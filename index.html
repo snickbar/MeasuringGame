@@ -135,7 +135,7 @@
 
   .question-prompt { font-family: 'Press Start 2P', monospace; font-size: 15px; line-height: 1.7; margin: 10px 0; text-align: center; color: var(--ink); text-shadow: 1px 1px 0 #123047; }
 
-  .game-body { display: flex; gap: 8px; align-items: flex-start; }
+  .game-body { display: flex; gap: 46px; align-items: flex-start; }
   .main-col { flex: 2 1 0; min-width: 0; }
   .score-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
   .score-card {
@@ -193,9 +193,14 @@
   }
   .reaction-bubble {
     position: absolute; padding: 4px 8px; display: flex; align-items: center; justify-content: center;
-    animation: popIn 250ms ease;
+    animation: reactionSlideOut 450ms ease-out both;
     border-width: 8px; border-style: solid; border-image-source: var(--panel); border-image-slice: 10 fill;
     color: var(--cream-text);
+  }
+  @keyframes reactionSlideOut {
+    0% { transform: translate(0, -50%) scale(.4); opacity: 0; }
+    55% { transform: translate(-70%, -50%) scale(1.15); opacity: 1; }
+    100% { transform: translate(-100%, -50%) scale(1); opacity: 1; }
   }
   .reaction-bubble .reaction-emoji { font-size: 24px; }
 
@@ -1209,7 +1214,6 @@
       const rect = card.getBoundingClientRect();
       bubble.style.top = `${rect.top + rect.height / 2}px`;
       bubble.style.left = `${rect.left}px`;
-      bubble.style.transform = "translate(-100%, -50%)";
     } else {
       bubble.style.top = "90px";
       bubble.style.left = "8px";
