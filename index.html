@@ -97,8 +97,20 @@
     color: var(--cream-text);
   }
   #settings-panel label { display: flex; align-items: center; justify-content: space-between; font-size: 18px; gap: 8px; }
-  #settings-panel input[type="number"] { width: 80px; }
+  #settings-panel input[type="number"] {
+    width: 56px; text-align: center; padding: 8px 2px; margin: 0;
+    -moz-appearance: textfield;
+  }
+  #settings-panel input[type="number"]::-webkit-inner-spin-button,
+  #settings-panel input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   #settings-panel input[type="checkbox"] { width: auto; }
+  .stepper { display: flex; align-items: center; gap: 6px; }
+  .stepper-btn {
+    width: 34px; flex-shrink: 0; padding: 6px 0; margin: 0; font-size: 16px; line-height: 1;
+    border-width: 9px; border-style: solid; border-image-source: var(--key); border-image-slice: 10 fill;
+    color: #eef3fa;
+  }
+  .stepper-btn:disabled { opacity: .4; cursor: default; }
 
   .kick-btn { width: auto; font-size: 12px; padding: 4px 8px; margin: 0 0 0 8px; background: #6a1010; color: #ffd7d7; border: 2px solid #a5222f; }
   .player-avatar { font-size: 22px; margin-right: 6px; }
@@ -303,8 +315,20 @@
   <ul id="player-list"></ul>
 
   <div id="settings-panel">
-    <label>Timer (sec) <input id="setting-timer" type="number" min="10" max="90" /></label>
-    <label>Rounds <input id="setting-rounds" type="number" min="1" max="20" /></label>
+    <label>Timer (sec)
+      <span class="stepper">
+        <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
+        <input id="setting-timer" type="number" min="10" max="90" />
+        <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
+      </span>
+    </label>
+    <label>Rounds
+      <span class="stepper">
+        <button type="button" class="stepper-btn minus" data-for="setting-rounds" data-step="-1">&minus;</button>
+        <input id="setting-rounds" type="number" min="1" max="20" />
+        <button type="button" class="stepper-btn plus" data-for="setting-rounds" data-step="1">+</button>
+      </span>
+    </label>
     <label>Second-chance scoring <input id="setting-secondchance" type="checkbox" /></label>
   </div>
 
@@ -711,7 +735,22 @@
     [settingTimerInput, settingRoundsInput, settingSecondChanceInput].forEach((el) => {
       el.disabled = locked;
     });
+    document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
+      btn.disabled = locked;
+    });
   }
+
+  document.getElementById("settings-panel").addEventListener("click", (e) => {
+    const btn = e.target.closest(".stepper-btn");
+    if (!btn || btn.disabled) return;
+    const input = document.getElementById(btn.dataset.for);
+    const step = parseInt(btn.dataset.step, 10);
+    const min = parseInt(input.min, 10);
+    const max = parseInt(input.max, 10);
+    const current = parseInt(input.value, 10) || min;
+    input.value = Math.max(min, Math.min(max, current + step));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
 
   settingTimerInput.addEventListener("change", () => {
     if (settingTimerInput.disabled) return;
