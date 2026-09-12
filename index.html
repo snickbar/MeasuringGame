@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Measuring Game</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 22px; }
+  input, button { font-size: 16px; padding: 10px; margin: 6px 0; width: 100%; box-sizing: border-box; }
+  button { cursor: pointer; }
+  #room-screen, #lobby-screen, #question-screen { display: none; }
+  #lobby-screen.active, #room-screen.active, #question-screen.active { display: block; }
+  #join-screen.active { display: block; }
+  #join-screen:not(.active) { display: none; }
+  ul { list-style: none; padding: 0; }
+  li { padding: 8px; background: #f2f2f2; margin: 4px 0; border-radius: 6px; }
+  #status { color: #888; font-size: 13px; min-height: 18px; }
+
+  #guess-display {
+    font-size: 36px; font-weight: 600; text-align: center;
+    padding: 16px; background: #f2f2f2; border-radius: 8px; margin: 16px 0;
+  }
+  #numpad {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .num-btn, #backspace-btn {
+    font-size: 22px; padding: 18px 0; border: none; border-radius: 8px;
+    background: #e8e8e8; margin: 0;
+  }
+  .num-btn:active, #backspace-btn:active { background: #d0d0d0; }
+  #submit-guess-btn { margin-top: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; }
+  #guess-status { text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="join-screen" class="active">
+  <h1>Measuring Game</h1>
+  <input id="name-input" placeholder="Your name" />
+  <button id="create-btn">Create a room</button>
+  <hr />
+  <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" />
+  <button id="join-btn">Join room</button>
+  <p id="status"></p>
+</div>
+
+<div id="lobby-screen">
+  <h1>Room: <span id="room-code-display"></span></h1>
+  <p>Share this code with other players.</p>
+  <h3>Players</h3>
+  <ul id="player-list"></ul>
+  <button id="host-start-btn" style="display:none;">Start game (host only)</button>
+</div>
+
+<div id="question-screen">
+  <h1 id="question-prompt"></h1>
+  <div id="guess-display">0</div>
+  <div id="numpad">
+    <button class="num-btn" data-val="1">1</button>
+    <button class="num-btn" data-val="2">2</button>
+    <button class="num-btn" data-val="3">3</button>
+    <button class="num-btn" data-val="4">4</button>
+    <button class="num-btn" data-val="5">5</button>
+    <button class="num-btn" data-val="6">6</button>
+    <button class="num-btn" data-val="7">7</button>
+    <button class="num-btn" data-val="8">8</button>
+    <button class="num-btn" data-val="9">9</button>
+    <button class="num-btn" data-val=".">.</button>
+    <button class="num-btn" data-val="0">0</button>
+    <button id="backspace-btn">&larr;</button>
+  </div>
+  <button id="submit-guess-btn">Submit guess</button>
+  <p id="guess-status"></p>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getDatabase, ref, set, onValue, push, serverTimestamp, onDisconnect
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3RTyL0yxNExF8SuoabHy5MDCcb8kG4X8",
+    authDomain: "measuring-game.firebaseapp.com",
+    databaseURL: "https://measuring-game-default-rtdb.firebaseio.com",
+    projectId: "measuring-game",
+    storageBucket: "measuring-game.firebasestorage.app",
+    messagingSenderId: "436049530728",
+    appId: "1:436049530728:web:2a64f85e97be20bb6710dd",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const OBJECTS = [
+    { name: "grain of sand",       plural: "grains of sand",       mm: 0.5 },
+    { name: "ant",                 plural: "ants",                 mm: 5 },
+    { name: "paperclip",           plural: "paperclips",           mm: 33 },
+    { name: "AA battery",          plural: "AA batteries",         mm: 50 },
+    { name: "smartphone",          plural: "smartphones",          mm: 150 },
+    { name: "sheet of paper (A4)", plural: "sheets of paper (A4)", mm: 297 },
+    { name: "baseball bat",        plural: "baseball bats",        mm: 700 },
+    { name: "door",                plural: "doors",                mm: 2030 },
+    { name: "giraffe",             plural: "giraffes",             mm: 5500 },
+    { name: "school bus",          plural: "school buses",         mm: 12000 },
+    { name: "blue whale",          plural: "blue whales",          mm: 24000 },
+    { name: "basketball court",    plural: "basketball courts",    mm: 28650 },
+    { name: "football field",      plural: "football fields",      mm: 109700 },
+    { name: "Eiffel Tower",        plural: "Eiffel Towers",        mm: 330000 },
+    { name: "Burj Khalifa",        plural: "Burj Khalifas",        mm: 828000 },
+  ];
+
+  function generateQuestion() {
+    const i = Math.floor(Math.random() * OBJECTS.length);
+    let j = Math.floor(Math.random() * OBJECTS.length);
+    while (j === i) j = Math.floor(Math.random() * OBJECTS.length);
+    const [unit, target] = OBJECTS[i].mm <= OBJECTS[j].mm
+      ? [OBJECTS[i], OBJECTS[j]]
+      : [OBJECTS[j], OBJECTS[i]];
+    return {
+      unitName: unit.name,
+      targetName: target.name,
+      answer: target.mm / unit.mm,
+      prompt: `How many ${unit.plural} long is a ${target.name}?`,
+    };
+  }
+
+  const joinScreen = document.getElementById("join-screen");
+  const lobbyScreen = document.getElementById("lobby-screen");
+  const nameInput = document.getElementById("name-input");
+  const codeInput = document.getElementById("code-input");
+  const createBtn = document.getElementById("create-btn");
+  const joinBtn = document.getElementById("join-btn");
+  const statusEl = document.getElementById("status");
+  const roomCodeDisplay = document.getElementById("room-code-display");
+  const playerList = document.getElementById("player-list");
+  const hostStartBtn = document.getElementById("host-start-btn");
+
+  function generateRoomCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars
+    let code = "";
+    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  function makePlayerId() {
+    return "p_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  let currentRoomCode = null;
+  let currentPlayerId = null;
+  let isHost = false;
+
+  function enterLobby(roomCode) {
+    currentRoomCode = roomCode;
+    joinScreen.classList.remove("active");
+    lobbyScreen.classList.add("active");
+    roomCodeDisplay.textContent = roomCode;
+    hostStartBtn.style.display = isHost ? "block" : "none";
+
+    // Listen for live player list updates
+    const playersRef = ref(db, `rooms/${roomCode}/players`);
+    onValue(playersRef, (snapshot) => {
+      const players = snapshot.val() || {};
+      playerList.innerHTML = "";
+      Object.values(players).forEach((p) => {
+        const li = document.createElement("li");
+        li.textContent = p.name + (p.isHost ? " (host)" : "");
+        playerList.appendChild(li);
+      });
+    });
+  }
+
+  async function joinRoomAsPlayer(roomCode, name, asHost) {
+    currentPlayerId = makePlayerId();
+    isHost = asHost;
+    const playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
+    await set(playerRef, { name, isHost, score: 0, joinedAt: serverTimestamp() });
+    // Remove player automatically if they close the tab / lose connection
+    onDisconnect(playerRef).remove();
+    enterLobby(roomCode);
+    watchPhase(roomCode);
+  }
+
+  createBtn.addEventListener("click", async () => {
+    const name = nameInput.value.trim();
+    if (!name) { statusEl.textContent = "Enter your name first."; return; }
+    statusEl.textContent = "Creating room...";
+    const roomCode = generateRoomCode();
+    await set(ref(db, `rooms/${roomCode}/phase`), "waiting");
+    await joinRoomAsPlayer(roomCode, name, true);
+  });
+
+  // ---- Question screen elements ----
+  const lobbyScreenEl = document.getElementById("lobby-screen");
+  const questionScreenEl = document.getElementById("question-screen");
+  const questionPromptEl = document.getElementById("question-prompt");
+  const guessDisplayEl = document.getElementById("guess-display");
+  const submitGuessBtn = document.getElementById("submit-guess-btn");
+  const guessStatusEl = document.getElementById("guess-status");
+
+  let currentGuessStr = "";
+  let hasSubmittedThisRound = false;
+
+  function renderGuessDisplay() {
+    guessDisplayEl.textContent = currentGuessStr === "" ? "0" : currentGuessStr;
+  }
+
+  document.getElementById("numpad").addEventListener("click", (e) => {
+    if (!e.target.classList.contains("num-btn")) return;
+    if (hasSubmittedThisRound) return;
+    const val = e.target.dataset.val;
+    if (val === "." && currentGuessStr.includes(".")) return; // only one decimal point
+    if (currentGuessStr.length >= 10) return; // reasonable length cap
+    currentGuessStr += val;
+    renderGuessDisplay();
+  });
+
+  document.getElementById("backspace-btn").addEventListener("click", () => {
+    if (hasSubmittedThisRound) return;
+    currentGuessStr = currentGuessStr.slice(0, -1);
+    renderGuessDisplay();
+  });
+
+  submitGuessBtn.addEventListener("click", async () => {
+    const guessNum = parseFloat(currentGuessStr);
+    if (isNaN(guessNum)) { guessStatusEl.textContent = "Enter a number first."; return; }
+    hasSubmittedThisRound = true;
+    guessStatusEl.textContent = "Guess submitted \u2014 waiting for others...";
+    await set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), guessNum);
+  });
+
+  // Host starts the game: generate a question, write it, switch phase
+  hostStartBtn.addEventListener("click", async () => {
+    const q = generateQuestion();
+    await set(ref(db, `rooms/${currentRoomCode}/currentQuestion`), q);
+    await set(ref(db, `rooms/${currentRoomCode}/guesses`), null); // clear old guesses
+    await set(ref(db, `rooms/${currentRoomCode}/phase`), "question");
+  });
+
+  // Every player watches the room's phase to know which screen to show
+  function watchPhase(roomCode) {
+    onValue(ref(db, `rooms/${roomCode}/phase`), (snapshot) => {
+      const phase = snapshot.val();
+      if (phase === "question") {
+        lobbyScreenEl.classList.remove("active");
+        questionScreenEl.classList.add("active");
+        currentGuessStr = "";
+        hasSubmittedThisRound = false;
+        guessStatusEl.textContent = "";
+        renderGuessDisplay();
+      } else if (phase === "waiting") {
+        questionScreenEl.classList.remove("active");
+        lobbyScreenEl.classList.add("active");
+      }
+    });
+    onValue(ref(db, `rooms/${roomCode}/currentQuestion`), (snapshot) => {
+      const q = snapshot.val();
+      if (q) questionPromptEl.textContent = q.prompt;
+    });
+  }
+
+  joinBtn.addEventListener("click", async () => {
+    const name = nameInput.value.trim();
+    const code = codeInput.value.trim().toUpperCase();
+    if (!name) { statusEl.textContent = "Enter your name first."; return; }
+    if (!code) { statusEl.textContent = "Enter a room code."; return; }
+    statusEl.textContent = "Joining room...";
+    // Check the room exists before joining
+    onValue(ref(db, `rooms/${code}/phase`), (snapshot) => {
+      if (snapshot.val() === null) {
+        statusEl.textContent = "Room not found. Check the code.";
+      } else {
+        joinRoomAsPlayer(code, name, false);
+      }
+    }, { onlyOnce: true });
+  });
+</script>
+</body>
+</html>
