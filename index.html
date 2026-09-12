@@ -9,13 +9,18 @@
   h1 { font-size: 22px; }
   input, button { font-size: 16px; padding: 10px; margin: 6px 0; width: 100%; box-sizing: border-box; }
   button { cursor: pointer; }
-  #room-screen, #lobby-screen, #question-screen { display: none; }
-  #lobby-screen.active, #room-screen.active, #question-screen.active { display: block; }
+  #room-screen, #lobby-screen, #question-screen, #reveal-screen { display: none; }
+  #lobby-screen.active, #room-screen.active, #question-screen.active, #reveal-screen.active { display: block; }
   #join-screen.active { display: block; }
   #join-screen:not(.active) { display: none; }
   ul { list-style: none; padding: 0; }
   li { padding: 8px; background: #f2f2f2; margin: 4px 0; border-radius: 6px; }
   #status { color: #888; font-size: 13px; min-height: 18px; }
+
+  #reveal-answer { color: #555; margin-bottom: 12px; }
+  #reveal-list li { display: flex; justify-content: space-between; opacity: 0; animation: fadeIn 0.4s forwards; }
+  #reveal-list li.winner { background: #dcfce7; font-weight: 600; }
+  @keyframes fadeIn { to { opacity: 1; } }
 
   #guess-display {
     font-size: 36px; font-weight: 600; text-align: center;
@@ -72,6 +77,14 @@
   </div>
   <button id="submit-guess-btn">Submit guess</button>
   <p id="guess-status"></p>
+</div>
+
+<div id="reveal-screen">
+  <h1 id="reveal-question"></h1>
+  <p id="reveal-answer"></p>
+  <ul id="reveal-list"></ul>
+  <button id="reveal-next-btn" style="display:none;">Reveal next</button>
+  <button id="next-round-btn" style="display:none;">Next round (host only)</button>
 </div>
 
 <script type="module">
@@ -152,6 +165,8 @@
   let currentPlayerId = null;
   let isHost = false;
 
+  let currentPlayers = {};
+
   function enterLobby(roomCode) {
     currentRoomCode = roomCode;
     joinScreen.classList.remove("active");
@@ -163,6 +178,7 @@
     const playersRef = ref(db, `rooms/${roomCode}/players`);
     onValue(playersRef, (snapshot) => {
       const players = snapshot.val() || {};
+      currentPlayers = players;
       playerList.innerHTML = "";
       Object.values(players).forEach((p) => {
         const li = document.createElement("li");
@@ -199,6 +215,14 @@
   const guessDisplayEl = document.getElementById("guess-display");
   const submitGuessBtn = document.getElementById("submit-guess-btn");
   const guessStatusEl = document.getElementById("guess-status");
+
+  // ---- Reveal screen elements ----
+  const revealScreenEl = document.getElementById("reveal-screen");
+  const revealQuestionEl = document.getElementById("reveal-question");
+  const revealAnswerEl = document.getElementById("reveal-answer");
+  const revealListEl = document.getElementById("reveal-list");
+  const revealNextBtn = document.getElementById("reveal-next-btn");
+  const nextRoundBtn = document.getElementById("next-round-btn");
 
   let currentGuessStr = "";
   let hasSubmittedThisRound = false;
@@ -243,23 +267,102 @@
   function watchPhase(roomCode) {
     onValue(ref(db, `rooms/${roomCode}/phase`), (snapshot) => {
       const phase = snapshot.val();
+      lobbyScreenEl.classList.remove("active");
+      questionScreenEl.classList.remove("active");
+      revealScreenEl.classList.remove("active");
       if (phase === "question") {
-        lobbyScreenEl.classList.remove("active");
         questionScreenEl.classList.add("active");
         currentGuessStr = "";
         hasSubmittedThisRound = false;
         guessStatusEl.textContent = "";
         renderGuessDisplay();
       } else if (phase === "waiting") {
-        questionScreenEl.classList.remove("active");
         lobbyScreenEl.classList.add("active");
+      } else if (phase === "reveal") {
+        revealScreenEl.classList.add("active");
       }
     });
     onValue(ref(db, `rooms/${roomCode}/currentQuestion`), (snapshot) => {
       const q = snapshot.val();
-      if (q) questionPromptEl.textContent = q.prompt;
+      if (q) {
+        questionPromptEl.textContent = q.prompt;
+        revealQuestionEl.textContent = q.prompt;
+        revealAnswerEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+      }
+    });
+
+    // Only the host decides when to move to reveal, to avoid every
+    // player racing to write the same thing at once.
+    if (isHost) {
+      onValue(ref(db, `rooms/${roomCode}/guesses`), async (snapshot) => {
+        const guesses = snapshot.val() || {};
+        const guessCount = Object.keys(guesses).length;
+        const playerCount = Object.keys(currentPlayers).length;
+        if (guessCount > 0 && guessCount >= playerCount) {
+          await startReveal(roomCode, guesses);
+        }
+      });
+    }
+
+    // Reveal list rendering, driven by revealOrder + revealIndex in the DB
+    onValue(ref(db, `rooms/${roomCode}/revealOrder`), (snapshot) => {
+      renderReveal(roomCode, snapshot.val() || []);
     });
   }
+
+  let latestRevealOrder = [];
+
+  async function startReveal(roomCode, guesses) {
+    const qSnap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${roomCode}/currentQuestion`), resolve, { onlyOnce: true });
+    });
+    const q = qSnap.val();
+    if (!q) return;
+    const order = Object.entries(guesses).map(([playerId, guess]) => ({
+      playerId,
+      name: (currentPlayers[playerId] && currentPlayers[playerId].name) || "Player",
+      guess,
+      error: Math.abs(guess - q.answer),
+    })).sort((a, b) => b.error - a.error); // furthest first, closest last
+    await set(ref(db, `rooms/${roomCode}/revealOrder`), order);
+    await set(ref(db, `rooms/${roomCode}/revealIndex`), 0);
+    await set(ref(db, `rooms/${roomCode}/phase`), "reveal");
+  }
+
+  function renderReveal(roomCode, order) {
+    latestRevealOrder = order;
+    onValue(ref(db, `rooms/${roomCode}/revealIndex`), (snapshot) => {
+      const revealIndex = snapshot.val() || 0;
+      revealListEl.innerHTML = "";
+      order.slice(0, revealIndex).forEach((entry, idx) => {
+        const li = document.createElement("li");
+        const isWinner = idx === revealIndex - 1 && revealIndex === order.length;
+        if (isWinner) li.classList.add("winner");
+        li.innerHTML = `<span>${entry.name}</span><span>${entry.guess}</span>`;
+        revealListEl.appendChild(li);
+      });
+      if (isHost) {
+        revealNextBtn.style.display = revealIndex < order.length ? "block" : "none";
+        nextRoundBtn.style.display = revealIndex >= order.length && order.length > 0 ? "block" : "none";
+      }
+    }, { onlyOnce: true });
+  }
+
+  revealNextBtn.addEventListener("click", async () => {
+    const idxSnap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${currentRoomCode}/revealIndex`), resolve, { onlyOnce: true });
+    });
+    const next = (idxSnap.val() || 0) + 1;
+    await set(ref(db, `rooms/${currentRoomCode}/revealIndex`), next);
+  });
+
+  nextRoundBtn.addEventListener("click", async () => {
+    await set(ref(db, `rooms/${currentRoomCode}/currentQuestion`), null);
+    await set(ref(db, `rooms/${currentRoomCode}/guesses`), null);
+    await set(ref(db, `rooms/${currentRoomCode}/revealOrder`), null);
+    await set(ref(db, `rooms/${currentRoomCode}/revealIndex`), null);
+    await set(ref(db, `rooms/${currentRoomCode}/phase`), "waiting");
+  });
 
   joinBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim();
