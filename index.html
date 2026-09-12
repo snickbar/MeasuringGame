@@ -130,19 +130,30 @@
     padding: 5px 6px; font-size: 11px;
     border-width: 9px; border-style: solid; border-image-source: var(--panel); border-image-slice: 10 fill;
     display: flex; align-items: center; gap: 4px; animation: popIn 300ms ease;
+    transition: padding 250ms ease;
   }
   .score-card .avatar {
     font-size: 12px; width: 26px; height: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     border-width: 7px; border-style: solid; border-image-source: var(--ring); border-image-slice: 9 fill;
+    transition: width 250ms ease, height 250ms ease, font-size 250ms ease;
   }
   .score-card .info { flex: 1; min-width: 0; }
-  .score-card .name { font-size: 14px; color: var(--cream-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .score-card .pts { font-family: 'VT323', monospace; font-size: 16px; color: var(--pts); font-weight: bold; }
+  .score-card .name { font-size: 14px; color: var(--cream-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: font-size 250ms ease; }
+  .score-card .pts { font-family: 'VT323', monospace; font-size: 16px; color: var(--pts); font-weight: bold; transition: font-size 250ms ease; }
   .score-card .pts.score-pop { animation: scorePop .4s ease; }
   .score-card .arrow { font-size: 12px; width: 14px; text-align: center; }
   .score-card .arrow.up { color: var(--green); }
   .score-card .arrow.down { color: var(--red); }
   @keyframes scorePop { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: var(--green); } 100% { transform: scale(1); } }
+
+  .score-card.rank-1 { padding: 10px 12px; border-image-source: var(--fancy); }
+  .score-card.rank-1 .avatar { width: 36px; height: 36px; font-size: 17px; }
+  .score-card.rank-1 .name { font-size: 18px; }
+  .score-card.rank-1 .pts { font-size: 21px; }
+  .score-card.rank-2 { padding: 7px 8px; }
+  .score-card.rank-2 .avatar { width: 30px; height: 30px; font-size: 14px; }
+  .score-card.rank-2 .name { font-size: 15px; }
+  .score-card.rank-2 .pts { font-size: 18px; }
 
   #guess-display {
     font-family: 'Press Start 2P', monospace; font-size: 26px; text-align: center;
@@ -195,6 +206,7 @@
   }
   .answer-slot:disabled { cursor: default; }
   #double-down-btn { border-image-source: var(--accent); color: #fff4e6; }
+  #double-down-btn.picked { border-image-source: var(--ring); }
   #answers-hint { text-align: center; font-size: 13px; color: var(--ink-muted); }
 
   /* ---- Reveal ---- */
@@ -203,14 +215,15 @@
   .reveal-card { padding: 0; background: transparent; display: block; }
   .card-inner {
     border-width: 9px; border-style: solid; border-image-source: var(--panel); border-image-slice: 10 fill;
-    padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    padding: 10px 14px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
     font-size: 14px; min-height: 24px; color: var(--cream-text);
   }
   .reveal-card.winner .card-inner { border-image-source: var(--fancy); font-weight: 700; }
   .reveal-card.drumroll .card-inner { animation: pulse 0.6s infinite; }
   .card-number { font-family: 'Press Start 2P', monospace; font-size: 13px; color: var(--pts); }
-  .pickedby-avatars { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+  .pickedby-avatars { display: flex; align-items: center; gap: 4px; font-size: 14px; flex-basis: 100%; }
   .pickedby-label { font-size: 11px; color: var(--cream-muted); }
+  .winner-detail-inline { flex-basis: 100%; font-size: 12px; font-weight: normal; color: var(--pts); text-align: center; }
 
   #final-list li { font-size: 15px; }
   #final-list li small { color: var(--cream-muted); margin-left: 6px; }
@@ -243,16 +256,6 @@
   }
   .summary-row-bottom { display: flex; justify-content: space-between; font-size: 12px; color: var(--cream-muted); }
 
-  /* ---- Winner banner ---- */
-  #winner-banner {
-    display: none; position: fixed; inset: 0; z-index: 1100; align-items: center; justify-content: center;
-    flex-direction: column; text-align: center; background: rgba(22, 50, 74, 0.92); color: var(--ink); padding: 24px;
-  }
-  #winner-banner.active { display: flex; }
-  #winner-banner .winner-title { font-family: 'Press Start 2P', monospace; font-size: 28px; color: #ffe08a; text-shadow: 3px 3px 0 #123047; animation: popIn 400ms ease; }
-  #winner-banner .winner-avatar { font-size: 60px; }
-  #winner-banner .winner-name { font-family: 'Press Start 2P', monospace; font-size: 16px; margin-top: 10px; }
-  #winner-banner .winner-detail { font-size: 18px; margin-top: 10px; opacity: .9; }
 
   /* ---- Paused overlay / kick modal / left screen ---- */
   #paused-overlay, #kick-modal {
@@ -407,13 +410,6 @@
   <button id="kick-yes-btn">Yes, I'm here</button>
 </div>
 
-<div id="winner-banner">
-  <div class="winner-title">WINNER!</div>
-  <div class="winner-avatar" id="winner-avatar"></div>
-  <div class="winner-name" id="winner-name"></div>
-  <div class="winner-detail" id="winner-detail"></div>
-</div>
-
 <div id="reactions-panel"></div>
 
 <script type="module">
@@ -560,11 +556,6 @@
   const kickYesBtn = document.getElementById("kick-yes-btn");
   const kickTimerEl = document.getElementById("kick-timer");
 
-  const winnerBannerEl = document.getElementById("winner-banner");
-  const winnerAvatarEl = document.getElementById("winner-avatar");
-  const winnerNameEl = document.getElementById("winner-name");
-  const winnerDetailEl = document.getElementById("winner-detail");
-
   // ---- Room / player id helpers ----
   function generateRoomCode() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars
@@ -599,7 +590,6 @@
   let takenAvatars = new Set();
   let takenAvatarsUnsub = null;
   let codeInputDebounce = null;
-  let winnerBannerHideHandle = null;
 
   // Reveal choreography local state (reset per round)
   let revealShuffled = false;
@@ -1193,17 +1183,18 @@
         + (isMine ? '<span class="you-badge">YOU</span>' : "")
         + (isMyPick ? `<span class="pick-stamp">${currentAvatar}</span>` : "");
       btn.className = "answer-slot" + (isMine ? " mine" : "") + (isMyPick ? " picked" : "");
-      btn.disabled = isMine || !!myPick || !!roomState.paused;
+      btn.disabled = isMine || !!roomState.paused;
       btn.addEventListener("click", () => choosePick("pick", entry.playerId));
       answersRowEl.appendChild(btn);
     });
-    doubleDownBtn.disabled = !!myPick || !!roomState.paused;
-    doubleDownBtn.textContent = (myPick && myPick.type === "doubledown") ? "Doubled down!" : "Double down on my answer";
+    const isMyDoubleDown = !!myPick && myPick.type === "doubledown";
+    doubleDownBtn.disabled = !!roomState.paused;
+    doubleDownBtn.classList.toggle("picked", isMyDoubleDown);
+    doubleDownBtn.textContent = isMyDoubleDown ? "Doubled down!" : "Double down on my answer";
   }
 
   async function choosePick(type, targetPlayerId) {
     if (roomState.paused) return;
-    if ((roomState.picks || {})[currentPlayerId]) return;
     await set(ref(db, `rooms/${currentRoomCode}/picks/${currentPlayerId}`), { type, targetPlayerId });
   }
 
@@ -1229,14 +1220,17 @@
   function cardNumberHtml(entry) {
     return `<div class="card-inner"><span class="card-number">${entry.guess}</span></div>`;
   }
-  function cardPersonHtml(entry, pts) {
+  function cardPersonHtml(entry, pts, isWinner) {
     const avatar = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
     const extra = entry.doubledOwn ? " (doubled down)" : "";
     const pickedBy = entry.pickedBy || [];
     const pickedAvatars = pickedBy.length
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
       : "";
-    return `<div class="card-inner"><span>${avatar} ${entry.name}${entry.isSpotOn ? " \u{1F3AF}" : ""}</span><span>${entry.guess} <b>+${pts}</b>${extra}</span>${pickedAvatars}</div>`;
+    const winnerDetail = isWinner
+      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)}</div>`
+      : "";
+    return `<div class="card-inner"><span>${avatar} ${entry.name}${entry.isSpotOn ? " \u{1F3AF}" : ""}</span><span>${entry.guess} <b>+${pts}</b>${extra}</span>${pickedAvatars}${winnerDetail}</div>`;
   }
 
   function renderFaceDownCards(order, idOrder) {
@@ -1283,13 +1277,12 @@
       function doFlips() {
         squeezeSwap(li, "y", () => cardNumberHtml(entry));
         setTimeout(() => {
-          squeezeSwap(li, "x", () => cardPersonHtml(entry, pts));
+          squeezeSwap(li, "x", () => cardPersonHtml(entry, pts, isWinner));
           playSound("reveal");
           if (isWinner) {
             li.classList.add("winner");
             if (entry.isSpotOn) playSound("win");
             celebrate(entry.isSpotOn);
-            setTimeout(() => showWinnerBanner(entry, pts), 350);
           }
           setTimeout(() => {
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
@@ -1306,21 +1299,6 @@
       }
     });
   }
-
-  function showWinnerBanner(entry, pts) {
-    const answer = roomState.currentQuestion ? roomState.currentQuestion.answer : 0;
-    winnerAvatarEl.textContent = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
-    winnerNameEl.textContent = entry.name;
-    winnerDetailEl.textContent = `Guessed ${entry.guess} — actual answer ${answer.toFixed(2)} — off by ${entry.error.toFixed(2)}`;
-    winnerBannerEl.classList.add("active");
-    clearTimeout(winnerBannerHideHandle);
-    winnerBannerHideHandle = setTimeout(hideWinnerBanner, 3500);
-  }
-  function hideWinnerBanner() {
-    clearTimeout(winnerBannerHideHandle);
-    winnerBannerEl.classList.remove("active");
-  }
-  winnerBannerEl.addEventListener("click", hideWinnerBanner);
 
   function renderRevealChoreography(data) {
     const order = data.revealOrder || [];
@@ -1347,8 +1325,9 @@
         const li = revealListEl.querySelector(`[data-id="${entry.playerId}"]`);
         if (li) {
           const pts = entry.basePoints + entry.doubleDownPoints;
-          li.innerHTML = cardPersonHtml(entry, pts);
-          if (i === order.length - 1 && entry.isClosest) li.classList.add("winner");
+          const isWinner = i === order.length - 1 && entry.isClosest;
+          li.innerHTML = cardPersonHtml(entry, pts, isWinner);
+          if (isWinner) li.classList.add("winner");
         }
       }
       lastChoreographedIndex = revealIndex;
@@ -1366,8 +1345,9 @@
         const li = revealListEl.querySelector(`[data-id="${entry.playerId}"]`);
         if (li) {
           const pts = entry.basePoints + entry.doubleDownPoints;
-          li.innerHTML = cardPersonHtml(entry, pts);
-          if (i === order.length - 1 && entry.isClosest) li.classList.add("winner");
+          const isWinner = i === order.length - 1 && entry.isClosest;
+          li.innerHTML = cardPersonHtml(entry, pts, isWinner);
+          if (isWinner) li.classList.add("winner");
         }
       }
       lastChoreographedIndex = revealIndex;
@@ -1403,7 +1383,7 @@
           arrow = '<span class="arrow"></span>';
         }
         const box = document.createElement("div");
-        box.className = "score-card";
+        box.className = "score-card" + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : "");
         box.dataset.id = id;
         box.innerHTML = `<span class="avatar">${p.avatar || ""}</span><span class="info"><span class="name">${p.name}</span></span>${arrow}<span class="pts">${score}</span>`;
         scoreColEl.appendChild(box);
@@ -1584,8 +1564,6 @@
     answersViewEl.classList.toggle("active", phase === "answers");
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
-
-    if (phase !== "reveal") hideWinnerBanner();
 
     if (phase === "question" && data.round !== lastSeenRound) {
       lastSeenRound = data.round;
