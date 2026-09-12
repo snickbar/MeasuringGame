@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>Measuring Game</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; }
@@ -295,11 +298,23 @@
     // player racing to write the same thing at once.
     if (isHost) {
       onValue(ref(db, `rooms/${roomCode}/guesses`), async (snapshot) => {
-        const guesses = snapshot.val() || {};
-        const guessCount = Object.keys(guesses).length;
-        const playerCount = Object.keys(currentPlayers).length;
-        if (guessCount > 0 && guessCount >= playerCount) {
-          await startReveal(roomCode, guesses);
+        try {
+          const guesses = snapshot.val() || {};
+          const guessCount = Object.keys(guesses).length;
+          console.log("[measuring-game] guesses updated:", guesses);
+          if (guessCount === 0) return;
+          // Fetch a fresh player count directly, rather than trusting
+          // locally cached state which could be stale.
+          const playersSnap = await new Promise((resolve) => {
+            onValue(ref(db, `rooms/${roomCode}/players`), resolve, { onlyOnce: true });
+          });
+          const playerCount = Object.keys(playersSnap.val() || {}).length;
+          console.log("[measuring-game] guessCount:", guessCount, "playerCount:", playerCount);
+          if (guessCount >= playerCount) {
+            await startReveal(roomCode, guesses);
+          }
+        } catch (err) {
+          console.error("[measuring-game] error checking guesses:", err);
         }
       });
     }
@@ -313,11 +328,12 @@
   let latestRevealOrder = [];
 
   async function startReveal(roomCode, guesses) {
+    console.log("[measuring-game] starting reveal");
     const qSnap = await new Promise((resolve) => {
       onValue(ref(db, `rooms/${roomCode}/currentQuestion`), resolve, { onlyOnce: true });
     });
     const q = qSnap.val();
-    if (!q) return;
+    if (!q) { console.error("[measuring-game] no currentQuestion found, aborting reveal"); return; }
     const order = Object.entries(guesses).map(([playerId, guess]) => ({
       playerId,
       name: (currentPlayers[playerId] && currentPlayers[playerId].name) || "Player",
@@ -327,6 +343,7 @@
     await set(ref(db, `rooms/${roomCode}/revealOrder`), order);
     await set(ref(db, `rooms/${roomCode}/revealIndex`), 0);
     await set(ref(db, `rooms/${roomCode}/phase`), "reveal");
+    console.log("[measuring-game] reveal phase set");
   }
 
   function renderReveal(roomCode, order) {
