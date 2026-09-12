@@ -7,93 +7,355 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>Measuring Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; }
-  h1 { font-size: 22px; }
-  input, button { font-size: 16px; padding: 10px; margin: 6px 0; width: 100%; box-sizing: border-box; }
-  button { cursor: pointer; }
-  #room-screen, #lobby-screen, #question-screen, #reveal-screen { display: none; }
-  #lobby-screen.active, #room-screen.active, #question-screen.active, #reveal-screen.active { display: block; }
-  #join-screen.active { display: block; }
-  #join-screen:not(.active) { display: none; }
+  :root {
+    --purple: #7c3aed;
+    --purple-dark: #5b21b6;
+    --teal: #06b6d4;
+    --green: #22c55e;
+    --coral: #f97316;
+    --red: #ef4444;
+    --bg: #fdf4ff;
+    --card-bg: #ffffff;
+    --text: #241b3a;
+    --text-muted: #7a7290;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --shadow-sm: 0 2px 6px rgba(124, 58, 237, 0.12);
+    --shadow-md: 0 6px 16px rgba(124, 58, 237, 0.18);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    max-width: 480px; margin: 0 auto; padding: 16px 12px 32px;
+    background: linear-gradient(180deg, #fdf4ff 0%, #f3e8ff 100%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  h1, h3 { font-family: 'Baloo 2', 'Nunito', sans-serif; }
+  h1 { font-size: 26px; color: var(--purple-dark); }
+  input, button {
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px; padding: 12px; margin: 6px 0; width: 100%; box-sizing: border-box;
+    border-radius: var(--radius-md); border: 2px solid #e5d4ff;
+  }
+  button {
+    cursor: pointer; font-weight: 700; background: var(--purple); color: white; border: none;
+    box-shadow: var(--shadow-sm); transition: transform 100ms ease, box-shadow 100ms ease;
+  }
+  button:active { transform: scale(.95); box-shadow: none; }
   ul { list-style: none; padding: 0; }
-  li { padding: 8px; background: #f2f2f2; margin: 4px 0; border-radius: 6px; }
-  #status { color: #888; font-size: 13px; min-height: 18px; }
+  li { padding: 10px; background: var(--card-bg); margin: 6px 0; border-radius: var(--radius-md);
+       display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); }
+  #status { color: var(--text-muted); font-size: 13px; min-height: 18px; }
 
-  #reveal-answer { color: #555; margin-bottom: 12px; }
-  #reveal-list li { display: flex; justify-content: space-between; opacity: 0; animation: fadeIn 0.4s forwards; }
-  #reveal-list li.winner { background: #dcfce7; font-weight: 600; }
-  @keyframes fadeIn { to { opacity: 1; } }
+  .screen { animation: screenEnter 300ms ease; }
+  @keyframes screenEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+
+  #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
+  #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
+  #hud.active { display: block; }
+
+  #question-view, #answers-view, #reveal-view, #summary-view { display: none; }
+  #question-view.active, #answers-view.active, #reveal-view.active, #summary-view.active { display: block; }
+
+  /* ---- Home screen ---- */
+  #avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0 12px; }
+  .avatar-choice {
+    font-size: 22px; padding: 6px 0; background: var(--card-bg); border: 2px solid #e5d4ff; border-radius: var(--radius-sm);
+    box-shadow: none; margin: 0;
+  }
+  .avatar-choice.selected { border-color: var(--purple); background: #f3e8ff; transform: scale(1.08); }
+  .avatar-choice.taken { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
+  #recent-rooms-section h3, #home-settings-section h3 { font-size: 15px; margin: 14px 0 4px; color: var(--purple-dark); }
+  .recent-room-row { display: flex; justify-content: space-between; align-items: center; }
+  .recent-room-row button { width: auto; padding: 6px 12px; margin: 0; font-size: 13px; }
+  #home-settings-toggle { background: transparent; color: var(--purple-dark); box-shadow: none; border: 2px solid #e5d4ff; }
+  #home-settings-section { display: none; border: 1px solid #e5d4ff; border-radius: var(--radius-md); padding: 10px; margin-top: 6px; }
+  #home-settings-section.open { display: block; }
+  #home-settings-section label { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+  #home-settings-section input[type="checkbox"] { width: auto; }
+
+  /* ---- Settings panel (lobby) ---- */
+  #settings-panel { border: 1px solid #e5d4ff; border-radius: var(--radius-md); padding: 10px; margin: 12px 0; background: var(--card-bg); }
+  #settings-panel label { display: flex; align-items: center; justify-content: space-between; font-size: 14px; gap: 8px; }
+  #settings-panel input[type="number"] { width: 80px; }
+  #settings-panel input[type="checkbox"] { width: auto; }
+
+  .kick-btn { width: auto; font-size: 11px; padding: 4px 8px; margin: 0 0 0 8px; background: var(--red); border-radius: var(--radius-sm); box-shadow: none; }
+  .player-avatar { font-size: 20px; margin-right: 6px; }
+
+  /* ---- HUD ---- */
+  .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .hud-topleft { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+  .hud-topleft .room-code { font-family: 'Baloo 2', sans-serif; font-weight: 700; letter-spacing: 1px; color: var(--purple-dark); }
+  .hud-topleft .round-label { color: var(--text-muted); }
+  .hud-btn-row { display: flex; gap: 4px; margin-top: 4px; }
+  .hud-btn-row button { font-size: 11px; padding: 5px 8px; width: auto; margin: 0; box-shadow: none; background: #e5d4ff; color: var(--purple-dark); }
+  .hud-timer {
+    font-family: 'Baloo 2', sans-serif; border: 3px solid var(--purple); border-radius: var(--radius-md);
+    padding: 6px 16px; font-size: 28px; font-weight: 700; min-width: 56px; text-align: center; color: var(--purple-dark);
+    background: var(--card-bg);
+  }
+  .hud-timer.low { border-color: var(--red); color: var(--red); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+  .question-prompt { font-family: 'Baloo 2', sans-serif; font-size: 18px; font-weight: 700; margin: 10px 0; text-align: center; }
+
+  .game-body { display: flex; gap: 8px; align-items: flex-start; }
+  .main-col { flex: 2 1 0; min-width: 0; }
+  .score-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
+  .score-card {
+    border-radius: var(--radius-sm); padding: 6px; font-size: 11px; background: var(--card-bg); box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 4px; animation: popIn 300ms ease;
+  }
+  .score-card .avatar { font-size: 18px; }
+  .score-card .info { flex: 1; min-width: 0; }
+  .score-card .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .score-card .pts { font-weight: 700; color: var(--purple-dark); }
+  .score-card .pts.score-pop { animation: scorePop .4s ease; }
+  .score-card .arrow { font-size: 12px; width: 14px; text-align: center; }
+  .score-card .arrow.up { color: var(--green); }
+  .score-card .arrow.down { color: var(--red); }
+  @keyframes scorePop { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: var(--green); } 100% { transform: scale(1); } }
 
   #guess-display {
-    font-size: 36px; font-weight: 600; text-align: center;
-    padding: 16px; background: #f2f2f2; border-radius: 8px; margin: 16px 0;
+    font-family: 'Baloo 2', sans-serif; font-size: 34px; font-weight: 700; text-align: center;
+    padding: 14px; background: var(--card-bg); border-radius: var(--radius-md); margin: 10px 0; box-shadow: var(--shadow-sm);
   }
-  #numpad {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .num-btn, #backspace-btn { font-size: 16px; padding: 10px 0; background: #f3e8ff; color: var(--purple-dark); box-shadow: none; }
+  .num-btn:active, #backspace-btn:active { background: #e5d4ff; }
+  #submit-guess-btn { margin-top: 10px; background: var(--coral); }
+  #guess-status { text-align: center; font-size: 12px; color: var(--text-muted); }
+
+  /* ---- Emoji reaction picker (replaces numpad after submit) ---- */
+  #emoji-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  #emoji-picker.active { display: grid; }
+  .emoji-btn { font-size: 28px; padding: 12px 0; background: var(--card-bg); box-shadow: var(--shadow-sm); }
+
+  #reactions-panel {
+    position: fixed; left: max(8px, calc(50vw - 232px)); top: 90px; display: flex; flex-direction: column; gap: 6px;
+    z-index: 900; pointer-events: none;
   }
-  .num-btn, #backspace-btn {
-    font-size: 22px; padding: 18px 0; border: none; border-radius: 8px;
-    background: #e8e8e8; margin: 0;
+  .reaction-bubble {
+    background: var(--card-bg); border-radius: 999px; padding: 6px 10px; box-shadow: var(--shadow-md);
+    display: flex; align-items: center; gap: 6px; font-size: 20px; animation: popIn 250ms ease;
   }
-  .num-btn:active, #backspace-btn:active { background: #d0d0d0; }
-  #submit-guess-btn { margin-top: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; }
-  #guess-status { text-align: center; }
+  .reaction-bubble .reaction-emoji { font-size: 22px; }
+
+  /* ---- Answers / second chance ---- */
+  #answers-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
+  .answer-slot { width: auto; flex: 1 1 60px; padding: 10px 4px; font-size: 15px; font-weight: 700; color: var(--text); border: 2px solid #d8c7f5; border-radius: var(--radius-md); background: var(--card-bg); position: relative; box-shadow: none; }
+  .answer-slot.mine { border-color: var(--coral); background: #fff4e8; color: var(--text); opacity: 1; }
+  .answer-slot .you-badge {
+    position: absolute; top: -9px; right: -6px; background: var(--coral); color: white; font-size: 10px;
+    font-weight: 700; padding: 2px 6px; border-radius: 999px;
+  }
+  .answer-slot:disabled { cursor: default; }
+  #double-down-btn { background: var(--purple); }
+  #answers-hint { text-align: center; font-size: 12px; color: var(--text-muted); }
+
+  /* ---- Reveal ---- */
+  #reveal-answer { color: var(--text-muted); margin-bottom: 8px; text-align: center; font-weight: 700; }
+  #reveal-list { perspective: 800px; }
+  .reveal-card { padding: 0; background: transparent; box-shadow: none; display: block; }
+  .card-inner {
+    background: var(--card-bg); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    font-size: 13px; min-height: 24px;
+  }
+  .reveal-card.winner .card-inner { background: #dcfce7; font-weight: 700; }
+  .reveal-card.drumroll .card-inner { animation: pulse 0.6s infinite; border: 2px solid var(--coral); }
+  .card-number { font-family: 'Baloo 2', sans-serif; font-weight: 700; }
+  .pickedby-avatars { display: flex; gap: 2px; font-size: 14px; }
+
+  #summary-list li[data-id], #final-list li { font-size: 14px; }
+  #summary-list li small { color: var(--text-muted); margin-left: 6px; }
+
+  /* ---- Winner banner ---- */
+  #winner-banner {
+    display: none; position: fixed; inset: 0; z-index: 1100; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center; background: rgba(124, 58, 237, 0.92); color: white; padding: 24px;
+  }
+  #winner-banner.active { display: flex; }
+  #winner-banner .winner-title { font-family: 'Baloo 2', sans-serif; font-size: 40px; font-weight: 800; animation: popIn 400ms ease; }
+  #winner-banner .winner-avatar { font-size: 60px; }
+  #winner-banner .winner-name { font-family: 'Baloo 2', sans-serif; font-size: 24px; margin-top: 6px; }
+  #winner-banner .winner-detail { font-size: 15px; margin-top: 10px; opacity: .9; }
+
+  /* ---- Paused overlay / kick modal / left screen ---- */
+  #paused-overlay, #kick-modal {
+    display: none; position: fixed; inset: 0; background: rgba(36,27,58,0.75); color: #fff;
+    align-items: center; justify-content: center; flex-direction: column; text-align: center;
+    padding: 24px; z-index: 1000;
+  }
+  #paused-overlay.active, #kick-modal.active { display: flex; }
+  #kick-modal button, #paused-overlay button { width: auto; margin-top: 12px; }
+  #kick-timer { font-family: 'Baloo 2', sans-serif; font-size: 22px; margin-top: 8px; }
+  #kick-timer.low { color: var(--red); animation: pulse 1s infinite; }
 </style>
 </head>
 <body>
 
-<div id="join-screen" class="active">
+<div id="join-screen" class="screen active">
   <h1>Measuring Game</h1>
   <input id="name-input" placeholder="Your name" />
+
+  <div id="avatar-grid"></div>
+
   <button id="create-btn">Create a room</button>
   <hr />
   <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" />
   <button id="join-btn">Join room</button>
   <p id="status"></p>
+
+  <div id="recent-rooms-section" style="display:none;">
+    <h3>Recent rooms</h3>
+    <div id="recent-rooms-list"></div>
+  </div>
+
+  <div id="settings-toggle-row">
+    <button id="home-settings-toggle">&#9881; Settings</button>
+  </div>
+  <div id="home-settings-section">
+    <label>Sound effects <input id="home-sound-toggle" type="checkbox" /></label>
+  </div>
 </div>
 
-<div id="lobby-screen">
+<div id="lobby-screen" class="screen">
   <h1>Room: <span id="room-code-display"></span></h1>
   <p>Share this code with other players.</p>
   <h3>Players</h3>
   <ul id="player-list"></ul>
+
+  <div id="settings-panel">
+    <label>Timer (sec) <input id="setting-timer" type="number" min="10" max="90" /></label>
+    <label>Rounds <input id="setting-rounds" type="number" min="1" max="20" /></label>
+    <label>Second-chance scoring <input id="setting-secondchance" type="checkbox" /></label>
+  </div>
+
   <button id="host-start-btn" style="display:none;">Start game (host only)</button>
 </div>
 
-<div id="question-screen">
-  <h1 id="question-prompt"></h1>
-  <div id="guess-display">0</div>
-  <div id="numpad">
-    <button class="num-btn" data-val="1">1</button>
-    <button class="num-btn" data-val="2">2</button>
-    <button class="num-btn" data-val="3">3</button>
-    <button class="num-btn" data-val="4">4</button>
-    <button class="num-btn" data-val="5">5</button>
-    <button class="num-btn" data-val="6">6</button>
-    <button class="num-btn" data-val="7">7</button>
-    <button class="num-btn" data-val="8">8</button>
-    <button class="num-btn" data-val="9">9</button>
-    <button class="num-btn" data-val=".">.</button>
-    <button class="num-btn" data-val="0">0</button>
-    <button id="backspace-btn">&larr;</button>
+<div id="hud">
+  <div class="hud-top">
+    <div class="hud-topleft">
+      <div class="room-code" id="hud-room-code"></div>
+      <div class="round-label" id="hud-round-label"></div>
+      <div class="hud-btn-row" id="hud-host-controls" style="display:none;">
+        <button id="pause-btn">Pause</button>
+        <button id="exit-btn">Exit</button>
+      </div>
+      <div class="hud-btn-row" id="hud-guest-controls" style="display:none;">
+        <button id="exit-btn-guest">Exit</button>
+      </div>
+    </div>
+    <div class="hud-timer" id="hud-timer">--</div>
   </div>
-  <button id="submit-guess-btn">Submit guess</button>
-  <p id="guess-status"></p>
+
+  <div class="question-prompt" id="question-prompt"></div>
+
+  <div class="game-body">
+    <div class="main-col">
+
+      <div id="question-view">
+        <div id="guess-display">0</div>
+        <div id="numpad">
+          <button class="num-btn" data-val="1">1</button>
+          <button class="num-btn" data-val="2">2</button>
+          <button class="num-btn" data-val="3">3</button>
+          <button class="num-btn" data-val="4">4</button>
+          <button class="num-btn" data-val="5">5</button>
+          <button class="num-btn" data-val="6">6</button>
+          <button class="num-btn" data-val="7">7</button>
+          <button class="num-btn" data-val="8">8</button>
+          <button class="num-btn" data-val="9">9</button>
+          <button class="num-btn" data-val=".">.</button>
+          <button class="num-btn" data-val="0">0</button>
+          <button id="backspace-btn">&larr;</button>
+        </div>
+        <div id="emoji-picker">
+          <button class="emoji-btn" data-emoji="&#129335;">&#129335;</button>
+          <button class="emoji-btn" data-emoji="&#128512;">&#128512;</button>
+          <button class="emoji-btn" data-emoji="&#9200;">&#9200;</button>
+          <button class="emoji-btn" data-emoji="&#128079;">&#128079;</button>
+        </div>
+        <button id="submit-guess-btn">Submit guess</button>
+        <p id="guess-status"></p>
+      </div>
+
+      <div id="answers-view">
+        <p id="answers-hint">Pick an answer that isn't yours, or double down on your own.</p>
+        <div id="answers-row"></div>
+        <button id="double-down-btn">Double down on my answer</button>
+      </div>
+
+      <div id="reveal-view">
+        <p id="reveal-answer"></p>
+        <ul id="reveal-list"></ul>
+        <button id="reveal-next-btn" style="display:none;">Reveal next</button>
+        <button id="show-summary-btn" style="display:none;">Show round summary</button>
+      </div>
+
+      <div id="summary-view">
+        <h3>Round summary</h3>
+        <ul id="summary-list"></ul>
+        <button id="next-round-btn" style="display:none;">Next round</button>
+      </div>
+
+    </div>
+    <div class="score-col" id="score-col"></div>
+  </div>
 </div>
 
-<div id="reveal-screen">
-  <h1 id="reveal-question"></h1>
-  <p id="reveal-answer"></p>
-  <ul id="reveal-list"></ul>
-  <button id="reveal-next-btn" style="display:none;">Reveal next</button>
-  <button id="next-round-btn" style="display:none;">Next round (host only)</button>
+<div id="final-screen" class="screen">
+  <h1>Final results</h1>
+  <ul id="final-list"></ul>
 </div>
+
+<div id="ended-screen" class="screen">
+  <h1>Game ended</h1>
+  <p>The host ended this game.</p>
+  <button id="ended-reload-btn">Back to start</button>
+</div>
+
+<div id="left-screen" class="screen">
+  <h1>You have left the game</h1>
+  <p id="left-reason"></p>
+  <button id="left-reload-btn">Back to start</button>
+</div>
+
+<div id="paused-overlay">
+  <div>Game paused</div>
+  <button id="paused-resume-btn" style="display:none;">Resume</button>
+</div>
+
+<div id="kick-modal">
+  <div>Are you still there?</div>
+  <div id="kick-timer"></div>
+  <button id="kick-yes-btn">Yes, I'm here</button>
+</div>
+
+<div id="winner-banner">
+  <div class="winner-title">WINNER!</div>
+  <div class="winner-avatar" id="winner-avatar"></div>
+  <div class="winner-name" id="winner-name"></div>
+  <div class="winner-detail" id="winner-detail"></div>
+</div>
+
+<div id="reactions-panel"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getDatabase, ref, set, onValue, push, serverTimestamp, onDisconnect
+    getDatabase, ref, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -108,6 +370,28 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  // ---- Server-synced clock: every client counts down from a shared deadline ----
+  let serverTimeOffsetMs = 0;
+  onValue(ref(db, ".info/serverTimeOffset"), (snap) => { serverTimeOffsetMs = snap.val() || 0; });
+  function nowMs() { return Date.now() + serverTimeOffsetMs; }
+
+  // ==================== Local (per-user, per-browser) identity/prefs ====================
+
+  const AVATARS = ["\u{1F98A}","\u{1F43C}","\u{1F438}","\u{1F435}","\u{1F436}","\u{1F431}","\u{1F981}","\u{1F428}","\u{1F42F}","\u{1F437}","\u{1F430}","\u{1F984}","\u{1F419}","\u{1F422}","\u{1F989}","\u{1F433}"];
+
+  let currentName = localStorage.getItem("mg_name") || "";
+  let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS[0];
+  let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
+
+  function loadRecentRooms() {
+    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]"); } catch (e) { return []; }
+  }
+  function addRecentRoom(code) {
+    const list = loadRecentRooms().filter((r) => r.code !== code);
+    list.unshift({ code, joinedAt: Date.now() });
+    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 3)));
+  }
 
   const OBJECTS = [
     { name: "grain of sand",       plural: "grains of sand",       mm: 0.5 },
@@ -142,8 +426,9 @@
     };
   }
 
+  // ---- DOM refs ----
   const joinScreen = document.getElementById("join-screen");
-  const lobbyScreen = document.getElementById("lobby-screen");
+  const lobbyScreenEl = document.getElementById("lobby-screen");
   const nameInput = document.getElementById("name-input");
   const codeInput = document.getElementById("code-input");
   const createBtn = document.getElementById("create-btn");
@@ -152,54 +437,260 @@
   const roomCodeDisplay = document.getElementById("room-code-display");
   const playerList = document.getElementById("player-list");
   const hostStartBtn = document.getElementById("host-start-btn");
+  const avatarGridEl = document.getElementById("avatar-grid");
+  const recentRoomsSection = document.getElementById("recent-rooms-section");
+  const recentRoomsListEl = document.getElementById("recent-rooms-list");
+  const homeSettingsToggle = document.getElementById("home-settings-toggle");
+  const homeSettingsSection = document.getElementById("home-settings-section");
+  const homeSoundToggle = document.getElementById("home-sound-toggle");
 
+  const settingTimerInput = document.getElementById("setting-timer");
+  const settingRoundsInput = document.getElementById("setting-rounds");
+  const settingSecondChanceInput = document.getElementById("setting-secondchance");
+
+  const hudEl = document.getElementById("hud");
+  const hudRoomCodeEl = document.getElementById("hud-room-code");
+  const hudRoundLabelEl = document.getElementById("hud-round-label");
+  const hudHostControlsEl = document.getElementById("hud-host-controls");
+  const hudGuestControlsEl = document.getElementById("hud-guest-controls");
+  const hudTimerEl = document.getElementById("hud-timer");
+  const pauseBtn = document.getElementById("pause-btn");
+  const exitBtn = document.getElementById("exit-btn");
+  const exitBtnGuest = document.getElementById("exit-btn-guest");
+  const questionPromptEl = document.getElementById("question-prompt");
+  const scoreColEl = document.getElementById("score-col");
+
+  const questionViewEl = document.getElementById("question-view");
+  const guessDisplayEl = document.getElementById("guess-display");
+  const submitGuessBtn = document.getElementById("submit-guess-btn");
+  const guessStatusEl = document.getElementById("guess-status");
+  const emojiPickerEl = document.getElementById("emoji-picker");
+  const numpadEl = document.getElementById("numpad");
+  const reactionsPanelEl = document.getElementById("reactions-panel");
+
+  const answersViewEl = document.getElementById("answers-view");
+  const answersRowEl = document.getElementById("answers-row");
+  const doubleDownBtn = document.getElementById("double-down-btn");
+
+  const revealViewEl = document.getElementById("reveal-view");
+  const revealAnswerEl = document.getElementById("reveal-answer");
+  const revealListEl = document.getElementById("reveal-list");
+  const revealNextBtn = document.getElementById("reveal-next-btn");
+  const showSummaryBtn = document.getElementById("show-summary-btn");
+
+  const summaryViewEl = document.getElementById("summary-view");
+  const summaryListEl = document.getElementById("summary-list");
+  const nextRoundBtn = document.getElementById("next-round-btn");
+
+  const finalScreenEl = document.getElementById("final-screen");
+  const finalListEl = document.getElementById("final-list");
+  const endedScreenEl = document.getElementById("ended-screen");
+  const leftScreenEl = document.getElementById("left-screen");
+  const leftReasonEl = document.getElementById("left-reason");
+  const leftReloadBtn = document.getElementById("left-reload-btn");
+  const endedReloadBtn = document.getElementById("ended-reload-btn");
+
+  const pausedOverlayEl = document.getElementById("paused-overlay");
+  const pausedResumeBtn = document.getElementById("paused-resume-btn");
+  const kickModalEl = document.getElementById("kick-modal");
+  const kickYesBtn = document.getElementById("kick-yes-btn");
+  const kickTimerEl = document.getElementById("kick-timer");
+
+  const winnerBannerEl = document.getElementById("winner-banner");
+  const winnerAvatarEl = document.getElementById("winner-avatar");
+  const winnerNameEl = document.getElementById("winner-name");
+  const winnerDetailEl = document.getElementById("winner-detail");
+
+  // ---- Room / player id helpers ----
   function generateRoomCode() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars
     let code = "";
     for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
     return code;
   }
-
   function makePlayerId() {
     return "p_" + Math.random().toString(36).slice(2, 10);
   }
 
+  // ---- Local state ----
   let currentRoomCode = null;
   let currentPlayerId = null;
   let isHost = false;
-
   let currentPlayers = {};
+  let currentSettings = { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5 };
+  let roomState = {};
 
-  function enterLobby(roomCode) {
-    currentRoomCode = roomCode;
-    joinScreen.classList.remove("active");
-    lobbyScreen.classList.add("active");
-    roomCodeDisplay.textContent = roomCode;
-    hostStartBtn.style.display = isHost ? "block" : "none";
+  let currentGuessStr = "";
+  let hasSubmittedThisRound = false;
+  let guessLocked = false;
+  let lastSeenRound = null;
+  let transitionInFlight = false;
+  let previousDisplayedScores = {};
+  let previousScoreColumnOrder = [];
+  let armedKickTimers = {};
+  let audioCtx = null;
+  let everSeenSelfInPlayers = false;
+  let wasRemoved = false;
+  let myKickDeadline = null;
+  let takenAvatars = new Set();
+  let takenAvatarsUnsub = null;
+  let codeInputDebounce = null;
+  let winnerBannerHideHandle = null;
 
-    // Listen for live player list updates
-    const playersRef = ref(db, `rooms/${roomCode}/players`);
-    onValue(playersRef, (snapshot) => {
-      const players = snapshot.val() || {};
-      currentPlayers = players;
-      playerList.innerHTML = "";
-      Object.values(players).forEach((p) => {
-        const li = document.createElement("li");
-        li.textContent = p.name + (p.isHost ? " (host)" : "");
-        playerList.appendChild(li);
+  // Reveal choreography local state (reset per round)
+  let revealShuffled = false;
+  let lastChoreographedIndex = -1;
+  let revealAnimating = false;
+
+  function DEFAULT_SETTINGS() {
+    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5 };
+  }
+
+  // ==================== Home screen ====================
+
+  function renderAvatarGrid() {
+    // If the room we're looking at has already claimed our saved avatar,
+    // silently move us to a free one rather than leaving the picker stuck.
+    if (takenAvatars.has(currentAvatar)) {
+      const free = AVATARS.find((a) => !takenAvatars.has(a));
+      if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
+    }
+    avatarGridEl.innerHTML = "";
+    AVATARS.forEach((a) => {
+      const taken = takenAvatars.has(a) && a !== currentAvatar;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = a;
+      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "");
+      btn.disabled = taken;
+      btn.addEventListener("click", () => {
+        if (taken) return;
+        currentAvatar = a;
+        localStorage.setItem("mg_avatar", a);
+        renderAvatarGrid();
+        playSound("pick");
       });
+      avatarGridEl.appendChild(btn);
     });
   }
 
+  function watchTakenAvatarsForCode(code) {
+    if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
+    if (!code) { takenAvatars = new Set(); renderAvatarGrid(); return; }
+    takenAvatarsUnsub = onValue(ref(db, `rooms/${code}/players`), (snap) => {
+      const players = snap.val() || {};
+      takenAvatars = new Set(Object.values(players).map((p) => p.avatar).filter(Boolean));
+      renderAvatarGrid();
+    });
+  }
+
+  codeInput.addEventListener("input", () => {
+    const code = codeInput.value.trim().toUpperCase();
+    clearTimeout(codeInputDebounce);
+    codeInputDebounce = setTimeout(() => watchTakenAvatarsForCode(code), 300);
+  });
+
+  nameInput.value = currentName;
+  nameInput.addEventListener("input", () => {
+    currentName = nameInput.value;
+    localStorage.setItem("mg_name", currentName);
+  });
+
+  homeSoundToggle.checked = localSoundEnabled;
+  homeSoundToggle.addEventListener("change", () => {
+    localSoundEnabled = homeSoundToggle.checked;
+    localStorage.setItem("mg_soundEnabled", String(localSoundEnabled));
+  });
+
+  homeSettingsToggle.addEventListener("click", () => {
+    homeSettingsSection.classList.toggle("open");
+  });
+
+  function renderRecentRooms() {
+    const rooms = loadRecentRooms();
+    if (rooms.length === 0) { recentRoomsSection.style.display = "none"; return; }
+    recentRoomsSection.style.display = "block";
+    recentRoomsListEl.innerHTML = "";
+    rooms.forEach((r) => {
+      const row = document.createElement("div");
+      row.className = "recent-room-row";
+      const label = document.createElement("span");
+      label.textContent = r.code;
+      const btn = document.createElement("button");
+      btn.textContent = "Rejoin";
+      btn.addEventListener("click", () => attemptJoin(r.code));
+      row.appendChild(label);
+      row.appendChild(btn);
+      recentRoomsListEl.appendChild(row);
+    });
+  }
+
+  renderAvatarGrid();
+  renderRecentRooms();
+
+  // ==================== Lobby / join flow ====================
+
+  function renderPlayerList() {
+    playerList.innerHTML = "";
+    Object.entries(currentPlayers).forEach(([id, p]) => {
+      const li = document.createElement("li");
+      const nameSpan = document.createElement("span");
+      nameSpan.innerHTML = `<span class="player-avatar">${p.avatar || ""}</span>${p.name}${p.isHost ? " (host)" : ""}`;
+      li.appendChild(nameSpan);
+      if (isHost && id !== currentPlayerId) {
+        const btn = document.createElement("button");
+        btn.textContent = "Kick";
+        btn.className = "kick-btn";
+        btn.addEventListener("click", () => kickPlayer(id));
+        li.appendChild(btn);
+      }
+      playerList.appendChild(li);
+    });
+  }
+
+  function renderSettingsPanel() {
+    const s = currentSettings;
+    if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
+    if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
+    settingSecondChanceInput.checked = !!s.secondChanceEnabled;
+    const locked = !isHost || (roomState.round && roomState.round > 0);
+    [settingTimerInput, settingRoundsInput, settingSecondChanceInput].forEach((el) => {
+      el.disabled = locked;
+    });
+  }
+
+  settingTimerInput.addEventListener("change", () => {
+    if (settingTimerInput.disabled) return;
+    const val = Math.max(10, Math.min(90, parseInt(settingTimerInput.value, 10) || 30));
+    set(ref(db, `rooms/${currentRoomCode}/settings/timerSeconds`), val);
+  });
+  settingRoundsInput.addEventListener("change", () => {
+    if (settingRoundsInput.disabled) return;
+    const val = Math.max(1, Math.min(20, parseInt(settingRoundsInput.value, 10) || 5));
+    set(ref(db, `rooms/${currentRoomCode}/settings/totalRounds`), val);
+  });
+  settingSecondChanceInput.addEventListener("change", () => {
+    if (settingSecondChanceInput.disabled) return;
+    set(ref(db, `rooms/${currentRoomCode}/settings/secondChanceEnabled`), settingSecondChanceInput.checked);
+  });
+
   async function joinRoomAsPlayer(roomCode, name, asHost) {
+    if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
     currentPlayerId = makePlayerId();
     isHost = asHost;
     const playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-    await set(playerRef, { name, isHost, score: 0, joinedAt: serverTimestamp() });
-    // Remove player automatically if they close the tab / lose connection
+    await set(playerRef, { name, avatar: currentAvatar, isHost, score: 0, joinedAt: serverTimestamp() });
     onDisconnect(playerRef).remove();
-    enterLobby(roomCode);
-    watchPhase(roomCode);
+
+    currentRoomCode = roomCode;
+    addRecentRoom(roomCode);
+    joinScreen.classList.remove("active");
+    roomCodeDisplay.textContent = roomCode;
+    hostStartBtn.style.display = isHost ? "block" : "none";
+
+    startHudTicker();
+    watchRoom(roomCode);
+    watchReactions(roomCode);
   }
 
   createBtn.addEventListener("click", async () => {
@@ -207,195 +698,858 @@
     if (!name) { statusEl.textContent = "Enter your name first."; return; }
     statusEl.textContent = "Creating room...";
     const roomCode = generateRoomCode();
-    await set(ref(db, `rooms/${roomCode}/phase`), "waiting");
+    await set(ref(db, `rooms/${roomCode}`), {
+      phase: "waiting",
+      round: 0,
+      settings: DEFAULT_SETTINGS(),
+    });
     await joinRoomAsPlayer(roomCode, name, true);
   });
 
-  // ---- Question screen elements ----
-  const lobbyScreenEl = document.getElementById("lobby-screen");
-  const questionScreenEl = document.getElementById("question-screen");
-  const questionPromptEl = document.getElementById("question-prompt");
-  const guessDisplayEl = document.getElementById("guess-display");
-  const submitGuessBtn = document.getElementById("submit-guess-btn");
-  const guessStatusEl = document.getElementById("guess-status");
+  async function attemptJoin(code) {
+    const name = nameInput.value.trim();
+    if (!name) { statusEl.textContent = "Enter your name first."; return; }
+    if (!code) { statusEl.textContent = "Enter a room code."; return; }
+    statusEl.textContent = "Joining room...";
+    const snap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${code}`), resolve, { onlyOnce: true });
+    });
+    const data = snap.val();
+    if (data === null) { statusEl.textContent = "Room not found. Check the code."; return; }
+    // Final authoritative avatar-uniqueness check right before writing —
+    // the live grid greying-out is just a preview and can race or be
+    // bypassed (e.g. the recent-rooms "Rejoin" button skips it entirely).
+    const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
+    if (existingAvatars.has(currentAvatar)) {
+      const free = AVATARS.find((a) => !existingAvatars.has(a));
+      if (!free) { statusEl.textContent = "Every avatar is taken in that room."; return; }
+      currentAvatar = free;
+      localStorage.setItem("mg_avatar", free);
+    }
+    takenAvatars = existingAvatars;
+    renderAvatarGrid();
+    joinRoomAsPlayer(code, name, false);
+  }
 
-  // ---- Reveal screen elements ----
-  const revealScreenEl = document.getElementById("reveal-screen");
-  const revealQuestionEl = document.getElementById("reveal-question");
-  const revealAnswerEl = document.getElementById("reveal-answer");
-  const revealListEl = document.getElementById("reveal-list");
-  const revealNextBtn = document.getElementById("reveal-next-btn");
-  const nextRoundBtn = document.getElementById("next-round-btn");
+  joinBtn.addEventListener("click", () => {
+    const code = codeInput.value.trim().toUpperCase();
+    attemptJoin(code);
+  });
 
-  let currentGuessStr = "";
-  let hasSubmittedThisRound = false;
+  hostStartBtn.addEventListener("click", async () => {
+    await startRound(currentRoomCode, 1);
+  });
+
+  function kickPlayer(targetId) {
+    set(ref(db, `rooms/${currentRoomCode}/kickChallenges/${targetId}`), {
+      requestedAt: nowMs(),
+      respondedAt: null,
+    });
+  }
+
+  kickYesBtn.addEventListener("click", () => {
+    set(ref(db, `rooms/${currentRoomCode}/kickChallenges/${currentPlayerId}/respondedAt`), nowMs());
+  });
+
+  function renderKickModal(data) {
+    const ch = data.kickChallenges && data.kickChallenges[currentPlayerId];
+    const active = !!(ch && !ch.respondedAt);
+    kickModalEl.classList.toggle("active", active);
+    myKickDeadline = active ? ch.requestedAt + 20000 : null;
+  }
+
+  function handleKickChallengesUpdate(roomCode, kickChallenges) {
+    if (!isHost) return;
+    const kc = kickChallenges || {};
+    Object.keys(armedKickTimers).forEach((id) => {
+      if (!kc[id]) { clearTimeout(armedKickTimers[id]); delete armedKickTimers[id]; }
+    });
+    Object.entries(kc).forEach(([id, ch]) => {
+      if (ch.respondedAt) {
+        if (armedKickTimers[id]) { clearTimeout(armedKickTimers[id]); delete armedKickTimers[id]; }
+        set(ref(db, `rooms/${roomCode}/kickChallenges/${id}`), null);
+        return;
+      }
+      if (!armedKickTimers[id]) {
+        armedKickTimers[id] = scheduleHostDeadline(ch.requestedAt + 20000, () => resolveKick(roomCode, id));
+      }
+    });
+  }
+
+  async function resolveKick(roomCode, targetId) {
+    delete armedKickTimers[targetId];
+    const ch = (roomState.kickChallenges || {})[targetId];
+    if (!ch || ch.respondedAt) return;
+    console.log("[measuring-game] kick timed out, removing player", targetId);
+    await remove(ref(db, `rooms/${roomCode}/players/${targetId}`));
+    await set(ref(db, `rooms/${roomCode}/kickChallenges/${targetId}`), null);
+  }
+
+  // ==================== Timer plumbing ====================
+
+  function scheduleHostDeadline(deadlineMs, fn) {
+    return setTimeout(fn, Math.max(0, deadlineMs - nowMs()));
+  }
+
+  let hudTickHandle = null;
+  function startHudTicker() {
+    if (hudTickHandle) return;
+    hudTickHandle = setInterval(() => {
+      if (myKickDeadline != null) {
+        const remaining = Math.max(0, myKickDeadline - nowMs());
+        kickTimerEl.textContent = `Auto-kick in ${Math.ceil(remaining / 1000)}s`;
+        kickTimerEl.classList.toggle("low", remaining <= 5000);
+      } else {
+        kickTimerEl.textContent = "";
+      }
+      if (!roomState || roomState.paused) return;
+      let deadline = null;
+      if (roomState.phase === "question") deadline = roomState.graceEndsAt || roomState.questionEndsAt;
+      else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
+      if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); return; }
+      const remaining = Math.max(0, deadline - nowMs());
+      hudTimerEl.textContent = Math.ceil(remaining / 1000).toString();
+      hudTimerEl.classList.toggle("low", remaining <= 5000);
+      if (remaining <= 0 && roomState.phase === "question") lockOwnGuessIfNeeded();
+    }, 200);
+  }
+
+  function lockOwnGuessIfNeeded() {
+    if (guessLocked) return;
+    guessLocked = true;
+    if (!hasSubmittedThisRound) {
+      const val = parseFloat(currentGuessStr);
+      if (!isNaN(val)) set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), val);
+    }
+  }
+
+  // ==================== Host-authoritative round transitions ====================
+
+  async function startRound(roomCode, roundNum) {
+    const q = generateQuestion();
+    const endsAt = nowMs() + (currentSettings.timerSeconds || 30) * 1000;
+    console.log("[measuring-game] starting round", roundNum, q);
+    await update(ref(db, `rooms/${roomCode}`), {
+      currentQuestion: q,
+      guesses: null,
+      answers: null,
+      picks: null,
+      revealOrder: null,
+      revealIndex: null,
+      lastRoundPoints: null,
+      graceEndsAt: null,
+      answersEndsAt: null,
+      questionEndsAt: endsAt,
+      round: roundNum,
+      phase: "question",
+    });
+    scheduleHostDeadline(endsAt, () => checkQuestionAdvance(roomCode));
+  }
+
+  function checkQuestionAdvance(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "question") return;
+    if (roomState.paused) return;
+    const players = roomState.players || {};
+    const guesses = roomState.guesses || {};
+    const activeIds = Object.keys(players);
+    const guessedCount = activeIds.filter((id) => guesses[id] !== undefined).length;
+    const now = nowMs();
+
+    if (now >= roomState.questionEndsAt || (roomState.graceEndsAt && now >= roomState.graceEndsAt)) {
+      transitionInFlight = true;
+      lockQuestionAndAdvance(roomCode, activeIds, guesses).finally(() => { transitionInFlight = false; });
+      return;
+    }
+    if (!roomState.graceEndsAt && activeIds.length > 0 && guessedCount >= activeIds.length) {
+      const ge = now + 3000;
+      set(ref(db, `rooms/${roomCode}/graceEndsAt`), ge);
+      scheduleHostDeadline(ge, () => checkQuestionAdvance(roomCode));
+    }
+  }
+
+  async function lockQuestionAndAdvance(roomCode, activeIds, guesses) {
+    const settings = roomState.settings || currentSettings;
+    if (settings.secondChanceEnabled) {
+      const sorted = activeIds
+        .filter((id) => guesses[id] !== undefined)
+        .map((id) => ({ playerId: id, value: guesses[id] }))
+        .sort((a, b) => a.value - b.value)
+        .map((e, i) => ({ slot: i, playerId: e.playerId, value: e.value }));
+      const answersEndsAt = nowMs() + 10000;
+      console.log("[measuring-game] question locked, entering answers phase", sorted);
+      await update(ref(db, `rooms/${roomCode}`), { answers: sorted, answersEndsAt, phase: "answers" });
+      scheduleHostDeadline(answersEndsAt, () => checkAnswersAdvance(roomCode));
+    } else {
+      await finishRoundScoring(roomCode, activeIds, guesses, {});
+    }
+  }
+
+  function checkAnswersAdvance(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "answers") return;
+    if (roomState.paused) return;
+    if (nowMs() < roomState.answersEndsAt) return;
+    transitionInFlight = true;
+    const activeIds = Object.keys(roomState.players || {});
+    finishRoundScoring(roomCode, activeIds, roomState.guesses || {}, roomState.picks || {})
+      .finally(() => { transitionInFlight = false; });
+  }
+
+  async function finishRoundScoring(roomCode, activeIds, guesses, picks) {
+    const q = roomState.currentQuestion;
+    const playersSnap = roomState.players || {};
+    if (!q) { console.error("[measuring-game] no currentQuestion, aborting scoring"); return; }
+    const answer = q.answer;
+
+    const entries = activeIds
+      .filter((id) => guesses[id] !== undefined)
+      .map((id) => ({
+        playerId: id,
+        name: (playersSnap[id] && playersSnap[id].name) || "Player",
+        guess: guesses[id],
+        error: Math.abs(guesses[id] - answer),
+      }))
+      .sort((a, b) => b.error - a.error); // furthest first, closest last
+
+    const closest = entries[entries.length - 1];
+    entries.forEach((e) => {
+      e.isClosest = !!closest && e.playerId === closest.playerId;
+      e.isSpotOn = Math.round(e.guess) === Math.round(answer);
+      const within09 = e.error <= 0.9;
+      e.basePoints = within09 ? 5 : (e.isClosest ? 3 : 0);
+      e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
+      e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? (e.isSpotOn ? 10 : 5) : 0;
+      e.pickedBy = [];
+    });
+    Object.entries(picks).forEach(([pickerId, pick]) => {
+      if (pick.type === "pick" && pick.targetPlayerId !== pickerId) {
+        const target = entries.find((e) => e.playerId === pick.targetPlayerId);
+        if (target && target.isClosest) {
+          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", points: 1 });
+        }
+      }
+    });
+
+    const lastRoundPoints = {};
+    entries.forEach((e) => {
+      lastRoundPoints[e.playerId] = (lastRoundPoints[e.playerId] || 0) + e.basePoints + e.doubleDownPoints;
+    });
+    entries.forEach((e) => {
+      e.pickedBy.forEach((p) => {
+        lastRoundPoints[p.playerId] = (lastRoundPoints[p.playerId] || 0) + p.points;
+      });
+    });
+
+    const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints, phase: "reveal" };
+    Object.keys(playersSnap).forEach((id) => {
+      const newScore = (playersSnap[id].score || 0) + (lastRoundPoints[id] || 0);
+      updates[`players/${id}/score`] = newScore;
+    });
+    console.log("[measuring-game] scoring computed", entries, lastRoundPoints);
+    try {
+      await update(ref(db, `rooms/${roomCode}`), updates);
+    } catch (err) {
+      console.error("[measuring-game] failed to write scoring update", err, updates);
+    }
+  }
+
+  revealNextBtn.addEventListener("click", () => {
+    if (revealAnimating) return;
+    const next = (roomState.revealIndex || 0) + 1;
+    set(ref(db, `rooms/${currentRoomCode}/revealIndex`), next);
+  });
+
+  showSummaryBtn.addEventListener("click", () => goToSummary(currentRoomCode));
+
+  async function goToSummary(roomCode) {
+    const players = roomState.players || {};
+    const prevOrder = roomState.previousRankOrder || null;
+    const sorted = Object.entries(players).sort((a, b) => (b[1].score || 0) - (a[1].score || 0)).map(([id]) => id);
+    const rankDeltas = {};
+    sorted.forEach((id, idx) => {
+      const prevIdx = prevOrder ? prevOrder.indexOf(id) : idx;
+      rankDeltas[id] = prevIdx === -1 ? 0 : (prevIdx - idx);
+    });
+    await update(ref(db, `rooms/${roomCode}`), { phase: "summary", rankDeltas, previousRankOrder: sorted });
+  }
+
+  nextRoundBtn.addEventListener("click", () => advanceAfterSummary(currentRoomCode));
+
+  async function advanceAfterSummary(roomCode) {
+    const nextRound = (roomState.round || 0) + 1;
+    const totalRounds = (roomState.settings || currentSettings).totalRounds || 5;
+    if (nextRound > totalRounds) {
+      await set(ref(db, `rooms/${roomCode}/phase`), "final");
+    } else {
+      await startRound(roomCode, nextRound);
+    }
+  }
+
+  // ==================== Pause / Exit ====================
+
+  pauseBtn.addEventListener("click", () => togglePause());
+  pausedResumeBtn.addEventListener("click", () => togglePause());
+
+  async function togglePause() {
+    if (!roomState.paused) {
+      await update(ref(db, `rooms/${currentRoomCode}`), { paused: true, pausedAt: nowMs() });
+      return;
+    }
+    const pauseDurationMs = nowMs() - (roomState.pausedAt || nowMs());
+    const updates = { paused: false, pausedAt: null };
+    if (roomState.phase === "question") {
+      if (roomState.graceEndsAt) {
+        updates.graceEndsAt = roomState.graceEndsAt + pauseDurationMs;
+        scheduleHostDeadline(updates.graceEndsAt, () => checkQuestionAdvance(currentRoomCode));
+      } else {
+        updates.questionEndsAt = roomState.questionEndsAt + pauseDurationMs;
+        scheduleHostDeadline(updates.questionEndsAt, () => checkQuestionAdvance(currentRoomCode));
+      }
+    } else if (roomState.phase === "answers") {
+      updates.answersEndsAt = roomState.answersEndsAt + pauseDurationMs;
+      scheduleHostDeadline(updates.answersEndsAt, () => checkAnswersAdvance(currentRoomCode));
+    }
+    Object.keys(armedKickTimers).forEach((id) => { clearTimeout(armedKickTimers[id]); delete armedKickTimers[id]; });
+    if (roomState.kickChallenges) {
+      Object.entries(roomState.kickChallenges).forEach(([id, ch]) => {
+        if (!ch.respondedAt) updates[`kickChallenges/${id}/requestedAt`] = ch.requestedAt + pauseDurationMs;
+      });
+    }
+    await update(ref(db, `rooms/${currentRoomCode}`), updates);
+  }
+
+  exitBtnGuest.addEventListener("click", () => guestExit());
+  exitBtn.addEventListener("click", () => hostExit());
+  endedReloadBtn.addEventListener("click", () => location.reload());
+  leftReloadBtn.addEventListener("click", () => location.reload());
+
+  function showLeftScreen(reason) {
+    [joinScreen, lobbyScreenEl, hudEl, finalScreenEl, endedScreenEl].forEach((el) => el.classList.remove("active"));
+    kickModalEl.classList.remove("active");
+    pausedOverlayEl.classList.remove("active");
+    leftReasonEl.textContent = reason;
+    leftScreenEl.classList.add("active");
+  }
+
+  async function guestExit() {
+    onDisconnect(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`)).cancel();
+    await remove(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`));
+    showLeftScreen("You left the room.");
+  }
+
+  async function hostExit() {
+    await set(ref(db, `rooms/${currentRoomCode}/phase`), "ended");
+    onDisconnect(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`)).cancel();
+    await remove(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`));
+    showLeftScreen("You ended the game.");
+  }
+
+  // ==================== Guess input (question phase) ====================
 
   function renderGuessDisplay() {
     guessDisplayEl.textContent = currentGuessStr === "" ? "0" : currentGuessStr;
   }
 
-  document.getElementById("numpad").addEventListener("click", (e) => {
+  numpadEl.addEventListener("click", (e) => {
     if (!e.target.classList.contains("num-btn")) return;
-    if (hasSubmittedThisRound) return;
+    if (guessLocked || roomState.paused) return;
     const val = e.target.dataset.val;
-    if (val === "." && currentGuessStr.includes(".")) return; // only one decimal point
-    if (currentGuessStr.length >= 10) return; // reasonable length cap
+    if (val === "." && currentGuessStr.includes(".")) return;
+    if (currentGuessStr.length >= 10) return;
     currentGuessStr += val;
     renderGuessDisplay();
   });
 
   document.getElementById("backspace-btn").addEventListener("click", () => {
-    if (hasSubmittedThisRound) return;
+    if (guessLocked || roomState.paused) return;
     currentGuessStr = currentGuessStr.slice(0, -1);
     renderGuessDisplay();
   });
 
   submitGuessBtn.addEventListener("click", async () => {
+    if (guessLocked || roomState.paused) return;
     const guessNum = parseFloat(currentGuessStr);
     if (isNaN(guessNum)) { guessStatusEl.textContent = "Enter a number first."; return; }
     hasSubmittedThisRound = true;
-    guessStatusEl.textContent = "Guess submitted \u2014 waiting for others...";
+    guessStatusEl.textContent = "Guess submitted — you can still change it until it locks.";
+    playSound("submit");
+    updateWaitingUi();
     await set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), guessNum);
   });
 
-  // Host starts the game: generate a question, write it, switch phase
-  hostStartBtn.addEventListener("click", async () => {
-    const q = generateQuestion();
-    await set(ref(db, `rooms/${currentRoomCode}/currentQuestion`), q);
-    await set(ref(db, `rooms/${currentRoomCode}/guesses`), null); // clear old guesses
-    await set(ref(db, `rooms/${currentRoomCode}/phase`), "question");
+  function updateWaitingUi() {
+    const waiting = hasSubmittedThisRound && !guessLocked && roomState.phase === "question";
+    numpadEl.style.display = waiting ? "none" : "grid";
+    submitGuessBtn.style.display = waiting ? "none" : "block";
+    emojiPickerEl.classList.toggle("active", waiting);
+  }
+
+  emojiPickerEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".emoji-btn");
+    if (!btn) return;
+    sendReaction(btn.dataset.emoji);
   });
 
-  // Every player watches the room's phase to know which screen to show
-  function watchPhase(roomCode) {
-    onValue(ref(db, `rooms/${roomCode}/phase`), (snapshot) => {
-      const phase = snapshot.val();
-      lobbyScreenEl.classList.remove("active");
-      questionScreenEl.classList.remove("active");
-      revealScreenEl.classList.remove("active");
-      if (phase === "question") {
-        questionScreenEl.classList.add("active");
-        currentGuessStr = "";
-        hasSubmittedThisRound = false;
-        guessStatusEl.textContent = "";
-        renderGuessDisplay();
-      } else if (phase === "waiting") {
-        lobbyScreenEl.classList.add("active");
-      } else if (phase === "reveal") {
-        revealScreenEl.classList.add("active");
-      }
-    });
-    onValue(ref(db, `rooms/${roomCode}/currentQuestion`), (snapshot) => {
-      const q = snapshot.val();
-      if (q) {
-        questionPromptEl.textContent = q.prompt;
-        revealQuestionEl.textContent = q.prompt;
-        revealAnswerEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
-      }
-    });
+  // ==================== Emoji reactions ====================
 
-    // Only the host decides when to move to reveal, to avoid every
-    // player racing to write the same thing at once.
-    if (isHost) {
-      onValue(ref(db, `rooms/${roomCode}/guesses`), async (snapshot) => {
-        try {
-          const guesses = snapshot.val() || {};
-          const guessCount = Object.keys(guesses).length;
-          console.log("[measuring-game] guesses updated:", guesses);
-          if (guessCount === 0) return;
-          // Fetch a fresh player count directly, rather than trusting
-          // locally cached state which could be stale.
-          const playersSnap = await new Promise((resolve) => {
-            onValue(ref(db, `rooms/${roomCode}/players`), resolve, { onlyOnce: true });
-          });
-          const playerCount = Object.keys(playersSnap.val() || {}).length;
-          console.log("[measuring-game] guessCount:", guessCount, "playerCount:", playerCount);
-          if (guessCount >= playerCount) {
-            await startReveal(roomCode, guesses);
+  function sendReaction(emoji) {
+    const reactionsRef = ref(db, `rooms/${currentRoomCode}/reactions`);
+    const newRef = push(reactionsRef);
+    set(newRef, { playerId: currentPlayerId, name: currentName, avatar: currentAvatar, emoji, sentAt: nowMs() });
+    setTimeout(() => remove(newRef), 1500);
+  }
+
+  function watchReactions(roomCode) {
+    onChildAdded(ref(db, `rooms/${roomCode}/reactions`), (snap) => {
+      renderReactionBubble(snap.val());
+    });
+  }
+
+  function renderReactionBubble(r) {
+    if (!r) return;
+    const bubble = document.createElement("div");
+    bubble.className = "reaction-bubble";
+    bubble.innerHTML = `<span>${r.avatar || ""}</span><span class="reaction-emoji">${r.emoji}</span>`;
+    reactionsPanelEl.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 1000);
+  }
+
+  // ==================== Answers / second-chance phase ====================
+
+  function renderAnswersScreen(data) {
+    const answers = data.answers || [];
+    const myPick = (data.picks || {})[currentPlayerId];
+    answersRowEl.innerHTML = "";
+    answers.forEach((entry) => {
+      const isMine = entry.playerId === currentPlayerId;
+      const btn = document.createElement("button");
+      btn.innerHTML = entry.value + (isMine ? '<span class="you-badge">YOU</span>' : "");
+      btn.className = "answer-slot" + (isMine ? " mine" : "");
+      btn.disabled = isMine || !!myPick || !!roomState.paused;
+      btn.addEventListener("click", () => choosePick("pick", entry.playerId));
+      answersRowEl.appendChild(btn);
+    });
+    doubleDownBtn.disabled = !!myPick || !!roomState.paused;
+    doubleDownBtn.textContent = (myPick && myPick.type === "doubledown") ? "Doubled down!" : "Double down on my answer";
+  }
+
+  async function choosePick(type, targetPlayerId) {
+    if (roomState.paused) return;
+    if ((roomState.picks || {})[currentPlayerId]) return;
+    await set(ref(db, `rooms/${currentRoomCode}/picks/${currentPlayerId}`), { type, targetPlayerId });
+  }
+
+  doubleDownBtn.addEventListener("click", () => choosePick("doubledown", currentPlayerId));
+
+  // ==================== Reveal choreography ====================
+
+  function computeDisplayedScores(order, lastRoundPoints, revealIndex) {
+    const finalScores = {};
+    Object.keys(currentPlayers).forEach((id) => { finalScores[id] = currentPlayers[id].score || 0; });
+    const displayed = {};
+    Object.keys(finalScores).forEach((id) => { displayed[id] = finalScores[id] - (lastRoundPoints[id] || 0); });
+    order.slice(0, revealIndex).forEach((entry) => {
+      displayed[entry.playerId] = (displayed[entry.playerId] || 0) + entry.basePoints + entry.doubleDownPoints;
+      (entry.pickedBy || []).forEach((p) => { displayed[p.playerId] = (displayed[p.playerId] || 0) + p.points; });
+    });
+    return displayed;
+  }
+
+  function cardHiddenHtml() {
+    return `<div class="card-inner"><span>?</span></div>`;
+  }
+  function cardNumberHtml(entry) {
+    return `<div class="card-inner"><span class="card-number">${entry.guess}</span></div>`;
+  }
+  function cardPersonHtml(entry, pts) {
+    const avatar = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
+    const extra = entry.doubledOwn ? " (doubled down)" : "";
+    const pickedBy = entry.pickedBy || [];
+    const pickedAvatars = pickedBy.length
+      ? `<div class="pickedby-avatars">${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
+      : "";
+    return `<div class="card-inner"><span>${avatar} ${entry.name}${entry.isSpotOn ? " \u{1F3AF}" : ""}</span><span>${entry.guess} <b>+${pts}</b>${extra}</span>${pickedAvatars}</div>`;
+  }
+
+  function renderFaceDownCards(order, idOrder) {
+    revealListEl.innerHTML = "";
+    idOrder.forEach((id) => {
+      const entry = order.find((e) => e.playerId === id);
+      if (!entry) return;
+      const li = document.createElement("li");
+      li.className = "reveal-card";
+      li.dataset.id = id;
+      li.innerHTML = cardHiddenHtml();
+      revealListEl.appendChild(li);
+    });
+  }
+
+  function squeezeSwap(cardInnerParentLi, axis, renderNewInnerHtml) {
+    const inner = cardInnerParentLi.querySelector(".card-inner");
+    inner.style.transition = "none";
+    inner.style.transform = "scale(1)";
+    requestAnimationFrame(() => {
+      inner.style.transition = `transform 150ms ease-in`;
+      inner.style.transform = axis === "y" ? "scaleY(0)" : "scaleX(0)";
+      setTimeout(() => {
+        cardInnerParentLi.innerHTML = renderNewInnerHtml();
+        const newInner = cardInnerParentLi.querySelector(".card-inner");
+        newInner.style.transition = "none";
+        newInner.style.transform = axis === "y" ? "scaleY(0)" : "scaleX(0)";
+        requestAnimationFrame(() => {
+          newInner.style.transition = `transform 150ms ease-out`;
+          newInner.style.transform = "scale(1)";
+        });
+      }, 150);
+    });
+  }
+
+  function playCardReveal(order, idx, lastRoundPoints) {
+    const entry = order[idx];
+    const li = revealListEl.querySelector(`[data-id="${entry.playerId}"]`);
+    if (!li) return Promise.resolve();
+    const pts = entry.basePoints + entry.doubleDownPoints;
+    const isWinner = idx === order.length - 1 && entry.isClosest;
+
+    return new Promise((resolve) => {
+      function doFlips() {
+        squeezeSwap(li, "y", () => cardNumberHtml(entry));
+        setTimeout(() => {
+          squeezeSwap(li, "x", () => cardPersonHtml(entry, pts));
+          playSound("reveal");
+          if (isWinner) {
+            li.classList.add("winner");
+            if (entry.isSpotOn) playSound("win");
+            celebrate(entry.isSpotOn);
+            setTimeout(() => showWinnerBanner(entry, pts), 350);
           }
-        } catch (err) {
-          console.error("[measuring-game] error checking guesses:", err);
-        }
-      });
+          setTimeout(() => {
+            renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
+            resolve();
+          }, 350);
+        }, 650);
+      }
+      if (isWinner) {
+        li.classList.add("drumroll");
+        playSound("drumroll");
+        setTimeout(() => { li.classList.remove("drumroll"); doFlips(); }, 900);
+      } else {
+        doFlips();
+      }
+    });
+  }
+
+  function showWinnerBanner(entry, pts) {
+    const answer = roomState.currentQuestion ? roomState.currentQuestion.answer : 0;
+    winnerAvatarEl.textContent = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
+    winnerNameEl.textContent = entry.name;
+    winnerDetailEl.textContent = `Guessed ${entry.guess} — actual answer ${answer.toFixed(2)} — off by ${entry.error.toFixed(2)}`;
+    winnerBannerEl.classList.add("active");
+    clearTimeout(winnerBannerHideHandle);
+    winnerBannerHideHandle = setTimeout(hideWinnerBanner, 3500);
+  }
+  function hideWinnerBanner() {
+    clearTimeout(winnerBannerHideHandle);
+    winnerBannerEl.classList.remove("active");
+  }
+  winnerBannerEl.addEventListener("click", hideWinnerBanner);
+
+  function renderRevealChoreography(data) {
+    const order = data.revealOrder || [];
+    const revealIndex = data.revealIndex || 0;
+    const lastRoundPoints = data.lastRoundPoints || {};
+
+    if (order.length === 0) {
+      revealListEl.innerHTML = "<li>No one answered in time.</li>";
+      if (isHost) { revealNextBtn.style.display = "none"; showSummaryBtn.style.display = "block"; }
+      return;
     }
 
-    // Reveal list rendering, driven by revealOrder + revealIndex in the DB
-    onValue(ref(db, `rooms/${roomCode}/revealOrder`), (snapshot) => {
-      renderReveal(roomCode, snapshot.val() || []);
-    });
-  }
-
-  let latestRevealOrder = [];
-
-  async function startReveal(roomCode, guesses) {
-    console.log("[measuring-game] starting reveal");
-    const qSnap = await new Promise((resolve) => {
-      onValue(ref(db, `rooms/${roomCode}/currentQuestion`), resolve, { onlyOnce: true });
-    });
-    const q = qSnap.val();
-    if (!q) { console.error("[measuring-game] no currentQuestion found, aborting reveal"); return; }
-    const order = Object.entries(guesses).map(([playerId, guess]) => ({
-      playerId,
-      name: (currentPlayers[playerId] && currentPlayers[playerId].name) || "Player",
-      guess,
-      error: Math.abs(guess - q.answer),
-    })).sort((a, b) => b.error - a.error); // furthest first, closest last
-    await set(ref(db, `rooms/${roomCode}/revealOrder`), order);
-    await set(ref(db, `rooms/${roomCode}/revealIndex`), 0);
-    await set(ref(db, `rooms/${roomCode}/phase`), "reveal");
-    console.log("[measuring-game] reveal phase set");
-  }
-
-  function renderReveal(roomCode, order) {
-    latestRevealOrder = order;
-    onValue(ref(db, `rooms/${roomCode}/revealIndex`), (snapshot) => {
-      const revealIndex = snapshot.val() || 0;
-      revealListEl.innerHTML = "";
-      order.slice(0, revealIndex).forEach((entry, idx) => {
-        const li = document.createElement("li");
-        const isWinner = idx === revealIndex - 1 && revealIndex === order.length;
-        if (isWinner) li.classList.add("winner");
-        li.innerHTML = `<span>${entry.name}</span><span>${entry.guess}</span>`;
-        revealListEl.appendChild(li);
+    if (!revealShuffled) {
+      revealShuffled = true;
+      const answersOrderIds = (roomState.answers || []).map((a) => a.playerId);
+      const idOrder = answersOrderIds.length ? answersOrderIds : order.map((e) => e.playerId);
+      renderFaceDownCards(order, idOrder);
+      requestAnimationFrame(() => {
+        flipReorder(revealListEl, () => renderFaceDownCards(order, order.map((e) => e.playerId)));
       });
-      if (isHost) {
-        revealNextBtn.style.display = revealIndex < order.length ? "block" : "none";
-        nextRoundBtn.style.display = revealIndex >= order.length && order.length > 0 ? "block" : "none";
+      // Instantly show any entries already revealed (e.g. a client joining mid-reveal)
+      for (let i = 0; i < revealIndex; i++) {
+        const entry = order[i];
+        const li = revealListEl.querySelector(`[data-id="${entry.playerId}"]`);
+        if (li) {
+          const pts = entry.basePoints + entry.doubleDownPoints;
+          li.innerHTML = cardPersonHtml(entry, pts);
+          if (i === order.length - 1 && entry.isClosest) li.classList.add("winner");
+        }
       }
-    }, { onlyOnce: true });
+      lastChoreographedIndex = revealIndex;
+      renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, revealIndex));
+    } else if (revealIndex === lastChoreographedIndex + 1 && !revealAnimating) {
+      revealAnimating = true;
+      playCardReveal(order, revealIndex - 1, lastRoundPoints).then(() => {
+        lastChoreographedIndex = revealIndex;
+        revealAnimating = false;
+      });
+    } else if (revealIndex > lastChoreographedIndex) {
+      // jumped by more than one — just snap remaining cards to final state
+      for (let i = lastChoreographedIndex; i < revealIndex; i++) {
+        const entry = order[i];
+        const li = revealListEl.querySelector(`[data-id="${entry.playerId}"]`);
+        if (li) {
+          const pts = entry.basePoints + entry.doubleDownPoints;
+          li.innerHTML = cardPersonHtml(entry, pts);
+          if (i === order.length - 1 && entry.isClosest) li.classList.add("winner");
+        }
+      }
+      lastChoreographedIndex = revealIndex;
+      renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, revealIndex));
+    }
+
+    if (isHost) {
+      revealNextBtn.style.display = revealIndex < order.length ? "block" : "none";
+      showSummaryBtn.style.display = revealIndex >= order.length ? "block" : "none";
+    }
   }
 
-  revealNextBtn.addEventListener("click", async () => {
-    const idxSnap = await new Promise((resolve) => {
-      onValue(ref(db, `rooms/${currentRoomCode}/revealIndex`), resolve, { onlyOnce: true });
+  // ==================== Score column / HUD top ====================
+
+  function renderScoreColumn(overrideScores) {
+    flipReorder(scoreColEl, () => {
+      const ids = Object.keys(currentPlayers).sort((a, b) => {
+        const sa = overrideScores ? (overrideScores[a] || 0) : (currentPlayers[a].score || 0);
+        const sb = overrideScores ? (overrideScores[b] || 0) : (currentPlayers[b].score || 0);
+        return sb - sa;
+      });
+      scoreColEl.innerHTML = "";
+      ids.forEach((id, idx) => {
+        const p = currentPlayers[id];
+        const score = overrideScores ? (overrideScores[id] || 0) : (p.score || 0);
+        const prevIdx = previousScoreColumnOrder.indexOf(id);
+        let arrow = "";
+        if (prevIdx !== -1) {
+          if (idx < prevIdx) arrow = '<span class="arrow up">▲</span>';
+          else if (idx > prevIdx) arrow = '<span class="arrow down">▼</span>';
+          else arrow = '<span class="arrow"></span>';
+        } else {
+          arrow = '<span class="arrow"></span>';
+        }
+        const box = document.createElement("div");
+        box.className = "score-card";
+        box.dataset.id = id;
+        box.innerHTML = `<span class="avatar">${p.avatar || ""}</span><span class="info"><span class="name">${p.name}</span></span>${arrow}<span class="pts">${score}</span>`;
+        scoreColEl.appendChild(box);
+        const prevScore = previousDisplayedScores[id];
+        if (prevScore !== undefined && prevScore !== score) {
+          const ptsEl = box.querySelector(".pts");
+          ptsEl.classList.remove("score-pop");
+          void ptsEl.offsetWidth;
+          ptsEl.classList.add("score-pop");
+        }
+        previousDisplayedScores[id] = score;
+      });
+      previousScoreColumnOrder = ids;
     });
-    const next = (idxSnap.val() || 0) + 1;
-    await set(ref(db, `rooms/${currentRoomCode}/revealIndex`), next);
-  });
+  }
 
-  nextRoundBtn.addEventListener("click", async () => {
-    await set(ref(db, `rooms/${currentRoomCode}/currentQuestion`), null);
-    await set(ref(db, `rooms/${currentRoomCode}/guesses`), null);
-    await set(ref(db, `rooms/${currentRoomCode}/revealOrder`), null);
-    await set(ref(db, `rooms/${currentRoomCode}/revealIndex`), null);
-    await set(ref(db, `rooms/${currentRoomCode}/phase`), "waiting");
-  });
+  function renderHudTop(data) {
+    hudRoomCodeEl.textContent = "Room: " + currentRoomCode;
+    const totalRounds = (data.settings || currentSettings).totalRounds || 5;
+    hudRoundLabelEl.textContent = `round ${data.round || 1} of ${totalRounds}`;
+    hudHostControlsEl.style.display = isHost ? "flex" : "none";
+    hudGuestControlsEl.style.display = isHost ? "none" : "flex";
+    pauseBtn.textContent = data.paused ? "Resume" : "Pause";
+  }
 
-  joinBtn.addEventListener("click", async () => {
-    const name = nameInput.value.trim();
-    const code = codeInput.value.trim().toUpperCase();
-    if (!name) { statusEl.textContent = "Enter your name first."; return; }
-    if (!code) { statusEl.textContent = "Enter a room code."; return; }
-    statusEl.textContent = "Joining room...";
-    // Check the room exists before joining
-    onValue(ref(db, `rooms/${code}/phase`), (snapshot) => {
-      if (snapshot.val() === null) {
-        statusEl.textContent = "Room not found. Check the code.";
-      } else {
-        joinRoomAsPlayer(code, name, false);
+  function renderPausedOverlay(paused) {
+    pausedOverlayEl.classList.toggle("active", !!paused);
+    pausedResumeBtn.style.display = isHost ? "block" : "none";
+  }
+
+  // ==================== Summary / final ====================
+
+  function flipReorder(container, renderFn) {
+    const rows = Array.from(container.children);
+    const oldRects = new Map(rows.map((r) => [r.dataset.id, r.getBoundingClientRect()]));
+    renderFn();
+    Array.from(container.children).forEach((r) => {
+      const old = oldRects.get(r.dataset.id);
+      if (!old) return;
+      const newRect = r.getBoundingClientRect();
+      const dy = old.top - newRect.top;
+      if (dy) {
+        r.style.transition = "none";
+        r.style.transform = `translateY(${dy}px)`;
+        requestAnimationFrame(() => {
+          r.style.transition = "transform 400ms ease-out";
+          r.style.transform = "";
+        });
       }
-    }, { onlyOnce: true });
-  });
+    });
+  }
+
+  function renderSummary(data) {
+    flipReorder(summaryListEl, () => {
+      summaryListEl.innerHTML = "";
+      const ids = Object.keys(currentPlayers).sort((a, b) => (currentPlayers[b].score || 0) - (currentPlayers[a].score || 0));
+      ids.forEach((id) => {
+        const p = currentPlayers[id];
+        const delta = (data.rankDeltas || {})[id] || 0;
+        const li = document.createElement("li");
+        li.dataset.id = id;
+        const arrow = delta > 0 ? `▲${delta}` : delta < 0 ? `▼${Math.abs(delta)}` : "–";
+        li.innerHTML = `<span>${p.avatar || ""} ${p.name}</span><span>${p.score || 0} <small>${arrow}</small></span>`;
+        summaryListEl.appendChild(li);
+      });
+    });
+    if (isHost) {
+      const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
+      nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
+      nextRoundBtn.style.display = "block";
+    } else {
+      nextRoundBtn.style.display = "none";
+    }
+  }
+
+  function renderFinal() {
+    finalListEl.innerHTML = "";
+    const ids = Object.keys(currentPlayers).sort((a, b) => (currentPlayers[b].score || 0) - (currentPlayers[a].score || 0));
+    ids.forEach((id, idx) => {
+      const p = currentPlayers[id];
+      const li = document.createElement("li");
+      li.textContent = `${idx + 1}. ${p.avatar || ""} ${p.name} — ${p.score || 0}`;
+      finalListEl.appendChild(li);
+    });
+  }
+
+  // ==================== Sound / confetti ====================
+
+  function celebrate(big) {
+    if (window.confetti) {
+      window.confetti({ particleCount: big ? 220 : 90, spread: big ? 110 : 65, origin: { y: 0.6 } });
+    }
+  }
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function beep(freq, durationMs) {
+    if (!localSoundEnabled) return;
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+      osc.start();
+      osc.stop(ctx.currentTime + durationMs / 1000);
+    } catch (e) { /* ignore audio errors (e.g. autoplay policy) */ }
+  }
+
+  function playSound(kind) {
+    if (kind === "submit") beep(600, 120);
+    else if (kind === "reveal") beep(440, 150);
+    else if (kind === "win") { beep(523, 150); setTimeout(() => beep(659, 150), 120); setTimeout(() => beep(784, 250), 240); }
+    else if (kind === "pick") beep(700, 80);
+    else if (kind === "drumroll") { for (let i = 0; i < 4; i++) setTimeout(() => beep(300, 60), i * 150); }
+  }
+
+  // ==================== Master phase switch ====================
+
+  function applyPhase(data) {
+    const phase = data.phase;
+    lobbyScreenEl.classList.toggle("active", phase === "waiting");
+    hudEl.classList.toggle("active", ["question", "answers", "reveal", "summary"].includes(phase));
+    finalScreenEl.classList.toggle("active", phase === "final");
+    endedScreenEl.classList.toggle("active", phase === "ended");
+
+    questionViewEl.classList.toggle("active", phase === "question");
+    answersViewEl.classList.toggle("active", phase === "answers");
+    revealViewEl.classList.toggle("active", phase === "reveal");
+    summaryViewEl.classList.toggle("active", phase === "summary");
+
+    if (phase !== "reveal") hideWinnerBanner();
+
+    if (phase === "question" && data.round !== lastSeenRound) {
+      lastSeenRound = data.round;
+      currentGuessStr = "";
+      hasSubmittedThisRound = false;
+      guessLocked = false;
+      guessStatusEl.textContent = "";
+      revealShuffled = false;
+      lastChoreographedIndex = -1;
+      revealAnimating = false;
+      renderGuessDisplay();
+      updateWaitingUi();
+    }
+
+    if (phase === "question") {
+      const q = data.currentQuestion;
+      questionPromptEl.textContent = q ? q.prompt : "";
+      updateWaitingUi();
+    } else if (phase === "answers" || phase === "reveal") {
+      const q = data.currentQuestion;
+      if (q) {
+        questionPromptEl.textContent = q.prompt;
+        revealAnswerEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+      }
+    }
+  }
+
+  function watchRoom(roomCode) {
+    onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
+      const data = snapshot.val() || {};
+      roomState = data;
+      currentPlayers = data.players || {};
+      currentSettings = data.settings || currentSettings;
+
+      if (currentPlayers[currentPlayerId]) everSeenSelfInPlayers = true;
+      if (everSeenSelfInPlayers && !currentPlayers[currentPlayerId] && data.phase !== "ended") {
+        if (!wasRemoved) {
+          wasRemoved = true;
+          showLeftScreen("The host removed you from this room.");
+        }
+        return;
+      }
+
+      renderPlayerList();
+      renderSettingsPanel();
+      applyPhase(data);
+      renderHudTop(data);
+      renderPausedOverlay(data.paused);
+      renderKickModal(data);
+
+      if (data.phase === "question" || data.phase === "waiting") {
+        renderScoreColumn();
+      }
+      if (data.phase === "answers") {
+        renderAnswersScreen(data);
+        renderScoreColumn();
+      }
+      if (data.phase === "reveal") {
+        renderRevealChoreography(data);
+      }
+      if (data.phase === "summary") {
+        renderSummary(data);
+        renderScoreColumn();
+      }
+      if (data.phase === "final") {
+        renderFinal();
+      }
+
+      if (isHost) {
+        checkQuestionAdvance(roomCode);
+        checkAnswersAdvance(roomCode);
+        handleKickChallengesUpdate(roomCode, data.kickChallenges);
+      }
+    });
+  }
 </script>
 </body>
 </html>
