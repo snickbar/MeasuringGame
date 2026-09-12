@@ -188,6 +188,11 @@
     position: absolute; top: -9px; right: -6px; background: #7a3a10; color: #fff4e6; font-size: 9px;
     font-family: 'Press Start 2P', monospace; padding: 2px 6px;
   }
+  .answer-slot.picked { border-image-source: var(--ring); }
+  .answer-slot .pick-stamp {
+    position: absolute; top: -14px; left: -10px; font-size: 20px;
+    animation: popIn 300ms ease;
+  }
   .answer-slot:disabled { cursor: default; }
   #double-down-btn { border-image-source: var(--accent); color: #fff4e6; }
   #answers-hint { text-align: center; font-size: 13px; color: var(--ink-muted); }
@@ -204,7 +209,8 @@
   .reveal-card.winner .card-inner { border-image-source: var(--fancy); font-weight: 700; }
   .reveal-card.drumroll .card-inner { animation: pulse 0.6s infinite; }
   .card-number { font-family: 'Press Start 2P', monospace; font-size: 13px; color: var(--pts); }
-  .pickedby-avatars { display: flex; gap: 2px; font-size: 14px; }
+  .pickedby-avatars { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+  .pickedby-label { font-size: 11px; color: var(--cream-muted); }
 
   #final-list li { font-size: 15px; }
   #final-list li small { color: var(--cream-muted); margin-left: 6px; }
@@ -983,8 +989,8 @@
     Object.entries(picks).forEach(([pickerId, pick]) => {
       if (pick.type === "pick" && pick.targetPlayerId !== pickerId) {
         const target = entries.find((e) => e.playerId === pick.targetPlayerId);
-        if (target && target.isClosest) {
-          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", points: 1 });
+        if (target) {
+          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", points: target.isClosest ? 1 : 0 });
         }
       }
     });
@@ -1181,9 +1187,12 @@
     answersRowEl.innerHTML = "";
     answers.forEach((entry) => {
       const isMine = entry.playerId === currentPlayerId;
+      const isMyPick = !!myPick && myPick.type === "pick" && myPick.targetPlayerId === entry.playerId;
       const btn = document.createElement("button");
-      btn.innerHTML = entry.value + (isMine ? '<span class="you-badge">YOU</span>' : "");
-      btn.className = "answer-slot" + (isMine ? " mine" : "");
+      btn.innerHTML = entry.value
+        + (isMine ? '<span class="you-badge">YOU</span>' : "")
+        + (isMyPick ? `<span class="pick-stamp">${currentAvatar}</span>` : "");
+      btn.className = "answer-slot" + (isMine ? " mine" : "") + (isMyPick ? " picked" : "");
       btn.disabled = isMine || !!myPick || !!roomState.paused;
       btn.addEventListener("click", () => choosePick("pick", entry.playerId));
       answersRowEl.appendChild(btn);
@@ -1225,7 +1234,7 @@
     const extra = entry.doubledOwn ? " (doubled down)" : "";
     const pickedBy = entry.pickedBy || [];
     const pickedAvatars = pickedBy.length
-      ? `<div class="pickedby-avatars">${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
+      ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
       : "";
     return `<div class="card-inner"><span>${avatar} ${entry.name}${entry.isSpotOn ? " \u{1F3AF}" : ""}</span><span>${entry.guess} <b>+${pts}</b>${extra}</span>${pickedAvatars}</div>`;
   }
