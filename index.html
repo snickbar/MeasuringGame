@@ -177,11 +177,11 @@
   }
 
   #reactions-panel {
-    position: fixed; left: max(8px, calc(50vw - 232px)); top: 90px; display: flex; flex-direction: column; gap: 6px;
-    z-index: 900; pointer-events: none;
+    position: fixed; inset: 0; z-index: 900; pointer-events: none;
   }
   .reaction-bubble {
-    padding: 6px 10px; display: flex; align-items: center; gap: 6px; font-size: 20px; animation: popIn 250ms ease;
+    position: absolute; padding: 4px 8px; display: flex; align-items: center; justify-content: center;
+    animation: popIn 250ms ease;
     border-width: 8px; border-style: solid; border-image-source: var(--panel); border-image-slice: 10 fill;
     color: var(--cream-text);
   }
@@ -1162,9 +1162,19 @@
 
   function renderReactionBubble(r) {
     if (!r) return;
+    const card = scoreColEl.querySelector(`[data-id="${r.playerId}"]`);
     const bubble = document.createElement("div");
     bubble.className = "reaction-bubble";
-    bubble.innerHTML = `<span>${r.avatar || ""}</span><span class="reaction-emoji">${r.emoji}</span>`;
+    bubble.innerHTML = `<span class="reaction-emoji">${r.emoji}</span>`;
+    if (card) {
+      const rect = card.getBoundingClientRect();
+      bubble.style.top = `${rect.top + rect.height / 2}px`;
+      bubble.style.left = `${rect.left}px`;
+      bubble.style.transform = "translate(-100%, -50%)";
+    } else {
+      bubble.style.top = "90px";
+      bubble.style.left = "8px";
+    }
     reactionsPanelEl.appendChild(bubble);
     setTimeout(() => bubble.remove(), 1000);
   }
