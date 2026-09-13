@@ -291,7 +291,6 @@
     display: flex; flex-direction: column; gap: 5px; animation: popIn 300ms ease;
     transition: padding 250ms ease;
   }
-  .card-header-bg { position: absolute; top: 0; left: 0; right: 0; height: 0; z-index: -1; border-radius: 8px 8px 0 0; pointer-events: none; }
   .score-row-top { display: flex; align-items: center; gap: 6px; }
   .score-row-bottom { display: flex; align-items: center; gap: 6px; }
   .medal {
@@ -493,7 +492,7 @@
   .reveal-pts-badge { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--green); white-space: nowrap; line-height: 1.1; }
   .reveal-pts-badge.zero { color: var(--text-muted); }
   .reveal-bonus-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11px; color: var(--green); line-height: 1.2; white-space: normal; }
-  .reveal-winner-label { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 13px; color: var(--red); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+  .reveal-winner-label { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; color: var(--red); text-transform: uppercase; letter-spacing: .5px; white-space: normal; line-height: 1.2; }
 
   /* ---- Final results ---- */
   #final-title { text-align: center; animation: popIn 500ms ease; }
@@ -504,29 +503,25 @@
     opacity: 0; animation: summaryRowIn 500ms ease-out both;
   }
   .final-row-top { display: flex; align-items: center; gap: 8px; }
+  .final-row-top .avatar { font-size: 24px; flex-shrink: 0; }
   .final-row-top .name { flex: 1; font-size: 18px; font-weight: 700; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .final-avg-pct { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); flex-shrink: 0; white-space: nowrap; }
-  .final-row-bottom { display: flex; align-items: center; justify-content: space-between; }
-  .final-row-bottom .avatar { font-size: 24px; }
-  .final-row-bottom .pts { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--pts); }
+  .final-row-top .pts { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--pts); flex-shrink: 0; margin-left: auto; }
   .final-row-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 13px; color: var(--text-muted); font-weight: 600; }
   .final-bonus-note { font-size: 13px; font-weight: 700; color: var(--green); }
   .final-tiebreak-note { font-size: 13px; font-weight: 700; color: var(--brand); }
   .final-row.rank-1 {
-    border-image-source: var(--fancy); padding: 12px 16px 16px;
+    padding: 12px 16px 16px;
     animation: summaryRowIn 500ms ease-out both;
   }
-  .final-row.rank-1 .card-header-bg { height: 56px; background: var(--red); }
   .final-row.rank-1 .medal { width: 34px; height: 34px; }
   .final-row.rank-1 .name { font-size: 24px; }
   .final-row.rank-1 .avatar { font-size: 34px; }
   .final-row.rank-1 .pts { font-size: 28px; }
-  .final-row.rank-1 .final-avg-pct { font-size: 26px; color: #fff; text-shadow: 1px 1px 0 rgba(0,0,0,.25); }
-  .final-row.rank-2 { border-image-source: var(--wood2); padding: 9px 13px 13px; }
-  .final-row.rank-2 .card-header-bg { height: 46px; background: var(--brand); }
+  .final-row.rank-1 .final-avg-pct { font-size: 26px; }
+  .final-row.rank-2 { padding: 9px 13px 13px; }
   .final-row.rank-2 .medal { width: 26px; height: 26px; }
   .final-row.rank-2 .name { font-size: 19px; }
-  .final-row.rank-2 .final-avg-pct { color: #fff; text-shadow: 1px 1px 0 rgba(0,0,0,.25); }
   .final-row.rank-3 .medal { width: 22px; height: 22px; }
   #final-home-btn { border-image-source: var(--btn2); color: #fff; }
   #final-screen.active { padding-bottom: 66px; }
@@ -1660,7 +1655,7 @@
       e.isPerfect = e.error < 0.005;
       e.accuracyPercent = Math.round((e.guess / answer) * 100);
       const within09 = e.error <= 0.9;
-      e.basePoints = within09 ? 5 : (e.isClosest ? 3 : 0);
+      e.basePoints = e.isClosest ? (within09 ? 5 : 3) : 0;
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
       e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? e.basePoints : 0;
       e.pickedBy = [];
@@ -2363,10 +2358,8 @@
         ? `<div class="drumroll-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>`
         : "";
       li.innerHTML = `
-        <div class="card-header-bg"></div>
         ${winnerStars}
-        <div class="final-row-top">${medal}<span class="name">${p.name}</span>${avgPctHtml}</div>
-        <div class="final-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts">${score}</span></div>
+        <div class="final-row-top">${medal}<span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span>${avgPctHtml}<span class="pts">${score}</span></div>
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
