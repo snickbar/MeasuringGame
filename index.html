@@ -1328,7 +1328,7 @@
       e.isClosest = !!closest && e.playerId === closest.playerId;
       e.isSpotOn = Math.round(e.guess) === Math.round(answer);
       e.isPerfect = e.error < 0.005;
-      e.accuracyPercent = Math.max(0, Math.round((1 - e.error / answer) * 100));
+      e.accuracyPercent = Math.round((e.guess / answer) * 100);
       const within09 = e.error <= 0.9;
       e.basePoints = within09 ? 5 : (e.isClosest ? 3 : 0);
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
@@ -1363,7 +1363,7 @@
       const p = playersSnap[e.playerId] || {};
       updates[`players/${e.playerId}/accuracySum`] = (p.accuracySum || 0) + e.accuracyPercent;
       updates[`players/${e.playerId}/roundsCounted`] = (p.roundsCounted || 0) + 1;
-      if (!p.bestGuess || e.accuracyPercent > p.bestGuess.percent) {
+      if (!p.bestGuess || Math.abs(e.accuracyPercent - 100) < Math.abs(p.bestGuess.percent - 100)) {
         updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.guess, answer, prompt: q.prompt };
       }
     });
@@ -1405,7 +1405,7 @@
       const ranked = Object.keys(players)
         .filter((id) => players[id].roundsCounted)
         .map((id) => ({ id, avg: players[id].accuracySum / players[id].roundsCounted }))
-        .sort((a, b) => b.avg - a.avg);
+        .sort((a, b) => Math.abs(a.avg - 100) - Math.abs(b.avg - 100));
       const accuracyBonuses = [10, 6, 3];
       const updates = { phase: "final" };
       ranked.forEach((r, idx) => {
@@ -1624,7 +1624,7 @@
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
       : "";
     const winnerDetail = isWinner
-      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)} (${entry.accuracyPercent}% correct)</div>`
+      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)} (guessed ${entry.accuracyPercent}% of actual)</div>`
       : "";
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
@@ -1959,7 +1959,7 @@
       const bonusNote = p.accuracyBonus ? `<div class="final-bonus-note">+${p.accuracyBonus} accuracy bonus</div>` : "";
       const statsHtml = `
         <div class="final-row-stats">
-          <span>Avg accuracy: ${avgAccuracy == null ? "–" : avgAccuracy + "%"}</span>
+          <span>Avg guess: ${avgAccuracy == null ? "–" : avgAccuracy + "% of actual"}</span>
           ${p.bestGuess ? `<span>\u{1F3AF} Best guess: ${p.bestGuess.guess} on "${p.bestGuess.prompt}" (${p.bestGuess.percent}%)</span>` : ""}
         </div>
         ${bonusNote}
