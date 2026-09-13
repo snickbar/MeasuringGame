@@ -119,7 +119,7 @@
     border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
     margin: 0;
   }
-  .avatar-choice.selected { border-image-source: var(--fancy); transform: scale(1.08); }
+  .avatar-choice.selected { border-image-source: var(--ring); border-image-slice: 45 fill; transform: scale(1.08); }
   .avatar-choice.taken { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
   #recent-rooms-section h3 { font-size: 15px; margin: 14px 0 4px; color: var(--brand); }
   .recent-room-row { display: flex; justify-content: space-between; align-items: center; }
@@ -362,7 +362,7 @@
   #final-title { text-align: center; animation: popIn 500ms ease; }
   #final-list { display: flex; flex-direction: column; gap: 10px; }
   .final-row {
-    padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 6px;
+    padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 6px; position: relative;
     border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     opacity: 0; animation: summaryRowIn 500ms ease-out both;
   }
@@ -374,14 +374,16 @@
   .final-row-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 13px; color: var(--text-muted); font-weight: 600; }
   .final-bonus-note { font-size: 13px; font-weight: 700; color: var(--green); }
   .final-row.rank-1 {
-    border-image-source: var(--fancy); padding: 18px 16px;
+    border-image-source: var(--fancy); padding: 12px 16px 16px;
     animation: summaryRowIn 500ms ease-out both, pulse 1.6s ease-in-out 500ms infinite;
   }
+  .final-row.rank-1 .card-header-bg { height: 56px; background: var(--red); }
   .final-row.rank-1 .medal { font-size: 34px; }
   .final-row.rank-1 .name { font-size: 24px; }
   .final-row.rank-1 .avatar { font-size: 34px; }
   .final-row.rank-1 .pts { font-size: 28px; }
-  .final-row.rank-2 { border-image-source: var(--wood2); padding: 14px 13px; }
+  .final-row.rank-2 { border-image-source: var(--wood2); padding: 9px 13px 13px; }
+  .final-row.rank-2 .card-header-bg { height: 46px; background: var(--brand); }
   .final-row.rank-2 .medal { font-size: 26px; }
   .final-row.rank-2 .name { font-size: 19px; }
   .final-row.rank-3 .medal { font-size: 22px; }
@@ -1987,6 +1989,7 @@
       li.className = "final-row" + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : idx === 2 ? " rank-3" : "");
       li.style.animationDelay = `${idx * 150}ms`;
       li.innerHTML = `
+        <div class="card-header-bg"></div>
         <div class="final-row-top">${medal}<span class="name">${p.name}</span></div>
         <div class="final-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts">${p.score || 0}</span></div>
         ${statsHtml}
