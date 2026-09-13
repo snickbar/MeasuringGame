@@ -1635,7 +1635,7 @@
       if (pick.type === "pick" && pick.targetPlayerId !== pickerId) {
         const target = entries.find((e) => e.playerId === pick.targetPlayerId);
         if (target) {
-          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", points: target.isClosest ? 1 : 0 });
+          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", avatar: (playersSnap[pickerId] || {}).avatar || null, points: target.isClosest ? 1 : 0 });
         }
       }
     });
@@ -1951,7 +1951,7 @@
     const extra = entry.doubledOwn ? " (doubled down)" : "";
     const pickedBy = entry.pickedBy || [];
     const pickedAvatars = pickedBy.length
-      ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
+      ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar || "⭐").join(" ")}</div>`
       : "";
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
