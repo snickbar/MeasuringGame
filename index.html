@@ -508,6 +508,7 @@
   .final-row-bottom .pts { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--pts); }
   .final-row-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 13px; color: var(--text-muted); font-weight: 600; }
   .final-bonus-note { font-size: 13px; font-weight: 700; color: var(--green); }
+  .final-tiebreak-note { font-size: 13px; font-weight: 700; color: var(--brand); }
   .final-row.rank-1 {
     border-image-source: var(--fancy); padding: 12px 16px 16px;
     animation: summaryRowIn 500ms ease-out both;
@@ -963,7 +964,49 @@
   let lastSeenRound = null;
   let transitionInFlight = false;
   let previousDisplayedScores = {};
-  let previousScoreColumnOrder = [];
+  let previousScoreColumnRanks = {};
+
+  // Sorts players by score (highest first). Ties share the same rank/medal unless
+  // useAccuracyTiebreak is set, in which case avg-accuracy-closest-to-100% breaks
+  // the tie (marking tiebreakUsed on both players it separates) — used only for
+  // final results, since mid-game ties should just be shown as ties.
+  function computeRanks(ids, scoreFn, avgFn, useAccuracyTiebreak) {
+    const entries = ids.map((id) => ({ id, score: scoreFn(id), avg: avgFn(id) }));
+    entries.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (useAccuracyTiebreak) {
+        const da = a.avg == null ? Infinity : Math.abs(a.avg - 100);
+        const db = b.avg == null ? Infinity : Math.abs(b.avg - 100);
+        if (da !== db) return da - db;
+      }
+      return 0;
+    });
+    entries.forEach((entry, i) => {
+      if (i === 0) {
+        entry.rank = 1;
+        entry.tiebreakUsed = false;
+      } else {
+        const prev = entries[i - 1];
+        const sameScore = prev.score === entry.score;
+        const sameAvg = !useAccuracyTiebreak || (
+          (prev.avg == null && entry.avg == null) ||
+          (prev.avg != null && entry.avg != null && Math.abs(prev.avg - entry.avg) < 1e-9)
+        );
+        if (sameScore && sameAvg) {
+          entry.rank = prev.rank;
+          entry.tiebreakUsed = false;
+        } else {
+          entry.rank = i + 1;
+          entry.tiebreakUsed = useAccuracyTiebreak && sameScore && !sameAvg;
+          if (entry.tiebreakUsed) prev.tiebreakUsed = true;
+        }
+      }
+      entry.medal = entry.score > 0
+        ? (entry.rank === 1 ? "gold" : entry.rank === 2 ? "silver" : entry.rank === 3 ? "bronze" : null)
+        : null;
+    });
+    return entries;
+  }
   let armedKickTimers = {};
   let audioCtx = null;
   let everSeenSelfInPlayers = false;
@@ -2088,33 +2131,31 @@
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
     flipReorder(scoreColEl, () => {
-      const ids = Object.keys(currentPlayers).sort((a, b) => {
-        const sa = overrideScores ? (overrideScores[a] || 0) : (currentPlayers[a].score || 0);
-        const sb = overrideScores ? (overrideScores[b] || 0) : (currentPlayers[b].score || 0);
-        return sb - sa;
-      });
-      scoreColEl.innerHTML = "";
-      ids.forEach((id, idx) => {
+      const scoreFn = (id) => overrideScores ? (overrideScores[id] || 0) : (currentPlayers[id].score || 0);
+      const avgFn = (id) => {
         const p = currentPlayers[id];
-        const score = overrideScores ? (overrideScores[id] || 0) : (p.score || 0);
-        const prevIdx = roomState.phase === "waiting" ? -1 : previousScoreColumnOrder.indexOf(id);
+        return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
+      };
+      const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, false);
+      scoreColEl.innerHTML = "";
+      ranked.forEach((entry) => {
+        const { id, score, rank, medal: medalType } = entry;
+        const p = currentPlayers[id];
+        const prevRank = roomState.phase === "waiting" ? undefined : previousScoreColumnRanks[id];
         let arrow = "";
-        if (prevIdx !== -1) {
-          if (idx < prevIdx) arrow = '<span class="arrow move-icon up"></span>';
-          else if (idx > prevIdx) arrow = '<span class="arrow move-icon down"></span>';
+        if (prevRank !== undefined) {
+          if (rank < prevRank) arrow = '<span class="arrow move-icon up"></span>';
+          else if (rank > prevRank) arrow = '<span class="arrow move-icon down"></span>';
           else arrow = '<span class="arrow"></span>';
         } else {
           arrow = '<span class="arrow"></span>';
         }
-        const medal = idx === 0 ? '<span class="medal gold"></span>'
-          : idx === 1 ? '<span class="medal silver"></span>'
-          : idx === 2 ? '<span class="medal bronze"></span>'
-          : `<span class="medal rank-num">${idx + 1}</span>`;
+        const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
         const frameIndex = p.frameIndex || 1;
         const avgAcc = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
         const accHtml = avgAcc == null ? "" : `<span class="acc">${avgAcc}%</span>`;
         const box = document.createElement("div");
-        box.className = "score-card frame-" + frameIndex + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : idx === 2 ? " rank-3" : "");
+        box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.dataset.id = id;
         box.innerHTML = `
           <div class="score-row-top"><span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span></div>
@@ -2130,7 +2171,11 @@
         }
         previousDisplayedScores[id] = score;
       });
-      if (roomState.phase !== "waiting") previousScoreColumnOrder = ids;
+      if (roomState.phase !== "waiting") {
+        const newRanks = {};
+        ranked.forEach((entry) => { newRanks[entry.id] = entry.rank; });
+        previousScoreColumnRanks = newRanks;
+      }
     });
   }
 
@@ -2255,33 +2300,38 @@
     if (finalRendered) return;
     finalRendered = true;
     finalListEl.innerHTML = "";
-    const ids = Object.keys(currentPlayers).sort((a, b) => (currentPlayers[b].score || 0) - (currentPlayers[a].score || 0));
-    ids.forEach((id, idx) => {
+    const scoreFn = (id) => currentPlayers[id].score || 0;
+    const avgFn = (id) => {
       const p = currentPlayers[id];
-      const medal = idx === 0 ? '<span class="medal gold"></span>'
-        : idx === 1 ? '<span class="medal silver"></span>'
-        : idx === 2 ? '<span class="medal bronze"></span>'
-        : `<span class="medal rank-num">${idx + 1}</span>`;
+      return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
+    };
+    const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
+    ranked.forEach((entry, idx) => {
+      const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
+      const p = currentPlayers[id];
+      const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
       const avgAccuracy = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
       const bonusNote = p.accuracyBonus ? `<div class="final-bonus-note">+${p.accuracyBonus} accuracy bonus</div>` : "";
+      const tiebreakNote = tiebreakUsed ? `<div class="final-tiebreak-note">\u{1F3AF} Tied on score — ranked by closer avg accuracy</div>` : "";
       const statsHtml = `
         <div class="final-row-stats">
           <span>Avg guess: ${avgAccuracy == null ? "–" : avgAccuracy + "% of actual"}</span>
           ${p.bestGuess ? `<span>\u{1F3AF} Best guess: ${p.bestGuess.guess} on "${p.bestGuess.prompt}" (${p.bestGuess.percent}%)</span>` : ""}
         </div>
         ${bonusNote}
+        ${tiebreakNote}
       `;
       const li = document.createElement("li");
-      li.className = "final-row" + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : idx === 2 ? " rank-3" : "");
+      li.className = "final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
       li.style.animationDelay = `${idx * 150}ms`;
-      const winnerStars = idx === 0
+      const winnerStars = rank === 1 && score > 0
         ? `<div class="drumroll-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>`
         : "";
       li.innerHTML = `
         <div class="card-header-bg"></div>
         ${winnerStars}
         <div class="final-row-top">${medal}<span class="name">${p.name}</span></div>
-        <div class="final-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts">${p.score || 0}</span></div>
+        <div class="final-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts">${score}</span></div>
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
