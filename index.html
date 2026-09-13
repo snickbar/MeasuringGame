@@ -308,10 +308,10 @@
     padding: 12px; margin: 10px 0; color: #4a2a10;
     border-width: 16px; border-style: solid; border-image-source: var(--wood); border-image-slice: 70 fill;
   }
-  #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .num-btn, #backspace-btn {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; padding: 14px 0; color: var(--text);
-    border-width: 12px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; padding: 10px 0; margin: 0; color: var(--text);
+    border-width: 9px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
   }
   #submit-guess-btn { margin-top: 10px; border-image-source: var(--btn-accent); color: #fff; }
   #guess-status { text-align: center; font-size: 15px; color: var(--text-muted); }
@@ -431,6 +431,10 @@
   .winner-name-row .winner-avatar { font-size: 28px; line-height: 1; }
   .winner-name-row .winner-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000; }
   .winner-guess-row { flex-basis: 100%; font-size: 16px; font-weight: 600; color: #000; }
+  .reveal-name-row { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+  .reveal-name-row .reveal-avatar { flex-shrink: 0; }
+  .reveal-name-row .reveal-name { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reveal-guess-line { flex-shrink: 0; white-space: nowrap; }
   .winner-guess-row b { font-size: 18px; }
   .winner-stats-row { flex-basis: 100%; font-size: 15px; font-weight: 700; color: #000; }
   .reveal-pts-stack {
@@ -485,13 +489,13 @@
     70% { opacity: 1; transform: translateY(-2px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
-  .summary-row-top { display: flex; justify-content: space-between; align-items: center; }
-  .summary-row .who { display: flex; align-items: center; gap: 6px; }
-  .summary-row .who .avatar { font-size: 20px; }
-  .summary-row .who .name { font-size: 17px; font-weight: 700; }
+  .summary-row-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .summary-row .who { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+  .summary-row .who .avatar { font-size: 20px; flex-shrink: 0; }
+  .summary-row .who .name { font-size: 17px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .summary-row .roundpts {
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--green);
-    opacity: 0; animation: popIn 320ms ease-out both;
+    opacity: 0; animation: popIn 320ms ease-out both; flex-shrink: 0;
   }
   .summary-row .roundpts.zero { color: var(--text-faint); }
   .breakdown { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -1782,7 +1786,11 @@
         ${pickedAvatars}
       </div>${ptsStack}`;
     }
-    return `<div class="card-inner ${containerClass}"><span>${avatar} ${entry.name}</span><span>${entry.guess} (${entry.accuracyPercent}%)${extra}</span>${spotBadge}${pickedAvatars}</div>${ptsStack}`;
+    return `<div class="card-inner ${containerClass}">
+      <div class="reveal-name-row"><span class="reveal-avatar">${avatar}</span><span class="reveal-name">${entry.name}</span></div>
+      <span class="reveal-guess-line">${entry.guess} (${entry.accuracyPercent}%)${extra}</span>
+      ${spotBadge}${pickedAvatars}
+    </div>${ptsStack}`;
   }
 
   function renderFaceDownCards(order, idOrder) {
