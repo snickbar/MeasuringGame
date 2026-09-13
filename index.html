@@ -375,8 +375,8 @@
   #reveal-answer { display: flex; justify-content: center; margin-bottom: 12px; min-height: 0; }
   .answer-badge {
     display: inline-flex; flex-direction: column; align-items: center; gap: 0;
-    padding: 8px 30px 12px; border-width: 16px; border-style: solid;
-    border-image-source: var(--answer-badge); border-image-slice: 26 fill;
+    padding: 10px 30px 14px;
+    background: #fffeeb; border: 5px solid #97513e; border-radius: 20px;
     animation: popIn 350ms ease;
   }
   .answer-badge-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
@@ -425,6 +425,15 @@
   .winner-guess-row { flex-basis: 100%; font-size: 16px; font-weight: 600; color: #000; }
   .winner-guess-row b { font-size: 18px; }
   .winner-stats-row { flex-basis: 100%; font-size: 15px; font-weight: 700; color: #000; }
+  .reveal-pts-stack {
+    position: absolute; top: 50%; left: 100%; transform: translateY(-50%);
+    margin-left: 6px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    opacity: 0; pointer-events: none; transition: opacity 250ms ease; z-index: 1;
+  }
+  #reveal-list.answer-revealed .reveal-pts-stack { opacity: 1; }
+  .reveal-pts-badge { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--green); white-space: nowrap; }
+  .reveal-pts-badge.zero { color: var(--text-muted); }
+  .reveal-pts-badge.bonus { font-size: 12px; }
 
   /* ---- Final results ---- */
   #final-title { text-align: center; animation: popIn 500ms ease; }
@@ -1730,7 +1739,20 @@
   function cardNumberHtml(entry) {
     return `<div class="card-inner"><span class="card-number">${entry.guess}</span></div>`;
   }
-  function cardPersonHtml(entry, pts, isWinner) {
+  function secondChanceBonusFor(playerId, order) {
+    return (order || []).reduce((sum, e) => sum + (e.pickedBy || [])
+      .filter((p) => p.playerId === playerId)
+      .reduce((s, p) => s + p.points, 0), 0);
+  }
+
+  function ptsStackHtml(pts, bonus) {
+    return `<div class="reveal-pts-stack">
+      <div class="reveal-pts-badge${pts === 0 ? " zero" : ""}">+${pts}</div>
+      ${bonus > 0 ? `<div class="reveal-pts-badge bonus">+${bonus} 2nd</div>` : ""}
+    </div>`;
+  }
+
+  function cardPersonHtml(entry, pts, isWinner, order) {
     const avatar = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
     const containerClass = "container-" + ((currentPlayers[entry.playerId] && currentPlayers[entry.playerId].frameIndex) || 1);
     const extra = entry.doubledOwn ? " (doubled down)" : "";
@@ -1741,16 +1763,18 @@
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
       : (entry.isSpotOn ? `<div class="spot-badge">\u{1F3AF} Spot On!</div>` : "");
+    const bonus = secondChanceBonusFor(entry.playerId, order);
+    const ptsStack = ptsStackHtml(pts, bonus);
     if (isWinner) {
       return `<div class="card-inner ${containerClass}">
         <div class="winner-name-row"><span class="winner-avatar">${avatar}</span><span class="winner-name">${entry.name}</span></div>
-        <div class="winner-guess-row">Guess: <b>${entry.guess}</b> +${pts}${extra}</div>
+        <div class="winner-guess-row">Guess: <b>${entry.guess}</b>${extra}</div>
         ${spotBadge}
         <div class="winner-stats-row">${entry.accuracyPercent}% — off by ${entry.error.toFixed(2)}</div>
         ${pickedAvatars}
-      </div>`;
+      </div>${ptsStack}`;
     }
-    return `<div class="card-inner ${containerClass}"><span>${avatar} ${entry.name}</span><span>${entry.guess} <b>+${pts}</b> (${entry.accuracyPercent}%)${extra}</span>${spotBadge}${pickedAvatars}</div>`;
+    return `<div class="card-inner ${containerClass}"><span>${avatar} ${entry.name}</span><span>${entry.guess} (${entry.accuracyPercent}%)${extra}</span>${spotBadge}${pickedAvatars}</div>${ptsStack}`;
   }
 
   function renderFaceDownCards(order, idOrder) {
@@ -1797,13 +1821,14 @@
       function doFlips() {
         squeezeSwap(li, "y", () => cardNumberHtml(entry));
         setTimeout(() => {
-          squeezeSwap(li, "x", () => cardPersonHtml(entry, pts, isWinner));
+          squeezeSwap(li, "x", () => cardPersonHtml(entry, pts, isWinner, order));
           playSound("reveal");
           if (isWinner) {
             li.classList.add("winner");
             if (entry.isSpotOn) playSound("win");
             celebrate(entry.isSpotOn);
             revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
+            revealListEl.classList.add("answer-revealed");
           }
           setTimeout(() => {
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
@@ -1855,10 +1880,11 @@
         if (li) {
           const pts = entry.basePoints + entry.doubleDownPoints;
           const isWinner = i === order.length - 1 && entry.isClosest;
-          li.innerHTML = cardPersonHtml(entry, pts, isWinner);
+          li.innerHTML = cardPersonHtml(entry, pts, isWinner, order);
           if (isWinner) {
             li.classList.add("winner");
             revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
+            revealListEl.classList.add("answer-revealed");
           }
         }
       }
@@ -1878,10 +1904,11 @@
         if (li) {
           const pts = entry.basePoints + entry.doubleDownPoints;
           const isWinner = i === order.length - 1 && entry.isClosest;
-          li.innerHTML = cardPersonHtml(entry, pts, isWinner);
+          li.innerHTML = cardPersonHtml(entry, pts, isWinner, order);
           if (isWinner) {
             li.classList.add("winner");
             revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
+            revealListEl.classList.add("answer-revealed");
           }
         }
       }
@@ -2217,6 +2244,7 @@
       guessLocked = false;
       guessStatusEl.textContent = "";
       revealAnswerEl.innerHTML = "";
+      revealListEl.classList.remove("answer-revealed");
       revealShuffled = false;
       lastChoreographedIndex = -1;
       revealAnimating = false;
