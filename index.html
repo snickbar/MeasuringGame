@@ -67,8 +67,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
-  #home-screen.active, #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
+  #home-screen, #settings-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
+  #home-screen.active, #settings-screen.active, #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
   #hud.active { display: block; }
 
   #question-view, #answers-view, #reveal-view, #summary-view { display: none; }
@@ -91,7 +91,7 @@
     border-width: 10px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
     color: #fff;
   }
-  #avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0 12px; }
+  #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 8px 0;
     border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
@@ -99,18 +99,18 @@
   }
   .avatar-choice.selected { border-image-source: var(--fancy); transform: scale(1.08); }
   .avatar-choice.taken { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
-  #recent-rooms-section h3, #home-settings-section h3 { font-size: 15px; margin: 14px 0 4px; color: var(--brand); }
+  #recent-rooms-section h3 { font-size: 15px; margin: 14px 0 4px; color: var(--brand); }
   .recent-room-row { display: flex; justify-content: space-between; align-items: center; }
   .recent-room-row button { width: auto; padding: 6px 12px; margin: 0; font-size: 13px; }
-  #home-settings-toggle { color: var(--text); }
-  #home-settings-section {
-    display: none; padding: 10px; margin-top: 6px;
+
+  /* ---- Settings screen ---- */
+  #settings-toggles-panel {
+    padding: 10px; margin: 12px 0;
     border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     color: var(--text);
   }
-  #home-settings-section.open { display: block; }
-  #home-settings-section label { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
-  #home-settings-section input[type="checkbox"] { width: auto; }
+  #settings-toggles-panel label { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
+  #settings-toggles-panel input[type="checkbox"] { width: auto; }
 
   /* ---- Settings panel (lobby) ---- */
   #settings-panel {
@@ -372,12 +372,23 @@
     <div id="recent-rooms-list"></div>
   </div>
 
-  <div id="settings-toggle-row">
-    <button id="home-settings-toggle">&#9881; Settings</button>
+  <button id="home-settings-btn" class="back-btn">&#9881; Settings</button>
+</div>
+
+<div id="settings-screen" class="screen">
+  <button id="settings-back-btn" type="button" class="back-btn">&larr; Back</button>
+  <h1>Settings</h1>
+
+  <div id="settings-toggles-panel">
+    <label>Sound effects <input id="settings-sound-toggle" type="checkbox" /></label>
+    <label>Music <input id="settings-music-toggle" type="checkbox" /></label>
   </div>
-  <div id="home-settings-section">
-    <label>Sound effects <input id="home-sound-toggle" type="checkbox" /></label>
-  </div>
+
+  <h3>Default name</h3>
+  <input id="settings-name-input" placeholder="Your name" />
+
+  <h3>Default avatar</h3>
+  <div id="settings-avatar-grid"></div>
 </div>
 
 <div id="join-screen" class="screen">
@@ -558,6 +569,7 @@
   let currentName = localStorage.getItem("mg_name") || "";
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS[0];
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
+  let musicEnabled = localStorage.getItem("mg_musicEnabled") === "true";
 
   function loadRecentRooms() {
     try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]"); } catch (e) { return []; }
@@ -620,9 +632,13 @@
   const avatarGridEl = document.getElementById("avatar-grid");
   const recentRoomsSection = document.getElementById("recent-rooms-section");
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
-  const homeSettingsToggle = document.getElementById("home-settings-toggle");
-  const homeSettingsSection = document.getElementById("home-settings-section");
-  const homeSoundToggle = document.getElementById("home-sound-toggle");
+  const homeSettingsBtn = document.getElementById("home-settings-btn");
+  const settingsScreen = document.getElementById("settings-screen");
+  const settingsBackBtn = document.getElementById("settings-back-btn");
+  const settingsSoundToggle = document.getElementById("settings-sound-toggle");
+  const settingsMusicToggle = document.getElementById("settings-music-toggle");
+  const settingsNameInput = document.getElementById("settings-name-input");
+  const settingsAvatarGridEl = document.getElementById("settings-avatar-grid");
 
   const settingTimerInput = document.getElementById("setting-timer");
   const settingRoundsInput = document.getElementById("setting-rounds");
@@ -744,6 +760,7 @@
         currentAvatar = a;
         localStorage.setItem("mg_avatar", a);
         renderAvatarGrid();
+        renderSettingsAvatarGrid();
         playSound("pick");
       });
       avatarGridEl.appendChild(btn);
@@ -770,16 +787,54 @@
   nameInput.addEventListener("input", () => {
     currentName = nameInput.value;
     localStorage.setItem("mg_name", currentName);
+    settingsNameInput.value = currentName;
   });
 
-  homeSoundToggle.checked = localSoundEnabled;
-  homeSoundToggle.addEventListener("change", () => {
-    localSoundEnabled = homeSoundToggle.checked;
+  function renderSettingsAvatarGrid() {
+    settingsAvatarGridEl.innerHTML = "";
+    AVATARS.forEach((a) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = a;
+      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "");
+      btn.addEventListener("click", () => {
+        currentAvatar = a;
+        localStorage.setItem("mg_avatar", a);
+        renderSettingsAvatarGrid();
+        renderAvatarGrid();
+        playSound("pick");
+      });
+      settingsAvatarGridEl.appendChild(btn);
+    });
+  }
+
+  settingsNameInput.value = currentName;
+  settingsNameInput.addEventListener("input", () => {
+    currentName = settingsNameInput.value;
+    localStorage.setItem("mg_name", currentName);
+    nameInput.value = currentName;
+  });
+
+  settingsSoundToggle.checked = localSoundEnabled;
+  settingsSoundToggle.addEventListener("change", () => {
+    localSoundEnabled = settingsSoundToggle.checked;
     localStorage.setItem("mg_soundEnabled", String(localSoundEnabled));
   });
 
-  homeSettingsToggle.addEventListener("click", () => {
-    homeSettingsSection.classList.toggle("open");
+  settingsMusicToggle.checked = musicEnabled;
+  settingsMusicToggle.addEventListener("change", () => {
+    musicEnabled = settingsMusicToggle.checked;
+    localStorage.setItem("mg_musicEnabled", String(musicEnabled));
+    if (musicEnabled) startMusic(); else stopMusic();
+  });
+
+  homeSettingsBtn.addEventListener("click", () => {
+    homeScreen.classList.remove("active");
+    settingsScreen.classList.add("active");
+  });
+  settingsBackBtn.addEventListener("click", () => {
+    settingsScreen.classList.remove("active");
+    homeScreen.classList.add("active");
   });
 
   function renderRecentRooms() {
@@ -802,6 +857,7 @@
   }
 
   renderAvatarGrid();
+  renderSettingsAvatarGrid();
   renderRecentRooms();
 
   // ==================== Lobby / join flow ====================
@@ -1804,6 +1860,54 @@
     else if (kind === "pick") beep(700, 80);
     else if (kind === "drumroll") { for (let i = 0; i < 4; i++) setTimeout(() => beep(300, 60), i * 150); }
   }
+
+  // ---- Ambient background music (simple procedural pad, no external assets) ----
+  let musicNodes = null;
+  let musicTimer = null;
+
+  function startMusic() {
+    if (!musicEnabled || musicNodes) return;
+    try {
+      const ctx = getAudioCtx();
+      const master = ctx.createGain();
+      master.gain.value = 0.05;
+      master.connect(ctx.destination);
+      musicNodes = { master };
+      const scale = [261.63, 293.66, 329.63, 392.00, 440.00]; // C D E G A, calm pentatonic
+      const playNote = () => {
+        if (!musicNodes) return;
+        const freq = scale[Math.floor(Math.random() * scale.length)] / 2;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(musicNodes.master);
+        const now = ctx.currentTime;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(1, now + 1.2);
+        gain.gain.linearRampToValueAtTime(0, now + 3.5);
+        osc.start(now);
+        osc.stop(now + 3.6);
+      };
+      playNote();
+      musicTimer = setInterval(playNote, 2600);
+    } catch (e) { /* ignore audio errors (e.g. autoplay policy) */ }
+  }
+
+  function stopMusic() {
+    clearInterval(musicTimer);
+    musicTimer = null;
+    if (musicNodes) {
+      try { musicNodes.master.disconnect(); } catch (e) { /* ignore */ }
+      musicNodes = null;
+    }
+  }
+
+  document.addEventListener("click", function initMusicOnce() {
+    if (musicEnabled) startMusic();
+    document.removeEventListener("click", initMusicOnce);
+  }, { once: true });
 
   // ==================== Master phase switch ====================
 
