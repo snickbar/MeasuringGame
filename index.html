@@ -148,6 +148,15 @@
 
   .kick-btn { width: auto; font-size: 12px; padding: 4px 8px; margin: 0 0 0 8px; background: var(--red); color: #fff; border: 2px solid #8a3a2a; border-radius: 8px; }
   .player-avatar { font-size: 22px; margin-right: 6px; }
+  .bot-tag { font-size: 12px; margin-left: 4px; }
+
+  #bot-controls { display: none; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  #bot-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+  .bot-btn {
+    width: auto; font-size: 14px; padding: 6px 12px; margin: 0;
+    border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    color: var(--text);
+  }
 
   /* ---- HUD ---- */
   .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -454,6 +463,13 @@
   <h3>Players</h3>
   <ul id="player-list"></ul>
 
+  <div id="bot-controls">
+    <span>Add bot:</span>
+    <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
+    <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
+    <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
+  </div>
+
   <div id="settings-panel">
     <label>Timer (sec)
       <span class="stepper">
@@ -610,6 +626,12 @@
 
   const AVATARS = ["\u{1F98A}","\u{1F43C}","\u{1F438}","\u{1F435}","\u{1F436}","\u{1F431}","\u{1F981}","\u{1F428}","\u{1F42F}","\u{1F437}","\u{1F430}","\u{1F984}","\u{1F419}","\u{1F422}","\u{1F989}","\u{1F433}","\u{1F40A}"];
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
+  const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.6, 1.4] };
+  const BOT_NAMES = [
+    "RoboRex", "ByteBuddy", "CircuitSam", "PixelPete", "TurboTina", "ByteBecca", "ChipChester",
+    "VoltVera", "GizmoGus", "NanoNina", "CogCarl", "SparkySue", "BitBarry", "ZapZoe", "MegaMo",
+    "LogicLou", "WattWally", "BinaryBea", "ServoStan", "QuantumQuinn",
+  ];
 
   let currentName = localStorage.getItem("mg_name") || "";
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS[0];
@@ -674,6 +696,7 @@
   const roomCodeDisplay = document.getElementById("room-code-display");
   const playerList = document.getElementById("player-list");
   const hostStartBtn = document.getElementById("host-start-btn");
+  const botControlsEl = document.getElementById("bot-controls");
   const avatarGridEl = document.getElementById("avatar-grid");
   const recentRoomsSection = document.getElementById("recent-rooms-section");
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
@@ -912,7 +935,7 @@
     Object.entries(currentPlayers).forEach(([id, p]) => {
       const li = document.createElement("li");
       const nameSpan = document.createElement("span");
-      nameSpan.innerHTML = `<span class="player-avatar">${p.avatar || ""}</span>${p.name}${p.isHost ? " (host)" : ""}`;
+      nameSpan.innerHTML = `<span class="player-avatar">${p.avatar || ""}</span>${p.name}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag">\u{1F916} ${p.botDifficulty || ""}</span>` : ""}`;
       li.appendChild(nameSpan);
       if (isHost && id !== currentPlayerId) {
         const btn = document.createElement("button");
@@ -937,6 +960,7 @@
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
       btn.disabled = locked;
     });
+    botControlsEl.style.display = locked ? "none" : "flex";
   }
 
   document.getElementById("settings-panel").addEventListener("click", (e) => {
@@ -1065,9 +1089,67 @@
   });
 
   function kickPlayer(targetId) {
+    const target = (currentPlayers || {})[targetId];
+    if (target && target.isBot) {
+      remove(ref(db, `rooms/${currentRoomCode}/players/${targetId}`));
+      return;
+    }
     set(ref(db, `rooms/${currentRoomCode}/kickChallenges/${targetId}`), {
       requestedAt: nowMs(),
       respondedAt: null,
+    });
+  }
+
+  async function addBot(difficulty) {
+    if (!isHost || !currentRoomCode) return;
+    const playersSnap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${currentRoomCode}/players`), resolve, { onlyOnce: true });
+    });
+    const existingPlayers = playersSnap.val() || {};
+    const usedFrames = new Set(Object.values(existingPlayers).map((p) => p.frameIndex).filter(Boolean));
+    const freeFrames = [];
+    for (let i = 1; i <= FRAME_COUNT; i++) if (!usedFrames.has(i)) freeFrames.push(i);
+    if (freeFrames.length === 0) {
+      statusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
+      return;
+    }
+    const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
+    const usedAvatars = new Set(Object.values(existingPlayers).map((p) => p.avatar).filter(Boolean));
+    const avatar = AVATARS.find((a) => !usedAvatars.has(a)) || AVATARS[Math.floor(Math.random() * AVATARS.length)];
+    const usedNames = new Set(Object.values(existingPlayers).map((p) => p.name));
+    const freeNames = BOT_NAMES.filter((n) => !usedNames.has(n));
+    const namePool = freeNames.length ? freeNames : BOT_NAMES;
+    const name = namePool[Math.floor(Math.random() * namePool.length)];
+    const botId = "bot_" + Math.random().toString(36).slice(2, 10);
+    await set(ref(db, `rooms/${currentRoomCode}/players/${botId}`), {
+      name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
+      joinedAt: serverTimestamp(),
+    });
+  }
+  document.querySelectorAll(".bot-btn").forEach((btn) => {
+    btn.addEventListener("click", () => addBot(btn.dataset.difficulty));
+  });
+
+  function botGuessValue(answer, difficulty) {
+    const range = BOT_DIFFICULTY_RANGES[difficulty] || BOT_DIFFICULTY_RANGES.medium;
+    const ratio = range[0] + Math.random() * (range[1] - range[0]);
+    return Math.max(0, Math.round(answer * ratio * 100) / 100);
+  }
+
+  function scheduleBotGuesses(roomCode, q) {
+    const players = roomState.players || {};
+    const timerMs = (currentSettings.timerSeconds || 30) * 1000;
+    Object.keys(players).forEach((id) => {
+      const p = players[id];
+      if (!p || !p.isBot) return;
+      const delay = Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
+      setTimeout(() => {
+        if (currentRoomCode !== roomCode) return;
+        if (roomState.phase !== "question") return;
+        if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
+        const val = botGuessValue(q.answer, p.botDifficulty);
+        set(ref(db, `rooms/${roomCode}/guesses/${id}`), val);
+      }, delay);
     });
   }
 
@@ -1168,6 +1250,7 @@
       phase: "question",
     });
     scheduleHostDeadline(endsAt, () => checkQuestionAdvance(roomCode));
+    scheduleBotGuesses(roomCode, q);
   }
 
   function checkQuestionAdvance(roomCode) {
