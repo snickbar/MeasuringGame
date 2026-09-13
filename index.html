@@ -93,7 +93,9 @@
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     transition: transform 100ms ease;
   }
-  button:active { transform: scale(.95); }
+  button:active { transform: scale(.93); transition: transform 60ms ease-out; }
+  button.btn-bounce { animation: btnBounce 220ms ease-out; }
+  @keyframes btnBounce { 0% { transform: scale(.93); } 55% { transform: scale(1.06); } 80% { transform: scale(.98); } 100% { transform: scale(1); } }
   ul { list-style: none; padding: 0; }
   li { padding: 10px; margin: 6px 0;
        border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
@@ -101,8 +103,8 @@
        display: flex; justify-content: space-between; align-items: center; }
   #status { color: var(--text-muted); font-size: 15px; min-height: 18px; }
 
-  .screen { animation: screenEnter 300ms ease; }
-  @keyframes screenEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .screen { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
+  @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
   #home-screen, #settings-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
@@ -276,10 +278,10 @@
   }
   .pts-wrap { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
   .score-card .pts { font-family: 'Fredoka', sans-serif; font-size: 20px; color: var(--pts); font-weight: 700; transition: font-size 250ms ease; }
-  .score-card .pts.score-pop { animation: scorePop .4s ease; }
+  .score-card .pts.score-pop { animation: scorePop .45s ease-out; }
   .score-card .arrow { font-size: 15px; width: 14px; text-align: center; flex-shrink: 0; }
   .score-card .arrow.move-icon { width: 16px; height: 16px; margin-right: 0; }
-  @keyframes scorePop { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: var(--green); } 100% { transform: scale(1); } }
+  @keyframes scorePop { 0% { transform: scale(1); } 45% { transform: scale(1.45); color: var(--green); } 70% { transform: scale(.92); } 100% { transform: scale(1); } }
 
   .score-card.frame-1 { border-image-source: var(--frame1); }
   .score-card.frame-2 { border-image-source: var(--frame2); }
@@ -370,6 +372,7 @@
   .answer-slot:disabled { cursor: default; }
   #double-down-btn { border-image-source: var(--btn-accent); color: #fff; }
   #double-down-btn.picked { border-image-source: var(--ring); }
+  #double-down-btn.pop { animation: popIn 300ms ease; }
   #answers-hint { text-align: center; font-size: 15px; color: var(--text-muted); }
   #my-guess-display {
     display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -925,6 +928,7 @@
   let revealShuffled = false;
   let lastChoreographedIndex = -1;
   let revealAnimating = false;
+  let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
     return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5 };
@@ -1031,11 +1035,13 @@
     settingsReturnScreen = ALL_SCREEN_ELS.find((el) => el.classList.contains("active")) || homeScreen;
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     settingsScreen.classList.add("active");
+    playSound("popup-open");
   });
   settingsBackBtn.addEventListener("click", () => {
     settingsScreen.classList.remove("active");
     (settingsReturnScreen || homeScreen).classList.add("active");
     settingsReturnScreen = null;
+    playSound("popup-close");
   });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
@@ -1291,9 +1297,12 @@
     set(ref(db, `rooms/${currentRoomCode}/kickChallenges/${currentPlayerId}/respondedAt`), nowMs());
   });
 
+  let kickModalWasActive = false;
   function renderKickModal(data) {
     const ch = data.kickChallenges && data.kickChallenges[currentPlayerId];
     const active = !!(ch && !ch.respondedAt);
+    if (active !== kickModalWasActive) playSound(active ? "popup-open" : "popup-close");
+    kickModalWasActive = active;
     kickModalEl.classList.toggle("active", active);
     myKickDeadline = active ? ch.requestedAt + 20000 : null;
   }
@@ -1629,18 +1638,20 @@
     if (currentGuessStr.length >= 10) return;
     currentGuessStr += val;
     renderGuessDisplay();
+    playSound("tap");
   });
 
   document.getElementById("backspace-btn").addEventListener("click", () => {
     if (guessLocked || roomState.paused) return;
     currentGuessStr = currentGuessStr.slice(0, -1);
     renderGuessDisplay();
+    playSound("tap");
   });
 
   submitGuessBtn.addEventListener("click", async () => {
     if (guessLocked || roomState.paused) return;
     const guessNum = parseFloat(currentGuessStr);
-    if (isNaN(guessNum)) { guessStatusEl.textContent = "Enter a number first."; return; }
+    if (isNaN(guessNum)) { guessStatusEl.textContent = "Enter a number first."; playSound("error"); return; }
     hasSubmittedThisRound = true;
     guessStatusEl.textContent = "Guess submitted — you can still change it until it locks.";
     playSound("submit");
@@ -1717,6 +1728,12 @@
     const isMyDoubleDown = !!myPick && myPick.type === "doubledown";
     doubleDownBtn.disabled = !!roomState.paused;
     doubleDownBtn.classList.toggle("picked", isMyDoubleDown);
+    if (isMyDoubleDown && !wasDoubleDownPicked) {
+      doubleDownBtn.classList.remove("pop");
+      void doubleDownBtn.offsetWidth;
+      doubleDownBtn.classList.add("pop");
+    }
+    wasDoubleDownPicked = isMyDoubleDown;
     doubleDownBtn.textContent = isMyDoubleDown ? "Doubled down!" : "Double down on my answer";
     myGuessDisplayEl.innerHTML = myEntry
       ? `<span class="my-guess-label">Your guess</span><span class="my-guess-value">${myEntry.value}</span>`
@@ -1728,8 +1745,10 @@
     const pickRef = ref(db, `rooms/${currentRoomCode}/picks/${currentPlayerId}`);
     if (alreadyActive) {
       await remove(pickRef);
+      playSound("cancel");
     } else {
       await set(pickRef, { type, targetPlayerId });
+      playSound("select");
     }
   }
 
@@ -1823,7 +1842,7 @@
         newInner.style.transition = "none";
         newInner.style.transform = axis === "y" ? "scaleY(0)" : "scaleX(0)";
         requestAnimationFrame(() => {
-          newInner.style.transition = `transform 150ms ease-out`;
+          newInner.style.transition = `transform 180ms cubic-bezier(.34,1.56,.64,1)`;
           newInner.style.transform = "scale(1)";
         });
       }, 150);
@@ -2179,11 +2198,43 @@
     } catch (e) { /* ignore audio errors (e.g. autoplay policy) */ }
   }
 
+  const SFX_FILES = {
+    tap: "sfx/tap.mp3",
+    select: "sfx/select.mp3",
+    cancel: "sfx/cancel.mp3",
+    error: "sfx/error.mp3",
+    "popup-open": "sfx/popup-open.mp3",
+    "popup-close": "sfx/popup-close.mp3",
+    swipe: "sfx/swipe.mp3",
+  };
+  const sfxPool = {};
+  Object.keys(SFX_FILES).forEach((name) => {
+    const a = new Audio(SFX_FILES[name]);
+    a.preload = "auto";
+    sfxPool[name] = a;
+  });
+
+  function sfx(name) {
+    if (!localSoundEnabled) return;
+    const base = sfxPool[name];
+    if (!base) return;
+    try {
+      const node = base.cloneNode(true);
+      node.volume = 0.6;
+      node.play().catch(() => { /* ignore autoplay-policy rejection */ });
+    } catch (e) { /* ignore audio errors */ }
+  }
+
   function playSound(kind) {
-    if (kind === "submit") beep(600, 120);
+    if (kind === "submit" || kind === "select") sfx("select");
+    else if (kind === "pick" || kind === "tap") sfx("tap");
+    else if (kind === "cancel") sfx("cancel");
+    else if (kind === "error") sfx("error");
+    else if (kind === "popup-open") sfx("popup-open");
+    else if (kind === "popup-close") sfx("popup-close");
+    else if (kind === "swipe") sfx("swipe");
     else if (kind === "reveal") beep(440, 150);
     else if (kind === "win") { beep(523, 150); setTimeout(() => beep(659, 150), 120); setTimeout(() => beep(784, 250), 240); }
-    else if (kind === "pick") beep(700, 80);
     else if (kind === "drumroll") { for (let i = 0; i < 4; i++) setTimeout(() => beep(300, 60), i * 150); }
   }
 
@@ -2237,6 +2288,20 @@
     if (musicEnabled) startMusic();
     document.removeEventListener("click", initMusicOnce);
   }, { once: true });
+
+  // Springy release bounce on every button, everywhere — one delegated listener.
+  function triggerBtnBounce(e) {
+    const btn = e.target.closest && e.target.closest("button");
+    if (!btn) return;
+    btn.classList.remove("btn-bounce");
+    void btn.offsetWidth;
+    btn.classList.add("btn-bounce");
+  }
+  document.addEventListener("pointerup", triggerBtnBounce);
+  document.addEventListener("pointercancel", triggerBtnBounce);
+  document.addEventListener("animationend", (e) => {
+    if (e.animationName === "btnBounce") e.target.classList.remove("btn-bounce");
+  });
 
   // ==================== Master phase switch ====================
 
