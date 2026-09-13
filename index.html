@@ -190,7 +190,10 @@
     width: 20px; height: 20px; border-radius: 50%; background: var(--text-faint); color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
   }
-  .score-card .name { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: font-size 250ms ease; }
+  .score-card .name {
+    flex: 1; min-width: 0; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.15;
+    overflow-wrap: break-word; transition: font-size 250ms ease;
+  }
   .score-card .avatar {
     font-size: 20px; width: 38px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     border-width: 8px; border-style: solid; border-image-source: var(--ring); border-image-slice: 45 fill;
@@ -203,15 +206,15 @@
   .score-card .arrow.move-icon { width: 16px; height: 16px; margin-right: 0; }
   @keyframes scorePop { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: var(--green); } 100% { transform: scale(1); } }
 
-  .score-card.rank-1 { padding: 13px 14px; border-image-source: var(--fancy); }
+  .score-card.rank-1 { padding: 6px 14px 13px; border-image-source: var(--fancy); border-width: 50px 14px 13px; }
   .score-card.rank-1 .medal { font-size: 26px; }
   .score-card.rank-1 .avatar { width: 48px; height: 43px; font-size: 24px; }
-  .score-card.rank-1 .name { font-size: 20px; }
+  .score-card.rank-1 .name { font-size: 18px; }
   .score-card.rank-1 .pts { font-size: 22px; }
-  .score-card.rank-2 { padding: 10px 11px; border-image-source: var(--wood2); }
+  .score-card.rank-2 { padding: 5px 11px 10px; border-image-source: var(--wood2); border-width: 44px 11px 10px; }
   .score-card.rank-2 .medal { font-size: 22px; }
   .score-card.rank-2 .avatar { width: 42px; height: 37px; font-size: 20px; }
-  .score-card.rank-2 .name { font-size: 17px; }
+  .score-card.rank-2 .name { font-size: 16px; }
   .score-card.rank-2 .pts { font-size: 20px; }
   .score-card.rank-3 .medal { font-size: 21px; }
 
@@ -1718,8 +1721,8 @@
         box.className = "score-card" + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : idx === 2 ? " rank-3" : "");
         box.dataset.id = id;
         box.innerHTML = `
-          <div class="score-row-top">${medal}<span class="name">${p.name}</span></div>
-          <div class="score-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts-wrap"><span class="pts">${score}</span>${arrow}</span></div>
+          <div class="score-row-top"><span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span></div>
+          <div class="score-row-bottom">${medal}<span class="pts-wrap"><span class="pts">${score}</span>${arrow}</span></div>
         `;
         scoreColEl.appendChild(box);
         const prevScore = previousDisplayedScores[id];
