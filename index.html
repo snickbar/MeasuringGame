@@ -315,8 +315,7 @@
     padding: 12px 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
     font-size: 16px; min-height: 24px; color: var(--text); position: relative;
   }
-  .reveal-card.winner .card-inner { border-image-source: var(--fancy); font-weight: 700; padding-top: 26px; }
-  .winner-header-bg { position: absolute; top: 0; left: 0; right: 0; height: 52px; background: var(--red); border-radius: 8px 8px 0 0; z-index: -1; pointer-events: none; }
+  .reveal-card.winner .card-inner { font-weight: 700; }
   .drumroll-stars { position: absolute; inset: -10px; pointer-events: none; }
   .drumroll-stars span {
     position: absolute; top: 0; left: 0; font-size: 16px; line-height: 1;
@@ -1624,13 +1623,12 @@
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
       : "";
     const winnerDetail = isWinner
-      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)} (guessed ${entry.accuracyPercent}% of actual)</div>`
+      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)}</div>`
       : "";
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
       : (entry.isSpotOn ? `<div class="spot-badge">\u{1F3AF} Spot On!</div>` : "");
-    const headerBg = isWinner ? `<div class="winner-header-bg"></div>` : "";
-    return `<div class="card-inner">${headerBg}<span>${avatar} ${entry.name}</span><span>${entry.guess} <b>+${pts}</b>${extra}</span>${spotBadge}${pickedAvatars}${winnerDetail}</div>`;
+    return `<div class="card-inner"><span>${avatar} ${entry.name}</span><span>${entry.guess} <b>+${pts}</b> (${entry.accuracyPercent}%)${extra}</span>${spotBadge}${pickedAvatars}${winnerDetail}</div>`;
   }
 
   function renderFaceDownCards(order, idOrder) {
