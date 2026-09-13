@@ -99,7 +99,12 @@
 
   #home-screen, #settings-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
   #home-screen.active, #settings-screen.active, #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
-  #hud.active { display: block; }
+  #hud.active {
+    display: flex; flex-direction: column;
+    position: fixed; top: 62px; left: 0; right: 0; bottom: 0;
+    max-width: 520px; margin: 0 auto;
+    padding: 12px 12px 0; z-index: 10;
+  }
 
   #question-view, #answers-view, #reveal-view, #summary-view { display: none; }
   #question-view.active, #answers-view.active, #reveal-view.active, #summary-view.active { display: block; }
@@ -187,6 +192,7 @@
     position: fixed; top: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
     min-height: 50px; display: flex; align-items: center; justify-content: space-between;
     padding: 5px 6px; z-index: 50;
+    background: #fbfaf6; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
   .icon-btn {
     width: 34px; height: 34px; flex-shrink: 0; padding: 0; margin: 0;
@@ -216,7 +222,7 @@
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10px; line-height: 1; padding: 2px 7px; width: auto; margin: 0; color: var(--text);
     border-width: 6px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
   }
-  .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
   .hud-timer {
     font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
@@ -227,9 +233,9 @@
 
   .question-prompt { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.4; margin: 0; text-align: left; color: var(--text); flex: 1; }
 
-  .game-body { display: flex; gap: 40px; align-items: flex-start; }
+  .game-body { display: flex; gap: 40px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .main-col { flex: 5 1 0; min-width: 0; }
-  .score-col { flex: 4 1 0; display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; }
+  .score-col { flex: 4 1 0; display: flex; flex-direction: column; gap: 8px; }
   .score-card {
     padding: 8px 9px; font-size: 13px; position: relative;
     border-width: 10px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
@@ -260,7 +266,7 @@
     border-width: 8px; border-style: solid; border-image-source: var(--ring); border-image-slice: 45 fill;
     transition: width 250ms ease, height 250ms ease, font-size 250ms ease;
   }
-  .pts-wrap { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+  .pts-wrap { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
   .score-card .pts { font-family: 'Fredoka', sans-serif; font-size: 20px; color: var(--pts); font-weight: 700; transition: font-size 250ms ease; }
   .score-card .pts.score-pop { animation: scorePop .4s ease; }
   .score-card .arrow { font-size: 15px; width: 14px; text-align: center; flex-shrink: 0; }
