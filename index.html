@@ -205,6 +205,15 @@
     color: var(--text);
   }
 
+  #host-mode-controls { display: none; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  #host-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
+  .hostmode-btn {
+    width: auto; font-size: 13px; padding: 6px 12px; margin: 0;
+    border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    color: var(--text);
+  }
+  .hostmode-btn.selected { border-image-source: var(--ring); }
+
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
     position: fixed; top: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
@@ -307,6 +316,7 @@
   }
   .pts-wrap { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
   .score-card .pts { font-family: 'Fredoka', sans-serif; font-size: 20px; color: var(--pts); font-weight: 700; transition: font-size 250ms ease; }
+  .score-card .acc { font-size: 11px; color: var(--text-muted); font-weight: 600; }
   .score-card .pts.score-pop { animation: scorePop .45s ease-out; }
   .score-card .arrow { font-size: 15px; width: 14px; text-align: center; flex-shrink: 0; }
   .score-card .arrow.move-icon { width: 16px; height: 16px; margin-right: 0; }
@@ -512,7 +522,8 @@
   .final-row.rank-2 .medal { width: 26px; height: 26px; }
   .final-row.rank-2 .name { font-size: 19px; }
   .final-row.rank-3 .medal { width: 22px; height: 22px; }
-  #final-home-btn { margin-top: 20px; border-image-source: var(--btn2); color: #fff; }
+  #final-home-btn { border-image-source: var(--btn2); color: #fff; }
+  #final-screen.active { padding-bottom: 66px; }
 
   /* ---- Round summary recap ---- */
   #summary-list { display: flex; flex-direction: column; gap: 8px; }
@@ -586,6 +597,8 @@
 <div id="bottom-toolbar">
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show round summary</button>
+  <button id="next-round-btn" style="display:none;">Next round</button>
+  <button id="final-home-btn" style="display:none;">Back to home</button>
 </div>
 
 <div id="home-screen" class="screen active">
@@ -601,7 +614,6 @@
 </div>
 
 <div id="settings-screen" class="screen">
-  <button id="settings-back-btn" type="button" class="back-btn">&larr; Back</button>
   <h1>Settings</h1>
 
   <div id="settings-toggles-panel">
@@ -622,6 +634,12 @@
   <input id="name-input" placeholder="Your name" />
 
   <div id="avatar-grid"></div>
+
+  <div id="host-mode-controls" style="display:none;">
+    <span>If host disconnects:</span>
+    <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
+    <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+  </div>
 
   <button id="create-btn">Create room</button>
   <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
@@ -711,7 +729,6 @@
       <div id="summary-view">
         <h3>Round summary</h3>
         <ul id="summary-list"></ul>
-        <button id="next-round-btn" style="display:none;">Next round</button>
       </div>
 
     </div>
@@ -722,7 +739,6 @@
 <div id="final-screen" class="screen">
   <h1 id="final-title">&#127881; Final Results! &#127881;</h1>
   <ul id="final-list"></ul>
-  <button id="final-home-btn">Back to home</button>
 </div>
 
 <div id="ended-screen" class="screen">
@@ -847,6 +863,7 @@
   const nameInput = document.getElementById("name-input");
   const codeInput = document.getElementById("code-input");
   const createBtn = document.getElementById("create-btn");
+  const hostModeControlsEl = document.getElementById("host-mode-controls");
   const joinBtn = document.getElementById("join-btn");
   const statusEl = document.getElementById("status");
   const roomCodeDisplay = document.getElementById("room-code-display");
@@ -862,7 +879,6 @@
   const toolbarHudControlsEl = document.getElementById("toolbar-hud-controls");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
   const settingsScreen = document.getElementById("settings-screen");
-  const settingsBackBtn = document.getElementById("settings-back-btn");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
   const settingsMusicToggle = document.getElementById("settings-music-toggle");
   const settingsNameInput = document.getElementById("settings-name-input");
@@ -1070,16 +1086,17 @@
   const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen];
   let settingsReturnScreen = null;
   toolbarSettingsBtn.addEventListener("click", () => {
-    settingsReturnScreen = ALL_SCREEN_ELS.find((el) => el.classList.contains("active")) || homeScreen;
-    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
-    settingsScreen.classList.add("active");
-    playSound("popup-open");
-  });
-  settingsBackBtn.addEventListener("click", () => {
-    settingsScreen.classList.remove("active");
-    (settingsReturnScreen || homeScreen).classList.add("active");
-    settingsReturnScreen = null;
-    playSound("popup-close");
+    if (settingsScreen.classList.contains("active")) {
+      settingsScreen.classList.remove("active");
+      (settingsReturnScreen || homeScreen).classList.add("active");
+      settingsReturnScreen = null;
+      playSound("popup-close");
+    } else {
+      settingsReturnScreen = ALL_SCREEN_ELS.find((el) => el.classList.contains("active")) || homeScreen;
+      ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+      settingsScreen.classList.add("active");
+      playSound("popup-open");
+    }
   });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
@@ -1169,7 +1186,11 @@
     set(ref(db, `rooms/${currentRoomCode}/settings/secondChanceEnabled`), next);
   });
 
-  async function joinRoomAsPlayer(roomCode, name, asHost) {
+  function armHostReclaimMarker(roomCode, name) {
+    onDisconnect(ref(db, `rooms/${roomCode}/pendingHostReclaim`)).set({ name });
+  }
+
+  async function joinRoomAsPlayer(roomCode, name, asHost, roomData) {
     if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
     // Final authoritative frame-availability check right before writing (mirrors the
     // avatar recheck above) — this is also what caps room size at FRAME_COUNT players.
@@ -1186,18 +1207,36 @@
     }
     const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
 
+    // "Reclaim" host mode: rejoining under the name that was holding host duties
+    // when it disconnected (see armHostReclaimMarker) picks host status back up.
+    const canReclaim = !asHost && roomData && roomData.settings && roomData.settings.hostTransferMode === "reclaim"
+      && roomData.pendingHostReclaim && roomData.pendingHostReclaim.name
+      && roomData.pendingHostReclaim.name.trim().toLowerCase() === name.trim().toLowerCase();
+    const finalIsHost = asHost || !!canReclaim;
+
     currentPlayerId = makePlayerId();
-    isHost = asHost;
+    isHost = finalIsHost;
     const playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
     await set(playerRef, { name, avatar: currentAvatar, isHost, score: 0, frameIndex, joinedAt: serverTimestamp() });
     onDisconnect(playerRef).remove();
+    if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
+    const effectiveMode = roomData && roomData.settings && roomData.settings.hostTransferMode;
+    if (finalIsHost && effectiveMode === "reclaim") armHostReclaimMarker(roomCode, name);
+    if (canReclaim && roomData) {
+      // Pick back up whichever deadline was pending when the original host dropped.
+      if (roomData.phase === "question") {
+        const dl = roomData.graceEndsAt || roomData.questionEndsAt;
+        if (dl) scheduleHostDeadline(dl, () => checkQuestionAdvance(roomCode));
+      } else if (roomData.phase === "answers" && roomData.answersEndsAt) {
+        scheduleHostDeadline(roomData.answersEndsAt, () => checkAnswersAdvance(roomCode));
+      }
+    }
 
     currentRoomCode = roomCode;
     addRecentRoom(roomCode);
     homeScreen.classList.remove("active");
     joinScreen.classList.remove("active");
     roomCodeDisplay.textContent = roomCode;
-    hostStartBtn.style.display = isHost ? "block" : "none";
 
     startHudTicker();
     watchRoom(roomCode);
@@ -1207,6 +1246,7 @@
   function enterSetup(mode) {
     setupTitleEl.textContent = mode === "create" ? "Create Game" : "Join Game";
     createBtn.style.display = mode === "create" ? "block" : "none";
+    hostModeControlsEl.style.display = mode === "create" ? "flex" : "none";
     codeInput.style.display = mode === "join" ? "block" : "none";
     joinBtn.style.display = mode === "join" ? "block" : "none";
     statusEl.textContent = "";
@@ -1220,17 +1260,29 @@
     homeScreen.classList.add("active");
   });
 
+  let hostTransferModeChoice = "reassign";
+  hostModeControlsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".hostmode-btn");
+    if (!btn) return;
+    hostTransferModeChoice = btn.dataset.mode;
+    hostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b === btn);
+    });
+    playSound("tap");
+  });
+
   createBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim();
     if (!name) { statusEl.textContent = "Enter your name first."; return; }
     statusEl.textContent = "Creating room...";
     const roomCode = generateRoomCode();
+    const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice };
     await set(ref(db, `rooms/${roomCode}`), {
       phase: "waiting",
       round: 0,
-      settings: DEFAULT_SETTINGS(),
+      settings,
     });
-    await joinRoomAsPlayer(roomCode, name, true);
+    await joinRoomAsPlayer(roomCode, name, true, { settings });
   });
 
   async function attemptJoin(code) {
@@ -1255,7 +1307,7 @@
     }
     takenAvatars = existingAvatars;
     renderAvatarGrid();
-    joinRoomAsPlayer(code, name, false);
+    joinRoomAsPlayer(code, name, false, data);
   }
 
   joinBtn.addEventListener("click", () => {
@@ -1266,6 +1318,29 @@
   hostStartBtn.addEventListener("click", async () => {
     await startRound(currentRoomCode, 1);
   });
+
+  function maybeReassignHost(data, roomCode) {
+    if (!data.settings || data.settings.hostTransferMode !== "reassign") return;
+    if (data.phase === "ended") return;
+    const players = data.players || {};
+    const realIds = Object.keys(players).filter((id) => !players[id].isBot);
+    if (realIds.length === 0) return;
+    if (realIds.some((id) => players[id].isHost)) return;
+    const sorted = realIds.sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0) || a.localeCompare(b));
+    const chosenId = sorted[0];
+    if (chosenId === currentPlayerId) {
+      isHost = true;
+      set(ref(db, `rooms/${roomCode}/players/${currentPlayerId}/isHost`), true);
+      // The old host's locally-scheduled deadline timer died with their tab —
+      // re-arm whichever one is currently pending so the round doesn't stall.
+      if (data.phase === "question") {
+        const dl = data.graceEndsAt || data.questionEndsAt;
+        if (dl) scheduleHostDeadline(dl, () => checkQuestionAdvance(roomCode));
+      } else if (data.phase === "answers" && data.answersEndsAt) {
+        scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
+      }
+    }
+  }
 
   function kickPlayer(targetId) {
     const target = (currentPlayers || {})[targetId];
@@ -2036,12 +2111,14 @@
           : idx === 2 ? '<span class="medal bronze"></span>'
           : `<span class="medal rank-num">${idx + 1}</span>`;
         const frameIndex = p.frameIndex || 1;
+        const avgAcc = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
+        const accHtml = avgAcc == null ? "" : `<span class="acc">${avgAcc}%</span>`;
         const box = document.createElement("div");
         box.className = "score-card frame-" + frameIndex + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : idx === 2 ? " rank-3" : "");
         box.dataset.id = id;
         box.innerHTML = `
           <div class="score-row-top"><span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span></div>
-          <div class="score-row-bottom">${medal}<span class="pts-wrap"><span class="pts">${score}</span></span>${arrow}</div>
+          <div class="score-row-bottom">${medal}<span class="pts-wrap"><span class="pts">${score}</span>${accHtml}</span>${arrow}</div>
         `;
         scoreColEl.appendChild(box);
         const prevScore = previousDisplayedScores[id];
@@ -2354,11 +2431,12 @@
     const isHudActive = ["question", "answers", "reveal", "summary"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     toolbarLobbyStartEl.classList.toggle("active", phase === "waiting" && isHost);
+    hostStartBtn.style.display = isHost ? "block" : "none";
     hudEl.classList.toggle("active", isHudActive);
     hudRoomCodeEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     toolbarHudControlsEl.classList.toggle("active", isHudActive);
-    bottomToolbarEl.classList.toggle("active", phase === "reveal");
+    bottomToolbarEl.classList.toggle("active", ["reveal", "summary", "final"].includes(phase));
     finalScreenEl.classList.toggle("active", phase === "final");
     endedScreenEl.classList.toggle("active", phase === "ended");
 
@@ -2370,6 +2448,8 @@
       revealNextBtn.style.display = "none";
       showSummaryBtn.style.display = "none";
     }
+    if (phase !== "summary") nextRoundBtn.style.display = "none";
+    finalHomeBtn.style.display = phase === "final" ? "block" : "none";
 
     if (phase === "question" && data.round !== lastSeenRound) {
       lastSeenRound = data.round;
@@ -2414,6 +2494,8 @@
         }
         return;
       }
+
+      maybeReassignHost(data, roomCode);
 
       renderPlayerList();
       renderSettingsPanel();
