@@ -170,6 +170,7 @@
     background-image: var(--toggle-off);
   }
   .text-toggle-btn.is-on { background-image: var(--toggle-on); }
+  .text-toggle-btn:disabled { opacity: .4; cursor: default; }
 
   /* ---- Settings panel (lobby) ---- */
   #settings-panel {
@@ -332,10 +333,10 @@
   .score-card.frame-8 { border-image-source: var(--frame8); }
   .score-card.frame-9 { border-image-source: var(--frame9); }
   .score-card.frame-10 { border-image-source: var(--frame10); }
-  .score-card.rank-1 { padding: 8px 14px; }
+  .score-card.rank-1 { padding: 8px 10px; }
   .score-card.rank-1 .medal { width: 26px; height: 26px; }
-  .score-card.rank-1 .avatar { width: 48px; height: 43px; font-size: 24px; }
-  .score-card.rank-1 .name { font-size: 18px; }
+  .score-card.rank-1 .avatar { width: 44px; height: 39px; font-size: 22px; }
+  .score-card.rank-1 .name { font-size: 16px; }
   .score-card.rank-1 .pts { font-size: 24px; }
   .score-card.rank-2 { padding: 7px 11px; }
   .score-card.rank-2 .medal { width: 22px; height: 22px; }
@@ -492,6 +493,7 @@
   .reveal-pts-badge { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--green); white-space: nowrap; line-height: 1.1; }
   .reveal-pts-badge.zero { color: var(--text-muted); }
   .reveal-bonus-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11px; color: var(--green); line-height: 1.2; white-space: normal; }
+  .reveal-winner-label { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 13px; color: var(--red); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
 
   /* ---- Final results ---- */
   #final-title { text-align: center; animation: popIn 500ms ease; }
@@ -502,7 +504,8 @@
     opacity: 0; animation: summaryRowIn 500ms ease-out both;
   }
   .final-row-top { display: flex; align-items: center; gap: 8px; }
-  .final-row-top .name { flex: 1; font-size: 18px; font-weight: 700; color: var(--text); }
+  .final-row-top .name { flex: 1; font-size: 18px; font-weight: 700; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .final-avg-pct { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); flex-shrink: 0; white-space: nowrap; }
   .final-row-bottom { display: flex; align-items: center; justify-content: space-between; }
   .final-row-bottom .avatar { font-size: 24px; }
   .final-row-bottom .pts { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--pts); }
@@ -518,10 +521,12 @@
   .final-row.rank-1 .name { font-size: 24px; }
   .final-row.rank-1 .avatar { font-size: 34px; }
   .final-row.rank-1 .pts { font-size: 28px; }
+  .final-row.rank-1 .final-avg-pct { font-size: 26px; color: #fff; text-shadow: 1px 1px 0 rgba(0,0,0,.25); }
   .final-row.rank-2 { border-image-source: var(--wood2); padding: 9px 13px 13px; }
   .final-row.rank-2 .card-header-bg { height: 46px; background: var(--brand); }
   .final-row.rank-2 .medal { width: 26px; height: 26px; }
   .final-row.rank-2 .name { font-size: 19px; }
+  .final-row.rank-2 .final-avg-pct { color: #fff; text-shadow: 1px 1px 0 rgba(0,0,0,.25); }
   .final-row.rank-3 .medal { width: 22px; height: 22px; }
   #final-home-btn { border-image-source: var(--btn2); color: #fff; }
   #final-screen.active { padding-bottom: 66px; }
@@ -609,7 +614,7 @@
   <button id="home-join-btn" class="big-cta join">Join Game</button>
 
   <div id="recent-rooms-section" style="display:none;">
-    <h3>Recent rooms</h3>
+    <h3>Last game</h3>
     <div id="recent-rooms-list"></div>
   </div>
 </div>
@@ -674,6 +679,7 @@
       </span>
     </label>
     <label>Second-chance scoring <button id="setting-secondchance" type="button" class="text-toggle-btn"></button></label>
+    <label>Bots use second chances <button id="setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
   </div>
 
   <h3>Players</h3>
@@ -812,12 +818,12 @@
   let musicEnabled = localStorage.getItem("mg_musicEnabled") === "true";
 
   function loadRecentRooms() {
-    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]"); } catch (e) { return []; }
+    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 1); } catch (e) { return []; }
   }
   function addRecentRoom(code) {
     const list = loadRecentRooms().filter((r) => r.code !== code);
     list.unshift({ code, joinedAt: Date.now() });
-    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 3)));
+    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 1)));
   }
 
   const OBJECTS = [
@@ -888,6 +894,7 @@
   const settingTimerInput = document.getElementById("setting-timer");
   const settingRoundsInput = document.getElementById("setting-rounds");
   const settingSecondChanceInput = document.getElementById("setting-secondchance");
+  const settingBotsSecondChanceInput = document.getElementById("setting-bots-secondchance");
 
   const hudEl = document.getElementById("hud");
   const hudRoomCodeEl = document.getElementById("hud-room-code");
@@ -1023,7 +1030,7 @@
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5 };
+    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, botsSecondChance: false };
   }
 
   // ==================== Home screen ====================
@@ -1191,10 +1198,12 @@
     if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
     settingSecondChanceInput.classList.toggle("is-on", !!s.secondChanceEnabled);
+    settingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
     const locked = !isHost || (roomState.round && roomState.round > 0);
     [settingTimerInput, settingRoundsInput, settingSecondChanceInput].forEach((el) => {
       el.disabled = locked;
     });
+    settingBotsSecondChanceInput.disabled = locked || !s.secondChanceEnabled;
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
       btn.disabled = locked;
     });
@@ -1227,6 +1236,11 @@
     if (settingSecondChanceInput.disabled) return;
     const next = !settingSecondChanceInput.classList.contains("is-on");
     set(ref(db, `rooms/${currentRoomCode}/settings/secondChanceEnabled`), next);
+  });
+  settingBotsSecondChanceInput.addEventListener("click", () => {
+    if (settingBotsSecondChanceInput.disabled) return;
+    const next = !settingBotsSecondChanceInput.classList.contains("is-on");
+    set(ref(db, `rooms/${currentRoomCode}/settings/botsSecondChance`), next);
   });
 
   function armHostReclaimMarker(roomCode, name) {
@@ -1450,6 +1464,25 @@
     });
   }
 
+  function scheduleBotPicks(roomCode, sorted) {
+    const players = roomState.players || {};
+    Object.keys(players).forEach((id) => {
+      const p = players[id];
+      if (!p || !p.isBot) return;
+      const others = sorted.filter((e) => e.playerId !== id);
+      const delay = 1000 + Math.random() * 7000;
+      setTimeout(() => {
+        if (currentRoomCode !== roomCode) return;
+        if (roomState.phase !== "answers") return;
+        const doDoubleDown = others.length === 0 || Math.random() < 0.4;
+        const pick = doDoubleDown
+          ? { type: "doubledown", targetPlayerId: id }
+          : { type: "pick", targetPlayerId: others[Math.floor(Math.random() * others.length)].playerId };
+        set(ref(db, `rooms/${roomCode}/picks/${id}`), pick);
+      }, delay);
+    });
+  }
+
   kickYesBtn.addEventListener("click", () => {
     set(ref(db, `rooms/${currentRoomCode}/kickChallenges/${currentPlayerId}/respondedAt`), nowMs());
   });
@@ -1587,6 +1620,7 @@
       console.log("[measuring-game] question locked, entering answers phase", sorted);
       await update(ref(db, `rooms/${roomCode}`), { answers: sorted, answersEndsAt, phase: "answers" });
       scheduleHostDeadline(answersEndsAt, () => checkAnswersAdvance(roomCode));
+      if (settings.botsSecondChance) scheduleBotPicks(roomCode, sorted);
     } else {
       await finishRoundScoring(roomCode, activeIds, guesses, {});
     }
@@ -1938,9 +1972,10 @@
       .reduce((s, p) => s + p.points, 0), 0);
   }
 
-  function ptsStackHtml(pts, bonus) {
+  function ptsStackHtml(pts, bonus, isWinner) {
     return `<div class="reveal-pts-stack">
       <div class="reveal-pts-badge${pts === 0 ? " zero" : ""}">+${pts}</div>
+      ${isWinner ? `<div class="reveal-winner-label">Winner</div>` : ""}
       ${bonus > 0 ? `<div class="reveal-pts-badge">+${bonus}</div><div class="reveal-bonus-label">Second Chance Bonus</div>` : ""}
     </div>`;
   }
@@ -1957,7 +1992,7 @@
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
       : (entry.isSpotOn ? `<div class="spot-badge">\u{1F3AF} Spot On!</div>` : "");
     const bonus = secondChanceBonusFor(entry.playerId, order);
-    const ptsStack = ptsStackHtml(pts, bonus);
+    const ptsStack = ptsStackHtml(pts, bonus, isWinner);
     if (isWinner) {
       return `<div class="card-inner ${containerClass}">
         <div class="winner-name-row"><span class="winner-avatar">${avatar}</span><span class="winner-name">${entry.name}</span></div>
@@ -2313,9 +2348,9 @@
       const avgAccuracy = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
       const bonusNote = p.accuracyBonus ? `<div class="final-bonus-note">+${p.accuracyBonus} accuracy bonus</div>` : "";
       const tiebreakNote = tiebreakUsed ? `<div class="final-tiebreak-note">\u{1F3AF} Tied on score — ranked by closer avg accuracy</div>` : "";
+      const avgPctHtml = avgAccuracy == null ? "" : `<span class="final-avg-pct">${avgAccuracy}%</span>`;
       const statsHtml = `
         <div class="final-row-stats">
-          <span>Avg guess: ${avgAccuracy == null ? "–" : avgAccuracy + "% of actual"}</span>
           ${p.bestGuess ? `<span>\u{1F3AF} Best guess: ${p.bestGuess.guess} on "${p.bestGuess.prompt}" (${p.bestGuess.percent}%)</span>` : ""}
         </div>
         ${bonusNote}
@@ -2330,7 +2365,7 @@
       li.innerHTML = `
         <div class="card-header-bg"></div>
         ${winnerStars}
-        <div class="final-row-top">${medal}<span class="name">${p.name}</span></div>
+        <div class="final-row-top">${medal}<span class="name">${p.name}</span>${avgPctHtml}</div>
         <div class="final-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts">${score}</span></div>
         ${statsHtml}
       `;
