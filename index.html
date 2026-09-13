@@ -411,9 +411,14 @@
   .card-number { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #000; }
   .pickedby-avatars { display: flex; align-items: center; gap: 4px; font-size: 16px; flex-basis: 100%; }
   .pickedby-label { font-size: 13px; color: #000; }
-  .winner-detail-inline { flex-basis: 100%; font-size: 18px; font-weight: 700; color: #000; text-align: center; }
   .spot-badge { flex-basis: 100%; font-weight: 700; font-size: 15px; color: #000; }
   .spot-badge.perfect { color: #000; }
+  .winner-name-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; }
+  .winner-name-row .winner-avatar { font-size: 28px; line-height: 1; }
+  .winner-name-row .winner-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000; }
+  .winner-guess-row { flex-basis: 100%; font-size: 16px; font-weight: 600; color: #000; }
+  .winner-guess-row b { font-size: 18px; }
+  .winner-stats-row { flex-basis: 100%; font-size: 15px; font-weight: 700; color: #000; }
 
   /* ---- Final results ---- */
   #final-title { text-align: center; animation: popIn 500ms ease; }
@@ -1727,13 +1732,19 @@
     const pickedAvatars = pickedBy.length
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
       : "";
-    const winnerDetail = isWinner
-      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)}</div>`
-      : "";
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
       : (entry.isSpotOn ? `<div class="spot-badge">\u{1F3AF} Spot On!</div>` : "");
-    return `<div class="card-inner ${containerClass}"><span>${avatar} ${entry.name}</span><span>${entry.guess} <b>+${pts}</b> (${entry.accuracyPercent}%)${extra}</span>${spotBadge}${pickedAvatars}${winnerDetail}</div>`;
+    if (isWinner) {
+      return `<div class="card-inner ${containerClass}">
+        <div class="winner-name-row"><span class="winner-avatar">${avatar}</span><span class="winner-name">${entry.name}</span></div>
+        <div class="winner-guess-row">Guess: <b>${entry.guess}</b> +${pts}${extra}</div>
+        ${spotBadge}
+        <div class="winner-stats-row">${entry.accuracyPercent}% — off by ${entry.error.toFixed(2)}</div>
+        ${pickedAvatars}
+      </div>`;
+    }
+    return `<div class="card-inner ${containerClass}"><span>${avatar} ${entry.name}</span><span>${entry.guess} <b>+${pts}</b> (${entry.accuracyPercent}%)${extra}</span>${spotBadge}${pickedAvatars}</div>`;
   }
 
   function renderFaceDownCards(order, idOrder) {
