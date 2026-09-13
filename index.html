@@ -295,6 +295,8 @@
   .final-row-bottom { display: flex; align-items: center; justify-content: space-between; }
   .final-row-bottom .avatar { font-size: 24px; }
   .final-row-bottom .pts { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--pts); }
+  .final-row-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 13px; color: var(--text-muted); font-weight: 600; }
+  .final-bonus-note { font-size: 13px; font-weight: 700; color: var(--green); }
   .final-row.rank-1 {
     border-image-source: var(--fancy); padding: 18px 16px;
     animation: summaryRowIn 500ms ease-out both, pulse 1.6s ease-in-out 500ms infinite;
@@ -1123,10 +1125,11 @@
       e.isClosest = !!closest && e.playerId === closest.playerId;
       e.isSpotOn = Math.round(e.guess) === Math.round(answer);
       e.isPerfect = e.error < 0.005;
+      e.accuracyPercent = Math.max(0, Math.round((1 - e.error / answer) * 100));
       const within09 = e.error <= 0.9;
       e.basePoints = within09 ? 5 : (e.isClosest ? 3 : 0);
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
-      e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? (e.isSpotOn ? 10 : 5) : 0;
+      e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? e.basePoints : 0;
       e.pickedBy = [];
     });
     Object.entries(picks).forEach(([pickerId, pick]) => {
@@ -1152,6 +1155,14 @@
     Object.keys(playersSnap).forEach((id) => {
       const newScore = (playersSnap[id].score || 0) + (lastRoundPoints[id] || 0);
       updates[`players/${id}/score`] = newScore;
+    });
+    entries.forEach((e) => {
+      const p = playersSnap[e.playerId] || {};
+      updates[`players/${e.playerId}/accuracySum`] = (p.accuracySum || 0) + e.accuracyPercent;
+      updates[`players/${e.playerId}/roundsCounted`] = (p.roundsCounted || 0) + 1;
+      if (!p.bestGuess || e.accuracyPercent > p.bestGuess.percent) {
+        updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.guess, answer, prompt: q.prompt };
+      }
     });
     console.log("[measuring-game] scoring computed", entries, lastRoundPoints);
     try {
@@ -1187,7 +1198,21 @@
     const nextRound = (roomState.round || 0) + 1;
     const totalRounds = (roomState.settings || currentSettings).totalRounds || 5;
     if (nextRound > totalRounds) {
-      await set(ref(db, `rooms/${roomCode}/phase`), "final");
+      const players = roomState.players || {};
+      const ranked = Object.keys(players)
+        .filter((id) => players[id].roundsCounted)
+        .map((id) => ({ id, avg: players[id].accuracySum / players[id].roundsCounted }))
+        .sort((a, b) => b.avg - a.avg);
+      const accuracyBonuses = [10, 6, 3];
+      const updates = { phase: "final" };
+      ranked.forEach((r, idx) => {
+        const bonus = accuracyBonuses[idx] || 0;
+        if (bonus > 0) {
+          updates[`players/${r.id}/score`] = (players[r.id].score || 0) + bonus;
+          updates[`players/${r.id}/accuracyBonus`] = bonus;
+        }
+      });
+      await update(ref(db, `rooms/${roomCode}`), updates);
     } else {
       await startRound(roomCode, nextRound);
     }
@@ -1395,7 +1420,7 @@
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => (currentPlayers[p.playerId] && currentPlayers[p.playerId].avatar) || "⭐").join(" ")}</div>`
       : "";
     const winnerDetail = isWinner
-      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)}</div>`
+      ? `<div class="winner-detail-inline">\u{1F3C6} actual answer ${roomState.currentQuestion.answer.toFixed(2)} — off by ${entry.error.toFixed(2)} (${entry.accuracyPercent}% correct)</div>`
       : "";
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
@@ -1720,12 +1745,22 @@
         : idx === 1 ? '<span class="medal silver">\u{1F948}</span>'
         : idx === 2 ? '<span class="medal bronze">\u{1F949}</span>'
         : `<span class="medal rank-num">${idx + 1}</span>`;
+      const avgAccuracy = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
+      const bonusNote = p.accuracyBonus ? `<div class="final-bonus-note">+${p.accuracyBonus} accuracy bonus</div>` : "";
+      const statsHtml = `
+        <div class="final-row-stats">
+          <span>Avg accuracy: ${avgAccuracy == null ? "–" : avgAccuracy + "%"}</span>
+          ${p.bestGuess ? `<span>\u{1F3AF} Best guess: ${p.bestGuess.guess} (${p.bestGuess.percent}%)</span>` : ""}
+        </div>
+        ${bonusNote}
+      `;
       const li = document.createElement("li");
       li.className = "final-row" + (idx === 0 ? " rank-1" : idx === 1 ? " rank-2" : idx === 2 ? " rank-3" : "");
       li.style.animationDelay = `${idx * 150}ms`;
       li.innerHTML = `
         <div class="final-row-top">${medal}<span class="name">${p.name}</span></div>
         <div class="final-row-bottom"><span class="avatar">${p.avatar || ""}</span><span class="pts">${p.score || 0}</span></div>
+        ${statsHtml}
       `;
       finalListEl.appendChild(li);
     });
