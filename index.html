@@ -200,11 +200,11 @@
     width: auto; margin: 0; font-weight: 700; font-size: 13px; padding: 6px 18px; color: #fff;
     border-width: 10px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
-  #toolbar-hud-info { display: none; flex-direction: column; gap: 2px; font-size: 14px; flex: 1; margin: 0 6px; align-items: center; }
-  #toolbar-hud-info.active { display: flex; }
-  #toolbar-hud-info .room-code { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: .5px; color: var(--brand); display: flex; align-items: center; gap: 4px; }
+  #hud-room-code { display: none; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: .5px; color: var(--brand); align-items: center; gap: 4px; }
+  #hud-room-code.active { display: flex; }
   .room-icon { font-size: 15px; }
-  #toolbar-hud-info .round-label { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+  #hud-round-label { display: none; flex-direction: column; gap: 3px; align-items: center; font-size: 14px; }
+  #hud-round-label.active { display: flex; }
   .round-text { color: var(--text-muted); font-size: 12px; font-weight: 600; }
   .round-dots { display: flex; gap: 3px; flex-wrap: wrap; max-width: 100px; justify-content: center; }
   .round-dots .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); }
@@ -216,16 +216,16 @@
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10px; line-height: 1; padding: 2px 7px; width: auto; margin: 0; color: var(--text);
     border-width: 6px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
   }
-  .hud-timer-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
   .hud-timer {
-    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     padding: 6px 16px; font-size: 26px; min-width: 56px; text-align: center; color: #fff;
   }
   .hud-timer.low { color: #ffe066; animation: pulse 0.6s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 
-  .question-prompt { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.5; margin: 10px 0; text-align: center; color: var(--text); }
+  .question-prompt { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.4; margin: 0; text-align: left; color: var(--text); flex: 1; }
 
   .game-body { display: flex; gap: 40px; align-items: flex-start; }
   .main-col { flex: 5 1 0; min-width: 0; }
@@ -501,10 +501,8 @@
   <div id="toolbar-lobby-start">
     <button id="host-start-btn" type="button" style="display:none;">Start game</button>
   </div>
-  <div id="toolbar-hud-info">
-    <div class="room-code" id="hud-room-code"></div>
-    <div class="round-label" id="hud-round-label"></div>
-  </div>
+  <div id="hud-room-code"></div>
+  <div id="hud-round-label"></div>
   <div id="toolbar-hud-controls">
     <div class="hud-btn-row" id="hud-host-controls" style="display:none;">
       <button id="pause-btn" type="button">Pause</button>
@@ -592,10 +590,9 @@
 
 <div id="hud">
   <div class="hud-timer-row">
+    <div class="question-prompt" id="question-prompt"></div>
     <div class="hud-timer" id="hud-timer">--</div>
   </div>
-
-  <div class="question-prompt" id="question-prompt"></div>
 
   <div class="game-body">
     <div class="main-col">
@@ -791,7 +788,6 @@
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const toolbarLobbyStartEl = document.getElementById("toolbar-lobby-start");
-  const toolbarHudInfoEl = document.getElementById("toolbar-hud-info");
   const toolbarHudControlsEl = document.getElementById("toolbar-hud-controls");
   const settingsScreen = document.getElementById("settings-screen");
   const settingsBackBtn = document.getElementById("settings-back-btn");
@@ -1561,7 +1557,8 @@
   function showLeftScreen(reason) {
     [joinScreen, lobbyScreenEl, hudEl, finalScreenEl, endedScreenEl].forEach((el) => el.classList.remove("active"));
     toolbarLobbyStartEl.classList.remove("active");
-    toolbarHudInfoEl.classList.remove("active");
+    hudRoomCodeEl.classList.remove("active");
+    hudRoundLabelEl.classList.remove("active");
     toolbarHudControlsEl.classList.remove("active");
     kickModalEl.classList.remove("active");
     pausedOverlayEl.classList.remove("active");
@@ -2185,7 +2182,8 @@
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     toolbarLobbyStartEl.classList.toggle("active", phase === "waiting" && isHost);
     hudEl.classList.toggle("active", isHudActive);
-    toolbarHudInfoEl.classList.toggle("active", isHudActive);
+    hudRoomCodeEl.classList.toggle("active", isHudActive);
+    hudRoundLabelEl.classList.toggle("active", isHudActive);
     toolbarHudControlsEl.classList.toggle("active", isHudActive);
     finalScreenEl.classList.toggle("active", phase === "final");
     endedScreenEl.classList.toggle("active", phase === "ended");
