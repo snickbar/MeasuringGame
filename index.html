@@ -234,7 +234,7 @@
   .hud-timer {
     font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
-    padding: 6px 16px; font-size: 26px; min-width: 56px; text-align: center; color: #fff;
+    padding: 6px 4px; font-size: 26px; width: 72px; box-sizing: border-box; text-align: center; color: #fff;
   }
   .hud-timer.low { color: #ffe066; animation: pulse 0.6s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
@@ -243,9 +243,9 @@
 
   .game-body { display: flex; gap: 40px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .main-col { flex: 5 1 0; min-width: 0; }
-  .score-col { flex: 4 1 0; display: flex; flex-direction: column; gap: 8px; }
+  .score-col { flex: 4 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
   .score-card {
-    padding: 8px 9px; font-size: 13px; position: relative;
+    padding: 8px 9px; font-size: 13px; position: relative; overflow: hidden;
     border-width: 10px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     display: flex; flex-direction: column; gap: 5px; animation: popIn 300ms ease;
     transition: padding 250ms ease;
@@ -267,7 +267,7 @@
   }
   .score-card .name {
     flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.15;
-    overflow-wrap: normal; word-break: normal; transition: font-size 250ms ease;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: font-size 250ms ease;
   }
   .score-card .avatar {
     font-size: 20px; width: 38px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
@@ -394,7 +394,7 @@
   .card-inner {
     border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     padding: 12px 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
-    font-size: 16px; min-height: 24px; color: #000; position: relative;
+    font-size: 16px; min-height: 24px; color: #000; position: relative; overflow: hidden;
   }
   .reveal-card.winner .card-inner { font-weight: 700; }
   .card-inner.container-1 { border-image-source: var(--card1); }
@@ -427,9 +427,12 @@
   .pickedby-label { font-size: 13px; color: #000; }
   .spot-badge { flex-basis: 100%; font-weight: 700; font-size: 15px; color: #000; }
   .spot-badge.perfect { color: #000; }
-  .winner-name-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; }
-  .winner-name-row .winner-avatar { font-size: 28px; line-height: 1; }
-  .winner-name-row .winner-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000; }
+  .winner-name-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+  .winner-name-row .winner-avatar { font-size: 28px; line-height: 1; flex-shrink: 0; }
+  .winner-name-row .winner-name {
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .winner-guess-row { flex-basis: 100%; font-size: 16px; font-weight: 600; color: #000; }
   .reveal-name-row { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
   .reveal-name-row .reveal-avatar { flex-shrink: 0; }
@@ -439,13 +442,13 @@
   .winner-stats-row { flex-basis: 100%; font-size: 15px; font-weight: 700; color: #000; }
   .reveal-pts-stack {
     position: absolute; top: 50%; left: 100%; transform: translateY(-50%);
-    margin-left: 6px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    margin-left: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
     opacity: 0; pointer-events: none; transition: opacity 250ms ease; z-index: 1;
   }
   #reveal-list.answer-revealed .reveal-pts-stack { opacity: 1; }
-  .reveal-pts-badge { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--green); white-space: nowrap; }
+  .reveal-pts-badge { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--green); white-space: nowrap; line-height: 1.1; }
   .reveal-pts-badge.zero { color: var(--text-muted); }
-  .reveal-pts-badge.bonus { font-size: 12px; }
+  .reveal-pts-badge.bonus { font-size: 10px; }
 
   /* ---- Final results ---- */
   #final-title { text-align: center; animation: popIn 500ms ease; }
@@ -1760,7 +1763,7 @@
   function ptsStackHtml(pts, bonus) {
     return `<div class="reveal-pts-stack">
       <div class="reveal-pts-badge${pts === 0 ? " zero" : ""}">+${pts}</div>
-      ${bonus > 0 ? `<div class="reveal-pts-badge bonus">+${bonus} 2nd</div>` : ""}
+      ${bonus > 0 ? `<div class="reveal-pts-badge bonus">2nd</div>` : ""}
     </div>`;
   }
 
