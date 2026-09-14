@@ -224,14 +224,14 @@
   }
   .hostmode-btn.selected { border-image-source: var(--ring); }
 
-  #item-mode-controls { display: none; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  #item-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
+  .itemmode-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   .itemmode-btn {
     width: auto; font-size: 13px; padding: 6px 12px; margin: 0;
     border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
     color: var(--text);
   }
   .itemmode-btn.selected { border-image-source: var(--ring); }
+  .itemmode-btn:disabled { opacity: .4; cursor: default; }
 
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
@@ -660,12 +660,6 @@
     <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
   </div>
 
-  <div id="item-mode-controls" style="display:none;">
-    <span>Item selection:</span>
-    <button type="button" class="itemmode-btn selected" data-mode="anything">Anything goes</button>
-    <button type="button" class="itemmode-btn" data-mode="relative">Keep it relative</button>
-  </div>
-
   <input id="name-input" placeholder="Your name" />
 
   <div id="avatar-grid"></div>
@@ -702,6 +696,12 @@
     </label>
     <label>Second-chance scoring <button id="setting-secondchance" type="button" class="text-toggle-btn"></button></label>
     <label>Bots use second chances <button id="setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
+    <label>Item selection
+      <span class="itemmode-row">
+        <button type="button" id="setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
+        <button type="button" id="setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
+      </span>
+    </label>
   </div>
 
   <h3>Players</h3>
@@ -1010,7 +1010,6 @@
   const codeInput = document.getElementById("code-input");
   const createBtn = document.getElementById("create-btn");
   const hostModeControlsEl = document.getElementById("host-mode-controls");
-  const itemModeControlsEl = document.getElementById("item-mode-controls");
   const joinBtn = document.getElementById("join-btn");
   const statusEl = document.getElementById("status");
   const roomCodeDisplay = document.getElementById("room-code-display");
@@ -1035,6 +1034,8 @@
   const settingRoundsInput = document.getElementById("setting-rounds");
   const settingSecondChanceInput = document.getElementById("setting-secondchance");
   const settingBotsSecondChanceInput = document.getElementById("setting-bots-secondchance");
+  const settingItemAnythingInput = document.getElementById("setting-item-anything");
+  const settingItemRelativeInput = document.getElementById("setting-item-relative");
 
   const hudEl = document.getElementById("hud");
   const hudRoomCodeEl = document.getElementById("hud-room-code");
@@ -1339,11 +1340,15 @@
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
     settingSecondChanceInput.classList.toggle("is-on", !!s.secondChanceEnabled);
     settingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
+    settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
+    settingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
     const locked = !isHost || (roomState.round && roomState.round > 0);
     [settingTimerInput, settingRoundsInput, settingSecondChanceInput].forEach((el) => {
       el.disabled = locked;
     });
     settingBotsSecondChanceInput.disabled = locked || !s.secondChanceEnabled;
+    settingItemAnythingInput.disabled = locked;
+    settingItemRelativeInput.disabled = locked;
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
       btn.disabled = locked;
     });
@@ -1381,6 +1386,12 @@
     if (settingBotsSecondChanceInput.disabled) return;
     const next = !settingBotsSecondChanceInput.classList.contains("is-on");
     set(ref(db, `rooms/${currentRoomCode}/settings/botsSecondChance`), next);
+  });
+  [settingItemAnythingInput, settingItemRelativeInput].forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.disabled) return;
+      set(ref(db, `rooms/${currentRoomCode}/settings/itemSelectionMode`), btn.dataset.mode);
+    });
   });
 
   function armHostReclaimMarker(roomCode, name) {
@@ -1443,7 +1454,6 @@
   function enterSetup(mode) {
     createBtn.style.display = mode === "create" ? "block" : "none";
     hostModeControlsEl.style.display = mode === "create" ? "flex" : "none";
-    itemModeControlsEl.style.display = mode === "create" ? "flex" : "none";
     codeInput.style.display = mode === "join" ? "block" : "none";
     joinBtn.style.display = mode === "join" ? "block" : "none";
     statusEl.textContent = "";
@@ -1468,23 +1478,12 @@
     playSound("tap");
   });
 
-  let itemSelectionModeChoice = "anything";
-  itemModeControlsEl.addEventListener("click", (e) => {
-    const btn = e.target.closest(".itemmode-btn");
-    if (!btn) return;
-    itemSelectionModeChoice = btn.dataset.mode;
-    itemModeControlsEl.querySelectorAll(".itemmode-btn").forEach((b) => {
-      b.classList.toggle("selected", b === btn);
-    });
-    playSound("tap");
-  });
-
   createBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim();
     if (!name) { statusEl.textContent = "Enter your name first."; return; }
     statusEl.textContent = "Creating room...";
     const roomCode = generateRoomCode();
-    const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice, itemSelectionMode: itemSelectionModeChoice };
+    const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice };
     await set(ref(db, `rooms/${roomCode}`), {
       phase: "waiting",
       round: 0,
