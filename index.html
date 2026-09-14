@@ -1305,6 +1305,24 @@
   });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
+  // ---- Prevent the phone's back button/gesture from closing the app (a
+  // real PWA complaint: with no history entries to go back to, back exits
+  // straight to the home screen/app switcher). Keep an extra history entry
+  // around at all times so back always has somewhere to go, and use it for
+  // simple, unambiguous in-app navigation (closing Settings, backing out of
+  // Create/Join setup). Screens with live room/Firebase state (lobby, hud,
+  // final, etc.) are left alone on back - leaving those needs proper
+  // cleanup (guestExit/hostExit), not an implicit back-press.
+  history.pushState({ appGuard: true }, "", location.href);
+  window.addEventListener("popstate", () => {
+    history.pushState({ appGuard: true }, "", location.href);
+    if (settingsScreen.classList.contains("active")) {
+      toolbarSettingsBtn.click();
+    } else if (joinScreen.classList.contains("active")) {
+      setupBackBtn.click();
+    }
+  });
+
   function renderRecentRooms() {
     const rooms = loadRecentRooms();
     if (rooms.length === 0) { recentRoomsSection.style.display = "none"; return; }
