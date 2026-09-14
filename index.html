@@ -145,7 +145,7 @@
   }
   .setup-header { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; }
   .setup-header .back-btn { margin: 0; flex-shrink: 0; }
-  .setup-header h1 { margin: 0; }
+  .setup-header button:not(.back-btn) { width: auto; flex: 1; margin: 0; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -642,7 +642,7 @@
 <div id="join-screen" class="screen">
   <div class="setup-header">
     <button id="setup-back-btn" type="button" class="back-btn">&larr; Back</button>
-    <h1 id="setup-title">Create Game</h1>
+    <button id="create-btn">Create room</button>
   </div>
 
   <div id="host-mode-controls" style="display:none;">
@@ -655,7 +655,6 @@
 
   <div id="avatar-grid"></div>
 
-  <button id="create-btn">Create room</button>
   <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
   <button id="join-btn" style="display:none;">Join room</button>
   <p id="status"></p>
@@ -897,7 +896,6 @@
   const homeCreateBtn = document.getElementById("home-create-btn");
   const homeJoinBtn = document.getElementById("home-join-btn");
   const setupBackBtn = document.getElementById("setup-back-btn");
-  const setupTitleEl = document.getElementById("setup-title");
   const joinScreen = document.getElementById("join-screen");
   const lobbyScreenEl = document.getElementById("lobby-screen");
   const nameInput = document.getElementById("name-input");
@@ -1334,7 +1332,6 @@
   }
 
   function enterSetup(mode) {
-    setupTitleEl.textContent = mode === "create" ? "Create Game" : "Join Game";
     createBtn.style.display = mode === "create" ? "block" : "none";
     hostModeControlsEl.style.display = mode === "create" ? "flex" : "none";
     codeInput.style.display = mode === "join" ? "block" : "none";
