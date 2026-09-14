@@ -326,7 +326,7 @@
   }
   .score-card .name {
     flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.15;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: font-size 250ms ease;
+    overflow-wrap: break-word; word-break: normal; transition: font-size 250ms ease;
   }
   .score-card .avatar {
     font-size: 20px; width: 38px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
@@ -424,9 +424,12 @@
   .move-icon.up { background-image: var(--arrow-up); }
   .move-icon.down { background-image: var(--arrow-down); }
   .answer-slot .pick-stamp, #double-down-btn .pick-stamp {
-    position: absolute; top: -14px; left: -10px; font-size: 22px;
+    position: absolute; top: -16px; left: -12px; font-size: 22px;
     animation: popIn 300ms ease;
   }
+  .answer-slot .pick-stamp .avatar-icon, #double-down-btn .pick-stamp .avatar-icon { width: 1.1em; height: 1.1em; }
+  .doubledown-mark { display: inline-flex; vertical-align: middle; margin-left: 4px; }
+  .doubledown-mark .avatar-icon { width: 18px; height: 18px; }
   .answer-slot:disabled { cursor: default; }
   #double-down-btn { border-image-source: var(--btn-accent); color: #fff; position: relative; }
   #double-down-btn.picked { border-image-source: var(--ring); }
@@ -2135,7 +2138,7 @@
   function cardPersonHtml(entry, pts, isWinner, order) {
     const avatar = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
     const containerClass = "container-" + ((currentPlayers[entry.playerId] && currentPlayers[entry.playerId].frameIndex) || 1);
-    const extra = entry.doubledOwn ? " (doubled down)" : "";
+    const extra = entry.doubledOwn ? `<span class="doubledown-mark">${avatarHtml(avatar)}</span>` : "";
     const pickedBy = entry.pickedBy || [];
     const pickedAvatars = pickedBy.length
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : "⭐").join(" ")}</div>`
