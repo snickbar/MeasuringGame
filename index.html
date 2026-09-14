@@ -876,19 +876,38 @@
   const OBJECTS = [
     { name: "grain of sand",       plural: "grains of sand",       mm: 0.5 },
     { name: "ant",                 plural: "ants",                 mm: 5 },
+    { name: "grain of rice",       plural: "grains of rice",       mm: 7 },
+    { name: "ladybug",             plural: "ladybugs",             mm: 8 },
+    { name: "honeybee",            plural: "honeybees",            mm: 15 },
     { name: "paperclip",           plural: "paperclips",           mm: 33 },
+    { name: "golf ball",           plural: "golf balls",           mm: 43 },
     { name: "AA battery",          plural: "AA batteries",         mm: 50 },
+    { name: "tennis ball",         plural: "tennis balls",         mm: 67 },
+    { name: "credit card",         plural: "credit cards",         mm: 86 },
     { name: "smartphone",          plural: "smartphones",          mm: 150 },
+    { name: "banana",              plural: "bananas",              mm: 180 },
+    { name: "pencil",              plural: "pencils",              mm: 190 },
+    { name: "house brick",         plural: "house bricks",         mm: 215 },
     { name: "sheet of paper (A4)", plural: "sheets of paper (A4)", mm: 297 },
     { name: "baseball bat",        plural: "baseball bats",        mm: 700 },
+    { name: "skateboard",          plural: "skateboards",          mm: 800 },
+    { name: "acoustic guitar",     plural: "acoustic guitars",     mm: 1010 },
+    { name: "bicycle",             plural: "bicycles",             mm: 1800 },
+    { name: "surfboard",           plural: "surfboards",           mm: 2000 },
     { name: "door",                plural: "doors",                mm: 2030 },
+    { name: "grand piano",         plural: "grand pianos",         mm: 2740 },
     { name: "giraffe",             plural: "giraffes",             mm: 5500 },
+    { name: "shipping container",  plural: "shipping containers",  mm: 6060 },
+    { name: "killer whale",        plural: "killer whales",        mm: 7000 },
     { name: "school bus",          plural: "school buses",         mm: 12000 },
     { name: "blue whale",          plural: "blue whales",          mm: 24000 },
     { name: "basketball court",    plural: "basketball courts",    mm: 28650 },
+    { name: "Space Shuttle",       plural: "Space Shuttles",       mm: 37200 },
+    { name: "Boeing 737",          plural: "Boeing 737s",          mm: 39500 },
     { name: "football field",      plural: "football fields",      mm: 109700 },
+    { name: "Great Pyramid of Giza", plural: "Great Pyramids of Giza", mm: 138800 },
+    { name: "Titanic",             plural: "Titanics",             mm: 269000 },
     { name: "Eiffel Tower",        plural: "Eiffel Towers",        mm: 330000 },
-    { name: "Burj Khalifa",        plural: "Burj Khalifas",        mm: 828000 },
   ];
 
   const RELATIVE_MIN_RATIO = 0.2; // "Keep it relative": unit must be at least 20% of the target's size
@@ -916,13 +935,17 @@
     return RELATIVE_PAIRS[Math.floor(Math.random() * RELATIVE_PAIRS.length)];
   }
 
+  function articleFor(name) {
+    return /^[aeiou]/i.test(name) ? "an" : "a";
+  }
+
   function generateQuestion() {
     const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair() : pickRandomPair();
     return {
       unitName: unit.name,
       targetName: target.name,
       answer: target.mm / unit.mm,
-      prompt: `How many ${unit.plural} long is a ${target.name}?`,
+      prompt: `How many ${unit.plural} long is ${articleFor(target.name)} ${target.name}?`,
     };
   }
 
