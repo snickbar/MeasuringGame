@@ -142,14 +142,18 @@
     border-width: 10px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
     color: #fff;
   }
-  #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0 12px; }
+  .setup-header { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; }
+  .setup-header .back-btn { margin: 0; flex-shrink: 0; }
+  .setup-header h1 { margin: 0; }
+  #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
-    font-size: 24px; padding: 8px 0;
+    font-size: 24px; padding: 6px 0;
     border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
-    margin: 0;
+    margin: 0; display: flex; align-items: center; justify-content: center;
   }
   .avatar-choice.selected { border-image-source: var(--ring); border-image-slice: 45 fill; transform: scale(1.08); }
   .avatar-choice.taken { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
+  .avatar-icon { width: 1em; height: 1em; object-fit: contain; vertical-align: middle; border-radius: 20%; }
   #recent-rooms-section h3 { font-size: 15px; margin: 14px 0 4px; color: var(--brand); }
   .recent-room-row { display: flex; justify-content: space-between; align-items: center; }
   .recent-room-row button { width: auto; padding: 6px 12px; margin: 0; font-size: 13px; }
@@ -634,17 +638,20 @@
 </div>
 
 <div id="join-screen" class="screen">
-  <button id="setup-back-btn" type="button" class="back-btn">&larr; Back</button>
-  <h1 id="setup-title">Create Game</h1>
-  <input id="name-input" placeholder="Your name" />
-
-  <div id="avatar-grid"></div>
+  <div class="setup-header">
+    <button id="setup-back-btn" type="button" class="back-btn">&larr; Back</button>
+    <h1 id="setup-title">Create Game</h1>
+  </div>
 
   <div id="host-mode-controls" style="display:none;">
     <span>If host disconnects:</span>
     <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
     <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
   </div>
+
+  <input id="name-input" placeholder="Your name" />
+
+  <div id="avatar-grid"></div>
 
   <button id="create-btn">Create room</button>
   <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
@@ -823,7 +830,11 @@
 
   // ==================== Local (per-user, per-browser) identity/prefs ====================
 
-  const AVATARS = ["\u{1F98A}","\u{1F43C}","\u{1F438}","\u{1F435}","\u{1F436}","\u{1F431}","\u{1F981}","\u{1F428}","\u{1F42F}","\u{1F437}","\u{1F430}","\u{1F984}","\u{1F419}","\u{1F422}","\u{1F989}","\u{1F433}","\u{1F40A}"];
+  const AVATAR_COUNT = 56;
+  const AVATARS = Array.from({ length: AVATAR_COUNT }, (_, i) => "av" + String(i + 1).padStart(2, "0"));
+  function avatarHtml(id, extraClass) {
+    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png" alt="" draggable="false">` : "";
+  }
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
   const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.6, 1.4] };
   const BOT_NAMES = [
@@ -1067,7 +1078,7 @@
       const taken = takenAvatars.has(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = a;
+      btn.innerHTML = avatarHtml(a);
       btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "");
       btn.disabled = taken;
       btn.addEventListener("click", () => {
@@ -1110,7 +1121,7 @@
     AVATARS.forEach((a) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = a;
+      btn.innerHTML = avatarHtml(a);
       btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "");
       btn.addEventListener("click", () => {
         currentAvatar = a;
@@ -1200,7 +1211,7 @@
     Object.entries(currentPlayers).forEach(([id, p]) => {
       const li = document.createElement("li");
       const nameSpan = document.createElement("span");
-      nameSpan.innerHTML = `<span class="player-avatar">${p.avatar || ""}</span>${p.name}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag">\u{1F916} ${p.botDifficulty || ""}</span>` : ""}`;
+      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${p.name}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag">\u{1F916} ${p.botDifficulty || ""}</span>` : ""}`;
       li.appendChild(nameSpan);
       if (isHost && id !== currentPlayerId) {
         const btn = document.createElement("button");
@@ -1931,7 +1942,7 @@
       const frameIndex = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].frameIndex) || 1;
       const btn = document.createElement("button");
       btn.innerHTML = entry.value
-        + (isMyPick ? `<span class="pick-stamp">${currentAvatar}</span>` : "");
+        + (isMyPick ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
       btn.className = "answer-slot frame-" + frameIndex + (isMyPick ? " picked" : "");
       btn.disabled = !!roomState.paused;
       btn.addEventListener("click", () => choosePick("pick", entry.playerId, isMyPick));
@@ -1947,7 +1958,7 @@
     }
     wasDoubleDownPicked = isMyDoubleDown;
     doubleDownBtn.innerHTML = "Double down on my answer"
-      + (isMyDoubleDown ? `<span class="pick-stamp">${currentAvatar}</span>` : "");
+      + (isMyDoubleDown ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
     myGuessDisplayEl.innerHTML = myEntry
       ? `<span class="my-guess-label">Your guess</span><span class="my-guess-value">${myEntry.value}</span>`
       : "";
@@ -2007,7 +2018,7 @@
     const extra = entry.doubledOwn ? " (doubled down)" : "";
     const pickedBy = entry.pickedBy || [];
     const pickedAvatars = pickedBy.length
-      ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar || "⭐").join(" ")}</div>`
+      ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : "⭐").join(" ")}</div>`
       : "";
     const spotBadge = entry.isPerfect
       ? `<div class="spot-badge perfect">\u{1F3AF} Perfect!</div>`
@@ -2016,7 +2027,7 @@
     const ptsStack = ptsStackHtml(pts, bonus, isWinner);
     if (isWinner) {
       return `<div class="card-inner ${containerClass}">
-        <div class="winner-name-row"><span class="winner-avatar">${avatar}</span><span class="winner-name">${entry.name}</span></div>
+        <div class="winner-name-row"><span class="winner-avatar">${avatarHtml(avatar)}</span><span class="winner-name">${entry.name}</span></div>
         <div class="winner-guess-row">Guess: <b>${entry.guess}</b>${extra}</div>
         ${spotBadge}
         <div class="winner-stats-row">${entry.accuracyPercent}% — off by ${entry.error.toFixed(2)}</div>
@@ -2024,7 +2035,7 @@
       </div>${ptsStack}`;
     }
     return `<div class="card-inner ${containerClass}">
-      <div class="reveal-name-row"><span class="reveal-avatar">${avatar}</span><span class="reveal-name">${entry.name}</span></div>
+      <div class="reveal-name-row"><span class="reveal-avatar">${avatarHtml(avatar)}</span><span class="reveal-name">${entry.name}</span></div>
       <span class="reveal-guess-line">${entry.guess} (${entry.accuracyPercent}%)${extra}</span>
       ${spotBadge}${pickedAvatars}
     </div>${ptsStack}`;
@@ -2214,7 +2225,7 @@
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.dataset.id = id;
         box.innerHTML = `
-          <div class="score-row-top"><span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span></div>
+          <div class="score-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${p.name}</span></div>
           <div class="score-row-bottom">${medal}<span class="pts-wrap"><span class="pts">${score}</span>${accHtml}</span>${arrow}</div>
         `;
         scoreColEl.appendChild(box);
@@ -2334,7 +2345,7 @@
       ).join("");
       li.innerHTML = `
         <div class="summary-row-top">
-          <span class="who"><span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span></span>
+          <span class="who"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${p.name}</span></span>
           <span class="roundpts${roundPts === 0 ? " zero" : ""}" style="animation-delay:${idx * 90 + 180}ms">+${roundPts}</span>
         </div>
         <div class="breakdown">${chipHtml}</div>
@@ -2385,7 +2396,7 @@
         : "";
       li.innerHTML = `
         ${winnerStars}
-        <div class="final-row-top">${medal}<span class="avatar">${p.avatar || ""}</span><span class="name">${p.name}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${p.name}</span>${avgPctHtml}<span class="pts">${score}</span></div>
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
