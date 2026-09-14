@@ -291,9 +291,22 @@
     width: auto; margin: 0; font-weight: 700; font-size: 13px; padding: 6px 18px; color: #fff;
     border-width: 10px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
-  #hud-room-code { display: none; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: .5px; color: var(--brand); align-items: center; gap: 4px; }
-  #hud-room-code.active { display: flex; }
-  .room-icon { font-size: 15px; }
+  #hud-room-code-group { display: none; align-items: center; gap: 6px; flex-shrink: 0; }
+  #hud-room-code-group.active { display: flex; }
+  #hud-room-code {
+    display: flex; align-items: center; gap: 4px;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .5px; color: var(--brand);
+    padding: 3px 9px; box-sizing: border-box;
+    border-width: 9px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
+  }
+  .room-icon { font-size: 14px; }
+  #copy-room-code-btn {
+    width: auto; margin: 0; flex-shrink: 0; color: var(--text);
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11px; line-height: 1; padding: 6px 9px;
+    border-width: 7px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
+    transition: color 150ms ease;
+  }
+  #copy-room-code-btn.copied { color: var(--brand); }
   #hud-round-label { display: none; flex-direction: column; gap: 3px; align-items: center; font-size: 14px; }
   #hud-round-label.active { display: flex; }
   .round-text { color: var(--text-muted); font-size: 12px; font-weight: 600; }
@@ -628,11 +641,14 @@
 
 <div id="app-toolbar">
   <button id="toolbar-home-btn" class="icon-btn" type="button" aria-label="Home"></button>
+  <div id="hud-room-code-group">
+    <div id="hud-room-code"></div>
+    <button id="copy-room-code-btn" type="button">Copy code</button>
+  </div>
   <div id="toolbar-center">
     <div id="toolbar-lobby-start">
       <button id="host-start-btn" type="button" style="display:none;">Start game</button>
     </div>
-    <div id="hud-room-code"></div>
     <div id="hud-round-label"></div>
   </div>
   <div id="toolbar-right-group">
@@ -1142,7 +1158,9 @@
   const settingItemRelativeInput = document.getElementById("setting-item-relative");
 
   const hudEl = document.getElementById("hud");
+  const hudRoomCodeGroupEl = document.getElementById("hud-room-code-group");
   const hudRoomCodeEl = document.getElementById("hud-room-code");
+  const copyRoomCodeBtn = document.getElementById("copy-room-code-btn");
   const hudRoundLabelEl = document.getElementById("hud-round-label");
   const hudHostControlsEl = document.getElementById("hud-host-controls");
   const hudGuestControlsEl = document.getElementById("hud-guest-controls");
@@ -1412,6 +1430,38 @@
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
   toolbarHomeBtn.addEventListener("click", () => location.reload());
+
+  let copyCodeResetTimer = null;
+  copyRoomCodeBtn.addEventListener("click", async () => {
+    if (!currentRoomCode) return;
+    let copied = false;
+    try {
+      if (!navigator.clipboard) throw new Error("no clipboard api");
+      await Promise.race([
+        navigator.clipboard.writeText(currentRoomCode),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("clipboard timeout")), 1200)),
+      ]);
+      copied = true;
+    } catch (err) {
+      const scratch = document.createElement("textarea");
+      scratch.value = currentRoomCode;
+      scratch.style.position = "fixed";
+      scratch.style.opacity = "0";
+      document.body.appendChild(scratch);
+      scratch.select();
+      try { copied = document.execCommand("copy"); } catch (err2) { copied = false; }
+      document.body.removeChild(scratch);
+    }
+    if (!copied) return;
+    playSound("select");
+    copyRoomCodeBtn.textContent = "Copied!";
+    copyRoomCodeBtn.classList.add("copied");
+    clearTimeout(copyCodeResetTimer);
+    copyCodeResetTimer = setTimeout(() => {
+      copyRoomCodeBtn.textContent = "Copy code";
+      copyRoomCodeBtn.classList.remove("copied");
+    }, 1500);
+  });
 
   // ---- Prevent the phone's back button/gesture from closing the app (a
   // real PWA complaint: with no history entries to go back to, back exits
@@ -2084,7 +2134,7 @@
   function showLeftScreen(reason) {
     [joinScreen, lobbyScreenEl, hudEl, finalScreenEl, endedScreenEl].forEach((el) => el.classList.remove("active"));
     toolbarLobbyStartEl.classList.remove("active");
-    hudRoomCodeEl.classList.remove("active");
+    hudRoomCodeGroupEl.classList.remove("active");
     hudRoundLabelEl.classList.remove("active");
     bottomToolbarEl.classList.remove("active");
     kickModalEl.classList.remove("active");
@@ -2807,7 +2857,7 @@
     toolbarLobbyStartEl.classList.toggle("active", phase === "waiting" && isHost);
     hostStartBtn.style.display = isHost ? "block" : "none";
     hudEl.classList.toggle("active", isHudActive);
-    hudRoomCodeEl.classList.toggle("active", isHudActive);
+    hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
     finalScreenEl.classList.toggle("active", phase === "final");
