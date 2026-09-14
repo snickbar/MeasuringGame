@@ -156,9 +156,11 @@
   .avatar-choice.taken { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
   .avatar-choice .avatar-icon { width: 100%; height: 100%; }
   .avatar-icon { width: 1.8em; height: 1.8em; object-fit: contain; vertical-align: middle; border-radius: 20%; }
-  #recent-rooms-section h3 { font-size: 15px; margin: 14px 0 4px; color: var(--brand); }
+  #recent-rooms-section h3 { font-size: 15px; margin: 10px 0 4px; color: var(--brand); }
   .recent-room-row { display: flex; justify-content: space-between; align-items: center; }
   .recent-room-row button { width: auto; padding: 6px 12px; margin: 0; font-size: 13px; }
+  .code-name-row { display: flex; gap: 8px; }
+  .code-name-row input { flex: 1; min-width: 0; }
 
   /* ---- Settings screen ---- */
   #settings-toggles-panel {
@@ -629,11 +631,6 @@
 
   <button id="home-create-btn" class="big-cta create">Create Game</button>
   <button id="home-join-btn" class="big-cta join">Join Game</button>
-
-  <div id="recent-rooms-section" style="display:none;">
-    <h3>Last game</h3>
-    <div id="recent-rooms-list"></div>
-  </div>
 </div>
 
 <div id="settings-screen" class="screen">
@@ -655,6 +652,7 @@
   <div class="setup-header">
     <button id="setup-back-btn" type="button" class="back-btn">&larr; Back</button>
     <button id="create-btn">Create room</button>
+    <button id="join-btn" style="display:none;">Join room</button>
   </div>
 
   <div id="host-mode-controls" style="display:none;">
@@ -663,12 +661,18 @@
     <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
   </div>
 
-  <input id="name-input" placeholder="Your name" />
+  <div class="code-name-row">
+    <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
+    <input id="name-input" placeholder="Your name" />
+  </div>
+
+  <div id="recent-rooms-section" style="display:none;">
+    <h3>Last game</h3>
+    <div id="recent-rooms-list"></div>
+  </div>
 
   <div id="avatar-grid"></div>
 
-  <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
-  <button id="join-btn" style="display:none;">Join room</button>
   <p id="status"></p>
 </div>
 
@@ -1460,6 +1464,7 @@
     hostModeControlsEl.style.display = mode === "create" ? "flex" : "none";
     codeInput.style.display = mode === "join" ? "block" : "none";
     joinBtn.style.display = mode === "join" ? "block" : "none";
+    if (mode === "join") { renderRecentRooms(); } else { recentRoomsSection.style.display = "none"; }
     statusEl.textContent = "";
     homeScreen.classList.remove("active");
     joinScreen.classList.add("active");
