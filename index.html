@@ -151,6 +151,14 @@
   .setup-header { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; }
   .setup-header .back-btn { margin: 0; flex-shrink: 0; }
   .setup-header button:not(.back-btn) { width: auto; flex: 1; margin: 0; }
+  .screen-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
+  .screen-header h1 { margin: 0; }
+  .screen-close-btn {
+    width: 34px; height: 34px; flex-shrink: 0; padding: 0; margin: 0;
+    border: none; border-radius: 50%; background: var(--red); color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; line-height: 1;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 3px rgba(0,0,0,.15);
+  }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -657,7 +665,10 @@
 </div>
 
 <div id="settings-screen" class="screen">
-  <h1>Settings</h1>
+  <div class="screen-header">
+    <h1>Settings</h1>
+    <button id="settings-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
+  </div>
 
   <div id="settings-toggles-panel">
     <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
@@ -672,7 +683,10 @@
 </div>
 
 <div id="howto-screen" class="screen">
-  <h1>How to Play</h1>
+  <div class="screen-header">
+    <h1>How to Play</h1>
+    <button id="howto-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
+  </div>
 
   <div class="howto-section">
     <h3>Creating a room</h3>
@@ -1113,6 +1127,8 @@
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
   const settingsScreen = document.getElementById("settings-screen");
   const howtoScreen = document.getElementById("howto-screen");
+  const settingsCloseBtn = document.getElementById("settings-close-btn");
+  const howtoCloseBtn = document.getElementById("howto-close-btn");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
   const settingsMusicToggle = document.getElementById("settings-music-toggle");
   const settingsNameInput = document.getElementById("settings-name-input");
@@ -1363,22 +1379,38 @@
   });
 
   const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen];
   let overlayReturnScreen = null;
-  function toggleOverlay(screenEl) {
+  function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
-      screenEl.classList.remove("active");
-      (overlayReturnScreen || homeScreen).classList.add("active");
-      overlayReturnScreen = null;
-      playSound("popup-close");
-    } else {
-      overlayReturnScreen = ALL_SCREEN_ELS.find((el) => el.classList.contains("active")) || homeScreen;
-      ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
-      screenEl.classList.add("active");
-      playSound("popup-open");
+      closeOverlay();
+      return;
     }
+    const currentActive = ALL_SCREEN_ELS.find((el) => el.classList.contains("active"));
+    // Only remember a non-overlay screen to return to - if we're already in
+    // an overlay (e.g. opening Settings from How to Play), keep whatever
+    // screen was active before ANY overlay opened, so closing either one
+    // always lands back on the real room/lobby/home screen, never the
+    // other overlay.
+    if (currentActive && !OVERLAY_SCREENS.includes(currentActive)) {
+      overlayReturnScreen = currentActive;
+    }
+    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+    screenEl.classList.add("active");
+    playSound("popup-open");
   }
-  toolbarSettingsBtn.addEventListener("click", () => toggleOverlay(settingsScreen));
-  toolbarHelpBtn.addEventListener("click", () => toggleOverlay(howtoScreen));
+  function closeOverlay() {
+    const current = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
+    if (!current) return;
+    current.classList.remove("active");
+    (overlayReturnScreen || homeScreen).classList.add("active");
+    overlayReturnScreen = null;
+    playSound("popup-close");
+  }
+  toolbarSettingsBtn.addEventListener("click", () => openOverlay(settingsScreen));
+  toolbarHelpBtn.addEventListener("click", () => openOverlay(howtoScreen));
+  settingsCloseBtn.addEventListener("click", closeOverlay);
+  howtoCloseBtn.addEventListener("click", closeOverlay);
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
   // ---- Prevent the phone's back button/gesture from closing the app (a
@@ -1392,10 +1424,8 @@
   history.pushState({ appGuard: true }, "", location.href);
   window.addEventListener("popstate", () => {
     history.pushState({ appGuard: true }, "", location.href);
-    if (settingsScreen.classList.contains("active")) {
-      toolbarSettingsBtn.click();
-    } else if (howtoScreen.classList.contains("active")) {
-      toolbarHelpBtn.click();
+    if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
+      closeOverlay();
     } else if (joinScreen.classList.contains("active")) {
       setupBackBtn.click();
     }
