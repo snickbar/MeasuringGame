@@ -114,8 +114,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #settings-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
-  #home-screen.active, #settings-screen.active, #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
+  #home-screen, #settings-screen, #howto-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
+  #home-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
     position: fixed; top: 62px; left: 0; right: 0; bottom: 58px;
@@ -186,6 +186,18 @@
   }
   .text-toggle-btn.is-on { background-image: var(--toggle-on); }
   .text-toggle-btn:disabled { opacity: .4; cursor: default; }
+
+  /* ---- How to Play screen ---- */
+  #howto-screen { padding-bottom: 24px; }
+  .howto-section {
+    padding: 10px 12px; margin: 12px 0;
+    border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
+    color: var(--text);
+  }
+  .howto-section h3 { margin: 0 0 6px; }
+  .howto-section p { font-size: 14px; line-height: 1.5; margin: 0 0 8px; }
+  .howto-section p:last-child { margin-bottom: 0; }
+  .howto-section b { color: var(--brand); }
 
   /* ---- Settings panel (lobby) ---- */
   #settings-panel {
@@ -261,6 +273,11 @@
   }
   #toolbar-home-btn { background-image: var(--icon-home); }
   #toolbar-settings-btn { background-image: var(--icon-settings); }
+  .icon-btn-text {
+    border-radius: 50%; background: var(--brand); color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; line-height: 1;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 3px rgba(0,0,0,.15);
+  }
   #toolbar-lobby-start { display: none; flex: 1; justify-content: center; margin: 0 6px; }
   #toolbar-lobby-start.active { display: flex; }
   #host-start-btn {
@@ -285,12 +302,10 @@
     opacity: 1; background: var(--brand); border-color: var(--red);
     box-shadow: 0 0 0 2px rgba(193, 85, 63, 0.3);
   }
-  #toolbar-hud-controls { display: none; }
-  #toolbar-hud-controls.active { display: block; }
-  .hud-btn-row { display: flex; flex-direction: column; gap: 2px; }
+  .hud-btn-row { display: flex; gap: 6px; flex-shrink: 0; }
   .hud-btn-row button {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10px; line-height: 1; padding: 2px 7px; width: auto; margin: 0; color: var(--text);
-    border-width: 6px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; padding: 8px 12px; width: auto; margin: 0; color: var(--text);
+    border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
   }
   .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
   .hud-timer {
@@ -611,19 +626,18 @@
   </div>
   <div id="hud-room-code"></div>
   <div id="hud-round-label"></div>
-  <div id="toolbar-hud-controls">
-    <div class="hud-btn-row" id="hud-host-controls" style="display:none;">
-      <button id="pause-btn" type="button">Pause</button>
-      <button id="exit-btn" type="button">Exit</button>
-    </div>
-    <div class="hud-btn-row" id="hud-guest-controls" style="display:none;">
-      <button id="exit-btn-guest" type="button">Exit</button>
-    </div>
-  </div>
+  <button id="toolbar-help-btn" class="icon-btn icon-btn-text" type="button" aria-label="How to play">?</button>
   <button id="toolbar-settings-btn" class="icon-btn" type="button" aria-label="Settings"></button>
 </div>
 
 <div id="bottom-toolbar">
+  <div class="hud-btn-row" id="hud-host-controls" style="display:none;">
+    <button id="pause-btn" type="button">Pause</button>
+    <button id="exit-btn" type="button">Exit</button>
+  </div>
+  <div class="hud-btn-row" id="hud-guest-controls" style="display:none;">
+    <button id="exit-btn-guest" type="button">Exit</button>
+  </div>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show round summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
@@ -652,6 +666,62 @@
 
   <h3>Default avatar</h3>
   <div id="settings-avatar-grid"></div>
+</div>
+
+<div id="howto-screen" class="screen">
+  <h1>How to Play</h1>
+
+  <div class="howto-section">
+    <h3>Creating a room</h3>
+    <p>Tap <b>Create Game</b>, enter your name, pick an avatar, and tap <b>Create room</b>. You're the host - only you can change the room settings and start the game.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Joining a room</h3>
+    <p>Tap <b>Join Game</b>, type the 4-letter room code the host gave you, enter your name, and pick an avatar. Every player needs a unique avatar per room, so any already taken will be grayed out.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Rejoining a room</h3>
+    <p>If you get disconnected or reload mid-game, open <b>Join Game</b> - your most recent room shows up as <b>Last game</b> with a one-tap <b>Rejoin</b> button.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Host settings</h3>
+    <p>Chosen once when you create a room:</p>
+    <p><b>If host disconnects</b> - "Give another player host" auto-hands host duties to whoever's been in the room longest if you drop; "Save my host spot" holds your spot so rejoining under the same name gets it back.</p>
+    <p>Adjustable any time from the lobby (before the game starts):</p>
+    <p><b>Timer</b> - how many seconds each round's guessing phase lasts. <b>Rounds</b> - how many rounds the game runs. <b>Second-chance scoring</b> - turns on the pick/double-down phase after guesses lock (see below). <b>Bots use second chances</b> - lets bots join in on that phase too. <b>Item selection</b> - see next section.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Item selection</h3>
+    <p><b>Anything goes</b> pairs any two objects at random, so you might get wildly mismatched sizes. <b>Keep it relative</b> only pairs objects where the smaller one is at least 15% of the larger one's size, so you won't be asked how many grains of sand long the Eiffel Tower is.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Second chances</h3>
+    <p>When it's on, everyone gets a few seconds after guesses lock to either <b>pick another player's answer</b> (if you think they nailed it) or <b>double down</b> on your own guess. Picking the round's actual closest answer earns you a bonus point; doubling down doubles your own points if your guess turns out to be the closest.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Scoring</h3>
+    <p>Only the single <b>closest guess</b> each round scores: +3 points normally, or +5 if it's within 0.9 of the exact answer. Everyone else gets 0 for that round, no matter how close they were.</p>
+    <p><b>Second-chance bonus:</b> +1 for correctly picking the round's closest answer.</p>
+    <p><b>Double down:</b> if your own guess is the round's closest, doubling down doubles those points (an extra +3 or +5 on top).</p>
+    <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
+    <p>At the very end of the game, the top 3 players by <b>average guess accuracy</b> (how close their guesses ran to exactly 100% of the real answer, on average) get a one-time bonus: +10 / +6 / +3.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Tiebreakers</h3>
+    <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever's average guess accuracy is closer to 100%; if that's tied too, they stay tied there as well.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Good to know</h3>
+    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> let you send an emoji while waiting for everyone else to guess. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+  </div>
 </div>
 
 <div id="join-screen" class="screen">
@@ -1035,10 +1105,11 @@
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
+  const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
   const toolbarLobbyStartEl = document.getElementById("toolbar-lobby-start");
-  const toolbarHudControlsEl = document.getElementById("toolbar-hud-controls");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
   const settingsScreen = document.getElementById("settings-screen");
+  const howtoScreen = document.getElementById("howto-screen");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
   const settingsMusicToggle = document.getElementById("settings-music-toggle");
   const settingsNameInput = document.getElementById("settings-name-input");
@@ -1288,21 +1359,23 @@
     if (musicEnabled) startMusic(); else stopMusic();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen];
-  let settingsReturnScreen = null;
-  toolbarSettingsBtn.addEventListener("click", () => {
-    if (settingsScreen.classList.contains("active")) {
-      settingsScreen.classList.remove("active");
-      (settingsReturnScreen || homeScreen).classList.add("active");
-      settingsReturnScreen = null;
+  const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen];
+  let overlayReturnScreen = null;
+  function toggleOverlay(screenEl) {
+    if (screenEl.classList.contains("active")) {
+      screenEl.classList.remove("active");
+      (overlayReturnScreen || homeScreen).classList.add("active");
+      overlayReturnScreen = null;
       playSound("popup-close");
     } else {
-      settingsReturnScreen = ALL_SCREEN_ELS.find((el) => el.classList.contains("active")) || homeScreen;
+      overlayReturnScreen = ALL_SCREEN_ELS.find((el) => el.classList.contains("active")) || homeScreen;
       ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
-      settingsScreen.classList.add("active");
+      screenEl.classList.add("active");
       playSound("popup-open");
     }
-  });
+  }
+  toolbarSettingsBtn.addEventListener("click", () => toggleOverlay(settingsScreen));
+  toolbarHelpBtn.addEventListener("click", () => toggleOverlay(howtoScreen));
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
   // ---- Prevent the phone's back button/gesture from closing the app (a
@@ -1318,6 +1391,8 @@
     history.pushState({ appGuard: true }, "", location.href);
     if (settingsScreen.classList.contains("active")) {
       toolbarSettingsBtn.click();
+    } else if (howtoScreen.classList.contains("active")) {
+      toolbarHelpBtn.click();
     } else if (joinScreen.classList.contains("active")) {
       setupBackBtn.click();
     }
@@ -1978,7 +2053,6 @@
     toolbarLobbyStartEl.classList.remove("active");
     hudRoomCodeEl.classList.remove("active");
     hudRoundLabelEl.classList.remove("active");
-    toolbarHudControlsEl.classList.remove("active");
     bottomToolbarEl.classList.remove("active");
     kickModalEl.classList.remove("active");
     pausedOverlayEl.classList.remove("active");
@@ -2702,8 +2776,7 @@
     hudEl.classList.toggle("active", isHudActive);
     hudRoomCodeEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
-    toolbarHudControlsEl.classList.toggle("active", isHudActive);
-    bottomToolbarEl.classList.toggle("active", ["reveal", "summary", "final"].includes(phase));
+    bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
     finalScreenEl.classList.toggle("active", phase === "final");
     endedScreenEl.classList.toggle("active", phase === "ended");
 
