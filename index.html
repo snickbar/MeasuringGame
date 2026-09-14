@@ -224,6 +224,15 @@
   }
   .hostmode-btn.selected { border-image-source: var(--ring); }
 
+  #item-mode-controls { display: none; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  #item-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
+  .itemmode-btn {
+    width: auto; font-size: 13px; padding: 6px 12px; margin: 0;
+    border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    color: var(--text);
+  }
+  .itemmode-btn.selected { border-image-source: var(--ring); }
+
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
     position: fixed; top: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
@@ -651,6 +660,12 @@
     <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
   </div>
 
+  <div id="item-mode-controls" style="display:none;">
+    <span>Item selection:</span>
+    <button type="button" class="itemmode-btn selected" data-mode="anything">Anything goes</button>
+    <button type="button" class="itemmode-btn" data-mode="relative">Keep it relative</button>
+  </div>
+
   <input id="name-input" placeholder="Your name" />
 
   <div id="avatar-grid"></div>
@@ -876,13 +891,33 @@
     { name: "Burj Khalifa",        plural: "Burj Khalifas",        mm: 828000 },
   ];
 
-  function generateQuestion() {
+  const RELATIVE_MIN_RATIO = 0.2; // "Keep it relative": unit must be at least 20% of the target's size
+  // Precomputed once so "Keep it relative" mode can never produce a pair that
+  // violates the ratio, no matter how unlucky a random draw would otherwise be.
+  const RELATIVE_PAIRS = (() => {
+    const pairs = [];
+    for (let i = 0; i < OBJECTS.length; i++) {
+      for (let j = i + 1; j < OBJECTS.length; j++) {
+        const [unit, target] = OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
+        if (unit.mm / target.mm >= RELATIVE_MIN_RATIO) pairs.push([unit, target]);
+      }
+    }
+    return pairs;
+  })();
+
+  function pickRandomPair() {
     const i = Math.floor(Math.random() * OBJECTS.length);
     let j = Math.floor(Math.random() * OBJECTS.length);
     while (j === i) j = Math.floor(Math.random() * OBJECTS.length);
-    const [unit, target] = OBJECTS[i].mm <= OBJECTS[j].mm
-      ? [OBJECTS[i], OBJECTS[j]]
-      : [OBJECTS[j], OBJECTS[i]];
+    return OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
+  }
+
+  function pickRelativePair() {
+    return RELATIVE_PAIRS[Math.floor(Math.random() * RELATIVE_PAIRS.length)];
+  }
+
+  function generateQuestion() {
+    const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair() : pickRandomPair();
     return {
       unitName: unit.name,
       targetName: target.name,
@@ -902,6 +937,7 @@
   const codeInput = document.getElementById("code-input");
   const createBtn = document.getElementById("create-btn");
   const hostModeControlsEl = document.getElementById("host-mode-controls");
+  const itemModeControlsEl = document.getElementById("item-mode-controls");
   const joinBtn = document.getElementById("join-btn");
   const statusEl = document.getElementById("status");
   const roomCodeDisplay = document.getElementById("room-code-display");
@@ -993,7 +1029,7 @@
   let currentPlayerId = null;
   let isHost = false;
   let currentPlayers = {};
-  let currentSettings = { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5 };
+  let currentSettings = { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, itemSelectionMode: "anything" };
   let roomState = {};
 
   let currentGuessStr = "";
@@ -1061,7 +1097,7 @@
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, botsSecondChance: false };
+    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, botsSecondChance: false, itemSelectionMode: "anything" };
   }
 
   // ==================== Home screen ====================
@@ -1334,6 +1370,7 @@
   function enterSetup(mode) {
     createBtn.style.display = mode === "create" ? "block" : "none";
     hostModeControlsEl.style.display = mode === "create" ? "flex" : "none";
+    itemModeControlsEl.style.display = mode === "create" ? "flex" : "none";
     codeInput.style.display = mode === "join" ? "block" : "none";
     joinBtn.style.display = mode === "join" ? "block" : "none";
     statusEl.textContent = "";
@@ -1358,12 +1395,23 @@
     playSound("tap");
   });
 
+  let itemSelectionModeChoice = "anything";
+  itemModeControlsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".itemmode-btn");
+    if (!btn) return;
+    itemSelectionModeChoice = btn.dataset.mode;
+    itemModeControlsEl.querySelectorAll(".itemmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b === btn);
+    });
+    playSound("tap");
+  });
+
   createBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim();
     if (!name) { statusEl.textContent = "Enter your name first."; return; }
     statusEl.textContent = "Creating room...";
     const roomCode = generateRoomCode();
-    const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice };
+    const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice, itemSelectionMode: itemSelectionModeChoice };
     await set(ref(db, `rooms/${roomCode}`), {
       phase: "waiting",
       round: 0,
