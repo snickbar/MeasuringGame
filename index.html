@@ -155,6 +155,7 @@
   .setup-header button:not(.back-btn) { width: auto; flex: 1; margin: 0; }
   .screen-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
   .screen-header h1 { margin: 0; }
+  .screen-header .back-btn { margin: 0; flex-shrink: 0; }
   .screen-close-btn {
     width: 34px; height: 34px; flex-shrink: 0; padding: 0; margin: 0;
     border: none; border-radius: 50%; background: var(--red); color: #fff;
@@ -287,6 +288,14 @@
   #toolbar-home-btn { background-image: var(--icon-home); }
   #toolbar-settings-btn { background-image: var(--icon-settings); }
   #toolbar-help-btn { background-image: var(--icon-help); }
+  @keyframes helpHintPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(193,122,84,.55); }
+    50% { box-shadow: 0 0 0 7px rgba(193,122,84,0); }
+  }
+  #toolbar-help-btn.hint-pulse { border-radius: 50%; animation: helpHintPulse 1.6s ease-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    #toolbar-help-btn.hint-pulse { animation: none; }
+  }
   #toolbar-lobby-start { display: none; flex: 1; justify-content: center; }
   #toolbar-lobby-start.active { display: flex; }
   #host-start-btn {
@@ -308,7 +317,7 @@
     border-width: 7px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
     transition: color 150ms ease;
   }
-  #copy-room-code-btn.copied { color: var(--brand); }
+  #copy-room-code-btn.copied, #share-room-btn.copied { color: var(--brand); }
   #hud-round-label { display: none; flex-direction: column; gap: 3px; align-items: center; font-size: 14px; }
   #hud-round-label.active { display: flex; }
   .round-text { color: var(--text-muted); font-size: 12px; font-weight: 600; }
@@ -589,6 +598,7 @@
   .final-row.rank-2 .name { font-size: 19px; }
   .final-row.rank-3 .medal { width: 22px; height: 22px; }
   #final-home-btn { border-image-source: var(--btn2); color: #fff; }
+  #play-again-btn { border-image-source: var(--btn-accent); color: #fff; }
   #final-screen.active { padding-bottom: 66px; }
 
   /* ---- Round summary recap ---- */
@@ -670,6 +680,7 @@
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show round summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
+  <button id="play-again-btn" style="display:none;">Play again</button>
   <button id="final-home-btn" style="display:none;">Back to home</button>
 </div>
 
@@ -788,7 +799,10 @@
 </div>
 
 <div id="lobby-screen" class="screen">
-  <h1>Room: <span id="room-code-display"></span></h1>
+  <div class="screen-header">
+    <h1>Room: <span id="room-code-display"></span></h1>
+    <button id="share-room-btn" type="button" class="back-btn">Share room</button>
+  </div>
 
   <div id="bot-controls">
     <span>Add bot:</span>
@@ -1132,6 +1146,7 @@
   const joinBtn = document.getElementById("join-btn");
   const statusEl = document.getElementById("status");
   const roomCodeDisplay = document.getElementById("room-code-display");
+  const shareRoomBtn = document.getElementById("share-room-btn");
   const playerList = document.getElementById("player-list");
   const hostStartBtn = document.getElementById("host-start-btn");
   const botControlsEl = document.getElementById("bot-controls");
@@ -1199,6 +1214,7 @@
   const finalScreenEl = document.getElementById("final-screen");
   const finalListEl = document.getElementById("final-list");
   const finalHomeBtn = document.getElementById("final-home-btn");
+  const playAgainBtn = document.getElementById("play-again-btn");
   const endedScreenEl = document.getElementById("ended-screen");
   const leftScreenEl = document.getElementById("left-screen");
   const leftReasonEl = document.getElementById("left-reason");
@@ -1428,41 +1444,79 @@
     playSound("popup-close");
   }
   toolbarSettingsBtn.addEventListener("click", () => openOverlay(settingsScreen));
-  toolbarHelpBtn.addEventListener("click", () => openOverlay(howtoScreen));
+  const HAS_SEEN_HOWTO_KEY = "mg_seenHowTo";
+  if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) toolbarHelpBtn.classList.add("hint-pulse");
+  toolbarHelpBtn.addEventListener("click", () => {
+    if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) {
+      localStorage.setItem(HAS_SEEN_HOWTO_KEY, "1");
+      toolbarHelpBtn.classList.remove("hint-pulse");
+    }
+    openOverlay(howtoScreen);
+  });
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
-  let copyCodeResetTimer = null;
-  copyRoomCodeBtn.addEventListener("click", async () => {
-    if (!currentRoomCode) return;
-    let copied = false;
+  async function copyTextToClipboard(text) {
     try {
       if (!navigator.clipboard) throw new Error("no clipboard api");
       await Promise.race([
-        navigator.clipboard.writeText(currentRoomCode),
+        navigator.clipboard.writeText(text),
         new Promise((_, reject) => setTimeout(() => reject(new Error("clipboard timeout")), 1200)),
       ]);
-      copied = true;
+      return true;
     } catch (err) {
       const scratch = document.createElement("textarea");
-      scratch.value = currentRoomCode;
+      scratch.value = text;
       scratch.style.position = "fixed";
       scratch.style.opacity = "0";
       document.body.appendChild(scratch);
       scratch.select();
+      let copied = false;
       try { copied = document.execCommand("copy"); } catch (err2) { copied = false; }
       document.body.removeChild(scratch);
+      return copied;
     }
-    if (!copied) return;
+  }
+
+  function flashButtonConfirm(btn, resetTimerHolder, confirmText, normalText) {
     playSound("select");
-    copyRoomCodeBtn.textContent = "Copied!";
-    copyRoomCodeBtn.classList.add("copied");
-    clearTimeout(copyCodeResetTimer);
-    copyCodeResetTimer = setTimeout(() => {
-      copyRoomCodeBtn.textContent = "Copy code";
-      copyRoomCodeBtn.classList.remove("copied");
+    btn.textContent = confirmText;
+    btn.classList.add("copied");
+    clearTimeout(resetTimerHolder.timer);
+    resetTimerHolder.timer = setTimeout(() => {
+      btn.textContent = normalText;
+      btn.classList.remove("copied");
     }, 1500);
+  }
+
+  const copyCodeReset = { timer: null };
+  copyRoomCodeBtn.addEventListener("click", async () => {
+    if (!currentRoomCode) return;
+    const copied = await copyTextToClipboard(currentRoomCode);
+    if (!copied) return;
+    flashButtonConfirm(copyRoomCodeBtn, copyCodeReset, "Copied!", "Copy code");
+  });
+
+  function joinLinkFor(roomCode) {
+    return `${location.origin}${location.pathname}?join=${roomCode}`;
+  }
+
+  const shareRoomReset = { timer: null };
+  shareRoomBtn.addEventListener("click", async () => {
+    if (!currentRoomCode) return;
+    const joinUrl = joinLinkFor(currentRoomCode);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Size Em Up!", text: `Join my Size Em Up! game - room code ${currentRoomCode}`, url: joinUrl });
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+      }
+    }
+    const copied = await copyTextToClipboard(joinUrl);
+    if (!copied) return;
+    flashButtonConfirm(shareRoomBtn, shareRoomReset, "Link copied!", "Share room");
   });
 
   // ---- Prevent the phone's back button/gesture from closing the app (a
@@ -1505,6 +1559,17 @@
   renderAvatarGrid();
   renderSettingsAvatarGrid();
   renderRecentRooms();
+
+  // ---- Deep-link join: a shared "Share room" link lands here as
+  // ?join=CODE, so send new visitors straight to the join screen with
+  // the code already filled in instead of making them retype it.
+  (function handleJoinDeepLink() {
+    const deepLinkCode = new URLSearchParams(location.search).get("join");
+    if (!deepLinkCode) return;
+    history.replaceState({}, "", location.pathname);
+    enterSetup("join");
+    codeInput.value = deepLinkCode.trim().toUpperCase();
+  })();
 
   // ==================== Lobby / join flow ====================
 
@@ -2093,6 +2158,22 @@
       await startRound(roomCode, nextRound);
     }
   }
+
+  async function playAgain(roomCode) {
+    if (!isHost) return;
+    const players = roomState.players || {};
+    const updates = { previousRankOrder: null, rankDeltas: null };
+    Object.keys(players).forEach((id) => {
+      updates[`players/${id}/score`] = 0;
+      updates[`players/${id}/accuracySum`] = null;
+      updates[`players/${id}/roundsCounted`] = null;
+      updates[`players/${id}/bestGuess`] = null;
+      updates[`players/${id}/accuracyBonus`] = null;
+    });
+    await update(ref(db, `rooms/${roomCode}`), updates);
+    await startRound(roomCode, 1);
+  }
+  playAgainBtn.addEventListener("click", () => playAgain(currentRoomCode));
 
   // ==================== Pause / Exit ====================
 
@@ -2875,6 +2956,7 @@
     }
     if (phase !== "summary") nextRoundBtn.style.display = "none";
     finalHomeBtn.style.display = phase === "final" ? "block" : "none";
+    playAgainBtn.style.display = (phase === "final" && isHost) ? "block" : "none";
 
     if (phase === "question" && data.round !== lastSeenRound) {
       lastSeenRound = data.round;
