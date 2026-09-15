@@ -2647,8 +2647,9 @@
       slots += `<span class="round-slot${i === round ? " current" : ""}"></span>`;
     }
     hudRoundLabelEl.innerHTML = `<span class="round-text">Round ${round} of ${totalRounds}</span><span class="round-tracker">${slots}</span>`;
-    hudHostControlsEl.style.display = isHost ? "flex" : "none";
-    hudGuestControlsEl.style.display = isHost ? "none" : "flex";
+    const showRoundControls = data.phase !== "final";
+    hudHostControlsEl.style.display = (isHost && showRoundControls) ? "flex" : "none";
+    hudGuestControlsEl.style.display = (!isHost && showRoundControls) ? "flex" : "none";
     pauseBtn.textContent = data.paused ? "Resume" : "Pause";
   }
 
