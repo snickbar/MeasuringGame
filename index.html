@@ -1589,6 +1589,20 @@
     installBanner.classList.remove("active");
   });
 
+  // ---- Disable pinch-to-zoom. The viewport meta tag's user-scalable=no
+  // is a request, not a guarantee - modern iOS Safari (13+) and some
+  // Android browsers deliberately ignore it as an accessibility override,
+  // so pinch still works unless the gesture itself is blocked at the JS
+  // level. touchmove covers Chrome/Android multi-touch pinch; the
+  // gesture* events are Safari-only (iOS pinch reports as a "gesture",
+  // not a multi-touch move) and are simply never fired elsewhere.
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener("gesturestart", (e) => e.preventDefault());
+  document.addEventListener("gesturechange", (e) => e.preventDefault());
+  document.addEventListener("gestureend", (e) => e.preventDefault());
+
   // ---- Prevent the phone's back button/gesture from closing the app (a
   // real PWA complaint: with no history entries to go back to, back exits
   // straight to the home screen/app switcher). Keep an extra history entry
