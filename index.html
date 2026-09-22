@@ -740,7 +740,7 @@
   </div>
 
   <h3>Default name</h3>
-  <input id="settings-name-input" placeholder="Your name" />
+  <input id="settings-name-input" placeholder="Your name" maxlength="20" />
 
   <h3>Default avatar</h3>
   <div id="settings-avatar-grid"></div>
@@ -820,7 +820,7 @@
 
   <div class="code-name-row">
     <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
-    <input id="name-input" placeholder="Your name" />
+    <input id="name-input" placeholder="Your name" maxlength="20" />
   </div>
 
   <div id="recent-rooms-section" style="display:none;">
@@ -969,7 +969,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getDatabase, ref, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect
+    getDatabase, ref, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -1002,13 +1002,17 @@
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
     update(playerRef, { connected: true, disconnectedAt: null });
   });
-  setInterval(() => {
+  setInterval(async () => {
     if (!currentRoomCode || !roomState.players) return;
-    Object.entries(roomState.players).forEach(([id, p]) => {
+    const roomCode = currentRoomCode;
+    let removedAny = false;
+    for (const [id, p] of Object.entries(roomState.players)) {
       if (p && p.connected === false && typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt > DISCONNECT_GRACE_MS) {
-        remove(ref(db, `rooms/${currentRoomCode}/players/${id}`));
+        await remove(ref(db, `rooms/${roomCode}/players/${id}`));
+        removedAny = true;
       }
-    });
+    }
+    if (removedAny) await maybeDeleteEmptyRoom(roomCode);
   }, 5000);
 
   // ==================== Local (per-user, per-browser) identity/prefs ====================
@@ -1017,6 +1021,14 @@
   const AVATARS = Array.from({ length: AVATAR_COUNT }, (_, i) => "av" + String(i + 1).padStart(2, "0"));
   function avatarHtml(id, extraClass) {
     return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png" alt="" draggable="false">` : "";
+  }
+  // Escapes any free-text value (player names, above all) before it's dropped into
+  // an innerHTML template — without this, a name like "<img src=x onerror=...>"
+  // executes in every other connected player's browser.
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
   }
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
   const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.6, 1.4] };
@@ -1343,6 +1355,20 @@
   let audioCtx = null;
   let everSeenSelfInPlayers = false;
   let wasRemoved = false;
+  let roomEmptyGuardArmed = false;
+
+  // Rooms are otherwise never deleted (only individual players are), so an
+  // abandoned game lives in the DB forever. Call this right after removing a
+  // player to reap the room once its player list is genuinely empty.
+  async function maybeDeleteEmptyRoom(roomCode) {
+    const snap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${roomCode}/players`), resolve, { onlyOnce: true });
+    });
+    const players = snap.val();
+    if (!players || Object.keys(players).length === 0) {
+      await remove(ref(db, `rooms/${roomCode}`));
+    }
+  }
   let myKickDeadline = null;
   let takenAvatars = new Set();
   let takenAvatarsUnsub = null;
@@ -1668,7 +1694,7 @@
     Object.entries(currentPlayers).forEach(([id, p]) => {
       const li = document.createElement("li");
       const nameSpan = document.createElement("span");
-      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${p.name}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag">\u{1F916} ${p.botDifficulty || ""}</span>` : ""}`;
+      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag">\u{1F916} ${escapeHtml(p.botDifficulty || "")}</span>` : ""}`;
       li.appendChild(nameSpan);
       if (isHost && id !== currentPlayerId) {
         const btn = document.createElement("button");
@@ -1827,21 +1853,28 @@
   });
 
   createBtn.addEventListener("click", async () => {
-    const name = nameInput.value.trim();
+    const name = nameInput.value.trim().slice(0, 20);
     if (!name) { statusEl.textContent = "Enter your name first."; return; }
     statusEl.textContent = "Creating room...";
-    const roomCode = generateRoomCode();
     const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice };
-    await set(ref(db, `rooms/${roomCode}`), {
-      phase: "waiting",
-      round: 0,
-      settings,
-    });
+    // Claim a code atomically (transaction only commits if the path is still
+    // empty) and retry on the rare collision, rather than blindly set()-ing a
+    // random code and risking a silent overwrite of someone else's room.
+    let roomCode = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = generateRoomCode();
+      const result = await runTransaction(ref(db, `rooms/${candidate}`), (existing) => {
+        if (existing !== null) return; // abort — code taken, try another
+        return { phase: "waiting", round: 0, settings };
+      });
+      if (result.committed) { roomCode = candidate; break; }
+    }
+    if (!roomCode) { statusEl.textContent = "Couldn't create a room, please try again."; return; }
     await joinRoomAsPlayer(roomCode, name, true, { settings });
   });
 
   async function attemptJoin(code) {
-    const name = nameInput.value.trim();
+    const name = nameInput.value.trim().slice(0, 20);
     if (!name) { statusEl.textContent = "Enter your name first."; return; }
     if (!code) { statusEl.textContent = "Enter a room code."; return; }
     statusEl.textContent = "Joining room...";
@@ -1900,7 +1933,7 @@
   function kickPlayer(targetId) {
     const target = (currentPlayers || {})[targetId];
     if (target && target.isBot) {
-      remove(ref(db, `rooms/${currentRoomCode}/players/${targetId}`));
+      remove(ref(db, `rooms/${currentRoomCode}/players/${targetId}`)).then(() => maybeDeleteEmptyRoom(currentRoomCode));
       return;
     }
     set(ref(db, `rooms/${currentRoomCode}/kickChallenges/${targetId}`), {
@@ -2020,6 +2053,7 @@
     console.log("[measuring-game] kick timed out, removing player", targetId);
     await remove(ref(db, `rooms/${roomCode}/players/${targetId}`));
     await set(ref(db, `rooms/${roomCode}/kickChallenges/${targetId}`), null);
+    await maybeDeleteEmptyRoom(roomCode);
   }
 
   // ==================== Timer plumbing ====================
@@ -2317,15 +2351,21 @@
   }
 
   async function guestExit() {
-    onDisconnect(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`)).cancel();
-    await remove(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`));
+    const roomCode = currentRoomCode;
+    onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
+    if (roomEmptyGuardArmed) { onDisconnect(ref(db, `rooms/${roomCode}`)).cancel(); roomEmptyGuardArmed = false; }
+    await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
+    await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("You left the room.");
   }
 
   async function hostExit() {
-    await set(ref(db, `rooms/${currentRoomCode}/phase`), "ended");
-    onDisconnect(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`)).cancel();
-    await remove(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`));
+    const roomCode = currentRoomCode;
+    await set(ref(db, `rooms/${roomCode}/phase`), "ended");
+    onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
+    if (roomEmptyGuardArmed) { onDisconnect(ref(db, `rooms/${roomCode}`)).cancel(); roomEmptyGuardArmed = false; }
+    await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
+    await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("You ended the game.");
   }
 
@@ -2509,7 +2549,7 @@
     const ptsStack = ptsStackHtml(pts, bonus, isWinner);
     if (isWinner) {
       return `<div class="card-inner ${containerClass}">
-        <div class="winner-name-row"><span class="winner-avatar">${avatarHtml(avatar)}</span><span class="winner-name">${entry.name}</span></div>
+        <div class="winner-name-row"><span class="winner-avatar">${avatarHtml(avatar)}</span><span class="winner-name">${escapeHtml(entry.name)}</span></div>
         <div class="winner-guess-row">Guess: <b>${entry.guess}</b>${extra}</div>
         ${spotBadge}
         <div class="winner-stats-row">${entry.accuracyPercent}% — off by ${entry.error.toFixed(2)}</div>
@@ -2517,7 +2557,7 @@
       </div>${ptsStack}`;
     }
     return `<div class="card-inner ${containerClass}">
-      <div class="reveal-name-row"><span class="reveal-avatar">${avatarHtml(avatar)}</span><span class="reveal-name">${entry.name}</span></div>
+      <div class="reveal-name-row"><span class="reveal-avatar">${avatarHtml(avatar)}</span><span class="reveal-name">${escapeHtml(entry.name)}</span></div>
       <span class="reveal-guess-line">${entry.guess} (${entry.accuracyPercent}%)${extra}</span>
       ${spotBadge}${pickedAvatars}
     </div>${ptsStack}`;
@@ -2707,7 +2747,7 @@
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.dataset.id = id;
         box.innerHTML = `
-          <div class="score-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${p.name}</span></div>
+          <div class="score-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span></div>
           <div class="score-row-bottom">${medal}<span class="pts-wrap"><span class="pts">${score}</span>${accHtml}</span>${arrow}</div>
         `;
         scoreColEl.appendChild(box);
@@ -2828,7 +2868,7 @@
       ).join("");
       li.innerHTML = `
         <div class="summary-row-top">
-          <span class="who"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${p.name}</span></span>
+          <span class="who"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span></span>
           <span class="roundpts${roundPts === 0 ? " zero" : ""}" style="animation-delay:${idx * 90 + 180}ms">+${roundPts}</span>
         </div>
         <div class="breakdown">${chipHtml}</div>
@@ -2879,7 +2919,7 @@
         : "";
       li.innerHTML = `
         ${winnerStars}
-        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${p.name}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${avgPctHtml}<span class="pts">${score}</span></div>
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
@@ -3084,6 +3124,22 @@
       }
 
       maybeReassignHost(data, roomCode);
+
+      // If I'm the only real (non-bot) player left, arm a room-level
+      // onDisconnect so a crashed tab/dead network still reaps the room —
+      // the explicit leave/kick paths and the stale-player sweep cover the
+      // cases where the connection doesn't actually drop.
+      const otherRealPlayers = Object.entries(currentPlayers).filter(
+        ([id, p]) => id !== currentPlayerId && p && !p.isBot
+      );
+      const roomRef = ref(db, `rooms/${roomCode}`);
+      if (otherRealPlayers.length === 0 && currentPlayers[currentPlayerId]) {
+        onDisconnect(roomRef).remove();
+        roomEmptyGuardArmed = true;
+      } else if (roomEmptyGuardArmed) {
+        onDisconnect(roomRef).cancel();
+        roomEmptyGuardArmed = false;
+      }
 
       renderPlayerList();
       renderSettingsPanel();
