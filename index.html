@@ -299,14 +299,15 @@
     padding: 6px 10px; z-index: 50;
     background: #fbfaf6; box-shadow: 0 -2px 6px rgba(0,0,0,.08);
   }
-  #bottom-toolbar.active { display: flex; }
+  #bottom-toolbar.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
+  @keyframes toolbarFadeIn { 0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); } }
   #bottom-toolbar button { width: auto; margin: 0; flex: 1; max-width: 260px; }
   #install-banner {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
     align-items: center; gap: 10px; padding: 10px 12px; z-index: 55;
     background: var(--brand); box-shadow: 0 -2px 6px rgba(0,0,0,.15);
   }
-  #install-banner.active { display: flex; }
+  #install-banner.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   #install-banner span { flex: 1; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1.3; color: #fff; }
   #install-btn {
     width: auto; margin: 0; flex-shrink: 0; color: #fff;
@@ -335,13 +336,13 @@
     #toolbar-help-btn.hint-pulse { animation: none; }
   }
   #toolbar-lobby-start { display: none; flex: 1; justify-content: center; }
-  #toolbar-lobby-start.active { display: flex; }
+  #toolbar-lobby-start.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   #host-start-btn {
     width: auto; margin: 0; font-weight: 700; font-size: 13px; padding: 6px 18px; color: #fff;
     border-width: 10px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
   #hud-room-code-group { display: none; align-items: center; gap: 6px; flex-shrink: 0; }
-  #hud-room-code-group.active { display: flex; }
+  #hud-room-code-group.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   #hud-room-code {
     display: flex; align-items: center; gap: 4px;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .5px; color: var(--brand);
@@ -360,7 +361,7 @@
   }
   #copy-room-code-btn.copied, #share-room-btn.copied { color: var(--brand); }
   #hud-round-label { display: none; flex-direction: column; gap: 3px; align-items: center; font-size: 14px; }
-  #hud-round-label.active { display: flex; }
+  #hud-round-label.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   .round-text { color: var(--text-muted); font-size: 12px; font-weight: 600; }
   .round-tracker {
     display: flex; gap: 3px; flex-wrap: wrap; max-width: 130px; justify-content: center;
@@ -484,6 +485,20 @@
   #reactions-panel {
     position: fixed; inset: 0; z-index: 900; pointer-events: none;
   }
+  #perfect-flash {
+    position: fixed; inset: 0; z-index: 850; pointer-events: none;
+    background: radial-gradient(circle at 50% 40%, rgba(217,164,65,.55), rgba(217,164,65,0) 70%);
+    opacity: 0;
+  }
+  #perfect-flash.flash { animation: perfectFlash 700ms ease-out; }
+  @keyframes perfectFlash {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #perfect-flash.flash { animation: none; }
+  }
   .reaction-bubble {
     position: absolute; padding: 4px 8px; display: flex; align-items: center; justify-content: center;
     animation: reactionSlideOut 380ms ease-out both;
@@ -604,7 +619,12 @@
   .spot-badge.perfect::before { left: -2px; top: -6px; animation-delay: 0ms; }
   .spot-badge.perfect::after { right: -2px; top: -2px; animation-delay: 400ms; }
   @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(15deg); } }
-  .streak-badge { flex-basis: 100%; font-weight: 700; font-size: 14px; color: var(--red); }
+  .streak-badge { flex-basis: 100%; font-weight: 700; font-size: 14px; color: var(--red); animation: streakPop 400ms cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes streakPop {
+    0% { transform: scale(.5) rotate(-6deg); opacity: 0; }
+    60% { transform: scale(1.12) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
   .winner-name-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
   .winner-name-row .winner-avatar { font-size: 28px; line-height: 1; flex-shrink: 0; }
   .winner-name-row .winner-name {
@@ -769,7 +789,6 @@
 
   <div id="settings-toggles-panel">
     <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
-    <label>Music <button id="settings-music-toggle" type="button" class="icon-toggle-btn"></button></label>
   </div>
 
   <h3>Default name</h3>
@@ -902,6 +921,14 @@
         <button type="button" id="setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
       </span>
     </label>
+    <label>Auto mode <button id="setting-auto-advance" type="button" class="text-toggle-btn"></button></label>
+    <label>Auto-advance delay (sec)
+      <span class="stepper">
+        <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
+        <input id="setting-auto-advance-seconds" type="number" min="1" max="15" />
+        <button type="button" class="stepper-btn plus" data-for="setting-auto-advance-seconds" data-step="1">+</button>
+      </span>
+    </label>
   </div>
 
   <h3>Players</h3>
@@ -998,6 +1025,7 @@
 </div>
 
 <div id="reactions-panel"></div>
+<div id="perfect-flash"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
@@ -1074,7 +1102,6 @@
   let currentName = localStorage.getItem("mg_name") || "";
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS[0];
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
-  let musicEnabled = localStorage.getItem("mg_musicEnabled") === "true";
 
   function loadRecentRooms() {
     try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 1); } catch (e) { return []; }
@@ -1252,7 +1279,6 @@
   const settingsCloseBtn = document.getElementById("settings-close-btn");
   const howtoCloseBtn = document.getElementById("howto-close-btn");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
-  const settingsMusicToggle = document.getElementById("settings-music-toggle");
   const settingsNameInput = document.getElementById("settings-name-input");
   const settingsAvatarGridEl = document.getElementById("settings-avatar-grid");
 
@@ -1262,6 +1288,8 @@
   const settingBotsSecondChanceInput = document.getElementById("setting-bots-secondchance");
   const settingItemAnythingInput = document.getElementById("setting-item-anything");
   const settingItemRelativeInput = document.getElementById("setting-item-relative");
+  const settingAutoAdvanceInput = document.getElementById("setting-auto-advance");
+  const settingAutoAdvanceSecondsInput = document.getElementById("setting-auto-advance-seconds");
 
   const hudEl = document.getElementById("hud");
   const hudRoomCodeGroupEl = document.getElementById("hud-room-code-group");
@@ -1284,6 +1312,7 @@
   const emojiPickerEl = document.getElementById("emoji-picker");
   const numpadEl = document.getElementById("numpad");
   const reactionsPanelEl = document.getElementById("reactions-panel");
+  const perfectFlashEl = document.getElementById("perfect-flash");
 
   const answersViewEl = document.getElementById("answers-view");
   const answersRowEl = document.getElementById("answers-row");
@@ -1386,7 +1415,6 @@
     return entries;
   }
   let armedKickTimers = {};
-  let audioCtx = null;
   let everSeenSelfInPlayers = false;
   let wasRemoved = false;
   let roomEmptyGuardArmed = false;
@@ -1415,7 +1443,7 @@
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, botsSecondChance: true, itemSelectionMode: "anything" };
+    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, botsSecondChance: true, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 3 };
   }
 
   // ==================== Home screen ====================
@@ -1504,18 +1532,6 @@
     localSoundEnabled = !localSoundEnabled;
     localStorage.setItem("mg_soundEnabled", String(localSoundEnabled));
     renderSoundToggleIcon();
-  });
-
-  function renderMusicToggleIcon() {
-    settingsMusicToggle.classList.toggle("is-on", musicEnabled);
-    settingsMusicToggle.setAttribute("aria-pressed", String(musicEnabled));
-  }
-  renderMusicToggleIcon();
-  settingsMusicToggle.addEventListener("click", () => {
-    musicEnabled = !musicEnabled;
-    localStorage.setItem("mg_musicEnabled", String(musicEnabled));
-    renderMusicToggleIcon();
-    if (musicEnabled) startMusic(); else stopMusic();
   });
 
   const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen];
@@ -1756,6 +1772,8 @@
     settingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
     settingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
+    settingAutoAdvanceInput.classList.toggle("is-on", !!s.autoAdvanceEnabled);
+    if (document.activeElement !== settingAutoAdvanceSecondsInput) settingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
     const locked = !isHost || (roomState.round && roomState.round > 0);
     [settingTimerInput, settingRoundsInput, settingSecondChanceInput].forEach((el) => {
       el.disabled = locked;
@@ -1763,8 +1781,10 @@
     settingBotsSecondChanceInput.disabled = locked || !s.secondChanceEnabled;
     settingItemAnythingInput.disabled = locked;
     settingItemRelativeInput.disabled = locked;
+    settingAutoAdvanceInput.disabled = locked;
+    settingAutoAdvanceSecondsInput.disabled = locked || !s.autoAdvanceEnabled;
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
-      btn.disabled = locked;
+      btn.disabled = locked || (btn.dataset.for === "setting-auto-advance-seconds" && !s.autoAdvanceEnabled);
     });
     botControlsEl.style.display = locked ? "none" : "flex";
   }
@@ -1806,6 +1826,16 @@
       if (btn.disabled) return;
       set(ref(db, `rooms/${currentRoomCode}/settings/itemSelectionMode`), btn.dataset.mode);
     });
+  });
+  settingAutoAdvanceInput.addEventListener("click", () => {
+    if (settingAutoAdvanceInput.disabled) return;
+    const next = !settingAutoAdvanceInput.classList.contains("is-on");
+    set(ref(db, `rooms/${currentRoomCode}/settings/autoAdvanceEnabled`), next);
+  });
+  settingAutoAdvanceSecondsInput.addEventListener("change", () => {
+    if (settingAutoAdvanceSecondsInput.disabled) return;
+    const val = Math.max(1, Math.min(15, parseInt(settingAutoAdvanceSecondsInput.value, 10) || 3));
+    set(ref(db, `rooms/${currentRoomCode}/settings/autoAdvanceSeconds`), val);
   });
 
   function armHostReclaimMarker(roomCode, name) {
@@ -2259,7 +2289,9 @@
       });
     });
 
-    const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints, phase: "reveal" };
+    const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    const revealAdvanceAt = nowMs() + revealDelayMs;
+    const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints, phase: "reveal", revealAdvanceAt };
     Object.keys(playersSnap).forEach((id) => {
       const newScore = (playersSnap[id].score || 0) + (lastRoundPoints[id] || 0);
       updates[`players/${id}/score`] = newScore;
@@ -2276,15 +2308,39 @@
     console.log("[measuring-game] scoring computed", entries, lastRoundPoints);
     try {
       await update(ref(db, `rooms/${roomCode}`), updates);
+      scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
     } catch (err) {
       console.error("[measuring-game] failed to write scoring update", err, updates);
     }
   }
 
+  function advanceReveal(roomCode) {
+    const next = (roomState.revealIndex || 0) + 1;
+    const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    const revealAdvanceAt = nowMs() + delayMs;
+    update(ref(db, `rooms/${roomCode}`), { revealIndex: next, revealAdvanceAt });
+    scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
+  }
+
+  function checkRevealAdvance(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "reveal") return;
+    if (roomState.paused) return;
+    if (!(roomState.settings || currentSettings).autoAdvanceEnabled) return;
+    if (nowMs() < (roomState.revealAdvanceAt || Infinity)) return;
+    const order = roomState.revealOrder || [];
+    const idx = roomState.revealIndex || 0;
+    if (idx < order.length) {
+      advanceReveal(roomCode);
+    } else {
+      transitionInFlight = true;
+      goToSummary(roomCode).finally(() => { transitionInFlight = false; });
+    }
+  }
+
   revealNextBtn.addEventListener("click", () => {
     if (revealAnimating) return;
-    const next = (roomState.revealIndex || 0) + 1;
-    set(ref(db, `rooms/${currentRoomCode}/revealIndex`), next);
+    advanceReveal(currentRoomCode);
   });
 
   showSummaryBtn.addEventListener("click", () => goToSummary(currentRoomCode));
@@ -2298,7 +2354,20 @@
       const prevIdx = prevOrder ? prevOrder.indexOf(id) : idx;
       rankDeltas[id] = prevIdx === -1 ? 0 : (prevIdx - idx);
     });
-    await update(ref(db, `rooms/${roomCode}`), { phase: "summary", rankDeltas, previousRankOrder: sorted });
+    const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    const summaryAdvanceAt = nowMs() + delayMs;
+    await update(ref(db, `rooms/${roomCode}`), { phase: "summary", rankDeltas, previousRankOrder: sorted, summaryAdvanceAt });
+    scheduleHostDeadline(summaryAdvanceAt, () => checkSummaryAdvance(roomCode));
+  }
+
+  function checkSummaryAdvance(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "summary") return;
+    if (roomState.paused) return;
+    if (!(roomState.settings || currentSettings).autoAdvanceEnabled) return;
+    if (nowMs() < (roomState.summaryAdvanceAt || Infinity)) return;
+    transitionInFlight = true;
+    advanceAfterSummary(roomCode).finally(() => { transitionInFlight = false; });
   }
 
   nextRoundBtn.addEventListener("click", () => advanceAfterSummary(currentRoomCode));
@@ -2672,6 +2741,11 @@
             li.classList.add("winner");
             if (entry.isSpotOn) playSound("roundwin");
             celebrate(confettiTierFor(entry));
+            if (entry.isPerfect) {
+              perfectFlashEl.classList.remove("flash");
+              void perfectFlashEl.offsetWidth;
+              perfectFlashEl.classList.add("flash");
+            }
             revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
             revealListEl.classList.add("answer-revealed");
           }
@@ -2994,7 +3068,20 @@
 
   // ==================== Sound / confetti ====================
 
+  function vibrate(pattern) {
+    try {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    } catch (e) { /* ignore unsupported/blocked vibration */ }
+  }
+
   function celebrate(tier) {
+    if (tier === "perfect") {
+      vibrate([40, 50, 40, 50, 70]);
+    } else if (tier === "spotOn" || tier === true) {
+      vibrate([35, 60, 45]);
+    } else {
+      vibrate(25);
+    }
     if (!window.confetti) return;
     if (tier === "perfect") {
       window.confetti({ particleCount: 320, spread: 130, origin: { y: 0.6 }, colors: ["#d9a441", "#ffe08a", "#fff4d6"] });
@@ -3012,11 +3099,6 @@
       else if (tier === "spotOn") tier = "perfect";
     }
     return tier;
-  }
-
-  function getAudioCtx() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    return audioCtx;
   }
 
   const SFX_FILES = {
@@ -3063,57 +3145,6 @@
     else if (kind === "roundwin") sfx("roundwin");
     else if (kind === "drumroll") sfx("shuffle");
   }
-
-  // ---- Ambient background music (simple procedural pad, no external assets) ----
-  // Placeholder track disabled for now (annoying during testing) — the toggle/localStorage
-  // setting stays wired up so a real track can be dropped in later without redoing the UI.
-  const MUSIC_PLACEHOLDER_DISABLED = true;
-  let musicNodes = null;
-  let musicTimer = null;
-
-  function startMusic() {
-    if (MUSIC_PLACEHOLDER_DISABLED || !musicEnabled || musicNodes) return;
-    try {
-      const ctx = getAudioCtx();
-      const master = ctx.createGain();
-      master.gain.value = 0.05;
-      master.connect(ctx.destination);
-      musicNodes = { master };
-      const scale = [261.63, 293.66, 329.63, 392.00, 440.00]; // C D E G A, calm pentatonic
-      const playNote = () => {
-        if (!musicNodes) return;
-        const freq = scale[Math.floor(Math.random() * scale.length)] / 2;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        osc.connect(gain);
-        gain.connect(musicNodes.master);
-        const now = ctx.currentTime;
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(1, now + 1.2);
-        gain.gain.linearRampToValueAtTime(0, now + 3.5);
-        osc.start(now);
-        osc.stop(now + 3.6);
-      };
-      playNote();
-      musicTimer = setInterval(playNote, 2600);
-    } catch (e) { /* ignore audio errors (e.g. autoplay policy) */ }
-  }
-
-  function stopMusic() {
-    clearInterval(musicTimer);
-    musicTimer = null;
-    if (musicNodes) {
-      try { musicNodes.master.disconnect(); } catch (e) { /* ignore */ }
-      musicNodes = null;
-    }
-  }
-
-  document.addEventListener("click", function initMusicOnce() {
-    if (musicEnabled) startMusic();
-    document.removeEventListener("click", initMusicOnce);
-  }, { once: true });
 
   // Springy release bounce on every button, everywhere — one delegated listener.
   function triggerBtnBounce(e) {
@@ -3247,6 +3278,8 @@
       if (isHost) {
         checkQuestionAdvance(roomCode);
         checkAnswersAdvance(roomCode);
+        checkRevealAdvance(roomCode);
+        checkSummaryAdvance(roomCode);
         handleKickChallengesUpdate(roomCode, data.kickChallenges);
       }
     });
