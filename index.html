@@ -302,6 +302,13 @@
   #bottom-toolbar.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   @keyframes toolbarFadeIn { 0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); } }
   #bottom-toolbar button { width: auto; margin: 0; flex: 1; max-width: 260px; }
+  #bottom-toolbar button:disabled { opacity: .4; filter: grayscale(.4); }
+  #hud-auto-toggle {
+    flex: 0 0 auto; max-width: none; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px;
+    padding: 8px 10px; color: var(--text); border-width: 8px; border-style: solid;
+    border-image-source: var(--btn2); border-image-slice: 55 fill;
+  }
+  #hud-auto-toggle.is-on { color: #fff; border-image-source: var(--btn-accent); }
   #install-banner {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
     align-items: center; gap: 10px; padding: 10px 12px; z-index: 55;
@@ -765,6 +772,7 @@
   <div class="hud-btn-row" id="hud-guest-controls" style="display:none;">
     <button id="exit-btn-guest" type="button">Exit</button>
   </div>
+  <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show round summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
@@ -1298,6 +1306,7 @@
   const hudRoundLabelEl = document.getElementById("hud-round-label");
   const hudHostControlsEl = document.getElementById("hud-host-controls");
   const hudGuestControlsEl = document.getElementById("hud-guest-controls");
+  const hudAutoToggleEl = document.getElementById("hud-auto-toggle");
   const hudTimerEl = document.getElementById("hud-timer");
   const pauseBtn = document.getElementById("pause-btn");
   const exitBtn = document.getElementById("exit-btn");
@@ -2345,6 +2354,28 @@
 
   showSummaryBtn.addEventListener("click", () => goToSummary(currentRoomCode));
 
+  // Live in-HUD auto-mode toggle — separate from the lobby's pre-game setting,
+  // this one stays editable mid-game (no round-lock) so the host can flip
+  // pacing on the fly during reveal/summary without leaving the HUD.
+  function renderAutoToggle(data) {
+    if (!isHost || (data.phase !== "reveal" && data.phase !== "summary")) {
+      hudAutoToggleEl.style.display = "none";
+      return;
+    }
+    const autoOn = !!(data.settings || currentSettings).autoAdvanceEnabled;
+    hudAutoToggleEl.style.display = "block";
+    hudAutoToggleEl.classList.toggle("is-on", autoOn);
+    hudAutoToggleEl.textContent = autoOn ? "Auto: On" : "Auto: Off";
+    revealNextBtn.disabled = autoOn;
+    showSummaryBtn.disabled = autoOn;
+    nextRoundBtn.disabled = autoOn;
+  }
+
+  hudAutoToggleEl.addEventListener("click", () => {
+    const autoOn = hudAutoToggleEl.classList.contains("is-on");
+    set(ref(db, `rooms/${currentRoomCode}/settings/autoAdvanceEnabled`), !autoOn);
+  });
+
   async function goToSummary(roomCode) {
     const players = roomState.players || {};
     const prevOrder = roomState.previousRankOrder || null;
@@ -2728,6 +2759,7 @@
     const entry = order[idx];
     const li = revealListEl.querySelector(`[data-id="${entry.playerId}"]`);
     if (!li) return Promise.resolve();
+    li.scrollIntoView({ behavior: "smooth", block: "center" });
     const pts = entry.basePoints + entry.doubleDownPoints;
     const isWinner = idx === order.length - 1 && entry.isClosest;
 
@@ -2789,8 +2821,13 @@
       setTimeout(() => {
         if ((roomState.revealIndex || 0) === 0) {
           flipReorder(revealListEl, () => renderFaceDownCards(order, order.slice().reverse().map((e) => e.playerId)));
+          // Reveals proceed bottom-up (furthest guess first, winner last, on top) — start
+          // scrolled to the bottom card so the very first reveal is visible without
+          // requiring a manual scroll first, especially with many players.
+          const lastLi = revealListEl.lastElementChild;
+          if (lastLi) lastLi.scrollIntoView({ behavior: "smooth", block: "end" });
         }
-        if (isHost) revealNextBtn.disabled = false;
+        if (isHost) revealNextBtn.disabled = !!(roomState.settings || currentSettings).autoAdvanceEnabled;
       }, 700);
       // Instantly show any entries already revealed (e.g. a client joining mid-reveal)
       for (let i = 0; i < revealIndex; i++) {
@@ -3256,6 +3293,7 @@
       renderHudTop(data);
       renderPausedOverlay(data.paused);
       renderKickModal(data);
+      renderAutoToggle(data);
 
       if (data.phase === "question" || data.phase === "waiting") {
         renderScoreColumn();
