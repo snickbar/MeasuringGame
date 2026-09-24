@@ -1447,6 +1447,7 @@
 
   // Reveal choreography local state (reset per round)
   let revealShuffled = false;
+  let summaryScrollStarted = false;
   let lastChoreographedIndex = -1;
   let revealAnimating = false;
   let wasDoubleDownPicked = false;
@@ -2323,9 +2324,19 @@
     }
   }
 
+  const WINNER_REVEAL_EXTRA_MS = 3000;
+  const SUMMARY_DWELL_MS = 2000;
+  const SUMMARY_SCROLL_MS = 2000;
+
   function advanceReveal(roomCode) {
     const next = (roomState.revealIndex || 0) + 1;
-    const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    const orderLength = (roomState.revealOrder || []).length;
+    const baseDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    // The winner's card has its own drumroll + flip animation on top of the base
+    // delay (per playCardReveal), so give it extra breathing room before the
+    // auto-advance to summary fires — otherwise it reads as "instant."
+    const isRevealingWinner = next === orderLength;
+    const delayMs = isRevealingWinner ? baseDelayMs + WINNER_REVEAL_EXTRA_MS : baseDelayMs;
     const revealAdvanceAt = nowMs() + delayMs;
     update(ref(db, `rooms/${roomCode}`), { revealIndex: next, revealAdvanceAt });
     scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
@@ -2385,8 +2396,10 @@
       const prevIdx = prevOrder ? prevOrder.indexOf(id) : idx;
       rankDeltas[id] = prevIdx === -1 ? 0 : (prevIdx - idx);
     });
-    const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
-    const summaryAdvanceAt = nowMs() + delayMs;
+    // Summary's auto-advance timing is a fixed choreography (bottom -> scroll up -> top,
+    // see renderSummary/startSummaryScrollChoreography) rather than the adjustable
+    // autoAdvanceSeconds slider, which only paces the reveal cards.
+    const summaryAdvanceAt = nowMs() + (SUMMARY_DWELL_MS * 2 + SUMMARY_SCROLL_MS);
     await update(ref(db, `rooms/${roomCode}`), { phase: "summary", rankDeltas, previousRankOrder: sorted, summaryAdvanceAt });
     scheduleHostDeadline(summaryAdvanceAt, () => checkSummaryAdvance(roomCode));
   }
@@ -3053,6 +3066,40 @@
     } else {
       nextRoundBtn.style.display = "none";
     }
+    if (!summaryScrollStarted) {
+      summaryScrollStarted = true;
+      startSummaryScrollChoreography();
+    }
+  }
+
+  function animateScrollTop(container, targetTop, durationMs) {
+    const startTop = container.scrollTop;
+    const delta = targetTop - startTop;
+    if (Math.abs(delta) < 1) return;
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / durationMs);
+      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      container.scrollTop = startTop + delta * eased;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Worst-to-best drama, mirroring the reveal cards: land on the bottom (lowest
+  // round scorer) first, dwell, then slowly pan up to the top performer, dwell
+  // again. Purely cosmetic in manual mode; in auto mode this timeline also
+  // matches summaryAdvanceAt (see goToSummary) so the visual and the actual
+  // advance land together.
+  function startSummaryScrollChoreography() {
+    const gameBody = document.querySelector(".game-body");
+    if (!gameBody) return;
+    requestAnimationFrame(() => {
+      gameBody.scrollTop = Math.max(0, gameBody.scrollHeight - gameBody.clientHeight);
+      setTimeout(() => {
+        animateScrollTop(gameBody, 0, SUMMARY_SCROLL_MS);
+      }, SUMMARY_DWELL_MS);
+    });
   }
 
   let finalRendered = false;
@@ -3236,6 +3283,7 @@
       revealShuffled = false;
       lastChoreographedIndex = -1;
       revealAnimating = false;
+      summaryScrollStarted = false;
       finalRendered = false;
       renderGuessDisplay();
       updateWaitingUi();
