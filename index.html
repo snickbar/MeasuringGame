@@ -143,8 +143,30 @@
     padding: 12px 12px 0; z-index: 10;
   }
 
-  #question-view, #answers-view, #reveal-view, #summary-view { display: none; }
+  #question-view, #answers-view, #reveal-view, #summary-view, #countdown-view { display: none; }
   #question-view.active, #answers-view.active, #reveal-view.active, #summary-view.active { display: block; }
+  #countdown-view.active { display: flex; }
+  #countdown-view {
+    flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    min-height: 46vh; text-align: center;
+  }
+  .countdown-label {
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px; color: var(--brand);
+  }
+  .countdown-number {
+    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 84px; line-height: 1; color: #fff;
+    width: 150px; height: 150px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+    border-width: 20px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
+  }
+  .countdown-number.tick { animation: countdownTick 550ms cubic-bezier(.34,1.56,.64,1); }
+  @keyframes countdownTick {
+    0% { transform: scale(1.5); opacity: 0; }
+    60% { transform: scale(.92); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .countdown-number.tick { animation: none; }
+  }
 
   /* ---- Home screen ---- */
   #home-screen.active {
@@ -995,6 +1017,11 @@
         <ul id="summary-list"></ul>
       </div>
 
+      <div id="countdown-view">
+        <div class="countdown-label">Next round starting in</div>
+        <div class="countdown-number" id="countdown-number">3</div>
+      </div>
+
     </div>
     <div class="score-col" id="score-col"></div>
   </div>
@@ -1335,6 +1362,8 @@
   const showSummaryBtn = document.getElementById("show-summary-btn");
 
   const summaryViewEl = document.getElementById("summary-view");
+  const countdownViewEl = document.getElementById("countdown-view");
+  const countdownNumberEl = document.getElementById("countdown-number");
   const summaryListEl = document.getElementById("summary-list");
   const nextRoundBtn = document.getElementById("next-round-btn");
 
@@ -2144,6 +2173,7 @@
   }
 
   let hudTickHandle = null;
+  let lastCountdownDisplayed = null;
   function startHudTicker() {
     if (hudTickHandle) return;
     hudTickHandle = setInterval(() => {
@@ -2155,6 +2185,17 @@
         kickTimerEl.textContent = "";
       }
       if (!roomState || roomState.paused) return;
+      if (roomState.phase === "countdown" && roomState.countdownEndsAt) {
+        const remaining = Math.max(0, roomState.countdownEndsAt - nowMs());
+        const n = Math.max(1, Math.ceil(remaining / 1000));
+        if (n !== lastCountdownDisplayed) {
+          lastCountdownDisplayed = n;
+          countdownNumberEl.textContent = n;
+          countdownNumberEl.classList.remove("tick");
+          void countdownNumberEl.offsetWidth;
+          countdownNumberEl.classList.add("tick");
+        }
+      }
       let deadline = null;
       if (roomState.phase === "question") deadline = roomState.graceEndsAt || roomState.questionEndsAt;
       else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
@@ -2326,6 +2367,7 @@
 
   const WINNER_REVEAL_EXTRA_MS = 3000;
   const SUMMARY_DWELL_MS = 2000;
+  const COUNTDOWN_SECONDS = 3;
   const SUMMARY_SCROLL_MS = 2000;
 
   function advanceReveal(roomCode) {
@@ -2436,8 +2478,19 @@
       });
       await update(ref(db, `rooms/${roomCode}`), updates);
     } else {
-      await startRound(roomCode, nextRound);
+      const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
+      await update(ref(db, `rooms/${roomCode}`), { phase: "countdown", countdownRound: nextRound, countdownEndsAt });
+      scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(roomCode));
     }
+  }
+
+  function checkCountdownAdvance(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "countdown") return;
+    if (roomState.paused) return;
+    if (nowMs() < (roomState.countdownEndsAt || Infinity)) return;
+    transitionInFlight = true;
+    startRound(roomCode, roomState.countdownRound).finally(() => { transitionInFlight = false; });
   }
 
   async function playAgain(roomCode) {
@@ -3248,7 +3301,7 @@
 
   function applyPhase(data) {
     const phase = data.phase;
-    const isHudActive = ["question", "answers", "reveal", "summary"].includes(phase);
+    const isHudActive = ["question", "answers", "reveal", "summary", "countdown"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     toolbarLobbyStartEl.classList.toggle("active", phase === "waiting" && isHost);
     hostStartBtn.style.display = isHost ? "block" : "none";
@@ -3264,6 +3317,7 @@
     answersViewEl.classList.toggle("active", phase === "answers");
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
+    countdownViewEl.classList.toggle("active", phase === "countdown");
     if (phase !== "reveal") {
       revealNextBtn.style.display = "none";
       showSummaryBtn.style.display = "none";
@@ -3366,6 +3420,7 @@
         checkAnswersAdvance(roomCode);
         checkRevealAdvance(roomCode);
         checkSummaryAdvance(roomCode);
+        checkCountdownAdvance(roomCode);
         handleKickChallengesUpdate(roomCode, data.kickChallenges);
       }
     });
