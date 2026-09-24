@@ -134,8 +134,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #settings-screen, #howto-screen, #join-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
-  #home-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
     position: fixed; top: 62px; left: 0; right: 0; bottom: 58px;
@@ -192,6 +192,7 @@
   .setup-header { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; }
   .setup-header .back-btn { margin: 0; flex-shrink: 0; }
   .setup-header button:not(.back-btn) { width: auto; flex: 1; margin: 0; }
+  .setup-header h1 { flex: 1; margin: 0; font-size: 21px; }
   .screen-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
   .screen-header h1 { margin: 0; }
   .screen-header .back-btn { margin: 0; flex-shrink: 0; }
@@ -280,7 +281,7 @@
     background-image: var(--icon-bot); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
 
-  #bot-controls { display: none; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  #bot-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
   #bot-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
   .bot-btn {
     width: auto; font-size: 14px; padding: 6px 12px; margin: 0;
@@ -288,7 +289,7 @@
     color: var(--text);
   }
 
-  #host-mode-controls { display: none; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  #host-mode-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
   #host-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
   .hostmode-btn {
     width: auto; font-size: 13px; padding: 6px 12px; margin: 0;
@@ -364,12 +365,7 @@
   @media (prefers-reduced-motion: reduce) {
     #toolbar-help-btn.hint-pulse { animation: none; }
   }
-  #toolbar-lobby-start { display: none; flex: 1; justify-content: center; }
-  #toolbar-lobby-start.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
-  #host-start-btn {
-    width: auto; margin: 0; font-weight: 700; font-size: 13px; padding: 6px 18px; color: #fff;
-    border-width: 10px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
-  }
+  #host-start-btn { margin-top: 14px; font-size: 18px; }
   #hud-room-code-group { display: none; align-items: center; gap: 6px; flex-shrink: 0; }
   #hud-room-code-group.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   #hud-room-code {
@@ -775,9 +771,6 @@
     <button id="copy-room-code-btn" type="button">Copy code</button>
   </div>
   <div id="toolbar-center">
-    <div id="toolbar-lobby-start">
-      <button id="host-start-btn" type="button" style="display:none;">Start game</button>
-    </div>
     <div id="hud-round-label"></div>
   </div>
   <div id="toolbar-right-group">
@@ -836,12 +829,12 @@
 
   <div class="howto-section">
     <h3>Creating a room</h3>
-    <p>Tap <b>Create Game</b>, enter your name, pick an avatar, and tap <b>Create room</b>. You're the host - only you can change the room settings and start the game.</p>
+    <p>Tap <b>Create Game</b> to choose the room settings and what happens if you disconnect, then tap <b>Create Room</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in.</p>
   </div>
 
   <div class="howto-section">
     <h3>Joining a room</h3>
-    <p>Tap <b>Join Game</b>, type the 4-letter room code the host gave you, enter your name, and pick an avatar. Every player needs a unique avatar per room, so any already taken will be grayed out.</p>
+    <p>Tap <b>Join Game</b>, type the 4-letter room code the host gave you, and tap <b>Continue</b>. Then pick your name and avatar and tap <b>Join Lobby</b>. Every player needs a unique avatar per room, so any already taken will be grayed out.</p>
   </div>
 
   <div class="howto-section">
@@ -851,9 +844,8 @@
 
   <div class="howto-section">
     <h3>Host settings</h3>
-    <p>Chosen once when you create a room:</p>
+    <p>All chosen once, up front, before the room is created:</p>
     <p><b>If host disconnects</b> - "Give another player host" auto-hands host duties to whoever's been in the room longest if you drop; "Save my host spot" holds your spot so rejoining under the same name gets it back.</p>
-    <p>Adjustable any time from the lobby (before the game starts):</p>
     <p><b>Timer</b> - how many seconds each round's guessing phase lasts. <b>Rounds</b> - how many rounds the game runs. <b>Second-chance scoring</b> - turns on the pick/double-down phase after guesses lock (see below). <b>Bots use second chances</b> - lets bots join in on that phase too. <b>Item selection</b> - see next section.</p>
   </div>
 
@@ -887,45 +879,16 @@
   </div>
 </div>
 
-<div id="join-screen" class="screen">
+<div id="create-screen" class="screen">
   <div class="setup-header">
-    <button id="setup-back-btn" type="button" class="back-btn">&larr; Back</button>
-    <button id="create-btn">Create room</button>
-    <button id="join-btn" style="display:none;">Join room</button>
+    <button id="create-back-btn" type="button" class="back-btn">&larr; Back</button>
+    <h1>Create Game</h1>
   </div>
 
-  <div id="host-mode-controls" style="display:none;">
+  <div id="host-mode-controls">
     <span>If host disconnects:</span>
     <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
     <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
-  </div>
-
-  <div class="code-name-row">
-    <input id="code-input" placeholder="Room code" style="text-transform: uppercase; display:none;" />
-    <input id="name-input" placeholder="Your name" maxlength="20" />
-  </div>
-
-  <div id="recent-rooms-section" style="display:none;">
-    <h3>Last game</h3>
-    <div id="recent-rooms-list"></div>
-  </div>
-
-  <div id="avatar-grid"></div>
-
-  <p id="status"></p>
-</div>
-
-<div id="lobby-screen" class="screen">
-  <div class="screen-header">
-    <h1>Room: <span id="room-code-display"></span></h1>
-    <button id="share-room-btn" type="button" class="back-btn">Share room</button>
-  </div>
-
-  <div id="bot-controls">
-    <span>Add bot:</span>
-    <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
-    <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
-    <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
   </div>
 
   <div id="settings-panel">
@@ -961,8 +924,59 @@
     </label>
   </div>
 
+  <p id="create-status"></p>
+  <button id="create-room-btn">Create Room</button>
+</div>
+
+<div id="join-screen" class="screen">
+  <div class="setup-header">
+    <button id="join-back-btn" type="button" class="back-btn">&larr; Back</button>
+    <h1>Join Game</h1>
+  </div>
+
+  <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" />
+
+  <div id="recent-rooms-section" style="display:none;">
+    <h3>Last game</h3>
+    <div id="recent-rooms-list"></div>
+  </div>
+
+  <p id="join-status"></p>
+  <button id="join-continue-btn">Continue</button>
+</div>
+
+<div id="name-avatar-screen" class="screen">
+  <div class="setup-header">
+    <button id="name-avatar-back-btn" type="button" class="back-btn">&larr; Back</button>
+    <h1>Choose your look</h1>
+  </div>
+
+  <input id="name-input" placeholder="Your name" maxlength="20" />
+
+  <div id="avatar-grid"></div>
+
+  <p id="name-avatar-status"></p>
+  <button id="join-lobby-btn">Join Lobby</button>
+</div>
+
+<div id="lobby-screen" class="screen">
+  <div class="screen-header">
+    <h1>Room: <span id="room-code-display"></span></h1>
+    <button id="share-room-btn" type="button" class="back-btn">Share room</button>
+  </div>
+
+  <div id="bot-controls">
+    <span>Add bot:</span>
+    <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
+    <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
+    <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
+  </div>
+  <p id="lobby-status"></p>
+
   <h3>Players</h3>
   <ul id="player-list"></ul>
+
+  <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
 </div>
 
 <div id="hud">
@@ -1018,7 +1032,7 @@
       </div>
 
       <div id="countdown-view">
-        <div class="countdown-label">Next round starting in</div>
+        <div class="countdown-label" id="countdown-label">Next round starting in</div>
         <div class="countdown-number" id="countdown-number">3</div>
       </div>
 
@@ -1284,27 +1298,34 @@
   const homeScreen = document.getElementById("home-screen");
   const homeCreateBtn = document.getElementById("home-create-btn");
   const homeJoinBtn = document.getElementById("home-join-btn");
-  const setupBackBtn = document.getElementById("setup-back-btn");
-  const joinScreen = document.getElementById("join-screen");
-  const lobbyScreenEl = document.getElementById("lobby-screen");
-  const nameInput = document.getElementById("name-input");
-  const codeInput = document.getElementById("code-input");
-  const createBtn = document.getElementById("create-btn");
+  const createScreenEl = document.getElementById("create-screen");
+  const createBackBtn = document.getElementById("create-back-btn");
+  const createRoomBtn = document.getElementById("create-room-btn");
+  const createStatusEl = document.getElementById("create-status");
   const hostModeControlsEl = document.getElementById("host-mode-controls");
-  const joinBtn = document.getElementById("join-btn");
-  const statusEl = document.getElementById("status");
+  const joinScreen = document.getElementById("join-screen");
+  const joinBackBtn = document.getElementById("join-back-btn");
+  const joinContinueBtn = document.getElementById("join-continue-btn");
+  const joinStatusEl = document.getElementById("join-status");
+  const codeInput = document.getElementById("code-input");
+  const nameAvatarScreenEl = document.getElementById("name-avatar-screen");
+  const nameAvatarBackBtn = document.getElementById("name-avatar-back-btn");
+  const joinLobbyBtn = document.getElementById("join-lobby-btn");
+  const nameAvatarStatusEl = document.getElementById("name-avatar-status");
+  const nameInput = document.getElementById("name-input");
+  const lobbyScreenEl = document.getElementById("lobby-screen");
   const roomCodeDisplay = document.getElementById("room-code-display");
   const shareRoomBtn = document.getElementById("share-room-btn");
   const playerList = document.getElementById("player-list");
   const hostStartBtn = document.getElementById("host-start-btn");
   const botControlsEl = document.getElementById("bot-controls");
+  const lobbyStatusEl = document.getElementById("lobby-status");
   const avatarGridEl = document.getElementById("avatar-grid");
   const recentRoomsSection = document.getElementById("recent-rooms-section");
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
-  const toolbarLobbyStartEl = document.getElementById("toolbar-lobby-start");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
   const installBanner = document.getElementById("install-banner");
   const installBtn = document.getElementById("install-btn");
@@ -1363,6 +1384,7 @@
 
   const summaryViewEl = document.getElementById("summary-view");
   const countdownViewEl = document.getElementById("countdown-view");
+  const countdownLabelEl = document.getElementById("countdown-label");
   const countdownNumberEl = document.getElementById("countdown-number");
   const summaryListEl = document.getElementById("summary-list");
   const nextRoundBtn = document.getElementById("next-round-btn");
@@ -1737,8 +1759,12 @@
     history.pushState({ appGuard: true }, "", location.href);
     if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
       closeOverlay();
+    } else if (createScreenEl.classList.contains("active")) {
+      createBackBtn.click();
     } else if (joinScreen.classList.contains("active")) {
-      setupBackBtn.click();
+      joinBackBtn.click();
+    } else if (nameAvatarScreenEl.classList.contains("active")) {
+      nameAvatarBackBtn.click();
     }
   });
 
@@ -1754,7 +1780,7 @@
       label.textContent = r.code;
       const btn = document.createElement("button");
       btn.textContent = "Rejoin";
-      btn.addEventListener("click", () => attemptJoin(r.code));
+      btn.addEventListener("click", () => rejoinRoom(r.code));
       row.appendChild(label);
       row.appendChild(btn);
       recentRoomsListEl.appendChild(row);
@@ -1772,7 +1798,7 @@
     const deepLinkCode = new URLSearchParams(location.search).get("join");
     if (!deepLinkCode) return;
     history.replaceState({}, "", location.pathname);
-    enterSetup("join");
+    showJoinScreen();
     codeInput.value = deepLinkCode.trim().toUpperCase();
   })();
 
@@ -1803,29 +1829,23 @@
     renderedPlayerListIds = newIds;
   }
 
-  function renderSettingsPanel() {
+  // Settings live as local state (currentSettings) until the room is actually
+  // created on the create screen — there's no room to write to yet.
+  function renderLocalSettingsPanel() {
     const s = currentSettings;
     if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
     settingSecondChanceInput.classList.toggle("is-on", !!s.secondChanceEnabled);
     settingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
+    settingBotsSecondChanceInput.disabled = !s.secondChanceEnabled;
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
     settingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
     settingAutoAdvanceInput.classList.toggle("is-on", !!s.autoAdvanceEnabled);
     if (document.activeElement !== settingAutoAdvanceSecondsInput) settingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
-    const locked = !isHost || (roomState.round && roomState.round > 0);
-    [settingTimerInput, settingRoundsInput, settingSecondChanceInput].forEach((el) => {
-      el.disabled = locked;
-    });
-    settingBotsSecondChanceInput.disabled = locked || !s.secondChanceEnabled;
-    settingItemAnythingInput.disabled = locked;
-    settingItemRelativeInput.disabled = locked;
-    settingAutoAdvanceInput.disabled = locked;
-    settingAutoAdvanceSecondsInput.disabled = locked || !s.autoAdvanceEnabled;
+    settingAutoAdvanceSecondsInput.disabled = !s.autoAdvanceEnabled;
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
-      btn.disabled = locked || (btn.dataset.for === "setting-auto-advance-seconds" && !s.autoAdvanceEnabled);
+      btn.disabled = btn.dataset.for === "setting-auto-advance-seconds" && !s.autoAdvanceEnabled;
     });
-    botControlsEl.style.display = locked ? "none" : "flex";
   }
 
   document.getElementById("settings-panel").addEventListener("click", (e) => {
@@ -1841,40 +1861,36 @@
   });
 
   settingTimerInput.addEventListener("change", () => {
-    if (settingTimerInput.disabled) return;
-    const val = Math.max(10, Math.min(90, parseInt(settingTimerInput.value, 10) || 30));
-    set(ref(db, `rooms/${currentRoomCode}/settings/timerSeconds`), val);
+    currentSettings.timerSeconds = Math.max(10, Math.min(90, parseInt(settingTimerInput.value, 10) || 30));
+    renderLocalSettingsPanel();
   });
   settingRoundsInput.addEventListener("change", () => {
-    if (settingRoundsInput.disabled) return;
-    const val = Math.max(1, Math.min(20, parseInt(settingRoundsInput.value, 10) || 5));
-    set(ref(db, `rooms/${currentRoomCode}/settings/totalRounds`), val);
+    currentSettings.totalRounds = Math.max(1, Math.min(20, parseInt(settingRoundsInput.value, 10) || 5));
+    renderLocalSettingsPanel();
   });
   settingSecondChanceInput.addEventListener("click", () => {
-    if (settingSecondChanceInput.disabled) return;
-    const next = !settingSecondChanceInput.classList.contains("is-on");
-    set(ref(db, `rooms/${currentRoomCode}/settings/secondChanceEnabled`), next);
+    currentSettings.secondChanceEnabled = !settingSecondChanceInput.classList.contains("is-on");
+    renderLocalSettingsPanel();
   });
   settingBotsSecondChanceInput.addEventListener("click", () => {
     if (settingBotsSecondChanceInput.disabled) return;
-    const next = !settingBotsSecondChanceInput.classList.contains("is-on");
-    set(ref(db, `rooms/${currentRoomCode}/settings/botsSecondChance`), next);
+    currentSettings.botsSecondChance = !settingBotsSecondChanceInput.classList.contains("is-on");
+    renderLocalSettingsPanel();
   });
   [settingItemAnythingInput, settingItemRelativeInput].forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (btn.disabled) return;
-      set(ref(db, `rooms/${currentRoomCode}/settings/itemSelectionMode`), btn.dataset.mode);
+      currentSettings.itemSelectionMode = btn.dataset.mode;
+      renderLocalSettingsPanel();
     });
   });
   settingAutoAdvanceInput.addEventListener("click", () => {
-    if (settingAutoAdvanceInput.disabled) return;
-    const next = !settingAutoAdvanceInput.classList.contains("is-on");
-    set(ref(db, `rooms/${currentRoomCode}/settings/autoAdvanceEnabled`), next);
+    currentSettings.autoAdvanceEnabled = !settingAutoAdvanceInput.classList.contains("is-on");
+    renderLocalSettingsPanel();
   });
   settingAutoAdvanceSecondsInput.addEventListener("change", () => {
     if (settingAutoAdvanceSecondsInput.disabled) return;
-    const val = Math.max(1, Math.min(15, parseInt(settingAutoAdvanceSecondsInput.value, 10) || 3));
-    set(ref(db, `rooms/${currentRoomCode}/settings/autoAdvanceSeconds`), val);
+    currentSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(settingAutoAdvanceSecondsInput.value, 10) || 3));
+    renderLocalSettingsPanel();
   });
 
   function armHostReclaimMarker(roomCode, name) {
@@ -1893,7 +1909,7 @@
     const freeFrames = [];
     for (let i = 1; i <= FRAME_COUNT; i++) if (!usedFrames.has(i)) freeFrames.push(i);
     if (freeFrames.length === 0) {
-      statusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
+      nameAvatarStatusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
       return;
     }
     const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
@@ -1926,7 +1942,9 @@
 
     addRecentRoom(roomCode);
     homeScreen.classList.remove("active");
+    createScreenEl.classList.remove("active");
     joinScreen.classList.remove("active");
+    nameAvatarScreenEl.classList.remove("active");
     roomCodeDisplay.textContent = roomCode;
 
     startHudTicker();
@@ -1934,21 +1952,58 @@
     watchReactions(roomCode);
   }
 
-  function enterSetup(mode) {
-    createBtn.style.display = mode === "create" ? "block" : "none";
-    hostModeControlsEl.style.display = mode === "create" ? "flex" : "none";
-    codeInput.style.display = mode === "join" ? "block" : "none";
-    joinBtn.style.display = mode === "join" ? "block" : "none";
-    if (mode === "join") { renderRecentRooms(); } else { recentRoomsSection.style.display = "none"; }
-    statusEl.textContent = "";
+  // ---- Screen navigation: home -> create/join -> name & avatar -> lobby ----
+  let pendingRoomCode = null;
+  let pendingIsHost = false;
+  let pendingSettings = null;
+  let nameAvatarCameFrom = null; // "create" | "join" — for the back button
+
+  function showCreateScreen() {
+    currentSettings = DEFAULT_SETTINGS();
+    hostTransferModeChoice = "reassign";
+    hostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b.dataset.mode === "reassign");
+    });
+    renderLocalSettingsPanel();
+    createStatusEl.textContent = "";
+    homeScreen.classList.remove("active");
+    createScreenEl.classList.add("active");
+  }
+  homeCreateBtn.addEventListener("click", showCreateScreen);
+  createBackBtn.addEventListener("click", () => {
+    createScreenEl.classList.remove("active");
+    homeScreen.classList.add("active");
+  });
+
+  function showJoinScreen() {
+    codeInput.value = "";
+    renderRecentRooms();
+    joinStatusEl.textContent = "";
     homeScreen.classList.remove("active");
     joinScreen.classList.add("active");
   }
-  homeCreateBtn.addEventListener("click", () => enterSetup("create"));
-  homeJoinBtn.addEventListener("click", () => enterSetup("join"));
-  setupBackBtn.addEventListener("click", () => {
+  homeJoinBtn.addEventListener("click", showJoinScreen);
+  joinBackBtn.addEventListener("click", () => {
     joinScreen.classList.remove("active");
     homeScreen.classList.add("active");
+  });
+
+  function showNameAvatarScreen(cameFrom) {
+    nameAvatarCameFrom = cameFrom;
+    nameAvatarStatusEl.textContent = "";
+    nameInput.value = currentName;
+    watchTakenAvatarsForCode(pendingRoomCode);
+    createScreenEl.classList.remove("active");
+    joinScreen.classList.remove("active");
+    nameAvatarScreenEl.classList.add("active");
+  }
+  nameAvatarBackBtn.addEventListener("click", () => {
+    nameAvatarScreenEl.classList.remove("active");
+    if (nameAvatarCameFrom === "create") {
+      createScreenEl.classList.add("active");
+    } else {
+      joinScreen.classList.add("active");
+    }
   });
 
   let hostTransferModeChoice = "reassign";
@@ -1962,11 +2017,9 @@
     playSound("tap");
   });
 
-  createBtn.addEventListener("click", async () => {
-    const name = nameInput.value.trim().slice(0, 20);
-    if (!name) { statusEl.textContent = "Enter your name first."; return; }
-    statusEl.textContent = "Creating room...";
-    const settings = { ...DEFAULT_SETTINGS(), hostTransferMode: hostTransferModeChoice };
+  createRoomBtn.addEventListener("click", async () => {
+    createStatusEl.textContent = "Creating room...";
+    const settings = { ...currentSettings, hostTransferMode: hostTransferModeChoice };
     // Claim a code atomically (transaction only commits if the path is still
     // empty) and retry on the rare collision, rather than blindly set()-ing a
     // random code and risking a silent overwrite of someone else's room.
@@ -1979,42 +2032,77 @@
       });
       if (result.committed) { roomCode = candidate; break; }
     }
-    if (!roomCode) { statusEl.textContent = "Couldn't create a room, please try again."; return; }
-    await joinRoomAsPlayer(roomCode, name, true, { settings });
+    if (!roomCode) { createStatusEl.textContent = "Couldn't create a room, please try again."; return; }
+    pendingRoomCode = roomCode;
+    pendingIsHost = true;
+    pendingSettings = settings;
+    showNameAvatarScreen("create");
   });
 
-  async function attemptJoin(code) {
+  joinContinueBtn.addEventListener("click", () => {
+    const code = codeInput.value.trim().toUpperCase();
+    if (!code) { joinStatusEl.textContent = "Enter a room code."; return; }
+    pendingRoomCode = code;
+    pendingIsHost = false;
+    pendingSettings = null;
+    showNameAvatarScreen("join");
+  });
+
+  joinLobbyBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim().slice(0, 20);
-    if (!name) { statusEl.textContent = "Enter your name first."; return; }
-    if (!code) { statusEl.textContent = "Enter a room code."; return; }
-    statusEl.textContent = "Joining room...";
+    if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
+    if (pendingIsHost) {
+      await joinRoomAsPlayer(pendingRoomCode, name, true, { settings: pendingSettings });
+      return;
+    }
+    nameAvatarStatusEl.textContent = "Joining room...";
     const snap = await new Promise((resolve) => {
-      onValue(ref(db, `rooms/${code}`), resolve, { onlyOnce: true });
+      onValue(ref(db, `rooms/${pendingRoomCode}`), resolve, { onlyOnce: true });
     });
     const data = snap.val();
-    if (data === null) { statusEl.textContent = "Room not found. Check the code."; return; }
+    if (data === null) { nameAvatarStatusEl.textContent = "Room not found. Check the code."; return; }
     // Final authoritative avatar-uniqueness check right before writing —
     // the live grid greying-out is just a preview and can race or be
     // bypassed (e.g. the recent-rooms "Rejoin" button skips it entirely).
     const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a));
-      if (!free) { statusEl.textContent = "Every avatar is taken in that room."; return; }
+      if (!free) { nameAvatarStatusEl.textContent = "Every avatar is taken in that room."; return; }
       currentAvatar = free;
       localStorage.setItem("mg_avatar", free);
     }
     takenAvatars = existingAvatars;
     renderAvatarGrid();
-    joinRoomAsPlayer(code, name, false, data);
-  }
-
-  joinBtn.addEventListener("click", () => {
-    const code = codeInput.value.trim().toUpperCase();
-    attemptJoin(code);
+    joinRoomAsPlayer(pendingRoomCode, name, false, data);
   });
 
+  // One-tap shortcut from "Last game" — bypasses the code/name/avatar screens
+  // entirely and rejoins under the remembered name/avatar.
+  async function rejoinRoom(code) {
+    if (!currentName) {
+      joinStatusEl.textContent = "Set a default name in Settings first, or join manually below.";
+      return;
+    }
+    joinStatusEl.textContent = "Rejoining room...";
+    const snap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${code}`), resolve, { onlyOnce: true });
+    });
+    const data = snap.val();
+    if (data === null) { joinStatusEl.textContent = "Room not found."; return; }
+    const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
+    if (existingAvatars.has(currentAvatar)) {
+      const free = AVATARS.find((a) => !existingAvatars.has(a));
+      if (!free) { joinStatusEl.textContent = "Every avatar is taken in that room."; return; }
+      currentAvatar = free;
+      localStorage.setItem("mg_avatar", free);
+    }
+    joinRoomAsPlayer(code, currentName, false, data);
+  }
+
   hostStartBtn.addEventListener("click", async () => {
-    await startRound(currentRoomCode, 1);
+    const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
+    await update(ref(db, `rooms/${currentRoomCode}`), { phase: "countdown", countdownRound: 1, countdownEndsAt });
+    scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
   });
 
   function maybeReassignHost(data, roomCode) {
@@ -2062,7 +2150,7 @@
     const freeFrames = [];
     for (let i = 1; i <= FRAME_COUNT; i++) if (!usedFrames.has(i)) freeFrames.push(i);
     if (freeFrames.length === 0) {
-      statusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
+      lobbyStatusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
       return;
     }
     const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
@@ -2550,8 +2638,7 @@
   leftReloadBtn.addEventListener("click", () => location.reload());
 
   function showLeftScreen(reason) {
-    [joinScreen, lobbyScreenEl, hudEl, finalScreenEl, endedScreenEl].forEach((el) => el.classList.remove("active"));
-    toolbarLobbyStartEl.classList.remove("active");
+    [createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, endedScreenEl].forEach((el) => el.classList.remove("active"));
     hudRoomCodeGroupEl.classList.remove("active");
     hudRoundLabelEl.classList.remove("active");
     bottomToolbarEl.classList.remove("active");
@@ -3303,7 +3390,6 @@
     const phase = data.phase;
     const isHudActive = ["question", "answers", "reveal", "summary", "countdown"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
-    toolbarLobbyStartEl.classList.toggle("active", phase === "waiting" && isHost);
     hostStartBtn.style.display = isHost ? "block" : "none";
     hudEl.classList.toggle("active", isHudActive);
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
@@ -3318,6 +3404,9 @@
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
+    if (phase === "countdown") {
+      countdownLabelEl.textContent = data.countdownRound === 1 ? "Round 1 starting in" : "Next round starting in";
+    }
     if (phase !== "reveal") {
       revealNextBtn.style.display = "none";
       showSummaryBtn.style.display = "none";
@@ -3390,7 +3479,6 @@
       }
 
       renderPlayerList();
-      renderSettingsPanel();
       applyPhase(data);
       renderHudTop(data);
       renderPausedOverlay(data.paused);
