@@ -1479,7 +1479,6 @@
   let armedKickTimers = {};
   let everSeenSelfInPlayers = false;
   let wasRemoved = false;
-  let roomEmptyGuardArmed = false;
 
   // Rooms are otherwise never deleted (only individual players are), so an
   // abandoned game lives in the DB forever. Call this right after removing a
@@ -2653,7 +2652,6 @@
   async function guestExit() {
     const roomCode = currentRoomCode;
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
-    if (roomEmptyGuardArmed) { onDisconnect(ref(db, `rooms/${roomCode}`)).cancel(); roomEmptyGuardArmed = false; }
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("You left the room.");
@@ -2663,7 +2661,6 @@
     const roomCode = currentRoomCode;
     await set(ref(db, `rooms/${roomCode}/phase`), "ended");
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
-    if (roomEmptyGuardArmed) { onDisconnect(ref(db, `rooms/${roomCode}`)).cancel(); roomEmptyGuardArmed = false; }
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("You ended the game.");
@@ -3465,21 +3462,16 @@
 
       maybeReassignHost(data, roomCode);
 
-      // If I'm the only real (non-bot) player left, arm a room-level
-      // onDisconnect so a crashed tab/dead network still reaps the room —
-      // the explicit leave/kick paths and the stale-player sweep cover the
-      // cases where the connection doesn't actually drop.
-      const otherRealPlayers = Object.entries(currentPlayers).filter(
-        ([id, p]) => id !== currentPlayerId && p && !p.isBot
-      );
-      const roomRef = ref(db, `rooms/${roomCode}`);
-      if (otherRealPlayers.length === 0 && currentPlayers[currentPlayerId]) {
-        onDisconnect(roomRef).remove();
-        roomEmptyGuardArmed = true;
-      } else if (roomEmptyGuardArmed) {
-        onDisconnect(roomRef).cancel();
-        roomEmptyGuardArmed = false;
-      }
+      // Room cleanup for genuine abandonment is handled entirely by the
+      // presence system above (player-level onDisconnect -> 25s grace ->
+      // periodic sweep -> maybeDeleteEmptyRoom) plus the explicit exit/kick
+      // paths, which already call maybeDeleteEmptyRoom themselves. A
+      // room-level onDisconnect used to also be armed here to "catch crashed
+      // tabs", but it fired on ANY disconnect with no grace period at all -
+      // including a momentary one from opening the native share sheet (e.g.
+      // tapping "Share room") - which deleted the room out from under an
+      // active host who never actually left. Removed; the sweep above
+      // already covers real abandonment without that false-positive risk.
 
       renderPlayerList();
       applyPhase(data);
