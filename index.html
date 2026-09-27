@@ -902,6 +902,12 @@
   <h3>Default avatar</h3>
   <div id="settings-avatar-grid"></div>
 
+  <div id="debug-coins-panel" style="display:none;">
+    <h3>Debug: set coins</h3>
+    <input id="debug-coins-input" type="number" min="0" step="1" placeholder="Coin amount" />
+    <button id="debug-coins-btn" type="button">Set</button>
+  </div>
+
   <p class="settings-footer-link"><a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>
 </div>
 
@@ -1894,6 +1900,17 @@
     celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
     spawnTrophyBurst(gachaRevealEl);
   });
+
+  // Hidden dev convenience for testing the coin economy from any device
+  // (including phones, where there's no easy console access) - only
+  // renders when visiting with ?debug=1 in the URL, never shown otherwise.
+  if (new URLSearchParams(location.search).get("debug") === "1") {
+    document.getElementById("debug-coins-panel").style.display = "block";
+    document.getElementById("debug-coins-btn").addEventListener("click", async () => {
+      const val = Math.max(0, parseInt(document.getElementById("debug-coins-input").value, 10) || 0);
+      await update(ref(db, `profiles/${deviceId}`), { coins: val });
+    });
+  }
 
   async function copyTextToClipboard(text) {
     try {
