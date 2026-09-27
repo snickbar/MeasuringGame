@@ -154,15 +154,17 @@
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px; color: var(--brand);
   }
   .countdown-number {
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 84px; line-height: 1; color: #fff;
-    width: 150px; height: 150px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
-    border-width: 20px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
+    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 72px; line-height: 1; color: #fff;
+    letter-spacing: 2px;
+    min-width: 150px; height: 150px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+    background: #4a3324; border-radius: 18px;
+    box-shadow: inset 0 3px 0 rgba(255,255,255,0.12), inset 0 -6px 10px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.25);
+    perspective: 400px;
   }
-  .countdown-number.tick { animation: countdownTick 550ms cubic-bezier(.34,1.56,.64,1); }
-  @keyframes countdownTick {
-    0% { transform: scale(1.5); opacity: 0; }
-    60% { transform: scale(.92); }
-    100% { transform: scale(1); opacity: 1; }
+  .countdown-number.tick { animation: countdownFlip 350ms ease; }
+  @keyframes countdownFlip {
+    0% { transform: rotateX(90deg); opacity: 0.3; }
+    100% { transform: rotateX(0deg); opacity: 1; }
   }
   @media (prefers-reduced-motion: reduce) {
     .countdown-number.tick { animation: none; }
@@ -537,6 +539,50 @@
     100% { transform: translate(-100%, -50%) scale(1); opacity: 1; }
   }
   .reaction-bubble .reaction-emoji { font-size: 24px; }
+
+  .float-reaction {
+    position: absolute; font-size: 20px; animation: floatReactionUp 900ms ease-out forwards;
+  }
+  @keyframes floatReactionUp {
+    0% { transform: translate(-50%, -50%) scale(.5); opacity: 0; }
+    15% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+    100% { transform: translate(-50%, -220%) scale(1); opacity: 0; }
+  }
+
+  .streamer-piece {
+    position: absolute; top: -24px; width: 7px; height: 24px; border-radius: 2px;
+    animation: streamerFall linear forwards;
+  }
+  @keyframes streamerFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(560deg); opacity: 0; }
+  }
+
+  .trophy-burst { position: fixed; display: flex; align-items: center; justify-content: center; z-index: 950; }
+  .trophy-burst .trophy-emoji { font-size: 46px; display: inline-block; animation: trophyPopIn 550ms cubic-bezier(.34,1.56,.64,1) both; }
+  .trophy-burst .ray {
+    position: absolute; top: 50%; left: 50%; width: 3px; height: 46px;
+    background: linear-gradient(var(--brand), transparent); transform-origin: top center;
+    animation: rayShootOut 650ms ease-out both;
+  }
+  @keyframes trophyPopIn {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.25) rotate(8deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes rayShootOut { 0% { opacity: 0; } 30% { opacity: .85; } 100% { opacity: 0; } }
+
+  .coin-fly { position: fixed; font-size: 18px; z-index: 950; animation: coinFlyArc 650ms ease-in forwards; }
+  @keyframes coinFlyArc {
+    0% { transform: translate(0,0) scale(.7) rotate(0deg); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translate(var(--fx), var(--fy)) scale(1) rotate(360deg); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .float-reaction, .streamer-piece, .coin-fly { display: none; }
+    .trophy-burst .trophy-emoji { animation: none; }
+    .trophy-burst .ray { display: none; }
+  }
 
   /* ---- Answers / second chance ---- */
   #answers-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
@@ -2765,16 +2811,27 @@
     const bubble = document.createElement("div");
     bubble.className = "reaction-bubble";
     bubble.innerHTML = `<span class="reaction-emoji">${r.emoji}</span>`;
+    let originTop = 90, originLeft = 8;
     if (card) {
       const rect = card.getBoundingClientRect();
-      bubble.style.top = `${rect.top + rect.height / 2}px`;
-      bubble.style.left = `${rect.left}px`;
-    } else {
-      bubble.style.top = "90px";
-      bubble.style.left = "8px";
+      originTop = rect.top + rect.height / 2;
+      originLeft = rect.left;
     }
+    bubble.style.top = `${originTop}px`;
+    bubble.style.left = `${originLeft}px`;
     reactionsPanelEl.appendChild(bubble);
     setTimeout(() => bubble.remove(), 1000);
+
+    for (let i = 0; i < 4; i++) {
+      const f = document.createElement("div");
+      f.className = "float-reaction";
+      f.textContent = r.emoji;
+      f.style.left = `${originLeft + 10 + Math.random() * 24}px`;
+      f.style.top = `${originTop}px`;
+      f.style.animationDelay = `${i * 90}ms`;
+      reactionsPanelEl.appendChild(f);
+      setTimeout(() => f.remove(), 1100);
+    }
   }
 
   // ==================== Answers / second-chance phase ====================
@@ -2947,6 +3004,7 @@
             else if (entry.isSpotOn) playSound("roundwin");
             if (entry.consecutiveWins >= 2) playSound("streak");
             celebrate(confettiTierFor(entry));
+            spawnTrophyBurst(li);
             if (entry.isPerfect) {
               perfectFlashEl.classList.remove("flash");
               void perfectFlashEl.offsetWidth;
@@ -2956,6 +3014,13 @@
             revealListEl.classList.add("answer-revealed");
           }
           setTimeout(() => {
+            if (isWinner) {
+              order.slice(0, idx + 1).forEach((e) => {
+                const cardLi = revealListEl.querySelector(`[data-id="${e.playerId}"]`);
+                const scoreCard = scoreColEl.querySelector(`[data-id="${e.playerId}"]`);
+                if (cardLi && scoreCard) spawnCoinFly(cardLi, scoreCard);
+              });
+            }
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
             resolve();
           }, 350);
@@ -3260,6 +3325,7 @@
       setTimeout(() => {
         animateScrollTop(gameBody, 0, SUMMARY_SCROLL_MS);
         playSound("winner");
+        spawnStreamerConfetti();
       }, SUMMARY_DWELL_MS);
     });
   }
@@ -3308,6 +3374,7 @@
     });
     setTimeout(() => {
       celebrate("spotOn");
+      spawnStreamerConfetti();
       playSound("win");
     }, rank1Delay + 350);
   }
@@ -3345,6 +3412,60 @@
       else if (tier === "spotOn") tier = "perfect";
     }
     return tier;
+  }
+
+  function spawnStreamerConfetti() {
+    const colors = ["#c1543d", "#c17a54", "#6f8f5a", "#e0996c", "#8a5a3c", "#d9b26a"];
+    for (let i = 0; i < 26; i++) {
+      const s = document.createElement("div");
+      s.className = "streamer-piece";
+      s.style.left = `${Math.random() * 96}%`;
+      s.style.background = colors[i % colors.length];
+      const dur = 1600 + Math.random() * 900;
+      s.style.animationDuration = `${dur}ms`;
+      s.style.animationDelay = `${Math.random() * 300}ms`;
+      reactionsPanelEl.appendChild(s);
+      setTimeout(() => s.remove(), dur + 400);
+    }
+  }
+
+  function spawnTrophyBurst(targetEl) {
+    if (!targetEl) return;
+    const rect = targetEl.getBoundingClientRect();
+    const wrap = document.createElement("div");
+    wrap.className = "trophy-burst";
+    wrap.style.left = `${rect.left + rect.width / 2}px`;
+    wrap.style.top = `${rect.top + rect.height / 2}px`;
+    wrap.style.transform = "translate(-50%, -50%)";
+    let rays = "";
+    for (let i = 0; i < 8; i++) {
+      rays += `<div class="ray" style="transform: translate(-50%,-50%) rotate(${i * 45}deg);"></div>`;
+    }
+    wrap.innerHTML = rays + `<span class="trophy-emoji">\u{1F3C6}</span>`;
+    reactionsPanelEl.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 900);
+  }
+
+  function spawnCoinFly(fromEl, toEl) {
+    if (!fromEl || !toEl) return;
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+    const startX = fromRect.left + fromRect.width / 2;
+    const startY = fromRect.top + fromRect.height / 2;
+    const dx = (toRect.left + toRect.width / 2) - startX;
+    const dy = (toRect.top + toRect.height / 2) - startY;
+    for (let i = 0; i < 3; i++) {
+      const coin = document.createElement("div");
+      coin.className = "coin-fly";
+      coin.textContent = "\u{1FA99}";
+      coin.style.left = `${startX}px`;
+      coin.style.top = `${startY}px`;
+      coin.style.setProperty("--fx", `${dx}px`);
+      coin.style.setProperty("--fy", `${dy}px`);
+      coin.style.animationDelay = `${i * 60}ms`;
+      reactionsPanelEl.appendChild(coin);
+      setTimeout(() => coin.remove(), 800);
+    }
   }
 
   const SFX_FILES = {
