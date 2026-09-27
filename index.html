@@ -528,18 +528,6 @@
   @media (prefers-reduced-motion: reduce) {
     #perfect-flash.flash { animation: none; }
   }
-  .reaction-bubble {
-    position: absolute; padding: 4px 8px; display: flex; align-items: center; justify-content: center;
-    animation: reactionSlideOut 380ms ease-out both;
-    border-width: 10px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
-    color: var(--text);
-  }
-  @keyframes reactionSlideOut {
-    0% { transform: translate(-35%, -50%) scale(.6); opacity: 0; }
-    100% { transform: translate(-100%, -50%) scale(1); opacity: 1; }
-  }
-  .reaction-bubble .reaction-emoji { font-size: 24px; }
-
   .float-reaction {
     position: absolute; font-size: 20px; animation: floatReactionUp 900ms ease-out forwards;
   }
@@ -1478,6 +1466,7 @@
   let guessLocked = false;
   let lastSeenRound = null;
   let lastSeenPhaseForSound = null;
+  let answersPhaseInputLockedUntil = 0;
   let transitionInFlight = false;
   let previousDisplayedScores = {};
   let previousScoreColumnRanks = {};
@@ -2808,25 +2797,18 @@
     if (!r) return;
     playSound("emoji");
     const card = scoreColEl.querySelector(`[data-id="${r.playerId}"]`);
-    const bubble = document.createElement("div");
-    bubble.className = "reaction-bubble";
-    bubble.innerHTML = `<span class="reaction-emoji">${r.emoji}</span>`;
     let originTop = 90, originLeft = 8;
     if (card) {
       const rect = card.getBoundingClientRect();
       originTop = rect.top + rect.height / 2;
       originLeft = rect.left;
     }
-    bubble.style.top = `${originTop}px`;
-    bubble.style.left = `${originLeft}px`;
-    reactionsPanelEl.appendChild(bubble);
-    setTimeout(() => bubble.remove(), 1000);
 
     for (let i = 0; i < 4; i++) {
       const f = document.createElement("div");
       f.className = "float-reaction";
       f.textContent = r.emoji;
-      f.style.left = `${originLeft + 10 + Math.random() * 24}px`;
+      f.style.left = `${originLeft + Math.random() * 10}px`;
       f.style.top = `${originTop}px`;
       f.style.animationDelay = `${i * 90}ms`;
       reactionsPanelEl.appendChild(f);
@@ -2850,12 +2832,12 @@
       btn.innerHTML = entry.value
         + (isMyPick ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
       btn.className = "answer-slot frame-" + frameIndex + (isMyPick ? " picked" : "");
-      btn.disabled = !!roomState.paused;
+      btn.disabled = !!roomState.paused || nowMs() < answersPhaseInputLockedUntil;
       btn.addEventListener("click", () => choosePick("pick", entry.playerId, isMyPick));
       answersRowEl.appendChild(btn);
     });
     const isMyDoubleDown = !!myPick && myPick.type === "doubledown";
-    doubleDownBtn.disabled = !!roomState.paused;
+    doubleDownBtn.disabled = !!roomState.paused || nowMs() < answersPhaseInputLockedUntil;
     doubleDownBtn.classList.toggle("picked", isMyDoubleDown);
     if (isMyDoubleDown && !wasDoubleDownPicked) {
       doubleDownBtn.classList.remove("pop");
@@ -2872,6 +2854,7 @@
 
   async function choosePick(type, targetPlayerId, alreadyActive) {
     if (roomState.paused) return;
+    if (nowMs() < answersPhaseInputLockedUntil) return;
     const pickRef = ref(db, `rooms/${currentRoomCode}/picks/${currentPlayerId}`);
     if (alreadyActive) {
       await remove(pickRef);
@@ -3433,8 +3416,8 @@
     const rect = targetEl.getBoundingClientRect();
     const wrap = document.createElement("div");
     wrap.className = "trophy-burst";
-    wrap.style.left = `${rect.left + rect.width / 2}px`;
-    wrap.style.top = `${rect.top + rect.height / 2}px`;
+    wrap.style.left = `${rect.right - 24}px`;
+    wrap.style.top = `${rect.top + 6}px`;
     wrap.style.transform = "translate(-50%, -50%)";
     let rays = "";
     for (let i = 0; i < 8; i++) {
@@ -3562,7 +3545,11 @@
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
     if (phase !== lastSeenPhaseForSound) {
-      if (phase === "answers") playSound("answers");
+      if (phase === "answers") {
+        playSound("answers");
+        answersPhaseInputLockedUntil = nowMs() + 500;
+        setTimeout(() => { if (roomState) renderAnswersScreen(roomState); }, 500);
+      }
       else if (phase === "question" && lastSeenPhaseForSound === "countdown") playSound("go");
       lastSeenPhaseForSound = phase;
     }
