@@ -1234,6 +1234,10 @@
   };
   const GACHA_COST = 100;
   const GACHA_TIER_WEIGHTS = { common: 0.65, rare: 0.25, ultra: 0.10 };
+  const TIER_ORDER = { default: 0, common: 1, rare: 2, ultra: 3 };
+  function avatarsSortedByRarity() {
+    return [...AVATARS].sort((a, b) => TIER_ORDER[AVATAR_TIERS[a]] - TIER_ORDER[AVATAR_TIERS[b]]);
+  }
 
   function defaultUnlockedAvatars() {
     const obj = {};
@@ -1717,7 +1721,7 @@
       if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
     }
     avatarGridEl.innerHTML = "";
-    AVATARS.forEach((a) => {
+    avatarsSortedByRarity().forEach((a) => {
       const taken = takenAvatars.has(a) && a !== currentAvatar;
       const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
@@ -1762,7 +1766,7 @@
 
   function renderSettingsAvatarGrid() {
     settingsAvatarGridEl.innerHTML = "";
-    AVATARS.forEach((a) => {
+    avatarsSortedByRarity().forEach((a) => {
       const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
