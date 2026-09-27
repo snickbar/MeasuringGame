@@ -1431,6 +1431,7 @@
   let hasSubmittedThisRound = false;
   let guessLocked = false;
   let lastSeenRound = null;
+  let lastSeenPhaseForSound = null;
   let transitionInFlight = false;
   let previousDisplayedScores = {};
   let previousScoreColumnRanks = {};
@@ -1814,6 +1815,7 @@
       const li = document.createElement("li");
       if (!isFirstRender && !renderedPlayerListIds.has(id)) {
         li.style.animation = "popIn 320ms cubic-bezier(.34,1.56,.64,1) both";
+        if (roomState.phase === "waiting") playSound("join");
       }
       const nameSpan = document.createElement("span");
       nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}`;
@@ -1827,6 +1829,11 @@
       }
       playerList.appendChild(li);
     });
+    if (!isFirstRender && roomState.phase === "waiting") {
+      for (const id of renderedPlayerListIds) {
+        if (!newIds.has(id)) { playSound("leave"); break; }
+      }
+    }
     renderedPlayerListIds = newIds;
   }
 
@@ -2101,6 +2108,7 @@
   }
 
   hostStartBtn.addEventListener("click", async () => {
+    playSound("start");
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
     await update(ref(db, `rooms/${currentRoomCode}`), { phase: "countdown", countdownRound: 1, countdownEndsAt });
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
@@ -2263,6 +2271,7 @@
 
   let hudTickHandle = null;
   let lastCountdownDisplayed = null;
+  let lastTickSecond = null;
   function startHudTicker() {
     if (hudTickHandle) return;
     hudTickHandle = setInterval(() => {
@@ -2283,6 +2292,7 @@
           countdownNumberEl.classList.remove("tick");
           void countdownNumberEl.offsetWidth;
           countdownNumberEl.classList.add("tick");
+          playSound("count");
         }
       }
       let deadline = null;
@@ -2292,6 +2302,14 @@
       const remaining = Math.max(0, deadline - nowMs());
       hudTimerEl.textContent = Math.ceil(remaining / 1000).toString();
       hudTimerEl.classList.toggle("low", remaining <= 5000);
+      // Tick once per second through the last 5 seconds of a timed phase.
+      const secondsLeft = Math.ceil(remaining / 1000);
+      if (secondsLeft <= 5 && secondsLeft >= 1 && secondsLeft !== lastTickSecond) {
+        lastTickSecond = secondsLeft;
+        playSound("tick");
+      } else if (secondsLeft > 5) {
+        lastTickSecond = null;
+      }
       if (remaining <= 0 && roomState.phase === "question") lockOwnGuessIfNeeded();
     }, 200);
   }
@@ -2299,6 +2317,7 @@
   function lockOwnGuessIfNeeded() {
     if (guessLocked) return;
     guessLocked = true;
+    playSound("timesup");
     if (!hasSubmittedThisRound) {
       const val = parseFloat(currentGuessStr);
       if (!isNaN(val)) set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), val);
@@ -2741,6 +2760,7 @@
 
   function renderReactionBubble(r) {
     if (!r) return;
+    playSound("emoji");
     const card = scoreColEl.querySelector(`[data-id="${r.playerId}"]`);
     const bubble = document.createElement("div");
     bubble.className = "reaction-bubble";
@@ -2923,7 +2943,9 @@
           playSound("reveal");
           if (isWinner) {
             li.classList.add("winner");
-            if (entry.isSpotOn) playSound("roundwin");
+            if (entry.isPerfect) playSound("perfect");
+            else if (entry.isSpotOn) playSound("roundwin");
+            if (entry.consecutiveWins >= 2) playSound("streak");
             celebrate(confettiTierFor(entry));
             if (entry.isPerfect) {
               perfectFlashEl.classList.remove("flash");
@@ -3237,6 +3259,7 @@
       gameBody.scrollTop = Math.max(0, gameBody.scrollHeight - gameBody.clientHeight);
       setTimeout(() => {
         animateScrollTop(gameBody, 0, SUMMARY_SCROLL_MS);
+        playSound("winner");
       }, SUMMARY_DWELL_MS);
     });
   }
@@ -3336,7 +3359,21 @@
     cardflip: "sfx/cardflip.mp3",
     win: "sfx/win.mp3",
     roundwin: "sfx/roundwin.mp3",
+    count: "sfx/count.mp3",
+    tick: "sfx/tick.mp3",
+    go: "sfx/go.mp3",
+    timesup: "sfx/timesup.mp3",
+    join: "sfx/join.mp3",
+    leave: "sfx/leave.mp3",
+    perfect: "sfx/perfect.mp3",
+    streak: "sfx/streak.mp3",
+    answers: "sfx/answers.mp3",
+    winner: "sfx/winner.mp3",
+    emoji: "sfx/emoji.mp3",
+    start: "sfx/start.mp3",
   };
+  // Some of the new sounds are very short/quiet at the source; per-sound gain.
+  const SFX_VOLUME = { tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7 };
   const sfxPool = {};
   Object.keys(SFX_FILES).forEach((name) => {
     const a = new Audio(SFX_FILES[name]);
@@ -3350,7 +3387,7 @@
     if (!base) return;
     try {
       const node = base.cloneNode(true);
-      node.volume = 0.6;
+      node.volume = SFX_VOLUME[name] ?? 0.6;
       node.play().catch(() => { /* ignore autoplay-policy rejection */ });
     } catch (e) { /* ignore audio errors */ }
   }
@@ -3366,6 +3403,7 @@
     else if (kind === "reveal") sfx("cardflip");
     else if (kind === "win") sfx("win");
     else if (kind === "roundwin") sfx("roundwin");
+    else if (SFX_FILES[kind]) sfx(kind);
     else if (kind === "drumroll") sfx("shuffle");
   }
 
@@ -3403,6 +3441,11 @@
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
+    if (phase !== lastSeenPhaseForSound) {
+      if (phase === "answers") playSound("answers");
+      else if (phase === "question" && lastSeenPhaseForSound === "countdown") playSound("go");
+      lastSeenPhaseForSound = phase;
+    }
     if (phase === "countdown") {
       countdownLabelEl.textContent = data.countdownRound === 1 ? "Round 1 starting in" : "Next round starting in";
       questionPromptEl.textContent = "";
