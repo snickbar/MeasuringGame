@@ -134,8 +134,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
     position: fixed; top: 62px; left: 0; right: 0; bottom: 58px;
@@ -185,6 +185,26 @@
   }
   .big-cta.create { border-image-source: var(--btn-round-yellow); color: #4a2a10; }
   .big-cta.join { border-image-source: var(--btn-round-cream); color: #4a2a10; }
+  .coin-shop-btn {
+    font-size: 13px; padding: 6px 0; margin: 0;
+    border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
+    color: #4a2a10; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .coin-shop-balance { font-weight: 700; }
+  .gacha-balance { font-size: 22px; font-weight: 700; margin: 4px 0 2px; text-align: center; }
+  .gacha-sub { font-size: 14px; color: var(--text); text-align: center; margin: 0 0 16px; }
+  #gacha-pull-btn { display: block; margin: 0 auto; }
+  #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
+  .gacha-reveal { display: flex; justify-content: center; margin-top: 18px; min-height: 140px; }
+  .gacha-reveal-card {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px;
+    border-width: 12px; border-style: solid; border-image-slice: 55 fill;
+  }
+  .gacha-reveal-card.tier-common { border-image-source: var(--panel); }
+  .gacha-reveal-card.tier-rare { border-image-source: var(--fancy); }
+  .gacha-reveal-card.tier-ultra { border-image-source: var(--wood2); }
+  .gacha-reveal-card img { width: 72px; height: 72px; }
+  .gacha-reveal-card .gacha-tier-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
   body:has(#home-screen.active) #app-toolbar { background: transparent; box-shadow: none; }
   .back-btn {
     width: auto; font-size: 14px; padding: 6px 12px; margin: 0 0 10px;
@@ -212,6 +232,11 @@
   }
   .avatar-choice.selected { border-image-source: var(--ring); border-image-slice: 45 fill; transform: scale(1.08); }
   .avatar-choice.taken { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
+  .avatar-choice.locked { opacity: .35; filter: grayscale(1); cursor: not-allowed; position: relative; }
+  .avatar-choice.locked::after {
+    content: "\1F512"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
   .avatar-choice .avatar-icon { width: 100%; height: 100%; }
   .avatar-icon { width: 1.8em; height: 1.8em; object-fit: contain; vertical-align: middle; border-radius: 20%; }
   #recent-rooms-section h3 { font-size: 15px; margin: 10px 0 4px; color: var(--brand); }
@@ -839,7 +864,26 @@
   <div class="home-buttons">
     <button id="home-create-btn" class="big-cta create">Create Game</button>
     <button id="home-join-btn" class="big-cta join">Join Game</button>
+    <button id="home-gacha-btn" class="coin-shop-btn" type="button">
+      <span class="coin-shop-balance">&#129689; <span id="home-coin-count">0</span></span>
+      <span class="coin-shop-label">Avatar Shop</span>
+    </button>
   </div>
+</div>
+
+<div id="gacha-screen" class="screen">
+  <div class="screen-header">
+    <h1>Avatar Shop</h1>
+    <button id="gacha-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
+  </div>
+
+  <p class="gacha-balance">&#129689; <span id="gacha-coin-count">0</span> coins</p>
+  <p class="gacha-sub">Spend <span id="gacha-cost-label"></span> coins for a random locked avatar. Play games to earn more &mdash; your score becomes coins when a game ends.</p>
+
+  <button id="gacha-pull-btn" type="button" class="big-cta">Pull</button>
+  <p id="gacha-status"></p>
+
+  <div id="gacha-reveal" class="gacha-reveal"></div>
 </div>
 
 <div id="settings-screen" class="screen">
@@ -1169,6 +1213,112 @@
 
   const AVATAR_COUNT = 74;
   const AVATARS = Array.from({ length: AVATAR_COUNT }, (_, i) => "av" + String(i + 1).padStart(2, "0"));
+
+  // ==================== Gacha: avatar rarity tiers + coin economy ====================
+  const AVATAR_TIERS = {
+    av01: "common", av02: "default", av03: "common", av04: "common", av05: "default",
+    av06: "default", av07: "default", av08: "common", av09: "rare", av10: "rare",
+    av11: "rare", av12: "rare", av13: "rare", av14: "rare", av15: "rare",
+    av16: "default", av17: "default", av18: "rare", av19: "default", av20: "default",
+    av21: "common", av22: "common", av23: "common", av24: "rare", av25: "rare",
+    av26: "rare", av27: "ultra", av28: "ultra", av29: "ultra", av30: "common",
+    av31: "common", av32: "common", av33: "common", av34: "common", av35: "default",
+    av36: "rare", av37: "rare", av38: "rare", av39: "rare", av40: "rare",
+    av41: "ultra", av42: "ultra", av43: "default", av44: "common", av45: "common",
+    av46: "common", av47: "common", av48: "common", av49: "common", av50: "default",
+    av51: "rare", av52: "rare", av53: "ultra", av54: "rare", av55: "common",
+    av56: "rare", av57: "ultra", av58: "rare", av59: "ultra", av60: "ultra",
+    av61: "ultra", av62: "rare", av63: "rare", av64: "default", av65: "ultra",
+    av66: "common", av67: "ultra", av68: "ultra", av69: "rare", av70: "rare",
+    av71: "rare", av72: "rare", av73: "rare", av74: "rare",
+  };
+  const GACHA_COST = 100;
+  const GACHA_TIER_WEIGHTS = { common: 0.65, rare: 0.25, ultra: 0.10 };
+
+  function defaultUnlockedAvatars() {
+    const obj = {};
+    AVATARS.forEach((a) => { if (AVATAR_TIERS[a] === "default") obj[a] = true; });
+    return obj;
+  }
+
+  function generateDeviceId() {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  let deviceId = localStorage.getItem("mg_deviceId");
+  if (!deviceId) {
+    deviceId = generateDeviceId();
+    localStorage.setItem("mg_deviceId", deviceId);
+  }
+
+  let myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars() };
+  function watchMyProfile() {
+    onValue(ref(db, `profiles/${deviceId}`), (snap) => {
+      const data = snap.val();
+      if (!data) {
+        myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars() };
+        set(ref(db, `profiles/${deviceId}`), myProfile);
+      } else {
+        myProfile = {
+          coins: data.coins || 0,
+          unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
+        };
+      }
+      renderCoinBalance();
+      renderAvatarGrid();
+      renderSettingsAvatarGrid();
+      renderGachaScreen();
+    });
+  }
+
+  function isAvatarUnlocked(a) {
+    return !!myProfile.unlockedAvatars[a];
+  }
+
+  async function awardCoinsForGameEnd(amount) {
+    if (!amount || amount <= 0) return;
+    await runTransaction(ref(db, `profiles/${deviceId}/coins`), (current) => (current || 0) + amount);
+  }
+
+  function pickGachaResult() {
+    const lockedByTier = { common: [], rare: [], ultra: [] };
+    AVATARS.forEach((a) => {
+      const tier = AVATAR_TIERS[a];
+      if (tier !== "default" && !isAvatarUnlocked(a)) lockedByTier[tier].push(a);
+    });
+    const availableTiers = Object.keys(GACHA_TIER_WEIGHTS).filter((t) => lockedByTier[t].length > 0);
+    if (availableTiers.length === 0) return null;
+    const totalWeight = availableTiers.reduce((sum, t) => sum + GACHA_TIER_WEIGHTS[t], 0);
+    let roll = Math.random() * totalWeight;
+    let chosenTier = availableTiers[availableTiers.length - 1];
+    for (const t of availableTiers) {
+      if (roll < GACHA_TIER_WEIGHTS[t]) { chosenTier = t; break; }
+      roll -= GACHA_TIER_WEIGHTS[t];
+    }
+    const pool = lockedByTier[chosenTier];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  async function pullGacha() {
+    if (myProfile.coins < GACHA_COST) return null;
+    const result = pickGachaResult();
+    if (!result) return null;
+    const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || { coins: 0, unlockedAvatars: defaultUnlockedAvatars() };
+      if ((profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
+      if (profile.unlockedAvatars && profile.unlockedAvatars[result]) return profile; // abort: already unlocked (race)
+      return {
+        coins: (profile.coins || 0) - GACHA_COST,
+        unlockedAvatars: { ...(profile.unlockedAvatars || {}), [result]: true },
+      };
+    });
+    if (!txResult.committed) return null;
+    const finalUnlocked = (txResult.snapshot.val() || {}).unlockedAvatars || {};
+    return finalUnlocked[result] ? result : null;
+  }
+
+  watchMyProfile();
+
   function avatarHtml(id, extraClass) {
     return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png" alt="" draggable="false">` : "";
   }
@@ -1189,7 +1339,7 @@
   ];
 
   let currentName = localStorage.getItem("mg_name") || "";
-  let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS[0];
+  let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
 
   function loadRecentRooms() {
@@ -1372,8 +1522,17 @@
   const installDismissBtn = document.getElementById("install-dismiss-btn");
   const settingsScreen = document.getElementById("settings-screen");
   const howtoScreen = document.getElementById("howto-screen");
+  const gachaScreen = document.getElementById("gacha-screen");
   const settingsCloseBtn = document.getElementById("settings-close-btn");
   const howtoCloseBtn = document.getElementById("howto-close-btn");
+  const gachaCloseBtn = document.getElementById("gacha-close-btn");
+  const homeGachaBtn = document.getElementById("home-gacha-btn");
+  const homeCoinCountEl = document.getElementById("home-coin-count");
+  const gachaCoinCountEl = document.getElementById("gacha-coin-count");
+  const gachaCostLabelEl = document.getElementById("gacha-cost-label");
+  const gachaPullBtn = document.getElementById("gacha-pull-btn");
+  const gachaStatusEl = document.getElementById("gacha-status");
+  const gachaRevealEl = document.getElementById("gacha-reveal");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
   const settingsNameInput = document.getElementById("settings-name-input");
   const settingsAvatarGridEl = document.getElementById("settings-avatar-grid");
@@ -1554,19 +1713,20 @@
     // If the room we're looking at has already claimed our saved avatar,
     // silently move us to a free one rather than leaving the picker stuck.
     if (takenAvatars.has(currentAvatar)) {
-      const free = AVATARS.find((a) => !takenAvatars.has(a));
+      const free = AVATARS.find((a) => !takenAvatars.has(a) && isAvatarUnlocked(a));
       if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
     }
     avatarGridEl.innerHTML = "";
     AVATARS.forEach((a) => {
       const taken = takenAvatars.has(a) && a !== currentAvatar;
+      const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = avatarHtml(a);
-      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "");
-      btn.disabled = taken;
+      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "") + (locked ? " locked" : "");
+      btn.disabled = taken || locked;
       btn.addEventListener("click", () => {
-        if (taken) return;
+        if (taken || locked) return;
         currentAvatar = a;
         localStorage.setItem("mg_avatar", a);
         renderAvatarGrid();
@@ -1603,11 +1763,14 @@
   function renderSettingsAvatarGrid() {
     settingsAvatarGridEl.innerHTML = "";
     AVATARS.forEach((a) => {
+      const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = avatarHtml(a);
-      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "");
+      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (locked ? " locked" : "");
+      btn.disabled = locked;
       btn.addEventListener("click", () => {
+        if (locked) return;
         currentAvatar = a;
         localStorage.setItem("mg_avatar", a);
         renderSettingsAvatarGrid();
@@ -1636,8 +1799,8 @@
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen];
+  const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -1677,7 +1840,56 @@
   });
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
+  gachaCloseBtn.addEventListener("click", closeOverlay);
   toolbarHomeBtn.addEventListener("click", () => location.reload());
+
+  homeGachaBtn.addEventListener("click", () => {
+    gachaStatusEl.textContent = "";
+    gachaRevealEl.innerHTML = "";
+    openOverlay(gachaScreen);
+  });
+
+  function renderCoinBalance() {
+    homeCoinCountEl.textContent = myProfile.coins;
+    gachaCoinCountEl.textContent = myProfile.coins;
+  }
+
+  function renderGachaScreen() {
+    gachaCostLabelEl.textContent = GACHA_COST;
+    const anyLocked = AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
+    if (!anyLocked) {
+      gachaPullBtn.disabled = true;
+      gachaPullBtn.textContent = "All avatars unlocked!";
+    } else {
+      gachaPullBtn.disabled = myProfile.coins < GACHA_COST;
+      gachaPullBtn.textContent = "Pull";
+    }
+  }
+
+  const GACHA_TIER_LABELS = { common: "Common", rare: "Rare", ultra: "Ultra-rare" };
+  gachaPullBtn.addEventListener("click", async () => {
+    if (myProfile.coins < GACHA_COST) return;
+    gachaPullBtn.disabled = true;
+    gachaStatusEl.textContent = "Pulling...";
+    gachaRevealEl.innerHTML = "";
+    playSound("shuffle");
+    const result = await pullGacha();
+    if (!result) {
+      gachaStatusEl.textContent = "Nothing to pull right now.";
+      renderGachaScreen();
+      return;
+    }
+    const tier = AVATAR_TIERS[result];
+    gachaStatusEl.textContent = "New avatar unlocked!";
+    gachaRevealEl.innerHTML = `
+      <div class="gacha-reveal-card tier-${tier}">
+        <img src="avatars/${result}.png" alt="">
+        <span class="gacha-tier-label">${GACHA_TIER_LABELS[tier]}</span>
+      </div>`;
+    playSound(tier === "ultra" ? "perfect" : tier === "rare" ? "roundwin" : "reveal");
+    celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
+    spawnTrophyBurst(gachaRevealEl);
+  });
 
   async function copyTextToClipboard(text) {
     try {
@@ -2113,7 +2325,7 @@
     // bypassed (e.g. the recent-rooms "Rejoin" button skips it entirely).
     const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
-      const free = AVATARS.find((a) => !existingAvatars.has(a));
+      const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { nameAvatarStatusEl.textContent = "Every avatar is taken in that room."; return; }
       currentAvatar = free;
       localStorage.setItem("mg_avatar", free);
@@ -2138,7 +2350,7 @@
     if (data === null) { joinStatusEl.textContent = "Room not found."; return; }
     const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
-      const free = AVATARS.find((a) => !existingAvatars.has(a));
+      const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { joinStatusEl.textContent = "Every avatar is taken in that room."; return; }
       currentAvatar = free;
       localStorage.setItem("mg_avatar", free);
@@ -3320,6 +3532,8 @@
   function renderFinal() {
     if (finalRendered) return;
     finalRendered = true;
+    const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
+    awardCoinsForGameEnd(myFinalScore);
     finalListEl.innerHTML = "";
     const scoreFn = (id) => currentPlayers[id].score || 0;
     const avgFn = (id) => {
