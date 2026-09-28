@@ -1315,8 +1315,15 @@
   const GACHA_COST = 100;
   const GACHA_TIER_WEIGHTS = { common: 0.65, rare: 0.25, ultra: 0.10 };
   const TIER_ORDER = { default: 0, common: 1, rare: 2, ultra: 3 };
-  function avatarsSortedByRarity() {
-    return [...AVATARS].sort((a, b) => TIER_ORDER[AVATAR_TIERS[a]] - TIER_ORDER[AVATAR_TIERS[b]]);
+  // Unlocked-for-this-device avatars first (so what you can actually use isn't
+  // buried among locked ones), then by rarity tier within each group. Stable
+  // sort preserves AVATARS' own order as the tie-breaker.
+  function avatarsSortedForPicker() {
+    return [...AVATARS].sort((a, b) => {
+      const unlockedDiff = (isAvatarUnlocked(b) ? 1 : 0) - (isAvatarUnlocked(a) ? 1 : 0);
+      if (unlockedDiff !== 0) return unlockedDiff;
+      return TIER_ORDER[AVATAR_TIERS[a]] - TIER_ORDER[AVATAR_TIERS[b]];
+    });
   }
 
   function defaultUnlockedAvatars() {
@@ -1801,7 +1808,7 @@
       if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
     }
     avatarGridEl.innerHTML = "";
-    avatarsSortedByRarity().forEach((a) => {
+    avatarsSortedForPicker().forEach((a) => {
       const taken = takenAvatars.has(a) && a !== currentAvatar;
       const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
@@ -1846,7 +1853,7 @@
 
   function renderSettingsAvatarGrid() {
     settingsAvatarGridEl.innerHTML = "";
-    avatarsSortedByRarity().forEach((a) => {
+    avatarsSortedForPicker().forEach((a) => {
       const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
