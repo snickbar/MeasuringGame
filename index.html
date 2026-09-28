@@ -134,8 +134,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
     position: fixed; top: 62px; left: 0; right: 0; bottom: 58px;
@@ -192,8 +192,42 @@
   }
   .coin-shop-balance { font-weight: 700; }
   .gacha-balance { font-size: 22px; font-weight: 700; margin: 4px 0 2px; text-align: center; }
-  .gacha-sub { font-size: 14px; color: var(--text); text-align: center; margin: 0 0 16px; }
+  .gacha-debug-btn {
+    display: block; margin: 6px auto 10px; width: auto; padding: 6px 12px; font-size: 12px; font-weight: 600;
+    background: #fff3cd; color: #7a4a00; border: 2px dashed var(--red); border-radius: 8px;
+  }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
+  #gacha-status.error { color: var(--red); font-weight: 700; }
+  .gacha-pull-coin { margin-right: 2px; }
+  #gacha-pull-btn.shake { animation: gachaPullShake .4s ease-in-out; }
+  @keyframes gachaPullShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(3px); }
+  }
+  .gacha-viewall-btn {
+    display: block; margin: 8px auto 0; width: auto; padding: 8px 16px; font-size: 13px;
+    border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill; color: #fff;
+  }
+  .collection-tier-group { margin-bottom: 18px; }
+  .collection-tier-title {
+    display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px; margin: 0 0 6px;
+  }
+  .collection-tier-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .collection-tier-count { font-weight: 400; text-transform: none; color: var(--text); opacity: .7; font-size: 12px; }
+  .collection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
+  .collection-tile {
+    position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-width: 6px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+  }
+  .collection-tile.locked { opacity: .35; filter: grayscale(1); }
+  .collection-tile.locked::after {
+    content: "\1F512"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .collection-tile .avatar-icon { width: 100%; height: 100%; }
 
   .gacha-scene { position: relative; width: 100%; max-width: 280px; height: 340px; margin: 4px auto 6px; }
   .gacha-flash { position: absolute; inset: -20px; background: #fff; opacity: 0; pointer-events: none; z-index: 20; }
@@ -494,6 +528,11 @@
     background: #fbfaf6; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
   #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  #toolbar-coin-balance {
+    display: none; align-items: center; gap: 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px;
+  }
+  body:has(#gacha-screen.active) #toolbar-coin-balance,
+  body:has(#collection-screen.active) #toolbar-coin-balance { display: flex; }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #bottom-toolbar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
@@ -985,6 +1024,7 @@
   </div>
   <div id="toolbar-center">
     <div id="hud-round-label"></div>
+    <div id="toolbar-coin-balance"><span>&#129689;</span> <span id="toolbar-coin-count">0</span></div>
   </div>
   <div id="toolbar-right-group">
     <button id="toolbar-help-btn" class="icon-btn" type="button" aria-label="How to play"></button>
@@ -1028,7 +1068,9 @@
   </div>
 
   <p class="gacha-balance">&#129689; <span id="gacha-coin-count">0</span> coins</p>
-  <p class="gacha-sub">Spend <span id="gacha-cost-label"></span> coins for a random locked avatar. Play games to earn more &mdash; your score becomes coins when a game ends.</p>
+
+  <!-- TEMP: testing-only, gives free coins with no cost. Remove this button before launch. -->
+  <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
 
   <div class="gacha-scene">
     <div class="gacha-flash" id="gacha-flash"></div>
@@ -1059,8 +1101,17 @@
     </div>
   </div>
 
-  <button id="gacha-pull-btn" type="button" class="big-cta">Pull</button>
+  <button id="gacha-pull-btn" type="button" class="big-cta"></button>
+  <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn">View All Avatars</button>
   <p id="gacha-status"></p>
+</div>
+
+<div id="collection-screen" class="screen">
+  <div class="screen-header">
+    <h1>All Avatars</h1>
+    <button id="collection-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
+  </div>
+  <div id="collection-content"></div>
 </div>
 
 <div id="settings-screen" class="screen">
@@ -1143,6 +1194,11 @@
   <div class="howto-section">
     <h3>Good to know</h3>
     <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> let you send an emoji while waiting for everyone else to guess. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+  </div>
+
+  <div class="howto-section">
+    <h3>Avatar Shop</h3>
+    <p>Your score becomes coins when a game ends, win or lose. Open the <b>Avatar Shop</b> from the home screen to spend coins - each <b>Pull</b> costs 100 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> from the shop to see every avatar grouped by rarity, with locked ones grayed out.</p>
   </div>
 </div>
 
@@ -1829,7 +1885,12 @@
   const homeGachaBtn = document.getElementById("home-gacha-btn");
   const homeCoinCountEl = document.getElementById("home-coin-count");
   const gachaCoinCountEl = document.getElementById("gacha-coin-count");
-  const gachaCostLabelEl = document.getElementById("gacha-cost-label");
+  const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
+  const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
+  const gachaViewAllBtn = document.getElementById("gacha-view-all-btn");
+  const collectionScreen = document.getElementById("collection-screen");
+  const collectionCloseBtn = document.getElementById("collection-close-btn");
+  const collectionContentEl = document.getElementById("collection-content");
   const gachaPullBtn = document.getElementById("gacha-pull-btn");
   const gachaStatusEl = document.getElementById("gacha-status");
   const gachaFlashEl = document.getElementById("gacha-flash");
@@ -2107,8 +2168,8 @@
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen];
+  const ALL_SCREEN_ELS = [homeScreen, joinScreen, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -2149,6 +2210,14 @@
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
   gachaCloseBtn.addEventListener("click", closeOverlay);
+  collectionCloseBtn.addEventListener("click", closeOverlay);
+  gachaViewAllBtn.addEventListener("click", () => {
+    renderCollectionScreen();
+    openOverlay(collectionScreen);
+  });
+  // TEMP: testing-only, gives free coins with no cost. Remove this handler
+  // (and the matching button in #gacha-screen) before launch.
+  gachaDebugAddCoinsBtn.addEventListener("click", () => { awardCoinsForGameEnd(100); });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
   homeGachaBtn.addEventListener("click", () => {
@@ -2161,18 +2230,43 @@
   function renderCoinBalance() {
     homeCoinCountEl.textContent = myProfile.coins;
     gachaCoinCountEl.textContent = myProfile.coins;
+    toolbarCoinCountEl.textContent = myProfile.coins;
   }
 
   function renderGachaScreen() {
-    gachaCostLabelEl.textContent = GACHA_COST;
     const anyLocked = AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
     if (!anyLocked) {
       gachaPullBtn.disabled = true;
       gachaPullBtn.textContent = "All avatars unlocked!";
     } else {
-      gachaPullBtn.disabled = myProfile.coins < GACHA_COST;
-      gachaPullBtn.textContent = "Pull";
+      // Left enabled even without enough coins - the click handler itself
+      // gives a "not enough" shake/error instead of silently doing nothing.
+      gachaPullBtn.disabled = false;
+      gachaPullBtn.innerHTML = `<span class="gacha-pull-coin">&#129689;</span>Pull for ${GACHA_COST} coins`;
     }
+  }
+
+  const GACHA_TIER_ORDER = ["default", "common", "rare", "ultra"];
+  const GACHA_TIER_DISPLAY_LABELS = { default: "Default", common: "Common", rare: "Rare", ultra: "Ultra-rare" };
+  const GACHA_TIER_DOT_COLORS = { default: "#8a9a6f", common: "#7a8fa6", rare: "#9a6fc1", ultra: "#d9a441" };
+  function renderCollectionScreen() {
+    const byTier = { default: [], common: [], rare: [], ultra: [] };
+    AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
+    collectionContentEl.innerHTML = GACHA_TIER_ORDER.map((tier) => {
+      const list = byTier[tier];
+      if (!list.length) return "";
+      const unlockedCount = list.filter(isAvatarUnlocked).length;
+      const tiles = list.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}">${avatarHtml(a)}</div>`).join("");
+      return `
+        <div class="collection-tier-group">
+          <h3 class="collection-tier-title">
+            <span class="collection-tier-dot" style="background:${GACHA_TIER_DOT_COLORS[tier]}"></span>
+            ${GACHA_TIER_DISPLAY_LABELS[tier]}
+            <span class="collection-tier-count">(${unlockedCount}/${list.length} unlocked)</span>
+          </h3>
+          <div class="collection-grid">${tiles}</div>
+        </div>`;
+    }).join("");
   }
 
   const GACHA_TIER_LABELS = { common: "COMMON", rare: "RARE", ultra: "ULTRA-RARE" };
@@ -2206,7 +2300,14 @@
   function gachaWait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
   gachaPullBtn.addEventListener("click", async () => {
-    if (myProfile.coins < GACHA_COST) return;
+    if (myProfile.coins < GACHA_COST) {
+      gachaStatusEl.textContent = "Not enough coins!";
+      gachaStatusEl.classList.add("error");
+      gachaRetrigger(gachaPullBtn, "shake");
+      playSound("error");
+      return;
+    }
+    gachaStatusEl.classList.remove("error");
     gachaPullBtn.disabled = true;
     gachaStatusEl.textContent = "Pulling...";
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
