@@ -1217,9 +1217,6 @@
 
   // ==================== Local (per-user, per-browser) identity/prefs ====================
 
-  const AVATAR_COUNT = 148;
-  const AVATARS = Array.from({ length: AVATAR_COUNT }, (_, i) => "av" + String(i + 1).padStart(2, "0"));
-
   // ==================== Gacha: avatar rarity tiers + coin economy ====================
   const AVATAR_TIERS = {
     av01: "common", av02: "default", av03: "common", av04: "common", av05: "default",
@@ -1244,7 +1241,6 @@
     av79: "default",
     av80: "rare",
     av81: "common",
-    av82: "rare",
     av83: "common",
     av84: "rare",
     av85: "common",
@@ -1312,6 +1308,10 @@
     av147: "rare",
     av148: "ultra",
   };
+  // Avatar ids are derived from this map (not a dense 1..N range) so a
+  // specific avatar can be dropped or replaced without renumbering every
+  // id after it - each key here is a real file at avatars/<id>.png.
+  const AVATARS = Object.keys(AVATAR_TIERS);
   const GACHA_COST = 100;
   const GACHA_TIER_WEIGHTS = { common: 0.65, rare: 0.25, ultra: 0.10 };
   const TIER_ORDER = { default: 0, common: 1, rare: 2, ultra: 3 };
