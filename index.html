@@ -191,14 +191,13 @@
     color: #4a2a10; display: flex; align-items: center; justify-content: center; gap: 8px;
   }
   .coin-shop-balance { font-weight: 700; }
-  .gacha-balance { font-size: 22px; font-weight: 700; margin: 4px 0 2px; text-align: center; }
   .gacha-debug-btn {
     display: block; margin: 6px auto 10px; width: auto; padding: 6px 12px; font-size: 12px; font-weight: 600;
     background: #fff3cd; color: #7a4a00; border: 2px dashed var(--red); border-radius: 8px;
   }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
   #gacha-status.error { color: var(--red); font-weight: 700; }
-  .gacha-pull-coin { margin-right: 2px; }
+  #gacha-pull-btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 0; }
   #gacha-pull-btn.shake { animation: gachaPullShake .4s ease-in-out; }
   @keyframes gachaPullShake {
     0%, 100% { transform: translateX(0); }
@@ -208,9 +207,17 @@
     80% { transform: translateX(3px); }
   }
   .gacha-viewall-btn {
-    display: block; margin: 8px auto 0; width: auto; padding: 8px 16px; font-size: 13px;
-    border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill; color: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; margin: 10px 0 0; padding: 8px 0; font-size: 16px;
+    border-width: 9px; border-style: solid; border-image-source: var(--btn-round-cream); border-image-slice: 55 fill;
+    color: #4a2a10;
   }
+  .gacha-viewall-avatar {
+    width: 30px; height: 30px; border-radius: 20%; object-fit: contain; flex-shrink: 0;
+    background: rgba(255,255,255,.55);
+  }
+  .gacha-viewall-avatar[src=""] { visibility: hidden; }
+  #gacha-collection-status { text-align: center; font-size: 13px; color: var(--brand); margin: 6px 0 0; }
   .collection-tier-group { margin-bottom: 18px; }
   .collection-tier-title {
     display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700;
@@ -1067,8 +1074,6 @@
     <button id="gacha-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
   </div>
 
-  <p class="gacha-balance">&#129689; <span id="gacha-coin-count">0</span> coins</p>
-
   <!-- TEMP: testing-only, gives free coins with no cost. Remove this button before launch. -->
   <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
 
@@ -1102,7 +1107,12 @@
   </div>
 
   <button id="gacha-pull-btn" type="button" class="big-cta"></button>
-  <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn">View All Avatars</button>
+  <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn">
+    <img id="gacha-viewall-avatar-left" class="gacha-viewall-avatar" src="" alt="">
+    <span>View All Avatars</span>
+    <img id="gacha-viewall-avatar-right" class="gacha-viewall-avatar" src="" alt="">
+  </button>
+  <p id="gacha-collection-status"></p>
   <p id="gacha-status"></p>
 </div>
 
@@ -1884,10 +1894,12 @@
   const gachaCloseBtn = document.getElementById("gacha-close-btn");
   const homeGachaBtn = document.getElementById("home-gacha-btn");
   const homeCoinCountEl = document.getElementById("home-coin-count");
-  const gachaCoinCountEl = document.getElementById("gacha-coin-count");
   const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
   const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
   const gachaViewAllBtn = document.getElementById("gacha-view-all-btn");
+  const gachaViewAllAvatarLeftEl = document.getElementById("gacha-viewall-avatar-left");
+  const gachaViewAllAvatarRightEl = document.getElementById("gacha-viewall-avatar-right");
+  const gachaCollectionStatusEl = document.getElementById("gacha-collection-status");
   const collectionScreen = document.getElementById("collection-screen");
   const collectionCloseBtn = document.getElementById("collection-close-btn");
   const collectionContentEl = document.getElementById("collection-content");
@@ -2229,7 +2241,6 @@
 
   function renderCoinBalance() {
     homeCoinCountEl.textContent = myProfile.coins;
-    gachaCoinCountEl.textContent = myProfile.coins;
     toolbarCoinCountEl.textContent = myProfile.coins;
   }
 
@@ -2242,8 +2253,20 @@
       // Left enabled even without enough coins - the click handler itself
       // gives a "not enough" shake/error instead of silently doing nothing.
       gachaPullBtn.disabled = false;
-      gachaPullBtn.innerHTML = `<span class="gacha-pull-coin">&#129689;</span>Pull for ${GACHA_COST} coins`;
+      gachaPullBtn.innerHTML = `&#129689; Pull for ${GACHA_COST} coins &#129689;`;
     }
+
+    const unlockedAvatars = AVATARS.filter(isAvatarUnlocked);
+    const previewPicks = [];
+    if (unlockedAvatars.length) {
+      const pool = [...unlockedAvatars];
+      for (let i = 0; i < 2 && pool.length; i++) {
+        previewPicks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      }
+    }
+    gachaViewAllAvatarLeftEl.src = previewPicks[0] ? `avatars/${previewPicks[0]}.png` : "";
+    gachaViewAllAvatarRightEl.src = previewPicks[1] ? `avatars/${previewPicks[1]}.png` : "";
+    gachaCollectionStatusEl.textContent = `${unlockedAvatars.length} / ${AVATARS.length} unlocked`;
   }
 
   const GACHA_TIER_ORDER = ["default", "common", "rare", "ultra"];
