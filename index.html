@@ -685,6 +685,9 @@
     box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 0;
     border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
   }
+  .question-answer-line {
+    margin-top: 8px; font-weight: 700; color: var(--brand); animation: popIn 300ms ease;
+  }
 
   .game-body { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .main-col { flex: 4 1 0; min-width: 0; }
@@ -1374,7 +1377,10 @@
 
 <div id="hud">
   <div class="hud-timer-row">
-    <div class="question-prompt" id="question-prompt"></div>
+    <div class="question-prompt" id="question-prompt">
+      <span id="question-prompt-text"></span>
+      <div id="question-answer-line" class="question-answer-line" style="display:none;"></div>
+    </div>
     <div class="hud-timer" id="hud-timer">--</div>
   </div>
 
@@ -2021,7 +2027,8 @@
   const pauseBtn = document.getElementById("pause-btn");
   const exitBtn = document.getElementById("exit-btn");
   const exitBtnGuest = document.getElementById("exit-btn-guest");
-  const questionPromptEl = document.getElementById("question-prompt");
+  const questionPromptTextEl = document.getElementById("question-prompt-text");
+  const questionAnswerLineEl = document.getElementById("question-answer-line");
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -2040,6 +2047,19 @@
 
   const revealViewEl = document.getElementById("reveal-view");
   const revealAnswerEl = document.getElementById("reveal-answer");
+  // Shared by every reveal code path that flips the winning card (the normal
+  // one-at-a-time animation, a late joiner catching up, and the "snap to
+  // final state" fast-forward) - keeps the fancy reveal-view badge and the
+  // plain answer line on the question paper in sync. The paper line is what
+  // carries the answer forward into the round-summary screen, since
+  // #reveal-view (and its badge) is hidden there but the paper isn't.
+  function showAnswerReveal() {
+    const val = roomState.currentQuestion.answer.toFixed(2);
+    revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${val}</span></div>`;
+    revealListEl.classList.add("answer-revealed");
+    questionAnswerLineEl.textContent = `Answer: ${val}`;
+    questionAnswerLineEl.style.display = "block";
+  }
   const revealListEl = document.getElementById("reveal-list");
   const revealNextBtn = document.getElementById("reveal-next-btn");
   const showSummaryBtn = document.getElementById("show-summary-btn");
@@ -3818,8 +3838,7 @@
               void perfectFlashEl.offsetWidth;
               perfectFlashEl.classList.add("flash");
             }
-            revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
-            revealListEl.classList.add("answer-revealed");
+            showAnswerReveal();
           }
           setTimeout(() => {
             if (isWinner) {
@@ -3886,8 +3905,7 @@
           li.innerHTML = cardPersonHtml(entry, pts, isWinner, order);
           if (isWinner) {
             li.classList.add("winner");
-            revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
-            revealListEl.classList.add("answer-revealed");
+            showAnswerReveal();
           }
         }
       }
@@ -3910,8 +3928,7 @@
           li.innerHTML = cardPersonHtml(entry, pts, isWinner, order);
           if (isWinner) {
             li.classList.add("winner");
-            revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${roomState.currentQuestion.answer.toFixed(2)}</span></div>`;
-            revealListEl.classList.add("answer-revealed");
+            showAnswerReveal();
           }
         }
       }
@@ -4382,7 +4399,8 @@
     }
     if (phase === "countdown") {
       countdownLabelEl.textContent = data.countdownRound === 1 ? "Round 1 starting in" : "Next round starting in";
-      questionPromptEl.textContent = "";
+      questionPromptTextEl.textContent = "";
+      questionAnswerLineEl.style.display = "none";
     }
     if (phase !== "reveal") {
       revealNextBtn.style.display = "none";
@@ -4400,6 +4418,8 @@
       guessStatusEl.textContent = "";
       revealAnswerEl.innerHTML = "";
       revealListEl.classList.remove("answer-revealed");
+      questionAnswerLineEl.textContent = "";
+      questionAnswerLineEl.style.display = "none";
       revealShuffled = false;
       lastChoreographedIndex = -1;
       revealAnimating = false;
@@ -4411,12 +4431,29 @@
 
     if (phase === "question") {
       const q = data.currentQuestion;
-      questionPromptEl.textContent = q ? q.prompt : "";
+      questionPromptTextEl.textContent = q ? q.prompt : "";
+      questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
-    } else if (phase === "answers" || phase === "reveal") {
+    } else if (phase === "answers") {
+      const q = data.currentQuestion;
+      if (q) questionPromptTextEl.textContent = q.prompt;
+      questionAnswerLineEl.style.display = "none"; // second-chance phase - answer isn't revealed yet either
+    } else if (phase === "reveal") {
+      const q = data.currentQuestion;
+      if (q) questionPromptTextEl.textContent = q.prompt;
+      // Answer line's own visibility is driven by showAnswerReveal(), timed to
+      // the winning card's flip - left alone here so it doesn't jump ahead of
+      // (or reset behind) wherever the reveal choreography currently is.
+    } else if (phase === "summary") {
+      // A client that lands straight in summary (freshly joined, or reloaded
+      // mid-round) never runs the reveal choreography for this round, so set
+      // both explicitly here rather than relying on showAnswerReveal() having
+      // already run.
       const q = data.currentQuestion;
       if (q) {
-        questionPromptEl.textContent = q.prompt;
+        questionPromptTextEl.textContent = q.prompt;
+        questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+        questionAnswerLineEl.style.display = "block";
       }
     }
   }
