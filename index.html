@@ -2251,6 +2251,11 @@
   gachaViewAllBtn.addEventListener("click", () => {
     renderCollectionScreen();
     openOverlay(collectionScreen);
+    // Overridden after the fact: openOverlay only remembers a return screen
+    // when opening from non-overlay ground, so nesting from the Avatar Shop
+    // (itself an overlay) would otherwise skip straight back to home. This
+    // nesting specifically should return to the shop, not home.
+    overlayReturnScreen = gachaScreen;
   });
   // TEMP: testing-only, gives free coins with no cost. Remove this handler
   // (and the matching button in #gacha-screen) before launch.
