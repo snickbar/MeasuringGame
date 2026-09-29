@@ -100,6 +100,7 @@
     background: linear-gradient(150deg, #fbfaf6 0%, #f3f1ea 45%, #fdf6ec 100%);
     color: var(--text);
     min-height: 100vh;
+    min-height: 100dvh; /* iOS: 100vh doesn't reliably recompute when the address bar/app-switcher state changes after backgrounding - dvh does */
     overflow-x: hidden;
     overscroll-behavior-y: none;
     touch-action: manipulation;
@@ -172,7 +173,7 @@
 
   /* ---- Home screen ---- */
   #home-screen.active {
-    position: relative; margin: -62px -12px -32px; min-height: 100vh;
+    position: relative; margin: -62px -12px -32px; min-height: 100vh; min-height: 100dvh;
     background-image: url('home-bg.jpg'); background-size: cover; background-position: center top; background-repeat: no-repeat;
   }
   #home-title { display: none; }
@@ -2488,6 +2489,23 @@
   installDismissBtn.addEventListener("click", () => {
     localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
     installBanner.classList.remove("active");
+  });
+
+  // ---- Fix layout sometimes going stale on iOS after backgrounding the app
+  // and switching back (reported: "formatting is all messed up"). WebKit can
+  // leave fixed-position elements (the toolbars) and vh-based sizing painted
+  // against the old viewport/chrome state instead of repainting against the
+  // real one on resume - forcing a reflow clears it. pageshow's `persisted`
+  // covers the bfcache-restore case; visibilitychange covers plain
+  // background/foreground without a full page restore.
+  function forceLayoutReflow() {
+    document.body.style.display = "none";
+    void document.body.offsetHeight;
+    document.body.style.display = "";
+  }
+  window.addEventListener("pageshow", (e) => { if (e.persisted) forceLayoutReflow(); });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) forceLayoutReflow();
   });
 
   // ---- Disable pinch-to-zoom. The viewport meta tag's user-scalable=no
