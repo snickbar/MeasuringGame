@@ -474,11 +474,15 @@
   }
   .icon-toggle-btn.is-on { background-image: var(--icon-sound-on); }
   .text-toggle-btn {
-    width: 74px; height: 33px; flex-shrink: 0; padding: 0; margin: 0; border: none;
-    background-color: transparent; background-repeat: no-repeat; background-position: center; background-size: contain;
-    background-image: var(--toggle-off);
+    width: 38px; height: 22px; flex-shrink: 0; padding: 0; margin: 0; border: none; border-image-source: none;
+    border-radius: 11px; background: rgba(90,74,58,.22); position: relative; transition: background .15s;
   }
-  .text-toggle-btn.is-on { background-image: var(--toggle-on); }
+  .text-toggle-btn::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s;
+  }
+  .text-toggle-btn.is-on { background: var(--red); }
+  .text-toggle-btn.is-on::after { left: 18px; }
   .text-toggle-btn:disabled { opacity: .4; cursor: default; }
 
   /* ---- How to Play screen ---- */
@@ -493,26 +497,36 @@
   .howto-section p:last-child { margin-bottom: 0; }
   .howto-section b { color: var(--brand); }
 
-  /* ---- Settings panel (lobby) ---- */
+  /* ---- Settings panel (create-game screen) ---- */
   #settings-panel {
-    padding: 10px; margin: 12px 0;
-    border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
+    padding: 4px 14px; margin: 12px 0; border: none; border-image-source: none;
+    background: #fffdfa; border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08);
     color: var(--text);
   }
-  #settings-panel label { display: flex; align-items: center; justify-content: space-between; font-size: 17px; gap: 8px; }
-  #settings-panel label.settings-row-stack { flex-direction: column; align-items: stretch; gap: 8px; }
+  .settings-group + .settings-group { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(90,74,58,.14); }
+  .settings-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--brand); margin: 8px 0 2px;
+  }
+  #settings-panel label {
+    display: flex; align-items: center; justify-content: space-between; font-size: 15px; gap: 8px;
+    padding-block: 7px;
+  }
+  #settings-panel label.settings-row-stack { flex-direction: column; align-items: stretch; gap: 6px; }
   #settings-panel input[type="number"] {
-    width: 56px; text-align: center; padding: 8px 2px; margin: 0;
+    width: 30px; text-align: center; padding: 0; margin: 0; border: none; border-image-source: none;
+    background: transparent; font-weight: 700; font-size: 15px; color: var(--text);
     -moz-appearance: textfield;
   }
   #settings-panel input[type="number"]::-webkit-inner-spin-button,
   #settings-panel input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   #settings-panel input[type="checkbox"] { width: auto; }
-  .stepper { display: flex; align-items: center; gap: 6px; }
+  .stepper { display: flex; align-items: center; gap: 8px; }
   .stepper-btn {
-    width: 34px; flex-shrink: 0; padding: 6px 0; margin: 0; font-size: 16px; line-height: 1;
-    border-width: 12px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
-    color: var(--text);
+    width: 24px; height: 24px; flex-shrink: 0; padding: 0; margin: 0; font-size: 14px; line-height: 1;
+    border: 1px solid rgba(90,74,58,.28); border-image-source: none; border-radius: 50%;
+    background: transparent; color: var(--text);
   }
   .stepper-btn:disabled { opacity: .4; cursor: default; }
 
@@ -541,14 +555,16 @@
   }
   .hostmode-btn.selected { border-image-source: var(--ring); }
 
-  .itemmode-row { display: flex; gap: 6px; }
-  .itemmode-btn {
-    flex: 1 1 0; min-width: 0; font-size: 13px; padding: 6px 8px; margin: 0;
-    border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
-    color: var(--text);
+  .itemmode-row {
+    display: flex; border: 1px solid rgba(90,74,58,.28); border-radius: 8px; overflow: hidden; width: 100%;
   }
-  .itemmode-btn.selected { border-image-source: var(--ring); }
-  .itemmode-btn:disabled { opacity: .4; cursor: default; }
+  .itemmode-btn {
+    flex: 1 1 0; min-width: 0; font-size: 12px; padding: 6px 8px; margin: 0;
+    border: none; border-image-source: none; border-radius: 0;
+    background: transparent; color: var(--text); opacity: .65;
+  }
+  .itemmode-btn.selected { background: var(--red); color: #fff; opacity: 1; }
+  .itemmode-btn:disabled { opacity: .3; cursor: default; }
 
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
@@ -1251,36 +1267,45 @@
   </div>
 
   <div id="settings-panel">
-    <label>Timer (sec)
-      <span class="stepper">
-        <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
-        <input id="setting-timer" type="number" min="10" max="90" />
-        <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
-      </span>
-    </label>
-    <label>Rounds
-      <span class="stepper">
-        <button type="button" class="stepper-btn minus" data-for="setting-rounds" data-step="-1">&minus;</button>
-        <input id="setting-rounds" type="number" min="1" max="20" />
-        <button type="button" class="stepper-btn plus" data-for="setting-rounds" data-step="1">+</button>
-      </span>
-    </label>
-    <label>Second-chance scoring <button id="setting-secondchance" type="button" class="text-toggle-btn"></button></label>
-    <label>Bots use second chances <button id="setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
-    <label class="settings-row-stack">Item selection
-      <span class="itemmode-row">
-        <button type="button" id="setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
-        <button type="button" id="setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
-      </span>
-    </label>
-    <label>Auto mode <button id="setting-auto-advance" type="button" class="text-toggle-btn"></button></label>
-    <label>Auto-advance delay (sec)
-      <span class="stepper">
-        <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
-        <input id="setting-auto-advance-seconds" type="number" min="1" max="15" />
-        <button type="button" class="stepper-btn plus" data-for="setting-auto-advance-seconds" data-step="1">+</button>
-      </span>
-    </label>
+    <div class="settings-group">
+      <div class="settings-eyebrow">Round</div>
+      <label>Timer (sec)
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
+          <input id="setting-timer" type="number" min="10" max="90" />
+          <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
+        </span>
+      </label>
+      <label>Rounds
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="setting-rounds" data-step="-1">&minus;</button>
+          <input id="setting-rounds" type="number" min="1" max="20" />
+          <button type="button" class="stepper-btn plus" data-for="setting-rounds" data-step="1">+</button>
+        </span>
+      </label>
+    </div>
+    <div class="settings-group">
+      <div class="settings-eyebrow">Scoring</div>
+      <label>Second-chance scoring <button id="setting-secondchance" type="button" class="text-toggle-btn"></button></label>
+      <label>Bots use second chances <button id="setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
+    </div>
+    <div class="settings-group">
+      <div class="settings-eyebrow">Gameplay</div>
+      <label class="settings-row-stack">Item selection
+        <span class="itemmode-row">
+          <button type="button" id="setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
+          <button type="button" id="setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
+        </span>
+      </label>
+      <label>Auto mode <button id="setting-auto-advance" type="button" class="text-toggle-btn"></button></label>
+      <label>Auto-advance delay (sec)
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
+          <input id="setting-auto-advance-seconds" type="number" min="1" max="15" />
+          <button type="button" class="stepper-btn plus" data-for="setting-auto-advance-seconds" data-step="1">+</button>
+        </span>
+      </label>
+    </div>
   </div>
 
   <p id="create-status"></p>
