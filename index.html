@@ -837,8 +837,20 @@
     15% { opacity: 1; }
     100% { transform: translate(var(--fx), var(--fy)) scale(1) rotate(360deg); opacity: 0; }
   }
+  .coin-award-popup {
+    position: fixed; z-index: 951; transform: translateX(-50%);
+    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #d9a441;
+    text-shadow: 0 2px 0 rgba(0,0,0,.15), 0 0 8px rgba(217,164,65,.5);
+    pointer-events: none; animation: coinAwardPopup 1.4s ease-out forwards;
+  }
+  @keyframes coinAwardPopup {
+    0% { transform: translateX(-50%) translateY(0) scale(.6); opacity: 0; }
+    15% { transform: translateX(-50%) translateY(-10px) scale(1.15); opacity: 1; }
+    30% { transform: translateX(-50%) translateY(-16px) scale(1); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-72px) scale(1); opacity: 0; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .float-reaction, .streamer-piece, .coin-fly { display: none; }
+    .float-reaction, .streamer-piece, .coin-fly, .coin-award-popup { display: none; }
     .trophy-burst .trophy-emoji { animation: none; }
     .trophy-burst .ray { display: none; }
   }
@@ -4240,8 +4252,10 @@
     // becoming coins happens on their own screen, not visibly here.
     if (willAnimateCoins && myLi) {
       setTimeout(() => {
-        spawnCoinFly(myLi.querySelector(".pts"), toolbarCoinBalanceEl);
-        setTimeout(() => animateCoinCount(coinsBeforeAward, coinsBeforeAward + myFinalScore, 500), 700);
+        const ptsEl = myLi.querySelector(".pts");
+        spawnCoinFly(ptsEl, toolbarCoinBalanceEl, { count: 8, durationMs: 1100, staggerMs: 90 });
+        spawnCoinAwardPopup(ptsEl, myFinalScore);
+        setTimeout(() => animateCoinCount(coinsBeforeAward, coinsBeforeAward + myFinalScore, 600), 1400);
       }, myRowDelay + 400);
     } else if (willAnimateCoins) {
       coinCountTweenActive = false; // no row found to fly from - don't leave the toolbar stuck
@@ -4320,15 +4334,18 @@
     setTimeout(() => wrap.remove(), 900);
   }
 
-  function spawnCoinFly(fromEl, toEl) {
+  function spawnCoinFly(fromEl, toEl, opts = {}) {
     if (!fromEl || !toEl) return;
+    const count = opts.count || 3;
+    const durationMs = opts.durationMs || 650;
+    const staggerMs = opts.staggerMs || 60;
     const fromRect = fromEl.getBoundingClientRect();
     const toRect = toEl.getBoundingClientRect();
     const startX = fromRect.left + fromRect.width / 2;
     const startY = fromRect.top + fromRect.height / 2;
     const dx = (toRect.left + toRect.width / 2) - startX;
     const dy = (toRect.top + toRect.height / 2) - startY;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < count; i++) {
       const coin = document.createElement("div");
       coin.className = "coin-fly";
       coin.textContent = "\u{1FA99}";
@@ -4336,10 +4353,23 @@
       coin.style.top = `${startY}px`;
       coin.style.setProperty("--fx", `${dx}px`);
       coin.style.setProperty("--fy", `${dy}px`);
-      coin.style.animationDelay = `${i * 60}ms`;
+      coin.style.animationDuration = `${durationMs}ms`;
+      coin.style.animationDelay = `${i * staggerMs}ms`;
       reactionsPanelEl.appendChild(coin);
-      setTimeout(() => coin.remove(), 800);
+      setTimeout(() => coin.remove(), durationMs + i * staggerMs + 150);
     }
+  }
+
+  function spawnCoinAwardPopup(nearEl, amount) {
+    if (!nearEl || !amount) return;
+    const rect = nearEl.getBoundingClientRect();
+    const el = document.createElement("div");
+    el.className = "coin-award-popup";
+    el.textContent = `+${amount} coins`;
+    el.style.left = `${rect.left + rect.width / 2}px`;
+    el.style.top = `${rect.top}px`;
+    reactionsPanelEl.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
   }
 
   const SFX_FILES = {
