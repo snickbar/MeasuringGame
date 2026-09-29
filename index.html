@@ -578,7 +578,8 @@
     display: none; align-items: center; gap: 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px;
   }
   body:has(#gacha-screen.active) #toolbar-coin-balance,
-  body:has(#collection-screen.active) #toolbar-coin-balance { display: flex; }
+  body:has(#collection-screen.active) #toolbar-coin-balance,
+  body:has(#final-screen.active) #toolbar-coin-balance { display: flex; }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #bottom-toolbar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
@@ -612,6 +613,10 @@
     width: 26px; height: 26px; flex-shrink: 0; padding: 0; margin: 0;
     border: none; border-radius: 50%; background: rgba(255,255,255,.25); color: #fff;
     font-weight: 700; font-size: 12px; line-height: 1;
+  }
+  #reveal-next-btn, #show-summary-btn, #next-round-btn {
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px;
+    padding: 8px 10px; border-width: 8px; border-style: solid; border-image-slice: 55 fill;
   }
   #reveal-next-btn { border-image-source: var(--btn-hex-red); color: #fff; }
   .icon-btn {
@@ -1100,7 +1105,7 @@
   </div>
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
-  <button id="show-summary-btn" style="display:none;">Show round summary</button>
+  <button id="show-summary-btn" style="display:none;">Show summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
   <button id="play-again-btn" style="display:none;">Play again</button>
   <button id="final-home-btn" style="display:none;">Back to home</button>
@@ -1982,6 +1987,7 @@
   const gachaCloseBtn = document.getElementById("gacha-close-btn");
   const homeGachaBtn = document.getElementById("home-gacha-btn");
   const homeCoinCountEl = document.getElementById("home-coin-count");
+  const toolbarCoinBalanceEl = document.getElementById("toolbar-coin-balance");
   const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
   const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
   const gachaViewAllBtn = document.getElementById("gacha-view-all-btn");
@@ -2348,7 +2354,28 @@
 
   function renderCoinBalance() {
     homeCoinCountEl.textContent = myProfile.coins;
-    toolbarCoinCountEl.textContent = myProfile.coins;
+    // Skipped mid-tween so the final-screen coin-fly's own count-up animation
+    // (see animateCoinCount) isn't stomped by the profile update landing
+    // partway through it.
+    if (!coinCountTweenActive) toolbarCoinCountEl.textContent = myProfile.coins;
+  }
+
+  let coinCountTweenActive = false;
+  function animateCoinCount(fromVal, toVal, durationMs) {
+    coinCountTweenActive = true;
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      toolbarCoinCountEl.textContent = Math.round(fromVal + (toVal - fromVal) * eased);
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        toolbarCoinCountEl.textContent = toVal;
+        coinCountTweenActive = false;
+      }
+    }
+    requestAnimationFrame(step);
   }
 
   function renderGachaScreen() {
@@ -4159,6 +4186,13 @@
     if (finalRendered) return;
     finalRendered = true;
     const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
+    const coinsBeforeAward = myProfile.coins;
+    const willAnimateCoins = myFinalScore > 0;
+    // Set before awardCoinsForGameEnd fires, not after: the Firebase round-trip
+    // can resolve (and renderCoinBalance() can snap the toolbar number to its
+    // final value) before our own delayed animation below even starts, which
+    // would make animateCoinCount visibly flicker back down first.
+    if (willAnimateCoins) coinCountTweenActive = true;
     awardCoinsForGameEnd(myFinalScore);
     finalListEl.innerHTML = "";
     const scoreFn = (id) => currentPlayers[id].score || 0;
@@ -4168,6 +4202,8 @@
     };
     const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
     let rank1Delay = 0;
+    let myRowDelay = 0;
+    let myLi = null;
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
@@ -4188,6 +4224,7 @@
       const delayMs = idx * 150;
       li.style.animationDelay = `${delayMs}ms`;
       if (rank === 1) rank1Delay = delayMs;
+      if (id === currentPlayerId) myRowDelay = delayMs;
       const winnerStars = rank === 1 && score > 0
         ? `<div class="drumroll-stars"><span></span><span></span><span></span><span></span></div>`
         : "";
@@ -4197,7 +4234,18 @@
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
+      if (id === currentPlayerId) myLi = li;
     });
+    // Only your own coin haul flies up to the toolbar - everyone else's score
+    // becoming coins happens on their own screen, not visibly here.
+    if (willAnimateCoins && myLi) {
+      setTimeout(() => {
+        spawnCoinFly(myLi.querySelector(".pts"), toolbarCoinBalanceEl);
+        setTimeout(() => animateCoinCount(coinsBeforeAward, coinsBeforeAward + myFinalScore, 500), 700);
+      }, myRowDelay + 400);
+    } else if (willAnimateCoins) {
+      coinCountTweenActive = false; // no row found to fly from - don't leave the toolbar stuck
+    }
     setTimeout(() => {
       celebrate("spotOn");
       spawnStreamerConfetti();
