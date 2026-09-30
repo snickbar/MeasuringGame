@@ -225,15 +225,18 @@
     border-width: 9px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
   #watch-ad-status { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); min-height: 1.3em; }
-  #coin-pack-row { display: flex; gap: 8px; margin-top: 10px; }
-  .coin-pack-btn {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    width: auto; margin: 0; padding: 8px 4px; color: var(--text);
-    font-family: 'Fredoka', sans-serif; font-size: 12px;
+  #coin-pack-row { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
+  .coin-pack-card {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 10px 4px 8px; color: var(--text);
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
   }
-  .coin-pack-amount { font-weight: 700; }
-  .coin-pack-price { font-weight: 600; color: var(--brand); }
+  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; }
+  .coin-pack-buy-btn {
+    width: 100%; margin-top: auto; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; padding: 7px 2px;
+    border-width: 7px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
+  }
   #shop-tabs { display: flex; gap: 6px; margin: 10px 0 4px; }
   .shop-tab-btn {
     flex: 1; width: auto; margin: 0; padding: 8px 4px; color: var(--text);
@@ -614,14 +617,14 @@
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
     position: fixed; top: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
-    min-height: 50px; display: flex; align-items: center; gap: 6px;
-    padding: 5px 6px; z-index: 50;
+    min-height: 56px; display: flex; align-items: center; gap: 6px;
+    padding: 6px; z-index: 50;
     background: #fbfaf6; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
   #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
   #toolbar-coin-balance {
-    display: none; align-items: center; gap: 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px;
-    border: none; background: transparent; padding: 2px; margin: 0; color: var(--text); cursor: pointer;
+    display: none; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
+    border: none; background: transparent; padding: 4px; margin: 0; color: var(--text); cursor: pointer;
   }
   body:has(#gacha-screen.active) #toolbar-coin-balance,
   body:has(#collection-screen.active) #toolbar-coin-balance,
@@ -629,17 +632,18 @@
   body:has(#home-screen.active) #toolbar-coin-balance { display: flex; }
   #toolbar-coin-plus {
     display: flex; align-items: center; justify-content: center;
-    width: 15px; height: 15px; border-radius: 50%; background: var(--brand); color: #fff;
-    font-size: 12px; font-weight: 700; line-height: 1;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--brand); color: #fff;
+    font-size: 15px; font-weight: 700; line-height: 1;
   }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #toolbar-shop-btn {
-    display: none; width: auto; height: 34px; flex-shrink: 0; padding: 0 9px 0 4px; margin: 0; gap: 3px;
-    border: none; background: rgba(255,251,239,0.9); border-radius: 12px; align-items: center; justify-content: center;
+    display: none; width: auto; height: 44px; flex-shrink: 0; padding: 0 12px 0 6px; margin: 0; gap: 6px;
+    border: none; background: rgba(255,251,239,0.9); border-radius: 14px; align-items: center; justify-content: center;
     box-shadow: 0 2px 4px rgba(74,42,16,0.3);
   }
   body:has(#home-screen.active) #toolbar-shop-btn { display: flex; }
-  #toolbar-shop-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; color: #4a2a10; }
+  #toolbar-shop-btn .home-shop-icon { transform: scale(1.35); }
+  #toolbar-shop-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #4a2a10; }
   .icon-btn, #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
   }
@@ -1231,9 +1235,18 @@
       <button id="watch-ad-btn" type="button">Watch an Ad &middot; +50 coins</button>
       <p id="watch-ad-status"></p>
       <div id="coin-pack-row">
-        <button type="button" class="coin-pack-btn" data-coins="500" data-price="$1.99"><span class="coin-pack-amount">500 coins</span><span class="coin-pack-price">$1.99</span></button>
-        <button type="button" class="coin-pack-btn" data-coins="1200" data-price="$3.99"><span class="coin-pack-amount">1,200 coins</span><span class="coin-pack-price">$3.99</span></button>
-        <button type="button" class="coin-pack-btn" data-coins="3000" data-price="$7.99"><span class="coin-pack-amount">3,000 coins</span><span class="coin-pack-price">$7.99</span></button>
+        <div class="coin-pack-card">
+          <span class="coin-pack-amount">500 coins</span>
+          <button type="button" class="coin-pack-buy-btn" data-coins="500">$1.99 &middot; Buy Now</button>
+        </div>
+        <div class="coin-pack-card">
+          <span class="coin-pack-amount">1,200 coins</span>
+          <button type="button" class="coin-pack-buy-btn" data-coins="1200">$3.99 &middot; Buy Now</button>
+        </div>
+        <div class="coin-pack-card">
+          <span class="coin-pack-amount">3,000 coins</span>
+          <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2281,7 +2294,7 @@
   const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
   const watchAdBtn = document.getElementById("watch-ad-btn");
   const watchAdStatusEl = document.getElementById("watch-ad-status");
-  const coinPackBtns = document.querySelectorAll(".coin-pack-btn");
+  const coinPackBtns = document.querySelectorAll(".coin-pack-buy-btn");
   const gachaViewAllBtn = document.getElementById("gacha-view-all-btn");
   const gachaViewAllAvatarLeftEl = document.getElementById("gacha-viewall-avatar-left");
   const gachaViewAllAvatarRightEl = document.getElementById("gacha-viewall-avatar-right");
