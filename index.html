@@ -634,6 +634,18 @@
   @media (prefers-reduced-motion: reduce) {
     #toolbar-help-btn.hint-pulse { animation: none; }
   }
+  #host-unlock-banner {
+    display: none; margin: 10px 0; padding: 12px 14px; border-radius: 10px;
+    background: var(--brand); color: #fff;
+  }
+  #host-unlock-banner.active { display: block; animation: toolbarFadeIn 200ms ease-out; }
+  #host-unlock-banner p { margin: 0 0 10px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1.4; }
+  #host-unlock-btn {
+    width: auto; margin: 0; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; padding: 10px 14px;
+    border-width: 9px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
+  }
+  #room-code-display.code-locked { filter: blur(5px); user-select: none; }
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
   .players-header h3 { margin: 0; flex-shrink: 0; }
   #host-start-btn { width: auto; flex: 1; max-width: 220px; margin: 0; font-size: 13px; padding: 9px 10px; line-height: 1.25; }
@@ -1214,6 +1226,8 @@
     <h3>Debug: set coins</h3>
     <input id="debug-coins-input" type="number" min="0" step="1" placeholder="Coin amount" />
     <button id="debug-coins-btn" type="button">Set</button>
+    <h3>Debug: room code unlock</h3>
+    <button id="debug-reset-host-unlock-btn" type="button">Reset (re-lock for testing)</button>
   </div>
 
   <p class="settings-footer-link"><a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>
@@ -1374,6 +1388,11 @@
   <div class="screen-header">
     <h1>Room: <span id="room-code-display"></span></h1>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
+  </div>
+
+  <div id="host-unlock-banner">
+    <p>Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
+    <button id="host-unlock-btn" type="button">Unlock for $2.99 &middot; One time</button>
   </div>
 
   <div id="bot-controls">
@@ -1744,23 +1763,25 @@
     localStorage.setItem("mg_deviceId", deviceId);
   }
 
-  let myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars() };
+  let myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false };
   function watchMyProfile() {
     onValue(ref(db, `profiles/${deviceId}`), (snap) => {
       const data = snap.val();
       if (!data) {
-        myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars() };
+        myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false };
         set(ref(db, `profiles/${deviceId}`), myProfile);
       } else {
         myProfile = {
           coins: data.coins || 0,
           unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
+          hostUnlocked: !!data.hostUnlocked,
         };
       }
       renderCoinBalance();
       renderAvatarGrid();
       renderSettingsAvatarGrid();
       renderGachaScreen();
+      renderHostUnlockUi();
     });
   }
 
@@ -1999,6 +2020,8 @@
   const lobbyScreenEl = document.getElementById("lobby-screen");
   const roomCodeDisplay = document.getElementById("room-code-display");
   const shareRoomBtn = document.getElementById("share-room-btn");
+  const hostUnlockBannerEl = document.getElementById("host-unlock-banner");
+  const hostUnlockBtn = document.getElementById("host-unlock-btn");
   const playerList = document.getElementById("player-list");
   const hostStartBtn = document.getElementById("host-start-btn");
   const botControlsEl = document.getElementById("bot-controls");
@@ -2562,6 +2585,9 @@
       const val = Math.max(0, parseInt(document.getElementById("debug-coins-input").value, 10) || 0);
       await update(ref(db, `profiles/${deviceId}`), { coins: val });
     });
+    document.getElementById("debug-reset-host-unlock-btn").addEventListener("click", async () => {
+      await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: false });
+    });
   }
 
   async function copyTextToClipboard(text) {
@@ -2624,6 +2650,30 @@
     const copied = await copyTextToClipboard(joinUrl);
     if (!copied) return;
     flashButtonConfirm(shareRoomBtn, shareRoomReset, "Link copied!", "Share room");
+  });
+
+  // ---- Room-code paywall: only the host's own view is ever gated - a guest
+  // already has the code (that's how they joined), so there's nothing to
+  // unlock for them. Unlocking is a one-time, per-profile flag, not
+  // per-room, matching "pay once, host unlimited games forever".
+  function renderHostUnlockUi() {
+    if (!isHost) {
+      hostUnlockBannerEl.classList.remove("active");
+      roomCodeDisplay.classList.remove("code-locked");
+      shareRoomBtn.style.display = "";
+      return;
+    }
+    const unlocked = myProfile.hostUnlocked;
+    hostUnlockBannerEl.classList.toggle("active", !unlocked);
+    roomCodeDisplay.classList.toggle("code-locked", !unlocked);
+    shareRoomBtn.style.display = unlocked ? "" : "none";
+  }
+  // TEMP: simulates a successful purchase with no real payment, so the
+  // unlock flow can be built and tested end-to-end before Google Play
+  // Billing is wired up. Swap this handler's body for the real purchase
+  // call later; renderHostUnlockUi() itself doesn't need to change.
+  hostUnlockBtn.addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
   });
 
   // ---- "Install app" banner, driven by the browser's own install
@@ -2942,6 +2992,7 @@
     joinScreen.classList.remove("active");
     nameAvatarScreenEl.classList.remove("active");
     roomCodeDisplay.textContent = roomCode;
+    renderHostUnlockUi();
 
     startHudTicker();
     watchRoom(roomCode);
