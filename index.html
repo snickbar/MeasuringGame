@@ -234,6 +234,34 @@
   }
   .coin-pack-amount { font-weight: 700; }
   .coin-pack-price { font-weight: 600; color: var(--brand); }
+  #shop-tabs { display: flex; gap: 6px; margin: 10px 0 4px; }
+  .shop-tab-btn {
+    flex: 1; width: auto; margin: 0; padding: 8px 4px; color: var(--text);
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px;
+    border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
+    opacity: .65;
+  }
+  .shop-tab-btn.active { opacity: 1; border-image-source: var(--btn-accent); color: #fff; }
+  .shop-tab-panel { display: none; }
+  .shop-tab-panel.active { display: block; }
+  .cosmetics-intro { text-align: center; font-size: 12px; color: var(--text-muted); margin: 8px 0; }
+  .cosmetic-section { margin: 4px 0 14px; }
+  .cosmetic-section h3 { margin: 0 0 8px; font-size: 14px; }
+  .cosmetic-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+  .cosmetic-item {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 4px; border-width: 7px; border-style: solid;
+    border-image-source: var(--btn2); border-image-slice: 55 fill;
+  }
+  .cosmetic-item.equipped { border-image-source: var(--btn-accent); }
+  .cosmetic-item.equipped .cosmetic-item-label,
+  .cosmetic-item.equipped .cosmetic-item-state { color: #fff; }
+  .cosmetic-swatch-border { width: 40px; height: 26px; border-radius: 6px; background: #fff; border: 4px solid; box-sizing: border-box; }
+  .cosmetic-swatch-star { font-size: 22px; line-height: 1; }
+  .cosmetic-swatch-circle { width: 26px; height: 26px; border-radius: 50%; }
+  .cosmetic-item-label { font-size: 11px; font-weight: 700; color: var(--text); text-align: center; }
+  .cosmetic-item-state { font-size: 10px; font-weight: 700; color: var(--text-muted); }
+  .cosmetic-item.equipped .cosmetic-item-state { color: var(--brand); }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
   #gacha-status.error { color: var(--red); font-weight: 700; }
   #gacha-pull-btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 0; }
@@ -593,17 +621,28 @@
   #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
   #toolbar-coin-balance {
     display: none; align-items: center; gap: 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px;
+    border: none; background: transparent; padding: 2px; margin: 0; color: var(--text); cursor: pointer;
   }
   body:has(#gacha-screen.active) #toolbar-coin-balance,
   body:has(#collection-screen.active) #toolbar-coin-balance,
   body:has(#final-screen.active) #toolbar-coin-balance,
   body:has(#home-screen.active) #toolbar-coin-balance { display: flex; }
+  #toolbar-coin-plus {
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; border-radius: 50%; background: var(--brand); color: #fff;
+    font-size: 12px; font-weight: 700; line-height: 1;
+  }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #toolbar-shop-btn {
-    display: none; width: 34px; height: 34px; flex-shrink: 0; padding: 0; margin: 0;
-    border: none; background: transparent; align-items: center; justify-content: center;
+    display: none; width: auto; height: 34px; flex-shrink: 0; padding: 0 9px 0 4px; margin: 0; gap: 3px;
+    border: none; background: rgba(255,251,239,0.9); border-radius: 12px; align-items: center; justify-content: center;
+    box-shadow: 0 2px 4px rgba(74,42,16,0.3);
   }
   body:has(#home-screen.active) #toolbar-shop-btn { display: flex; }
+  #toolbar-shop-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; color: #4a2a10; }
+  .icon-btn, #toolbar-coin-balance {
+    filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
+  }
   #bottom-toolbar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
     min-height: 58px; align-items: center; justify-content: flex-start; gap: 8px;
@@ -1133,7 +1172,7 @@
   </div>
   <div id="toolbar-center">
     <div id="hud-round-label"></div>
-    <div id="toolbar-coin-balance"><span>&#129689;</span> <span id="toolbar-coin-count">0</span></div>
+    <button id="toolbar-coin-balance" type="button"><span>&#129689;</span> <span id="toolbar-coin-count">0</span><span id="toolbar-coin-plus" aria-hidden="true">+</span></button>
   </div>
   <div id="toolbar-right-group">
     <button id="toolbar-shop-btn" type="button" aria-label="Shop">
@@ -1141,6 +1180,7 @@
         <span class="home-shop-globe"></span>
         <span class="home-shop-base"></span>
       </span>
+      <span id="toolbar-shop-label">Shop</span>
     </button>
     <button id="toolbar-help-btn" class="icon-btn" type="button" aria-label="How to play"></button>
     <button id="toolbar-settings-btn" class="icon-btn" type="button" aria-label="Settings"></button>
@@ -1168,74 +1208,91 @@
 
   <button id="home-create-btn" class="big-cta create">Create Game</button>
   <button id="home-join-btn" class="big-cta join">Join Game</button>
-
-  <button id="home-gacha-btn" type="button">
-    <span class="coin-shop-balance">&#129689; <span id="home-coin-count">0</span></span>
-    <span class="coin-shop-label">Avatar Shop</span>
-    <span class="home-shop-icon" aria-hidden="true">
-      <span class="home-shop-globe"></span>
-      <span class="home-shop-base"></span>
-    </span>
-  </button>
 </div>
 
 <div id="gacha-screen" class="screen">
   <div class="screen-header">
-    <h1>Avatar Shop</h1>
+    <h1>Shop</h1>
     <button id="gacha-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
   </div>
 
-  <!-- TEMP: testing-only, gives free coins with no cost. Remove this button before launch. -->
-  <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
+  <div id="shop-tabs">
+    <button type="button" class="shop-tab-btn" data-tab="coins">Coins</button>
+    <button type="button" class="shop-tab-btn" data-tab="avatars">Avatars</button>
+    <button type="button" class="shop-tab-btn" data-tab="cosmetics">Cosmetics</button>
+  </div>
 
-  <div id="coin-acquire-panel">
-    <h3>Get More Coins</h3>
-    <button id="watch-ad-btn" type="button">Watch an Ad &middot; +50 coins</button>
-    <p id="watch-ad-status"></p>
-    <div id="coin-pack-row">
-      <button type="button" class="coin-pack-btn" data-coins="500" data-price="$1.99"><span class="coin-pack-amount">500 coins</span><span class="coin-pack-price">$1.99</span></button>
-      <button type="button" class="coin-pack-btn" data-coins="1200" data-price="$3.99"><span class="coin-pack-amount">1,200 coins</span><span class="coin-pack-price">$3.99</span></button>
-      <button type="button" class="coin-pack-btn" data-coins="3000" data-price="$7.99"><span class="coin-pack-amount">3,000 coins</span><span class="coin-pack-price">$7.99</span></button>
+  <div id="shop-tab-coins" class="shop-tab-panel">
+    <!-- TEMP: testing-only, gives free coins with no cost. Remove this button before launch. -->
+    <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
+
+    <div id="coin-acquire-panel">
+      <h3>Get More Coins</h3>
+      <button id="watch-ad-btn" type="button">Watch an Ad &middot; +50 coins</button>
+      <p id="watch-ad-status"></p>
+      <div id="coin-pack-row">
+        <button type="button" class="coin-pack-btn" data-coins="500" data-price="$1.99"><span class="coin-pack-amount">500 coins</span><span class="coin-pack-price">$1.99</span></button>
+        <button type="button" class="coin-pack-btn" data-coins="1200" data-price="$3.99"><span class="coin-pack-amount">1,200 coins</span><span class="coin-pack-price">$3.99</span></button>
+        <button type="button" class="coin-pack-btn" data-coins="3000" data-price="$7.99"><span class="coin-pack-amount">3,000 coins</span><span class="coin-pack-price">$7.99</span></button>
+      </div>
     </div>
   </div>
 
-  <div class="gacha-scene">
-    <div class="gacha-flash" id="gacha-flash"></div>
-    <div class="gacha-machine" id="gacha-machine">
-      <div class="gacha-globe-dome">
-        <div class="gacha-globe" id="gacha-globe">
-          <div class="gacha-globe-shine"></div>
+  <div id="shop-tab-avatars" class="shop-tab-panel">
+    <div class="gacha-scene">
+      <div class="gacha-flash" id="gacha-flash"></div>
+      <div class="gacha-machine" id="gacha-machine">
+        <div class="gacha-globe-dome">
+          <div class="gacha-globe" id="gacha-globe">
+            <div class="gacha-globe-shine"></div>
+          </div>
+          <div class="gacha-coin-fly" id="gacha-coin-fly">&#129689;</div>
         </div>
-        <div class="gacha-coin-fly" id="gacha-coin-fly">&#129689;</div>
+        <div class="gacha-neck"></div>
+        <div class="gacha-base">
+          <div class="gacha-coin-slot"></div>
+          <div class="gacha-knob-row"><div class="gacha-knob" id="gacha-knob"></div></div>
+          <div class="gacha-spout"></div>
+          <div class="gacha-tray"></div>
+        </div>
       </div>
-      <div class="gacha-neck"></div>
-      <div class="gacha-base">
-        <div class="gacha-coin-slot"></div>
-        <div class="gacha-knob-row"><div class="gacha-knob" id="gacha-knob"></div></div>
-        <div class="gacha-spout"></div>
-        <div class="gacha-tray"></div>
+      <div class="gacha-capsule" id="gacha-capsule">
+        <div class="gacha-capsule-top"></div>
+        <div class="gacha-capsule-bottom"></div>
+      </div>
+      <div class="gacha-reveal-wrap" id="gacha-reveal-wrap">
+        <div class="gacha-reveal-rays"></div>
+        <div class="gacha-reveal-burst"></div>
+        <img id="gacha-reveal-img" src="" alt="">
+        <div><span class="gacha-badge" id="gacha-badge"></span></div>
       </div>
     </div>
-    <div class="gacha-capsule" id="gacha-capsule">
-      <div class="gacha-capsule-top"></div>
-      <div class="gacha-capsule-bottom"></div>
-    </div>
-    <div class="gacha-reveal-wrap" id="gacha-reveal-wrap">
-      <div class="gacha-reveal-rays"></div>
-      <div class="gacha-reveal-burst"></div>
-      <img id="gacha-reveal-img" src="" alt="">
-      <div><span class="gacha-badge" id="gacha-badge"></span></div>
-    </div>
+
+    <button id="gacha-pull-btn" type="button" class="big-cta"></button>
+    <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn">
+      <img id="gacha-viewall-avatar-left" class="gacha-viewall-avatar" src="" alt="">
+      <span>View All Avatars</span>
+      <img id="gacha-viewall-avatar-right" class="gacha-viewall-avatar" src="" alt="">
+    </button>
+    <p id="gacha-collection-status"></p>
+    <p id="gacha-status"></p>
   </div>
 
-  <button id="gacha-pull-btn" type="button" class="big-cta"></button>
-  <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn">
-    <img id="gacha-viewall-avatar-left" class="gacha-viewall-avatar" src="" alt="">
-    <span>View All Avatars</span>
-    <img id="gacha-viewall-avatar-right" class="gacha-viewall-avatar" src="" alt="">
-  </button>
-  <p id="gacha-collection-status"></p>
-  <p id="gacha-status"></p>
+  <div id="shop-tab-cosmetics" class="shop-tab-panel">
+    <p class="cosmetics-intro">Coin-bought extras for your cards. New categories added over time.</p>
+    <div class="cosmetic-section">
+      <h3>Card Borders</h3>
+      <div class="cosmetic-grid" id="cosmetic-grid-borders"></div>
+    </div>
+    <div class="cosmetic-section">
+      <h3>Win Effects</h3>
+      <div class="cosmetic-grid" id="cosmetic-grid-effects"></div>
+    </div>
+    <div class="cosmetic-section">
+      <h3>Name Colors</h3>
+      <div class="cosmetic-grid" id="cosmetic-grid-colors"></div>
+    </div>
+  </div>
 </div>
 
 <div id="collection-screen" class="screen">
@@ -1803,20 +1860,45 @@
     localStorage.setItem("mg_deviceId", deviceId);
   }
 
-  let myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false, adsWatchedDate: null, adsWatchedCount: 0 };
+  function defaultCosmeticState() {
+    return {
+      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true } },
+      equipped: { borders: "classic", effects: "classic", colors: "default" },
+    };
+  }
+  function defaultProfile() {
+    return {
+      coins: 0,
+      unlockedAvatars: defaultUnlockedAvatars(),
+      hostUnlocked: false,
+      adsWatchedDate: null,
+      adsWatchedCount: 0,
+      cosmetics: defaultCosmeticState(),
+    };
+  }
+  let myProfile = defaultProfile();
   function watchMyProfile() {
     onValue(ref(db, `profiles/${deviceId}`), (snap) => {
       const data = snap.val();
       if (!data) {
-        myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false, adsWatchedDate: null, adsWatchedCount: 0 };
+        myProfile = defaultProfile();
         set(ref(db, `profiles/${deviceId}`), myProfile);
       } else {
+        const defaults = defaultCosmeticState();
         myProfile = {
           coins: data.coins || 0,
           unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
           hostUnlocked: !!data.hostUnlocked,
           adsWatchedDate: data.adsWatchedDate || null,
           adsWatchedCount: data.adsWatchedCount || 0,
+          cosmetics: {
+            owned: {
+              borders: { ...defaults.owned.borders, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.borders) || {}) },
+              effects: { ...defaults.owned.effects, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.effects) || {}) },
+              colors: { ...defaults.owned.colors, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.colors) || {}) },
+            },
+            equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
+          },
         };
       }
       renderCoinBalance();
@@ -1825,6 +1907,7 @@
       renderGachaScreen();
       renderWatchAdStatus();
       renderHostUnlockUi();
+      renderCosmeticsShop();
     });
   }
 
@@ -1863,6 +1946,85 @@
       };
     });
     return txResult.committed;
+  }
+
+  // TEMP: cosmetics are purely cosmetic bookkeeping for now - buying/equipping
+  // one spends real coins and persists to the profile, but nothing in actual
+  // gameplay (card borders, winner-reveal stars, name color) reads these
+  // values yet. Wiring that up is a separate follow-on task; this just
+  // proves out the economy end-to-end, same as the room-code unlock and the
+  // coin-acquiring panel.
+  const COSMETIC_CATALOG = {
+    borders: [
+      { id: "classic", label: "Classic", cost: 0, color: "#C98A4D" },
+      { id: "neon", label: "Neon", cost: 150, color: "#39D6C8" },
+      { id: "gold", label: "Gold", cost: 300, color: "#E8B930" },
+      { id: "holiday", label: "Holiday", cost: 200, color: "#D9435B" },
+    ],
+    effects: [
+      { id: "classic", label: "Classic Stars", cost: 0, color: "#E8B930" },
+      { id: "rainbow", label: "Rainbow Stars", cost: 200, color: "#9B6BD1" },
+      { id: "fireworks", label: "Fireworks", cost: 250, color: "#F2994A" },
+      { id: "coinshower", label: "Coin Shower", cost: 180, color: "#F2C94C" },
+    ],
+    colors: [
+      { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
+      { id: "crimson", label: "Crimson", cost: 50, color: "#C23F35" },
+      { id: "ocean", label: "Ocean", cost: 50, color: "#2E86AB" },
+      { id: "violet", label: "Violet", cost: 50, color: "#7B4FA6" },
+      { id: "forest", label: "Forest", cost: 50, color: "#3B7A3B" },
+    ],
+  };
+  async function buyOrEquipCosmetic(category, id) {
+    const item = COSMETIC_CATALOG[category].find((c) => c.id === id);
+    if (!item) return false;
+    const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const cosmetics = profile.cosmetics || defaultCosmeticState();
+      const owned = (cosmetics.owned && cosmetics.owned[category]) || {};
+      const alreadyOwned = !!owned[id] || item.cost === 0;
+      if (!alreadyOwned && (profile.coins || 0) < item.cost) return profile; // abort: insufficient funds
+      return {
+        ...profile,
+        coins: alreadyOwned ? (profile.coins || 0) : (profile.coins || 0) - item.cost,
+        cosmetics: {
+          owned: { ...cosmetics.owned, [category]: { ...owned, [id]: true } },
+          equipped: { ...cosmetics.equipped, [category]: id },
+        },
+      };
+    });
+    return txResult.committed;
+  }
+  function renderCosmeticCategory(category) {
+    const grid = document.getElementById(`cosmetic-grid-${category}`);
+    if (!grid) return;
+    grid.innerHTML = "";
+    const owned = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned[category]) || {};
+    const equipped = (myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped[category]) || null;
+    COSMETIC_CATALOG[category].forEach((item) => {
+      const isOwned = !!owned[item.id] || item.cost === 0;
+      const isEquipped = equipped === item.id;
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "cosmetic-item" + (isEquipped ? " equipped" : "");
+      let swatchHtml;
+      if (category === "borders") swatchHtml = `<div class="cosmetic-swatch-border" style="border-color:${item.color}"></div>`;
+      else if (category === "effects") swatchHtml = `<span class="cosmetic-swatch-star" style="color:${item.color}">&#9733;</span>`;
+      else swatchHtml = `<div class="cosmetic-swatch-circle" style="background:${item.color}"></div>`;
+      const stateHtml = isEquipped ? "Equipped" : isOwned ? "Tap to equip" : `${item.cost} coins`;
+      card.innerHTML = `${swatchHtml}<span class="cosmetic-item-label">${item.label}</span><span class="cosmetic-item-state">${stateHtml}</span>`;
+      card.addEventListener("click", async () => {
+        card.disabled = true;
+        await buyOrEquipCosmetic(category, item.id);
+        card.disabled = false;
+      });
+      grid.appendChild(card);
+    });
+  }
+  function renderCosmeticsShop() {
+    renderCosmeticCategory("borders");
+    renderCosmeticCategory("effects");
+    renderCosmeticCategory("colors");
   }
 
   function pickGachaResult() {
@@ -2114,8 +2276,6 @@
   const settingsCloseBtn = document.getElementById("settings-close-btn");
   const howtoCloseBtn = document.getElementById("howto-close-btn");
   const gachaCloseBtn = document.getElementById("gacha-close-btn");
-  const homeGachaBtn = document.getElementById("home-gacha-btn");
-  const homeCoinCountEl = document.getElementById("home-coin-count");
   const toolbarCoinBalanceEl = document.getElementById("toolbar-coin-balance");
   const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
   const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
@@ -2507,17 +2667,28 @@
   });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
-  function openGachaScreen() {
+  function setShopTab(tab) {
+    document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tab === tab);
+    });
+    document.querySelectorAll(".shop-tab-panel").forEach((panel) => {
+      panel.classList.toggle("active", panel.id === `shop-tab-${tab}`);
+    });
+  }
+  function openGachaScreen(tab) {
     gachaStatusEl.textContent = "";
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
     gachaCapsuleEl.className = "gacha-capsule";
+    setShopTab(tab || "avatars");
     openOverlay(gachaScreen);
   }
-  homeGachaBtn.addEventListener("click", openGachaScreen);
-  toolbarShopBtn.addEventListener("click", openGachaScreen);
+  toolbarShopBtn.addEventListener("click", () => openGachaScreen("avatars"));
+  toolbarCoinBalanceEl.addEventListener("click", () => openGachaScreen("coins"));
+  document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
+  });
 
   function renderCoinBalance() {
-    homeCoinCountEl.textContent = myProfile.coins;
     // Skipped mid-tween so the final-screen coin-fly's own count-up animation
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
