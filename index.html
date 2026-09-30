@@ -1493,7 +1493,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getDatabase, ref, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction
+    getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -1519,18 +1519,42 @@
   // to false (never removes the node); a separate grace-period sweep (below) removes
   // truly-gone players after DISCONNECT_GRACE_MS. Re-fires on every reconnect, which is
   // exactly when the tab resumes from being backgrounded, restoring `connected:true`.
-  const DISCONNECT_GRACE_MS = 25000;
-  onValue(ref(db, ".info/connected"), (snap) => {
+  // 2 minutes, not seconds: a normal "stepped away from the party for a bit" easily
+  // exceeds a short grace period, and letting the sweep remove someone that
+  // readily used to wipe their whole player node (name/avatar/score all gone).
+  const DISCONNECT_GRACE_MS = 120000;
+  onValue(ref(db, ".info/connected"), async (snap) => {
     if (snap.val() !== true || !currentRoomCode || !currentPlayerId) return;
     const playerRef = ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`);
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
-    update(playerRef, { connected: true, disconnectedAt: null });
+    // Some other player's grace-period sweep (below) may have already removed this
+    // node entirely while we were away too long. A plain update() on a missing path
+    // would silently recreate it with only `connected`/`disconnectedAt` set - a
+    // nameless, avatar-less ghost row - and that resurrection would also race ahead
+    // of (and defeat) the "removed from room" detection in watchRoom's listener. So
+    // check first: only patch connected state if our actual player data is still there.
+    const existing = await get(playerRef);
+    if (existing.exists() && existing.val().name) {
+      update(playerRef, { connected: true, disconnectedAt: null });
+    }
   });
   setInterval(async () => {
     if (!currentRoomCode || !roomState.players) return;
     const roomCode = currentRoomCode;
     let removedAny = false;
     for (const [id, p] of Object.entries(roomState.players)) {
+      // A player node with no `name` is never legitimate - it can only be a
+      // corrupted "ghost" left behind by a write racing a removal (e.g. a
+      // server-armed onDisconnect().update() or maybeReassignHost() recreating
+      // the path after this same sweep already deleted it for being gone too
+      // long). Prune those on sight instead of waiting out the grace period
+      // again, so a stale nameless/avatar-less card can't keep showing up in
+      // everyone else's score column.
+      if (p && !p.name) {
+        await remove(ref(db, `rooms/${roomCode}/players/${id}`));
+        removedAny = true;
+        continue;
+      }
       if (p && p.connected === false && typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt > DISCONNECT_GRACE_MS) {
         await remove(ref(db, `rooms/${roomCode}/players/${id}`));
         removedAny = true;
@@ -4582,7 +4606,11 @@
       if (everSeenSelfInPlayers && !currentPlayers[currentPlayerId] && data.phase !== "ended") {
         if (!wasRemoved) {
           wasRemoved = true;
-          showLeftScreen("The host removed you from this room.");
+          // Covers both an actual host kick and the grace-period presence sweep
+          // removing someone who was disconnected/backgrounded too long - this
+          // listener can't tell those apart, so the message stays neutral rather
+          // than blaming the host for something that may have been a timeout.
+          showLeftScreen("You're no longer in this room.");
         }
         return;
       }
