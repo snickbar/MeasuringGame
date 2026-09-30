@@ -2503,16 +2503,17 @@
       if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
     }
     avatarGridEl.innerHTML = "";
-    avatarsSortedForPicker().forEach((a) => {
+    // Only avatars the player has unlocked - the full catalog, locked ones
+    // included, is only ever shown via the Shop's "View All Avatars".
+    avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)).forEach((a) => {
       const taken = takenAvatars.has(a) && a !== currentAvatar;
-      const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = avatarHtml(a);
-      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "") + (locked ? " locked" : "");
-      btn.disabled = taken || locked;
+      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "");
+      btn.disabled = taken;
       btn.addEventListener("click", () => {
-        if (taken || locked) return;
+        if (taken) return;
         currentAvatar = a;
         localStorage.setItem("mg_avatar", a);
         renderAvatarGrid();
