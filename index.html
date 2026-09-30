@@ -139,7 +139,7 @@
   #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
-    position: fixed; top: 62px; left: 0; right: 0; bottom: 58px;
+    position: fixed; top: 96px; left: 0; right: 0; bottom: 58px;
     max-width: 520px; margin: 0 auto;
     padding: 12px 12px 0; z-index: 10;
   }
@@ -616,26 +616,19 @@
      the leftover space between the home button and the right-side icons -
      those two groups are different widths, so centering within "what's left"
      visually leaned left. */
-  #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  /* Only pulled out to true full-toolbar centering on the screens where it
-     holds the coin balance + shop chip (see the matching #toolbar-coin-balance
-     rule below) - during actual gameplay it holds #hud-round-label instead,
-     which has to coexist with #hud-room-code-group in normal flex flow;
-     centering it on the whole toolbar there made it overlap the room code. */
-  body:has(#home-screen.active) #toolbar-center,
-  body:has(#gacha-screen.active) #toolbar-center,
-  body:has(#collection-screen.active) #toolbar-center,
-  body:has(#final-screen.active) #toolbar-center {
+  /* Always the coin balance + shop chip now, on every screen - the room
+     code / round indicator that used to also live in this toolbar (and only
+     appeared during a game) moved to their own #hud-sub-toolbar row below,
+     so this main bar's contents no longer change screen to screen and can
+     stay truly centered on the full toolbar width. */
+  #toolbar-center {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
   }
   #toolbar-coin-balance {
-    display: none; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
+    display: flex; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
     border: none; background: transparent; padding: 4px; margin: 0; color: var(--text); cursor: pointer;
   }
-  body:has(#gacha-screen.active) #toolbar-coin-balance,
-  body:has(#collection-screen.active) #toolbar-coin-balance,
-  body:has(#final-screen.active) #toolbar-coin-balance,
-  body:has(#home-screen.active) #toolbar-coin-balance { display: flex; }
   #toolbar-coin-plus {
     display: flex; align-items: center; justify-content: center;
     width: 20px; height: 20px; border-radius: 50%; background: var(--brand); color: #fff;
@@ -643,16 +636,24 @@
   }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #toolbar-shop-btn {
-    display: none; width: auto; height: 44px; flex-shrink: 0; padding: 0 12px 0 6px; margin: 0; gap: 6px;
+    display: flex; width: auto; height: 44px; flex-shrink: 0; padding: 0 12px 0 6px; margin: 0; gap: 6px;
     border: none; background: rgba(255,251,239,0.9); border-radius: 14px; align-items: center; justify-content: center;
     box-shadow: 0 2px 4px rgba(74,42,16,0.3);
   }
-  body:has(#home-screen.active) #toolbar-shop-btn { display: flex; }
   #toolbar-shop-btn .home-shop-icon { transform: scale(1.35); }
   #toolbar-shop-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #4a2a10; }
   .icon-btn, #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
   }
+  /* Narrow second row, game-only: room code + round indicator. Kept out of
+     the main toolbar above so that one stays identical everywhere. */
+  #hud-sub-toolbar {
+    display: none; position: fixed; top: 56px; left: 0; right: 0; max-width: 520px; margin: 0 auto;
+    align-items: center; justify-content: space-between; gap: 6px;
+    min-height: 34px; padding: 3px 8px; z-index: 49;
+    background: #fbfaf6; box-shadow: 0 2px 4px rgba(0,0,0,.06);
+  }
+  #hud-sub-toolbar.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   #bottom-toolbar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
     min-height: 58px; align-items: center; justify-content: flex-start; gap: 8px;
@@ -1176,12 +1177,7 @@
 
 <div id="app-toolbar">
   <button id="toolbar-home-btn" class="icon-btn" type="button" aria-label="Home"></button>
-  <div id="hud-room-code-group">
-    <div id="hud-room-code"></div>
-    <button id="copy-room-code-btn" type="button">Copy code</button>
-  </div>
   <div id="toolbar-center">
-    <div id="hud-round-label"></div>
     <button id="toolbar-coin-balance" type="button"><span>&#129689;</span> <span id="toolbar-coin-count">0</span><span id="toolbar-coin-plus" aria-hidden="true">+</span></button>
     <button id="toolbar-shop-btn" type="button" aria-label="Shop">
       <span class="home-shop-icon" aria-hidden="true">
@@ -1195,6 +1191,18 @@
     <button id="toolbar-help-btn" class="icon-btn" type="button" aria-label="How to play"></button>
     <button id="toolbar-settings-btn" class="icon-btn" type="button" aria-label="Settings"></button>
   </div>
+</div>
+
+<!-- Second, narrower row for the room code + round indicator - only shown
+     while a game is actually in progress, so the main toolbar above (home,
+     coins, shop, help, settings) can stay identical on every screen instead
+     of rearranging itself when these context-specific items come and go. -->
+<div id="hud-sub-toolbar">
+  <div id="hud-room-code-group">
+    <div id="hud-room-code"></div>
+    <button id="copy-room-code-btn" type="button">Copy code</button>
+  </div>
+  <div id="hud-round-label"></div>
 </div>
 
 <div id="bottom-toolbar">
@@ -2327,6 +2335,7 @@
   const settingAutoAdvanceSecondsInput = document.getElementById("setting-auto-advance-seconds");
 
   const hudEl = document.getElementById("hud");
+  const hudSubToolbarEl = document.getElementById("hud-sub-toolbar");
   const hudRoomCodeGroupEl = document.getElementById("hud-room-code-group");
   const hudRoomCodeEl = document.getElementById("hud-room-code");
   const copyRoomCodeBtn = document.getElementById("copy-room-code-btn");
@@ -4873,6 +4882,7 @@
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     hostStartBtn.style.display = isHost ? "block" : "none";
     hudEl.classList.toggle("active", isHudActive);
+    hudSubToolbarEl.classList.toggle("active", isHudActive);
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
