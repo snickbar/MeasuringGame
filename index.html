@@ -225,18 +225,20 @@
     border-width: 9px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
   #watch-ad-status { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); min-height: 1.3em; }
-  #coin-pack-row { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
+  #coin-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
   .coin-pack-card {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
     padding: 10px 4px 8px; color: var(--text);
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
   }
-  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; }
+  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; }
+  .coin-pack-sub { font-size: 11px; font-weight: 600; color: var(--text-muted); min-height: 1.2em; }
   .coin-pack-buy-btn {
     width: 100%; margin-top: auto; color: #fff;
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; padding: 7px 2px;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; padding: 8px 2px;
     border-width: 7px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
+  .coin-pack-buy-btn:disabled { opacity: .45; filter: grayscale(.3); }
   #shop-tabs { display: flex; gap: 6px; margin: 10px 0 4px; }
   .shop-tab-btn {
     flex: 1; width: auto; margin: 0; padding: 8px 4px; color: var(--text);
@@ -617,11 +619,18 @@
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
     position: fixed; top: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
-    min-height: 56px; display: flex; align-items: center; gap: 6px;
+    min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 6px;
     padding: 6px; z-index: 50;
     background: #fbfaf6; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
-  #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  /* Centered on the WHOLE toolbar width via absolute positioning, not just
+     the leftover space between the home button and the right-side icons -
+     those two groups are different widths, so centering within "what's left"
+     visually leaned left. */
+  #toolbar-center {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
   #toolbar-coin-balance {
     display: none; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
     border: none; background: transparent; padding: 4px; margin: 0; color: var(--text); cursor: pointer;
@@ -1177,8 +1186,6 @@
   <div id="toolbar-center">
     <div id="hud-round-label"></div>
     <button id="toolbar-coin-balance" type="button"><span>&#129689;</span> <span id="toolbar-coin-count">0</span><span id="toolbar-coin-plus" aria-hidden="true">+</span></button>
-  </div>
-  <div id="toolbar-right-group">
     <button id="toolbar-shop-btn" type="button" aria-label="Shop">
       <span class="home-shop-icon" aria-hidden="true">
         <span class="home-shop-globe"></span>
@@ -1186,6 +1193,8 @@
       </span>
       <span id="toolbar-shop-label">Shop</span>
     </button>
+  </div>
+  <div id="toolbar-right-group">
     <button id="toolbar-help-btn" class="icon-btn" type="button" aria-label="How to play"></button>
     <button id="toolbar-settings-btn" class="icon-btn" type="button" aria-label="Settings"></button>
   </div>
@@ -1232,9 +1241,12 @@
 
     <div id="coin-acquire-panel">
       <h3>Get More Coins</h3>
-      <button id="watch-ad-btn" type="button">Watch an Ad &middot; +50 coins</button>
-      <p id="watch-ad-status"></p>
       <div id="coin-pack-row">
+        <div class="coin-pack-card">
+          <span class="coin-pack-amount">+50 coins</span>
+          <span class="coin-pack-sub" id="watch-ad-status"></span>
+          <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn">Watch Ad</button>
+        </div>
         <div class="coin-pack-card">
           <span class="coin-pack-amount">500 coins</span>
           <button type="button" class="coin-pack-buy-btn" data-coins="500">$1.99 &middot; Buy Now</button>
@@ -2658,7 +2670,7 @@
       watchAdStatusEl.textContent = `${remaining} left today`;
     } else {
       watchAdBtn.disabled = true;
-      watchAdStatusEl.textContent = "Come back tomorrow for more";
+      watchAdStatusEl.textContent = "Come back tomorrow";
     }
   }
   // Status text is owned entirely by renderWatchAdStatus(), which reacts to
