@@ -434,6 +434,12 @@
   @keyframes gachaShimmerSweep { 0% { left: -60%; opacity: 0; } 15% { opacity: 1; } 55% { opacity: 1; } 100% { left: 130%; opacity: 0; } }
   #gacha-pull-btn { display: block; margin: 6px auto 0; }
   body:has(#home-screen.active) #app-toolbar { background: transparent; box-shadow: none; }
+  /* The home background art is sized to exactly fill the viewport, but real
+     mobile browsers (dynamic address bar height changes, etc.) can leave a
+     sliver of real scrollable overflow - enough for a drag to visibly shift
+     the art and toolbar icons out of place. Just disallow scrolling outright
+     while home is showing; nothing on it needs to scroll anyway. */
+  body:has(#home-screen.active) { overflow-y: hidden; }
   .back-btn {
     width: auto; font-size: 14px; padding: 6px 12px; margin: 0 0 10px;
     border-width: 10px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
@@ -610,6 +616,12 @@
     width: 20px; height: 20px; border-radius: 50%; background: var(--brand); color: #fff;
     font-size: 15px; font-weight: 700; line-height: 1;
   }
+  /* Fixed width (enough for the "9999+" display cap, see formatCoinDisplay)
+     so the chip's own size never changes as the number updates - it used to
+     visibly shrink/grow (and shove the neighboring icon) every time the
+     coin count re-rendered, most noticeably right after the Home button's
+     full reload replaces the default "0" with the real balance. */
+  #toolbar-coin-count { display: inline-block; min-width: 46px; text-align: center; }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
@@ -1154,9 +1166,9 @@
   <button id="toolbar-home-btn" class="toolbar-badge-btn" type="button" aria-label="Home"><img src="icons/toolbar-home.png" alt=""></button>
   <div id="toolbar-center">
     <button id="toolbar-coin-balance" type="button"><span>&#129689;</span> <span id="toolbar-coin-count">0</span><span id="toolbar-coin-plus" aria-hidden="true">+</span></button>
-    <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
   </div>
   <div id="toolbar-right-group">
+    <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-help-btn" class="toolbar-badge-btn" type="button" aria-label="How to play"><img src="icons/toolbar-help.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
   </div>
@@ -2680,11 +2692,18 @@
     btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
   });
 
+  // Capped so the display (and its reserved layout width, see
+  // #toolbar-coin-count) never has to grow past 5 characters no matter how
+  // large the real balance gets.
+  const COIN_DISPLAY_CAP = 9999;
+  function formatCoinDisplay(n) {
+    return n > COIN_DISPLAY_CAP ? COIN_DISPLAY_CAP + "+" : String(n);
+  }
   function renderCoinBalance() {
     // Skipped mid-tween so the final-screen coin-fly's own count-up animation
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
-    if (!coinCountTweenActive) toolbarCoinCountEl.textContent = myProfile.coins;
+    if (!coinCountTweenActive) toolbarCoinCountEl.textContent = formatCoinDisplay(myProfile.coins);
   }
 
   let coinCountTweenActive = false;
@@ -2694,11 +2713,11 @@
     function step(now) {
       const t = Math.min(1, (now - start) / durationMs);
       const eased = 1 - Math.pow(1 - t, 3);
-      toolbarCoinCountEl.textContent = Math.round(fromVal + (toVal - fromVal) * eased);
+      toolbarCoinCountEl.textContent = formatCoinDisplay(Math.round(fromVal + (toVal - fromVal) * eased));
       if (t < 1) {
         requestAnimationFrame(step);
       } else {
-        toolbarCoinCountEl.textContent = toVal;
+        toolbarCoinCountEl.textContent = formatCoinDisplay(toVal);
         coinCountTweenActive = false;
       }
     }
