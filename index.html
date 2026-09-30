@@ -249,24 +249,13 @@
   .shop-tab-btn.active { opacity: 1; border-image-source: var(--btn-accent); color: #fff; }
   .shop-tab-panel { display: none; }
   .shop-tab-panel.active { display: block; }
-  .cosmetics-intro { text-align: center; font-size: 12px; color: var(--text-muted); margin: 8px 0; }
-  .cosmetic-section { margin: 4px 0 14px; }
-  .cosmetic-section h3 { margin: 0 0 8px; font-size: 14px; }
-  .cosmetic-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
-  .cosmetic-item {
-    display: flex; flex-direction: column; align-items: center; gap: 5px;
-    padding: 10px 4px; border-width: 7px; border-style: solid;
-    border-image-source: var(--btn2); border-image-slice: 55 fill;
+  .coming-soon-box {
+    margin-top: 24px; padding: 32px 20px; text-align: center;
+    border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
+    opacity: .55; filter: grayscale(.5);
   }
-  .cosmetic-item.equipped { border-image-source: var(--btn-accent); }
-  .cosmetic-item.equipped .cosmetic-item-label,
-  .cosmetic-item.equipped .cosmetic-item-state { color: #fff; }
-  .cosmetic-swatch-border { width: 40px; height: 26px; border-radius: 6px; background: #fff; border: 4px solid; box-sizing: border-box; }
-  .cosmetic-swatch-star { font-size: 22px; line-height: 1; }
-  .cosmetic-swatch-circle { width: 26px; height: 26px; border-radius: 50%; }
-  .cosmetic-item-label { font-size: 11px; font-weight: 700; color: var(--text); text-align: center; }
-  .cosmetic-item-state { font-size: 10px; font-weight: 700; color: var(--text-muted); }
-  .cosmetic-item.equipped .cosmetic-item-state { color: var(--brand); }
+  .coming-soon-title { margin: 0 0 8px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); }
+  .coming-soon-sub { margin: 0; font-size: 13px; color: var(--text-muted); }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
   #gacha-status.error { color: var(--red); font-weight: 700; }
   #gacha-pull-btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 0; }
@@ -1304,18 +1293,9 @@
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
-    <p class="cosmetics-intro">Coin-bought extras for your cards. New categories added over time.</p>
-    <div class="cosmetic-section">
-      <h3>Card Borders</h3>
-      <div class="cosmetic-grid" id="cosmetic-grid-borders"></div>
-    </div>
-    <div class="cosmetic-section">
-      <h3>Win Effects</h3>
-      <div class="cosmetic-grid" id="cosmetic-grid-effects"></div>
-    </div>
-    <div class="cosmetic-section">
-      <h3>Name Colors</h3>
-      <div class="cosmetic-grid" id="cosmetic-grid-colors"></div>
+    <div class="coming-soon-box">
+      <p class="coming-soon-title">Coming Soon</p>
+      <p class="coming-soon-sub">Card borders, win effects, and name colors are on the way.</p>
     </div>
   </div>
 </div>
@@ -2568,15 +2548,15 @@
 
   function renderSettingsAvatarGrid() {
     settingsAvatarGridEl.innerHTML = "";
-    avatarsSortedForPicker().forEach((a) => {
-      const locked = !isAvatarUnlocked(a) && a !== currentAvatar;
+    // Only avatars the player actually owns - unlike the join/lobby avatar
+    // picker, this one has no "locked" state to show; it's just your
+    // available options for a default.
+    avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)).forEach((a) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = avatarHtml(a);
-      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (locked ? " locked" : "");
-      btn.disabled = locked;
+      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "");
       btn.addEventListener("click", () => {
-        if (locked) return;
         currentAvatar = a;
         localStorage.setItem("mg_avatar", a);
         renderSettingsAvatarGrid();
