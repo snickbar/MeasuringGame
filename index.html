@@ -887,17 +887,15 @@
   .doubledown-mark { display: inline-flex; vertical-align: middle; margin-left: 4px; }
   .doubledown-mark .avatar-icon { width: 18px; height: 18px; }
   .answer-slot:disabled { cursor: default; }
-  #double-down-btn { border-image-source: var(--btn-accent); color: #fff; position: relative; }
+  #double-down-btn {
+    border-image-source: var(--btn-accent); color: #fff; position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding-block: 14px;
+  }
   #double-down-btn.picked { border-image-source: var(--ring); }
   #double-down-btn.pop { animation: popIn 300ms ease; }
+  .dd-main { font-size: 16px; }
+  .dd-guess { font-family: 'Fredoka', sans-serif; font-size: 15px; font-weight: 700; opacity: .9; }
   #answers-hint { text-align: center; font-size: 15px; color: var(--text-muted); }
-  #my-guess-display {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    margin-top: 14px; padding: 12px; text-align: center;
-    border-width: 14px; border-style: solid; border-image-source: var(--wood); border-image-slice: 70 fill;
-  }
-  .my-guess-label { font-size: 14px; color: #7a5a3a; font-weight: 600; }
-  .my-guess-value { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 32px; color: #4a2a10; }
 
   /* ---- Reveal ---- */
   #reveal-answer { display: flex; justify-content: center; margin-bottom: 12px; min-height: 0; }
@@ -1433,8 +1431,7 @@
       <div id="answers-view">
         <p id="answers-hint">Pick an answer that isn't yours, or double down on your own.</p>
         <div id="answers-row"></div>
-        <button id="double-down-btn">Double down on my answer</button>
-        <div id="my-guess-display"></div>
+        <button id="double-down-btn"><span class="dd-main">Double down on my answer</span></button>
       </div>
 
       <div id="reveal-view">
@@ -2061,7 +2058,6 @@
   const answersViewEl = document.getElementById("answers-view");
   const answersRowEl = document.getElementById("answers-row");
   const doubleDownBtn = document.getElementById("double-down-btn");
-  const myGuessDisplayEl = document.getElementById("my-guess-display");
 
   const revealViewEl = document.getElementById("reveal-view");
   const revealAnswerEl = document.getElementById("reveal-answer");
@@ -3730,11 +3726,9 @@
       doubleDownBtn.classList.add("pop");
     }
     wasDoubleDownPicked = isMyDoubleDown;
-    doubleDownBtn.innerHTML = "Double down on my answer"
+    doubleDownBtn.innerHTML = `<span class="dd-main">Double down on my answer</span>`
+      + (myEntry ? `<span class="dd-guess">Your guess: ${myEntry.value}</span>` : "")
       + (isMyDoubleDown ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
-    myGuessDisplayEl.innerHTML = myEntry
-      ? `<span class="my-guess-label">Your guess</span><span class="my-guess-value">${myEntry.value}</span>`
-      : "";
   }
 
   async function choosePick(type, targetPlayerId, alreadyActive) {
