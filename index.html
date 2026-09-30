@@ -173,7 +173,12 @@
 
   /* ---- Home screen ---- */
   #home-screen.active {
-    position: relative; margin: -62px -12px -32px; min-height: 100vh; min-height: 100dvh;
+    /* Fixed and pinned to the actual viewport box (not vh/dvh units, which
+       can drift a little between loads as the mobile browser's own chrome
+       - address bar, etc. - changes height) - repeatedly tapping Home
+       (a full reload each time) was making the background render visibly
+       larger/more zoomed-in bit by bit. */
+    position: fixed; inset: 0;
     background-image: url('home-bg.jpg'); background-size: cover; background-position: center top; background-repeat: no-repeat;
   }
   #home-title { display: none; }
@@ -594,19 +599,11 @@
     padding: 6px; z-index: 50;
     background: #fbfaf6; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
-  /* Centered on the WHOLE toolbar width via absolute positioning, not just
-     the leftover space between the home button and the right-side icons -
-     those two groups are different widths, so centering within "what's left"
-     visually leaned left. */
-  /* Always the coin balance + shop chip now, on every screen - the room
-     code / round indicator that used to also live in this toolbar (and only
-     appeared during a game) moved to their own #hud-sub-toolbar row below,
-     so this main bar's contents no longer change screen to screen and can
-     stay truly centered on the full toolbar width. */
-  #toolbar-center {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
+  /* Centered within the leftover space between the home button and the
+     right-side icon group (not the whole toolbar) - the coin balance
+     should sit in the middle of that visual gap, not get pulled toward
+     whichever side is narrower. */
+  #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
   #toolbar-coin-balance {
     display: flex; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
     border: none; background: transparent; padding: 4px; margin: 0; color: var(--text); cursor: pointer;
