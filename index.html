@@ -927,7 +927,7 @@
   .card-inner.container-8 { border-image-source: var(--card8); }
   .card-inner.container-9 { border-image-source: var(--card9); }
   .card-inner.container-10 { border-image-source: var(--card10); }
-  .drumroll-stars { position: absolute; inset: -10px; pointer-events: none; z-index: 5; }
+  .drumroll-stars { position: fixed; pointer-events: none; }
   .drumroll-stars span {
     position: absolute; top: 0; left: 0; width: 18px; height: 18px;
     background-image: var(--icon-star); background-repeat: no-repeat; background-position: center; background-size: contain;
@@ -3895,10 +3895,20 @@
       }
       if (isWinner) {
         li.classList.add("drumroll");
+        // Appended to the global reactions-panel overlay (fixed, z-index 900),
+        // not as a child of li - #reveal-list sets `perspective` for the card
+        // flip, which creates its own stacking context and traps any z-index
+        // set on a descendant, so the stars could never actually paint above
+        // the separate .score-col cards they visually orbit into.
+        const rect = li.getBoundingClientRect();
         const stars = document.createElement("div");
         stars.className = "drumroll-stars";
+        stars.style.left = `${rect.left - 10}px`;
+        stars.style.top = `${rect.top - 10}px`;
+        stars.style.width = `${rect.width + 20}px`;
+        stars.style.height = `${rect.height + 20}px`;
         stars.innerHTML = "<span></span><span></span><span></span><span></span>";
-        li.appendChild(stars);
+        reactionsPanelEl.appendChild(stars);
         playSound("drumroll");
         setTimeout(() => { li.classList.remove("drumroll"); stars.remove(); doFlips(); }, 900);
       } else {
