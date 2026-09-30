@@ -616,9 +616,17 @@
      the leftover space between the home button and the right-side icons -
      those two groups are different widths, so centering within "what's left"
      visually leaned left. */
-  #toolbar-center {
+  #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  /* Only pulled out to true full-toolbar centering on the screens where it
+     holds the coin balance + shop chip (see the matching #toolbar-coin-balance
+     rule below) - during actual gameplay it holds #hud-round-label instead,
+     which has to coexist with #hud-room-code-group in normal flex flow;
+     centering it on the whole toolbar there made it overlap the room code. */
+  body:has(#home-screen.active) #toolbar-center,
+  body:has(#gacha-screen.active) #toolbar-center,
+  body:has(#collection-screen.active) #toolbar-center,
+  body:has(#final-screen.active) #toolbar-center {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    display: flex; align-items: center; justify-content: center; gap: 6px;
   }
   #toolbar-coin-balance {
     display: none; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
