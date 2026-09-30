@@ -278,14 +278,14 @@
   }
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
 
-  .gacha-scene { position: relative; width: 100%; max-width: 280px; height: 340px; margin: 4px auto 6px; }
+  .gacha-scene { position: relative; width: 100%; max-width: 280px; height: 450px; margin: 4px auto 6px; }
   .gacha-flash { position: absolute; inset: -20px; background: #fff; opacity: 0; pointer-events: none; z-index: 20; }
   .gacha-flash.go { animation: gachaFlashPop .5s ease-out forwards; }
   @keyframes gachaFlashPop { 0% { opacity: 0; } 12% { opacity: .85; } 100% { opacity: 0; } }
 
   .gacha-machine {
     position: absolute; left: 50%; top: 0; transform: translateX(-50%);
-    display: flex; flex-direction: column; align-items: center; width: 210px;
+    width: 240px; height: 388px;
   }
   .gacha-machine.jostle { animation: gachaMachineJostle .9s ease-in-out; }
   @keyframes gachaMachineJostle {
@@ -297,11 +297,16 @@
     75% { transform: translateX(-50%) translate(-3px,2px) rotate(-1.4deg); }
     90% { transform: translateX(-50%) translate(2px,-1px) rotate(1deg); }
   }
-  .gacha-globe-dome { position: relative; width: 180px; height: 180px; z-index: 2; }
+  .gacha-machine-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: 1; }
+  /* Purely a positioning/clipping box now, sized to match the glass dome in
+     gumball-machine.png - the art supplies the glass look, this just clips
+     the capsule pile (appended by initGachaGumballs()) to that oval so it
+     reads as "inside" the dome, and keeps the existing agitate/jostle
+     animations (which only ever moved transforms, never cared what was
+     inside) working unchanged. */
   .gacha-globe {
-    width: 100%; height: 100%; border-radius: 50%; position: relative; overflow: hidden;
-    background: radial-gradient(circle at 30% 26%, rgba(255,255,255,0.95), rgba(215,238,247,0.4) 55%, rgba(190,222,235,0.55) 100%);
-    border: 6px solid #fff; box-shadow: 0 12px 22px rgba(74,42,16,0.3), inset 0 -14px 26px rgba(140,185,205,0.4);
+    position: absolute; left: 20px; top: 37px; width: 199px; height: 156px;
+    border-radius: 50%; overflow: hidden; z-index: 2; pointer-events: none;
   }
   .gacha-globe.agitate { animation: gachaGlobeWobble .9s ease-in-out; }
   @keyframes gachaGlobeWobble {
@@ -311,10 +316,6 @@
     54% { transform: scale(1.04,0.96) rotate(-2deg); }
     72% { transform: scale(0.97,1.03) rotate(1.5deg); }
     90% { transform: scale(1.02,0.98) rotate(-0.8deg); }
-  }
-  .gacha-globe-shine {
-    position: absolute; top: 8%; left: 14%; width: 34%; height: 22%; border-radius: 50%;
-    background: rgba(255,255,255,0.75); filter: blur(3px); transform: rotate(-25deg); pointer-events: none; z-index: 3;
   }
   .gacha-gumball {
     position: absolute; border-radius: 50%;
@@ -327,37 +328,15 @@
     48% { translate: var(--dx2) var(--dy2); rotate: var(--dr2); }
     74% { translate: var(--dx3) var(--dy3); rotate: var(--dr3); }
   }
-  .gacha-neck { width: 28px; height: 16px; background: #7a4530; margin-top: -6px; z-index: 1; border-radius: 2px; }
-  .gacha-base {
-    width: 180px; border-radius: 20px 20px 26px 26px; position: relative; margin-top: -2px;
-    background: linear-gradient(180deg, var(--red) 0%, var(--red) 46%, #9c3d2c 46%, #7a2e21 100%);
-    box-shadow: 0 10px 18px rgba(0,0,0,0.25); padding-bottom: 14px;
-  }
-  .gacha-base::before, .gacha-base::after {
-    content: ""; position: absolute; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.25);
-  }
-  .gacha-base::before { left: 12px; }
-  .gacha-base::after { right: 12px; }
-  .gacha-coin-slot { width: 36px; height: 9px; background: #1a1008; border-radius: 5px; margin: 14px auto 10px; }
-  .gacha-knob-row { display: flex; align-items: center; justify-content: center; }
-  .gacha-knob {
-    width: 56px; height: 56px; border-radius: 50%; position: relative;
-    background: conic-gradient(from 90deg, #f2f2f2, #b7b7b7 25%, #f2f2f2 50%, #b7b7b7 75%, #f2f2f2 100%);
-    box-shadow: 0 5px 10px rgba(0,0,0,0.35), inset 0 0 0 4px #dcdcdc;
-  }
-  .gacha-knob::after {
-    content: ""; position: absolute; top: 6px; left: 50%; width: 7px; height: 20px; margin-left: -3.5px;
-    background: var(--red); border-radius: 4px;
-  }
+  /* Cropped from the same art as a standalone rotatable disc, sized/placed
+     to sit exactly over the machine image's own (static) knob - spinning
+     just this layer keeps "turn the dial" working without needing to spin
+     the whole machine. */
+  .gacha-knob { position: absolute; left: 78px; top: 263px; width: 80px; height: 80px; z-index: 3; }
   .gacha-knob.spin { animation: gachaSpin .9s cubic-bezier(.55,-0.3,.3,1.3); }
   @keyframes gachaSpin { from { transform: rotate(0deg); } to { transform: rotate(480deg); } }
-  .gacha-spout { width: 24px; height: 14px; background: #5a2318; border-radius: 0 0 10px 10px; margin: -4px auto 0; }
-  .gacha-tray {
-    width: 80px; height: 20px; background: #5a2318; border-radius: 0 0 12px 12px; margin: 6px auto 0;
-    box-shadow: inset 0 5px 7px rgba(0,0,0,0.45);
-  }
   .gacha-coin-fly {
-    position: absolute; font-size: 20px; left: 50%; bottom: 6px; transform: translateX(-50%);
+    position: absolute; font-size: 20px; left: 50%; top: 225px; transform: translateX(-50%);
     opacity: 0; pointer-events: none; z-index: 4;
   }
   .gacha-coin-fly.fly { animation: gachaCoinFly .45s ease-in forwards; }
@@ -366,11 +345,11 @@
     100% { opacity: 0; transform: translate(-50%, -250px) scale(0.6); }
   }
   .gacha-capsule {
-    position: absolute; left: 50%; top: 274px; transform: translateX(-50%);
+    position: absolute; left: 50%; top: 380px; transform: translateX(-50%);
     width: 38px; height: 38px; pointer-events: none; opacity: 0; z-index: 5;
   }
   .gacha-capsule.drop { animation: gachaCapDrop .5s cubic-bezier(.5,0,.2,1.4) forwards; }
-  @keyframes gachaCapDrop { 0% { opacity: 1; top: 236px; } 65% { top: 282px; } 100% { opacity: 1; top: 274px; } }
+  @keyframes gachaCapDrop { 0% { opacity: 1; top: 342px; } 65% { top: 388px; } 100% { opacity: 1; top: 380px; } }
   .gacha-capsule.pulse { animation: gachaCapPulse .32s ease-in-out; }
   @keyframes gachaCapPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.18); } }
   .gacha-capsule-top, .gacha-capsule-bottom { position: absolute; left: 0; width: 38px; height: 19px; overflow: hidden; }
@@ -385,7 +364,7 @@
   @keyframes gachaCapOpenBottom { to { transform: translate(20px,26px) rotate(40deg); opacity: 0; } }
 
   .gacha-reveal-wrap {
-    position: absolute; left: 50%; top: 274px; transform: translate(-50%, 10px) scale(.4);
+    position: absolute; left: 50%; top: 380px; transform: translate(-50%, 10px) scale(.4);
     opacity: 0; pointer-events: none; text-align: center; width: 230px; z-index: 6;
   }
   .gacha-reveal-wrap.show { animation: gachaRevealIn .5s cubic-bezier(.34,1.56,.64,1) .3s forwards; }
@@ -1250,19 +1229,10 @@
     <div class="gacha-scene">
       <div class="gacha-flash" id="gacha-flash"></div>
       <div class="gacha-machine" id="gacha-machine">
-        <div class="gacha-globe-dome">
-          <div class="gacha-globe" id="gacha-globe">
-            <div class="gacha-globe-shine"></div>
-          </div>
-          <div class="gacha-coin-fly" id="gacha-coin-fly">&#129689;</div>
-        </div>
-        <div class="gacha-neck"></div>
-        <div class="gacha-base">
-          <div class="gacha-coin-slot"></div>
-          <div class="gacha-knob-row"><div class="gacha-knob" id="gacha-knob"></div></div>
-          <div class="gacha-spout"></div>
-          <div class="gacha-tray"></div>
-        </div>
+        <img class="gacha-machine-img" src="icons/gumball-machine.png" alt="">
+        <div class="gacha-globe" id="gacha-globe"></div>
+        <div class="gacha-coin-fly" id="gacha-coin-fly">&#129689;</div>
+        <img class="gacha-knob" id="gacha-knob" src="icons/gumball-knob.png" alt="">
       </div>
       <div class="gacha-capsule" id="gacha-capsule">
         <div class="gacha-capsule-top"></div>
