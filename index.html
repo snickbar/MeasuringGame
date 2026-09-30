@@ -217,6 +217,23 @@
     display: block; margin: 6px auto 10px; width: auto; padding: 6px 12px; font-size: 12px; font-weight: 600;
     background: #fff3cd; color: #7a4a00; border: 2px dashed var(--red); border-radius: 8px;
   }
+  #coin-acquire-panel { margin: 0 0 12px; text-align: center; }
+  #coin-acquire-panel h3 { margin: 0 0 8px; font-size: 14px; }
+  #watch-ad-btn {
+    width: auto; margin: 0 auto; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; padding: 9px 16px;
+    border-width: 9px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
+  }
+  #watch-ad-status { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); min-height: 1.3em; }
+  #coin-pack-row { display: flex; gap: 8px; margin-top: 10px; }
+  .coin-pack-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    width: auto; margin: 0; padding: 8px 4px; color: var(--text);
+    font-family: 'Fredoka', sans-serif; font-size: 12px;
+    border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
+  }
+  .coin-pack-amount { font-weight: 700; }
+  .coin-pack-price { font-weight: 600; color: var(--brand); }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
   #gacha-status.error { color: var(--red); font-weight: 700; }
   #gacha-pull-btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 0; }
@@ -1159,6 +1176,17 @@
   <!-- TEMP: testing-only, gives free coins with no cost. Remove this button before launch. -->
   <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
 
+  <div id="coin-acquire-panel">
+    <h3>Get More Coins</h3>
+    <button id="watch-ad-btn" type="button">Watch an Ad &middot; +50 coins</button>
+    <p id="watch-ad-status"></p>
+    <div id="coin-pack-row">
+      <button type="button" class="coin-pack-btn" data-coins="500" data-price="$1.99"><span class="coin-pack-amount">500 coins</span><span class="coin-pack-price">$1.99</span></button>
+      <button type="button" class="coin-pack-btn" data-coins="1200" data-price="$3.99"><span class="coin-pack-amount">1,200 coins</span><span class="coin-pack-price">$3.99</span></button>
+      <button type="button" class="coin-pack-btn" data-coins="3000" data-price="$7.99"><span class="coin-pack-amount">3,000 coins</span><span class="coin-pack-price">$7.99</span></button>
+    </div>
+  </div>
+
   <div class="gacha-scene">
     <div class="gacha-flash" id="gacha-flash"></div>
     <div class="gacha-machine" id="gacha-machine">
@@ -1763,24 +1791,27 @@
     localStorage.setItem("mg_deviceId", deviceId);
   }
 
-  let myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false };
+  let myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false, adsWatchedDate: null, adsWatchedCount: 0 };
   function watchMyProfile() {
     onValue(ref(db, `profiles/${deviceId}`), (snap) => {
       const data = snap.val();
       if (!data) {
-        myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false };
+        myProfile = { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false, adsWatchedDate: null, adsWatchedCount: 0 };
         set(ref(db, `profiles/${deviceId}`), myProfile);
       } else {
         myProfile = {
           coins: data.coins || 0,
           unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
           hostUnlocked: !!data.hostUnlocked,
+          adsWatchedDate: data.adsWatchedDate || null,
+          adsWatchedCount: data.adsWatchedCount || 0,
         };
       }
       renderCoinBalance();
       renderAvatarGrid();
       renderSettingsAvatarGrid();
       renderGachaScreen();
+      renderWatchAdStatus();
       renderHostUnlockUi();
     });
   }
@@ -1789,9 +1820,37 @@
     return !!myProfile.unlockedAvatars[a];
   }
 
-  async function awardCoinsForGameEnd(amount) {
+  async function addCoins(amount) {
     if (!amount || amount <= 0) return;
     await runTransaction(ref(db, `profiles/${deviceId}/coins`), (current) => (current || 0) + amount);
+  }
+  async function awardCoinsForGameEnd(amount) {
+    await addCoins(amount);
+  }
+
+  // TEMP: no real ad SDK wired up yet - "watching" an ad is simulated and
+  // grants the coins immediately. The 3-per-day cap and the transaction
+  // itself (so a race between taps can't double-grant) are real; only the
+  // "watch an ad" step is fake. Swap the instant grant for a real rewarded-ad
+  // callback later; the cap-tracking logic underneath doesn't need to change.
+  const DAILY_AD_COIN_CAP = 3;
+  function todayDateStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+  async function watchAdForCoins() {
+    const today = todayDateStr();
+    const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false };
+      const countToday = profile.adsWatchedDate === today ? (profile.adsWatchedCount || 0) : 0;
+      if (countToday >= DAILY_AD_COIN_CAP) return profile; // abort: cap already reached today
+      return {
+        ...profile,
+        coins: (profile.coins || 0) + 50,
+        adsWatchedDate: today,
+        adsWatchedCount: countToday + 1,
+      };
+    });
+    return txResult.committed;
   }
 
   function pickGachaResult() {
@@ -2047,6 +2106,9 @@
   const toolbarCoinBalanceEl = document.getElementById("toolbar-coin-balance");
   const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
   const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
+  const watchAdBtn = document.getElementById("watch-ad-btn");
+  const watchAdStatusEl = document.getElementById("watch-ad-status");
+  const coinPackBtns = document.querySelectorAll(".coin-pack-btn");
   const gachaViewAllBtn = document.getElementById("gacha-view-all-btn");
   const gachaViewAllAvatarLeftEl = document.getElementById("gacha-viewall-avatar-left");
   const gachaViewAllAvatarRightEl = document.getElementById("gacha-viewall-avatar-right");
@@ -2400,6 +2462,36 @@
   // TEMP: testing-only, gives free coins with no cost. Remove this handler
   // (and the matching button in #gacha-screen) before launch.
   gachaDebugAddCoinsBtn.addEventListener("click", () => { awardCoinsForGameEnd(100); });
+
+  function renderWatchAdStatus() {
+    const today = todayDateStr();
+    const countToday = myProfile.adsWatchedDate === today ? myProfile.adsWatchedCount : 0;
+    const remaining = Math.max(0, DAILY_AD_COIN_CAP - countToday);
+    if (remaining > 0) {
+      watchAdBtn.disabled = false;
+      watchAdStatusEl.textContent = `${remaining} left today`;
+    } else {
+      watchAdBtn.disabled = true;
+      watchAdStatusEl.textContent = "Come back tomorrow for more";
+    }
+  }
+  // Status text is owned entirely by renderWatchAdStatus(), which reacts to
+  // the profile listener - it always reflects the authoritative post-write
+  // state. Setting it here too (from the immediate local result) would race
+  // that listener and could leave a stale message if the listener's own
+  // update lands after this one.
+  watchAdBtn.addEventListener("click", async () => {
+    watchAdBtn.disabled = true;
+    await watchAdForCoins();
+    renderWatchAdStatus();
+  });
+  coinPackBtns.forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      await addCoins(parseInt(btn.dataset.coins, 10));
+      btn.disabled = false;
+    });
+  });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
   homeGachaBtn.addEventListener("click", () => {
@@ -2576,19 +2668,18 @@
     renderGachaScreen();
   });
 
-  // Hidden dev convenience for testing the coin economy from any device
-  // (including phones, where there's no easy console access) - only
-  // renders when visiting with ?debug=1 in the URL, never shown otherwise.
-  if (new URLSearchParams(location.search).get("debug") === "1") {
-    document.getElementById("debug-coins-panel").style.display = "block";
-    document.getElementById("debug-coins-btn").addEventListener("click", async () => {
-      const val = Math.max(0, parseInt(document.getElementById("debug-coins-input").value, 10) || 0);
-      await update(ref(db, `profiles/${deviceId}`), { coins: val });
-    });
-    document.getElementById("debug-reset-host-unlock-btn").addEventListener("click", async () => {
-      await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: false });
-    });
-  }
+  // TEMP: dev convenience for testing the coin economy and the room-code
+  // unlock from the installed phone app, where there's no address bar to
+  // append a ?debug=1 to and no console access either - always visible in
+  // Settings for now. Remove before launch (see launch-blockers memory).
+  document.getElementById("debug-coins-panel").style.display = "block";
+  document.getElementById("debug-coins-btn").addEventListener("click", async () => {
+    const val = Math.max(0, parseInt(document.getElementById("debug-coins-input").value, 10) || 0);
+    await update(ref(db, `profiles/${deviceId}`), { coins: val });
+  });
+  document.getElementById("debug-reset-host-unlock-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: false });
+  });
 
   async function copyTextToClipboard(text) {
     try {
