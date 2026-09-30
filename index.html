@@ -2687,8 +2687,33 @@
     if (currentRoomCode && roomState && roomState.phase) {
       applyPhase(roomState);
       lastScoreColumnSignature = null;
-      if (roomState.phase === "question" || roomState.phase === "waiting" || roomState.phase === "answers" || roomState.phase === "summary") {
+      const phase = roomState.phase;
+      if (phase === "question" || phase === "waiting" || phase === "summary") {
         renderScoreColumn();
+      }
+      if (phase === "answers") {
+        // Always a clean rebuild (clears its own innerHTML first), so it's
+        // safe to just re-run - unlike the score column there's no memoized
+        // no-op guard to fight here.
+        renderAnswersScreen(roomState);
+        renderScoreColumn();
+      }
+      if (phase === "reveal") {
+        // applyPhase() above only re-toggles which VIEW is visible - it
+        // doesn't touch #reveal-list's actual content. Re-running the
+        // choreography as-is would no-op (revealIndex already matches
+        // lastChoreographedIndex from before backgrounding), leaving any
+        // stray/duplicate cards from an interrupted render right where they
+        // were. Resetting these forces the choreography's own from-scratch
+        // rebuild path instead, which clears #reveal-list before replaying
+        // every already-revealed entry up to the real current revealIndex.
+        revealShuffled = false;
+        lastChoreographedIndex = -1;
+        revealAnimating = false;
+        renderRevealChoreography(roomState);
+      }
+      if (phase === "summary") {
+        renderSummary(roomState);
       }
     }
   }
