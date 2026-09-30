@@ -596,8 +596,14 @@
   }
   body:has(#gacha-screen.active) #toolbar-coin-balance,
   body:has(#collection-screen.active) #toolbar-coin-balance,
-  body:has(#final-screen.active) #toolbar-coin-balance { display: flex; }
+  body:has(#final-screen.active) #toolbar-coin-balance,
+  body:has(#home-screen.active) #toolbar-coin-balance { display: flex; }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  #toolbar-shop-btn {
+    display: none; width: 34px; height: 34px; flex-shrink: 0; padding: 0; margin: 0;
+    border: none; background: transparent; align-items: center; justify-content: center;
+  }
+  body:has(#home-screen.active) #toolbar-shop-btn { display: flex; }
   #bottom-toolbar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
     min-height: 58px; align-items: center; justify-content: flex-start; gap: 8px;
@@ -1130,6 +1136,12 @@
     <div id="toolbar-coin-balance"><span>&#129689;</span> <span id="toolbar-coin-count">0</span></div>
   </div>
   <div id="toolbar-right-group">
+    <button id="toolbar-shop-btn" type="button" aria-label="Shop">
+      <span class="home-shop-icon" aria-hidden="true">
+        <span class="home-shop-globe"></span>
+        <span class="home-shop-base"></span>
+      </span>
+    </button>
     <button id="toolbar-help-btn" class="icon-btn" type="button" aria-label="How to play"></button>
     <button id="toolbar-settings-btn" class="icon-btn" type="button" aria-label="Settings"></button>
   </div>
@@ -2089,6 +2101,7 @@
   const recentRoomsSection = document.getElementById("recent-rooms-section");
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
+  const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
@@ -2494,12 +2507,14 @@
   });
   toolbarHomeBtn.addEventListener("click", () => location.reload());
 
-  homeGachaBtn.addEventListener("click", () => {
+  function openGachaScreen() {
     gachaStatusEl.textContent = "";
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
     gachaCapsuleEl.className = "gacha-capsule";
     openOverlay(gachaScreen);
-  });
+  }
+  homeGachaBtn.addEventListener("click", openGachaScreen);
+  toolbarShopBtn.addEventListener("click", openGachaScreen);
 
   function renderCoinBalance() {
     homeCoinCountEl.textContent = myProfile.coins;
