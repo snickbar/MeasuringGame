@@ -2634,21 +2634,43 @@
     installBanner.classList.remove("active");
   });
 
-  // ---- Fix layout sometimes going stale on iOS after backgrounding the app
-  // and switching back (reported: "formatting is all messed up"). WebKit can
-  // leave fixed-position elements (the toolbars) and vh-based sizing painted
-  // against the old viewport/chrome state instead of repainting against the
-  // real one on resume - forcing a reflow clears it. pageshow's `persisted`
-  // covers the bfcache-restore case; visibilitychange covers plain
-  // background/foreground without a full page restore.
+  // ---- Fix layout/UI sometimes going stale after backgrounding the app and
+  // switching back (reported: "formatting is all messed up", stray leftover
+  // elements, a screen stuck mid-transition). Two distinct causes, both
+  // fixed here:
+  // 1. WebKit can leave fixed-position elements (the toolbars) and
+  //    vh-based sizing painted against the old viewport/chrome state
+  //    instead of repainting against the real one on resume - forcing a
+  //    reflow clears it.
+  // 2. If a render is ever interrupted partway (exactly what backgrounding
+  //    a tab can do to in-flight JS/rAF work), some UI can get stuck: a
+  //    stray animation overlay (coin-fly, drumroll stars, confetti) never
+  //    finishes removing itself, two screens' `.active` states end up
+  //    simultaneously true, or renderScoreColumn's memoized "does the data
+  //    look unchanged" signature guard skips rebuilding a player card that
+  //    only half-rendered - since the signature still matches, nothing
+  //    ever forces a real redraw again. Re-applying the current phase and
+  //    forcing renderScoreColumn to rebuild (by clearing its memo) fixes
+  //    both without needing new data to arrive.
   function forceLayoutReflow() {
     document.body.style.display = "none";
     void document.body.offsetHeight;
     document.body.style.display = "";
   }
-  window.addEventListener("pageshow", (e) => { if (e.persisted) forceLayoutReflow(); });
+  function resyncUiAfterResume() {
+    forceLayoutReflow();
+    reactionsPanelEl.innerHTML = "";
+    if (currentRoomCode && roomState && roomState.phase) {
+      applyPhase(roomState);
+      lastScoreColumnSignature = null;
+      if (roomState.phase === "question" || roomState.phase === "waiting" || roomState.phase === "answers" || roomState.phase === "summary") {
+        renderScoreColumn();
+      }
+    }
+  }
+  window.addEventListener("pageshow", (e) => { if (e.persisted) resyncUiAfterResume(); });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) forceLayoutReflow();
+    if (!document.hidden) resyncUiAfterResume();
   });
 
   // ---- Disable pinch-to-zoom. The viewport meta tag's user-scalable=no
