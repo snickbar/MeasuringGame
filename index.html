@@ -2130,6 +2130,7 @@
   let guessLocked = false;
   let lastSeenRound = null;
   let lastSeenPhaseForSound = null;
+  let lastSeenPhaseForReset = null;
   let answersPhaseInputLockedUntil = 0;
   let transitionInFlight = false;
   let previousDisplayedScores = {};
@@ -4488,7 +4489,13 @@
     finalHomeBtn.style.display = phase === "final" ? "block" : "none";
     playAgainBtn.style.display = (phase === "final" && isHost) ? "block" : "none";
 
-    if (phase === "question" && data.round !== lastSeenRound) {
+    // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
+    // straight back to round 1, which is indistinguishable from "still on round
+    // 1" whenever the previous game was only 1 round - so also reset whenever
+    // we're arriving at "question" from any other phase (e.g. straight from
+    // "final"), not just when the round number itself changes.
+    const enteringQuestionPhase = phase === "question" && lastSeenPhaseForReset !== "question";
+    if (phase === "question" && (data.round !== lastSeenRound || enteringQuestionPhase)) {
       lastSeenRound = data.round;
       currentGuessStr = "";
       hasSubmittedThisRound = false;
@@ -4506,6 +4513,7 @@
       renderGuessDisplay();
       updateWaitingUi();
     }
+    lastSeenPhaseForReset = phase;
 
     if (phase === "question") {
       const q = data.currentQuestion;
