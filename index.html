@@ -2162,16 +2162,43 @@
   ];
 
   const RELATIVE_MIN_RATIO = 0.15; // "Keep it relative": unit must be at least 15% of the target's size
+  // Objects near either end of the size range (a grain of sand, Mount Everest)
+  // have few or no partners within that ratio - with nothing bigger/smaller
+  // than them to pair with, a strict ratio cutoff left some objects with zero
+  // valid pairs, so they'd never appear. RELATIVE_MIN_PARTNERS guarantees every
+  // object at least this many pairs by also including its closest-ratio
+  // matches even when they fall under the cutoff.
+  const RELATIVE_MIN_PARTNERS = 10;
   // Precomputed once so "Keep it relative" mode can never produce a pair that
   // violates the ratio, no matter how unlucky a random draw would otherwise be.
   const RELATIVE_PAIRS = (() => {
-    const pairs = [];
+    const allPairs = [];
     for (let i = 0; i < OBJECTS.length; i++) {
       for (let j = i + 1; j < OBJECTS.length; j++) {
         const [unit, target] = OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
-        if (unit.mm / target.mm >= RELATIVE_MIN_RATIO) pairs.push([unit, target]);
+        allPairs.push([unit, target, unit.mm / target.mm]);
       }
     }
+
+    const seen = new Set();
+    const pairs = [];
+    function addPair(pair) {
+      const key = pair[0].name + "|" + pair[1].name;
+      if (seen.has(key)) return;
+      seen.add(key);
+      pairs.push([pair[0], pair[1]]);
+    }
+
+    allPairs.filter((p) => p[2] >= RELATIVE_MIN_RATIO).forEach(addPair);
+
+    for (const obj of OBJECTS) {
+      allPairs
+        .filter((p) => p[0].name === obj.name || p[1].name === obj.name)
+        .sort((a, b) => b[2] - a[2])
+        .slice(0, RELATIVE_MIN_PARTNERS)
+        .forEach(addPair);
+    }
+
     return pairs;
   })();
 
