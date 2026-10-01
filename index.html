@@ -292,7 +292,16 @@
   }
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
 
-  .gacha-scene { position: relative; width: 100%; max-width: 280px; height: 450px; margin: 4px auto 6px; }
+  /* The machine graphic and its overlaid globe/capsule/knob are positioned
+     with pixel offsets calibrated to this exact 280x450 box, so it can't
+     just be resized with CSS without breaking their alignment. On a short
+     phone screen the whole thing is taller than the available space -
+     JS (fitGachaScene) measures that and scales .gacha-scene down with a
+     transform (which keeps every child's relative position intact) while
+     -scene-wrap is given the resulting shorter height so nothing overlaps
+     or needs to scroll. */
+  .gacha-scene-wrap { position: relative; width: 100%; max-width: 280px; height: 450px; margin: 4px auto 6px; overflow: hidden; }
+  .gacha-scene { position: relative; width: 100%; max-width: 280px; height: 450px; transform-origin: top center; }
   .gacha-flash { position: absolute; inset: -20px; background: #fff; opacity: 0; pointer-events: none; z-index: 20; }
   .gacha-flash.go { animation: gachaFlashPop .5s ease-out forwards; }
   @keyframes gachaFlashPop { 0% { opacity: 0; } 12% { opacity: .85; } 100% { opacity: 0; } }
@@ -1253,7 +1262,8 @@
   </div>
 
   <div id="shop-tab-avatars" class="shop-tab-panel">
-    <div class="gacha-scene">
+    <div class="gacha-scene-wrap" id="gacha-scene-wrap">
+    <div class="gacha-scene" id="gacha-scene">
       <div class="gacha-flash" id="gacha-flash"></div>
       <div class="gacha-machine" id="gacha-machine">
         <img class="gacha-machine-img" src="icons/gumball-machine.png" alt="">
@@ -1269,6 +1279,7 @@
         <div class="gacha-reveal-rays"></div>
         <div class="gacha-reveal-burst"></div>
       </div>
+    </div>
     </div>
 
     <div class="gacha-result-overlay" id="gacha-result-overlay">
@@ -2367,6 +2378,8 @@
   const gachaCoinFlyEl = document.getElementById("gacha-coin-fly");
   const gachaKnobEl = document.getElementById("gacha-knob");
   const gachaCapsuleEl = document.getElementById("gacha-capsule");
+  const gachaSceneWrapEl = document.getElementById("gacha-scene-wrap");
+  const gachaSceneEl = document.getElementById("gacha-scene");
   const gachaRevealWrapEl = document.getElementById("gacha-reveal-wrap");
   const gachaResultOverlayEl = document.getElementById("gacha-result-overlay");
   const gachaResultCardEl = document.getElementById("gacha-result-card");
@@ -2753,7 +2766,30 @@
     document.querySelectorAll(".shop-tab-panel").forEach((panel) => {
       panel.classList.toggle("active", panel.id === `shop-tab-${tab}`);
     });
+    fitGachaScene();
   }
+  const GACHA_SCENE_NATURAL_HEIGHT = 450;
+  const GACHA_SCENE_MIN_HEIGHT = 220;
+  // The machine graphic + its overlaid globe/capsule/knob are positioned
+  // with pixel offsets calibrated to a 450px-tall scene, so on a short phone
+  // screen where the full Avatars tab content doesn't fit, shrink the WHOLE
+  // scene proportionally (transform, not a resize - that would misalign the
+  // overlays) by exactly however much it's overflowing, so nothing needs to
+  // scroll and the full machine is always visible.
+  function fitGachaScene() {
+    const panel = document.getElementById("shop-tab-avatars");
+    if (!panel.classList.contains("active") || !gachaScreen.classList.contains("active")) return;
+    gachaSceneWrapEl.style.height = `${GACHA_SCENE_NATURAL_HEIGHT}px`;
+    gachaSceneEl.style.transform = "none";
+    const overflow = panel.scrollHeight - panel.clientHeight;
+    if (overflow <= 0) return;
+    const targetHeight = Math.max(GACHA_SCENE_MIN_HEIGHT, GACHA_SCENE_NATURAL_HEIGHT - overflow);
+    gachaSceneWrapEl.style.height = `${targetHeight}px`;
+    gachaSceneEl.style.transform = `scale(${targetHeight / GACHA_SCENE_NATURAL_HEIGHT})`;
+  }
+  window.addEventListener("resize", () => {
+    if (gachaScreen.classList.contains("active")) fitGachaScene();
+  });
   function resetGachaScene() {
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
     gachaCapsuleEl.className = "gacha-capsule";
@@ -2763,8 +2799,8 @@
   function openGachaScreen(tab) {
     gachaStatusEl.textContent = "";
     resetGachaScene();
-    setShopTab(tab || "avatars");
     openOverlay(gachaScreen);
+    setShopTab(tab || "avatars");
   }
   toolbarShopBtn.addEventListener("click", () => openGachaScreen("avatars"));
   toolbarCoinBalanceEl.addEventListener("click", () => openGachaScreen("coins"));
