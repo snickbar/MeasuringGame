@@ -395,27 +395,40 @@
   .gacha-reveal-wrap.rare.show .gacha-reveal-rays { opacity: .28; animation: gachaRaySpin 3.4s linear infinite; }
   .gacha-reveal-wrap.ultra.show .gacha-reveal-rays { opacity: .5; animation: gachaRaySpin 2.2s linear infinite; }
   @keyframes gachaRaySpin { to { transform: rotate(360deg); } }
-  .gacha-reveal-wrap img {
-    width: 80px; height: 80px; border-radius: 16px; border: 4px solid var(--tier-color, #7a8fa6);
-    box-shadow: 0 8px 18px rgba(0,0,0,0.25); background: #fff;
+  .gacha-result-overlay {
+    position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
   }
-  .gacha-reveal-wrap.ultra img { box-shadow: 0 0 20px #d9a441, 0 8px 18px rgba(0,0,0,0.25); }
-  .gacha-badge {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 5px 14px;
+  .gacha-result-overlay.show { opacity: 1; pointer-events: auto; }
+  .gacha-result-card {
+    width: 220px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4); transform: scale(.7); opacity: 0;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+  }
+  .gacha-result-overlay.show .gacha-result-card { transform: scale(1); opacity: 1; }
+  .gacha-result-card img {
+    width: 92px; height: 92px; border-radius: 16px; border: 4px solid var(--tier-color, #7a8fa6);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.25); background: #fff; margin-bottom: 12px;
+  }
+  .gacha-result-card.ultra img { box-shadow: 0 0 20px #d9a441, 0 8px 18px rgba(0,0,0,0.25); }
+  .gacha-result-rarity {
+    display: inline-flex; align-items: center; gap: 5px; margin-bottom: 16px; padding: 5px 14px;
     border-radius: 999px; background: var(--tier-color, #7a8fa6); color: #fff;
     font-weight: 700; font-size: .8rem; letter-spacing: .04em;
     box-shadow: 0 3px 6px rgba(0,0,0,0.2); position: relative; overflow: hidden;
   }
-  .gacha-reveal-wrap.ultra .gacha-badge { font-size: .95rem; box-shadow: 0 0 14px #d9a441, 0 3px 6px rgba(0,0,0,0.2); }
-  .gacha-badge::after {
+  .gacha-result-card.ultra .gacha-result-rarity { font-size: .95rem; box-shadow: 0 0 14px #d9a441, 0 3px 6px rgba(0,0,0,0.2); }
+  .gacha-result-rarity::after {
     content: ""; position: absolute; top: 0; left: -60%; width: 35%; height: 100%;
     background: linear-gradient(115deg, transparent, rgba(255,255,255,0.85), transparent);
     transform: skewX(-20deg); opacity: 0;
   }
-  .gacha-reveal-wrap.rare.show .gacha-badge::after, .gacha-reveal-wrap.ultra.show .gacha-badge::after {
-    animation: gachaShimmerSweep 1s ease-out .55s;
+  .gacha-result-overlay.show .gacha-result-card.rare .gacha-result-rarity::after,
+  .gacha-result-overlay.show .gacha-result-card.ultra .gacha-result-rarity::after {
+    animation: gachaShimmerSweep 1s ease-out .2s;
   }
   @keyframes gachaShimmerSweep { 0% { left: -60%; opacity: 0; } 15% { opacity: 1; } 55% { opacity: 1; } 100% { left: 130%; opacity: 0; } }
+  .gacha-result-card .big-cta { width: 100%; }
   #gacha-pull-btn { display: block; margin: 6px auto 0; }
   body:has(#home-screen.active) #app-toolbar { background: transparent; box-shadow: none; }
   /* The home background art is sized to exactly fill the viewport, but real
@@ -1241,8 +1254,14 @@
       <div class="gacha-reveal-wrap" id="gacha-reveal-wrap">
         <div class="gacha-reveal-rays"></div>
         <div class="gacha-reveal-burst"></div>
-        <img id="gacha-reveal-img" src="" alt="">
-        <div><span class="gacha-badge" id="gacha-badge"></span></div>
+      </div>
+    </div>
+
+    <div class="gacha-result-overlay" id="gacha-result-overlay">
+      <div class="gacha-result-card" id="gacha-result-card">
+        <img id="gacha-result-img" src="" alt="">
+        <div class="gacha-result-rarity" id="gacha-result-rarity"></div>
+        <button id="gacha-result-close-btn" type="button" class="big-cta">Nice!</button>
       </div>
     </div>
 
@@ -2335,8 +2354,11 @@
   const gachaKnobEl = document.getElementById("gacha-knob");
   const gachaCapsuleEl = document.getElementById("gacha-capsule");
   const gachaRevealWrapEl = document.getElementById("gacha-reveal-wrap");
-  const gachaRevealImgEl = document.getElementById("gacha-reveal-img");
-  const gachaBadgeEl = document.getElementById("gacha-badge");
+  const gachaResultOverlayEl = document.getElementById("gacha-result-overlay");
+  const gachaResultCardEl = document.getElementById("gacha-result-card");
+  const gachaResultImgEl = document.getElementById("gacha-result-img");
+  const gachaResultRarityEl = document.getElementById("gacha-result-rarity");
+  const gachaResultCloseBtn = document.getElementById("gacha-result-close-btn");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
   const settingsNameInput = document.getElementById("settings-name-input");
   const settingsAvatarGridEl = document.getElementById("settings-avatar-grid");
@@ -2644,7 +2666,11 @@
     const current = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
     if (!current) return;
     current.classList.remove("active");
-    (overlayReturnScreen || homeScreen).classList.add("active");
+    const dest = overlayReturnScreen || homeScreen;
+    // Returning to the shop (e.g. backing out of "View All Avatars") should
+    // never re-show the last pull's leftover capsule/reveal animation state.
+    if (dest === gachaScreen) resetGachaScene();
+    dest.classList.add("active");
     overlayReturnScreen = null;
     playSound("popup-close");
   }
@@ -2714,10 +2740,15 @@
       panel.classList.toggle("active", panel.id === `shop-tab-${tab}`);
     });
   }
-  function openGachaScreen(tab) {
-    gachaStatusEl.textContent = "";
+  function resetGachaScene() {
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
     gachaCapsuleEl.className = "gacha-capsule";
+    gachaResultOverlayEl.classList.remove("show");
+    gachaResultCardEl.className = "gacha-result-card";
+  }
+  function openGachaScreen(tab) {
+    gachaStatusEl.textContent = "";
+    resetGachaScene();
     setShopTab(tab || "avatars");
     openOverlay(gachaScreen);
   }
@@ -2848,8 +2879,7 @@
     gachaStatusEl.classList.remove("error");
     gachaPullBtn.disabled = true;
     gachaStatusEl.textContent = "Pulling...";
-    gachaRevealWrapEl.className = "gacha-reveal-wrap";
-    gachaCapsuleEl.className = "gacha-capsule";
+    resetGachaScene();
 
     const result = await pullGacha();
     if (!result) {
@@ -2885,8 +2915,6 @@
     }
 
     gachaCapsuleEl.classList.add("open");
-    gachaRevealImgEl.src = `avatars/${result}.png`;
-    gachaBadgeEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"★".repeat(stars)}`;
     gachaRevealWrapEl.className = `gacha-reveal-wrap ${tier}`;
     gachaRevealWrapEl.classList.add("show");
     gachaStatusEl.textContent = "New avatar unlocked!";
@@ -2897,6 +2925,19 @@
     if (tier === "ultra") gachaRetrigger(gachaFlashEl, "go");
     await gachaWait(850);
 
+    // Final result goes in its own popup the player has to explicitly
+    // dismiss, rather than a floating label that lingers mid-scene - also
+    // means the pull button and "View all" stay blocked behind it until
+    // they close it, so there's no path back to a stale reveal state.
+    gachaResultCardEl.style.setProperty("--tier-color", tierColor);
+    gachaResultCardEl.className = `gacha-result-card ${tier}`;
+    gachaResultImgEl.src = `avatars/${result}.png`;
+    gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"★".repeat(stars)}`;
+    gachaResultOverlayEl.classList.add("show");
+  });
+
+  gachaResultCloseBtn.addEventListener("click", () => {
+    resetGachaScene();
     renderGachaScreen();
   });
 
