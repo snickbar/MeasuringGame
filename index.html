@@ -220,6 +220,14 @@
     border-width: 7px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
   .coin-pack-buy-btn:disabled { opacity: .45; filter: grayscale(.3); }
+  .host-unlock-shop-box {
+    margin-top: 14px; padding: 14px 16px 16px; border-radius: 16px;
+    background: var(--red); color: #fff; text-align: center;
+  }
+  .host-unlock-shop-box.unlocked { background: var(--green); }
+  .host-unlock-shop-box h3 { margin: 0 0 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; }
+  .host-unlock-shop-box p { margin: 0 0 12px; font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .host-unlock-shop-box.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; }
   #shop-tabs { display: flex; gap: 6px; margin: 10px 0 4px; flex-shrink: 0; }
   .shop-tab-btn {
     flex: 1; width: auto; margin: 0; padding: 8px 4px; color: var(--text);
@@ -1257,6 +1265,12 @@
           <span class="coin-pack-amount">3,000 coins</span>
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
+      </div>
+
+      <div id="host-unlock-shop-box" class="host-unlock-shop-box">
+        <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
+        <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
+        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $2.99 &middot; One time</button>
       </div>
     </div>
   </div>
@@ -2336,6 +2350,8 @@
   const shareRoomBtn = document.getElementById("share-room-btn");
   const hostUnlockBannerEl = document.getElementById("host-unlock-banner");
   const hostUnlockBtn = document.getElementById("host-unlock-btn");
+  const hostUnlockShopBoxEl = document.getElementById("host-unlock-shop-box");
+  const hostUnlockShopBtn = document.getElementById("host-unlock-shop-btn");
   const playerList = document.getElementById("player-list");
   const hostStartBtn = document.getElementById("host-start-btn");
   const botControlsEl = document.getElementById("bot-controls");
@@ -3071,6 +3087,13 @@
   // unlock for them. Unlocking is a one-time, per-profile flag, not
   // per-room, matching "pay once, host unlimited games forever".
   function renderHostUnlockUi() {
+    // Shop box: visible from the Shop regardless of whether a room/lobby is
+    // even open, so this part doesn't depend on isHost like the rest below.
+    const shopUnlocked = !!myProfile.hostUnlocked;
+    hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
+    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $2.99 · One time";
+    hostUnlockShopBtn.disabled = shopUnlocked;
+
     if (!isHost) {
       hostUnlockBannerEl.classList.remove("active");
       roomCodeDisplay.classList.remove("code-locked");
@@ -3084,9 +3107,12 @@
   }
   // TEMP: simulates a successful purchase with no real payment, so the
   // unlock flow can be built and tested end-to-end before Google Play
-  // Billing is wired up. Swap this handler's body for the real purchase
+  // Billing is wired up. Swap these handlers' bodies for the real purchase
   // call later; renderHostUnlockUi() itself doesn't need to change.
   hostUnlockBtn.addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
+  });
+  hostUnlockShopBtn.addEventListener("click", async () => {
     await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
   });
 
