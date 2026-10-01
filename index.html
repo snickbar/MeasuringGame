@@ -3430,11 +3430,29 @@
     homeScreen.classList.remove("active");
     createScreenEl.classList.add("active");
   }
-  // Matches the .btn-bounce CSS animation's 220ms duration (see
-  // triggerBtnBounce) - without this delay the screen switch happens before
-  // the bounce finishes playing, cutting it off.
+  // A fixed setTimeout here raced the .btn-bounce CSS animation (see
+  // triggerBtnBounce) - close enough to its 220ms that the screen could
+  // still hide the button a hair before the animation's own cleanup ran,
+  // leaving .btn-bounce stuck on and replaying next time the button was
+  // shown again. Waiting for the animation's own "animationend" is exact;
+  // the timeout is just a safety net for when no bounce plays at all
+  // (e.g. a non-pointer activation that never added the class).
   const BTN_BOUNCE_MS = 220;
-  homeCreateBtn.addEventListener("click", () => setTimeout(showCreateScreen, BTN_BOUNCE_MS));
+  function afterBtnBounce(btn, fn) {
+    let done = false;
+    function run() {
+      if (done) return;
+      done = true;
+      btn.removeEventListener("animationend", onEnd);
+      fn();
+    }
+    function onEnd(e) {
+      if (e.animationName === "btnBounce") run();
+    }
+    btn.addEventListener("animationend", onEnd);
+    setTimeout(run, BTN_BOUNCE_MS + 80);
+  }
+  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, showCreateScreen));
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
@@ -3447,7 +3465,7 @@
     homeScreen.classList.remove("active");
     joinScreen.classList.add("active");
   }
-  homeJoinBtn.addEventListener("click", () => setTimeout(showJoinScreen, BTN_BOUNCE_MS));
+  homeJoinBtn.addEventListener("click", () => afterBtnBounce(homeJoinBtn, showJoinScreen));
   joinBackBtn.addEventListener("click", () => {
     joinScreen.classList.remove("active");
     homeScreen.classList.add("active");
