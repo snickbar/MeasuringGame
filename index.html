@@ -3430,7 +3430,11 @@
     homeScreen.classList.remove("active");
     createScreenEl.classList.add("active");
   }
-  homeCreateBtn.addEventListener("click", showCreateScreen);
+  // Matches the .btn-bounce CSS animation's 220ms duration (see
+  // triggerBtnBounce) - without this delay the screen switch happens before
+  // the bounce finishes playing, cutting it off.
+  const BTN_BOUNCE_MS = 220;
+  homeCreateBtn.addEventListener("click", () => setTimeout(showCreateScreen, BTN_BOUNCE_MS));
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
@@ -3443,7 +3447,7 @@
     homeScreen.classList.remove("active");
     joinScreen.classList.add("active");
   }
-  homeJoinBtn.addEventListener("click", showJoinScreen);
+  homeJoinBtn.addEventListener("click", () => setTimeout(showJoinScreen, BTN_BOUNCE_MS));
   joinBackBtn.addEventListener("click", () => {
     joinScreen.classList.remove("active");
     homeScreen.classList.add("active");
