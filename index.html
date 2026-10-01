@@ -220,7 +220,7 @@
     border-width: 7px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
   .coin-pack-buy-btn:disabled { opacity: .45; filter: grayscale(.3); }
-  #shop-tabs { display: flex; gap: 6px; margin: 10px 0 4px; }
+  #shop-tabs { display: flex; gap: 6px; margin: 10px 0 4px; flex-shrink: 0; }
   .shop-tab-btn {
     flex: 1; width: auto; margin: 0; padding: 8px 4px; color: var(--text);
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px;
@@ -230,6 +230,20 @@
   .shop-tab-btn.active { opacity: 1; border-image-source: var(--btn-accent); color: #fff; }
   .shop-tab-panel { display: none; }
   .shop-tab-panel.active { display: block; }
+  /* The shop screen used to sit in normal body flow, which on a tall tab
+     (Coins, with its stacked pack cards) let the whole page be dragged up
+     and down like a scroll - pinning it as its own fixed panel below the
+     toolbar stops that drag entirely and keeps "Shop" fixed at the top;
+     only the active tab's own content scrolls, if it's taller than the
+     available space. Same pattern as #hud.active. */
+  #gacha-screen.active {
+    display: flex; flex-direction: column;
+    position: fixed; top: 62px; left: 0; right: 0; bottom: 0;
+    max-width: 520px; margin: 0 auto;
+    padding: 12px 12px 0;
+  }
+  #gacha-screen.active .screen-header { flex-shrink: 0; }
+  #gacha-screen.active .shop-tab-panel.active { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
