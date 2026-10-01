@@ -2202,15 +2202,56 @@
     return pairs;
   })();
 
-  function pickRandomPair() {
-    const i = Math.floor(Math.random() * OBJECTS.length);
-    let j = Math.floor(Math.random() * OBJECTS.length);
-    while (j === i) j = Math.floor(Math.random() * OBJECTS.length);
-    return OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
+  function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
   }
 
+  // Plain independent random draws are "fair" over millions of trials, but
+  // with ~90 objects and only a handful of rounds per game, pure i.i.d.
+  // sampling makes some objects feel like they constantly repeat while
+  // others never show up - just ordinary small-sample variance, but it reads
+  // as broken. Drawing from a shuffled bag (no repeats until every
+  // object/pair has come up once) fixes that perception while staying fully
+  // random over any longer run.
+  let objectBag = [];
+  function drawObjectFromBag() {
+    if (objectBag.length === 0) objectBag = shuffled(OBJECTS);
+    return objectBag.pop();
+  }
+
+  function pickRandomPair() {
+    const a = drawObjectFromBag();
+    let b = drawObjectFromBag();
+    while (b.name === a.name) b = drawObjectFromBag();
+    return a.mm <= b.mm ? [a, b] : [b, a];
+  }
+
+  // Shuffling RELATIVE_PAIRS itself would cycle back to covering every
+  // object only once every ~1,300 rounds (since well-connected mid-size
+  // objects dominate the pair list) - too slow to feel fair in an actual
+  // test session. Instead draw the next OBJECT from a shuffled bag (same
+  // cadence as "anything goes", one full object cycle every ~90 rounds),
+  // then pick a random valid partner for it.
+  const PARTNERS_BY_OBJECT = (() => {
+    const map = new Map();
+    for (const o of OBJECTS) map.set(o.name, []);
+    for (const pair of RELATIVE_PAIRS) {
+      map.get(pair[0].name).push(pair);
+      map.get(pair[1].name).push(pair);
+    }
+    return map;
+  })();
+  let relativeObjectBag = [];
   function pickRelativePair() {
-    return RELATIVE_PAIRS[Math.floor(Math.random() * RELATIVE_PAIRS.length)];
+    if (relativeObjectBag.length === 0) relativeObjectBag = shuffled(OBJECTS);
+    const anchor = relativeObjectBag.pop();
+    const candidates = PARTNERS_BY_OBJECT.get(anchor.name);
+    return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
   function articleFor(name) {
