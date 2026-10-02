@@ -685,6 +685,21 @@
   .preset-slot-btn.empty img { filter: grayscale(1) brightness(1.15); opacity: .6; }
   .preset-slot-btn.empty .preset-slot-label { opacity: .75; }
   .preset-slot-btn:disabled { cursor: default; }
+  /* Edit-preset screen only: the big artwork button is just a display (no
+     longer clickable itself, see .preset-slot-col) - the two small buttons
+     below it are the actual Save/Load actions. flex:none overrides the
+     plain row's flex:1 so aspect-ratio governs its height here instead. */
+  .preset-slot-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .preset-slot-col .preset-slot-btn { flex: none; }
+  .preset-slot-actions { display: flex; gap: 6px; }
+  .preset-slot-action-btn {
+    flex: 1; width: auto; margin: 0; padding: 5px 2px; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px;
+    border-width: 6px; border-style: solid; border-image-slice: 55 fill;
+  }
+  .preset-slot-action-btn[data-action="save"] { border-image-source: var(--btn-accent); }
+  .preset-slot-action-btn[data-action="load"] { border-image-source: var(--btn2); color: var(--text); }
+  .preset-slot-action-btn:disabled { opacity: .4; cursor: default; }
 
   #preset-save-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
@@ -1698,11 +1713,29 @@
     </div>
   </div>
 
-  <h3>Save to a preset slot</h3>
+  <h3>Save or load a preset slot</h3>
   <div id="preset-edit-slot-row" class="preset-slot-row">
-    <button type="button" class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></button>
-    <button type="button" class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></button>
-    <button type="button" class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></button>
+    <div class="preset-slot-col">
+      <div class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></div>
+      <div class="preset-slot-actions">
+        <button type="button" class="preset-slot-action-btn" data-slot="1" data-action="save">Save</button>
+        <button type="button" class="preset-slot-action-btn" data-slot="1" data-action="load">Load</button>
+      </div>
+    </div>
+    <div class="preset-slot-col">
+      <div class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></div>
+      <div class="preset-slot-actions">
+        <button type="button" class="preset-slot-action-btn" data-slot="2" data-action="save">Save</button>
+        <button type="button" class="preset-slot-action-btn" data-slot="2" data-action="load">Load</button>
+      </div>
+    </div>
+    <div class="preset-slot-col">
+      <div class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></div>
+      <div class="preset-slot-actions">
+        <button type="button" class="preset-slot-action-btn" data-slot="3" data-action="save">Save</button>
+        <button type="button" class="preset-slot-action-btn" data-slot="3" data-action="load">Load</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3813,6 +3846,11 @@
       btn.querySelector(".preset-slot-label").textContent = label;
       if (btn.closest("#create-preset-row")) btn.disabled = !preset;
     });
+    // Edit-preset screen's small Load button - nothing to load from an
+    // empty slot. Save is always enabled (saving is how you fill a slot).
+    document.querySelectorAll('.preset-slot-action-btn[data-action="load"]').forEach((btn) => {
+      btn.disabled = !presets[btn.dataset.slot];
+    });
   }
 
   createPresetRowEl.addEventListener("click", (e) => {
@@ -3830,15 +3868,33 @@
   });
 
   let pendingPresetSlot = null;
-  presetEditSlotRowEl.addEventListener("click", (e) => {
-    const btn = e.target.closest(".preset-slot-btn");
-    if (!btn) return;
-    const slot = btn.dataset.slot;
+  function openPresetSaveModal(slot) {
     const existing = myProfile.presets && myProfile.presets[slot];
     pendingPresetSlot = slot;
     presetSaveTitleEl.textContent = `Save to Preset ${slot}?`;
     presetSaveNameInput.value = existing ? existing.name : `Preset ${slot}`;
     presetSaveOverlayEl.classList.add("show");
+  }
+  presetEditSlotRowEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".preset-slot-action-btn");
+    if (!btn || btn.disabled) return;
+    const slot = btn.dataset.slot;
+    if (btn.dataset.action === "save") {
+      openPresetSaveModal(slot);
+      return;
+    }
+    // Load: pull that slot's saved settings into the editor so they can be
+    // reviewed or tweaked before re-saving, same loading logic the Create
+    // screen's preset row uses, just targeting presetEditSettings instead.
+    const preset = myProfile.presets && myProfile.presets[slot];
+    if (!preset) return;
+    presetEditSettings = { ...DEFAULT_SETTINGS(), ...preset.settings };
+    presetHostTransferModeChoice = preset.settings.hostTransferMode || "reassign";
+    presetHostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b.dataset.mode === presetHostTransferModeChoice);
+    });
+    renderPresetEditPanel();
+    playSound("tap");
   });
   presetSaveCancelBtn.addEventListener("click", () => {
     presetSaveOverlayEl.classList.remove("show");
