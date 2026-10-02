@@ -135,8 +135,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
     position: fixed; top: 98px; left: 0; right: 0; bottom: 58px;
@@ -539,7 +539,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen { position: relative; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -600,8 +600,11 @@
   .howto-section p:last-child { margin-bottom: 0; }
   .howto-section b { color: var(--brand); }
 
-  /* ---- Settings panel (create-game screen) ---- */
-  #settings-panel {
+  /* ---- Settings panel (create-game screen, and the identical duplicate on
+     the preset-editing screen - #preset-settings-panel/#preset-host-mode-
+     controls share every one of these rules with their create-screen
+     counterparts) ---- */
+  #settings-panel, #preset-settings-panel {
     padding: 4px 14px; margin: 12px 0; border: none; border-image-source: none;
     background: #fffdfa; border-radius: 14px;
     box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08);
@@ -612,19 +615,21 @@
     font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
     color: var(--brand); margin: 8px 0 2px;
   }
-  #settings-panel label {
+  #settings-panel label, #preset-settings-panel label {
     display: flex; align-items: center; justify-content: space-between; font-size: 15px; gap: 8px;
     padding-block: 7px;
   }
-  #settings-panel label.settings-row-stack { flex-direction: column; align-items: stretch; gap: 6px; }
-  #settings-panel input[type="number"] {
+  #settings-panel label.settings-row-stack, #preset-settings-panel label.settings-row-stack { flex-direction: column; align-items: stretch; gap: 6px; }
+  #settings-panel input[type="number"], #preset-settings-panel input[type="number"] {
     width: 30px; text-align: center; padding: 0; margin: 0; border: none; border-image-source: none;
     background: transparent; font-weight: 700; font-size: 15px; color: var(--text);
     -moz-appearance: textfield;
   }
   #settings-panel input[type="number"]::-webkit-inner-spin-button,
-  #settings-panel input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  #settings-panel input[type="checkbox"] { width: auto; }
+  #settings-panel input[type="number"]::-webkit-outer-spin-button,
+  #preset-settings-panel input[type="number"]::-webkit-inner-spin-button,
+  #preset-settings-panel input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  #settings-panel input[type="checkbox"], #preset-settings-panel input[type="checkbox"] { width: auto; }
   .stepper { display: flex; align-items: center; gap: 8px; }
   .stepper-btn {
     width: 24px; height: 24px; flex-shrink: 0; padding: 0; margin: 0; font-size: 14px; line-height: 1;
@@ -649,14 +654,59 @@
     color: var(--text);
   }
 
-  #host-mode-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  #host-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
+  #host-mode-controls, #preset-host-mode-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  #host-mode-controls span, #preset-host-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
   .hostmode-btn {
     width: auto; font-size: 13px; padding: 6px 12px; margin: 0;
     border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
     color: var(--text);
   }
   .hostmode-btn.selected { border-image-source: var(--ring); }
+
+  .edit-preset-settings-btn { width: 100%; margin: 0 0 14px; }
+
+  /* ---- Preset slot buttons (Create screen = load, Preset-editing screen =
+     save) - fixed-size regardless of label length, per the user's request,
+     since the background image is a fixed pill shape with the slot number
+     baked into its left ~28%; the name is overlaid as real text on top. */
+  .preset-slot-row { display: flex; gap: 8px; margin: 10px 0 14px; }
+  .preset-slot-btn {
+    flex: 1; position: relative; aspect-ratio: 1053 / 432; width: 100%; min-width: 0;
+    padding: 0; margin: 0; border: none; background: none; overflow: hidden;
+  }
+  .preset-slot-btn img { display: block; width: 100%; height: 100%; object-fit: fill; }
+  .preset-slot-label {
+    position: absolute; left: 30%; right: 8%; top: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; line-height: 1.1;
+    color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.35);
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .preset-slot-btn.empty img { filter: grayscale(1) brightness(1.15); opacity: .6; }
+  .preset-slot-btn.empty .preset-slot-label { opacity: .75; }
+  .preset-slot-btn:disabled { cursor: default; }
+
+  #preset-save-overlay {
+    position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
+  }
+  #preset-save-overlay.show { opacity: 1; pointer-events: auto; }
+  #preset-save-card {
+    width: 260px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4); transform: scale(.7); opacity: 0;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+  }
+  #preset-save-overlay.show #preset-save-card { transform: scale(1); opacity: 1; }
+  #preset-save-card h3 { margin: 0 0 14px; font-size: 18px; color: #000; text-shadow: none; }
+  #preset-save-name-input { width: 100%; margin: 0 0 16px; text-align: center; }
+  #preset-save-buttons { display: flex; flex-direction: column; gap: 8px; }
+  #preset-save-buttons button {
+    width: 100%; margin: 0; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; padding: 10px 14px;
+    border-width: 9px; border-style: solid; border-image-slice: 55 fill;
+  }
+  #preset-save-confirm-btn { border-image-source: var(--btn-hex-red); }
+  #preset-save-cancel-btn { border-image-source: var(--btn2); color: var(--text); }
 
   .itemmode-row {
     display: flex; border: 1px solid rgba(90,74,58,.28); border-radius: 8px; overflow: hidden; width: 100%;
@@ -1444,6 +1494,8 @@
     <h1>Settings</h1>
   </div>
 
+  <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn">Edit Preset Game Settings</button>
+
   <div id="settings-toggles-panel">
     <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
   </div>
@@ -1534,6 +1586,12 @@
     <h1>Create Game</h1>
   </div>
 
+  <div id="create-preset-row" class="preset-slot-row">
+    <button type="button" class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></button>
+    <button type="button" class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></button>
+    <button type="button" class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></button>
+  </div>
+
   <div id="host-mode-controls">
     <span>If host disconnects:</span>
     <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
@@ -1584,6 +1642,79 @@
 
   <p id="create-status"></p>
   <button id="create-room-btn">Create Room</button>
+</div>
+
+<div id="preset-settings-screen" class="screen">
+  <button id="preset-settings-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div class="screen-header">
+    <h1>Edit Preset Game Settings</h1>
+  </div>
+
+  <div id="preset-host-mode-controls">
+    <span>If host disconnects:</span>
+    <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
+    <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+  </div>
+
+  <div id="preset-settings-panel">
+    <div class="settings-group">
+      <div class="settings-eyebrow">Round</div>
+      <label>Timer (sec)
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="preset-setting-timer" data-step="-5">&minus;</button>
+          <input id="preset-setting-timer" type="number" min="10" max="90" />
+          <button type="button" class="stepper-btn plus" data-for="preset-setting-timer" data-step="5">+</button>
+        </span>
+      </label>
+      <label>Rounds
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="preset-setting-rounds" data-step="-1">&minus;</button>
+          <input id="preset-setting-rounds" type="number" min="1" max="20" />
+          <button type="button" class="stepper-btn plus" data-for="preset-setting-rounds" data-step="1">+</button>
+        </span>
+      </label>
+    </div>
+    <div class="settings-group">
+      <div class="settings-eyebrow">Scoring</div>
+      <label>Second-chance scoring <button id="preset-setting-secondchance" type="button" class="text-toggle-btn"></button></label>
+      <label>Bots use second chances <button id="preset-setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
+    </div>
+    <div class="settings-group">
+      <div class="settings-eyebrow">Gameplay</div>
+      <label class="settings-row-stack">Item selection
+        <span class="itemmode-row">
+          <button type="button" id="preset-setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
+          <button type="button" id="preset-setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
+        </span>
+      </label>
+      <label>Auto mode <button id="preset-setting-auto-advance" type="button" class="text-toggle-btn"></button></label>
+      <label>Auto-advance delay (sec)
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="preset-setting-auto-advance-seconds" data-step="-1">&minus;</button>
+          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" />
+          <button type="button" class="stepper-btn plus" data-for="preset-setting-auto-advance-seconds" data-step="1">+</button>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <h3>Save to a preset slot</h3>
+  <div id="preset-edit-slot-row" class="preset-slot-row">
+    <button type="button" class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></button>
+    <button type="button" class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></button>
+    <button type="button" class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></button>
+  </div>
+</div>
+
+<div id="preset-save-overlay">
+  <div id="preset-save-card">
+    <h3 id="preset-save-title">Save to Preset 1?</h3>
+    <input id="preset-save-name-input" maxlength="10" placeholder="Preset name" />
+    <div id="preset-save-buttons">
+      <button id="preset-save-confirm-btn" type="button">Save</button>
+      <button id="preset-save-cancel-btn" type="button">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <div id="join-screen" class="screen">
@@ -2010,6 +2141,7 @@
       adsWatchedDate: null,
       adsWatchedCount: 0,
       cosmetics: defaultCosmeticState(),
+      presets: {},
     };
   }
   let myProfile = defaultProfile();
@@ -2035,6 +2167,7 @@
             },
             equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
           },
+          presets: { ...(data.presets || {}) },
         };
       }
       renderCoinBalance();
@@ -2044,6 +2177,7 @@
       renderWatchAdStatus();
       renderHostUnlockUi();
       renderCosmeticsShop();
+      renderPresetSlotButtons();
     });
   }
 
@@ -2530,6 +2664,28 @@
   const settingAutoAdvanceInput = document.getElementById("setting-auto-advance");
   const settingAutoAdvanceSecondsInput = document.getElementById("setting-auto-advance-seconds");
 
+  // ---- Game presets (duplicate of the create-screen settings panel above,
+  // for the dedicated preset-editing screen - see renderPresetEditPanel) ----
+  const editPresetSettingsBtn = document.getElementById("edit-preset-settings-btn");
+  const presetSettingsScreen = document.getElementById("preset-settings-screen");
+  const presetSettingsBackBtn = document.getElementById("preset-settings-back-btn");
+  const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
+  const presetSettingTimerInput = document.getElementById("preset-setting-timer");
+  const presetSettingRoundsInput = document.getElementById("preset-setting-rounds");
+  const presetSettingSecondChanceInput = document.getElementById("preset-setting-secondchance");
+  const presetSettingBotsSecondChanceInput = document.getElementById("preset-setting-bots-secondchance");
+  const presetSettingItemAnythingInput = document.getElementById("preset-setting-item-anything");
+  const presetSettingItemRelativeInput = document.getElementById("preset-setting-item-relative");
+  const presetSettingAutoAdvanceInput = document.getElementById("preset-setting-auto-advance");
+  const presetSettingAutoAdvanceSecondsInput = document.getElementById("preset-setting-auto-advance-seconds");
+  const createPresetRowEl = document.getElementById("create-preset-row");
+  const presetEditSlotRowEl = document.getElementById("preset-edit-slot-row");
+  const presetSaveOverlayEl = document.getElementById("preset-save-overlay");
+  const presetSaveTitleEl = document.getElementById("preset-save-title");
+  const presetSaveNameInput = document.getElementById("preset-save-name-input");
+  const presetSaveConfirmBtn = document.getElementById("preset-save-confirm-btn");
+  const presetSaveCancelBtn = document.getElementById("preset-save-cancel-btn");
+
   const hudEl = document.getElementById("hud");
   const hudSubToolbarEl = document.getElementById("hud-sub-toolbar");
   const hudRoomCodeGroupEl = document.getElementById("hud-room-code-group");
@@ -2799,8 +2955,8 @@
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -3550,6 +3706,152 @@
     if (settingAutoAdvanceSecondsInput.disabled) return;
     currentSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(settingAutoAdvanceSecondsInput.value, 10) || 3));
     renderLocalSettingsPanel();
+  });
+
+  // ---- Game presets: a second, independent copy of the settings panel
+  // above (own local state, own DOM) living on its own screen, so you can
+  // dial in settings and save them to one of 3 slots without needing an
+  // actual room open. Loading a preset back on the Create screen just
+  // copies its saved settings into currentSettings, same as if you'd typed
+  // them in by hand.
+  let presetEditSettings = DEFAULT_SETTINGS();
+  let presetHostTransferModeChoice = "reassign";
+  function renderPresetEditPanel() {
+    const s = presetEditSettings;
+    if (document.activeElement !== presetSettingTimerInput) presetSettingTimerInput.value = s.timerSeconds;
+    if (document.activeElement !== presetSettingRoundsInput) presetSettingRoundsInput.value = s.totalRounds;
+    presetSettingSecondChanceInput.classList.toggle("is-on", !!s.secondChanceEnabled);
+    presetSettingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
+    presetSettingBotsSecondChanceInput.disabled = !s.secondChanceEnabled;
+    presetSettingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
+    presetSettingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
+    presetSettingAutoAdvanceInput.classList.toggle("is-on", !!s.autoAdvanceEnabled);
+    if (document.activeElement !== presetSettingAutoAdvanceSecondsInput) presetSettingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
+    presetSettingAutoAdvanceSecondsInput.disabled = !s.autoAdvanceEnabled;
+    document.querySelectorAll("#preset-settings-panel .stepper-btn").forEach((btn) => {
+      btn.disabled = btn.dataset.for === "preset-setting-auto-advance-seconds" && !s.autoAdvanceEnabled;
+    });
+  }
+  document.getElementById("preset-settings-panel").addEventListener("click", (e) => {
+    const btn = e.target.closest(".stepper-btn");
+    if (!btn || btn.disabled) return;
+    const input = document.getElementById(btn.dataset.for);
+    const step = parseInt(btn.dataset.step, 10);
+    const min = parseInt(input.min, 10);
+    const max = parseInt(input.max, 10);
+    const current = parseInt(input.value, 10) || min;
+    input.value = Math.max(min, Math.min(max, current + step));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  presetSettingTimerInput.addEventListener("change", () => {
+    presetEditSettings.timerSeconds = Math.max(10, Math.min(90, parseInt(presetSettingTimerInput.value, 10) || 30));
+    renderPresetEditPanel();
+  });
+  presetSettingRoundsInput.addEventListener("change", () => {
+    presetEditSettings.totalRounds = Math.max(1, Math.min(20, parseInt(presetSettingRoundsInput.value, 10) || 5));
+    renderPresetEditPanel();
+  });
+  presetSettingSecondChanceInput.addEventListener("click", () => {
+    presetEditSettings.secondChanceEnabled = !presetSettingSecondChanceInput.classList.contains("is-on");
+    renderPresetEditPanel();
+  });
+  presetSettingBotsSecondChanceInput.addEventListener("click", () => {
+    if (presetSettingBotsSecondChanceInput.disabled) return;
+    presetEditSettings.botsSecondChance = !presetSettingBotsSecondChanceInput.classList.contains("is-on");
+    renderPresetEditPanel();
+  });
+  [presetSettingItemAnythingInput, presetSettingItemRelativeInput].forEach((btn) => {
+    btn.addEventListener("click", () => {
+      presetEditSettings.itemSelectionMode = btn.dataset.mode;
+      renderPresetEditPanel();
+    });
+  });
+  presetSettingAutoAdvanceInput.addEventListener("click", () => {
+    presetEditSettings.autoAdvanceEnabled = !presetSettingAutoAdvanceInput.classList.contains("is-on");
+    renderPresetEditPanel();
+  });
+  presetSettingAutoAdvanceSecondsInput.addEventListener("change", () => {
+    if (presetSettingAutoAdvanceSecondsInput.disabled) return;
+    presetEditSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(presetSettingAutoAdvanceSecondsInput.value, 10) || 3));
+    renderPresetEditPanel();
+  });
+  presetHostModeControlsEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".hostmode-btn");
+    if (!btn) return;
+    presetHostTransferModeChoice = btn.dataset.mode;
+    presetHostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b === btn);
+    });
+    playSound("tap");
+  });
+
+  editPresetSettingsBtn.addEventListener("click", () => {
+    presetEditSettings = DEFAULT_SETTINGS();
+    presetHostTransferModeChoice = "reassign";
+    presetHostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b.dataset.mode === "reassign");
+    });
+    renderPresetEditPanel();
+    renderPresetSlotButtons();
+    openOverlay(presetSettingsScreen);
+    overlayReturnScreen = settingsScreen;
+  });
+  presetSettingsBackBtn.addEventListener("click", closeOverlay);
+
+  // Keeps every row of preset-slot buttons (the save row on the editing
+  // screen, the load row on Create) showing the same thing: the saved name
+  // (or "Preset N" greyed out if that slot's empty). Re-run whenever
+  // myProfile.presets changes (see watchMyProfile) and whenever either
+  // screen that shows a row opens.
+  function renderPresetSlotButtons() {
+    const presets = myProfile.presets || {};
+    document.querySelectorAll(".preset-slot-btn").forEach((btn) => {
+      const slot = btn.dataset.slot;
+      const preset = presets[slot];
+      const label = preset ? preset.name : `Preset ${slot}`;
+      btn.classList.toggle("empty", !preset);
+      btn.querySelector(".preset-slot-label").textContent = label;
+      if (btn.closest("#create-preset-row")) btn.disabled = !preset;
+    });
+  }
+
+  createPresetRowEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".preset-slot-btn");
+    if (!btn || btn.disabled) return;
+    const preset = myProfile.presets && myProfile.presets[btn.dataset.slot];
+    if (!preset) return;
+    currentSettings = { ...DEFAULT_SETTINGS(), ...preset.settings };
+    hostTransferModeChoice = preset.settings.hostTransferMode || "reassign";
+    hostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
+      b.classList.toggle("selected", b.dataset.mode === hostTransferModeChoice);
+    });
+    renderLocalSettingsPanel();
+    playSound("tap");
+  });
+
+  let pendingPresetSlot = null;
+  presetEditSlotRowEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".preset-slot-btn");
+    if (!btn) return;
+    const slot = btn.dataset.slot;
+    const existing = myProfile.presets && myProfile.presets[slot];
+    pendingPresetSlot = slot;
+    presetSaveTitleEl.textContent = `Save to Preset ${slot}?`;
+    presetSaveNameInput.value = existing ? existing.name : `Preset ${slot}`;
+    presetSaveOverlayEl.classList.add("show");
+  });
+  presetSaveCancelBtn.addEventListener("click", () => {
+    presetSaveOverlayEl.classList.remove("show");
+    pendingPresetSlot = null;
+  });
+  presetSaveConfirmBtn.addEventListener("click", async () => {
+    if (pendingPresetSlot == null) return;
+    const slot = pendingPresetSlot;
+    const name = presetSaveNameInput.value.trim().slice(0, 10) || `Preset ${slot}`;
+    const settings = { ...presetEditSettings, hostTransferMode: presetHostTransferModeChoice };
+    presetSaveOverlayEl.classList.remove("show");
+    pendingPresetSlot = null;
+    await set(ref(db, `profiles/${deviceId}/presets/${slot}`), { name, settings });
   });
 
   function armHostReclaimMarker(roomCode, name) {
