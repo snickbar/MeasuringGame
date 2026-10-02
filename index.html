@@ -520,19 +520,26 @@
     border-width: 10px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
     color: #fff;
   }
-  .setup-header { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; }
-  .setup-header .back-btn { margin: 0; flex-shrink: 0; }
+  /* Reserve room on the right so the title/content never runs under the
+     floating back button (see .screen-back-btn below). */
+  .setup-header { display: flex; align-items: center; gap: 12px; margin: 4px 0 10px; padding-right: 60px; }
   .setup-header button:not(.back-btn) { width: auto; flex: 1; margin: 0; }
   .setup-header h1 { flex: 1; margin: 0; font-size: 21px; }
-  .screen-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
+  .screen-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; padding-right: 60px; }
   .screen-header h1 { margin: 0; }
   .screen-header .back-btn { margin: 0; flex-shrink: 0; }
-  .screen-close-btn {
-    width: 34px; height: 34px; flex-shrink: 0; padding: 0; margin: 0;
-    border: none; border-radius: 50%; background: var(--red); color: #fff;
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; line-height: 1;
-    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 3px rgba(0,0,0,.15);
+  /* Shared "back" button used on Create/Join/Name&Avatar/Lobby/Settings/
+     How-to-Play/All-Avatars - floats in each screen's own top-right corner
+     (see the position:relative rule on those screen ids below) instead of
+     sitting inline in the header, which is what frees the header's other
+     content to shift left into the full row width. */
+  .screen-back-btn {
+    position: absolute; top: 0; right: 0; width: 48px; height: 48px; z-index: 5;
+    padding: 0; border: none; background: none;
   }
+  .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
+  #settings-screen, #howto-screen, #collection-screen { position: relative; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -1423,17 +1430,17 @@
 </div>
 
 <div id="collection-screen" class="screen">
+  <button id="collection-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header">
     <h1>All Avatars</h1>
-    <button id="collection-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
   </div>
   <div id="collection-content"></div>
 </div>
 
 <div id="settings-screen" class="screen">
+  <button id="settings-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header">
     <h1>Settings</h1>
-    <button id="settings-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
   </div>
 
   <div id="settings-toggles-panel">
@@ -1458,9 +1465,9 @@
 </div>
 
 <div id="howto-screen" class="screen">
+  <button id="howto-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header">
     <h1>How to Play</h1>
-    <button id="howto-close-btn" type="button" class="screen-close-btn" aria-label="Close">&#10005;</button>
   </div>
 
   <div class="howto-section">
@@ -1521,8 +1528,8 @@
 </div>
 
 <div id="create-screen" class="screen">
+  <button id="create-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="setup-header">
-    <button id="create-back-btn" type="button" class="back-btn">&larr; Back</button>
     <h1>Create Game</h1>
   </div>
 
@@ -1579,8 +1586,8 @@
 </div>
 
 <div id="join-screen" class="screen">
+  <button id="join-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="setup-header">
-    <button id="join-back-btn" type="button" class="back-btn">&larr; Back</button>
     <h1>Join Game</h1>
   </div>
 
@@ -1596,8 +1603,8 @@
 </div>
 
 <div id="name-avatar-screen" class="screen">
+  <button id="name-avatar-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="setup-header">
-    <button id="name-avatar-back-btn" type="button" class="back-btn">&larr; Back</button>
     <button id="join-lobby-btn">Join Lobby</button>
   </div>
 
@@ -1609,6 +1616,7 @@
 </div>
 
 <div id="lobby-screen" class="screen">
+  <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header">
     <h1>Room: <span id="room-code-display"></span></h1>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
@@ -2446,6 +2454,7 @@
   const nameAvatarStatusEl = document.getElementById("name-avatar-status");
   const nameInput = document.getElementById("name-input");
   const lobbyScreenEl = document.getElementById("lobby-screen");
+  const lobbyBackBtn = document.getElementById("lobby-back-btn");
   const roomCodeDisplay = document.getElementById("room-code-display");
   const shareRoomBtn = document.getElementById("share-room-btn");
   const hostUnlockBannerEl = document.getElementById("host-unlock-banner");
@@ -3674,6 +3683,10 @@
     } else {
       joinScreen.classList.add("active");
     }
+  });
+  lobbyBackBtn.addEventListener("click", () => {
+    lobbyScreenEl.classList.remove("active");
+    nameAvatarScreenEl.classList.add("active");
   });
 
   let hostTransferModeChoice = "reassign";
