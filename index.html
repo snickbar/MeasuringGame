@@ -287,8 +287,13 @@
   #gacha-pull-btn.shake { animation: gachaPullShake .4s ease-in-out; }
   #gacha-pull-btn-img { display: block; width: 100%; height: auto; }
   #gacha-pull-btn-text { display: none; }
-  #gacha-pull-btn:disabled #gacha-pull-btn-img { display: none; }
-  #gacha-pull-btn:disabled #gacha-pull-btn-text {
+  /* Mid-pull (.busy): keep the artwork visible, just dimmed, rather than
+     swapping to text - only "every avatar is already unlocked" (.soldout)
+     replaces it with a real message, since that's a different, non-
+     temporary reason the button can't be used. */
+  #gacha-pull-btn.busy #gacha-pull-btn-img { opacity: .5; filter: grayscale(.3); }
+  #gacha-pull-btn.soldout #gacha-pull-btn-img { display: none; }
+  #gacha-pull-btn.soldout #gacha-pull-btn-text {
     display: block; padding: 14px; border-radius: 999px;
     background: #e8e2d4; color: var(--text-muted);
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; text-align: center;
@@ -462,6 +467,10 @@
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
   }
   .gacha-result-overlay.show { opacity: 1; pointer-events: auto; }
+  /* Blocks input for the whole pull animation, not just once the result
+     card fades in - invisible (no backdrop dimming) until .show is also
+     added, so it doesn't obscure the machine animation. */
+  .gacha-result-overlay.blocking { pointer-events: auto; }
   .gacha-result-card {
     width: 220px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
     box-shadow: 0 14px 34px rgba(0,0,0,.4); transform: scale(.7); opacity: 0;
@@ -2913,8 +2922,9 @@
   function resetGachaScene() {
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
     gachaCapsuleEl.className = "gacha-capsule";
-    gachaResultOverlayEl.classList.remove("show");
+    gachaResultOverlayEl.classList.remove("show", "blocking");
     gachaResultCardEl.className = "gacha-result-card";
+    gachaPullBtn.classList.remove("busy");
   }
   function openGachaScreen(tab) {
     gachaStatusEl.textContent = "";
@@ -2971,11 +2981,13 @@
     if (!gachaPullInProgress) {
       if (!anyLocked) {
         gachaPullBtn.disabled = true;
+        gachaPullBtn.classList.add("soldout");
         gachaPullBtnTextEl.textContent = "All avatars unlocked!";
       } else {
         // Left enabled even without enough coins - the click handler itself
         // gives a "not enough" shake/error instead of silently doing nothing.
         gachaPullBtn.disabled = false;
+        gachaPullBtn.classList.remove("soldout");
       }
     }
 
@@ -3075,11 +3087,20 @@
     gachaPullInProgress = true;
     gachaStatusEl.textContent = "Pulling...";
     resetGachaScene();
+    // Blocks every other button on screen (View All Avatars, shop tabs, the
+    // toolbar) from the moment the pull starts, not just once the result
+    // popup appears at the end - previously there was a window where the
+    // user could tap away mid-animation. Invisible (no dimming) until the
+    // result card actually shows via the existing "show" class, so the
+    // machine animation itself isn't obscured.
+    gachaResultOverlayEl.classList.add("blocking");
+    gachaPullBtn.classList.add("busy");
 
     const result = await pullGacha();
     if (!result) {
       gachaPullInProgress = false;
       gachaStatusEl.textContent = "Nothing to pull right now.";
+      resetGachaScene();
       renderGachaScreen();
       return;
     }
