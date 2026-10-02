@@ -629,20 +629,25 @@
      whichever side is narrower. */
   #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
   #toolbar-coin-balance {
-    display: flex; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
+    display: flex; align-items: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px;
     border: none; background: transparent; padding: 4px; margin: 0; color: var(--text); cursor: pointer;
   }
-  #toolbar-coin-plus {
-    display: flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px; border-radius: 50%; background: var(--brand); color: #fff;
-    font-size: 15px; font-weight: 700; line-height: 1;
+  #toolbar-coin-icon { width: 40px; height: 40px; flex-shrink: 0; position: relative; z-index: 2; pointer-events: none; }
+  /* The number pill tucks slightly behind the coin icon (negative margin +
+     lower z-index) so it reads as "coming out of" the coin, per the coin
+     art's own built-in plus badge replacing the old separate + chip.
+     Fixed min-width (enough for the "9999+" display cap, see
+     formatCoinDisplay) so the pill's own size never changes as the number
+     updates - it used to visibly shrink/grow (and shove the neighboring
+     icon) every time the coin count re-rendered. */
+  #toolbar-coin-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 50px; height: 26px; padding: 0 10px 0 16px;
+    margin-left: -14px; border-radius: 999px;
+    background: #fffaf0; box-shadow: 0 1px 3px rgba(0,0,0,.18);
+    position: relative; z-index: 1;
   }
-  /* Fixed width (enough for the "9999+" display cap, see formatCoinDisplay)
-     so the chip's own size never changes as the number updates - it used to
-     visibly shrink/grow (and shove the neighboring icon) every time the
-     coin count re-rendered, most noticeably right after the Home button's
-     full reload replaces the default "0" with the real balance. */
-  #toolbar-coin-count { display: inline-block; min-width: 46px; text-align: center; }
+  #toolbar-coin-count { display: inline-block; text-align: center; }
   #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
@@ -1207,7 +1212,7 @@
 <div id="app-toolbar">
   <button id="toolbar-home-btn" class="toolbar-badge-btn" type="button" aria-label="Home"><img src="icons/toolbar-home.png" alt=""></button>
   <div id="toolbar-center">
-    <button id="toolbar-coin-balance" type="button"><span>&#129689;</span> <span id="toolbar-coin-count">0</span><span id="toolbar-coin-plus" aria-hidden="true">+</span></button>
+    <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
