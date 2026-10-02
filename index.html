@@ -396,15 +396,15 @@
   .gacha-knob { position: absolute; left: 91px; top: 265px; width: 60px; height: 60px; z-index: 3; }
   .gacha-knob.spin { animation: gachaSpin .9s cubic-bezier(.55,-0.3,.3,1.3); }
   @keyframes gachaSpin { from { transform: rotate(0deg); } to { transform: rotate(480deg); } }
-  .gacha-coin-fly {
-    position: absolute; left: 50%; top: 225px; transform: translateX(-50%);
-    width: 26px; height: 26px; opacity: 0; pointer-events: none; z-index: 4;
+  .gacha-coin-fly { position: absolute; left: 50%; top: 225px; pointer-events: none; z-index: 4; }
+  .gacha-coin-burst-piece {
+    position: absolute; left: 0; top: 0; width: 24px; height: 24px; opacity: 0;
+    animation: gachaCoinFly .5s ease-in forwards;
   }
-  .gacha-coin-fly img { display: block; width: 100%; height: 100%; }
-  .gacha-coin-fly.fly { animation: gachaCoinFly .45s ease-in forwards; }
+  .gacha-coin-burst-piece img { display: block; width: 100%; height: 100%; }
   @keyframes gachaCoinFly {
     0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -250px) scale(0.6); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), -250px) scale(0.6); }
   }
   .gacha-capsule {
     position: absolute; left: 50%; top: 380px; transform: translateX(-50%);
@@ -1362,7 +1362,7 @@
       <div class="gacha-machine" id="gacha-machine">
         <img class="gacha-machine-img" src="icons/gumball-machine.png" alt="">
         <div class="gacha-globe" id="gacha-globe"></div>
-        <div class="gacha-coin-fly" id="gacha-coin-fly"><img src="icons/coin.png" alt=""></div>
+        <div class="gacha-coin-fly" id="gacha-coin-fly"></div>
         <img class="gacha-knob" id="gacha-knob" src="icons/gumball-knob.png" alt="">
       </div>
       <div class="gacha-capsule" id="gacha-capsule">
@@ -2960,15 +2960,23 @@
     requestAnimationFrame(step);
   }
 
+  // Set for the whole span of a pull (click -> result popup dismissed), so
+  // the profile listener's own renderGachaScreen() call - fired when
+  // pullGacha()'s transaction lands mid-animation - can't re-enable the
+  // button while a pull is still playing out. Without this, spamming the
+  // button let multiple pulls' machine/capsule animations run concurrently.
+  let gachaPullInProgress = false;
   function renderGachaScreen() {
     const anyLocked = AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
-    if (!anyLocked) {
-      gachaPullBtn.disabled = true;
-      gachaPullBtnTextEl.textContent = "All avatars unlocked!";
-    } else {
-      // Left enabled even without enough coins - the click handler itself
-      // gives a "not enough" shake/error instead of silently doing nothing.
-      gachaPullBtn.disabled = false;
+    if (!gachaPullInProgress) {
+      if (!anyLocked) {
+        gachaPullBtn.disabled = true;
+        gachaPullBtnTextEl.textContent = "All avatars unlocked!";
+      } else {
+        // Left enabled even without enough coins - the click handler itself
+        // gives a "not enough" shake/error instead of silently doing nothing.
+        gachaPullBtn.disabled = false;
+      }
     }
 
     const unlockedAvatars = AVATARS.filter(isAvatarUnlocked);
@@ -3037,6 +3045,23 @@
   function gachaRetrigger(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
   function gachaWait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
+  function spawnGachaCoinBurst(count) {
+    gachaCoinFlyEl.innerHTML = "";
+    const staggerMs = 35;
+    for (let i = 0; i < count; i++) {
+      const piece = document.createElement("div");
+      piece.className = "gacha-coin-burst-piece";
+      piece.style.setProperty("--dx", `${Math.round(Math.random() * 70 - 35)}px`);
+      piece.style.animationDelay = `${i * staggerMs}ms`;
+      const img = document.createElement("img");
+      img.src = "icons/coin.png";
+      img.alt = "";
+      piece.appendChild(img);
+      gachaCoinFlyEl.appendChild(piece);
+    }
+    setTimeout(() => { gachaCoinFlyEl.innerHTML = ""; }, count * staggerMs + 600);
+  }
+
   gachaPullBtn.addEventListener("click", async () => {
     if (myProfile.coins < GACHA_COST) {
       gachaStatusEl.textContent = "Not enough coins!";
@@ -3047,11 +3072,13 @@
     }
     gachaStatusEl.classList.remove("error");
     gachaPullBtn.disabled = true;
+    gachaPullInProgress = true;
     gachaStatusEl.textContent = "Pulling...";
     resetGachaScene();
 
     const result = await pullGacha();
     if (!result) {
+      gachaPullInProgress = false;
       gachaStatusEl.textContent = "Nothing to pull right now.";
       renderGachaScreen();
       return;
@@ -3062,7 +3089,7 @@
     gachaRevealWrapEl.style.setProperty("--tier-color", tierColor);
 
     playSound("tap");
-    gachaRetrigger(gachaCoinFlyEl, "fly");
+    spawnGachaCoinBurst(10);
     await gachaWait(400);
 
     gachaRetrigger(gachaMachineEl, "jostle");
@@ -3106,6 +3133,7 @@
   });
 
   gachaResultCloseBtn.addEventListener("click", () => {
+    gachaPullInProgress = false;
     resetGachaScene();
     renderGachaScreen();
   });
