@@ -397,9 +397,10 @@
   .gacha-knob.spin { animation: gachaSpin .9s cubic-bezier(.55,-0.3,.3,1.3); }
   @keyframes gachaSpin { from { transform: rotate(0deg); } to { transform: rotate(480deg); } }
   .gacha-coin-fly {
-    position: absolute; font-size: 20px; left: 50%; top: 225px; transform: translateX(-50%);
-    opacity: 0; pointer-events: none; z-index: 4;
+    position: absolute; left: 50%; top: 225px; transform: translateX(-50%);
+    width: 26px; height: 26px; opacity: 0; pointer-events: none; z-index: 4;
   }
+  .gacha-coin-fly img { display: block; width: 100%; height: 100%; }
   .gacha-coin-fly.fly { animation: gachaCoinFly .45s ease-in forwards; }
   @keyframes gachaCoinFly {
     0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
@@ -978,7 +979,8 @@
   }
   @keyframes rayShootOut { 0% { opacity: 0; } 30% { opacity: .85; } 100% { opacity: 0; } }
 
-  .coin-fly { position: fixed; font-size: 18px; z-index: 950; animation: coinFlyArc 650ms ease-in forwards; }
+  .coin-fly { position: fixed; width: 22px; height: 22px; z-index: 950; animation: coinFlyArc 650ms ease-in forwards; }
+  .coin-fly img { display: block; width: 100%; height: 100%; }
   @keyframes coinFlyArc {
     0% { transform: translate(0,0) scale(.7) rotate(0deg); opacity: 0; }
     15% { opacity: 1; }
@@ -1360,7 +1362,7 @@
       <div class="gacha-machine" id="gacha-machine">
         <img class="gacha-machine-img" src="icons/gumball-machine.png" alt="">
         <div class="gacha-globe" id="gacha-globe"></div>
-        <div class="gacha-coin-fly" id="gacha-coin-fly">&#129689;</div>
+        <div class="gacha-coin-fly" id="gacha-coin-fly"><img src="icons/coin.png" alt=""></div>
         <img class="gacha-knob" id="gacha-knob" src="icons/gumball-knob.png" alt="">
       </div>
       <div class="gacha-capsule" id="gacha-capsule">
@@ -5039,7 +5041,10 @@
     for (let i = 0; i < count; i++) {
       const coin = document.createElement("div");
       coin.className = "coin-fly";
-      coin.textContent = "\u{1FA99}";
+      const coinImg = document.createElement("img");
+      coinImg.src = "icons/coin.png";
+      coinImg.alt = "";
+      coin.appendChild(coinImg);
       coin.style.left = `${startX}px`;
       coin.style.top = `${startY}px`;
       coin.style.setProperty("--fx", `${dx}px`);
