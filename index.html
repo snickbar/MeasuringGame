@@ -467,10 +467,18 @@
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
   }
   .gacha-result-overlay.show { opacity: 1; pointer-events: auto; }
-  /* Blocks input for the whole pull animation, not just once the result
-     card fades in - invisible (no backdrop dimming) until .show is also
-     added, so it doesn't obscure the machine animation. */
-  .gacha-result-overlay.blocking { pointer-events: auto; }
+  /* Blocks EVERY other element on the page (toolbar included) for the whole
+     pull animation, not just once the result card fades in - a z-index-based
+     overlay isn't reliable here since an ancestor further up the tree could
+     establish its own stacking context (a transform, filter, etc.) and trap
+     the overlay's z-index below something like the toolbar regardless of how
+     high it's set. pointer-events:none on literally everything sidesteps
+     that - it doesn't depend on paint order at all - with the result
+     overlay (and its own children, once the card fades in via .show)
+     explicitly exempted so "Nice!" still works. */
+  body.gacha-pull-lock * { pointer-events: none; }
+  body.gacha-pull-lock #gacha-result-overlay,
+  body.gacha-pull-lock #gacha-result-overlay * { pointer-events: auto; }
   .gacha-result-card {
     width: 220px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
     box-shadow: 0 14px 34px rgba(0,0,0,.4); transform: scale(.7); opacity: 0;
@@ -2922,9 +2930,10 @@
   function resetGachaScene() {
     gachaRevealWrapEl.className = "gacha-reveal-wrap";
     gachaCapsuleEl.className = "gacha-capsule";
-    gachaResultOverlayEl.classList.remove("show", "blocking");
+    gachaResultOverlayEl.classList.remove("show");
     gachaResultCardEl.className = "gacha-result-card";
     gachaPullBtn.classList.remove("busy");
+    document.body.classList.remove("gacha-pull-lock");
   }
   function openGachaScreen(tab) {
     gachaStatusEl.textContent = "";
@@ -3093,7 +3102,7 @@
     // user could tap away mid-animation. Invisible (no dimming) until the
     // result card actually shows via the existing "show" class, so the
     // machine animation itself isn't obscured.
-    gachaResultOverlayEl.classList.add("blocking");
+    document.body.classList.add("gacha-pull-lock");
     gachaPullBtn.classList.add("busy");
 
     const result = await pullGacha();
