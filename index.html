@@ -707,6 +707,27 @@
   @media (prefers-reduced-motion: reduce) {
     #toolbar-help-btn.hint-pulse { animation: none; }
   }
+  #exit-confirm-overlay {
+    position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
+  }
+  #exit-confirm-overlay.show { opacity: 1; pointer-events: auto; }
+  #exit-confirm-card {
+    width: 240px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4); transform: scale(.7); opacity: 0;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+  }
+  #exit-confirm-overlay.show #exit-confirm-card { transform: scale(1); opacity: 1; }
+  #exit-confirm-card h3 { margin: 0 0 8px; font-size: 18px; color: #000; text-shadow: none; }
+  #exit-confirm-card p { margin: 0 0 16px; font-size: 13px; font-weight: 600; color: var(--text); }
+  #exit-confirm-buttons { display: flex; flex-direction: column; gap: 8px; }
+  #exit-confirm-yes-btn, #exit-confirm-no-btn {
+    width: 100%; margin: 0; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; padding: 10px 14px;
+    border-width: 9px; border-style: solid; border-image-slice: 55 fill;
+  }
+  #exit-confirm-yes-btn { border-image-source: var(--btn-hex-red); }
+  #exit-confirm-no-btn { border-image-source: var(--btn2); color: var(--text); }
   #host-unlock-banner {
     display: none; margin: 10px 0; padding: 12px 14px; border-radius: 10px;
     background: var(--brand); color: #fff;
@@ -1192,6 +1213,18 @@
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-help-btn" class="toolbar-badge-btn" type="button" aria-label="How to play"><img src="icons/toolbar-help.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
+    <button id="toolbar-exit-btn" class="toolbar-badge-btn" type="button" aria-label="Exit"><img src="icons/toolbar-exit.png" alt=""></button>
+  </div>
+</div>
+
+<div id="exit-confirm-overlay">
+  <div id="exit-confirm-card">
+    <h3>Exit the game?</h3>
+    <p>Are you sure you want to exit?</p>
+    <div id="exit-confirm-buttons">
+      <button id="exit-confirm-yes-btn" type="button">Yes</button>
+      <button id="exit-confirm-no-btn" type="button">No, go back</button>
+    </div>
   </div>
 </div>
 
@@ -2364,6 +2397,10 @@
   const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
+  const toolbarExitBtn = document.getElementById("toolbar-exit-btn");
+  const exitConfirmOverlayEl = document.getElementById("exit-confirm-overlay");
+  const exitConfirmYesBtn = document.getElementById("exit-confirm-yes-btn");
+  const exitConfirmNoBtn = document.getElementById("exit-confirm-no-btn");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
   const installBanner = document.getElementById("install-banner");
   const installBtn = document.getElementById("install-btn");
@@ -2730,6 +2767,24 @@
   });
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
+  toolbarExitBtn.addEventListener("click", () => {
+    exitConfirmOverlayEl.classList.add("show");
+  });
+  exitConfirmNoBtn.addEventListener("click", () => {
+    exitConfirmOverlayEl.classList.remove("show");
+  });
+  exitConfirmYesBtn.addEventListener("click", () => {
+    // Capacitor auto-registers installed native plugins as globals - no
+    // import needed since this page has no bundler. Outside the installed
+    // app (plain browser, no @capacitor/app bridge present) there's no real
+    // "exit" concept, so just dismiss the dialog instead.
+    const appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (appPlugin && appPlugin.exitApp) {
+      appPlugin.exitApp();
+    } else {
+      exitConfirmOverlayEl.classList.remove("show");
+    }
+  });
   gachaCloseBtn.addEventListener("click", closeOverlay);
   collectionCloseBtn.addEventListener("click", closeOverlay);
   gachaViewAllBtn.addEventListener("click", () => {
