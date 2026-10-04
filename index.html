@@ -2238,7 +2238,7 @@
   async function watchAdForCoins() {
     const today = todayDateStr();
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
-      const profile = current || { coins: 0, unlockedAvatars: defaultUnlockedAvatars(), hostUnlocked: false };
+      const profile = current || defaultProfile();
       const countToday = profile.adsWatchedDate === today ? (profile.adsWatchedCount || 0) : 0;
       if (countToday >= DAILY_AD_COIN_CAP) return profile; // abort: cap already reached today
       return {
@@ -2354,10 +2354,11 @@
     const result = pickGachaResult();
     if (!result) return null;
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
-      const profile = current || { coins: 0, unlockedAvatars: defaultUnlockedAvatars() };
+      const profile = current || defaultProfile();
       if ((profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
       if (profile.unlockedAvatars && profile.unlockedAvatars[result]) return profile; // abort: already unlocked (race)
       return {
+        ...profile,
         coins: (profile.coins || 0) - GACHA_COST,
         unlockedAvatars: { ...(profile.unlockedAvatars || {}), [result]: true },
       };
