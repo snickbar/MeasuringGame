@@ -2186,6 +2186,19 @@
     };
   }
   let myProfile = defaultProfile();
+  // Prime from the last confirmed balance, synchronously, before Firebase
+  // even responds - without this the toolbar always flashed "0" (the
+  // static default) on every full reload while waiting on the profile
+  // listener, which is why it only showed up on the Home button (a real
+  // reload) and never on the screen-back-btn navigation (which never
+  // reloads, so there's nothing to flash back to 0 from).
+  const CACHED_COINS_KEY = "mg_lastCoins";
+  const cachedCoins = parseInt(localStorage.getItem(CACHED_COINS_KEY), 10);
+  if (!isNaN(cachedCoins)) {
+    myProfile.coins = cachedCoins;
+    const coinCountEl = document.getElementById("toolbar-coin-count");
+    if (coinCountEl) coinCountEl.textContent = formatCoinDisplay(cachedCoins);
+  }
   function watchMyProfile() {
     onValue(ref(db, `profiles/${deviceId}`), (snap) => {
       const data = snap.val();
@@ -3169,6 +3182,7 @@
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
     if (!coinCountTweenActive) toolbarCoinCountEl.textContent = formatCoinDisplay(myProfile.coins);
+    localStorage.setItem(CACHED_COINS_KEY, String(myProfile.coins));
   }
 
   let coinCountTweenActive = false;
