@@ -3923,27 +3923,52 @@
       onValue(ref(db, `rooms/${roomCode}/players`), resolve, { onlyOnce: true });
     });
     const existingPlayers = playersSnap.val() || {};
-    const usedFrames = new Set(Object.values(existingPlayers).map((p) => p.frameIndex).filter(Boolean));
-    const freeFrames = [];
-    for (let i = 1; i <= FRAME_COUNT; i++) if (!usedFrames.has(i)) freeFrames.push(i);
-    if (freeFrames.length === 0) {
-      nameAvatarStatusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
-      return;
+
+    // Reclaim an existing, currently-disconnected same-named slot instead of
+    // minting a brand new one - without this, rejoining (especially the
+    // one-tap "Last game" shortcut) after a force-close created a genuine
+    // duplicate player alongside the old not-yet-swept entry (it can take up
+    // to DISCONNECT_GRACE_MS before that's cleaned up), leaving two
+    // identically-named players and the round effectively waiting forever on
+    // a guess from the orphaned one. Only matches a DISCONNECTED entry so a
+    // live, actively-connected player can never get hijacked by someone else
+    // typing the same name.
+    const staleOwnId = Object.keys(existingPlayers).find((id) => {
+      const p = existingPlayers[id];
+      return !p.isBot && p.connected === false && p.name && p.name.trim().toLowerCase() === name.trim().toLowerCase();
+    });
+
+    let frameIndex;
+    if (staleOwnId) {
+      frameIndex = existingPlayers[staleOwnId].frameIndex;
+    } else {
+      const usedFrames = new Set(Object.values(existingPlayers).map((p) => p.frameIndex).filter(Boolean));
+      const freeFrames = [];
+      for (let i = 1; i <= FRAME_COUNT; i++) if (!usedFrames.has(i)) freeFrames.push(i);
+      if (freeFrames.length === 0) {
+        nameAvatarStatusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
+        return;
+      }
+      frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
     }
-    const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
 
     // "Reclaim" host mode: rejoining under the name that was holding host duties
     // when it disconnected (see armHostReclaimMarker) picks host status back up.
     const canReclaim = !asHost && roomData && roomData.settings && roomData.settings.hostTransferMode === "reclaim"
       && roomData.pendingHostReclaim && roomData.pendingHostReclaim.name
       && roomData.pendingHostReclaim.name.trim().toLowerCase() === name.trim().toLowerCase();
-    const finalIsHost = asHost || !!canReclaim;
+    const finalIsHost = asHost || !!canReclaim || (staleOwnId ? !!existingPlayers[staleOwnId].isHost : false);
+
+    const baseData = staleOwnId
+      ? { ...existingPlayers[staleOwnId] }
+      : { avatar: currentAvatar, score: 0, joinedAt: serverTimestamp() };
 
     currentPlayerId = makePlayerId();
     currentRoomCode = roomCode;
     isHost = finalIsHost;
     const playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-    await set(playerRef, { name, avatar: currentAvatar, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
+    await set(playerRef, { ...baseData, name, frameIndex, isHost, connected: true, disconnectedAt: null });
+    if (staleOwnId) await remove(ref(db, `rooms/${roomCode}/players/${staleOwnId}`));
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
     if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
     const effectiveMode = roomData && roomData.settings && roomData.settings.hostTransferMode;
@@ -4114,7 +4139,10 @@
     // Final authoritative avatar-uniqueness check right before writing —
     // the live grid greying-out is just a preview and can race or be
     // bypassed (e.g. the recent-rooms "Rejoin" button skips it entirely).
-    const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
+    // Only counts currently-connected players - a disconnected same-named
+    // slot is about to be reclaimed (see joinRoomAsPlayer), not collided
+    // with, so it shouldn't force you onto a different avatar than your own.
+    const existingAvatars = new Set(Object.values(data.players || {}).filter((p) => p.connected !== false).map((p) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { nameAvatarStatusEl.textContent = "Every avatar is taken in that room."; return; }
@@ -4139,7 +4167,10 @@
     });
     const data = snap.val();
     if (data === null) { joinStatusEl.textContent = "Room not found."; return; }
-    const existingAvatars = new Set(Object.values(data.players || {}).map((p) => p.avatar).filter(Boolean));
+    // Same exclusion as the manual-join path above - a disconnected
+    // same-named slot (almost always this exact rejoin's own stale entry)
+    // is about to be reclaimed, not collided with.
+    const existingAvatars = new Set(Object.values(data.players || {}).filter((p) => p.connected !== false).map((p) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { joinStatusEl.textContent = "Every avatar is taken in that room."; return; }
@@ -4162,7 +4193,14 @@
     const players = data.players || {};
     const realIds = Object.keys(players).filter((id) => !players[id].isBot);
     if (realIds.length === 0) return;
-    if (realIds.some((id) => players[id].isHost)) return;
+    // Must also be connected - a disconnected player's record keeps
+    // isHost:true frozen at whatever it was before they dropped (onDisconnect
+    // only touches connected/disconnectedAt), so without this check a host
+    // who force-closed rather than cleanly exiting permanently blocked
+    // reassignment: this looked like "already has a host" forever, with
+    // nobody actually around to run the host-authoritative deadline checks -
+    // the room (and everyone's timer) just froze.
+    if (realIds.some((id) => players[id].isHost && players[id].connected !== false)) return;
     const sorted = realIds.sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0) || a.localeCompare(b));
     const chosenId = sorted[0];
     if (chosenId === currentPlayerId) {
