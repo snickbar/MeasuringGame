@@ -656,12 +656,17 @@
 
   #host-mode-controls, #preset-host-mode-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
   #host-mode-controls span, #preset-host-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
-  .hostmode-btn {
-    width: auto; font-size: 13px; padding: 6px 12px; margin: 0;
-    border-width: 10px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
-    color: var(--text);
+  /* Same segmented-control look as .itemmode-row/.itemmode-btn below, per
+     the user's explicit request to match the two styles. */
+  .hostmode-row {
+    display: flex; border: 1px solid rgba(90,74,58,.28); border-radius: 8px; overflow: hidden; width: 100%;
   }
-  .hostmode-btn.selected { border-image-source: var(--ring); }
+  .hostmode-btn {
+    flex: 1 1 0; min-width: 0; font-size: 13px; padding: 8px; margin: 0;
+    border: none; border-image-source: none; border-radius: 0;
+    background: transparent; color: var(--text); opacity: .65;
+  }
+  .hostmode-btn.selected { background: var(--red); color: #fff; opacity: 1; }
 
   .edit-preset-settings-btn { width: 100%; margin: 0 0 14px; }
 
@@ -1361,8 +1366,8 @@
 
 <div id="exit-confirm-overlay">
   <div id="exit-confirm-card">
-    <h3>Exit the game?</h3>
-    <p>Are you sure you want to exit?</p>
+    <h3 id="exit-confirm-title">Exit the game?</h3>
+    <p id="exit-confirm-message">Are you sure you want to exit?</p>
     <div id="exit-confirm-buttons">
       <button id="exit-confirm-yes-btn" type="button">Yes</button>
       <button id="exit-confirm-no-btn" type="button">No, go back</button>
@@ -1627,8 +1632,10 @@
 
   <div id="host-mode-controls">
     <span>If host disconnects:</span>
-    <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
-    <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+    <div class="hostmode-row">
+      <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
+      <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+    </div>
   </div>
 
   <div id="settings-panel">
@@ -1685,8 +1692,10 @@
 
   <div id="preset-host-mode-controls">
     <span>If host disconnects:</span>
-    <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
-    <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+    <div class="hostmode-row">
+      <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
+      <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+    </div>
   </div>
 
   <div id="preset-settings-panel">
@@ -2680,6 +2689,8 @@
   const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
   const toolbarExitBtn = document.getElementById("toolbar-exit-btn");
   const exitConfirmOverlayEl = document.getElementById("exit-confirm-overlay");
+  const exitConfirmTitleEl = document.getElementById("exit-confirm-title");
+  const exitConfirmMessageEl = document.getElementById("exit-confirm-message");
   const exitConfirmYesBtn = document.getElementById("exit-confirm-yes-btn");
   const exitConfirmNoBtn = document.getElementById("exit-confirm-no-btn");
   const bottomToolbarEl = document.getElementById("bottom-toolbar");
@@ -3071,13 +3082,31 @@
   });
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
-  toolbarExitBtn.addEventListener("click", () => {
+  // Shared by two different "Yes" actions - quitting the app entirely
+  // (toolbar Exit) and, as host, ending the current game for everyone
+  // (in-game Exit) - so an accidental tap doesn't silently end the game.
+  let pendingExitAction = null; // "app" | "hostGame"
+  function openExitConfirm(action, title, message) {
+    pendingExitAction = action;
+    exitConfirmTitleEl.textContent = title;
+    exitConfirmMessageEl.textContent = message;
     exitConfirmOverlayEl.classList.add("show");
+  }
+  toolbarExitBtn.addEventListener("click", () => {
+    openExitConfirm("app", "Exit the game?", "Are you sure you want to exit?");
   });
   exitConfirmNoBtn.addEventListener("click", () => {
     exitConfirmOverlayEl.classList.remove("show");
+    pendingExitAction = null;
   });
   exitConfirmYesBtn.addEventListener("click", () => {
+    const action = pendingExitAction;
+    exitConfirmOverlayEl.classList.remove("show");
+    pendingExitAction = null;
+    if (action === "hostGame") {
+      hostExit();
+      return;
+    }
     // Capacitor auto-registers installed native plugins as globals - no
     // import needed since this page has no bundler. Outside the installed
     // app (plain browser, no @capacitor/app bridge present) there's no real
@@ -3085,8 +3114,6 @@
     const appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
     if (appPlugin && appPlugin.exitApp) {
       appPlugin.exitApp();
-    } else {
-      exitConfirmOverlayEl.classList.remove("show");
     }
   });
   collectionCloseBtn.addEventListener("click", closeOverlay);
@@ -4794,7 +4821,9 @@
   }
 
   exitBtnGuest.addEventListener("click", () => guestExit());
-  exitBtn.addEventListener("click", () => hostExit());
+  exitBtn.addEventListener("click", () => {
+    openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
+  });
   endedReloadBtn.addEventListener("click", () => location.reload());
   finalHomeBtn.addEventListener("click", () => location.reload());
   leftReloadBtn.addEventListener("click", () => location.reload());
