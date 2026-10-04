@@ -1219,11 +1219,19 @@
   .reveal-guess-line { flex-shrink: 0; white-space: nowrap; }
   .winner-guess-row b { font-size: 18px; }
   .winner-stats-row { flex-basis: 100%; font-size: 15px; font-weight: 700; color: #000; }
+  /* Was left:100% + margin-left:12px at width:40px - needed ~52px clear of
+     the card's own right edge before it would stop overlapping the score
+     column, but .game-body's gap between the two columns is only 14px, so
+     this could never actually fit in that gutter and was overlapping score
+     cards by design on every single reveal. right:-8px keeps it peeking out
+     past the card's edge (preserving the "floating badge" look) while
+     guaranteeing it stays within that 14px gutter regardless of font/stack
+     height, since only the width affects the horizontal overlap. */
   .reveal-pts-stack {
-    position: absolute; top: 50%; left: 100%; margin-left: 12px; transform: translateY(-50%);
+    position: absolute; top: 50%; right: -8px; transform: translateY(-50%);
     display: flex; flex-direction: column; align-items: center; gap: 3px;
     opacity: 0; pointer-events: none; transition: opacity 250ms ease; z-index: 1;
-    width: 40px; text-align: center;
+    width: 32px; text-align: center;
   }
   #reveal-list.answer-revealed .reveal-pts-stack { opacity: 1; }
   .reveal-pts-badge { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--green); white-space: nowrap; line-height: 1.1; }
@@ -3959,16 +3967,27 @@
       && roomData.pendingHostReclaim.name.trim().toLowerCase() === name.trim().toLowerCase();
     const finalIsHost = asHost || !!canReclaim || (staleOwnId ? !!existingPlayers[staleOwnId].isHost : false);
 
-    const baseData = staleOwnId
-      ? { ...existingPlayers[staleOwnId] }
-      : { avatar: currentAvatar, score: 0, joinedAt: serverTimestamp() };
-
-    currentPlayerId = makePlayerId();
     currentRoomCode = roomCode;
     isHost = finalIsHost;
-    const playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-    await set(playerRef, { ...baseData, name, frameIndex, isHost, connected: true, disconnectedAt: null });
-    if (staleOwnId) await remove(ref(db, `rooms/${roomCode}/players/${staleOwnId}`));
+    let playerRef;
+    if (staleOwnId) {
+      // Reuse the SAME id rather than minting a new one and copying its
+      // fields across - this round's guess/pick (rooms/{code}/guesses/{id},
+      // .../picks/{id}) are stored keyed by player id in their own separate
+      // paths, not nested under the player record, so a fresh id here would
+      // silently orphan whatever this player had already submitted before
+      // closing out (exactly what showed up as "my answer wasn't there" on
+      // the second-chance/reveal screens after reclaiming). Score/avatar/
+      // frame are already correct in place on this node; only these fields
+      // actually need updating.
+      currentPlayerId = staleOwnId;
+      playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
+      await update(playerRef, { name, isHost, connected: true, disconnectedAt: null });
+    } else {
+      currentPlayerId = makePlayerId();
+      playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
+      await set(playerRef, { name, avatar: currentAvatar, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
+    }
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
     if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
     const effectiveMode = roomData && roomData.settings && roomData.settings.hostTransferMode;
@@ -4208,11 +4227,20 @@
       set(ref(db, `rooms/${roomCode}/players/${currentPlayerId}/isHost`), true);
       // The old host's locally-scheduled deadline timer died with their tab —
       // re-arm whichever one is currently pending so the round doesn't stall.
+      // Bot guesses/picks are also setTimeout's scheduled on whoever was
+      // hosting at the time - any bot whose timeout hadn't fired yet when
+      // that host's tab died would otherwise never guess/pick at all (this
+      // is what "only one of the bots' answers were there" turned out to
+      // be). Both schedule functions skip any bot that already has an
+      // entry, so this can't double-submit for ones that already fired.
       if (data.phase === "question") {
         const dl = data.graceEndsAt || data.questionEndsAt;
         if (dl) scheduleHostDeadline(dl, () => checkQuestionAdvance(roomCode));
-      } else if (data.phase === "answers" && data.answersEndsAt) {
-        scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
+        if (data.currentQuestion) scheduleBotGuesses(roomCode, data.currentQuestion);
+      } else if (data.phase === "answers") {
+        if (data.answersEndsAt) scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
+        const settings = data.settings || currentSettings;
+        if (settings.botsSecondChance && data.answers) scheduleBotPicks(roomCode, data.answers);
       }
     }
   }
@@ -4267,10 +4295,12 @@
 
   function scheduleBotGuesses(roomCode, q) {
     const players = roomState.players || {};
+    const existingGuesses = roomState.guesses || {};
     const timerMs = (currentSettings.timerSeconds || 30) * 1000;
     Object.keys(players).forEach((id) => {
       const p = players[id];
       if (!p || !p.isBot) return;
+      if (existingGuesses[id] !== undefined) return; // already guessed - e.g. re-triggered after a host handoff
       const delay = Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
@@ -4284,9 +4314,11 @@
 
   function scheduleBotPicks(roomCode, sorted) {
     const players = roomState.players || {};
+    const existingPicks = roomState.picks || {};
     Object.keys(players).forEach((id) => {
       const p = players[id];
       if (!p || !p.isBot) return;
+      if (existingPicks[id] !== undefined) return; // already picked - e.g. re-triggered after a host handoff
       const others = sorted.filter((e) => e.playerId !== id);
       const delay = 1000 + Math.random() * 7000;
       setTimeout(() => {
