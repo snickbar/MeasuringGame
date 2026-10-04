@@ -654,9 +654,10 @@
     color: var(--text);
   }
 
-  #host-mode-controls, #preset-host-mode-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  #host-mode-controls span, #preset-host-mode-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; width: 100%; }
-  /* Same segmented-control look as .itemmode-row/.itemmode-btn below, per
+  /* host-mode-controls/preset-host-mode-controls now sit inside their
+     settings-panel as a normal settings-group (same as every other row) and
+     carry the .hostmode-row class directly - no separate wrapper needed.
+     Same segmented-control look as .itemmode-row/.itemmode-btn below, per
      the user's explicit request to match the two styles. */
   .hostmode-row {
     display: flex; border: 1px solid rgba(90,74,58,.28); border-radius: 8px; overflow: hidden; width: 100%;
@@ -1630,15 +1631,16 @@
     <button type="button" class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></button>
   </div>
 
-  <div id="host-mode-controls">
-    <span>If host disconnects:</span>
-    <div class="hostmode-row">
-      <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
-      <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
-    </div>
-  </div>
-
   <div id="settings-panel">
+    <div class="settings-group">
+      <div class="settings-eyebrow">Host</div>
+      <label class="settings-row-stack">If host disconnects
+        <div id="host-mode-controls" class="hostmode-row">
+          <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
+          <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+        </div>
+      </label>
+    </div>
     <div class="settings-group">
       <div class="settings-eyebrow">Round</div>
       <label>Timer (sec)
@@ -1669,7 +1671,12 @@
           <button type="button" id="setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
         </span>
       </label>
-      <label>Auto mode <button id="setting-auto-advance" type="button" class="text-toggle-btn"></button></label>
+      <label class="settings-row-stack">Round advance
+        <span class="itemmode-row">
+          <button type="button" id="setting-auto-advance-auto" class="itemmode-btn" data-mode="auto">Auto Mode</button>
+          <button type="button" id="setting-auto-advance-manual" class="itemmode-btn" data-mode="manual">Manual Host Mode</button>
+        </span>
+      </label>
       <label>Auto-advance delay (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
@@ -1690,15 +1697,16 @@
     <h1>Edit Preset Game Settings</h1>
   </div>
 
-  <div id="preset-host-mode-controls">
-    <span>If host disconnects:</span>
-    <div class="hostmode-row">
-      <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
-      <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
-    </div>
-  </div>
-
   <div id="preset-settings-panel">
+    <div class="settings-group">
+      <div class="settings-eyebrow">Host</div>
+      <label class="settings-row-stack">If host disconnects
+        <div id="preset-host-mode-controls" class="hostmode-row">
+          <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
+          <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+        </div>
+      </label>
+    </div>
     <div class="settings-group">
       <div class="settings-eyebrow">Round</div>
       <label>Timer (sec)
@@ -1729,7 +1737,12 @@
           <button type="button" id="preset-setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
         </span>
       </label>
-      <label>Auto mode <button id="preset-setting-auto-advance" type="button" class="text-toggle-btn"></button></label>
+      <label class="settings-row-stack">Round advance
+        <span class="itemmode-row">
+          <button type="button" id="preset-setting-auto-advance-auto" class="itemmode-btn" data-mode="auto">Auto Mode</button>
+          <button type="button" id="preset-setting-auto-advance-manual" class="itemmode-btn" data-mode="manual">Manual Host Mode</button>
+        </span>
+      </label>
       <label>Auto-advance delay (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-auto-advance-seconds" data-step="-1">&minus;</button>
@@ -2743,7 +2756,8 @@
   const settingBotsSecondChanceInput = document.getElementById("setting-bots-secondchance");
   const settingItemAnythingInput = document.getElementById("setting-item-anything");
   const settingItemRelativeInput = document.getElementById("setting-item-relative");
-  const settingAutoAdvanceInput = document.getElementById("setting-auto-advance");
+  const settingAutoAdvanceAutoInput = document.getElementById("setting-auto-advance-auto");
+  const settingAutoAdvanceManualInput = document.getElementById("setting-auto-advance-manual");
   const settingAutoAdvanceSecondsInput = document.getElementById("setting-auto-advance-seconds");
 
   // ---- Game presets (duplicate of the create-screen settings panel above,
@@ -2758,7 +2772,8 @@
   const presetSettingBotsSecondChanceInput = document.getElementById("preset-setting-bots-secondchance");
   const presetSettingItemAnythingInput = document.getElementById("preset-setting-item-anything");
   const presetSettingItemRelativeInput = document.getElementById("preset-setting-item-relative");
-  const presetSettingAutoAdvanceInput = document.getElementById("preset-setting-auto-advance");
+  const presetSettingAutoAdvanceAutoInput = document.getElementById("preset-setting-auto-advance-auto");
+  const presetSettingAutoAdvanceManualInput = document.getElementById("preset-setting-auto-advance-manual");
   const presetSettingAutoAdvanceSecondsInput = document.getElementById("preset-setting-auto-advance-seconds");
   const createPresetRowEl = document.getElementById("create-preset-row");
   const presetEditSlotRowEl = document.getElementById("preset-edit-slot-row");
@@ -3754,7 +3769,8 @@
     settingBotsSecondChanceInput.disabled = !s.secondChanceEnabled;
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
     settingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
-    settingAutoAdvanceInput.classList.toggle("is-on", !!s.autoAdvanceEnabled);
+    settingAutoAdvanceAutoInput.classList.toggle("selected", !!s.autoAdvanceEnabled);
+    settingAutoAdvanceManualInput.classList.toggle("selected", !s.autoAdvanceEnabled);
     if (document.activeElement !== settingAutoAdvanceSecondsInput) settingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
     settingAutoAdvanceSecondsInput.disabled = !s.autoAdvanceEnabled;
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
@@ -3797,9 +3813,11 @@
       renderLocalSettingsPanel();
     });
   });
-  settingAutoAdvanceInput.addEventListener("click", () => {
-    currentSettings.autoAdvanceEnabled = !settingAutoAdvanceInput.classList.contains("is-on");
-    renderLocalSettingsPanel();
+  [settingAutoAdvanceAutoInput, settingAutoAdvanceManualInput].forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentSettings.autoAdvanceEnabled = btn.dataset.mode === "auto";
+      renderLocalSettingsPanel();
+    });
   });
   settingAutoAdvanceSecondsInput.addEventListener("change", () => {
     if (settingAutoAdvanceSecondsInput.disabled) return;
@@ -3824,7 +3842,8 @@
     presetSettingBotsSecondChanceInput.disabled = !s.secondChanceEnabled;
     presetSettingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
     presetSettingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
-    presetSettingAutoAdvanceInput.classList.toggle("is-on", !!s.autoAdvanceEnabled);
+    presetSettingAutoAdvanceAutoInput.classList.toggle("selected", !!s.autoAdvanceEnabled);
+    presetSettingAutoAdvanceManualInput.classList.toggle("selected", !s.autoAdvanceEnabled);
     if (document.activeElement !== presetSettingAutoAdvanceSecondsInput) presetSettingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
     presetSettingAutoAdvanceSecondsInput.disabled = !s.autoAdvanceEnabled;
     document.querySelectorAll("#preset-settings-panel .stepper-btn").forEach((btn) => {
@@ -3865,9 +3884,11 @@
       renderPresetEditPanel();
     });
   });
-  presetSettingAutoAdvanceInput.addEventListener("click", () => {
-    presetEditSettings.autoAdvanceEnabled = !presetSettingAutoAdvanceInput.classList.contains("is-on");
-    renderPresetEditPanel();
+  [presetSettingAutoAdvanceAutoInput, presetSettingAutoAdvanceManualInput].forEach((btn) => {
+    btn.addEventListener("click", () => {
+      presetEditSettings.autoAdvanceEnabled = btn.dataset.mode === "auto";
+      renderPresetEditPanel();
+    });
   });
   presetSettingAutoAdvanceSecondsInput.addEventListener("change", () => {
     if (presetSettingAutoAdvanceSecondsInput.disabled) return;
