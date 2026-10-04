@@ -2192,12 +2192,18 @@
   // listener, which is why it only showed up on the Home button (a real
   // reload) and never on the screen-back-btn navigation (which never
   // reloads, so there's nothing to flash back to 0 from).
+  // Cap logic is inlined (not a call to formatCoinDisplay) deliberately -
+  // that function reads the const COIN_DISPLAY_CAP declared much later in
+  // the file, which is real but still uninitialized (temporal dead zone)
+  // this early in the script's top-to-bottom run. Calling it here threw,
+  // which silently killed the ENTIRE script before any event listener ever
+  // got attached - that's what "coins at 0 and nothing is clickable" was.
   const CACHED_COINS_KEY = "mg_lastCoins";
   const cachedCoins = parseInt(localStorage.getItem(CACHED_COINS_KEY), 10);
   if (!isNaN(cachedCoins)) {
     myProfile.coins = cachedCoins;
     const coinCountEl = document.getElementById("toolbar-coin-count");
-    if (coinCountEl) coinCountEl.textContent = formatCoinDisplay(cachedCoins);
+    if (coinCountEl) coinCountEl.textContent = cachedCoins > 9999 ? "9999+" : String(cachedCoins);
   }
   function watchMyProfile() {
     onValue(ref(db, `profiles/${deviceId}`), (snap) => {
