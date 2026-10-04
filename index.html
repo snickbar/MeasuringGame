@@ -4046,10 +4046,15 @@
       joinScreen.classList.add("active");
     }
   });
-  lobbyBackBtn.addEventListener("click", () => {
-    lobbyScreenEl.classList.remove("active");
-    nameAvatarScreenEl.classList.add("active");
-  });
+  // A plain screen toggle isn't safe here: the room's live listener
+  // (watchRoom -> applyPhase) keeps running and will keep forcing Lobby (and
+  // the HUD, if the game starts while you're away) back into view regardless
+  // of whatever screen you manually navigated to - this app has no existing
+  // "leave a room without reloading" path, every other exit (Home, Exit)
+  // works by reloading, which is what actually tears the listeners down.
+  // Matching that same proven-safe pattern here instead of inventing a new
+  // one blind.
+  lobbyBackBtn.addEventListener("click", () => location.reload());
 
   let hostTransferModeChoice = "reassign";
   hostModeControlsEl.addEventListener("click", (e) => {
@@ -4695,7 +4700,11 @@
   leftReloadBtn.addEventListener("click", () => location.reload());
 
   function showLeftScreen(reason) {
-    [createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, endedScreenEl].forEach((el) => el.classList.remove("active"));
+    // Sweep the full screen list (same as openOverlay) rather than a
+    // hand-picked subset - this used to miss any open overlay (Shop,
+    // Settings, etc.), which stayed active and visually merged with this
+    // screen underneath it.
+    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     hudRoomCodeGroupEl.classList.remove("active");
     hudRoundLabelEl.classList.remove("active");
     bottomToolbarEl.classList.remove("active");
@@ -4710,7 +4719,7 @@
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
-    showLeftScreen("You left the room.");
+    showLeftScreen("You left the room. The other players can keep playing without you.");
   }
 
   async function hostExit() {
@@ -4719,7 +4728,7 @@
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
-    showLeftScreen("You ended the game.");
+    showLeftScreen("You ended the game for everyone in the room.");
   }
 
   // ==================== Guess input (question phase) ====================
@@ -5688,7 +5697,7 @@
           // removing someone who was disconnected/backgrounded too long - this
           // listener can't tell those apart, so the message stays neutral rather
           // than blaming the host for something that may have been a timeout.
-          showLeftScreen("You're no longer in this room.");
+          showLeftScreen("You're no longer in this room. This happens if the host removed you, or if you were disconnected for too long.");
         }
         return;
       }
