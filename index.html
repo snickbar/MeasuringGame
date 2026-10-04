@@ -135,8 +135,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active { display: block; }
   #hud.active {
     display: flex; flex-direction: column;
     position: fixed; top: 98px; left: 0; right: 0; bottom: 58px;
@@ -334,6 +334,14 @@
     content: "\1F512"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px;
   }
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
+  .items-intro { font-size: 13px; color: var(--text); opacity: .75; margin: 0 0 16px; }
+  .items-letter-group { margin-bottom: 14px; }
+  .items-letter-title {
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--brand); margin: 0 0 4px; padding-bottom: 3px; border-bottom: 1px solid rgba(90,74,58,.18);
+  }
+  .items-row { padding: 7px 2px; font-size: 15px; border-bottom: 1px solid rgba(90,74,58,.08); }
+  .items-row:last-child { border-bottom: none; }
 
   /* The machine graphic and its overlaid globe/capsule/knob are positioned
      with pixel offsets calibrated to this exact 280x450 box, so it can't
@@ -539,7 +547,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen { position: relative; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -743,7 +751,7 @@
   /* ---- App toolbar (persistent, every screen) ---- */
   #app-toolbar {
     position: fixed; top: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
-    min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 4px;
     padding: 6px; z-index: 50;
     background: #fbfaf6; box-shadow: 0 2px 6px rgba(0,0,0,.08);
   }
@@ -772,7 +780,7 @@
     position: relative; z-index: 1;
   }
   #toolbar-coin-count { display: inline-block; text-align: center; }
-  #toolbar-right-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  #toolbar-right-group { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
   #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
   }
@@ -824,7 +832,7 @@
   }
   #reveal-next-btn { border-image-source: var(--btn-hex-red); color: #fff; }
   .toolbar-badge-btn {
-    width: 46px; height: 46px; flex-shrink: 0; padding: 0; margin: 0;
+    width: 40px; height: 40px; flex-shrink: 0; padding: 0; margin: 0;
     border: none; background: transparent; display: flex; align-items: center; justify-content: center;
   }
   .toolbar-badge-btn img { width: 100%; height: 100%; object-fit: contain; }
@@ -1358,6 +1366,7 @@
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
+    <button id="toolbar-items-btn" class="toolbar-badge-btn" type="button" aria-label="Items"><img src="icons/toolbar-items.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-help-btn" class="toolbar-badge-btn" type="button" aria-label="How to play"><img src="icons/toolbar-help.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
@@ -1525,6 +1534,14 @@
     <h1>All Avatars</h1>
   </div>
   <div id="collection-content"></div>
+</div>
+
+<div id="items-screen" class="screen">
+  <button id="items-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div class="screen-header">
+    <h1>Items</h1>
+  </div>
+  <div id="items-content"></div>
 </div>
 
 <div id="settings-screen" class="screen">
@@ -2698,6 +2715,7 @@
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
   const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
+  const toolbarItemsBtn = document.getElementById("toolbar-items-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
   const toolbarExitBtn = document.getElementById("toolbar-exit-btn");
@@ -2728,6 +2746,9 @@
   const collectionScreen = document.getElementById("collection-screen");
   const collectionCloseBtn = document.getElementById("collection-close-btn");
   const collectionContentEl = document.getElementById("collection-content");
+  const itemsScreen = document.getElementById("items-screen");
+  const itemsCloseBtn = document.getElementById("items-close-btn");
+  const itemsContentEl = document.getElementById("items-content");
   const gachaPullBtn = document.getElementById("gacha-pull-btn");
   const gachaPullBtnTextEl = document.getElementById("gacha-pull-btn-text");
   const gachaStatusEl = document.getElementById("gacha-status");
@@ -3052,8 +3073,8 @@
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -3132,6 +3153,11 @@
     }
   });
   collectionCloseBtn.addEventListener("click", closeOverlay);
+  itemsCloseBtn.addEventListener("click", closeOverlay);
+  toolbarItemsBtn.addEventListener("click", () => {
+    renderItemsScreen();
+    openOverlay(itemsScreen);
+  });
   gachaBackBtn.addEventListener("click", closeOverlay);
   gachaViewAllBtn.addEventListener("click", () => {
     renderCollectionScreen();
@@ -3316,6 +3342,27 @@
           <div class="collection-grid">${tiles}</div>
         </div>`;
     }).join("");
+  }
+
+  // Display names only - deliberately leaves out OBJECTS[].mm (the whole
+  // point of this screen is "what can come up", not "how to rank them by
+  // size", so no sorting or labeling by size here).
+  function renderItemsScreen() {
+    const groups = {};
+    OBJECTS.forEach((obj) => {
+      const display = obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
+      const letter = display.charAt(0).toUpperCase();
+      (groups[letter] = groups[letter] || []).push(display);
+    });
+    const letters = Object.keys(groups).sort();
+    letters.forEach((letter) => groups[letter].sort((a, b) => a.localeCompare(b)));
+    itemsContentEl.innerHTML =
+      `<p class="items-intro">Every object that can come up in a round, A to Z.</p>` +
+      letters.map((letter) => `
+        <div class="items-letter-group">
+          <div class="items-letter-title">${letter}</div>
+          <div class="items-list">${groups[letter].map((name) => `<div class="items-row">${name}</div>`).join("")}</div>
+        </div>`).join("");
   }
 
   const GACHA_TIER_LABELS = { common: "COMMON", rare: "RARE", ultra: "ULTRA-RARE" };
