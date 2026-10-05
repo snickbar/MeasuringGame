@@ -1414,7 +1414,7 @@
   <button id="show-summary-btn" style="display:none;">Show summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
   <button id="play-again-btn" style="display:none;">Play again</button>
-  <button id="final-home-btn" style="display:none;">Back to home</button>
+  <button id="final-home-btn" style="display:none;">Finish game</button>
 </div>
 
 <div id="home-screen" class="screen active">
@@ -3751,11 +3751,15 @@
   function renderRecentRooms() {
     const rooms = loadRecentRooms();
     if (rooms.length === 0) { recentRoomsSection.style.display = "none"; return; }
-    recentRoomsSection.style.display = "block";
     recentRoomsListEl.innerHTML = "";
+    // Hidden by default and only shown once we've confirmed the room is
+    // still live - a finished-and-closed room shouldn't offer a Rejoin
+    // button at all, rather than offering one that just errors out.
+    recentRoomsSection.style.display = "none";
     rooms.forEach((r) => {
       const row = document.createElement("div");
       row.className = "recent-room-row";
+      row.style.display = "none";
       const label = document.createElement("span");
       label.textContent = r.code;
       const btn = document.createElement("button");
@@ -3764,6 +3768,13 @@
       row.appendChild(label);
       row.appendChild(btn);
       recentRoomsListEl.appendChild(row);
+      onValue(ref(db, `rooms/${r.code}/phase`), (snap) => {
+        const phase = snap.val();
+        if (phase !== null && phase !== "ended") {
+          row.style.display = "";
+          recentRoomsSection.style.display = "block";
+        }
+      }, { onlyOnce: true });
     });
   }
 
@@ -4290,6 +4301,7 @@
     });
     const data = snap.val();
     if (data === null) { nameAvatarStatusEl.textContent = "Room not found. Check the code."; return; }
+    if (data.phase === "ended") { nameAvatarStatusEl.textContent = "This game is over and the room is closed."; return; }
     // Final authoritative avatar-uniqueness check right before writing —
     // the live grid greying-out is just a preview and can race or be
     // bypassed (e.g. the recent-rooms "Rejoin" button skips it entirely).
@@ -4321,6 +4333,7 @@
     });
     const data = snap.val();
     if (data === null) { joinStatusEl.textContent = "Room not found."; return; }
+    if (data.phase === "ended") { joinStatusEl.textContent = "This game is over and the room is closed."; return; }
     // Same exclusion as the manual-join path above - a disconnected
     // same-named slot (almost always this exact rejoin's own stale entry)
     // is about to be reclaimed, not collided with.
@@ -4876,8 +4889,15 @@
       updates[`players/${id}/accuracyBonus`] = null;
       updates[`players/${id}/consecutiveWins`] = null;
     });
+    // Go through the same countdown phase a fresh game start uses, instead
+    // of jumping straight into round 1 - otherwise "Play again" skipped the
+    // "Round 1 starting in" beat entirely.
+    const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
+    updates.phase = "countdown";
+    updates.countdownRound = 1;
+    updates.countdownEndsAt = countdownEndsAt;
     await update(ref(db, `rooms/${roomCode}`), updates);
-    await startRound(roomCode, 1);
+    scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(roomCode));
   }
   playAgainBtn.addEventListener("click", () => playAgain(currentRoomCode));
 
@@ -4919,7 +4939,19 @@
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });
   endedReloadBtn.addEventListener("click", () => location.reload());
-  finalHomeBtn.addEventListener("click", () => location.reload());
+  // "Finish game" fully closes the room, not just this one client's view -
+  // it used to be a plain reload, which left the room (and this player's
+  // record in it) sitting in Firebase forever with phase still "final",
+  // which is exactly what let a stale "Rejoin last game" tap drop someone
+  // right back onto a long-finished results screen.
+  finalHomeBtn.addEventListener("click", async () => {
+    const roomCode = currentRoomCode;
+    await update(ref(db, `rooms/${roomCode}`), { phase: "ended" });
+    onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
+    await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
+    await maybeDeleteEmptyRoom(roomCode);
+    location.reload();
+  });
   leftReloadBtn.addEventListener("click", () => location.reload());
 
   function showLeftScreen(reason) {
