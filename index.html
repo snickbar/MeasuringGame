@@ -1619,8 +1619,8 @@
     <h3>Scoring</h3>
     <p>Only the single <b>closest guess</b> each round scores: +3 points normally, or +5 if it's within 0.9 of the exact answer. Everyone else gets 0 for that round, no matter how close they were.</p>
     <p><b>Second-chance bonus:</b> +1 for correctly picking the round's closest answer.</p>
-    <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top.</p>
-    <p><b>Crowd favorite:</b> +1 to whoever got the most second-chance picks that round, whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
+    <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top - as long as someone else guessed that round too, so it can't be earned for free in a solo practice game with no bots.</p>
+    <p><b>Crowd favorite:</b> +1 to whoever got 2 or more second-chance picks that round (whichever count is highest), whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
     <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
     <p>At the very end of the game, the top 3 players by <b>average guess accuracy</b> (how close their guesses ran to exactly 100% of the real answer, on average) get a one-time bonus: +10 / +6 / +3.</p>
   </div>
@@ -4673,8 +4673,11 @@
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
       // Flat bonus rather than doubling the round's own points - doubling
       // made one binary decision worth as much as an entire extra round
-      // (+3/+5 more on top of an already-scored win).
-      e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? 2 : 0;
+      // (+3/+5 more on top of an already-scored win). Also requires someone
+      // else to have actually guessed this round - otherwise "closest" is
+      // trivial (you're the only guesser) and the bonus would be free, like
+      // playing solo with no bots.
+      e.doubleDownPoints = (e.doubledOwn && e.isClosest && entries.length >= 2) ? 2 : 0;
       e.pickedBy = [];
       const prevStreak = (playersSnap[e.playerId] && playersSnap[e.playerId].consecutiveWins) || 0;
       e.consecutiveWins = e.isClosest ? prevStreak + 1 : 0;
@@ -4689,10 +4692,13 @@
     });
     // Crowd favorite: whoever got the most second-chance picks this round,
     // regardless of whether their answer was actually closest - rewards
-    // being trusted, not just being right. Ties (including 3+ way) all win it.
+    // being trusted, not just being right. Ties (including 3+ way) all win
+    // it. Requires at least 2 picks - a single pick is just one other
+    // player's opinion, not a "crowd" (and in a 2-person room, nobody could
+    // ever reach 2 picks, so it naturally never fires there).
     const maxPicks = Math.max(0, ...entries.map((e) => e.pickedBy.length));
     entries.forEach((e) => {
-      e.crowdFavoritePoints = (maxPicks > 0 && e.pickedBy.length === maxPicks) ? 1 : 0;
+      e.crowdFavoritePoints = (maxPicks >= 2 && e.pickedBy.length === maxPicks) ? 1 : 0;
     });
 
     const lastRoundPoints = {};
