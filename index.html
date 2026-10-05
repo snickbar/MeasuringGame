@@ -1619,7 +1619,8 @@
     <h3>Scoring</h3>
     <p>Only the single <b>closest guess</b> each round scores: +3 points normally, or +5 if it's within 0.9 of the exact answer. Everyone else gets 0 for that round, no matter how close they were.</p>
     <p><b>Second-chance bonus:</b> +1 for correctly picking the round's closest answer.</p>
-    <p><b>Double down:</b> if your own guess is the round's closest, doubling down doubles those points (an extra +3 or +5 on top).</p>
+    <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top.</p>
+    <p><b>Crowd favorite:</b> +1 to whoever got the most second-chance picks that round, whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
     <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
     <p>At the very end of the game, the top 3 players by <b>average guess accuracy</b> (how close their guesses ran to exactly 100% of the real answer, on average) get a one-time bonus: +10 / +6 / +3.</p>
   </div>
@@ -4670,7 +4671,10 @@
       const within09 = e.error <= 0.9;
       e.basePoints = e.isClosest ? (within09 ? 5 : 3) : 0;
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
-      e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? e.basePoints : 0;
+      // Flat bonus rather than doubling the round's own points - doubling
+      // made one binary decision worth as much as an entire extra round
+      // (+3/+5 more on top of an already-scored win).
+      e.doubleDownPoints = (e.doubledOwn && e.isClosest) ? 2 : 0;
       e.pickedBy = [];
       const prevStreak = (playersSnap[e.playerId] && playersSnap[e.playerId].consecutiveWins) || 0;
       e.consecutiveWins = e.isClosest ? prevStreak + 1 : 0;
@@ -4683,10 +4687,17 @@
         }
       }
     });
+    // Crowd favorite: whoever got the most second-chance picks this round,
+    // regardless of whether their answer was actually closest - rewards
+    // being trusted, not just being right. Ties (including 3+ way) all win it.
+    const maxPicks = Math.max(0, ...entries.map((e) => e.pickedBy.length));
+    entries.forEach((e) => {
+      e.crowdFavoritePoints = (maxPicks > 0 && e.pickedBy.length === maxPicks) ? 1 : 0;
+    });
 
     const lastRoundPoints = {};
     entries.forEach((e) => {
-      lastRoundPoints[e.playerId] = (lastRoundPoints[e.playerId] || 0) + e.basePoints + e.doubleDownPoints;
+      lastRoundPoints[e.playerId] = (lastRoundPoints[e.playerId] || 0) + e.basePoints + e.doubleDownPoints + e.crowdFavoritePoints;
     });
     entries.forEach((e) => {
       e.pickedBy.forEach((p) => {
@@ -5090,7 +5101,7 @@
     const displayed = {};
     Object.keys(finalScores).forEach((id) => { displayed[id] = finalScores[id] - (lastRoundPoints[id] || 0); });
     order.slice(0, revealIndex).forEach((entry) => {
-      displayed[entry.playerId] = (displayed[entry.playerId] || 0) + entry.basePoints + entry.doubleDownPoints;
+      displayed[entry.playerId] = (displayed[entry.playerId] || 0) + entry.basePoints + entry.doubleDownPoints + (entry.crowdFavoritePoints || 0);
       (entry.pickedBy || []).forEach((p) => { displayed[p.playerId] = (displayed[p.playerId] || 0) + p.points; });
     });
     return displayed;
@@ -5108,11 +5119,12 @@
       .reduce((s, p) => s + p.points, 0), 0);
   }
 
-  function ptsStackHtml(pts, bonus, isWinner) {
+  function ptsStackHtml(pts, bonus, isWinner, crowdBonus) {
     return `<div class="reveal-pts-stack">
       <div class="reveal-pts-badge${pts === 0 ? " zero" : ""}">+${pts}</div>
       ${isWinner ? `<div class="reveal-winner-label">Winner</div>` : ""}
       ${bonus > 0 ? `<div class="reveal-pts-badge">+${bonus}</div><div class="reveal-bonus-label">Second Chance Bonus</div>` : ""}
+      ${crowdBonus > 0 ? `<div class="reveal-pts-badge">+${crowdBonus}</div><div class="reveal-bonus-label">Crowd Favorite</div>` : ""}
     </div>`;
   }
 
@@ -5131,7 +5143,8 @@
       ? `<div class="streak-badge">\u{1F525} On Fire! x${entry.consecutiveWins}</div>`
       : "";
     const bonus = secondChanceBonusFor(entry.playerId, order);
-    const ptsStack = ptsStackHtml(pts, bonus, isWinner);
+    const crowdBonus = entry.crowdFavoritePoints || 0;
+    const ptsStack = ptsStackHtml(pts, bonus, isWinner, crowdBonus);
     if (isWinner) {
       return `<div class="card-inner ${containerClass}">
         <div class="winner-name-row"><span class="winner-avatar">${avatarHtml(avatar)}</span><span class="winner-name">${escapeHtml(entry.name)}</span></div>
@@ -5428,7 +5441,7 @@
     const entries = data.revealOrder || [];
     const sources = {};
     const bump = (id, key, amount) => {
-      if (!sources[id]) sources[id] = { closestGuess: 0, secondChance: 0, doubleDown: 0, spotOn: 0, perfect: false };
+      if (!sources[id]) sources[id] = { closestGuess: 0, secondChance: 0, doubleDown: 0, spotOn: 0, crowdFavorite: 0, perfect: false };
       sources[id][key] += amount;
     };
     entries.forEach((e) => {
@@ -5438,6 +5451,7 @@
         if (e.isPerfect) sources[e.playerId].perfect = true;
       }
       if (e.doubleDownPoints > 0) bump(e.playerId, "doubleDown", e.doubleDownPoints);
+      if (e.crowdFavoritePoints > 0) bump(e.playerId, "crowdFavorite", e.crowdFavoritePoints);
       (e.pickedBy || []).forEach((p) => bump(p.playerId, "secondChance", p.points));
     });
     const breakdown = {};
@@ -5447,6 +5461,7 @@
       if (s.closestGuess) chips.push({ label: "closest guess", amount: s.closestGuess });
       if (s.secondChance) chips.push({ label: "second chance", amount: s.secondChance });
       if (s.doubleDown) chips.push({ label: "double down", amount: s.doubleDown });
+      if (s.crowdFavorite) chips.push({ label: "crowd favorite", amount: s.crowdFavorite });
       if (s.spotOn) chips.push({ label: s.perfect ? "perfect!" : "spot on", amount: s.spotOn });
       breakdown[id] = chips;
     });
