@@ -4939,12 +4939,16 @@
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });
   endedReloadBtn.addEventListener("click", () => location.reload());
-  // "Finish game" fully closes the room, not just this one client's view -
-  // it used to be a plain reload, which left the room (and this player's
-  // record in it) sitting in Firebase forever with phase still "final",
-  // which is exactly what let a stale "Rejoin last game" tap drop someone
-  // right back onto a long-finished results screen.
+  // Host: "Finish game" fully closes the room, not just this one client's
+  // view - it used to be a plain reload, which left the room (and this
+  // player's record in it) sitting in Firebase forever with phase still
+  // "final", which is exactly what let a stale "Rejoin last game" tap drop
+  // someone right back onto a long-finished results screen.
+  // Guest: a guest can't close the room for everyone else, so their button
+  // just leaves (same as guestExit mid-game) - the room stays open for
+  // whoever's left, including the host potentially hitting Play Again.
   finalHomeBtn.addEventListener("click", async () => {
+    if (!isHost) { await guestExit(); return; }
     const roomCode = currentRoomCode;
     await update(ref(db, `rooms/${roomCode}`), { phase: "ended" });
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
@@ -5884,6 +5888,11 @@
     }
     if (phase !== "summary") nextRoundBtn.style.display = "none";
     finalHomeBtn.style.display = phase === "final" ? "block" : "none";
+    // Only the host can close the room for everyone - a guest's button
+    // does the same thing it always did (just leave, room stays open for
+    // whoever's left), so it keeps the old label instead of claiming to
+    // "finish" something it can't actually finish for the group.
+    finalHomeBtn.textContent = isHost ? "Finish game" : "Back to home";
     playAgainBtn.style.display = (phase === "final" && isHost) ? "block" : "none";
 
     // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
