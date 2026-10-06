@@ -679,6 +679,10 @@
   .hostmode-btn.selected { background: var(--red); color: #fff; opacity: 1; }
 
   .edit-preset-settings-btn { width: 100%; margin: 0 0 14px; }
+  .settings-signed-in-box { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+  .settings-signed-in-box p { flex: 1; min-width: 0; font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .settings-signed-in-box .edit-preset-settings-btn { width: auto; flex-shrink: 0; margin: 0; padding-inline: 16px; }
+  #settings-account-status { font-size: 13px; color: var(--text-muted); min-height: 1.2em; margin: -8px 0 14px; }
 
   /* ---- Preset slot buttons (Create screen = load, Preset-editing screen =
      save) - fixed-size regardless of label length, per the user's request,
@@ -1558,6 +1562,14 @@
 
   <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn">Edit Preset Game Settings</button>
 
+  <h3>Account</h3>
+  <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn" style="display:none;">Sign in with Google</button>
+  <div id="settings-signed-in-box" class="settings-signed-in-box" style="display:none;">
+    <p id="settings-signed-in-email"></p>
+    <button id="settings-sign-out-btn" type="button" class="edit-preset-settings-btn">Sign out</button>
+  </div>
+  <p id="settings-account-status"></p>
+
   <div id="settings-toggles-panel">
     <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
   </div>
@@ -1980,6 +1992,16 @@
   import {
     getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+  // Kept pinned to the exact same build as firebase-app/firebase-database above
+  // (not the newer version the native @capacitor-firebase/authentication plugin's
+  // own npm package wants) - these CDN modules only guarantee mutual
+  // compatibility when loaded at identical versions, and this page has no
+  // bundler to reconcile a mismatch. The npm "firebase" package in
+  // package.json is a separate thing, only used for the native plugin's own
+  // bundling; it never runs in this page.
+  import {
+    initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider, signInWithCredential, onAuthStateChanged, signOut as firebaseSignOut
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB3RTyL0yxNExF8SuoabHy5MDCcb8kG4X8",
@@ -1993,6 +2015,17 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  // ---- Google Sign-In (Android app only - see isNativeApp below) ----
+  // Account identity is intentionally independent of the game's existing
+  // simulated-purchase flows (host unlock, coin packs, emoji packs): signing
+  // in only changes WHICH profile record those unlocks get written to, never
+  // how they're granted.
+  const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  // initializeAuth (not plain getAuth) with indexedDBLocalPersistence is
+  // required for a signed-in session to survive a full app kill, not just
+  // backgrounding - must be called before any other getAuth() on this app.
+  const auth = isNativeApp ? initializeAuth(app, { persistence: indexedDBLocalPersistence }) : null;
 
   // ---- Server-synced clock: every client counts down from a shared deadline ----
   let serverTimeOffsetMs = 0;
@@ -2228,6 +2261,11 @@
     deviceId = generateDeviceId();
     localStorage.setItem("mg_deviceId", deviceId);
   }
+  // Holds the profile's own random local id permanently, separate from
+  // `deviceId` above (which gets reassigned to a signed-in Google account's
+  // uid once Sign-In is added) - sign-out needs to be able to point back at
+  // this device's own local progress rather than losing track of it.
+  const localDeviceId = deviceId;
 
   function defaultCosmeticState() {
     return {
@@ -2267,8 +2305,14 @@
     const coinCountEl = document.getElementById("toolbar-coin-count");
     if (coinCountEl) coinCountEl.textContent = cachedCoins > 9999 ? "9999+" : String(cachedCoins);
   }
+  // Set once watchMyProfile() has an active subscription - must be called
+  // (if set) before ever reassigning `deviceId` and re-subscribing, or
+  // signing in/out repeatedly stacks a new listener on the old path every
+  // time instead of replacing it.
+  let unwatchProfile = null;
   function watchMyProfile() {
-    onValue(ref(db, `profiles/${deviceId}`), (snap) => {
+    if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
+    unwatchProfile = onValue(ref(db, `profiles/${deviceId}`), (snap) => {
       const data = snap.val();
       if (!data) {
         myProfile = defaultProfile();
@@ -2497,6 +2541,96 @@
   }
 
   watchMyProfile();
+
+  // ==================== Google Sign-In (native app only) ====================
+  // Reuses the existing profiles/{id} collection - `deviceId` just points at
+  // a Firebase Auth uid instead of the local random id once signed in, so
+  // every one of the profile read/write sites above (which all read
+  // `deviceId` fresh at call-time) keeps working completely unchanged.
+  let accountUser = null; // the signed-in Firebase Auth user, or null
+
+  function renderAccountUi() {
+    if (!isNativeApp) return;
+    const signedIn = !!accountUser;
+    settingsSignInBtn.style.display = signedIn ? "none" : "block";
+    settingsSignOutBox.style.display = signedIn ? "flex" : "none";
+    if (signedIn) settingsSignedInEmailEl.textContent = accountUser.email || "your Google account";
+  }
+  renderAccountUi();
+
+  if (isNativeApp) {
+    onAuthStateChanged(auth, (user) => {
+      accountUser = user;
+      renderAccountUi();
+    });
+  }
+
+  async function signInWithGoogle() {
+    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
+    const result = await FirebaseAuthentication.signInWithGoogle();
+    const idToken = result.credential && result.credential.idToken;
+    if (!idToken) throw new Error("No ID token returned from Google sign-in");
+    // The plugin only signs in on the native layer by default - bridging
+    // that credential into the web SDK's own auth instance is required, or
+    // the Database SDK (which reads auth state from this same `app`) never
+    // sees auth.uid and every profile write gets rejected by the rules.
+    const credential = GoogleAuthProvider.credential(idToken);
+    const webResult = await signInWithCredential(auth, credential);
+    const uid = webResult.user.uid;
+
+    // One-time-per-pairing merge: claim this device's local progress into
+    // the account only if the account doesn't already have its own profile.
+    // If it does (e.g. this Google account signed in before, on another
+    // phone), leave it alone - account data wins. Safe to run on every
+    // sign-in: returning undefined when `current` already exists is a
+    // clean no-op transaction (no write, nothing changes).
+    const localSnap = await get(ref(db, `profiles/${localDeviceId}`));
+    const localProfileData = localSnap.val();
+    if (localProfileData) {
+      await runTransaction(ref(db, `profiles/${uid}`), (current) => {
+        if (current) return; // abort: account already has its own profile
+        return localProfileData;
+      });
+    }
+
+    deviceId = uid;
+    watchMyProfile();
+  }
+
+  async function signOutOfGoogle() {
+    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
+    await FirebaseAuthentication.signOut();
+    await firebaseSignOut(auth);
+    // Local progress was never touched or deleted - just point back at it.
+    deviceId = localDeviceId;
+    watchMyProfile();
+  }
+
+  if (isNativeApp) {
+    settingsSignInBtn.addEventListener("click", async () => {
+      settingsSignInBtn.disabled = true;
+      settingsAccountStatusEl.textContent = "Signing in...";
+      try {
+        await signInWithGoogle();
+        settingsAccountStatusEl.textContent = "";
+      } catch (err) {
+        console.error("[measuring-game] Google sign-in failed", err);
+        settingsAccountStatusEl.textContent = "Sign-in failed or cancelled.";
+      } finally {
+        settingsSignInBtn.disabled = false;
+      }
+    });
+    settingsSignOutBtn.addEventListener("click", async () => {
+      settingsSignOutBtn.disabled = true;
+      try {
+        await signOutOfGoogle();
+      } catch (err) {
+        console.error("[measuring-game] Google sign-out failed", err);
+      } finally {
+        settingsSignOutBtn.disabled = false;
+      }
+    });
+  }
 
   function avatarHtml(id, extraClass) {
     return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png" alt="" draggable="false">` : "";
@@ -2820,6 +2954,11 @@
   const gachaResultCloseBtn = document.getElementById("gacha-result-close-btn");
   const gachaBackBtn = document.getElementById("gacha-back-btn");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
+  const settingsSignInBtn = document.getElementById("settings-sign-in-btn");
+  const settingsSignOutBox = document.getElementById("settings-signed-in-box");
+  const settingsSignedInEmailEl = document.getElementById("settings-signed-in-email");
+  const settingsSignOutBtn = document.getElementById("settings-sign-out-btn");
+  const settingsAccountStatusEl = document.getElementById("settings-account-status");
   const settingsNameInput = document.getElementById("settings-name-input");
   const settingsAvatarGridEl = document.getElementById("settings-avatar-grid");
 
