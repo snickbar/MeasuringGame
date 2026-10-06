@@ -2000,7 +2000,7 @@
   // package.json is a separate thing, only used for the native plugin's own
   // bundling; it never runs in this page.
   import {
-    initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider, signInWithCredential, onAuthStateChanged, signOut as firebaseSignOut
+    initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, GoogleAuthProvider, signInWithCredential, onAuthStateChanged, signOut as firebaseSignOut
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -2025,7 +2025,21 @@
   // initializeAuth (not plain getAuth) with indexedDBLocalPersistence is
   // required for a signed-in session to survive a full app kill, not just
   // backgrounding - must be called before any other getAuth() on this app.
-  const auth = isNativeApp ? initializeAuth(app, { persistence: indexedDBLocalPersistence }) : null;
+  // A fallback list (rather than indexedDBLocalPersistence alone) and a
+  // try/catch around the whole thing are deliberate: this runs this early,
+  // synchronously, before literally anything else in the script sets up -
+  // if it ever throws unguarded, it silently kills the entire script before
+  // a single button's click handler attaches, exactly like the coin-cache
+  // priming bug earlier in this project's history. Sign-in simply not
+  // working is an acceptable failure mode; the whole app not working is not.
+  let auth = null;
+  if (isNativeApp) {
+    try {
+      auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence] });
+    } catch (err) {
+      console.error("[measuring-game] Firebase Auth init failed - Google Sign-In will be unavailable", err);
+    }
+  }
 
   // ---- Server-synced clock: every client counts down from a shared deadline ----
   let serverTimeOffsetMs = 0;
@@ -2558,7 +2572,7 @@
   }
   renderAccountUi();
 
-  if (isNativeApp) {
+  if (auth) {
     onAuthStateChanged(auth, (user) => {
       accountUser = user;
       renderAccountUi();
