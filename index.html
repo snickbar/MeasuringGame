@@ -265,26 +265,63 @@
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: .06em;
     color: #8a5c4e; text-transform: uppercase; margin-bottom: 8px;
   }
+  /* Warm brand-brown ladder instead of the old pink pill - each tier's
+     button gets a little richer/brighter than the last, ending in gold for
+     the best-value pack, so the button colors reinforce the same hierarchy
+     the ribbons/card colors already set up rather than looking identical. */
   .coin-pack-buy-btn {
     width: 100%; margin-top: auto; color: #fff; border: none; border-radius: 999px;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; padding: 9px 4px;
-    background: linear-gradient(180deg, #ea847c 0%, #d8736f 100%);
+    background: linear-gradient(180deg, #c98a52 0%, #a05e32 100%);
     box-shadow: 0 2px 4px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.35);
+    text-shadow: 0 1px 1px rgba(0,0,0,.2);
   }
   .coin-pack-buy-btn:disabled { opacity: .45; filter: grayscale(.3); }
+  .coin-pack-card.popular .coin-pack-buy-btn { background: linear-gradient(180deg, #ff9f4d 0%, #e07a1a 100%); }
+  .coin-pack-card.best-value .coin-pack-buy-btn { background: linear-gradient(180deg, #ffd54f 0%, #f0a825 100%); color: #4a2800; text-shadow: none; }
+
+  /* Host unlock: the single most important purchase on this tab (it's what
+     lets you actually host real games with friends), so it gets the
+     strongest treatment of anything here - top of the list, vivid sunset
+     gradient + gold trim, shine overlay, and its own glow-pulse. */
   .host-unlock-shop-box {
-    margin-top: 14px; padding: 16px; border-radius: 18px;
-    background: linear-gradient(180deg, #e9988b 0%, #de7b74 100%);
+    position: relative; overflow: hidden;
+    margin-bottom: 14px; padding: 18px 16px 16px; border-radius: 20px;
+    background: linear-gradient(145deg, #ff8f5c 0%, #e8521f 100%);
     color: #fff; text-align: left;
+    border: 2px solid #ffd54f;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    animation: hostUnlockGlow 2.2s ease-in-out infinite;
   }
-  .host-unlock-top-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-  .host-unlock-icon { width: 68px; height: 68px; flex-shrink: 0; object-fit: contain; }
+  .host-unlock-shop-box::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 25% -10%, rgba(255,255,255,.45), transparent 55%);
+  }
+  @keyframes hostUnlockGlow {
+    0%, 100% { box-shadow: 0 4px 12px rgba(0,0,0,.2), 0 0 0 0 rgba(255,213,79,.55); }
+    50% { box-shadow: 0 4px 12px rgba(0,0,0,.2), 0 0 0 8px rgba(255,213,79,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .host-unlock-shop-box { animation: none; }
+  }
+  .host-unlock-ribbon {
+    position: relative; display: inline-block; margin-bottom: 10px; padding: 4px 12px; border-radius: 999px;
+    background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2800;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: .05em;
+    box-shadow: 0 2px 4px rgba(0,0,0,.2);
+  }
+  .host-unlock-top-row { position: relative; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .host-unlock-icon { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
   .host-unlock-text { flex: 1; min-width: 0; }
-  .host-unlock-shop-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #fff; text-shadow: none; }
+  .host-unlock-shop-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
   .host-unlock-shop-box p { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.4; color: #fff; }
-  .host-unlock-shop-box .coin-pack-buy-btn { border: 3px solid #fcd783; }
-  .host-unlock-shop-box.unlocked { background: #a5d6a7; }
-  .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; }
+  .host-unlock-shop-box .coin-pack-buy-btn {
+    position: relative; border: 3px solid #fff; font-size: 13px; padding: 11px 4px;
+    background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2800; text-shadow: none;
+  }
+  .host-unlock-shop-box.unlocked { background: #a5d6a7; border-color: transparent; animation: none; }
+  .host-unlock-shop-box.unlocked .host-unlock-ribbon { display: none; }
+  .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; text-shadow: none; }
   .host-unlock-shop-box.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; }
   .emoji-pack-preview { width: 70px; flex-shrink: 0; font-size: 20px; line-height: 1.4; text-align: center; }
   #shop-tabs { display: flex; gap: 6px; margin: 10px 56px 4px 0; flex-shrink: 0; height: 52px; }
@@ -1484,6 +1521,18 @@
     <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
 
     <div id="coin-acquire-panel">
+      <div id="host-unlock-shop-box" class="host-unlock-shop-box">
+        <span class="host-unlock-ribbon">&#128081; UNLOCK TO HOST</span>
+        <div class="host-unlock-top-row">
+          <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
+          <div class="host-unlock-text">
+            <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
+            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
+          </div>
+        </div>
+        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $2.99 &middot; One time</button>
+      </div>
+
       <div id="ad-reward-card" class="shop-hero-card">
         <span class="shop-hero-badge">&#127916; Free Coins</span>
         <img class="shop-hero-icon" src="icons/shop-coin-reward.png" alt="">
@@ -1516,17 +1565,6 @@
           <div class="coin-pack-label">Coins</div>
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
-      </div>
-
-      <div id="host-unlock-shop-box" class="host-unlock-shop-box">
-        <div class="host-unlock-top-row">
-          <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
-          <div class="host-unlock-text">
-            <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
-            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
-          </div>
-        </div>
-        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $2.99 &middot; One time</button>
       </div>
     </div>
   </div>
