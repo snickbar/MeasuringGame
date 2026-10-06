@@ -251,6 +251,7 @@
   .host-unlock-shop-box.unlocked { background: #a5d6a7; }
   .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; }
   .host-unlock-shop-box.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; }
+  .emoji-pack-preview { width: 70px; flex-shrink: 0; font-size: 20px; line-height: 1.4; text-align: center; }
   #shop-tabs { display: flex; gap: 6px; margin: 10px 56px 4px 0; flex-shrink: 0; height: 52px; }
   .shop-tab-btn {
     flex: 1; width: auto; height: 100%; margin: 0; padding: 0; border: none; background: none;
@@ -1525,6 +1526,7 @@
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
+    <div id="emoji-pack-list"></div>
     <div class="coming-soon-box">
       <p class="coming-soon-title">Coming Soon</p>
       <p class="coming-soon-sub">Card borders, win effects, and name colors are on the way.</p>
@@ -2242,6 +2244,7 @@
       adsWatchedCount: 0,
       cosmetics: defaultCosmeticState(),
       presets: {},
+      emojiPacks: {},
     };
   }
   let myProfile = defaultProfile();
@@ -2287,6 +2290,7 @@
             equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
           },
           presets: { ...(data.presets || {}) },
+          emojiPacks: { ...(data.emojiPacks || {}) },
         };
       }
       renderCoinBalance();
@@ -2296,6 +2300,7 @@
       renderWatchAdStatus();
       renderHostUnlockUi();
       renderCosmeticsShop();
+      renderEmojiPackShop();
       renderPresetSlotButtons();
     });
   }
@@ -2414,6 +2419,43 @@
     renderCosmeticCategory("borders");
     renderCosmeticCategory("effects");
     renderCosmeticCategory("colors");
+  }
+
+  // TEMP: same simulated-purchase pattern as the host-unlock button below -
+  // no real payment yet, just proves out the unlock + persistence end to
+  // end. Swap the button handler's body for the real purchase call once
+  // billing is wired up. Packs are a one-time bundle unlock (own it or
+  // don't), not coin-priced like the single-equip cosmetics above - more
+  // packs just get appended here.
+  const EMOJI_PACK_CATALOG = [
+    { id: "pack1", label: "Emoji Pack 1", price: "$2.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
+  ];
+  const emojiPackListEl = document.getElementById("emoji-pack-list");
+  function renderEmojiPackShop() {
+    if (!emojiPackListEl) return;
+    const owned = myProfile.emojiPacks || {};
+    emojiPackListEl.innerHTML = "";
+    EMOJI_PACK_CATALOG.forEach((pack) => {
+      const isOwned = !!owned[pack.id];
+      const box = document.createElement("div");
+      box.className = "host-unlock-shop-box" + (isOwned ? " unlocked" : "");
+      box.innerHTML = `
+        <div class="host-unlock-top-row">
+          <div class="emoji-pack-preview">${pack.emojis.join(" ")}</div>
+          <div class="host-unlock-text">
+            <h3>${pack.label}</h3>
+            <p>${pack.emojis.length} new reactions to use in-game.</p>
+          </div>
+        </div>
+        <button type="button" class="coin-pack-buy-btn"${isOwned ? " disabled" : ""}>${isOwned ? "&#10003; Unlocked" : `Unlock for ${pack.price} &middot; One time`}</button>
+      `;
+      if (!isOwned) {
+        box.querySelector(".coin-pack-buy-btn").addEventListener("click", async () => {
+          await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
+        });
+      }
+      emojiPackListEl.appendChild(box);
+    });
   }
 
   function pickGachaResult() {
