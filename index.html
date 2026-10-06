@@ -2556,96 +2556,6 @@
 
   watchMyProfile();
 
-  // ==================== Google Sign-In (native app only) ====================
-  // Reuses the existing profiles/{id} collection - `deviceId` just points at
-  // a Firebase Auth uid instead of the local random id once signed in, so
-  // every one of the profile read/write sites above (which all read
-  // `deviceId` fresh at call-time) keeps working completely unchanged.
-  let accountUser = null; // the signed-in Firebase Auth user, or null
-
-  function renderAccountUi() {
-    if (!isNativeApp) return;
-    const signedIn = !!accountUser;
-    settingsSignInBtn.style.display = signedIn ? "none" : "block";
-    settingsSignOutBox.style.display = signedIn ? "flex" : "none";
-    if (signedIn) settingsSignedInEmailEl.textContent = accountUser.email || "your Google account";
-  }
-  renderAccountUi();
-
-  if (auth) {
-    onAuthStateChanged(auth, (user) => {
-      accountUser = user;
-      renderAccountUi();
-    });
-  }
-
-  async function signInWithGoogle() {
-    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
-    const result = await FirebaseAuthentication.signInWithGoogle();
-    const idToken = result.credential && result.credential.idToken;
-    if (!idToken) throw new Error("No ID token returned from Google sign-in");
-    // The plugin only signs in on the native layer by default - bridging
-    // that credential into the web SDK's own auth instance is required, or
-    // the Database SDK (which reads auth state from this same `app`) never
-    // sees auth.uid and every profile write gets rejected by the rules.
-    const credential = GoogleAuthProvider.credential(idToken);
-    const webResult = await signInWithCredential(auth, credential);
-    const uid = webResult.user.uid;
-
-    // One-time-per-pairing merge: claim this device's local progress into
-    // the account only if the account doesn't already have its own profile.
-    // If it does (e.g. this Google account signed in before, on another
-    // phone), leave it alone - account data wins. Safe to run on every
-    // sign-in: returning undefined when `current` already exists is a
-    // clean no-op transaction (no write, nothing changes).
-    const localSnap = await get(ref(db, `profiles/${localDeviceId}`));
-    const localProfileData = localSnap.val();
-    if (localProfileData) {
-      await runTransaction(ref(db, `profiles/${uid}`), (current) => {
-        if (current) return; // abort: account already has its own profile
-        return localProfileData;
-      });
-    }
-
-    deviceId = uid;
-    watchMyProfile();
-  }
-
-  async function signOutOfGoogle() {
-    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
-    await FirebaseAuthentication.signOut();
-    await firebaseSignOut(auth);
-    // Local progress was never touched or deleted - just point back at it.
-    deviceId = localDeviceId;
-    watchMyProfile();
-  }
-
-  if (isNativeApp) {
-    settingsSignInBtn.addEventListener("click", async () => {
-      settingsSignInBtn.disabled = true;
-      settingsAccountStatusEl.textContent = "Signing in...";
-      try {
-        await signInWithGoogle();
-        settingsAccountStatusEl.textContent = "";
-      } catch (err) {
-        console.error("[measuring-game] Google sign-in failed", err);
-        settingsAccountStatusEl.textContent = "Sign-in failed or cancelled.";
-      } finally {
-        settingsSignInBtn.disabled = false;
-      }
-    });
-    settingsSignOutBtn.addEventListener("click", async () => {
-      settingsSignOutBtn.disabled = true;
-      try {
-        await signOutOfGoogle();
-      } catch (err) {
-        console.error("[measuring-game] Google sign-out failed", err);
-      } finally {
-        settingsSignOutBtn.disabled = false;
-      }
-    });
-  }
-
   function avatarHtml(id, extraClass) {
     return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png" alt="" draggable="false">` : "";
   }
@@ -2973,6 +2883,104 @@
   const settingsSignedInEmailEl = document.getElementById("settings-signed-in-email");
   const settingsSignOutBtn = document.getElementById("settings-sign-out-btn");
   const settingsAccountStatusEl = document.getElementById("settings-account-status");
+
+  // ==================== Google Sign-In (native app only) ====================
+  // Reuses the existing profiles/{id} collection - `deviceId` just points at
+  // a Firebase Auth uid instead of the local random id once signed in, so
+  // every one of the profile read/write sites above (which all read
+  // `deviceId` fresh at call-time) keeps working completely unchanged.
+  // Deliberately placed here, AFTER the settings-sign-in-btn etc. DOM refs
+  // just above - calling renderAccountUi() (which touches those refs) any
+  // earlier in the script than their own `const` declarations throws a
+  // temporal-dead-zone ReferenceError that kills the entire remaining
+  // script before a single button's click handler attaches. This is the
+  // same class of bug as the coin-cache priming incident earlier in this
+  // project's history, just with a different variable.
+  let accountUser = null; // the signed-in Firebase Auth user, or null
+
+  function renderAccountUi() {
+    if (!isNativeApp) return;
+    const signedIn = !!accountUser;
+    settingsSignInBtn.style.display = signedIn ? "none" : "block";
+    settingsSignOutBox.style.display = signedIn ? "flex" : "none";
+    if (signedIn) settingsSignedInEmailEl.textContent = accountUser.email || "your Google account";
+  }
+  renderAccountUi();
+
+  if (auth) {
+    onAuthStateChanged(auth, (user) => {
+      accountUser = user;
+      renderAccountUi();
+    });
+  }
+
+  async function signInWithGoogle() {
+    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
+    const result = await FirebaseAuthentication.signInWithGoogle();
+    const idToken = result.credential && result.credential.idToken;
+    if (!idToken) throw new Error("No ID token returned from Google sign-in");
+    // The plugin only signs in on the native layer by default - bridging
+    // that credential into the web SDK's own auth instance is required, or
+    // the Database SDK (which reads auth state from this same `app`) never
+    // sees auth.uid and every profile write gets rejected by the rules.
+    const credential = GoogleAuthProvider.credential(idToken);
+    const webResult = await signInWithCredential(auth, credential);
+    const uid = webResult.user.uid;
+
+    // One-time-per-pairing merge: claim this device's local progress into
+    // the account only if the account doesn't already have its own profile.
+    // If it does (e.g. this Google account signed in before, on another
+    // phone), leave it alone - account data wins. Safe to run on every
+    // sign-in: returning undefined when `current` already exists is a
+    // clean no-op transaction (no write, nothing changes).
+    const localSnap = await get(ref(db, `profiles/${localDeviceId}`));
+    const localProfileData = localSnap.val();
+    if (localProfileData) {
+      await runTransaction(ref(db, `profiles/${uid}`), (current) => {
+        if (current) return; // abort: account already has its own profile
+        return localProfileData;
+      });
+    }
+
+    deviceId = uid;
+    watchMyProfile();
+  }
+
+  async function signOutOfGoogle() {
+    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
+    await FirebaseAuthentication.signOut();
+    await firebaseSignOut(auth);
+    // Local progress was never touched or deleted - just point back at it.
+    deviceId = localDeviceId;
+    watchMyProfile();
+  }
+
+  if (isNativeApp) {
+    settingsSignInBtn.addEventListener("click", async () => {
+      settingsSignInBtn.disabled = true;
+      settingsAccountStatusEl.textContent = "Signing in...";
+      try {
+        await signInWithGoogle();
+        settingsAccountStatusEl.textContent = "";
+      } catch (err) {
+        console.error("[measuring-game] Google sign-in failed", err);
+        settingsAccountStatusEl.textContent = "Sign-in failed or cancelled.";
+      } finally {
+        settingsSignInBtn.disabled = false;
+      }
+    });
+    settingsSignOutBtn.addEventListener("click", async () => {
+      settingsSignOutBtn.disabled = true;
+      try {
+        await signOutOfGoogle();
+      } catch (err) {
+        console.error("[measuring-game] Google sign-out failed", err);
+      } finally {
+        settingsSignOutBtn.disabled = false;
+      }
+    });
+  }
+
   const settingsNameInput = document.getElementById("settings-name-input");
   const settingsAvatarGridEl = document.getElementById("settings-avatar-grid");
 
