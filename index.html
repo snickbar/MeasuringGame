@@ -200,32 +200,67 @@
   }
   #coin-acquire-panel { margin: 0 0 12px; }
   .shop-hero-card {
-    text-align: center; padding: 18px 16px 16px; border-radius: 20px;
-    background: linear-gradient(180deg, #fcf3e0 0%, #fceada 100%);
-    box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    position: relative; overflow: hidden; text-align: center; padding: 18px 16px 16px; border-radius: 20px;
+    background: linear-gradient(180deg, #fff3da 0%, #fcdfc2 100%);
+    box-shadow: 0 3px 8px rgba(0,0,0,.12);
+  }
+  /* Soft diagonal shine, same trick used on gacha/premium cards elsewhere -
+     a cheap way to make a flat gradient card feel like it's catching light. */
+  .shop-hero-card::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 50% -15%, rgba(255,255,255,.65), transparent 55%);
   }
   .shop-hero-badge {
-    display: inline-block; padding: 5px 16px; border-radius: 999px;
-    background: #fad2bd; color: #4a1f17;
+    position: relative; display: inline-block; padding: 5px 16px; border-radius: 999px;
+    background: linear-gradient(180deg, #8fd66f 0%, #5fb844 100%); color: #fff;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .03em;
+    box-shadow: 0 2px 4px rgba(0,0,0,.18);
   }
-  .shop-hero-amount { margin-top: 8px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #3a1812; }
-  .shop-hero-icon { width: 110px; height: auto; margin: 10px auto; display: block; }
+  .shop-hero-amount {
+    position: relative; margin-top: 6px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 32px;
+    color: #c97a1a; text-shadow: 0 2px 0 rgba(255,255,255,.7);
+  }
+  .shop-hero-icon { position: relative; width: 108px; height: auto; margin: 6px auto; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,.18)); }
   .shop-hero-meta-row {
-    display: flex; justify-content: space-between; margin: 4px 2px 14px;
+    position: relative; display: flex; justify-content: space-between; margin: 4px 2px 14px;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .02em;
     color: #8a5c4e; text-transform: uppercase;
   }
-  #watch-ad-status { color: #8a5c4e; min-height: 1.2em; }
-  #coin-pack-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  #watch-ad-status { color: #c9542f; font-weight: 800; min-height: 1.2em; }
+  .ad-reward-btn { background: linear-gradient(180deg, #7bce5a 0%, #58a83c 100%) !important; }
+  #coin-pack-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
   .coin-pack-card {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
     padding: 14px 4px 10px; border-radius: 18px;
     background: linear-gradient(180deg, #f8c6a9 0%, #f4b799 100%);
     box-shadow: 0 2px 5px rgba(0,0,0,.08);
+    border: 2px solid transparent;
   }
-  .coin-pack-icon { width: 56px; height: 56px; object-fit: contain; margin-bottom: 4px; }
-  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #44150d; }
+  .coin-pack-ribbon {
+    position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 8.5px; letter-spacing: .04em;
+    color: #fff; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    background: linear-gradient(180deg, #ff9a6a 0%, #e8653f 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,.25);
+  }
+  .coin-pack-card.popular { background: linear-gradient(180deg, #ffcf85 0%, #f7ab52 100%); }
+  .coin-pack-card.best-value {
+    background: linear-gradient(180deg, #ffe08a 0%, #f4a93d 100%);
+    border-color: #fff176;
+    box-shadow: 0 4px 10px rgba(0,0,0,.2);
+    animation: coinPackGlow 2s ease-in-out infinite;
+  }
+  .coin-pack-card.best-value .coin-pack-ribbon { background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2a00; }
+  @keyframes coinPackGlow {
+    0%, 100% { box-shadow: 0 4px 10px rgba(0,0,0,.2), 0 0 0 0 rgba(249,168,37,.5); }
+    50% { box-shadow: 0 4px 10px rgba(0,0,0,.2), 0 0 0 7px rgba(249,168,37,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .coin-pack-card.best-value { animation: none; }
+  }
+  .coin-pack-icon { width: 56px; height: 56px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
+  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px; color: #44150d; }
+  .coin-pack-card.best-value .coin-pack-amount { font-size: 22px; color: #522900; }
   .coin-pack-label {
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: .06em;
     color: #8a5c4e; text-transform: uppercase; margin-bottom: 8px;
@@ -234,7 +269,7 @@
     width: 100%; margin-top: auto; color: #fff; border: none; border-radius: 999px;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; padding: 9px 4px;
     background: linear-gradient(180deg, #ea847c 0%, #d8736f 100%);
-    box-shadow: 0 2px 4px rgba(0,0,0,.15);
+    box-shadow: 0 2px 4px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.35);
   }
   .coin-pack-buy-btn:disabled { opacity: .45; filter: grayscale(.3); }
   .host-unlock-shop-box {
@@ -1450,14 +1485,14 @@
 
     <div id="coin-acquire-panel">
       <div id="ad-reward-card" class="shop-hero-card">
-        <span class="shop-hero-badge">Ad Reward</span>
-        <div class="shop-hero-amount">+50 Coins</div>
+        <span class="shop-hero-badge">&#127916; Free Coins</span>
         <img class="shop-hero-icon" src="icons/shop-coin-reward.png" alt="">
+        <div class="shop-hero-amount">+50 Coins</div>
         <div class="shop-hero-meta-row">
           <span>Daily Ad Offer</span>
           <span id="watch-ad-status"></span>
         </div>
-        <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn">Watch Ad</button>
+        <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn ad-reward-btn">Watch Ad</button>
       </div>
 
       <div id="coin-pack-row">
@@ -1467,13 +1502,15 @@
           <div class="coin-pack-label">Coins</div>
           <button type="button" class="coin-pack-buy-btn" data-coins="500">$1.99 &middot; Buy Now</button>
         </div>
-        <div class="coin-pack-card">
+        <div class="coin-pack-card popular">
+          <span class="coin-pack-ribbon">POPULAR</span>
           <img class="coin-pack-icon" src="icons/shop-coin-pile-1200.png" alt="">
           <div class="coin-pack-amount">1,200</div>
           <div class="coin-pack-label">Coins</div>
           <button type="button" class="coin-pack-buy-btn" data-coins="1200">$3.99 &middot; Buy Now</button>
         </div>
-        <div class="coin-pack-card">
+        <div class="coin-pack-card best-value">
+          <span class="coin-pack-ribbon">BEST VALUE</span>
           <img class="coin-pack-icon" src="icons/shop-treasure-chest-3000.png" alt="">
           <div class="coin-pack-amount">3,000</div>
           <div class="coin-pack-label">Coins</div>
