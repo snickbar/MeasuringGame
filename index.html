@@ -1684,7 +1684,7 @@
     <h3>Host settings</h3>
     <p>All chosen once, up front, before the room is created:</p>
     <p><b>If host disconnects</b> - "Give another player host" auto-hands host duties to whoever's been in the room longest if you drop; "Save my host spot" holds your spot so rejoining under the same name gets it back.</p>
-    <p><b>Timer</b> - how many seconds each round's guessing phase lasts. <b>Rounds</b> - how many rounds the game runs. <b>Second-chance scoring</b> - turns on the pick/double-down phase after guesses lock (see below). <b>Bots use second chances</b> - lets bots join in on that phase too. <b>Item selection</b> - see next section.</p>
+    <p><b>Timer</b> - how many seconds each round's guessing phase lasts. <b>Rounds</b> - how many rounds the game runs. <b>Item selection</b> - see next section.</p>
   </div>
 
   <div class="howto-section">
@@ -1763,11 +1763,6 @@
       </label>
     </div>
     <div class="settings-group">
-      <div class="settings-eyebrow">Scoring</div>
-      <label>Second-chance scoring <button id="setting-secondchance" type="button" class="text-toggle-btn"></button></label>
-      <label>Bots use second chances <button id="setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
-    </div>
-    <div class="settings-group">
       <div class="settings-eyebrow">Gameplay</div>
       <label class="settings-row-stack">Item selection
         <span class="itemmode-row">
@@ -1827,11 +1822,6 @@
           <button type="button" class="stepper-btn plus" data-for="preset-setting-rounds" data-step="1">+</button>
         </span>
       </label>
-    </div>
-    <div class="settings-group">
-      <div class="settings-eyebrow">Scoring</div>
-      <label>Second-chance scoring <button id="preset-setting-secondchance" type="button" class="text-toggle-btn"></button></label>
-      <label>Bots use second chances <button id="preset-setting-bots-secondchance" type="button" class="text-toggle-btn"></button></label>
     </div>
     <div class="settings-group">
       <div class="settings-eyebrow">Gameplay</div>
@@ -3072,8 +3062,6 @@
 
   const settingTimerInput = document.getElementById("setting-timer");
   const settingRoundsInput = document.getElementById("setting-rounds");
-  const settingSecondChanceInput = document.getElementById("setting-secondchance");
-  const settingBotsSecondChanceInput = document.getElementById("setting-bots-secondchance");
   const settingItemAnythingInput = document.getElementById("setting-item-anything");
   const settingItemRelativeInput = document.getElementById("setting-item-relative");
   const settingAutoAdvanceAutoInput = document.getElementById("setting-auto-advance-auto");
@@ -3144,8 +3132,6 @@
   const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
   const presetSettingTimerInput = document.getElementById("preset-setting-timer");
   const presetSettingRoundsInput = document.getElementById("preset-setting-rounds");
-  const presetSettingSecondChanceInput = document.getElementById("preset-setting-secondchance");
-  const presetSettingBotsSecondChanceInput = document.getElementById("preset-setting-bots-secondchance");
   const presetSettingItemAnythingInput = document.getElementById("preset-setting-item-anything");
   const presetSettingItemRelativeInput = document.getElementById("preset-setting-item-relative");
   const presetSettingAutoAdvanceAutoInput = document.getElementById("preset-setting-auto-advance-auto");
@@ -3248,7 +3234,7 @@
   let isHost = false;
   let currentPlayers = {};
   let renderedPlayerListIds = new Set();
-  let currentSettings = { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, itemSelectionMode: "anything" };
+  let currentSettings = { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything" };
   let roomState = {};
 
   let currentGuessStr = "";
@@ -3332,7 +3318,7 @@
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, secondChanceEnabled: true, totalRounds: 5, botsSecondChance: true, itemSelectionMode: "anything", autoAdvanceEnabled: true, autoAdvanceSeconds: 3 };
+    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: true, autoAdvanceSeconds: 3 };
   }
 
   // ==================== Home screen ====================
@@ -4177,9 +4163,6 @@
     const s = currentSettings;
     if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
-    settingSecondChanceInput.classList.toggle("is-on", !!s.secondChanceEnabled);
-    settingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
-    settingBotsSecondChanceInput.disabled = !s.secondChanceEnabled;
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
     settingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
     settingAutoAdvanceAutoInput.classList.toggle("selected", !!s.autoAdvanceEnabled);
@@ -4209,15 +4192,6 @@
   });
   settingRoundsInput.addEventListener("change", () => {
     currentSettings.totalRounds = Math.max(1, Math.min(20, parseInt(settingRoundsInput.value, 10) || 5));
-    renderLocalSettingsPanel();
-  });
-  settingSecondChanceInput.addEventListener("click", () => {
-    currentSettings.secondChanceEnabled = !settingSecondChanceInput.classList.contains("is-on");
-    renderLocalSettingsPanel();
-  });
-  settingBotsSecondChanceInput.addEventListener("click", () => {
-    if (settingBotsSecondChanceInput.disabled) return;
-    currentSettings.botsSecondChance = !settingBotsSecondChanceInput.classList.contains("is-on");
     renderLocalSettingsPanel();
   });
   [settingItemAnythingInput, settingItemRelativeInput].forEach((btn) => {
@@ -4250,9 +4224,6 @@
     const s = presetEditSettings;
     if (document.activeElement !== presetSettingTimerInput) presetSettingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== presetSettingRoundsInput) presetSettingRoundsInput.value = s.totalRounds;
-    presetSettingSecondChanceInput.classList.toggle("is-on", !!s.secondChanceEnabled);
-    presetSettingBotsSecondChanceInput.classList.toggle("is-on", !!s.botsSecondChance);
-    presetSettingBotsSecondChanceInput.disabled = !s.secondChanceEnabled;
     presetSettingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
     presetSettingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
     presetSettingAutoAdvanceAutoInput.classList.toggle("selected", !!s.autoAdvanceEnabled);
@@ -4280,15 +4251,6 @@
   });
   presetSettingRoundsInput.addEventListener("change", () => {
     presetEditSettings.totalRounds = Math.max(1, Math.min(20, parseInt(presetSettingRoundsInput.value, 10) || 5));
-    renderPresetEditPanel();
-  });
-  presetSettingSecondChanceInput.addEventListener("click", () => {
-    presetEditSettings.secondChanceEnabled = !presetSettingSecondChanceInput.classList.contains("is-on");
-    renderPresetEditPanel();
-  });
-  presetSettingBotsSecondChanceInput.addEventListener("click", () => {
-    if (presetSettingBotsSecondChanceInput.disabled) return;
-    presetEditSettings.botsSecondChance = !presetSettingBotsSecondChanceInput.classList.contains("is-on");
     renderPresetEditPanel();
   });
   [presetSettingItemAnythingInput, presetSettingItemRelativeInput].forEach((btn) => {
@@ -4732,8 +4694,7 @@
         if (data.currentQuestion) scheduleBotGuesses(roomCode, data.currentQuestion);
       } else if (data.phase === "answers") {
         if (data.answersEndsAt) scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
-        const settings = data.settings || currentSettings;
-        if (settings.botsSecondChance && data.answers) scheduleBotPicks(roomCode, data.answers);
+        if (data.answers) scheduleBotPicks(roomCode, data.answers);
       }
     }
   }
@@ -4976,21 +4937,17 @@
   }
 
   async function lockQuestionAndAdvance(roomCode, activeIds, guesses) {
-    const settings = roomState.settings || currentSettings;
-    if (settings.secondChanceEnabled) {
-      const sorted = activeIds
-        .filter((id) => guesses[id] !== undefined)
-        .map((id) => ({ playerId: id, value: guesses[id] }))
-        .sort((a, b) => a.value - b.value)
-        .map((e, i) => ({ slot: i, playerId: e.playerId, value: e.value }));
-      const answersEndsAt = nowMs() + 10000;
-      console.log("[measuring-game] question locked, entering answers phase", sorted);
-      await update(ref(db, `rooms/${roomCode}`), { answers: sorted, answersEndsAt, phase: "answers" });
-      scheduleHostDeadline(answersEndsAt, () => checkAnswersAdvance(roomCode));
-      if (settings.botsSecondChance) scheduleBotPicks(roomCode, sorted);
-    } else {
-      await finishRoundScoring(roomCode, activeIds, guesses, {});
-    }
+    // Second chances are always on, and bots always take part in them.
+    const sorted = activeIds
+      .filter((id) => guesses[id] !== undefined)
+      .map((id) => ({ playerId: id, value: guesses[id] }))
+      .sort((a, b) => a.value - b.value)
+      .map((e, i) => ({ slot: i, playerId: e.playerId, value: e.value }));
+    const answersEndsAt = nowMs() + 10000;
+    console.log("[measuring-game] question locked, entering answers phase", sorted);
+    await update(ref(db, `rooms/${roomCode}`), { answers: sorted, answersEndsAt, phase: "answers" });
+    scheduleHostDeadline(answersEndsAt, () => checkAnswersAdvance(roomCode));
+    scheduleBotPicks(roomCode, sorted);
   }
 
   function checkAnswersAdvance(roomCode) {
