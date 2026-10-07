@@ -218,6 +218,106 @@ function visualOf(o) {
   };
 }
 
+// Which way an object leans up from lying down. Small ones on the left lean back to the left
+// and the big one on the right leans back to the right (that is what the saved settings give).
+function leanOf(o, extraMirror) {
+  const vis = visualOf(o);
+  if (vis.axisHeight || vis.upright) return null;   // a door or a tower already stands upright
+  const mirrored = !vis.noMirror && vis.mirror !== extraMirror;
+  const turned = vis.turn180 !== (vis.noMirror && extraMirror && !vis.axisHeight && !vis.upright);
+  let cw = turned !== mirrored;
+  if (vis.leanFlip) cw = !cw;
+  return cw ? 'cw' : 'ccw';
+}
+
+// The timeline (in seconds) depends only on the two objects and how many times the small one fits,
+// never on the screen size. So the host can work out how long the animation lasts, and every
+// player's screen plays it on the same clock.
+function timelineFor(R, bigLean, smLean) {
+    const starts = [];
+    const tLeanStart = bigLean ? BIG_WALK : BIG_S;
+    const tLeanEnd = bigLean ? BIG_WALK + BIG_LEAN : BIG_S;
+    const tZ0 = tLeanEnd + BIG_HOLD;
+    const tZ1 = tZ0 + 0.75;
+    let tt = tZ1 - 0.1;
+    const whole = Math.floor(R + 1e-9);
+    const nHop = Math.min(K_MAX, whole);
+    const durs = [];
+    let gapLast = 0.07;
+    for (let i = 0; i < nHop; i++) {
+      starts.push(tt);
+      if (i === 0 && smLean) {
+        // The first object comes in like the big one: walks in, then leans up.
+        durs.push(SM_WALK + SM_LEAN);
+        tt += SM_WALK + SM_LEAN - 0.3;
+        continue;
+      }
+      durs.push(Math.max(0.45, HOP_S * Math.pow(0.93, i)));
+      gapLast = Math.max(0.07, 0.36 * Math.pow(0.86, i));
+      tt += gapLast;
+    }
+    const lastLand = starts[nHop - 1] + durs[nHop - 1];
+
+    let kk = 0, streamCap = 1;
+    const G_TABLE = [0, 1];
+    // The stream starts the moment the last hop lands, at the pace the landings had reached.
+    const tB0 = lastLand;
+    const M = Math.max(0, R - nHop);
+    const rate0 = 1 / gapLast;
+    let TB = Math.min(10, 2 + 1.6 * Math.log10(Math.max(1, R / nHop)));
+    // The stream's pace: starts at the pace of the hops, speeds up smoothly (capped), then
+    // eases off to a stop over the last quarter so the camera never halts or lurches.
+    const FADE_AT = 0.75;
+    const fadeW = (x) => (x <= FADE_AT ? 1 : 0.5 + 0.5 * Math.cos(Math.PI * (x - FADE_AT) / (1 - FADE_AT)));
+    const STEPS = 400;
+    const integral = (k, cap) => {
+      let sum = 0;
+      for (let i = 0; i < STEPS; i++) {
+        const x = (i + 0.5) / STEPS;
+        sum += Math.min(Math.exp(k * x), cap) * fadeW(x);
+      }
+      return sum / STEPS;
+    };
+    const I0 = integral(0, 1);
+    if (M > 0 && M / (TB * rate0) > I0) {
+      const need = M / (TB * rate0);
+      const cap = Math.max(PEAK_RATE / rate0, need * 1.6);
+      let lo = 0, hi = 40;
+      for (let it = 0; it < 60; it++) {
+        const mid = (lo + hi) / 2;
+        if (integral(mid, cap) < need) lo = mid; else hi = mid;
+      }
+      kk = (lo + hi) / 2;
+      streamCap = cap;
+    } else {
+      TB = Math.max(0.3, M / (rate0 * I0));
+    }
+    // Running total of the pace, as a table to read the count from.
+    G_TABLE.length = 0;
+    let acc = 0;
+    G_TABLE.push(0);
+    for (let i = 0; i < STEPS; i++) {
+      const x = (i + 0.5) / STEPS;
+      acc += Math.min(Math.exp(kk * x), streamCap) * fadeW(x);
+      G_TABLE.push(acc);
+    }
+    for (let i = 0; i <= STEPS; i++) G_TABLE[i] /= acc;
+    const tB1 = tB0 + TB;
+    const tHoldEnd = tB1 + HOLD_S;
+    const tEnd = tHoldEnd + ZOOM_S;
+
+  return { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE };
+}
+
+export function animationDuration(unitIn, targetIn) {
+  let unit = unitIn;
+  let target = targetIn;
+  if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
+  const bigLean = leanOf(target, true);
+  const smLean = leanOf(unit, false);
+  return timelineFor(target.mm / unit.mm, bigLean, smLean).tEnd;
+}
+
 export function createStackAnimation(container, options = {}) {
   const theme = { ...LIGHT_THEME, ...(options.theme || {}) };
   const imageUrl = options.imageUrl || ((o) => o.image);
@@ -303,17 +403,6 @@ export function createStackAnimation(container, options = {}) {
     spriteCache.set(key, c);
     return c;
   }
-  // Which way an object leans up from lying down. Small ones on the left lean back to the left
-  // and the big one on the right leans back to the right (that is what the saved settings give).
-  function leanOf(o, extraMirror) {
-    const vis = visualOf(o);
-    if (vis.axisHeight || vis.upright) return null;   // a door or a tower already stands upright
-    const mirrored = !vis.noMirror && vis.mirror !== extraMirror;
-    const turned = vis.turn180 !== (vis.noMirror && extraMirror && !vis.axisHeight && !vis.upright);
-    let cw = turned !== mirrored;
-    if (vis.leanFlip) cw = !cw;
-    return cw ? 'cw' : 'ccw';
-  }
   const lyingCache = new Map();
   function lyingSprite(o, extraMirror, lean) {
     const key = o.id + (extraMirror ? ':m' : '') + lean;
@@ -393,78 +482,8 @@ export function createStackAnimation(container, options = {}) {
     const bigLeftWorld = (colWFinal / 2 + GAP) / cEnd;
     const stripMin = fast ? STRIP_W : 0;
 
-    // ---- Timeline (seconds) ----
-    const starts = [];
-    const tLeanStart = bigLean ? BIG_WALK : BIG_S;
-    const tLeanEnd = bigLean ? BIG_WALK + BIG_LEAN : BIG_S;
-    const tZ0 = tLeanEnd + BIG_HOLD;
-    const tZ1 = tZ0 + 0.75;
-    let tt = tZ1 - 0.1;
-    const whole = Math.floor(R + 1e-9);
-    const nHop = Math.min(K_MAX, whole);
-    const durs = [];
-    let gapLast = 0.07;
-    for (let i = 0; i < nHop; i++) {
-      starts.push(tt);
-      if (i === 0 && smLean) {
-        // The first object comes in like the big one: walks in, then leans up.
-        durs.push(SM_WALK + SM_LEAN);
-        tt += SM_WALK + SM_LEAN - 0.3;
-        continue;
-      }
-      durs.push(Math.max(0.45, HOP_S * Math.pow(0.93, i)));
-      gapLast = Math.max(0.07, 0.36 * Math.pow(0.86, i));
-      tt += gapLast;
-    }
-    const lastLand = starts[nHop - 1] + durs[nHop - 1];
-
-    let kk = 0, streamCap = 1;
-    const G_TABLE = [0, 1];
-    // The stream starts the moment the last hop lands, at the pace the landings had reached.
-    const tB0 = lastLand;
-    const M = Math.max(0, R - nHop);
-    const rate0 = 1 / gapLast;
-    let TB = Math.min(10, 2 + 1.6 * Math.log10(Math.max(1, R / nHop)));
-    // The stream's pace: starts at the pace of the hops, speeds up smoothly (capped), then
-    // eases off to a stop over the last quarter so the camera never halts or lurches.
-    const FADE_AT = 0.75;
-    const fadeW = (x) => (x <= FADE_AT ? 1 : 0.5 + 0.5 * Math.cos(Math.PI * (x - FADE_AT) / (1 - FADE_AT)));
-    const STEPS = 400;
-    const integral = (k, cap) => {
-      let sum = 0;
-      for (let i = 0; i < STEPS; i++) {
-        const x = (i + 0.5) / STEPS;
-        sum += Math.min(Math.exp(k * x), cap) * fadeW(x);
-      }
-      return sum / STEPS;
-    };
-    const I0 = integral(0, 1);
-    if (M > 0 && M / (TB * rate0) > I0) {
-      const need = M / (TB * rate0);
-      const cap = Math.max(PEAK_RATE / rate0, need * 1.6);
-      let lo = 0, hi = 40;
-      for (let it = 0; it < 60; it++) {
-        const mid = (lo + hi) / 2;
-        if (integral(mid, cap) < need) lo = mid; else hi = mid;
-      }
-      kk = (lo + hi) / 2;
-      streamCap = cap;
-    } else {
-      TB = Math.max(0.3, M / (rate0 * I0));
-    }
-    // Running total of the pace, as a table to read the count from.
-    G_TABLE.length = 0;
-    let acc = 0;
-    G_TABLE.push(0);
-    for (let i = 0; i < STEPS; i++) {
-      const x = (i + 0.5) / STEPS;
-      acc += Math.min(Math.exp(kk * x), streamCap) * fadeW(x);
-      G_TABLE.push(acc);
-    }
-    for (let i = 0; i <= STEPS; i++) G_TABLE[i] /= acc;
-    const tB1 = tB0 + TB;
-    const tHoldEnd = tB1 + HOLD_S;
-    const tEnd = tHoldEnd + ZOOM_S;
+    const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
+      timelineFor(R, bigLean, smLean);
 
     const streamG = (x) => {
       const pos = clamp(x, 0, 1) * (G_TABLE.length - 1);
@@ -829,5 +848,8 @@ export function createStackAnimation(container, options = {}) {
     tally.remove();
   }
 
-  return { prepare, start, stop, destroy, canvas };
+  // Loads the pictures ahead of time (no stage needed), so the animation can start the moment it is wanted.
+  function preload(a, b) { return Promise.all([loadPicture(a), loadPicture(b)]); }
+
+  return { prepare, preload, start, stop, destroy, canvas };
 }
