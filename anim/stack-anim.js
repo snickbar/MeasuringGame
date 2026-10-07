@@ -448,16 +448,17 @@ export function createStackAnimation(container, options = {}) {
 
   // Loads the two pictures and works out the whole animation for this pair at this width.
   // The container must be on screen (so it has a width) when this is called. sizing.hMax is the
-  // tallest the big object may be drawn (the game passes less on short screens).
+  // tallest the big object may be drawn (the game passes less on short screens). sizing.minStageH is
+  // the least height the stage may have (the game passes the space under the question).
   async function prepare(unitIn, targetIn, sizing = {}) {
     let unit = unitIn;
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
     await Promise.all([loadPicture(unit), loadPicture(target)]);
-    return buildScene(unit, target, sizing.hMax || H_MAX);
+    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0);
   }
 
-  function buildScene(unit, target, hMax) {
+  function buildScene(unit, target, hMax, minStageH) {
     const R = target.mm / unit.mm;
     const aBig = pics.get(target.id).aspect;
     const aSm = pics.get(unit.id).aspect;
@@ -486,8 +487,11 @@ export function createStackAnimation(container, options = {}) {
 
     // The camera starts zoomed out on the big object, zooms in on the stack, follows it up and
     // zooms back out. Pairs that fit at true scale get a gentler zoom.
-    const stageH = PAD_TOP + H + PAD_BOTTOM;
-    const floorY = PAD_TOP + H;
+    // The stage is at least minStageH tall: when the scene is shorter than that (two round objects
+    // are limited by the width), the extra height is sky above, so the floor stays at the bottom.
+    const padTop = PAD_TOP + Math.max(0, (minStageH || 0) - (PAD_TOP + H + PAD_BOTTOM));
+    const stageH = padTop + H + PAD_BOTTOM;
+    const floorY = padTop + H;
     const bigThick = H * aBig;
     let bigX = W - G - bigThick;
 
@@ -617,7 +621,7 @@ export function createStackAnimation(container, options = {}) {
       const e = 0.5 - 0.5 * Math.cos(Math.PI * u);
       const c0 = climbScale(tHoldEnd);
       const c = Math.exp(Math.log(c0) + (Math.log(cEnd) - Math.log(c0)) * e);
-      const topY = ay + (PAD_TOP - ay) * e;
+      const topY = ay + (padTop - ay) * e;
       return { c, sx0: axClimb + (colCenterX - axClimb) * e, sy0: topY + Hw * c };
     }
 
