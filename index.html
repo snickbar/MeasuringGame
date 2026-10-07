@@ -5288,7 +5288,10 @@
       return;
     }
     if (!roomState.graceEndsAt && activeIds.length > 0 && guessedCount >= activeIds.length) {
-      const ge = now + 3000;
+      // Grace window once everyone's answered, before the round locks and
+      // moves to second chance - gives players a beat to send a reaction
+      // emoji rather than snapping straight to the next phase.
+      const ge = now + 5000;
       set(ref(db, `rooms/${roomCode}/graceEndsAt`), ge);
       scheduleHostDeadline(ge, () => checkQuestionAdvance(roomCode));
     }
