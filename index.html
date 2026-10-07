@@ -952,6 +952,7 @@
     border-width: 9px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
   }
   #room-code-display.code-locked { filter: blur(5px); user-select: none; }
+  #hud-room-code.code-locked { filter: blur(4px); user-select: none; }
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
   .players-header h3 { margin: 0; flex-shrink: 0; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
@@ -4115,12 +4116,22 @@
       hostUnlockBannerEl.classList.remove("active");
       roomCodeDisplay.classList.remove("code-locked");
       shareRoomBtn.style.display = "";
+      hudRoomCodeEl.classList.remove("code-locked");
+      copyRoomCodeBtn.style.display = "";
       return;
     }
     const unlocked = myProfile.hostUnlocked;
     hostUnlockBannerEl.classList.toggle("active", !unlocked);
     roomCodeDisplay.classList.toggle("code-locked", !unlocked);
     shareRoomBtn.style.display = unlocked ? "" : "none";
+    // The lobby's code-locked blur only covered #room-code-display - once the
+    // game actually started, the HUD's own room-code readout (and its "Copy
+    // code" button, which would've copied the plain code straight past the
+    // blur) had no gating at all, so an un-unlocked host's code was fully
+    // visible/copyable for the entire game. Same paywall, same condition,
+    // now applied here too.
+    hudRoomCodeEl.classList.toggle("code-locked", !unlocked);
+    copyRoomCodeBtn.style.display = unlocked ? "" : "none";
   }
   // TEMP: simulates a successful purchase with no real payment, so the
   // unlock flow can be built and tested end-to-end before Google Play
