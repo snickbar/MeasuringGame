@@ -2385,12 +2385,33 @@
     };
   }
   let myProfile = defaultProfile();
-  // Prime from the last confirmed balance, synchronously, before Firebase
-  // even responds - without this the toolbar always flashed "0" (the
-  // static default) on every full reload while waiting on the profile
-  // listener, which is why it only showed up on the Home button (a real
-  // reload) and never on the screen-back-btn navigation (which never
-  // reloads, so there's nothing to flash back to 0 from).
+  // Full local backup of whatever profile (local-device or signed-in
+  // account) was last successfully synced, keyed by id - so the app has
+  // real data to show (avatars, unlocks, everything, not just the coin
+  // count) with no network at all, instead of silently falling back to an
+  // empty default profile. Keyed per-id since a signed-in account's data
+  // and this device's own local data are two different things that can
+  // both have a cache sitting here.
+  function profileCacheKey(id) { return "mg_profileCache_" + id; }
+  function loadCachedProfile(id) {
+    try {
+      const raw = localStorage.getItem(profileCacheKey(id));
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveCachedProfile(id, profile) {
+    try { localStorage.setItem(profileCacheKey(id), JSON.stringify(profile)); } catch (e) {}
+  }
+  const cachedLocalProfile = loadCachedProfile(localDeviceId);
+  if (cachedLocalProfile) myProfile = { ...defaultProfile(), ...cachedLocalProfile };
+  // Prime the toolbar's coin count synchronously, before Firebase even
+  // responds - without this the toolbar always flashed "0" (the static
+  // default) on every full reload while waiting on the profile listener,
+  // which is why it only showed up on the Home button (a real reload) and
+  // never on the screen-back-btn navigation (which never reloads, so
+  // there's nothing to flash back to 0 from). mg_lastCoins is an older,
+  // narrower cache (coins only) kept as a fallback for upgrading from a
+  // build from before the full-profile cache above existed.
   // Cap logic is inlined (not a call to formatCoinDisplay) deliberately -
   // that function reads the const COIN_DISPLAY_CAP declared much later in
   // the file, which is real but still uninitialized (temporal dead zone)
@@ -2398,17 +2419,37 @@
   // which silently killed the ENTIRE script before any event listener ever
   // got attached - that's what "coins at 0 and nothing is clickable" was.
   const CACHED_COINS_KEY = "mg_lastCoins";
-  const cachedCoins = parseInt(localStorage.getItem(CACHED_COINS_KEY), 10);
-  if (!isNaN(cachedCoins)) {
-    myProfile.coins = cachedCoins;
-    const coinCountEl = document.getElementById("toolbar-coin-count");
-    if (coinCountEl) coinCountEl.textContent = cachedCoins > 9999 ? "9999+" : String(cachedCoins);
+  if (!cachedLocalProfile) {
+    const cachedCoins = parseInt(localStorage.getItem(CACHED_COINS_KEY), 10);
+    if (!isNaN(cachedCoins)) myProfile.coins = cachedCoins;
   }
+  const coinCountEl = document.getElementById("toolbar-coin-count");
+  if (coinCountEl) coinCountEl.textContent = myProfile.coins > 9999 ? "9999+" : String(myProfile.coins || 0);
   // Set once watchMyProfile() has an active subscription - must be called
   // (if set) before ever reassigning `deviceId` and re-subscribing, or
   // signing in/out repeatedly stacks a new listener on the old path every
   // time instead of replacing it.
   let unwatchProfile = null;
+  // Single shared list of "something about the profile changed, repaint
+  // everything that depends on it" calls - both the live Firebase listener
+  // below and the offline-cache priming on sign-in/out need to trigger the
+  // exact same repaint, and keeping one shared list (instead of copy-pasting
+  // the call list in two places) is exactly the kind of place that's
+  // already caused two separate bugs this session from one spot getting
+  // updated without the other.
+  function renderProfileDependentUi() {
+    renderCoinBalance();
+    renderAvatarGrid();
+    renderSettingsAvatarGrid();
+    renderGachaScreen();
+    renderWatchAdStatus();
+    renderHostUnlockUi();
+    renderCosmeticsShop();
+    renderEmojiPackShop();
+    renderInGameEmojiPicker();
+    renderEmojiPickerSettings();
+    renderPresetSlotButtons();
+  }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
     unwatchProfile = onValue(ref(db, `profiles/${deviceId}`), (snap) => {
@@ -2437,17 +2478,8 @@
           activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...DEFAULT_EMOJIS],
         };
       }
-      renderCoinBalance();
-      renderAvatarGrid();
-      renderSettingsAvatarGrid();
-      renderGachaScreen();
-      renderWatchAdStatus();
-      renderHostUnlockUi();
-      renderCosmeticsShop();
-      renderEmojiPackShop();
-      renderInGameEmojiPicker();
-      renderEmojiPickerSettings();
-      renderPresetSlotButtons();
+      saveCachedProfile(deviceId, myProfile);
+      renderProfileDependentUi();
     });
   }
 
@@ -2992,6 +3024,7 @@
   // same class of bug as the coin-cache priming incident earlier in this
   // project's history, just with a different variable.
   let accountUser = null; // the signed-in Firebase Auth user, or null
+  let authFlowInProgress = false; // true for the duration of an explicit sign-in/out, see onAuthStateChanged below
 
   function renderAccountUi() {
     if (!isNativeApp) return;
@@ -3003,51 +3036,93 @@
   renderAccountUi();
 
   if (auth) {
+    // This fires on a cold start too, whenever Firebase Auth silently
+    // restores a previously-signed-in session (the whole point of
+    // initializeAuth + indexedDBLocalPersistence above) - not only right
+    // after an explicit sign-in/out action. It used to only update the
+    // Settings "Signed in as X" display, never actually repointing
+    // deviceId/watchMyProfile() at the account - so a fresh launch always
+    // kept showing this device's OWN local profile (wrong avatars/coins)
+    // even though the UI correctly said "signed in," and the only way to
+    // get the real account data was to explicitly sign out and back in
+    // (which does repoint it, inside signInWithGoogle()). Fixed by doing
+    // the same repoint here. Deliberately no merge-claim logic here, only
+    // in signInWithGoogle() itself - merging is for the moment of an
+    // explicit new sign-in, not something that should re-run every time
+    // auth state is merely restored/confirmed.
     onAuthStateChanged(auth, (user) => {
       accountUser = user;
       renderAccountUi();
+      // Skip while an explicit sign-in/out is already running: signInCredential
+      // triggers this same event mid-flow, before signInWithGoogle()'s own
+      // merge transaction below has run - if this repointed deviceId that
+      // early, watchMyProfile() would see no profile at the new uid yet and
+      // write an empty default one, which would make the merge transaction
+      // (which only claims local progress if the account has NO profile yet)
+      // find one already there and wrongly skip claiming it.
+      if (authFlowInProgress) return;
+      const targetId = user ? user.uid : localDeviceId;
+      if (targetId !== deviceId) {
+        const cached = loadCachedProfile(targetId);
+        if (cached) {
+          myProfile = { ...defaultProfile(), ...cached };
+          renderProfileDependentUi();
+        }
+        deviceId = targetId;
+        watchMyProfile();
+      }
     });
   }
 
   async function signInWithGoogle() {
-    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
-    const result = await FirebaseAuthentication.signInWithGoogle();
-    const idToken = result.credential && result.credential.idToken;
-    if (!idToken) throw new Error("No ID token returned from Google sign-in");
-    // The plugin only signs in on the native layer by default - bridging
-    // that credential into the web SDK's own auth instance is required, or
-    // the Database SDK (which reads auth state from this same `app`) never
-    // sees auth.uid and every profile write gets rejected by the rules.
-    const credential = GoogleAuthProvider.credential(idToken);
-    const webResult = await signInWithCredential(auth, credential);
-    const uid = webResult.user.uid;
+    authFlowInProgress = true;
+    try {
+      const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      const idToken = result.credential && result.credential.idToken;
+      if (!idToken) throw new Error("No ID token returned from Google sign-in");
+      // The plugin only signs in on the native layer by default - bridging
+      // that credential into the web SDK's own auth instance is required, or
+      // the Database SDK (which reads auth state from this same `app`) never
+      // sees auth.uid and every profile write gets rejected by the rules.
+      const credential = GoogleAuthProvider.credential(idToken);
+      const webResult = await signInWithCredential(auth, credential);
+      const uid = webResult.user.uid;
 
-    // One-time-per-pairing merge: claim this device's local progress into
-    // the account only if the account doesn't already have its own profile.
-    // If it does (e.g. this Google account signed in before, on another
-    // phone), leave it alone - account data wins. Safe to run on every
-    // sign-in: returning undefined when `current` already exists is a
-    // clean no-op transaction (no write, nothing changes).
-    const localSnap = await get(ref(db, `profiles/${localDeviceId}`));
-    const localProfileData = localSnap.val();
-    if (localProfileData) {
-      await runTransaction(ref(db, `profiles/${uid}`), (current) => {
-        if (current) return; // abort: account already has its own profile
-        return localProfileData;
-      });
+      // One-time-per-pairing merge: claim this device's local progress into
+      // the account only if the account doesn't already have its own profile.
+      // If it does (e.g. this Google account signed in before, on another
+      // phone), leave it alone - account data wins. Safe to run on every
+      // sign-in: returning undefined when `current` already exists is a
+      // clean no-op transaction (no write, nothing changes).
+      const localSnap = await get(ref(db, `profiles/${localDeviceId}`));
+      const localProfileData = localSnap.val();
+      if (localProfileData) {
+        await runTransaction(ref(db, `profiles/${uid}`), (current) => {
+          if (current) return; // abort: account already has its own profile
+          return localProfileData;
+        });
+      }
+
+      deviceId = uid;
+      watchMyProfile();
+    } finally {
+      authFlowInProgress = false;
     }
-
-    deviceId = uid;
-    watchMyProfile();
   }
 
   async function signOutOfGoogle() {
-    const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
-    await FirebaseAuthentication.signOut();
-    await firebaseSignOut(auth);
-    // Local progress was never touched or deleted - just point back at it.
-    deviceId = localDeviceId;
-    watchMyProfile();
+    authFlowInProgress = true;
+    try {
+      const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
+      await FirebaseAuthentication.signOut();
+      await firebaseSignOut(auth);
+      // Local progress was never touched or deleted - just point back at it.
+      deviceId = localDeviceId;
+      watchMyProfile();
+    } finally {
+      authFlowInProgress = false;
+    }
   }
 
   if (isNativeApp) {
