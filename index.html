@@ -4995,6 +4995,86 @@
     const b = OBJECTS.find((o) => o.id === q.targetId);
     return a && b && a.image && b.image ? [a, b] : null;
   }
+  // ---- Animation sounds: the engine announces cues; this plays them (Web Audio, so rapid
+  // ticking stays light). Respects the player's sound setting. ----
+  let animAudio = null;   // { ctx, bufs }
+  function animAudioInit() {
+    try {
+      if (animAudio) { if (animAudio.ctx.state === "suspended") animAudio.ctx.resume().catch(() => {}); return; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      animAudio = { ctx: new AC(), bufs: {} };
+      ["swipe", "tap", "tick", "cardflip"].forEach((name) => {
+        fetch(SFX_FILES[name])
+          .then((r) => r.arrayBuffer())
+          .then((ab) => new Promise((ok, no) => animAudio.ctx.decodeAudioData(ab, ok, no)))
+          .then((buf) => { animAudio.bufs[name] = buf; })
+          .catch(() => { /* a missing sound just stays silent */ });
+      });
+    } catch (e) { animAudio = null; }
+  }
+  function animTone(freq, at, len, vol, type) {
+    const ctx = animAudio.ctx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(at);
+    o.stop(at + len + 0.05);
+  }
+  const ANIM_SYNTH = {
+    // Zoom back out: a soft descending "bloop".
+    zoomback(vol) {
+      const ctx = animAudio.ctx;
+      const at = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(620, at);
+      o.frequency.exponentialRampToValueAtTime(170, at + 0.5);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(vol, at + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.55);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(at);
+      o.stop(at + 0.6);
+    },
+    // The answer: a bright little bell run, three notes climbing, with a sparkle on top.
+    reveal(vol) {
+      const at = animAudio.ctx.currentTime;
+      [[784, 0], [988, 0.11], [1319, 0.22]].forEach(([f, d]) => {
+        animTone(f, at + d, 0.55, vol * 0.7, "triangle");
+        animTone(f * 2, at + d, 0.35, vol * 0.25, "sine");
+      });
+      animTone(2637, at + 0.36, 0.7, vol * 0.3, "sine");
+    },
+  };
+  function playAnimCue(cue) {
+    if (!localSoundEnabled) return;
+    try {
+      animAudioInit();
+      if (!animAudio) return;
+      if (ANIM_SYNTH[cue.name]) { ANIM_SYNTH[cue.name](cue.vol); return; }
+      const buf = animAudio.bufs[cue.name];
+      if (!buf) return;
+      const ctx = animAudio.ctx;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = cue.rate || 1;
+      const g = ctx.createGain();
+      g.gain.value = cue.vol;
+      src.connect(g);
+      g.connect(ctx.destination);
+      src.start();
+      src.stop(ctx.currentTime + 1);   // the click files carry a long silent tail; don't keep them alive
+    } catch (e) { /* sound is never worth breaking the round */ }
+  }
   async function getAnimCtl() {
     const mod = await loadAnimModule();
     if (!mod) return null;
@@ -5055,9 +5135,11 @@
         animSceneRound = data.round;
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
+      animAudioInit();
       ctl.start(animScene, {
         startAt: data.animStartAt,
         now: animClock,
+        onCue: playAnimCue,
         onDone: () => {
           if (token !== animToken || !roomState || roomState.phase !== "animation") return;
           animDoneKey = key;

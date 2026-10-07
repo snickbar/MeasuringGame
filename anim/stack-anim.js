@@ -171,6 +171,8 @@ const SM_LEAN = 0.7;
 const HOP_S = 0.95;        // seconds one object spends hopping in
 const ZOOM_S = 2.4;        // seconds for the final zoom out
 const HOLD_S = 0.35;       // pause on the finished stack before zooming out
+const FAST_TICK_MIN = 50;   // fast ticking only for answers over this many copies
+const FAST_TICK_AT = 0.25;  // ...and only once this share of the stack-up has gone by
 const K_MAX = 18;          // objects that hop in one by one before the stack starts to stream
 const PEAK_RATE = 1500;    // fastest the stream normally goes, in objects per second
 const PAN_PX = 450;        // fastest the stack may rise on screen (pixels per second) before the camera backs off
@@ -520,6 +522,34 @@ export function createStackAnimation(container, options = {}) {
     };
     const streamCount = (t) => nHop + M * streamG(clamp((t - tB0) / TB, 0, 1));
 
+    // ---- Sound cues: moments on the timeline where a sound belongs. The engine only announces
+    // them (opts.onCue); the page decides what to play. ----
+    const cues = [];
+    cues.push({ t: 0.05, name: 'swipe', vol: 0.5, rate: 1 });                         // the big one arrives
+    cues.push({ t: tZ0, name: 'swipe', vol: 0.35, rate: 1.25 });                      // camera zooms in
+    for (let i = 0; i < nHop; i++) {                                                  // each hop lands
+      cues.push({ t: starts[i] + durs[i], name: 'tap', vol: 0.45, rate: 0.9 + 0.5 * (i / Math.max(1, nHop - 1)) });
+    }
+    if (M >= 1) {                                                                     // the stream
+      // Copies keep clicking one by one; the fast ticking only joins for big answers, partway through.
+      const fastOn = R >= FAST_TICK_MIN;
+      const fastFrom = tB0 + TB * FAST_TICK_AT;
+      let tk = tB0;
+      while (tk < tB1) {
+        const rate = (streamCount(tk + 0.05) - streamCount(tk)) / 0.05;
+        if (fastOn && tk >= fastFrom) {
+          cues.push({ t: tk, name: 'tick', vol: 0.4, rate: 1 + 0.8 * ((tk - tB0) / TB) });
+        } else {
+          cues.push({ t: tk, name: 'tap', vol: 0.45, rate: 1.4 });
+        }
+        tk += 1 / Math.min(Math.max(rate, 1), 16);
+      }
+    }
+    if (R - Math.floor(R + 1e-9) > 1e-6) cues.push({ t: tB1, name: 'cardflip', vol: 0.6, rate: 1.1 });   // the last copy gets cut
+    cues.push({ t: tHoldEnd, name: 'zoomback', vol: 0.3, rate: 1 });                  // zoom back out
+    cues.push({ t: tEnd, name: 'reveal', vol: 0.5, rate: 1 });                        // the answer appears
+    cues.sort((p, q) => p.t - q.t);
+
     // Camera anchors for the climb.
     const axClimb = W * 0.42;
     const ay = stageH * 0.34;
@@ -831,6 +861,7 @@ export function createStackAnimation(container, options = {}) {
     return {
       unit, target, R, fast, stageH, width: W,
       duration: tEnd,
+      cues,
       render,
       renderEnd() { render(tEnd); },
     };
@@ -850,6 +881,8 @@ export function createStackAnimation(container, options = {}) {
       return;
     }
     let last = now();
+    const cues = scene.cues || [];
+    let cueAt = 0;
     function frame() {
       if (destroyed || my !== runId) return;
       const clockNow = now();
@@ -858,6 +891,12 @@ export function createStackAnimation(container, options = {}) {
       last = clockNow;
       scene.render(t, dt);
       if (opts.onFrame) opts.onFrame(t);
+      // Sound cues: each fires once as the clock passes it. Ones that are already well behind
+      // (a late joiner, a throttled tab) are skipped rather than played in a burst.
+      while (cueAt < cues.length && cues[cueAt].t <= t) {
+        const c = cues[cueAt++];
+        if (opts.onCue && t - c.t < 0.3) opts.onCue(c);
+      }
       if (t < scene.duration) raf = requestAnimationFrame(frame);
       else done();
     }
