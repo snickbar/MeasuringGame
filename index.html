@@ -4943,9 +4943,18 @@
   let animPreloadKey = null;
 
   // Loaded on first use, so a problem with it can never stop the game from running.
+  // No cache-busting query string on this import path - Capacitor's local
+  // WebView asset server (which is what actually resolves "./anim/..." in
+  // the installed app, not a real HTTP server) doesn't reliably handle a
+  // "?v=" suffix on a bundled asset URL; it can 404 and silently fail the
+  // dynamic import, which this function's own .catch() then swallows as
+  // "animation unavailable" - exactly the "it just skips straight to the
+  // reveal" symptom, with nothing visibly wrong to point at. Every new APK
+  // build already ships a fresh copy of this file bundled in its assets
+  // anyway, so there's no real staleness risk from dropping the cache-buster.
   function loadAnimModule() {
     if (!animModulePromise) {
-      animModulePromise = import("./anim/stack-anim.js?v=2").catch((err) => {
+      animModulePromise = import("./anim/stack-anim.js").catch((err) => {
         console.warn("[measuring-game] animation unavailable", err);
         return null;
       });
