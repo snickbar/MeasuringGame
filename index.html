@@ -4249,7 +4249,23 @@
   }
   window.addEventListener("pageshow", (e) => { if (e.persisted) resyncUiAfterResume(); });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) resyncUiAfterResume();
+    if (!document.hidden) {
+      resyncUiAfterResume();
+      // animAudio is declared later in the file (the answer-animation sound
+      // system) - safe to reference here regardless, since this callback
+      // only ever runs well after the whole script has finished its first
+      // pass, same as every other deferred handler in this file.
+      if (animAudio && animAudio.ctx.state === "suspended") animAudio.ctx.resume().catch(() => {});
+    } else if (animAudio && animAudio.ctx.state === "running") {
+      // The animation's Web Audio sounds (tick/tap/swipe/reveal) use one
+      // persistent AudioContext, unlike the regular one-shot <audio> sfx
+      // elsewhere - nothing stops that context from rendering audio just
+      // because the app is backgrounded, which is exactly what let the
+      // reveal animation's sounds keep playing after minimizing. Suspending
+      // it here silences anything in flight and blocks any cue that tries
+      // to fire while hidden, with no special-casing needed on the cue side.
+      animAudio.ctx.suspend().catch(() => {});
+    }
   });
 
   // ---- Disable pinch-to-zoom. The viewport meta tag's user-scalable=no
