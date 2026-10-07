@@ -5129,9 +5129,14 @@
       if (!ctl) { fail("engine not loaded"); return; }
       if (animSceneRound !== data.round || !animScene) {
         animScene = null;
+        // The answer line appears under the question when the animation ends and pushes the stage
+        // down, so measure with it showing to leave room for it now.
+        const lineWasHidden = questionAnswerLineEl.style.display === "none";
+        if (lineWasHidden) { questionAnswerLineEl.textContent = "Answer: 0.00"; questionAnswerLineEl.style.display = "block"; }
         const top = animStageEl.getBoundingClientRect().top;
+        if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.textContent = ""; }
         const avail = window.innerHeight - 58 - top - 8;
-        animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)) });
+        animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)), minStageH: Math.max(260, avail) });
         animSceneRound = data.round;
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
