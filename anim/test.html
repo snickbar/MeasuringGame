@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Animation test</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 12px; background: #f4f7fc; color: #16223a; }
+  .wrap { max-width: 360px; margin: 0 auto; }
+  .row { display: flex; gap: 6px; margin: 6px 0; }
+  select, button, input { font: inherit; padding: 6px; min-width: 0; }
+  select { flex: 1; }
+  #stage { margin-top: 8px; border-radius: 12px; }
+  #info { font-size: 13px; color: #55657f; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row"><select id="unit"></select><select id="target"></select></div>
+  <div class="row"><button id="play">Play</button><input id="t" type="range" min="0" max="1000" value="0" style="flex:1"><button id="dark">Dark</button></div>
+  <div id="stage"></div>
+  <div id="info"></div>
+</div>
+<script type="module">
+import { createStackAnimation, LIGHT_THEME, DARK_THEME } from './stack-anim.js';
+
+// The game's own object list, read out of index.html so this page never drifts from it.
+const html = await (await fetch('../index.html')).text();
+const m = html.match(/const OBJECTS = (\[[\s\S]*?\n\s*\]);/);
+const OBJECTS = (0, eval)('(' + m[1] + ')').map((o) => ({ ...o, image: '../' + o.image }));
+
+const q = new URLSearchParams(location.search);
+if (q.get('w')) document.querySelector('.wrap').style.maxWidth = q.get('w') + 'px';
+const unitSel = document.getElementById('unit');
+const targetSel = document.getElementById('target');
+for (const sel of [unitSel, targetSel]) {
+  for (const o of OBJECTS) sel.add(new Option(o.name, o.id));
+}
+unitSel.value = q.get('unit') || 'ant';
+targetSel.value = q.get('target') || 'door';
+let dark = q.get('dark') === '1';
+let anim = null;
+let scene = null;
+const stage = document.getElementById('stage');
+const slider = document.getElementById('t');
+const info = document.getElementById('info');
+
+async function load() {
+  if (anim) anim.destroy();
+  stage.innerHTML = '';
+  anim = createStackAnimation(stage, { theme: dark ? DARK_THEME : LIGHT_THEME, imageUrl: (o) => o.image });
+  const u = OBJECTS.find((o) => o.id === unitSel.value);
+  const t = OBJECTS.find((o) => o.id === targetSel.value);
+  scene = await anim.prepare(u, t);
+  info.textContent = 'R = ' + scene.R.toFixed(2) + ', ' + scene.duration.toFixed(1) + ' s' + (scene.fast ? ' (thin stack)' : '');
+  scene.render(0);
+  slider.value = 0;
+  window.__scene = scene;   // for automated checks
+  window.__ready = true;
+}
+function play() { anim.start(scene, { onFrame: (t) => { slider.value = Math.round(t / scene.duration * 1000); } }); }
+unitSel.onchange = targetSel.onchange = load;
+document.getElementById('play').onclick = play;
+document.getElementById('dark').onclick = () => { dark = !dark; document.body.style.background = dark ? '#0b1220' : '#f4f7fc'; load(); };
+slider.oninput = () => { anim.stop(); scene.render(slider.value / 1000 * scene.duration); };
+await load();
+if (q.get('t') != null) scene.render(parseFloat(q.get('t')));
+</script>
+</body>
+</html>

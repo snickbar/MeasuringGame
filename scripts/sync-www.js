@@ -9,7 +9,7 @@ const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
 
 const FILES = ["index.html", "manifest.json", "sw.js", "privacy.html", "icon-192.png", "icon-512.png", "home-bg.jpg"];
-const DIRS = ["icons", "avatars", "sfx", "items"];
+const DIRS = ["icons", "avatars", "sfx", "items", "anim"];
 
 function copyDir(src, dest) {
   fs.mkdirSync(dest, { recursive: true });
