@@ -1025,6 +1025,36 @@
   .bot-btn[data-difficulty="easy"] { border-image-source: url(icons/btn-bot-easy.png); }
   .bot-btn[data-difficulty="medium"] { border-image-source: url(icons/btn-bot-medium.png); }
   .bot-btn[data-difficulty="hard"] { border-image-source: url(icons/btn-bot-hard.png); }
+  /* Coloured pill buttons (green = go on, red = leave, yellow = coins), as 9-slice pictures:
+     the round ends keep their shape and only the middle stretches. Height comes from --pic-h. */
+  #join-continue-btn,
+  #reveal-next-btn,
+  #show-summary-btn,
+  #next-round-btn,
+  #play-again-btn,
+  #final-home-btn,
+  #exit-confirm-yes-btn,
+  .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn) {
+    --pic-h: 38px;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    box-sizing: border-box; height: var(--pic-h); padding: 0 4px; margin: 0; min-width: 0;
+    background: transparent; border-radius: 0; box-shadow: none; filter: none;
+    color: #fff; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; line-height: 1;
+    border-style: solid; border-width: calc(var(--pic-h) / 2); border-image-slice: 137 fill; border-image-repeat: stretch;
+    text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
+                 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
+  }
+  button#join-continue-btn,
+  button#reveal-next-btn,
+  button#show-summary-btn,
+  button#next-round-btn,
+  button#play-again-btn { border-image-source: url(icons/btn-bot-easy.png); }
+  button#final-home-btn,
+  button#exit-confirm-yes-btn { border-image-source: url(icons/btn-bot-hard.png); }
+  .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn) { border-image-source: url(icons/btn-bot-medium.png); }
+  #join-continue-btn { --pic-h: 50px; width: 100%; margin: 6px 0; font-size: 20px; }
+  #exit-confirm-yes-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
+  .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn):disabled { opacity: .6; filter: grayscale(.4); }
   #host-unlock-btn { width: auto; }
   #host-unlock-shop-btn { width: 100%; max-width: 360px; }
   #host-unlock-shop-btn:disabled { filter: grayscale(.5) brightness(.95); }
@@ -6066,7 +6096,7 @@
 
     if (order.length === 0) {
       revealListEl.innerHTML = "<li>No one answered in time.</li>";
-      if (isHost) { revealNextBtn.style.display = "none"; showSummaryBtn.style.display = "block"; }
+      if (isHost) { revealNextBtn.style.display = "none"; showSummaryBtn.style.display = "flex"; }
       return;
     }
 
@@ -6129,8 +6159,8 @@
     }
 
     if (isHost) {
-      revealNextBtn.style.display = revealIndex < order.length ? "block" : "none";
-      showSummaryBtn.style.display = revealIndex >= order.length ? "block" : "none";
+      revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
+      showSummaryBtn.style.display = revealIndex >= order.length ? "flex" : "none";
     }
   }
 
@@ -6307,7 +6337,7 @@
     if (isHost) {
       const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
       nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
-      nextRoundBtn.style.display = "block";
+      nextRoundBtn.style.display = "flex";
     } else {
       nextRoundBtn.style.display = "none";
     }
@@ -6648,13 +6678,13 @@
       showSummaryBtn.style.display = "none";
     }
     if (phase !== "summary") nextRoundBtn.style.display = "none";
-    finalHomeBtn.style.display = phase === "final" ? "block" : "none";
+    finalHomeBtn.style.display = phase === "final" ? "flex" : "none";
     // Only the host can close the room for everyone - a guest's button
     // does the same thing it always did (just leave, room stays open for
     // whoever's left), so it keeps the old label instead of claiming to
     // "finish" something it can't actually finish for the group.
     finalHomeBtn.textContent = isHost ? "Finish game" : "Back to home";
-    playAgainBtn.style.display = (phase === "final" && isHost) ? "block" : "none";
+    playAgainBtn.style.display = (phase === "final" && isHost) ? "flex" : "none";
 
     // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
     // straight back to round 1, which is indistinguishable from "still on round
