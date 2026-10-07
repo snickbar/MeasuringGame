@@ -420,16 +420,17 @@ export function createStackAnimation(container, options = {}) {
   }
 
   // Loads the two pictures and works out the whole animation for this pair at this width.
-  // The container must be on screen (so it has a width) when this is called.
-  async function prepare(unitIn, targetIn) {
+  // The container must be on screen (so it has a width) when this is called. sizing.hMax is the
+  // tallest the big object may be drawn (the game passes less on short screens).
+  async function prepare(unitIn, targetIn, sizing = {}) {
     let unit = unitIn;
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
     await Promise.all([loadPicture(unit), loadPicture(target)]);
-    return buildScene(unit, target);
+    return buildScene(unit, target, sizing.hMax || H_MAX);
   }
 
-  function buildScene(unit, target) {
+  function buildScene(unit, target, hMax) {
     const R = target.mm / unit.mm;
     const aBig = pics.get(target.id).aspect;
     const aSm = pics.get(unit.id).aspect;
@@ -446,14 +447,14 @@ export function createStackAnimation(container, options = {}) {
     // ---- Final view: the big object at most H_MAX tall, the stack beside it ----
     const W = container.clientWidth || 360;
 
-    let H = H_MAX;
+    let H = hMax;
     let fast = false;   // too thin to draw at true scale: the final stack is drawn as a wider strip
     for (let k = 0; k < 3; k++) {
       fast = (H / R) * aSm < MIN_THICK;
       const fit = fast
         ? (W - 2 * G - GAP - STRIP_W) / aBig
         : (W - 2 * G - GAP) / (aBig + aSm / R);
-      H = Math.min(H_MAX, fit);
+      H = Math.min(hMax, fit);
     }
 
     // The camera starts zoomed out on the big object, zooms in on the stack, follows it up and

@@ -144,8 +144,10 @@
     padding: 12px 12px 0; z-index: 10;
   }
 
-  #question-view, #answers-view, #reveal-view, #summary-view, #countdown-view { display: none; }
-  #question-view.active, #answers-view.active, #reveal-view.active, #summary-view.active { display: block; }
+  #question-view, #answers-view, #animation-view, #reveal-view, #summary-view, #countdown-view { display: none; }
+  #question-view.active, #answers-view.active, #animation-view.active, #reveal-view.active, #summary-view.active { display: block; }
+  #anim-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; }
+  #anim-skip-btn { display: none; width: auto; margin: 10px auto 0; }
   #countdown-view.active { display: flex; }
   #countdown-view {
     flex-direction: column; align-items: center; justify-content: center; gap: 20px;
@@ -1020,6 +1022,8 @@
 
   .game-body { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .main-col { flex: 4 1 0; min-width: 0; }
+  .game-body.anim-wide .score-col { display: none; }
+  .game-body.anim-wide .main-col { flex: 1 1 100%; }
   .score-col { flex: 4 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
   .score-card {
     padding: 6px 6px; font-size: 13px; position: relative; overflow: hidden;
@@ -1997,6 +2001,11 @@
         <p id="answers-hint">Pick an answer that isn't yours, or double down on your own.</p>
         <div id="answers-row"></div>
         <button id="double-down-btn"><span class="dd-main">Double down on my answer</span></button>
+      </div>
+
+      <div id="animation-view">
+        <div id="anim-stage"></div>
+        <button id="anim-skip-btn">Skip</button>
       </div>
 
       <div id="reveal-view">
@@ -4914,6 +4923,144 @@
     await maybeDeleteEmptyRoom(roomCode);
   }
 
+  // ==================== Answer animation ====================
+  // After everyone has used their second chance, the big object and the stack of small ones play
+  // out on every screen, started from one shared time (animStartAt on the shared clock). The host
+  // moves on to the one-by-one reveal at animEndsAt.
+
+  const animationViewEl = document.getElementById("animation-view");
+  const animStageEl = document.getElementById("anim-stage");
+  const animSkipBtn = document.getElementById("anim-skip-btn");
+  const ANIM_LEAD_MS = 1500;   // pause before it starts, so every screen is ready
+  const ANIM_HOLD_MS = 2500;   // time to look at the finished picture and the answer
+  let animModulePromise = null;
+  let animCtl = null;
+  let animScene = null;
+  let animSceneRound = null;
+  let animPlayKey = null;
+  let animDoneKey = null;
+  let animToken = 0;
+  let animPreloadKey = null;
+
+  // Loaded on first use, so a problem with it can never stop the game from running.
+  function loadAnimModule() {
+    if (!animModulePromise) {
+      animModulePromise = import("./anim/stack-anim.js").catch((err) => {
+        console.warn("[measuring-game] animation unavailable", err);
+        return null;
+      });
+    }
+    return animModulePromise;
+  }
+  // The two objects of a question, or null when it can't be drawn.
+  function questionObjects(q) {
+    if (!q || !q.unitId || !q.targetId || q.unitId === q.targetId) return null;
+    const a = OBJECTS.find((o) => o.id === q.unitId);
+    const b = OBJECTS.find((o) => o.id === q.targetId);
+    return a && b && a.image && b.image ? [a, b] : null;
+  }
+  async function getAnimCtl() {
+    const mod = await loadAnimModule();
+    if (!mod) return null;
+    if (!animCtl) {
+      animCtl = mod.createStackAnimation(animStageEl, {
+        theme: mod.LIGHT_THEME,
+        imageUrl: (o) => o.image,
+      });
+    }
+    return animCtl;
+  }
+  // Load the two pictures while players are still guessing.
+  async function preloadAnimation(q) {
+    const pair = questionObjects(q);
+    if (!pair) return;
+    const key = pair[0].id + "/" + pair[1].id;
+    if (key === animPreloadKey) return;
+    animPreloadKey = key;
+    try {
+      const ctl = await getAnimCtl();
+      if (ctl) await ctl.preload(pair[0], pair[1]);
+    } catch (err) {
+      animPreloadKey = null;
+      console.warn("[measuring-game] animation preload failed", err);
+    }
+  }
+  // While the game is paused the animation clock stands still.
+  function animClock() {
+    return (roomState && roomState.paused && roomState.pausedAt) ? roomState.pausedAt : nowMs();
+  }
+  function stopAnimation() {
+    animToken++;
+    if (animCtl) animCtl.stop();
+    animPlayKey = null;
+  }
+  // Starts (or re-aligns) the animation for this round. Safe to call on every room update: it only
+  // acts when the round or the start time changed. A screen that arrives or reloads partway
+  // through simply starts from the right moment, because every frame is drawn from the time alone.
+  async function runAnimation(data) {
+    const key = `${data.round}:${data.animStartAt}`;
+    if (animPlayKey === key) return;
+    animPlayKey = key;
+    const token = ++animToken;
+    const pair = questionObjects(data.currentQuestion);
+    const fail = (why) => {
+      console.warn("[measuring-game] animation skipped:", why);
+      if (isHost && token === animToken) goToReveal(currentRoomCode);
+    };
+    if (!pair) { fail("no pictures for this question"); return; }
+    try {
+      const ctl = await getAnimCtl();
+      if (!ctl) { fail("engine not loaded"); return; }
+      if (animSceneRound !== data.round || !animScene) {
+        animScene = null;
+        const top = animStageEl.getBoundingClientRect().top;
+        const avail = window.innerHeight - 58 - top - 8;
+        animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)) });
+        animSceneRound = data.round;
+      }
+      if (token !== animToken) return;   // the phase moved on while the pictures loaded
+      ctl.start(animScene, {
+        startAt: data.animStartAt,
+        now: animClock,
+        onDone: () => {
+          if (token !== animToken || !roomState || roomState.phase !== "animation") return;
+          animDoneKey = key;
+          const q = roomState.currentQuestion;
+          if (q) {
+            questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+            questionAnswerLineEl.style.display = "block";
+          }
+        },
+      });
+    } catch (err) {
+      console.warn("[measuring-game] animation failed", err);
+      animPlayKey = null;
+      if (isHost && token === animToken) goToReveal(currentRoomCode);
+    }
+  }
+
+  async function goToReveal(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "animation") return;
+    transitionInFlight = true;
+    try {
+      const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+      const revealAdvanceAt = nowMs() + delayMs;
+      await update(ref(db, `rooms/${roomCode}`), { phase: "reveal", revealIndex: 0, revealAdvanceAt });
+      scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
+    } finally {
+      transitionInFlight = false;
+    }
+  }
+  function checkAnimationAdvance(roomCode) {
+    if (!isHost || transitionInFlight) return;
+    if (roomState.phase !== "animation") return;
+    if (roomState.paused) return;
+    if (nowMs() < (roomState.animEndsAt || Infinity)) return;
+    goToReveal(roomCode);
+  }
+  animSkipBtn.addEventListener("click", () => goToReveal(currentRoomCode));
+
   // ==================== Timer plumbing ====================
 
   function scheduleHostDeadline(deadlineMs, fn) {
@@ -4934,6 +5081,7 @@
         kickTimerEl.textContent = "";
       }
       if (!roomState || roomState.paused) return;
+      if (isHost && roomState.phase === "animation") checkAnimationAdvance(currentRoomCode);
       if (roomState.phase === "countdown" && roomState.countdownEndsAt) {
         const remaining = Math.max(0, roomState.countdownEndsAt - nowMs());
         const n = Math.max(1, Math.ceil(remaining / 1000));
@@ -4989,6 +5137,8 @@
       revealOrder: null,
       revealIndex: null,
       lastRoundPoints: null,
+      animStartAt: null,
+      animEndsAt: null,
       graceEndsAt: null,
       answersEndsAt: null,
       questionEndsAt: endsAt,
@@ -5112,8 +5262,22 @@
     });
 
     const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
-    const revealAdvanceAt = nowMs() + revealDelayMs;
+    let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints, phase: "reveal", revealAdvanceAt };
+    // The answer animation plays between second chance and the one-by-one reveal. If it can't run
+    // (nobody answered, an older question without picture ids, or the engine failed to load), the
+    // game goes straight to the reveal like before.
+    let animEndsAt = null;
+    const animPair = entries.length ? questionObjects(q) : null;
+    const animMod = animPair ? await loadAnimModule() : null;
+    if (animPair && animMod) {
+      const animStartAt = nowMs() + ANIM_LEAD_MS;
+      animEndsAt = animStartAt + animMod.animationDuration(animPair[0], animPair[1]) * 1000 + ANIM_HOLD_MS;
+      updates.phase = "animation";
+      updates.animStartAt = animStartAt;
+      updates.animEndsAt = animEndsAt;
+      updates.revealAdvanceAt = null;
+    }
     Object.keys(playersSnap).forEach((id) => {
       const newScore = (playersSnap[id].score || 0) + (lastRoundPoints[id] || 0);
       updates[`players/${id}/score`] = newScore;
@@ -5130,7 +5294,8 @@
     console.log("[measuring-game] scoring computed", entries, lastRoundPoints);
     try {
       await update(ref(db, `rooms/${roomCode}`), updates);
-      scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
+      if (animEndsAt) scheduleHostDeadline(animEndsAt, () => checkAnimationAdvance(roomCode));
+      else scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
     } catch (err) {
       console.error("[measuring-game] failed to write scoring update", err, updates);
     }
@@ -5311,6 +5476,12 @@
     } else if (roomState.phase === "answers") {
       updates.answersEndsAt = roomState.answersEndsAt + pauseDurationMs;
       scheduleHostDeadline(updates.answersEndsAt, () => checkAnswersAdvance(currentRoomCode));
+    } else if (roomState.phase === "animation" && roomState.animEndsAt) {
+      // Every screen's animation clock stood still while paused (see animClock), so push its start
+      // and end back by the pause: it carries on from the same frame.
+      updates.animStartAt = roomState.animStartAt + pauseDurationMs;
+      updates.animEndsAt = roomState.animEndsAt + pauseDurationMs;
+      scheduleHostDeadline(updates.animEndsAt, () => checkAnimationAdvance(currentRoomCode));
     }
     Object.keys(armedKickTimers).forEach((id) => { clearTimeout(armedKickTimers[id]); delete armedKickTimers[id]; });
     if (roomState.kickChallenges) {
@@ -6238,7 +6409,7 @@
 
   function applyPhase(data) {
     const phase = data.phase;
-    const isHudActive = ["question", "answers", "reveal", "summary", "countdown"].includes(phase);
+    const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     hostStartBtn.style.display = isHost ? "block" : "none";
     hudEl.classList.toggle("active", isHudActive);
@@ -6252,6 +6423,10 @@
 
     questionViewEl.classList.toggle("active", phase === "question");
     answersViewEl.classList.toggle("active", phase === "answers");
+    animationViewEl.classList.toggle("active", phase === "animation");
+    animSkipBtn.style.display = (isHost && phase === "animation") ? "block" : "none";
+    scoreColEl.parentElement.classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
+    if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
@@ -6313,10 +6488,23 @@
       questionPromptTextEl.textContent = q ? q.prompt : "";
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
+      preloadAnimation(q);
     } else if (phase === "answers") {
       const q = data.currentQuestion;
       if (q) questionPromptTextEl.textContent = q.prompt;
       questionAnswerLineEl.style.display = "none"; // second-chance phase - answer isn't revealed yet either
+      preloadAnimation(q);
+    } else if (phase === "animation") {
+      const q = data.currentQuestion;
+      if (q) questionPromptTextEl.textContent = q.prompt;
+      // The answer number appears on the paper once the animation has finished (see runAnimation).
+      // This function runs on every update, so it must not hide it again afterwards.
+      if (q && animDoneKey === `${data.round}:${data.animStartAt}`) {
+        questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+        questionAnswerLineEl.style.display = "block";
+      } else {
+        questionAnswerLineEl.style.display = "none";
+      }
     } else if (phase === "reveal") {
       const q = data.currentQuestion;
       if (q) questionPromptTextEl.textContent = q.prompt;
@@ -6384,6 +6572,9 @@
         renderAnswersScreen(data);
         renderScoreColumn();
       }
+      if (data.phase === "animation") {
+        runAnimation(data);
+      }
       if (data.phase === "reveal") {
         renderRevealChoreography(data);
       }
@@ -6398,6 +6589,7 @@
       if (isHost) {
         checkQuestionAdvance(roomCode);
         checkAnswersAdvance(roomCode);
+        checkAnimationAdvance(roomCode);
         checkRevealAdvance(roomCode);
         checkSummaryAdvance(roomCode);
         checkCountdownAdvance(roomCode);
