@@ -956,12 +956,36 @@
   .players-header h3 { margin: 0; flex-shrink: 0; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
   @keyframes readyGlowPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(193,85,63,.5); }
-    50% { box-shadow: 0 0 0 9px rgba(193,85,63,0); }
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(255,205,90,0)); }
+    50% { filter: drop-shadow(0 0 7px rgba(255,205,90,.95)); }
   }
   #host-start-btn { animation: readyGlowPulse 1.8s ease-out infinite; }
   @media (prefers-reduced-motion: reduce) {
     #host-start-btn { animation: none; }
+  }
+
+  /* Picture buttons: the artwork is the background and the words are live text on top. */
+  #create-room-btn, #join-lobby-btn, #host-start-btn {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    border: none; border-image: none; box-sizing: border-box;
+    background-color: transparent; background-repeat: no-repeat; background-position: center; background-size: 100% 100%;
+    color: #fff; font-family: 'Fredoka', sans-serif; font-weight: 700; line-height: 1.1;
+    text-shadow: -2px -2px 0 #5b3a26, 2px -2px 0 #5b3a26, -2px 2px 0 #5b3a26, 2px 2px 0 #5b3a26,
+                 0 -2px 0 #5b3a26, 0 2px 0 #5b3a26, -2px 0 0 #5b3a26, 2px 0 0 #5b3a26, 0 3px 0 #5b3a26;
+  }
+  #create-room-btn {
+    width: 100%; aspect-ratio: 1000 / 157; padding: 0 6% 0 15%; margin: 10px 0; font-size: 24px;
+    background-image: url(icons/btn-create-room.png);
+  }
+  #join-lobby-btn {
+    aspect-ratio: 900 / 163; padding: 0 6% 0 17%; font-size: 24px;
+    background-image: url(icons/btn-join-lobby.png);
+  }
+  #host-start-btn {
+    aspect-ratio: 1000 / 140; padding: 0 12%; font-size: 15px;
+    background-image: url(icons/btn-ready.png);
+    text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
+                 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
   #hud-room-code-group { display: none; align-items: center; gap: 6px; flex-shrink: 0; }
   #hud-room-code-group.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
@@ -6545,7 +6569,7 @@
     const phase = data.phase;
     const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
-    hostStartBtn.style.display = isHost ? "block" : "none";
+    hostStartBtn.style.display = isHost ? "flex" : "none";
     hudEl.classList.toggle("active", isHudActive);
     hudSubToolbarEl.classList.toggle("active", isHudActive);
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
