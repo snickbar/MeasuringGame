@@ -161,7 +161,9 @@ const PAD_TOP = 18;
 const PAD_BOTTOM = 52;
 const H_MAX = 400;         // tallest the big object is drawn in the final view
 const MIN_THICK = 14;      // thinnest a true-scale stack may be before the camera takes over
-const STRIP_W = 18;        // width of the stack in the final view when it is too thin to see
+const STRIP_W = 18;        // widest the stack may be in the final view when it is too thin to see
+const STRIP_W_MIN = 9;     // ...and the thinnest
+const STRIP_LEN = 40;       // about how long each copy is drawn there, so thin things (rice) are not drawn huge
 const BIG_S = 1.1;         // seconds for an object that already stands upright (a door, a tower) to hop in
 const BIG_WALK = 1.3;      // seconds the big object spends walking, driving or gliding in
 const BIG_LEAN = 0.9;      // seconds it takes to lean back upright
@@ -464,6 +466,7 @@ export function createStackAnimation(container, options = {}) {
     const R = target.mm / unit.mm;
     const aBig = pics.get(target.id).aspect;
     const aSm = pics.get(unit.id).aspect;
+    const stripW = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);   // width of the stack when it is shown as a strip
     const smallSprite = spriteFor(unit, flipFacing);
     const bigSprite = spriteFor(target, !flipFacing);
     const bigLean = leanOf(target, !flipFacing);
@@ -482,7 +485,7 @@ export function createStackAnimation(container, options = {}) {
     for (let k = 0; k < 3; k++) {
       fast = (H / R) * aSm < MIN_THICK;
       const fit = fast
-        ? (W - 2 * G - GAP - STRIP_W) / aBig
+        ? (W - 2 * G - GAP - stripW) / aBig
         : (W - 2 * G - GAP) / (aBig + aSm / R);
       H = Math.min(hMax, fit);
     }
@@ -508,13 +511,13 @@ export function createStackAnimation(container, options = {}) {
     cEnd = H / Hw;
     const tw = l * aSm;
     const Tw = Hw * aBig;
-    const colWFinal = fast ? STRIP_W : tw * cEnd;
+    const colWFinal = fast ? stripW : tw * cEnd;
     // Centre the pair (stack and big object) across the stage in the final view.
     const pairW = colWFinal + GAP + bigThick;
     bigX = (W - pairW) / 2 + colWFinal + GAP;
     const colCenterX = bigX - GAP - colWFinal / 2;
     const bigLeftWorld = (colWFinal / 2 + GAP) / cEnd;
-    const stripMin = fast ? STRIP_W : 0;
+    const stripMin = fast ? stripW : 0;
 
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
       timelineFor(R, bigLean, smLean);
