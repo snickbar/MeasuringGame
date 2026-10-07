@@ -4945,7 +4945,7 @@
   // Loaded on first use, so a problem with it can never stop the game from running.
   function loadAnimModule() {
     if (!animModulePromise) {
-      animModulePromise = import("./anim/stack-anim.js").catch((err) => {
+      animModulePromise = import("./anim/stack-anim.js?v=2").catch((err) => {
         console.warn("[measuring-game] animation unavailable", err);
         return null;
       });
@@ -5271,12 +5271,20 @@
     const animPair = entries.length ? questionObjects(q) : null;
     const animMod = animPair ? await loadAnimModule() : null;
     if (animPair && animMod) {
-      const animStartAt = nowMs() + ANIM_LEAD_MS;
-      animEndsAt = animStartAt + animMod.animationDuration(animPair[0], animPair[1]) * 1000 + ANIM_HOLD_MS;
-      updates.phase = "animation";
-      updates.animStartAt = animStartAt;
-      updates.animEndsAt = animEndsAt;
-      updates.revealAdvanceAt = null;
+      try {
+        const animStartAt = nowMs() + ANIM_LEAD_MS;
+        const endsAt = animStartAt + animMod.animationDuration(animPair[0], animPair[1]) * 1000 + ANIM_HOLD_MS;
+        if (!isFinite(endsAt)) throw new Error("bad animation length");
+        animEndsAt = endsAt;
+        updates.phase = "animation";
+        updates.animStartAt = animStartAt;
+        updates.animEndsAt = animEndsAt;
+        updates.revealAdvanceAt = null;
+      } catch (err) {
+        // Whatever goes wrong with the animation must never stall the round: go straight to the reveal.
+        console.warn("[measuring-game] animation skipped:", err);
+        animEndsAt = null;
+      }
     }
     Object.keys(playersSnap).forEach((id) => {
       const newScore = (playersSnap[id].score || 0) + (lastRoundPoints[id] || 0);
