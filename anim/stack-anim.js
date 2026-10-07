@@ -129,6 +129,7 @@ const VISUAL = {
   'eiffel-tower': { turn180: false, mirror: false, axis: 'height' },
   'aircraft-carrier': { turn180: true, mirror: true },
   'empire-state-building': { turn180: false, mirror: false, axis: 'height' },
+  'angel-falls': { turn180: false, mirror: false, axis: 'height' },
   'brooklyn-bridge': { turn180: false, mirror: false },
   'grand-canyon': { turn180: false, mirror: false, axis: 'height' },
   'mount-fuji': { turn180: false, mirror: false, axis: 'height' },
