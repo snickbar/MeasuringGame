@@ -1668,7 +1668,7 @@
   /* ---- Reveal ---- */
   #reveal-list { perspective: 800px; padding-left: 2px; }
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
-  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 6px; }
+  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 18px; }
   .reveal-card .rv-paper { cursor: default; width: 100%; }
   .reveal-card:nth-child(even) .rv-paper { --rot: 1.2deg; }
   .reveal-card:nth-child(odd) .rv-paper { --rot: -1.4deg; }
@@ -1679,10 +1679,16 @@
   .reveal-card .owner-stamp .avatar-icon { width: 26px; height: 26px; }
   .reveal-card .dd-chip { position: absolute; top: -10px; right: 24px; z-index: 2; width: 30px; height: 30px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); animation: popIn 300ms ease; }
   .reveal-card .dd-chip svg { width: 100%; height: 100%; display: block; }
-  .rv-info { margin-top: 5px; padding: 0 2px; font-family: 'Fredoka', sans-serif; color: #000; animation: popIn 300ms ease; }
-  .rv-info .pickedby-avatars { flex-wrap: wrap; flex-basis: auto; font-size: 13px; }
-  .rv-info .pickedby-avatars .avatar-icon { width: 22px; height: 22px; }
-  .rv-info .spot-badge, .rv-info .streak-badge { font-size: 13px; }
+  /* Accuracy % and who-picked-it avatars, grouped together bottom-left,
+     overlapping the paper's edge the same way the owner-stamp overlaps the
+     top - no separate caption line under the card anymore. */
+  .rv-badges { position: absolute; left: 2px; bottom: -10px; z-index: 2; display: flex; align-items: center; gap: 4px; animation: popIn 300ms ease; }
+  .rv-badges .acc-badge {
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; color: var(--green); white-space: nowrap; line-height: 1.1;
+    background: #fff; border-radius: 999px; padding: 2px 7px; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .rv-badges .pickedby-avatars { display: flex; align-items: center; gap: 2px; font-size: 13px; }
+  .rv-badges .pickedby-avatars .avatar-icon { width: 20px; height: 20px; }
   .card-inner {
     border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     padding: 12px 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
@@ -1723,7 +1729,6 @@
     display: inline-block; width: 18px; height: 18px;
     background-image: var(--icon-star); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
-  .pickedby-label { font-size: 13px; color: #000; }
   .icon-target-inline {
     display: inline-block; width: 15px; height: 15px; vertical-align: -2px;
     background-image: var(--icon-target); background-repeat: no-repeat; background-position: center; background-size: contain;
@@ -6885,11 +6890,14 @@
       + (withNumber ? handNumberHtml(entry.guess, entry.playerId, animate) : "") + stamp + `</div>`;
   }
 
-  // Under the paper: only who picked it (names, points and bonuses live on the summary screen).
+  // Overlapping the paper's bottom-left edge: accuracy %, then who picked it
+  // (names, points and bonuses live on the summary screen).
   function revealInfoHtml(entry) {
     const pickedBy = entry.pickedBy || [];
-    if (!pickedBy.length) return "";
-    return `<div class="rv-info"><div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join(" ")}</div></div>`;
+    const pickedHtml = pickedBy.length
+      ? `<div class="pickedby-avatars">${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join("")}</div>`
+      : "";
+    return `<div class="rv-badges"><span class="acc-badge">${entry.accuracyPercent}%</span>${pickedHtml}</div>`;
   }
 
   function revealCardFinalHtml(entry) {
@@ -6924,7 +6932,7 @@
         li.querySelector(".rv-paper").outerHTML = revealPaperHtml(entry, true, true);
         playSound("reveal");
         setTimeout(() => {
-          li.querySelectorAll(".rv-info").forEach((n) => n.remove());
+          li.querySelectorAll(".rv-badges").forEach((n) => n.remove());
           li.insertAdjacentHTML("beforeend", revealInfoHtml(entry));
           if (isWinner) {
             li.classList.add("winner");
