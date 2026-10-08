@@ -148,7 +148,7 @@
   #question-view, #answers-view, #animation-view, #reveal-view, #summary-view, #countdown-view { display: none; }
   #question-view.active, #answers-view.active, #animation-view.active, #reveal-view.active, #summary-view.active { display: block; }
   #anim-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; }
-  #anim-skip-btn { display: none; width: auto; margin: 10px auto 0; }
+  #anim-skip-btn { display: none; width: 72px; margin: 0; padding: 6px 2px; font-size: 13px; border-width: 9px; }
   #countdown-view.active { display: flex; }
   #countdown-view {
     flex-direction: column; align-items: center; justify-content: center; gap: 20px;
@@ -983,10 +983,12 @@
      fixed column) so it always sits flush at the screen's bottom edge - the
      action-button row above it is what pops in/out instead, keeping the
      reactions themselves from shifting position depending on which (if any)
-     context button is showing. On every in-game screen except the reveal
-     animation. */
+     context button is showing. During the reveal animation (cards hidden,
+     reactions make no sense) it stays visible but grayed out and unclickable
+     instead of disappearing and popping back a moment later. */
   #reaction-strip { display: flex; justify-content: center; gap: 5px; }
   #reaction-strip[hidden] { display: none; }
+  #reaction-strip.anim-locked { opacity: .4; filter: grayscale(.6); pointer-events: none; }
   button.react-slot {
     flex: 1 1 0; min-width: 0; max-width: 56px; aspect-ratio: 1; box-sizing: border-box; margin: 0; padding: 4px;
     display: flex; align-items: center; justify-content: center;
@@ -1386,6 +1388,11 @@
     border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
   }
   .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+  /* The timer box shows "--" (empty/unused) during the reveal animation, so the
+     host's Skip button lives right under it instead of its old spot below the
+     whole animation picture - frees up room there for the ticking answer (now
+     on the question paper) and the full-size picture itself. */
+  .hud-timer-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
   .hud-timer {
     font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
@@ -2414,7 +2421,10 @@
     <span id="question-prompt-text"></span>
     <div id="question-answer-line" class="question-answer-line" style="display:none;"></div>
   </div>
-  <div class="hud-timer" id="hud-timer">--</div>
+  <div class="hud-timer-col">
+    <div class="hud-timer" id="hud-timer">--</div>
+    <button id="anim-skip-btn" type="button">Skip</button>
+  </div>
   </div>
 
   <div class="game-body">
@@ -2448,7 +2458,6 @@
 
       <div id="animation-view">
         <div id="anim-stage"></div>
-        <button id="anim-skip-btn">Skip</button>
       </div>
 
       <div id="reveal-view">
@@ -3932,6 +3941,7 @@
     if (lk) { openSlotUnlock(Number(lk.dataset.slot)); return; }
     const b = ev.target.closest(".react-slot[data-emoji]");
     if (!b || !currentRoomCode) return;
+    if (roomState && roomState.phase === "animation") return; // grayed out, not just visually - belt and suspenders alongside the CSS pointer-events:none
     const t = Date.now();
     if (t - lastReactionTapAt < REACTION_COOLDOWN_MS) return;
     lastReactionTapAt = t;
@@ -5841,6 +5851,7 @@
   const ANIM_HOLD_MS = 4500;   // time to look at the finished picture and the answer
   let animModulePromise = null;
   let animCtl = null;
+  let animModuleResolved = null; // settled copy of loadAnimModule()'s promise, for the synchronous formatCount use in applyPhase()
   let animScene = null;
   let animSceneRound = null;
   let animPlayKey = null;
@@ -5957,10 +5968,12 @@
   async function getAnimCtl() {
     const mod = await loadAnimModule();
     if (!mod) return null;
+    animModuleResolved = mod;
     if (!animCtl) {
       animCtl = mod.createStackAnimation(animStageEl, {
         theme: mod.LIGHT_THEME,
         imageUrl: (o) => o.image,
+        hideTally: true, // the running count is mirrored onto the question paper instead (see runAnimation's onFrame)
       });
     }
     return animCtl;
@@ -6006,6 +6019,7 @@
     try {
       const ctl = await getAnimCtl();
       if (!ctl) { fail("engine not loaded"); return; }
+      const mod = await loadAnimModule();
       if (animSceneRound !== data.round || !animScene) {
         animScene = null;
         // The answer line appears under the question when the animation ends and pushes the stage
@@ -6020,16 +6034,26 @@
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
       animAudioInit();
+      // The running count used to live under the picture (the animation engine's own
+      // "tally", now suppressed via hideTally) - it ticks up on the question paper
+      // instead, through to completion, so the final "Answer:" line is just where the
+      // ticking stops rather than a separate value popping in afterward.
+      questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(0, animScene.R));
+      questionAnswerLineEl.style.display = "block";
       ctl.start(animScene, {
         startAt: data.animStartAt,
         now: animClock,
         onCue: playAnimCue,
+        onFrame: (t, shown) => {
+          if (token !== animToken) return;
+          questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(shown, animScene.R));
+        },
         onDone: () => {
           if (token !== animToken || !roomState || roomState.phase !== "animation") return;
           animDoneKey = key;
           const q = roomState.currentQuestion;
           if (q) {
-            questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
+            questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(q.answer, animScene.R));
             questionAnswerLineEl.style.display = "block";
           }
         },
@@ -7684,7 +7708,7 @@
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
-    reactionStripEl.hidden = phase === "animation";
+    reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
     finalScreenEl.classList.toggle("active", phase === "final");
     endedScreenEl.classList.toggle("active", phase === "ended");
@@ -7765,11 +7789,18 @@
     } else if (phase === "animation") {
       const q = data.currentQuestion;
       if (q) questionPromptTextEl.textContent = q.prompt;
-      // The answer number appears on the paper once the animation has finished (see runAnimation).
-      // This function runs on every update, so it must not hide it again afterwards.
-      if (q && animDoneKey === `${data.round}:${data.animStartAt}`) {
-        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
+      // The answer line ticks up live on the paper while runAnimation()'s own
+      // onFrame/onDone callbacks are driving it (animPlayKey set) - this
+      // function runs on every room update (other players' reactions, etc.),
+      // so it must not fight that by hiding or overwriting it mid-count. Only
+      // takes over once done (animDoneKey), and only as a fallback for a
+      // client where runAnimation() never ran locally at all.
+      const animKey = `${data.round}:${data.animStartAt}`;
+      if (q && animDoneKey === animKey) {
+        questionAnswerLineEl.innerHTML = answerLineHtml(animModuleResolved ? animModuleResolved.formatCount(q.answer, q.answer) : q.answer.toFixed(2));
         questionAnswerLineEl.style.display = "block";
+      } else if (animPlayKey === animKey) {
+        // already showing (or about to, via runAnimation) - leave it alone
       } else {
         questionAnswerLineEl.style.display = "none";
       }
