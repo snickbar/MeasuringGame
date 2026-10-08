@@ -7309,7 +7309,7 @@
     butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "scatter", lap: 3000, size: 31, items: 12, burstN: 40 },
     snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "drift", lap: 3000, size: 27, items: 12, burstN: 40 },
     coinshower: { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
-    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "radial", hueRandom: true, lap: 3000, size: 36, items: 10, burstN: 32 },
+    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "firework", lap: 3000, size: 36, items: 10, burstN: 32 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -7377,6 +7377,33 @@
       fl.style.cssText = "position:absolute;inset:0;background:#fff;opacity:.9;";
       layer.appendChild(fl);
       fl.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 350, easing: "ease-out" }).onfinish = () => fl.remove();
+    }
+    if (f.burst === "firework") {
+      // real firework pictures: a few bursts that bloom out and fade, each in a random colour (the willow stays gold)
+      const shapes = ["fw-peony", "fw-ring", "fw-willow"];
+      const spots = [[0, 0, 190, 0], [-0.32, -0.9, 140, 160], [0.34, -0.7, 150, 300]];
+      spots.forEach(([dx, dy, px, delay], i) => {
+        const name = shapes[(Math.floor(Math.random() * 3) + i) % 3];
+        const img = document.createElement("img");
+        img.alt = ""; img.src = `icons/flair/${name}.png`;
+        const sz = px * (0.9 + Math.random() * 0.25);
+        img.style.cssText = `position:absolute;left:${cx + dx * r.width - sz / 2}px;top:${cy + dy * r.height - sz / 2}px;width:${sz}px;opacity:0;pointer-events:none;` +
+          (name === "fw-willow" ? "" : `filter:hue-rotate(${Math.floor(Math.random() * 360)}deg) saturate(1.2);`);
+        layer.appendChild(img);
+        img.animate([
+          { opacity: 0, transform: "scale(.15)" },
+          { opacity: 1, transform: "scale(.8)", offset: .25 },
+          { opacity: 1, transform: "scale(1.1)", offset: .6 },
+          { opacity: 0, transform: `scale(1.3) translateY(${name === "fw-willow" ? 26 : 8}px)` },
+        ], { duration: 1500, delay, easing: "ease-out", fill: "both" });
+      });
+      const fl = document.createElement("img");
+      fl.alt = ""; fl.src = "icons/flair/fw-flash.png";
+      fl.style.cssText = `position:absolute;left:${cx - 60}px;top:${cy - 60}px;width:120px;opacity:0;pointer-events:none;`;
+      layer.appendChild(fl);
+      fl.animate([{ opacity: 0, transform: "scale(.2)" }, { opacity: 1, transform: "scale(1)", offset: .3 }, { opacity: 0, transform: "scale(1.5)" }], { duration: 500, easing: "ease-out", fill: "both" });
+      setTimeout(() => layer.remove(), 2100);
+      return;
     }
     const now0 = performance.now(), parts = [];
     const bp = f.burstPics || f.pics;
