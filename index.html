@@ -2171,7 +2171,7 @@
   <div class="howto-section">
     <h3>Scoring</h3>
     <p>Only the single <b>closest guess</b> each round scores: +3 points normally, or +5 if it's within 0.9 of the exact answer. Everyone else gets 0 for that round, no matter how close they were.</p>
-    <p><b>Second-chance bonus:</b> +1 for correctly picking the round's closest answer, or the hidden answer that's within 1% of the truth - as long as it beats every player's guess (a closer guess still wins the round, and then picking the hidden one earns nothing). Everyone who found it shows up beside the answer.</p>
+    <p><b>Second-chance bonus:</b> +1 for correctly picking the round's closest answer, or the hidden answer that's within 1% of the truth - as long as it beats every player's guess (a closer guess still wins the round, and then picking the hidden one earns nothing). It's a second chance for everyone who didn't win the round, so the closest player doesn't get it on top, and it only shows up when two or more players guessed. Everyone who found it shows up beside the answer.</p>
     <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top - as long as someone else guessed that round too, so it can't be earned for free in a solo practice game with no bots.</p>
     <p><b>Crowd favorite:</b> +1 to whoever got 2 or more second-chance picks that round (whichever count is highest), whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
     <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
@@ -6234,9 +6234,10 @@
       .map((id) => ({ playerId: id, value: guesses[id] }));
     // A true second chance: one extra card on the table that is within
     // TRUTH_TOLERANCE of the real answer. Anyone who picks it gets the
-    // second-chance point. It looks like any other answer (no owner).
+    // second-chance point. It looks like any other answer (no owner). Only offered
+    // when at least two players guessed, so a solo game can't collect it for free.
     const q = roomState.currentQuestion;
-    if (real.length && q && isFinite(q.answer)) real.push({ playerId: TRUTH_ID, value: truthAnswerValue(q.answer, real.map((e) => e.value)), truth: true });
+    if (real.length >= 2 && q && isFinite(q.answer)) real.push({ playerId: TRUTH_ID, value: truthAnswerValue(q.answer, real.map((e) => e.value)), truth: true });
     const sorted = real
       .sort((a, b) => a.value - b.value)
       .map((e, i) => (e.truth ? { slot: i, playerId: e.playerId, value: e.value, truth: true } : { slot: i, playerId: e.playerId, value: e.value }));
@@ -6306,10 +6307,11 @@
     // Anyone who picked the true-answer card gets their second-chance point.
     // It only counts when it is closer to the truth than every player's guess:
     // if someone guessed even closer they win as usual and these picks earn nothing.
+    // The round's closest player never collects it too: the second chance is for everyone else.
     const truthCard = (roomState.answers || []).find((a) => a.truth);
     const truthWins = !!(truthCard && closest && Math.abs(truthCard.value - answer) < closest.error);
     const truthPickedBy = !truthWins ? [] : Object.entries(picks)
-      .filter(([, pick]) => pick.type === "pick" && pick.targetPlayerId === TRUTH_ID)
+      .filter(([pickerId, pick]) => pick.type === "pick" && pick.targetPlayerId === TRUTH_ID && !(closest && pickerId === closest.playerId))
       .map(([pickerId]) => ({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", avatar: (playersSnap[pickerId] || {}).avatar || null, points: 1 }));
     // Crowd favorite: whoever got the most second-chance picks this round,
     // regardless of whether their answer was actually closest - rewards
