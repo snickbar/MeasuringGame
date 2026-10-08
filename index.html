@@ -338,11 +338,13 @@
   .shop-tab-btn.active { opacity: 1; }
   /* "Coins" used to be baked into shop-tab-coins.png - now real text (renamed to
      "Purchases"), so relabeling it again never needs new art. Positioned over
-     the right ~55% of the pill (left ~45% is the coin-stack icon in the art). */
+     the right ~56% of the pill (left ~44% is the coin-stack icon in the art).
+     Also carries .fit-text (see fitTextToBox()), which shrinks it further on
+     any device where even this starting size doesn't fit. */
   .shop-tab-text {
-    position: absolute; left: 46%; right: 4%; top: 0; bottom: 0; pointer-events: none;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; color: #fff;
+    position: absolute; left: 44%; right: 3%; top: 0; bottom: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #fff; white-space: nowrap;
     text-shadow: -1.3px -1.3px 0 #8a5c28, 1.3px -1.3px 0 #8a5c28, -1.3px 1.3px 0 #8a5c28, 1.3px 1.3px 0 #8a5c28,
                  0 -1.3px 0 #8a5c28, 0 1.3px 0 #8a5c28, -1.3px 0 0 #8a5c28, 1.3px 0 0 #8a5c28;
   }
@@ -433,6 +435,7 @@
      outline sampled from the original art). */
   #gacha-pull-btn:not(.soldout) #gacha-pull-btn-text {
     display: flex; position: absolute; inset: 0; align-items: center; justify-content: center;
+    padding: 0 14%; overflow: hidden; white-space: nowrap;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #fff;
     text-shadow: -1.5px -1.5px 0 #4b0d0c, 1.5px -1.5px 0 #4b0d0c, -1.5px 1.5px 0 #4b0d0c, 1.5px 1.5px 0 #4b0d0c,
                  0 -1.5px 0 #4b0d0c, 0 1.5px 0 #4b0d0c, -1.5px 0 0 #4b0d0c, 1.5px 0 0 #4b0d0c;
@@ -1865,7 +1868,7 @@
 <div id="gacha-screen" class="screen">
   <button id="gacha-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="shop-tabs">
-    <button type="button" class="shop-tab-btn" data-tab="coins"><img src="icons/shop-tab-coins.png" alt="Purchases"><span class="shop-tab-text">Purchases</span></button>
+    <button type="button" class="shop-tab-btn" data-tab="coins"><img src="icons/shop-tab-coins.png" alt="Purchases"><span class="shop-tab-text fit-text">Purchases</span></button>
     <button type="button" class="shop-tab-btn" data-tab="avatars"><img src="icons/shop-tab-avatars.png" alt="Avatars"></button>
     <button type="button" class="shop-tab-btn" data-tab="cosmetics"><img src="icons/shop-tab-cosmetics.png" alt="Cosmetics"></button>
   </div>
@@ -1954,7 +1957,7 @@
 
     <button id="gacha-pull-btn" type="button" class="big-cta">
       <img id="gacha-pull-btn-img" src="icons/gacha-pull-btn.png" alt="">
-      <span id="gacha-pull-btn-text"></span>
+      <span id="gacha-pull-btn-text" class="fit-text"></span>
     </button>
     <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn">
       <img id="gacha-viewall-avatar-left" class="gacha-viewall-avatar" src="" alt="">
@@ -1968,8 +1971,8 @@
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
     <div class="cosm-sticky-header">
       <div class="cosm-tabs" role="group" aria-label="Cosmetics">
-        <button type="button" class="cosm-tab-btn active" data-sub="emojis">Reactions</button>
-        <button type="button" class="cosm-tab-btn" data-sub="flairs">Flairs</button>
+        <button type="button" class="cosm-tab-btn fit-text active" data-sub="emojis">Reactions</button>
+        <button type="button" class="cosm-tab-btn fit-text" data-sub="flairs">Flairs</button>
       </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <p id="cosm-emoji-status" class="cosm-sub cosm-sub-desc" data-sub="emojis"></p>
@@ -4227,6 +4230,31 @@
   });
   toolbarHomeBtn.addEventListener("click", guardToolbarNav(() => location.reload()));
 
+  // Shrinks a ".fit-text" element's font-size (from whatever its CSS rule
+  // sets) until its content actually fits the box it's rendered in - a
+  // safety net for real text sitting on a fixed/externally-sized picture-
+  // button (price labels, renamed tabs), which a fixed px font-size can't
+  // guarantee on every device: body caps at 520px but a narrower phone gets
+  // proportionally LESS room for the exact same button, same layout. Always
+  // resets to the CSS-defined size first, so it's safe to call repeatedly
+  // (tab switches, screen reopens) without ratcheting font-size down forever.
+  function fitTextToBox(el, minPx = 9) {
+    if (!el) return;
+    el.style.fontSize = "";
+    if (!el.clientWidth) return; // hidden (display:none ancestor) - nothing to measure yet
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    let guard = 40;
+    while (el.scrollWidth > el.clientWidth + 0.5 && size > minPx && guard-- > 0) {
+      size -= 0.5;
+      el.style.fontSize = size + "px";
+    }
+  }
+  function fitAllButtonText() {
+    document.querySelectorAll(".fit-text").forEach((el) => fitTextToBox(el));
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllButtonText);
+  window.addEventListener("resize", fitAllButtonText);
+
   function setShopTab(tab) {
     document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === tab);
@@ -4235,6 +4263,7 @@
       panel.classList.toggle("active", panel.id === `shop-tab-${tab}`);
     });
     fitGachaScene();
+    fitAllButtonText();
   }
   const GACHA_SCENE_NATURAL_HEIGHT = 450;
   const GACHA_SCENE_MIN_HEIGHT = 220;
