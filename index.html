@@ -1139,22 +1139,38 @@
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
-  /* Two-option switches (host mode, item mode, auto/manual): selected = orange pill, other = cream pill. */
+  /* Two-option switches (host mode, item mode, auto/manual): selected = orange pill, other = cream pill.
+     Each button keeps the rounded end-cap art on its OUTER edge but flattens its INNER (meeting) edge to
+     a 0-width border, so the flat "fill" strip of the pill art (the straight midsection of the source
+     image) stretches all the way to that edge instead of the rounded cap - giving the pair a single
+     flush seam in the middle, like the old bordered-container look, without new art assets. */
   .hostmode-row, .itemmode-row { border: none; border-radius: 0; overflow: visible; gap: 0; }
   button.hostmode-btn, button.itemmode-btn {
     --pic-h: 36px;
     display: flex; align-items: center; justify-content: center; text-align: center;
-    box-sizing: border-box; height: var(--pic-h); padding: 0 2px; margin: 0 -3px; min-width: 0;
+    box-sizing: border-box; height: var(--pic-h); padding: 0 2px; margin: 0; min-width: 0;
     background: transparent; border-radius: 0; box-shadow: none; filter: none; opacity: 1;
     font-family: 'Fredoka', sans-serif; font-weight: 700; line-height: 1;
-    border-style: solid; border-width: 0 calc(var(--pic-h) / 2); border-image-repeat: stretch;
-    border-image-source: url(icons/btn-sw-off.png); border-image-slice: 0 125 0 125 fill;
+    border-style: solid; border-image-repeat: stretch;
+    border-image-source: url(icons/btn-sw-off.png);
     color: #5b3a26; text-shadow: none;
   }
+  button.hostmode-btn:first-child, button.itemmode-btn:first-child {
+    border-width: 0 0 0 calc(var(--pic-h) / 2); border-image-slice: 0 0 0 125 fill;
+  }
+  button.hostmode-btn:last-child, button.itemmode-btn:last-child {
+    border-width: 0 calc(var(--pic-h) / 2) 0 0; border-image-slice: 0 125 0 0 fill;
+  }
   button.hostmode-btn.selected, button.itemmode-btn.selected {
-    background: transparent; border-image-source: url(icons/btn-sw-on.png); border-image-slice: 0 135 0 135 fill; color: #fff;
+    background: transparent; border-image-source: url(icons/btn-sw-on.png); color: #fff;
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
+  }
+  button.hostmode-btn.selected:first-child, button.itemmode-btn.selected:first-child {
+    border-image-slice: 0 0 0 135 fill;
+  }
+  button.hostmode-btn.selected:last-child, button.itemmode-btn.selected:last-child {
+    border-image-slice: 0 135 0 0 fill;
   }
   button.hostmode-btn { font-size: 12px; white-space: nowrap; }
   button.itemmode-btn { font-size: 12px; white-space: nowrap; }
