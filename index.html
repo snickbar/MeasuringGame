@@ -1389,9 +1389,13 @@
     box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 0;
     border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
   }
-  .question-answer-line {
-    margin-top: 8px; font-weight: 700; color: var(--brand); animation: popIn 300ms ease;
-  }
+  /* Used to be a small inline line, with a separate big standalone "THE
+     ANSWER" card doing the actual emphasis further down the screen - removed
+     that card per request and moved its same text size here instead, so the
+     answer is prominent right where it's already being read. */
+  .question-answer-line { margin-top: 8px; animation: popIn 300ms ease; }
+  .answer-line-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
+  .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px; color: #000; line-height: 1.1; }
 
   .game-body { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .main-col { flex: 4 1 0; min-width: 0; }
@@ -1622,15 +1626,6 @@
   #answers-hint { text-align: center; font-size: 15px; color: var(--text-muted); }
 
   /* ---- Reveal ---- */
-  #reveal-answer { display: flex; justify-content: center; margin-bottom: 12px; min-height: 0; }
-  .answer-badge {
-    display: inline-flex; flex-direction: column; align-items: center; gap: 0;
-    padding: 10px 30px 14px;
-    background: #fffeeb; border: 5px solid #97513e; border-radius: 20px;
-    animation: popIn 350ms ease;
-  }
-  .answer-badge-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
-  .answer-badge-value { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px; color: #000; line-height: 1.1; }
   #reveal-list { perspective: 800px; padding-left: 22px; }
   .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; }
   .card-inner {
@@ -2416,7 +2411,6 @@
       </div>
 
       <div id="reveal-view">
-        <p id="reveal-answer"></p>
         <ul id="reveal-list"></ul>
       </div>
 
@@ -3972,18 +3966,22 @@
   const doubleDownBtn = document.getElementById("double-down-btn");
 
   const revealViewEl = document.getElementById("reveal-view");
-  const revealAnswerEl = document.getElementById("reveal-answer");
+  // The big bold value used to live in its own separate "THE ANSWER" badge
+  // card in #reveal-view; that's gone now (same size moved onto the paper's
+  // own answer line instead, see .answer-line-value), so this is the only
+  // place the revealed answer renders - which is also why it still needs to
+  // carry forward into the round-summary screen unchanged, since
+  // #reveal-view itself is hidden there but the paper isn't.
+  function answerLineHtml(val) {
+    return `<span class="answer-line-label">Answer:</span> <span class="answer-line-value">${val}</span>`;
+  }
   // Shared by every reveal code path that flips the winning card (the normal
   // one-at-a-time animation, a late joiner catching up, and the "snap to
-  // final state" fast-forward) - keeps the fancy reveal-view badge and the
-  // plain answer line on the question paper in sync. The paper line is what
-  // carries the answer forward into the round-summary screen, since
-  // #reveal-view (and its badge) is hidden there but the paper isn't.
+  // final state" fast-forward).
   function showAnswerReveal() {
     const val = roomState.currentQuestion.answer.toFixed(2);
-    revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${val}</span></div>`;
     revealListEl.classList.add("answer-revealed");
-    questionAnswerLineEl.textContent = `Answer: ${val}`;
+    questionAnswerLineEl.innerHTML = answerLineHtml(val);
     questionAnswerLineEl.style.display = "block";
   }
   const revealListEl = document.getElementById("reveal-list");
@@ -5926,9 +5924,9 @@
         // The answer line appears under the question when the animation ends and pushes the stage
         // down, so measure with it showing to leave room for it now.
         const lineWasHidden = questionAnswerLineEl.style.display === "none";
-        if (lineWasHidden) { questionAnswerLineEl.textContent = "Answer: 0.00"; questionAnswerLineEl.style.display = "block"; }
+        if (lineWasHidden) { questionAnswerLineEl.innerHTML = answerLineHtml("0.00"); questionAnswerLineEl.style.display = "block"; }
         const top = animStageEl.getBoundingClientRect().top;
-        if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.textContent = ""; }
+        if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; }
         const avail = window.innerHeight - 58 - top - 8;
         animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)), minStageH: Math.max(260, avail) });
         animSceneRound = data.round;
@@ -5944,7 +5942,7 @@
           animDoneKey = key;
           const q = roomState.currentQuestion;
           if (q) {
-            questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+            questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
             questionAnswerLineEl.style.display = "block";
           }
         },
@@ -7642,9 +7640,8 @@
       hasSubmittedThisRound = false;
       guessLocked = false;
       guessStatusEl.textContent = "";
-      revealAnswerEl.innerHTML = "";
       revealListEl.classList.remove("answer-revealed");
-      questionAnswerLineEl.textContent = "";
+      questionAnswerLineEl.innerHTML = "";
       questionAnswerLineEl.style.display = "none";
       revealShuffled = false;
       lastChoreographedIndex = -1;
@@ -7673,7 +7670,7 @@
       // The answer number appears on the paper once the animation has finished (see runAnimation).
       // This function runs on every update, so it must not hide it again afterwards.
       if (q && animDoneKey === `${data.round}:${data.animStartAt}`) {
-        questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
         questionAnswerLineEl.style.display = "block";
       } else {
         questionAnswerLineEl.style.display = "none";
@@ -7692,7 +7689,7 @@
       const q = data.currentQuestion;
       if (q) {
         questionPromptTextEl.textContent = q.prompt;
-        questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
         questionAnswerLineEl.style.display = "block";
       }
     }
