@@ -1146,11 +1146,13 @@
      end-cap on its OUTER edge and has a clean flat cut on its INNER (meeting) edge, so the two flat edges
      sit flush together. (A pure-CSS zero-border-width attempt was tried first but failed: with no crop,
      the "fill" stretch region still contained the opposite cap's pixels and rendered them distorted-but-
-     still-rounded at the inner edge instead of flat.) The on/off source PNGs also had mismatched canvas
-     heights relative to their actual pill-shape size (off=251px tall, on=271px tall), which made the
-     selected pill render visibly thinner once both were force-stretched into the same button height -
-     the "on" source was rescaled to match "off"'s height (and re-cropped) before shipping, so both now
-     use the same end-cap slice width (125). */
+     still-rounded at the inner edge instead of flat.) The on/off source PNGs also don't line up in height:
+     "off" (cream) is a tight border with ~3px of antialiasing fringe, but "on" (orange) carries an extra
+     ~15px faint peach glow/halo padding the dark-outlined core on top AND bottom - a first attempt that
+     just height-matched the two full canvases left the cream pill looking taller, since it was effectively
+     being matched against red's faint outer halo instead of its real (dark-outlined) border. Fixed by
+     trimming "off" to its tight border bounds and "on" down to ONLY its dark-outlined core (discarding the
+     halo), then rescaling that core to match "off"'s height before re-cropping into left/right halves. */
   .hostmode-row, .itemmode-row { border: none; border-radius: 0; overflow: visible; gap: 0; }
   button.hostmode-btn, button.itemmode-btn {
     --pic-h: 36px;
@@ -1175,10 +1177,10 @@
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
   button.hostmode-btn.selected:first-child, button.itemmode-btn.selected:first-child {
-    border-image-source: url(icons/btn-sw-on-left.png); border-image-slice: 0 0 0 125 fill;
+    border-image-source: url(icons/btn-sw-on-left.png); border-image-slice: 0 0 0 138 fill;
   }
   button.hostmode-btn.selected:last-child, button.itemmode-btn.selected:last-child {
-    border-image-source: url(icons/btn-sw-on-right.png); border-image-slice: 0 125 0 0 fill;
+    border-image-source: url(icons/btn-sw-on-right.png); border-image-slice: 0 138 0 0 fill;
   }
   button.hostmode-btn { font-size: 12px; white-space: nowrap; }
   button.itemmode-btn { font-size: 12px; white-space: nowrap; }
