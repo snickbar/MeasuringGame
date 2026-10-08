@@ -207,7 +207,7 @@
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: .03em;
     box-shadow: 0 2px 4px rgba(0,0,0,.18); margin-bottom: 2px;
   }
-  #watch-ad-status { color: #c9542f; font-weight: 800; font-size: 11px; min-height: 1.2em; margin-bottom: 6px; }
+  #watch-ad-status { color: #c9542f; font-weight: 800; font-size: 11px; min-height: 1.2em; margin-bottom: 3px; }
   .ad-reward-btn { background: linear-gradient(180deg, #7bce5a 0%, #58a83c 100%) !important; }
   /* 2x2: the free-coins card and all 3 purchasable packs are one unified
      family of same-size tiles now, instead of a separate full-width hero
@@ -215,8 +215,8 @@
      text/buttons fit comfortably instead of being squeezed 3-up. */
   #coin-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
   .coin-pack-card {
-    position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 18px 10px 14px; border-radius: 20px;
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 16px 10px 10px; border-radius: 20px;
     background: linear-gradient(180deg, #f8c6a9 0%, #f4b799 100%);
     box-shadow: 0 2px 6px rgba(0,0,0,.1);
     border: 2px solid transparent;
@@ -244,12 +244,12 @@
   @media (prefers-reduced-motion: reduce) {
     .coin-pack-card.best-value { animation: none; }
   }
-  .coin-pack-icon { width: 78px; height: 78px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.15)); }
-  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: #44150d; }
-  .coin-pack-card.best-value .coin-pack-amount { font-size: 27px; color: #522900; }
+  .coin-pack-icon { width: 54px; height: 54px; object-fit: contain; margin-bottom: 2px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.15)); }
+  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; color: #44150d; }
+  .coin-pack-card.best-value .coin-pack-amount { font-size: 23px; color: #522900; }
   .coin-pack-label {
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .06em;
-    color: #8a5c4e; text-transform: uppercase; margin-bottom: 8px;
+    color: #8a5c4e; text-transform: uppercase; margin-bottom: 5px;
   }
   /* Warm brand-brown ladder instead of the old pink pill - each tier's
      button gets a little richer/brighter than the last, ending in gold for
@@ -265,8 +265,10 @@
   .coin-pack-buy-btn:disabled { opacity: .45; filter: grayscale(.3); }
   /* Scoped to this row specifically (not the shared base rule) so the
      bigger 2x2 cells get bigger buttons without also inflating the
-     unrelated emoji-pack-shop buttons that reuse the same base class. */
-  #coin-pack-row .coin-pack-buy-btn { font-size: 14px; padding: 12px 4px; }
+     unrelated emoji-pack-shop buttons that reuse the same base class.
+     (margin-top:auto is restated further down, after the shared picture-
+     button rule that resets margin to 0 - see the comment there.) */
+  #coin-pack-row .coin-pack-buy-btn { font-size: 13px; padding: 10px 4px; }
   .coin-pack-card.popular .coin-pack-buy-btn { background: linear-gradient(180deg, #ff9f4d 0%, #e07a1a 100%); }
   .coin-pack-card.best-value .coin-pack-buy-btn { background: linear-gradient(180deg, #ffd54f 0%, #f0a825 100%); color: #4a2800; text-shadow: none; }
 
@@ -1073,6 +1075,14 @@
   #join-continue-btn { --pic-h: 50px; width: 100%; margin: 6px 0; font-size: 20px; }
   #exit-confirm-yes-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
   .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn):disabled { opacity: .6; filter: grayscale(.4); }
+  /* The rule above resets margin to 0, which cancels the margin-top:auto that's
+     supposed to pin every coin-pack button to the bottom of its (grid-stretched,
+     same-height-as-its-row-mate) card - invisible on cards whose own content
+     already reaches the bottom, but left the 500-coin button stranded mid-card
+     since its row-mate (the Free/Watch-Ad card, with an extra status line) is
+     taller. Same specificity as the rule above (one #id + two classes) so this
+     has to come after it in the file to actually win. */
+  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn) { margin-top: auto; }
   /* Cream (cancel/secondary), blue (info) and green-small pills, as 9-slice pictures. */
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on), button#copy-room-code-btn,
