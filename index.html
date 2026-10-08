@@ -1365,7 +1365,7 @@
     100% { transform: translateX(-50%) translateY(-72px) scale(1); opacity: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .float-reaction, .streamer-piece, .coin-fly, .coin-award-popup { display: none; }
+    .float-reaction, .streamer-piece, .coin-fly, .coin-award-popup, .flair-layer { display: none; }
     .trophy-burst .trophy-emoji { animation: none; }
     .trophy-burst .ray { display: none; }
   }
@@ -1441,6 +1441,8 @@
   .card-inner.container-8 { border-image-source: var(--card8); }
   .card-inner.container-9 { border-image-source: var(--card9); }
   .card-inner.container-10 { border-image-source: var(--card10); }
+  .flair-layer { position: fixed; inset: 0; pointer-events: none; }
+  .flair-it { position: absolute; left: 0; top: 0; height: auto; will-change: transform; pointer-events: none; }
   .drumroll-stars { position: fixed; pointer-events: none; }
   .drumroll-stars span {
     position: absolute; top: 0; left: 0; width: 18px; height: 18px;
@@ -6155,6 +6157,7 @@
             if (entry.consecutiveWins >= 2) playSound("streak");
             celebrate(confettiTierFor(entry));
             spawnTrophyBurst(li);
+            flairBurst(li, flairIdFor(entry));
             if (entry.isPerfect) {
               perfectFlashEl.classList.remove("flash");
               void perfectFlashEl.offsetWidth;
@@ -6177,22 +6180,13 @@
       }
       if (isWinner) {
         li.classList.add("drumroll");
-        // Appended to the global reactions-panel overlay (fixed, z-index 900),
-        // not as a child of li - #reveal-list sets `perspective` for the card
-        // flip, which creates its own stacking context and traps any z-index
-        // set on a descendant, so the stars could never actually paint above
-        // the separate .score-col cards they visually orbit into.
-        const rect = li.getBoundingClientRect();
-        const stars = document.createElement("div");
-        stars.className = "drumroll-stars";
-        stars.style.left = `${rect.left - 10}px`;
-        stars.style.top = `${rect.top - 10}px`;
-        stars.style.width = `${rect.width + 20}px`;
-        stars.style.height = `${rect.height + 20}px`;
-        stars.innerHTML = "<span></span><span></span><span></span><span></span>";
-        reactionsPanelEl.appendChild(stars);
+        // The flair's items circle the card (in the fixed reactions-panel overlay, so they
+        // paint above the separate .score-col cards) for the drumroll, then the card flips.
+        const drumMs = flairDrumMs();
         playSound("drumroll");
-        setTimeout(() => { li.classList.remove("drumroll"); stars.remove(); doFlips(); }, 900);
+        if (drumMs > 1100) setTimeout(() => playSound("drumroll"), 1000);
+        flairOrbit(li, flairIdFor(entry), drumMs);
+        setTimeout(() => { li.classList.remove("drumroll"); doFlips(); }, drumMs);
       } else {
         doFlips();
       }
@@ -6610,6 +6604,122 @@
       reactionsPanelEl.appendChild(s);
       setTimeout(() => s.remove(), dur + 400);
     }
+  }
+
+  // ---- Winner flairs: items circle the winner's card during the drumroll, then burst as it flips ----
+  // Numbers picked per flair in the flair preview page. lap = ms per lap around the card,
+  // size = px, items = how many circle the card, burst = how many fly out when it flips.
+  const FLAIR_DRUM_MS = 2300;
+  const FLAIRS = {
+    classic:   { pics: ["star"], move: "twinkle", burst: "radial", lap: 3000, size: 33, items: 10, burstN: 32 },
+    rainbow:   { pics: ["star"], move: "twinkle", burst: "radial", rainbow: true, lap: 3000, size: 36, items: 10, burstN: 18 },
+    hearts:    { pics: ["heart"], move: "pulse", burst: "rise", lap: 2400, size: 41, items: 6, burstN: 11 },
+    lightning: { pics: ["bolt"], move: "flicker", burst: "zap", lap: 2200, size: 44, items: 6, burstN: 31 },
+    fire:      { pics: ["flame"], move: "flame", burst: "rise", lap: 3000, size: 41, items: 12, burstN: 40 },
+    butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "scatter", lap: 3000, size: 31, items: 12, burstN: 40 },
+    snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "drift", lap: 3000, size: 27, items: 12, burstN: 40 },
+    coins:     { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
+    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "radial", hueRandom: true, lap: 3000, size: 36, items: 10, burstN: 32 },
+  };
+  const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
+  const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // ?flair=hearts previews a flair in-game; otherwise the winner's own equipped flair (default Classic Stars).
+  function flairIdFor(entry) {
+    const test = new URLSearchParams(location.search).get("flair");
+    const id = test || (entry && entry.flair) || "classic";
+    return FLAIRS[id] ? id : "classic";
+  }
+  function flairDrumMs() { return reduceMotion() ? 900 : FLAIR_DRUM_MS; }
+  function flairMakeItem(layer, name, size) {
+    const e = document.createElement("img");
+    e.className = "flair-it"; e.alt = ""; e.src = flairPic(name); e.style.width = `${size}px`;
+    layer.appendChild(e); return e;
+  }
+  function flairOrbit(li, flairId, ms) {
+    if (reduceMotion()) return;
+    const f = FLAIRS[flairId], size = f.size;
+    const layer = document.createElement("div");
+    layer.className = "flair-layer";
+    reactionsPanelEl.appendChild(layer);
+    const items = [];
+    for (let k = 0; k < f.items; k++) items.push({ el: flairMakeItem(layer, f.pics[k % f.pics.length], size), off: k / f.items, ph: Math.random() * 6.28 });
+    const t0 = performance.now();
+    function frame(now) {
+      const t = now - t0;
+      if (t >= ms || !layer.isConnected) { layer.remove(); return; }
+      const r = li.getBoundingClientRect(), x0 = r.left - 8, y0 = r.top - 8, w = r.width + 16, h = r.height + 16, P = 2 * (w + h);
+      const at = (u) => {
+        let d = (((u % 1) + 1) % 1) * P;
+        if (d < w) return [d, 0];
+        if ((d -= w) < h) return [w, d];
+        if ((d -= h) < w) return [w - d, h];
+        d -= w; return [0, h - d];
+      };
+      items.forEach((it, k) => {
+        const u = it.off + t / f.lap, [px, py] = at(u);
+        const sp = t / 1000 * 6 + it.ph;
+        let sc = 1, rot = 0, sx = 1, dy = 0, op = 1;
+        if (f.move === "twinkle") { sc = 0.85 + 0.25 * Math.sin(sp * 1.6); rot = Math.sin(sp) * 25; }
+        else if (f.move === "pulse") { sc = 0.85 + 0.25 * Math.abs(Math.sin(sp * 1.2)); }
+        else if (f.move === "flicker") { sc = 0.9 + 0.2 * Math.sin(sp * 5); rot = Math.sin(sp * 3) * 14; op = 0.8 + 0.2 * Math.sin(sp * 9); }
+        else if (f.move === "flame") { sc = 0.9 + 0.15 * Math.sin(sp * 3); dy = -3 * Math.abs(Math.sin(sp * 2)); }
+        else if (f.move === "flap") { sx = 0.35 + 0.65 * Math.abs(Math.sin(sp * 2.4)); dy = Math.sin(sp) * 3; }
+        else if (f.move === "spin") { rot = (t / 1000) * 120 + it.ph * 20; }
+        else if (f.move === "coin") { sx = Math.cos(sp * 1.8); }
+        else if (f.move === "rocket") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI + 45; dy = Math.sin(sp * 3) * 1.5; }
+        it.el.style.transform = `translate(${x0 + px - size / 2}px, ${y0 + py - size / 2 + dy}px) rotate(${rot}deg) scale(${sc * sx}, ${sc})`;
+        it.el.style.opacity = op;
+        if (f.rainbow) it.el.style.filter = `hue-rotate(${(t / 8 + k * 60) % 360}deg) saturate(1.3)`;
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function flairBurst(li, flairId) {
+    if (reduceMotion()) return;
+    const f = FLAIRS[flairId], size = f.size;
+    const r = li.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const layer = document.createElement("div");
+    layer.className = "flair-layer";
+    reactionsPanelEl.appendChild(layer);
+    if (f.burst === "zap") {
+      const fl = document.createElement("div");
+      fl.style.cssText = "position:absolute;inset:0;background:#fff;opacity:.9;";
+      layer.appendChild(fl);
+      fl.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 350, easing: "ease-out" }).onfinish = () => fl.remove();
+    }
+    const now0 = performance.now(), parts = [];
+    const bp = f.burstPics || f.pics;
+    for (let k = 0; k < f.burstN; k++) {
+      const s = 0.6 + Math.random() * 0.7, ang = Math.random() * 6.28, spd = 2 + Math.random() * 4;
+      const p = { el: flairMakeItem(layer, bp[k % bp.length], size), t0: now0 + Math.random() * 120, life: 1100 + Math.random() * 500, s, ph: Math.random() * 6,
+        r: Math.random() * 360, vr: (Math.random() - 0.5) * 8, g: 0, vx: 0, vy: 0, x: cx - size / 2, y: cy - size / 2 };
+      if (f.burst === "radial") { p.vx = Math.cos(ang) * spd; p.vy = Math.sin(ang) * spd; p.g = 0.06; }
+      else if (f.burst === "rise") { p.vx = (Math.random() - 0.5) * 2.4; p.vy = -1.5 - Math.random() * 2.5; p.g = -0.02; p.vr = (Math.random() - 0.5) * 2; p.x = cx - size / 2 + (Math.random() - 0.5) * r.width; p.y = cy; }
+      else if (f.burst === "zap") { p.vx = Math.cos(ang) * spd * 1.3; p.vy = Math.sin(ang) * spd * 1.3; p.vr = (Math.random() - 0.5) * 20; }
+      else if (f.burst === "scatter") { p.vx = Math.cos(ang) * spd * 0.7; p.vy = Math.sin(ang) * spd * 0.7 - 0.5; p.vr = 0; p.r = 0; p.g = -0.01; }
+      else if (f.burst === "drift") { p.vx = (Math.random() - 0.5) * 1.2; p.vy = 0.4 + Math.random() * 0.8; p.vr = (Math.random() - 0.5) * 3; p.x = Math.random() * window.innerWidth - size / 2; p.y = -size - Math.random() * 60; p.life = 2200; }
+      else if (f.burst === "rain") { p.vx = (Math.random() - 0.5) * 1.2; p.vy = 1 + Math.random() * 1.5; p.g = 0.12; p.vr = 0; p.r = 0; p.x = Math.random() * window.innerWidth - size / 2; p.y = -size - Math.random() * 120; p.life = 1900; }
+      if (f.hueRandom) p.el.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg) saturate(1.4)`;
+      parts.push(p);
+    }
+    function frame(now) {
+      if (!layer.isConnected) return;
+      let alive = false;
+      parts.forEach((p) => {
+        const a = Math.min(1, (now - p.t0) / p.life);
+        if (a >= 1) { p.el.style.display = "none"; return; }
+        alive = true;
+        if (a < 0) return;
+        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        const sx = f.move === "flap" ? 0.35 + 0.65 * Math.abs(Math.sin(now / 90 + p.ph)) : (f.move === "coin" ? Math.cos(now / 110 + p.ph) : 1);
+        p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg) scale(${sx * p.s}, ${p.s})`;
+        p.el.style.opacity = a < 0.7 ? 1 : (1 - a) / 0.3;
+        if (f.rainbow) p.el.style.filter = `hue-rotate(${(now / 6 + p.ph * 50) % 360}deg) saturate(1.3)`;
+      });
+      if (alive) requestAnimationFrame(frame); else layer.remove();
+    }
+    requestAnimationFrame(frame);
   }
 
   function spawnTrophyBurst(targetEl) {
