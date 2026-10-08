@@ -337,21 +337,45 @@
   }
   #gacha-screen.active .screen-header { flex-shrink: 0; }
   #gacha-screen.active .shop-tab-panel.active { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
-  .flair-shop-title { margin: 20px 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); }
-  .flair-shop-sub { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
-  .flair-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .cosmetic-item {
-    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-width: 0;
-    padding: 10px 4px 8px; margin: 0; border-width: 0; border-image: none; border-radius: 14px; box-shadow: none; filter: none;
-    background: #fffaf0; border: 3px solid #d9c3a3; color: var(--text); font-family: 'Fredoka', sans-serif;
+  /* ---- Cosmetics: Emojis / Flairs mini menu, one item per row: picture left, Equip middle, coin price right ---- */
+  .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
+  .cosm-pane[hidden] { display: none; }
+  .cosm-note { min-height: 1.3em; margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
+  .cosm-sub { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+  .cosm-list { display: flex; flex-direction: column; gap: 8px; }
+  .cosm-group-label { margin: 8px 0 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
+  .cosm-pack-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+  .cosm-pack-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+  .cosm-pack-sub { font-size: 12px; color: var(--text-muted); }
+  .cosm-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px;
+    padding: 8px 10px; background: #fffaf0; border: 3px solid #d9c3a3; border-radius: 14px;
   }
-  .cosmetic-item.equipped { border-color: #4caf50; background: #f1fae9; }
-  .cosmetic-item:disabled { opacity: .6; }
-  .cosmetic-swatch-flair { width: 100%; max-width: 54px; height: 48px; object-fit: contain; }
-  .cosmetic-swatch-flair.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
-  .cosmetic-item-label { font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; color: var(--text); }
-  .cosmetic-item-state { font-size: 12px; font-weight: 600; color: var(--text-muted); }
-  .cosmetic-item.equipped .cosmetic-item-state { color: #2e7d32; }
+  .cosm-row.equipped { border-color: #4caf50; background: #f1fae9; }
+  .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .cosm-flair-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
+  .cosm-flair-pic.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
+  .cosm-emoji { width: 46px; font-size: 32px; line-height: 1; text-align: center; flex: none; }
+  .cosm-name { min-width: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; line-height: 1.1; color: var(--text); }
+  .cosm-coin { width: 16px; height: 16px; margin-right: 3px; }
+  button.cosm-tab-btn, button.cosm-equip, button.cosm-buy, button.cosm-unlock {
+    --pic-h: 34px;
+    display: flex; align-items: center; justify-content: center; text-align: center; box-sizing: border-box;
+    height: var(--pic-h); padding: 0 2px; margin: 0; min-width: 0; background: transparent; border-radius: 0; box-shadow: none; filter: none;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; line-height: 1; white-space: nowrap;
+    border-style: solid; border-width: calc(var(--pic-h) / 2); border-image-repeat: stretch;
+    border-image-source: url(icons/btn-cream.png); border-image-slice: 155 fill; color: #5b3a26; text-shadow: none;
+  }
+  button.cosm-tab-btn { --pic-h: 40px; flex: 1; font-size: 15px; }
+  button.cosm-equip, button.cosm-buy { width: 96px; }
+  button.cosm-unlock { width: auto; min-width: 110px; }
+  button.cosm-tab-btn.active, button.cosm-equip:not(:disabled):not(.is-on) {
+    border-image-source: url(icons/btn-bot-easy.png); border-image-slice: 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
+  }
+  button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
+  button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
+  button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
+  #emoji-picker-settings-grid { display: block; }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
@@ -1801,10 +1825,19 @@
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
-    <div id="emoji-pack-list"></div>
-    <h2 class="flair-shop-title">Winner flair</h2>
-    <p class="flair-shop-sub">Plays around your card when you win a round, and everyone in the room sees it. Tap one to buy or equip it.</p>
-    <div id="cosmetic-grid-effects" class="flair-grid"></div>
+    <div class="cosm-tabs" role="group" aria-label="Cosmetics">
+      <button type="button" class="cosm-tab-btn active" data-sub="emojis">Emojis</button>
+      <button type="button" class="cosm-tab-btn" data-sub="flairs">Flairs</button>
+    </div>
+    <p id="cosm-note" class="cosm-note" role="status"></p>
+    <div id="cosm-pane-emojis" class="cosm-pane">
+      <p id="cosm-emoji-status" class="cosm-sub"></p>
+      <div id="cosm-emojis-list" class="cosm-list"></div>
+    </div>
+    <div id="cosm-pane-flairs" class="cosm-pane" hidden>
+      <p class="cosm-sub">Your flair plays around your card when you win a round, and everyone in the room sees it.</p>
+      <div id="cosm-flairs-list" class="cosm-list"></div>
+    </div>
     <div class="coming-soon-box">
       <p class="coming-soon-title">Coming Soon</p>
       <p class="coming-soon-sub">Card borders and name colors are on the way.</p>
@@ -2579,6 +2612,8 @@
       cosmetics: defaultCosmeticState(),
       presets: {},
       emojiPacks: {},
+      emojiOwned: {},
+      flairPacks: {},
       activeEmojis: [...DEFAULT_EMOJIS],
     };
   }
@@ -2658,7 +2693,6 @@
     renderWatchAdStatus();
     renderHostUnlockUi();
     renderCosmeticsShop();
-    renderEmojiPackShop();
     renderInGameEmojiPicker();
     renderEmojiPickerSettings();
     renderPresetSlotButtons();
@@ -2688,6 +2722,8 @@
           },
           presets: { ...(data.presets || {}) },
           emojiPacks: { ...(data.emojiPacks || {}) },
+          emojiOwned: { ...(data.emojiOwned || {}) },
+          flairPacks: { ...(data.flairPacks || {}) },
           activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...DEFAULT_EMOJIS],
         };
       }
@@ -2814,9 +2850,8 @@
     });
   }
   function renderCosmeticsShop() {
-    renderCosmeticCategory("borders");
-    renderCosmeticCategory("effects");
-    renderCosmeticCategory("colors");
+    renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
+    renderFlairRows(document.getElementById("cosm-flairs-list"));
   }
 
   // TEMP: same simulated-purchase pattern as the host-unlock button below -
@@ -2828,39 +2863,146 @@
   const EMOJI_PACK_CATALOG = [
     { id: "pack1", label: "Emoji Pack 1", price: "$2.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
   ];
-  const emojiPackListEl = document.getElementById("emoji-pack-list");
-  function renderEmojiPackShop() {
-    if (!emojiPackListEl) return;
-    const owned = myProfile.emojiPacks || {};
-    emojiPackListEl.innerHTML = "";
-    EMOJI_PACK_CATALOG.forEach((pack) => {
-      const isOwned = !!owned[pack.id];
-      const box = document.createElement("div");
-      box.className = "host-unlock-shop-box" + (isOwned ? " unlocked" : "");
-      box.innerHTML = `
-        <div class="host-unlock-top-row">
-          <div class="emoji-pack-preview">${pack.emojis.join(" ")}</div>
-          <div class="host-unlock-text">
-            <h3>${pack.label}</h3>
-            <p>${pack.emojis.length} new reactions to use in-game.</p>
-          </div>
-        </div>
-        <button type="button" class="coin-pack-buy-btn"${isOwned ? " disabled" : ""}>${isOwned ? "&#10003; Unlocked" : `Unlock for ${pack.price} &middot; One time`}</button>
-      `;
-      if (!isOwned) {
-        box.querySelector(".coin-pack-buy-btn").addEventListener("click", async () => {
-          await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
-        });
-      }
-      emojiPackListEl.appendChild(box);
-    });
+  function emojiPool() {
+    return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
   }
 
-  function emojiPool() {
-    const owned = myProfile.emojiPacks || {};
-    const pool = [...DEFAULT_EMOJIS];
-    EMOJI_PACK_CATALOG.forEach((pack) => { if (owned[pack.id]) pool.push(...pack.emojis); });
-    return pool;
+  // ---- Cosmetics rows: picture on the left, Equip in the middle, coin price on the right ----
+  // Pack bundles are real-money (simulated for now, like the emoji pack was); each item can also be bought with coins.
+  const EMOJI_COIN_COST = 125;
+  const EMOJI_NAMES = {
+    "\u{1F937}": "Shrug", "\u{1F600}": "Grin", "\u23F0": "Alarm clock", "\u{1F44F}": "Clap", "\u2764\uFE0F": "Heart",
+    "\u{1F44D}": "Thumbs up", "\u{1F602}": "Laughing", "\u{1F525}": "Fire", "\u{1F389}": "Party popper",
+    "\u{1F624}": "Triumph", "\u{1F62B}": "Tired face", "\u{1F913}": "Nerd", "\u{1F4AA}": "Flexed arm", "\u2620\uFE0F": "Skull", "\u{1F62D}": "Crying",
+  };
+  const FLAIR_PACK_CATALOG = [
+    { id: "fpack1", label: "Flair Pack 1", price: "$2.99", flairs: ["hearts", "coinshower", "snow", "rainbow"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$2.99", flairs: ["butterfly", "fireworks", "fire", "lightning"] },
+  ];
+  const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
+  function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
+  function ownsEmoji(e) {
+    if (DEFAULT_EMOJIS.includes(e)) return true;
+    const pk = emojiPackOf(e);
+    return !!((pk && (myProfile.emojiPacks || {})[pk.id]) || (myProfile.emojiOwned || {})[emojiKey(e)]);
+  }
+  function flairPackOf(id) { return FLAIR_PACK_CATALOG.find((p) => p.flairs.includes(id)); }
+  function ownsFlair(item) {
+    if (item.cost === 0) return true;
+    const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.effects) || {};
+    const pk = flairPackOf(item.id);
+    return !!(own[item.id] || (pk && (myProfile.flairPacks || {})[pk.id]));
+  }
+  let cosmNoteTimer = null;
+  function cosmNote(msg) {
+    [document.getElementById("cosm-note"), emojiPickerSettingsStatusEl].forEach((el) => { if (el) el.textContent = msg; });
+    clearTimeout(cosmNoteTimer);
+    cosmNoteTimer = setTimeout(() => { const n = document.getElementById("cosm-note"); if (n) n.textContent = ""; renderEmojiPickerSettings(); }, 2200);
+  }
+  async function buyEmojiWithCoins(e) {
+    if ((myProfile.coins || 0) < EMOJI_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+    const key = emojiKey(e);
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if ((profile.emojiOwned || {})[key] || (profile.coins || 0) < EMOJI_COIN_COST) return profile;
+      return { ...profile, coins: (profile.coins || 0) - EMOJI_COIN_COST, emojiOwned: { ...(profile.emojiOwned || {}), [key]: true } };
+    });
+  }
+  async function buyFlairWithCoins(item) {
+    if ((myProfile.coins || 0) < item.cost) { cosmNote("Not enough coins yet."); return; }
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const cosmetics = profile.cosmetics || defaultCosmeticState();
+      const owned = (cosmetics.owned && cosmetics.owned.effects) || {};
+      if (owned[item.id] || (profile.coins || 0) < item.cost) return profile;
+      return { ...profile, coins: (profile.coins || 0) - item.cost,
+        cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, effects: { ...owned, [item.id]: true } } } };
+    });
+  }
+  async function equipFlair(id) {
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/effects": id });
+  }
+  function cosmRow(o) {
+    const row = document.createElement("div");
+    row.className = "cosm-row" + (o.equipped ? " equipped" : "");
+    row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.name}</span></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    if (o.owned) {
+      btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
+      btn.textContent = o.equipped ? "Equipped" : "Equip";
+      btn.addEventListener("click", o.onEquip);
+    } else {
+      btn.className = "cosm-buy";
+      btn.innerHTML = `<img class="cosm-coin" src="icons/coin.png" alt="">${o.cost}`;
+      btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
+      btn.addEventListener("click", o.onBuy);
+    }
+    row.appendChild(btn);
+    return row;
+  }
+  function cosmPackHead(pack, owned, onUnlock, subText) {
+    const head = document.createElement("div");
+    head.className = "cosm-pack-head";
+    head.innerHTML = `<div><div class="cosm-pack-title">${pack.label}</div><div class="cosm-pack-sub">${subText}</div></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cosm-unlock";
+    btn.disabled = owned;
+    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${pack.price}`;
+    if (!owned) btn.addEventListener("click", onUnlock);
+    head.appendChild(btn);
+    return head;
+  }
+  function renderEmojiRows(container, statusEl) {
+    if (!container) return;
+    const active = myProfile.activeEmojis || DEFAULT_EMOJIS;
+    container.innerHTML = "";
+    const row = (e, cost) => cosmRow({
+      leadHtml: `<span class="cosm-emoji">${e}</span>`, name: EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
+      equipped: active.includes(e),
+      onEquip: () => {
+        if (!active.includes(e) && active.length >= 9) { cosmNote("You can equip up to 9. Unequip one first."); return; }
+        toggleActiveEmoji(e);
+      },
+      onBuy: () => buyEmojiWithCoins(e),
+    });
+    const label = document.createElement("div");
+    label.className = "cosm-group-label";
+    label.textContent = "Free";
+    container.appendChild(label);
+    DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
+    EMOJI_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.emojiPacks || {})[pack.id];
+      container.appendChild(cosmPackHead(pack, owned, async () => {
+        await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
+      }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
+      pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
+    });
+    if (statusEl) statusEl.textContent = `${active.length} / 9 equipped. Only equipped emojis show up in the game.`;
+  }
+  function renderFlairRows(container) {
+    if (!container) return;
+    const equipped = (myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects) || "classic";
+    container.innerHTML = "";
+    const row = (item) => cosmRow({
+      leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
+      owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id,
+      onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
+    });
+    const items = COSMETIC_CATALOG.effects;
+    const label = document.createElement("div");
+    label.className = "cosm-group-label";
+    label.textContent = "Free";
+    container.appendChild(label);
+    items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
+    FLAIR_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.flairPacks || {})[pack.id];
+      container.appendChild(cosmPackHead(pack, owned, async () => {
+        await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
+      }, `${pack.flairs.length} flairs, or buy each with coins`));
+      pack.flairs.forEach((id) => { const it = items.find((x) => x.id === id); if (it) container.appendChild(row(it)); });
+    });
   }
 
   function pickGachaResult() {
@@ -3437,20 +3579,7 @@
   }
 
   function renderEmojiPickerSettings() {
-    const pool = emojiPool();
-    const active = myProfile.activeEmojis || DEFAULT_EMOJIS;
-    const atLimit = active.length >= 9;
-    emojiPickerSettingsGridEl.innerHTML = "";
-    pool.forEach((emoji) => {
-      const isSelected = active.includes(emoji);
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "emoji-btn" + (isSelected ? " selected" : "") + (!isSelected && atLimit ? " disabled-pick" : "");
-      btn.textContent = emoji;
-      btn.addEventListener("click", () => toggleActiveEmoji(emoji));
-      emojiPickerSettingsGridEl.appendChild(btn);
-    });
-    emojiPickerSettingsStatusEl.textContent = `${active.length} / 9 selected`;
+    renderEmojiRows(emojiPickerSettingsGridEl, emojiPickerSettingsStatusEl);
   }
 
   async function toggleActiveEmoji(emoji) {
@@ -3465,6 +3594,11 @@
     await update(ref(db, `profiles/${deviceId}`), { activeEmojis: next });
   }
 
+  document.querySelectorAll(".cosm-tab-btn").forEach((btn) => btn.addEventListener("click", () => {
+    document.querySelectorAll(".cosm-tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    document.getElementById("cosm-pane-emojis").hidden = btn.dataset.sub !== "emojis";
+    document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
+  }));
   editEmojiPickerBtn.addEventListener("click", () => {
     renderEmojiPickerSettings();
     openOverlay(emojiPickerSettingsScreen);
