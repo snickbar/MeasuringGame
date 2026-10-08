@@ -7470,13 +7470,13 @@
   const FLAIRS = {
     classic:   { pics: ["star"], move: "twinkle", burst: "radial", lap: 3000, size: 33, items: 10, burstN: 32 },
     rainbow:   { pics: ["star"], move: "twinkle", burst: "radial", rainbow: true, lap: 3000, size: 36, items: 10, burstN: 18 },
-    hearts:    { pics: ["heart"], move: "pulse", burst: "rise", lap: 2400, size: 41, items: 6, burstN: 11 },
-    lightning: { pics: ["bolt"], move: "flicker", burst: "zap", lap: 2200, size: 44, items: 6, burstN: 31 },
-    fire:      { pics: ["flame"], move: "flame", burst: "rise", lap: 3000, size: 41, items: 12, burstN: 40 },
-    butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "scatter", lap: 3000, size: 31, items: 12, burstN: 40 },
-    snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "drift", lap: 3000, size: 27, items: 12, burstN: 40 },
-    coinshower: { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
-    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "firework", lap: 3000, size: 36, items: 10, burstN: 32 },
+    hearts:    { pics: ["heart"], move: "pulse", burst: "flutterup", lap: 2400, size: 41, items: 6, burstN: 28, life: 5000 },
+    lightning: { pics: ["bolt"], move: "flicker", burst: "zigzag", lap: 2200, size: 44, items: 6, burstN: 14, life: 1800 },
+    fire:      { pics: ["flame"], move: "flame", burst: "spiral", lap: 3000, size: 41, items: 12, burstN: 36, life: 4000 },
+    butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "linger", lap: 3000, size: 31, items: 12, burstN: 18, life: 6000 },
+    snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "fall", lap: 3000, size: 27, items: 12, burstN: 40, life: 5000 },
+    coinshower: { pics: ["coin"], move: "coin", burst: "coinfall", lap: 3000, size: 40, items: 12, burstN: 40, life: 4000 },
+    fireworks: { pics: ["rocket"], move: "rocket", burst: "show", lap: 3000, size: 36, items: 10, burstN: 5, life: 2600 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -7532,6 +7532,155 @@
     }
     requestAnimationFrame(frame);
   }
+  // The newer flair bursts. They fill the whole screen (the layer is fixed over the viewport), centred on the winner's card.
+  // Each particle's position is a function of time, so a longer "life" simply lasts longer. Returns true when it handled the flair.
+  function flairBurstNew(layer, f, li, r, cx, cy) {
+    const b = f.burst;
+    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger"].includes(b)) return false;
+    const W = window.innerWidth, H = window.innerHeight, L = f.life || 3000, N = f.burstN, size = f.size;
+    const rnd = (a, c) => a + Math.random() * (c - a);
+    const tf = (x, y, rot, sx, sy) => `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
+    const fadeOut = (bt, end, span) => Math.max(0, Math.min(1, (end - bt) / span));
+    const ease = (p) => p * p * (3 - 2 * p);
+    const item = (name, sz) => flairMakeItem(layer, name, sz || size);
+    const cust = [], t0 = performance.now();
+    const add = (el, up) => cust.push({ el, up });
+    const runCust = () => {
+      function frame(now) {
+        if (!layer.isConnected) return;
+        const bt = now - t0; let alive = false;
+        cust.forEach((c) => { if (c.dead) return; if (c.up(bt)) alive = true; else { c.dead = true; c.el.style.display = "none"; } });
+        if (alive) requestAnimationFrame(frame); else layer.remove();
+      }
+      requestAnimationFrame(frame);
+    };
+
+    if (b === "spiral") {
+      // arms of flames sweep outward to the edges while the whole pattern spins; the winner's card stays on top (the layer is clipped around it)
+      layer.style.clipPath = `path(evenodd, 'M0 0H${W}V${H}H0Z M${r.left + 1} ${r.top + 1}h${r.width - 2}v${r.height - 2}h${-(r.width - 2)}Z')`;
+      const arms = 3, per = Math.max(2, Math.round(N / arms)), R = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + size;
+      const T = Math.max(1400, L * 0.45), spin = 1.5, swirl = 2.4;
+      for (let a = 0; a < arms; a++) for (let j = 0; j < per; j++) {
+        const el = item("flame"), ph = j / per;
+        add(el, (bt) => {
+          if (bt >= L) return false;
+          const u = ((bt / T + ph) % 1), rr = u * R, ang = a * 6.2832 / arms + swirl * u + spin * bt / 1000;
+          const g = Math.min(1, bt / 250) * fadeOut(bt, L, 700), op = Math.min(1, u * 8) * (1 - Math.pow(u, 3)) * g;
+          const sc = 0.55 + 0.7 * (1 - u) + 0.1 * Math.sin(bt / 90 + j);
+          el.style.transform = tf(cx + Math.cos(ang) * rr - size / 2, cy + Math.sin(ang) * rr - size / 2, ang * 57.3 + 90, sc, sc); el.style.opacity = op; return true;
+        });
+      }
+      runCust(); return true;
+    }
+
+    if (b === "zigzag") {
+      // jagged bolts in every direction to the edges, with lightning icons riding along them
+      const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("width", W); svg.setAttribute("height", H); svg.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;overflow:visible";
+      layer.appendChild(svg);
+      const flash = document.createElement("div"); flash.style.cssText = "position:absolute;inset:0;background:#fff;pointer-events:none"; layer.appendChild(flash);
+      flash.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 380, easing: "ease-out", fill: "both" });
+      const rays = Math.max(6, Math.round(N / 2)), R = Math.hypot(W, H) / 2 + 40;
+      const bolt = (ang, len, delay, width) => {
+        const step = 22, nSeg = Math.ceil(len / step); let x = cx, y = cy, d = `M${x} ${y}`; const pts = [];
+        const dx = Math.cos(ang), dy = Math.sin(ang), px = -dy, py = dx;
+        for (let i = 1; i <= nSeg; i++) { const off = (i % 2 ? 1 : -1) * rnd(8, 20); x = cx + dx * i * step + px * off; y = cy + dy * i * step + py * off; d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; pts.push([x, y]); }
+        const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); p.setAttribute("pathLength", "1"); p.setAttribute("fill", "none");
+        p.setAttribute("stroke", "#fff7c2"); p.setAttribute("stroke-width", width); p.setAttribute("stroke-linejoin", "miter"); p.setAttribute("stroke-linecap", "round");
+        p.style.filter = "drop-shadow(0 0 5px #ffd21f) drop-shadow(0 0 10px #ff9d00)"; p.style.strokeDasharray = "1"; svg.appendChild(p);
+        p.animate([{ strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: 0, opacity: 1, offset: 0.14 }, { opacity: 0.55, offset: 0.2 }, { opacity: 1, offset: 0.27 }, { opacity: 0.5, offset: 0.4 }, { opacity: 0.9, offset: 0.46 }, { opacity: 0 }], { duration: L, delay, easing: "linear", fill: "both" });
+        return pts;
+      };
+      for (let i = 0; i < rays; i++) {
+        const ang = i * 6.2832 / rays + rnd(-0.18, 0.18), delay = rnd(0, 220);
+        const pts = bolt(ang, R * rnd(0.55, 1), delay, 3.2);
+        [0.3, 0.55, 0.8].forEach((fr, q) => {
+          const pt = pts[Math.min(pts.length - 1, Math.floor(pts.length * fr))]; if (!pt || Math.random() < 0.25) return;
+          const isz = size * rnd(0.7, 1.0), ic = item("bolt", isz);
+          ic.style.transform = `translate(${pt[0] - isz / 2}px, ${pt[1] - isz / 2}px) rotate(${ang * 57.3 - 90 + rnd(-25, 25)}deg)`;
+          ic.style.opacity = 0; ic.style.filter = "drop-shadow(0 0 6px #ffd21f)";
+          ic.animate([{ opacity: 0 }, { opacity: 1, offset: 0.08 }, { opacity: 0.85, offset: 0.2 }, { opacity: 1, offset: 0.3 }, { opacity: 0.9, offset: 0.7 }, { opacity: 0 }], { duration: L, delay: delay + 140 + q * 90, easing: "linear", fill: "both" });
+        });
+        if (Math.random() < 0.7) bolt(ang + rnd(0.35, 0.7) * (Math.random() < 0.5 ? 1 : -1), R * rnd(0.2, 0.4), delay + 80, 2);
+      }
+      setTimeout(() => layer.remove(), L + 500);
+      return true;
+    }
+
+    if (b === "show") {
+      // fireworks all over the screen, popping one after another: each starts small, grows and fades
+      const shapes = ["fw-peony", "fw-ring", "fw-willow"], cnt = Math.max(2, Math.round(N));
+      const dur = Math.max(900, L * 0.62), gap = Math.max(110, Math.min(260, L * 0.09)); let end = 0;
+      for (let i = 0; i < cnt; i++) {
+        const x = W * (0.14 + 0.72 * ((i * 0.618 + rnd(-0.08, 0.08)) % 1)), y = H * (0.14 + 0.62 * ((i * 0.382 + 0.17 + rnd(-0.08, 0.08)) % 1));
+        const name = shapes[Math.floor(Math.random() * 3)], sz = Math.min(W, 520) * rnd(0.34, 0.58), delay = i * gap + rnd(0, 60);
+        const img = document.createElement("img"); img.alt = ""; img.src = `icons/flair/${name}.png`;
+        img.style.cssText = `position:absolute;left:${x - sz / 2}px;top:${y - sz / 2}px;width:${sz}px;opacity:0;pointer-events:none;` + (name === "fw-willow" ? "" : `filter:hue-rotate(${Math.floor(Math.random() * 360)}deg) saturate(1.2);`);
+        layer.appendChild(img);
+        img.animate([{ opacity: 0, transform: "scale(.12)" }, { opacity: 1, transform: "scale(.55)", offset: 0.18 }, { opacity: 1, transform: "scale(1)", offset: 0.62 }, { opacity: 0, transform: `scale(1.18) translateY(${name === "fw-willow" ? 22 : 6}px)` }], { duration: dur, delay, easing: "ease-out", fill: "both" });
+        const fl = document.createElement("img"); fl.alt = ""; fl.src = "icons/flair/fw-flash.png"; const fs = sz * 0.4;
+        fl.style.cssText = `position:absolute;left:${x - fs / 2}px;top:${y - fs / 2}px;width:${fs}px;opacity:0;pointer-events:none`;
+        layer.appendChild(fl);
+        fl.animate([{ opacity: 0, transform: "scale(.2)" }, { opacity: 1, transform: "scale(1)", offset: 0.3 }, { opacity: 0, transform: "scale(1.5)" }], { duration: 420, delay, easing: "ease-out", fill: "both" });
+        end = Math.max(end, delay + dur);
+      }
+      setTimeout(() => layer.remove(), end + 300);
+      return true;
+    }
+
+    if (b === "fall" || b === "coinfall") {
+      // snowflakes / coins all the way down the screen
+      const coin = b === "coinfall";
+      for (let k = 0; k < N; k++) {
+        const el = item(f.pics[k % f.pics.length]), s = rnd(0.7, 1.25), x = rnd(-size / 2, W - size / 2);
+        const dl = rnd(0, L * 0.4), fd = Math.max(900, L * rnd(0.5, 0.6)), sw = rnd(8, 26), fq = rnd(1.2, 2.6), ph = rnd(0, 6.28), vr = rnd(-90, 90), r0 = rnd(0, 360);
+        add(el, (bt) => {
+          const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
+          const q = coin ? Math.pow(p, 1.35) : p, y = -size * 1.2 + q * (H + size * 2.4);
+          const xx = x + (coin ? Math.sin(p * fq * 3 + ph) * sw * 0.35 : Math.sin(p * fq * 5 + ph) * sw), sx = coin ? Math.cos(bt / 110 + ph) : 1;
+          el.style.transform = tf(xx, y, r0 + vr * bt / 1000, sx * s, s); el.style.opacity = p > 0.9 ? (1 - p) / 0.1 : 1; return true;
+        });
+      }
+      runCust(); return true;
+    }
+
+    if (b === "flutterup") {
+      // hearts flutter up in a left-to-right cascade, and one big heart drifts down and swells toward you
+      for (let k = 0; k < N; k++) {
+        const el = item("heart"), s = rnd(0.6, 1.2), x = rnd(0, W - size), cas = x / W;
+        const dl = cas * L * 0.32 + rnd(0, L * 0.08), fd = Math.max(1200, L * rnd(0.5, 0.58)), sw = rnd(14, 34), fq = rnd(0.8, 1.6), ph = rnd(0, 6.28);
+        add(el, (bt) => {
+          const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
+          const y = H + size - ease(p) * (H + size * 2), xx = x + Math.sin(p * fq * 6 + ph) * sw, rot = Math.sin(p * fq * 6 + ph) * 16, sc = s * (0.9 + 0.12 * Math.sin(bt / 260 + ph));
+          el.style.transform = tf(xx, y, rot, sc, sc); el.style.opacity = Math.min(1, p * 8) * (p > 0.85 ? (1 - p) / 0.15 : 1); return true;
+        });
+      }
+      const big = item("heart", size * 1.4), bd = Math.max(1400, L * 0.6), bl = 200;
+      add(big, (bt) => {
+        const p = (bt - bl) / bd; if (p >= 1) return false; if (p < 0) { big.style.opacity = 0; return true; }
+        const q = p * p, sc = 0.6 + q * (Math.min(W, 520) / (size * 1.4)) * 0.95, y = cy - size * 0.7 + Math.pow(p, 1.3) * H * 0.4;
+        big.style.transform = tf(cx - size * 0.7, y, 0, sc, sc); big.style.transformOrigin = "50% 50%"; big.style.opacity = Math.min(1, p * 6) * (p > 0.7 ? (1 - p) / 0.3 : 1); return true;
+      });
+      runCust(); return true;
+    }
+
+    if (b === "linger") {
+      // butterflies scatter, then drift lazily around for a long while
+      for (let k = 0; k < N; k++) {
+        const el = item(f.pics[k % f.pics.length]), s = rnd(0.75, 1.2), ang = rnd(0, 6.28), R = rnd(0.2, 0.46) * Math.min(W, H) * 1.1;
+        const ph = rnd(0, 6.28), f1 = rnd(0.5, 1.1), f2 = rnd(0.4, 0.9), wob = rnd(22, 46), flapSp = rnd(70, 110);
+        add(el, (bt) => {
+          if (bt >= L) return false;
+          const e = 1 - Math.exp(-bt / 650), rr = R * e;
+          const x = cx + Math.cos(ang) * rr + Math.sin(bt / 1000 * f1 + ph) * wob * e - size / 2, y = cy + Math.sin(ang) * rr + Math.cos(bt / 1000 * f2 + ph) * wob * 0.8 * e - bt * 0.006 - size / 2;
+          const sx = 0.35 + 0.65 * Math.abs(Math.sin(bt / flapSp + ph)), rot = Math.sin(bt / 1000 * f1 + ph) * 18;
+          el.style.transform = tf(x, y, rot, sx * s, s); el.style.opacity = Math.min(1, bt / 200) * fadeOut(bt, L, 900); return true;
+        });
+      }
+      runCust(); return true;
+    }
+    return false;
+  }
   function flairBurst(li, flairId) {
     if (reduceMotion()) return;
     const f = FLAIRS[flairId], size = f.size;
@@ -7545,6 +7694,7 @@
       layer.appendChild(fl);
       fl.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 350, easing: "ease-out" }).onfinish = () => fl.remove();
     }
+    if (flairBurstNew(layer, f, li, r, cx, cy)) return;
     if (f.burst === "firework") {
       // real firework pictures: a few bursts that bloom out and fade, each in a random colour (the willow stays gold)
       const shapes = ["fw-peony", "fw-ring", "fw-willow"];
