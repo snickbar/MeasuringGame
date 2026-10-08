@@ -337,6 +337,21 @@
   }
   #gacha-screen.active .screen-header { flex-shrink: 0; }
   #gacha-screen.active .shop-tab-panel.active { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+  .flair-shop-title { margin: 20px 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); }
+  .flair-shop-sub { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
+  .flair-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .cosmetic-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; min-width: 0;
+    padding: 10px 4px 8px; margin: 0; border-width: 0; border-image: none; border-radius: 14px; box-shadow: none; filter: none;
+    background: #fffaf0; border: 3px solid #d9c3a3; color: var(--text); font-family: 'Fredoka', sans-serif;
+  }
+  .cosmetic-item.equipped { border-color: #4caf50; background: #f1fae9; }
+  .cosmetic-item:disabled { opacity: .6; }
+  .cosmetic-swatch-flair { width: 100%; max-width: 54px; height: 48px; object-fit: contain; }
+  .cosmetic-swatch-flair.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
+  .cosmetic-item-label { font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; color: var(--text); }
+  .cosmetic-item-state { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .cosmetic-item.equipped .cosmetic-item-state { color: #2e7d32; }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
@@ -1714,7 +1729,7 @@
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
           <span class="shop-hero-badge">&#127916; Free</span>
           <img class="coin-pack-icon" src="icons/shop-coin-reward.png" alt="">
-          <div class="coin-pack-amount">+50</div>
+          <div class="coin-pack-amount">+20</div>
           <div class="coin-pack-label">Coins</div>
           <div id="watch-ad-status"></div>
           <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn ad-reward-btn">Watch Ad</button>
@@ -1787,9 +1802,12 @@
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
     <div id="emoji-pack-list"></div>
+    <h2 class="flair-shop-title">Winner flair</h2>
+    <p class="flair-shop-sub">Plays around your card when you win a round, and everyone in the room sees it. Tap one to buy or equip it.</p>
+    <div id="cosmetic-grid-effects" class="flair-grid"></div>
     <div class="coming-soon-box">
       <p class="coming-soon-title">Coming Soon</p>
-      <p class="coming-soon-sub">Card borders, win effects, and name colors are on the way.</p>
+      <p class="coming-soon-sub">Card borders and name colors are on the way.</p>
     </div>
   </div>
 </div>
@@ -2617,7 +2635,22 @@
   // the call list in two places) is exactly the kind of place that's
   // already caused two separate bugs this session from one spot getting
   // updated without the other.
+  // The winner's flair plays for everyone, so each player's equipped flair lives on their room entry.
+  function myEquippedFlair() {
+    const id = myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects;
+    return FLAIRS[id] ? id : "classic";
+  }
+  let lastSyncedFlair = null;
+  function syncFlairToRoom() {
+    if (!currentRoomCode || !currentPlayerId) return;
+    if (!(roomState && roomState.players && roomState.players[currentPlayerId])) return; // not in the room: don't create a stray entry
+    const f = myEquippedFlair();
+    if (f === lastSyncedFlair) return;
+    lastSyncedFlair = f;
+    update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
+  }
   function renderProfileDependentUi() {
+    syncFlairToRoom();
     renderCoinBalance();
     renderAvatarGrid();
     renderSettingsAvatarGrid();
@@ -2681,6 +2714,7 @@
   // "watch an ad" step is fake. Swap the instant grant for a real rewarded-ad
   // callback later; the cap-tracking logic underneath doesn't need to change.
   const DAILY_AD_COIN_CAP = 3;
+  const AD_REWARD_COINS = 20; // coins per ad (keep the "+20" on the shop card in step)
   function todayDateStr() {
     return new Date().toISOString().slice(0, 10);
   }
@@ -2692,7 +2726,7 @@
       if (countToday >= DAILY_AD_COIN_CAP) return profile; // abort: cap already reached today
       return {
         ...profile,
-        coins: (profile.coins || 0) + 50,
+        coins: (profile.coins || 0) + AD_REWARD_COINS,
         adsWatchedDate: today,
         adsWatchedCount: countToday + 1,
       };
@@ -2713,11 +2747,17 @@
       { id: "gold", label: "Gold", cost: 300, color: "#E8B930" },
       { id: "holiday", label: "Holiday", cost: 200, color: "#D9435B" },
     ],
+    // Winner flairs: items that circle the winning card, then burst. id matches FLAIRS below; pic is the swatch.
     effects: [
-      { id: "classic", label: "Classic Stars", cost: 0, color: "#E8B930" },
-      { id: "rainbow", label: "Rainbow Stars", cost: 200, color: "#9B6BD1" },
-      { id: "fireworks", label: "Fireworks", cost: 250, color: "#F2994A" },
-      { id: "coinshower", label: "Coin Shower", cost: 180, color: "#F2C94C" },
+      { id: "classic", label: "Classic Stars", cost: 0, pic: "star" },
+      { id: "hearts", label: "Hearts", cost: 150, pic: "heart" },
+      { id: "coinshower", label: "Coin Shower", cost: 180, pic: "coin" },
+      { id: "snow", label: "Snowflakes", cost: 200, pic: "snow-simple" },
+      { id: "rainbow", label: "Rainbow Stars", cost: 200, pic: "star", rainbow: true },
+      { id: "butterfly", label: "Butterflies", cost: 250, pic: "butterfly-monarch" },
+      { id: "fireworks", label: "Fireworks", cost: 250, pic: "rocket" },
+      { id: "fire", label: "Fireballs", cost: 300, pic: "flame" },
+      { id: "lightning", label: "Lightning", cost: 350, pic: "bolt" },
     ],
     colors: [
       { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
@@ -2761,7 +2801,7 @@
       card.className = "cosmetic-item" + (isEquipped ? " equipped" : "");
       let swatchHtml;
       if (category === "borders") swatchHtml = `<div class="cosmetic-swatch-border" style="border-color:${item.color}"></div>`;
-      else if (category === "effects") swatchHtml = `<span class="cosmetic-swatch-star" style="color:${item.color}">&#9733;</span>`;
+      else if (category === "effects") swatchHtml = `<img class="cosmetic-swatch-flair${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`;
       else swatchHtml = `<div class="cosmetic-swatch-circle" style="background:${item.color}"></div>`;
       const stateHtml = isEquipped ? "Equipped" : isOwned ? "Tap to equip" : `${item.cost} coins`;
       card.innerHTML = `${swatchHtml}<span class="cosmetic-item-label">${item.label}</span><span class="cosmetic-item-state">${stateHtml}</span>`;
@@ -4763,11 +4803,13 @@
       // actually need updating.
       currentPlayerId = staleOwnId;
       playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-      await update(playerRef, { name, isHost, connected: true, disconnectedAt: null });
+      lastSyncedFlair = myEquippedFlair();
+      await update(playerRef, { name, isHost, flair: lastSyncedFlair, connected: true, disconnectedAt: null });
     } else {
       currentPlayerId = makePlayerId();
       playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-      await set(playerRef, { name, avatar: currentAvatar, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
+      lastSyncedFlair = myEquippedFlair();
+      await set(playerRef, { name, avatar: currentAvatar, flair: lastSyncedFlair, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
     }
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
     if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
@@ -5540,6 +5582,7 @@
       .map((id) => ({
         playerId: id,
         name: (playersSnap[id] && playersSnap[id].name) || "Player",
+        flair: (playersSnap[id] && playersSnap[id].flair) || "classic",
         guess: guesses[id],
         error: Math.abs(guesses[id] - answer),
       }))
@@ -6618,7 +6661,7 @@
     fire:      { pics: ["flame"], move: "flame", burst: "rise", lap: 3000, size: 41, items: 12, burstN: 40 },
     butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "scatter", lap: 3000, size: 31, items: 12, burstN: 40 },
     snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "drift", lap: 3000, size: 27, items: 12, burstN: 40 },
-    coins:     { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
+    coinshower: { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
     fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "radial", hueRandom: true, lap: 3000, size: 36, items: 10, burstN: 32 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
