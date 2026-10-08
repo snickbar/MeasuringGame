@@ -1469,8 +1469,6 @@
   @keyframes statusFade { 0% { opacity: 0; transform: translateY(-3px); } 100% { opacity: 1; transform: translateY(0); } }
 
   /* ---- Emoji reaction picker (replaces numpad after submit) ---- */
-  #emoji-picker { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
-  #emoji-picker.active { display: grid; }
   .emo-o { display: inline-block; }
   .emoji-btn {
     font-size: 26px; padding: 12px 0; min-width: 0;
@@ -1501,14 +1499,21 @@
   @media (prefers-reduced-motion: reduce) {
     #perfect-flash.flash { animation: none; }
   }
-  .float-reaction {
-    position: absolute; font-size: 20px; animation: floatReactionUp 900ms ease-out forwards;
+  .rx-stage { position: absolute; pointer-events: none; }
+  .rx-piv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .rx-piv img { width: 60%; height: 60%; object-fit: contain; display: block; }
+  .rx-text { font-size: 38px; }
+  .rx-stage .fx { position: absolute; pointer-events: none; }
+  /* after you send one, the slots dim and a ring sweeps round for 2 seconds */
+  @property --rx-p { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  #reaction-strip.cooling .react-slot[data-emoji] { position: relative; }
+  #reaction-strip.cooling .react-slot[data-emoji]::after {
+    content: ""; position: absolute; inset: -2px; border-radius: 12px; pointer-events: none;
+    background: conic-gradient(rgba(255,250,240,0) var(--rx-p), rgba(90,60,30,.42) 0);
+    animation: rxCool 2s linear forwards;
   }
-  @keyframes floatReactionUp {
-    0% { transform: translate(-50%, -50%) scale(.5); opacity: 0; }
-    15% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
-    100% { transform: translate(-50%, -220%) scale(1); opacity: 0; }
-  }
+  @keyframes rxCool { from { --rx-p: 0deg; } to { --rx-p: 360deg; } }
+  @media (prefers-reduced-motion: reduce) { #reaction-strip.cooling .react-slot[data-emoji]::after { animation: none; background: rgba(90,60,30,.35); } }
 
   .streamer-piece {
     position: absolute; top: -24px; width: 7px; height: 24px; border-radius: 2px;
@@ -1553,7 +1558,7 @@
     100% { transform: translateX(-50%) translateY(-72px) scale(1); opacity: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .float-reaction, .streamer-piece, .coin-fly, .coin-award-popup, .flair-layer { display: none; }
+    .rx-stage, .streamer-piece, .coin-fly, .coin-award-popup, .flair-layer { display: none; }
     .trophy-burst .trophy-emoji { animation: none; }
     .trophy-burst .ray { display: none; }
   }
@@ -2384,7 +2389,6 @@
           <button class="num-btn" data-val="0">0</button>
           <button id="backspace-btn" aria-label="Backspace">&larr;</button>
         </div>
-        <div id="emoji-picker"></div>
         <button id="submit-guess-btn">Submit guess</button>
         <p id="guess-status"></p>
       </div>
@@ -2888,7 +2892,6 @@
     renderWatchAdStatus();
     renderHostUnlockUi();
     renderCosmeticsShop();
-    renderInGameEmojiPicker();
     renderReactionStrip();
     renderEmojiPickerSettings();
     renderPresetSlotButtons();
@@ -3784,21 +3787,10 @@
   const emojiPickerSettingsGridEl = document.getElementById("emoji-picker-settings-grid");
   const emojiPickerSettingsStatusEl = document.getElementById("emoji-picker-settings-status");
 
-  // Note: emojiPickerEl (the in-game "#emoji-picker" container) is declared
-  // further down alongside the numpad/guess-view refs - safe to reference
-  // from renderInGameEmojiPicker() below since that function is only ever
-  // called from async callbacks (watchMyProfile's onValue), which never run
-  // until the whole synchronous script - including that later declaration -
-  // has already finished once.
-  function renderInGameEmojiPicker() {
-    if (!emojiPickerEl) return;
-    const active = (myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : DEFAULT_EMOJIS;
-    emojiPickerEl.innerHTML = active.map((e) => `<button type="button" class="emoji-btn" data-emoji="${e}">${emojiHtml(e)}</button>`).join("");
-  }
-
   // The strip along the bottom of every in-game screen: your equipped reactions first, then any empty owned slots, then the locked ones.
   const reactionStripEl = document.getElementById("reaction-strip");
   let lastReactionTapAt = 0;
+  const REACTION_COOLDOWN_MS = 2000;
   function renderReactionStrip() {
     if (!reactionStripEl) return;
     const owned = Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
@@ -3830,8 +3822,12 @@
     const b = ev.target.closest(".react-slot[data-emoji]");
     if (!b || !currentRoomCode) return;
     const t = Date.now();
-    if (t - lastReactionTapAt < 400) return;
+    if (t - lastReactionTapAt < REACTION_COOLDOWN_MS) return;
     lastReactionTapAt = t;
+    reactionStripEl.classList.remove("cooling");
+    void reactionStripEl.offsetWidth; // restart the sweeping ring
+    reactionStripEl.classList.add("cooling");
+    setTimeout(() => reactionStripEl.classList.remove("cooling"), REACTION_COOLDOWN_MS);
     sendReaction(b.dataset.emoji);
   });
   new ResizeObserver(() => document.documentElement.style.setProperty("--bottom-bar-h", `${bottomToolbarEl.offsetHeight || 58}px`)).observe(bottomToolbarEl);
@@ -3900,7 +3896,6 @@
   const guessDisplayEl = document.getElementById("guess-display");
   const submitGuessBtn = document.getElementById("submit-guess-btn");
   const guessStatusEl = document.getElementById("guess-status");
-  const emojiPickerEl = document.getElementById("emoji-picker");
   const numpadEl = document.getElementById("numpad");
   const reactionsPanelEl = document.getElementById("reactions-panel");
   const perfectFlashEl = document.getElementById("perfect-flash");
@@ -6459,14 +6454,7 @@
     const waiting = hasSubmittedThisRound && !guessLocked && roomState.phase === "question";
     numpadEl.style.display = waiting ? "none" : "grid";
     submitGuessBtn.style.display = waiting ? "none" : "flex";
-    emojiPickerEl.classList.toggle("active", waiting);
   }
-
-  emojiPickerEl.addEventListener("click", (e) => {
-    const btn = e.target.closest(".emoji-btn");
-    if (!btn) return;
-    sendReaction(btn.dataset.emoji);
-  });
 
   // ==================== Emoji reactions ====================
 
@@ -6483,27 +6471,131 @@
     });
   }
 
+  // ---------- effects ----------
+  const RX_BASE = 140; // the size the animations were designed at
+  const rxRnd = (a, b) => a + Math.random() * (b - a);
+  const rxPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const RX_SPARK = ['spark-1', 'spark-2', 'spark-3', 'spark-4', 'spark-5', 'spark-6', 'spark-7'];
+  function rxFxImg(stage, name, size, x, y) {
+    const i = new Image(); i.src = 'icons/reactions/fx/' + name + '.png'; i.className = 'fx';
+    i.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + size + 'px;opacity:0';
+    stage.appendChild(i); return i;
+  }
+  // Pieces that fly out from a point. ang is in degrees (0 right, -90 up); grav pulls them down by that many px.
+  function rxBurst(stage, o) {
+    if (o.mir) o = Object.assign({}, o, { from: [1 - o.from[0], o.from[1]], ang: [180 - o.ang[1], 180 - o.ang[0]] });
+    const W = stage.clientWidth || RX_BASE, k = W / RX_BASE;
+    for (let n = 0; n < o.n; n++) {
+      const name = typeof o.src === 'function' ? o.src() : o.src;
+      const size = rxRnd(o.size[0], o.size[1]) * k * 1.35;
+      const x = o.from[0] * W, y = o.from[1] * W;
+      const i = rxFxImg(stage, name, size, x - size / 2, y - size / 2);
+      const a = rxRnd(o.ang[0], o.ang[1]) * Math.PI / 180, d = rxRnd(o.dist[0], o.dist[1]) * k;
+      const dx = Math.cos(a) * d, dy = Math.sin(a) * d + (o.grav || 0) * k;
+      const s1 = o.grow || 1, spin = o.spin ? rxRnd(-o.spin, o.spin) : 0;
+      const an = i.animate([
+        { opacity: 0, transform: 'translate(0,0) scale(.2) rotate(0deg)', offset: 0 },
+        { opacity: 1, transform: 'translate(' + dx * .35 + 'px,' + dy * .35 + 'px) scale(' + s1 * .9 + ') rotate(' + spin * .4 + 'deg)', offset: .22 },
+        { opacity: 1, transform: 'translate(' + dx * .8 + 'px,' + dy * .8 + 'px) scale(' + s1 + ') rotate(' + spin * .8 + 'deg)', offset: .7 },
+        { opacity: 0, transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + s1 * .8 + ') rotate(' + spin + 'deg)', offset: 1 },
+      ], { duration: o.dur || 900, delay: (o.delay || 0) + n * (o.stagger || 0), easing: 'ease-out', fill: 'both' });
+      an.onfinish = () => i.remove();
+    }
+  }
+  function rxLines(stage, spots, mir) {  // short curved "shake" strokes drawn in code
+    if (mir) spots = spots.map(s => [1 - s[0], s[1], 180 - s[2]]);
+    const W = stage.clientWidth || RX_BASE;
+    spots.forEach(function (s) {
+      const e = document.createElement('div'); e.className = 'fx';
+      e.style.cssText = 'left:' + s[0] * W + 'px;top:' + s[1] * W + 'px;width:' + W * .07 + 'px;height:' + W * .16 + 'px;border:3px solid #5b3a26;border-radius:50%;border-color:transparent #5b3a26 transparent transparent;opacity:0;transform:rotate(' + s[2] + 'deg)';
+      stage.appendChild(e);
+      const an = e.animate([{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: 1, offset: .75 }, { opacity: 0 }], { duration: 1100, easing: 'linear', fill: 'both' });
+      an.onfinish = () => e.remove();
+    });
+  }
+  function rxShake(deg, n, extra) {
+    const f = [{ transform: 'rotate(0deg)' }];
+    for (let i = 0; i < n; i++) f.push({ transform: 'rotate(' + (i % 2 ? deg : -deg) + 'deg) ' + (extra || '') });
+    f.push({ transform: 'rotate(0deg)' }); return f;
+  }
+  const RX_POP = 'scale(.35)';
+  const RX_MOVES = {
+    thumbsup: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-16px) rotate(-14deg) scale(1.2)', offset: .3 }, { transform: 'translateY(0) rotate(6deg)', offset: .55 }, { transform: 'translateY(-7px) rotate(-6deg)', offset: .75 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 4, from: [.7, .3], ang: [-150, -30], dist: [34, 50], size: [14, 22], delay: 200 }); },
+    laughing: (c) => { c.move([{ transform: RX_POP }, ...rxShake(8, 8, 'translateY(-3px)')], 1500); c.burst({ src: () => rxPick(['tear-4', 'tear-5']), n: 2, from: [.34, .5], ang: [180, 215], dist: [32, 48], grav: 22, size: [12, 16], delay: 300, stagger: 250 }); c.burst({ src: () => rxPick(['tear-4', 'tear-5']), n: 2, from: [.66, .5], ang: [-35, 0], dist: [32, 48], grav: 22, size: [12, 16], delay: 300, stagger: 250 }); },
+    clap: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.1,.9)', offset: .2 }, { transform: 'scale(.88,1.08)', offset: .35 }, { transform: 'scale(1.1,.9)', offset: .5 }, { transform: 'scale(.88,1.08)', offset: .65 }, { transform: 'scale(1.05,.95)', offset: .8 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 3, from: [.55, .3], ang: [-135, -45], dist: [34, 48], size: [14, 20], delay: 350, stagger: 150 }); },
+    heart: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.3)', offset: .25 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1.22)', offset: .6 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(['heart-2', 'heart-5']), n: 5, from: [.5, .35], ang: [-125, -55], dist: [42, 62], size: [14, 22], delay: 250, stagger: 120, spin: 30 }); },
+    fire: (c) => { c.move([{ transform: 'scale(.3)', transformOrigin: '50% 100%' }, { transform: 'scale(1.05,1.18)', offset: .25, transformOrigin: '50% 100%' }, { transform: 'scale(.97,.9)', offset: .45, transformOrigin: '50% 100%' }, { transform: 'scale(1.03,1.12)', offset: .65, transformOrigin: '50% 100%' }, { transform: 'scale(1)', transformOrigin: '50% 100%' }], 1400); c.burst({ src: () => rxPick(['ember-1', 'ember-2', 'ember-3', 'ember-4', 'dot-3']), n: 5, from: [.5, .3], ang: [-115, -65], dist: [38, 60], size: [9, 14], delay: 250, stagger: 140, grow: .7 }); },
+    shrug: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-12px) scale(1.05,1.08)', offset: .3 }, { transform: 'translateY(0)', offset: .5 }, { transform: 'translateY(-8px) scale(1.03,1.05)', offset: .7 }, { transform: 'none' }], 1300); },
+    grin: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.2) rotate(-6deg)', offset: .3 }, { transform: 'scale(.95) rotate(5deg)', offset: .5 }, { transform: 'scale(1.1) rotate(-3deg)', offset: .7 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 3, from: [.78, .25], ang: [-120, -30], dist: [28, 44], size: [14, 20], delay: 250, stagger: 160 }); },
+    alarm: (c) => { c.move([{ transform: RX_POP }, ...rxShake(14, 12)], 1400); c.lines([[.2, .42, 20], [.14, .5, 10], [.78, .42, 200], [.84, .5, 190]]); },
+    popper: (c) => { c.move([{ transform: RX_POP }, { transform: 'translate(-10px,10px) rotate(-8deg) scale(.95)', offset: .35 }, { transform: 'translate(3px,-3px) rotate(3deg)', offset: .55 }, { transform: 'none' }], 1100); if (c.ver === 'popper') { c.burst({ src: () => 'conf-' + (1 + Math.floor(Math.random() * 15)), n: 18, from: [.6, .3], ang: [-100, -30], dist: [26, 52], grav: 30, size: [7, 12], delay: 250, stagger: 25, spin: 360, dur: 1200 }); c.burst({ src: () => 'conf-' + (16 + Math.floor(Math.random() * 3)), n: 3, from: [.6, .3], ang: [-95, -45], dist: [24, 44], grav: 34, size: [12, 17], delay: 280, stagger: 60, spin: 200, dur: 1300 }); } },
+    triumph: (c) => { c.move([{ transform: RX_POP }, ...rxShake(5, 8, 'scale(1.06)')], 1300); c.burst({ src: () => rxPick(['steam-2', 'steam-5']), n: 2, from: [.44, .62], ang: [100, 130], dist: [26, 40], size: [18, 24], delay: 350, stagger: 250, grow: 1.6 }); c.burst({ src: () => rxPick(['steam-2', 'steam-5']), n: 2, from: [.56, .62], ang: [50, 80], dist: [26, 40], size: [18, 24], delay: 350, stagger: 250, grow: 1.6 }); },
+    tired: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.06,.86) translateY(8px)', offset: .35 }, { transform: 'scale(.98,1.02) rotate(-5deg)', offset: .55 }, { transform: 'scale(1.03,.92) translateY(5px)', offset: .8 }, { transform: 'none' }], 1400); c.burst({ src: 'tear-6', n: 1, from: [.78, .3], ang: [80, 100], dist: [34, 40], size: [12, 14], delay: 400 }); },
+    nerd: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-8px) rotate(-4deg)', offset: .35 }, { transform: 'translateY(0) rotate(3deg)', offset: .6 }, { transform: 'none' }], 1200); c.burst({ src: 'spark-1', n: 1, from: [.36, .42], ang: [-45, -45], dist: [0, 2], size: [22, 22], delay: 500, grow: 1.3, spin: 90 }); },
+    flex: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.22) rotate(-8deg)', offset: .25 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1.22) rotate(-8deg)', offset: .6 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 3, from: [.7, .35], ang: [-130, -40], dist: [30, 46], size: [14, 20], delay: 300, stagger: 150 }); },
+    skull: (c) => { c.move([{ transform: RX_POP }, ...rxShake(9, 10)], 1300); c.burst({ src: 'spark-2', n: 1, from: [.35, .3], ang: [-135, -135], dist: [6, 10], size: [18, 18], delay: 450, grow: 1.2, spin: 60 }); },
+    crying: (c) => { c.move([{ transform: RX_POP }, ...rxShake(4, 8, 'translateY(2px)')], 1600); [.32, .68].forEach(function (x) { c.burst({ src: () => rxPick(['tear-4', 'tear-5']), n: 3, from: [x, .52], ang: [85, 95], dist: [42, 56], size: [11, 15], delay: 250, stagger: 260 }); }); },
+    mindblown: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.28)', offset: .25 }, { transform: 'scale(.95) rotate(-3deg)', offset: .45 }, { transform: 'scale(1.1) rotate(3deg)', offset: .65 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 6, from: [.5, .22], ang: [-170, -10], dist: [36, 56], size: [14, 22], delay: 250, stagger: 80 }); },
+    nervous: (c) => { c.move([{ transform: RX_POP }, ...rxShake(3, 14, 'translateX(1px)')], 1300); c.burst({ src: 'tear-6', n: 1, from: [.74, .24], ang: [80, 100], dist: [36, 44], size: [12, 14], delay: 350 }); },
+    crown: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-10px) rotate(-6deg)', offset: .35 }, { transform: 'translateY(0) rotate(5deg)', offset: .6 }, { transform: 'none' }], 1200); c.burst({ src: () => rxPick(RX_SPARK), n: 4, from: [.5, .3], ang: [-160, -20], dist: [30, 48], size: [13, 20], delay: 300, stagger: 130 }); },
+    trophy: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-14px) rotate(-8deg) scale(1.1)', offset: .35 }, { transform: 'translateY(0) rotate(5deg)', offset: .6 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 5, from: [.5, .32], ang: [-165, -15], dist: [32, 52], size: [13, 21], delay: 300, stagger: 110 }); },
+  };
+
+  // mirrored reactions lean, tilt and throw their pieces the other way too
+  function rxMirrorFrames(frames) {
+    const neg = (t) => t.replace(/rotate\((-?[\d.]+)deg\)/g, (m, a) => 'rotate(' + (-a) + 'deg)')
+      .replace(/translateX\((-?[\d.]+)px\)/g, (m, a) => 'translateX(' + (-a) + 'px)')
+      .replace(/translate\((-?[\d.]+)px,/g, (m, a) => 'translate(' + (-a) + 'px,');
+    return frames.map(f => Object.assign({}, f, f.transform ? { transform: neg(f.transform) } : {}));
+  }
+
+  // One reaction per player at a time: a new one replaces the one still showing.
+  const RX_STAGE = 96;          // px; the picture itself takes the middle 60%
+  const rxShowing = {};         // playerId -> element
   function renderReactionBubble(r) {
     if (!r) return;
+    if (roomState && roomState.phase === "animation") return; // the cards are hidden during the reveal
     playSound("emoji");
+    const def = REACTIONS[r.emoji];
     const card = scoreColEl.querySelector(`[data-id="${r.playerId}"]`);
-    let originTop = 90, originLeft = 8;
+    let left = 0, top = 70;
     if (card) {
       const rect = card.getBoundingClientRect();
-      originTop = rect.top + rect.height / 2;
-      originLeft = rect.left;
+      left = rect.left - RX_STAGE + 24;
+      top = rect.top + rect.height / 2 - RX_STAGE / 2;
     }
-
-    for (let i = 0; i < 4; i++) {
-      const f = document.createElement("div");
-      f.className = "float-reaction";
-      f.innerHTML = emojiHtml(r.emoji);
-      f.style.left = `${originLeft + Math.random() * 10}px`;
-      f.style.top = `${originTop}px`;
-      f.style.animationDelay = `${i * 90}ms`;
-      reactionsPanelEl.appendChild(f);
-      setTimeout(() => f.remove(), 1100);
+    if (rxShowing[r.playerId]) { rxShowing[r.playerId].remove(); delete rxShowing[r.playerId]; }
+    const stage = document.createElement("div");
+    stage.className = "rx-stage";
+    stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RX_STAGE}px;height:${RX_STAGE}px`;
+    const piv = document.createElement("div");
+    piv.className = "rx-piv";
+    if (def) {
+      piv.innerHTML = `<img alt="" src="${reactionPic(r.emoji)}"${def.mirror ? ' style="transform:scaleX(-1)"' : ""}>`;
+    } else {
+      piv.innerHTML = `<span class="rx-text">${emojiHtml(r.emoji)}</span>`; // an older version's emoji
     }
+    stage.appendChild(piv);
+    reactionsPanelEl.appendChild(stage);
+    rxShowing[r.playerId] = stage;
+    if (def) {
+      const mir = !!def.mirror;
+      RX_MOVES[def.id]({
+        ver: def.id === "popper" ? "popper" : def.id,
+        move: (frames, dur) => piv.animate(mir ? rxMirrorFrames(frames) : frames, { duration: dur, easing: "ease-in-out" }),
+        burst: (o) => rxBurst(stage, Object.assign({ mir }, o)),
+        lines: (sp) => rxLines(stage, sp, mir),
+      });
+    } else {
+      piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.2)", offset: .3 }, { transform: "none" }], { duration: 700, easing: "ease-out" });
+    }
+    // after the little show it drifts left and fades
+    const life = stage.animate([
+      { opacity: 1, transform: "translateX(0)", offset: 0 },
+      { opacity: 1, transform: "translateX(0)", offset: .62 },
+      { opacity: 0, transform: "translateX(-34px)", offset: 1 },
+    ], { duration: 2000, easing: "ease-in", fill: "forwards" });
+    life.onfinish = () => { stage.remove(); if (rxShowing[r.playerId] === stage) delete rxShowing[r.playerId]; };
   }
 
   // ==================== Answers / second-chance phase ====================
