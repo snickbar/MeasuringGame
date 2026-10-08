@@ -207,7 +207,14 @@
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: .03em;
     box-shadow: 0 2px 4px rgba(0,0,0,.18); margin-bottom: 2px;
   }
-  #watch-ad-status { color: #c9542f; font-weight: 800; font-size: 11px; min-height: 1.2em; margin-bottom: 3px; }
+  /* Shared by every coin-pack card (not just the ad-reward one) so a card
+     without its own status line (the 500/1200/3000 packs) still reserves the
+     same vertical slot - otherwise their shorter content sat higher than the
+     ad-reward card's (which has the real "N left today" line), throwing the
+     "500"/"1,200"/"3,000" and "COINS" labels out of alignment with the Free
+     card's even though the buttons below them still matched up (pinned to
+     the bottom via margin-top:auto). */
+  .coin-pack-status { color: #c9542f; font-weight: 800; font-size: 11px; min-height: 1.2em; margin-bottom: 3px; }
   .ad-reward-btn { background: linear-gradient(180deg, #7bce5a 0%, #58a83c 100%) !important; }
   /* 2x2: the free-coins card and all 3 purchasable packs are one unified
      family of same-size tiles now, instead of a separate full-width hero
@@ -348,15 +355,28 @@
   .coming-soon-sub { margin: 0; font-size: 13px; color: var(--text-muted); }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
   #gacha-status.error { color: var(--red); font-weight: 700; }
-  #gacha-pull-btn { display: block; width: 100%; margin: 6px 0 0; padding: 0; border: none; background: none; }
+  #gacha-pull-btn { position: relative; display: block; width: 100%; margin: 6px 0 0; padding: 0; border: none; background: none; }
   #gacha-pull-btn.shake { animation: gachaPullShake .4s ease-in-out; }
   #gacha-pull-btn-img { display: block; width: 100%; height: auto; }
   #gacha-pull-btn-text { display: none; }
-  /* Mid-pull (.busy): keep the artwork visible, just dimmed, rather than
-     swapping to text - only "every avatar is already unlocked" (.soldout)
-     replaces it with a real message, since that's a different, non-
-     temporary reason the button can't be used. */
+  /* The banner art (icons/gacha-pull-btn.png) used to have "Pull for 100
+     coins" baked into the image - the price text now lives here instead, as
+     a real overlay centered on the (price-free) art, so a cost change is
+     just a number in code and never needs new art again. Styled to match
+     the look the baked-in text used to have (white fill, dark maroon
+     outline sampled from the original art). */
+  #gacha-pull-btn:not(.soldout) #gacha-pull-btn-text {
+    display: flex; position: absolute; inset: 0; align-items: center; justify-content: center;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #fff;
+    text-shadow: -1.5px -1.5px 0 #4b0d0c, 1.5px -1.5px 0 #4b0d0c, -1.5px 1.5px 0 #4b0d0c, 1.5px 1.5px 0 #4b0d0c,
+                 0 -1.5px 0 #4b0d0c, 0 1.5px 0 #4b0d0c, -1.5px 0 0 #4b0d0c, 1.5px 0 0 #4b0d0c;
+  }
+  /* Mid-pull (.busy): keep the artwork (and its price text) visible, just
+     dimmed, rather than swapping to a different message - only "every
+     avatar is already unlocked" (.soldout) replaces it with a real message,
+     since that's a different, non-temporary reason the button can't be used. */
   #gacha-pull-btn.busy #gacha-pull-btn-img { opacity: .5; filter: grayscale(.3); }
+  #gacha-pull-btn.busy #gacha-pull-btn-text { opacity: .5; filter: grayscale(.3); }
   #gacha-pull-btn.soldout #gacha-pull-btn-img { display: none; }
   #gacha-pull-btn.soldout #gacha-pull-btn-text {
     display: block; padding: 14px; border-radius: 999px;
@@ -1805,13 +1825,14 @@
           <img class="coin-pack-icon" src="icons/shop-coin-reward.png" alt="">
           <div class="coin-pack-amount">+50</div>
           <div class="coin-pack-label">Coins</div>
-          <div id="watch-ad-status"></div>
+          <div id="watch-ad-status" class="coin-pack-status"></div>
           <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn ad-reward-btn">Watch Ad</button>
         </div>
         <div class="coin-pack-card">
           <img class="coin-pack-icon" src="icons/shop-coin-stack-500.png" alt="">
           <div class="coin-pack-amount">500</div>
           <div class="coin-pack-label">Coins</div>
+          <div class="coin-pack-status"></div>
           <button type="button" class="coin-pack-buy-btn" data-coins="500">$1.99 &middot; Buy Now</button>
         </div>
         <div class="coin-pack-card popular">
@@ -1819,6 +1840,7 @@
           <img class="coin-pack-icon" src="icons/shop-coin-pile-1200.png" alt="">
           <div class="coin-pack-amount">1,200</div>
           <div class="coin-pack-label">Coins</div>
+          <div class="coin-pack-status"></div>
           <button type="button" class="coin-pack-buy-btn" data-coins="1200">$3.99 &middot; Buy Now</button>
         </div>
         <div class="coin-pack-card best-value">
@@ -1826,6 +1848,7 @@
           <img class="coin-pack-icon" src="icons/shop-treasure-chest-3000.png" alt="">
           <div class="coin-pack-amount">3,000</div>
           <div class="coin-pack-label">Coins</div>
+          <div class="coin-pack-status"></div>
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
       </div>
@@ -2003,7 +2026,7 @@
 
   <div class="howto-section">
     <h3>Avatar Shop</h3>
-    <p>Your score becomes coins when a game ends, win or lose. Open the <b>Avatar Shop</b> from the home screen to spend coins - each <b>Pull</b> costs 100 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> from the shop to see every avatar grouped by rarity, with locked ones grayed out.</p>
+    <p>Your score becomes coins when a game ends, win or lose. Open the <b>Avatar Shop</b> from the home screen to spend coins - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> from the shop to see every avatar grouped by rarity, with locked ones grayed out.</p>
   </div>
 </div>
 
@@ -2595,7 +2618,7 @@
   // specific avatar can be dropped or replaced without renumbering every
   // id after it - each key here is a real file at avatars/<id>.png.
   const AVATARS = Object.keys(AVATAR_TIERS);
-  const GACHA_COST = 100;
+  const GACHA_COST = 50;
   const GACHA_TIER_WEIGHTS = { common: 0.65, rare: 0.25, ultra: 0.10 };
   // Unlocked-for-this-device avatars first (so what you can actually use isn't
   // buried among locked ones). AVATAR_TIERS' own key order *is* the curated
@@ -4096,6 +4119,7 @@
         // gives a "not enough" shake/error instead of silently doing nothing.
         gachaPullBtn.disabled = false;
         gachaPullBtn.classList.remove("soldout");
+        gachaPullBtnTextEl.textContent = `Pull for ${GACHA_COST} coins`;
       }
     }
 
