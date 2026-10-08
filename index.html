@@ -979,7 +979,12 @@
   #bottom-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))) { display: none; }
   #bottom-actions button { width: auto; margin: 0; flex: 1; max-width: 260px; }
   #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
-  /* Reaction strip: one row above the action buttons, on every in-game screen except the reveal animation. */
+  /* Reaction strip is the LAST child of #bottom-toolbar (a bottom-anchored
+     fixed column) so it always sits flush at the screen's bottom edge - the
+     action-button row above it is what pops in/out instead, keeping the
+     reactions themselves from shifting position depending on which (if any)
+     context button is showing. On every in-game screen except the reveal
+     animation. */
   #reaction-strip { display: flex; justify-content: center; gap: 5px; }
   #reaction-strip[hidden] { display: none; }
   button.react-slot {
@@ -1096,9 +1101,19 @@
     aspect-ratio: 900 / 163; padding: 0 6% 0 17%; font-size: 24px;
     background-image: url(icons/btn-join-lobby.png);
   }
+  /* Taller than the other two picture buttons on this screen, per request -
+     switched from a plain stretched background-image (which only had its
+     aspect-ratio to define height, tied to width) to a real border-image
+     9-slice so height can be set directly while the star-medallion end caps
+     and top/bottom trim (sized relative to --pic-h, matching their original
+     proportions in icons/btn-ready.png: caps 90/140 of height, top trim
+     32/140, bottom trim 38/140) keep their shape instead of stretching. */
   #host-start-btn {
-    aspect-ratio: 1000 / 140; padding: 0 12%; font-size: 15px;
-    background-image: url(icons/btn-ready.png);
+    --pic-h: 64px; height: var(--pic-h); padding: 0 10%; font-size: 15px;
+    border-style: solid; border-image-repeat: stretch;
+    border-image-source: url(icons/btn-ready.png);
+    border-width: calc(var(--pic-h) * .229) calc(var(--pic-h) * .643) calc(var(--pic-h) * .271);
+    border-image-slice: 32 90 38 90 fill;
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
@@ -1384,9 +1399,13 @@
     box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 0;
     border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
   }
-  .question-answer-line {
-    margin-top: 8px; font-weight: 700; color: var(--brand); animation: popIn 300ms ease;
-  }
+  /* Used to be a small inline line, with a separate big standalone "THE
+     ANSWER" card doing the actual emphasis further down the screen - removed
+     that card per request and moved its same text size here instead, so the
+     answer is prominent right where it's already being read. */
+  .question-answer-line { margin-top: 8px; animation: popIn 300ms ease; }
+  .answer-line-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
+  .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px; color: #000; line-height: 1.1; }
 
   .game-body { display: flex; gap: 56px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   .main-col { flex: 1 1 0; min-width: 0; }
@@ -1609,15 +1628,6 @@
   #answers-hint { text-align: center; font-size: 15px; color: var(--text-muted); }
 
   /* ---- Reveal ---- */
-  #reveal-answer { display: flex; justify-content: center; margin-bottom: 12px; min-height: 0; }
-  .answer-badge {
-    display: inline-flex; flex-direction: column; align-items: center; gap: 0;
-    padding: 10px 30px 14px;
-    background: #fffeeb; border: 5px solid #97513e; border-radius: 20px;
-    animation: popIn 350ms ease;
-  }
-  .answer-badge-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
-  .answer-badge-value { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px; color: #000; line-height: 1.1; }
   #reveal-list { perspective: 800px; padding-left: 22px; }
   .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; }
   .card-inner {
@@ -1864,7 +1874,6 @@
 </div>
 
 <div id="bottom-toolbar">
-  <div id="reaction-strip" aria-label="Reactions"></div>
   <div id="bottom-actions">
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
@@ -1873,6 +1882,7 @@
   <button id="play-again-btn" style="display:none;">Play again</button>
   <button id="final-home-btn" style="display:none;">Finish game</button>
   </div>
+  <div id="reaction-strip" aria-label="Reactions"></div>
 </div>
 
 <div id="home-screen" class="screen active">
@@ -2403,7 +2413,6 @@
       </div>
 
       <div id="reveal-view">
-        <p id="reveal-answer"></p>
         <ul id="reveal-list"></ul>
       </div>
 
@@ -3443,30 +3452,30 @@
     { id: "semi-truck", name: "semi-truck", plural: "semi-trucks", mm: 22000, image: "items/semi-truck.webp" },
     { id: "blue-whale", name: "blue whale", plural: "blue whales", mm: 24000, image: "items/blue-whale.webp" },
     { id: "basketball-court", name: "basketball court", plural: "basketball courts", mm: 28650, image: "items/basketball-court.webp" },
-    { id: "stonehenge", name: "Stonehenge", plural: "Stonehenges", mm: 30000, image: "items/stonehenge.webp" },
+    { id: "stonehenge", name: "Stonehenge", plural: "Stonehenges", properNoun: true, mm: 30000, image: "items/stonehenge.webp" },
     { id: "space-shuttle", name: "Space Shuttle", plural: "Space Shuttles", mm: 37200, image: "items/space-shuttle.webp" },
     { id: "boeing-737", name: "Boeing 737", plural: "Boeing 737s", mm: 39500, image: "items/boeing-737.webp" },
-    { id: "statue-of-liberty", name: "Statue of Liberty", plural: "Statues of Liberty", mm: 46000, image: "items/statue-of-liberty.webp" },
+    { id: "statue-of-liberty", name: "Statue of Liberty", plural: "Statues of Liberty", properNoun: true, mm: 46000, image: "items/statue-of-liberty.webp" },
     { id: "olympic-pool", name: "Olympic swimming pool", plural: "Olympic swimming pools", mm: 50000, image: "items/olympic-pool.webp" },
-    { id: "leaning-tower-of-pisa", name: "Leaning Tower of Pisa", plural: "Leaning Towers of Pisa", mm: 55860, image: "items/leaning-tower-of-pisa.webp" },
+    { id: "leaning-tower-of-pisa", name: "Leaning Tower of Pisa", plural: "Leaning Towers of Pisa", properNoun: true, mm: 55860, image: "items/leaning-tower-of-pisa.webp" },
     { id: "blimp", name: "blimp", plural: "blimps", mm: 75000, image: "items/blimp.webp" },
-    { id: "big-ben", name: "Big Ben", plural: "Big Bens", mm: 96000, image: "items/big-ben.webp" },
+    { id: "big-ben", name: "Big Ben", plural: "Big Bens", properNoun: true, mm: 96000, image: "items/big-ben.webp" },
     { id: "football-field", name: "football field", plural: "football fields", mm: 109700, image: "items/football-field.webp" },
-    { id: "great-pyramid", name: "Great Pyramid of Giza", plural: "Great Pyramids of Giza", mm: 138800, image: "items/great-pyramid.webp" },
-    { id: "washington-monument", name: "Washington Monument", plural: "Washington Monuments", mm: 169300, image: "items/washington-monument.webp" },
-    { id: "space-needle", name: "Space Needle", plural: "Space Needles", mm: 184000, image: "items/space-needle.webp" },
-    { id: "colosseum", name: "Colosseum", plural: "Colosseums", mm: 189000, image: "items/colosseum.webp" },
-    { id: "gateway-arch", name: "Gateway Arch", plural: "Gateway Arches", mm: 192000, image: "items/gateway-arch.webp" },
-    { id: "titanic", name: "Titanic", plural: "Titanics", mm: 269000, image: "items/titanic.webp" },
-    { id: "eiffel-tower", name: "Eiffel Tower", plural: "Eiffel Towers", mm: 330000, image: "items/eiffel-tower.webp" },
+    { id: "great-pyramid", name: "Great Pyramid of Giza", plural: "Great Pyramids of Giza", properNoun: true, mm: 138800, image: "items/great-pyramid.webp" },
+    { id: "washington-monument", name: "Washington Monument", plural: "Washington Monuments", properNoun: true, mm: 169300, image: "items/washington-monument.webp" },
+    { id: "space-needle", name: "Space Needle", plural: "Space Needles", properNoun: true, mm: 184000, image: "items/space-needle.webp" },
+    { id: "colosseum", name: "Colosseum", plural: "Colosseums", properNoun: true, mm: 189000, image: "items/colosseum.webp" },
+    { id: "gateway-arch", name: "Gateway Arch", plural: "Gateway Arches", properNoun: true, mm: 192000, image: "items/gateway-arch.webp" },
+    { id: "titanic", name: "Titanic", plural: "Titanics", properNoun: true, mm: 269000, image: "items/titanic.webp" },
+    { id: "eiffel-tower", name: "Eiffel Tower", plural: "Eiffel Towers", properNoun: true, mm: 330000, image: "items/eiffel-tower.webp" },
     { id: "aircraft-carrier", name: "aircraft carrier", plural: "aircraft carriers", mm: 332800, image: "items/aircraft-carrier.webp" },
-    { id: "empire-state-building", name: "Empire State Building", plural: "Empire State Buildings", mm: 443000, image: "items/empire-state-building.webp" },
-    { id: "angel-falls", name: "Angel Falls", plural: "Angel Falls", mm: 979000, image: "items/angel-falls.webp" },
-    { id: "brooklyn-bridge", name: "Brooklyn Bridge", plural: "Brooklyn Bridges", mm: 1825000, image: "items/brooklyn-bridge.webp" },
-    { id: "grand-canyon", name: "Grand Canyon", plural: "Grand Canyons", mm: 1857000, image: "items/grand-canyon.webp" },
-    { id: "mount-fuji", name: "Mount Fuji", plural: "Mount Fujis", mm: 3776000, image: "items/mount-fuji.webp" },
-    { id: "central-park", name: "Central Park", plural: "Central Parks", mm: 4000000, image: "items/central-park.webp" },
-    { id: "mount-everest", name: "Mount Everest", plural: "Mount Everests", mm: 8849000, image: "items/mount-everest.webp" },
+    { id: "empire-state-building", name: "Empire State Building", plural: "Empire State Buildings", properNoun: true, mm: 443000, image: "items/empire-state-building.webp" },
+    { id: "angel-falls", name: "Angel Falls", plural: "Angel Falls", properNoun: true, mm: 979000, image: "items/angel-falls.webp" },
+    { id: "brooklyn-bridge", name: "Brooklyn Bridge", plural: "Brooklyn Bridges", properNoun: true, mm: 1825000, image: "items/brooklyn-bridge.webp" },
+    { id: "grand-canyon", name: "Grand Canyon", plural: "Grand Canyons", properNoun: true, mm: 1857000, image: "items/grand-canyon.webp" },
+    { id: "mount-fuji", name: "Mount Fuji", plural: "Mount Fujis", properNoun: true, mm: 3776000, image: "items/mount-fuji.webp" },
+    { id: "central-park", name: "Central Park", plural: "Central Parks", properNoun: true, mm: 4000000, image: "items/central-park.webp" },
+    { id: "mount-everest", name: "Mount Everest", plural: "Mount Everests", properNoun: true, mm: 8849000, image: "items/mount-everest.webp" },
   ];
 
   const RELATIVE_MIN_RATIO = 0.15; // "Keep it relative": unit must be at least 15% of the target's size
@@ -3562,8 +3571,13 @@
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
-  function articleFor(name) {
-    return /^[aeiou]/i.test(name) ? "an" : "a";
+  // Unique named landmarks (properNoun: true on their OBJECTS entry) don't take
+  // an indefinite article - "how long is Angel Falls?", not "...is an Angel
+  // Falls?" - unlike a capitalized but still-countable common noun like
+  // "Komodo dragon" or "Boeing 737", which does.
+  function articleFor(obj) {
+    if (obj.properNoun) return "";
+    return /^[aeiou]/i.test(obj.name) ? "an" : "a";
   }
 
   function generateQuestion() {
@@ -3574,7 +3588,7 @@
       unitName: unit.name,
       targetName: target.name,
       answer: target.mm / unit.mm,
-      prompt: `How many ${unit.plural} long is ${articleFor(target.name)} ${target.name}?`,
+      prompt: `How many ${unit.plural} long is ${[articleFor(target), target.name].filter(Boolean).join(" ")}?`,
     };
   }
 
@@ -3959,18 +3973,22 @@
   const doubleDownBtn = document.getElementById("double-down-btn");
 
   const revealViewEl = document.getElementById("reveal-view");
-  const revealAnswerEl = document.getElementById("reveal-answer");
+  // The big bold value used to live in its own separate "THE ANSWER" badge
+  // card in #reveal-view; that's gone now (same size moved onto the paper's
+  // own answer line instead, see .answer-line-value), so this is the only
+  // place the revealed answer renders - which is also why it still needs to
+  // carry forward into the round-summary screen unchanged, since
+  // #reveal-view itself is hidden there but the paper isn't.
+  function answerLineHtml(val) {
+    return `<span class="answer-line-label">Answer:</span> <span class="answer-line-value">${val}</span>`;
+  }
   // Shared by every reveal code path that flips the winning card (the normal
   // one-at-a-time animation, a late joiner catching up, and the "snap to
-  // final state" fast-forward) - keeps the fancy reveal-view badge and the
-  // plain answer line on the question paper in sync. The paper line is what
-  // carries the answer forward into the round-summary screen, since
-  // #reveal-view (and its badge) is hidden there but the paper isn't.
+  // final state" fast-forward).
   function showAnswerReveal() {
     const val = roomState.currentQuestion.answer.toFixed(2);
-    revealAnswerEl.innerHTML = `<div class="answer-badge"><span class="answer-badge-label">The answer</span><span class="answer-badge-value">${val}</span></div>`;
     revealListEl.classList.add("answer-revealed");
-    questionAnswerLineEl.textContent = `Answer: ${val}`;
+    questionAnswerLineEl.innerHTML = answerLineHtml(val);
     questionAnswerLineEl.style.display = "block";
   }
   const revealListEl = document.getElementById("reveal-list");
@@ -4295,6 +4313,7 @@
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
     if (action === "dismiss") return;
+    if (action === "startGame") { startGameNow(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
@@ -5561,11 +5580,17 @@
     joinRoomAsPlayer(code, currentName, false, data);
   }
 
-  hostStartBtn.addEventListener("click", async () => {
+  async function startGameNow() {
     playSound("start");
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
     await update(ref(db, `rooms/${currentRoomCode}`), { phase: "countdown", countdownRound: 1, countdownEndsAt });
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
+  }
+  // Confirmed via the shared exit-confirm dialog (same pattern already reused
+  // for leaving/ending a game and unlocking a reaction slot) so an accidental
+  // tap doesn't skip straight into the countdown.
+  hostStartBtn.addEventListener("click", () => {
+    openExitConfirm("startGame", "Start game?", "Make sure everyone's ready to begin.");
   });
 
   function maybeReassignHost(data, roomCode) {
@@ -5927,9 +5952,9 @@
         // The answer line appears under the question when the animation ends and pushes the stage
         // down, so measure with it showing to leave room for it now.
         const lineWasHidden = questionAnswerLineEl.style.display === "none";
-        if (lineWasHidden) { questionAnswerLineEl.textContent = "Answer: 0.00"; questionAnswerLineEl.style.display = "block"; }
+        if (lineWasHidden) { questionAnswerLineEl.innerHTML = answerLineHtml("0.00"); questionAnswerLineEl.style.display = "block"; }
         const top = animStageEl.getBoundingClientRect().top;
-        if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.textContent = ""; }
+        if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; }
         const avail = window.innerHeight - 58 - top - 8;
         animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)), minStageH: Math.max(260, avail) });
         animSceneRound = data.round;
@@ -5945,7 +5970,7 @@
           animDoneKey = key;
           const q = roomState.currentQuestion;
           if (q) {
-            questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+            questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
             questionAnswerLineEl.style.display = "block";
           }
         },
@@ -6517,7 +6542,7 @@
     const guessNum = parseFloat(currentGuessStr);
     if (isNaN(guessNum)) { setGuessStatus("Enter a number first."); playSound("error"); return; }
     hasSubmittedThisRound = true;
-    setGuessStatus("Guess submitted — you can still change it until it locks.");
+    setGuessStatus("Guess submitted.");
     playSound("submit");
     updateWaitingUi();
     await set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), guessNum);
@@ -7649,9 +7674,8 @@
       hasSubmittedThisRound = false;
       guessLocked = false;
       guessStatusEl.textContent = "";
-      revealAnswerEl.innerHTML = "";
       revealListEl.classList.remove("answer-revealed");
-      questionAnswerLineEl.textContent = "";
+      questionAnswerLineEl.innerHTML = "";
       questionAnswerLineEl.style.display = "none";
       revealShuffled = false;
       lastChoreographedIndex = -1;
@@ -7680,17 +7704,24 @@
       // The answer number appears on the paper once the animation has finished (see runAnimation).
       // This function runs on every update, so it must not hide it again afterwards.
       if (q && animDoneKey === `${data.round}:${data.animStartAt}`) {
-        questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
         questionAnswerLineEl.style.display = "block";
       } else {
         questionAnswerLineEl.style.display = "none";
       }
     } else if (phase === "reveal") {
+      // Show the answer immediately on entering reveal rather than waiting for
+      // showAnswerReveal() (tied to the winning card's flip, which can be several
+      // cards into the choreography) - the per-card point stacks still wait for
+      // that same timing via revealListEl's "answer-revealed" class, untouched
+      // here; only the number under the question jumps ahead, since the reveal
+      // list already starts spoiling relative results before the winner flips.
       const q = data.currentQuestion;
-      if (q) questionPromptTextEl.textContent = q.prompt;
-      // Answer line's own visibility is driven by showAnswerReveal(), timed to
-      // the winning card's flip - left alone here so it doesn't jump ahead of
-      // (or reset behind) wherever the reveal choreography currently is.
+      if (q) {
+        questionPromptTextEl.textContent = q.prompt;
+        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
+        questionAnswerLineEl.style.display = "block";
+      }
     } else if (phase === "summary") {
       // A client that lands straight in summary (freshly joined, or reloaded
       // mid-round) never runs the reveal choreography for this round, so set
@@ -7699,7 +7730,7 @@
       const q = data.currentQuestion;
       if (q) {
         questionPromptTextEl.textContent = q.prompt;
-        questionAnswerLineEl.textContent = `Answer: ${q.answer.toFixed(2)}`;
+        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
         questionAnswerLineEl.style.display = "block";
       }
     }
