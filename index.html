@@ -1396,7 +1396,7 @@
 
   .question-prompt {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.35; text-align: left; color: var(--text); flex: 1;
-    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 0;
+    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 0; min-width: 0;
     border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
   }
   /* Used to be a small inline line, with a separate big standalone "THE
@@ -1407,14 +1407,16 @@
   .answer-line-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
   .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px; color: #000; line-height: 1.1; }
 
-  .game-body { display: flex; gap: 56px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
-  .main-col { flex: 1 1 0; min-width: 0; }
+  /* Two independent scrollers: the answers/board on the left and the player cards docked on the right (swipe up on the cards to scroll them) */
+  .game-body { display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
+  .main-col { flex: 1 1 0; min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
   .game-body.anim-wide .score-col { display: none; }
   .game-body.anim-wide .main-col { flex: 1 1 100%; }
-  .score-col { flex: 0 0 150px; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+  .score-col { flex: 0 0 150px; min-width: 0; display: flex; flex-direction: column; gap: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding-bottom: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .score-col::-webkit-scrollbar { display: none; }
   /* Compact card: avatar on the left across two rows; name on top, then medal | points + percent. Cards stack with no gaps. */
   .score-card {
-    padding: 0; font-size: 13px; position: relative; overflow: hidden;
+    padding: 0; flex-shrink: 0; font-size: 13px; position: relative; overflow: hidden;
     border-width: 7px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 6px; row-gap: 1px; align-items: center;
     margin-top: -4px; animation: popIn 300ms ease;
@@ -2405,11 +2407,11 @@
 
 <div id="hud">
   <div class="hud-timer-row">
-    <div class="question-prompt" id="question-prompt">
-      <span id="question-prompt-text"></span>
-      <div id="question-answer-line" class="question-answer-line" style="display:none;"></div>
-    </div>
-    <div class="hud-timer" id="hud-timer">--</div>
+  <div class="question-prompt" id="question-prompt">
+    <span id="question-prompt-text"></span>
+    <div id="question-answer-line" class="question-answer-line" style="display:none;"></div>
+  </div>
+  <div class="hud-timer" id="hud-timer">--</div>
   </div>
 
   <div class="game-body">
@@ -6702,8 +6704,10 @@
     let left = 0, top = 70;
     if (card) {
       const rect = card.getBoundingClientRect();
+      const col = scoreColEl.getBoundingClientRect();
       left = rect.left - RX_STAGE + 14;
-      top = rect.top + rect.height / 2 - RX_STAGE / 2;
+      const mid = Math.min(Math.max(rect.top + rect.height / 2, col.top + RX_STAGE / 2), col.bottom - RX_STAGE / 2); // stay in view if the card is scrolled away
+      top = mid - RX_STAGE / 2;
     }
     if (rxShowing[r.playerId]) { rxShowing[r.playerId].remove(); delete rxShowing[r.playerId]; }
     const stage = document.createElement("div");
@@ -7274,7 +7278,7 @@
   // matches summaryAdvanceAt (see goToSummary) so the visual and the actual
   // advance land together.
   function startSummaryScrollChoreography() {
-    const gameBody = document.querySelector(".game-body");
+    const gameBody = document.querySelector(".main-col");
     if (!gameBody) return;
     requestAnimationFrame(() => {
       gameBody.scrollTop = Math.max(0, gameBody.scrollHeight - gameBody.clientHeight);
