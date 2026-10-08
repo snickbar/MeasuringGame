@@ -6556,7 +6556,9 @@
     if (guessLocked || roomState.paused) return;
     const val = e.target.dataset.val;
     if (val === "." && currentGuessStr.includes(".")) return;
-    if (currentGuessStr.length >= 10) return;
+    // The biggest possible answer is grain of sand vs Mount Everest: 17,698,000 (8 digits). Answers show 2 decimals, so cap at 8 whole digits + 2 decimals.
+    const [whole, frac] = currentGuessStr.split(".");
+    if (frac !== undefined ? frac.length >= 2 : (val !== "." && whole.length >= 8)) return;
     currentGuessStr += val;
     renderGuessDisplay();
     playSound("tap");
