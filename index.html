@@ -352,6 +352,45 @@
   }
   #gacha-screen.active .screen-header { flex-shrink: 0; }
   #gacha-screen.active .shop-tab-panel.active { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+  /* ---- Cosmetics: Emojis / Flairs mini menu, one item per row: picture left, Equip middle, coin price right ---- */
+  .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
+  .cosm-pane[hidden] { display: none; }
+  .cosm-note { min-height: 1.3em; margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
+  .cosm-sub { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+  .cosm-list { display: flex; flex-direction: column; gap: 8px; }
+  .cosm-group-label { margin: 8px 0 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
+  .cosm-pack-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+  .cosm-pack-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+  .cosm-pack-sub { font-size: 12px; color: var(--text-muted); }
+  .cosm-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px;
+    padding: 8px 10px; background: #fffaf0; border: 3px solid #d9c3a3; border-radius: 14px;
+  }
+  .cosm-row.equipped { border-color: #4caf50; background: #f1fae9; }
+  .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .cosm-flair-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
+  .cosm-flair-pic.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
+  .cosm-emoji { width: 46px; font-size: 32px; line-height: 1; text-align: center; flex: none; }
+  .cosm-name { min-width: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; line-height: 1.1; color: var(--text); }
+  .cosm-coin { width: 16px; height: 16px; margin-right: 3px; }
+  button.cosm-tab-btn, button.cosm-equip, button.cosm-buy, button.cosm-unlock {
+    --pic-h: 34px;
+    display: flex; align-items: center; justify-content: center; text-align: center; box-sizing: border-box;
+    height: var(--pic-h); padding: 0 2px; margin: 0; min-width: 0; background: transparent; border-radius: 0; box-shadow: none; filter: none;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; line-height: 1; white-space: nowrap;
+    border-style: solid; border-width: calc(var(--pic-h) / 2); border-image-repeat: stretch;
+    border-image-source: url(icons/btn-cream.png); border-image-slice: 155 fill; color: #5b3a26; text-shadow: none;
+  }
+  button.cosm-tab-btn { --pic-h: 40px; flex: 1; font-size: 15px; }
+  button.cosm-equip, button.cosm-buy { width: 96px; }
+  button.cosm-unlock { width: auto; min-width: 110px; }
+  button.cosm-tab-btn.active, button.cosm-equip:not(:disabled):not(.is-on) {
+    border-image-source: url(icons/btn-bot-easy.png); border-image-slice: 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
+  }
+  button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
+  button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
+  button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
+  #emoji-picker-settings-grid { display: block; }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
@@ -1478,7 +1517,7 @@
     100% { transform: translateX(-50%) translateY(-72px) scale(1); opacity: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .float-reaction, .streamer-piece, .coin-fly, .coin-award-popup { display: none; }
+    .float-reaction, .streamer-piece, .coin-fly, .coin-award-popup, .flair-layer { display: none; }
     .trophy-burst .trophy-emoji { animation: none; }
     .trophy-burst .ray { display: none; }
   }
@@ -1558,6 +1597,8 @@
   .card-inner.container-8 { border-image-source: var(--card8); }
   .card-inner.container-9 { border-image-source: var(--card9); }
   .card-inner.container-10 { border-image-source: var(--card10); }
+  .flair-layer { position: fixed; inset: 0; pointer-events: none; }
+  .flair-it { position: absolute; left: 0; top: 0; height: auto; will-change: transform; pointer-events: none; }
   .drumroll-stars { position: fixed; pointer-events: none; }
   .drumroll-stars span {
     position: absolute; top: 0; left: 0; width: 18px; height: 18px;
@@ -1829,7 +1870,7 @@
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
           <span class="shop-hero-badge">&#127916; Free</span>
           <img class="coin-pack-icon" src="icons/shop-coin-reward.png" alt="">
-          <div class="coin-pack-amount">+50</div>
+          <div class="coin-pack-amount">+20</div>
           <div class="coin-pack-label">Coins</div>
           <div id="watch-ad-status" class="coin-pack-status"></div>
           <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn ad-reward-btn">Watch Ad</button>
@@ -1904,10 +1945,22 @@
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
-    <div id="emoji-pack-list"></div>
+    <div class="cosm-tabs" role="group" aria-label="Cosmetics">
+      <button type="button" class="cosm-tab-btn active" data-sub="emojis">Emojis</button>
+      <button type="button" class="cosm-tab-btn" data-sub="flairs">Flairs</button>
+    </div>
+    <p id="cosm-note" class="cosm-note" role="status"></p>
+    <div id="cosm-pane-emojis" class="cosm-pane">
+      <p id="cosm-emoji-status" class="cosm-sub"></p>
+      <div id="cosm-emojis-list" class="cosm-list"></div>
+    </div>
+    <div id="cosm-pane-flairs" class="cosm-pane" hidden>
+      <p class="cosm-sub">Your flair plays around your card when you win a round, and everyone in the room sees it.</p>
+      <div id="cosm-flairs-list" class="cosm-list"></div>
+    </div>
     <div class="coming-soon-box">
       <p class="coming-soon-title">Coming Soon</p>
-      <p class="coming-soon-sub">Card borders, win effects, and name colors are on the way.</p>
+      <p class="coming-soon-sub">Card borders and name colors are on the way.</p>
     </div>
   </div>
 </div>
@@ -2691,6 +2744,8 @@
       cosmetics: defaultCosmeticState(),
       presets: {},
       emojiPacks: {},
+      emojiOwned: {},
+      flairPacks: {},
       activeEmojis: [...DEFAULT_EMOJIS],
       seenObjects: {},
     };
@@ -2748,7 +2803,22 @@
   // the call list in two places) is exactly the kind of place that's
   // already caused two separate bugs this session from one spot getting
   // updated without the other.
+  // The winner's flair plays for everyone, so each player's equipped flair lives on their room entry.
+  function myEquippedFlair() {
+    const id = myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects;
+    return FLAIRS[id] ? id : "classic";
+  }
+  let lastSyncedFlair = null;
+  function syncFlairToRoom() {
+    if (!currentRoomCode || !currentPlayerId) return;
+    if (!(roomState && roomState.players && roomState.players[currentPlayerId])) return; // not in the room: don't create a stray entry
+    const f = myEquippedFlair();
+    if (f === lastSyncedFlair) return;
+    lastSyncedFlair = f;
+    update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
+  }
   function renderProfileDependentUi() {
+    syncFlairToRoom();
     renderCoinBalance();
     renderAvatarGrid();
     renderSettingsAvatarGrid();
@@ -2756,7 +2826,6 @@
     renderWatchAdStatus();
     renderHostUnlockUi();
     renderCosmeticsShop();
-    renderEmojiPackShop();
     renderInGameEmojiPicker();
     renderEmojiPickerSettings();
     renderPresetSlotButtons();
@@ -2787,6 +2856,8 @@
           },
           presets: { ...(data.presets || {}) },
           emojiPacks: { ...(data.emojiPacks || {}) },
+          emojiOwned: { ...(data.emojiOwned || {}) },
+          flairPacks: { ...(data.flairPacks || {}) },
           activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...DEFAULT_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
         };
@@ -2826,6 +2897,7 @@
   // "watch an ad" step is fake. Swap the instant grant for a real rewarded-ad
   // callback later; the cap-tracking logic underneath doesn't need to change.
   const DAILY_AD_COIN_CAP = 3;
+  const AD_REWARD_COINS = 20; // coins per ad (keep the "+20" on the shop card in step)
   function todayDateStr() {
     return new Date().toISOString().slice(0, 10);
   }
@@ -2837,7 +2909,7 @@
       if (countToday >= DAILY_AD_COIN_CAP) return profile; // abort: cap already reached today
       return {
         ...profile,
-        coins: (profile.coins || 0) + 50,
+        coins: (profile.coins || 0) + AD_REWARD_COINS,
         adsWatchedDate: today,
         adsWatchedCount: countToday + 1,
       };
@@ -2858,11 +2930,17 @@
       { id: "gold", label: "Gold", cost: 300, color: "#E8B930" },
       { id: "holiday", label: "Holiday", cost: 200, color: "#D9435B" },
     ],
+    // Winner flairs: items that circle the winning card, then burst. id matches FLAIRS below; pic is the swatch.
     effects: [
-      { id: "classic", label: "Classic Stars", cost: 0, color: "#E8B930" },
-      { id: "rainbow", label: "Rainbow Stars", cost: 200, color: "#9B6BD1" },
-      { id: "fireworks", label: "Fireworks", cost: 250, color: "#F2994A" },
-      { id: "coinshower", label: "Coin Shower", cost: 180, color: "#F2C94C" },
+      { id: "classic", label: "Classic Stars", cost: 0, pic: "star" },
+      { id: "hearts", label: "Hearts", cost: 150, pic: "heart" },
+      { id: "coinshower", label: "Coin Shower", cost: 180, pic: "coin" },
+      { id: "snow", label: "Snowflakes", cost: 200, pic: "snow-simple" },
+      { id: "rainbow", label: "Rainbow Stars", cost: 200, pic: "star", rainbow: true },
+      { id: "butterfly", label: "Butterflies", cost: 250, pic: "butterfly-monarch" },
+      { id: "fireworks", label: "Fireworks", cost: 250, pic: "rocket" },
+      { id: "fire", label: "Fireballs", cost: 300, pic: "flame" },
+      { id: "lightning", label: "Lightning", cost: 350, pic: "bolt" },
     ],
     colors: [
       { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
@@ -2906,7 +2984,7 @@
       card.className = "cosmetic-item" + (isEquipped ? " equipped" : "");
       let swatchHtml;
       if (category === "borders") swatchHtml = `<div class="cosmetic-swatch-border" style="border-color:${item.color}"></div>`;
-      else if (category === "effects") swatchHtml = `<span class="cosmetic-swatch-star" style="color:${item.color}">&#9733;</span>`;
+      else if (category === "effects") swatchHtml = `<img class="cosmetic-swatch-flair${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`;
       else swatchHtml = `<div class="cosmetic-swatch-circle" style="background:${item.color}"></div>`;
       const stateHtml = isEquipped ? "Equipped" : isOwned ? "Tap to equip" : `${item.cost} coins`;
       card.innerHTML = `${swatchHtml}<span class="cosmetic-item-label">${item.label}</span><span class="cosmetic-item-state">${stateHtml}</span>`;
@@ -2919,9 +2997,8 @@
     });
   }
   function renderCosmeticsShop() {
-    renderCosmeticCategory("borders");
-    renderCosmeticCategory("effects");
-    renderCosmeticCategory("colors");
+    renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
+    renderFlairRows(document.getElementById("cosm-flairs-list"));
   }
 
   // TEMP: same simulated-purchase pattern as the host-unlock button below -
@@ -2933,39 +3010,146 @@
   const EMOJI_PACK_CATALOG = [
     { id: "pack1", label: "Emoji Pack 1", price: "$2.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
   ];
-  const emojiPackListEl = document.getElementById("emoji-pack-list");
-  function renderEmojiPackShop() {
-    if (!emojiPackListEl) return;
-    const owned = myProfile.emojiPacks || {};
-    emojiPackListEl.innerHTML = "";
-    EMOJI_PACK_CATALOG.forEach((pack) => {
-      const isOwned = !!owned[pack.id];
-      const box = document.createElement("div");
-      box.className = "host-unlock-shop-box" + (isOwned ? " unlocked" : "");
-      box.innerHTML = `
-        <div class="host-unlock-top-row">
-          <div class="emoji-pack-preview">${pack.emojis.map(emojiHtml).join(" ")}</div>
-          <div class="host-unlock-text">
-            <h3>${pack.label}</h3>
-            <p>${pack.emojis.length} new reactions to use in-game.</p>
-          </div>
-        </div>
-        <button type="button" class="coin-pack-buy-btn"${isOwned ? " disabled" : ""}>${isOwned ? "&#10003; Unlocked" : `Unlock for ${pack.price} &middot; One time`}</button>
-      `;
-      if (!isOwned) {
-        box.querySelector(".coin-pack-buy-btn").addEventListener("click", async () => {
-          await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
-        });
-      }
-      emojiPackListEl.appendChild(box);
-    });
+  function emojiPool() {
+    return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
   }
 
-  function emojiPool() {
-    const owned = myProfile.emojiPacks || {};
-    const pool = [...DEFAULT_EMOJIS];
-    EMOJI_PACK_CATALOG.forEach((pack) => { if (owned[pack.id]) pool.push(...pack.emojis); });
-    return pool;
+  // ---- Cosmetics rows: picture on the left, Equip in the middle, coin price on the right ----
+  // Pack bundles are real-money (simulated for now, like the emoji pack was); each item can also be bought with coins.
+  const EMOJI_COIN_COST = 125;
+  const EMOJI_NAMES = {
+    "\u{1F937}": "Shrug", "\u{1F600}": "Grin", "\u23F0": "Alarm clock", "\u{1F44F}": "Clap", "\u2764\uFE0F": "Heart",
+    "\u{1F44D}": "Thumbs up", "\u{1F602}": "Laughing", "\u{1F525}": "Fire", "\u{1F389}": "Party popper",
+    "\u{1F624}": "Triumph", "\u{1F62B}": "Tired face", "\u{1F913}": "Nerd", "\u{1F4AA}": "Flexed arm", "\u2620\uFE0F": "Skull", "\u{1F62D}": "Crying",
+  };
+  const FLAIR_PACK_CATALOG = [
+    { id: "fpack1", label: "Flair Pack 1", price: "$2.99", flairs: ["hearts", "coinshower", "snow", "rainbow"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$2.99", flairs: ["butterfly", "fireworks", "fire", "lightning"] },
+  ];
+  const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
+  function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
+  function ownsEmoji(e) {
+    if (DEFAULT_EMOJIS.includes(e)) return true;
+    const pk = emojiPackOf(e);
+    return !!((pk && (myProfile.emojiPacks || {})[pk.id]) || (myProfile.emojiOwned || {})[emojiKey(e)]);
+  }
+  function flairPackOf(id) { return FLAIR_PACK_CATALOG.find((p) => p.flairs.includes(id)); }
+  function ownsFlair(item) {
+    if (item.cost === 0) return true;
+    const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.effects) || {};
+    const pk = flairPackOf(item.id);
+    return !!(own[item.id] || (pk && (myProfile.flairPacks || {})[pk.id]));
+  }
+  let cosmNoteTimer = null;
+  function cosmNote(msg) {
+    [document.getElementById("cosm-note"), emojiPickerSettingsStatusEl].forEach((el) => { if (el) el.textContent = msg; });
+    clearTimeout(cosmNoteTimer);
+    cosmNoteTimer = setTimeout(() => { const n = document.getElementById("cosm-note"); if (n) n.textContent = ""; renderEmojiPickerSettings(); }, 2200);
+  }
+  async function buyEmojiWithCoins(e) {
+    if ((myProfile.coins || 0) < EMOJI_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+    const key = emojiKey(e);
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if ((profile.emojiOwned || {})[key] || (profile.coins || 0) < EMOJI_COIN_COST) return profile;
+      return { ...profile, coins: (profile.coins || 0) - EMOJI_COIN_COST, emojiOwned: { ...(profile.emojiOwned || {}), [key]: true } };
+    });
+  }
+  async function buyFlairWithCoins(item) {
+    if ((myProfile.coins || 0) < item.cost) { cosmNote("Not enough coins yet."); return; }
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const cosmetics = profile.cosmetics || defaultCosmeticState();
+      const owned = (cosmetics.owned && cosmetics.owned.effects) || {};
+      if (owned[item.id] || (profile.coins || 0) < item.cost) return profile;
+      return { ...profile, coins: (profile.coins || 0) - item.cost,
+        cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, effects: { ...owned, [item.id]: true } } } };
+    });
+  }
+  async function equipFlair(id) {
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/effects": id });
+  }
+  function cosmRow(o) {
+    const row = document.createElement("div");
+    row.className = "cosm-row" + (o.equipped ? " equipped" : "");
+    row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.name}</span></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    if (o.owned) {
+      btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
+      btn.textContent = o.equipped ? "Equipped" : "Equip";
+      btn.addEventListener("click", o.onEquip);
+    } else {
+      btn.className = "cosm-buy";
+      btn.innerHTML = `<img class="cosm-coin" src="icons/coin.png" alt="">${o.cost}`;
+      btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
+      btn.addEventListener("click", o.onBuy);
+    }
+    row.appendChild(btn);
+    return row;
+  }
+  function cosmPackHead(pack, owned, onUnlock, subText) {
+    const head = document.createElement("div");
+    head.className = "cosm-pack-head";
+    head.innerHTML = `<div><div class="cosm-pack-title">${pack.label}</div><div class="cosm-pack-sub">${subText}</div></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cosm-unlock";
+    btn.disabled = owned;
+    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${pack.price}`;
+    if (!owned) btn.addEventListener("click", onUnlock);
+    head.appendChild(btn);
+    return head;
+  }
+  function renderEmojiRows(container, statusEl) {
+    if (!container) return;
+    const active = myProfile.activeEmojis || DEFAULT_EMOJIS;
+    container.innerHTML = "";
+    const row = (e, cost) => cosmRow({
+      leadHtml: `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
+      equipped: active.includes(e),
+      onEquip: () => {
+        if (!active.includes(e) && active.length >= 9) { cosmNote("You can equip up to 9. Unequip one first."); return; }
+        toggleActiveEmoji(e);
+      },
+      onBuy: () => buyEmojiWithCoins(e),
+    });
+    const label = document.createElement("div");
+    label.className = "cosm-group-label";
+    label.textContent = "Free";
+    container.appendChild(label);
+    DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
+    EMOJI_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.emojiPacks || {})[pack.id];
+      container.appendChild(cosmPackHead(pack, owned, async () => {
+        await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
+      }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
+      pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
+    });
+    if (statusEl) statusEl.textContent = `${active.length} / 9 equipped. Only equipped emojis show up in the game.`;
+  }
+  function renderFlairRows(container) {
+    if (!container) return;
+    const equipped = (myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects) || "classic";
+    container.innerHTML = "";
+    const row = (item) => cosmRow({
+      leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
+      owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id,
+      onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
+    });
+    const items = COSMETIC_CATALOG.effects;
+    const label = document.createElement("div");
+    label.className = "cosm-group-label";
+    label.textContent = "Free";
+    container.appendChild(label);
+    items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
+    FLAIR_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.flairPacks || {})[pack.id];
+      container.appendChild(cosmPackHead(pack, owned, async () => {
+        await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
+      }, `${pack.flairs.length} flairs, or buy each with coins`));
+      pack.flairs.forEach((id) => { const it = items.find((x) => x.id === id); if (it) container.appendChild(row(it)); });
+    });
   }
 
   function pickGachaResult() {
@@ -3546,20 +3730,7 @@
   }
 
   function renderEmojiPickerSettings() {
-    const pool = emojiPool();
-    const active = myProfile.activeEmojis || DEFAULT_EMOJIS;
-    const atLimit = active.length >= 9;
-    emojiPickerSettingsGridEl.innerHTML = "";
-    pool.forEach((emoji) => {
-      const isSelected = active.includes(emoji);
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "emoji-btn" + (isSelected ? " selected" : "") + (!isSelected && atLimit ? " disabled-pick" : "");
-      btn.innerHTML = emojiHtml(emoji);
-      btn.addEventListener("click", () => toggleActiveEmoji(emoji));
-      emojiPickerSettingsGridEl.appendChild(btn);
-    });
-    emojiPickerSettingsStatusEl.textContent = `${active.length} / 9 selected`;
+    renderEmojiRows(emojiPickerSettingsGridEl, emojiPickerSettingsStatusEl);
   }
 
   async function toggleActiveEmoji(emoji) {
@@ -3574,6 +3745,11 @@
     await update(ref(db, `profiles/${deviceId}`), { activeEmojis: next });
   }
 
+  document.querySelectorAll(".cosm-tab-btn").forEach((btn) => btn.addEventListener("click", () => {
+    document.querySelectorAll(".cosm-tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    document.getElementById("cosm-pane-emojis").hidden = btn.dataset.sub !== "emojis";
+    document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
+  }));
   editEmojiPickerBtn.addEventListener("click", () => {
     renderEmojiPickerSettings();
     openOverlay(emojiPickerSettingsScreen);
@@ -4956,11 +5132,13 @@
       // actually need updating.
       currentPlayerId = staleOwnId;
       playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-      await update(playerRef, { name, isHost, connected: true, disconnectedAt: null });
+      lastSyncedFlair = myEquippedFlair();
+      await update(playerRef, { name, isHost, flair: lastSyncedFlair, connected: true, disconnectedAt: null });
     } else {
       currentPlayerId = makePlayerId();
       playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-      await set(playerRef, { name, avatar: currentAvatar, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
+      lastSyncedFlair = myEquippedFlair();
+      await set(playerRef, { name, avatar: currentAvatar, flair: lastSyncedFlair, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
     }
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
     if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
@@ -5742,6 +5920,7 @@
       .map((id) => ({
         playerId: id,
         name: (playersSnap[id] && playersSnap[id].name) || "Player",
+        flair: (playersSnap[id] && playersSnap[id].flair) || "classic",
         guess: guesses[id],
         error: Math.abs(guesses[id] - answer),
       }))
@@ -6359,6 +6538,7 @@
             if (entry.consecutiveWins >= 2) playSound("streak");
             celebrate(confettiTierFor(entry));
             spawnTrophyBurst(li);
+            flairBurst(li, flairIdFor(entry));
             if (entry.isPerfect) {
               perfectFlashEl.classList.remove("flash");
               void perfectFlashEl.offsetWidth;
@@ -6381,22 +6561,13 @@
       }
       if (isWinner) {
         li.classList.add("drumroll");
-        // Appended to the global reactions-panel overlay (fixed, z-index 900),
-        // not as a child of li - #reveal-list sets `perspective` for the card
-        // flip, which creates its own stacking context and traps any z-index
-        // set on a descendant, so the stars could never actually paint above
-        // the separate .score-col cards they visually orbit into.
-        const rect = li.getBoundingClientRect();
-        const stars = document.createElement("div");
-        stars.className = "drumroll-stars";
-        stars.style.left = `${rect.left - 10}px`;
-        stars.style.top = `${rect.top - 10}px`;
-        stars.style.width = `${rect.width + 20}px`;
-        stars.style.height = `${rect.height + 20}px`;
-        stars.innerHTML = "<span></span><span></span><span></span><span></span>";
-        reactionsPanelEl.appendChild(stars);
+        // The flair's items circle the card (in the fixed reactions-panel overlay, so they
+        // paint above the separate .score-col cards) for the drumroll, then the card flips.
+        const drumMs = flairDrumMs();
         playSound("drumroll");
-        setTimeout(() => { li.classList.remove("drumroll"); stars.remove(); doFlips(); }, 900);
+        if (drumMs > 1100) setTimeout(() => playSound("drumroll"), 1000);
+        flairOrbit(li, flairIdFor(entry), drumMs);
+        setTimeout(() => { li.classList.remove("drumroll"); doFlips(); }, drumMs);
       } else {
         doFlips();
       }
@@ -6814,6 +6985,122 @@
       reactionsPanelEl.appendChild(s);
       setTimeout(() => s.remove(), dur + 400);
     }
+  }
+
+  // ---- Winner flairs: items circle the winner's card during the drumroll, then burst as it flips ----
+  // Numbers picked per flair in the flair preview page. lap = ms per lap around the card,
+  // size = px, items = how many circle the card, burst = how many fly out when it flips.
+  const FLAIR_DRUM_MS = 2300;
+  const FLAIRS = {
+    classic:   { pics: ["star"], move: "twinkle", burst: "radial", lap: 3000, size: 33, items: 10, burstN: 32 },
+    rainbow:   { pics: ["star"], move: "twinkle", burst: "radial", rainbow: true, lap: 3000, size: 36, items: 10, burstN: 18 },
+    hearts:    { pics: ["heart"], move: "pulse", burst: "rise", lap: 2400, size: 41, items: 6, burstN: 11 },
+    lightning: { pics: ["bolt"], move: "flicker", burst: "zap", lap: 2200, size: 44, items: 6, burstN: 31 },
+    fire:      { pics: ["flame"], move: "flame", burst: "rise", lap: 3000, size: 41, items: 12, burstN: 40 },
+    butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "scatter", lap: 3000, size: 31, items: 12, burstN: 40 },
+    snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "drift", lap: 3000, size: 27, items: 12, burstN: 40 },
+    coinshower: { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
+    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "radial", hueRandom: true, lap: 3000, size: 36, items: 10, burstN: 32 },
+  };
+  const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
+  const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // ?flair=hearts previews a flair in-game; otherwise the winner's own equipped flair (default Classic Stars).
+  function flairIdFor(entry) {
+    const test = new URLSearchParams(location.search).get("flair");
+    const id = test || (entry && entry.flair) || "classic";
+    return FLAIRS[id] ? id : "classic";
+  }
+  function flairDrumMs() { return reduceMotion() ? 900 : FLAIR_DRUM_MS; }
+  function flairMakeItem(layer, name, size) {
+    const e = document.createElement("img");
+    e.className = "flair-it"; e.alt = ""; e.src = flairPic(name); e.style.width = `${size}px`;
+    layer.appendChild(e); return e;
+  }
+  function flairOrbit(li, flairId, ms) {
+    if (reduceMotion()) return;
+    const f = FLAIRS[flairId], size = f.size;
+    const layer = document.createElement("div");
+    layer.className = "flair-layer";
+    reactionsPanelEl.appendChild(layer);
+    const items = [];
+    for (let k = 0; k < f.items; k++) items.push({ el: flairMakeItem(layer, f.pics[k % f.pics.length], size), off: k / f.items, ph: Math.random() * 6.28 });
+    const t0 = performance.now();
+    function frame(now) {
+      const t = now - t0;
+      if (t >= ms || !layer.isConnected) { layer.remove(); return; }
+      const r = li.getBoundingClientRect(), x0 = r.left - 8, y0 = r.top - 8, w = r.width + 16, h = r.height + 16, P = 2 * (w + h);
+      const at = (u) => {
+        let d = (((u % 1) + 1) % 1) * P;
+        if (d < w) return [d, 0];
+        if ((d -= w) < h) return [w, d];
+        if ((d -= h) < w) return [w - d, h];
+        d -= w; return [0, h - d];
+      };
+      items.forEach((it, k) => {
+        const u = it.off + t / f.lap, [px, py] = at(u);
+        const sp = t / 1000 * 6 + it.ph;
+        let sc = 1, rot = 0, sx = 1, dy = 0, op = 1;
+        if (f.move === "twinkle") { sc = 0.85 + 0.25 * Math.sin(sp * 1.6); rot = Math.sin(sp) * 25; }
+        else if (f.move === "pulse") { sc = 0.85 + 0.25 * Math.abs(Math.sin(sp * 1.2)); }
+        else if (f.move === "flicker") { sc = 0.9 + 0.2 * Math.sin(sp * 5); rot = Math.sin(sp * 3) * 14; op = 0.8 + 0.2 * Math.sin(sp * 9); }
+        else if (f.move === "flame") { sc = 0.9 + 0.15 * Math.sin(sp * 3); dy = -3 * Math.abs(Math.sin(sp * 2)); }
+        else if (f.move === "flap") { sx = 0.35 + 0.65 * Math.abs(Math.sin(sp * 2.4)); dy = Math.sin(sp) * 3; }
+        else if (f.move === "spin") { rot = (t / 1000) * 120 + it.ph * 20; }
+        else if (f.move === "coin") { sx = Math.cos(sp * 1.8); }
+        else if (f.move === "rocket") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI + 45; dy = Math.sin(sp * 3) * 1.5; }
+        it.el.style.transform = `translate(${x0 + px - size / 2}px, ${y0 + py - size / 2 + dy}px) rotate(${rot}deg) scale(${sc * sx}, ${sc})`;
+        it.el.style.opacity = op;
+        if (f.rainbow) it.el.style.filter = `hue-rotate(${(t / 8 + k * 60) % 360}deg) saturate(1.3)`;
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function flairBurst(li, flairId) {
+    if (reduceMotion()) return;
+    const f = FLAIRS[flairId], size = f.size;
+    const r = li.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const layer = document.createElement("div");
+    layer.className = "flair-layer";
+    reactionsPanelEl.appendChild(layer);
+    if (f.burst === "zap") {
+      const fl = document.createElement("div");
+      fl.style.cssText = "position:absolute;inset:0;background:#fff;opacity:.9;";
+      layer.appendChild(fl);
+      fl.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 350, easing: "ease-out" }).onfinish = () => fl.remove();
+    }
+    const now0 = performance.now(), parts = [];
+    const bp = f.burstPics || f.pics;
+    for (let k = 0; k < f.burstN; k++) {
+      const s = 0.6 + Math.random() * 0.7, ang = Math.random() * 6.28, spd = 2 + Math.random() * 4;
+      const p = { el: flairMakeItem(layer, bp[k % bp.length], size), t0: now0 + Math.random() * 120, life: 1100 + Math.random() * 500, s, ph: Math.random() * 6,
+        r: Math.random() * 360, vr: (Math.random() - 0.5) * 8, g: 0, vx: 0, vy: 0, x: cx - size / 2, y: cy - size / 2 };
+      if (f.burst === "radial") { p.vx = Math.cos(ang) * spd; p.vy = Math.sin(ang) * spd; p.g = 0.06; }
+      else if (f.burst === "rise") { p.vx = (Math.random() - 0.5) * 2.4; p.vy = -1.5 - Math.random() * 2.5; p.g = -0.02; p.vr = (Math.random() - 0.5) * 2; p.x = cx - size / 2 + (Math.random() - 0.5) * r.width; p.y = cy; }
+      else if (f.burst === "zap") { p.vx = Math.cos(ang) * spd * 1.3; p.vy = Math.sin(ang) * spd * 1.3; p.vr = (Math.random() - 0.5) * 20; }
+      else if (f.burst === "scatter") { p.vx = Math.cos(ang) * spd * 0.7; p.vy = Math.sin(ang) * spd * 0.7 - 0.5; p.vr = 0; p.r = 0; p.g = -0.01; }
+      else if (f.burst === "drift") { p.vx = (Math.random() - 0.5) * 1.2; p.vy = 0.4 + Math.random() * 0.8; p.vr = (Math.random() - 0.5) * 3; p.x = Math.random() * window.innerWidth - size / 2; p.y = -size - Math.random() * 60; p.life = 2200; }
+      else if (f.burst === "rain") { p.vx = (Math.random() - 0.5) * 1.2; p.vy = 1 + Math.random() * 1.5; p.g = 0.12; p.vr = 0; p.r = 0; p.x = Math.random() * window.innerWidth - size / 2; p.y = -size - Math.random() * 120; p.life = 1900; }
+      if (f.hueRandom) p.el.style.filter = `hue-rotate(${Math.floor(Math.random() * 360)}deg) saturate(1.4)`;
+      parts.push(p);
+    }
+    function frame(now) {
+      if (!layer.isConnected) return;
+      let alive = false;
+      parts.forEach((p) => {
+        const a = Math.min(1, (now - p.t0) / p.life);
+        if (a >= 1) { p.el.style.display = "none"; return; }
+        alive = true;
+        if (a < 0) return;
+        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        const sx = f.move === "flap" ? 0.35 + 0.65 * Math.abs(Math.sin(now / 90 + p.ph)) : (f.move === "coin" ? Math.cos(now / 110 + p.ph) : 1);
+        p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg) scale(${sx * p.s}, ${p.s})`;
+        p.el.style.opacity = a < 0.7 ? 1 : (1 - a) / 0.3;
+        if (f.rainbow) p.el.style.filter = `hue-rotate(${(now / 6 + p.ph * 50) % 360}deg) saturate(1.3)`;
+      });
+      if (alive) requestAnimationFrame(frame); else layer.remove();
+    }
+    requestAnimationFrame(frame);
   }
 
   function spawnTrophyBurst(targetEl) {
