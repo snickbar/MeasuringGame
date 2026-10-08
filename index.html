@@ -137,9 +137,10 @@
 
   #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #emoji-picker-settings-screen { display: none; }
   #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #emoji-picker-settings-screen.active { display: block; }
+  #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
-    position: fixed; top: 102px; left: 0; right: 0; bottom: 58px;
+    position: fixed; top: 102px; left: 0; right: 0; bottom: var(--bottom-bar-h, 58px);
     max-width: 520px; margin: 0 auto;
     padding: 12px 12px 0; z-index: 10;
   }
@@ -966,14 +967,29 @@
   #hud-sub-toolbar.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   #bottom-toolbar {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
-    min-height: 58px; align-items: center; justify-content: flex-start; gap: 8px;
+    flex-direction: column; align-items: stretch; gap: 6px;
     padding: 6px 10px; z-index: 50;
     background: #fbfaf6; box-shadow: 0 -2px 6px rgba(0,0,0,.08);
   }
   #bottom-toolbar.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   @keyframes toolbarFadeIn { 0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); } }
-  #bottom-toolbar button { width: auto; margin: 0; flex: 1; max-width: 260px; }
-  #bottom-toolbar button:disabled { opacity: .4; filter: grayscale(.4); }
+  #bottom-actions { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 46px; }
+  #bottom-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))) { display: none; }
+  #bottom-actions button { width: auto; margin: 0; flex: 1; max-width: 260px; }
+  #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
+  /* Reaction strip: one row above the action buttons, on every in-game screen except the reveal animation. */
+  #reaction-strip { display: flex; justify-content: center; gap: 5px; }
+  #reaction-strip[hidden] { display: none; }
+  button.react-slot {
+    flex: 1 1 0; min-width: 0; max-width: 56px; aspect-ratio: 1; box-sizing: border-box; margin: 0; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #d9c3a3; border-image: none; border-radius: 11px; background: #fffaf0; box-shadow: 0 2px 0 #d9c3a3; color: inherit;
+  }
+  button.react-slot img { max-width: 100%; max-height: 100%; display: block; pointer-events: none; }
+  button.react-slot.empty { background: transparent; border-style: dashed; box-shadow: none; }
+  button.react-slot.lock { background: #eadfcb; border-style: dashed; box-shadow: none; cursor: default; }
+  button.react-slot.lock img { width: 62%; }
+  button.react-slot:active:not(.lock):not(.empty) { transform: scale(.88); }
   #hud-auto-toggle {
     flex: 0 0 auto; max-width: none; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px;
     padding: 8px 10px; color: var(--text); border-width: 8px; border-style: solid;
@@ -1845,12 +1861,15 @@
 </div>
 
 <div id="bottom-toolbar">
+  <div id="reaction-strip" aria-label="Reactions"></div>
+  <div id="bottom-actions">
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
   <button id="play-again-btn" style="display:none;">Play again</button>
   <button id="final-home-btn" style="display:none;">Finish game</button>
+  </div>
 </div>
 
 <div id="home-screen" class="screen active">
@@ -2755,6 +2774,28 @@
     return `<span class="emo-o" style="transform: rotate(${o.rotate}deg) scale(${o.flipH ? -1 : 1}, ${o.flipV ? -1 : 1})">${safe}</span>`;
   }
   const DEFAULT_EMOJIS = ["\u{1F937}", "\u{1F600}", "⏰", "\u{1F44F}", "❤️", "\u{1F44D}", "\u{1F602}", "\u{1F525}", "\u{1F389}"];
+  // What a new player starts with in the reaction strip (all nine free ones stay free to swap in).
+  const START_EMOJIS = ["\u{1F44D}", "\u{1F602}", "\u{1F44F}", "❤️", "\u{1F525}"];
+  // The reaction pictures. `emoji` is the id reactions are still stored under in the database and profiles; mirror comes from the viewer page.
+  const REACTIONS = {
+    "\u{1F44D}": { id: "thumbsup", label: "Thumbs up" },
+    "\u{1F602}": { id: "laughing", label: "Laughing" },
+    "\u{1F44F}": { id: "clap", label: "Clap" },
+    "❤️": { id: "heart", label: "Heart" },
+    "\u{1F525}": { id: "fire", label: "Fire" },
+    "\u{1F937}": { id: "shrug", label: "Shrug" },
+    "\u{1F600}": { id: "grin", label: "Grin", mirror: true },
+    "⏰": { id: "alarm", label: "Alarm clock" },
+    "\u{1F389}": { id: "popper", label: "Party popper", mirror: true },
+    "\u{1F624}": { id: "triumph", label: "Triumph" },
+    "\u{1F62B}": { id: "tired", label: "Tired face", mirror: true },
+    "\u{1F913}": { id: "nerd", label: "Nerd" },
+    "\u{1F4AA}": { id: "flex", label: "Flexed arm" },
+    "☠️": { id: "skull", label: "Skull" },
+    "\u{1F62D}": { id: "crying", label: "Crying" },
+  };
+  const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`;
+  const REACTION_SLOTS_MAX = 7, REACTION_SLOTS_BASE = 5;
   function defaultProfile() {
     return {
       coins: 0,
@@ -2767,7 +2808,7 @@
       emojiPacks: {},
       emojiOwned: {},
       flairPacks: {},
-      activeEmojis: [...DEFAULT_EMOJIS],
+      activeEmojis: [...START_EMOJIS],
       seenObjects: {},
     };
   }
@@ -2848,6 +2889,7 @@
     renderHostUnlockUi();
     renderCosmeticsShop();
     renderInGameEmojiPicker();
+    renderReactionStrip();
     renderEmojiPickerSettings();
     renderPresetSlotButtons();
     renderItemsScreen();
@@ -2879,7 +2921,7 @@
           emojiPacks: { ...(data.emojiPacks || {}) },
           emojiOwned: { ...(data.emojiOwned || {}) },
           flairPacks: { ...(data.flairPacks || {}) },
-          activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...DEFAULT_EMOJIS],
+          activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
         };
       }
@@ -3753,6 +3795,46 @@
     const active = (myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : DEFAULT_EMOJIS;
     emojiPickerEl.innerHTML = active.map((e) => `<button type="button" class="emoji-btn" data-emoji="${e}">${emojiHtml(e)}</button>`).join("");
   }
+
+  // The strip along the bottom of every in-game screen: your equipped reactions first, then any empty owned slots, then the locked ones.
+  const reactionStripEl = document.getElementById("reaction-strip");
+  let lastReactionTapAt = 0;
+  function renderReactionStrip() {
+    if (!reactionStripEl) return;
+    const owned = Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
+    const active = ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, owned);
+    reactionStripEl.innerHTML = "";
+    for (let i = 0; i < REACTION_SLOTS_MAX; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (i < active.length) {
+        const e = active[i], r = REACTIONS[e];
+        b.className = "react-slot";
+        b.dataset.emoji = e;
+        b.setAttribute("aria-label", r.label);
+        b.innerHTML = `<img alt="" src="${reactionPic(e)}"${r.mirror ? ' style="transform:scaleX(-1)"' : ""}>`;
+      } else if (i < owned) {
+        b.className = "react-slot empty";
+        b.disabled = true;
+        b.setAttribute("aria-label", "Empty reaction slot");
+      } else {
+        b.className = "react-slot lock";
+        b.setAttribute("aria-label", "Locked reaction slot");
+        b.setAttribute("aria-disabled", "true");
+        b.innerHTML = '<img alt="" src="icons/reactions/padlock.png">';
+      }
+      reactionStripEl.appendChild(b);
+    }
+  }
+  reactionStripEl.addEventListener("click", (ev) => {
+    const b = ev.target.closest(".react-slot[data-emoji]");
+    if (!b || !currentRoomCode) return;
+    const t = Date.now();
+    if (t - lastReactionTapAt < 400) return;
+    lastReactionTapAt = t;
+    sendReaction(b.dataset.emoji);
+  });
+  new ResizeObserver(() => document.documentElement.style.setProperty("--bottom-bar-h", `${bottomToolbarEl.offsetHeight || 58}px`)).observe(bottomToolbarEl);
 
   function renderEmojiPickerSettings() {
     renderEmojiRows(emojiPickerSettingsGridEl, emojiPickerSettingsStatusEl);
@@ -7305,6 +7387,7 @@
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
+    reactionStripEl.hidden = phase === "animation";
     updateInstallBannerVisibility();
     finalScreenEl.classList.toggle("active", phase === "final");
     endedScreenEl.classList.toggle("active", phase === "ended");
