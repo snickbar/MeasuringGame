@@ -1406,13 +1406,14 @@
     font-size: 22px; width: 48px; height: auto; align-self: stretch; min-height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     border-width: 8px; border-style: solid; border-image-source: var(--ring); border-image-slice: 45 fill;
   }
-  .sc-top { grid-row: 1; grid-column: 2; display: flex; align-items: center; justify-content: center; min-width: 0; position: relative; padding: 0 9px; }
-  .sc-top .arrow { position: absolute; right: -3px; width: 12px; font-size: 12px; top: 50%; transform: translateY(-50%); }
-  .sc-bot { grid-row: 2; grid-column: 2; display: flex; align-items: center; gap: 6px; min-width: 0; padding-right: 4px; }
+  .sc-top { grid-row: 1; grid-column: 2; display: flex; align-items: center; justify-content: center; min-width: 0; position: relative; padding: 0 2px; }
+  .sc-bot { grid-row: 2; grid-column: 2; display: flex; align-items: center; gap: 5px; min-width: 0; padding-right: 2px; }
   .sc-bot .pts { margin-left: auto; }
-  .sc-bot .acc { margin-right: 2px; }
+  .sc-bot .acc { margin-right: 0; }
+  .sc-bot .arrow { width: 12px; font-size: 12px; }
+  .sc-bot .arrow.move-icon { width: 12px; height: 12px; }
   .score-card .name {
-    flex: 0 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.15; text-align: center;
+    flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.15; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .medal {
@@ -4378,6 +4379,20 @@
       el.style.fontSize = size + "px";
     }
   }
+  // Player-card names: measure the real text width (scrollWidth rounds, which let a name a hair too wide get an ellipsis).
+  function fitNameToCard(el, minPx = 10) {
+    if (!el) return;
+    el.style.fontSize = "";
+    if (!el.clientWidth) return;
+    const range = document.createRange();
+    let size = parseFloat(getComputedStyle(el).fontSize), guard = 40;
+    // the card pops in with a scale animation, so undo that scale when measuring
+    const textW = () => { range.selectNodeContents(el); return range.getBoundingClientRect().width / ((el.getBoundingClientRect().width / el.clientWidth) || 1); };
+    while (textW() > el.clientWidth - 1 && size > minPx && guard-- > 0) {
+      size -= 0.5;
+      el.style.fontSize = size + "px";
+    }
+  }
   function fitAllButtonText() {
     document.querySelectorAll(".fit-text").forEach((el) => fitTextToBox(el));
   }
@@ -6989,11 +7004,11 @@
         box.dataset.id = id;
         box.innerHTML = `
           <span class="avatar">${avatarHtml(p.avatar)}</span>
-          <div class="sc-top"><span class="name">${escapeHtml(p.name)}</span>${arrow}</div>
-          <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}</div>
+          <div class="sc-top"><span class="name">${escapeHtml(p.name)}</span></div>
+          <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
         `;
         scoreColEl.appendChild(box);
-        fitTextToBox(box.querySelector(".name"), 10);
+        fitNameToCard(box.querySelector(".name"));
         const prevScore = previousDisplayedScores[id];
         if (prevScore !== undefined && prevScore !== score) {
           const ptsEl = box.querySelector(".pts");
@@ -7566,7 +7581,9 @@
 
   // ==================== Master phase switch ====================
 
-  const fitScoreNames = () => document.querySelectorAll(".score-card .name").forEach((el) => fitTextToBox(el, 10));
+  const fitScoreNames = () => document.querySelectorAll(".score-card .name").forEach((el) => fitNameToCard(el));
+  new ResizeObserver(() => fitScoreNames()).observe(scoreColEl); // refit when the column appears (it is hidden during the reveal animation)
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitScoreNames);
   function applyPhase(data) {
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
