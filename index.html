@@ -353,10 +353,21 @@
   #gacha-screen.active .screen-header { flex-shrink: 0; }
   #gacha-screen.active .shop-tab-panel.active { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
   /* ---- Cosmetics: Emojis / Flairs mini menu, one item per row: picture left, Equip middle, coin price right ---- */
+  /* Pinned to the top of the (scrollable) shop-tab-panel - the tab buttons
+     and the active tab's description used to scroll away with the list
+     below them, same bug the main app toolbar already solved for its own
+     scrolling screens. #fbfaf6 matches #app-toolbar's own opaque background
+     for the same "sits over scrolling content" reason. */
+  .cosm-sticky-header { position: sticky; top: 0; z-index: 5; background: #fbfaf6; padding-top: 2px; }
   .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
   .cosm-pane[hidden] { display: none; }
   .cosm-note { min-height: 1.3em; margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
   .cosm-sub { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+  /* Emoji's live status line ("3/9 equipped...") is usually 1 line, the
+     flair tab's static description is 2 - reserve 2 lines for both so
+     switching tabs doesn't shift the sticky header's height under the list. */
+  .cosm-sub-desc { min-height: 2.6em; line-height: 1.3; }
+  .cosm-sub-desc[hidden] { display: none; }
   .cosm-list { display: flex; flex-direction: column; gap: 8px; }
   .cosm-group-label { margin: 8px 0 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
   .cosm-pack-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
@@ -1945,17 +1956,19 @@
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
-    <div class="cosm-tabs" role="group" aria-label="Cosmetics">
-      <button type="button" class="cosm-tab-btn active" data-sub="emojis">Emojis</button>
-      <button type="button" class="cosm-tab-btn" data-sub="flairs">Flairs</button>
+    <div class="cosm-sticky-header">
+      <div class="cosm-tabs" role="group" aria-label="Cosmetics">
+        <button type="button" class="cosm-tab-btn active" data-sub="emojis">Emojis</button>
+        <button type="button" class="cosm-tab-btn" data-sub="flairs">Flairs</button>
+      </div>
+      <p id="cosm-note" class="cosm-note" role="status"></p>
+      <p id="cosm-emoji-status" class="cosm-sub cosm-sub-desc" data-sub="emojis"></p>
+      <p id="cosm-flair-desc" class="cosm-sub cosm-sub-desc" data-sub="flairs" hidden>Your flair plays around your card when you win a round, and everyone in the room sees it.</p>
     </div>
-    <p id="cosm-note" class="cosm-note" role="status"></p>
     <div id="cosm-pane-emojis" class="cosm-pane">
-      <p id="cosm-emoji-status" class="cosm-sub"></p>
       <div id="cosm-emojis-list" class="cosm-list"></div>
     </div>
     <div id="cosm-pane-flairs" class="cosm-pane" hidden>
-      <p class="cosm-sub">Your flair plays around your card when you win a round, and everyone in the room sees it.</p>
       <div id="cosm-flairs-list" class="cosm-list"></div>
     </div>
     <div class="coming-soon-box">
@@ -2931,16 +2944,20 @@
       { id: "holiday", label: "Holiday", cost: 200, color: "#D9435B" },
     ],
     // Winner flairs: items that circle the winning card, then burst. id matches FLAIRS below; pic is the swatch.
+    // Price escalation order (per request): rainbow/snow swapped (same tier,
+    // just reordered), butterfly promoted to most expensive, fireworks to
+    // 2nd-most, and fire/lightning (which used to hold those top 2 spots)
+    // bumped down 2 rank spots into the tier butterfly/fireworks vacated.
     effects: [
       { id: "classic", label: "Classic Stars", cost: 0, pic: "star" },
       { id: "hearts", label: "Hearts", cost: 150, pic: "heart" },
       { id: "coinshower", label: "Coin Shower", cost: 180, pic: "coin" },
-      { id: "snow", label: "Snowflakes", cost: 200, pic: "snow-simple" },
       { id: "rainbow", label: "Rainbow Stars", cost: 200, pic: "star", rainbow: true },
-      { id: "butterfly", label: "Butterflies", cost: 250, pic: "butterfly-monarch" },
-      { id: "fireworks", label: "Fireworks", cost: 250, pic: "rocket" },
-      { id: "fire", label: "Fireballs", cost: 300, pic: "flame" },
-      { id: "lightning", label: "Lightning", cost: 350, pic: "bolt" },
+      { id: "snow", label: "Snowflakes", cost: 200, pic: "snow-simple" },
+      { id: "fire", label: "Fireballs", cost: 250, pic: "flame" },
+      { id: "lightning", label: "Lightning", cost: 250, pic: "bolt" },
+      { id: "fireworks", label: "Fireworks", cost: 300, pic: "rocket" },
+      { id: "butterfly", label: "Butterflies", cost: 350, pic: "butterfly-monarch" },
     ],
     colors: [
       { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
@@ -3023,8 +3040,8 @@
     "\u{1F624}": "Triumph", "\u{1F62B}": "Tired face", "\u{1F913}": "Nerd", "\u{1F4AA}": "Flexed arm", "\u2620\uFE0F": "Skull", "\u{1F62D}": "Crying",
   };
   const FLAIR_PACK_CATALOG = [
-    { id: "fpack1", label: "Flair Pack 1", price: "$2.99", flairs: ["hearts", "coinshower", "snow", "rainbow"] },
-    { id: "fpack2", label: "Flair Pack 2", price: "$2.99", flairs: ["butterfly", "fireworks", "fire", "lightning"] },
+    { id: "fpack1", label: "Flair Pack 1", price: "$2.99", flairs: ["hearts", "coinshower", "rainbow", "snow"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$2.99", flairs: ["fire", "lightning", "fireworks", "butterfly"] },
   ];
   const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
@@ -3749,6 +3766,7 @@
     document.querySelectorAll(".cosm-tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
     document.getElementById("cosm-pane-emojis").hidden = btn.dataset.sub !== "emojis";
     document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
+    document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== btn.dataset.sub; });
   }));
   editEmojiPickerBtn.addEventListener("click", () => {
     renderEmojiPickerSettings();
