@@ -394,6 +394,8 @@
   .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .cosm-flair-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
   .cosm-flair-pic.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
+  .cosm-reaction-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
+  button.react-slot.lock-tap { cursor: pointer; }
   .cosm-emoji { width: 46px; font-size: 32px; line-height: 1; text-align: center; flex: none; }
   .cosm-name { min-width: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; line-height: 1.1; color: var(--text); }
   .cosm-coin { width: 16px; height: 16px; margin-right: 3px; }
@@ -1501,7 +1503,11 @@
   }
   .rx-stage { position: absolute; pointer-events: none; }
   .rx-piv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .rx-piv img { width: 60%; height: 60%; object-fit: contain; display: block; }
+  .rx-piv > img { width: 60%; height: 60%; object-fit: contain; display: block; }
+  .rx-eyes { position: relative; width: 62%; aspect-ratio: 320 / 241; }
+  .rx-eyes > img:first-child { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .rx-eyes .rx-pupil { position: absolute; width: 21%; top: 58%; transform: translate(-50%, -50%); }
+  .rx-piv .rx-eyes img { object-fit: fill; }
   .rx-text { font-size: 38px; }
   .rx-stage .fx { position: absolute; pointer-events: none; }
   /* after you send one, the slots dim and a ring sweeps round for 2 seconds */
@@ -2033,7 +2039,7 @@
   </div>
 
   <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn">Edit Preset Game Settings</button>
-  <button id="edit-emoji-picker-btn" type="button" class="edit-preset-settings-btn">Choose Your Emojis</button>
+  <button id="edit-emoji-picker-btn" type="button" class="edit-preset-settings-btn">Choose Your Reactions</button>
 
   <h3>Account</h3>
   <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn" style="display:none;">Sign in with Google</button>
@@ -2125,7 +2131,7 @@
 
   <div class="howto-section">
     <h3>Good to know</h3>
-    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> let you send an emoji while waiting for everyone else to guess. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
   </div>
 
   <div class="howto-section">
@@ -2287,7 +2293,7 @@
 <div id="emoji-picker-settings-screen" class="screen">
   <button id="emoji-picker-settings-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header">
-    <h1>Choose Your Emojis</h1>
+    <h1>Choose Your Reactions</h1>
   </div>
   <p id="emoji-picker-settings-status"></p>
   <div id="emoji-picker-settings-grid"></div>
@@ -2788,18 +2794,28 @@
     "❤️": { id: "heart", label: "Heart" },
     "\u{1F525}": { id: "fire", label: "Fire" },
     "\u{1F937}": { id: "shrug", label: "Shrug" },
-    "\u{1F600}": { id: "grin", label: "Grin", mirror: true },
+    "\u{1F600}": { id: "grin", label: "Grin" },
     "⏰": { id: "alarm", label: "Alarm clock" },
-    "\u{1F389}": { id: "popper", label: "Party popper", mirror: true },
+    "\u{1F389}": { id: "popper", label: "Party popper" },
     "\u{1F624}": { id: "triumph", label: "Triumph" },
-    "\u{1F62B}": { id: "tired", label: "Tired face", mirror: true },
+    "\u{1F62B}": { id: "tired", label: "Tired face" },
     "\u{1F913}": { id: "nerd", label: "Nerd" },
     "\u{1F4AA}": { id: "flex", label: "Flexed arm" },
     "☠️": { id: "skull", label: "Skull" },
     "\u{1F62D}": { id: "crying", label: "Crying" },
+    // second pack
+    "\u{1F92F}": { id: "mindblown", label: "Mind blown" },
+    "\u{1F605}": { id: "nervous", label: "Nervous smile" },
+    "\u{1F451}": { id: "crown", label: "Crown" },
+    "\u{1F3C6}": { id: "trophy", label: "Trophy" },
+    "\u{1F612}": { id: "sideeye", label: "Side eye" },
   };
-  const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`;
+  const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`; // sideeye.png is the "looking" eyes
   const REACTION_SLOTS_MAX = 7, REACTION_SLOTS_BASE = 5;
+  const REACTION_SLOT_COSTS = [200, 400]; // coins for slot 6 and slot 7
+  const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
+  // What is really equipped: only reactions that have pictures, and no more than the slots you own.
+  const equippedReactions = () => ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, ownedReactionSlots());
   function defaultProfile() {
     return {
       coins: 0,
@@ -2811,6 +2827,7 @@
       presets: {},
       emojiPacks: {},
       emojiOwned: {},
+      reactionSlotsExtra: 0,
       flairPacks: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
@@ -2923,6 +2940,7 @@
           presets: { ...(data.presets || {}) },
           emojiPacks: { ...(data.emojiPacks || {}) },
           emojiOwned: { ...(data.emojiOwned || {}) },
+          reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
           flairPacks: { ...(data.flairPacks || {}) },
           activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
@@ -3078,7 +3096,8 @@
   // don't), not coin-priced like the single-equip cosmetics above - more
   // packs just get appended here.
   const EMOJI_PACK_CATALOG = [
-    { id: "pack1", label: "Emoji Pack 1", price: "$2.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
+    { id: "pack1", label: "Reaction Pack 1", price: "$2.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
+    { id: "pack2", label: "Reaction Pack 2", price: "$2.99", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}"] },
   ];
   function emojiPool() {
     return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
@@ -3125,6 +3144,30 @@
       return { ...profile, coins: (profile.coins || 0) - EMOJI_COIN_COST, emojiOwned: { ...(profile.emojiOwned || {}), [key]: true } };
     });
   }
+  // Tapping a locked slot in the game: offer to unlock it (or say how many coins are missing).
+  function openSlotUnlock(n) {
+    const cost = REACTION_SLOT_COSTS[n - 6];
+    const have = ownedReactionSlots();
+    if (have >= n) return;
+    if (n > have + 1) { openExitConfirm("dismiss", `Slot ${n} is locked`, `Unlock slot ${n - 1} first.`, "OK", null); return; }
+    if ((myProfile.coins || 0) < cost) {
+      openExitConfirm("dismiss", `Unlock slot ${n}`, `It costs ${cost} coins and you have ${myProfile.coins || 0}. You can earn coins by playing, or pick some up in the Shop between games.`, "OK", null);
+      return;
+    }
+    openExitConfirm("unlockSlot" + n, `Unlock slot ${n} for ${cost} coins?`, "You'll get one more spot in your reaction bar.", "Unlock", "Not now");
+  }
+  async function buyReactionSlot(n) {
+    const cost = REACTION_SLOT_COSTS[n - 6];
+    if (ownedReactionSlots() >= n) return;
+    if (n > ownedReactionSlots() + 1) { cosmNote(`Unlock slot ${n - 1} first.`); return; }
+    if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const extra = profile.reactionSlotsExtra | 0;
+      if (extra !== n - 6 || (profile.coins || 0) < cost) return profile;
+      return { ...profile, coins: (profile.coins || 0) - cost, reactionSlotsExtra: extra + 1 };
+    });
+  }
   async function buyFlairWithCoins(item) {
     if ((myProfile.coins || 0) < item.cost) { cosmNote("Not enough coins yet."); return; }
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -3145,7 +3188,11 @@
     row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.name}</span></div>`;
     const btn = document.createElement("button");
     btn.type = "button";
-    if (o.owned) {
+    if (o.owned && o.ownedLabel) {
+      btn.className = "cosm-unlock";
+      btn.disabled = true;
+      btn.textContent = "\u2713 " + o.ownedLabel;
+    } else if (o.owned) {
       btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
       btn.textContent = o.equipped ? "Equipped" : "Equip";
       btn.addEventListener("click", o.onEquip);
@@ -3173,16 +3220,28 @@
   }
   function renderEmojiRows(container, statusEl) {
     if (!container) return;
-    const active = myProfile.activeEmojis || DEFAULT_EMOJIS;
+    const active = equippedReactions();
+    const slots = ownedReactionSlots();
     container.innerHTML = "";
     const row = (e, cost) => cosmRow({
-      leadHtml: `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
+      leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e),
       onEquip: () => {
-        if (!active.includes(e) && active.length >= 9) { cosmNote("You can equip up to 9. Unequip one first."); return; }
+        if (!active.includes(e) && active.length >= slots) { cosmNote(`All ${slots} slots are full. Unequip one first.`); return; }
         toggleActiveEmoji(e);
       },
       onBuy: () => buyEmojiWithCoins(e),
+    });
+    const slotLabel = document.createElement("div");
+    slotLabel.className = "cosm-group-label";
+    slotLabel.textContent = "Slots";
+    container.appendChild(slotLabel);
+    [6, 7].forEach((n) => {
+      const have = slots >= n, cost = REACTION_SLOT_COSTS[n - 6];
+      container.appendChild(cosmRow({
+        leadHtml: `<img class="cosm-reaction-pic" alt="" src="icons/reactions/padlock.png">`, name: `Reaction slot ${n}`,
+        owned: have, ownedLabel: "Unlocked", cost, onBuy: () => buyReactionSlot(n),
+      }));
     });
     const label = document.createElement("div");
     label.className = "cosm-group-label";
@@ -3196,7 +3255,7 @@
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
       pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
     });
-    if (statusEl) statusEl.textContent = `${active.length} / 9 equipped. Only equipped emojis show up in the game.`;
+    if (statusEl) statusEl.textContent = `${active.length} / ${slots} equipped. Only equipped reactions show up in the game.`;
   }
   function renderFlairRows(container) {
     if (!container) return;
@@ -3793,8 +3852,8 @@
   const REACTION_COOLDOWN_MS = 2000;
   function renderReactionStrip() {
     if (!reactionStripEl) return;
-    const owned = Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
-    const active = ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, owned);
+    const owned = ownedReactionSlots();
+    const active = equippedReactions();
     reactionStripEl.innerHTML = "";
     for (let i = 0; i < REACTION_SLOTS_MAX; i++) {
       const b = document.createElement("button");
@@ -3811,14 +3870,17 @@
         b.setAttribute("aria-label", "Empty reaction slot");
       } else {
         b.className = "react-slot lock";
-        b.setAttribute("aria-label", "Locked reaction slot");
-        b.setAttribute("aria-disabled", "true");
+        b.className += " lock-tap";
+        b.dataset.slot = String(i + 1);
+        b.setAttribute("aria-label", `Locked reaction slot ${i + 1}. Tap to unlock.`);
         b.innerHTML = '<img alt="" src="icons/reactions/padlock.png">';
       }
       reactionStripEl.appendChild(b);
     }
   }
   reactionStripEl.addEventListener("click", (ev) => {
+    const lk = ev.target.closest(".react-slot.lock-tap");
+    if (lk) { openSlotUnlock(Number(lk.dataset.slot)); return; }
     const b = ev.target.closest(".react-slot[data-emoji]");
     if (!b || !currentRoomCode) return;
     const t = Date.now();
@@ -3837,7 +3899,7 @@
   }
 
   async function toggleActiveEmoji(emoji) {
-    const current = myProfile.activeEmojis || DEFAULT_EMOJIS;
+    const current = equippedReactions();
     let next;
     if (current.includes(emoji)) {
       next = current.filter((e) => e !== emoji);
@@ -4181,8 +4243,11 @@
   // everyone (in-game Exit), and leaving an in-progress game via any top
   // toolbar button - so an accidental tap doesn't silently end/leave a game.
   let pendingExitAction = null; // "app" | "hostGame" | "leaveGame"
-  function openExitConfirm(action, title, message) {
+  function openExitConfirm(action, title, message, yesLabel, noLabel) {
     pendingExitAction = action;
+    exitConfirmYesBtn.textContent = yesLabel || "Yes";
+    exitConfirmNoBtn.textContent = noLabel || "No, go back";
+    exitConfirmNoBtn.style.display = noLabel === null ? "none" : "";
     exitConfirmTitleEl.textContent = title;
     exitConfirmMessageEl.textContent = message;
     exitConfirmOverlayEl.classList.add("show");
@@ -4237,6 +4302,8 @@
     const action = pendingExitAction;
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
+    if (action === "dismiss") return;
+    if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
       return;
@@ -6534,7 +6601,7 @@
     nerd: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-8px) rotate(-4deg)', offset: .35 }, { transform: 'translateY(0) rotate(3deg)', offset: .6 }, { transform: 'none' }], 1200); c.burst({ src: 'spark-1', n: 1, from: [.36, .42], ang: [-45, -45], dist: [0, 2], size: [22, 22], delay: 500, grow: 1.3, spin: 90 }); },
     flex: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.22) rotate(-8deg)', offset: .25 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1.22) rotate(-8deg)', offset: .6 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 3, from: [.7, .35], ang: [-130, -40], dist: [30, 46], size: [14, 20], delay: 300, stagger: 150 }); },
     skull: (c) => { c.move([{ transform: RX_POP }, ...rxShake(9, 10)], 1300); c.burst({ src: 'spark-2', n: 1, from: [.35, .3], ang: [-135, -135], dist: [6, 10], size: [18, 18], delay: 450, grow: 1.2, spin: 60 }); },
-    crying: (c) => { c.move([{ transform: RX_POP }, ...rxShake(4, 8, 'translateY(2px)')], 1600); [.32, .68].forEach(function (x) { c.burst({ src: () => rxPick(['tear-4', 'tear-5']), n: 3, from: [x, .52], ang: [85, 95], dist: [42, 56], size: [11, 15], delay: 250, stagger: 260 }); }); },
+    crying: (c) => { c.move([{ transform: RX_POP }, ...rxShake(4, 8, 'translateY(2px)')], 1600); },
     mindblown: (c) => { c.move([{ transform: RX_POP }, { transform: 'scale(1.28)', offset: .25 }, { transform: 'scale(.95) rotate(-3deg)', offset: .45 }, { transform: 'scale(1.1) rotate(3deg)', offset: .65 }, { transform: 'none' }], 1300); c.burst({ src: () => rxPick(RX_SPARK), n: 6, from: [.5, .22], ang: [-170, -10], dist: [36, 56], size: [14, 22], delay: 250, stagger: 80 }); },
     nervous: (c) => { c.move([{ transform: RX_POP }, ...rxShake(3, 14, 'translateX(1px)')], 1300); c.burst({ src: 'tear-6', n: 1, from: [.74, .24], ang: [80, 100], dist: [36, 44], size: [12, 14], delay: 350 }); },
     crown: (c) => { c.move([{ transform: RX_POP }, { transform: 'translateY(-10px) rotate(-6deg)', offset: .35 }, { transform: 'translateY(0) rotate(5deg)', offset: .6 }, { transform: 'none' }], 1200); c.burst({ src: () => rxPick(RX_SPARK), n: 4, from: [.5, .3], ang: [-160, -20], dist: [30, 48], size: [13, 20], delay: 300, stagger: 130 }); },
@@ -6570,7 +6637,10 @@
     stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RX_STAGE}px;height:${RX_STAGE}px`;
     const piv = document.createElement("div");
     piv.className = "rx-piv";
-    if (def) {
+    if (def && def.id === "sideeye") {
+      // still eyes with two pupils that slide across and back
+      piv.innerHTML = `<div class="rx-eyes"${def.mirror ? ' style="transform:scaleX(-1)"' : ""}><img alt="" src="icons/reactions/fx/eyes-empty.png"><img class="rx-pupil" alt="" src="icons/reactions/fx/pupil.png" style="left:25%"><img class="rx-pupil" alt="" src="icons/reactions/fx/pupil.png" style="left:74%"></div>`;
+    } else if (def) {
       piv.innerHTML = `<img alt="" src="${reactionPic(r.emoji)}"${def.mirror ? ' style="transform:scaleX(-1)"' : ""}>`;
     } else {
       piv.innerHTML = `<span class="rx-text">${emojiHtml(r.emoji)}</span>`; // an older version's emoji
@@ -6578,7 +6648,14 @@
     stage.appendChild(piv);
     reactionsPanelEl.appendChild(stage);
     rxShowing[r.playerId] = stage;
-    if (def) {
+    if (def && def.id === "sideeye") {
+      piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.12)", offset: .2 }, { transform: "none" }], { duration: 500, easing: "ease-out" });
+      const d = RX_STAGE * 0.62 * 0.106;
+      piv.querySelectorAll(".rx-pupil").forEach((pu) => pu.animate([
+        { transform: `translate(calc(-50% - ${d}px), -50%)` }, { transform: `translate(calc(-50% + ${d}px), -50%)`, offset: .4 },
+        { transform: `translate(calc(-50% + ${d}px), -50%)`, offset: .6 }, { transform: `translate(calc(-50% - ${d}px), -50%)`, offset: .95 },
+        { transform: `translate(calc(-50% - ${d}px), -50%)` }], { duration: 1500, easing: "ease-in-out" }));
+    } else if (def) {
       const mir = !!def.mirror;
       RX_MOVES[def.id]({
         ver: def.id === "popper" ? "popper" : def.id,
@@ -7232,7 +7309,7 @@
     butterfly: { pics: ["butterfly-monarch", "butterfly-gold", "butterfly-green"], move: "flap", burst: "scatter", lap: 3000, size: 31, items: 12, burstN: 40 },
     snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "drift", lap: 3000, size: 27, items: 12, burstN: 40 },
     coinshower: { pics: ["coin"], move: "coin", burst: "rain", lap: 3000, size: 40, items: 12, burstN: 40 },
-    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "radial", hueRandom: true, lap: 3000, size: 36, items: 10, burstN: 32 },
+    fireworks: { pics: ["rocket"], burstPics: ["star"], move: "rocket", burst: "firework", lap: 3000, size: 36, items: 10, burstN: 32 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -7300,6 +7377,33 @@
       fl.style.cssText = "position:absolute;inset:0;background:#fff;opacity:.9;";
       layer.appendChild(fl);
       fl.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 350, easing: "ease-out" }).onfinish = () => fl.remove();
+    }
+    if (f.burst === "firework") {
+      // real firework pictures: a few bursts that bloom out and fade, each in a random colour (the willow stays gold)
+      const shapes = ["fw-peony", "fw-ring", "fw-willow"];
+      const spots = [[0, 0, 190, 0], [-0.32, -0.9, 140, 160], [0.34, -0.7, 150, 300]];
+      spots.forEach(([dx, dy, px, delay], i) => {
+        const name = shapes[(Math.floor(Math.random() * 3) + i) % 3];
+        const img = document.createElement("img");
+        img.alt = ""; img.src = `icons/flair/${name}.png`;
+        const sz = px * (0.9 + Math.random() * 0.25);
+        img.style.cssText = `position:absolute;left:${cx + dx * r.width - sz / 2}px;top:${cy + dy * r.height - sz / 2}px;width:${sz}px;opacity:0;pointer-events:none;` +
+          (name === "fw-willow" ? "" : `filter:hue-rotate(${Math.floor(Math.random() * 360)}deg) saturate(1.2);`);
+        layer.appendChild(img);
+        img.animate([
+          { opacity: 0, transform: "scale(.15)" },
+          { opacity: 1, transform: "scale(.8)", offset: .25 },
+          { opacity: 1, transform: "scale(1.1)", offset: .6 },
+          { opacity: 0, transform: `scale(1.3) translateY(${name === "fw-willow" ? 26 : 8}px)` },
+        ], { duration: 1500, delay, easing: "ease-out", fill: "both" });
+      });
+      const fl = document.createElement("img");
+      fl.alt = ""; fl.src = "icons/flair/fw-flash.png";
+      fl.style.cssText = `position:absolute;left:${cx - 60}px;top:${cy - 60}px;width:120px;opacity:0;pointer-events:none;`;
+      layer.appendChild(fl);
+      fl.animate([{ opacity: 0, transform: "scale(.2)" }, { opacity: 1, transform: "scale(1)", offset: .3 }, { opacity: 0, transform: "scale(1.5)" }], { duration: 500, easing: "ease-out", fill: "both" });
+      setTimeout(() => layer.remove(), 2100);
+      return;
     }
     const now0 = performance.now(), parts = [];
     const bp = f.burstPics || f.pics;
