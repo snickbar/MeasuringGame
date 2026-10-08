@@ -2202,14 +2202,14 @@
       <label>Timer (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
-          <input id="setting-timer" type="number" min="10" max="90" />
+          <input id="setting-timer" type="number" min="10" max="90" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
         </span>
       </label>
       <label>Rounds
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-rounds" data-step="-1">&minus;</button>
-          <input id="setting-rounds" type="number" min="1" max="20" />
+          <input id="setting-rounds" type="number" min="1" max="20" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-rounds" data-step="1">+</button>
         </span>
       </label>
@@ -2231,7 +2231,7 @@
       <label>Auto-advance delay (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
-          <input id="setting-auto-advance-seconds" type="number" min="1" max="15" />
+          <input id="setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-auto-advance-seconds" data-step="1">+</button>
         </span>
       </label>
@@ -2263,14 +2263,14 @@
       <label>Timer (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-timer" data-step="-5">&minus;</button>
-          <input id="preset-setting-timer" type="number" min="10" max="90" />
+          <input id="preset-setting-timer" type="number" min="10" max="90" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-timer" data-step="5">+</button>
         </span>
       </label>
       <label>Rounds
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-rounds" data-step="-1">&minus;</button>
-          <input id="preset-setting-rounds" type="number" min="1" max="20" />
+          <input id="preset-setting-rounds" type="number" min="1" max="20" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-rounds" data-step="1">+</button>
         </span>
       </label>
@@ -2292,7 +2292,7 @@
       <label>Auto-advance delay (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-auto-advance-seconds" data-step="-1">&minus;</button>
-          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" />
+          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-auto-advance-seconds" data-step="1">+</button>
         </span>
       </label>
@@ -4830,8 +4830,16 @@
     hudCodeCopiedTimer = setTimeout(() => { hudCodeCopied = false; renderHudRoomCode(); }, 1500);
   });
 
+  // Inside the native app, location.origin is Capacitor's internal
+  // "https://localhost" (how it serves the bundled WebView assets) - not a
+  // real address, so a shared link built from it 404s with "localhost
+  // refused to connect" for whoever opens it. Use the real live Hosting
+  // domain there instead; the web build's own location.origin is already
+  // correct as-is.
   function joinLinkFor(roomCode) {
-    return `${location.origin}${location.pathname}?join=${roomCode}`;
+    return isNativeApp
+      ? `https://measuring-game.web.app/?join=${roomCode}`
+      : `${location.origin}${location.pathname}?join=${roomCode}`;
   }
 
   const shareRoomReset = { timer: null };
@@ -5135,6 +5143,14 @@
       btn.disabled = btn.dataset.for === "setting-auto-advance-seconds" && !s.autoAdvanceEnabled;
     });
   }
+
+  // Steppers are the only way to change these (readonly in the markup already
+  // blocks typing on most browsers, but Android WebView can still be
+  // inconsistent) - an immediate blur guarantees no keyboard pops up even if
+  // a tap accidentally lands on the number itself instead of +/-.
+  document.querySelectorAll("#settings-panel input[type=\"number\"], #preset-settings-panel input[type=\"number\"]").forEach((input) => {
+    input.addEventListener("focus", () => input.blur());
+  });
 
   document.getElementById("settings-panel").addEventListener("click", (e) => {
     const btn = e.target.closest(".stepper-btn");
@@ -7654,6 +7670,7 @@
     const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     hostStartBtn.style.display = isHost ? "flex" : "none";
+    botControlsEl.style.display = isHost ? "flex" : "none";
     hudEl.classList.toggle("active", isHudActive);
     hudSubToolbarEl.classList.toggle("active", isHudActive);
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
