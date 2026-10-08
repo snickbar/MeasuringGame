@@ -1465,18 +1465,18 @@
   .score-card.frame-9 { border-image-source: var(--frame9); }
   .score-card.frame-10 { border-image-source: var(--frame10); }
   #guess-display {
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; text-align: center;
-    padding: 12px; margin: 10px 0; color: #4a2a10;
-    border-width: 16px; border-style: solid; border-image-source: var(--wood); border-image-slice: 70 fill;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 26px; text-align: center;
+    padding: 4px 2px; margin: 6px 0; color: #4a2a10; white-space: nowrap; overflow: hidden;
+    border-width: 12px; border-style: solid; border-image-source: var(--wood); border-image-slice: 70 fill;
   }
   #guess-display.digit-pop { animation: digitPop 150ms ease-out; }
   @keyframes digitPop { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
-  #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
   .num-btn, #backspace-btn {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; padding: 10px 0; margin: 0; color: var(--text);
-    border-width: 9px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; padding: 5px 0; margin: 0; color: var(--text);
+    border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
   }
-  #submit-guess-btn { margin-top: 10px; border-image-source: var(--btn-accent); color: #fff; }
+  #submit-guess-btn { margin-top: 6px; border-image-source: var(--btn-accent); color: #fff; }
   #guess-status { text-align: center; font-size: 15px; color: var(--text-muted); }
   #guess-status.status-fade { animation: statusFade 220ms ease-out; }
   @keyframes statusFade { 0% { opacity: 0; transform: translateY(-3px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -1581,23 +1581,55 @@
   }
 
   /* ---- Answers / second chance ---- */
-  #answers-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
+  /* Player answers: hand-drawn numbers on scraps of paper, one per row, kept narrow so reactions have room beside the player cards */
+  #answers-row { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 8px 0; padding-left: 2px; }
   .answer-slot {
-    width: auto; flex: 1 1 60px; padding: 14px 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: #000;
-    border-width: 12px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
-    position: relative;
+    --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
+    position: relative; width: min(100%, 138px); aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
+    background: transparent; border-image: none; color: #000; cursor: pointer;
+    transform: rotate(var(--rot)); transition: transform 150ms ease;
+    filter: drop-shadow(0 2px 0 rgba(90,60,30,.28)) drop-shadow(0 4px 5px rgba(90,60,30,.18));
   }
-  .answer-slot.frame-1 { border-image-source: var(--frame1); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-2 { border-image-source: var(--frame2); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-3 { border-image-source: var(--frame3); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-4 { border-image-source: var(--frame4); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-5 { border-image-source: var(--frame5); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-6 { border-image-source: var(--frame6); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-7 { border-image-source: var(--frame7); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-8 { border-image-source: var(--frame8); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-9 { border-image-source: var(--frame9); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.frame-10 { border-image-source: var(--frame10); border-width: 14px; border-image-slice: 50 fill; }
-  .answer-slot.picked { border-image-source: var(--ring); }
+  /* the paper picture, with the player's colour multiplied over the same shape */
+  .answer-slot .paper-bg { position: absolute; inset: 0; background: var(--img) center / 100% 100% no-repeat; isolation: isolate; filter: brightness(1.07) saturate(1.25); }
+  .answer-slot .paper-bg::after {
+    content: ""; position: absolute; inset: 0; background: var(--paper); mix-blend-mode: multiply;
+    -webkit-mask: var(--img) center / 100% 100% no-repeat; mask: var(--img) center / 100% 100% no-repeat;
+  }
+  .answer-slot.pp-crumpled { --img: url(icons/paper/crumpled.png); --ar: 2.88; }
+  .answer-slot.pp-graph { --img: url(icons/paper/graph.png); --ar: 3.06; }
+  .answer-slot.pp-card { --img: url(icons/paper/card.png); --ar: 2.13; }
+  .answer-slot.pp-torn { --img: url(icons/paper/torn.png); --ar: 3.08; }
+  .answer-slot.pp-sticky { --img: url(icons/paper/sticky.png); --ar: 3.1; }
+  .answer-slot:nth-child(even) { --rot: 1.2deg; }
+  .answer-slot:nth-child(odd) { --rot: -1.4deg; }
+  .answer-slot:nth-child(3n) { --rot: .6deg; }
+  .answer-slot:active:not(:disabled) { transform: rotate(var(--rot)) scale(.97); }
+  .answer-slot.frame-1 { --paper: #efd2c6; --paper-edge: #ba765c; }
+  .answer-slot.frame-2 { --paper: #f7ecd2; --paper-edge: #d9b778; }
+  .answer-slot.frame-3 { --paper: #f0d9d5; --paper-edge: #b89289; }
+  .answer-slot.frame-4 { --paper: #dde1ea; --paper-edge: #8b8f97; }
+  .answer-slot.frame-5 { --paper: #d9e6d6; --paper-edge: #748574; }
+  .answer-slot.frame-6 { --paper: #e6ebc4; --paper-edge: #87943d; }
+  .answer-slot.frame-7 { --paper: #f7d6dc; --paper-edge: #cb757f; }
+  .answer-slot.frame-8 { --paper: #efe3c6; --paper-edge: #bea884; }
+  .answer-slot.frame-9 { --paper: #f9d3d0; --paper-edge: #f05c61; }
+  .answer-slot.frame-10 { --paper: #f4e0c4; --paper-edge: #cb9863; }
+  /* the chosen answer gets a red crayon circle drawn round it */
+  .answer-slot.picked::after {
+    content: ""; position: absolute; inset: 3px 2px; border: 3px solid #d2402f; border-radius: 48% 52% 50% 50% / 55% 50% 50% 45%;
+    transform: rotate(-2deg); pointer-events: none; animation: crayonRing .35s ease-out;
+  }
+  @keyframes crayonRing { from { opacity: 0; transform: rotate(-2deg) scale(1.25); } to { opacity: 1; transform: rotate(-2deg) scale(1); } }
+  .hand-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8% 11% 8% 13%; }
+  .answer-slot.pp-card .hand-num { padding-top: 15%; }
+  .hand-num svg { width: 100%; height: 100%; max-height: 34px; overflow: visible; }
+  .hand-num path { fill: none; stroke: #3a332b; stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+  .hand-num path.ghost { stroke: #6b5f50; stroke-width: 2.4; opacity: .4; }
+  .hand-num.draw path { stroke-dashoffset: 1; animation: handDraw .42s ease-out forwards; animation-delay: calc(var(--i) * .17s + .08s); }
+  @keyframes handDraw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) { .hand-num.draw path { animation: none; stroke-dashoffset: 0; } }
+  .answer-slot .pick-stamp { top: -8px; left: auto; right: -6px; z-index: 2; }
   .move-icon {
     display: inline-block; width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px;
     background-size: contain; background-repeat: no-repeat; background-position: center;
@@ -1622,9 +1654,9 @@
   }
   #double-down-btn.picked { border-image-source: var(--ring); }
   #double-down-btn.pop { animation: popIn 300ms ease; }
-  .dd-main { font-size: 17px; }
-  .dd-guess-label { display: block; font-size: 16px; }
-  .dd-guess-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 41px; color: #1a1108; }
+  .dd-main { font-size: 14px; line-height: 1.1; }
+  .dd-guess-label { display: block; font-size: 14px; }
+  .dd-guess-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 28px; color: #1a1108; }
   #answers-hint { text-align: center; font-size: 15px; color: var(--text-muted); }
 
   /* ---- Reveal ---- */
@@ -2368,6 +2400,8 @@
   </div>
   <ul id="player-list"></ul>
 </div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="pencil-wobble" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter></svg>
 
 <div id="hud">
   <div class="hud-timer-row">
@@ -6511,6 +6545,7 @@
 
   function renderGuessDisplay() {
     guessDisplayEl.textContent = currentGuessStr === "" ? "0" : currentGuessStr;
+    fitTextToBox(guessDisplayEl, 13); // long numbers shrink to stay inside the box
     guessDisplayEl.classList.remove("digit-pop");
     void guessDisplayEl.offsetWidth;
     guessDisplayEl.classList.add("digit-pop");
@@ -6521,7 +6556,9 @@
     if (guessLocked || roomState.paused) return;
     const val = e.target.dataset.val;
     if (val === "." && currentGuessStr.includes(".")) return;
-    if (currentGuessStr.length >= 10) return;
+    // The biggest possible answer is grain of sand vs Mount Everest: 17,698,000 (8 digits). Answers show 2 decimals, so cap at 8 whole digits + 2 decimals.
+    const [whole, frac] = currentGuessStr.split(".");
+    if (frac !== undefined ? frac.length >= 2 : (val !== "." && whole.length >= 8)) return;
     currentGuessStr += val;
     renderGuessDisplay();
     playSound("tap");
@@ -6714,6 +6751,39 @@
 
   // ==================== Answers / second-chance phase ====================
 
+  // ---- Hand-drawn numbers: each digit is a pencil stroke that draws itself in (once per card) ----
+  const drawnAnswerKeys = new Set();
+  const PAPER_STYLES = ["crumpled", "graph", "card", "torn", "sticky"];
+  const HAND_GLYPHS = {
+    "0": ["M20 4 C6 4 4 20 4 32 C4 46 8 60 20 60 C32 60 36 46 36 32 C36 18 32 4 20 4", 40],
+    "1": ["M9 18 L22 4 L22 60", 30],
+    "2": ["M6 16 C8 4 32 2 33 17 C34 30 10 44 5 58 L35 58", 40],
+    "3": ["M6 8 C18 2 34 6 30 20 C28 28 18 31 14 31 C28 31 36 38 34 48 C32 62 14 62 5 54", 40],
+    "4": ["M28 60 L28 4 L4 42 L38 42", 40],
+    "5": ["M33 5 L10 5 L8 30 C20 24 36 28 35 44 C34 62 14 63 5 54", 40],
+    "6": ["M32 6 C14 6 6 24 6 42 C6 56 14 62 22 62 C32 62 36 52 34 42 C32 32 20 30 10 38", 40],
+    "7": ["M5 6 L35 6 C30 24 22 42 18 60", 40],
+    "8": ["M20 32 C8 30 6 8 20 5 C34 8 32 28 20 32 C6 36 4 62 20 62 C36 62 34 38 20 32", 40],
+    "9": ["M33 22 C32 8 12 6 8 20 C6 32 24 38 33 22 C34 36 30 54 22 60 C16 63 10 60 7 56", 40],
+    ".": ["M7 56 C4 56 4 62 7 62 C10 62 10 56 7 56", 14],
+    ",": ["M7 54 L4 64", 14],
+  };
+  function handNumberHtml(str, seed, animate) {
+    const chars = String(str).split("").filter((c) => HAND_GLYPHS[c]);
+    let h = 0; for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const rnd = () => { h = (h * 1664525 + 1013904223) >>> 0; return h / 4294967296; };
+    let x = 0, body = "", i = 0;
+    chars.forEach((c) => {
+      const [d, w] = HAND_GLYPHS[c];
+      const dy = (rnd() - 0.5) * 5, rot = (rnd() - 0.5) * 9, sc = 0.93 + rnd() * 0.12;
+      body += `<g transform="translate(${x.toFixed(1)} ${dy.toFixed(1)}) rotate(${rot.toFixed(1)} ${w / 2} 32) scale(${sc.toFixed(2)})" style="--i:${i}">`
+        + `<path class="ghost" pathLength="1" d="${d}" transform="translate(1.2 1)"></path><path pathLength="1" d="${d}"></path></g>`;
+      x += w + 7; i++;
+    });
+    const width = Math.max(40, x - 7);
+    return `<span class="hand-num${animate ? " draw" : ""}"><svg viewBox="-4 -6 ${width + 8} 76" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="filter:url(#pencil-wobble)">${body}</svg></span>`;
+  }
+
   function renderAnswersScreen(data) {
     const answers = data.answers || [];
     const myPick = (data.picks || {})[currentPlayerId];
@@ -6725,9 +6795,13 @@
       const isMyPick = !!myPick && myPick.type === "pick" && myPick.targetPlayerId === entry.playerId;
       const frameIndex = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].frameIndex) || 1;
       const btn = document.createElement("button");
-      btn.innerHTML = entry.value
+      const seenKey = `${roomState.round || 0}:${entry.playerId}`;
+      const animate = !drawnAnswerKeys.has(seenKey);
+      drawnAnswerKeys.add(seenKey);
+      btn.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(entry.value, entry.playerId, animate)
         + (isMyPick ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
-      btn.className = "answer-slot frame-" + frameIndex + (isMyPick ? " picked" : "");
+      btn.setAttribute("aria-label", `Answer ${entry.value}`);
+      btn.className = "answer-slot frame-" + frameIndex + " pp-" + PAPER_STYLES[frameIndex % PAPER_STYLES.length] + (isMyPick ? " picked" : "");
       btn.disabled = !!roomState.paused || nowMs() < answersPhaseInputLockedUntil;
       btn.addEventListener("click", () => choosePick("pick", entry.playerId, isMyPick));
       answersRowEl.appendChild(btn);
