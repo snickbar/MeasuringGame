@@ -1542,7 +1542,7 @@
   }
 
   .trophy-burst { position: fixed; display: flex; align-items: center; justify-content: center; z-index: 950; }
-  .trophy-burst .trophy-emoji { font-size: 46px; display: inline-block; animation: trophyPopIn 550ms cubic-bezier(.34,1.56,.64,1) both; }
+  .trophy-burst .trophy-emoji { width: 52px; height: 52px; object-fit: contain; display: inline-block; animation: trophyPopIn 550ms cubic-bezier(.34,1.56,.64,1) both; }
   .trophy-burst .ray {
     position: absolute; top: 50%; left: 50%; width: 3px; height: 46px;
     background: linear-gradient(var(--brand), transparent); transform-origin: top center;
@@ -2811,6 +2811,9 @@
     "\u{1F3C6}": { id: "trophy", label: "Trophy" },
     "\u{1F612}": { id: "sideeye", label: "Side eye" },
   };
+  // the same reactions looked up by short id (what is sent with each reaction alongside the old emoji character, so older app versions still show the emoji)
+  const REACTION_BY_ID = {};
+  Object.entries(REACTIONS).forEach(([emoji, r]) => { REACTION_BY_ID[r.id] = { ...r, emoji }; });
   const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`; // sideeye.png is the "looking" eyes
   const REACTION_SLOTS_MAX = 7, REACTION_SLOTS_BASE = 5;
   const REACTION_SLOT_COSTS = [200, 400]; // coins for slot 6 and slot 7
@@ -2943,7 +2946,8 @@
           emojiOwned: { ...(data.emojiOwned || {}) },
           reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
           flairPacks: { ...(data.flairPacks || {}) },
-          activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
+          activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length) ? data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean)
+            : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
         };
       }
@@ -3913,7 +3917,7 @@
       if (current.length >= 9) return; // full - deselect one first
       next = [...current, emoji];
     }
-    await update(ref(db, `profiles/${deviceId}`), { activeEmojis: next });
+    await update(ref(db, `profiles/${deviceId}`), { activeEmojis: next, activeReactions: next.map((e) => REACTIONS[e] && REACTIONS[e].id).filter(Boolean) });
   }
 
   document.querySelectorAll(".cosm-tab-btn").forEach((btn) => btn.addEventListener("click", () => {
@@ -6559,7 +6563,7 @@
   function sendReaction(emoji) {
     const reactionsRef = ref(db, `rooms/${currentRoomCode}/reactions`);
     const newRef = push(reactionsRef);
-    set(newRef, { playerId: currentPlayerId, name: currentName, avatar: currentAvatar, emoji, sentAt: nowMs() });
+    set(newRef, { playerId: currentPlayerId, name: currentName, avatar: currentAvatar, emoji, rid: (REACTIONS[emoji] && REACTIONS[emoji].id) || null, sentAt: nowMs() });
     setTimeout(() => remove(newRef), 1500);
   }
 
@@ -6654,6 +6658,8 @@
     if (!r) return;
     if (roomState && roomState.phase === "animation") return; // the cards are hidden during the reveal
     playSound("emoji");
+    const byId = r.rid && REACTION_BY_ID[r.rid];
+    if (byId) r = { ...r, emoji: byId.emoji };
     const def = REACTIONS[r.emoji];
     const card = scoreColEl.querySelector(`[data-id="${r.playerId}"]`);
     let left = 0, top = 70;
@@ -7484,7 +7490,7 @@
     for (let i = 0; i < 8; i++) {
       rays += `<div class="ray" style="transform: translate(-50%,-50%) rotate(${i * 45}deg);"></div>`;
     }
-    wrap.innerHTML = rays + `<span class="trophy-emoji">\u{1F3C6}</span>`;
+    wrap.innerHTML = rays + `<img class="trophy-emoji" alt="" src="icons/reactions/trophy.png">`;
     reactionsPanelEl.appendChild(wrap);
     setTimeout(() => wrap.remove(), 900);
   }
