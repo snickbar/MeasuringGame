@@ -1662,8 +1662,28 @@
   #answers-hint { text-align: center; font-size: 15px; color: var(--text-muted); }
 
   /* ---- Reveal ---- */
-  #reveal-list { perspective: 800px; padding-left: 22px; }
-  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; }
+  #reveal-list { perspective: 800px; padding-left: 2px; }
+  /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
+  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 4px 0 16px; }
+  .reveal-card .rv-paper { cursor: default; width: 100%; }
+  .reveal-card:nth-child(even) .rv-paper { --rot: 1.2deg; }
+  .reveal-card:nth-child(odd) .rv-paper { --rot: -1.4deg; }
+  .reveal-card:nth-child(3n) .rv-paper { --rot: .6deg; }
+  .reveal-card .hand-num.draw path { animation-duration: .3s; animation-delay: calc(var(--i) * .09s + .05s); }
+  .reveal-card.winner .rv-paper { filter: drop-shadow(0 0 7px rgba(255,200,60,.95)) drop-shadow(0 3px 4px rgba(90,60,30,.3)); }
+  .reveal-card .dd-stamp { position: absolute; top: -12px; right: -8px; z-index: 2; animation: popIn 300ms ease; }
+  .reveal-card .dd-stamp .avatar-icon { width: 24px; height: 24px; }
+  .rv-info { margin-top: 5px; padding: 0 2px; font-family: 'Fredoka', sans-serif; color: #000; animation: popIn 300ms ease; }
+  .rv-name { display: flex; align-items: center; gap: 5px; min-width: 0; font-weight: 700; font-size: 14px; line-height: 1.2; }
+  .rv-name .avatar-icon { width: 22px; height: 22px; flex-shrink: 0; }
+  .rv-name .rv-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reveal-card.winner .rv-name { font-size: 16px; }
+  .rv-row2 { display: flex; align-items: center; flex-wrap: wrap; column-gap: 6px; }
+  .rv-stat { font-size: 13px; font-weight: 600; }
+  .reveal-card.winner .rv-stat { font-weight: 700; }
+  .rv-info .pickedby-avatars { flex-wrap: wrap; flex-basis: auto; font-size: 13px; }
+  .rv-info .pickedby-avatars .avatar-icon { width: 22px; height: 22px; }
+  .rv-info .spot-badge, .rv-info .streak-badge { font-size: 13px; }
   .card-inner {
     border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     padding: 12px 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
@@ -1746,10 +1766,8 @@
      guaranteeing it stays within that 14px gutter regardless of font/stack
      height, since only the width affects the horizontal overlap. */
   .reveal-pts-stack {
-    position: absolute; top: 50%; right: -8px; transform: translateY(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    opacity: 0; pointer-events: none; transition: opacity 250ms ease; z-index: 1;
-    width: 32px; text-align: center;
+    display: flex; flex-flow: row wrap; align-items: center; gap: 4px; margin-top: 4px;
+    opacity: 0; pointer-events: none; transition: opacity 250ms ease; text-align: center;
   }
   #reveal-list.answer-revealed .reveal-pts-stack { opacity: 1; }
   .reveal-pts-badge {
@@ -6853,12 +6871,6 @@
     return displayed;
   }
 
-  function cardHiddenHtml() {
-    return `<div class="card-inner"><span>?</span></div>`;
-  }
-  function cardNumberHtml(entry) {
-    return `<div class="card-inner"><span class="card-number">${entry.guess}</span></div>`;
-  }
   function secondChanceBonusFor(playerId, order) {
     return (order || []).reduce((sum, e) => sum + (e.pickedBy || [])
       .filter((p) => p.playerId === playerId)
@@ -6874,38 +6886,37 @@
     </div>`;
   }
 
-  function cardPersonHtml(entry, pts, isWinner, order) {
+  // Paper scrap for one answer: blank until `withNumber`, then the number is pencilled in (animated when `animate`).
+  function revealPaperHtml(entry, withNumber, animate) {
+    const p = currentPlayers[entry.playerId] || {};
+    const frameIndex = p.frameIndex || 1;
+    const stamp = (withNumber && entry.doubledOwn) ? `<span class="dd-stamp">${avatarHtml(p.avatar || "")}</span>` : "";
+    return `<div class="answer-slot rv-paper frame-${frameIndex} pp-${PAPER_STYLES[frameIndex % PAPER_STYLES.length]}"><span class="paper-bg"></span>`
+      + (withNumber ? handNumberHtml(entry.guess, entry.playerId, animate) : "") + stamp + `</div>`;
+  }
+
+  // Caption under the paper: who wrote it, how close, badges, who picked it - plus the points stack to its right.
+  function revealInfoHtml(entry, pts, isWinner, order) {
     const avatar = (currentPlayers[entry.playerId] && currentPlayers[entry.playerId].avatar) || "";
-    const containerClass = "container-" + ((currentPlayers[entry.playerId] && currentPlayers[entry.playerId].frameIndex) || 1);
-    const extra = entry.doubledOwn ? `<span class="doubledown-mark">${avatarHtml(avatar)}</span>` : "";
     const pickedBy = entry.pickedBy || [];
     const pickedAvatars = pickedBy.length
       ? `<div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join(" ")}</div>`
       : "";
     const spotBadge = entry.isPerfect
-      ? `<div class="spot-badge perfect">\<span class="icon-target-inline"></span> Perfect!</div>`
-      : (entry.isSpotOn ? `<div class="spot-badge">\<span class="icon-target-inline"></span> Spot On!</div>` : "");
+      ? `<div class="spot-badge perfect"><span class="icon-target-inline"></span> Perfect!</div>`
+      : (entry.isSpotOn ? `<div class="spot-badge"><span class="icon-target-inline"></span> Spot On!</div>` : "");
     const streakBadge = (isWinner && entry.consecutiveWins >= 2)
       ? `<div class="streak-badge">\u{1F525} On Fire! x${entry.consecutiveWins}</div>`
       : "";
+    const stat = isWinner ? `${entry.accuracyPercent}% \u2014 off by ${entry.error.toFixed(2)}` : `${entry.accuracyPercent}%`;
     const bonus = secondChanceBonusFor(entry.playerId, order);
-    const crowdBonus = entry.crowdFavoritePoints || 0;
-    const ptsStack = ptsStackHtml(pts, bonus, isWinner, crowdBonus);
-    if (isWinner) {
-      return `<div class="card-inner ${containerClass}">
-        <div class="winner-name-row"><span class="winner-avatar">${avatarHtml(avatar)}</span><span class="winner-name">${escapeHtml(entry.name)}</span></div>
-        <div class="winner-guess-row">Guess: <b>${entry.guess}</b>${extra}</div>
-        ${spotBadge}
-        ${streakBadge}
-        <div class="winner-stats-row">${entry.accuracyPercent}% — off by ${entry.error.toFixed(2)}</div>
-        ${pickedAvatars}
-      </div>${ptsStack}`;
-    }
-    return `<div class="card-inner ${containerClass}">
-      <div class="reveal-name-row"><span class="reveal-avatar">${avatarHtml(avatar)}</span><span class="reveal-name">${escapeHtml(entry.name)}</span></div>
-      <span class="reveal-guess-line">${entry.guess} (${entry.accuracyPercent}%)${extra}</span>
-      ${spotBadge}${pickedAvatars}
-    </div>${ptsStack}`;
+    return `<div class="rv-info"><div class="rv-name">${avatarHtml(avatar)}<span class="rv-nm">${escapeHtml(entry.name)}</span></div>`
+      + `<div class="rv-row2"><span class="rv-stat">${stat}</span>${pickedAvatars}</div>${spotBadge}${streakBadge}</div>`
+      + ptsStackHtml(pts, bonus, isWinner, entry.crowdFavoritePoints || 0);
+  }
+
+  function revealCardFinalHtml(entry, pts, isWinner, order) {
+    return revealPaperHtml(entry, true, false) + revealInfoHtml(entry, pts, isWinner, order);
   }
 
   function renderFaceDownCards(order, idOrder) {
@@ -6916,28 +6927,8 @@
       const li = document.createElement("li");
       li.className = "reveal-card";
       li.dataset.id = id;
-      li.innerHTML = cardHiddenHtml();
+      li.innerHTML = revealPaperHtml(entry, false, false);
       revealListEl.appendChild(li);
-    });
-  }
-
-  function squeezeSwap(cardInnerParentLi, axis, renderNewInnerHtml) {
-    const inner = cardInnerParentLi.querySelector(".card-inner");
-    inner.style.transition = "none";
-    inner.style.transform = "scale(1)";
-    requestAnimationFrame(() => {
-      inner.style.transition = `transform 150ms ease-in`;
-      inner.style.transform = axis === "y" ? "scaleY(0)" : "scaleX(0)";
-      setTimeout(() => {
-        cardInnerParentLi.innerHTML = renderNewInnerHtml();
-        const newInner = cardInnerParentLi.querySelector(".card-inner");
-        newInner.style.transition = "none";
-        newInner.style.transform = axis === "y" ? "scaleY(0)" : "scaleX(0)";
-        requestAnimationFrame(() => {
-          newInner.style.transition = `transform 180ms cubic-bezier(.34,1.56,.64,1)`;
-          newInner.style.transform = "scale(1)";
-        });
-      }, 150);
     });
   }
 
@@ -6951,10 +6942,13 @@
 
     return new Promise((resolve) => {
       function doFlips() {
-        squeezeSwap(li, "y", () => cardNumberHtml(entry));
+        // the number is pencilled onto the blank paper, then the caption pops in underneath
+        const drawMs = String(entry.guess).length * 90 + 420;
+        li.querySelector(".rv-paper").outerHTML = revealPaperHtml(entry, true, true);
+        playSound("reveal");
         setTimeout(() => {
-          squeezeSwap(li, "x", () => cardPersonHtml(entry, pts, isWinner, order));
-          playSound("reveal");
+          li.querySelectorAll(".rv-info, .reveal-pts-stack").forEach((n) => n.remove());
+          li.insertAdjacentHTML("beforeend", revealInfoHtml(entry, pts, isWinner, order));
           if (isWinner) {
             li.classList.add("winner");
             if (entry.isPerfect) playSound("perfect");
@@ -6981,7 +6975,7 @@
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
             resolve();
           }, 350);
-        }, 650);
+        }, drawMs);
       }
       if (isWinner) {
         li.classList.add("drumroll");
@@ -7033,7 +7027,7 @@
         if (li) {
           const pts = entry.basePoints + entry.doubleDownPoints;
           const isWinner = i === order.length - 1 && entry.isClosest;
-          li.innerHTML = cardPersonHtml(entry, pts, isWinner, order);
+          li.innerHTML = revealCardFinalHtml(entry, pts, isWinner, order);
           if (isWinner) {
             li.classList.add("winner");
             showAnswerReveal();
@@ -7056,7 +7050,7 @@
         if (li) {
           const pts = entry.basePoints + entry.doubleDownPoints;
           const isWinner = i === order.length - 1 && entry.isClosest;
-          li.innerHTML = cardPersonHtml(entry, pts, isWinner, order);
+          li.innerHTML = revealCardFinalHtml(entry, pts, isWinner, order);
           if (isWinner) {
             li.classList.add("winner");
             showAnswerReveal();
