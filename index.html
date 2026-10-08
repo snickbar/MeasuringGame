@@ -1485,6 +1485,10 @@
     position: absolute; top: -16px; left: -12px; font-size: 22px;
     animation: popIn 300ms ease;
   }
+  /* Double down's own button is full-width, so a stamp hanging off its LEFT
+     edge (the shared rule above) sticks out past the screen edge on narrow
+     phones - pull it onto the button's right side instead, closer in. */
+  #double-down-btn .pick-stamp { top: -10px; left: auto; right: 2px; }
   .answer-slot .pick-stamp .avatar-icon, #double-down-btn .pick-stamp .avatar-icon { width: 1.1em; height: 1.1em; }
   .doubledown-mark { display: inline-flex; vertical-align: middle; margin-left: 4px; }
   .doubledown-mark .avatar-icon { width: 18px; height: 18px; }
@@ -3861,29 +3865,57 @@
     overlayReturnScreen = null;
     playSound("popup-close");
   }
-  toolbarSettingsBtn.addEventListener("click", () => openOverlay(settingsScreen));
-  const HAS_SEEN_HOWTO_KEY = "mg_seenHowTo";
-  if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) toolbarHelpBtn.classList.add("hint-pulse");
-  toolbarHelpBtn.addEventListener("click", () => {
-    if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) {
-      localStorage.setItem(HAS_SEEN_HOWTO_KEY, "1");
-      toolbarHelpBtn.classList.remove("hint-pulse");
-    }
-    openOverlay(howtoScreen);
-  });
-  settingsCloseBtn.addEventListener("click", closeOverlay);
-  howtoCloseBtn.addEventListener("click", closeOverlay);
-  // Shared by two different "Yes" actions - quitting the app entirely
-  // (toolbar Exit) and, as host, ending the current game for everyone
-  // (in-game Exit) - so an accidental tap doesn't silently end the game.
-  let pendingExitAction = null; // "app" | "hostGame"
+  // Shared by three different "Yes" actions - quitting the app entirely
+  // (toolbar Exit outside a game), as host ending the current game for
+  // everyone (in-game Exit), and leaving an in-progress game via any top
+  // toolbar button - so an accidental tap doesn't silently end/leave a game.
+  let pendingExitAction = null; // "app" | "hostGame" | "leaveGame"
   function openExitConfirm(action, title, message) {
     pendingExitAction = action;
     exitConfirmTitleEl.textContent = title;
     exitConfirmMessageEl.textContent = message;
     exitConfirmOverlayEl.classList.add("show");
   }
+  // The top toolbar (Home/Items/Shop/Help/Settings/Exit) is visible on every
+  // screen, including mid-game - clicking one used to just barrel through its
+  // normal (lobby/menu-context) action no matter what, which for Home meant
+  // reloading the whole app out from under a live room with zero cleanup, and
+  // for the overlay screens (Items/Shop/Help/Settings) meant hiding the HUD
+  // to show the overlay and trusting the overlay-close logic to correctly
+  // restore it - fragile, and exactly the kind of state this app has never
+  // really exercised before. Now any of them, while a game is in progress,
+  // asks to leave the game first (same leave/end-game path as the in-HUD
+  // Exit button) instead of risking it.
+  function isInActiveGame() {
+    return hudEl.classList.contains("active");
+  }
+  function openLeaveGameConfirm() {
+    if (isHost) {
+      openExitConfirm("leaveGame", "End the game?", "You're the host - leaving now ends the game and removes everyone from the room. Are you sure?");
+    } else {
+      openExitConfirm("leaveGame", "Leave the game?", "You'll leave this game, but you can rejoin anytime with the room code. Continue?");
+    }
+  }
+  function guardToolbarNav(action) {
+    return () => {
+      if (isInActiveGame()) { openLeaveGameConfirm(); return; }
+      action();
+    };
+  }
+  toolbarSettingsBtn.addEventListener("click", guardToolbarNav(() => openOverlay(settingsScreen)));
+  const HAS_SEEN_HOWTO_KEY = "mg_seenHowTo";
+  if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) toolbarHelpBtn.classList.add("hint-pulse");
+  toolbarHelpBtn.addEventListener("click", guardToolbarNav(() => {
+    if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) {
+      localStorage.setItem(HAS_SEEN_HOWTO_KEY, "1");
+      toolbarHelpBtn.classList.remove("hint-pulse");
+    }
+    openOverlay(howtoScreen);
+  }));
+  settingsCloseBtn.addEventListener("click", closeOverlay);
+  howtoCloseBtn.addEventListener("click", closeOverlay);
   toolbarExitBtn.addEventListener("click", () => {
+    if (isInActiveGame()) { openLeaveGameConfirm(); return; }
     openExitConfirm("app", "Exit the game?", "Are you sure you want to exit?");
   });
   exitConfirmNoBtn.addEventListener("click", () => {
@@ -3894,8 +3926,8 @@
     const action = pendingExitAction;
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
-    if (action === "hostGame") {
-      hostExit();
+    if (action === "hostGame" || action === "leaveGame") {
+      if (isHost) hostExit(); else guestExit();
       return;
     }
     // Capacitor auto-registers installed native plugins as globals - no
@@ -3909,10 +3941,10 @@
   });
   collectionCloseBtn.addEventListener("click", closeOverlay);
   itemsCloseBtn.addEventListener("click", closeOverlay);
-  toolbarItemsBtn.addEventListener("click", () => {
+  toolbarItemsBtn.addEventListener("click", guardToolbarNav(() => {
     renderItemsScreen();
     openOverlay(itemsScreen);
-  });
+  }));
   gachaBackBtn.addEventListener("click", closeOverlay);
   gachaViewAllBtn.addEventListener("click", () => {
     renderCollectionScreen();
@@ -3956,7 +3988,7 @@
       btn.disabled = false;
     });
   });
-  toolbarHomeBtn.addEventListener("click", () => location.reload());
+  toolbarHomeBtn.addEventListener("click", guardToolbarNav(() => location.reload()));
 
   function setShopTab(tab) {
     document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
@@ -4003,8 +4035,8 @@
     openOverlay(gachaScreen);
     setShopTab(tab || "avatars");
   }
-  toolbarShopBtn.addEventListener("click", () => openGachaScreen("avatars"));
-  toolbarCoinBalanceEl.addEventListener("click", () => openGachaScreen("coins"));
+  toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen("avatars")));
+  toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
   document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
   });
@@ -5180,8 +5212,17 @@
       return;
     }
     const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
+    // Random across the WHOLE catalog (every tier), not just whichever unused
+    // avatar happens to come first in AVATARS - that order is AVATAR_TIERS'
+    // insertion order, which lists every "default" avatar before any
+    // common/rare/ultra one, so .find() was silently only ever handing bots
+    // a default-tier avatar (there's rarely enough players to exhaust that
+    // pool first). Bots aren't real profiles with purchases, so "unlocked"
+    // doesn't apply to them - they can wear anything in the game.
     const usedAvatars = new Set(Object.values(existingPlayers).map((p) => p.avatar).filter(Boolean));
-    const avatar = AVATARS.find((a) => !usedAvatars.has(a)) || AVATARS[Math.floor(Math.random() * AVATARS.length)];
+    const unusedAvatars = AVATARS.filter((a) => !usedAvatars.has(a));
+    const avatarPool = unusedAvatars.length ? unusedAvatars : AVATARS;
+    const avatar = avatarPool[Math.floor(Math.random() * avatarPool.length)];
     const usedNames = new Set(Object.values(existingPlayers).map((p) => p.name));
     const freeNames = BOT_NAMES.filter((n) => !usedNames.has(n));
     const namePool = freeNames.length ? freeNames : BOT_NAMES;
