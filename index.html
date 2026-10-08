@@ -1389,22 +1389,35 @@
   }
 
   .game-body { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
-  .main-col { flex: 4 1 0; min-width: 0; }
+  .main-col { flex: 1 1 0; min-width: 0; }
   .game-body.anim-wide .score-col { display: none; }
   .game-body.anim-wide .main-col { flex: 1 1 100%; }
-  .score-col { flex: 4 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .score-col { flex: 0 0 158px; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+  /* Compact card: avatar on the left across two rows; name on top, then medal | points + percent. Cards stack with no gaps. */
   .score-card {
-    padding: 6px 6px; font-size: 13px; position: relative; overflow: hidden;
-    border-width: 10px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
-    display: flex; flex-direction: column; gap: 5px; animation: popIn 300ms ease;
-    transition: padding 250ms ease;
+    padding: 0; font-size: 13px; position: relative; overflow: hidden;
+    border-width: 7px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 6px; row-gap: 1px; align-items: center;
+    margin-top: -4px; animation: popIn 300ms ease;
   }
-  .score-row-top { display: flex; align-items: center; gap: 5px; }
-  .score-row-bottom { display: flex; align-items: center; gap: 6px; }
+  .score-card:first-child { margin-top: 0; }
+  .score-card .avatar {
+    grid-row: 1 / 3; grid-column: 1;
+    font-size: 22px; width: 48px; height: auto; align-self: stretch; min-height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    border-width: 8px; border-style: solid; border-image-source: var(--ring); border-image-slice: 45 fill;
+  }
+  .sc-top { grid-row: 1; grid-column: 2; display: flex; align-items: center; justify-content: center; min-width: 0; position: relative; padding: 0 12px; }
+  .sc-top .arrow { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+  .sc-bot { grid-row: 2; grid-column: 2; display: flex; align-items: center; gap: 6px; min-width: 0; padding-right: 4px; }
+  .sc-bot .pts { margin-left: auto; }
+  .sc-bot .acc { margin-right: 2px; }
+  .score-card .name {
+    flex: 0 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.15; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   .medal {
     width: 20px; height: 20px; flex-shrink: 0;
     background-repeat: no-repeat; background-position: center; background-size: contain;
-    transition: width 250ms ease, height 250ms ease;
   }
   .medal.gold { background-image: var(--icon-medal-gold); }
   .medal.silver { background-image: var(--icon-medal-silver); }
@@ -1413,22 +1426,12 @@
     width: 20px; height: 20px; border-radius: 50%; background: var(--text-faint); color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
   }
-  .score-card .name {
-    flex: 1 1 auto; min-width: 0; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.15;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden; text-overflow: ellipsis; overflow-wrap: break-word; transition: font-size 250ms ease;
-  }
-  .score-card .avatar {
-    font-size: 20px; width: 32px; height: 29px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    border-width: 8px; border-style: solid; border-image-source: var(--ring); border-image-slice: 45 fill;
-    transition: width 250ms ease, height 250ms ease, font-size 250ms ease;
-  }
-  .pts-wrap { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
-  .score-card .pts { font-family: 'Fredoka', sans-serif; font-size: 20px; color: var(--pts); font-weight: 700; transition: font-size 250ms ease; }
-  .score-card .acc { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+  .sc-div { width: 2px; align-self: stretch; margin: 3px 0; background: rgba(120,90,60,.28); border-radius: 1px; flex-shrink: 0; }
+  .score-card .pts { font-family: 'Fredoka', sans-serif; font-size: 19px; color: var(--pts); font-weight: 700; line-height: 1; }
+  .score-card .acc { font-size: 11px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
   .score-card .pts.score-pop { animation: scorePop .45s ease-out; }
-  .score-card .arrow { font-size: 15px; width: 14px; text-align: center; flex-shrink: 0; }
-  .score-card .arrow.move-icon { width: 16px; height: 16px; margin-right: 0; }
+  .score-card .arrow { width: 14px; text-align: center; flex-shrink: 0; font-size: 13px; }
+  .score-card .arrow.move-icon { width: 14px; height: 14px; margin-right: 0; }
   @keyframes scorePop { 0% { transform: scale(1); } 45% { transform: scale(1.45); color: var(--green); } 70% { transform: scale(.92); } 100% { transform: scale(1); } }
 
   .score-card.frame-1 { border-image-source: var(--frame1); }
@@ -1441,18 +1444,6 @@
   .score-card.frame-8 { border-image-source: var(--frame8); }
   .score-card.frame-9 { border-image-source: var(--frame9); }
   .score-card.frame-10 { border-image-source: var(--frame10); }
-  .score-card.rank-1 { padding: 6px 7px; }
-  .score-card.rank-1 .medal { width: 26px; height: 26px; }
-  .score-card.rank-1 .avatar { width: 38px; height: 33px; font-size: 22px; }
-  .score-card.rank-1 .name { font-size: 16px; }
-  .score-card.rank-1 .pts { font-size: 24px; }
-  .score-card.rank-2 { padding: 6px 7px; }
-  .score-card.rank-2 .medal { width: 22px; height: 22px; }
-  .score-card.rank-2 .avatar { width: 36px; height: 32px; font-size: 20px; }
-  .score-card.rank-2 .name { font-size: 16px; }
-  .score-card.rank-2 .pts { font-size: 22px; }
-  .score-card.rank-3 .medal { width: 21px; height: 21px; }
-
   #guess-display {
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; text-align: center;
     padding: 12px; margin: 10px 0; color: #4a2a10;
@@ -6628,7 +6619,7 @@
     let left = 0, top = 70;
     if (card) {
       const rect = card.getBoundingClientRect();
-      left = rect.left - RX_STAGE + 24;
+      left = rect.left - RX_STAGE + 8;
       top = rect.top + rect.height / 2 - RX_STAGE / 2;
     }
     if (rxShowing[r.playerId]) { rxShowing[r.playerId].remove(); delete rxShowing[r.playerId]; }
@@ -6997,8 +6988,9 @@
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.dataset.id = id;
         box.innerHTML = `
-          <div class="score-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span></div>
-          <div class="score-row-bottom">${medal}<span class="pts-wrap"><span class="pts">${score}</span>${accHtml}</span>${arrow}</div>
+          <span class="avatar">${avatarHtml(p.avatar)}</span>
+          <div class="sc-top"><span class="name">${escapeHtml(p.name)}</span>${arrow}</div>
+          <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}</div>
         `;
         scoreColEl.appendChild(box);
         const prevScore = previousDisplayedScores[id];
