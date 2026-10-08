@@ -979,7 +979,12 @@
   #bottom-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))) { display: none; }
   #bottom-actions button { width: auto; margin: 0; flex: 1; max-width: 260px; }
   #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
-  /* Reaction strip: one row above the action buttons, on every in-game screen except the reveal animation. */
+  /* Reaction strip is the LAST child of #bottom-toolbar (a bottom-anchored
+     fixed column) so it always sits flush at the screen's bottom edge - the
+     action-button row above it is what pops in/out instead, keeping the
+     reactions themselves from shifting position depending on which (if any)
+     context button is showing. On every in-game screen except the reveal
+     animation. */
   #reaction-strip { display: flex; justify-content: center; gap: 5px; }
   #reaction-strip[hidden] { display: none; }
   button.react-slot {
@@ -1872,7 +1877,6 @@
 </div>
 
 <div id="bottom-toolbar">
-  <div id="reaction-strip" aria-label="Reactions"></div>
   <div id="bottom-actions">
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
@@ -1881,6 +1885,7 @@
   <button id="play-again-btn" style="display:none;">Play again</button>
   <button id="final-home-btn" style="display:none;">Finish game</button>
   </div>
+  <div id="reaction-strip" aria-label="Reactions"></div>
 </div>
 
 <div id="home-screen" class="screen active">
