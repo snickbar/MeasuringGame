@@ -1174,7 +1174,7 @@
   #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn) { margin-top: auto; }
   /* Cream (cancel/secondary), blue (info) and green-small pills, as 9-slice pictures. */
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
-  button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on), button#copy-room-code-btn,
+  button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on),
   button.preset-slot-action-btn[data-action="save"], button#preset-save-confirm-btn, button#hud-auto-toggle.is-on {
     --pic-h: 38px;
     display: flex; align-items: center; justify-content: center; text-align: center;
@@ -1186,11 +1186,10 @@
   }
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on) { border-image-source: url(icons/btn-cream.png); }
-  button#copy-room-code-btn { border-image-source: url(icons/btn-blue.png); }
   button.preset-slot-action-btn[data-action="save"], button#preset-save-confirm-btn, button#hud-auto-toggle.is-on {
     border-image-source: url(icons/btn-bot-easy.png); border-image-slice: 0 137 0 137 fill;
   }
-  button#copy-room-code-btn, button.preset-slot-action-btn[data-action="save"], button#preset-save-confirm-btn,
+  button.preset-slot-action-btn[data-action="save"], button#preset-save-confirm-btn,
   button#hud-auto-toggle.is-on {
     color: #fff;
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
@@ -1201,7 +1200,6 @@
   button.preset-slot-action-btn { --pic-h: 30px; font-size: 12px; }
   button.edit-preset-settings-btn { --pic-h: 46px; font-size: 16px; margin-bottom: 14px; }
   button#hud-auto-toggle { --pic-h: 32px; font-size: 12px; min-width: 86px; padding: 0 2px; }
-  button#copy-room-code-btn { --pic-h: 28px; font-size: 12px; min-width: 72px; padding: 0 2px; }
 
   /* Pills with an icon in the left cap: Submit guess (check) and Watch Ad (play). */
   button#submit-guess-btn, button#watch-ad-btn.ad-reward-btn {
@@ -1322,20 +1320,15 @@
   #hud-room-code {
     display: flex; align-items: center; gap: 4px;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .5px; color: var(--brand);
-    padding: 3px 9px; box-sizing: border-box;
+    padding: 3px 9px; box-sizing: border-box; width: auto; margin: 0; cursor: pointer; min-width: 74px; justify-content: center;
     border-width: 9px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
+    transition: color 150ms ease;
   }
   .room-icon {
     display: inline-block; width: 15px; height: 15px; vertical-align: -2px; margin-right: 2px;
     background-image: var(--icon-room); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
-  #copy-room-code-btn {
-    width: auto; margin: 0; flex-shrink: 0; color: var(--text);
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 11px; line-height: 1; padding: 6px 9px;
-    border-width: 7px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
-    transition: color 150ms ease;
-  }
-  #copy-room-code-btn.copied, #share-room-btn.copied { color: var(--brand); }
+  #hud-room-code.copied { color: var(--green, #3a8f3a); }
   #hud-round-label { display: none; flex-direction: column; gap: 3px; align-items: center; font-size: 14px; }
   #hud-round-label.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   .round-text { color: var(--text-muted); font-size: 12px; font-weight: 600; }
@@ -1351,7 +1344,10 @@
     opacity: 1; background: var(--brand); border-color: var(--red);
     box-shadow: 0 0 0 2px rgba(193, 85, 63, 0.3);
   }
-  .hud-btn-row { display: flex; gap: 6px; flex-shrink: 0; }
+  .hud-btn-row { display: flex; gap: 4px; flex-shrink: 0; }
+  #hud-sub-toolbar #pause-btn { height: 28px; font-size: 12px; min-width: 66px; border-width: 0 13.5px 0 28.2px; }
+  #hud-sub-toolbar #exit-btn, #hud-sub-toolbar #exit-btn-guest { height: 28px; font-size: 12px; min-width: 62px; border-width: 0 8.2px 0 23.1px; }
+  #hud-sub-toolbar #hud-round-label { flex: 1 1 auto; min-width: 0; }
   .hud-btn-row button {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; padding: 8px 12px; width: auto; margin: 0; color: var(--text);
     border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
@@ -1836,13 +1832,9 @@
      of rearranging itself when these context-specific items come and go. -->
 <div id="hud-sub-toolbar">
   <div id="hud-room-code-group">
-    <div id="hud-room-code"></div>
-    <button id="copy-room-code-btn" type="button">Copy code</button>
+    <button id="hud-room-code" type="button" aria-label="Room code. Tap to copy."></button>
   </div>
   <div id="hud-round-label"></div>
-</div>
-
-<div id="bottom-toolbar">
   <div class="hud-btn-row" id="hud-host-controls" style="display:none;">
     <button id="pause-btn" type="button">Pause</button>
     <button id="exit-btn" type="button">Exit</button>
@@ -1850,6 +1842,9 @@
   <div class="hud-btn-row" id="hud-guest-controls" style="display:none;">
     <button id="exit-btn-guest" type="button">Exit</button>
   </div>
+</div>
+
+<div id="bottom-toolbar">
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show summary</button>
@@ -3807,7 +3802,6 @@
   const hudSubToolbarEl = document.getElementById("hud-sub-toolbar");
   const hudRoomCodeGroupEl = document.getElementById("hud-room-code-group");
   const hudRoomCodeEl = document.getElementById("hud-room-code");
-  const copyRoomCodeBtn = document.getElementById("copy-room-code-btn");
   const hudRoundLabelEl = document.getElementById("hud-round-label");
   const hudHostControlsEl = document.getElementById("hud-host-controls");
   const hudGuestControlsEl = document.getElementById("hud-guest-controls");
@@ -4612,12 +4606,21 @@
     }, 1500);
   }
 
-  const copyCodeReset = { timer: null };
-  copyRoomCodeBtn.addEventListener("click", async () => {
-    if (!currentRoomCode) return;
+  // Tapping the room code in the game row copies it, and the chip says "Copied!" for a moment.
+  let hudCodeCopied = false, hudCodeCopiedTimer = null;
+  function renderHudRoomCode() {
+    hudRoomCodeEl.classList.toggle("copied", hudCodeCopied);
+    hudRoomCodeEl.innerHTML = hudCodeCopied ? "Copied!" : `<span class="room-icon"></span>${currentRoomCode}`;
+  }
+  hudRoomCodeEl.addEventListener("click", async () => {
+    if (!currentRoomCode || hudRoomCodeEl.classList.contains("code-locked")) return;
     const copied = await copyTextToClipboard(currentRoomCode);
     if (!copied) return;
-    flashButtonConfirm(copyRoomCodeBtn, copyCodeReset, "Copied!", "Copy code");
+    playSound("select");
+    hudCodeCopied = true;
+    renderHudRoomCode();
+    clearTimeout(hudCodeCopiedTimer);
+    hudCodeCopiedTimer = setTimeout(() => { hudCodeCopied = false; renderHudRoomCode(); }, 1500);
   });
 
   function joinLinkFor(roomCode) {
@@ -4658,7 +4661,6 @@
       roomCodeDisplay.classList.remove("code-locked");
       shareRoomBtn.style.display = "";
       hudRoomCodeEl.classList.remove("code-locked");
-      copyRoomCodeBtn.style.display = "";
       return;
     }
     const unlocked = myProfile.hostUnlocked;
@@ -4672,7 +4674,6 @@
     // visible/copyable for the entire game. Same paywall, same condition,
     // now applied here too.
     hudRoomCodeEl.classList.toggle("code-locked", !unlocked);
-    copyRoomCodeBtn.style.display = unlocked ? "" : "none";
   }
   // TEMP: simulates a successful purchase with no real payment, so the
   // unlock flow can be built and tested end-to-end before Google Play
@@ -6767,7 +6768,7 @@
   }
 
   function renderHudTop(data) {
-    hudRoomCodeEl.innerHTML = `<span class="room-icon"></span>${currentRoomCode}`;
+    renderHudRoomCode();
     const totalRounds = (data.settings || currentSettings).totalRounds || 5;
     const round = data.round || 1;
     let slots = "";
