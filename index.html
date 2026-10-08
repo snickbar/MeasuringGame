@@ -397,6 +397,10 @@
     content: "\1F512"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px;
   }
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
+  .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
+  .items-stat-box { flex: 1; background: rgba(90,74,58,.07); border-radius: 10px; padding: 10px 8px; text-align: center; }
+  .items-stat-value { font-size: 18px; font-weight: 700; color: var(--brand); line-height: 1.1; }
+  .items-stat-label { font-size: 11px; color: var(--text); opacity: .7; margin-top: 2px; }
   .items-intro { font-size: 13px; color: var(--text); opacity: .75; margin: 0 0 16px; }
   .items-letter-group { margin-bottom: 14px; }
   .items-letter-title {
@@ -405,6 +409,7 @@
   }
   .items-row { padding: 7px 2px; font-size: 15px; border-bottom: 1px solid rgba(90,74,58,.08); }
   .items-row:last-child { border-bottom: none; }
+  .items-row.unseen { opacity: .4; }
 
   /* The machine graphic and its overlaid globe/capsule/knob are positioned
      with pixel offsets calibrated to this exact 280x450 box, so it can't
@@ -2644,6 +2649,7 @@
       presets: {},
       emojiPacks: {},
       activeEmojis: [...DEFAULT_EMOJIS],
+      seenObjects: {},
     };
   }
   let myProfile = defaultProfile();
@@ -2711,6 +2717,7 @@
     renderInGameEmojiPicker();
     renderEmojiPickerSettings();
     renderPresetSlotButtons();
+    renderItemsScreen();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -2738,6 +2745,7 @@
           presets: { ...(data.presets || {}) },
           emojiPacks: { ...(data.emojiPacks || {}) },
           activeEmojis: (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...DEFAULT_EMOJIS],
+          seenObjects: { ...(data.seenObjects || {}) },
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -2755,6 +2763,18 @@
   }
   async function awardCoinsForGameEnd(amount) {
     await addCoins(amount);
+  }
+
+  // Marks an object pair as "seen" (for the Items screen's collection count) the
+  // first time a question involving it is shown to this player. Only writes the
+  // ids that aren't already marked, so re-entering the same round (reconnect,
+  // reload) doesn't spam the database.
+  function markObjectsSeen(unitId, targetId) {
+    const seen = myProfile.seenObjects || {};
+    const updates = {};
+    if (unitId && !seen[unitId]) updates[`seenObjects/${unitId}`] = true;
+    if (targetId && !seen[targetId]) updates[`seenObjects/${targetId}`] = true;
+    if (Object.keys(updates).length) update(ref(db, `profiles/${deviceId}`), updates).catch(() => {});
   }
 
   // TEMP: no real ad SDK wired up yet - "watching" an ad is simulated and
@@ -4073,20 +4093,35 @@
   // point of this screen is "what can come up", not "how to rank them by
   // size", so no sorting or labeling by size here).
   function renderItemsScreen() {
+    if (!itemsContentEl) return;
+    const seenSet = myProfile.seenObjects || {};
     const groups = {};
     OBJECTS.forEach((obj) => {
       const display = obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
       const letter = display.charAt(0).toUpperCase();
-      (groups[letter] = groups[letter] || []).push(display);
+      (groups[letter] = groups[letter] || []).push({ display, seen: !!seenSet[obj.id] });
     });
     const letters = Object.keys(groups).sort();
-    letters.forEach((letter) => groups[letter].sort((a, b) => a.localeCompare(b)));
+    letters.forEach((letter) => groups[letter].sort((a, b) => a.display.localeCompare(b.display)));
+    const totalCount = OBJECTS.length;
+    const seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
+    const comboCount = (totalCount * (totalCount - 1)) / 2;
     itemsContentEl.innerHTML =
-      `<p class="items-intro">Every object that can come up in a round, A to Z.</p>` +
+      `<div class="items-stats">
+        <div class="items-stat-box">
+          <div class="items-stat-value">${seenCount} / ${totalCount}</div>
+          <div class="items-stat-label">Items seen</div>
+        </div>
+        <div class="items-stat-box">
+          <div class="items-stat-value">${comboCount.toLocaleString()}</div>
+          <div class="items-stat-label">Possible match-ups</div>
+        </div>
+      </div>` +
+      `<p class="items-intro">Every object that can come up in a round, A to Z. Items you haven't seen in a round yet are dimmed.</p>` +
       letters.map((letter) => `
         <div class="items-letter-group">
           <div class="items-letter-title">${letter}</div>
-          <div class="items-list">${groups[letter].map((name) => `<div class="items-row">${name}</div>`).join("")}</div>
+          <div class="items-list">${groups[letter].map((o) => `<div class="items-row${o.seen ? "" : " unseen"}">${o.display}</div>`).join("")}</div>
         </div>`).join("");
   }
 
@@ -6888,6 +6923,7 @@
     const enteringQuestionPhase = phase === "question" && lastSeenPhaseForReset !== "question";
     if (phase === "question" && (data.round !== lastSeenRound || enteringQuestionPhase)) {
       lastSeenRound = data.round;
+      if (data.currentQuestion) markObjectsSeen(data.currentQuestion.unitId, data.currentQuestion.targetId);
       currentGuessStr = "";
       hasSubmittedThisRound = false;
       guessLocked = false;
