@@ -1331,6 +1331,7 @@
   /* ---- Emoji reaction picker (replaces numpad after submit) ---- */
   #emoji-picker { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
   #emoji-picker.active { display: grid; }
+  .emo-o { display: inline-block; }
   .emoji-btn {
     font-size: 26px; padding: 12px 0; min-width: 0;
     border-width: 11px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
@@ -2595,6 +2596,18 @@
   // - defaultProfile() is called immediately below to prime myProfile before
   // Firebase responds, so anything it references has to already exist by
   // then, not just be defined later in the file.
+  // Reaction emoji that read better turned or mirrored (picked in the orientation picker).
+  // rotate is in degrees; flipH mirrors left-right, flipV up-down.
+  const EMOJI_ORIENT = {
+    "\u{1F44D}": { rotate: 0, flipH: true, flipV: false },  // thumbs up
+    "\u{1F389}": { rotate: 0, flipH: true, flipV: false },  // party popper
+  };
+  function emojiHtml(e) {
+    const safe = String(e).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";"); // reactions come from other players
+    const o = EMOJI_ORIENT[e];
+    if (!o || (!o.rotate && !o.flipH && !o.flipV)) return safe;
+    return `<span class="emo-o" style="transform: rotate(${o.rotate}deg) scale(${o.flipH ? -1 : 1}, ${o.flipV ? -1 : 1})">${safe}</span>`;
+  }
   const DEFAULT_EMOJIS = ["\u{1F937}", "\u{1F600}", "⏰", "\u{1F44F}", "❤️", "\u{1F44D}", "\u{1F602}", "\u{1F525}", "\u{1F389}"];
   function defaultProfile() {
     return {
@@ -2844,7 +2857,7 @@
       box.className = "host-unlock-shop-box" + (isOwned ? " unlocked" : "");
       box.innerHTML = `
         <div class="host-unlock-top-row">
-          <div class="emoji-pack-preview">${pack.emojis.join(" ")}</div>
+          <div class="emoji-pack-preview">${pack.emojis.map(emojiHtml).join(" ")}</div>
           <div class="host-unlock-text">
             <h3>${pack.label}</h3>
             <p>${pack.emojis.length} new reactions to use in-game.</p>
@@ -3438,7 +3451,7 @@
   function renderInGameEmojiPicker() {
     if (!emojiPickerEl) return;
     const active = (myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : DEFAULT_EMOJIS;
-    emojiPickerEl.innerHTML = active.map((e) => `<button type="button" class="emoji-btn" data-emoji="${e}">${e}</button>`).join("");
+    emojiPickerEl.innerHTML = active.map((e) => `<button type="button" class="emoji-btn" data-emoji="${e}">${emojiHtml(e)}</button>`).join("");
   }
 
   function renderEmojiPickerSettings() {
@@ -3451,7 +3464,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "emoji-btn" + (isSelected ? " selected" : "") + (!isSelected && atLimit ? " disabled-pick" : "");
-      btn.textContent = emoji;
+      btn.innerHTML = emojiHtml(emoji);
       btn.addEventListener("click", () => toggleActiveEmoji(emoji));
       emojiPickerSettingsGridEl.appendChild(btn);
     });
@@ -6021,7 +6034,7 @@
     for (let i = 0; i < 4; i++) {
       const f = document.createElement("div");
       f.className = "float-reaction";
-      f.textContent = r.emoji;
+      f.innerHTML = emojiHtml(r.emoji);
       f.style.left = `${originLeft + Math.random() * 10}px`;
       f.style.top = `${originTop}px`;
       f.style.animationDelay = `${i * 90}ms`;
