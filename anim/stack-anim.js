@@ -356,6 +356,11 @@ export function createStackAnimation(container, options = {}) {
     ? options.reduceMotion
     : !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const flipFacing = !!options.flipFacing;   // swaps which of the two pictures is mirrored
+  // The caller can mirror the running count elsewhere (via start()'s onFrame,
+  // which now also receives the current shown value) instead of showing it
+  // under the floor here - its styles/text are still kept up to date either
+  // way, just never attached to the page.
+  const hideTally = !!options.hideTally;
 
   // ---- The stage: a canvas, with the running count under the floor ----
   container.style.position = 'relative';
@@ -371,7 +376,8 @@ export function createStackAnimation(container, options = {}) {
   const uEl = document.createElement('span');
   uEl.style.cssText = 'font-weight:700;';
   tally.append(nEl, uEl);
-  container.append(canvas, tally);
+  container.append(canvas);
+  if (!hideTally) container.append(tally);
 
   let raf = 0;
   let runId = 0;
@@ -871,6 +877,7 @@ export function createStackAnimation(container, options = {}) {
       cues,
       render,
       renderEnd() { render(tEnd); },
+      getShown: () => shown,
     };
   }
 
@@ -897,7 +904,7 @@ export function createStackAnimation(container, options = {}) {
       const dt = Math.max(0, (clockNow - last) / 1000);
       last = clockNow;
       scene.render(t, dt);
-      if (opts.onFrame) opts.onFrame(t);
+      if (opts.onFrame) opts.onFrame(t, scene.getShown());
       // Sound cues: each fires once as the clock passes it. Ones that are already well behind
       // (a late joiner, a throttled tab) are skipped rather than played in a burst.
       while (cueAt < cues.length && cues[cueAt].t <= t) {

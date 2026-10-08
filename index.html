@@ -148,7 +148,7 @@
   #question-view, #answers-view, #animation-view, #reveal-view, #summary-view, #countdown-view { display: none; }
   #question-view.active, #answers-view.active, #animation-view.active, #reveal-view.active, #summary-view.active { display: block; }
   #anim-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; }
-  #anim-skip-btn { display: none; width: auto; margin: 10px auto 0; }
+  #anim-skip-btn { display: none; width: 72px; margin: 0; padding: 6px 2px; font-size: 13px; border-width: 9px; }
   #countdown-view.active { display: flex; }
   #countdown-view {
     flex-direction: column; align-items: center; justify-content: center; gap: 20px;
@@ -986,10 +986,12 @@
      fixed column) so it always sits flush at the screen's bottom edge - the
      action-button row above it is what pops in/out instead, keeping the
      reactions themselves from shifting position depending on which (if any)
-     context button is showing. On every in-game screen except the reveal
-     animation. */
+     context button is showing. During the reveal animation (cards hidden,
+     reactions make no sense) it stays visible but grayed out and unclickable
+     instead of disappearing and popping back a moment later. */
   #reaction-strip { display: flex; justify-content: center; gap: 5px; }
   #reaction-strip[hidden] { display: none; }
+  #reaction-strip.anim-locked { opacity: .4; filter: grayscale(.6); pointer-events: none; }
   button.react-slot {
     flex: 1 1 0; min-width: 0; max-width: 56px; aspect-ratio: 1; box-sizing: border-box; margin: 0; padding: 4px;
     display: flex; align-items: center; justify-content: center;
@@ -1389,6 +1391,11 @@
     border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
   }
   .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+  /* The timer box shows "--" (empty/unused) during the reveal animation, so the
+     host's Skip button lives right under it instead of its old spot below the
+     whole animation picture - frees up room there for the ticking answer (now
+     on the question paper) and the full-size picture itself. */
+  .hud-timer-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
   .hud-timer {
     font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
@@ -1432,11 +1439,17 @@
   }
   .score-card .avatar .avatar-icon { width: 100%; height: 100%; }
   .sc-top { grid-row: 1; grid-column: 2; display: flex; align-items: center; justify-content: center; min-width: 0; position: relative; padding: 0 2px; }
-  .sc-bot { grid-row: 2; grid-column: 2; display: flex; align-items: center; gap: 5px; min-width: 0; padding-right: 2px; }
+  /* The arrow used to sit in normal flex flow after points+accuracy, so a
+     3-digit accuracy (100%, 2px wider than any 2-digit value) pushed the
+     row's total content past the card's own overflow:hidden, clipping the
+     arrow - the one thing here that actually needs to always stay visible.
+     Pinned it to a fixed spot instead (reserved via padding-right), so it
+     never competes with pts/acc for space regardless of digit count. */
+  .sc-bot { grid-row: 2; grid-column: 2; display: flex; align-items: center; gap: 5px; min-width: 0; padding-right: 16px; position: relative; }
   .sc-bot .pts { margin-left: auto; }
   .sc-bot .acc { margin-right: 0; }
-  .sc-bot .arrow { width: 12px; font-size: 12px; }
-  .sc-bot .arrow.move-icon { width: 12px; height: 12px; }
+  .score-card .sc-bot .arrow { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 12px; font-size: 12px; }
+  .score-card .sc-bot .arrow.move-icon { width: 12px; height: 12px; }
   .score-card .name {
     flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.15; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -1666,7 +1679,7 @@
   /* ---- Reveal ---- */
   #reveal-list { perspective: 800px; padding-left: 2px; }
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
-  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 6px; }
+  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 18px; }
   .reveal-card .rv-paper { cursor: default; width: 100%; }
   .reveal-card:nth-child(even) .rv-paper { --rot: 1.2deg; }
   .reveal-card:nth-child(odd) .rv-paper { --rot: -1.4deg; }
@@ -1677,10 +1690,16 @@
   .reveal-card .owner-stamp .avatar-icon { width: 34px; height: 34px; }
   .reveal-card .dd-chip { position: absolute; top: -10px; right: 32px; z-index: 2; width: 30px; height: 30px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); animation: popIn 300ms ease; }
   .reveal-card .dd-chip svg { width: 100%; height: 100%; display: block; }
-  .rv-info { margin-top: 5px; padding: 0 2px; font-family: 'Fredoka', sans-serif; color: #000; animation: popIn 300ms ease; }
-  .rv-info .pickedby-avatars { flex-wrap: wrap; flex-basis: auto; font-size: 13px; }
-  .rv-info .pickedby-avatars .avatar-icon { width: 28px; height: 28px; }
-  .rv-info .spot-badge, .rv-info .streak-badge { font-size: 13px; }
+  /* Accuracy % and who-picked-it avatars, grouped together bottom-left,
+     overlapping the paper's edge the same way the owner-stamp overlaps the
+     top - no separate caption line under the card anymore. */
+  .rv-badges { position: absolute; left: 2px; bottom: -10px; z-index: 2; display: flex; align-items: center; gap: 4px; animation: popIn 300ms ease; }
+  .rv-badges .acc-badge {
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; color: var(--green); white-space: nowrap; line-height: 1.1;
+    background: #fff; border-radius: 999px; padding: 2px 7px; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .rv-badges .pickedby-avatars { display: flex; align-items: center; gap: 2px; font-size: 13px; }
+  .rv-badges .pickedby-avatars .avatar-icon { width: 20px; height: 20px; }
   .card-inner {
     border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
     padding: 12px 15px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px;
@@ -1721,7 +1740,6 @@
     display: inline-block; width: 18px; height: 18px;
     background-image: var(--icon-star); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
-  .pickedby-label { font-size: 13px; color: #000; }
   .icon-target-inline {
     display: inline-block; width: 15px; height: 15px; vertical-align: -2px;
     background-image: var(--icon-target); background-repeat: no-repeat; background-position: center; background-size: contain;
@@ -2200,14 +2218,14 @@
       <label>Timer (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
-          <input id="setting-timer" type="number" min="10" max="90" />
+          <input id="setting-timer" type="number" min="10" max="90" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
         </span>
       </label>
       <label>Rounds
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-rounds" data-step="-1">&minus;</button>
-          <input id="setting-rounds" type="number" min="1" max="20" />
+          <input id="setting-rounds" type="number" min="1" max="20" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-rounds" data-step="1">+</button>
         </span>
       </label>
@@ -2229,7 +2247,7 @@
       <label>Auto-advance delay (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
-          <input id="setting-auto-advance-seconds" type="number" min="1" max="15" />
+          <input id="setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-auto-advance-seconds" data-step="1">+</button>
         </span>
       </label>
@@ -2261,14 +2279,14 @@
       <label>Timer (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-timer" data-step="-5">&minus;</button>
-          <input id="preset-setting-timer" type="number" min="10" max="90" />
+          <input id="preset-setting-timer" type="number" min="10" max="90" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-timer" data-step="5">+</button>
         </span>
       </label>
       <label>Rounds
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-rounds" data-step="-1">&minus;</button>
-          <input id="preset-setting-rounds" type="number" min="1" max="20" />
+          <input id="preset-setting-rounds" type="number" min="1" max="20" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-rounds" data-step="1">+</button>
         </span>
       </label>
@@ -2290,7 +2308,7 @@
       <label>Auto-advance delay (sec)
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-auto-advance-seconds" data-step="-1">&minus;</button>
-          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" />
+          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-auto-advance-seconds" data-step="1">+</button>
         </span>
       </label>
@@ -2391,12 +2409,11 @@
     <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
     <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
   </div>
-  <p id="lobby-status"></p>
-
   <div class="players-header">
     <h3>Players</h3>
     <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
   </div>
+  <p id="lobby-status"></p>
   <ul id="player-list"></ul>
 </div>
 
@@ -2408,7 +2425,10 @@
     <span id="question-prompt-text"></span>
     <div id="question-answer-line" class="question-answer-line" style="display:none;"></div>
   </div>
-  <div class="hud-timer" id="hud-timer">--</div>
+  <div class="hud-timer-col">
+    <div class="hud-timer" id="hud-timer">--</div>
+    <button id="anim-skip-btn" type="button">Skip</button>
+  </div>
   </div>
 
   <div class="game-body">
@@ -2442,7 +2462,6 @@
 
       <div id="animation-view">
         <div id="anim-stage"></div>
-        <button id="anim-skip-btn">Skip</button>
       </div>
 
       <div id="reveal-view">
@@ -3926,6 +3945,7 @@
     if (lk) { openSlotUnlock(Number(lk.dataset.slot)); return; }
     const b = ev.target.closest(".react-slot[data-emoji]");
     if (!b || !currentRoomCode) return;
+    if (roomState && roomState.phase === "animation") return; // grayed out, not just visually - belt and suspenders alongside the CSS pointer-events:none
     const t = Date.now();
     if (t - lastReactionTapAt < REACTION_COOLDOWN_MS) return;
     lastReactionTapAt = t;
@@ -4829,8 +4849,16 @@
     hudCodeCopiedTimer = setTimeout(() => { hudCodeCopied = false; renderHudRoomCode(); }, 1500);
   });
 
+  // Inside the native app, location.origin is Capacitor's internal
+  // "https://localhost" (how it serves the bundled WebView assets) - not a
+  // real address, so a shared link built from it 404s with "localhost
+  // refused to connect" for whoever opens it. Use the real live Hosting
+  // domain there instead; the web build's own location.origin is already
+  // correct as-is.
   function joinLinkFor(roomCode) {
-    return `${location.origin}${location.pathname}?join=${roomCode}`;
+    return isNativeApp
+      ? `https://measuring-game.web.app/?join=${roomCode}`
+      : `${location.origin}${location.pathname}?join=${roomCode}`;
   }
 
   const shareRoomReset = { timer: null };
@@ -5134,6 +5162,14 @@
       btn.disabled = btn.dataset.for === "setting-auto-advance-seconds" && !s.autoAdvanceEnabled;
     });
   }
+
+  // Steppers are the only way to change these (readonly in the markup already
+  // blocks typing on most browsers, but Android WebView can still be
+  // inconsistent) - an immediate blur guarantees no keyboard pops up even if
+  // a tap accidentally lands on the number itself instead of +/-.
+  document.querySelectorAll("#settings-panel input[type=\"number\"], #preset-settings-panel input[type=\"number\"]").forEach((input) => {
+    input.addEventListener("focus", () => input.blur());
+  });
 
   document.getElementById("settings-panel").addEventListener("click", (e) => {
     const btn = e.target.closest(".stepper-btn");
@@ -5819,6 +5855,7 @@
   const ANIM_HOLD_MS = 4500;   // time to look at the finished picture and the answer
   let animModulePromise = null;
   let animCtl = null;
+  let animModuleResolved = null; // settled copy of loadAnimModule()'s promise, for the synchronous formatCount use in applyPhase()
   let animScene = null;
   let animSceneRound = null;
   let animPlayKey = null;
@@ -5935,10 +5972,12 @@
   async function getAnimCtl() {
     const mod = await loadAnimModule();
     if (!mod) return null;
+    animModuleResolved = mod;
     if (!animCtl) {
       animCtl = mod.createStackAnimation(animStageEl, {
         theme: mod.LIGHT_THEME,
         imageUrl: (o) => o.image,
+        hideTally: true, // the running count is mirrored onto the question paper instead (see runAnimation's onFrame)
       });
     }
     return animCtl;
@@ -5984,6 +6023,7 @@
     try {
       const ctl = await getAnimCtl();
       if (!ctl) { fail("engine not loaded"); return; }
+      const mod = await loadAnimModule();
       if (animSceneRound !== data.round || !animScene) {
         animScene = null;
         // The answer line appears under the question when the animation ends and pushes the stage
@@ -5998,16 +6038,26 @@
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
       animAudioInit();
+      // The running count used to live under the picture (the animation engine's own
+      // "tally", now suppressed via hideTally) - it ticks up on the question paper
+      // instead, through to completion, so the final "Answer:" line is just where the
+      // ticking stops rather than a separate value popping in afterward.
+      questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(0, animScene.R));
+      questionAnswerLineEl.style.display = "block";
       ctl.start(animScene, {
         startAt: data.animStartAt,
         now: animClock,
         onCue: playAnimCue,
+        onFrame: (t, shown) => {
+          if (token !== animToken) return;
+          questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(shown, animScene.R));
+        },
         onDone: () => {
           if (token !== animToken || !roomState || roomState.phase !== "animation") return;
           animDoneKey = key;
           const q = roomState.currentQuestion;
           if (q) {
-            questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
+            questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(q.answer, animScene.R));
             questionAnswerLineEl.style.display = "block";
           }
         },
@@ -6868,11 +6918,14 @@
       + (withNumber ? handNumberHtml(entry.guess, entry.playerId, animate) : "") + stamp + `</div>`;
   }
 
-  // Under the paper: only who picked it (names, points and bonuses live on the summary screen).
+  // Overlapping the paper's bottom-left edge: accuracy %, then who picked it
+  // (names, points and bonuses live on the summary screen).
   function revealInfoHtml(entry) {
     const pickedBy = entry.pickedBy || [];
-    if (!pickedBy.length) return "";
-    return `<div class="rv-info"><div class="pickedby-avatars"><span class="pickedby-label">picked by</span>${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join(" ")}</div></div>`;
+    const pickedHtml = pickedBy.length
+      ? `<div class="pickedby-avatars">${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join("")}</div>`
+      : "";
+    return `<div class="rv-badges"><span class="acc-badge">${entry.accuracyPercent}%</span>${pickedHtml}</div>`;
   }
 
   function revealCardFinalHtml(entry) {
@@ -6907,7 +6960,7 @@
         li.querySelector(".rv-paper").outerHTML = revealPaperHtml(entry, true, true);
         playSound("reveal");
         setTimeout(() => {
-          li.querySelectorAll(".rv-info").forEach((n) => n.remove());
+          li.querySelectorAll(".rv-badges").forEach((n) => n.remove());
           li.insertAdjacentHTML("beforeend", revealInfoHtml(entry));
           if (isWinner) {
             li.classList.add("winner");
@@ -7653,12 +7706,13 @@
     const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
     lobbyScreenEl.classList.toggle("active", phase === "waiting");
     hostStartBtn.style.display = isHost ? "flex" : "none";
+    botControlsEl.style.display = isHost ? "flex" : "none";
     hudEl.classList.toggle("active", isHudActive);
     hudSubToolbarEl.classList.toggle("active", isHudActive);
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
-    reactionStripEl.hidden = phase === "animation";
+    reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
     finalScreenEl.classList.toggle("active", phase === "final");
     endedScreenEl.classList.toggle("active", phase === "ended");
@@ -7739,11 +7793,18 @@
     } else if (phase === "animation") {
       const q = data.currentQuestion;
       if (q) questionPromptTextEl.textContent = q.prompt;
-      // The answer number appears on the paper once the animation has finished (see runAnimation).
-      // This function runs on every update, so it must not hide it again afterwards.
-      if (q && animDoneKey === `${data.round}:${data.animStartAt}`) {
-        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
+      // The answer line ticks up live on the paper while runAnimation()'s own
+      // onFrame/onDone callbacks are driving it (animPlayKey set) - this
+      // function runs on every room update (other players' reactions, etc.),
+      // so it must not fight that by hiding or overwriting it mid-count. Only
+      // takes over once done (animDoneKey), and only as a fallback for a
+      // client where runAnimation() never ran locally at all.
+      const animKey = `${data.round}:${data.animStartAt}`;
+      if (q && animDoneKey === animKey) {
+        questionAnswerLineEl.innerHTML = answerLineHtml(animModuleResolved ? animModuleResolved.formatCount(q.answer, q.answer) : q.answer.toFixed(2));
         questionAnswerLineEl.style.display = "block";
+      } else if (animPlayKey === animKey) {
+        // already showing (or about to, via runAnimation) - leave it alone
       } else {
         questionAnswerLineEl.style.display = "none";
       }
