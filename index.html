@@ -515,20 +515,50 @@
   /* ---- Achievements ---- */
   #toolbar-awards-btn { position: relative; }
   #toolbar-awards-btn.has-claim::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
-  .ach-cat-title { font-weight: 700; font-size: 15px; color: var(--brand); margin: 16px 0 6px; }
-  .ach-row { display: flex; align-items: center; gap: 10px; background: rgba(90,74,58,.07); border-radius: 10px; padding: 9px 10px; margin-bottom: 6px; }
-  .ach-row.done { background: rgba(120,170,80,.18); }
-  .ach-main { flex: 1; min-width: 0; }
+  .ach-filter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; padding: 8px 12px; background: rgba(90,74,58,.07); border-radius: 10px; font-weight: 700; font-size: 14px; }
+  .ach-switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; border: 2px solid #8a6a3a; border-radius: 14px; background: #d9cdb8; padding: 0; margin: 0; cursor: pointer; transition: background 160ms; }
+  .ach-switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform 160ms; }
+  .ach-switch.on { background: #6aa84f; }
+  .ach-switch.on::after { transform: translateX(20px); }
+  .ach-cat-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; color: var(--brand); margin: 18px 0 8px; }
+  .ach-cat-title::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: linear-gradient(90deg, rgba(193,122,84,.5), transparent); }
+  .ach-row { position: relative; display: flex; align-items: center; gap: 10px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; padding: 9px 10px; margin-bottom: 8px; box-shadow: 0 2px 0 rgba(160,120,60,.18); }
+  .ach-row.ready { border-color: #f0a830; background: linear-gradient(180deg, #fff8e0, #ffefbd); animation: achReady 1.8s ease-in-out infinite; }
+  .ach-row.done { background: #f1f8e8; border-color: #bcd9a0; }
+  @keyframes achReady { 0%,100% { box-shadow: 0 2px 0 rgba(160,120,60,.18), 0 0 0 0 rgba(240,168,48,.5); } 50% { box-shadow: 0 2px 0 rgba(160,120,60,.18), 0 0 0 6px rgba(240,168,48,0); } }
+  .ach-medal { position: relative; width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 35% 30%, #e4dccd, #bdb2a0); border: 3px solid #9d9180; z-index: 1; }
+  .ach-medal svg { width: 26px; height: 26px; opacity: .55; }
+  .ach-row.ready .ach-medal, .ach-row.done .ach-medal { background: radial-gradient(circle at 35% 30%, #fff1a8, #f2a91e); border-color: #b97a10; }
+  .ach-row.ready .ach-medal svg, .ach-row.done .ach-medal svg { opacity: 1; }
+  .ach-main { flex: 1; min-width: 0; z-index: 1; }
   .ach-name { font-weight: 700; font-size: 14px; line-height: 1.2; }
   .ach-desc { font-size: 12px; opacity: .75; margin: 1px 0 5px; }
-  .ach-bar { height: 8px; border-radius: 4px; background: rgba(90,74,58,.15); overflow: hidden; }
-  .ach-bar > i { display: block; height: 100%; background: var(--brand); border-radius: 4px; }
+  .ach-bar { height: 9px; border-radius: 5px; background: rgba(90,74,58,.15); overflow: hidden; }
+  .ach-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #f0a830, #e4761b); border-radius: 5px; }
   .ach-row.done .ach-bar > i { background: #6aa84f; }
   .ach-count { font-size: 11px; opacity: .7; margin-top: 2px; }
-  .ach-side { flex-shrink: 0; text-align: center; min-width: 74px; }
-  .ach-reward { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
-  .ach-claim { font-family: inherit; font-weight: 700; font-size: 12px; background: var(--red); color: #fff; border: 2px solid #8a3a2a; border-radius: 8px; padding: 5px 10px; width: auto; margin: 0; }
+  .ach-side { flex-shrink: 0; text-align: center; min-width: 78px; z-index: 1; }
+  .ach-reward { font-size: 13px; font-weight: 700; margin-bottom: 3px; color: #a8620f; }
+  .ach-claim { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 4px; font-family: inherit; font-weight: 700; font-size: 13px; background: linear-gradient(180deg, #ffd45a, #f0a020); color: #5a3300; border: 2px solid #a8620f; border-radius: 10px; padding: 5px 10px; width: auto; margin: 0; cursor: pointer; box-shadow: 0 2px 0 #a8620f; }
+  .ach-claim svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .ach-claim::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.7), transparent); transform: skewX(-20deg); animation: achShine 2.2s ease-in-out infinite; }
+  @keyframes achShine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+  .ach-claim:active { transform: translateY(2px); box-shadow: 0 0 0 #a8620f; }
   .ach-claimed { font-size: 12px; font-weight: 700; color: #4f8a35; }
+  .ach-undo { font-family: inherit; font-weight: 700; font-size: 12px; background: #fff; color: var(--red); border: 2px solid var(--red); border-radius: 8px; padding: 4px 8px; width: auto; margin: 0; cursor: pointer; }
+  .ach-empty { text-align: center; opacity: .7; padding: 24px 0; font-size: 14px; }
+  /* claim celebration: rotating rays + star burst behind the medal */
+  .ach-burst { position: absolute; left: 33px; top: 50%; width: 0; height: 0; pointer-events: none; z-index: 0; }
+  .ach-burst .rays { position: absolute; left: -90px; top: -90px; width: 180px; height: 180px; border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(255,214,64,.85) 0 9deg, rgba(255,214,64,0) 9deg 22deg);
+    -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 70%); mask-image: radial-gradient(circle, #000 20%, transparent 70%);
+    animation: achRays 1.3s ease-out forwards; }
+  @keyframes achRays { 0% { transform: scale(.2) rotate(0); opacity: 0; } 25% { opacity: 1; } 100% { transform: scale(1.5) rotate(70deg); opacity: 0; } }
+  .ach-burst .st { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; background: #ffd23c; clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 80% 100%, 50% 76%, 20% 100%, 30% 60%, 0 38%, 38% 36%); animation: achStar 1.1s cubic-bezier(.2,.8,.3,1) forwards; }
+  @keyframes achStar { 0% { transform: translate(0,0) scale(.2) rotate(0); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(1.25) rotate(260deg); opacity: 0; } }
+  .ach-row.just .ach-medal { animation: achPop 700ms cubic-bezier(.34,1.56,.64,1); }
+  @keyframes achPop { 0% { transform: scale(.6); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .ach-row.ready, .ach-claim::after, .ach-burst, .ach-row.just .ach-medal { animation: none; } .ach-burst { display: none; } }
   #ach-toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 9999; background: #fff3cd; color: #7a4a00; border: 2px solid var(--brand); border-radius: 12px; padding: 8px 14px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.25); animation: achToast 3.2s ease both; pointer-events: none; }
   @keyframes achToast { 0% { opacity: 0; transform: translate(-50%,-10px); } 10%,85% { opacity: 1; transform: translate(-50%,0); } 100% { opacity: 0; } }
   .items-intro { font-size: 13px; color: var(--text); opacity: .75; margin: 0 0 16px; }
@@ -4686,7 +4716,14 @@
   }));
   document.getElementById("achievements-content").addEventListener("click", (e) => {
     const b = e.target.closest(".ach-claim");
-    if (b) claimAchievement(b.dataset.id);
+    if (b) { claimAchievement(b.dataset.id); return; }
+    const u = e.target.closest(".ach-undo");
+    if (u) { unclaimAchievement(u.dataset.id); return; }
+    if (e.target.closest("#ach-hide-switch")) {
+      achHideDone = !achHideDone;
+      try { localStorage.setItem("mg_ach_hide", achHideDone ? "1" : "0"); } catch (err) {}
+      renderAchievementsScreen();
+    }
   });
   toolbarItemsBtn.addEventListener("click", guardToolbarNav(() => {
     renderItemsScreen();
@@ -4995,38 +5032,79 @@
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
+  const TROPHY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none" stroke="#8a4f00" stroke-width="1.6"/><path d="M12 14v4M8 21h8M9 18h6v3H9z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  // Temporary: always claimable, tap to claim, tap again to unclaim (for testing the UI).
+  ACHIEVEMENTS.unshift({ id: "test_achievement", cat: "Test", name: "Test achievement", desc: "Always ready. Tap to claim, tap again to unclaim.", target: 1, reward: 10, progress: () => 1, test: true });
+  ACH_CATS.unshift("Test");
+  let achHideDone = false;
+  try { achHideDone = localStorage.getItem("mg_ach_hide") === "1"; } catch (e) {}
+  let achJustClaimed = null;
+
+  function achBurstHtml() {
+    let st = "";
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2 + (i % 2 ? .15 : 0), dist = 44 + (i % 3) * 20;
+      st += `<span class="st" style="--dx:${Math.round(Math.cos(ang) * dist)}px;--dy:${Math.round(Math.sin(ang) * dist)}px;animation-delay:${(i % 4) * 40}ms"></span>`;
+    }
+    return `<div class="ach-burst"><div class="rays"></div>${st}</div>`;
+  }
+
   function renderAchievementsScreen() {
     const el = document.getElementById("achievements-content");
     if (!el) return;
     const claimed = myProfile.achClaimed || {};
-    const doneCount = ACHIEVEMENTS.filter((a) => claimed[a.id]).length;
-    const waiting = ACHIEVEMENTS.filter(achClaimable).reduce((n, a) => n + a.reward, 0);
+    const real = ACHIEVEMENTS.filter((a) => !a.test);
+    const doneCount = real.filter((a) => claimed[a.id]).length;
+    const waiting = real.filter(achClaimable).reduce((n, a) => n + a.reward, 0);
     const btn = document.getElementById("toolbar-awards-btn");
     if (btn) btn.classList.toggle("has-claim", waiting > 0);
+    const rowHtml = (a) => {
+      const p = Math.min(a.progress(), a.target);
+      const done = p >= a.target, isClaimed = !!claimed[a.id];
+      const side = isClaimed ? (a.test ? `<button type="button" class="ach-undo" data-id="${a.id}">Unclaim</button>` : `<div class="ach-claimed">Claimed</div>`)
+        : done ? `<div class="ach-reward">+${a.reward} coins</div><button type="button" class="ach-claim" data-id="${a.id}">${TROPHY_SVG}Claim</button>`
+        : `<div class="ach-reward">+${a.reward} coins</div>`;
+      const cls = isClaimed ? "done" : done ? "ready" : "";
+      const just = achJustClaimed === a.id;
+      return `<div class="ach-row ${cls}${just ? " just" : ""}">${just ? achBurstHtml() : ""}<div class="ach-medal">${TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${side}</div></div>`;
+    };
+    let body = "";
+    ACH_CATS.forEach((cat) => {
+      const list = ACHIEVEMENTS.filter((a) => a.cat === cat && !(achHideDone && claimed[a.id] && !a.test));
+      if (list.length) body += `<div class="ach-cat-title">${cat}</div>` + list.map(rowHtml).join("");
+    });
+    if (!body) body = `<div class="ach-empty">Everything is claimed. Nice work!</div>`;
     el.innerHTML =
       `<div class="items-stats">
-        <div class="items-stat-box"><div class="items-stat-value">${doneCount} / ${ACHIEVEMENTS.length}</div><div class="items-stat-label">Awards claimed</div></div>
+        <div class="items-stat-box"><div class="items-stat-value">${doneCount} / ${real.length}</div><div class="items-stat-label">Awards claimed</div></div>
         <div class="items-stat-box"><div class="items-stat-value">${waiting}</div><div class="items-stat-label">Coins ready to claim</div></div>
-      </div>` +
-      ACH_CATS.map((cat) => `<div class="ach-cat-title">${cat}</div>` + ACHIEVEMENTS.filter((a) => a.cat === cat).map((a) => {
-        const p = Math.min(a.progress(), a.target);
-        const done = p >= a.target;
-        const side = claimed[a.id] ? `<div class="ach-claimed">Claimed</div>`
-          : done ? `<div class="ach-reward">+${a.reward}</div><button type="button" class="ach-claim" data-id="${a.id}">Claim</button>`
-          : `<div class="ach-reward">+${a.reward}</div>`;
-        return `<div class="ach-row${done ? " done" : ""}"><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${side}</div></div>`;
-      }).join("")).join("");
+      </div>
+      <div class="ach-filter"><span>Hide completed</span><button type="button" id="ach-hide-switch" class="ach-switch${achHideDone ? " on" : ""}" role="switch" aria-checked="${achHideDone}" aria-label="Hide completed"></button></div>` + body;
+    achJustClaimed = null;
   }
 
   async function claimAchievement(id) {
     const a = ACHIEVEMENTS.find((x) => x.id === id);
     if (!a || !achClaimable(a)) return;
-    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+    achJustClaimed = id;
+    playSound("win");
+    const res = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
       if ((profile.achClaimed || {})[id]) return profile;
       return { ...profile, coins: (profile.coins || 0) + a.reward, achClaimed: { ...(profile.achClaimed || {}), [id]: true } };
-    });
-    playSound("win");
+    }).catch(() => null);
+    if (!res) achJustClaimed = null;
+  }
+  async function unclaimAchievement(id) {
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    if (!a || !a.test) return;
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if (!(profile.achClaimed || {})[id]) return profile;
+      const rest = { ...(profile.achClaimed || {}) };
+      delete rest[id];
+      return { ...profile, coins: Math.max(0, (profile.coins || 0) - a.reward), achClaimed: rest };
+    }).catch(() => {});
   }
 
   function showAchToast(text) {
@@ -5043,12 +5121,12 @@
   function checkAchievementToasts() {
     let seen = null;
     try { seen = JSON.parse(localStorage.getItem("mg_ach_seen") || "null"); } catch (e) {}
-    const doneIds = ACHIEVEMENTS.filter(achDone).map((a) => a.id);
+    const doneIds = ACHIEVEMENTS.filter((a) => !a.test && achDone(a)).map((a) => a.id);
     if (!seen) {
       try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
       return;
     }
-    const fresh = ACHIEVEMENTS.filter((a) => achDone(a) && !seen.includes(a.id));
+    const fresh = ACHIEVEMENTS.filter((a) => !a.test && achDone(a) && !seen.includes(a.id));
     if (!fresh.length) return;
     try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
     showAchToast(fresh.length === 1 ? `Award unlocked: ${fresh[0].name}! +${fresh[0].reward} coins ready` : `${fresh.length} awards unlocked! Check the Awards button`);
