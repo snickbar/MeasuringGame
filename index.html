@@ -1590,20 +1590,24 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 
   .question-prompt {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.35; text-align: left; color: var(--text); flex: 1;
-    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 184px; min-width: 0;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.35; text-align: left; color: var(--text); flex: 1;
+    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 20px; min-height: 184px; min-width: 0;
     border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
   }
   /* Used to be a small inline line, with a separate big standalone "THE
      ANSWER" card doing the actual emphasis further down the screen - removed
      that card per request and moved its same text size here instead, so the
      answer is prominent right where it's already being read. */
-  .question-answer-line { margin-top: 8px; animation: popIn 300ms ease; }
+  .question-answer-line { margin-top: 8px; text-align: center; animation: popIn 300ms ease; }
   .answer-line-label { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #7a5a3a; }
   /* avatars of the players who picked the real answer in second chance, tucked beside the answer */
   .answer-line-picks { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; margin-top: 3px; animation: popIn 300ms ease; }
   .answer-line-picks .avatar-icon { width: 24px; height: 24px; }
-  .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px; color: #000; line-height: 1.1; }
+  /* Big base size, centered - setAnswerLineValue() shrinks it (via the
+     existing .fit-text mechanism) only as far as a given answer's actual
+     character count needs, so a short answer stays large and only a long
+     one gives ground. */
+  .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 56px; color: #000; line-height: 1.1; }
 
   /* Two independent scrollers: the answers/board on the left and the player cards docked on the right (swipe up on the cards to scroll them) */
   .game-body { display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
@@ -4496,7 +4500,19 @@
     const picks = pickers.length
       ? `<span class="answer-line-picks" title="Picked the real answer">${pickers.map((p) => p.avatar ? avatarHtml(p.avatar) : "").join("")}</span>`
       : "";
-    return `<span class="answer-line-label">Answer:</span> <span class="answer-line-value">${val}</span>${picks}`;
+    return `<span class="answer-line-label">Answer:</span> <span class="answer-line-value fit-text">${val}</span>${picks}`;
+  }
+  // The onFrame count-up callback (see runAnimation below) calls
+  // questionAnswerLineEl.innerHTML = answerLineHtml(...) directly, not this -
+  // every tick replaces the .answer-line-value span outright, so re-fitting
+  // it there would re-measure on every single animation frame for no benefit
+  // (a shorter in-progress count never needs MORE shrinking than the final
+  // answer it's counting up to). This wrapper is for the places the value is
+  // actually set once: the real fit needs to happen there.
+  function setAnswerLineValue(val) {
+    questionAnswerLineEl.innerHTML = answerLineHtml(val);
+    questionAnswerLineEl.style.display = "block";
+    fitTextToBox(questionAnswerLineEl.querySelector(".answer-line-value"), 22);
   }
   // Shared by every reveal code path that flips the winning card (the normal
   // one-at-a-time animation, a late joiner catching up, and the "snap to
@@ -4504,8 +4520,7 @@
   function showAnswerReveal() {
     const val = roomState.currentQuestion.answer.toFixed(2);
     revealListEl.classList.add("answer-revealed");
-    questionAnswerLineEl.innerHTML = answerLineHtml(val);
-    questionAnswerLineEl.style.display = "block";
+    setAnswerLineValue(val);
   }
   const revealListEl = document.getElementById("reveal-list");
   const revealNextBtn = document.getElementById("reveal-next-btn");
@@ -6808,8 +6823,7 @@
       // "tally", now suppressed via hideTally) - it ticks up on the question paper
       // instead, through to completion, so the final "Answer:" line is just where the
       // ticking stops rather than a separate value popping in afterward.
-      questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(0, animScene.R));
-      questionAnswerLineEl.style.display = "block";
+      setAnswerLineValue(mod.formatCount(0, animScene.R));
       ctl.start(animScene, {
         startAt: data.animStartAt,
         now: animClock,
@@ -6822,10 +6836,7 @@
           if (token !== animToken || !roomState || roomState.phase !== "animation") return;
           animDoneKey = key;
           const q = roomState.currentQuestion;
-          if (q) {
-            questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(q.answer, animScene.R));
-            questionAnswerLineEl.style.display = "block";
-          }
+          if (q) setAnswerLineValue(mod.formatCount(q.answer, animScene.R));
         },
       });
     } catch (err) {
@@ -8839,8 +8850,7 @@
       // client where runAnimation() never ran locally at all.
       const animKey = `${data.round}:${data.animStartAt}`;
       if (q && animDoneKey === animKey) {
-        questionAnswerLineEl.innerHTML = answerLineHtml(animModuleResolved ? animModuleResolved.formatCount(q.answer, q.answer) : q.answer.toFixed(2));
-        questionAnswerLineEl.style.display = "block";
+        setAnswerLineValue(animModuleResolved ? animModuleResolved.formatCount(q.answer, q.answer) : q.answer.toFixed(2));
       } else if (animPlayKey === animKey) {
         // already showing (or about to, via runAnimation) - leave it alone
       } else {
@@ -8856,8 +8866,7 @@
       const q = data.currentQuestion;
       if (q) {
         questionPromptTextEl.textContent = q.prompt;
-        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
-        questionAnswerLineEl.style.display = "block";
+        setAnswerLineValue(q.answer.toFixed(2));
       }
     } else if (phase === "summary") {
       // A client that lands straight in summary (freshly joined, or reloaded
@@ -8867,8 +8876,7 @@
       const q = data.currentQuestion;
       if (q) {
         questionPromptTextEl.textContent = q.prompt;
-        questionAnswerLineEl.innerHTML = answerLineHtml(q.answer.toFixed(2));
-        questionAnswerLineEl.style.display = "block";
+        setAnswerLineValue(q.answer.toFixed(2));
       }
     }
   }
