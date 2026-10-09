@@ -3871,6 +3871,97 @@
     "ArcadeArt", "ModuleMolly", "ThrusterThad", "OctaneOtto", "ScrapScout", "BeepBella", "ClickClara",
     "RadarRandy", "FlareFelix", "GearGina", "BoltyBob", "WhirlWinnie",
   ];
+  // A bot's name is themed to whatever avatar it happens to get (addBot()
+  // below), instead of always drawing from the generic robot-y BOT_NAMES
+  // pool above regardless of looking nothing like a robot. Falls back to
+  // BOT_NAMES only if this avatar's themed name is already taken in the
+  // room (name collisions are otherwise impossible: every value here is
+  // unique, and this map has exactly one entry per id in AVATARS).
+  const BOT_NAME_BY_AVATAR = {
+    av07: "GigglesGwen", av19: "CoolCasey", av06: "ChillCharlie", av20: "BubblyBree",
+    av166: "CozyCraig", av165: "SunnySadie", av50: "ReelRandy", av43: "KnitNana",
+    av79: "GrandpaGus", av114: "GrannyGrace", av02: "WhiskerWally", av05: "PawPatch",
+    av64: "WaddleWinnie", av35: "TrunkTilly", av29: "ChompChad", av65: "SlowpokeSly",
+    av16: "CircuitChip", av17: "ByteBeep", av22: "FieryFiona", av21: "SillySawyer",
+    av126: "CasualCole", av49: "RainbowRomy", av133: "PeppyPaige", av124: "BubblyBrooke",
+    av125: "JerseyJude", av121: "HanukkahHank", av44: "StrummerStu", av45: "TwirlyTessa",
+    av132: "NurseNora", av46: "BeakerBea",
+
+    av76: "OfficerOwen", av70: "SweetSophie", av47: "KickoffKyle", av131: "HammerHank",
+    av100: "LumberLuke", av81: "PaintPablo", av48: "ArtsyAmara", av77: "BuilderBen",
+    av128: "SafetySadie", av105: "FarmerFred", av130: "MailmanMike", av03: "HootHazel",
+    av04: "FlyingFennec", av01: "KingKuma", av08: "PandaPip", av30: "CalicoClem",
+    av31: "MidnightMia", av32: "PugglesPenny", av33: "GoldenGus", av142: "HoppyHarold",
+    av143: "ShellyShell", av34: "ManeMaxx", av144: "CheekyChester", av87: "JollyJingles",
+    av156: "NanaBanana", av55: "RetroRusty", av161: "SunnyFlor", av83: "FrostyFinn",
+    av153: "SunnySol", av155: "LunaLoom",
+
+    av150: "GoalGetter", av149: "HoopsHarry", av151: "FastballFred", av154: "BlitzBrody",
+    av152: "SpikeSandy", av09: "EmberDrake", av10: "SparkleUni", av63: "KoalaKip",
+    av62: "InkySquiggle", av74: "PricklyPete", av141: "SlitherSid", av36: "BananaBandit",
+    av38: "LankyLeo", av145: "PollyParrot", av146: "GeckoGreg", av58: "SkyScreech",
+    av11: "CosmoCody", av13: "SirSteel", av12: "MysticMalachi", av14: "CaptainCutlass",
+    av15: "ShadowShin", av18: "HeroHugo", av129: "BladeBrecken", av69: "BrassDiver",
+    av112: "CaptainClara", av78: "DunkDarius", av93: "PartyPete", av75: "BeakerBella",
+    av24: "TrailTess", av72: "CowboyColt",
+
+    av25: "ChefAntoine", av103: "BakerBrianna", av111: "DoctorDan", av26: "PixiePenny",
+    av97: "GlideGigi", av104: "TeacherTina", av108: "AceAmelia", av88: "CandleCassie",
+    av89: "LanternLi", av167: "DoveyDarla", av169: "HopperHallie", av170: "CrabbyCarl",
+    av168: "QuackQuinn", av157: "SpiderSprinkle", av159: "AntAndy", av158: "LadybugLola",
+    av160: "FlutterFaye", av162: "RosieRose", av163: "LilyBelle", av164: "BloomBrynn",
+    av39: "WinkyWurp", av40: "PetalPhee", av51: "CountCrimson", av52: "HowlingHank",
+    av54: "ZombieZeke", av73: "AlienAra", av80: "GingerSnap", av90: "FrostyFergus",
+    av91: "YetiYara", av92: "CarolCrew",
+
+    av122: "AngelAlina", av99: "StarlightSage", av119: "JingleJade", av101: "HollyHugo",
+    av117: "RudyReindeer", av28: "SlimySlick", av41: "BlazeFyre", av42: "SerpentSoren",
+    av53: "WrapWesley", av27: "BooBertram", av57: "RexRoar", av59: "FinFrankie",
+    av60: "SnowySimone", av61: "BobtailBibi", av67: "BatBaxter", av68: "BunnyBlossom",
+    av94: "ImpIggy", av96: "KingKendrick", av95: "SaintSimeon", av116: "NutcrackerNiko",
+    av118: "SantaStan", av98: "FrostQueenFreya", av120: "FrostFlint", av148: "BubbleBowl",
+    av171: "ProspectorPat", av172: "GardenGerty", av173: "ProfessorPhil", av174: "LibrarianLynn",
+    av175: "MamaMarigold", av176: "BabyBee",
+
+    av177: "FreckleFinn", av178: "GrooveGabby", av179: "HijabHana", av185: "SareeSanya",
+    av186: "DiyaDev", av187: "CalaveraCamila", av189: "CupidCarter", av190: "PilgrimPaul",
+    av191: "LuckyLeo", av192: "BanditRocco", av193: "RedPandaRio", av194: "OtterOllie",
+    av195: "CapyCappy", av196: "LlamaLuna", av197: "FlamingoFiona", av198: "ToucanTobi",
+    av199: "PeacockPria", av200: "HippoHugo", av225: "BoltNeck", av226: "RattleBones",
+    av227: "HexHilda", av228: "GoblinGrix", av229: "TrollTobin", av230: "SneakySnix",
+    av231: "DevilDax", av232: "BigfootBruno", av233: "GargoyleGrit", av239: "MermaidMarina",
+    av240: "ArrowAerin", av241: "VikingVolk",
+
+    av242: "CentaurCassius", av243: "GenieJaleel", av244: "JesterJolly", av245: "BardBramwell",
+    av246: "PrincessPetal", av247: "PrinceParker", av258: "SprinkleCup", av259: "PizzaPeel",
+    av260: "TacoTuesday", av261: "SushiSake", av262: "DonutDash", av263: "BobaBea",
+    av264: "ScoopSundae", av265: "PricklyPaz", av266: "FungiFreddo", av278: "HoardHarlow",
+    av280: "SkyWhale", av281: "CosmicCleo", av282: "GildedGaze", av283: "FoxyFelix",
+    av284: "CrystalKade", av285: "MagmaMort", av180: "HoopsHenry", av181: "FirefighterFinn",
+    av182: "VetVivian", av183: "DJDexter", av184: "SnorkelSam", av201: "ZippyZeb",
+    av202: "MooMolly", av203: "OinkieOtis",
+
+    av204: "CluckClara", av205: "GallopGinger", av206: "FawnFreya", av207: "NuttyNora",
+    av208: "CheesyChip", av209: "BuzzyBea", av210: "SnailySadie", av211: "WhaleWinston",
+    av212: "SplashSkipper", av213: "SeahorseSerena", av214: "JellyJune", av215: "PuffyPaxton",
+    av216: "NarwhalNoa", av217: "WalrusWade", av218: "SealySage", av219: "TrikeTrina",
+    av220: "StegoStevie", av221: "MammothMaple", av222: "SabreSasha", av223: "DodoDax",
+    av224: "AxieAria", av234: "NessieNoodle", av235: "MimicMax", av236: "ShroomieShay",
+    av237: "TimberTrent", av238: "PumpkinPenny", av248: "QueenQuincy", av249: "KnightKellan",
+    av250: "SorceressSiv", av251: "ArcticAsher",
+
+    av252: "TanukiTate", av253: "PhoenixPhiona", av254: "GriffinGale", av255: "PegasusPearl",
+    av256: "MinotaurMarcus", av257: "MedusaMira", av268: "BrightBixby", av269: "RainbowReese",
+    av270: "BoltyBob", av271: "FlurryFenn", av272: "OrbitOwen", av273: "ChampionChase",
+    av274: "ThriftyPiggy", av275: "RulerRemy", av276: "MeasureMolly", av277: "PencilPenny",
+    av286: "FrostPhoenixFira", av287: "DrakeyDot", av288: "AuroraWolf", av289: "GalaxyJelly",
+    av291: "BobaDrake", av292: "GhostlyGilligan", av293: "TreeTobias", av294: "CloudyCora",
+    av295: "SamuraiFennec", av296: "NinjaNimbus", av297: "WizardWhiskers", av298: "StarlitSocks",
+    av299: "PixelPaladin", av300: "PixelMonarch",
+
+    av301: "LittleLancelot", av302: "SlickSplit", av279: "CapsuleCody", av290: "KrakenKalder",
+    av303: "CaptainCoralie", av304: "ArrowAndy", av305: "ValkyrieVee", av306: "MossyMerlin",
+  };
 
   let currentName = localStorage.getItem("mg_name") || "";
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
@@ -6601,9 +6692,15 @@
     const avatarPool = unusedAvatars.length ? unusedAvatars : AVATARS;
     const avatar = avatarPool[Math.floor(Math.random() * avatarPool.length)];
     const usedNames = new Set(Object.values(existingPlayers).map((p) => p.name));
-    const freeNames = BOT_NAMES.filter((n) => !usedNames.has(n));
-    const namePool = freeNames.length ? freeNames : BOT_NAMES;
-    const name = namePool[Math.floor(Math.random() * namePool.length)];
+    const themedName = BOT_NAME_BY_AVATAR[avatar];
+    let name;
+    if (themedName && !usedNames.has(themedName)) {
+      name = themedName;
+    } else {
+      const freeNames = BOT_NAMES.filter((n) => !usedNames.has(n));
+      const namePool = freeNames.length ? freeNames : BOT_NAMES;
+      name = namePool[Math.floor(Math.random() * namePool.length)];
+    }
     const botId = "bot_" + Math.random().toString(36).slice(2, 10);
     await set(ref(db, `rooms/${currentRoomCode}/players/${botId}`), {
       name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
