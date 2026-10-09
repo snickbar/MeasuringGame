@@ -150,8 +150,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -512,6 +512,25 @@
   .items-stat-box { flex: 1; background: rgba(90,74,58,.07); border-radius: 10px; padding: 10px 8px; text-align: center; }
   .items-stat-value { font-size: 18px; font-weight: 700; color: var(--brand); line-height: 1.1; }
   .items-stat-label { font-size: 11px; color: var(--text); opacity: .7; margin-top: 2px; }
+  /* ---- Achievements ---- */
+  #toolbar-awards-btn { position: relative; }
+  #toolbar-awards-btn.has-claim::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+  .ach-cat-title { font-weight: 700; font-size: 15px; color: var(--brand); margin: 16px 0 6px; }
+  .ach-row { display: flex; align-items: center; gap: 10px; background: rgba(90,74,58,.07); border-radius: 10px; padding: 9px 10px; margin-bottom: 6px; }
+  .ach-row.done { background: rgba(120,170,80,.18); }
+  .ach-main { flex: 1; min-width: 0; }
+  .ach-name { font-weight: 700; font-size: 14px; line-height: 1.2; }
+  .ach-desc { font-size: 12px; opacity: .75; margin: 1px 0 5px; }
+  .ach-bar { height: 8px; border-radius: 4px; background: rgba(90,74,58,.15); overflow: hidden; }
+  .ach-bar > i { display: block; height: 100%; background: var(--brand); border-radius: 4px; }
+  .ach-row.done .ach-bar > i { background: #6aa84f; }
+  .ach-count { font-size: 11px; opacity: .7; margin-top: 2px; }
+  .ach-side { flex-shrink: 0; text-align: center; min-width: 74px; }
+  .ach-reward { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .ach-claim { font-family: inherit; font-weight: 700; font-size: 12px; background: var(--red); color: #fff; border: 2px solid #8a3a2a; border-radius: 8px; padding: 5px 10px; width: auto; margin: 0; }
+  .ach-claimed { font-size: 12px; font-weight: 700; color: #4f8a35; }
+  #ach-toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 9999; background: #fff3cd; color: #7a4a00; border: 2px solid var(--brand); border-radius: 12px; padding: 8px 14px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.25); animation: achToast 3.2s ease both; pointer-events: none; }
+  @keyframes achToast { 0% { opacity: 0; transform: translate(-50%,-10px); } 10%,85% { opacity: 1; transform: translate(-50%,0); } 100% { opacity: 0; } }
   .items-intro { font-size: 13px; color: var(--text); opacity: .75; margin: 0 0 16px; }
   .items-letter-group { margin-bottom: 14px; }
   .items-letter-title {
@@ -742,7 +761,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen { position: relative; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -1933,6 +1952,7 @@
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
+    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Awards"><img src="icons/toolbar-awards.png" alt=""></button>
     <button id="toolbar-items-btn" class="toolbar-badge-btn" type="button" aria-label="Items"><img src="icons/toolbar-items.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
@@ -2129,6 +2149,14 @@
     <h1>Items</h1>
   </div>
   <div id="items-content"></div>
+</div>
+
+<div id="achievements-screen" class="screen">
+  <button id="achievements-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div class="screen-header">
+    <h1>Awards</h1>
+  </div>
+  <div id="achievements-content"></div>
 </div>
 
 <div id="settings-screen" class="screen">
@@ -2868,7 +2896,7 @@
     av282: "ultra",
     av283: "common",
     av284: "ultra",
-    av285: "ultra"
+    av285: "ultra",
     av180: "rare",
     av181: "common",
     av182: "rare",
@@ -2938,7 +2966,7 @@
     av299: "ultra",
     av300: "ultra",
     av301: "ultra",
-    av302: "ultra"
+    av302: "ultra",
     av279: "ultra",
     av290: "ultra",
     av303: "rare",
@@ -3058,6 +3086,8 @@
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
+      stats: {},
+      achClaimed: {},
     };
   }
   let myProfile = defaultProfile();
@@ -3139,6 +3169,8 @@
     renderReactionStrip();
     renderPresetSlotButtons();
     renderItemsScreen();
+    renderAchievementsScreen();
+    checkAchievementToasts();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -3172,6 +3204,8 @@
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
+          stats: { ...(data.stats || {}) },
+          achClaimed: { ...(data.achClaimed || {}) },
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -3259,6 +3293,7 @@
         adsWatchedCount: countToday + 1,
       };
     });
+    if (txResult.committed) bumpStats({ adsWatched: 1 });
     return txResult.committed;
   }
 
@@ -3599,6 +3634,7 @@
     });
     if (!txResult.committed) return null;
     const finalUnlocked = (txResult.snapshot.val() || {}).unlockedAvatars || {};
+    if (finalUnlocked[result]) bumpStats({ pulls: 1 });
     return finalUnlocked[result] ? result : null;
   }
 
@@ -3976,6 +4012,7 @@
   const collectionCloseBtn = document.getElementById("collection-close-btn");
   const collectionContentEl = document.getElementById("collection-content");
   const itemsScreen = document.getElementById("items-screen");
+  const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
   const gachaPullBtn = document.getElementById("gacha-pull-btn");
@@ -4521,8 +4558,8 @@
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -4642,6 +4679,15 @@
   });
   collectionCloseBtn.addEventListener("click", closeOverlay);
   itemsCloseBtn.addEventListener("click", closeOverlay);
+  document.getElementById("achievements-close-btn").addEventListener("click", closeOverlay);
+  document.getElementById("toolbar-awards-btn").addEventListener("click", guardToolbarNav(() => {
+    renderAchievementsScreen();
+    openOverlay(achievementsScreen);
+  }));
+  document.getElementById("achievements-content").addEventListener("click", (e) => {
+    const b = e.target.closest(".ach-claim");
+    if (b) claimAchievement(b.dataset.id);
+  });
   toolbarItemsBtn.addEventListener("click", guardToolbarNav(() => {
     renderItemsScreen();
     openOverlay(itemsScreen);
@@ -4909,6 +4955,133 @@
           <div class="items-letter-title">${letter}</div>
           <div class="items-list">${groups[letter].map((o) => `<div class="items-row${o.seen ? "" : " unseen"}" data-id="${o.id}" role="button" tabindex="0">${o.display}</div>`).join("")}</div>
         </div>`).join("");
+  }
+
+
+  // ---- Achievements ----
+  // Counters live in profiles/<id>/stats and are bumped by bumpStats(); things we
+  // can already derive (avatars owned, items/combos seen) are read straight from
+  // the profile. Rewards are claimed manually (atomic transaction), and claimed
+  // ids live in profiles/<id>/achClaimed.
+  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun"];
+  function ownedNonDefaultAvatars() {
+    const u = (myProfile && myProfile.unlockedAvatars) || {};
+    return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
+  }
+  const ACH_STAT = (k) => () => ((myProfile.stats || {})[k] || 0);
+  const ACHIEVEMENTS = [];
+  function achTier(cat, base, desc, prog, steps) {
+    const romans = ["", " II", " III"];
+    steps.forEach(([target, reward], i) => {
+      ACHIEVEMENTS.push({ id: `${cat}-${base}-${target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: base + romans[i], desc: desc(target), target, reward, progress: prog });
+    });
+  }
+  achTier("Collector", "Avatar fan", (n) => `Own ${n} avatars from the machine`, () => ownedNonDefaultAvatars().length, [[5, 20], [25, 60], [75, 150]]);
+  achTier("Collector", "Ultra lucky", (n) => `Own ${n} ultra-rare avatar${n > 1 ? "s" : ""}`, () => ownedNonDefaultAvatars().filter((a) => AVATAR_TIERS[a] === "ultra").length, [[1, 50], [5, 150]]);
+  achTier("Collector", "Item spotter", (n) => `See ${n} different items in rounds`, () => Object.keys((myProfile.seenObjects) || {}).length, [[25, 20], [75, 60], [OBJECTS.length, 200]]);
+  achTier("Collector", "Combo hunter", (n) => `See ${n} different item combinations`, () => Object.keys((myProfile.seenCombos) || {}).length, [[50, 20], [250, 60], [1000, 200]]);
+  achTier("Accuracy", "Spot on", (n) => `Land ${n} spot-on guess${n > 1 ? "es" : ""}`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]]);
+  achTier("Accuracy", "Perfect", (n) => `Guess exactly right ${n} time${n > 1 ? "s" : ""}`, ACH_STAT("perfects"), [[1, 75], [5, 250]]);
+  achTier("Winning", "Round winner", (n) => `Win ${n} round${n > 1 ? "s" : ""}`, ACH_STAT("roundWins"), [[1, 10], [10, 40], [50, 150]]);
+  achTier("Winning", "On a roll", (n) => `Win ${n} rounds in a row`, ACH_STAT("bestStreak"), [[3, 40], [5, 120]]);
+  achTier("Winning", "Champion", (n) => `Win ${n} game${n > 1 ? "s" : ""}`, ACH_STAT("gamesWon"), [[1, 25], [10, 100], [50, 300]]);
+  achTier("Winning", "Regular", (n) => `Finish ${n} games`, ACH_STAT("gamesPlayed"), [[5, 15], [25, 50], [100, 150]]);
+  achTier("Second chance", "Second look", (n) => `Earn points from a second chance in ${n} rounds`, ACH_STAT("secondChances"), [[5, 25], [25, 100]]);
+  achTier("Second chance", "Double down", (n) => `Win double-down points in ${n} rounds`, ACH_STAT("doubleDowns"), [[5, 25], [25, 100]]);
+  achTier("Social", "Party time", (n) => `Finish ${n} games with 3 or more players`, ACH_STAT("groupGames"), [[5, 30], [25, 120]]);
+  achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]]);
+  achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]]);
+
+  function achDone(a) { return a.progress() >= a.target; }
+  function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
+
+  function renderAchievementsScreen() {
+    const el = document.getElementById("achievements-content");
+    if (!el) return;
+    const claimed = myProfile.achClaimed || {};
+    const doneCount = ACHIEVEMENTS.filter((a) => claimed[a.id]).length;
+    const waiting = ACHIEVEMENTS.filter(achClaimable).reduce((n, a) => n + a.reward, 0);
+    const btn = document.getElementById("toolbar-awards-btn");
+    if (btn) btn.classList.toggle("has-claim", waiting > 0);
+    el.innerHTML =
+      `<div class="items-stats">
+        <div class="items-stat-box"><div class="items-stat-value">${doneCount} / ${ACHIEVEMENTS.length}</div><div class="items-stat-label">Awards claimed</div></div>
+        <div class="items-stat-box"><div class="items-stat-value">${waiting}</div><div class="items-stat-label">Coins ready to claim</div></div>
+      </div>` +
+      ACH_CATS.map((cat) => `<div class="ach-cat-title">${cat}</div>` + ACHIEVEMENTS.filter((a) => a.cat === cat).map((a) => {
+        const p = Math.min(a.progress(), a.target);
+        const done = p >= a.target;
+        const side = claimed[a.id] ? `<div class="ach-claimed">Claimed</div>`
+          : done ? `<div class="ach-reward">+${a.reward}</div><button type="button" class="ach-claim" data-id="${a.id}">Claim</button>`
+          : `<div class="ach-reward">+${a.reward}</div>`;
+        return `<div class="ach-row${done ? " done" : ""}"><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${side}</div></div>`;
+      }).join("")).join("");
+  }
+
+  async function claimAchievement(id) {
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    if (!a || !achClaimable(a)) return;
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if ((profile.achClaimed || {})[id]) return profile;
+      return { ...profile, coins: (profile.coins || 0) + a.reward, achClaimed: { ...(profile.achClaimed || {}), [id]: true } };
+    });
+    playSound("win");
+  }
+
+  function showAchToast(text) {
+    const old = document.getElementById("ach-toast");
+    if (old) old.remove();
+    const t = document.createElement("div");
+    t.id = "ach-toast";
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3300);
+  }
+  // Announces awards that just became claimable. The first run on a device marks
+  // everything already done as announced, so nobody gets a wall of toasts.
+  function checkAchievementToasts() {
+    let seen = null;
+    try { seen = JSON.parse(localStorage.getItem("mg_ach_seen") || "null"); } catch (e) {}
+    const doneIds = ACHIEVEMENTS.filter(achDone).map((a) => a.id);
+    if (!seen) {
+      try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
+      return;
+    }
+    const fresh = ACHIEVEMENTS.filter((a) => achDone(a) && !seen.includes(a.id));
+    if (!fresh.length) return;
+    try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
+    showAchToast(fresh.length === 1 ? `Award unlocked: ${fresh[0].name}! +${fresh[0].reward} coins ready` : `${fresh.length} awards unlocked! Check the Awards button`);
+  }
+
+  // inc: counters to add; max: counters that keep the highest value seen.
+  function bumpStats(inc, max) {
+    return runTransaction(ref(db, `profiles/${deviceId}/stats`), (cur) => {
+      const s = { ...(cur || {}) };
+      Object.keys(inc || {}).forEach((k) => { s[k] = (s[k] || 0) + inc[k]; });
+      Object.keys(max || {}).forEach((k) => { s[k] = Math.max(s[k] || 0, max[k]); });
+      return s;
+    }).catch(() => {});
+  }
+  // Called each time a round summary renders; counted once per round.
+  function recordRoundStats(data) {
+    if (!data || !currentPlayerId || !currentPlayers[currentPlayerId]) return;
+    const key = `${currentRoomCode}:${data.round || 0}:${data.animStartAt || ""}`;
+    let done = [];
+    try { done = JSON.parse(localStorage.getItem("mg_ach_rounds") || "[]"); } catch (e) {}
+    if (done.includes(key)) return;
+    const mine = (data.revealOrder || []).find((e) => e.playerId === currentPlayerId);
+    if (!mine) return;
+    done.push(key);
+    try { localStorage.setItem("mg_ach_rounds", JSON.stringify(done.slice(-30))); } catch (e) {}
+    const chips = (computeRoundBreakdown(data)[currentPlayerId] || []).map((c) => c.label);
+    const inc = {};
+    if (mine.basePoints === 5) inc.spotOns = 1;
+    if (mine.isPerfect) inc.perfects = 1;
+    if (mine.isClosest) inc.roundWins = 1;
+    if (mine.doubleDownPoints > 0) inc.doubleDowns = 1;
+    if (chips.includes("second chance")) inc.secondChances = 1;
+    bumpStats(inc, mine.isClosest ? { bestStreak: mine.consecutiveWins || 1 } : null);
   }
 
   document.querySelectorAll("#howto-screen .howto-section").forEach((d) => {
@@ -7550,6 +7723,7 @@
   }
 
   function renderSummary(data) {
+    recordRoundStats(data);
     const breakdown = computeRoundBreakdown(data);
     const lastRoundPoints = data.lastRoundPoints || {};
     summaryListEl.innerHTML = "";
@@ -7647,6 +7821,14 @@
     // would make animateCoinCount visibly flicker back down first.
     if (willAnimateCoins) coinCountTweenActive = true;
     awardCoinsForGameEnd(myFinalScore);
+    {
+      const ids = Object.keys(currentPlayers);
+      const top = Math.max(...ids.map((id) => currentPlayers[id].score || 0));
+      const inc = { gamesPlayed: 1 };
+      if (ids.length >= 2 && myFinalScore === top) inc.gamesWon = 1;
+      if (ids.length >= 3) inc.groupGames = 1;
+      bumpStats(inc);
+    }
     finalListEl.innerHTML = "";
     const scoreFn = (id) => currentPlayers[id].score || 0;
     const avgFn = (id) => {
