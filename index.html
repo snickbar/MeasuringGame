@@ -638,6 +638,16 @@
   .gacha-reveal-wrap.rare.show .gacha-reveal-rays { opacity: .28; animation: gachaRaySpin 3.4s linear infinite; }
   .gacha-reveal-wrap.ultra.show .gacha-reveal-rays { opacity: .5; animation: gachaRaySpin 2.2s linear infinite; }
   @keyframes gachaRaySpin { to { transform: rotate(360deg); } }
+  #fake-ad-overlay {
+    position: fixed; inset: 0; z-index: 2000; background: #111; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+    font-family: 'Fredoka', sans-serif; pointer-events: auto;
+  }
+  body.gacha-pull-lock #fake-ad-overlay, body.gacha-pull-lock #fake-ad-overlay * { pointer-events: auto; }
+  .fake-ad-timer { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 18px); right: 18px; font-size: 18px; font-weight: 700; background: rgba(255,255,255,.15); padding: 6px 14px; border-radius: 999px; }
+  .fake-ad-body { font-size: 30px; font-weight: 700; text-align: center; padding: 0 24px; }
+  .fake-ad-close { width: auto; min-width: 160px; margin: 0; font-family: inherit; font-size: 20px; font-weight: 700; padding: 12px 36px; border: none; border-radius: 12px; background: #7bce5a; color: #123; }
+  .fake-ad-close:disabled { opacity: .35; }
   .gacha-result-overlay {
     position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -3066,6 +3076,29 @@
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
+  // TEMP stand-in for a real rewarded ad: a full-screen pop-up with a 2 second
+  // countdown, then a close button. Resolves once the player closes it, which is
+  // the moment a real ad SDK's "reward earned" callback would fire.
+  function showFakeAd() {
+    return new Promise((resolve) => {
+      const ov = document.createElement("div");
+      ov.id = "fake-ad-overlay";
+      ov.innerHTML = `<div class="fake-ad-timer" id="fake-ad-timer">Ad ends in 2</div>
+        <div class="fake-ad-body">Ad is playing now</div>
+        <button type="button" id="fake-ad-close" class="fake-ad-close" disabled>Close</button>`;
+      document.body.appendChild(ov);
+      const timerEl = ov.querySelector("#fake-ad-timer"), closeBtn = ov.querySelector("#fake-ad-close");
+      let left = 2;
+      const tick = setInterval(() => {
+        left -= 1;
+        if (left > 0) { timerEl.textContent = `Ad ends in ${left}`; return; }
+        clearInterval(tick);
+        timerEl.textContent = "Ad finished";
+        closeBtn.disabled = false;
+      }, 1000);
+      closeBtn.addEventListener("click", () => { ov.remove(); resolve(true); });
+    });
+  }
   async function watchAdForCoins() {
     const today = todayDateStr();
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -4482,6 +4515,7 @@
   // update lands after this one.
   watchAdBtn.addEventListener("click", async () => {
     watchAdBtn.disabled = true;
+    await showFakeAd();
     await watchAdForCoins();
     renderWatchAdStatus();
   });
@@ -7507,8 +7541,9 @@
   }
   finalDoubleCoinsBtn.addEventListener("click", async () => {
     if (finalCoinsDoubled || finalScoreForDouble <= 0) return;
-    finalCoinsDoubled = true;
     finalDoubleCoinsBtn.disabled = true;
+    await showFakeAd();
+    finalCoinsDoubled = true;
     finalDoubleCoinsBtn.textContent = "Doubled!";
     await addCoins(finalScoreForDouble);
     setTimeout(() => finalHomeBtn.click(), 700);
