@@ -236,7 +236,7 @@
      "500"/"1,200"/"3,000" and "COINS" labels out of alignment with the Free
      card's even though the buttons below them still matched up (pinned to
      the bottom via margin-top:auto). */
-  .coin-pack-status { color: #c9542f; font-weight: 800; font-size: 11px; min-height: 1.2em; margin-bottom: 3px; }
+  .coin-pack-status { color: #c9542f; font-weight: 800; font-size: 11px; margin-top: 2px; }
   .ad-reward-btn { background: linear-gradient(180deg, #7bce5a 0%, #58a83c 100%) !important; }
   /* 2x2: the free-coins card and all 3 purchasable packs are one unified
      family of same-size tiles now, instead of a separate full-width hero
@@ -244,12 +244,20 @@
      text/buttons fit comfortably instead of being squeezed 3-up. */
   #coin-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
   .coin-pack-card {
-    position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 16px 10px 10px; border-radius: 20px;
+    position: relative; display: grid; align-items: center; column-gap: 8px; row-gap: 0;
+    grid-template-columns: 44px 1fr;
+    grid-template-areas: "icon amt" "icon lbl" "st st" "btn btn";
+    padding: 14px 10px 8px; border-radius: 18px;
     background: linear-gradient(180deg, #f8c6a9 0%, #f4b799 100%);
     box-shadow: 0 2px 6px rgba(0,0,0,.1);
     border: 2px solid transparent;
   }
+  .coin-pack-card > .coin-pack-icon { grid-area: icon; }
+  .coin-pack-card > .coin-pack-amount { grid-area: amt; align-self: end; }
+  .coin-pack-card > .coin-pack-label { grid-area: lbl; align-self: start; }
+  .coin-pack-card > .coin-pack-status { grid-area: st; text-align: center; }
+  .coin-pack-card > .coin-pack-status:empty { display: none; }
+  .coin-pack-card > .coin-pack-buy-btn { grid-area: btn; margin-top: 6px !important; }
   .coin-pack-card.ad-reward-card { background: linear-gradient(180deg, #d9f0c8 0%, #b8e09a 100%); }
   .coin-pack-ribbon {
     position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
@@ -273,12 +281,12 @@
   @media (prefers-reduced-motion: reduce) {
     .coin-pack-card.best-value { animation: none; }
   }
-  .coin-pack-icon { width: 54px; height: 54px; object-fit: contain; margin-bottom: 2px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.15)); }
-  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; color: #44150d; }
+  .coin-pack-icon { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.15)); }
+  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.1; color: #44150d; text-align: left; }
   .coin-pack-card.best-value .coin-pack-amount { font-size: 23px; color: #522900; }
   .coin-pack-label {
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .06em;
-    color: #8a5c4e; text-transform: uppercase; margin-bottom: 5px;
+    color: #8a5c4e; text-transform: uppercase; text-align: left;
   }
   /* Warm brand-brown ladder instead of the old pink pill - each tier's
      button gets a little richer/brighter than the last, ending in gold for
@@ -297,7 +305,13 @@
      unrelated emoji-pack-shop buttons that reuse the same base class.
      (margin-top:auto is restated further down, after the shared picture-
      button rule that resets margin to 0 - see the comment there.) */
-  #coin-pack-row .coin-pack-buy-btn { font-size: 13px; padding: 10px 4px; }
+  #coin-pack-row .coin-pack-buy-btn { font-size: 13px; --pic-h: 32px; }
+  #pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  .shop-section-label { margin: 16px 0 -4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
+  .pack-card { grid-template-columns: 1fr; grid-template-areas: "ttl" "emo" "btn"; justify-items: center; text-align: center; background: linear-gradient(180deg, #d9e8ff 0%, #b9d2f5 100%); }
+  .pack-title { grid-area: ttl; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; color: #1f3558; }
+  .pack-emojis { grid-area: emo; font-size: 17px; line-height: 1.25; white-space: nowrap; margin-top: 2px; }
+  .pack-card > .coin-pack-buy-btn { width: 100%; --pic-h: 32px; font-size: 13px; }
   .coin-pack-card.popular .coin-pack-buy-btn { background: linear-gradient(180deg, #ff9f4d 0%, #e07a1a 100%); }
   .coin-pack-card.best-value .coin-pack-buy-btn { background: linear-gradient(180deg, #ffd54f 0%, #f0a825 100%); color: #4a2800; text-shadow: none; }
 
@@ -1368,7 +1382,7 @@
      since its row-mate (the Free/Watch-Ad card, with an extra status line) is
      taller. Same specificity as the rule above (one #id + two classes) so this
      has to come after it in the file to actually win. */
-  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn) { margin-top: auto; }
+  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn), #pack-row .coin-pack-buy-btn { margin-top: 6px; }
   /* Cream (cancel/secondary), blue (info) and green-small pills, as 9-slice pictures. */
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on),
@@ -2120,10 +2134,10 @@
           <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
           <div class="host-unlock-text">
             <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
-            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
+            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever, plus 500 bonus coins. Bots are always free, no unlock needed.</p>
           </div>
         </div>
-        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $2.99 &middot; One time</button>
+        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
       </div>
 
       <div id="coin-pack-row">
@@ -2159,6 +2173,8 @@
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
       </div>
+      <div class="shop-section-label">Reaction packs</div>
+      <div id="pack-row"></div>
     </div>
   </div>
 
@@ -2552,8 +2568,8 @@
   </div>
 
   <div id="host-unlock-banner">
-    <p>Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
-    <button id="host-unlock-btn" type="button">Unlock for $2.99 &middot; One time</button>
+    <p>Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever, plus 500 bonus coins. Bots are always free, no unlock needed.</p>
+    <button id="host-unlock-btn" type="button">Unlock for $9.99 &middot; One time</button>
   </div>
 
   <div id="bot-controls">
@@ -3260,6 +3276,7 @@
     renderItemsScreen();
     renderAchievementsScreen();
     checkAchievementToasts();
+    renderPackShop();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -3467,6 +3484,29 @@
         card.disabled = false;
       });
       grid.appendChild(card);
+    });
+  }
+  // Real-money reaction packs, shown on the Purchases tab (anything paid with real money lives there).
+  function renderPackShop() {
+    const row = document.getElementById("pack-row");
+    if (!row) return;
+    row.innerHTML = "";
+    EMOJI_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
+      const card = document.createElement("div");
+      card.className = "coin-pack-card pack-card";
+      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-emojis">${pack.emojis.join(" ")}</div>`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "coin-pack-buy-btn";
+      btn.disabled = owned;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
+      if (!owned) btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
+      });
+      card.appendChild(btn);
+      row.appendChild(card);
     });
   }
   function renderCosmeticsShop() {
@@ -5526,7 +5566,7 @@
     // even open, so this part doesn't depend on isHost like the rest below.
     const shopUnlocked = !!myProfile.hostUnlocked;
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
-    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $2.99 · One time";
+    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $9.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
 
     if (!isHost) {
@@ -5552,12 +5592,16 @@
   // unlock flow can be built and tested end-to-end before Google Play
   // Billing is wired up. Swap these handlers' bodies for the real purchase
   // call later; renderHostUnlockUi() itself doesn't need to change.
-  hostUnlockBtn.addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
-  });
-  hostUnlockShopBtn.addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
-  });
+  const HOST_UNLOCK_BONUS_COINS = 500;
+  async function purchaseHostUnlock() {
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if (profile.hostUnlocked) return profile;
+      return { ...profile, hostUnlocked: true, coins: (profile.coins || 0) + HOST_UNLOCK_BONUS_COINS };
+    });
+  }
+  hostUnlockBtn.addEventListener("click", purchaseHostUnlock);
+  hostUnlockShopBtn.addEventListener("click", purchaseHostUnlock);
 
   // ---- "Install app" banner, driven by the browser's own install
   // eligibility signal rather than a fixed schedule. Suppressed while the
