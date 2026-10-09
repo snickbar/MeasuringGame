@@ -991,6 +991,8 @@
   #bottom-actions { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 46px; }
   #bottom-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))) { display: none; }
   #bottom-actions button { width: auto; margin: 0; flex: 1; max-width: 260px; }
+  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) { flex-direction: column; align-items: stretch; gap: 6px; }
+  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) button { max-width: none; width: 100%; flex: none; }
   #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
   /* Reaction strip is the LAST child of #bottom-toolbar (a bottom-anchored
      fixed column) so it always sits flush at the screen's bottom edge - the
@@ -1090,7 +1092,7 @@
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
   .players-header h3 { margin: 0; flex-shrink: 0; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
-  .lobby-player-count { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+  .lobby-player-count { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--text-muted); }
   @keyframes readyGlowPulse {
     0%, 100% { filter: drop-shadow(0 0 0 rgba(255,205,90,0)); }
     50% { filter: drop-shadow(0 0 7px rgba(255,205,90,.95)); }
@@ -1938,8 +1940,9 @@
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="show-summary-btn" style="display:none;">Show summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
-  <button id="play-again-btn" style="display:none;">Play again</button>
+  <button id="play-again-btn" style="display:none;">Play Again</button>
   <button id="final-home-btn" style="display:none;">Finish game</button>
+  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch Ad: Double Coins &amp; Finish</button>
   </div>
   <div id="reaction-strip" aria-label="Reactions"></div>
 </div>
@@ -2496,7 +2499,6 @@
 <div id="final-screen" class="screen">
   <h1 id="final-title">&#127881; Final Results! &#127881;</h1>
   <ul id="final-list"></ul>
-  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch Ad: Double Your Coins</button>
 </div>
 
 <div id="ended-screen" class="screen">
@@ -4823,7 +4825,7 @@
 
     playSound(tier === "ultra" ? "perfect" : tier === "rare" ? "roundwin" : "reveal");
     celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
-    spawnTrophyBurst(gachaRevealWrapEl);
+    spawnTrophyBurst(gachaRevealWrapEl, "icons/gacha-capsule-open.png");
     if (tier === "ultra") gachaRetrigger(gachaFlashEl, "go");
     await gachaWait(850);
 
@@ -5197,7 +5199,7 @@
       playerList.appendChild(li);
     });
     const playerCount = Object.keys(currentPlayers).length;
-    lobbyPlayerCountEl.textContent = `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here`;
+    lobbyPlayerCountEl.textContent = `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here` + (playerCount >= FRAME_COUNT ? ` \u2022 Room full (${FRAME_COUNT} max)` : "");
     if (!isFirstRender && roomState.phase === "waiting") {
       for (const id of renderedPlayerListIds) {
         if (!newIds.has(id)) { playSound("leave"); break; }
@@ -5700,7 +5702,7 @@
     onDone: (value) => {
       const name = value.trim().slice(0, 12);
       if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
-      openExitConfirm("joinLobbyConfirmed", `Continue as ${name}?`, "You can always change it later in Settings.", "Continue", "Cancel");
+      openExitConfirm("joinLobbyConfirmed", `Continue as ${name}?`, "", "Continue", "Cancel");
     },
   });
 
@@ -5804,7 +5806,7 @@
     const freeFrames = [];
     for (let i = 1; i <= FRAME_COUNT; i++) if (!usedFrames.has(i)) freeFrames.push(i);
     if (freeFrames.length === 0) {
-      lobbyStatusEl.textContent = `Room is full (${FRAME_COUNT} players max).`;
+      // the player-count line above already reads "Room full (10 max)" in this state
       return;
     }
     const frameIndex = freeFrames[Math.floor(Math.random() * freeFrames.length)];
@@ -7416,10 +7418,9 @@
     const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
     const coinsBeforeAward = myProfile.coins;
     const willAnimateCoins = myFinalScore > 0;
-    finalDoubleCoinsBtn.style.display = myFinalScore > 0 ? "flex" : "none";
-    finalDoubleCoinsBtn.disabled = false;
-    finalDoubleCoinsBtn.textContent = "Watch Ad: Double Your Coins";
     finalScoreForDouble = myFinalScore;
+    finalDoubleCoinsBtn.disabled = false;
+    updateFinalButtons();
     // Set before awardCoinsForGameEnd fires, not after: the Firebase round-trip
     // can resolve (and renderCoinBalance() can snap the toolbar number to its
     // final value) before our own delayed animation below even starts, which
@@ -7491,12 +7492,25 @@
   // finalRendered whenever a new game/round starts), not a repeatable
   // daily-cap mechanic like the other ad button.
   let finalScoreForDouble = 0;
+  // The coins from the game are already in the player's balance by the time the
+  // results show (see renderFinal), so "Collect" just states the amount and
+  // finishes, and the ad button adds the same amount a second time, then finishes.
+  function updateFinalButtons() {
+    const n = finalScoreForDouble;
+    if (!finalCoinsDoubled) {
+      finalDoubleCoinsBtn.textContent = `Watch Ad: Double to +${n * 2} Coins & ${isHost ? "Finish" : "Leave"}`;
+    }
+    finalHomeBtn.textContent = n > 0
+      ? `Collect +${n} Coins & ${isHost ? "Finish" : "Leave"}`
+      : (isHost ? "Finish Game" : "Leave Game");
+  }
   finalDoubleCoinsBtn.addEventListener("click", async () => {
     if (finalCoinsDoubled || finalScoreForDouble <= 0) return;
     finalCoinsDoubled = true;
     finalDoubleCoinsBtn.disabled = true;
     finalDoubleCoinsBtn.textContent = "Doubled!";
     await addCoins(finalScoreForDouble);
+    setTimeout(() => finalHomeBtn.click(), 700);
   });
 
   // ==================== Sound / confetti ====================
@@ -7842,7 +7856,7 @@
     requestAnimationFrame(frame);
   }
 
-  function spawnTrophyBurst(targetEl) {
+  function spawnTrophyBurst(targetEl, iconSrc) {
     if (!targetEl) return;
     const rect = targetEl.getBoundingClientRect();
     const wrap = document.createElement("div");
@@ -7854,7 +7868,7 @@
     for (let i = 0; i < 8; i++) {
       rays += `<div class="ray" style="transform: translate(-50%,-50%) rotate(${i * 45}deg);"></div>`;
     }
-    wrap.innerHTML = rays + `<img class="trophy-emoji" alt="" src="icons/reactions/trophy.png">`;
+    wrap.innerHTML = rays + `<img class="trophy-emoji" alt="" src="${iconSrc || "icons/reactions/trophy.png"}">`;
     reactionsPanelEl.appendChild(wrap);
     setTimeout(() => wrap.remove(), 900);
   }
@@ -8029,7 +8043,8 @@
     // does the same thing it always did (just leave, room stays open for
     // whoever's left), so it keeps the old label instead of claiming to
     // "finish" something it can't actually finish for the group.
-    finalHomeBtn.textContent = isHost ? "Finish game" : "Back to home";
+    if (phase === "final") updateFinalButtons();
+    finalDoubleCoinsBtn.style.display = (phase === "final" && finalScoreForDouble > 0) ? "flex" : "none";
     playAgainBtn.style.display = (phase === "final" && isHost) ? "flex" : "none";
 
     // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
