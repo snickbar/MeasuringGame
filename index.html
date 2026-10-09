@@ -3683,12 +3683,13 @@
     const head = document.createElement("div");
     head.className = "cosm-pack-head";
     head.innerHTML = `<div><div class="cosm-pack-title">${pack.label}</div><div class="cosm-pack-sub">${subText}</div></div>`;
-    // Real-money pack purchases live on the Shop's Purchases tab; here the header just shows status.
-    const tag = document.createElement("div");
-    tag.className = "cosm-pack-sub";
-    tag.style.fontWeight = "700";
-    tag.textContent = owned ? "\u2713 Pack unlocked" : "Pack sold in Purchases";
-    head.appendChild(tag);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cosm-unlock";
+    btn.disabled = owned;
+    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${pack.price}`;
+    if (!owned) btn.addEventListener("click", onUnlock);
+    head.appendChild(btn);
     return head;
   }
   function renderEmojiRows(container, statusEl) {
