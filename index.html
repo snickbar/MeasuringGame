@@ -306,10 +306,11 @@
      (margin-top:auto is restated further down, after the shared picture-
      button rule that resets margin to 0 - see the comment there.) */
   #coin-pack-row .coin-pack-buy-btn { font-size: 13px; --pic-h: 32px; }
-  #pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  #pack-row, #flair-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
   .shop-section-label { margin: 16px 0 -4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
   .pack-card { grid-template-columns: 1fr; grid-template-areas: "ttl" "emo" "btn"; justify-items: center; text-align: center; background: linear-gradient(180deg, #d9e8ff 0%, #b9d2f5 100%); }
   .pack-title { grid-area: ttl; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; color: #1f3558; }
+  .pack-flairs { grid-area: emo; font-size: 12px; font-weight: 600; line-height: 1.3; color: #2c466e; margin-top: 2px; }
   .pack-emojis { grid-area: emo; font-size: 17px; line-height: 1.25; white-space: nowrap; margin-top: 2px; }
   .pack-card > .coin-pack-buy-btn { width: 100%; --pic-h: 32px; font-size: 13px; }
   .coin-pack-card.popular .coin-pack-buy-btn { background: linear-gradient(180deg, #ff9f4d 0%, #e07a1a 100%); }
@@ -1382,7 +1383,7 @@
      since its row-mate (the Free/Watch-Ad card, with an extra status line) is
      taller. Same specificity as the rule above (one #id + two classes) so this
      has to come after it in the file to actually win. */
-  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn), #pack-row .coin-pack-buy-btn { margin-top: 6px; }
+  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn), #pack-row .coin-pack-buy-btn, #flair-pack-row .coin-pack-buy-btn { margin-top: 6px; }
   /* Cream (cancel/secondary), blue (info) and green-small pills, as 9-slice pictures. */
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on),
@@ -2180,6 +2181,8 @@
       </div>
       <div class="shop-section-label">Reaction packs</div>
       <div id="pack-row"></div>
+      <div class="shop-section-label">Flair packs</div>
+      <div id="flair-pack-row"></div>
     </div>
   </div>
 
@@ -3282,6 +3285,7 @@
     renderAchievementsScreen();
     checkAchievementToasts();
     renderPackShop();
+    renderFlairPackShop();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -3514,6 +3518,31 @@
       row.appendChild(card);
     });
   }
+  function renderFlairPackShop() {
+    const row = document.getElementById("flair-pack-row");
+    if (!row) return;
+    row.innerHTML = "";
+    const items = COSMETIC_CATALOG.effects;
+    FLAIR_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.flairPacks || {})[pack.id]
+        || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
+      const names = pack.flairs.map((id) => { const it = items.find((x) => x.id === id); return it ? it.label : id; }).join(", ");
+      const card = document.createElement("div");
+      card.className = "coin-pack-card pack-card";
+      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-flairs">${names}</div>`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "coin-pack-buy-btn";
+      btn.disabled = owned;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
+      if (!owned) btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
+      });
+      card.appendChild(btn);
+      row.appendChild(card);
+    });
+  }
   function renderCosmeticsShop() {
     renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
     renderFlairRows(document.getElementById("cosm-flairs-list"));
@@ -3654,13 +3683,12 @@
     const head = document.createElement("div");
     head.className = "cosm-pack-head";
     head.innerHTML = `<div><div class="cosm-pack-title">${pack.label}</div><div class="cosm-pack-sub">${subText}</div></div>`;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "cosm-unlock";
-    btn.disabled = owned;
-    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${pack.price}`;
-    if (!owned) btn.addEventListener("click", onUnlock);
-    head.appendChild(btn);
+    // Real-money pack purchases live on the Shop's Purchases tab; here the header just shows status.
+    const tag = document.createElement("div");
+    tag.className = "cosm-pack-sub";
+    tag.style.fontWeight = "700";
+    tag.textContent = owned ? "\u2713 Pack unlocked" : "Pack sold in Purchases";
+    head.appendChild(tag);
     return head;
   }
   function renderEmojiRows(container, statusEl) {
