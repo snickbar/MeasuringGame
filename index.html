@@ -984,6 +984,12 @@
     background-image: var(--icon-bot); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
 
+  #player-list li.bot-row { flex-wrap: wrap; gap: 6px; }
+  .bot-row-ctl { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .bot-row-ctl .bot-btn { height: 28px; min-width: 52px; font-size: 12px; border-width: 0 12px; opacity: .45; filter: grayscale(.5); }
+  .bot-row-ctl .bot-btn.selected { opacity: 1; filter: none; transform: scale(1.06); }
+  .bot-x-btn { width: 28px; height: 28px; padding: 0; margin: 0 0 0 4px; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid #8a3a2a; font-weight: 700; font-size: 14px; line-height: 1; }
+  .bot-x-btn:disabled { background: #bbb; border-color: #999; opacity: .6; }
   #bot-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
   #bot-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
   .bot-btn {
@@ -2633,7 +2639,7 @@
 <div id="lobby-screen" class="screen">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header">
-    <h1>Room: <span id="room-code-display"></span></h1>
+    <h1><span id="lobby-title-room">Room: <span id="room-code-display"></span></span><span id="lobby-title-solo" style="display:none;">Solo Game</span></h1>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
   </div>
 
@@ -2650,6 +2656,7 @@
     <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
     <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
     <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
+    <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
   </div>
   <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
@@ -3875,6 +3882,7 @@
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
     })[c]);
   }
+  const SOLO_MIN_BOTS = 4;
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
   const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.6, 1.4] };
   const BOT_NAMES = [
@@ -3977,6 +3985,22 @@
     av301: "LittleLancelot", av302: "SlickSplit", av279: "CapsuleCody", av290: "KrakenKalder",
     av303: "CaptainCoralie", av304: "ArrowAndy", av305: "ValkyrieVee", av306: "MossyMerlin",
   };
+
+  // Themed bot names: the avatar's key word (or just its first letter for
+  // people) picks an alliterative first name, e.g. owl -> "Ollie Owl". Kept
+  // to 12 characters, the player-name limit.
+  const AV_NAMEHINT = {"av01":"Bear","av02":"Cat","av03":"Owl","av04":"Aviator","av05":"Puppy","av06":"=b","av07":"=g","av08":"Panda","av09":"Dragon","av10":"Unicorn","av103":"Baker","av104":"Teacher","av105":"Farmer","av108":"=t","av11":"Astronaut","av111":"Doctor","av112":"Pilot","av114":"=g","av116":"Nutcracker","av120":"Spirit","av121":"Hanukkah","av124":"=p","av125":"=c","av126":"=b","av13":"Knight","av131":"Carpenter","av141":"Snake","av142":"Frog","av143":"Turtle","av145":"Macaw","av146":"Gecko","av149":"Basketball","av15":"Ninja","av150":"Soccer","av151":"Baseball","av152":"Volleyball","av153":"Sun","av154":"Football","av155":"Moon","av156":"Banana","av157":"Spider","av158":"Ladybug","av159":"Ant","av16":"Robot","av160":"Butterfly","av162":"Rose","av164":"Bird","av165":"=w","av166":"=b","av168":"Duckling","av169":"Kangaroo","av170":"Crab","av19":"=s","av20":"=b","av21":"=t","av22":"=a","av24":"Explorer","av25":"Chef","av26":"Fairy","av27":"Ghost","av28":"Slime","av29":"Crocodile","av31":"Cat","av32":"Pug","av33":"Retriever","av34":"Lion","av35":"Elephant","av38":"Giraffe","av39":"Monster","av40":"Creature","av41":"Dragon","av42":"Dragon","av43":"=k","av44":"=s","av45":"=b","av46":"Scientist","av47":"=s","av48":"=p","av49":"=a","av51":"Vampire","av52":"Werewolf","av53":"Mummy","av54":"Zombie","av55":"Robot","av58":"Pterodactyl","av59":"Shark","av60":"Cat","av61":"Cat","av62":"Octopus","av63":"Koala","av64":"Penguin","av65":"Sloth","av67":"Bat","av68":"Bunny","av69":"Helmet","av70":"=g","av72":"=c","av73":"Alien","av74":"Hedgehog","av75":"Chemist","av76":"Police","av77":"Handyman","av78":"=b","av79":"=g","av80":"Gingerbread","av83":"Snowman","av87":"Penguin","av88":"Kwanzaa","av89":"=c","av90":"Bear","av91":"Yeti","av92":"Carolers","av93":"=t","av94":"Krampus","av96":"King","av98":"Queen","av99":"=s","av117":"Reindeer","av118":"Santa","av119":"Elf","av133":"=h","av167":"Pigeon","av17":"Robot","av57":"T-rex","av97":"Skater","av100":"Lumberjack","av12":"Wizard","av148":"Fishbowl","av161":"Sunflower","av163":"Lily","av50":"=o","av81":"=p","av95":"Nicholas","av101":"Holly","av122":"Angel","av128":"Construction","av129":"Chef","av130":"Mailman","av132":"Nurse","av14":"Captain","av144":"Hamster","av18":"=s","av30":"Cat","av36":"Monkey","av171":"=g","av172":"=g","av173":"=o","av174":"=l","av175":"=m","av176":"=b","av177":"=f","av178":"=l","av179":"=h","av180":"=w","av181":"Firefighter","av182":"Puppy","av183":"Dj","av184":"Diver","av185":"Diwali","av186":"Eid","av187":"Sugar","av189":"Valentine","av190":"Pilgrim","av191":"Leprechaun","av192":"Raccoon","av193":"Panda","av194":"Otter","av195":"Capybara","av196":"Llama","av197":"Flamingo","av198":"Toucan","av199":"Peacock","av200":"Hippo","av201":"Zebra","av202":"Cow","av203":"Pig","av204":"Chicken","av205":"Horse","av206":"Deer","av207":"Squirrel","av208":"Mouse","av209":"Bee","av210":"Snail","av211":"Whale","av212":"Dolphin","av213":"Seahorse","av214":"Jelly","av215":"Pufferfish","av216":"Narwhal","av217":"Walrus","av218":"Seal","av219":"Triceratops","av220":"Stegosaurus","av221":"Mammoth","av222":"Sabertooth","av223":"Dodo","av224":"Axolotl","av225":"Frankenstein","av226":"Skeleton","av227":"Witch","av228":"Goblin","av229":"Troll","av230":"Gremlin","av231":"Imp","av232":"Bigfoot","av233":"Gargoyle","av234":"Nessie","av235":"Mimic","av236":"Shroom","av237":"Tree","av238":"Pumpkin","av239":"Mermaid","av240":"Archer","av241":"Dwarf","av242":"Centaur","av243":"Genie","av244":"Jester","av245":"Bard","av246":"Princess","av247":"Prince","av248":"Queen","av249":"Paladin","av250":"Mage","av251":"Kitsune","av252":"Tanuki","av253":"Phoenix","av254":"Griffin","av255":"Pegasus","av256":"Minotaur","av257":"Medusa","av258":"Cupcake","av259":"Pizza","av260":"Taco","av261":"Sushi","av262":"Donut","av263":"Boba","av264":"Ice","av265":"Cactus","av266":"Mushroom","av268":"Lightbulb","av269":"Rainbow","av270":"Bolt","av271":"Snowflake","av272":"Saturn","av273":"Trophy","av274":"Piggy","av275":"Ruler","av276":"Tape","av277":"Pencil","av278":"Dragon","av279":"Gacha","av280":"Whale","av281":"Cat","av282":"Owl","av283":"Fox","av284":"Golem","av285":"Golem","av286":"Phoenix","av287":"Dragon","av288":"Wolf","av289":"Jelly","av290":"Kraken","av291":"Dragon","av292":"Pirate","av293":"Spirit","av294":"Giant","av295":"Fox","av296":"Cat","av297":"Cat","av298":"Kitten","av299":"Glitch","av300":"Coin","av301":"Knight","av302":"Ruler","av303":"Pirate","av304":"Archer","av305":"Shieldmaiden","av306":"Druid"};
+  const BOT_FIRST = {"a":["Abe","Ava","Axel","Amy"],"b":["Bo","Bea","Ben","Buzz"],"c":["Cy","Cleo","Cody","Coco"],"d":["Dex","Dot","Dan","Dara"],"e":["Ed","Eve","Elmo","Etta"],"f":["Finn","Fay","Fred","Fifi"],"g":["Gus","Gigi","Gil","Gwen"],"h":["Hal","Hugo","Hope","Hank"],"i":["Ike","Ivy","Ian","Iris"],"j":["Jo","Jax","Jill","Jem"],"k":["Kit","Kai","Kay","Ken"],"l":["Lou","Lulu","Leo","Lana"],"m":["Max","Mo","Mia","Milo"],"n":["Nat","Nell","Ned","Nova"],"o":["Ollie","Oz","Opal","Otto"],"p":["Pip","Pete","Pam","Percy"],"q":["Quin","Quill","Quip"],"r":["Rex","Rue","Ron","Rosa"],"s":["Sam","Sue","Sid","Sky"],"t":["Tom","Tess","Ty","Tilly"],"u":["Uma","Ugo","Ula"],"v":["Vic","Val","Vera","Vin"],"w":["Wes","Wren","Wally","Win"],"x":["Xan","Xena","Xav"],"y":["Yan","Yara","Yogi"],"z":["Zed","Zoe","Zip","Ziggy"]};
+  function botNameFor(avatar, usedNames) {
+    const hint = AV_NAMEHINT[avatar] || "=r";
+    const justFirst = hint[0] === "=";
+    const letter = (justFirst ? hint[1] : hint[0]).toLowerCase();
+    const pool = (BOT_FIRST[letter] || BOT_FIRST.r).slice().sort(() => Math.random() - 0.5);
+    const full = (f) => (justFirst ? f : f + " " + hint);
+    const pick = pool.map(full).find((n) => n.length <= 12 && !usedNames.has(n))
+      || pool.find((n) => !usedNames.has(n)) || pool[0];
+    return pick;
+  }
 
   let currentName = localStorage.getItem("mg_name") || "";
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
@@ -5842,6 +5866,10 @@
     // visible/copyable for the entire game. Same paywall, same condition,
     // now applied here too.
     hudRoomCodeEl.classList.toggle("code-locked", !unlocked);
+    if (roomState && roomState.settings && roomState.settings.solo) {
+      shareRoomBtn.style.display = "none";
+      hostUnlockBannerEl.classList.remove("active");
+    }
   }
   // TEMP: simulates a successful purchase with no real payment, so the
   // unlock flow can be built and tested end-to-end before Google Play
@@ -6065,9 +6093,34 @@
         if (roomState.phase === "waiting") playSound("join");
       }
       const nameSpan = document.createElement("span");
-      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${p.isBot ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}`;
+      const botRowsOn = isHost && p.isBot && roomState && roomState.phase === "waiting";
+      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}`;
       li.appendChild(nameSpan);
-      if (isHost && id !== currentPlayerId) {
+      if (botRowsOn) {
+        li.classList.add("bot-row");
+        const ctl = document.createElement("div");
+        ctl.className = "bot-row-ctl";
+        ["easy", "medium", "hard"].forEach((d) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "bot-btn" + (p.botDifficulty === d ? " selected" : "");
+          b.textContent = d[0].toUpperCase() + d.slice(1);
+          b.dataset.difficulty = d;
+          b.addEventListener("click", () => update(ref(db, `rooms/${currentRoomCode}/players/${id}`), { botDifficulty: d }));
+          ctl.appendChild(b);
+        });
+        const x = document.createElement("button");
+        x.type = "button";
+        x.className = "bot-x-btn";
+        x.textContent = "\u2715";
+        x.setAttribute("aria-label", "Remove bot");
+        const isSolo = !!(roomState.settings && roomState.settings.solo);
+        const botCount = Object.values(currentPlayers).filter((q) => q.isBot).length;
+        x.disabled = isSolo && botCount <= SOLO_MIN_BOTS;
+        x.addEventListener("click", () => kickPlayer(id));
+        ctl.appendChild(x);
+        li.appendChild(ctl);
+      } else if (isHost && id !== currentPlayerId) {
         const btn = document.createElement("button");
         btn.textContent = "Kick";
         btn.className = "kick-btn";
@@ -6599,6 +6652,10 @@
     }
     if (pendingIsHost) {
       await joinRoomAsPlayer(pendingRoomCode, name, true, { settings: pendingSettings });
+      if (pendingSettings && pendingSettings.solo) {
+        // Solo Game starts with 4 bots (one at a time so frames/avatars/names don't collide).
+        for (let i = 0; i < SOLO_MIN_BOTS; i++) await addBot("medium");
+      }
       return;
     }
     nameAvatarStatusEl.textContent = "Joining room...";
@@ -6751,15 +6808,9 @@
     const avatarPool = unusedAvatars.length ? unusedAvatars : AVATARS;
     const avatar = avatarPool[Math.floor(Math.random() * avatarPool.length)];
     const usedNames = new Set(Object.values(existingPlayers).map((p) => p.name));
+    // Hand-picked themed name first; the generated alliterative name covers any avatar without one.
     const themedName = BOT_NAME_BY_AVATAR[avatar];
-    let name;
-    if (themedName && !usedNames.has(themedName)) {
-      name = themedName;
-    } else {
-      const freeNames = BOT_NAMES.filter((n) => !usedNames.has(n));
-      const namePool = freeNames.length ? freeNames : BOT_NAMES;
-      name = namePool[Math.floor(Math.random() * namePool.length)];
-    }
+    const name = (themedName && themedName.length <= 12 && !usedNames.has(themedName)) ? themedName : botNameFor(avatar, usedNames);
     const botId = "bot_" + Math.random().toString(36).slice(2, 10);
     await set(ref(db, `rooms/${currentRoomCode}/players/${botId}`), {
       name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
@@ -8969,6 +9020,21 @@
   const fitScoreNames = () => document.querySelectorAll(".score-card .name").forEach((el) => fitNameToCard(el));
   new ResizeObserver(() => fitScoreNames()).observe(scoreColEl); // refit when the column appears (it is hidden during the reveal animation)
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitScoreNames);
+  // Solo Game: no room code anywhere, one "+ Add bot" button instead of the
+  // Easy/Medium/Hard add buttons (difficulty is set per bot row).
+  function applyLobbyMode(data) {
+    const solo = !!(data.settings && data.settings.solo);
+    document.getElementById("lobby-title-room").style.display = solo ? "none" : "";
+    document.getElementById("lobby-title-solo").style.display = solo ? "" : "none";
+    if (solo) {
+      shareRoomBtn.style.display = "none";
+      hostUnlockBannerEl.classList.remove("active");
+    }
+    botControlsEl.querySelectorAll(".bot-btn:not(#solo-add-bot-btn), #bot-controls > span").forEach((el) => { el.style.display = solo ? "none" : ""; });
+    const addBtn = document.getElementById("solo-add-bot-btn");
+    addBtn.style.display = solo ? "" : "none";
+    addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
+  }
   function applyPhase(data) {
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
@@ -8984,9 +9050,10 @@
     if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting");
     hostStartBtn.style.display = isHost ? "flex" : "none";
     botControlsEl.style.display = isHost ? "flex" : "none";
+    applyLobbyMode(data);
     hudEl.classList.toggle("active", isHudActive);
     hudSubToolbarEl.classList.toggle("active", isHudActive);
-    hudRoomCodeGroupEl.classList.toggle("active", isHudActive);
+    hudRoomCodeGroupEl.classList.toggle("active", isHudActive && !(data.settings && data.settings.solo));
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final");
     reactionStripEl.classList.toggle("anim-locked", phase === "animation");
