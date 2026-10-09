@@ -533,6 +533,13 @@
   /* ---- Achievements ---- */
   #toolbar-awards-btn { position: relative; }
   #toolbar-awards-btn.has-claim::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+  /* Same pinned-header treatment as the Objects screen: stat boxes + the
+     Hide Completed toggle stay put while the award list scrolls underneath,
+     and the back button rides fixed in that same strip instead of its own
+     (now-removed) title row. */
+  #achievements-content .ach-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
+  #achievements-content .ach-sticky-head .items-stats { padding-right: 54px; }
+  #achievements-screen.active #achievements-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
   .ach-filter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; padding: 8px 12px; background: rgba(90,74,58,.07); border-radius: 10px; font-weight: 700; font-size: 14px; }
   .ach-switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; border: 2px solid #8a6a3a; border-radius: 14px; background: #d9cdb8; padding: 0; margin: 0; cursor: pointer; transition: background 160ms; }
   .ach-switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform 160ms; }
@@ -2266,9 +2273,6 @@
 
 <div id="achievements-screen" class="screen">
   <button id="achievements-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header">
-    <h1>Awards</h1>
-  </div>
   <div id="achievements-content"></div>
 </div>
 
@@ -5215,11 +5219,13 @@
     });
     if (!body) body = `<div class="ach-empty">Everything is claimed. Nice work!</div>`;
     el.innerHTML =
-      `<div class="items-stats">
-        <div class="items-stat-box"><div class="items-stat-value">${doneCount} / ${real.length}</div><div class="items-stat-label">Awards claimed</div></div>
-        <div class="items-stat-box"><div class="items-stat-value">${waiting}</div><div class="items-stat-label">Coins ready to claim</div></div>
-      </div>
-      <div class="ach-filter"><span>Hide completed</span><button type="button" id="ach-hide-switch" class="ach-switch${achHideDone ? " on" : ""}" role="switch" aria-checked="${achHideDone}" aria-label="Hide completed"></button></div>` + body;
+      `<div class="ach-sticky-head">
+        <div class="items-stats">
+          <div class="items-stat-box"><div class="items-stat-value">${doneCount} / ${real.length}</div><div class="items-stat-label">Awards claimed</div></div>
+          <div class="items-stat-box"><div class="items-stat-value">${waiting}</div><div class="items-stat-label">Coins ready to claim</div></div>
+        </div>
+        <div class="ach-filter"><span>Hide completed</span><button type="button" id="ach-hide-switch" class="ach-switch${achHideDone ? " on" : ""}" role="switch" aria-checked="${achHideDone}" aria-label="Hide completed"></button></div>
+      </div>` + body;
     achJustClaimed = null;
   }
 
