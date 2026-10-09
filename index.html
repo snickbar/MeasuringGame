@@ -135,8 +135,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #emoji-picker-settings-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #emoji-picker-settings-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -408,6 +408,7 @@
     border-image-source: url(icons/btn-cream.png); border-image-slice: 0 155 fill; color: #5b3a26; text-shadow: none;
   }
   button.cosm-tab-btn { --pic-h: 40px; flex: 1; font-size: 15px; }
+  .cosm-tab-icon { margin-right: 6px; font-size: 16px; line-height: 1; }
   button.cosm-equip, button.cosm-buy { width: 96px; }
   button.cosm-unlock { width: auto; min-width: 110px; }
   button.cosm-tab-btn.active, button.cosm-equip:not(:disabled):not(.is-on) {
@@ -416,7 +417,6 @@
   button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 0 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
-  #emoji-picker-settings-grid { display: block; }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
     border-width: 8px; border-style: solid; border-image-source: var(--btn2); border-image-slice: 55 fill;
@@ -709,7 +709,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #emoji-picker-settings-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen { position: relative; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -847,6 +847,10 @@
   .settings-signed-in-box p { flex: 1; min-width: 0; font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .settings-signed-in-box .edit-preset-settings-btn { width: auto; flex-shrink: 0; margin: 0; padding-inline: 16px; }
   #settings-account-status { font-size: 13px; color: var(--text-muted); min-height: 1.2em; margin: -8px 0 14px; }
+  .google-g-icon { width: 18px; height: 18px; flex-shrink: 0; }
+  .google-account-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .google-account-row { display: flex; align-items: center; gap: 8px; }
+  .google-account-row span#settings-signed-in-email-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ---- Preset slot buttons (Create screen = load, Preset-editing screen =
      save) - fixed-size regardless of label length, per the user's request,
@@ -1039,9 +1043,9 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(193,122,84,.55); }
     50% { box-shadow: 0 0 0 7px rgba(193,122,84,0); }
   }
-  #toolbar-help-btn.hint-pulse { border-radius: 12px; animation: helpHintPulse 1.6s ease-out infinite; }
+  #toolbar-settings-btn.hint-pulse { border-radius: 12px; animation: helpHintPulse 1.6s ease-out infinite; }
   @media (prefers-reduced-motion: reduce) {
-    #toolbar-help-btn.hint-pulse { animation: none; }
+    #toolbar-settings-btn.hint-pulse { animation: none; }
   }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
@@ -1080,6 +1084,7 @@
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
   .players-header h3 { margin: 0; flex-shrink: 0; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
+  .lobby-player-count { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
   @keyframes readyGlowPulse {
     0%, 100% { filter: drop-shadow(0 0 0 rgba(255,205,90,0)); }
     50% { filter: drop-shadow(0 0 7px rgba(255,205,90,.95)); }
@@ -1239,8 +1244,8 @@
   button.edit-preset-settings-btn { --pic-h: 46px; font-size: 16px; margin-bottom: 14px; }
   button#hud-auto-toggle { --pic-h: 32px; font-size: 12px; min-width: 86px; padding: 0 2px; }
 
-  /* Pills with an icon in the left cap: Submit guess (check) and Watch Ad (play). */
-  button#submit-guess-btn, button#watch-ad-btn.ad-reward-btn {
+  /* Pills with an icon in the left cap: Submit guess (check) and Watch Ad (play, reused for the final-screen double-coins button too). */
+  button#submit-guess-btn, button#watch-ad-btn.ad-reward-btn, button#final-double-coins-btn {
     color: #fff;
     display: flex; align-items: center; justify-content: center; text-align: center;
     box-sizing: border-box; margin: 0; background: transparent !important; border-radius: 0; box-shadow: none;
@@ -1255,6 +1260,10 @@
   }
   button#watch-ad-btn.ad-reward-btn {
     height: 38px; padding: 0; font-size: 14px; border-width: 0 19px 0 33px; border-image-source: url(icons/btn-watch-ad.png);
+  }
+  button#final-double-coins-btn {
+    width: 100%; height: 48px; margin: 16px 0 6px; padding: 0; font-size: 16px; white-space: nowrap;
+    border-width: 0 24px 0 42px; border-image-source: url(icons/btn-watch-ad.png);
   }
 
   /* Number keys: picture keys; the backspace picture carries its own arrow. */
@@ -1506,13 +1515,6 @@
     font-size: 26px; padding: 12px 0; min-width: 0;
     border-width: 11px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
   }
-
-  /* ---- Settings: "Choose Your Emojis" picker (up to 9, freely mixed from
-     defaults + any owned emoji packs) ---- */
-  #emoji-picker-settings-status { text-align: center; font-size: 14px; color: var(--text-muted); margin: 0 0 10px; }
-  #emoji-picker-settings-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  #emoji-picker-settings-grid .emoji-btn.selected { border-image-source: var(--btn-accent); }
-  #emoji-picker-settings-grid .emoji-btn.disabled-pick { opacity: .35; filter: grayscale(.6); }
 
   #reactions-panel {
     position: fixed; inset: 0; z-index: 900; pointer-events: none;
@@ -1890,7 +1892,6 @@
   <div id="toolbar-right-group">
     <button id="toolbar-items-btn" class="toolbar-badge-btn" type="button" aria-label="Items"><img src="icons/toolbar-items.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
-    <button id="toolbar-help-btn" class="toolbar-badge-btn" type="button" aria-label="How to play"><img src="icons/toolbar-help.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
     <button id="toolbar-exit-btn" class="toolbar-badge-btn" type="button" aria-label="Exit"><img src="icons/toolbar-exit.png" alt=""></button>
   </div>
@@ -2050,8 +2051,8 @@
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
     <div class="cosm-sticky-header">
       <div class="cosm-tabs" role="group" aria-label="Cosmetics">
-        <button type="button" class="cosm-tab-btn fit-text active" data-sub="emojis">Reactions</button>
-        <button type="button" class="cosm-tab-btn fit-text" data-sub="flairs">Flairs</button>
+        <button type="button" class="cosm-tab-btn fit-text active" data-sub="emojis"><span class="cosm-tab-icon" aria-hidden="true">👍</span>Reactions</button>
+        <button type="button" class="cosm-tab-btn fit-text" data-sub="flairs"><span class="cosm-tab-icon" aria-hidden="true">⭐</span>Flairs</button>
       </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <p id="cosm-emoji-status" class="cosm-sub cosm-sub-desc" data-sub="emojis"></p>
@@ -2092,13 +2093,19 @@
     <h1>Settings</h1>
   </div>
 
+  <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
   <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn">Edit Preset Game Settings</button>
-  <button id="edit-emoji-picker-btn" type="button" class="edit-preset-settings-btn">Choose Your Reactions</button>
 
   <h3>Account</h3>
-  <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn" style="display:none;">Sign in with Google</button>
+  <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn google-account-btn" style="display:none;">
+    <svg class="google-g-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    <span>Sign in with Google</span>
+  </button>
   <div id="settings-signed-in-box" class="settings-signed-in-box" style="display:none;">
-    <p id="settings-signed-in-email"></p>
+    <p id="settings-signed-in-email" class="google-account-row">
+      <svg class="google-g-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span id="settings-signed-in-email-text"></span>
+    </p>
     <button id="settings-sign-out-btn" type="button" class="edit-preset-settings-btn">Sign out</button>
   </div>
   <p id="settings-account-status"></p>
@@ -2344,15 +2351,6 @@
   </div>
 </div>
 
-<div id="emoji-picker-settings-screen" class="screen">
-  <button id="emoji-picker-settings-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header">
-    <h1>Choose Your Reactions</h1>
-  </div>
-  <p id="emoji-picker-settings-status"></p>
-  <div id="emoji-picker-settings-grid"></div>
-</div>
-
 <div id="preset-save-overlay">
   <div id="preset-save-card">
     <h3 id="preset-save-title">Save to Preset 1?</h3>
@@ -2416,6 +2414,7 @@
     <h3>Players</h3>
     <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
   </div>
+  <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
   <ul id="player-list"></ul>
 </div>
@@ -2489,6 +2488,7 @@
 <div id="final-screen" class="screen">
   <h1 id="final-title">&#127881; Final Results! &#127881;</h1>
   <ul id="final-list"></ul>
+  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch Ad: Double Your Coins</button>
 </div>
 
 <div id="ended-screen" class="screen">
@@ -2890,6 +2890,7 @@
       flairPacks: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
+      seenCombos: {},
     };
   }
   let myProfile = defaultProfile();
@@ -2969,7 +2970,6 @@
     renderHostUnlockUi();
     renderCosmeticsShop();
     renderReactionStrip();
-    renderEmojiPickerSettings();
     renderPresetSlotButtons();
     renderItemsScreen();
   }
@@ -3004,6 +3004,7 @@
           activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length) ? data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean)
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
+          seenCombos: { ...(data.seenCombos || {}) },
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -3032,6 +3033,11 @@
     const updates = {};
     if (unitId && !seen[unitId]) updates[`seenObjects/${unitId}`] = true;
     if (targetId && !seen[targetId]) updates[`seenObjects/${targetId}`] = true;
+    // Order-independent: "A vs B" and "B vs A" are the same combination.
+    if (unitId && targetId) {
+      const comboKey = [unitId, targetId].sort().join("|");
+      if (!(myProfile.seenCombos || {})[comboKey]) updates[`seenCombos/${comboKey}`] = true;
+    }
     if (Object.keys(updates).length) update(ref(db, `profiles/${deviceId}`), updates).catch(() => {});
   }
 
@@ -3042,8 +3048,13 @@
   // callback later; the cap-tracking logic underneath doesn't need to change.
   const DAILY_AD_COIN_CAP = 3;
   const AD_REWARD_COINS = 20; // coins per ad (keep the "+20" on the shop card in step)
+  // Local calendar date, not UTC - toISOString() rolls over at UTC midnight,
+  // which for most timezones is afternoon/evening local time, so the daily ad
+  // cap looked like it "didn't reset" until well past when the player's own
+  // day had already turned over.
   function todayDateStr() {
-    return new Date().toISOString().slice(0, 10);
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
   async function watchAdForCoins() {
     const today = todayDateStr();
@@ -3191,9 +3202,10 @@
   }
   let cosmNoteTimer = null;
   function cosmNote(msg) {
-    [document.getElementById("cosm-note"), emojiPickerSettingsStatusEl].forEach((el) => { if (el) el.textContent = msg; });
+    const n = document.getElementById("cosm-note");
+    if (n) n.textContent = msg;
     clearTimeout(cosmNoteTimer);
-    cosmNoteTimer = setTimeout(() => { const n = document.getElementById("cosm-note"); if (n) n.textContent = ""; renderEmojiPickerSettings(); }, 2200);
+    cosmNoteTimer = setTimeout(() => { if (n) n.textContent = ""; }, 2200);
   }
   async function buyEmojiWithCoins(e) {
     if ((myProfile.coins || 0) < EMOJI_COIN_COST) { cosmNote("Not enough coins yet."); return; }
@@ -3309,7 +3321,9 @@
     container.appendChild(label);
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
-      const owned = !!(myProfile.emojiPacks || {})[pack.id];
+      // Also "owned" once every reaction in the pack has been bought
+      // individually with coins - the bundle would have nothing left to add.
+      const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       container.appendChild(cosmPackHead(pack, owned, async () => {
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
@@ -3333,7 +3347,10 @@
     container.appendChild(label);
     items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
     FLAIR_PACK_CATALOG.forEach((pack) => {
-      const owned = !!(myProfile.flairPacks || {})[pack.id];
+      // Also "owned" once every flair in the pack has been bought
+      // individually with coins - the bundle would have nothing left to add.
+      const owned = !!(myProfile.flairPacks || {})[pack.id]
+        || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       container.appendChild(cosmPackHead(pack, owned, async () => {
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       }, `${pack.flairs.length} flairs, or buy each with coins`));
@@ -3679,6 +3696,7 @@
   const hostUnlockShopBoxEl = document.getElementById("host-unlock-shop-box");
   const hostUnlockShopBtn = document.getElementById("host-unlock-shop-btn");
   const playerList = document.getElementById("player-list");
+  const lobbyPlayerCountEl = document.getElementById("lobby-player-count");
   const hostStartBtn = document.getElementById("host-start-btn");
   const botControlsEl = document.getElementById("bot-controls");
   const lobbyStatusEl = document.getElementById("lobby-status");
@@ -3689,7 +3707,7 @@
   const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
   const toolbarItemsBtn = document.getElementById("toolbar-items-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
-  const toolbarHelpBtn = document.getElementById("toolbar-help-btn");
+  const settingsHowtoBtn = document.getElementById("settings-howto-btn");
   const toolbarExitBtn = document.getElementById("toolbar-exit-btn");
   const exitConfirmOverlayEl = document.getElementById("exit-confirm-overlay");
   const exitConfirmTitleEl = document.getElementById("exit-confirm-title");
@@ -3742,7 +3760,7 @@
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
   const settingsSignInBtn = document.getElementById("settings-sign-in-btn");
   const settingsSignOutBox = document.getElementById("settings-signed-in-box");
-  const settingsSignedInEmailEl = document.getElementById("settings-signed-in-email");
+  const settingsSignedInEmailEl = document.getElementById("settings-signed-in-email-text");
   const settingsSignOutBtn = document.getElementById("settings-sign-out-btn");
   const settingsAccountStatusEl = document.getElementById("settings-account-status");
 
@@ -3903,14 +3921,6 @@
   const presetSettingsScreen = document.getElementById("preset-settings-screen");
   const presetSettingsBackBtn = document.getElementById("preset-settings-back-btn");
 
-  // ---- Emoji reaction picker (choose up to 9 active emojis from the
-  // combined pool of defaults + any owned emoji packs) ----
-  const editEmojiPickerBtn = document.getElementById("edit-emoji-picker-btn");
-  const emojiPickerSettingsScreen = document.getElementById("emoji-picker-settings-screen");
-  const emojiPickerSettingsBackBtn = document.getElementById("emoji-picker-settings-back-btn");
-  const emojiPickerSettingsGridEl = document.getElementById("emoji-picker-settings-grid");
-  const emojiPickerSettingsStatusEl = document.getElementById("emoji-picker-settings-status");
-
   // The strip along the bottom of every in-game screen: your equipped reactions first, then any empty owned slots, then the locked ones.
   const reactionStripEl = document.getElementById("reaction-strip");
   let lastReactionTapAt = 0;
@@ -3960,10 +3970,6 @@
   });
   new ResizeObserver(() => document.documentElement.style.setProperty("--bottom-bar-h", `${bottomToolbarEl.offsetHeight || 58}px`)).observe(bottomToolbarEl);
 
-  function renderEmojiPickerSettings() {
-    renderEmojiRows(emojiPickerSettingsGridEl, emojiPickerSettingsStatusEl);
-  }
-
   async function toggleActiveEmoji(emoji) {
     const current = equippedReactions();
     let next;
@@ -3982,12 +3988,6 @@
     document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
     document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== btn.dataset.sub; });
   }));
-  editEmojiPickerBtn.addEventListener("click", () => {
-    renderEmojiPickerSettings();
-    openOverlay(emojiPickerSettingsScreen);
-    overlayReturnScreen = settingsScreen;
-  });
-  emojiPickerSettingsBackBtn.addEventListener("click", closeOverlay);
   const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
   const presetSettingTimerInput = document.getElementById("preset-setting-timer");
   const presetSettingRoundsInput = document.getElementById("preset-setting-rounds");
@@ -4070,6 +4070,7 @@
 
   const finalScreenEl = document.getElementById("final-screen");
   const finalListEl = document.getElementById("final-list");
+  const finalDoubleCoinsBtn = document.getElementById("final-double-coins-btn");
   const finalHomeBtn = document.getElementById("final-home-btn");
   const playAgainBtn = document.getElementById("play-again-btn");
   const endedScreenEl = document.getElementById("ended-screen");
@@ -4281,8 +4282,8 @@
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, emojiPickerSettingsScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, emojiPickerSettingsScreen];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -4355,15 +4356,19 @@
     };
   }
   toolbarSettingsBtn.addEventListener("click", guardToolbarNav(() => openOverlay(settingsScreen)));
+  // How to Play moved into Settings - the first-open nudge (a pulsing ring) now
+  // lives on the Settings icon itself instead, since that's the toolbar button
+  // that actually gets you there now.
   const HAS_SEEN_HOWTO_KEY = "mg_seenHowTo";
-  if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) toolbarHelpBtn.classList.add("hint-pulse");
-  toolbarHelpBtn.addEventListener("click", guardToolbarNav(() => {
+  if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) toolbarSettingsBtn.classList.add("hint-pulse");
+  settingsHowtoBtn.addEventListener("click", () => {
     if (!localStorage.getItem(HAS_SEEN_HOWTO_KEY)) {
       localStorage.setItem(HAS_SEEN_HOWTO_KEY, "1");
-      toolbarHelpBtn.classList.remove("hint-pulse");
+      toolbarSettingsBtn.classList.remove("hint-pulse");
     }
     openOverlay(howtoScreen);
-  }));
+    overlayReturnScreen = settingsScreen;
+  });
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
   toolbarExitBtn.addEventListener("click", () => {
@@ -4644,6 +4649,7 @@
     const totalCount = OBJECTS.length;
     const seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
     const comboCount = (totalCount * (totalCount - 1)) / 2;
+    const seenComboCount = Object.keys(myProfile.seenCombos || {}).length;
     itemsContentEl.innerHTML =
       `<div class="items-stats">
         <div class="items-stat-box">
@@ -4651,8 +4657,8 @@
           <div class="items-stat-label">Items seen</div>
         </div>
         <div class="items-stat-box">
-          <div class="items-stat-value">${comboCount.toLocaleString()}</div>
-          <div class="items-stat-label">Possible match-ups</div>
+          <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
+          <div class="items-stat-label">Combinations seen</div>
         </div>
       </div>` +
       `<p class="items-intro">Every object that can come up in a round, A to Z. Items you haven't seen in a round yet are dimmed.</p>` +
@@ -5147,6 +5153,8 @@
       }
       playerList.appendChild(li);
     });
+    const playerCount = Object.keys(currentPlayers).length;
+    lobbyPlayerCountEl.textContent = `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here`;
     if (!isFirstRender && roomState.phase === "waiting") {
       for (const id of renderedPlayerListIds) {
         if (!newIds.has(id)) { playSound("leave"); break; }
@@ -7340,12 +7348,17 @@
   }
 
   let finalRendered = false;
+  let finalCoinsDoubled = false;
   function renderFinal() {
     if (finalRendered) return;
     finalRendered = true;
     const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
     const coinsBeforeAward = myProfile.coins;
     const willAnimateCoins = myFinalScore > 0;
+    finalDoubleCoinsBtn.style.display = myFinalScore > 0 ? "flex" : "none";
+    finalDoubleCoinsBtn.disabled = false;
+    finalDoubleCoinsBtn.textContent = "Watch Ad: Double Your Coins";
+    finalScoreForDouble = myFinalScore;
     // Set before awardCoinsForGameEnd fires, not after: the Firebase round-trip
     // can resolve (and renderCoinBalance() can snap the toolbar number to its
     // final value) before our own delayed animation below even starts, which
@@ -7412,6 +7425,18 @@
       playSound("win");
     }, rank1Delay + 350);
   }
+  // TEMP: no real ad SDK wired up yet, same simulated-watch pattern as
+  // watchAdForCoins - one-time per game (finalCoinsDoubled, reset alongside
+  // finalRendered whenever a new game/round starts), not a repeatable
+  // daily-cap mechanic like the other ad button.
+  let finalScoreForDouble = 0;
+  finalDoubleCoinsBtn.addEventListener("click", async () => {
+    if (finalCoinsDoubled || finalScoreForDouble <= 0) return;
+    finalCoinsDoubled = true;
+    finalDoubleCoinsBtn.disabled = true;
+    finalDoubleCoinsBtn.textContent = "Doubled!";
+    await addCoins(finalScoreForDouble);
+  });
 
   // ==================== Sound / confetti ====================
 
@@ -7967,6 +7992,7 @@
       revealAnimating = false;
       summaryScrollStarted = false;
       finalRendered = false;
+      finalCoinsDoubled = false;
       renderGuessDisplay();
       updateWaitingUi();
     }
