@@ -405,6 +405,11 @@
     display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px;
     padding: 8px 10px; background: #fffaf0; border: 3px solid #d9c3a3; border-radius: 14px;
   }
+  .cosm-actions { display: flex; align-items: center; gap: 6px; }
+  .cosm-preview {
+    width: auto; margin: 0; padding: 6px 10px; font-size: 13px; font-weight: 700; font-family: 'Fredoka', sans-serif;
+    border: 2px solid #d9c3a3; border-radius: 10px; background: #fff; color: #5a4a3a;
+  }
   .cosm-row.equipped { border-color: #4caf50; background: #f1fae9; }
   .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .cosm-flair-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
@@ -3317,7 +3322,21 @@
       btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
       btn.addEventListener("click", o.onBuy);
     }
-    row.appendChild(btn);
+    if (o.onPreview) {
+      const wrap = document.createElement("div");
+      wrap.className = "cosm-actions";
+      const pv = document.createElement("button");
+      pv.type = "button";
+      pv.className = "cosm-preview";
+      pv.textContent = "Preview";
+      pv.setAttribute("aria-label", `Preview ${o.name}`);
+      pv.addEventListener("click", o.onPreview);
+      wrap.appendChild(pv);
+      wrap.appendChild(btn);
+      row.appendChild(wrap);
+    } else {
+      row.appendChild(btn);
+    }
     return row;
   }
   function cosmPackHead(pack, owned, onUnlock, subText) {
@@ -3341,6 +3360,7 @@
     const row = (e, cost) => cosmRow({
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e),
+      onPreview: () => previewReaction(e),
       onEquip: () => {
         if (!active.includes(e) && active.length >= slots) { cosmNote(`All ${slots} slots are full. Unequip one first.`); return; }
         toggleActiveEmoji(e);
@@ -3381,6 +3401,7 @@
     const row = (item) => cosmRow({
       leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
       owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id,
+      onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
     });
     const items = COSMETIC_CATALOG.effects;
@@ -6903,6 +6924,7 @@
       const mid = Math.min(Math.max(rect.top + rect.height / 2, col.top + RX_STAGE / 2), col.bottom - RX_STAGE / 2); // stay in view if the card is scrolled away
       top = mid - RX_STAGE / 2;
     }
+    if (r.previewAt) { left = r.previewAt.x - RX_STAGE / 2; top = r.previewAt.y - RX_STAGE / 2; }
     if (rxShowing[r.playerId]) { rxShowing[r.playerId].remove(); delete rxShowing[r.playerId]; }
     const stage = document.createElement("div");
     stage.className = "rx-stage";
@@ -7668,6 +7690,25 @@
     }
     requestAnimationFrame(frame);
   }
+  // Shop previews: play a reaction, or a whole flair (orbit, then burst), on a stand-in card in the middle of the screen.
+  function previewReaction(emoji) {
+    renderReactionBubble({ playerId: "__preview__", emoji, previewAt: { x: window.innerWidth / 2, y: window.innerHeight / 2 } });
+  }
+  let flairPreviewBusy = false;
+  function previewFlair(flairId) {
+    if (flairPreviewBusy || !FLAIRS[flairId]) return;
+    flairPreviewBusy = true;
+    const card = document.createElement("div");
+    card.textContent = "Your card";
+    card.style.cssText = "position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);width:200px;height:84px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:#fffaf0;border:4px solid #d9a441;box-shadow:0 6px 18px rgba(0,0,0,.25);font:700 20px 'Fredoka',sans-serif;color:#5a4a3a;pointer-events:none;";
+    reactionsPanelEl.appendChild(card);
+    const drumMs = flairDrumMs(), f = FLAIRS[flairId];
+    playSound("drumroll");
+    flairOrbit(card, flairId, drumMs);
+    setTimeout(() => { flairBurst(card, flairId); playSound("roundwin"); }, drumMs);
+    setTimeout(() => { card.remove(); flairPreviewBusy = false; }, drumMs + Math.max(2500, f.life || 0) + 300);
+  }
+
   // The newer flair bursts. They fill the whole screen (the layer is fixed over the viewport), centred on the winner's card.
   // Each particle's position is a function of time, so a longer "life" simply lasts longer. Returns true when it handled the flair.
   function flairBurstNew(layer, f, li, r, cx, cy) {
