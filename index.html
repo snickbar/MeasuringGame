@@ -568,10 +568,10 @@
     color: var(--brand); margin: 0 0 4px; padding-bottom: 3px; border-bottom: 1px solid rgba(90,74,58,.18);
   }
   .items-row { padding: 7px 2px; font-size: 15px; border-bottom: 1px solid rgba(90,74,58,.08); }
-  .items-row { cursor: pointer; }
+  .items-row { cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   #item-popup {
     position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,.55);
+    background: rgba(0,0,0,.45);
   }
   #item-popup .item-popup-card {
     background: #fffaf0; border: 4px solid #d9c3a3; border-radius: 20px; padding: 18px 20px 14px;
@@ -580,7 +580,7 @@
   #item-popup img { display: block; width: 100%; max-height: 240px; object-fit: contain; margin: 0 auto 10px; }
   #item-popup .item-popup-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: var(--text); text-transform: capitalize; }
   #item-popup .item-popup-card { position: relative; }
-  #item-popup .item-popup-x { position: absolute; top: -14px; right: -14px; width: 38px; height: 38px; padding: 0; margin: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff7a5f, #c1352a); color: #fff; font-size: 20px; font-weight: 700; line-height: 1; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #item-popup .item-popup-x { position: absolute; top: -12px; right: -12px; width: 28px; height: 28px; margin: 0; padding: 0; border-radius: 50%; border: 2px solid #fff; border-image: none; background: #d9534f; color: #fff; font-size: 18px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.35); pointer-events: none; }
   #item-popup .item-popup-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
   /* Long-press zoom on an avatar tile (picker grids + the "View All" collection) -
      stays up after release (tap the X, or anywhere, to close) rather than
@@ -5227,11 +5227,20 @@
     ov.id = "item-popup";
     ov.innerHTML = `<div class="item-popup-card"><img alt="" src="${obj.image}"><div class="item-popup-name"></div><button type="button" class="item-popup-x" aria-label="Close">&#10005;</button></div>`;
     ov.querySelector(".item-popup-name").textContent = obj.name;
-    ov.querySelector(".item-popup-x").addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
+    ov.addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
     document.body.appendChild(ov);
   }
   if (itemsContentEl) {
-    itemsContentEl.addEventListener("click", (e) => { const r = e.target.closest(".items-row"); if (r) openItemPopup(r.dataset.id); });
+    // Long-press a discovered object (same 400ms hold as the avatar tiles) to see it bigger.
+    let itemHoldTimer = null;
+    itemsContentEl.addEventListener("pointerdown", (e) => {
+      const r = e.target.closest(".items-row");
+      if (!r || !r.dataset.id) return;
+      clearTimeout(itemHoldTimer);
+      itemHoldTimer = setTimeout(() => openItemPopup(r.dataset.id), 400);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => itemsContentEl.addEventListener(evt, () => clearTimeout(itemHoldTimer)));
+    itemsContentEl.addEventListener("contextmenu", (e) => { if (e.target.closest(".items-row")) e.preventDefault(); });
     itemsContentEl.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { const r = e.target.closest(".items-row"); if (r) { e.preventDefault(); openItemPopup(r.dataset.id); } } });
   }
 
