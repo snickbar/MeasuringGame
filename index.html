@@ -579,6 +579,8 @@
   }
   #item-popup img { display: block; width: 100%; max-height: 240px; object-fit: contain; margin: 0 auto 10px; }
   #item-popup .item-popup-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: var(--text); text-transform: capitalize; }
+  #item-popup .item-popup-card { position: relative; }
+  #item-popup .item-popup-x { position: absolute; top: -14px; right: -14px; width: 38px; height: 38px; padding: 0; margin: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff7a5f, #c1352a); color: #fff; font-size: 20px; font-weight: 700; line-height: 1; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
   #item-popup .item-popup-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
   .items-row:last-child { border-bottom: none; }
   .items-row.unseen { opacity: .4; }
@@ -4967,8 +4969,9 @@
     OBJECTS.forEach((obj) => {
       const display = obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
       const letter = display.charAt(0).toUpperCase();
-      (groups[letter] = groups[letter] || []).push({ display, id: obj.id, seen: !!seenSet[obj.id] });
+      if (seenSet[obj.id]) (groups[letter] = groups[letter] || []).push({ display, id: obj.id, seen: true });
     });
+    const lockedCount = OBJECTS.filter((o) => !seenSet[o.id]).length;
     const letters = Object.keys(groups).sort();
     letters.forEach((letter) => groups[letter].sort((a, b) => a.display.localeCompare(b.display)));
     const totalCount = OBJECTS.length;
@@ -4986,12 +4989,13 @@
           <div class="items-stat-label">Combinations seen</div>
         </div>
       </div>` +
-      `<p class="items-intro">Every object that can come up in a round, A to Z. Objects you haven't seen in a round yet are dimmed.</p>` +
+      `<p class="items-intro">Every object that can come up in a round. Objects you haven't seen yet stay hidden until you meet them in a round.</p>` +
       letters.map((letter) => `
         <div class="items-letter-group">
           <div class="items-letter-title">${letter}</div>
           <div class="items-list">${groups[letter].map((o) => `<div class="items-row${o.seen ? "" : " unseen"}" data-id="${o.id}" role="button" tabindex="0">${o.display}</div>`).join("")}</div>
-        </div>`).join("");
+        </div>`).join("") +
+      (lockedCount ? `<div class="items-letter-group"><div class="items-letter-title">Not discovered yet</div><div class="items-list">${Array.from({ length: lockedCount }, () => `<div class="items-row unseen locked" style="cursor:default">????</div>`).join("")}</div></div>` : "");
   }
 
 
@@ -5173,9 +5177,9 @@
     if (!obj) return;
     const ov = document.createElement("div");
     ov.id = "item-popup";
-    ov.innerHTML = `<div class="item-popup-card"><img alt="" src="${obj.image}"><div class="item-popup-name"></div><div class="item-popup-hint">Tap anywhere to close</div></div>`;
+    ov.innerHTML = `<div class="item-popup-card"><img alt="" src="${obj.image}"><div class="item-popup-name"></div><button type="button" class="item-popup-x" aria-label="Close">&#10005;</button></div>`;
     ov.querySelector(".item-popup-name").textContent = obj.name;
-    ov.addEventListener("click", () => ov.remove());
+    ov.querySelector(".item-popup-x").addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
     document.body.appendChild(ov);
   }
   if (itemsContentEl) {
