@@ -568,10 +568,10 @@
     color: var(--brand); margin: 0 0 4px; padding-bottom: 3px; border-bottom: 1px solid rgba(90,74,58,.18);
   }
   .items-row { padding: 7px 2px; font-size: 15px; border-bottom: 1px solid rgba(90,74,58,.08); }
-  .items-row { cursor: pointer; }
+  .items-row { cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   #item-popup {
     position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,.55);
+    background: rgba(0,0,0,.45);
   }
   #item-popup .item-popup-card {
     background: #fffaf0; border: 4px solid #d9c3a3; border-radius: 20px; padding: 18px 20px 14px;
@@ -579,6 +579,8 @@
   }
   #item-popup img { display: block; width: 100%; max-height: 240px; object-fit: contain; margin: 0 auto 10px; }
   #item-popup .item-popup-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: var(--text); text-transform: capitalize; }
+  #item-popup .item-popup-card { position: relative; }
+  #item-popup .item-popup-x { position: absolute; top: -12px; right: -12px; width: 28px; height: 28px; margin: 0; padding: 0; border-radius: 50%; border: 2px solid #fff; border-image: none; background: #d9534f; color: #fff; font-size: 18px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.35); pointer-events: none; }
   #item-popup .item-popup-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
   /* Long-press zoom on an avatar tile (picker grids + the "View All" collection) -
      stays up after release (tap the X, or anywhere, to close) rather than
@@ -5015,8 +5017,9 @@
     OBJECTS.forEach((obj) => {
       const display = obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
       const letter = display.charAt(0).toUpperCase();
-      (groups[letter] = groups[letter] || []).push({ display, id: obj.id, seen: !!seenSet[obj.id] });
+      if (seenSet[obj.id]) (groups[letter] = groups[letter] || []).push({ display, id: obj.id, seen: true });
     });
+    const lockedCount = OBJECTS.filter((o) => !seenSet[o.id]).length;
     const letters = Object.keys(groups).sort();
     letters.forEach((letter) => groups[letter].sort((a, b) => a.display.localeCompare(b.display)));
     const totalCount = OBJECTS.length;
@@ -5034,12 +5037,13 @@
           <div class="items-stat-label">Combinations seen</div>
         </div>
       </div>` +
-      `<p class="items-intro">Every object that can come up in a round, A to Z. Objects you haven't seen in a round yet are dimmed.</p>` +
+      `<p class="items-intro">Every object that can come up in a round. Objects you haven't seen yet stay hidden until you meet them in a round.</p>` +
       letters.map((letter) => `
         <div class="items-letter-group">
           <div class="items-letter-title">${letter}</div>
           <div class="items-list">${groups[letter].map((o) => `<div class="items-row${o.seen ? "" : " unseen"}" data-id="${o.id}" role="button" tabindex="0">${o.display}</div>`).join("")}</div>
-        </div>`).join("");
+        </div>`).join("") +
+      (lockedCount ? `<div class="items-letter-group"><div class="items-letter-title">Not discovered yet</div><div class="items-list">${Array.from({ length: lockedCount }, () => `<div class="items-row unseen locked" style="cursor:default">????</div>`).join("")}</div></div>` : "");
   }
 
 
@@ -5221,13 +5225,22 @@
     if (!obj) return;
     const ov = document.createElement("div");
     ov.id = "item-popup";
-    ov.innerHTML = `<div class="item-popup-card"><img alt="" src="${obj.image}"><div class="item-popup-name"></div><div class="item-popup-hint">Tap anywhere to close</div></div>`;
+    ov.innerHTML = `<div class="item-popup-card"><img alt="" src="${obj.image}"><div class="item-popup-name"></div><button type="button" class="item-popup-x" aria-label="Close">&#10005;</button></div>`;
     ov.querySelector(".item-popup-name").textContent = obj.name;
-    ov.addEventListener("click", () => ov.remove());
+    ov.addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
     document.body.appendChild(ov);
   }
   if (itemsContentEl) {
-    itemsContentEl.addEventListener("click", (e) => { const r = e.target.closest(".items-row"); if (r) openItemPopup(r.dataset.id); });
+    // Long-press a discovered object (same 400ms hold as the avatar tiles) to see it bigger.
+    let itemHoldTimer = null;
+    itemsContentEl.addEventListener("pointerdown", (e) => {
+      const r = e.target.closest(".items-row");
+      if (!r || !r.dataset.id) return;
+      clearTimeout(itemHoldTimer);
+      itemHoldTimer = setTimeout(() => openItemPopup(r.dataset.id), 400);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => itemsContentEl.addEventListener(evt, () => clearTimeout(itemHoldTimer)));
+    itemsContentEl.addEventListener("contextmenu", (e) => { if (e.target.closest(".items-row")) e.preventDefault(); });
     itemsContentEl.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { const r = e.target.closest(".items-row"); if (r) { e.preventDefault(); openItemPopup(r.dataset.id); } } });
   }
 
