@@ -1284,7 +1284,6 @@
   #room-code-display.code-locked { filter: blur(5px); user-select: none; }
   #hud-room-code.code-locked { filter: blur(4px); user-select: none; }
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
-  .players-header h3 { margin: 0; flex-shrink: 0; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
   .lobby-player-count { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--text-muted); }
   @keyframes readyGlowPulse {
@@ -1308,6 +1307,15 @@
   #create-room-btn {
     width: 100%; aspect-ratio: 1000 / 157; padding: 0 6% 0 15%; margin: 10px 0; font-size: 24px;
     background-image: url(icons/btn-create-room.png);
+  }
+  /* Living in the header now (next to the back button) instead of its own
+     full-width row below the settings - aspect-ratio is dropped in favor of
+     an explicit height matching what the button's height WOULD be at full
+     content width, so narrowing it to fit here doesn't also shrink it
+     vertically; the background art (background-size: 100% 100%, set above)
+     just stretches to fill whatever box results instead of distorting. */
+  .setup-header #create-room-btn {
+    aspect-ratio: auto; width: 100%; height: calc((min(100vw, 520px) - 24px) * 0.157); margin: 0;
   }
   #join-lobby-btn {
     aspect-ratio: 900 / 163; padding: 0 6% 0 17%; font-size: 24px;
@@ -2424,7 +2432,7 @@
 <div id="create-screen" class="screen">
   <button id="create-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="setup-header">
-    <h1>Create Game</h1>
+    <button id="create-room-btn">Create Room</button>
   </div>
 
   <div id="create-preset-row" class="preset-slot-row">
@@ -2485,7 +2493,6 @@
   </div>
 
   <p id="create-status"></p>
-  <button id="create-room-btn">Create Room</button>
 </div>
 
 <div id="preset-settings-screen" class="screen">
@@ -2626,15 +2633,14 @@
     <button id="host-unlock-btn" type="button">Unlock for $9.99 &middot; One time</button>
   </div>
 
+  <div class="players-header">
+    <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
+  </div>
   <div id="bot-controls">
     <span>Add bot:</span>
     <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
     <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
     <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
-  </div>
-  <div class="players-header">
-    <h3>Players</h3>
-    <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
   </div>
   <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
@@ -6395,7 +6401,15 @@
   let pendingRoomCode = null;
   let pendingIsHost = false;
   let pendingSettings = null;
-  let nameAvatarCameFrom = null; // "create" | "join" — for the back button
+  let nameAvatarCameFrom = null; // "create" | "join" | "lobby" — for the back button
+  // True while viewing the name/avatar screen reached via the Lobby's own
+  // back button (editing your already-submitted name/avatar in place,
+  // rather than the normal fresh-join flow). applyPhase() has to know about
+  // this: phase stays "waiting" the whole time you're in the lobby, and its
+  // own room listener fires on every lobby change (someone joining, a bot
+  // added, etc.) - each time, it would otherwise force the Lobby screen
+  // straight back into view out from under you.
+  let editingFromLobby = false;
 
   function showCreateScreen() {
     currentSettings = DEFAULT_SETTINGS();
@@ -6460,21 +6474,27 @@
   }
   nameAvatarBackBtn.addEventListener("click", () => {
     nameAvatarScreenEl.classList.remove("active");
-    if (nameAvatarCameFrom === "create") {
+    if (nameAvatarCameFrom === "lobby") {
+      editingFromLobby = false;
+      if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
+      lobbyScreenEl.classList.add("active");
+    } else if (nameAvatarCameFrom === "create") {
       createScreenEl.classList.add("active");
     } else {
       joinScreen.classList.add("active");
     }
   });
-  // A plain screen toggle isn't safe here: the room's live listener
-  // (watchRoom -> applyPhase) keeps running and will keep forcing Lobby (and
-  // the HUD, if the game starts while you're away) back into view regardless
-  // of whatever screen you manually navigated to - this app has no existing
-  // "leave a room without reloading" path, every other exit (Home, Exit)
-  // works by reloading, which is what actually tears the listeners down.
-  // Matching that same proven-safe pattern here instead of inventing a new
-  // one blind.
-  lobbyBackBtn.addEventListener("click", () => location.reload());
+  // Goes to the name/avatar screen to edit in place - NOT a real "leave the
+  // room" (that's lobby-back's old behavior before this, still used by the
+  // actual Exit button); the room listener's own editingFromLobby guard (see
+  // applyPhase()) is what keeps it from forcing Lobby straight back into
+  // view on the very next room update.
+  lobbyBackBtn.addEventListener("click", () => {
+    editingFromLobby = true;
+    pendingRoomCode = currentRoomCode;
+    lobbyScreenEl.classList.remove("active");
+    showNameAvatarScreen("lobby");
+  });
 
   let hostTransferModeChoice = "reassign";
   hostModeControlsEl.addEventListener("click", (e) => {
@@ -6546,6 +6566,21 @@
   joinLobbyBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim().slice(0, 12);
     if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
+    if (editingFromLobby) {
+      // A lightweight update to the existing player record, not the full
+      // join flow below - re-running that here (which only knows how to
+      // create a new player or reclaim a DISCONNECTED one) would leave this
+      // still-connected player behind as an orphan AND create a duplicate.
+      lastSyncedFlair = myEquippedFlair();
+      await update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { name, avatar: currentAvatar, flair: lastSyncedFlair });
+      currentName = name;
+      localStorage.setItem("mg_name", name);
+      editingFromLobby = false;
+      if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
+      nameAvatarScreenEl.classList.remove("active");
+      lobbyScreenEl.classList.add("active");
+      return;
+    }
     if (pendingIsHost) {
       await joinRoomAsPlayer(pendingRoomCode, name, true, { settings: pendingSettings });
       return;
@@ -8921,8 +8956,16 @@
   function applyPhase(data) {
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
+    // The game actually starting (or anything else moving the phase off
+    // "waiting") while someone's mid-edit cancels the edit outright rather
+    // than leaving the name/avatar screen stuck showing on top of the HUD
+    // this function is about to bring up below it.
+    if (editingFromLobby && phase !== "waiting") {
+      editingFromLobby = false;
+      nameAvatarScreenEl.classList.remove("active");
+    }
     const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
-    lobbyScreenEl.classList.toggle("active", phase === "waiting");
+    if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting");
     hostStartBtn.style.display = isHost ? "flex" : "none";
     botControlsEl.style.display = isHost ? "flex" : "none";
     hudEl.classList.toggle("active", isHudActive);
