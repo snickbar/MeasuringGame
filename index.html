@@ -984,11 +984,19 @@
     background-image: var(--icon-bot); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
 
-  #player-list li.bot-row { flex-wrap: wrap; gap: 6px; }
-  .bot-row-ctl { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-  .bot-row-ctl .bot-btn { height: 28px; min-width: 52px; font-size: 12px; border-width: 0 12px; opacity: .45; filter: grayscale(.5); }
+  #player-list li.bot-row { position: relative; flex-wrap: nowrap; gap: 4px; padding-block: 6px; min-height: 0; }
+  #player-list li.bot-row > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  #player-list li.bot-row .player-avatar { margin-right: 4px; }
+  .solo-lobby .screen-header { display: none; }
+  #lobby-status:empty { display: none; }
+  .solo-lobby .players-header { margin: 6px 0 0; padding-right: 70px; }
+  .solo-lobby .players-header h3 { display: none; }
+  .solo-lobby #host-start-btn { font-size: 14px; padding: 8px 6px; max-width: none; }
+  .solo-lobby #bot-controls { margin: 8px 0 0; }
+  .bot-row-ctl { display: flex; align-items: center; gap: 3px; margin-left: 0; flex-shrink: 0; }
+  .bot-row-ctl .bot-btn { height: 26px; min-width: 44px; font-size: 11px; border-width: 0 9px; opacity: .45; filter: grayscale(.5); }
   .bot-row-ctl .bot-btn.selected { opacity: 1; filter: none; transform: scale(1.06); }
-  .bot-x-btn { width: 28px; height: 28px; padding: 0; margin: 0 0 0 4px; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid #8a3a2a; font-weight: 700; font-size: 14px; line-height: 1; }
+  .bot-x-btn { position: absolute; top: -8px; right: -6px; width: 22px; height: 22px; padding: 0; margin: 0; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid #8a3a2a; font-weight: 700; font-size: 12px; line-height: 1; }
   .bot-x-btn:disabled { background: #bbb; border-color: #999; opacity: .6; }
   #bot-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
   #bot-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
@@ -8006,12 +8014,8 @@
     Object.keys(currentPlayers).forEach((id) => { finalScores[id] = currentPlayers[id].score || 0; });
     const displayed = {};
     Object.keys(finalScores).forEach((id) => { displayed[id] = finalScores[id] - (lastRoundPoints[id] || 0); });
-    // The true-answer pickers' points land with the first card.
-    if (revealIndex >= 1) (roomState.truthPickedBy || []).forEach((p) => { displayed[p.playerId] = (displayed[p.playerId] || 0) + p.points; });
-    order.slice(0, revealIndex).forEach((entry) => {
-      displayed[entry.playerId] = (displayed[entry.playerId] || 0) + entry.basePoints + entry.doubleDownPoints + (entry.crowdFavoritePoints || 0);
-      (entry.pickedBy || []).forEach((p) => { displayed[p.playerId] = (displayed[p.playerId] || 0) + p.points; });
-    });
+    // The score column holds last round's totals for the whole reveal; this round's points
+    // tally when the round summary screen appears.
     return displayed;
   }
 
@@ -9040,6 +9044,7 @@
   // Easy/Medium/Hard add buttons (difficulty is set per bot row).
   function applyLobbyMode(data) {
     const solo = !!(data.settings && data.settings.solo);
+    lobbyScreenEl.classList.toggle("solo-lobby", solo);
     document.getElementById("lobby-title-room").style.display = solo ? "none" : "";
     document.getElementById("lobby-title-solo").style.display = solo ? "" : "none";
     if (solo) {
