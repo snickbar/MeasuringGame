@@ -4692,6 +4692,14 @@
   let renderedPlayerListIds = new Set();
   let currentSettings = { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything" };
   let roomState = {};
+  // Set right before any of the "we're leaving/ending this room for good"
+  // sequences (finalHomeBtn, guestExit, hostExit) start their own awaited
+  // writes/cleanup. Without it, the room listener below still fires on our
+  // own "phase: ended" write mid-sequence and briefly renders the ended
+  // screen (or whatever phase just changed to) before the sequence's own
+  // final navigation (reload/showLeftScreen) takes over a moment later -
+  // a visible flash of a screen we're already on our way out of.
+  let leavingGame = false;
 
   let currentGuessStr = "";
   let hasSubmittedThisRound = false;
@@ -7532,6 +7540,7 @@
   // whoever's left, including the host potentially hitting Play Again.
   finalHomeBtn.addEventListener("click", async () => {
     if (!isHost) { await guestExit(); return; }
+    leavingGame = true;
     const roomCode = currentRoomCode;
     await update(ref(db, `rooms/${roomCode}`), { phase: "ended" });
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
@@ -7557,6 +7566,7 @@
   }
 
   async function guestExit() {
+    leavingGame = true;
     const roomCode = currentRoomCode;
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
@@ -7565,6 +7575,7 @@
   }
 
   async function hostExit() {
+    leavingGame = true;
     const roomCode = currentRoomCode;
     await set(ref(db, `rooms/${roomCode}/phase`), "ended");
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
@@ -9058,6 +9069,7 @@
 
   function watchRoom(roomCode) {
     onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
+      if (leavingGame) return; // see the comment on its declaration
       const data = snapshot.val() || {};
       roomState = data;
       currentPlayers = data.players || {};
