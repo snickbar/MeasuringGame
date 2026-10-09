@@ -236,7 +236,7 @@
      "500"/"1,200"/"3,000" and "COINS" labels out of alignment with the Free
      card's even though the buttons below them still matched up (pinned to
      the bottom via margin-top:auto). */
-  .coin-pack-status { color: #c9542f; font-weight: 800; font-size: 11px; min-height: 1.2em; margin-bottom: 3px; }
+  .coin-pack-status { color: #c9542f; font-weight: 800; font-size: 11px; margin-top: 2px; }
   .ad-reward-btn { background: linear-gradient(180deg, #7bce5a 0%, #58a83c 100%) !important; }
   /* 2x2: the free-coins card and all 3 purchasable packs are one unified
      family of same-size tiles now, instead of a separate full-width hero
@@ -244,12 +244,20 @@
      text/buttons fit comfortably instead of being squeezed 3-up. */
   #coin-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
   .coin-pack-card {
-    position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 16px 10px 10px; border-radius: 20px;
+    position: relative; display: grid; align-items: center; column-gap: 8px; row-gap: 0;
+    grid-template-columns: 44px 1fr;
+    grid-template-areas: "icon amt" "icon lbl" "st st" "btn btn";
+    padding: 14px 10px 8px; border-radius: 18px;
     background: linear-gradient(180deg, #f8c6a9 0%, #f4b799 100%);
     box-shadow: 0 2px 6px rgba(0,0,0,.1);
     border: 2px solid transparent;
   }
+  .coin-pack-card > .coin-pack-icon { grid-area: icon; }
+  .coin-pack-card > .coin-pack-amount { grid-area: amt; align-self: end; }
+  .coin-pack-card > .coin-pack-label { grid-area: lbl; align-self: start; }
+  .coin-pack-card > .coin-pack-status { grid-area: st; text-align: center; }
+  .coin-pack-card > .coin-pack-status:empty { display: none; }
+  .coin-pack-card > .coin-pack-buy-btn { grid-area: btn; margin-top: 6px !important; }
   .coin-pack-card.ad-reward-card { background: linear-gradient(180deg, #d9f0c8 0%, #b8e09a 100%); }
   .coin-pack-ribbon {
     position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
@@ -273,12 +281,12 @@
   @media (prefers-reduced-motion: reduce) {
     .coin-pack-card.best-value { animation: none; }
   }
-  .coin-pack-icon { width: 54px; height: 54px; object-fit: contain; margin-bottom: 2px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.15)); }
-  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; color: #44150d; }
+  .coin-pack-icon { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.15)); }
+  .coin-pack-amount { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.1; color: #44150d; text-align: left; }
   .coin-pack-card.best-value .coin-pack-amount { font-size: 23px; color: #522900; }
   .coin-pack-label {
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .06em;
-    color: #8a5c4e; text-transform: uppercase; margin-bottom: 5px;
+    color: #8a5c4e; text-transform: uppercase; text-align: left;
   }
   /* Warm brand-brown ladder instead of the old pink pill - each tier's
      button gets a little richer/brighter than the last, ending in gold for
@@ -297,7 +305,14 @@
      unrelated emoji-pack-shop buttons that reuse the same base class.
      (margin-top:auto is restated further down, after the shared picture-
      button rule that resets margin to 0 - see the comment there.) */
-  #coin-pack-row .coin-pack-buy-btn { font-size: 13px; padding: 10px 4px; }
+  #coin-pack-row .coin-pack-buy-btn { font-size: 13px; --pic-h: 32px; }
+  #pack-row, #flair-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  .shop-section-label { margin: 16px 0 -4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
+  .pack-card { grid-template-columns: 1fr; grid-template-areas: "ttl" "emo" "btn"; justify-items: center; text-align: center; background: linear-gradient(180deg, #d9e8ff 0%, #b9d2f5 100%); }
+  .pack-title { grid-area: ttl; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; color: #1f3558; }
+  .pack-flairs { grid-area: emo; font-size: 12px; font-weight: 600; line-height: 1.3; color: #2c466e; margin-top: 2px; }
+  .pack-emojis { grid-area: emo; font-size: 17px; line-height: 1.25; white-space: nowrap; margin-top: 2px; }
+  .pack-card > .coin-pack-buy-btn { width: 100%; --pic-h: 32px; font-size: 13px; }
   .coin-pack-card.popular .coin-pack-buy-btn { background: linear-gradient(180deg, #ff9f4d 0%, #e07a1a 100%); }
   .coin-pack-card.best-value .coin-pack-buy-btn { background: linear-gradient(180deg, #ffd54f 0%, #f0a825 100%); color: #4a2800; text-shadow: none; }
 
@@ -510,7 +525,9 @@
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
-  #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
+  #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 60px 8px 6px; background: #fbfaf6; }
+  /* Back button rides in the pinned stats row, right of the Combinations box */
+  #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -1366,7 +1383,7 @@
      since its row-mate (the Free/Watch-Ad card, with an extra status line) is
      taller. Same specificity as the rule above (one #id + two classes) so this
      has to come after it in the file to actually win. */
-  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn) { margin-top: auto; }
+  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn), #pack-row .coin-pack-buy-btn, #flair-pack-row .coin-pack-buy-btn { margin-top: 6px; }
   /* Cream (cancel/secondary), blue (info) and green-small pills, as 9-slice pictures. */
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on),
@@ -1551,7 +1568,7 @@
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; padding: 8px 12px; width: auto; margin: 0; color: var(--text);
     border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
   }
-  .hud-timer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+  .hud-timer-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
   /* The timer box shows "--" (empty/unused) during the reveal animation, so the
      host's Skip button lives right under it instead of its old spot below the
      whole animation picture - frees up room there for the ticking answer (now
@@ -1567,7 +1584,7 @@
 
   .question-prompt {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.35; text-align: left; color: var(--text); flex: 1;
-    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 0; min-width: 0;
+    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 40px; min-height: 184px; min-width: 0;
     border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
   }
   /* Used to be a small inline line, with a separate big standalone "THE
@@ -1596,6 +1613,11 @@
     margin-top: -4px; animation: popIn 300ms ease;
   }
   .score-card:first-child { margin-top: 0; }
+  .score-card.round-winner { animation: popIn 300ms ease, winnerPulse 1.5s ease-in-out infinite; z-index: 1; }
+  .score-card.round-winner::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: winnerInset 1.5s ease-in-out infinite; }
+  @keyframes winnerPulse { 0%, 100% { filter: drop-shadow(0 0 2px rgba(255,200,60,.7)); } 50% { filter: drop-shadow(0 0 8px rgba(255,200,60,1)); } }
+  @keyframes winnerInset { 0%, 100% { box-shadow: inset 0 0 6px 1px rgba(255,214,64,.55); } 50% { box-shadow: inset 0 0 14px 4px rgba(255,214,64,.95); } }
+  @media (prefers-reduced-motion: reduce) { .score-card.round-winner, .score-card.round-winner::after { animation: none; } .score-card.round-winner { filter: drop-shadow(0 0 6px rgba(255,200,60,.95)); } }
   .score-card .avatar {
     grid-row: 1 / 3; grid-column: 1;
     font-size: 22px; width: 56px; height: auto; align-self: stretch; min-height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
@@ -1769,11 +1791,11 @@
     content: ""; position: absolute; inset: 0; background: var(--paper); mix-blend-mode: multiply;
     -webkit-mask: var(--img) center / 100% 100% no-repeat; mask: var(--img) center / 100% 100% no-repeat;
   }
-  .answer-slot.pp-crumpled { --img: url(icons/paper/crumpled.png); --ar: 2.88; }
-  .answer-slot.pp-graph { --img: url(icons/paper/graph.png); --ar: 3.06; }
+  .answer-slot.pp-crumpled { --img: url(icons/paper/crumpled.png); --ar: 2.13; }
+  .answer-slot.pp-graph { --img: url(icons/paper/graph.png); --ar: 2.13; }
   .answer-slot.pp-card { --img: url(icons/paper/card.png); --ar: 2.13; }
-  .answer-slot.pp-torn { --img: url(icons/paper/torn.png); --ar: 3.08; }
-  .answer-slot.pp-sticky { --img: url(icons/paper/sticky.png); --ar: 3.1; }
+  .answer-slot.pp-torn { --img: url(icons/paper/torn.png); --ar: 2.13; }
+  .answer-slot.pp-sticky { --img: url(icons/paper/sticky.png); --ar: 2.13; }
   .answer-slot:nth-child(even) { --rot: 1.2deg; }
   .answer-slot:nth-child(odd) { --rot: -1.4deg; }
   .answer-slot:nth-child(3n) { --rot: .6deg; }
@@ -2118,10 +2140,10 @@
           <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
           <div class="host-unlock-text">
             <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
-            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
+            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever, plus 500 bonus coins. Bots are always free, no unlock needed.</p>
           </div>
         </div>
-        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $2.99 &middot; One time</button>
+        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
       </div>
 
       <div id="coin-pack-row">
@@ -2157,6 +2179,10 @@
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
       </div>
+      <div class="shop-section-label">Reaction packs</div>
+      <div id="pack-row"></div>
+      <div class="shop-section-label">Flair packs</div>
+      <div id="flair-pack-row"></div>
     </div>
   </div>
 
@@ -2235,9 +2261,6 @@
 
 <div id="items-screen" class="screen">
   <button id="items-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header">
-    <h1>Objects</h1>
-  </div>
   <div id="items-content"></div>
 </div>
 
@@ -2553,8 +2576,8 @@
   </div>
 
   <div id="host-unlock-banner">
-    <p>Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever. Bots are always free, no unlock needed.</p>
-    <button id="host-unlock-btn" type="button">Unlock for $2.99 &middot; One time</button>
+    <p>Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever, plus 500 bonus coins. Bots are always free, no unlock needed.</p>
+    <button id="host-unlock-btn" type="button">Unlock for $9.99 &middot; One time</button>
   </div>
 
   <div id="bot-controls">
@@ -3261,6 +3284,8 @@
     renderItemsScreen();
     renderAchievementsScreen();
     checkAchievementToasts();
+    renderPackShop();
+    renderFlairPackShop();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -3468,6 +3493,54 @@
         card.disabled = false;
       });
       grid.appendChild(card);
+    });
+  }
+  // Real-money reaction packs, shown on the Purchases tab (anything paid with real money lives there).
+  function renderPackShop() {
+    const row = document.getElementById("pack-row");
+    if (!row) return;
+    row.innerHTML = "";
+    EMOJI_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
+      const card = document.createElement("div");
+      card.className = "coin-pack-card pack-card";
+      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-emojis">${pack.emojis.join(" ")}</div>`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "coin-pack-buy-btn";
+      btn.disabled = owned;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
+      if (!owned) btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
+      });
+      card.appendChild(btn);
+      row.appendChild(card);
+    });
+  }
+  function renderFlairPackShop() {
+    const row = document.getElementById("flair-pack-row");
+    if (!row) return;
+    row.innerHTML = "";
+    const items = COSMETIC_CATALOG.effects;
+    FLAIR_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.flairPacks || {})[pack.id]
+        || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
+      const names = pack.flairs.map((id) => { const it = items.find((x) => x.id === id); return it ? it.label : id; }).join(", ");
+      const card = document.createElement("div");
+      card.className = "coin-pack-card pack-card";
+      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-flairs">${names}</div>`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "coin-pack-buy-btn";
+      btn.disabled = owned;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
+      if (!owned) btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
+      });
+      card.appendChild(btn);
+      row.appendChild(card);
     });
   }
   function renderCosmeticsShop() {
@@ -5527,7 +5600,7 @@
     // even open, so this part doesn't depend on isHost like the rest below.
     const shopUnlocked = !!myProfile.hostUnlocked;
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
-    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $2.99 · One time";
+    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $9.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
 
     if (!isHost) {
@@ -5553,12 +5626,16 @@
   // unlock flow can be built and tested end-to-end before Google Play
   // Billing is wired up. Swap these handlers' bodies for the real purchase
   // call later; renderHostUnlockUi() itself doesn't need to change.
-  hostUnlockBtn.addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
-  });
-  hostUnlockShopBtn.addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: true });
-  });
+  const HOST_UNLOCK_BONUS_COINS = 500;
+  async function purchaseHostUnlock() {
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if (profile.hostUnlocked) return profile;
+      return { ...profile, hostUnlocked: true, coins: (profile.coins || 0) + HOST_UNLOCK_BONUS_COINS };
+    });
+  }
+  hostUnlockBtn.addEventListener("click", purchaseHostUnlock);
+  hostUnlockShopBtn.addEventListener("click", purchaseHostUnlock);
 
   // ---- "Install app" banner, driven by the browser's own install
   // eligibility signal rather than a fixed schedule. Suppressed while the
@@ -7674,6 +7751,7 @@
           li.insertAdjacentHTML("beforeend", revealInfoHtml(entry));
           if (isWinner) {
             li.classList.add("winner");
+            setRoundWinner(entry.playerId);
             if (entry.isPerfect) playSound("perfect");
             else if (entry.isSpotOn) playSound("roundwin");
             if (entry.consecutiveWins >= 2) playSound("streak");
@@ -7753,6 +7831,7 @@
           li.innerHTML = revealCardFinalHtml(entry);
           if (isWinner) {
             li.classList.add("winner");
+            setRoundWinner(entry.playerId);
             showAnswerReveal();
           }
         }
@@ -7776,6 +7855,7 @@
           li.innerHTML = revealCardFinalHtml(entry);
           if (isWinner) {
             li.classList.add("winner");
+            setRoundWinner(entry.playerId);
             showAnswerReveal();
           }
         }
@@ -7793,6 +7873,12 @@
   // ==================== Score column / HUD top ====================
 
   let lastScoreColumnSignature = null;
+  // The round's winner keeps a gold pulse on their player card from the reveal until the next round starts.
+  let roundWinnerId = null;
+  function setRoundWinner(id) {
+    roundWinnerId = id || null;
+    document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && c.dataset.id === id));
+  }
   function renderScoreColumn(overrideScores) {
     const signature = Object.keys(currentPlayers).map((id) => {
       const p = currentPlayers[id];
@@ -7828,6 +7914,7 @@
         const box = document.createElement("div");
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.dataset.id = id;
+        if (id === roundWinnerId) box.classList.add("round-winner");
         box.innerHTML = `
           <span class="avatar">${avatarHtml(p.avatar)}</span>
           <div class="sc-top"><span class="name">${escapeHtml(p.name)}</span></div>
@@ -7928,6 +8015,7 @@
 
   function renderSummary(data) {
     recordRoundStats(data);
+    { const w = (data.revealOrder || []).slice(-1)[0]; if (w && w.isClosest && roundWinnerId !== w.playerId) setRoundWinner(w.playerId); }
     const breakdown = computeRoundBreakdown(data);
     const lastRoundPoints = data.lastRoundPoints || {};
     summaryListEl.innerHTML = "";
@@ -8798,6 +8886,7 @@
       renderAutoToggle(data);
 
       if (data.phase === "question" || data.phase === "waiting") {
+        if (roundWinnerId) setRoundWinner(null);
         renderScoreColumn();
       }
       if (data.phase === "answers") {
