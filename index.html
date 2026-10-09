@@ -582,6 +582,26 @@
   #item-popup .item-popup-card { position: relative; }
   #item-popup .item-popup-x { position: absolute; top: -14px; right: -14px; width: 38px; height: 38px; padding: 0; margin: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff7a5f, #c1352a); color: #fff; font-size: 20px; font-weight: 700; line-height: 1; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
   #item-popup .item-popup-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  /* Long-press zoom on an avatar tile (picker grids + the "View All" collection) -
+     stays up after release (tap the X, or anywhere, to close) rather than
+     closing on release, so a finger covering the popup can lift away or slide
+     off without losing it. */
+  #avatar-zoom-overlay {
+    position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45);
+  }
+  #avatar-zoom-overlay .avatar-zoom-card {
+    position: relative; width: 160px; height: 160px; padding: 10px; box-sizing: border-box;
+    background: #fffaf0; border: 4px solid #d9c3a3; border-radius: 20px; animation: popIn 160ms ease;
+  }
+  #avatar-zoom-overlay .avatar-zoom-card img { width: 100%; height: 100%; object-fit: contain; }
+  #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
+  #avatar-zoom-overlay .avatar-zoom-close {
+    position: absolute; top: -12px; right: -12px; width: 28px; height: 28px; margin: 0; padding: 0;
+    border-radius: 50%; border: 2px solid #fff; border-image: none; background: #d9534f; color: #fff;
+    font-size: 18px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  }
   .items-row:last-child { border-bottom: none; }
   .items-row.unseen { opacity: .4; }
 
@@ -1028,7 +1048,15 @@
      pill, which never shrinks below the size needed for "9999+") can't
      quite fit this column's share of the bar, clip it cleanly instead of
      letting it visually overlap the icon row next to it. */
-  #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; overflow: hidden; }
+  /* Used to be flex:1 (centered in the full gap between the home button and
+     the right-side icon group), but that left the icon group pinned to a
+     fixed width far to the right with dead space floating around the coin
+     balance instead of going to the icons. Now it's sized to its own
+     content, snug next to the home button, so the icon group (which now
+     grows to fill everything after it, see #toolbar-right-group) starts
+     right where the coin balance ends instead of wherever its fixed width
+     happened to land. */
+  #toolbar-center { flex: 0 0 auto; min-width: 0; display: flex; align-items: center; justify-content: flex-start; gap: 6px; overflow: hidden; }
   #toolbar-coin-balance {
     display: flex; align-items: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px;
     border: none; background: transparent; padding: 2px; margin: 0; color: var(--text); cursor: pointer;
@@ -1053,7 +1081,27 @@
     position: relative; z-index: 1;
   }
   #toolbar-coin-count { display: inline-block; text-align: center; white-space: nowrap; }
-  #toolbar-right-group { display: flex; align-items: center; gap: 1px; flex-shrink: 0; }
+  /* Grows to fill whatever's left after the home button + coin balance take
+     their own natural width, instead of sitting fixed-width (and far from
+     them) at the right edge - min-width:0 lets it shrink below its
+     buttons' natural width too, on a phone too narrow to fit all 5 at
+     max size. */
+  #toolbar-right-group { display: flex; align-items: center; gap: 1px; flex: 1; min-width: 0; }
+  /* Spreads the 5 icons evenly across that space and lets them grow past
+     their old fixed 45px up to a sensible ceiling, instead of leaving the
+     recovered space as a dead gap next to the coin balance. aspect-ratio
+     keeps them square as they grow/shrink with the available width; the
+     base .toolbar-badge-btn rule's fixed 45x45 still applies as-is to the
+     home button, which isn't inside this group. */
+  #toolbar-right-group .toolbar-badge-btn {
+    /* 54px, not a round number: #app-toolbar is min-height:62px with 4px
+       top/bottom padding (border-box), so 54px is exactly as tall as these
+       buttons can go without growing the toolbar itself past 62px tall -
+       #hud-sub-toolbar is a separate fixed-position element pinned at
+       top:62px right below it, and this toolbar hasn't needed to actually
+       measure its own height to position that correctly until now. */
+    flex: 1; min-width: 0; width: auto; height: auto; aspect-ratio: 1; max-height: 54px;
+  }
   #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
   }
@@ -5186,6 +5234,49 @@
     itemsContentEl.addEventListener("click", (e) => { const r = e.target.closest(".items-row"); if (r) openItemPopup(r.dataset.id); });
     itemsContentEl.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { const r = e.target.closest(".items-row"); if (r) { e.preventDefault(); openItemPopup(r.dataset.id); } } });
   }
+
+  // Long-press an avatar tile (either picker grid, or the "View All" collection)
+  // to see it bigger - delegated on document since both picker grids get
+  // rebuilt from scratch on every render and the collection grid is built
+  // fresh each time its screen opens, so per-element listeners would need
+  // constant re-attaching. The avatar id isn't stored as a data attribute
+  // anywhere (avatarHtml() never needed one before this) - reading it back out
+  // of the already-rendered <img src="avatars/<id>.png"> avoids touching every
+  // one of avatarHtml()'s many call sites just to add one.
+  //
+  // The popup stays open after the finger lifts (closed via its X or a tap
+  // anywhere on it) rather than closing on release - closing on release meant
+  // the finger holding it open was itself covering it, and sliding the finger
+  // aside to see around it reads to the browser as a scroll/drag, which
+  // cancels the touch and closed the popup before it could be seen at all.
+  // Since the overlay sits on top and takes pointer events normally, the
+  // eventual pointerup/click from that same touch lands on the overlay
+  // itself (not the button underneath), so there's no extra step needed to
+  // stop it from also selecting/equipping that avatar.
+  let avatarZoomTimer = null;
+  function closeAvatarZoom() {
+    const ov = document.getElementById("avatar-zoom-overlay");
+    if (ov) ov.remove();
+  }
+  document.addEventListener("pointerdown", (e) => {
+    const tile = e.target.closest(".avatar-choice, .collection-tile");
+    if (!tile) return;
+    const img = tile.querySelector("img.avatar-icon");
+    const m = img && img.src.match(/avatars\/([^/]+)\.png/);
+    if (!m) return;
+    clearTimeout(avatarZoomTimer);
+    avatarZoomTimer = setTimeout(() => {
+      const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
+      const ov = document.createElement("div");
+      ov.id = "avatar-zoom-overlay";
+      ov.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(m[1], dim ? "zoom-dim" : "")}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
+      ov.addEventListener("click", closeAvatarZoom);
+      document.body.appendChild(ov);
+    }, 400);
+  });
+  // Only cancels the pending long-press timer for an early release - the
+  // already-open popup (if any) is untouched, see above.
+  ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => document.addEventListener(evt, () => clearTimeout(avatarZoomTimer)));
 
   const GACHA_TIER_LABELS = { common: "COMMON", rare: "RARE", ultra: "ULTRA-RARE" };
   const GACHA_TIER_STARS = { common: 2, rare: 3, ultra: 4 };
