@@ -4766,7 +4766,7 @@
 
     playSound(tier === "ultra" ? "perfect" : tier === "rare" ? "roundwin" : "reveal");
     celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
-    spawnTrophyBurst(gachaRevealWrapEl);
+    spawnTrophyBurst(gachaRevealWrapEl, "icons/gacha-capsule-open.png");
     if (tier === "ultra") gachaRetrigger(gachaFlashEl, "go");
     await gachaWait(850);
 
@@ -7748,7 +7748,7 @@
     requestAnimationFrame(frame);
   }
 
-  function spawnTrophyBurst(targetEl) {
+  function spawnTrophyBurst(targetEl, iconSrc) {
     if (!targetEl) return;
     const rect = targetEl.getBoundingClientRect();
     const wrap = document.createElement("div");
@@ -7760,7 +7760,7 @@
     for (let i = 0; i < 8; i++) {
       rays += `<div class="ray" style="transform: translate(-50%,-50%) rotate(${i * 45}deg);"></div>`;
     }
-    wrap.innerHTML = rays + `<img class="trophy-emoji" alt="" src="icons/reactions/trophy.png">`;
+    wrap.innerHTML = rays + `<img class="trophy-emoji" alt="" src="${iconSrc || "icons/reactions/trophy.png"}">`;
     reactionsPanelEl.appendChild(wrap);
     setTimeout(() => wrap.remove(), 900);
   }
