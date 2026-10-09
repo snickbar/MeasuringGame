@@ -6547,11 +6547,16 @@
   }
   nameAvatarBackBtn.addEventListener("click", () => {
     nameAvatarScreenEl.classList.remove("active");
-    if (nameAvatarCameFrom === "lobby") {
+    // Backing out of an in-place edit (reached via the Lobby's own back
+    // button) retraces the original setup chain - Settings/Create, not back
+    // to the Lobby - same as if this had been the normal first-time flow.
+    // The only way back to the Lobby from here on is going forward again
+    // (Join Lobby), same as always.
+    if (editingFromLobby) {
       editingFromLobby = false;
       if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
-      lobbyScreenEl.classList.add("active");
-    } else if (nameAvatarCameFrom === "create") {
+    }
+    if (nameAvatarCameFrom === "create") {
       createScreenEl.classList.add("active");
     } else {
       joinScreen.classList.add("active");
@@ -6561,12 +6566,15 @@
   // room" (that's lobby-back's old behavior before this, still used by the
   // actual Exit button); the room listener's own editingFromLobby guard (see
   // applyPhase()) is what keeps it from forcing Lobby straight back into
-  // view on the very next room update.
+  // view on the very next room update. cameFrom is set to whichever screen
+  // actually precedes it in the real setup chain (Create for the host, Join
+  // for a guest) rather than a special "lobby" case, so backing out again
+  // from here goes to Settings, not back to the Lobby.
   lobbyBackBtn.addEventListener("click", () => {
     editingFromLobby = true;
     pendingRoomCode = currentRoomCode;
     lobbyScreenEl.classList.remove("active");
-    showNameAvatarScreen("lobby");
+    showNameAvatarScreen(isHost ? "create" : "join");
   });
 
   let hostTransferModeChoice = "reassign";
