@@ -517,12 +517,20 @@
   .collection-tile {
     position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
     border-width: 6px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill;
+    cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   }
   .collection-tile.locked { opacity: .35; filter: grayscale(1); }
   .collection-tile.locked::after {
     content: "\1F512"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px;
   }
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
+  /* Same pinned-header treatment as Objects/Awards: the discovered-count box
+     and the Hide Undiscovered toggle stay put while the tier groups scroll
+     underneath, with the back button riding fixed in that same strip
+     instead of the (now-removed) "All Avatars" title row. */
+  #collection-content .collection-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
+  #collection-content .collection-sticky-head .items-stats { padding-right: 54px; }
+  #collection-screen.active #collection-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
   #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 60px 8px 6px; background: #fbfaf6; }
@@ -2270,9 +2278,6 @@
 
 <div id="collection-screen" class="screen">
   <button id="collection-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header">
-    <h1>All Avatars</h1>
-  </div>
   <div id="collection-content"></div>
 </div>
 
@@ -4867,6 +4872,21 @@
     }
   });
   collectionCloseBtn.addEventListener("click", closeOverlay);
+  collectionContentEl.addEventListener("click", (e) => {
+    if (e.target.closest("#collection-hide-switch")) {
+      collectionHideLocked = !collectionHideLocked;
+      try { localStorage.setItem("mg_coll_hide", collectionHideLocked ? "1" : "0"); } catch (err) {}
+      renderCollectionScreen();
+    }
+  });
+  collectionContentEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tile = e.target.closest(".collection-tile");
+    if (!tile) return;
+    e.preventDefault();
+    const id = avatarIdFromTile(tile);
+    if (id) openAvatarZoom(tile, id);
+  });
   itemsCloseBtn.addEventListener("click", closeOverlay);
   document.getElementById("achievements-close-btn").addEventListener("click", closeOverlay);
   document.getElementById("toolbar-awards-btn").addEventListener("click", guardToolbarNav(() => {
@@ -5100,14 +5120,25 @@
   const GACHA_TIER_ORDER = ["default", "common", "rare", "ultra"];
   const GACHA_TIER_DISPLAY_LABELS = { default: "Default", common: "Common", rare: "Rare", ultra: "Ultra-rare" };
   const GACHA_TIER_DOT_COLORS = { default: "#8a9a6f", common: "#7a8fa6", rare: "#9a6fc1", ultra: "#d9a441" };
+  let collectionHideLocked = false;
+  try { collectionHideLocked = localStorage.getItem("mg_coll_hide") === "1"; } catch (e) {}
   function renderCollectionScreen() {
     const byTier = { default: [], common: [], rare: [], ultra: [] };
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
-    collectionContentEl.innerHTML = GACHA_TIER_ORDER.map((tier) => {
+    const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
+    const head = `<div class="collection-sticky-head">
+      <div class="items-stats">
+        <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
+      </div>
+      <div class="ach-filter"><span>Hide undiscovered</span><button type="button" id="collection-hide-switch" class="ach-switch${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"></button></div>
+    </div>`;
+    let body = GACHA_TIER_ORDER.map((tier) => {
       const list = byTier[tier];
       if (!list.length) return "";
       const unlockedCount = list.filter(isAvatarUnlocked).length;
-      const tiles = list.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}">${avatarHtml(a)}</div>`).join("");
+      const shown = collectionHideLocked ? list.filter(isAvatarUnlocked) : list;
+      if (!shown.length) return "";
+      const tiles = shown.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}" role="button" tabindex="0">${avatarHtml(a)}</div>`).join("");
       return `
         <div class="collection-tier-group">
           <h3 class="collection-tier-title">
@@ -5118,6 +5149,8 @@
           <div class="collection-grid">${tiles}</div>
         </div>`;
     }).join("");
+    if (!body) body = `<div class="ach-empty">No avatars discovered yet — give the machine a spin!</div>`;
+    collectionContentEl.innerHTML = head + body;
   }
 
   // Display names only - deliberately leaves out OBJECTS[].mm (the whole
@@ -5374,25 +5407,42 @@
     const ov = document.getElementById("avatar-zoom-overlay");
     if (ov) ov.remove();
   }
-  document.addEventListener("pointerdown", (e) => {
-    const tile = e.target.closest(".avatar-choice, .collection-tile");
-    if (!tile) return;
+  function avatarIdFromTile(tile) {
     const img = tile.querySelector("img.avatar-icon");
     const m = img && img.src.match(/avatars\/([^/]+)\.png/);
-    if (!m) return;
+    return m ? m[1] : null;
+  }
+  function openAvatarZoom(tile, id) {
+    const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
+    const ov = document.createElement("div");
+    ov.id = "avatar-zoom-overlay";
+    ov.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(id, dim ? "zoom-dim" : "")}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
+    ov.addEventListener("click", closeAvatarZoom);
+    document.body.appendChild(ov);
+  }
+  // Picker grids (join/name screen, settings default-avatar grid): tapping a
+  // tile selects it, so zooming needs a long-press instead so a normal tap
+  // still works as a pick.
+  document.addEventListener("pointerdown", (e) => {
+    const tile = e.target.closest(".avatar-choice");
+    if (!tile) return;
+    const id = avatarIdFromTile(tile);
+    if (!id) return;
     clearTimeout(avatarZoomTimer);
-    avatarZoomTimer = setTimeout(() => {
-      const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
-      const ov = document.createElement("div");
-      ov.id = "avatar-zoom-overlay";
-      ov.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(m[1], dim ? "zoom-dim" : "")}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
-      ov.addEventListener("click", closeAvatarZoom);
-      document.body.appendChild(ov);
-    }, 400);
+    avatarZoomTimer = setTimeout(() => openAvatarZoom(tile, id), 400);
   });
   // Only cancels the pending long-press timer for an early release - the
   // already-open popup (if any) is untouched, see above.
   ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => document.addEventListener(evt, () => clearTimeout(avatarZoomTimer)));
+  // The "View All" collection grid isn't a picker - there's nothing to
+  // select there, so a plain tap opens the zoom directly instead of making
+  // people hold it like the pickers.
+  document.addEventListener("click", (e) => {
+    const tile = e.target.closest(".collection-tile");
+    if (!tile) return;
+    const id = avatarIdFromTile(tile);
+    if (id) openAvatarZoom(tile, id);
+  });
 
   const GACHA_TIER_LABELS = { common: "COMMON", rare: "RARE", ultra: "ULTRA-RARE" };
   const GACHA_TIER_STARS = { common: 2, rare: 3, ultra: 4 };
