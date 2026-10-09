@@ -1152,8 +1152,22 @@
   #bottom-actions { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 46px; }
   #bottom-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))) { display: none; }
   #bottom-actions button { width: auto; margin: 0; flex: 1; max-width: 260px; }
-  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) { flex-direction: column; align-items: stretch; gap: 6px; }
-  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) button { max-width: none; width: 100%; flex: none; }
+  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) { flex-direction: row; align-items: stretch; gap: 8px; }
+  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) button { max-width: none; width: auto; flex: 1 1 0; }
+  /* Final-results trio: three square-ish buttons side by side */
+  #bottom-actions button#play-again-btn, #bottom-actions button#final-home-btn, #bottom-actions button#final-double-coins-btn {
+    border-image: none !important; border-width: 2px !important; border-style: solid !important; border-radius: 12px !important;
+    height: auto !important; min-height: 58px; margin: 0 !important; padding: 6px 4px !important;
+    flex-direction: column; gap: 1px; white-space: normal !important; text-align: center; line-height: 1.12;
+    font-size: 14px; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5) !important;
+    box-shadow: 0 3px 0 rgba(0,0,0,.28), inset 0 2px 0 rgba(255,255,255,.4) !important;
+  }
+  #bottom-actions button#play-again-btn { background: linear-gradient(180deg, #9be25f, #5bb02f) !important; border-color: #3b7d1d !important; }
+  #bottom-actions button#final-home-btn { background: linear-gradient(180deg, #ef6f5f, #c0332a) !important; border-color: #8a1f19 !important; }
+  #bottom-actions button#final-double-coins-btn { background: linear-gradient(180deg, #9a70ea, #5b34b0) !important; border-color: #3f2380 !important; }
+  #bottom-actions button#play-again-btn:active, #bottom-actions button#final-home-btn:active, #bottom-actions button#final-double-coins-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.28) !important; }
+  .fbtn-sub { display: block; font-size: 11px; font-weight: 600; opacity: .92; }
   #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
   /* Reaction strip is the LAST child of #bottom-toolbar (a bottom-anchored
      fixed column) so it always sits flush at the screen's bottom edge - the
@@ -1961,7 +1975,17 @@
      height, since only the width affects the horizontal overlap. */
 
   /* ---- Final results ---- */
-  #final-title { text-align: center; animation: popIn 500ms ease; }
+  #final-title { text-align: center; animation: popIn 500ms ease; margin: 6px 0 14px; text-shadow: none; }
+  .final-banner {
+    display: inline-flex; align-items: center; gap: 10px; padding: 6px 18px 7px; border-radius: 16px;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.1; letter-spacing: .5px; color: #fff;
+    background: linear-gradient(180deg, #ffd96a 0%, #f2a52b 55%, #e48a14 100%);
+    border: 3px solid #a8620f; box-shadow: 0 3px 0 #a8620f, 0 6px 10px rgba(120,70,10,.25), inset 0 2px 0 rgba(255,255,255,.55);
+    text-shadow: -2px -2px 0 #7a4208, 2px -2px 0 #7a4208, -2px 2px 0 #7a4208, 2px 2px 0 #7a4208, 0 -2px 0 #7a4208, 0 2px 0 #7a4208, -2px 0 0 #7a4208, 2px 0 0 #7a4208;
+  }
+  .final-banner-trophy { width: 30px; height: 30px; flex-shrink: 0; filter: drop-shadow(0 2px 1px rgba(90,50,0,.35)); }
+  .final-banner-trophy:first-child { transform: rotate(-10deg); }
+  .final-banner-trophy:last-child { transform: rotate(10deg) scaleX(-1); }
   #final-list { display: flex; flex-direction: column; gap: 10px; }
   .final-row {
     padding: 10px 12px; flex-direction: column; align-items: stretch; gap: 6px; position: relative;
@@ -1995,7 +2019,6 @@
   .final-row.rank-3 .medal { width: 22px; height: 22px; }
   #final-home-btn { border-image-source: var(--btn2); color: #fff; }
   #play-again-btn { border-image-source: var(--btn-accent); color: #fff; }
-  #final-screen.active { padding-bottom: 66px; }
 
   /* ---- Round summary recap ---- */
   #summary-list { display: flex; flex-direction: column; gap: 8px; }
@@ -2662,7 +2685,7 @@
 </div>
 
 <div id="final-screen" class="screen">
-  <h1 id="final-title">&#127881; Final Results! &#127881;</h1>
+  <h1 id="final-title"><span class="final-banner"><svg class="final-banner-trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none" stroke="#8a4f00" stroke-width="1.6"/><path d="M12 14v4M8 21h8M9 18h6v3H9z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/></svg><span>Final Results</span><svg class="final-banner-trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none" stroke="#8a4f00" stroke-width="1.6"/><path d="M12 14v4M8 21h8M9 18h6v3H9z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/></svg></span></h1>
   <ul id="final-list"></ul>
 </div>
 
@@ -8177,11 +8200,11 @@
     const n = finalScoreForDouble;
     finalDoubleCoinsBtn.style.display = n > 0 ? "flex" : "none";
     if (!finalCoinsDoubled) {
-      finalDoubleCoinsBtn.textContent = `Watch Ad: Double to +${n * 2} Coins & ${isHost ? "Finish" : "Leave"}`;
+      finalDoubleCoinsBtn.innerHTML = `<span>&#9654; Watch Ad</span><span class="fbtn-sub">Double to +${n * 2}</span>`;
     }
-    finalHomeBtn.textContent = n > 0
-      ? `Collect +${n} Coins & ${isHost ? "Finish" : "Leave"}`
-      : (isHost ? "Finish Game" : "Leave Game");
+    finalHomeBtn.innerHTML = n > 0
+      ? `<span>Collect +${n}</span><span class="fbtn-sub">& ${isHost ? "Finish" : "Leave"}</span>`
+      : `<span>${isHost ? "Finish Game" : "Leave Game"}</span>`;
   }
   finalDoubleCoinsBtn.addEventListener("click", async () => {
     if (finalCoinsDoubled || finalScoreForDouble <= 0) return;
