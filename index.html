@@ -531,6 +531,18 @@
   #item-popup img { display: block; width: 100%; max-height: 240px; object-fit: contain; margin: 0 auto 10px; }
   #item-popup .item-popup-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: var(--text); text-transform: capitalize; }
   #item-popup .item-popup-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  /* Long-press zoom on an avatar tile (picker grids + the "View All" collection) -
+     shown while held, dismissed on release, so it needs no close button/tap target. */
+  #avatar-zoom-overlay {
+    position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45); pointer-events: none;
+  }
+  #avatar-zoom-overlay .avatar-zoom-card {
+    width: 160px; height: 160px; padding: 10px; box-sizing: border-box;
+    background: #fffaf0; border: 4px solid #d9c3a3; border-radius: 20px; animation: popIn 160ms ease;
+  }
+  #avatar-zoom-overlay .avatar-zoom-card img { width: 100%; height: 100%; object-fit: contain; }
+  #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
   .items-row:last-child { border-bottom: none; }
   .items-row.unseen { opacity: .4; }
 
@@ -4797,6 +4809,48 @@
     itemsContentEl.addEventListener("click", (e) => { const r = e.target.closest(".items-row"); if (r) openItemPopup(r.dataset.id); });
     itemsContentEl.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { const r = e.target.closest(".items-row"); if (r) { e.preventDefault(); openItemPopup(r.dataset.id); } } });
   }
+
+  // Long-press an avatar tile (either picker grid, or the "View All" collection)
+  // to see it bigger while held - delegated on document since both picker grids
+  // get rebuilt from scratch on every render and the collection grid is built
+  // fresh each time its screen opens, so per-element listeners would need
+  // constant re-attaching. The avatar id isn't stored as a data attribute
+  // anywhere (avatarHtml() never needed one before this) - reading it back out
+  // of the already-rendered <img src="avatars/<id>.png"> avoids touching every
+  // one of avatarHtml()'s many call sites just to add one.
+  let avatarZoomTimer = null, avatarZoomOv = null, avatarZoomFired = false;
+  function closeAvatarZoom() {
+    clearTimeout(avatarZoomTimer);
+    avatarZoomTimer = null;
+    if (avatarZoomOv) { avatarZoomOv.remove(); avatarZoomOv = null; }
+  }
+  document.addEventListener("pointerdown", (e) => {
+    const tile = e.target.closest(".avatar-choice, .collection-tile");
+    if (!tile) return;
+    const img = tile.querySelector("img.avatar-icon");
+    const m = img && img.src.match(/avatars\/([^/]+)\.png/);
+    if (!m) return;
+    avatarZoomFired = false;
+    clearTimeout(avatarZoomTimer);
+    avatarZoomTimer = setTimeout(() => {
+      avatarZoomFired = true;
+      const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
+      avatarZoomOv = document.createElement("div");
+      avatarZoomOv.id = "avatar-zoom-overlay";
+      avatarZoomOv.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(m[1], dim ? "zoom-dim" : "")}</div>`;
+      document.body.appendChild(avatarZoomOv);
+    }, 400);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => document.addEventListener(evt, closeAvatarZoom));
+  // Suppress the click a long-press's release would otherwise fire (which
+  // would select/equip the avatar) - only once, and only when the zoom
+  // actually showed, so a normal quick tap still selects as always.
+  document.addEventListener("click", (e) => {
+    if (!avatarZoomFired) return;
+    avatarZoomFired = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
 
   const GACHA_TIER_LABELS = { common: "COMMON", rare: "RARE", ultra: "ULTRA-RARE" };
   const GACHA_TIER_STARS = { common: 2, rare: 3, ultra: 4 };
