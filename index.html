@@ -6221,9 +6221,25 @@
     showNameAvatarScreen("create");
   });
 
-  joinContinueBtn.addEventListener("click", () => {
+  // A mistyped/nonexistent code used to fall through silently here - nothing
+  // actually checks the room exists until the later Join Lobby step, several
+  // screens further into the flow. Check it right away instead, so a typo
+  // gets caught before the player goes through picking a name and avatar
+  // for a room that was never there.
+  joinContinueBtn.addEventListener("click", async () => {
     const code = codeInput.value.trim().toUpperCase();
     if (!code) { joinStatusEl.textContent = "Enter a room code."; return; }
+    joinContinueBtn.disabled = true;
+    joinStatusEl.textContent = "Checking room code...";
+    const snap = await new Promise((resolve) => {
+      onValue(ref(db, `rooms/${code}`), resolve, { onlyOnce: true });
+    });
+    joinContinueBtn.disabled = false;
+    joinStatusEl.textContent = "";
+    if (snap.val() === null) {
+      openExitConfirm("dismiss", "Room not found", "Double check the 4-character code and try again.", "OK", null);
+      return;
+    }
     pendingRoomCode = code;
     pendingIsHost = false;
     pendingSettings = null;
