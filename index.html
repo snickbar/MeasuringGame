@@ -4874,7 +4874,12 @@
     if (!code) { takenAvatars = new Set(); renderAvatarGrid(); return; }
     takenAvatarsUnsub = onValue(ref(db, `rooms/${code}/players`), (snap) => {
       const players = snap.val() || {};
-      takenAvatars = new Set(Object.values(players).map((p) => p.avatar).filter(Boolean));
+      // Excludes the editing player's own existing entry (relevant when
+      // reached via the Lobby's back button, editing in place while already
+      // a member of this exact room) - without this, your own avatar reads
+      // as "taken" by yourself, and renderAvatarGrid()'s silent-reassign
+      // guard below bumps you off it onto AVATARS' first entry every time.
+      takenAvatars = new Set(Object.entries(players).filter(([id]) => id !== currentPlayerId).map(([, p]) => p.avatar).filter(Boolean));
       renderAvatarGrid();
     });
   }
