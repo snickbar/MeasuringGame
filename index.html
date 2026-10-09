@@ -124,6 +124,21 @@
   button:active { transform: scale(.93); transition: transform 60ms ease-out; }
   button.btn-bounce { animation: btnBounce 220ms ease-out; }
   @keyframes btnBounce { 0% { transform: scale(.93); } 55% { transform: scale(1.06); } 80% { transform: scale(.98); } 100% { transform: scale(1); } }
+
+  /* Custom in-app keyboard (room code + name entry) - the inputs it drives
+     are `readonly` with inputmode="none" so the OS keyboard never appears. */
+  .custom-kbd { margin: 6px 0 10px; background: #f3e6d0; border-radius: 16px; padding: 10px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; }
+  .kbd-row { display: flex; gap: 4px; }
+  .kbd-row-home { padding-left: 14px; }
+  button.kbd-key {
+    flex: 1; width: auto; height: 36px; margin: 0; padding: 0; min-width: 0;
+    border-radius: 6px; border-width: 1.5px; border-style: solid; border-image: none;
+    border-color: #c89a6f; background: #fffaf0; color: #5b3a26;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px;
+  }
+  button.kbd-key.kbd-key-disabled, button.kbd-key:disabled { background: #eee6d8; border-color: #d8c7ae; color: #9c8b74; opacity: .5; cursor: default; }
+  button.kbd-key-backspace { flex: 1.9; background: #e8dcc5; font-size: 16px; }
+  button.kbd-key-done { flex: 1.6; background: #5b3a26; border-color: #5b3a26; color: #fff; font-size: 13px; }
   ul { list-style: none; padding: 0; }
   li { padding: 10px; margin: 6px 0;
        border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
@@ -2359,7 +2374,8 @@
     <h1>Join Game</h1>
   </div>
 
-  <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" />
+  <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" readonly inputmode="none" />
+  <div id="code-keyboard" class="custom-kbd"></div>
 
   <div id="recent-rooms-section" style="display:none;">
     <h3>Last game</h3>
@@ -2376,7 +2392,8 @@
     <button id="join-lobby-btn">Join Lobby</button>
   </div>
 
-  <input id="name-input" placeholder="Your name" maxlength="12" />
+  <input id="name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" />
+  <div id="name-keyboard" class="custom-kbd"></div>
 
   <div id="avatar-grid"></div>
 
@@ -3673,11 +3690,43 @@
   const joinContinueBtn = document.getElementById("join-continue-btn");
   const joinStatusEl = document.getElementById("join-status");
   const codeInput = document.getElementById("code-input");
+  const codeKeyboardEl = document.getElementById("code-keyboard");
   const nameAvatarScreenEl = document.getElementById("name-avatar-screen");
   const nameAvatarBackBtn = document.getElementById("name-avatar-back-btn");
   const joinLobbyBtn = document.getElementById("join-lobby-btn");
   const nameAvatarStatusEl = document.getElementById("name-avatar-status");
   const nameInput = document.getElementById("name-input");
+  const nameKeyboardEl = document.getElementById("name-keyboard");
+
+  // Custom in-app keyboard for the room-code and name inputs above, so the
+  // OS keyboard never pops up (both inputs are `readonly` + inputmode=none).
+  // `charset`, when given, greys out/disables any key not in it (used for
+  // the room-code charset); omit it to leave every key enabled.
+  function renderCustomKeyboard(containerEl, inputEl, opts) {
+    const { maxLength, charset, onDone } = opts;
+    const keyBtn = (ch, extraClass) => {
+      const enabled = !charset || charset.has(ch);
+      return `<button type="button" class="kbd-key${extraClass ? " " + extraClass : ""}${enabled ? "" : " kbd-key-disabled"}" data-key="${ch}"${enabled ? "" : " disabled"}>${ch}</button>`;
+    };
+    containerEl.innerHTML =
+      `<div class="kbd-row">${"1234567890".split("").map((c) => keyBtn(c)).join("")}</div>` +
+      `<div class="kbd-row">${"QWERTYUIOP".split("").map((c) => keyBtn(c)).join("")}</div>` +
+      `<div class="kbd-row kbd-row-home">${"ASDFGHJKL".split("").map((c) => keyBtn(c)).join("")}<button type="button" class="kbd-key kbd-key-backspace" data-action="backspace" aria-label="Backspace">&#9003;</button></div>` +
+      `<div class="kbd-row">${"ZXCVBNM".split("").map((c) => keyBtn(c)).join("")}<button type="button" class="kbd-key kbd-key-done" data-action="done">Done</button></div>`;
+    containerEl.querySelectorAll(".kbd-key[data-key]:not(:disabled)").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (inputEl.value.length >= maxLength) return;
+        inputEl.value += btn.dataset.key;
+        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+    containerEl.querySelector('[data-action="backspace"]').addEventListener("click", () => {
+      inputEl.value = inputEl.value.slice(0, -1);
+      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    containerEl.querySelector('[data-action="done"]').addEventListener("click", () => onDone(inputEl.value));
+  }
+
   const lobbyScreenEl = document.getElementById("lobby-screen");
   const lobbyBackBtn = document.getElementById("lobby-back-btn");
   const roomCodeDisplay = document.getElementById("room-code-display");
@@ -4077,10 +4126,10 @@
   const kickTimerEl = document.getElementById("kick-timer");
 
   // ---- Room / player id helpers ----
+  const ROOM_CODE_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars (no 0/1/I/O)
   function generateRoomCode() {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars
     let code = "";
-    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 4; i++) code += ROOM_CODE_CHARSET[Math.floor(Math.random() * ROOM_CODE_CHARSET.length)];
     return code;
   }
   function makePlayerId() {
@@ -4376,6 +4425,8 @@
     pendingExitAction = null;
     if (action === "dismiss") return;
     if (action === "startGame") { startGameNow(); return; }
+    if (action === "joinContinueConfirmed") { joinContinueBtn.click(); return; }
+    if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
@@ -5602,6 +5653,15 @@
     pendingSettings = null;
     showNameAvatarScreen("join");
   });
+  renderCustomKeyboard(codeKeyboardEl, codeInput, {
+    maxLength: 4,
+    charset: new Set(ROOM_CODE_CHARSET.split("")),
+    onDone: (value) => {
+      const code = value.trim().toUpperCase();
+      if (!code) { joinStatusEl.textContent = "Enter a room code."; return; }
+      openExitConfirm("joinContinueConfirmed", `Continue with code ${code}?`, "Make sure it's correct before continuing.", "Continue", "Cancel");
+    },
+  });
 
   joinLobbyBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim().slice(0, 12);
@@ -5633,6 +5693,15 @@
     takenAvatars = existingAvatars;
     renderAvatarGrid();
     joinRoomAsPlayer(pendingRoomCode, name, false, data);
+  });
+  renderCustomKeyboard(nameKeyboardEl, nameInput, {
+    maxLength: 12,
+    charset: null,
+    onDone: (value) => {
+      const name = value.trim().slice(0, 12);
+      if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
+      openExitConfirm("joinLobbyConfirmed", `Continue as ${name}?`, "You can always change it later in Settings.", "Continue", "Cancel");
+    },
   });
 
   // One-tap shortcut from "Last game" — bypasses the code/name/avatar screens
