@@ -4294,7 +4294,7 @@
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: true, autoAdvanceSeconds: 3 };
+    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: true, autoAdvanceSeconds: 5 };
   }
 
   // ==================== Home screen ====================
@@ -5300,7 +5300,7 @@
     settingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
     settingAutoAdvanceAutoInput.classList.toggle("selected", !!s.autoAdvanceEnabled);
     settingAutoAdvanceManualInput.classList.toggle("selected", !s.autoAdvanceEnabled);
-    if (document.activeElement !== settingAutoAdvanceSecondsInput) settingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
+    if (document.activeElement !== settingAutoAdvanceSecondsInput) settingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 5;
     settingAutoAdvanceSecondsInput.disabled = !s.autoAdvanceEnabled;
     document.querySelectorAll("#settings-panel .stepper-btn").forEach((btn) => {
       btn.disabled = btn.dataset.for === "setting-auto-advance-seconds" && !s.autoAdvanceEnabled;
@@ -5349,7 +5349,7 @@
   });
   settingAutoAdvanceSecondsInput.addEventListener("change", () => {
     if (settingAutoAdvanceSecondsInput.disabled) return;
-    currentSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(settingAutoAdvanceSecondsInput.value, 10) || 3));
+    currentSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(settingAutoAdvanceSecondsInput.value, 10) || 5));
     renderLocalSettingsPanel();
   });
 
@@ -5369,7 +5369,7 @@
     presetSettingItemRelativeInput.classList.toggle("selected", s.itemSelectionMode === "relative");
     presetSettingAutoAdvanceAutoInput.classList.toggle("selected", !!s.autoAdvanceEnabled);
     presetSettingAutoAdvanceManualInput.classList.toggle("selected", !s.autoAdvanceEnabled);
-    if (document.activeElement !== presetSettingAutoAdvanceSecondsInput) presetSettingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 3;
+    if (document.activeElement !== presetSettingAutoAdvanceSecondsInput) presetSettingAutoAdvanceSecondsInput.value = s.autoAdvanceSeconds || 5;
     presetSettingAutoAdvanceSecondsInput.disabled = !s.autoAdvanceEnabled;
     document.querySelectorAll("#preset-settings-panel .stepper-btn").forEach((btn) => {
       btn.disabled = btn.dataset.for === "preset-setting-auto-advance-seconds" && !s.autoAdvanceEnabled;
@@ -5408,7 +5408,7 @@
   });
   presetSettingAutoAdvanceSecondsInput.addEventListener("change", () => {
     if (presetSettingAutoAdvanceSecondsInput.disabled) return;
-    presetEditSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(presetSettingAutoAdvanceSecondsInput.value, 10) || 3));
+    presetEditSettings.autoAdvanceSeconds = Math.max(1, Math.min(15, parseInt(presetSettingAutoAdvanceSecondsInput.value, 10) || 5));
     renderPresetEditPanel();
   });
   presetHostModeControlsEl.addEventListener("click", (e) => {
@@ -6236,7 +6236,7 @@
     if (roomState.phase !== "animation") return;
     transitionInFlight = true;
     try {
-      const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+      const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
       const revealAdvanceAt = nowMs() + delayMs;
       await update(ref(db, `rooms/${roomCode}`), { phase: "reveal", revealIndex: 0, revealAdvanceAt });
       scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
@@ -6488,7 +6488,7 @@
     });
     truthPickedBy.forEach((p) => { lastRoundPoints[p.playerId] = (lastRoundPoints[p.playerId] || 0) + p.points; });
 
-    const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
     let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints, truthPickedBy: truthPickedBy.length ? truthPickedBy : null, phase: "reveal", revealAdvanceAt };
     // The answer animation plays between second chance and the one-by-one reveal. If it can't run
@@ -6544,7 +6544,7 @@
   function advanceReveal(roomCode) {
     const next = (roomState.revealIndex || 0) + 1;
     const orderLength = (roomState.revealOrder || []).length;
-    const baseDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 3) * 1000;
+    const baseDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
     // The winner's card has its own drumroll + flip animation on top of the base
     // delay (per playCardReveal), so give it extra breathing room before the
     // auto-advance to summary fires — otherwise it reads as "instant."
@@ -7762,7 +7762,7 @@
     if (b === "spiral") {
       // arms of flames sweep outward to the edges while the whole pattern spins; the winner's card stays on top (the layer is clipped around it)
       layer.style.clipPath = `path(evenodd, 'M0 0H${W}V${H}H0Z M${r.left + 1} ${r.top + 1}h${r.width - 2}v${r.height - 2}h${-(r.width - 2)}Z')`;
-      const arms = 3, per = Math.max(2, Math.round(N / arms)), R = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + size;
+      const arms = 5, per = Math.max(2, Math.round(N / 3)), R = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy)) + size;
       const T = Math.max(1400, L * 0.45), spin = 1.5, swirl = 2.4;
       for (let a = 0; a < arms; a++) for (let j = 0; j < per; j++) {
         const el = item("flame"), ph = j / per;
