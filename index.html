@@ -1016,7 +1016,15 @@
      pill, which never shrinks below the size needed for "9999+") can't
      quite fit this column's share of the bar, clip it cleanly instead of
      letting it visually overlap the icon row next to it. */
-  #toolbar-center { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; overflow: hidden; }
+  /* Used to be flex:1 (centered in the full gap between the home button and
+     the right-side icon group), but that left the icon group pinned to a
+     fixed width far to the right with dead space floating around the coin
+     balance instead of going to the icons. Now it's sized to its own
+     content, snug next to the home button, so the icon group (which now
+     grows to fill everything after it, see #toolbar-right-group) starts
+     right where the coin balance ends instead of wherever its fixed width
+     happened to land. */
+  #toolbar-center { flex: 0 0 auto; min-width: 0; display: flex; align-items: center; justify-content: flex-start; gap: 6px; overflow: hidden; }
   #toolbar-coin-balance {
     display: flex; align-items: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px;
     border: none; background: transparent; padding: 2px; margin: 0; color: var(--text); cursor: pointer;
@@ -1041,7 +1049,27 @@
     position: relative; z-index: 1;
   }
   #toolbar-coin-count { display: inline-block; text-align: center; white-space: nowrap; }
-  #toolbar-right-group { display: flex; align-items: center; gap: 1px; flex-shrink: 0; }
+  /* Grows to fill whatever's left after the home button + coin balance take
+     their own natural width, instead of sitting fixed-width (and far from
+     them) at the right edge - min-width:0 lets it shrink below its
+     buttons' natural width too, on a phone too narrow to fit all 5 at
+     max size. */
+  #toolbar-right-group { display: flex; align-items: center; gap: 1px; flex: 1; min-width: 0; }
+  /* Spreads the 5 icons evenly across that space and lets them grow past
+     their old fixed 45px up to a sensible ceiling, instead of leaving the
+     recovered space as a dead gap next to the coin balance. aspect-ratio
+     keeps them square as they grow/shrink with the available width; the
+     base .toolbar-badge-btn rule's fixed 45x45 still applies as-is to the
+     home button, which isn't inside this group. */
+  #toolbar-right-group .toolbar-badge-btn {
+    /* 54px, not a round number: #app-toolbar is min-height:62px with 4px
+       top/bottom padding (border-box), so 54px is exactly as tall as these
+       buttons can go without growing the toolbar itself past 62px tall -
+       #hud-sub-toolbar is a separate fixed-position element pinned at
+       top:62px right below it, and this toolbar hasn't needed to actually
+       measure its own height to position that correctly until now. */
+    flex: 1; min-width: 0; width: auto; height: auto; aspect-ratio: 1; max-height: 54px;
+  }
   #toolbar-coin-balance {
     filter: drop-shadow(0 2px 3px rgba(74,42,16,0.35));
   }
