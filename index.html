@@ -2215,7 +2215,7 @@
           <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
           <div class="host-unlock-text">
             <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
-            <p id="host-unlock-shop-desc">Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever, plus 500 bonus coins. Bots are always free, no unlock needed.</p>
+            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
           </div>
         </div>
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
@@ -2644,7 +2644,7 @@
   </div>
 
   <div id="host-unlock-banner">
-    <p>Unlock your room code to invite friends. One-time purchase &mdash; host unlimited real games forever, plus 500 bonus coins. Bots are always free, no unlock needed.</p>
+    <p>Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
     <button id="host-unlock-btn" type="button">Unlock for $9.99 &middot; One time</button>
   </div>
 
@@ -5389,7 +5389,7 @@
   achTier("Winning", "Regular", (n) => `Finish ${n} games`, ACH_STAT("gamesPlayed"), [[5, 15], [25, 50], [100, 150]]);
   achTier("Second chance", "Second look", (n) => `Earn points from a second chance in ${n} rounds`, ACH_STAT("secondChances"), [[5, 25], [25, 100]]);
   achTier("Second chance", "Double down", (n) => `Win double-down points in ${n} rounds`, ACH_STAT("doubleDowns"), [[5, 25], [25, 100]]);
-  achTier("Social", "Party time", (n) => `Finish ${n} games with 3 or more players`, ACH_STAT("groupGames"), [[5, 30], [25, 120]]);
+  achTier("Social", "Party time", (n) => `Finish ${n} Host Party games with friends`, ACH_STAT("groupGames"), [[5, 30], [25, 120]]);
   achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]]);
   achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]]);
 
@@ -6729,6 +6729,7 @@
   // for leaving/ending a game and unlocking a reaction slot) so an accidental
   // tap doesn't skip straight into the countdown.
   hostStartBtn.addEventListener("click", () => {
+    if (hostStartBtn.disabled) return;
     openExitConfirm("startGame", "Start game?", "Make sure everyone's ready to begin.");
   });
 
@@ -8430,7 +8431,9 @@
       const top = Math.max(...ids.map((id) => currentPlayers[id].score || 0));
       const inc = { gamesPlayed: 1 };
       if (ids.length >= 2 && myFinalScore === top) inc.gamesWon = 1;
-      if (ids.length >= 3) inc.groupGames = 1;
+      const humans = ids.filter((id) => !currentPlayers[id].isBot).length;
+      const isSoloGame = !!(roomState.settings && roomState.settings.solo);
+      if (!isSoloGame && humans >= 2 && ids.length >= 3) inc.groupGames = 1; // Party time counts Host Party games only
       bumpStats(inc);
     }
     finalListEl.innerHTML = "";
@@ -9034,6 +9037,12 @@
     const addBtn = document.getElementById("solo-add-bot-btn");
     addBtn.style.display = solo ? "" : "none";
     addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
+    // Host Party needs at least one other real player before it can start.
+    const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
+    const needsFriend = !solo && humans < 2;
+    hostStartBtn.disabled = needsFriend;
+    hostStartBtn.style.opacity = needsFriend ? ".5" : "";
+    lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? "Waiting for at least one friend to join. Share the room code!" : "";
   }
   function applyPhase(data) {
     requestAnimationFrame(fitScoreNames);
