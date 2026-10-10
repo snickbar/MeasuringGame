@@ -3552,7 +3552,11 @@
           reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
           flairPacks: { ...(data.flairPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
-          activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length) ? data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean)
+          // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
+          // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
+          // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
+          activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length)
+            ? (data.activeReactions[0] === "none" ? ["none"] : data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean))
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
