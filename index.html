@@ -4811,7 +4811,9 @@
   function renderReactionStrip() {
     if (!reactionStripEl) return;
     const owned = ownedReactionSlots();
-    const active = equippedReactions();
+    // Nothing equipped in the shop: still show the defaults in games (the shop selection stays empty).
+    let active = equippedReactions();
+    if (!active.length) active = START_EMOJIS.filter((e) => REACTIONS[e]).slice(0, owned);
     reactionStripEl.innerHTML = "";
     for (let i = 0; i < REACTION_SLOTS_MAX; i++) {
       const b = document.createElement("button");
