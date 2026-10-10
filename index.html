@@ -5974,12 +5974,52 @@
     // the old game's UI (whatever phase it was last in) right alongside the
     // left screen - reported as a broken/overlapping screen after bouncing
     // out of the app twice in a row.
+    // An open overlay (Settings/Objects/Shop/Awards/How to Play, openable
+    // un-guarded from the Lobby) is NOT skipped here - applyPhase() itself
+    // now knows how to leave a still-open overlay alone while just waiting,
+    // or force-close it if the game actually went live while this player
+    // was away, so it's safe (and necessary - that's exactly the case that
+    // needs the HUD ticker/bot-schedule restarts below) to run as normal.
     if (leftScreenEl.classList.contains("active") || leavingGame) return;
     reactionsPanelEl.innerHTML = "";
+    // The reaction-cooldown ring's own setTimeout (reactionStripEl click
+    // handler) can suffer the same fate as the hud ticker - if it died while
+    // backgrounded, .cooling never gets removed, and the ring looks stuck
+    // "still cooling" forever even though lastReactionTapAt-based gate it's
+    // illustrating has long since cleared (that check is plain Date.now()
+    // math, unaffected either way). Always safe to clear: by the time a
+    // visibilitychange round-trip happens at all, REACTION_COOLDOWN_MS has
+    // always already elapsed.
+    reactionStripEl.classList.remove("cooling");
     if (currentRoomCode && roomState && roomState.phase) {
+      // hudTimerEl/countdownNumberEl/the kick-challenge countdown are all
+      // driven exclusively by the setInterval in startHudTicker() - nothing
+      // else ever writes to them. Mobile WebViews can suspend a long-running
+      // setInterval while backgrounded without resuming it on their own, and
+      // startHudTicker()'s own `if (hudTickHandle) return` guard means it can
+      // never tell the difference between "already running" and "silently
+      // died" - left alone, those timers just freeze on screen forever after
+      // one bad background/resume cycle, with nothing else to unstick them.
+      // Unconditionally restarting is cheap and always safe either way.
+      if (hudTickHandle) { clearInterval(hudTickHandle); hudTickHandle = null; }
+      startHudTicker();
       applyPhase(roomState);
       lastScoreColumnSignature = null;
       const phase = roomState.phase;
+      // scheduleBotGuesses()/scheduleBotPicks() queue each bot's answer on a
+      // local setTimeout, armed only by the HOST's client - if the host is
+      // the one who backgrounded, that timer can die the same way the HUD
+      // ticker can, silently leaving a bot "stuck" never answering for the
+      // rest of the round (the round itself still advances fine on its own
+      // deadline regardless, so this isn't a deadlock - just a bot that goes
+      // quiet). Both functions already skip any bot that's already
+      // submitted, so re-calling them here is always safe.
+      if (isHost && phase === "question" && roomState.currentQuestion) {
+        scheduleBotGuesses(currentRoomCode, roomState.currentQuestion);
+      }
+      if (isHost && phase === "answers" && roomState.answers) {
+        scheduleBotPicks(currentRoomCode, roomState.answers);
+      }
       if (phase === "question" || phase === "waiting" || phase === "summary") {
         renderScoreColumn();
       }
@@ -9116,7 +9156,24 @@
       nameAvatarScreenEl.classList.remove("active");
     }
     const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
-    if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting");
+    // Settings/Objects/Shop/Awards/How to Play can't be opened mid-game
+    // (guardToolbarNav routes that through a leave-confirmation first), but
+    // CAN be opened un-guarded from the Lobby - every room update (someone
+    // joining, a bot added, etc.) was silently re-activating lobbyScreenEl
+    // underneath whichever one was open the whole time, since the toggle
+    // below never checked for that. Both are plain display:none/
+    // .active{display:block} with no z-index/positioning separation, so
+    // that's two screens' content actually stacked in document flow, not
+    // just visually overlaid. If the game actually starts while an overlay
+    // is open, missing that matters more than staying on the overlay, so
+    // force-close it instead - same reasoning as the editingFromLobby
+    // cancel just above.
+    if (isHudActive) {
+      const openOverlayEl = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
+      if (openOverlayEl) { openOverlayEl.classList.remove("active"); overlayReturnScreen = null; }
+    }
+    const overlayStillOpen = OVERLAY_SCREENS.some((el) => el.classList.contains("active"));
+    if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting" && !overlayStillOpen);
     hostStartBtn.style.display = isHost ? "flex" : "none";
     botControlsEl.style.display = isHost ? "flex" : "none";
     applyLobbyMode(data);
