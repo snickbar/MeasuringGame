@@ -1944,11 +1944,13 @@
   /* ---- Answers / second chance ---- */
   /* Player answers: hand-drawn numbers on scraps of paper, one per row, kept narrow so reactions have room beside the player cards */
   /* two columns of up to five: fills the left column top to bottom, then the right */
-  #answers-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; align-items: start; gap: 6px 8px; margin: 8px 0; padding-left: 2px; }
-  #answers-row .answer-slot { width: 100%; max-width: 138px; }
+  /* one full-width column for up to five papers; only past five does it split into two so everything still fits */
+  #answers-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
+  #answers-row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 6px 8px; }
+  #answers-row .answer-slot { width: 100%; max-width: none; }
   .answer-slot {
     --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
-    position: relative; width: min(100%, 138px); aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
+    position: relative; width: 100%; aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
     background: transparent; border-image: none; color: #000; cursor: pointer;
     transform: rotate(var(--rot)); transition: transform 150ms ease;
     filter: drop-shadow(0 2px 0 rgba(90,60,30,.28)) drop-shadow(0 4px 5px rgba(90,60,30,.18));
@@ -1964,12 +1966,12 @@
   .answer-slot.pp-card { --img: url(icons/paper/card.png); --ar: 2.13; }
   .answer-slot.pp-torn { --img: url(icons/paper/torn.png); --ar: 2.13; }
   .answer-slot.pp-sticky { --img: url(icons/paper/sticky.png); --ar: 2.13; }
-  .answer-slot.pp-graphgreen { --img: url(icons/paper/graphgreen.png); --ar: 2.13; }
-  .answer-slot.pp-stickynote { --img: url(icons/paper/stickynote.png); --ar: 2.13; }
-  .answer-slot.pp-scroll { --img: url(icons/paper/scroll.png); --ar: 2.13; }
+  .answer-slot.pp-graphgreen { --img: url(icons/paper/graphgreen.png); --ar: 2.0; }
+  .answer-slot.pp-stickynote { --img: url(icons/paper/stickynote.png); --ar: 1.8; }
+  .answer-slot.pp-scroll { --img: url(icons/paper/scroll.png); --ar: 2.0; }
   .answer-slot.pp-receipt { --img: url(icons/paper/receipt.png); --ar: 2.13; }
-  .answer-slot.pp-napkin { --img: url(icons/paper/napkin.png); --ar: 2.13; }
-  .answer-slot.pp-lined { --img: url(icons/paper/lined.png); --ar: 2.13; }
+  .answer-slot.pp-napkin { --img: url(icons/paper/napkin.png); --ar: 2.0; }
+  .answer-slot.pp-lined { --img: url(icons/paper/lined.png); --ar: 1.8; }
   .answer-slot:nth-child(even) { --rot: 1.2deg; }
   .answer-slot:nth-child(odd) { --rot: -1.4deg; }
   .answer-slot:nth-child(3n) { --rot: .6deg; }
@@ -1992,7 +1994,7 @@
   @keyframes crayonRing { from { opacity: 0; transform: rotate(-2deg) scale(1.25); } to { opacity: 1; transform: rotate(-2deg) scale(1); } }
   .hand-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8% 11% 8% 13%; }
   .answer-slot.pp-card .hand-num { padding-top: 15%; }
-  .hand-num svg { width: 100%; height: 100%; max-height: 34px; overflow: visible; }
+  .hand-num svg { width: 100%; min-width: 0; height: 100%; max-height: 52px; overflow: visible; }
   .hand-num path { fill: none; stroke: #3a332b; stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
   .hand-num path.ghost { stroke: #6b5f50; stroke-width: 2.4; opacity: .4; }
   .hand-num.draw-last g:last-child path { stroke-dashoffset: 1; animation: handDraw .3s ease-out forwards; }
@@ -2038,7 +2040,7 @@
   /* ---- Reveal ---- */
   #reveal-list { perspective: 800px; padding-left: 2px; }
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
-  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 18px; }
+  .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: 100%; margin: 0 0 18px; }
   .reveal-card .rv-paper { cursor: default; width: 100%; }
   /* papers waiting to be revealed show only as a soft silhouette, so their colour and style do not give away whose they are */
   .reveal-card .rv-paper.face-down { filter: none; }
@@ -8629,6 +8631,7 @@
     const myPick = (data.picks || {})[currentPlayerId];
     const myEntry = answers.find((a) => a.playerId === currentPlayerId);
     answersRowEl.innerHTML = "";
+    answersRowEl.classList.toggle("two-col", answers.filter((e) => e.playerId !== currentPlayerId).length > 5);
     // A fresh random order every round (seeded by this round's deadline so re-renders keep it stable).
     let seed = 0;
     for (const c of `${currentRoomCode}:${data.answersEndsAt || data.round || 0}`) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
