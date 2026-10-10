@@ -1047,7 +1047,7 @@
   .solo-lobby .players-header { margin: 6px 0 0; padding-right: 70px; }
   .solo-lobby .players-header h3 { display: none; }
   .solo-lobby #host-start-btn { font-size: 14px; padding: 8px 6px; max-width: none; }
-  .solo-lobby #bot-controls { margin: 8px 0 0; }
+  .solo-lobby .lobby-bots-row { margin: 8px 0 0; }
   .bot-row-ctl { display: flex; align-items: center; gap: 3px; margin-left: 0; flex-shrink: 0; }
   .bot-row-ctl .bot-btn { height: 26px; min-width: 44px; font-size: 11px; border-width: 0 9px; opacity: .45; filter: grayscale(.5); }
   .bot-row-ctl .bot-btn.selected { opacity: 1; filter: none; transform: scale(1.06); }
@@ -1364,6 +1364,12 @@
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
   .lobby-player-count { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--text-muted); }
+  /* Add-bot button and the player count sit side by side, button on the left; the count takes
+     whatever room is left and shrinks itself (via .fit-text) rather than wrapping or overflowing. */
+  .lobby-bots-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+  .lobby-bots-row #bot-controls { margin: 0; }
+  .lobby-bots-row .lobby-player-count { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #solo-add-bot-btn { height: 50px; min-width: 130px; padding: 0 10px; font-size: 18px; border-width: 0 25px; }
   @keyframes readyGlowPulse {
     0%, 100% { filter: drop-shadow(0 0 0 rgba(255,205,90,0)); }
     50% { filter: drop-shadow(0 0 7px rgba(255,205,90,.95)); }
@@ -2767,14 +2773,16 @@
   <div class="players-header">
     <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
   </div>
-  <div id="bot-controls">
-    <span>Add bot:</span>
-    <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
-    <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
-    <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
-    <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
+  <div class="lobby-bots-row">
+    <div id="bot-controls">
+      <span>Add bot:</span>
+      <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
+      <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
+      <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
+      <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
+    </div>
+    <p id="lobby-player-count" class="lobby-player-count fit-text"></p>
   </div>
-  <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
   <ul id="player-list"></ul>
 </div>
@@ -6590,6 +6598,7 @@
     });
     const playerCount = Object.keys(currentPlayers).length;
     lobbyPlayerCountEl.textContent = `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here` + (playerCount >= FRAME_COUNT ? ` \u2022 Room full (${FRAME_COUNT} max)` : "");
+    fitTextToBox(lobbyPlayerCountEl);
     if (!isFirstRender && roomState.phase === "waiting") {
       for (const id of renderedPlayerListIds) {
         if (!newIds.has(id)) { playSound("leave"); break; }
