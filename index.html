@@ -2510,6 +2510,7 @@
       <button id="debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins</button>
       <button id="debug-reset-host-unlock-btn" type="button" class="gacha-debug-btn">Reset host</button>
       <button id="debug-reset-avatars-btn" type="button" class="gacha-debug-btn">Reset avatars</button>
+      <button id="debug-unlock-avatars-btn" type="button" class="gacha-debug-btn">Unlock all avatars</button>
       <button id="debug-reset-flairs-btn" type="button" class="gacha-debug-btn">Reset flairs</button>
       <button id="debug-reset-reactions-btn" type="button" class="gacha-debug-btn">Reset reactions</button>
       <button id="debug-reset-holiday-btn" type="button" class="gacha-debug-btn">Reset holiday packs</button>
@@ -6209,6 +6210,11 @@
   document.getElementById("debug-add-coins-btn").addEventListener("click", () => { awardCoinsForGameEnd(100); });
   document.getElementById("debug-reset-avatars-btn").addEventListener("click", async () => {
     await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: defaultUnlockedAvatars() });
+  });
+  document.getElementById("debug-unlock-avatars-btn").addEventListener("click", async () => {
+    const all = {};
+    AVATARS.forEach((a) => { all[a] = true; });
+    await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: all });
   });
   document.getElementById("debug-reset-flairs-btn").addEventListener("click", async () => {
     await update(ref(db, `profiles/${deviceId}`), {
