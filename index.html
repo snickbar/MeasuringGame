@@ -1938,6 +1938,9 @@
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
   .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 18px; }
   .reveal-card .rv-paper { cursor: default; width: 100%; }
+  /* papers waiting to be revealed show only as a soft silhouette, so their colour and style do not give away whose they are */
+  .reveal-card .rv-paper.face-down { filter: none; }
+  .reveal-card .rv-paper.face-down .paper-bg { filter: brightness(0); opacity: .14; }
   .reveal-card:nth-child(even) .rv-paper { --rot: 1.2deg; }
   .reveal-card:nth-child(odd) .rv-paper { --rot: -1.4deg; }
   .reveal-card:nth-child(3n) .rv-paper { --rot: .6deg; }
@@ -8023,7 +8026,7 @@
     const stamp = withNumber
       ? `<span class="owner-stamp">${avatarHtml(p.avatar || "")}</span>` + (entry.doubledOwn ? `<span class="dd-chip" title="Doubled down"><svg viewBox="0 0 34 34" aria-hidden="true"><g stroke="#4a110d" stroke-width="1"><circle cx="13" cy="19" r="11" fill="#9c2a22"/><circle cx="13" cy="19" r="9.3" fill="none" stroke="#f3e3d0" stroke-width="3" stroke-dasharray="4.4 3.1"/><circle cx="19" cy="14" r="11" fill="#e0453a"/><circle cx="19" cy="14" r="9.3" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4.4 3.1"/><circle cx="19" cy="14" r="5.6" fill="#e0453a" stroke="#fff" stroke-width="1.2"/></g></svg></span>` : "")
       : "";
-    return `<div class="answer-slot rv-paper frame-${frameIndex} pp-${PAPER_STYLES[frameIndex % PAPER_STYLES.length]}"><span class="paper-bg"></span>`
+    return `<div class="answer-slot rv-paper${withNumber ? "" : " face-down"} frame-${frameIndex} pp-${PAPER_STYLES[frameIndex % PAPER_STYLES.length]}"><span class="paper-bg"></span>`
       + (withNumber ? handNumberHtml(entry.guess, entry.playerId, animate) : "") + stamp + `</div>`;
   }
 
