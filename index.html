@@ -4329,6 +4329,9 @@
     const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
     return Math.floor((h + l - 7 * m + 114) / 31) - 1;
   }
+  // Holiday Sampler: one favourite from each pack. Always buyable, never boosted, free in months with no pack.
+  const SAMPLER_PACK = { id: "sampler", name: "Holiday Sampler" };
+  const SAMPLER_IDS = new Set(["confetti", "teddy-bear", "leprechaun", "easter-egg", "pinata", "coffee-mug", "firecracker", "sailboat", "crayon", "candy-corn", "turkey", "christmas-tree"]);
   function seasonPackIds(date) {
     const month = date.getMonth(), year = date.getFullYear();
     return MONTH_PACKS.filter((p) => (p.month === "easter" ? easterMonth(year) : p.month) === month).map((p) => p.id);
@@ -4337,6 +4340,7 @@
   function activePackIdsFor(date, ownedPacks) {
     const ids = new Set(seasonPackIds(date));
     Object.keys(ownedPacks || {}).forEach((id) => { if (ownedPacks[id]) ids.add(id); });
+    if (seasonPackIds(date).length === 0) ids.add("sampler"); // a month with no pack of its own gets the sampler free
     return Array.from(ids);
   }
   const SEASON_BOOST_CHANCE = 0.15; // each in-season object gets an extra draw ticket this often - a tiny nudge (about +1% of all rounds)
@@ -4399,7 +4403,7 @@
     const key = packs.join(",") + "|" + season.join(",");
     let pool = poolCache.get(key);
     if (!pool) {
-      const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack)));
+      const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))));
       pool = { objects, seasonal: objects.filter((o) => o.pack && season.includes(o.pack)), bag: [], relBag: [], partners: null };
       poolCache.set(key, pool);
     }
@@ -6128,20 +6132,22 @@
     const el = document.getElementById("themed-pack-shop");
     if (!el) return;
     const owned = myProfile.holidayPacks || {};
-    el.innerHTML = seasonPackIds(new Date()).map((id) => {
-      const p = MONTH_PACKS.find((x) => x.id === id);
-      const has = !!owned[id];
-      return `<div class="host-unlock-shop-box themed-pack-box${has ? " unlocked" : ""}">
+    const season = seasonPackIds(new Date());
+    const cards = season.map((id) => ({ id, title: MONTH_PACKS.find((x) => x.id === id).name + " Pack",
+      desc: "This month's themed objects are free right now. Unlock them to use all year round.", price: "$1.99", has: !!owned[id], free: false }));
+    cards.push({ id: "sampler", title: SAMPLER_PACK.name,
+      desc: "One favourite from every themed pack: 12 holiday objects to play with all year round." + (season.length ? "" : " Free this month!"),
+      price: "$1.99", has: !!owned.sampler || !season.length, free: !season.length && !owned.sampler });
+    el.innerHTML = cards.map((c) => `<div class="host-unlock-shop-box themed-pack-box${c.has ? " unlocked" : ""}">
         <div class="host-unlock-top-row"><div class="host-unlock-text">
-          <h3>${p.name} Pack</h3>
-          <p>This month's themed objects are free right now. Unlock them to use all year round.</p>
+          <h3>${c.title}</h3>
+          <p>${c.desc}</p>
         </div></div>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${id}"${has ? " disabled" : ""}>${has ? "✓ Unlocked" : "Unlock for $1.99 · One time"}</button>
-      </div>`;
-    }).join("");
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.free ? "✓ Free this month" : c.has ? "✓ Unlocked" : "Unlock for " + c.price + " · One time"}</button>
+      </div>`).join("");
   }
   async function purchaseThemedPack(id) {
-    if (!seasonPackIds(new Date()).includes(id)) return;
+    if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
       return { ...profile, holidayPacks: { ...(profile.holidayPacks || {}), [id]: true } };
