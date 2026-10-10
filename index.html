@@ -919,6 +919,18 @@
   .settings-card { padding: 10px; margin: 12px 0; border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill; color: var(--text); }
   .settings-card > h3 { margin-top: 0; }
   .settings-card .edit-preset-settings-btn:last-child, .settings-card #settings-account-status { margin-bottom: 0; }
+  .settings-profile-row { display: flex; align-items: center; gap: 14px; }
+  .settings-avatar-big { width: 92px; height: 92px; flex-shrink: 0; padding: 6px; margin: 0; border-radius: 20px; background: #fffdf6; border: 3px solid var(--brand); position: relative; }
+  .settings-avatar-big img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .settings-avatar-big::after { content: "\270E"; position: absolute; right: -6px; bottom: -6px; width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 14px; line-height: 26px; text-align: center; }
+  .settings-profile-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .settings-profile-name label { font-size: 13px; color: var(--text-muted); }
+  .settings-profile-name input { margin: 0; width: 100%; }
+  .settings-profile-hint { font-size: 12px; color: var(--text-muted); }
+  .settings-preset-btn { margin: 20px 0 6px; }
+  .settings-preset-hint { text-align: center; }
+  #settings-avatar-picker { margin-top: 10px; }
+  #settings-avatar-picker h3 { margin: 4px 0; font-size: 15px; }
   .settings-footer-link { text-align: center; margin-top: 24px; font-size: 14px; }
   .settings-footer-link a { color: var(--brand); }
   .icon-toggle-btn {
@@ -2390,8 +2402,25 @@
     <h1>Settings</h1>
   </div>
 
+  <div class="settings-card" id="settings-profile-card">
+    <h3>Profile</h3>
+    <div class="settings-profile-row">
+      <button id="settings-avatar-big" type="button" class="settings-avatar-big" aria-label="Change default avatar" aria-expanded="false"></button>
+      <div class="settings-profile-name">
+        <label for="settings-name-input">Default name</label>
+        <input id="settings-name-input" placeholder="Your name" maxlength="12" />
+        <span class="settings-profile-hint">Tap your avatar to change it</span>
+      </div>
+    </div>
+    <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn settings-preset-btn">Custom Game Presets</button>
+    <p class="settings-profile-hint settings-preset-hint">Your saved timer, rounds and item settings for new games</p>
+    <div id="settings-avatar-picker" hidden>
+      <h3>Default avatar</h3>
+      <div id="settings-avatar-grid"></div>
+    </div>
+  </div>
+
   <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
-  <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn">Edit Preset Game Settings</button>
 
   <div class="settings-card">
   <h3>Account</h3>
@@ -2413,11 +2442,6 @@
     <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
   </div>
 
-  <h3>Default name</h3>
-  <input id="settings-name-input" placeholder="Your name" maxlength="12" />
-
-  <h3>Default avatar</h3>
-  <div id="settings-avatar-grid"></div>
 
   <div id="debug-coins-panel" style="display:none;">
     <h3>Debug: set coins</h3>
@@ -5098,7 +5122,15 @@
     settingsNameInput.value = currentName;
   });
 
+  const settingsAvatarBigEl = document.getElementById("settings-avatar-big");
+  const settingsAvatarPickerEl = document.getElementById("settings-avatar-picker");
+  settingsAvatarBigEl.addEventListener("click", () => {
+    const open = settingsAvatarPickerEl.hidden;
+    settingsAvatarPickerEl.hidden = !open;
+    settingsAvatarBigEl.setAttribute("aria-expanded", String(open));
+  });
   function renderSettingsAvatarGrid() {
+    settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
     settingsAvatarGridEl.innerHTML = "";
     // Only avatars the player actually owns - unlike the join/lobby avatar
     // picker, this one has no "locked" state to show; it's just your
@@ -5114,6 +5146,8 @@
         renderSettingsAvatarGrid();
         renderAvatarGrid();
         playSound("pick");
+        settingsAvatarPickerEl.hidden = true;
+        settingsAvatarBigEl.setAttribute("aria-expanded", "false");
       });
       settingsAvatarGridEl.appendChild(btn);
     });
