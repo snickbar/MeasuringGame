@@ -4553,7 +4553,7 @@
   // The strip along the bottom of every in-game screen: your equipped reactions first, then any empty owned slots, then the locked ones.
   const reactionStripEl = document.getElementById("reaction-strip");
   let lastReactionTapAt = 0;
-  const REACTION_COOLDOWN_MS = 2000;
+  const REACTION_COOLDOWN_MS = 1000;
   function renderReactionStrip() {
     if (!reactionStripEl) return;
     const owned = ownedReactionSlots();
@@ -7882,7 +7882,12 @@
       top = mid - RX_STAGE / 2;
     }
     if (r.previewAt) { left = r.previewAt.x - RX_STAGE / 2; top = r.previewAt.y - RX_STAGE / 2; }
-    if (rxShowing[r.playerId]) { rxShowing[r.playerId].remove(); delete rxShowing[r.playerId]; }
+    // A reaction still lingering (mid fade-out) from this same player used to
+    // get yanked off instantly when a new one came in - now it just keeps
+    // playing out on its own (same self-cleanup via life.onfinish below), and
+    // the new one loads in behind it instead of on top (see insertBefore
+    // below), so a quick second tap doesn't look like a jarring swap.
+    const lingering = rxShowing[r.playerId];
     const stage = document.createElement("div");
     stage.className = "rx-stage";
     stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RX_STAGE}px;height:${RX_STAGE}px`;
@@ -7897,7 +7902,11 @@
       piv.innerHTML = `<span class="rx-text">${emojiHtml(r.emoji)}</span>`; // an older version's emoji
     }
     stage.appendChild(piv);
-    reactionsPanelEl.appendChild(stage);
+    if (lingering && lingering.isConnected) {
+      reactionsPanelEl.insertBefore(stage, lingering);
+    } else {
+      reactionsPanelEl.appendChild(stage);
+    }
     rxShowing[r.playerId] = stage;
     if (def && def.id === "sideeye") {
       piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.12)", offset: .2 }, { transform: "none" }], { duration: 500, easing: "ease-out" });
