@@ -547,6 +547,11 @@
   #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 60px 8px 6px; background: #fbfaf6; }
   /* Back button rides in the pinned stats row, right of the Combinations box */
   #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
+  .items-tabs { display: flex; gap: 6px; margin: 0 -6px; padding: 4px 60px 6px 6px; position: sticky; top: 62px; z-index: 6; background: #fbfaf6; }
+  #items-content .items-tabs + .items-stats { top: 100px; }
+  .items-tab { flex: 1; font: inherit; font-weight: 700; padding: 7px 0; border-radius: 10px; border: 2px solid #f0b32e; background: #fff8e1; color: #9a5d0a; cursor: pointer; }
+  .items-tab.active { background: #f0b32e; color: #fff; }
+  .items-pack-away { font-size: 11px; font-weight: 700; color: #9a5d0a; background: #ffe9a8; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -4162,17 +4167,181 @@
   // object at least this many pairs by also including its closest-ratio
   // matches even when they fall under the cutoff.
   const RELATIVE_MIN_PARTNERS = 10;
-  // Precomputed once so "Keep it relative" mode can never produce a pair that
-  // violates the ratio, no matter how unlucky a random draw would otherwise be.
-  const RELATIVE_PAIRS = (() => {
+
+  // ---- Themed month packs ----
+  // Each pack's objects are free for everyone during its month, and can be bought to stay all year.
+  // Easter has no fixed month, so it follows the month Easter Sunday falls in that year.
+  const MONTH_PACKS = [
+    { id: "newyear", name: "New Year's", month: 0 },
+    { id: "valentine", name: "Valentine's Day", month: 1 },
+    { id: "stpatrick", name: "St. Patrick's Day", month: 2 },
+    { id: "easter", name: "Easter", month: "easter" },
+    { id: "may", name: "Mother's Day & Cinco de Mayo", month: 4 },
+    { id: "june", name: "Father's Day & Summer", month: 5 },
+    { id: "july", name: "Fourth of July & BBQ", month: 6 },
+    { id: "august", name: "Summer Vacation", month: 7 },
+    { id: "september", name: "Back to School", month: 8 },
+    { id: "halloween", name: "Halloween", month: 9 },
+    { id: "thanksgiving", name: "Thanksgiving", month: 10 },
+    { id: "christmas", name: "Christmas", month: 11 },
+  ];
+  // [pack, id, name, plural, mm]. An object only joins the game once its picture is listed in
+  // HOLIDAY_IMAGE_IDS (add an id there when items/<id>.webp is added).
+  const HOLIDAY_OBJECT_DEFS = [
+    ["christmas", "christmas-tree", "Christmas tree", "Christmas trees", 1800],
+    ["christmas", "christmas-stocking", "Christmas stocking", "Christmas stockings", 450],
+    ["christmas", "candy-cane", "candy cane", "candy canes", 150],
+    ["christmas", "mistletoe", "sprig of mistletoe", "sprigs of mistletoe", 200],
+    ["christmas", "present", "present", "presents", 300],
+    ["christmas", "santa-hat", "Santa hat", "Santa hats", 400],
+    ["christmas", "sleigh", "sleigh", "sleighs", 1800],
+    ["christmas", "reindeer", "reindeer", "reindeer", 1900],
+    ["christmas", "snow-globe", "snow globe", "snow globes", 150],
+    ["christmas", "gingerbread-house", "gingerbread house", "gingerbread houses", 300],
+    ["halloween", "pumpkin", "pumpkin", "pumpkins", 300],
+    ["halloween", "jack-o-lantern", "jack-o'-lantern", "jack-o'-lanterns", 300],
+    ["halloween", "witch-hat", "witch hat", "witch hats", 400],
+    ["halloween", "cauldron", "cauldron", "cauldrons", 500],
+    ["halloween", "skeleton", "skeleton", "skeletons", 1700],
+    ["halloween", "ghost", "ghost", "ghosts", 1500],
+    ["halloween", "bat", "bat", "bats", 250],
+    ["halloween", "candy-corn", "candy corn", "candy corn", 25],
+    ["halloween", "coffin", "coffin", "coffins", 2000],
+    ["halloween", "black-cat", "black cat", "black cats", 450],
+    ["thanksgiving", "turkey", "roast turkey", "roast turkeys", 400],
+    ["thanksgiving", "pilgrim-hat", "Pilgrim hat", "Pilgrim hats", 250],
+    ["thanksgiving", "cornucopia", "cornucopia", "cornucopias", 500],
+    ["thanksgiving", "pumpkin-pie", "pumpkin pie", "pumpkin pies", 230],
+    ["thanksgiving", "cranberry", "cranberry", "cranberries", 15],
+    ["thanksgiving", "stuffing", "bowl of stuffing", "bowls of stuffing", 250],
+    ["thanksgiving", "dinner-roll", "dinner roll", "dinner rolls", 80],
+    ["thanksgiving", "mashed-potatoes", "bowl of mashed potatoes", "bowls of mashed potatoes", 200],
+    ["thanksgiving", "casserole-dish", "casserole dish", "casserole dishes", 330],
+    ["thanksgiving", "napkin", "napkin", "napkins", 400],
+    ["valentine", "heart", "heart", "hearts", 120],
+    ["valentine", "chocolate", "chocolate", "chocolates", 30],
+    ["valentine", "cupid", "Cupid", "Cupids", 450],
+    ["valentine", "cupids-arrow", "Cupid's arrow", "Cupid's arrows", 700],
+    ["valentine", "valentines-card", "Valentine's card", "Valentine's cards", 180],
+    ["valentine", "teddy-bear", "teddy bear", "teddy bears", 300],
+    ["valentine", "jewelry-box", "jewelry box", "jewelry boxes", 100],
+    ["valentine", "conversation-heart", "conversation heart", "conversation hearts", 25],
+    ["valentine", "bouquet", "bouquet", "bouquets", 500],
+    ["valentine", "candle", "lit candle", "lit candles", 150],
+    ["stpatrick", "shamrock", "shamrock", "shamrocks", 60],
+    ["stpatrick", "leprechaun-hat", "leprechaun hat", "leprechaun hats", 200],
+    ["stpatrick", "pot-of-gold", "pot of gold", "pots of gold", 250],
+    ["stpatrick", "gold-coin", "gold coin", "gold coins", 35],
+    ["stpatrick", "rainbow", "rainbow", "rainbows", 6000000],
+    ["stpatrick", "green-beer-mug", "green beer mug", "green beer mugs", 170],
+    ["stpatrick", "four-leaf-clover", "four-leaf clover", "four-leaf clovers", 40],
+    ["stpatrick", "leprechaun", "leprechaun", "leprechauns", 1000],
+    ["stpatrick", "horseshoe", "horseshoe", "horseshoes", 130],
+    ["stpatrick", "shillelagh", "shillelagh", "shillelaghs", 900],
+    ["easter", "easter-egg", "Easter egg", "Easter eggs", 55],
+    ["easter", "egg-basket", "egg basket", "egg baskets", 250],
+    ["easter", "chocolate-bunny", "chocolate bunny", "chocolate bunnies", 150],
+    ["easter", "bunny-ears", "bunny ears headband", "bunny ears headbands", 300],
+    ["easter", "easter-basket", "Easter basket", "Easter baskets", 300],
+    ["easter", "jelly-bean", "jelly bean", "jelly beans", 20],
+    ["easter", "marshmallow-chick", "marshmallow chick", "marshmallow chicks", 60],
+    ["easter", "plastic-egg", "plastic egg", "plastic eggs", 65],
+    ["easter", "carrot", "carrot", "carrots", 180],
+    ["easter", "baby-chick", "baby chick", "baby chicks", 100],
+    ["newyear", "champagne-glass", "champagne glass", "champagne glasses", 200],
+    ["newyear", "party-hat", "party hat", "party hats", 200],
+    ["newyear", "noisemaker", "noisemaker", "noisemakers", 180],
+    ["newyear", "confetti", "piece of confetti", "pieces of confetti", 15],
+    ["newyear", "balloon", "balloon", "balloons", 300],
+    ["newyear", "fireworks", "firework burst", "firework bursts", 100000],
+    ["newyear", "clock", "clock", "clocks", 300],
+    ["newyear", "countdown-sign", "countdown sign", "countdown signs", 1200],
+    ["newyear", "streamer", "party streamer", "party streamers", 4000],
+    ["newyear", "disco-ball", "disco ball", "disco balls", 300],
+    ["may", "tulip", "tulip", "tulips", 300],
+    ["may", "mothers-day-card", "Mother's Day card", "Mother's Day cards", 180],
+    ["may", "pearl-necklace", "pearl necklace", "pearl necklaces", 450],
+    ["may", "handbag", "handbag", "handbags", 300],
+    ["may", "breakfast-tray", "breakfast tray", "breakfast trays", 500],
+    ["may", "sombrero", "sombrero", "sombreros", 500],
+    ["may", "maraca", "maraca", "maracas", 250],
+    ["may", "pinata", "piñata", "piñatas", 600],
+    ["may", "chili-pepper", "chili pepper", "chili peppers", 120],
+    ["may", "taco", "taco", "tacos", 150],
+    ["june", "necktie", "necktie", "neckties", 1400],
+    ["june", "toolbox", "toolbox", "toolboxes", 400],
+    ["june", "fishing-rod", "fishing rod", "fishing rods", 2100],
+    ["june", "coffee-mug", "coffee mug", "coffee mugs", 110],
+    ["june", "grill-spatula", "grill spatula", "grill spatulas", 400],
+    ["june", "golf-club", "golf club", "golf clubs", 1100],
+    ["june", "baseball-glove", "baseball glove", "baseball gloves", 300],
+    ["june", "sunscreen-bottle", "sunscreen bottle", "sunscreen bottles", 180],
+    ["june", "lemonade-pitcher", "lemonade pitcher", "lemonade pitchers", 250],
+    ["june", "popsicle", "popsicle", "popsicles", 150],
+    ["july", "american-flag", "American flag", "American flags", 900],
+    ["july", "sparkler", "sparkler", "sparklers", 250],
+    ["july", "firecracker", "firecracker", "firecrackers", 100],
+    ["july", "barbecue-grill", "barbecue grill", "barbecue grills", 1000],
+    ["july", "hamburger", "hamburger", "hamburgers", 120],
+    ["july", "corn-on-the-cob", "corn on the cob", "corn on the cob", 200],
+    ["july", "ribs", "rack of ribs", "racks of ribs", 300],
+    ["july", "ketchup-bottle", "ketchup bottle", "ketchup bottles", 200],
+    ["july", "cooler", "cooler", "coolers", 600],
+    ["july", "uncle-sam-hat", "Uncle Sam hat", "Uncle Sam hats", 400],
+    ["august", "beach-ball", "beach ball", "beach balls", 400],
+    ["august", "sandcastle", "sandcastle", "sandcastles", 400],
+    ["august", "flip-flop", "flip-flop", "flip-flops", 280],
+    ["august", "sunglasses", "pair of sunglasses", "pairs of sunglasses", 140],
+    ["august", "beach-umbrella", "beach umbrella", "beach umbrellas", 2000],
+    ["august", "sailboat", "sailboat", "sailboats", 6000],
+    ["august", "seashell", "seashell", "seashells", 80],
+    ["august", "suitcase", "suitcase", "suitcases", 700],
+    ["august", "snorkel-mask", "snorkel mask", "snorkel masks", 200],
+    ["august", "hammock", "hammock", "hammocks", 3000],
+    ["september", "backpack", "backpack", "backpacks", 450],
+    ["september", "lunchbox", "lunchbox", "lunchboxes", 220],
+    ["september", "notebook", "notebook", "notebooks", 250],
+    ["september", "locker", "school locker", "school lockers", 1800],
+    ["september", "globe", "globe", "globes", 400],
+    ["september", "calculator", "calculator", "calculators", 150],
+    ["september", "scissors", "scissors", "scissors", 200],
+    ["september", "crayon", "crayon", "crayons", 90],
+    ["september", "school-bell", "school bell", "school bells", 200],
+    ["september", "pencil-case", "pencil case", "pencil cases", 200],
+  ];
+  const HOLIDAY_IMAGE_IDS = new Set([]);
+  const HOLIDAY_OBJECTS = HOLIDAY_OBJECT_DEFS.filter((d) => HOLIDAY_IMAGE_IDS.has(d[1]))
+    .map((d) => ({ id: d[1], pack: d[0], name: d[2], plural: d[3], mm: d[4], image: `items/${d[1]}.webp` }));
+  const OBJECT_BY_ID = new Map(OBJECTS.concat(HOLIDAY_OBJECTS).map((o) => [o.id, o]));
+
+  // Anonymous Gregorian algorithm for Easter Sunday's month (0-11).
+  function easterMonth(year) {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+    const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    return Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  }
+  function seasonPackIds(date) {
+    const month = date.getMonth(), year = date.getFullYear();
+    return MONTH_PACKS.filter((p) => (p.month === "easter" ? easterMonth(year) : p.month) === month).map((p) => p.id);
+  }
+  // Packs in play for a game: this month's (free) plus any the host bought. Locked in when the game starts.
+  function activePackIdsFor(date, ownedPacks) {
+    const ids = new Set(seasonPackIds(date));
+    Object.keys(ownedPacks || {}).forEach((id) => { if (ownedPacks[id]) ids.add(id); });
+    return Array.from(ids);
+  }
+  const SEASON_BOOST_CHANCE = 0.15; // each in-season object gets an extra draw ticket this often - a tiny nudge (about +1% of all rounds)
+
+  function buildRelativeIndex(objects) {
     const allPairs = [];
-    for (let i = 0; i < OBJECTS.length; i++) {
-      for (let j = i + 1; j < OBJECTS.length; j++) {
-        const [unit, target] = OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
+    for (let i = 0; i < objects.length; i++) {
+      for (let j = i + 1; j < objects.length; j++) {
+        const [unit, target] = objects[i].mm <= objects[j].mm ? [objects[i], objects[j]] : [objects[j], objects[i]];
         allPairs.push([unit, target, unit.mm / target.mm]);
       }
     }
-
     const seen = new Set();
     const pairs = [];
     function addPair(pair) {
@@ -4181,19 +4350,23 @@
       seen.add(key);
       pairs.push([pair[0], pair[1]]);
     }
-
     allPairs.filter((p) => p[2] >= RELATIVE_MIN_RATIO).forEach(addPair);
-
-    for (const obj of OBJECTS) {
+    for (const obj of objects) {
       allPairs
         .filter((p) => p[0].name === obj.name || p[1].name === obj.name)
         .sort((a, b) => b[2] - a[2])
         .slice(0, RELATIVE_MIN_PARTNERS)
         .forEach(addPair);
     }
-
-    return pairs;
-  })();
+    // Draw the next OBJECT from a shuffled bag, then pick a random valid partner for it.
+    const partners = new Map();
+    for (const o of objects) partners.set(o.name, []);
+    for (const pair of pairs) {
+      partners.get(pair[0].name).push(pair);
+      partners.get(pair[1].name).push(pair);
+    }
+    return partners;
+  }
 
   function shuffled(arr) {
     const a = arr.slice();
@@ -4210,40 +4383,38 @@
   // others never show up - just ordinary small-sample variance, but it reads
   // as broken. Drawing from a shuffled bag (no repeats until every
   // object/pair has come up once) fixes that perception while staying fully
-  // random over any longer run.
-  let objectBag = [];
-  function drawObjectFromBag() {
-    if (objectBag.length === 0) objectBag = shuffled(OBJECTS);
-    return objectBag.pop();
+  // random over any longer run. The pool (and its bags) depend on which packs
+  // the room is using, so each distinct pack set keeps its own.
+  const poolCache = new Map();
+  function poolFor(activePacks, seasonPacks) {
+    const packs = (activePacks || []).slice().sort();
+    const season = (seasonPacks || []).slice().sort();
+    const key = packs.join(",") + "|" + season.join(",");
+    let pool = poolCache.get(key);
+    if (!pool) {
+      const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack)));
+      pool = { objects, seasonal: objects.filter((o) => o.pack && season.includes(o.pack)), bag: [], relBag: [], partners: null };
+      poolCache.set(key, pool);
+    }
+    return pool;
   }
-
-  function pickRandomPair() {
-    const a = drawObjectFromBag();
-    let b = drawObjectFromBag();
-    while (b.name === a.name) b = drawObjectFromBag();
+  function refillBag(pool) {
+    const tickets = pool.objects.slice();
+    pool.seasonal.forEach((o) => { if (Math.random() < SEASON_BOOST_CHANCE) tickets.push(o); });
+    return shuffled(tickets);
+  }
+  function pickRandomPair(pool) {
+    const draw = () => { if (pool.bag.length === 0) pool.bag = refillBag(pool); return pool.bag.pop(); };
+    const a = draw();
+    let b = draw();
+    while (b.name === a.name) b = draw();
     return a.mm <= b.mm ? [a, b] : [b, a];
   }
-
-  // Shuffling RELATIVE_PAIRS itself would cycle back to covering every
-  // object only once every ~1,300 rounds (since well-connected mid-size
-  // objects dominate the pair list) - too slow to feel fair in an actual
-  // test session. Instead draw the next OBJECT from a shuffled bag (same
-  // cadence as "anything goes", one full object cycle every ~90 rounds),
-  // then pick a random valid partner for it.
-  const PARTNERS_BY_OBJECT = (() => {
-    const map = new Map();
-    for (const o of OBJECTS) map.set(o.name, []);
-    for (const pair of RELATIVE_PAIRS) {
-      map.get(pair[0].name).push(pair);
-      map.get(pair[1].name).push(pair);
-    }
-    return map;
-  })();
-  let relativeObjectBag = [];
-  function pickRelativePair() {
-    if (relativeObjectBag.length === 0) relativeObjectBag = shuffled(OBJECTS);
-    const anchor = relativeObjectBag.pop();
-    const candidates = PARTNERS_BY_OBJECT.get(anchor.name);
+  function pickRelativePair(pool) {
+    if (!pool.partners) pool.partners = buildRelativeIndex(pool.objects);
+    if (pool.relBag.length === 0) pool.relBag = refillBag(pool);
+    const anchor = pool.relBag.pop();
+    const candidates = pool.partners.get(anchor.name);
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
@@ -4257,7 +4428,8 @@
   }
 
   function generateQuestion() {
-    const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair() : pickRandomPair();
+    const pool = poolFor(roomState.activePacks, roomState.seasonPacks);
+    const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair(pool) : pickRandomPair(pool);
     return {
       unitId: unit.id,
       targetId: target.id,
@@ -5351,39 +5523,82 @@
   // Display names only - deliberately leaves out OBJECTS[].mm (the whole
   // point of this screen is "what can come up", not "how to rank them by
   // size", so no sorting or labeling by size here).
+  let itemsTab = "normal";
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function packMonthName(p) {
+    return MONTH_NAMES[p.month === "easter" ? easterMonth(new Date().getFullYear()) : p.month];
+  }
   function renderItemsScreen() {
     if (!itemsContentEl) return;
     const seenSet = myProfile.seenObjects || {};
-    const groups = {};
-    OBJECTS.forEach((obj) => {
-      const display = obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
-      const letter = display.charAt(0).toUpperCase();
-      (groups[letter] = groups[letter] || []).push({ display, id: obj.id, image: obj.image, seen: !!seenSet[obj.id] });
-    });
-    const letters = Object.keys(groups).sort();
-    letters.forEach((letter) => groups[letter].sort((a, b) => a.display.localeCompare(b.display)));
-    const totalCount = OBJECTS.length;
-    const seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
-    const comboCount = (totalCount * (totalCount - 1)) / 2;
-    const seenComboCount = Object.keys(myProfile.seenCombos || {}).length;
+    const holidayIds = new Set(HOLIDAY_OBJECT_DEFS.map((d) => d[1]));
+    const isHoliday = itemsTab === "holiday";
+    const mk = (id, name, image, seen) => ({ id, display: name.charAt(0).toUpperCase() + name.slice(1), image, seen: !!seen });
+    const rowHtml = (o) => o.seen
+      ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"></span><span class="items-name">${o.display}</span></div>`
+      : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
+    const comboKeys = Object.keys(myProfile.seenCombos || {});
+    const normalTotal = OBJECTS.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
+    let seenCount, totalCount, seenComboCount, comboCount, listHtml;
+    if (!isHoliday) {
+      const groups = {};
+      OBJECTS.forEach((obj) => {
+        const o = mk(obj.id, obj.name, obj.image, seenSet[obj.id]);
+        (groups[o.display.charAt(0).toUpperCase()] = groups[o.display.charAt(0).toUpperCase()] || []).push(o);
+      });
+      const letters = Object.keys(groups).sort();
+      letters.forEach((l) => groups[l].sort((a, b) => a.display.localeCompare(b.display)));
+      totalCount = normalTotal;
+      seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
+      comboCount = (normalTotal * (normalTotal - 1)) / 2;
+      seenComboCount = comboKeys.filter((k) => !k.split("|").some((id) => holidayIds.has(id))).length;
+      listHtml = letters.map((letter) => `
+        <div class="items-letter-group">
+          <div class="items-letter-title">${letter}</div>
+          <div class="items-list">${groups[letter].map(rowHtml).join("")}</div>
+        </div>`).join("");
+    } else {
+      totalCount = holidayTotal;
+      seenCount = HOLIDAY_OBJECT_DEFS.filter((d) => seenSet[d[1]]).length;
+      // every pair that includes at least one holiday object (holiday+holiday and holiday+normal)
+      comboCount = (holidayTotal * (holidayTotal - 1)) / 2 + holidayTotal * normalTotal;
+      seenComboCount = comboKeys.filter((k) => k.split("|").some((id) => holidayIds.has(id))).length;
+      const owned = (myProfile.holidayPacks || {});
+      const season = seasonPackIds(new Date());
+      listHtml = MONTH_PACKS.map((p) => {
+        const list = HOLIDAY_OBJECT_DEFS.filter((d) => d[0] === p.id)
+          .map((d) => mk(d[1], d[2], `items/${d[1]}.webp`, seenSet[d[1]]))
+          .sort((a, b) => a.display.localeCompare(b.display));
+        const live = season.includes(p.id) || owned[p.id];
+        const tag = live ? "" : ` <span class="items-pack-away">Back in ${packMonthName(p)}</span>`;
+        return `
+        <div class="items-letter-group">
+          <div class="items-letter-title items-pack-title">${p.name}${tag}</div>
+          <div class="items-list">${list.map(rowHtml).join("")}</div>
+        </div>`;
+      }).join("");
+    }
     itemsContentEl.innerHTML =
-      `<div class="items-stats">
+      `<div class="items-tabs">
+        <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
+        <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
+      </div>
+      <div class="items-stats">
         <div class="items-stat-box">
           <div class="items-stat-value">${seenCount} / ${totalCount}</div>
-          <div class="items-stat-label">Objects seen</div>
+          <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
         </div>
         <div class="items-stat-box">
           <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
           <div class="items-stat-label">Combinations seen</div>
         </div>
-      </div>` +
-      letters.map((letter) => `
-        <div class="items-letter-group">
-          <div class="items-letter-title">${letter}</div>
-          <div class="items-list">${groups[letter].map((o) => o.seen
-            ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"></span><span class="items-name">${o.display}</span></div>`
-            : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`).join("")}</div>
-        </div>`).join("");
+      </div>` + listHtml;
+  }
+  if (itemsContentEl) {
+    itemsContentEl.addEventListener("click", (e) => {
+      const t = e.target.closest(".items-tab");
+      if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); itemsContentEl.scrollTop = 0; }
+    });
   }
 
 
@@ -5565,7 +5780,7 @@
   });
 
   function openItemPopup(id) {
-    const obj = OBJECTS.find((o) => o.id === id);
+    const obj = OBJECT_BY_ID.get(id) || (() => { const d = HOLIDAY_OBJECT_DEFS.find((x) => x[1] === id); return d && { name: d[2], image: `items/${d[1]}.webp` }; })();
     if (!obj) return;
     const ov = document.createElement("div");
     ov.id = "item-popup";
@@ -6821,7 +7036,12 @@
   async function startGameNow() {
     playSound("start");
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
-    await update(ref(db, `rooms/${currentRoomCode}`), { phase: "countdown", countdownRound: 1, countdownEndsAt });
+    // The room's object pool is fixed now, from the host's date and owned packs; a later host change doesn't alter it.
+    const now = new Date();
+    await update(ref(db, `rooms/${currentRoomCode}`), {
+      phase: "countdown", countdownRound: 1, countdownEndsAt,
+      activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now),
+    });
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
   }
   // Confirmed via the shared exit-confirm dialog (same pattern already reused
@@ -7051,8 +7271,8 @@
   // The two objects of a question, or null when it can't be drawn.
   function questionObjects(q) {
     if (!q || !q.unitId || !q.targetId || q.unitId === q.targetId) return null;
-    const a = OBJECTS.find((o) => o.id === q.unitId);
-    const b = OBJECTS.find((o) => o.id === q.targetId);
+    const a = OBJECT_BY_ID.get(q.unitId);
+    const b = OBJECT_BY_ID.get(q.targetId);
     return a && b && a.image && b.image ? [a, b] : null;
   }
   // ---- Animation sounds: the engine announces cues; this plays them (Web Audio, so rapid
