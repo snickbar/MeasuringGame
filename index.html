@@ -210,6 +210,12 @@
     aspect-ratio: 555 / 201;
   }
   .home-img-btn img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  /* Badge hangs off the right edge of the "Host Party" cloud, overlapping its rightmost lobe. */
+  .home-lock-badge {
+    position: absolute; top: 50%; right: -4px; transform: translateY(-50%);
+    pointer-events: none; font-size: 30px; line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.45));
+  }
   #home-solo-btn { top: 32%; }
   #home-create-btn { top: 39.9%; }
   #home-join-btn { top: 47.8%; }
@@ -223,6 +229,8 @@
     display: block; margin: 6px auto 10px; width: auto; padding: 6px 12px; font-size: 12px; font-weight: 600;
     background: #fff3cd; color: #7a4a00; border: 2px dashed var(--red); border-radius: 8px;
   }
+  .debug-btn-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .debug-btn-row .gacha-debug-btn { margin: 0 0 6px; }
   #coin-acquire-panel { margin: 0 0 12px; }
   /* Absolutely positioned (like .coin-pack-ribbon on the other 3 cards) so it
      hangs off the card's top edge instead of sitting in-flow - the real
@@ -562,14 +570,20 @@
   #collection-screen.active #collection-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
-  #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 60px 8px 6px; background: #fbfaf6; }
-  /* Back button rides in the pinned stats row, right of the Combinations box */
+  /* Tab toggle and stat boxes are pinned together as ONE sticky unit (not two separately-offset
+     sticky rows) so their stuck positions can never drift apart and overlap while scrolling. */
+  #items-content .items-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px; padding: 4px 60px 0 6px; background: #fbfaf6; }
+  #items-content .items-sticky-head .items-stats { margin: 0 0 12px; padding: 6px 0 8px; }
+  /* Back button rides in the pinned header, right of the Combinations box */
   #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
-  .items-tabs { display: flex; gap: 6px; margin: 0 -6px; padding: 4px 60px 6px 6px; position: sticky; top: 62px; z-index: 6; background: #fbfaf6; }
-  #items-content .items-tabs + .items-stats { top: 100px; }
+  .items-tabs { display: flex; gap: 6px; margin: 0 0 6px; }
   .items-tab { flex: 1; font: inherit; font-weight: 700; padding: 7px 0; border-radius: 10px; border: 2px solid #f0b32e; background: #fff8e1; color: #9a5d0a; cursor: pointer; }
   .items-tab.active { background: #f0b32e; color: #fff; }
   .items-pack-away { font-size: 11px; font-weight: 700; color: #9a5d0a; background: #ffe9a8; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+  /* The currently-active holiday category gets a warm highlighted backdrop behind its rows, and
+     an "Active" tag instead of (or alongside) the "Back in <Month>" tag other categories show. */
+  .items-letter-group.items-pack-live { background: linear-gradient(180deg, #fff6d9, #ffecae); border: 2px solid #f0b32e; border-radius: 14px; padding: 8px 8px 10px; margin: 0 -8px 10px; box-shadow: 0 0 0 4px rgba(240,179,46,.18); }
+  .items-pack-live-tag { font-size: 11px; font-weight: 700; color: #fff; background: #e0453a; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -812,6 +826,26 @@
   .fake-ad-body { font-size: 30px; font-weight: 700; text-align: center; padding: 0 24px; }
   .fake-ad-close { width: auto; min-width: 160px; margin: 0; font-family: inherit; font-size: 20px; font-weight: 700; padding: 12px 36px; border: none; border-radius: 12px; background: #7bce5a; color: #123; }
   .fake-ad-close:disabled { opacity: .35; }
+  #fake-purchase-overlay {
+    position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); padding: 20px;
+  }
+  .fake-purchase-card {
+    width: 100%; max-width: 280px; background: #fffaf0; border-radius: 22px; padding: 24px 20px 20px; text-align: center;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4); animation: popIn 240ms cubic-bezier(.34,1.56,.64,1);
+  }
+  .fake-purchase-icon { font-size: 44px; line-height: 1; margin-bottom: 6px; }
+  .fake-purchase-title { margin: 0 0 6px; font-size: 19px; color: #000; text-shadow: none; }
+  .fake-purchase-desc { margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text); }
+  .fake-purchase-price { font-size: 22px; font-weight: 700; color: #9a5d0a; margin: 0 0 16px; }
+  .fake-purchase-buy-btn, .fake-purchase-cancel-btn {
+    width: 100%; margin: 0 0 8px; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; padding: 11px 14px;
+    border-width: 9px; border-style: solid; border-image-slice: 55 fill; cursor: pointer;
+  }
+  .fake-purchase-buy-btn { border-image-source: var(--btn-accent); }
+  .fake-purchase-buy-btn:disabled { opacity: .6; }
+  .fake-purchase-cancel-btn { border-image-source: var(--btn2); color: var(--text); margin-bottom: 0; }
   .gacha-result-overlay {
     position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -933,7 +967,7 @@
   }
   #settings-toggles-panel label { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
   .settings-card { padding: 10px; margin: 12px 0; border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill; color: var(--text); }
-  .settings-card > h3 { margin-top: 0; }
+  .settings-card > h3 { margin-top: 0; margin-bottom: 6px; }
   .settings-card .edit-preset-settings-btn:last-child, .settings-card #settings-account-status { margin-bottom: 0; }
   .settings-profile-row { display: flex; align-items: center; gap: 14px; }
   .settings-avatar-big { width: 92px; height: 92px; flex-shrink: 0; padding: 6px; margin: 0; border-radius: 20px; background: #fffdf6; border: 3px solid var(--brand); position: relative; }
@@ -947,6 +981,11 @@
   .settings-preset-hint { text-align: center; }
   #settings-avatar-picker { margin-top: 10px; }
   #settings-avatar-picker h3 { margin: 4px 0; font-size: 15px; }
+  /* Plain black text on the Settings screen instead of the app's warm-brown default palette */
+  #settings-screen h1, #settings-screen h3 { color: #000; }
+  #settings-screen .hdr-sub, #settings-screen .settings-profile-name label, #settings-screen .settings-profile-hint,
+  #settings-screen #settings-account-status, #settings-screen #settings-toggles-panel label,
+  #settings-screen .google-account-row, #settings-screen input, #settings-screen .settings-footer-link a { color: #000; }
   .settings-footer-link { text-align: center; margin-top: 24px; font-size: 14px; }
   .settings-footer-link a { color: var(--brand); }
   .icon-toggle-btn {
@@ -1041,7 +1080,7 @@
   .solo-lobby .players-header { margin: 6px 0 0; padding-right: 70px; }
   .solo-lobby .players-header h3 { display: none; }
   .solo-lobby #host-start-btn { font-size: 14px; padding: 8px 6px; max-width: none; }
-  .solo-lobby #bot-controls { margin: 8px 0 0; }
+  .solo-lobby .lobby-bots-row { margin: 8px 0 0; }
   .bot-row-ctl { display: flex; align-items: center; gap: 3px; margin-left: 0; flex-shrink: 0; }
   .bot-row-ctl .bot-btn { height: 26px; min-width: 44px; font-size: 11px; border-width: 0 9px; opacity: .45; filter: grayscale(.5); }
   .bot-row-ctl .bot-btn.selected { opacity: 1; filter: none; transform: scale(1.06); }
@@ -1071,10 +1110,11 @@
   .hostmode-btn.selected { background: var(--red); color: #fff; opacity: 1; }
 
   .edit-preset-settings-btn { width: 100%; margin: 0 0 14px; }
-  .settings-signed-in-box { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+  .settings-signed-in-box { display: flex; align-items: center; gap: 10px; margin: 0; }
   .settings-signed-in-box p { flex: 1; min-width: 0; font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .settings-signed-in-box .edit-preset-settings-btn { width: auto; flex-shrink: 0; margin: 0; padding-inline: 16px; }
-  #settings-account-status { font-size: 13px; color: var(--text-muted); min-height: 1.2em; margin: -8px 0 14px; }
+  .settings-signed-in-box .edit-preset-settings-btn { width: auto; flex-shrink: 0; margin: 0; padding-inline: 14px; --pic-h: 34px; font-size: 13px; }
+  #settings-account-status { font-size: 12px; color: var(--text-muted); min-height: 0; margin: 0; }
+  #settings-account-status:not(:empty) { margin: 6px 0 0; }
   .google-g-icon { width: 18px; height: 18px; flex-shrink: 0; }
   .google-account-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .google-account-row { display: flex; align-items: center; gap: 8px; }
@@ -1358,6 +1398,12 @@
   .players-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
   #host-start-btn { width: auto; flex: 1; max-width: 360px; margin: 0; font-size: 16px; padding: 12px 10px; line-height: 1.25; }
   .lobby-player-count { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--text-muted); }
+  /* Add-bot button and the player count sit side by side, button on the left; the count takes
+     whatever room is left and shrinks itself (via .fit-text) rather than wrapping or overflowing. */
+  .lobby-bots-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+  .lobby-bots-row #bot-controls { margin: 0; }
+  .lobby-bots-row .lobby-player-count { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #solo-add-bot-btn { height: 50px; min-width: 130px; padding: 0 10px; font-size: 18px; border-width: 0 25px; }
   @keyframes readyGlowPulse {
     0%, 100% { filter: drop-shadow(0 0 0 rgba(255,205,90,0)); }
     50% { filter: drop-shadow(0 0 7px rgba(255,205,90,.95)); }
@@ -1448,7 +1494,7 @@
     border-image-source: url(icons/btn-unlock.png); border-image-slice: 0 70 0 170 fill;
   }
   /* Add-bot difficulty pills: green, orange, red, as 9-slice pictures. */
-  #bot-all-row { flex: 1 0 100%; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #bot-all-row { display: flex; margin: 0 0 8px; align-items: center; gap: 8px; flex-wrap: wrap; }
   .bot-btn {
     display: flex; align-items: center; justify-content: center; text-align: center;
     box-sizing: border-box; height: 36px; min-width: 78px; padding: 0 4px; margin: 0;
@@ -1840,7 +1886,7 @@
   #reaction-strip.cooling .react-slot[data-emoji]::after {
     content: ""; position: absolute; inset: -2px; border-radius: 12px; pointer-events: none;
     background: conic-gradient(rgba(255,250,240,0) var(--rx-p), rgba(90,60,30,.42) 0);
-    animation: rxCool 2s linear forwards;
+    animation: rxCool var(--rx-cool-ms, 2s) linear forwards;
   }
   @keyframes rxCool { from { --rx-p: 0deg; } to { --rx-p: 360deg; } }
   @media (prefers-reduced-motion: reduce) { #reaction-strip.cooling .react-slot[data-emoji]::after { animation: none; background: rgba(90,60,30,.35); } }
@@ -2262,7 +2308,7 @@
   <h1 id="home-title">Size Em Up!</h1>
 
   <button id="home-solo-btn" class="home-img-btn" aria-label="Solo Game"><img src="icons/solo-game-btn.png" alt=""></button>
-  <button id="home-create-btn" class="home-img-btn" aria-label="Host Party"><img src="icons/host-party-btn.png" alt=""></button>
+  <button id="home-create-btn" class="home-img-btn" aria-label="Host Party"><img src="icons/host-party-btn.png" alt=""><span id="home-create-lock" class="home-lock-badge" hidden>&#128274;</span></button>
   <button id="home-join-btn" class="home-img-btn" aria-label="Join Game"><img src="icons/join-game-btn.png" alt=""></button>
 </div>
 
@@ -2290,8 +2336,6 @@
         </div>
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
       </div>
-
-      <div id="themed-pack-shop"></div>
 
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
@@ -2326,6 +2370,8 @@
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
       </div>
+
+      <div id="themed-pack-shop"></div>
       <div class="shop-section-label">Reaction packs</div>
       <div id="pack-row"></div>
       <div class="shop-section-label">Flair packs</div>
@@ -2465,8 +2511,16 @@
     <h3>Debug: set coins</h3>
     <input id="debug-coins-input" type="number" min="0" step="1" placeholder="Coin amount" />
     <button id="debug-coins-btn" type="button">Set</button>
-    <h3>Debug: room code unlock</h3>
-    <button id="debug-reset-host-unlock-btn" type="button">Reset (re-lock for testing)</button>
+    <h3>Debug: reset purchases</h3>
+    <div class="debug-btn-row">
+      <button id="debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins</button>
+      <button id="debug-reset-host-unlock-btn" type="button" class="gacha-debug-btn">Reset host</button>
+      <button id="debug-reset-avatars-btn" type="button" class="gacha-debug-btn">Reset avatars</button>
+      <button id="debug-unlock-avatars-btn" type="button" class="gacha-debug-btn">Unlock all avatars</button>
+      <button id="debug-reset-flairs-btn" type="button" class="gacha-debug-btn">Reset flairs</button>
+      <button id="debug-reset-reactions-btn" type="button" class="gacha-debug-btn">Reset reactions</button>
+      <button id="debug-reset-holiday-btn" type="button" class="gacha-debug-btn">Reset holiday packs</button>
+    </div>
   </div>
 
   <p class="settings-footer-link"><a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>
@@ -2479,8 +2533,12 @@
     <div class="hdr-text"><h1>How to Play</h1><span class="hdr-sub">Tap a topic to open it</span></div>
   </div>
 
-  <details class="howto-section"><summary>Creating a room</summary><div class="howto-body">
-    <p>Tap <b>Create Game</b> to choose the room settings and what happens if you disconnect, then tap <b>Create Room</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in.</p>
+  <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
+    <p>Tap <b>Solo Game</b> from the home screen to practice by yourself - no room code, no waiting on anyone. It starts you off with 4 bots, and you can add or remove them from the lobby before you begin. Solo games are always free, even before Host Party is unlocked.</p>
+  </div></details>
+
+  <details class="howto-section"><summary>Hosting a party</summary><div class="howto-body">
+    <p>Tap <b>Host Party</b> to choose the room settings and what happens if you disconnect, then tap <b>Create Room</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
   </div></details>
 
   <details class="howto-section"><summary>Joining a room</summary><div class="howto-body">
@@ -2495,6 +2553,8 @@
     <p>All chosen once, up front, before the room is created:</p>
     <p><b>If host disconnects</b> - "Give another player host" auto-hands host duties to whoever's been in the room longest if you drop; "Save my host spot" holds your spot so rejoining under the same name gets it back.</p>
     <p><b>Timer</b> - how many seconds each round's guessing phase lasts. <b>Rounds</b> - how many rounds the game runs. <b>Item selection</b> - see next section.</p>
+    <p><b>Round advance</b> - <b>Auto Mode</b> moves everyone on to the next screen by itself after the "Auto-advance delay," so no one has to tap anything. <b>Manual Host Mode</b> instead waits for the host to tap Next, which is handy if you want to talk through an answer before moving on. The host can flip this mode on the fly mid-game too, from the toggle next to the timer.</p>
+    <p><b>Presets</b> - once you've got settings you like, save them from <b>Settings &gt; Custom Game Presets</b> into one of three slots with its own name and icon, so you can load the whole setup again next time instead of re-entering it.</p>
   </div></details>
 
   <details class="howto-section"><summary>Item selection</summary><div class="howto-body">
@@ -2507,7 +2567,7 @@
   </div></details>
 
   <details class="howto-section"><summary>Second chances</summary><div class="howto-body">
-    <p>When it's on, everyone gets a few seconds after guesses lock to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly within 1% of the real answer, and picking it earns the bonus point too or <b>double down</b> on your own guess. Picking the round's actual closest answer earns you a bonus point; doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
+    <p>Every round, after guesses lock, everyone gets a few seconds to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly within 1% of the real answer, and picking it earns the bonus point too or <b>double down</b> on your own guess. Picking the round's actual closest answer earns you a bonus point; doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
   </div></details>
 
   <details class="howto-section"><summary>Scoring</summary><div class="howto-body">
@@ -2523,12 +2583,26 @@
     <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever's average guess accuracy is closer to 100%; if that's tied too, they stay tied there as well.</p>
   </div></details>
 
-  <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
-    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+  <details class="howto-section"><summary>Objects &amp; collections</summary><div class="howto-body">
+    <p>Tap the <b>Objects</b> icon in the top toolbar to see every object that can show up in a round, grouped alphabetically - ones you haven't seen yet show as a locked "????" row. The stat boxes at the top track how many objects you've discovered and how many different <b>pairings</b> you've been asked to compare, with a <b>Hide Undiscovered</b> toggle to see only what you've found so far.</p>
+    <p>The <b>Holiday</b> tab (next to Objects) holds seasonal items like Christmas or Halloween props. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Holiday Sampler) from the Shop to keep it in rotation all year.</p>
+    <p>Your avatar collection works the same way: open it from the <b>View All Avatars</b> button on the Shop's Avatars tab to see every avatar grouped by rarity, with a Discovered count and its own Hide Undiscovered toggle.</p>
   </div></details>
 
-  <details class="howto-section"><summary>Avatar Shop</summary><div class="howto-body">
-    <p>Your score becomes coins when a game ends, win or lose. Open the <b>Avatar Shop</b> from the home screen to spend coins - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> from the shop to see every avatar grouped by rarity, with locked ones grayed out.</p>
+  <details class="howto-section"><summary>Awards</summary><div class="howto-body">
+    <p>Tap the <b>Awards</b> icon in the toolbar to see achievements across six categories - Collector, Accuracy, Winning, Second chance, Social, and Fun - each with a few tiers that get harder (and pay out more coins) as you go. A red dot on the toolbar icon means you've got a reward ready to <b>claim</b>; tap the achievement to collect its coins. A Hide Completed toggle keeps the list focused on what's still in progress.</p>
+  </div></details>
+
+  <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
+    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). <b>Flairs</b> are the burst of effects (hearts, fireworks, snow...) that plays around your card for everyone to see when you win a round - equip one from the Shop's Cosmetics tab. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+    <p>Signing in with <b>Google</b> (Settings &gt; Account) saves your coins, avatars, and unlocks to your account instead of just this device, so you can pick up where you left off on a new phone.</p>
+  </div></details>
+
+  <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
+    <p>Your score becomes coins when a game ends, win or lose. Open the <b>Shop</b> from the toolbar to spend them, across three tabs:</p>
+    <p><b>Purchases</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up themed holiday packs to keep seasonal objects in the mix year-round.</p>
+    <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
+    <p><b>Cosmetics</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
   </div></details>
 </div>
 
@@ -2742,20 +2816,22 @@
   <div class="players-header">
     <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
   </div>
-  <div id="bot-controls">
-    <span>Add bot:</span>
-    <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
-    <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
-    <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
-    <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
-    <div id="bot-all-row" style="display:none;">
-      <span>Set all bots:</span>
-      <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Easy</button>
-      <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Medium</button>
-      <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All Hard</button>
+  <div class="lobby-bots-row">
+    <div id="bot-controls">
+      <span>Add bot:</span>
+      <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
+      <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
+      <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
+      <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
     </div>
+    <p id="lobby-player-count" class="lobby-player-count fit-text"></p>
   </div>
-  <p id="lobby-player-count" class="lobby-player-count"></p>
+  <div id="bot-all-row" style="display:none;">
+    <span>Set all bots:</span>
+    <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Easy</button>
+    <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Medium</button>
+    <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All Hard</button>
+  </div>
   <p id="lobby-status"></p>
   <ul id="player-list"></ul>
 </div>
@@ -3483,7 +3559,11 @@
           reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
           flairPacks: { ...(data.flairPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
-          activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length) ? data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean)
+          // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
+          // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
+          // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
+          activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length)
+            ? (data.activeReactions[0] === "none" ? ["none"] : data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean))
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
@@ -3561,6 +3641,38 @@
         closeBtn.disabled = false;
       }, 1000);
       closeBtn.addEventListener("click", () => { ov.remove(); resolve(true); });
+    });
+  }
+  // TEMP: simulated purchase confirmation shown in front of every real-money
+  // buy button in the app, so there's a price/confirm moment before a purchase
+  // completes even though no real payment is wired up yet. Resolves true on
+  // Buy, false on Cancel or tapping the backdrop. Swap the caller's follow-up
+  // (the actual profile write) for a real receipt-validated grant later -
+  // this function itself doesn't need to change.
+  function showFakePurchase({ icon, title, price, desc }) {
+    return new Promise((resolve) => {
+      const ov = document.createElement("div");
+      ov.id = "fake-purchase-overlay";
+      ov.innerHTML = `<div class="fake-purchase-card">
+        <div class="fake-purchase-icon">${icon || "\u{1F6D2}"}</div>
+        <h3 class="fake-purchase-title">${title}</h3>
+        ${desc ? `<p class="fake-purchase-desc">${desc}</p>` : ""}
+        <div class="fake-purchase-price">${price}</div>
+        <button type="button" class="fake-purchase-buy-btn">Buy Now</button>
+        <button type="button" class="fake-purchase-cancel-btn">Cancel</button>
+      </div>`;
+      document.body.appendChild(ov);
+      const buyBtn = ov.querySelector(".fake-purchase-buy-btn");
+      const cancelBtn = ov.querySelector(".fake-purchase-cancel-btn");
+      const close = (ok) => { ov.remove(); resolve(ok); };
+      buyBtn.addEventListener("click", () => {
+        buyBtn.disabled = true;
+        cancelBtn.disabled = true;
+        buyBtn.textContent = "Processing...";
+        setTimeout(() => close(true), 600);
+      });
+      cancelBtn.addEventListener("click", () => close(false));
+      ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
     });
   }
   async function watchAdForCoins() {
@@ -3679,6 +3791,8 @@
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
       if (!owned) btn.addEventListener("click", async () => {
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price });
+        if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       });
@@ -3704,6 +3818,8 @@
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
       if (!owned) btn.addEventListener("click", async () => {
+        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, price: pack.price });
+        if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       });
@@ -3896,6 +4012,8 @@
       // individually with coins - the bundle would have nothing left to add.
       const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       container.appendChild(cosmPackHead(pack, owned, async () => {
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price });
+        if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
       pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
@@ -3927,6 +4045,8 @@
       const owned = !!(myProfile.flairPacks || {})[pack.id]
         || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       container.appendChild(cosmPackHead(pack, owned, async () => {
+        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, price: pack.price });
+        if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       }, `${pack.flairs.length} flairs, or buy each with coins`));
       pack.flairs.forEach((id) => { const it = items.find((x) => x.id === id); if (it) container.appendChild(row(it)); });
@@ -4018,7 +4138,7 @@
     av128: "SafetySadie", av105: "FarmerFred", av130: "MailmanMike", av03: "HootHazel",
     av04: "FlyingFennec", av01: "KingKuma", av08: "PandaPip", av30: "CalicoClem",
     av31: "MidnightMia", av32: "PugglesPenny", av33: "GoldenGus", av142: "HoppyHarold",
-    av143: "ShellyShell", av34: "ManeMaxx", av144: "CheekyChester", av87: "JollyJingles",
+    av143: "ShellyShell", av34: "ManeMaxx", av144: "CheekyChet", av87: "JollyJingles",
     av156: "NanaBanana", av55: "RetroRusty", av161: "SunnyFlor", av83: "FrostyFinn",
     av153: "SunnySol", av155: "LunaLoom",
 
@@ -4026,7 +4146,7 @@
     av152: "SpikeSandy", av09: "EmberDrake", av10: "SparkleUni", av63: "KoalaKip",
     av62: "InkySquiggle", av74: "PricklyPete", av141: "SlitherSid", av36: "BananaBandit",
     av38: "LankyLeo", av145: "PollyParrot", av146: "GeckoGreg", av58: "SkyScreech",
-    av11: "CosmoCody", av13: "SirSteel", av12: "MysticMalachi", av14: "CaptainCutlass",
+    av11: "CosmoCody", av13: "SirSteel", av12: "MysticMage", av14: "CaptCutlass",
     av15: "ShadowShin", av18: "HeroHugo", av129: "BladeBrecken", av69: "BrassDiver",
     av112: "CaptainClara", av78: "DunkDarius", av93: "PartyPete", av75: "BeakerBella",
     av24: "TrailTess", av72: "CowboyColt",
@@ -4034,59 +4154,59 @@
     av25: "ChefAntoine", av103: "BakerBrianna", av111: "DoctorDan", av26: "PixiePenny",
     av97: "GlideGigi", av104: "TeacherTina", av108: "AceAmelia", av88: "CandleCassie",
     av89: "LanternLi", av167: "DoveyDarla", av169: "HopperHallie", av170: "CrabbyCarl",
-    av168: "QuackQuinn", av157: "SpiderSprinkle", av159: "AntAndy", av158: "LadybugLola",
+    av168: "QuackQuinn", av157: "PartySpider", av159: "AntAndy", av158: "LadybugLola",
     av160: "FlutterFaye", av162: "RosieRose", av163: "LilyBelle", av164: "BloomBrynn",
     av39: "WinkyWurp", av40: "PetalPhee", av51: "CountCrimson", av52: "HowlingHank",
     av54: "ZombieZeke", av73: "AlienAra", av80: "GingerSnap", av90: "FrostyFergus",
     av91: "YetiYara", av92: "CarolCrew",
 
-    av122: "AngelAlina", av99: "StarlightSage", av119: "JingleJade", av101: "HollyHugo",
+    av122: "AngelAlina", av99: "StarlitSage", av119: "JingleJade", av101: "HollyHugo",
     av117: "RudyReindeer", av28: "SlimySlick", av41: "BlazeFyre", av42: "SerpentSoren",
     av53: "WrapWesley", av27: "BooBertram", av57: "RexRoar", av59: "FinFrankie",
     av60: "SnowySimone", av61: "BobtailBibi", av67: "BatBaxter", av68: "BunnyBlossom",
-    av94: "ImpIggy", av96: "KingKendrick", av95: "SaintSimeon", av116: "NutcrackerNiko",
-    av118: "SantaStan", av98: "FrostQueenFreya", av120: "FrostFlint", av148: "BubbleBowl",
-    av171: "ProspectorPat", av172: "GardenGerty", av173: "ProfessorPhil", av174: "LibrarianLynn",
+    av94: "ImpIggy", av96: "KingKendrick", av95: "SaintSimeon", av116: "NutcrackNiko",
+    av118: "SantaStan", av98: "QueenFreya", av120: "FrostFlint", av148: "BubbleBowl",
+    av171: "ProspectPat", av172: "GardenGerty", av173: "ProfPhil", av174: "LibraryLynn",
     av175: "MamaMarigold", av176: "BabyBee",
 
     av177: "FreckleFinn", av178: "GrooveGabby", av179: "HijabHana", av185: "SareeSanya",
-    av186: "DiyaDev", av187: "CalaveraCamila", av189: "CupidCarter", av190: "PilgrimPaul",
+    av186: "DiyaDev", av187: "CalaveraCami", av189: "CupidCarter", av190: "PilgrimPaul",
     av191: "LuckyLeo", av192: "BanditRocco", av193: "RedPandaRio", av194: "OtterOllie",
-    av195: "CapyCappy", av196: "LlamaLuna", av197: "FlamingoFiona", av198: "ToucanTobi",
+    av195: "CapyCappy", av196: "LlamaLuna", av197: "FlamingoFi", av198: "ToucanTobi",
     av199: "PeacockPria", av200: "HippoHugo", av225: "BoltNeck", av226: "RattleBones",
     av227: "HexHilda", av228: "GoblinGrix", av229: "TrollTobin", av230: "SneakySnix",
-    av231: "DevilDax", av232: "BigfootBruno", av233: "GargoyleGrit", av239: "MermaidMarina",
+    av231: "DevilDax", av232: "BigfootBruno", av233: "GargoyleGrit", av239: "MermaidMari",
     av240: "ArrowAerin", av241: "VikingVolk",
 
-    av242: "CentaurCassius", av243: "GenieJaleel", av244: "JesterJolly", av245: "BardBramwell",
-    av246: "PrincessPetal", av247: "PrinceParker", av258: "SprinkleCup", av259: "PizzaPeel",
+    av242: "CentaurCass", av243: "GenieJaleel", av244: "JesterJolly", av245: "BardBramwell",
+    av246: "RoyalPetal", av247: "PrinceParker", av258: "SprinkleCup", av259: "PizzaPeel",
     av260: "TacoTuesday", av261: "SushiSake", av262: "DonutDash", av263: "BobaBea",
     av264: "ScoopSundae", av265: "PricklyPaz", av266: "FungiFreddo", av278: "HoardHarlow",
     av280: "SkyWhale", av281: "CosmicCleo", av282: "GildedGaze", av283: "FoxyFelix",
-    av284: "CrystalKade", av285: "MagmaMort", av180: "HoopsHenry", av181: "FirefighterFinn",
+    av284: "CrystalKade", av285: "MagmaMort", av180: "HoopsHenry", av181: "FireFinn",
     av182: "VetVivian", av183: "DJDexter", av184: "SnorkelSam", av201: "ZippyZeb",
     av202: "MooMolly", av203: "OinkieOtis",
 
     av204: "CluckClara", av205: "GallopGinger", av206: "FawnFreya", av207: "NuttyNora",
     av208: "CheesyChip", av209: "BuzzyBea", av210: "SnailySadie", av211: "WhaleWinston",
-    av212: "SplashSkipper", av213: "SeahorseSerena", av214: "JellyJune", av215: "PuffyPaxton",
+    av212: "SplashSkip", av213: "SeahorseRena", av214: "JellyJune", av215: "PuffyPaxton",
     av216: "NarwhalNoa", av217: "WalrusWade", av218: "SealySage", av219: "TrikeTrina",
     av220: "StegoStevie", av221: "MammothMaple", av222: "SabreSasha", av223: "DodoDax",
     av224: "AxieAria", av234: "NessieNoodle", av235: "MimicMax", av236: "ShroomieShay",
     av237: "TimberTrent", av238: "PumpkinPenny", av248: "QueenQuincy", av249: "KnightKellan",
     av250: "SorceressSiv", av251: "ArcticAsher",
 
-    av252: "TanukiTate", av253: "PhoenixPhiona", av254: "GriffinGale", av255: "PegasusPearl",
-    av256: "MinotaurMarcus", av257: "MedusaMira", av268: "BrightBixby", av269: "RainbowReese",
-    av270: "BoltyBob", av271: "FlurryFenn", av272: "OrbitOwen", av273: "ChampionChase",
+    av252: "TanukiTate", av253: "PhoenixPhio", av254: "GriffinGale", av255: "PegasusPearl",
+    av256: "MinotaurMarc", av257: "MedusaMira", av268: "BrightBixby", av269: "RainbowReese",
+    av270: "BoltyBob", av271: "FlurryFenn", av272: "OrbitOwen", av273: "ChampChase",
     av274: "ThriftyPiggy", av275: "RulerRemy", av276: "MeasureMolly", av277: "PencilPenny",
-    av286: "FrostPhoenixFira", av287: "DrakeyDot", av288: "AuroraWolf", av289: "GalaxyJelly",
-    av291: "BobaDrake", av292: "GhostlyGilligan", av293: "TreeTobias", av294: "CloudyCora",
-    av295: "SamuraiFennec", av296: "NinjaNimbus", av297: "WizardWhiskers", av298: "StarlitSocks",
+    av286: "FrostPhoenix", av287: "DrakeyDot", av288: "AuroraWolf", av289: "GalaxyJelly",
+    av291: "BobaDrake", av292: "GhostGilli", av293: "TreeTobias", av294: "CloudyCora",
+    av295: "SamuraiFenn", av296: "NinjaNimbus", av297: "WizardWhisk", av298: "StarlitSocks",
     av299: "PixelPaladin", av300: "PixelMonarch",
 
-    av301: "LittleLancelot", av302: "SlickSplit", av279: "CapsuleCody", av290: "KrakenKalder",
-    av303: "CaptainCoralie", av304: "ArrowAndy", av305: "ValkyrieVee", av306: "MossyMerlin",
+    av301: "LilLancelot", av302: "SlickSplit", av279: "CapsuleCody", av290: "KrakenKalder",
+    av303: "CaptCoralie", av304: "ArrowAndy", av305: "ValkyrieVee", av306: "MossyMerlin",
   };
 
   // Themed bot names: the avatar's key word (or just its first letter for
@@ -4527,6 +4647,7 @@
   const homeScreen = document.getElementById("home-screen");
   const homeSoloBtn = document.getElementById("home-solo-btn");
   const homeCreateBtn = document.getElementById("home-create-btn");
+  const homeCreateLockEl = document.getElementById("home-create-lock");
   const homeJoinBtn = document.getElementById("home-join-btn");
   const createScreenEl = document.getElementById("create-screen");
   const createBackBtn = document.getElementById("create-back-btn");
@@ -4814,7 +4935,12 @@
   // The strip along the bottom of every in-game screen: your equipped reactions first, then any empty owned slots, then the locked ones.
   const reactionStripEl = document.getElementById("reaction-strip");
   let lastReactionTapAt = 0;
-  const REACTION_COOLDOWN_MS = 2000;
+  const REACTION_COOLDOWN_MS = 1000;
+  // The sweeping-ring CSS animation (.cooling ::after, see rxCool keyframes)
+  // can't read a JS constant directly - drives its duration off this custom
+  // property instead, so the visual indicator can't drift out of sync with
+  // the actual cooldown gate above again.
+  document.documentElement.style.setProperty("--rx-cool-ms", REACTION_COOLDOWN_MS + "ms");
   function renderReactionStrip() {
     if (!reactionStripEl) return;
     const owned = ownedReactionSlots();
@@ -5141,7 +5267,12 @@
     if (!code) { takenAvatars = new Set(); renderAvatarGrid(); return; }
     takenAvatarsUnsub = onValue(ref(db, `rooms/${code}/players`), (snap) => {
       const players = snap.val() || {};
-      takenAvatars = new Set(Object.values(players).map((p) => p.avatar).filter(Boolean));
+      // Excludes the editing player's own existing entry (relevant when
+      // reached via the Lobby's back button, editing in place while already
+      // a member of this exact room) - without this, your own avatar reads
+      // as "taken" by yourself, and renderAvatarGrid()'s silent-reassign
+      // guard below bumps you off it onto AVATARS' first entry every time.
+      takenAvatars = new Set(Object.entries(players).filter(([id]) => id !== currentPlayerId).map(([, p]) => p.avatar).filter(Boolean));
       renderAvatarGrid();
     });
   }
@@ -5407,9 +5538,17 @@
     renderWatchAdStatus();
   });
   coinPackBtns.forEach((btn) => {
+    // .coin-pack-buy-btn is also shared by the ad-reward and host-unlock
+    // buttons, which have their own dedicated listeners elsewhere - only
+    // the real coin packs carry data-coins, so that's what scopes this one.
+    if (!btn.dataset.coins) return;
     btn.addEventListener("click", async () => {
+      const amount = parseInt(btn.dataset.coins, 10);
+      const priceText = (btn.textContent.split("·")[0] || "").trim();
+      const bought = await showFakePurchase({ icon: "\u{1FA99}", title: `${amount.toLocaleString()} Coins`, price: priceText || "Buy Now" });
+      if (!bought) return;
       btn.disabled = true;
-      await addCoins(parseInt(btn.dataset.coins, 10));
+      await addCoins(amount);
       btn.disabled = false;
     });
   });
@@ -5659,28 +5798,32 @@
         const list = HOLIDAY_OBJECT_DEFS.filter((d) => d[0] === p.id)
           .map((d) => mk(d[1], d[2], `items/${d[1]}.webp`, seenSet[d[1]]))
           .sort((a, b) => a.display.localeCompare(b.display));
-        const live = season.includes(p.id) || owned[p.id];
-        const tag = live ? "" : ` <span class="items-pack-away">Back in ${packMonthName(p)}</span>`;
+        const isCurrentMonth = season.includes(p.id);
+        const live = isCurrentMonth || owned[p.id];
+        const tag = isCurrentMonth ? ` <span class="items-pack-live-tag">Currently Active</span>`
+          : live ? "" : ` <span class="items-pack-away">Back in ${packMonthName(p)}</span>`;
         return `
-        <div class="items-letter-group">
+        <div class="items-letter-group${isCurrentMonth ? " items-pack-live" : ""}">
           <div class="items-letter-title items-pack-title">${p.name}${tag}</div>
           <div class="items-list">${list.map(rowHtml).join("")}</div>
         </div>`;
       }).join("");
     }
     itemsContentEl.innerHTML =
-      `<div class="items-tabs">
-        <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
-        <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
-      </div>
-      <div class="items-stats">
-        <div class="items-stat-box">
-          <div class="items-stat-value">${seenCount} / ${totalCount}</div>
-          <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
+      `<div class="items-sticky-head">
+        <div class="items-tabs">
+          <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
+          <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
         </div>
-        <div class="items-stat-box">
-          <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
-          <div class="items-stat-label">Combinations seen</div>
+        <div class="items-stats">
+          <div class="items-stat-box">
+            <div class="items-stat-value">${seenCount} / ${totalCount}</div>
+            <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
+          </div>
+          <div class="items-stat-box">
+            <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
+            <div class="items-stat-label">Combinations seen</div>
+          </div>
         </div>
       </div>` + listHtml;
   }
@@ -6089,6 +6232,28 @@
   document.getElementById("debug-reset-host-unlock-btn").addEventListener("click", async () => {
     await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: false });
   });
+  document.getElementById("debug-add-coins-btn").addEventListener("click", () => { awardCoinsForGameEnd(100); });
+  document.getElementById("debug-reset-avatars-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: defaultUnlockedAvatars() });
+  });
+  document.getElementById("debug-unlock-avatars-btn").addEventListener("click", async () => {
+    const all = {};
+    AVATARS.forEach((a) => { all[a] = true; });
+    await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: all });
+  });
+  document.getElementById("debug-reset-flairs-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), {
+      flairPacks: {}, "cosmetics/owned/effects": { classic: true }, "cosmetics/equipped/effects": "classic",
+    });
+  });
+  document.getElementById("debug-reset-reactions-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), {
+      emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS],
+    });
+  });
+  document.getElementById("debug-reset-holiday-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { holidayPacks: {} });
+  });
 
   async function copyTextToClipboard(text) {
     try {
@@ -6180,6 +6345,7 @@
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
     hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $9.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
+    homeCreateLockEl.hidden = shopUnlocked;
 
     if (!isHost) {
       hostUnlockBannerEl.classList.remove("active");
@@ -6216,6 +6382,19 @@
       return { ...profile, hostUnlocked: true, coins: (profile.coins || 0) + HOST_UNLOCK_BONUS_COINS };
     });
   }
+  // Shared by every host-unlock entry point (shop box, shop tab, the lock on
+  // the home button) so they all show the same purchase popup and copy.
+  // Returns true once hostUnlocked is actually set (already owned counts).
+  async function confirmAndPurchaseHostUnlock() {
+    if (myProfile.hostUnlocked) return true;
+    const bought = await showFakePurchase({
+      icon: "\u{1F451}", title: "Host Party", price: "$9.99 · One time",
+      desc: "Host unlimited games with friends, plus 500 bonus coins.",
+    });
+    if (!bought) return false;
+    await purchaseHostUnlock();
+    return true;
+  }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
   const PACK_LOOK = {
     newyear: ["\u{1F386}", "#5b6ee1", "#2a2f8f"], valentine: ["\u{1F495}", "#f48fb1", "#c2185b"], stpatrick: ["\u{1F340}", "#66bb6a", "#1b7a3a"],
@@ -6251,12 +6430,19 @@
       return { ...profile, holidayPacks: { ...(profile.holidayPacks || {}), [id]: true } };
     });
   }
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     const b = e.target.closest && e.target.closest(".themed-pack-buy");
-    if (b && !b.disabled) purchaseThemedPack(b.dataset.pack);
+    if (!b || b.disabled) return;
+    const packId = b.dataset.pack;
+    const pack = packId === "sampler" ? SAMPLER_PACK : MONTH_PACKS.find((x) => x.id === packId);
+    if (!pack) return;
+    const priceText = (b.textContent.split("·")[0] || "").trim();
+    const look = PACK_LOOK[packId] || PACK_LOOK.sampler;
+    const bought = await showFakePurchase({ icon: look[0], title: pack.name, price: priceText || "Unlock" });
+    if (bought) purchaseThemedPack(packId);
   });
-  hostUnlockBtn.addEventListener("click", purchaseHostUnlock);
-  hostUnlockShopBtn.addEventListener("click", purchaseHostUnlock);
+  hostUnlockBtn.addEventListener("click", confirmAndPurchaseHostUnlock);
+  hostUnlockShopBtn.addEventListener("click", confirmAndPurchaseHostUnlock);
 
   // ---- "Install app" banner, driven by the browser's own install
   // eligibility signal rather than a fixed schedule. Suppressed while the
@@ -6315,11 +6501,60 @@
   }
   function resyncUiAfterResume() {
     forceLayoutReflow();
+    // Already showing "you were removed/left" (e.g. the grace-period sweep
+    // kicked an idle backgrounded player) - currentRoomCode/roomState are
+    // still the stale old room's, nothing left to resync into. Without this,
+    // backgrounding and resuming AGAIN while sitting on that screen replayed
+    // applyPhase()/runAnimation() etc. against that stale data, rebuilding
+    // the old game's UI (whatever phase it was last in) right alongside the
+    // left screen - reported as a broken/overlapping screen after bouncing
+    // out of the app twice in a row.
+    // An open overlay (Settings/Objects/Shop/Awards/How to Play, openable
+    // un-guarded from the Lobby) is NOT skipped here - applyPhase() itself
+    // now knows how to leave a still-open overlay alone while just waiting,
+    // or force-close it if the game actually went live while this player
+    // was away, so it's safe (and necessary - that's exactly the case that
+    // needs the HUD ticker/bot-schedule restarts below) to run as normal.
+    if (leftScreenEl.classList.contains("active") || leavingGame) return;
     reactionsPanelEl.innerHTML = "";
+    // The reaction-cooldown ring's own setTimeout (reactionStripEl click
+    // handler) can suffer the same fate as the hud ticker - if it died while
+    // backgrounded, .cooling never gets removed, and the ring looks stuck
+    // "still cooling" forever even though lastReactionTapAt-based gate it's
+    // illustrating has long since cleared (that check is plain Date.now()
+    // math, unaffected either way). Always safe to clear: by the time a
+    // visibilitychange round-trip happens at all, REACTION_COOLDOWN_MS has
+    // always already elapsed.
+    reactionStripEl.classList.remove("cooling");
     if (currentRoomCode && roomState && roomState.phase) {
+      // hudTimerEl/countdownNumberEl/the kick-challenge countdown are all
+      // driven exclusively by the setInterval in startHudTicker() - nothing
+      // else ever writes to them. Mobile WebViews can suspend a long-running
+      // setInterval while backgrounded without resuming it on their own, and
+      // startHudTicker()'s own `if (hudTickHandle) return` guard means it can
+      // never tell the difference between "already running" and "silently
+      // died" - left alone, those timers just freeze on screen forever after
+      // one bad background/resume cycle, with nothing else to unstick them.
+      // Unconditionally restarting is cheap and always safe either way.
+      if (hudTickHandle) { clearInterval(hudTickHandle); hudTickHandle = null; }
+      startHudTicker();
       applyPhase(roomState);
       lastScoreColumnSignature = null;
       const phase = roomState.phase;
+      // scheduleBotGuesses()/scheduleBotPicks() queue each bot's answer on a
+      // local setTimeout, armed only by the HOST's client - if the host is
+      // the one who backgrounded, that timer can die the same way the HUD
+      // ticker can, silently leaving a bot "stuck" never answering for the
+      // rest of the round (the round itself still advances fine on its own
+      // deadline regardless, so this isn't a deadlock - just a bot that goes
+      // quiet). Both functions already skip any bot that's already
+      // submitted, so re-calling them here is always safe.
+      if (isHost && phase === "question" && roomState.currentQuestion) {
+        scheduleBotGuesses(currentRoomCode, roomState.currentQuestion);
+      }
+      if (isHost && phase === "answers" && roomState.answers) {
+        scheduleBotPicks(currentRoomCode, roomState.answers);
+      }
       if (phase === "question" || phase === "waiting" || phase === "summary") {
         renderScoreColumn();
       }
@@ -6329,6 +6564,20 @@
         // no-op guard to fight here.
         renderAnswersScreen(roomState);
         renderScoreColumn();
+      }
+      if (phase === "animation") {
+        // applyPhase() above only re-toggles which VIEW is visible - the
+        // actual picture/animation content is driven separately by
+        // runAnimation(), which no-ops if animPlayKey already matches this
+        // round (it does, from before backgrounding) - left alone, that's
+        // exactly the blank #anim-stage with just the timer/Skip button
+        // around it reported as a stuck/broken-looking screen. stopAnimation()
+        // clears animPlayKey (and bumps animToken, so the old run's now-moot
+        // callbacks can't fire into the restarted one) so runAnimation() does
+        // a genuine restart - animScene itself is still valid for this same
+        // round, so it redraws immediately without re-preparing the pictures.
+        stopAnimation();
+        runAnimation(roomState);
       }
       if (phase === "reveal") {
         // applyPhase() above only re-toggles which VIEW is visible - it
@@ -6503,6 +6752,7 @@
     });
     const playerCount = Object.keys(currentPlayers).length;
     lobbyPlayerCountEl.textContent = `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here` + (playerCount >= FRAME_COUNT ? ` \u2022 Room full (${FRAME_COUNT} max)` : "");
+    fitTextToBox(lobbyPlayerCountEl);
     if (!isFirstRender && roomState.phase === "waiting") {
       for (const id of renderedPlayerListIds) {
         if (!newIds.has(id)) { playSound("leave"); break; }
@@ -6884,7 +7134,10 @@
     setTimeout(run, BTN_BOUNCE_MS + 80);
   }
   homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => showCreateScreen("solo")));
-  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, () => showCreateScreen("party")));
+  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, async () => {
+    if (!(await confirmAndPurchaseHostUnlock())) return;
+    showCreateScreen("party");
+  }));
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
@@ -6914,11 +7167,16 @@
   }
   nameAvatarBackBtn.addEventListener("click", () => {
     nameAvatarScreenEl.classList.remove("active");
-    if (nameAvatarCameFrom === "lobby") {
+    // Backing out of an in-place edit (reached via the Lobby's own back
+    // button) retraces the original setup chain - Settings/Create, not back
+    // to the Lobby - same as if this had been the normal first-time flow.
+    // The only way back to the Lobby from here on is going forward again
+    // (Join Lobby), same as always.
+    if (editingFromLobby) {
       editingFromLobby = false;
       if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
-      lobbyScreenEl.classList.add("active");
-    } else if (nameAvatarCameFrom === "create") {
+    }
+    if (nameAvatarCameFrom === "create") {
       createScreenEl.classList.add("active");
     } else {
       joinScreen.classList.add("active");
@@ -6928,12 +7186,15 @@
   // room" (that's lobby-back's old behavior before this, still used by the
   // actual Exit button); the room listener's own editingFromLobby guard (see
   // applyPhase()) is what keeps it from forcing Lobby straight back into
-  // view on the very next room update.
+  // view on the very next room update. cameFrom is set to whichever screen
+  // actually precedes it in the real setup chain (Create for the host, Join
+  // for a guest) rather than a special "lobby" case, so backing out again
+  // from here goes to Settings, not back to the Lobby.
   lobbyBackBtn.addEventListener("click", () => {
     editingFromLobby = true;
     pendingRoomCode = currentRoomCode;
     lobbyScreenEl.classList.remove("active");
-    showNameAvatarScreen("lobby");
+    showNameAvatarScreen(isHost ? "create" : "join");
   });
 
   let hostTransferModeChoice = "reassign";
@@ -8242,7 +8503,12 @@
       top = mid - RX_STAGE / 2;
     }
     if (r.previewAt) { left = r.previewAt.x - RX_STAGE / 2; top = r.previewAt.y - RX_STAGE / 2; }
-    if (rxShowing[r.playerId]) { rxShowing[r.playerId].remove(); delete rxShowing[r.playerId]; }
+    // A reaction still lingering (mid fade-out) from this same player used to
+    // get yanked off instantly when a new one came in - now it just keeps
+    // playing out on its own (same self-cleanup via life.onfinish below), and
+    // the new one loads in behind it instead of on top (see insertBefore
+    // below), so a quick second tap doesn't look like a jarring swap.
+    const lingering = rxShowing[r.playerId];
     const stage = document.createElement("div");
     stage.className = "rx-stage";
     stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RX_STAGE}px;height:${RX_STAGE}px`;
@@ -8257,7 +8523,11 @@
       piv.innerHTML = `<span class="rx-text">${emojiHtml(r.emoji)}</span>`; // an older version's emoji
     }
     stage.appendChild(piv);
-    reactionsPanelEl.appendChild(stage);
+    if (lingering && lingering.isConnected) {
+      reactionsPanelEl.insertBefore(stage, lingering);
+    } else {
+      reactionsPanelEl.appendChild(stage);
+    }
     rxShowing[r.playerId] = stage;
     if (def && def.id === "sideeye") {
       piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.12)", offset: .2 }, { transform: "none" }], { duration: 500, easing: "ease-out" });
@@ -9423,7 +9693,7 @@
     botControlsEl.querySelectorAll("#bot-controls > .bot-btn:not(#solo-add-bot-btn), #bot-controls > span").forEach((el) => { el.style.display = solo ? "none" : ""; });
     const addBtn = document.getElementById("solo-add-bot-btn");
     addBtn.style.display = solo ? "" : "none";
-    document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) ? "flex" : "none";
+    document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) && isHost ? "flex" : "none";
     addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
     // Host Party needs at least one other real player before it can start.
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
@@ -9444,7 +9714,24 @@
       nameAvatarScreenEl.classList.remove("active");
     }
     const isHudActive = ["question", "answers", "animation", "reveal", "summary", "countdown"].includes(phase);
-    if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting");
+    // Settings/Objects/Shop/Awards/How to Play can't be opened mid-game
+    // (guardToolbarNav routes that through a leave-confirmation first), but
+    // CAN be opened un-guarded from the Lobby - every room update (someone
+    // joining, a bot added, etc.) was silently re-activating lobbyScreenEl
+    // underneath whichever one was open the whole time, since the toggle
+    // below never checked for that. Both are plain display:none/
+    // .active{display:block} with no z-index/positioning separation, so
+    // that's two screens' content actually stacked in document flow, not
+    // just visually overlaid. If the game actually starts while an overlay
+    // is open, missing that matters more than staying on the overlay, so
+    // force-close it instead - same reasoning as the editingFromLobby
+    // cancel just above.
+    if (isHudActive) {
+      const openOverlayEl = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
+      if (openOverlayEl) { openOverlayEl.classList.remove("active"); overlayReturnScreen = null; }
+    }
+    const overlayStillOpen = OVERLAY_SCREENS.some((el) => el.classList.contains("active"));
+    if (!editingFromLobby) lobbyScreenEl.classList.toggle("active", phase === "waiting" && !overlayStillOpen);
     hostStartBtn.style.display = isHost ? "flex" : "none";
     botControlsEl.style.display = isHost ? "flex" : "none";
     applyLobbyMode(data);
