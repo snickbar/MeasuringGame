@@ -229,6 +229,8 @@
     display: block; margin: 6px auto 10px; width: auto; padding: 6px 12px; font-size: 12px; font-weight: 600;
     background: #fff3cd; color: #7a4a00; border: 2px dashed var(--red); border-radius: 8px;
   }
+  .debug-btn-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .debug-btn-row .gacha-debug-btn { margin: 0 0 6px; }
   #coin-acquire-panel { margin: 0 0 12px; }
   /* Absolutely positioned (like .coin-pack-ribbon on the other 3 cards) so it
      hangs off the card's top edge instead of sitting in-flow - the real
@@ -2502,8 +2504,15 @@
     <h3>Debug: set coins</h3>
     <input id="debug-coins-input" type="number" min="0" step="1" placeholder="Coin amount" />
     <button id="debug-coins-btn" type="button">Set</button>
-    <h3>Debug: room code unlock</h3>
-    <button id="debug-reset-host-unlock-btn" type="button">Reset (re-lock for testing)</button>
+    <h3>Debug: reset purchases</h3>
+    <div class="debug-btn-row">
+      <button id="debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins</button>
+      <button id="debug-reset-host-unlock-btn" type="button" class="gacha-debug-btn">Reset host</button>
+      <button id="debug-reset-avatars-btn" type="button" class="gacha-debug-btn">Reset avatars</button>
+      <button id="debug-reset-flairs-btn" type="button" class="gacha-debug-btn">Reset flairs</button>
+      <button id="debug-reset-reactions-btn" type="button" class="gacha-debug-btn">Reset reactions</button>
+      <button id="debug-reset-holiday-btn" type="button" class="gacha-debug-btn">Reset holiday packs</button>
+    </div>
   </div>
 
   <p class="settings-footer-link"><a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>
@@ -6195,6 +6204,23 @@
   });
   document.getElementById("debug-reset-host-unlock-btn").addEventListener("click", async () => {
     await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: false });
+  });
+  document.getElementById("debug-add-coins-btn").addEventListener("click", () => { awardCoinsForGameEnd(100); });
+  document.getElementById("debug-reset-avatars-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: defaultUnlockedAvatars() });
+  });
+  document.getElementById("debug-reset-flairs-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), {
+      flairPacks: {}, "cosmetics/owned/effects": { classic: true }, "cosmetics/equipped/effects": "classic",
+    });
+  });
+  document.getElementById("debug-reset-reactions-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), {
+      emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS],
+    });
+  });
+  document.getElementById("debug-reset-holiday-btn").addEventListener("click", async () => {
+    await update(ref(db, `profiles/${deviceId}`), { holidayPacks: {} });
   });
 
   async function copyTextToClipboard(text) {
