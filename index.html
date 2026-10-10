@@ -557,14 +557,20 @@
   #collection-screen.active #collection-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
-  #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 60px 8px 6px; background: #fbfaf6; }
-  /* Back button rides in the pinned stats row, right of the Combinations box */
+  /* Tab toggle and stat boxes are pinned together as ONE sticky unit (not two separately-offset
+     sticky rows) so their stuck positions can never drift apart and overlap while scrolling. */
+  #items-content .items-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px; padding: 4px 60px 0 6px; background: #fbfaf6; }
+  #items-content .items-sticky-head .items-stats { margin: 0 0 12px; padding: 6px 0 8px; }
+  /* Back button rides in the pinned header, right of the Combinations box */
   #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
-  .items-tabs { display: flex; gap: 6px; margin: 0 -6px; padding: 4px 60px 6px 6px; position: sticky; top: 62px; z-index: 6; background: #fbfaf6; }
-  #items-content .items-tabs + .items-stats { top: 100px; }
+  .items-tabs { display: flex; gap: 6px; margin: 0 0 6px; }
   .items-tab { flex: 1; font: inherit; font-weight: 700; padding: 7px 0; border-radius: 10px; border: 2px solid #f0b32e; background: #fff8e1; color: #9a5d0a; cursor: pointer; }
   .items-tab.active { background: #f0b32e; color: #fff; }
   .items-pack-away { font-size: 11px; font-weight: 700; color: #9a5d0a; background: #ffe9a8; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+  /* The currently-active holiday category gets a warm highlighted backdrop behind its rows, and
+     an "Active" tag instead of (or alongside) the "Back in <Month>" tag other categories show. */
+  .items-letter-group.items-pack-live { background: linear-gradient(180deg, #fff6d9, #ffecae); border: 2px solid #f0b32e; border-radius: 14px; padding: 8px 8px 10px; margin: 0 -8px 10px; box-shadow: 0 0 0 4px rgba(240,179,46,.18); }
+  .items-pack-live-tag { font-size: 11px; font-weight: 700; color: #fff; background: #e0453a; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -2257,8 +2263,6 @@
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
       </div>
 
-      <div id="themed-pack-shop"></div>
-
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
           <span class="shop-hero-badge">&#127916; Free</span>
@@ -2292,6 +2296,8 @@
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
         </div>
       </div>
+
+      <div id="themed-pack-shop"></div>
       <div class="shop-section-label">Reaction packs</div>
       <div id="pack-row"></div>
       <div class="shop-section-label">Flair packs</div>
@@ -5592,28 +5598,32 @@
         const list = HOLIDAY_OBJECT_DEFS.filter((d) => d[0] === p.id)
           .map((d) => mk(d[1], d[2], `items/${d[1]}.webp`, seenSet[d[1]]))
           .sort((a, b) => a.display.localeCompare(b.display));
-        const live = season.includes(p.id) || owned[p.id];
-        const tag = live ? "" : ` <span class="items-pack-away">Back in ${packMonthName(p)}</span>`;
+        const isCurrentMonth = season.includes(p.id);
+        const live = isCurrentMonth || owned[p.id];
+        const tag = isCurrentMonth ? ` <span class="items-pack-live-tag">Currently Active</span>`
+          : live ? "" : ` <span class="items-pack-away">Back in ${packMonthName(p)}</span>`;
         return `
-        <div class="items-letter-group">
+        <div class="items-letter-group${isCurrentMonth ? " items-pack-live" : ""}">
           <div class="items-letter-title items-pack-title">${p.name}${tag}</div>
           <div class="items-list">${list.map(rowHtml).join("")}</div>
         </div>`;
       }).join("");
     }
     itemsContentEl.innerHTML =
-      `<div class="items-tabs">
-        <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
-        <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
-      </div>
-      <div class="items-stats">
-        <div class="items-stat-box">
-          <div class="items-stat-value">${seenCount} / ${totalCount}</div>
-          <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
+      `<div class="items-sticky-head">
+        <div class="items-tabs">
+          <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
+          <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
         </div>
-        <div class="items-stat-box">
-          <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
-          <div class="items-stat-label">Combinations seen</div>
+        <div class="items-stats">
+          <div class="items-stat-box">
+            <div class="items-stat-value">${seenCount} / ${totalCount}</div>
+            <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
+          </div>
+          <div class="items-stat-box">
+            <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
+            <div class="items-stat-label">Combinations seen</div>
+          </div>
         </div>
       </div>` + listHtml;
   }
