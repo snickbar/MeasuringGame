@@ -1788,7 +1788,7 @@
   #reaction-strip.cooling .react-slot[data-emoji]::after {
     content: ""; position: absolute; inset: -2px; border-radius: 12px; pointer-events: none;
     background: conic-gradient(rgba(255,250,240,0) var(--rx-p), rgba(90,60,30,.42) 0);
-    animation: rxCool 2s linear forwards;
+    animation: rxCool var(--rx-cool-ms, 2s) linear forwards;
   }
   @keyframes rxCool { from { --rx-p: 0deg; } to { --rx-p: 360deg; } }
   @media (prefers-reduced-motion: reduce) { #reaction-strip.cooling .react-slot[data-emoji]::after { animation: none; background: rgba(90,60,30,.35); } }
@@ -4554,6 +4554,11 @@
   const reactionStripEl = document.getElementById("reaction-strip");
   let lastReactionTapAt = 0;
   const REACTION_COOLDOWN_MS = 1000;
+  // The sweeping-ring CSS animation (.cooling ::after, see rxCool keyframes)
+  // can't read a JS constant directly - drives its duration off this custom
+  // property instead, so the visual indicator can't drift out of sync with
+  // the actual cooldown gate above again.
+  document.documentElement.style.setProperty("--rx-cool-ms", REACTION_COOLDOWN_MS + "ms");
   function renderReactionStrip() {
     if (!reactionStripEl) return;
     const owned = ownedReactionSlots();
