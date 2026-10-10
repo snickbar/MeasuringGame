@@ -922,6 +922,21 @@
     color: var(--text);
   }
   #settings-toggles-panel label { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
+  .settings-card { padding: 10px; margin: 12px 0; border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill; color: var(--text); }
+  .settings-card > h3 { margin-top: 0; }
+  .settings-card .edit-preset-settings-btn:last-child, .settings-card #settings-account-status { margin-bottom: 0; }
+  .settings-profile-row { display: flex; align-items: center; gap: 14px; }
+  .settings-avatar-big { width: 92px; height: 92px; flex-shrink: 0; padding: 6px; margin: 0; border-radius: 20px; background: #fffdf6; border: 3px solid var(--brand); position: relative; }
+  .settings-avatar-big img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .settings-avatar-big::after { content: "\270E"; position: absolute; right: -6px; bottom: -6px; width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 14px; line-height: 26px; text-align: center; }
+  .settings-profile-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .settings-profile-name label { font-size: 13px; color: var(--text-muted); }
+  .settings-profile-name input { margin: 0; width: 100%; }
+  .settings-profile-hint { font-size: 12px; color: var(--text-muted); }
+  .settings-preset-btn { margin: 20px 0 6px; }
+  .settings-preset-hint { text-align: center; }
+  #settings-avatar-picker { margin-top: 10px; }
+  #settings-avatar-picker h3 { margin: 4px 0; font-size: 15px; }
   .settings-footer-link { text-align: center; margin-top: 24px; font-size: 14px; }
   .settings-footer-link a { color: var(--brand); }
   .icon-toggle-btn {
@@ -1286,6 +1301,8 @@
     border: none; background: transparent; display: flex; align-items: center; justify-content: center;
   }
   .toolbar-badge-btn img { width: 100%; height: 100%; object-fit: contain; }
+  /* Home isn't in the right-hand group, so it kept the fixed 45px while the others grow to 54px; match them. */
+  #toolbar-home-btn { width: 54px; height: 54px; }
   @keyframes helpHintPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(193,122,84,.55); }
     50% { box-shadow: 0 0 0 7px rgba(193,122,84,0); }
@@ -2391,9 +2408,27 @@
     <h1>Settings</h1>
   </div>
 
-  <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
-  <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn">Edit Preset Game Settings</button>
+  <div class="settings-card" id="settings-profile-card">
+    <h3>Profile</h3>
+    <div class="settings-profile-row">
+      <button id="settings-avatar-big" type="button" class="settings-avatar-big" aria-label="Change default avatar" aria-expanded="false"></button>
+      <div class="settings-profile-name">
+        <label for="settings-name-input">Default name</label>
+        <input id="settings-name-input" placeholder="Your name" maxlength="12" />
+        <span class="settings-profile-hint">Tap your avatar to change it</span>
+      </div>
+    </div>
+    <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn settings-preset-btn">Custom Game Presets</button>
+    <p class="settings-profile-hint settings-preset-hint">Your saved timer, rounds and item settings for new games</p>
+    <div id="settings-avatar-picker" hidden>
+      <h3>Default avatar</h3>
+      <div id="settings-avatar-grid"></div>
+    </div>
+  </div>
 
+  <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
+
+  <div class="settings-card">
   <h3>Account</h3>
   <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn google-account-btn" style="display:none;">
     <svg class="google-g-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
@@ -2407,16 +2442,12 @@
     <button id="settings-sign-out-btn" type="button" class="edit-preset-settings-btn">Sign out</button>
   </div>
   <p id="settings-account-status"></p>
+  </div>
 
   <div id="settings-toggles-panel">
     <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
   </div>
 
-  <h3>Default name</h3>
-  <input id="settings-name-input" placeholder="Your name" maxlength="12" />
-
-  <h3>Default avatar</h3>
-  <div id="settings-avatar-grid"></div>
 
   <div id="debug-coins-panel" style="display:none;">
     <h3>Debug: set coins</h3>
@@ -4618,7 +4649,7 @@
     const signedIn = !!accountUser;
     settingsSignInBtn.style.display = signedIn ? "none" : "block";
     settingsSignOutBox.style.display = signedIn ? "flex" : "none";
-    if (signedIn) settingsSignedInEmailEl.textContent = accountUser.email || "your Google account";
+    if (signedIn) settingsSignedInEmailEl.textContent = "Signed in with Google";
   }
   renderAccountUi();
 
@@ -5107,7 +5138,15 @@
     settingsNameInput.value = currentName;
   });
 
+  const settingsAvatarBigEl = document.getElementById("settings-avatar-big");
+  const settingsAvatarPickerEl = document.getElementById("settings-avatar-picker");
+  settingsAvatarBigEl.addEventListener("click", () => {
+    const open = settingsAvatarPickerEl.hidden;
+    settingsAvatarPickerEl.hidden = !open;
+    settingsAvatarBigEl.setAttribute("aria-expanded", String(open));
+  });
   function renderSettingsAvatarGrid() {
+    settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
     settingsAvatarGridEl.innerHTML = "";
     // Only avatars the player actually owns - unlike the join/lobby avatar
     // picker, this one has no "locked" state to show; it's just your
@@ -5123,6 +5162,8 @@
         renderSettingsAvatarGrid();
         renderAvatarGrid();
         playSound("pick");
+        settingsAvatarPickerEl.hidden = true;
+        settingsAvatarBigEl.setAttribute("aria-expanded", "false");
       });
       settingsAvatarGridEl.appendChild(btn);
     });
