@@ -1400,10 +1400,10 @@
   .lobby-player-count { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--text-muted); }
   /* Add-bot button and the player count sit side by side, button on the left; the count takes
      whatever room is left and shrinks itself (via .fit-text) rather than wrapping or overflowing. */
-  .lobby-bots-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+  .lobby-bots-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: 10px 0 6px; }
   .lobby-bots-row #bot-controls { margin: 0; }
-  .lobby-bots-row .lobby-player-count { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #solo-add-bot-btn { height: 50px; min-width: 130px; padding: 0 10px; font-size: 18px; border-width: 0 25px; }
+  #solo-add-bot-btn { height: 50px; min-width: 0; padding: 0 4px; font-size: clamp(13px, 4.4vw, 18px); border-width: 0 clamp(10px, 4vw, 22px); white-space: nowrap; }
+  .lobby-player-count { font-size: 22px; }
   @keyframes readyGlowPulse {
     0%, 100% { filter: drop-shadow(0 0 0 rgba(255,205,90,0)); }
     50% { filter: drop-shadow(0 0 7px rgba(255,205,90,.95)); }
@@ -1494,7 +1494,9 @@
     border-image-source: url(icons/btn-unlock.png); border-image-slice: 0 70 0 170 fill;
   }
   /* Add-bot difficulty pills: green, orange, red, as 9-slice pictures. */
-  #bot-all-row { display: flex; margin: 0 0 8px; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #bot-controls { flex: 0 1 auto; min-width: 0; }
+  #bot-all-row { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  #bot-all-row .bot-btn { flex: 1 1 0; min-width: 0; height: 40px; padding: 0 2px; font-size: clamp(10px, 3vw, 13px); border-width: 0 clamp(8px, 3vw, 14px); white-space: nowrap; }
   .bot-btn {
     display: flex; align-items: center; justify-content: center; text-align: center;
     box-sizing: border-box; height: 36px; min-width: 78px; padding: 0 4px; margin: 0;
@@ -2818,20 +2820,15 @@
   </div>
   <div class="lobby-bots-row">
     <div id="bot-controls">
-      <span>Add bot:</span>
-      <button type="button" class="bot-btn" data-difficulty="easy">Easy</button>
-      <button type="button" class="bot-btn" data-difficulty="medium">Medium</button>
-      <button type="button" class="bot-btn" data-difficulty="hard">Hard</button>
-      <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
+      <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium">+ Add bot</button>
     </div>
-    <p id="lobby-player-count" class="lobby-player-count fit-text"></p>
+    <div id="bot-all-row" style="display:none;">
+      <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Easy</button>
+      <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Medium</button>
+      <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All Hard</button>
+    </div>
   </div>
-  <div id="bot-all-row" style="display:none;">
-    <span>Set all bots:</span>
-    <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Easy</button>
-    <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Medium</button>
-    <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All Hard</button>
-  </div>
+  <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
   <ul id="player-list"></ul>
 </div>
@@ -9690,9 +9687,8 @@
       shareRoomBtn.style.display = "none";
       hostUnlockBannerEl.classList.remove("active");
     }
-    botControlsEl.querySelectorAll("#bot-controls > .bot-btn:not(#solo-add-bot-btn), #bot-controls > span").forEach((el) => { el.style.display = solo ? "none" : ""; });
     const addBtn = document.getElementById("solo-add-bot-btn");
-    addBtn.style.display = solo ? "" : "none";
+    addBtn.style.display = "";
     document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) && isHost ? "flex" : "none";
     addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
     // Host Party needs at least one other real player before it can start.
