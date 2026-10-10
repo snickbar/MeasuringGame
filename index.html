@@ -366,6 +366,8 @@
     position: relative; border: 3px solid #fff; font-size: 13px; padding: 11px 4px;
     background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2800; text-shadow: none;
   }
+  .themed-pack-box { background: linear-gradient(145deg, #7bc67e 0%, #2e8b57 100%); animation: none; }
+  .themed-pack-box .coin-pack-buy-btn { font-size: 13px; }
   .host-unlock-shop-box.unlocked { background: #a5d6a7; border-color: transparent; animation: none; }
   .host-unlock-shop-box.unlocked .host-unlock-ribbon { display: none; }
   .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; text-shadow: none; }
@@ -2244,6 +2246,8 @@
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
       </div>
 
+      <div id="themed-pack-shop"></div>
+
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
           <span class="shop-hero-badge">&#127916; Free</span>
@@ -3287,6 +3291,7 @@
       emojiOwned: {},
       reactionSlotsExtra: 0,
       flairPacks: {},
+      holidayPacks: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
@@ -3369,6 +3374,7 @@
     renderGachaScreen();
     renderWatchAdStatus();
     renderHostUnlockUi();
+    renderThemedPackShop();
     renderCosmeticsShop();
     renderReactionStrip();
     renderPresetSlotButtons();
@@ -3406,6 +3412,7 @@
           emojiOwned: { ...(data.emojiOwned || {}) },
           reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
           flairPacks: { ...(data.flairPacks || {}) },
+          holidayPacks: { ...(data.holidayPacks || {}) },
           activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length) ? data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean)
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
@@ -6126,6 +6133,34 @@
       return { ...profile, hostUnlocked: true, coins: (profile.coins || 0) + HOST_UNLOCK_BONUS_COINS };
     });
   }
+  // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
+  function renderThemedPackShop() {
+    const el = document.getElementById("themed-pack-shop");
+    if (!el) return;
+    const owned = myProfile.holidayPacks || {};
+    el.innerHTML = seasonPackIds(new Date()).map((id) => {
+      const p = MONTH_PACKS.find((x) => x.id === id);
+      const has = !!owned[id];
+      return `<div class="host-unlock-shop-box themed-pack-box${has ? " unlocked" : ""}">
+        <div class="host-unlock-top-row"><div class="host-unlock-text">
+          <h3>${p.name} Pack</h3>
+          <p>This month's themed objects are free right now. Unlock them to use all year round.</p>
+        </div></div>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${id}"${has ? " disabled" : ""}>${has ? "✓ Unlocked" : "Unlock for $1.99 · One time"}</button>
+      </div>`;
+    }).join("");
+  }
+  async function purchaseThemedPack(id) {
+    if (!seasonPackIds(new Date()).includes(id)) return;
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      return { ...profile, holidayPacks: { ...(profile.holidayPacks || {}), [id]: true } };
+    });
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest(".themed-pack-buy");
+    if (b && !b.disabled) purchaseThemedPack(b.dataset.pack);
+  });
   hostUnlockBtn.addEventListener("click", purchaseHostUnlock);
   hostUnlockShopBtn.addEventListener("click", purchaseHostUnlock);
 
