@@ -5966,6 +5966,15 @@
   }
   function resyncUiAfterResume() {
     forceLayoutReflow();
+    // Already showing "you were removed/left" (e.g. the grace-period sweep
+    // kicked an idle backgrounded player) - currentRoomCode/roomState are
+    // still the stale old room's, nothing left to resync into. Without this,
+    // backgrounding and resuming AGAIN while sitting on that screen replayed
+    // applyPhase()/runAnimation() etc. against that stale data, rebuilding
+    // the old game's UI (whatever phase it was last in) right alongside the
+    // left screen - reported as a broken/overlapping screen after bouncing
+    // out of the app twice in a row.
+    if (leftScreenEl.classList.contains("active") || leavingGame) return;
     reactionsPanelEl.innerHTML = "";
     if (currentRoomCode && roomState && roomState.phase) {
       applyPhase(roomState);
@@ -5980,6 +5989,20 @@
         // no-op guard to fight here.
         renderAnswersScreen(roomState);
         renderScoreColumn();
+      }
+      if (phase === "animation") {
+        // applyPhase() above only re-toggles which VIEW is visible - the
+        // actual picture/animation content is driven separately by
+        // runAnimation(), which no-ops if animPlayKey already matches this
+        // round (it does, from before backgrounding) - left alone, that's
+        // exactly the blank #anim-stage with just the timer/Skip button
+        // around it reported as a stuck/broken-looking screen. stopAnimation()
+        // clears animPlayKey (and bumps animToken, so the old run's now-moot
+        // callbacks can't fire into the restarted one) so runAnimation() does
+        // a genuine restart - animScene itself is still valid for this same
+        // round, so it redraws immediately without re-preparing the pictures.
+        stopAnimation();
+        runAnimation(roomState);
       }
       if (phase === "reveal") {
         // applyPhase() above only re-toggles which VIEW is visible - it
