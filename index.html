@@ -3985,6 +3985,8 @@
       // individually with coins - the bundle would have nothing left to add.
       const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       container.appendChild(cosmPackHead(pack, owned, async () => {
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price });
+        if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
       pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
@@ -4013,6 +4015,8 @@
       const owned = !!(myProfile.flairPacks || {})[pack.id]
         || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       container.appendChild(cosmPackHead(pack, owned, async () => {
+        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, price: pack.price });
+        if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       }, `${pack.flairs.length} flairs, or buy each with coins`));
       pack.flairs.forEach((id) => { const it = items.find((x) => x.id === id); if (it) container.appendChild(row(it)); });
