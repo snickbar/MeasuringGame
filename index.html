@@ -547,6 +547,11 @@
   #items-content .items-stats { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 60px 8px 6px; background: #fbfaf6; }
   /* Back button rides in the pinned stats row, right of the Combinations box */
   #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
+  .items-tabs { display: flex; gap: 6px; margin: 0 -6px; padding: 4px 60px 6px 6px; position: sticky; top: 62px; z-index: 6; background: #fbfaf6; }
+  #items-content .items-tabs + .items-stats { top: 100px; }
+  .items-tab { flex: 1; font: inherit; font-weight: 700; padding: 7px 0; border-radius: 10px; border: 2px solid #f0b32e; background: #fff8e1; color: #9a5d0a; cursor: pointer; }
+  .items-tab.active { background: #f0b32e; color: #fff; }
+  .items-pack-away { font-size: 11px; font-weight: 700; color: #9a5d0a; background: #ffe9a8; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -5508,39 +5513,82 @@
   // Display names only - deliberately leaves out OBJECTS[].mm (the whole
   // point of this screen is "what can come up", not "how to rank them by
   // size", so no sorting or labeling by size here).
+  let itemsTab = "normal";
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function packMonthName(p) {
+    return MONTH_NAMES[p.month === "easter" ? easterMonth(new Date().getFullYear()) : p.month];
+  }
   function renderItemsScreen() {
     if (!itemsContentEl) return;
     const seenSet = myProfile.seenObjects || {};
-    const groups = {};
-    OBJECTS.forEach((obj) => {
-      const display = obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
-      const letter = display.charAt(0).toUpperCase();
-      (groups[letter] = groups[letter] || []).push({ display, id: obj.id, image: obj.image, seen: !!seenSet[obj.id] });
-    });
-    const letters = Object.keys(groups).sort();
-    letters.forEach((letter) => groups[letter].sort((a, b) => a.display.localeCompare(b.display)));
-    const totalCount = OBJECTS.length;
-    const seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
-    const comboCount = (totalCount * (totalCount - 1)) / 2;
-    const seenComboCount = Object.keys(myProfile.seenCombos || {}).length;
+    const holidayIds = new Set(HOLIDAY_OBJECT_DEFS.map((d) => d[1]));
+    const isHoliday = itemsTab === "holiday";
+    const mk = (id, name, image, seen) => ({ id, display: name.charAt(0).toUpperCase() + name.slice(1), image, seen: !!seen });
+    const rowHtml = (o) => o.seen
+      ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"></span><span class="items-name">${o.display}</span></div>`
+      : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
+    const comboKeys = Object.keys(myProfile.seenCombos || {});
+    const normalTotal = OBJECTS.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
+    let seenCount, totalCount, seenComboCount, comboCount, listHtml;
+    if (!isHoliday) {
+      const groups = {};
+      OBJECTS.forEach((obj) => {
+        const o = mk(obj.id, obj.name, obj.image, seenSet[obj.id]);
+        (groups[o.display.charAt(0).toUpperCase()] = groups[o.display.charAt(0).toUpperCase()] || []).push(o);
+      });
+      const letters = Object.keys(groups).sort();
+      letters.forEach((l) => groups[l].sort((a, b) => a.display.localeCompare(b.display)));
+      totalCount = normalTotal;
+      seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
+      comboCount = (normalTotal * (normalTotal - 1)) / 2;
+      seenComboCount = comboKeys.filter((k) => !k.split("|").some((id) => holidayIds.has(id))).length;
+      listHtml = letters.map((letter) => `
+        <div class="items-letter-group">
+          <div class="items-letter-title">${letter}</div>
+          <div class="items-list">${groups[letter].map(rowHtml).join("")}</div>
+        </div>`).join("");
+    } else {
+      totalCount = holidayTotal;
+      seenCount = HOLIDAY_OBJECT_DEFS.filter((d) => seenSet[d[1]]).length;
+      // every pair that includes at least one holiday object (holiday+holiday and holiday+normal)
+      comboCount = (holidayTotal * (holidayTotal - 1)) / 2 + holidayTotal * normalTotal;
+      seenComboCount = comboKeys.filter((k) => k.split("|").some((id) => holidayIds.has(id))).length;
+      const owned = (myProfile.holidayPacks || {});
+      const season = seasonPackIds(new Date());
+      listHtml = MONTH_PACKS.map((p) => {
+        const list = HOLIDAY_OBJECT_DEFS.filter((d) => d[0] === p.id)
+          .map((d) => mk(d[1], d[2], `items/${d[1]}.webp`, seenSet[d[1]]))
+          .sort((a, b) => a.display.localeCompare(b.display));
+        const live = season.includes(p.id) || owned[p.id];
+        const tag = live ? "" : ` <span class="items-pack-away">Back in ${packMonthName(p)}</span>`;
+        return `
+        <div class="items-letter-group">
+          <div class="items-letter-title items-pack-title">${p.name}${tag}</div>
+          <div class="items-list">${list.map(rowHtml).join("")}</div>
+        </div>`;
+      }).join("");
+    }
     itemsContentEl.innerHTML =
-      `<div class="items-stats">
+      `<div class="items-tabs">
+        <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
+        <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
+      </div>
+      <div class="items-stats">
         <div class="items-stat-box">
           <div class="items-stat-value">${seenCount} / ${totalCount}</div>
-          <div class="items-stat-label">Objects seen</div>
+          <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
         </div>
         <div class="items-stat-box">
           <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
           <div class="items-stat-label">Combinations seen</div>
         </div>
-      </div>` +
-      letters.map((letter) => `
-        <div class="items-letter-group">
-          <div class="items-letter-title">${letter}</div>
-          <div class="items-list">${groups[letter].map((o) => o.seen
-            ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"></span><span class="items-name">${o.display}</span></div>`
-            : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`).join("")}</div>
-        </div>`).join("");
+      </div>` + listHtml;
+  }
+  if (itemsContentEl) {
+    itemsContentEl.addEventListener("click", (e) => {
+      const t = e.target.closest(".items-tab");
+      if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); itemsContentEl.scrollTop = 0; }
+    });
   }
 
 
@@ -5722,7 +5770,7 @@
   });
 
   function openItemPopup(id) {
-    const obj = OBJECTS.find((o) => o.id === id);
+    const obj = OBJECT_BY_ID.get(id) || (() => { const d = HOLIDAY_OBJECT_DEFS.find((x) => x[1] === id); return d && { name: d[2], image: `items/${d[1]}.webp` }; })();
     if (!obj) return;
     const ov = document.createElement("div");
     ov.id = "item-popup";
