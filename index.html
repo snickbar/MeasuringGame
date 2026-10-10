@@ -1843,7 +1843,9 @@
 
   /* ---- Answers / second chance ---- */
   /* Player answers: hand-drawn numbers on scraps of paper, one per row, kept narrow so reactions have room beside the player cards */
-  #answers-row { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 8px 0; padding-left: 2px; }
+  /* two columns of up to five: fills the left column top to bottom, then the right */
+  #answers-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; align-items: start; gap: 6px 8px; margin: 8px 0; padding-left: 2px; }
+  #answers-row .answer-slot { width: 100%; max-width: 138px; }
   .answer-slot {
     --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
     position: relative; width: min(100%, 138px); aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
@@ -1938,6 +1940,9 @@
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
   .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: min(100%, 138px); margin: 0 0 18px; }
   .reveal-card .rv-paper { cursor: default; width: 100%; }
+  /* papers waiting to be revealed show only as a soft silhouette, so their colour and style do not give away whose they are */
+  .reveal-card .rv-paper.face-down { filter: none; }
+  .reveal-card .rv-paper.face-down .paper-bg { filter: brightness(0); opacity: .14; }
   .reveal-card:nth-child(even) .rv-paper { --rot: 1.2deg; }
   .reveal-card:nth-child(odd) .rv-paper { --rot: -1.4deg; }
   .reveal-card:nth-child(3n) .rv-paper { --rot: .6deg; }
@@ -8043,9 +8048,13 @@
     const myPick = (data.picks || {})[currentPlayerId];
     const myEntry = answers.find((a) => a.playerId === currentPlayerId);
     answersRowEl.innerHTML = "";
-    answers.forEach((entry) => {
-      const isMine = entry.playerId === currentPlayerId;
-      if (isMine) return;
+    // A fresh random order every round (seeded by this round's deadline so re-renders keep it stable).
+    let seed = 0;
+    for (const c of `${currentRoomCode}:${data.answersEndsAt || data.round || 0}`) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+    const seededRand = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const shuffled = answers.filter((e) => e.playerId !== currentPlayerId).slice();
+    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(seededRand() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+    shuffled.forEach((entry) => {
       const isMyPick = !!myPick && myPick.type === "pick" && myPick.targetPlayerId === entry.playerId;
       const frameIndex = entry.truth ? (Math.round(entry.value * 100) % 5) + 1 : ((currentPlayers[entry.playerId] && currentPlayers[entry.playerId].frameIndex) || 1);
       const btn = document.createElement("button");
@@ -8113,7 +8122,7 @@
     const stamp = withNumber
       ? `<span class="owner-stamp">${avatarHtml(p.avatar || "")}</span>` + (entry.doubledOwn ? `<span class="dd-chip" title="Doubled down"><svg viewBox="0 0 34 34" aria-hidden="true"><g stroke="#4a110d" stroke-width="1"><circle cx="13" cy="19" r="11" fill="#9c2a22"/><circle cx="13" cy="19" r="9.3" fill="none" stroke="#f3e3d0" stroke-width="3" stroke-dasharray="4.4 3.1"/><circle cx="19" cy="14" r="11" fill="#e0453a"/><circle cx="19" cy="14" r="9.3" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="4.4 3.1"/><circle cx="19" cy="14" r="5.6" fill="#e0453a" stroke="#fff" stroke-width="1.2"/></g></svg></span>` : "")
       : "";
-    return `<div class="answer-slot rv-paper frame-${frameIndex} pp-${PAPER_STYLES[frameIndex % PAPER_STYLES.length]}"><span class="paper-bg"></span>`
+    return `<div class="answer-slot rv-paper${withNumber ? "" : " face-down"} frame-${frameIndex} pp-${PAPER_STYLES[frameIndex % PAPER_STYLES.length]}"><span class="paper-bg"></span>`
       + (withNumber ? handNumberHtml(entry.guess, entry.playerId, animate) : "") + stamp + `</div>`;
   }
 
