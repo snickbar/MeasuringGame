@@ -210,6 +210,14 @@
     aspect-ratio: 555 / 201;
   }
   .home-img-btn img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  /* Badge hangs off the right edge of the "Host Party" cloud, overlapping its rightmost lobe. */
+  .home-lock-badge {
+    position: absolute; top: 50%; right: -10px; transform: translateY(-50%);
+    width: 36px; height: 36px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle at 35% 30%, #fff6da, #f0b32e 70%, #b9790f);
+    border: 3px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
   #home-solo-btn { top: 32%; }
   #home-create-btn { top: 39.9%; }
   #home-join-btn { top: 47.8%; }
@@ -813,6 +821,26 @@
   .fake-ad-body { font-size: 30px; font-weight: 700; text-align: center; padding: 0 24px; }
   .fake-ad-close { width: auto; min-width: 160px; margin: 0; font-family: inherit; font-size: 20px; font-weight: 700; padding: 12px 36px; border: none; border-radius: 12px; background: #7bce5a; color: #123; }
   .fake-ad-close:disabled { opacity: .35; }
+  #fake-purchase-overlay {
+    position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); padding: 20px;
+  }
+  .fake-purchase-card {
+    width: 100%; max-width: 280px; background: #fffaf0; border-radius: 22px; padding: 24px 20px 20px; text-align: center;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4); animation: popIn 240ms cubic-bezier(.34,1.56,.64,1);
+  }
+  .fake-purchase-icon { font-size: 44px; line-height: 1; margin-bottom: 6px; }
+  .fake-purchase-title { margin: 0 0 6px; font-size: 19px; color: #000; text-shadow: none; }
+  .fake-purchase-desc { margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text); }
+  .fake-purchase-price { font-size: 22px; font-weight: 700; color: #9a5d0a; margin: 0 0 16px; }
+  .fake-purchase-buy-btn, .fake-purchase-cancel-btn {
+    width: 100%; margin: 0 0 8px; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; padding: 11px 14px;
+    border-width: 9px; border-style: solid; border-image-slice: 55 fill; cursor: pointer;
+  }
+  .fake-purchase-buy-btn { border-image-source: var(--btn-accent); }
+  .fake-purchase-buy-btn:disabled { opacity: .6; }
+  .fake-purchase-cancel-btn { border-image-source: var(--btn2); color: var(--text); margin-bottom: 0; }
   .gacha-result-overlay {
     position: fixed; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -2273,7 +2301,7 @@
   <h1 id="home-title">Size Em Up!</h1>
 
   <button id="home-solo-btn" class="home-img-btn" aria-label="Solo Game"><img src="icons/solo-game-btn.png" alt=""></button>
-  <button id="home-create-btn" class="home-img-btn" aria-label="Host Party"><img src="icons/host-party-btn.png" alt=""></button>
+  <button id="home-create-btn" class="home-img-btn" aria-label="Host Party"><img src="icons/host-party-btn.png" alt=""><span id="home-create-lock" class="home-lock-badge" hidden>&#128274;</span></button>
   <button id="home-join-btn" class="home-img-btn" aria-label="Join Game"><img src="icons/join-game-btn.png" alt=""></button>
 </div>
 
@@ -3590,6 +3618,38 @@
       closeBtn.addEventListener("click", () => { ov.remove(); resolve(true); });
     });
   }
+  // TEMP: simulated purchase confirmation shown in front of every real-money
+  // buy button in the app, so there's a price/confirm moment before a purchase
+  // completes even though no real payment is wired up yet. Resolves true on
+  // Buy, false on Cancel or tapping the backdrop. Swap the caller's follow-up
+  // (the actual profile write) for a real receipt-validated grant later -
+  // this function itself doesn't need to change.
+  function showFakePurchase({ icon, title, price, desc }) {
+    return new Promise((resolve) => {
+      const ov = document.createElement("div");
+      ov.id = "fake-purchase-overlay";
+      ov.innerHTML = `<div class="fake-purchase-card">
+        <div class="fake-purchase-icon">${icon || "\u{1F6D2}"}</div>
+        <h3 class="fake-purchase-title">${title}</h3>
+        ${desc ? `<p class="fake-purchase-desc">${desc}</p>` : ""}
+        <div class="fake-purchase-price">${price}</div>
+        <button type="button" class="fake-purchase-buy-btn">Buy Now</button>
+        <button type="button" class="fake-purchase-cancel-btn">Cancel</button>
+      </div>`;
+      document.body.appendChild(ov);
+      const buyBtn = ov.querySelector(".fake-purchase-buy-btn");
+      const cancelBtn = ov.querySelector(".fake-purchase-cancel-btn");
+      const close = (ok) => { ov.remove(); resolve(ok); };
+      buyBtn.addEventListener("click", () => {
+        buyBtn.disabled = true;
+        cancelBtn.disabled = true;
+        buyBtn.textContent = "Processing...";
+        setTimeout(() => close(true), 600);
+      });
+      cancelBtn.addEventListener("click", () => close(false));
+      ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
+    });
+  }
   async function watchAdForCoins() {
     const today = todayDateStr();
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -3706,6 +3766,8 @@
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
       if (!owned) btn.addEventListener("click", async () => {
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price });
+        if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       });
@@ -3731,6 +3793,8 @@
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy Now`;
       if (!owned) btn.addEventListener("click", async () => {
+        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, price: pack.price });
+        if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       });
@@ -4551,6 +4615,7 @@
   const homeScreen = document.getElementById("home-screen");
   const homeSoloBtn = document.getElementById("home-solo-btn");
   const homeCreateBtn = document.getElementById("home-create-btn");
+  const homeCreateLockEl = document.getElementById("home-create-lock");
   const homeJoinBtn = document.getElementById("home-join-btn");
   const createScreenEl = document.getElementById("create-screen");
   const createBackBtn = document.getElementById("create-back-btn");
@@ -5435,9 +5500,17 @@
     renderWatchAdStatus();
   });
   coinPackBtns.forEach((btn) => {
+    // .coin-pack-buy-btn is also shared by the ad-reward and host-unlock
+    // buttons, which have their own dedicated listeners elsewhere - only
+    // the real coin packs carry data-coins, so that's what scopes this one.
+    if (!btn.dataset.coins) return;
     btn.addEventListener("click", async () => {
+      const amount = parseInt(btn.dataset.coins, 10);
+      const priceText = (btn.textContent.split("·")[0] || "").trim();
+      const bought = await showFakePurchase({ icon: "\u{1FA99}", title: `${amount.toLocaleString()} Coins`, price: priceText || "Buy Now" });
+      if (!bought) return;
       btn.disabled = true;
-      await addCoins(parseInt(btn.dataset.coins, 10));
+      await addCoins(amount);
       btn.disabled = false;
     });
   });
@@ -6212,6 +6285,7 @@
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
     hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $9.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
+    homeCreateLockEl.hidden = shopUnlocked;
 
     if (!isHost) {
       hostUnlockBannerEl.classList.remove("active");
@@ -6248,6 +6322,19 @@
       return { ...profile, hostUnlocked: true, coins: (profile.coins || 0) + HOST_UNLOCK_BONUS_COINS };
     });
   }
+  // Shared by every host-unlock entry point (shop box, shop tab, the lock on
+  // the home button) so they all show the same purchase popup and copy.
+  // Returns true once hostUnlocked is actually set (already owned counts).
+  async function confirmAndPurchaseHostUnlock() {
+    if (myProfile.hostUnlocked) return true;
+    const bought = await showFakePurchase({
+      icon: "\u{1F451}", title: "Host Party", price: "$9.99 · One time",
+      desc: "Host unlimited games with friends, plus 500 bonus coins.",
+    });
+    if (!bought) return false;
+    await purchaseHostUnlock();
+    return true;
+  }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
   const PACK_LOOK = {
     newyear: ["\u{1F386}", "#5b6ee1", "#2a2f8f"], valentine: ["\u{1F495}", "#f48fb1", "#c2185b"], stpatrick: ["\u{1F340}", "#66bb6a", "#1b7a3a"],
@@ -6283,12 +6370,19 @@
       return { ...profile, holidayPacks: { ...(profile.holidayPacks || {}), [id]: true } };
     });
   }
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     const b = e.target.closest && e.target.closest(".themed-pack-buy");
-    if (b && !b.disabled) purchaseThemedPack(b.dataset.pack);
+    if (!b || b.disabled) return;
+    const packId = b.dataset.pack;
+    const pack = packId === "sampler" ? SAMPLER_PACK : MONTH_PACKS.find((x) => x.id === packId);
+    if (!pack) return;
+    const priceText = (b.textContent.split("·")[0] || "").trim();
+    const look = PACK_LOOK[packId] || PACK_LOOK.sampler;
+    const bought = await showFakePurchase({ icon: look[0], title: pack.name, price: priceText || "Unlock" });
+    if (bought) purchaseThemedPack(packId);
   });
-  hostUnlockBtn.addEventListener("click", purchaseHostUnlock);
-  hostUnlockShopBtn.addEventListener("click", purchaseHostUnlock);
+  hostUnlockBtn.addEventListener("click", confirmAndPurchaseHostUnlock);
+  hostUnlockShopBtn.addEventListener("click", confirmAndPurchaseHostUnlock);
 
   // ---- "Install app" banner, driven by the browser's own install
   // eligibility signal rather than a fixed schedule. Suppressed while the
@@ -6980,7 +7074,10 @@
     setTimeout(run, BTN_BOUNCE_MS + 80);
   }
   homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => showCreateScreen("solo")));
-  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, () => showCreateScreen("party")));
+  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, async () => {
+    if (!(await confirmAndPurchaseHostUnlock())) return;
+    showCreateScreen("party");
+  }));
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
