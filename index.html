@@ -1494,6 +1494,7 @@
     border-image-source: url(icons/btn-unlock.png); border-image-slice: 0 70 0 170 fill;
   }
   /* Add-bot difficulty pills: green, orange, red, as 9-slice pictures. */
+  #bot-all-row { display: flex; margin: 0 0 8px; align-items: center; gap: 8px; flex-wrap: wrap; }
   .bot-btn {
     display: flex; align-items: center; justify-content: center; text-align: center;
     box-sizing: border-box; height: 36px; min-width: 78px; padding: 0 4px; margin: 0;
@@ -2824,6 +2825,12 @@
       <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium" style="display:none;">+ Add bot</button>
     </div>
     <p id="lobby-player-count" class="lobby-player-count fit-text"></p>
+  </div>
+  <div id="bot-all-row" style="display:none;">
+    <span>Set all bots:</span>
+    <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Easy</button>
+    <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Medium</button>
+    <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All Hard</button>
   </div>
   <p id="lobby-status"></p>
   <ul id="player-list"></ul>
@@ -7449,8 +7456,17 @@
       joinedAt: serverTimestamp(),
     });
   }
-  document.querySelectorAll(".bot-btn").forEach((btn) => {
+  document.querySelectorAll(".bot-btn:not(.bot-all-btn)").forEach((btn) => {
     btn.addEventListener("click", () => addBot(btn.dataset.difficulty));
+  });
+  // Set every bot in the lobby to one difficulty at once.
+  document.querySelectorAll(".bot-all-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!isHost || !currentRoomCode) return;
+      const updates = {};
+      Object.entries(currentPlayers).forEach(([id, p]) => { if (p.isBot) updates[`${id}/botDifficulty`] = btn.dataset.difficulty; });
+      if (Object.keys(updates).length) await update(ref(db, `rooms/${currentRoomCode}/players`), updates);
+    });
   });
 
   function botGuessValue(answer, difficulty) {
@@ -9674,9 +9690,10 @@
       shareRoomBtn.style.display = "none";
       hostUnlockBannerEl.classList.remove("active");
     }
-    botControlsEl.querySelectorAll(".bot-btn:not(#solo-add-bot-btn), #bot-controls > span").forEach((el) => { el.style.display = solo ? "none" : ""; });
+    botControlsEl.querySelectorAll("#bot-controls > .bot-btn:not(#solo-add-bot-btn), #bot-controls > span").forEach((el) => { el.style.display = solo ? "none" : ""; });
     const addBtn = document.getElementById("solo-add-bot-btn");
     addBtn.style.display = solo ? "" : "none";
+    document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) && isHost ? "flex" : "none";
     addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
     // Host Party needs at least one other real player before it can start.
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
