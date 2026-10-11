@@ -1677,18 +1677,20 @@
   button.itemmode-btn { font-size: 12px; white-space: nowrap; }
   button.itemmode-btn:disabled { opacity: .35; }
 
-  /* Double down: gold pill; purple with a gold ring once picked. Live text on the picture. */
+  /* Double down: your own answer on a paper just like the others, with a bold pill label
+     on its top edge. Tapping it circles it in red crayon, same as picking another answer. */
   button#double-down-btn {
-    width: 100%; box-sizing: border-box; border: 0; border-image: none; border-radius: 0; box-shadow: none; filter: none;
-    padding: 18px 34px 20px; margin: 4px 0 0;
-    background: transparent url(icons/btn-dd.png) center / 100% 100% no-repeat;
-    color: #fff; font-family: 'Fredoka', sans-serif; font-weight: 700;
-    text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
-                 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
+    display: block; width: calc(100% * var(--fit, 1)); box-sizing: border-box; margin: 20px 0 0; padding: 0;
+    border: 0; border-image: none; border-radius: 0; box-shadow: none; background: transparent;
+    color: #000; font-family: 'Fredoka', sans-serif; font-weight: 700;
   }
-  button#double-down-btn.picked { border-image-source: none; background-image: url(icons/btn-dd-picked.png); text-shadow: -1.5px -1.5px 0 #3b1a5c, 1.5px -1.5px 0 #3b1a5c, -1.5px 1.5px 0 #3b1a5c, 1.5px 1.5px 0 #3b1a5c, 0 -1.5px 0 #3b1a5c, 0 1.5px 0 #3b1a5c, -1.5px 0 0 #3b1a5c, 1.5px 0 0 #3b1a5c; }
-  button#double-down-btn .dd-guess-value { color: #fff; }
   button#double-down-btn:disabled { opacity: .6; filter: grayscale(.4); }
+  .dd-pill {
+    position: absolute; top: -13px; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap;
+    padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,.88); border: 1.5px solid rgba(90,60,30,.35);
+    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; line-height: 1.25; color: #000; text-align: center;
+  }
+  button#double-down-btn .hand-num { padding-top: 12%; }
 
   /* Install: lavender pill with the arrow in its left cap. */
   button#install-btn {
@@ -2032,15 +2034,7 @@
   .doubledown-mark { display: inline-flex; vertical-align: middle; margin-left: 4px; }
   .doubledown-mark .avatar-icon { width: 18px; height: 18px; }
   .answer-slot:disabled { cursor: default; }
-  #double-down-btn {
-    border-image-source: var(--btn-accent); color: #fff; position: relative;
-    display: flex; flex-direction: column; align-items: center; gap: 0; padding-block: 4px;
-  }
-  #double-down-btn.picked { border-image-source: var(--ring); }
   #double-down-btn.pop { animation: popIn 300ms ease; }
-  .dd-main { font-size: 14px; line-height: 1.1; }
-  .dd-guess-label { display: block; font-size: 14px; }
-  .dd-guess-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 28px; color: #1a1108; }
   /* The question paper (.question-prompt) got a fixed min-height so it stops
      shifting as the timer/skip button area changes - that left blank space
      under the question itself. This fills it with phase-specific guidance
@@ -8863,16 +8857,16 @@
     });
     const isMyDoubleDown = !!myPick && myPick.type === "doubledown";
     doubleDownBtn.disabled = !!roomState.paused || nowMs() < answersPhaseInputLockedUntil;
-    doubleDownBtn.classList.toggle("picked", isMyDoubleDown);
-    if (isMyDoubleDown && !wasDoubleDownPicked) {
-      doubleDownBtn.classList.remove("pop");
-      void doubleDownBtn.offsetWidth;
-      doubleDownBtn.classList.add("pop");
-    }
+    const myFrame = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].frameIndex) || 1;
+    const popNow = isMyDoubleDown && !wasDoubleDownPicked;
     wasDoubleDownPicked = isMyDoubleDown;
-    doubleDownBtn.innerHTML = `<span class="dd-main">Double down on my answer</span>`
-      + (myEntry ? `<span class="dd-guess-value">${myEntry.value}</span>` : "")
+    doubleDownBtn.className = "answer-slot dd-paper frame-" + myFrame + " pp-" + PAPER_STYLES[myFrame % PAPER_STYLES.length]
+      + (isMyDoubleDown ? " picked" : "") + (popNow ? " pop" : "");
+    doubleDownBtn.innerHTML = `<span class="paper-bg"></span>`
+      + (myEntry ? handNumberHtml(myEntry.value, currentPlayerId, false) : "")
+      + `<span class="dd-pill">Double down +2</span>`
       + (isMyDoubleDown ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
+    doubleDownBtn.setAttribute("aria-label", "Double down on my answer");
     fitAnswerPapers();
   }
 
@@ -8880,20 +8874,19 @@
   // double down button sit above the bottom bar instead of running underneath it.
   function fitAnswerPapers() {
     if (!answersRowEl.children.length) return;
-    answersRowEl.style.setProperty("--fit", 1);
+    answersViewEl.style.setProperty("--fit", 1);
     const bar = document.getElementById("bottom-toolbar");
     const barTop = bar ? bar.getBoundingClientRect().top : window.innerHeight;
     const rowRect = answersRowEl.getBoundingClientRect();
-    const ddH = doubleDownBtn.offsetHeight + 10;
-    const avail = barTop - rowRect.top - ddH - 8;
+    const avail = barTop - rowRect.top - 8;
     if (avail <= 0) return;
     // the gaps between papers don't shrink with them, so nudge a few times until it settles
     let fit = 1;
     for (let i = 0; i < 4; i++) {
-      const h = answersRowEl.getBoundingClientRect().height;
+      const h = doubleDownBtn.getBoundingClientRect().bottom - answersRowEl.getBoundingClientRect().top;
       if (h <= avail + 0.5) break;
       fit = Math.max(0.5, fit * (avail / h) * 0.98);
-      answersRowEl.style.setProperty("--fit", fit.toFixed(3));
+      answersViewEl.style.setProperty("--fit", fit.toFixed(3));
     }
   }
   window.addEventListener("resize", () => { if (document.getElementById("answers-view").classList.contains("active")) fitAnswerPapers(); });
