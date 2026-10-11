@@ -988,6 +988,10 @@
   .settings-profile-name label { font-size: 13px; color: var(--text-muted); }
   .settings-profile-name input { margin: 0; width: 100%; }
   .settings-profile-hint { font-size: 12px; color: var(--text-muted); }
+  /* the join / host name + avatar screen reuses the profile row: big avatar left, name right (nothing to tap, so no pencil badge) */
+  .name-avatar-row { margin: 6px 0 10px; }
+  #name-avatar-big::after { display: none; }
+  #name-avatar-screen .settings-profile-name label, #name-avatar-screen .settings-profile-hint { color: #000; font-weight: 700; text-align: center; }
   .settings-preset-btn { margin: 20px 0 6px; }
   .settings-preset-hint { text-align: center; }
   #settings-avatar-picker { margin-top: 10px; }
@@ -2857,7 +2861,14 @@
     <button id="join-lobby-btn">Join Lobby</button>
   </div>
 
-  <input id="name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" />
+  <div class="settings-profile-row name-avatar-row">
+    <div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div>
+    <div class="settings-profile-name">
+      <label for="name-input">Your name</label>
+      <input id="name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" />
+      <span class="settings-profile-hint">Pick your avatar below</span>
+    </div>
+  </div>
   <div id="name-keyboard" class="custom-kbd"></div>
 
   <div id="avatar-grid"></div>
@@ -5440,6 +5451,7 @@
       if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
     }
     avatarGridEl.innerHTML = "";
+    document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar);
     // Only avatars the player has unlocked - the full catalog, locked ones
     // included, is only ever shown via the Shop's "View All Avatars".
     avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)).forEach((a) => {
