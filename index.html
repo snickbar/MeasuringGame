@@ -5423,6 +5423,7 @@
   let summaryScrollStarted = false;
   let lastChoreographedIndex = -1;
   let revealAnimating = false;
+  let revealEpoch = 0;   // bumped by cancelRevealEffects so delayed reveal callbacks can tell they are stale
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
@@ -8322,7 +8323,7 @@
     advanceReveal(currentRoomCode);
   });
 
-  showSummaryBtn.addEventListener("click", () => goToSummary(currentRoomCode));
+  showSummaryBtn.addEventListener("click", () => { cancelRevealEffects(); goToSummary(currentRoomCode); });
 
   // Live in-HUD auto-mode toggle — separate from the lobby's pre-game setting,
   // this one stays editable mid-game (no round-lock) so the host can flip
@@ -8969,13 +8970,17 @@
     const pts = entry.basePoints + entry.doubleDownPoints;
     const isWinner = idx === order.length - 1 && entry.isClosest;
 
+    const ep = revealEpoch;
+    const stale = () => ep !== revealEpoch;
     return new Promise((resolve) => {
       function doFlips() {
+        if (stale()) { resolve(); return; }
         // the number is pencilled onto the blank paper, then the caption pops in underneath
         const drawMs = String(entry.guess).length * 90 + 420;
         li.querySelector(".rv-paper").outerHTML = revealPaperHtml(entry, true, true);
         playSound("reveal");
         setTimeout(() => {
+          if (stale()) { resolve(); return; }
           li.querySelectorAll(".rv-badges").forEach((n) => n.remove());
           li.insertAdjacentHTML("beforeend", revealInfoHtml(entry));
           if (isWinner) {
@@ -8994,6 +8999,7 @@
             showAnswerReveal();
           }
           setTimeout(() => {
+            if (stale()) { resolve(); return; }
             if (isWinner) {
               order.slice(0, idx + 1).forEach((e) => {
                 const cardLi = revealListEl.querySelector(`[data-id="${e.playerId}"]`);
@@ -9004,6 +9010,7 @@
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
             // The trophy lands on the winner's medal spot in the score column (once the column has settled), not on their answer card.
             if (isWinner) setTimeout(() => {
+              if (stale()) return;
               const medalEl = scoreColEl.querySelector(`[data-id="${entry.playerId}"] .medal`);
               spawnTrophyBurst(medalEl, undefined, true);
             }, 450);
@@ -9017,7 +9024,7 @@
         // paint above the separate .score-col cards) for the drumroll, then the card flips.
         const drumMs = flairDrumMs();
         playSound("drumroll");
-        if (drumMs > 1100) setTimeout(() => playSound("drumroll"), 1000);
+        if (drumMs > 1100) setTimeout(() => { if (!stale()) playSound("drumroll"); }, 1000);
         flairOrbit(li, flairIdFor(entry), drumMs);
         setTimeout(() => { li.classList.remove("drumroll"); doFlips(); }, drumMs);
       } else {
@@ -9898,6 +9905,7 @@
     sfxPool[name] = a;
   });
 
+  const activeSfx = new Set();
   function sfx(name) {
     if (!localSoundEnabled) return;
     const base = sfxPool[name];
@@ -9905,8 +9913,27 @@
     try {
       const node = base.cloneNode(true);
       node.volume = SFX_VOLUME[name] ?? 0.6;
-      node.play().catch(() => { /* ignore autoplay-policy rejection */ });
+      activeSfx.add(node);
+      const done = () => activeSfx.delete(node);
+      node.addEventListener("ended", done);
+      node.play().catch(done /* ignore autoplay-policy rejection */);
     } catch (e) { /* ignore audio errors */ }
+  }
+  function stopAllSfx() {
+    activeSfx.forEach((n) => { try { n.pause(); } catch (e) { /* ignore */ } });
+    activeSfx.clear();
+  }
+
+  // When the screen moves on from the reveal (the host jumped to the summary mid-flair), the winner's
+  // flair, trophy, coins, confetti and their sounds stop right away instead of carrying onto the next screen.
+  function cancelRevealEffects() {
+    revealEpoch++;
+    revealAnimating = false;
+    reactionsPanelEl.querySelectorAll(".flair-layer, .trophy-burst, .coin-fly, .coin-award-popup, .streamer-piece").forEach((n) => n.remove());
+    perfectFlashEl.classList.remove("flash");
+    document.querySelectorAll("#reveal-list .drumroll").forEach((n) => n.classList.remove("drumroll"));
+    stopAllSfx();
+    try { if (window.confetti && window.confetti.reset) window.confetti.reset(); } catch (e) { /* ignore */ }
   }
 
   function playSound(kind) {
@@ -10034,6 +10061,7 @@
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
     if (phase !== lastSeenPhaseForSound) {
+      if (lastSeenPhaseForSound === "reveal") cancelRevealEffects();
       if (phase === "answers") {
         playSound("answers");
         answersPhaseInputLockedUntil = nowMs() + 500;
