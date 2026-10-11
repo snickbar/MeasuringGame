@@ -1766,9 +1766,14 @@
 
   .question-prompt {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; line-height: 1.35; text-align: left; color: var(--text); flex: 1;
-    box-sizing: border-box; margin: 0; padding: 10px 12px 10px 20px; min-height: 184px; min-width: 0;
-    border-style: solid; border-width: 16px 14px 16px 46px; border-image-source: var(--note-container); border-image-slice: 60 45 60 150 fill;
+    box-sizing: border-box; margin: 0; padding: 26px 26px 30px 26px; min-height: 184px; min-width: 0;
+    background: url(icons/board-paper.webp) center / 100% 100% no-repeat; position: relative;
   }
+  #q-pencil { position: absolute; left: 0; top: 0; width: 84px; pointer-events: none; transform-origin: 3px 8px; will-change: transform; z-index: 3; }
+  #q-eraser { position: absolute; left: calc(50% + 56px); bottom: 6.8%; width: 64px; pointer-events: none; z-index: 2; }
+  #q-pencil img { display: block; width: 84px; margin: 2px 0 0 3px; }
+  .qch { opacity: 0; }
+  .qch.on { opacity: 1; }
   /* Used to be a small inline line, with a separate big standalone "THE
      ANSWER" card doing the actual emphasis further down the screen - removed
      that card per request and moved its same text size here instead, so the
@@ -5258,6 +5263,61 @@
   const questionPromptTextEl = document.getElementById("question-prompt-text");
   const questionNoteEl = document.getElementById("question-note");
   const questionAnswerLineEl = document.getElementById("question-answer-line");
+  // ---- Paper board pencil: rests on the ledge, writes the question letter by letter.
+  const qPromptEl = document.getElementById("question-prompt");
+  const qPencilEl = document.createElement("div");
+  qPencilEl.id = "q-pencil";
+  qPencilEl.innerHTML = '<img src="icons/board-pencil.webp" alt="">';
+  qPromptEl.appendChild(qPencilEl);
+  const qEraserEl = document.createElement("img");
+  qEraserEl.id = "q-eraser"; qEraserEl.src = "icons/board-eraser.webp"; qEraserEl.alt = "";
+  qPromptEl.appendChild(qEraserEl);
+  const qReduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let qPx = 0, qPy = 0, qPr = 0, qLastT = 0, qRaf = 0, qWrite = null, qPlaced = false;
+  function qRestPos() { const r = qPromptEl.getBoundingClientRect(); return { x: r.width * 0.5 - 62, y: r.height * 0.932 - 11 }; }
+  function qPencilFrame(now) {
+    qRaf = requestAnimationFrame(qPencilFrame);
+    const dt = Math.min(50, now - (qLastT || now)); qLastT = now;
+    const cr = qPromptEl.getBoundingClientRect();
+    let target = qRestPos(), rot = 0;
+    if (qWrite) {
+      const n = Math.max(0, Math.min(qWrite.chars.length, Math.floor((now - qWrite.start) / 42)));
+      for (let i = qWrite.shown; i < n; i++) qWrite.chars[i].classList.add("on");
+      qWrite.shown = n;
+      if (n > 0) {
+        const r = qWrite.chars[Math.min(n, qWrite.chars.length) - 1].getBoundingClientRect();
+        target = { x: r.right - cr.left + 6, y: r.top - cr.top + r.height * 0.85 + Math.sin(now * 0.06) * 2 };
+        rot = -52 + Math.sin(now * 0.03) * 3;
+      }
+      if (n >= qWrite.chars.length && now - qWrite.start > qWrite.chars.length * 42 + 250) qWrite = null;
+    }
+    if (!qPlaced) { qPx = target.x; qPy = target.y; qPlaced = true; }
+    const k = 1 - Math.pow(0.0015, dt / 1000);
+    qPx += (target.x - qPx) * k; qPy += (target.y - qPy) * k; qPr += (rot - qPr) * k;
+    qPencilEl.style.transform = "translate(" + (qPx - 3) + "px," + (qPy - 8) + "px) rotate(" + qPr + "deg)";
+  }
+  function startPencilLoop() { if (!qRaf) { qLastT = 0; qRaf = requestAnimationFrame(qPencilFrame); } }
+  // Sets the question text. animate=true writes it letter by letter with the pencil
+  // (only when the text is new); every other call with the same text is a no-op,
+  // so repeated room updates never restart or wipe the writing.
+  function setPromptText(text, animate) {
+    if (questionPromptTextEl.dataset.txt === text) return;
+    questionPromptTextEl.dataset.txt = text;
+    qWrite = null;
+    if (!text || !animate || qReduceMotion) { questionPromptTextEl.textContent = text; return; }
+    questionPromptTextEl.textContent = "";
+    const chars = [];
+    text.split(/(\s+)/).forEach((word) => {
+      if (!word) return;
+      if (/^\s+$/.test(word)) { questionPromptTextEl.appendChild(document.createTextNode(" ")); return; }
+      const w = document.createElement("span"); w.style.whiteSpace = "nowrap";
+      for (const ch of word) { const c = document.createElement("span"); c.className = "qch"; c.textContent = ch; w.appendChild(c); chars.push(c); }
+      questionPromptTextEl.appendChild(w);
+    });
+    qWrite = { chars, shown: 0, start: performance.now() + 150 };
+    startPencilLoop();
+  }
+  startPencilLoop();
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -10107,7 +10167,7 @@
     }
     if (phase === "countdown") {
       countdownLabelEl.textContent = data.countdownRound === 1 ? "Round 1 starting in" : "Next round starting in";
-      questionPromptTextEl.textContent = "";
+      setPromptText("", false);
       questionAnswerLineEl.style.display = "none";
     }
     if (phase !== "reveal") {
@@ -10153,18 +10213,18 @@
 
     if (phase === "question") {
       const q = data.currentQuestion;
-      questionPromptTextEl.textContent = q ? q.prompt : "";
+      setPromptText(q ? q.prompt : "", true);
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
       preloadAnimation(q);
     } else if (phase === "answers") {
       const q = data.currentQuestion;
-      if (q) questionPromptTextEl.textContent = q.prompt;
+      if (q) setPromptText(q.prompt, false);
       questionAnswerLineEl.style.display = "none"; // second-chance phase - answer isn't revealed yet either
       preloadAnimation(q);
     } else if (phase === "animation") {
       const q = data.currentQuestion;
-      if (q) questionPromptTextEl.textContent = q.prompt;
+      if (q) setPromptText(q.prompt, false);
       // The answer line ticks up live on the paper while runAnimation()'s own
       // onFrame/onDone callbacks are driving it (animPlayKey set) - this
       // function runs on every room update (other players' reactions, etc.),
@@ -10188,7 +10248,7 @@
       // list already starts spoiling relative results before the winner flips.
       const q = data.currentQuestion;
       if (q) {
-        questionPromptTextEl.textContent = q.prompt;
+        setPromptText(q.prompt, false);
         setAnswerLineValue(q.answer.toFixed(2));
       }
     } else if (phase === "summary") {
@@ -10198,7 +10258,7 @@
       // already run.
       const q = data.currentQuestion;
       if (q) {
-        questionPromptTextEl.textContent = q.prompt;
+        setPromptText(q.prompt, false);
         setAnswerLineValue(q.answer.toFixed(2));
       }
     }
