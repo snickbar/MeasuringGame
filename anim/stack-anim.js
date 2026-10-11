@@ -18,6 +18,10 @@
 // object stands up on the left. noMirror: the picture has writing, so it is never mirrored.
 // axis 'height': the picture already has the object's length running up and down (a door, a
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
+import { ORIENT } from './orient-data.js';
+
+// The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
+// Object Orientation page). It is kept here for reference.
 const VISUAL = {
   'grain-of-sand': { turn180: true, mirror: true },
   'poppy-seed': { turn180: false, mirror: false },
@@ -251,14 +255,26 @@ function visualOf(o) {
 
 // Which way an object leans up from lying down. Small ones on the left lean back to the left
 // and the big one on the right leans back to the right (that is what the saved settings give).
+const ORIENT_DEFAULT = { rot: 0, flip: false, leanL: 'ccw', leanR: 'cw', mirR: false };
+function orientOf(o) { return ORIENT[o.id] || ORIENT_DEFAULT; }
+// extraMirror is true for the big object on the right. Returns how it swings up to stand: 'ccw' on the
+// left and 'cw' on the right by default, or null when it does not turn (it already stands as it is).
 function leanOf(o, extraMirror) {
-  const vis = visualOf(o);
-  if (vis.axisHeight || vis.upright) return null;   // a door or a tower already stands upright
-  const mirrored = !vis.noMirror && vis.mirror !== extraMirror;
-  const turned = vis.turn180 !== (vis.noMirror && extraMirror && !vis.axisHeight && !vis.upright);
-  let cw = turned !== mirrored;
-  if (vis.leanFlip) cw = !cw;
-  return cw ? 'cw' : 'ccw';
+  const st = orientOf(o);
+  const l = extraMirror ? st.leanR : st.leanL;
+  return l === 'cw' || l === 'ccw' ? l : null;
+}
+// The picture turned and flipped so it stands on the ground facing right (before any turning).
+function poseOf(img, st, mirrorExtra) {
+  const q = st.rot % 180 !== 0;
+  const w = q ? img.naturalHeight : img.naturalWidth, h = q ? img.naturalWidth : img.naturalHeight;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.translate(w / 2, h / 2);
+  if (!!st.flip !== !!mirrorExtra) x.scale(-1, 1);
+  x.rotate(st.rot * Math.PI / 180);
+  x.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+  return c;
 }
 
 // The timeline (in seconds) depends only on the two objects and how many times the small one fits,
@@ -397,20 +413,7 @@ export function createStackAnimation(container, options = {}) {
     entry.promise = new Promise((resolve, reject) => {
       const im = new Image();
       im.onload = () => {
-        const vis = visualOf(o);
-        if (vis.axisHeight) {
-          entry.base = im; entry.baseW = im.naturalWidth; entry.baseH = im.naturalHeight;
-        } else {
-          const c = document.createElement('canvas');
-          c.width = im.naturalHeight;
-          c.height = im.naturalWidth;
-          const x = c.getContext('2d');
-          x.translate(0, c.height);
-          x.rotate(-Math.PI / 2);
-          x.drawImage(im, 0, 0);
-          entry.base = c; entry.baseW = c.width; entry.baseH = c.height;
-        }
-        entry.aspect = entry.baseW / entry.baseH;   // thickness divided by length
+        entry.img = im;
         resolve(entry);
       };
       im.onerror = () => reject(new Error('Could not load the picture for ' + o.id));
@@ -420,41 +423,42 @@ export function createStackAnimation(container, options = {}) {
     return entry.promise;
   }
 
-  // The picture with its saved orientation, plus an optional extra mirror.
+  // The picture as it first lies on the ground (its saved standing pose, mirrored on the right if set).
+  const poseCache = new Map();
+  function poseFor(o, extraMirror) {
+    const key = o.id + (extraMirror ? ':m' : '');
+    if (!poseCache.has(key)) {
+      const st = orientOf(o);
+      poseCache.set(key, poseOf(pics.get(o.id).img, st, extraMirror && st.mirR));
+    }
+    return poseCache.get(key);
+  }
+  // The picture as it stands in the stack: the pose turned a quarter turn the way it swings up, or just the
+  // pose when it does not turn.
   const spriteCache = new Map();
   function spriteFor(o, extraMirror) {
     const key = o.id + (extraMirror ? ':m' : '');
     if (spriteCache.has(key)) return spriteCache.get(key);
-    const p = pics.get(o.id);
-    const vis = visualOf(o);
-    const c = document.createElement('canvas');
-    c.width = p.baseW;
-    c.height = p.baseH;
-    const x = c.getContext('2d');
-    x.translate(p.baseW / 2, p.baseH / 2);
-    // Writing is never mirrored: for those objects the second role is a half turn instead.
-    const turned = vis.turn180 !== (vis.noMirror && extraMirror && !vis.axisHeight && !vis.upright);
-    x.scale(!vis.noMirror && vis.mirror !== extraMirror ? -1 : 1, 1);
-    x.rotate(turned ? Math.PI : 0);
-    x.drawImage(p.base, -p.baseW / 2, -p.baseH / 2);
+    const lean = leanOf(o, extraMirror);
+    const p = poseFor(o, extraMirror);
+    let c = p;
+    if (lean) {
+      c = document.createElement('canvas');
+      c.width = p.height;
+      c.height = p.width;
+      const x = c.getContext('2d');
+      if (lean === 'ccw') { x.translate(0, c.height); x.rotate(-Math.PI / 2); }
+      else { x.translate(c.width, 0); x.rotate(Math.PI / 2); }
+      x.drawImage(p, 0, 0);
+    }
     spriteCache.set(key, c);
     return c;
   }
-  const lyingCache = new Map();
+  // The picture lying on the ground before it swings up to stand.
   function lyingSprite(o, extraMirror, lean) {
-    const key = o.id + (extraMirror ? ':m' : '') + lean;
-    if (lyingCache.has(key)) return lyingCache.get(key);
-    const up = spriteFor(o, extraMirror);
-    const c = document.createElement('canvas');
-    c.width = up.height;
-    c.height = up.width;
-    const x = c.getContext('2d');
-    if (lean === 'cw') { x.translate(0, c.height); x.rotate(-Math.PI / 2); }
-    else { x.translate(c.width, 0); x.rotate(Math.PI / 2); }
-    x.drawImage(up, 0, 0);
-    lyingCache.set(key, c);
-    return c;
+    return poseFor(o, extraMirror);
   }
+  function aspectFor(o, extraMirror) { const c = spriteFor(o, extraMirror); return c.width / c.height; }
 
   // Loads the two pictures and works out the whole animation for this pair at this width.
   // The container must be on screen (so it has a width) when this is called. sizing.hMax is the
@@ -470,8 +474,8 @@ export function createStackAnimation(container, options = {}) {
 
   function buildScene(unit, target, hMax, minStageH) {
     const R = target.mm / unit.mm;
-    const aBig = pics.get(target.id).aspect;
-    const aSm = pics.get(unit.id).aspect;
+    const aBig = aspectFor(target, !flipFacing);
+    const aSm = aspectFor(unit, flipFacing);
     const stripW = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);   // width of the stack when it is shown as a strip
     const smallSprite = spriteFor(unit, flipFacing);
     const bigSprite = spriteFor(target, !flipFacing);
