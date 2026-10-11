@@ -502,6 +502,8 @@
   }
   button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 0 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
+  .cosm-rnd-sub { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+  .cosm-random-on .cosm-row:not(.cosm-rnd-row) button.cosm-equip { opacity: .4; filter: grayscale(1); pointer-events: none; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
@@ -3596,6 +3598,52 @@
   const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
   // What is really equipped: only reactions that have pictures, and no more than the slots you own.
   const equippedReactions = () => ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, ownedReactionSlots());
+  // ---- Equip Random: with a category's toggle on, each game gives you random items you own from it.
+  // What is really equipped is left alone, so switching the toggle off goes straight back to it. ----
+  const rndOn = (cat) => !!(myProfile.randomEquip && myProfile.randomEquip[cat]);
+  let rndPick = {};
+  const rndOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  function rndGet(cat) {
+    if (rndPick[cat] !== undefined) return rndPick[cat];
+    let v = null;
+    if (cat === "boards") v = rndOf(["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard)));
+    else if (cat === "backgrounds") v = rndOf(["none"].concat(allBackgrounds().map((b) => b.id).filter(ownsBackground)));
+    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(ids) : "classic"; }
+    else if (cat === "reactions") {
+      const own = Object.keys(REACTIONS).filter((e) => ownsEmoji(e));
+      for (let i = own.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [own[i], own[j]] = [own[j], own[i]]; }
+      v = own.slice(0, ownedReactionSlots());
+    }
+    rndPick[cat] = v;
+    return v;
+  }
+  const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
+  const activeBoard = () => (rndOn("boards") ? rndGet("boards") : equippedBoard());
+  const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
+  function rollRandomEquips() {
+    rndPick = {};
+    applyBackground();
+    try { applyBoard(activeBoard()); } catch (e) { /* board module not initialised yet */ }
+    renderReactionStrip();
+    syncFlairToRoom();
+  }
+  function cosmRandomRow(cat, subText) {
+    const on = rndOn(cat);
+    const row = document.createElement("div");
+    row.className = "cosm-row cosm-rnd-row" + (on ? " equipped" : "");
+    row.innerHTML = `<div class="cosm-lead"><span class="cosm-emoji">\u{1F3B2}</span><span class="cosm-name">Equip Random<span class="cosm-rnd-sub">${subText}</span></span></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cosm-equip cosm-rnd-btn" + (on ? " is-on" : "");
+    btn.textContent = on ? "On" : "Off";
+    btn.setAttribute("aria-pressed", String(on));
+    btn.addEventListener("click", async () => {
+      rndPick[cat] = undefined;
+      await update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: !on });
+    });
+    row.appendChild(btn);
+    return row;
+  }
   function defaultProfile() {
     return {
       coins: 0,
@@ -3612,6 +3660,7 @@
       backgroundPacks: {},
       holidayPacks: {},
       boardPacks: {},
+      randomEquip: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
@@ -3674,7 +3723,7 @@
   // updated without the other.
   // The winner's flair plays for everyone, so each player's equipped flair lives on their room entry.
   function myEquippedFlair() {
-    const id = myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects;
+    const id = rndOn("flairs") ? rndGet("flairs") : (myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects);
     return FLAIRS[id] ? id : "classic";
   }
   let lastSyncedFlair = null;
@@ -3697,7 +3746,7 @@
     renderThemedPackShop();
     renderCosmeticsShop();
     applyBackground();
-    try { applyBoard(equippedBoard()); } catch (e) { /* board module not initialised yet */ }
+    try { applyBoard(activeBoard()); } catch (e) { /* board module not initialised yet */ }
     renderReactionStrip();
     renderPresetSlotButtons();
     renderItemsScreen();
@@ -3739,6 +3788,7 @@
           backgroundPacks: { ...(data.backgroundPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
           boardPacks: { ...(data.boardPacks || {}) },
+          randomEquip: { ...(data.randomEquip || {}) },
           // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
           // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
           // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
@@ -4064,7 +4114,7 @@
   const backgroundUrl = (id) => `backgrounds/${id}.webp`;
   // Shows the picked background behind every screen except Home (Home keeps its own picture; see the CSS).
   function applyBackground() {
-    const id = equippedBackground();
+    const id = activeBackground();
     if (id === "none") { delete document.body.dataset.bg; document.body.style.removeProperty("--game-bg"); return; }
     document.body.dataset.bg = id;
     document.body.style.setProperty("--game-bg", `url('${backgroundUrl(id)}')`);
@@ -4151,7 +4201,7 @@
     const done = () => {
       reset();
       saved.parent.insertBefore(qPromptEl, saved.next);
-      applyBoard(equippedBoard());
+      applyBoard(activeBoard());
       if (saved.txt) { setPromptText(saved.txt, false); questionAnswerLineEl.innerHTML = saved.ans; questionAnswerLineEl.style.display = saved.ansDisp; }
       ov.remove();
     };
@@ -4165,6 +4215,8 @@
     if (!container) return;
     const equipped = equippedBackground();
     container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", rndOn("backgrounds"));
+    container.appendChild(cosmRandomRow("backgrounds", "A random background you own each game"));
     const label = document.createElement("div");
     label.className = "cosm-group-label";
     label.textContent = "Default";
@@ -4247,6 +4299,8 @@
     if (!container) return;
     const equipped = equippedBoard();
     container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", rndOn("boards"));
+    container.appendChild(cosmRandomRow("boards", "A random board you own each game"));
     const label = document.createElement("div");
     label.className = "cosm-group-label";
     label.textContent = "Default";
@@ -4395,6 +4449,8 @@
     const active = equippedReactions();
     const slots = ownedReactionSlots();
     container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", rndOn("reactions"));
+    container.appendChild(cosmRandomRow("reactions", `${slots} random reactions you own each game`));
     const row = (e, cost) => cosmRow({
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e),
@@ -4435,7 +4491,7 @@
     if (statusEl) statusEl.textContent = `${active.length} / ${slots} equipped`;
     statusEl.classList.toggle("full", active.length >= slots);
     const unBtn = document.getElementById("cosm-unequip-all-btn");
-    if (unBtn) unBtn.disabled = active.length === 0;
+    if (unBtn) unBtn.disabled = active.length === 0 || rndOn("reactions");
   }
   function renderFlairRows(container) {
     if (!container) return;
@@ -4447,6 +4503,8 @@
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
     });
+    container.classList.toggle("cosm-random-on", rndOn("flairs"));
+    container.appendChild(cosmRandomRow("flairs", "A random flair you own each game"));
     const items = COSMETIC_CATALOG.effects;
     const label = document.createElement("div");
     label.className = "cosm-group-label";
@@ -5400,7 +5458,7 @@
     if (!reactionStripEl) return;
     const owned = ownedReactionSlots();
     // Nothing equipped in the shop: still show the defaults in games (the shop selection stays empty).
-    let active = equippedReactions();
+    let active = activeReactions();
     if (!active.length) active = START_EMOJIS.filter((e) => REACTIONS[e]).slice(0, owned);
     reactionStripEl.innerHTML = "";
     for (let i = 0; i < REACTION_SLOTS_MAX; i++) {
@@ -5969,7 +6027,7 @@
     qErase = { start: performance.now(), done: finish };
     startBoardLoop();
   }
-  applyBoard(equippedBoard());
+  applyBoard(activeBoard());
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -10941,11 +10999,14 @@
     }
   }
 
+  let lastRandomRollKey = null;
   function watchRoom(roomCode) {
     onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
       if (leavingGame) return; // see the comment on its declaration
       const data = snapshot.val() || {};
       roomState = data;
+      // A new game (its round-1 countdown) gives everyone with Equip Random on a fresh set of random items.
+      if (data.phase === "countdown" && data.countdownRound === 1 && data.countdownEndsAt !== lastRandomRollKey) { lastRandomRollKey = data.countdownEndsAt; rollRandomEquips(); }
       currentPlayers = data.players || {};
       currentSettings = data.settings || currentSettings;
 
