@@ -1790,17 +1790,17 @@
   .question-prompt[data-scene] .answer-line-label { font-size: calc(var(--qfs, 16px) * .6); }
   .question-prompt[data-scene] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.7); line-height: 1.1; }
   .question-prompt[data-board="terminal"] { color: #7fe08a; font-family: 'Courier New', monospace; font-weight: 700; }
-  .question-prompt[data-board="terminal"] #q-body { align-items: flex-start; text-align: left; }
+  .question-prompt[data-board="terminal"] #q-body { align-items: center; text-align: center; }
   .question-prompt[data-board="terminal"] .answer-line-label, .question-prompt[data-board="terminal"] .answer-line-value { color: #7fe08a; font-family: 'Courier New', monospace; }
-  .question-prompt[data-board="terminal"] .question-answer-line { text-align: left; }
+  .question-prompt[data-board="terminal"] .question-answer-line { text-align: center; }
   .question-prompt[data-board="terminal"] .qch.cur { background: #fff; color: transparent; }
   .question-prompt[data-board="terminal"] .question-note { color: #7fe08a; }
   .question-prompt[data-scene] .answer-line-label, .question-prompt[data-scene] .answer-line-value { color: inherit; font-family: inherit; }
   .question-prompt[data-scene] .answer-line-picks { margin-top: 0; }
   .question-prompt[data-scene] .answer-line-picks .avatar-icon { width: 16px; height: 16px; }
   .question-prompt[data-scene] .qch { display: inline-block; }
-  .question-prompt[data-board="terminal"] #q-body { justify-content: flex-start; }
-  .question-prompt[data-board="tv"] { color: #bff5d0; font-weight: 600; }
+  .question-prompt[data-board="terminal"] #q-body { justify-content: center; }
+  .question-prompt[data-board="tv"] { color: #14307a; font-weight: 600; }
   .question-prompt[data-board="typewriter"] { color: #161616; font-family: 'Courier New', monospace; font-weight: 700; -webkit-text-stroke: .4px #161616; }
   .question-prompt[data-board="typewriter"] #q-body { overflow: hidden; justify-content: flex-end; }
   .question-prompt[data-board="letterboard"] { color: #f3f1e8; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
@@ -4121,7 +4121,7 @@
       { id: "scroll", label: "Parchment Scroll" },
     ] },
   ];
-  const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp", terminal: "icons/bd-terminal.webp", tv: "icons/bd-tv.webp", typewriter: "icons/bd-typewriter.webp", phone: "icons/bd-phone.webp", splitflap: "icons/bd-splitflap.webp", letterboard: "icons/bd-letterboard.webp", neon: "icons/bd-neon.webp", sand: "icons/bd-sand.webp", scroll: "icons/bd-scroll.webp" };
+  const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp", terminal: "icons/bd-terminal-kb.webp", tv: "icons/bd-tv-dark.webp", typewriter: "icons/bd-typewriter.webp", phone: "icons/bd-phone.webp", splitflap: "icons/bd-splitflap.webp", letterboard: "icons/bd-letterboard.webp", neon: "icons/bd-neon.webp", sand: "icons/bd-sand.webp", scroll: "icons/bd-scroll.webp" };
   function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards); }
   function boardPackOf(id) { return BOARD_PACK_CATALOG.find((p) => p.boards.some((b) => b.id === id)); }
   function ownsBoard(id) {
@@ -5458,14 +5458,14 @@
   qBodyEl.appendChild(questionPromptTextEl);
   qBodyEl.appendChild(questionAnswerLineEl);
   const SB_DEFS = {
-    terminal: { img: "icons/bd-terminal.webp", ar: 895 / 708, box: [14.5, 12.5, 14, 28.5] },
-    tv: { img: "icons/bd-tv.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5] },
+    terminal: { img: "icons/bd-terminal-kb.webp", ar: 746 / 736, box: [14, 11, 14, 42] },
+    tv: { img: "icons/bd-tv-dark.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5], fmax: 23 },
     typewriter: { img: "icons/bd-typewriter.webp", ar: 760 / 702, box: [22.9, 4, 22.8, 33.6] },
-    letterboard: { img: "icons/bd-letterboard.webp", ar: 760 / 574, box: [9, 12, 9, 14] },
-    neon: { img: "icons/bd-neon.webp", ar: 760 / 556, box: [19, 20, 19, 22] },
-    sand: { img: "icons/bd-sand.webp", ar: 760 / 554, box: [10, 20, 10, 15] },
-    scroll: { img: null, ar: 668 / 501, box: [12.5, 21.2, 12.5, 21] },
-    splitflap: { img: "icons/bd-splitflap.webp", ar: 760 / 560, box: [9, 12, 9, 13] },
+    letterboard: { img: "icons/bd-letterboard.webp", ar: 760 / 574, box: [9, 12, 9, 14], fmax: 25 },
+    neon: { img: "icons/bd-neon.webp", ar: 760 / 556, box: [19, 20, 19, 22], fmax: 23 },
+    sand: { img: "icons/bd-sand.webp", ar: 760 / 554, box: [10, 20, 10, 15], fmax: 27 },
+    scroll: { img: null, ar: 668 / 501, box: [12.5, 21.2, 12.5, 21], fmax: 23 },
+    splitflap: { img: "icons/bd-splitflap.webp", ar: 760 / 560, box: [9, 12, 9, 13], fmax: 24 },
     phone: { img: "icons/bd-phone.webp", ar: 760 / 570, box: [21.5, 27.5, 21.5, 33], rsv: [2.4, 14] },
   };
   Object.keys(SB_DEFS).forEach((k) => { QB_DEFS[k] = { tool: null, scene: true }; });
@@ -5518,7 +5518,7 @@
     if (!qSB || !questionPromptTextEl.dataset.txt) return;
     const bh = qBodyEl.clientHeight;
     const rsv = qSB.def.rsv || [2.7, 24];
-    let fs = 19;
+    let fs = qSB.def.fmax || 19;
     for (; fs > 8; fs -= 0.5) {
       qBodyEl.style.setProperty("--qfs", fs + "px");
       if (questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] <= bh) break;
@@ -5593,10 +5593,10 @@
           const im = cx.createImageData(128, 112), d = im.data;
           for (let k = 0; k < d.length; k += 4) { const v = Math.random() * 255 | 0; d[k] = d[k + 1] = d[k + 2] = v; d[k + 3] = 255; }
           cx.putImageData(im, 0, 0);
-        } else { cx.fillStyle = "#10201d"; cx.fillRect(0, 0, 128, 112); }
+        } else { cx.fillStyle = "#d6d9dd"; cx.fillRect(0, 0, 128, 112); }
         let op = E >= 0 ? 1 - sbEase(E / 450) : (sb.animated ? sbEase((A - 800) / 450) : 1);
         if (flick) {
-          for (let q = 0; q < 3; q++) if (Math.random() < 0.75) { cx.fillStyle = "rgba(255,255,255," + (0.25 + Math.random() * 0.45) + ")"; cx.fillRect(0, Math.random() * 112 | 0, 128, 1 + (Math.random() * 3 | 0)); }
+          for (let q = 0; q < 3; q++) if (Math.random() < 0.75) { cx.fillStyle = "rgba(40,50,80," + (0.2 + Math.random() * 0.4) + ")"; cx.fillRect(0, Math.random() * 112 | 0, 128, 1 + (Math.random() * 3 | 0)); }
           qBodyEl.style.transform = "translateX(" + ((Math.random() - 0.5) * 5) + "px)";
           op *= 0.6 + Math.random() * 0.4;
         } else qBodyEl.style.transform = "";
@@ -5696,7 +5696,7 @@
     scroll: {
       build(sb) {
         const paper = document.createElement("div");
-        paper.style.cssText = "position:absolute;left:7.2%;width:85.8%;box-sizing:border-box;background:linear-gradient(90deg,#d9bf8a,#f6ead0 7%,#f6ead0 93%,#d9bf8a);border-left:2px solid #6b4a2c;border-right:2px solid #6b4a2c;box-shadow:inset 0 10px 10px -8px rgba(90,60,30,.5),inset 0 -10px 10px -8px rgba(90,60,30,.5)";
+        paper.style.cssText = "position:absolute;left:9.6%;width:80.8%;box-sizing:border-box;background:linear-gradient(90deg,#d9bf8a,#f6ead0 7%,#f6ead0 93%,#d9bf8a);border-left:2px solid #6b4a2c;border-right:2px solid #6b4a2c;box-shadow:inset 0 10px 10px -8px rgba(90,60,30,.5),inset 0 -10px 10px -8px rgba(90,60,30,.5)";
         const top = new Image(), bot = new Image();
         top.src = "icons/bd-scroll-top.webp"; bot.src = "icons/bd-scroll-bot.webp"; top.alt = bot.alt = "";
         [top, bot].forEach((i) => { i.style.cssText = "position:absolute;left:0;width:100%;height:auto"; });
@@ -5708,7 +5708,7 @@
         let o;
         if (E >= 0) o = 1 - sbEase(E / 1000); else if (!has) o = 0; else o = sb.animated ? sbEase(A / 1100) : 1;
         const u = sb.sw / 668, Hp = 335 * u, hp = o * Hp, mid = sb.sh / 2;
-        sb.paper.style.top = mid - hp / 2 + "px"; sb.paper.style.height = hp + "px";
+        const ex = 13 * u; sb.paper.style.top = mid - hp / 2 - ex + "px"; sb.paper.style.height = hp + 2 * ex + "px";
         sb.rtop.style.top = mid - hp / 2 - 90 * u + 4 * u + "px"; sb.rbot.style.top = mid + hp / 2 - 4 * u + "px";
         const bt = qBodyEl.offsetTop, bh = qBodyEl.offsetHeight, pt = sb.sy + mid - hp / 2, pb = sb.sy + mid + hp / 2;
         qBodyEl.style.clipPath = "inset(" + Math.max(0, pt - bt) + "px 0 " + Math.max(0, bt + bh - pb) + "px 0)";
