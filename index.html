@@ -598,6 +598,8 @@
      an "Active" tag instead of (or alongside) the "Back in <Month>" tag other categories show. */
   .items-letter-group.items-pack-live { background: linear-gradient(180deg, #fff6d9, #ffecae); border: 2px solid #f0b32e; border-radius: 14px; padding: 8px 8px 10px; margin: 0 -8px 10px; box-shadow: 0 0 0 4px rgba(240,179,46,.18); }
   .items-pack-live-tag { font-size: 11px; font-weight: 700; color: #fff; background: #e0453a; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+  .items-stat-box { min-width: 0; }
+  button.items-stat-box.items-jump { flex: 0 0 23%; width: auto; margin: 0; display: flex; align-items: center; justify-content: center; font: inherit; font-size: 10px; font-weight: 700; letter-spacing: .3px; line-height: 1.15; text-transform: uppercase; color: #9a5d0a; cursor: pointer; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -2736,7 +2738,7 @@
 
   <details class="howto-section"><summary>Objects &amp; collections</summary><div class="howto-body">
     <p>Tap the <b>Objects</b> icon in the top toolbar to see every object that can show up in a round, grouped alphabetically - ones you haven't seen yet show as a locked "????" row. The stat boxes at the top track how many objects you've discovered and how many different <b>pairings</b> you've been asked to compare, with a <b>Hide Undiscovered</b> toggle to see only what you've found so far.</p>
-    <p>The <b>Holiday</b> tab (next to Objects) holds seasonal items like Christmas or Halloween props. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Holiday Sampler) from the Shop to keep it in rotation all year.</p>
+    <p>The <b>Monthly</b> tab (next to Objects) holds seasonal items, like Christmas or Halloween props, in a pack for each month. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Yearly Object Sampler Pack) from the Shop to keep it in rotation all year.</p>
     <p>Your avatar collection works the same way: open it from the <b>View All Avatars</b> button on the Shop's Avatars tab to see every avatar grouped by rarity, with a Discovered count and its own Hide Undiscovered toggle.</p>
   </div></details>
 
@@ -2751,7 +2753,7 @@
 
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
     <p>Your score becomes coins when a game ends, win or lose. Open the <b>Shop</b> from the toolbar to spend them, across three tabs:</p>
-    <p><b>Purchases</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up themed holiday packs to keep seasonal objects in the mix year-round.</p>
+    <p><b>Purchases</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
     <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
     <p><b>Cosmetics</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
   </div></details>
@@ -4810,18 +4812,18 @@
   // Each pack's objects are free for everyone during its month, and can be bought to stay all year.
   // Easter has no fixed month, so it follows the month Easter Sunday falls in that year.
   const MONTH_PACKS = [
-    { id: "newyear", name: "New Year's", month: 0 },
-    { id: "valentine", name: "Valentine's Day", month: 1 },
-    { id: "stpatrick", name: "St. Patrick's Day", month: 2 },
-    { id: "easter", name: "Easter", month: "easter" },
-    { id: "may", name: "Mother's Day & Cinco de Mayo", month: 4 },
-    { id: "june", name: "Father's Day & Summer", month: 5 },
-    { id: "july", name: "Fourth of July & BBQ", month: 6 },
-    { id: "august", name: "Summer Vacation", month: 7 },
-    { id: "september", name: "Back to School", month: 8 },
-    { id: "halloween", name: "Halloween", month: 9 },
-    { id: "thanksgiving", name: "Thanksgiving", month: 10 },
-    { id: "christmas", name: "Christmas", month: 11 },
+    { id: "newyear", name: "January Object Pack", month: 0 },
+    { id: "valentine", name: "February Object Pack", month: 1 },
+    { id: "stpatrick", name: "March Object Pack", month: 2 },
+    { id: "easter", name: "April Object Pack", month: "easter" },
+    { id: "may", name: "May Object Pack", month: 4 },
+    { id: "june", name: "June Object Pack", month: 5 },
+    { id: "july", name: "July Object Pack", month: 6 },
+    { id: "august", name: "August Object Pack", month: 7 },
+    { id: "september", name: "September Object Pack", month: 8 },
+    { id: "halloween", name: "October Object Pack", month: 9 },
+    { id: "thanksgiving", name: "November Object Pack", month: 10 },
+    { id: "christmas", name: "December Object Pack", month: 11 },
   ];
   // [pack, id, name, plural, mm]. An object only joins the game once its picture is listed in
   // HOLIDAY_IMAGE_IDS (add an id there when items/<id>.webp is added).
@@ -4966,7 +4968,7 @@
     return Math.floor((h + l - 7 * m + 114) / 31) - 1;
   }
   // Holiday Sampler: one favourite from each pack. Always buyable, never boosted, free in months with no pack.
-  const SAMPLER_PACK = { id: "sampler", name: "Holiday Sampler" };
+  const SAMPLER_PACK = { id: "sampler", name: "Yearly Object Sampler Pack" };
   const SAMPLER_IDS = new Set(["confetti", "teddy-bear", "leprechaun", "easter-egg", "pinata", "coffee-mug", "firecracker", "sailboat", "crayon", "candy-corn", "turkey", "christmas-tree"]);
   function seasonPackIds(date) {
     const month = date.getMonth(), year = date.getFullYear();
@@ -6742,22 +6744,31 @@
       `<div class="items-sticky-head">
         <div class="items-tabs">
           <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
-          <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
+          <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Monthly</button>
         </div>
         <div class="items-stats">
           <div class="items-stat-box">
             <div class="items-stat-value">${seenCount} / ${totalCount}</div>
-            <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
+            <div class="items-stat-label">${isHoliday ? "Monthly objects seen" : "Objects seen"}</div>
           </div>
           <div class="items-stat-box">
             <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
             <div class="items-stat-label">Combinations seen</div>
           </div>
+          ${isHoliday ? `<button type="button" class="items-stat-box items-jump" id="items-jump-btn">Jump to current month</button>` : ""}
         </div>
       </div>` + listHtml;
   }
   if (itemsContentEl) {
     itemsContentEl.addEventListener("click", (e) => {
+      if (e.target.closest("#items-jump-btn")) {
+        const g = itemsContentEl.querySelector(".items-pack-live"), head = itemsContentEl.querySelector(".items-sticky-head");
+        if (g) {
+          g.style.scrollMarginTop = (62 + (head ? head.offsetHeight : 0) + 6) + "px";
+          g.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
       const t = e.target.closest(".items-tab");
       if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); itemsContentEl.scrollTop = 0; }
     });
