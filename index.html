@@ -1687,7 +1687,7 @@
   /* Double down: your own answer on a paper just like the others, with a bold pill label
      on its top edge. Tapping it circles it in red crayon, same as picking another answer. */
   button#double-down-btn {
-    display: block; width: calc(100% * var(--fit, 1)); box-sizing: border-box; margin: 20px 0 0; padding: 0;
+    display: block; width: 100%; box-sizing: border-box; margin: 20px 0 0; padding: 0;
     border: 0; border-image: none; border-radius: 0; box-shadow: none; background: transparent;
     color: #000; font-family: 'Fredoka', sans-serif; font-weight: 700;
   }
@@ -1965,10 +1965,9 @@
   /* Player answers: hand-drawn numbers on scraps of paper, one per row, kept narrow so reactions have room beside the player cards */
   /* two columns of up to five: fills the left column top to bottom, then the right */
   /* one full-width column for up to five papers; only past five does it split into two so everything still fits */
-  #answers-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
-  #answers-row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 6px 8px; }
-  /* --fit (set by fitAnswerPapers) shrinks the papers so every one, plus the double down button, fits above the bottom bar */
-  #answers-row .answer-slot { width: calc(100% * var(--fit, 1)); max-width: none; justify-self: start; }
+  /* two columns filled left to right, row by row; the double down paper sits full width underneath */
+  #answers-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
+  #answers-row .answer-slot { width: calc(100% * var(--fit, 1)); max-width: none; justify-self: center; }
   .answer-slot {
     --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
     position: relative; width: 100%; aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
@@ -8858,7 +8857,6 @@
     const myPick = (data.picks || {})[currentPlayerId];
     const myEntry = answers.find((a) => a.playerId === currentPlayerId);
     answersRowEl.innerHTML = "";
-    answersRowEl.classList.toggle("two-col", answers.filter((e) => e.playerId !== currentPlayerId).length > 5);
     // A fresh random order every round (seeded by this round's deadline so re-renders keep it stable).
     let seed = 0;
     for (const c of `${currentRoomCode}:${data.answersEndsAt || data.round || 0}`) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
