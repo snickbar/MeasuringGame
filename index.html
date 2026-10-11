@@ -1677,18 +1677,20 @@
   button.itemmode-btn { font-size: 12px; white-space: nowrap; }
   button.itemmode-btn:disabled { opacity: .35; }
 
-  /* Double down: gold pill; purple with a gold ring once picked. Live text on the picture. */
+  /* Double down: your own answer on a paper just like the others, with a bold pill label
+     on its top edge. Tapping it circles it in red crayon, same as picking another answer. */
   button#double-down-btn {
-    width: 100%; box-sizing: border-box; border: 0; border-image: none; border-radius: 0; box-shadow: none; filter: none;
-    padding: 18px 34px 20px; margin: 4px 0 0;
-    background: transparent url(icons/btn-dd.png) center / 100% 100% no-repeat;
-    color: #fff; font-family: 'Fredoka', sans-serif; font-weight: 700;
-    text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
-                 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
+    display: block; width: calc(100% * var(--fit, 1)); box-sizing: border-box; margin: 20px 0 0; padding: 0;
+    border: 0; border-image: none; border-radius: 0; box-shadow: none; background: transparent;
+    color: #000; font-family: 'Fredoka', sans-serif; font-weight: 700;
   }
-  button#double-down-btn.picked { border-image-source: none; background-image: url(icons/btn-dd-picked.png); text-shadow: -1.5px -1.5px 0 #3b1a5c, 1.5px -1.5px 0 #3b1a5c, -1.5px 1.5px 0 #3b1a5c, 1.5px 1.5px 0 #3b1a5c, 0 -1.5px 0 #3b1a5c, 0 1.5px 0 #3b1a5c, -1.5px 0 0 #3b1a5c, 1.5px 0 0 #3b1a5c; }
-  button#double-down-btn .dd-guess-value { color: #fff; }
   button#double-down-btn:disabled { opacity: .6; filter: grayscale(.4); }
+  .dd-pill {
+    position: absolute; top: -13px; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap;
+    padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,.88); border: 1.5px solid rgba(90,60,30,.35);
+    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; line-height: 1.25; color: #000; text-align: center;
+  }
+  button#double-down-btn .hand-num { padding-top: 12%; }
 
   /* Install: lavender pill with the arrow in its left cap. */
   button#install-btn {
@@ -1958,7 +1960,8 @@
   /* one full-width column for up to five papers; only past five does it split into two so everything still fits */
   #answers-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
   #answers-row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 6px 8px; }
-  #answers-row .answer-slot { width: 100%; max-width: none; }
+  /* --fit (set by fitAnswerPapers) shrinks the papers so every one, plus the double down button, fits above the bottom bar */
+  #answers-row .answer-slot { width: calc(100% * var(--fit, 1)); max-width: none; justify-self: start; }
   .answer-slot {
     --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
     position: relative; width: 100%; aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
@@ -2031,15 +2034,7 @@
   .doubledown-mark { display: inline-flex; vertical-align: middle; margin-left: 4px; }
   .doubledown-mark .avatar-icon { width: 18px; height: 18px; }
   .answer-slot:disabled { cursor: default; }
-  #double-down-btn {
-    border-image-source: var(--btn-accent); color: #fff; position: relative;
-    display: flex; flex-direction: column; align-items: center; gap: 0; padding-block: 4px;
-  }
-  #double-down-btn.picked { border-image-source: var(--ring); }
   #double-down-btn.pop { animation: popIn 300ms ease; }
-  .dd-main { font-size: 14px; line-height: 1.1; }
-  .dd-guess-label { display: block; font-size: 14px; }
-  .dd-guess-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 28px; color: #1a1108; }
   /* The question paper (.question-prompt) got a fixed min-height so it stops
      shifting as the timer/skip button area changes - that left blank space
      under the question itself. This fills it with phase-specific guidance
@@ -5428,6 +5423,7 @@
   let summaryScrollStarted = false;
   let lastChoreographedIndex = -1;
   let revealAnimating = false;
+  let revealEpoch = 0;   // bumped by cancelRevealEffects so delayed reveal callbacks can tell they are stale
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
@@ -6084,6 +6080,9 @@
   let achHideDone = false;
   try { achHideDone = localStorage.getItem("mg_ach_hide") === "1"; } catch (e) {}
   let achJustClaimed = null;
+  // A just-claimed award stays listed while its celebration plays, even with Hide completed on.
+  const achHold = {};
+  const ACH_HOLD_MS = 1600;
 
   function achBurstHtml() {
     let st = "";
@@ -6115,7 +6114,7 @@
     };
     let body = "";
     ACH_CATS.forEach((cat) => {
-      const list = ACHIEVEMENTS.filter((a) => a.cat === cat && !(achHideDone && claimed[a.id] && !a.test));
+      const list = ACHIEVEMENTS.filter((a) => a.cat === cat && !(achHideDone && claimed[a.id] && !a.test && !(achHold[a.id] && achHold[a.id] > Date.now())));
       if (list.length) body += `<div class="ach-cat-title">${cat}</div>` + list.map(rowHtml).join("");
     });
     if (!body) body = `<div class="ach-empty">Everything is claimed. Nice work!</div>`;
@@ -6134,6 +6133,8 @@
     const a = ACHIEVEMENTS.find((x) => x.id === id);
     if (!a || !achClaimable(a)) return;
     achJustClaimed = id;
+    achHold[id] = Date.now() + ACH_HOLD_MS;
+    setTimeout(() => { delete achHold[id]; if (document.getElementById("achievements-content")) renderAchievementsScreen(); }, ACH_HOLD_MS + 50);
     playSound("roundwin");
     const res = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
@@ -8327,7 +8328,7 @@
     advanceReveal(currentRoomCode);
   });
 
-  showSummaryBtn.addEventListener("click", () => goToSummary(currentRoomCode));
+  showSummaryBtn.addEventListener("click", () => { cancelRevealEffects(); goToSummary(currentRoomCode); });
 
   // Live in-HUD auto-mode toggle — separate from the lobby's pre-game setting,
   // this one stays editable mid-game (no round-lock) so the host can flip
@@ -8862,17 +8863,39 @@
     });
     const isMyDoubleDown = !!myPick && myPick.type === "doubledown";
     doubleDownBtn.disabled = !!roomState.paused || nowMs() < answersPhaseInputLockedUntil;
-    doubleDownBtn.classList.toggle("picked", isMyDoubleDown);
-    if (isMyDoubleDown && !wasDoubleDownPicked) {
-      doubleDownBtn.classList.remove("pop");
-      void doubleDownBtn.offsetWidth;
-      doubleDownBtn.classList.add("pop");
-    }
+    const myFrame = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].frameIndex) || 1;
+    const popNow = isMyDoubleDown && !wasDoubleDownPicked;
     wasDoubleDownPicked = isMyDoubleDown;
-    doubleDownBtn.innerHTML = `<span class="dd-main">Double down on my answer</span>`
-      + (myEntry ? `<span class="dd-guess-value">${myEntry.value}</span>` : "")
+    doubleDownBtn.className = "answer-slot dd-paper frame-" + myFrame + " pp-" + PAPER_STYLES[myFrame % PAPER_STYLES.length]
+      + (isMyDoubleDown ? " picked" : "") + (popNow ? " pop" : "");
+    doubleDownBtn.innerHTML = `<span class="paper-bg"></span>`
+      + (myEntry ? handNumberHtml(myEntry.value, currentPlayerId, false) : "")
+      + `<span class="dd-pill">Double down +2</span>`
       + (isMyDoubleDown ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
+    doubleDownBtn.setAttribute("aria-label", "Double down on my answer");
+    fitAnswerPapers();
   }
+
+  // Shrink the answer papers (width, so height follows) until the whole column and the
+  // double down button sit above the bottom bar instead of running underneath it.
+  function fitAnswerPapers() {
+    if (!answersRowEl.children.length) return;
+    answersViewEl.style.setProperty("--fit", 1);
+    const bar = document.getElementById("bottom-toolbar");
+    const barTop = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    const rowRect = answersRowEl.getBoundingClientRect();
+    const avail = barTop - rowRect.top - 8;
+    if (avail <= 0) return;
+    // the gaps between papers don't shrink with them, so nudge a few times until it settles
+    let fit = 1;
+    for (let i = 0; i < 4; i++) {
+      const h = doubleDownBtn.getBoundingClientRect().bottom - answersRowEl.getBoundingClientRect().top;
+      if (h <= avail + 0.5) break;
+      fit = Math.max(0.5, fit * (avail / h) * 0.98);
+      answersViewEl.style.setProperty("--fit", fit.toFixed(3));
+    }
+  }
+  window.addEventListener("resize", () => { if (document.getElementById("answers-view").classList.contains("active")) fitAnswerPapers(); });
 
   async function choosePick(type, targetPlayerId, alreadyActive) {
     if (roomState.paused) return;
@@ -8952,13 +8975,17 @@
     const pts = entry.basePoints + entry.doubleDownPoints;
     const isWinner = idx === order.length - 1 && entry.isClosest;
 
+    const ep = revealEpoch;
+    const stale = () => ep !== revealEpoch;
     return new Promise((resolve) => {
       function doFlips() {
+        if (stale()) { resolve(); return; }
         // the number is pencilled onto the blank paper, then the caption pops in underneath
         const drawMs = String(entry.guess).length * 90 + 420;
         li.querySelector(".rv-paper").outerHTML = revealPaperHtml(entry, true, true);
         playSound("reveal");
         setTimeout(() => {
+          if (stale()) { resolve(); return; }
           li.querySelectorAll(".rv-badges").forEach((n) => n.remove());
           li.insertAdjacentHTML("beforeend", revealInfoHtml(entry));
           if (isWinner) {
@@ -8977,6 +9004,7 @@
             showAnswerReveal();
           }
           setTimeout(() => {
+            if (stale()) { resolve(); return; }
             if (isWinner) {
               order.slice(0, idx + 1).forEach((e) => {
                 const cardLi = revealListEl.querySelector(`[data-id="${e.playerId}"]`);
@@ -8987,6 +9015,7 @@
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
             // The trophy lands on the winner's medal spot in the score column (once the column has settled), not on their answer card.
             if (isWinner) setTimeout(() => {
+              if (stale()) return;
               const medalEl = scoreColEl.querySelector(`[data-id="${entry.playerId}"] .medal`);
               spawnTrophyBurst(medalEl, undefined, true);
             }, 450);
@@ -9000,7 +9029,7 @@
         // paint above the separate .score-col cards) for the drumroll, then the card flips.
         const drumMs = flairDrumMs();
         playSound("drumroll");
-        if (drumMs > 1100) setTimeout(() => playSound("drumroll"), 1000);
+        if (drumMs > 1100) setTimeout(() => { if (!stale()) playSound("drumroll"); }, 1000);
         flairOrbit(li, flairIdFor(entry), drumMs);
         setTimeout(() => { li.classList.remove("drumroll"); doFlips(); }, drumMs);
       } else {
@@ -9881,6 +9910,7 @@
     sfxPool[name] = a;
   });
 
+  const activeSfx = new Set();
   function sfx(name) {
     if (!localSoundEnabled) return;
     const base = sfxPool[name];
@@ -9888,8 +9918,27 @@
     try {
       const node = base.cloneNode(true);
       node.volume = SFX_VOLUME[name] ?? 0.6;
-      node.play().catch(() => { /* ignore autoplay-policy rejection */ });
+      activeSfx.add(node);
+      const done = () => activeSfx.delete(node);
+      node.addEventListener("ended", done);
+      node.play().catch(done /* ignore autoplay-policy rejection */);
     } catch (e) { /* ignore audio errors */ }
+  }
+  function stopAllSfx() {
+    activeSfx.forEach((n) => { try { n.pause(); } catch (e) { /* ignore */ } });
+    activeSfx.clear();
+  }
+
+  // When the screen moves on from the reveal (the host jumped to the summary mid-flair), the winner's
+  // flair, trophy, coins, confetti and their sounds stop right away instead of carrying onto the next screen.
+  function cancelRevealEffects() {
+    revealEpoch++;
+    revealAnimating = false;
+    reactionsPanelEl.querySelectorAll(".flair-layer, .trophy-burst, .coin-fly, .coin-award-popup, .streamer-piece").forEach((n) => n.remove());
+    perfectFlashEl.classList.remove("flash");
+    document.querySelectorAll("#reveal-list .drumroll").forEach((n) => n.classList.remove("drumroll"));
+    stopAllSfx();
+    try { if (window.confetti && window.confetti.reset) window.confetti.reset(); } catch (e) { /* ignore */ }
   }
 
   function playSound(kind) {
@@ -10017,6 +10066,7 @@
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
     if (phase !== lastSeenPhaseForSound) {
+      if (lastSeenPhaseForSound === "reveal") cancelRevealEffects();
       if (phase === "answers") {
         playSound("answers");
         answersPhaseInputLockedUntil = nowMs() + 500;

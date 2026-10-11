@@ -1,0 +1,38 @@
+# Builds an installable Android APK (debug-signed, for sideloading/testing) on demand.
+# Run it from the GitHub Actions tab: "Build Android APK" -> Run workflow. When it finishes,
+# open the run and download the "size-em-up-apk" artifact (a zip containing the .apk).
+name: Build Android APK
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch to build (blank = the branch you run it on)
+        required: false
+        default: ""
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - name: Copy the web app into the Android project
+        run: npm run cap:sync
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: size-em-up-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
