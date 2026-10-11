@@ -199,6 +199,12 @@
     position: fixed; inset: 0;
     background-image: url('home-bg.jpg'); background-size: cover; background-position: center top; background-repeat: no-repeat;
   }
+  /* Picked shop background: a fixed picture behind every screen except Home. */
+  body[data-bg]::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(rgba(255,250,240,.38), rgba(255,250,240,.38)), var(--game-bg) center / cover no-repeat; }
+  body:has(#home-screen.active)::before { display: none; }
+  .cosm-bg-pic { width: 34px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; flex-shrink: 0; }
+  .cosm-bg-none { display: inline-block; background: linear-gradient(150deg, #fbfaf6, #f3f1ea 45%, #fdf6ec); }
   #home-title { display: none; }
   .big-cta {
     font-size: 18px; padding-block: 4px; padding-inline: 0; margin: 0;
@@ -2430,16 +2436,21 @@
       <div class="cosm-tabs" role="group" aria-label="Cosmetics">
         <button type="button" class="cosm-tab-btn fit-text active" data-sub="emojis"><span class="cosm-tab-icon" aria-hidden="true">👍</span>Reactions</button>
         <button type="button" class="cosm-tab-btn fit-text" data-sub="flairs"><span class="cosm-tab-icon" aria-hidden="true">⭐</span>Flairs</button>
+        <button type="button" class="cosm-tab-btn fit-text" data-sub="backgrounds"><span class="cosm-tab-icon" aria-hidden="true">🖼️</span>Backgrounds</button>
       </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
       <p id="cosm-flair-desc" class="cosm-sub cosm-sub-desc" data-sub="flairs" hidden>Your flair plays around your card when you win a round, and everyone in the room sees it.</p>
+      <p id="cosm-bg-desc" class="cosm-sub cosm-sub-desc" data-sub="backgrounds" hidden>A picture behind every screen except Home. Only you see it. Tap the equipped one again to go back to plain.</p>
     </div>
     <div id="cosm-pane-emojis" class="cosm-pane">
       <div id="cosm-emojis-list" class="cosm-list"></div>
     </div>
     <div id="cosm-pane-flairs" class="cosm-pane" hidden>
       <div id="cosm-flairs-list" class="cosm-list"></div>
+    </div>
+    <div id="cosm-pane-backgrounds" class="cosm-pane" hidden>
+      <div id="cosm-backgrounds-list" class="cosm-list"></div>
     </div>
     <div class="coming-soon-box">
       <p class="coming-soon-title">Coming Soon</p>
@@ -3370,8 +3381,8 @@
 
   function defaultCosmeticState() {
     return {
-      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true } },
-      equipped: { borders: "classic", effects: "classic", colors: "default" },
+      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {} },
+      equipped: { borders: "classic", effects: "classic", colors: "default", background: "none" },
     };
   }
   // The game's original fixed 9 reactions - always available regardless of
@@ -3442,6 +3453,7 @@
       emojiOwned: {},
       reactionSlotsExtra: 0,
       flairPacks: {},
+      backgroundPacks: {},
       holidayPacks: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
@@ -3527,6 +3539,7 @@
     renderHostUnlockUi();
     renderThemedPackShop();
     renderCosmeticsShop();
+    applyBackground();
     renderReactionStrip();
     renderPresetSlotButtons();
     renderItemsScreen();
@@ -3555,6 +3568,7 @@
               borders: { ...defaults.owned.borders, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.borders) || {}) },
               effects: { ...defaults.owned.effects, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.effects) || {}) },
               colors: { ...defaults.owned.colors, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.colors) || {}) },
+              backgrounds: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.backgrounds) || {}) },
             },
             equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
           },
@@ -3563,6 +3577,7 @@
           emojiOwned: { ...(data.emojiOwned || {}) },
           reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
           flairPacks: { ...(data.flairPacks || {}) },
+          backgroundPacks: { ...(data.backgroundPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
           // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
           // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
@@ -3835,6 +3850,7 @@
   function renderCosmeticsShop() {
     renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
     renderFlairRows(document.getElementById("cosm-flairs-list"));
+    renderBackgroundRows(document.getElementById("cosm-backgrounds-list"));
   }
 
   // TEMP: same simulated-purchase pattern as the host-unlock button below -
@@ -3859,6 +3875,81 @@
     "\u{1F44D}": "Thumbs up", "\u{1F602}": "Laughing", "\u{1F525}": "Fire", "\u{1F389}": "Party popper",
     "\u{1F624}": "Triumph", "\u{1F62B}": "Tired face", "\u{1F913}": "Nerd", "\u{1F4AA}": "Flexed arm", "\u2620\uFE0F": "Skull", "\u{1F62D}": "Crying",
   };
+  // Backgrounds: a picture behind every screen except Home. Packs are 6 backgrounds; each can be bought with
+  // coins, or the whole pack unlocked at once (simulated purchase, like the flair packs). Only backgrounds with
+  // art are listed; more are added here as their pictures arrive.
+  const BACKGROUND_COIN_COST = 200;
+  const BACKGROUND_PACK_CATALOG = [
+    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$2.99", backgrounds: [
+      { id: "newyear-bg", label: "New Year's" },
+      { id: "stpatrick-bg", label: "St. Patrick's Day" },
+      { id: "may-bg", label: "May Fiesta" },
+      { id: "july-bg", label: "Fourth of July" },
+      { id: "september-bg", label: "Back to School" },
+      { id: "thanksgiving-bg", label: "Thanksgiving" },
+    ] },
+  ];
+  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds); }
+  function backgroundPackOf(id) { return BACKGROUND_PACK_CATALOG.find((p) => p.backgrounds.some((b) => b.id === id)); }
+  function ownsBackground(id) {
+    const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.backgrounds) || {};
+    const pk = backgroundPackOf(id);
+    return !!(own[id] || (pk && (myProfile.backgroundPacks || {})[pk.id]));
+  }
+  function equippedBackground() {
+    const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.background;
+    return id && id !== "none" && ownsBackground(id) && allBackgrounds().some((b) => b.id === id) ? id : "none";
+  }
+  const backgroundUrl = (id) => `backgrounds/${id}.webp`;
+  // Shows the picked background behind every screen except Home (Home keeps its own picture; see the CSS).
+  function applyBackground() {
+    const id = equippedBackground();
+    if (id === "none") { delete document.body.dataset.bg; document.body.style.removeProperty("--game-bg"); return; }
+    document.body.dataset.bg = id;
+    document.body.style.setProperty("--game-bg", `url('${backgroundUrl(id)}')`);
+  }
+  async function buyBackgroundWithCoins(bg) {
+    if ((myProfile.coins || 0) < BACKGROUND_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const cosmetics = profile.cosmetics || defaultCosmeticState();
+      const owned = (cosmetics.owned && cosmetics.owned.backgrounds) || {};
+      if (owned[bg.id] || (profile.coins || 0) < BACKGROUND_COIN_COST) return profile;
+      return { ...profile, coins: (profile.coins || 0) - BACKGROUND_COIN_COST,
+        cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, backgrounds: { ...owned, [bg.id]: true } } } };
+    });
+  }
+  // Tapping the equipped one again goes back to the default look.
+  async function equipBackground(id) {
+    const now = equippedBackground();
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/background": now === id ? "none" : id });
+  }
+  function renderBackgroundRows(container) {
+    if (!container) return;
+    const equipped = equippedBackground();
+    container.innerHTML = "";
+    const label = document.createElement("div");
+    label.className = "cosm-group-label";
+    label.textContent = "Default";
+    container.appendChild(label);
+    container.appendChild(cosmRow({
+      leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Plain", owned: true, free: true, cost: 0,
+      equipped: equipped === "none", onEquip: () => equipBackground(equipped),
+    }));
+    BACKGROUND_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
+      container.appendChild(cosmPackHead(pack, owned, async () => {
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price });
+        if (!bought) return;
+        await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
+      }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
+      pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
+        leadHtml: `<img class="cosm-bg-pic" src="${backgroundUrl(b.id)}" alt="" loading="lazy">`, name: b.label,
+        owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
+        onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
+      })));
+    });
+  }
   const FLAIR_PACK_CATALOG = [
     { id: "fpack1", label: "Flair Pack 1", price: "$2.99", flairs: ["hearts", "coinshower", "rainbow", "snow"] },
     { id: "fpack2", label: "Flair Pack 2", price: "$2.99", flairs: ["fire", "lightning", "fireworks", "butterfly"] },
@@ -5045,6 +5136,7 @@
     document.querySelectorAll(".cosm-tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
     document.getElementById("cosm-pane-emojis").hidden = btn.dataset.sub !== "emojis";
     document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
+    document.getElementById("cosm-pane-backgrounds").hidden = btn.dataset.sub !== "backgrounds";
     document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== btn.dataset.sub; });
   }));
   const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
