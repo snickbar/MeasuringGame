@@ -2044,7 +2044,7 @@
   .question-note { margin-top: 10px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-style: italic; font-size: 14px; line-height: 1.3; color: rgba(74,51,28,.65); }
 
   /* ---- Reveal ---- */
-  #reveal-list { perspective: 800px; padding-left: 2px; }
+  #reveal-list { perspective: 800px; padding: 30px 16px 0 2px; } /* room for the avatar stamp that overhangs each card's right edge */
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
   .reveal-card { padding: 0; background: transparent; display: block; position: relative; border: none; width: 100%; margin: 0 0 18px; }
   .reveal-card .rv-paper { cursor: default; width: 100%; }
@@ -2058,6 +2058,19 @@
   .reveal-card.winner .rv-paper { filter: drop-shadow(0 0 7px rgba(255,200,60,.95)) drop-shadow(0 3px 4px rgba(90,60,30,.3)); }
   .reveal-card .owner-stamp { position: absolute; top: -14px; right: -6px; z-index: 2; animation: popIn 300ms ease; }
   .reveal-card .owner-stamp .avatar-icon { width: 34px; height: 34px; }
+  /* The round winner's avatar dances: hops, leans left and right, and grows a bit more with every hop, then stays big. */
+  .reveal-card.winner .owner-stamp { transform-origin: 70% 100%; animation: winnerDance 1.9s ease-in-out .15s both; }
+  @keyframes winnerDance {
+    0%   { transform: translateY(0) rotate(0) scale(1); }
+    12%  { transform: translateY(-14px) rotate(0) scale(1.12); }
+    24%  { transform: translateY(0) rotate(-16deg) scale(1.2); }
+    36%  { transform: translateY(-12px) rotate(-16deg) scale(1.3); }
+    48%  { transform: translateY(0) rotate(16deg) scale(1.38); }
+    60%  { transform: translateY(-12px) rotate(16deg) scale(1.46); }
+    72%  { transform: translateY(0) rotate(-10deg) scale(1.54); }
+    84%  { transform: translateY(-8px) rotate(8deg) scale(1.6); }
+    100% { transform: translateY(0) rotate(0) scale(1.6); }
+  }
   .reveal-card .dd-chip { position: absolute; top: -10px; right: 32px; z-index: 2; width: 30px; height: 30px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); animation: popIn 300ms ease; }
   .reveal-card .dd-chip svg { width: 100%; height: 100%; display: block; }
   /* Accuracy % and who-picked-it avatars, grouped together bottom-left,
