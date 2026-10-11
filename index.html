@@ -2243,26 +2243,26 @@
     70% { opacity: 1; transform: translateY(-2px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* avatar + name on the first line; the breakdown pills stack on the left and the total points fill the height beside them */
   .summary-row-top { display: flex; align-items: center; gap: 6px; }
-  .summary-row .avatar { font-size: 20px; flex-shrink: 0; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+  .summary-row .avatar { font-size: 20px; flex-shrink: 0; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; }
   .summary-row .avatar .avatar-icon { width: 100%; height: 100%; }
   .summary-row .name {
-    font-size: 15px; font-weight: 800; color: #000; text-align: center; line-height: 1.1;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden; text-overflow: ellipsis; overflow-wrap: break-word;
+    flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 800; color: #000; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .summary-row .move-icon { flex-shrink: 0; width: 20px; height: 20px; margin: 0; }
-  .summary-row .move-same { flex-shrink: 0; width: 20px; text-align: center; font-weight: 800; color: var(--text-faint); line-height: 1; }
+  .summary-row-body { display: flex; align-items: center; gap: 4px; }
+  .summary-row .breakdown { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 3px; }
   .summary-row .roundpts {
-    flex: 1 1 auto; text-align: center;
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; color: #000;
-    opacity: 0; animation: popIn 320ms ease-out both;
+    flex: 0 0 auto; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; line-height: .9; color: #000;
+    font-size: 34px; opacity: 0; animation: popIn 320ms ease-out both;
   }
+  .summary-row-body.lines-2 .roundpts { font-size: 56px; }
+  .summary-row-body.lines-3 .roundpts { font-size: 72px; }
   .summary-row .roundpts.zero { color: var(--text-faint); }
-  .breakdown { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
   .breakdown-chip {
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 13px; line-height: 1.2; padding: 2px 9px; color: #000; text-align: center;
-    background: rgba(255,255,255,.6); border: 1.5px solid rgba(90,60,30,.25); border-radius: 999px;
+    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; line-height: 1.2; padding: 2px 8px; color: #000; text-align: center;
+    background: rgba(255,255,255,.6); border: 1.5px solid rgba(90,60,30,.25); border-radius: 12px;
     opacity: 0; animation: popIn 320ms ease-out both;
   }
 
@@ -2966,7 +2966,6 @@
       </div>
 
       <div id="summary-view">
-        <h3>Round summary</h3>
         <ul id="summary-list"></ul>
       </div>
 
@@ -9295,22 +9294,18 @@
       li.className = "summary-row";
       li.dataset.id = id;
       li.style.animationDelay = `${idx * 90}ms`;
-      const moveTitle = delta > 0 ? `Up ${delta} spot${delta > 1 ? "s" : ""}` : delta < 0 ? `Down ${Math.abs(delta)} spot${Math.abs(delta) > 1 ? "s" : ""}` : "Holding steady";
-      const moveIcon = delta > 0 ? `<span class="move-icon up" role="img" aria-label="${moveTitle}"></span>`
-        : delta < 0 ? `<span class="move-icon down" role="img" aria-label="${moveTitle}"></span>`
-        : `<span class="move-same" role="img" aria-label="${moveTitle}">&ndash;</span>`;
       if (roundPts > 0 && idx === 0 && (data.revealOrder || []).some((e) => e.playerId === id && e.isClosest)) li.classList.add("round-winner");
+      const SHORT = { "closest guess": "Closest", "second chance": "Second chance", "double down": "Double down", "crowd favorite": "Crowd fave", "spot on": "Spot on", "perfect!": "Perfect!" };
       const chipHtml = chips.map((c, ci) =>
-        `<span class="breakdown-chip" style="animation-delay:${idx * 90 + 260 + ci * 90}ms">+${c.amount} ${c.label}</span>`
+        `<span class="breakdown-chip" style="animation-delay:${idx * 90 + 260 + ci * 90}ms">+${c.amount} ${SHORT[c.label] || c.label}</span>`
       ).join("");
+      const lineCount = Math.max(chips.length, 1);
       li.innerHTML = `
-        <div class="summary-row-top">
-          <span class="avatar">${avatarHtml(p.avatar)}</span>
+        <div class="summary-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span></div>
+        <div class="summary-row-body lines-${Math.min(lineCount, 3)}">
+          <div class="breakdown">${chipHtml}</div>
           <span class="roundpts${roundPts === 0 ? " zero" : ""}" style="animation-delay:${idx * 90 + 180}ms">+${roundPts}</span>
-          ${moveIcon}
         </div>
-        <div class="name">${escapeHtml(p.name)}</div>
-        ${chipHtml ? `<div class="breakdown">${chipHtml}</div>` : ""}
       `;
       summaryListEl.appendChild(li);
     });
