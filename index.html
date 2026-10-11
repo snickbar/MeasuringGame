@@ -1819,6 +1819,7 @@
   .question-prompt[data-board="typewriter"] { color: #161616; font-family: 'Courier New', monospace; font-weight: 700; -webkit-text-stroke: .4px #161616; }
   .question-prompt[data-board="typewriter"] #q-body { overflow: hidden; justify-content: flex-end; }
   .question-prompt[data-board="letterboard"] { color: #f3f1e8; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .question-prompt[data-board="letterboard"] .answer-line-value { background: linear-gradient(90deg, #ef4b43, #ffa63a, #ffe14d, #4bc460, #4aa3ff, #b777e8); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
   .question-prompt[data-board="neon"] { color: #ffb3d9; font-weight: 600; text-shadow: 0 0 4px #ff4fa3, 0 0 10px #ff2d95; }
   .question-prompt[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9), 0 -1px 0 rgba(120,70,20,.35); }
   .question-prompt[data-board="scroll"] { color: #5b3a26; font-weight: 600; }
@@ -5617,6 +5618,7 @@
   };
   Object.keys(SB_DEFS).forEach((k) => { QB_DEFS[k] = { tool: null, scene: true }; });
   const SB_CARD_H = 196;
+  const SB_LB_COLORS = ["#ef4b43", "#4bc460", "#4aa3ff", "#ffa63a", "#b777e8", "#ffe14d"]; // red, green, blue, orange, purple, yellow letters
   let qSB = null;
   const sbEase = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
   const sbC01 = (x) => Math.max(0, Math.min(1, x));
@@ -5787,7 +5789,7 @@
           let y, o, rot = 0;
           if (E < 0) { const p = sbC01((A - i * st) / 520); if (p <= 0) { y = -80; o = 0; } else { o = sbC01(p * 5); y = -80 * (1 - sbBounce(p)); rot = (1 - p) * (i % 2 ? 14 : -14); } }
           else { const p2 = sbEase((E - i * st2) / 300); y = -80 * p2; o = 1 - p2; rot = p2 * (i % 2 ? -10 : 10); }
-          c.style.transform = "translateY(" + y + "px) rotate(" + rot + "deg)"; c.style.opacity = String(o);
+          c.style.transform = "translateY(" + y + "px) rotate(" + rot + "deg)"; c.style.opacity = String(o); c.style.color = SB_LB_COLORS[i % SB_LB_COLORS.length];
         });
         questionAnswerLineEl.style.opacity = E >= 0 ? String(sbC01(1 - E / 350)) : "";
       },
@@ -5803,7 +5805,7 @@
         sb.base.style.filter = "brightness(" + (E >= 0 ? (E > n * st2 + 300 ? 0.5 : 1) : (sb.animated && A < 500 ? (Math.floor(A / 60) % 2 ? 1 : 0.6) : 1)) + ")";
         sb.chars.forEach((c, i) => {
           let o;
-          if (E < 0) { const d = A - (500 + i * st); o = d < 0 ? 0.08 : (d < 260 ? (Math.floor(d / 45) % 2 ? 0.15 : 1) : 1); if (A > allOn && (i === fa || i === fb)) { const ph = (now % 430) / 430; o = ph < 0.2 ? 0.15 : ph < 0.32 ? 1 : ph < 0.5 ? 0.25 : 1; } }
+          if (E < 0) { const d = A - (500 + i * st); o = d < 0 ? 0.08 : (d < 260 ? (Math.floor(d / 45) % 2 ? 0.15 : 1) : 1); if (A > allOn && i === fa) { const ph = (now % 430) / 430; o = ph < 0.2 ? 0.15 : ph < 0.32 ? 1 : ph < 0.5 ? 0.25 : 1; } }
           else { const d2 = E - i * st2; o = d2 < 0 ? 1 : (d2 < 260 ? (Math.floor(d2 / 45) % 2 ? 1 : 0.15) : 0.08); }
           c.style.opacity = String(o);
         });
