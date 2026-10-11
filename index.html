@@ -3532,6 +3532,7 @@
       flairPacks: {},
       backgroundPacks: {},
       holidayPacks: {},
+      boardPack: false,
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
@@ -3656,6 +3657,7 @@
           flairPacks: { ...(data.flairPacks || {}) },
           backgroundPacks: { ...(data.backgroundPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
+          boardPack: !!data.boardPack,
           // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
           // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
           // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
@@ -6624,6 +6626,7 @@
     july: ["\u{1F386}", "#ef5350", "#283593"], august: ["\u{1F3D6}\uFE0F", "#ffb74d", "#f06292"], september: ["\u{1F392}", "#ffa726", "#6d4c41"],
     halloween: ["\u{1F383}", "#ff9a3c", "#5a2a82"], thanksgiving: ["\u{1F983}", "#d98a3d", "#7a3b1c"], christmas: ["\u{1F384}", "#e53935", "#1b6b3a"],
     sampler: ["\u{1F381}", "#ab7df0", "#5a35b8"],
+    boards: ["\u{1F3AD}", "#4a9a6a", "#1d4d33"],
   };
   function renderThemedPackShop() {
     const el = document.getElementById("themed-pack-shop");
@@ -6634,6 +6637,8 @@
       desc: "Free this month. Unlock to use it all year round.", tag: "THIS MONTH", has: !!owned[id] }));
     cards.push({ id: "sampler", title: SAMPLER_PACK.name,
       desc: "One favourite from every pack, all year round." + (season.length ? "" : " Free this month."), tag: "MIX", has: !!owned.sampler });
+    cards.push({ id: "boards", title: BOARD_PACK_NAME,
+      desc: "Answer on a chalkboard, a whiteboard or behind stage curtains, with writing, erasing and curtain animations.", tag: "NEW", has: !!myProfile.boardPack });
     el.innerHTML = cards.map((c) => {
       const look = PACK_LOOK[c.id] || PACK_LOOK.sampler;
       return `<div class="tp-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
@@ -6641,9 +6646,17 @@
         <div class="tp-badge">${look[0]}</div>
         <div class="tp-title">${c.title}</div>
         <p class="tp-desc">${c.desc}</p>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : "$1.99 · Unlock"}</button>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (c.id === "boards" ? BOARD_PACK_PRICE : "$1.99") + " · Unlock"}</button>
       </div>`;
     }).join("");
+  }
+  const BOARD_PACK_NAME = "Game Show Boards";
+  const BOARD_PACK_PRICE = "$2.99";
+  async function purchaseBoardPack() {
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      return { ...profile, boardPack: true };
+    });
   }
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
@@ -6656,6 +6669,11 @@
     const b = e.target.closest && e.target.closest(".themed-pack-buy");
     if (!b || b.disabled) return;
     const packId = b.dataset.pack;
+    if (packId === "boards") {
+      const bought = await showFakePurchase({ icon: PACK_LOOK.boards[0], title: BOARD_PACK_NAME, price: BOARD_PACK_PRICE });
+      if (bought) purchaseBoardPack();
+      return;
+    }
     const pack = packId === "sampler" ? SAMPLER_PACK : MONTH_PACKS.find((x) => x.id === packId);
     if (!pack) return;
     const priceText = (b.textContent.split("·")[0] || "").trim();
