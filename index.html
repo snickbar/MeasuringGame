@@ -502,6 +502,8 @@
   }
   button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 0 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
+  .cosm-rnd-sub { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+  .cosm-random-on .cosm-row:not(.cosm-rnd-row) button.cosm-equip { opacity: .4; filter: grayscale(1); pointer-events: none; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
@@ -598,6 +600,8 @@
      an "Active" tag instead of (or alongside) the "Back in <Month>" tag other categories show. */
   .items-letter-group.items-pack-live { background: linear-gradient(180deg, #fff6d9, #ffecae); border: 2px solid #f0b32e; border-radius: 14px; padding: 8px 8px 10px; margin: 0 -8px 10px; box-shadow: 0 0 0 4px rgba(240,179,46,.18); }
   .items-pack-live-tag { font-size: 11px; font-weight: 700; color: #fff; background: #e0453a; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+  .items-stat-box { min-width: 0; }
+  button.items-stat-box.items-jump { flex: 0 0 23%; width: auto; margin: 0; display: flex; align-items: center; justify-content: center; font: inherit; font-size: 10px; font-weight: 700; letter-spacing: .3px; line-height: 1.15; text-transform: uppercase; color: #9a5d0a; cursor: pointer; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Achievements ---- */
@@ -2736,7 +2740,7 @@
 
   <details class="howto-section"><summary>Objects &amp; collections</summary><div class="howto-body">
     <p>Tap the <b>Objects</b> icon in the top toolbar to see every object that can show up in a round, grouped alphabetically - ones you haven't seen yet show as a locked "????" row. The stat boxes at the top track how many objects you've discovered and how many different <b>pairings</b> you've been asked to compare, with a <b>Hide Undiscovered</b> toggle to see only what you've found so far.</p>
-    <p>The <b>Holiday</b> tab (next to Objects) holds seasonal items like Christmas or Halloween props. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Holiday Sampler) from the Shop to keep it in rotation all year.</p>
+    <p>The <b>Monthly</b> tab (next to Objects) holds seasonal items, like Christmas or Halloween props, in a pack for each month. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Yearly Object Sampler Pack) from the Shop to keep it in rotation all year.</p>
     <p>Your avatar collection works the same way: open it from the <b>View All Avatars</b> button on the Shop's Avatars tab to see every avatar grouped by rarity, with a Discovered count and its own Hide Undiscovered toggle.</p>
   </div></details>
 
@@ -2751,7 +2755,7 @@
 
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
     <p>Your score becomes coins when a game ends, win or lose. Open the <b>Shop</b> from the toolbar to spend them, across three tabs:</p>
-    <p><b>Purchases</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up themed holiday packs to keep seasonal objects in the mix year-round.</p>
+    <p><b>Purchases</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
     <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
     <p><b>Cosmetics</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
   </div></details>
@@ -3594,6 +3598,52 @@
   const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
   // What is really equipped: only reactions that have pictures, and no more than the slots you own.
   const equippedReactions = () => ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, ownedReactionSlots());
+  // ---- Equip Random: with a category's toggle on, each game gives you random items you own from it.
+  // What is really equipped is left alone, so switching the toggle off goes straight back to it. ----
+  const rndOn = (cat) => !!(myProfile.randomEquip && myProfile.randomEquip[cat]);
+  let rndPick = {};
+  const rndOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  function rndGet(cat) {
+    if (rndPick[cat] !== undefined) return rndPick[cat];
+    let v = null;
+    if (cat === "boards") v = rndOf(["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard)));
+    else if (cat === "backgrounds") v = rndOf(["none"].concat(allBackgrounds().map((b) => b.id).filter(ownsBackground)));
+    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(ids) : "classic"; }
+    else if (cat === "reactions") {
+      const own = Object.keys(REACTIONS).filter((e) => ownsEmoji(e));
+      for (let i = own.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [own[i], own[j]] = [own[j], own[i]]; }
+      v = own.slice(0, ownedReactionSlots());
+    }
+    rndPick[cat] = v;
+    return v;
+  }
+  const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
+  const activeBoard = () => (rndOn("boards") ? rndGet("boards") : equippedBoard());
+  const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
+  function rollRandomEquips() {
+    rndPick = {};
+    applyBackground();
+    try { applyBoard(activeBoard()); } catch (e) { /* board module not initialised yet */ }
+    renderReactionStrip();
+    syncFlairToRoom();
+  }
+  function cosmRandomRow(cat, subText) {
+    const on = rndOn(cat);
+    const row = document.createElement("div");
+    row.className = "cosm-row cosm-rnd-row" + (on ? " equipped" : "");
+    row.innerHTML = `<div class="cosm-lead"><span class="cosm-emoji">\u{1F3B2}</span><span class="cosm-name">Equip Random<span class="cosm-rnd-sub">${subText}</span></span></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cosm-equip cosm-rnd-btn" + (on ? " is-on" : "");
+    btn.textContent = on ? "On" : "Off";
+    btn.setAttribute("aria-pressed", String(on));
+    btn.addEventListener("click", async () => {
+      rndPick[cat] = undefined;
+      await update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: !on });
+    });
+    row.appendChild(btn);
+    return row;
+  }
   function defaultProfile() {
     return {
       coins: 0,
@@ -3610,6 +3660,7 @@
       backgroundPacks: {},
       holidayPacks: {},
       boardPacks: {},
+      randomEquip: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
@@ -3672,7 +3723,7 @@
   // updated without the other.
   // The winner's flair plays for everyone, so each player's equipped flair lives on their room entry.
   function myEquippedFlair() {
-    const id = myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects;
+    const id = rndOn("flairs") ? rndGet("flairs") : (myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects);
     return FLAIRS[id] ? id : "classic";
   }
   let lastSyncedFlair = null;
@@ -3695,7 +3746,7 @@
     renderThemedPackShop();
     renderCosmeticsShop();
     applyBackground();
-    try { applyBoard(equippedBoard()); } catch (e) { /* board module not initialised yet */ }
+    try { applyBoard(activeBoard()); } catch (e) { /* board module not initialised yet */ }
     renderReactionStrip();
     renderPresetSlotButtons();
     renderItemsScreen();
@@ -3737,6 +3788,7 @@
           backgroundPacks: { ...(data.backgroundPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
           boardPacks: { ...(data.boardPacks || {}) },
+          randomEquip: { ...(data.randomEquip || {}) },
           // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
           // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
           // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
@@ -4062,7 +4114,7 @@
   const backgroundUrl = (id) => `backgrounds/${id}.webp`;
   // Shows the picked background behind every screen except Home (Home keeps its own picture; see the CSS).
   function applyBackground() {
-    const id = equippedBackground();
+    const id = activeBackground();
     if (id === "none") { delete document.body.dataset.bg; document.body.style.removeProperty("--game-bg"); return; }
     document.body.dataset.bg = id;
     document.body.style.setProperty("--game-bg", `url('${backgroundUrl(id)}')`);
@@ -4149,7 +4201,7 @@
     const done = () => {
       reset();
       saved.parent.insertBefore(qPromptEl, saved.next);
-      applyBoard(equippedBoard());
+      applyBoard(activeBoard());
       if (saved.txt) { setPromptText(saved.txt, false); questionAnswerLineEl.innerHTML = saved.ans; questionAnswerLineEl.style.display = saved.ansDisp; }
       ov.remove();
     };
@@ -4163,6 +4215,8 @@
     if (!container) return;
     const equipped = equippedBackground();
     container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", rndOn("backgrounds"));
+    container.appendChild(cosmRandomRow("backgrounds", "A random background you own each game"));
     const label = document.createElement("div");
     label.className = "cosm-group-label";
     label.textContent = "Default";
@@ -4245,6 +4299,8 @@
     if (!container) return;
     const equipped = equippedBoard();
     container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", rndOn("boards"));
+    container.appendChild(cosmRandomRow("boards", "A random board you own each game"));
     const label = document.createElement("div");
     label.className = "cosm-group-label";
     label.textContent = "Default";
@@ -4393,6 +4449,8 @@
     const active = equippedReactions();
     const slots = ownedReactionSlots();
     container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", rndOn("reactions"));
+    container.appendChild(cosmRandomRow("reactions", `${slots} random reactions you own each game`));
     const row = (e, cost) => cosmRow({
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e),
@@ -4433,7 +4491,7 @@
     if (statusEl) statusEl.textContent = `${active.length} / ${slots} equipped`;
     statusEl.classList.toggle("full", active.length >= slots);
     const unBtn = document.getElementById("cosm-unequip-all-btn");
-    if (unBtn) unBtn.disabled = active.length === 0;
+    if (unBtn) unBtn.disabled = active.length === 0 || rndOn("reactions");
   }
   function renderFlairRows(container) {
     if (!container) return;
@@ -4445,6 +4503,8 @@
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
     });
+    container.classList.toggle("cosm-random-on", rndOn("flairs"));
+    container.appendChild(cosmRandomRow("flairs", "A random flair you own each game"));
     const items = COSMETIC_CATALOG.effects;
     const label = document.createElement("div");
     label.className = "cosm-group-label";
@@ -4810,18 +4870,18 @@
   // Each pack's objects are free for everyone during its month, and can be bought to stay all year.
   // Easter has no fixed month, so it follows the month Easter Sunday falls in that year.
   const MONTH_PACKS = [
-    { id: "newyear", name: "New Year's", month: 0 },
-    { id: "valentine", name: "Valentine's Day", month: 1 },
-    { id: "stpatrick", name: "St. Patrick's Day", month: 2 },
-    { id: "easter", name: "Easter", month: "easter" },
-    { id: "may", name: "Mother's Day & Cinco de Mayo", month: 4 },
-    { id: "june", name: "Father's Day & Summer", month: 5 },
-    { id: "july", name: "Fourth of July & BBQ", month: 6 },
-    { id: "august", name: "Summer Vacation", month: 7 },
-    { id: "september", name: "Back to School", month: 8 },
-    { id: "halloween", name: "Halloween", month: 9 },
-    { id: "thanksgiving", name: "Thanksgiving", month: 10 },
-    { id: "christmas", name: "Christmas", month: 11 },
+    { id: "newyear", name: "January Object Pack", month: 0 },
+    { id: "valentine", name: "February Object Pack", month: 1 },
+    { id: "stpatrick", name: "March Object Pack", month: 2 },
+    { id: "easter", name: "April Object Pack", month: "easter" },
+    { id: "may", name: "May Object Pack", month: 4 },
+    { id: "june", name: "June Object Pack", month: 5 },
+    { id: "july", name: "July Object Pack", month: 6 },
+    { id: "august", name: "August Object Pack", month: 7 },
+    { id: "september", name: "September Object Pack", month: 8 },
+    { id: "halloween", name: "October Object Pack", month: 9 },
+    { id: "thanksgiving", name: "November Object Pack", month: 10 },
+    { id: "christmas", name: "December Object Pack", month: 11 },
   ];
   // [pack, id, name, plural, mm]. An object only joins the game once its picture is listed in
   // HOLIDAY_IMAGE_IDS (add an id there when items/<id>.webp is added).
@@ -4966,7 +5026,7 @@
     return Math.floor((h + l - 7 * m + 114) / 31) - 1;
   }
   // Holiday Sampler: one favourite from each pack. Always buyable, never boosted, free in months with no pack.
-  const SAMPLER_PACK = { id: "sampler", name: "Holiday Sampler" };
+  const SAMPLER_PACK = { id: "sampler", name: "Yearly Object Sampler Pack" };
   const SAMPLER_IDS = new Set(["confetti", "teddy-bear", "leprechaun", "easter-egg", "pinata", "coffee-mug", "firecracker", "sailboat", "crayon", "candy-corn", "turkey", "christmas-tree"]);
   function seasonPackIds(date) {
     const month = date.getMonth(), year = date.getFullYear();
@@ -5398,7 +5458,7 @@
     if (!reactionStripEl) return;
     const owned = ownedReactionSlots();
     // Nothing equipped in the shop: still show the defaults in games (the shop selection stays empty).
-    let active = equippedReactions();
+    let active = activeReactions();
     if (!active.length) active = START_EMOJIS.filter((e) => REACTIONS[e]).slice(0, owned);
     reactionStripEl.innerHTML = "";
     for (let i = 0; i < REACTION_SLOTS_MAX; i++) {
@@ -5967,7 +6027,7 @@
     qErase = { start: performance.now(), done: finish };
     startBoardLoop();
   }
-  applyBoard(equippedBoard());
+  applyBoard(activeBoard());
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -6742,22 +6802,31 @@
       `<div class="items-sticky-head">
         <div class="items-tabs">
           <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
-          <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Holiday</button>
+          <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Monthly</button>
         </div>
         <div class="items-stats">
           <div class="items-stat-box">
             <div class="items-stat-value">${seenCount} / ${totalCount}</div>
-            <div class="items-stat-label">${isHoliday ? "Holiday objects seen" : "Objects seen"}</div>
+            <div class="items-stat-label">${isHoliday ? "Monthly objects seen" : "Objects seen"}</div>
           </div>
           <div class="items-stat-box">
             <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
             <div class="items-stat-label">Combinations seen</div>
           </div>
+          ${isHoliday ? `<button type="button" class="items-stat-box items-jump" id="items-jump-btn">Jump to current month</button>` : ""}
         </div>
       </div>` + listHtml;
   }
   if (itemsContentEl) {
     itemsContentEl.addEventListener("click", (e) => {
+      if (e.target.closest("#items-jump-btn")) {
+        const g = itemsContentEl.querySelector(".items-pack-live"), head = itemsContentEl.querySelector(".items-sticky-head");
+        if (g) {
+          g.style.scrollMarginTop = (62 + (head ? head.offsetHeight : 0) + 6) + "px";
+          g.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
       const t = e.target.closest(".items-tab");
       if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); itemsContentEl.scrollTop = 0; }
     });
@@ -10930,11 +10999,14 @@
     }
   }
 
+  let lastRandomRollKey = null;
   function watchRoom(roomCode) {
     onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
       if (leavingGame) return; // see the comment on its declaration
       const data = snapshot.val() || {};
       roomState = data;
+      // A new game (its round-1 countdown) gives everyone with Equip Random on a fresh set of random items.
+      if (data.phase === "countdown" && data.countdownRound === 1 && data.countdownEndsAt !== lastRandomRollKey) { lastRandomRollKey = data.countdownEndsAt; rollRandomEquips(); }
       currentPlayers = data.players || {};
       currentSettings = data.settings || currentSettings;
 
