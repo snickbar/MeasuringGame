@@ -1687,7 +1687,7 @@
   /* Double down: your own answer on a paper just like the others, with a bold pill label
      on its top edge. Tapping it circles it in red crayon, same as picking another answer. */
   button#double-down-btn {
-    display: block; width: calc(100% * var(--fit, 1)); box-sizing: border-box; margin: 20px 0 0; padding: 0;
+    display: block; width: 100%; box-sizing: border-box; margin: 20px 0 0; padding: 0;
     border: 0; border-image: none; border-radius: 0; box-shadow: none; background: transparent;
     color: #000; font-family: 'Fredoka', sans-serif; font-weight: 700;
   }
@@ -1965,10 +1965,9 @@
   /* Player answers: hand-drawn numbers on scraps of paper, one per row, kept narrow so reactions have room beside the player cards */
   /* two columns of up to five: fills the left column top to bottom, then the right */
   /* one full-width column for up to five papers; only past five does it split into two so everything still fits */
-  #answers-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
-  #answers-row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 6px 8px; }
-  /* --fit (set by fitAnswerPapers) shrinks the papers so every one, plus the double down button, fits above the bottom bar */
-  #answers-row .answer-slot { width: calc(100% * var(--fit, 1)); max-width: none; justify-self: start; }
+  /* two columns filled left to right, row by row; the double down paper sits full width underneath */
+  #answers-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
+  #answers-row .answer-slot { width: calc(100% * var(--fit, 1)); max-width: none; justify-self: center; }
   .answer-slot {
     --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
     position: relative; width: 100%; aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
@@ -2642,12 +2641,12 @@
   </div></details>
 
   <details class="howto-section"><summary>Second chances</summary><div class="howto-body">
-    <p>Every round, after guesses lock, everyone gets a few seconds to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly within 1% of the real answer, and picking it earns the bonus point too or <b>double down</b> on your own guess. Picking the round's actual closest answer earns you a bonus point; doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
+    <p>Every round, after guesses lock, everyone gets a few seconds to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly the <b>real answer</b>, and picking it earns a bonus point, or <b>double down</b> on your own guess. Doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
   </div></details>
 
   <details class="howto-section"><summary>Scoring</summary><div class="howto-body">
     <p>Only the single <b>closest guess</b> each round scores: +3 points normally, or +5 if it's within 0.9 of the exact answer. Everyone else gets 0 for that round, no matter how close they were.</p>
-    <p><b>Second-chance bonus:</b> +1 for correctly picking the round's closest answer, or the hidden answer that's within 1% of the truth - as long as it beats every player's guess (a closer guess still wins the round, and then picking the hidden one earns nothing). It's a second chance for everyone who didn't win the round, so the closest player doesn't get it on top, and it only shows up when two or more players guessed. Everyone who found it shows up beside the answer.</p>
+    <p><b>Second-chance bonus:</b> +1 if you didn't win the round and you picked the hidden card, the real answer. Picking the winner's answer earns nothing, and the round's winner doesn't collect it. It only shows up when two or more players guessed (and not if someone guessed the exact answer). Players who picked an answer show up beside it, and the answer picked the most can earn a crowd favorite point.</p>
     <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top - as long as someone else guessed that round too, so it can't be earned for free in a solo practice game with no bots.</p>
     <p><b>Crowd favorite:</b> +1 to whoever got 2 or more second-chance picks that round (whichever count is highest), whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
     <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
@@ -8144,17 +8143,11 @@
     }
   }
 
-  // The "true answer" second-chance card. TRUTH_TOLERANCE is how far (as a
-  // fraction of the real answer) it may sit from the truth: 0.01 = within 1%.
+  // The hidden "true answer" second-chance card.
   const TRUTH_ID = "__truth__";
-  const TRUTH_TOLERANCE = 0.01;
-  function truthAnswerValue(answer, taken) {
-    const ok = (v) => Math.abs(v - answer) <= answer * TRUTH_TOLERANCE && !taken.some((t) => Math.abs(t - v) < 0.005);
-    for (let i = 0; i < 12; i++) {
-      const v = Math.round(answer * (1 + (Math.random() * 2 - 1) * TRUTH_TOLERANCE) * 100) / 100;
-      if (ok(v)) return v;
-    }
-    return Math.round(answer * 100) / 100; // tiny answers: rounding leaves no room, so use the answer itself
+  // The hidden card is the real answer itself (to two decimals), so it is always the best card on the table.
+  function truthAnswerValue(answer) {
+    return Math.round(answer * 100) / 100;
   }
 
   async function lockQuestionAndAdvance(roomCode, activeIds, guesses) {
@@ -8162,12 +8155,15 @@
     const real = activeIds
       .filter((id) => guesses[id] !== undefined)
       .map((id) => ({ playerId: id, value: guesses[id] }));
-    // A true second chance: one extra card on the table that is within
-    // TRUTH_TOLERANCE of the real answer. Anyone who picks it gets the
-    // second-chance point. It looks like any other answer (no owner). Only offered
-    // when at least two players guessed, so a solo game can't collect it for free.
+    // The hidden card: one extra card on the table showing the real answer. A player who
+    // doesn't win the round and picks it gets the second-chance point. It looks like any
+    // other answer (no owner). Only offered when at least two players guessed, so a solo
+    // game can't collect it for free, and left off if someone guessed it exactly.
     const q = roomState.currentQuestion;
-    if (real.length >= 2 && q && isFinite(q.answer)) real.push({ playerId: TRUTH_ID, value: truthAnswerValue(q.answer, real.map((e) => e.value)), truth: true });
+    if (real.length >= 2 && q && isFinite(q.answer)) {
+      const tv = truthAnswerValue(q.answer);
+      if (!real.some((e) => Math.abs(e.value - tv) < 0.005)) real.push({ playerId: TRUTH_ID, value: tv, truth: true });
+    }
     const sorted = real
       .sort((a, b) => a.value - b.value)
       .map((e, i) => (e.truth ? { slot: i, playerId: e.playerId, value: e.value, truth: true } : { slot: i, playerId: e.playerId, value: e.value }));
@@ -8230,17 +8226,14 @@
       if (pick.type === "pick" && pick.targetPlayerId !== pickerId) {
         const target = entries.find((e) => e.playerId === pick.targetPlayerId);
         if (target) {
-          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", avatar: (playersSnap[pickerId] || {}).avatar || null, points: target.isClosest ? 1 : 0 });
+          target.pickedBy.push({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", avatar: (playersSnap[pickerId] || {}).avatar || null, points: 0 });
         }
       }
     });
-    // Anyone who picked the true-answer card gets their second-chance point.
-    // It only counts when it is closer to the truth than every player's guess:
-    // if someone guessed even closer they win as usual and these picks earn nothing.
-    // The round's closest player never collects it too: the second chance is for everyone else.
-    const truthCard = (roomState.answers || []).find((a) => a.truth);
-    const truthWins = !!(truthCard && closest && Math.abs(truthCard.value - answer) < closest.error);
-    const truthPickedBy = !truthWins ? [] : Object.entries(picks)
+    // Anyone who picked the hidden true-answer card and did not win the round gets the
+    // second-chance point. Picking the round winner's answer earns nothing (the winner already scored),
+    // and the closest player never collects it too.
+    const truthPickedBy = Object.entries(picks)
       .filter(([pickerId, pick]) => pick.type === "pick" && pick.targetPlayerId === TRUTH_ID && !(closest && pickerId === closest.playerId))
       .map(([pickerId]) => ({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", avatar: (playersSnap[pickerId] || {}).avatar || null, points: 1 }));
     // Crowd favorite: whoever got the most second-chance picks this round,
@@ -8864,7 +8857,6 @@
     const myPick = (data.picks || {})[currentPlayerId];
     const myEntry = answers.find((a) => a.playerId === currentPlayerId);
     answersRowEl.innerHTML = "";
-    answersRowEl.classList.toggle("two-col", answers.filter((e) => e.playerId !== currentPlayerId).length > 5);
     // A fresh random order every round (seeded by this round's deadline so re-renders keep it stable).
     let seed = 0;
     for (const c of `${currentRoomCode}:${data.answersEndsAt || data.round || 0}`) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
