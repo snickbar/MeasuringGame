@@ -1772,9 +1772,22 @@
     box-sizing: border-box; margin: 0; padding: 26px 26px 30px 26px; min-height: 184px; min-width: 0;
     background: url(icons/board-paper.webp) center / 100% 100% no-repeat; position: relative;
   }
-  #q-pencil { position: absolute; left: 0; top: 0; width: 84px; pointer-events: none; transform-origin: 3px 8px; will-change: transform; z-index: 3; }
-  #q-eraser { position: absolute; left: calc(50% + 56px); bottom: 6.8%; width: 64px; pointer-events: none; z-index: 2; }
-  #q-pencil img { display: block; width: 84px; margin: 2px 0 0 3px; }
+  #q-pencil { position: absolute; left: 0; top: 0; pointer-events: none; transform-origin: 3px 8px; will-change: transform; z-index: 4; }
+  #q-eraser { position: absolute; left: 0; top: 0; pointer-events: none; transform-origin: 32px 17px; will-change: transform; z-index: 3; }
+  #q-dust { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+  #q-curtain { position: absolute; left: 1.5%; right: 1.5%; top: 12.3%; height: 76.1%; overflow: hidden; z-index: 2; pointer-events: none; }
+  #q-curtain img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: transform; }
+  #q-curtain-top { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+  .question-prompt > #question-prompt-text, .question-prompt > #question-note, .question-prompt > #question-answer-line { position: relative; z-index: 1; }
+  .question-prompt[data-board="chalkboard"] { background-image: url(icons/board-chalk.webp); padding: 26px 33px 32px; color: #f7f7f0; }
+  .question-prompt[data-board="chalkboard"] .question-note { color: rgba(240,240,230,.7); }
+  .question-prompt[data-board="chalkboard"] .answer-line-label { color: #cfe3cf; }
+  .question-prompt[data-board="chalkboard"] .answer-line-value { color: #fff; }
+  .question-prompt[data-board="whiteboard"] { background-image: url(icons/board-white.webp); padding: 22px 30px 28px; color: #1d3f9a; }
+  .question-prompt[data-board="whiteboard"] .question-note { color: rgba(29,63,154,.65); }
+  .question-prompt[data-board="whiteboard"] .answer-line-label { color: #3b5bb0; }
+  .question-prompt[data-board="whiteboard"] .answer-line-value { color: #1d3f9a; }
+  .question-prompt[data-board="curtains"] { background-image: url(icons/board-curtain.webp); padding: 34px 62px 40px; color: #5b3a26; }
   .qch { opacity: 0; }
   .qch.on { opacity: 1; }
   /* Used to be a small inline line, with a separate big standalone "THE
@@ -3630,6 +3643,7 @@
     renderThemedPackShop();
     renderCosmeticsShop();
     applyBackground();
+    try { applyBoard(equippedBoard()); } catch (e) { /* board module not initialised yet */ }
     renderReactionStrip();
     renderPresetSlotButtons();
     renderItemsScreen();
@@ -3659,6 +3673,7 @@
               effects: { ...defaults.owned.effects, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.effects) || {}) },
               colors: { ...defaults.owned.colors, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.colors) || {}) },
               backgrounds: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.backgrounds) || {}) },
+              boards: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.boards) || {}) },
             },
             equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
           },
@@ -5340,47 +5355,139 @@
   const questionPromptTextEl = document.getElementById("question-prompt-text");
   const questionNoteEl = document.getElementById("question-note");
   const questionAnswerLineEl = document.getElementById("question-answer-line");
-  // ---- Paper board pencil: rests on the ledge, writes the question letter by letter.
+  // ---- Question boards: paper (default), chalkboard, whiteboard, stage curtains ----
+  // The question card is a board picture with a writing tool resting on its ledge. The tool writes
+  // the question letter by letter, and an eraser sweeps the board clear before the next round.
+  // The curtains have no tool: the curtain rises to show the text and lowers to hide it.
+  const QB_SVG = {
+    chalk: `<svg viewBox="0 0 60 16" width="60" height="16"><path d="M3 8 Q3 2 9 2 H54 Q58 2 58 8 Q58 14 54 14 H9 Q3 14 3 8Z" fill="#fbfbf6" stroke="#4a2c14" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 5 H50" stroke="#e1e0d4" stroke-width="2" stroke-linecap="round"/></svg>`,
+    marker: `<svg viewBox="0 0 80 18" width="80" height="18"><path d="M1 9 L12 5 V13Z" fill="#2c5fd0" stroke="#4a2c14" stroke-width="1.8" stroke-linejoin="round"/><rect x="12" y="3.5" width="22" height="11" rx="2" fill="#2c5fd0" stroke="#4a2c14" stroke-width="1.8"/><rect x="34" y="2.5" width="42" height="13" rx="4" fill="#fbfbf6" stroke="#4a2c14" stroke-width="1.8"/><rect x="42" y="6.5" width="26" height="5" rx="2" fill="#2c5fd0"/></svg>`,
+    erChalk: `<svg viewBox="0 0 64 34" width="64" height="34"><rect x="2" y="4" width="60" height="18" rx="5" fill="#d6a16a" stroke="#4a2c14" stroke-width="2.2"/><rect x="2" y="20" width="60" height="11" rx="4" fill="#58504a" stroke="#4a2c14" stroke-width="2.2"/><path d="M10 10 H54" stroke="#ecc79a" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+    erMarker: `<svg viewBox="0 0 64 34" width="64" height="34"><rect x="2" y="4" width="60" height="18" rx="7" fill="#3a6fd0" stroke="#4a2c14" stroke-width="2.2"/><rect x="2" y="20" width="60" height="11" rx="4" fill="#9a9a9a" stroke="#4a2c14" stroke-width="2.2"/><path d="M10 10 H54" stroke="#7fa4ea" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+    pencil: '<img src="icons/board-pencil.webp" alt="" style="display:block;width:84px;margin:2px 0 0 3px">',
+    erPink: '<img src="icons/board-eraser.webp" alt="" style="display:block;width:64px">',
+  };
+  // ledge = where tools rest (fraction of card height); tx/ex = resting x offsets from the card middle.
+  const QB_DEFS = {
+    paper: { tool: "pencil", er: "erPink", ledge: 0.932, toolDy: -11, toolDx: -62, erDx: 90, dust: "#cdb8ad" },
+    chalkboard: { tool: "chalk", er: "erChalk", ledge: 0.905, toolDy: -6, toolDx: -52, erDx: 74, dust: "#f4f4ec" },
+    whiteboard: { tool: "marker", er: "erMarker", ledge: 0.937, toolDy: -8, toolDx: -62, erDx: 86, dust: "#a9b8d6" },
+    curtains: { tool: null },
+  };
   const qPromptEl = document.getElementById("question-prompt");
-  const qPencilEl = document.createElement("div");
-  qPencilEl.id = "q-pencil";
-  qPencilEl.innerHTML = '<img src="icons/board-pencil.webp" alt="">';
-  qPromptEl.appendChild(qPencilEl);
-  const qEraserEl = document.createElement("img");
-  qEraserEl.id = "q-eraser"; qEraserEl.src = "icons/board-eraser.webp"; qEraserEl.alt = "";
-  qPromptEl.appendChild(qEraserEl);
+  const qToolEl = document.createElement("div");
+  qToolEl.id = "q-pencil";
+  const qEraserEl = document.createElement("div");
+  qEraserEl.id = "q-eraser";
+  const qDustEl = document.createElement("canvas");
+  qDustEl.id = "q-dust";
+  const qCurtainEl = document.createElement("div");
+  qCurtainEl.id = "q-curtain";
+  const qCurtainImg = document.createElement("img");
+  qCurtainImg.src = "icons/board-curtain-panel.webp"; qCurtainImg.alt = "";
+  qCurtainEl.appendChild(qCurtainImg);
+  const qCurtainTopEl = document.createElement("img");
+  qCurtainTopEl.id = "q-curtain-top"; qCurtainTopEl.src = "icons/board-curtain-top.webp"; qCurtainTopEl.alt = "";
+  [qCurtainEl, qCurtainTopEl, qDustEl, qEraserEl, qToolEl].forEach((n) => qPromptEl.appendChild(n));
   const qReduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let qPx = 0, qPy = 0, qPr = 0, qLastT = 0, qRaf = 0, qWrite = null, qPlaced = false;
-  function qRestPos() { const r = qPromptEl.getBoundingClientRect(); return { x: r.width * 0.5 - 62, y: r.height * 0.932 - 11 }; }
-  function qPencilFrame(now) {
-    qRaf = requestAnimationFrame(qPencilFrame);
+  let qBoard = "paper";
+  let qPx = 0, qPy = 0, qPr = 0, qEx = 0, qEy = 0, qLastT = 0, qRaf = 0, qWrite = null, qPlaced = false;
+  let qErase = null, qClearing = false, qCurtainO = 0, qCurtainTarget = 0, qDust = [];
+  function qDef() { return QB_DEFS[qBoard] || QB_DEFS.paper; }
+  function qToolRest() { const r = qPromptEl.getBoundingClientRect(), d = qDef(); return { x: r.width * 0.5 + d.toolDx, y: r.height * d.ledge + d.toolDy }; }
+  function qEraserRest() { const r = qPromptEl.getBoundingClientRect(), d = qDef(); return { x: r.width * 0.5 + d.erDx, y: r.height * d.ledge - 16 }; }
+  function applyBoard(id) {
+    if (!QB_DEFS[id]) id = "paper";
+    if (qBoard === id && qPromptEl.dataset.board === id) return;
+    qBoard = id;
+    qPromptEl.dataset.board = id;
+    const d = qDef();
+    qToolEl.innerHTML = d.tool ? QB_SVG[d.tool] : "";
+    qEraserEl.innerHTML = d.er ? QB_SVG[d.er] : "";
+    qToolEl.style.display = qEraserEl.style.display = d.tool ? "" : "none";
+    qCurtainEl.style.display = qCurtainTopEl.style.display = id === "curtains" ? "" : "none";
+    qPlaced = false;
+    qWrite = null; qErase = null; qClearing = false;
+    qPromptEl.querySelectorAll("#question-prompt-text, #question-note, #question-answer-line").forEach((n) => { n.style.opacity = ""; });
+    // curtains start covering the board unless there is a question showing
+    qCurtainO = qCurtainTarget = (questionPromptTextEl.dataset.txt ? 1 : 0);
+    startBoardLoop();
+  }
+  function qFrame(now) {
+    qRaf = requestAnimationFrame(qFrame);
     const dt = Math.min(50, now - (qLastT || now)); qLastT = now;
     const cr = qPromptEl.getBoundingClientRect();
-    let target = qRestPos(), rot = 0;
+    const d = qDef();
+    // curtain
+    if (qBoard === "curtains") {
+      qCurtainO += Math.sign(qCurtainTarget - qCurtainO) * Math.min(Math.abs(qCurtainTarget - qCurtainO), dt / 1300);
+      const e = qCurtainO * qCurtainO * (3 - 2 * qCurtainO);
+      qCurtainImg.style.transform = "translateY(" + (-108 * e) + "%)";
+      return;
+    }
+    let tTarget = qToolRest(), rot = 0, eTarget = qEraserRest(), erasing = false, dir = 1;
     if (qWrite) {
       const n = Math.max(0, Math.min(qWrite.chars.length, Math.floor((now - qWrite.start) / 42)));
       for (let i = qWrite.shown; i < n; i++) qWrite.chars[i].classList.add("on");
       qWrite.shown = n;
       if (n > 0) {
         const r = qWrite.chars[Math.min(n, qWrite.chars.length) - 1].getBoundingClientRect();
-        target = { x: r.right - cr.left + 6, y: r.top - cr.top + r.height * 0.85 + Math.sin(now * 0.06) * 2 };
+        tTarget = { x: r.right - cr.left + 6, y: r.top - cr.top + r.height * 0.85 + Math.sin(now * 0.06) * 2 };
         rot = -52 + Math.sin(now * 0.03) * 3;
       }
       if (n >= qWrite.chars.length && now - qWrite.start > qWrite.chars.length * 42 + 250) qWrite = null;
     }
-    if (!qPlaced) { qPx = target.x; qPy = target.y; qPlaced = true; }
+    if (qErase) {
+      const t = now - qErase.start, PASS = 520, passes = 3;
+      if (t >= 0 && t < PASS * passes) {
+        const i = Math.floor(t / PASS), u = (t - i * PASS) / PASS;
+        dir = i % 2 === 0 ? 1 : -1;
+        const x0 = cr.width * 0.12, x1 = cr.width * 0.88;
+        eTarget = { x: dir > 0 ? x0 + (x1 - x0) * u : x1 - (x1 - x0) * u, y: cr.height * (0.3 + 0.17 * i) };
+        erasing = true;
+      }
+      const fade = Math.min(1, Math.max(0, (t - 150) / (PASS * passes - 150)));
+      qPromptEl.querySelectorAll("#question-prompt-text, #question-note, #question-answer-line").forEach((n) => { n.style.opacity = String(1 - fade); });
+      if (t >= PASS * passes + 120) { const done = qErase.done; qErase = null; done(); }
+    }
+    if (!qPlaced) { qPx = tTarget.x; qPy = tTarget.y; qEx = eTarget.x; qEy = eTarget.y; qPlaced = true; }
     const k = 1 - Math.pow(0.0015, dt / 1000);
-    qPx += (target.x - qPx) * k; qPy += (target.y - qPy) * k; qPr += (rot - qPr) * k;
-    qPencilEl.style.transform = "translate(" + (qPx - 3) + "px," + (qPy - 8) + "px) rotate(" + qPr + "deg)";
+    qPx += (tTarget.x - qPx) * k; qPy += (tTarget.y - qPy) * k; qPr += (rot - qPr) * k;
+    const ke = erasing ? 0.5 : k;
+    qEx += (eTarget.x - qEx) * ke; qEy += (eTarget.y - qEy) * ke;
+    qToolEl.style.transform = "translate(" + (qPx - 3) + "px," + (qPy - 8) + "px) rotate(" + qPr + "deg)";
+    qEraserEl.style.transform = "translate(" + (qEx - 32) + "px," + (qEy - 17 + (erasing ? Math.sin(now * 0.05) * 3 : 0)) + "px) rotate(" + (erasing ? (dir > 0 ? -4 : 4) : 0) + "deg)";
+    // crumbs
+    if (qDustEl.width !== Math.round(cr.width)) { qDustEl.width = Math.round(cr.width); qDustEl.height = Math.round(cr.height); }
+    const cx = qDustEl.getContext("2d");
+    cx.clearRect(0, 0, qDustEl.width, qDustEl.height);
+    if (erasing) for (let n = 0; n < 2; n++) qDust.push({ x: qEx + (dir > 0 ? -26 : 26) + (Math.random() - 0.5) * 10, y: qEy + 4 + (Math.random() - 0.5) * 14, vx: (Math.random() - 0.5) * 60 - dir * 20, vy: -30 - Math.random() * 50, life: 0, max: 500 + Math.random() * 400, r: 1 + Math.random() * 2.4 });
+    qDust = qDust.filter((p) => {
+      p.life += dt; if (p.life > p.max) return false;
+      p.vy += 90 * dt / 1000; p.x += p.vx * dt / 1000; p.y += p.vy * dt / 1000;
+      cx.globalAlpha = (1 - p.life / p.max) * 0.7; cx.fillStyle = d.dust || "#ccc";
+      cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.3); cx.fill(); return true;
+    });
+    cx.globalAlpha = 1;
   }
-  function startPencilLoop() { if (!qRaf) { qLastT = 0; qRaf = requestAnimationFrame(qPencilFrame); } }
-  // Sets the question text. animate=true writes it letter by letter with the pencil
-  // (only when the text is new); every other call with the same text is a no-op,
-  // so repeated room updates never restart or wipe the writing.
+  function startBoardLoop() { if (!qRaf) { qLastT = 0; qRaf = requestAnimationFrame(qFrame); } }
+  // Sets the question text. animate=true writes it with the tool (or raises the curtain) when the
+  // text is new; every other call with the same text is a no-op, so repeated room updates never
+  // restart or wipe the writing.
   function setPromptText(text, animate) {
     if (questionPromptTextEl.dataset.txt === text) return;
     questionPromptTextEl.dataset.txt = text;
     qWrite = null;
+    qClearing = false; qErase = null;
+    qPromptEl.querySelectorAll("#question-prompt-text, #question-note, #question-answer-line").forEach((n) => { n.style.opacity = ""; });
+    if (qBoard === "curtains") {
+      questionPromptTextEl.textContent = text;
+      qCurtainTarget = text ? 1 : 0;
+      if (!animate || qReduceMotion || !text) qCurtainO = qCurtainTarget;
+      else qCurtainO = 0;
+      startBoardLoop();
+      return;
+    }
     if (!text || !animate || qReduceMotion) { questionPromptTextEl.textContent = text; return; }
     questionPromptTextEl.textContent = "";
     const chars = [];
@@ -5392,9 +5499,26 @@
       questionPromptTextEl.appendChild(w);
     });
     qWrite = { chars, shown: 0, start: performance.now() + 150 };
-    startPencilLoop();
+    startBoardLoop();
   }
-  startPencilLoop();
+  // Clears the board between rounds: the eraser sweeps (or the curtain lowers), then everything is emptied.
+  function clearBoard() {
+    const finish = () => { qClearing = false; setPromptText("", false); questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; };
+    if (qClearing) return;
+    if (!questionPromptTextEl.dataset.txt) { questionAnswerLineEl.style.display = "none"; return; }
+    if (qReduceMotion) { finish(); return; }
+    qClearing = true;
+    if (qBoard === "curtains") {
+      qCurtainTarget = 0; startBoardLoop();
+      const check = () => { if (!qClearing) return; if (qCurtainO <= 0.001) finish(); else setTimeout(check, 60); };
+      check();
+      return;
+    }
+    qWrite = null;
+    qErase = { start: performance.now(), done: finish };
+    startBoardLoop();
+  }
+  applyBoard(equippedBoard());
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -10255,8 +10379,7 @@
     }
     if (phase === "countdown") {
       countdownLabelEl.textContent = data.countdownRound === 1 ? "Round 1 starting in" : "Next round starting in";
-      setPromptText("", false);
-      questionAnswerLineEl.style.display = "none";
+      clearBoard();
     }
     if (phase !== "reveal") {
       revealNextBtn.style.display = "none";
