@@ -1778,7 +1778,48 @@
   #q-curtain { position: absolute; left: 1.5%; right: 1.5%; top: 12.3%; height: 76.1%; overflow: hidden; z-index: 2; pointer-events: none; }
   #q-curtain img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: transform; }
   #q-curtain-top { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
-  .question-prompt > #question-prompt-text, .question-prompt > #question-note, .question-prompt > #question-answer-line { position: relative; z-index: 1; }
+  .question-prompt #question-prompt-text, .question-prompt #question-note, .question-prompt #question-answer-line { position: relative; z-index: 1; }
+  #q-body { position: relative; z-index: 1; }
+  /* Scene boards (terminal, TV, typewriter...): the card keeps one fixed size and a picture is fitted inside it. */
+  .question-prompt[data-scene] { background: none; height: 196px; min-height: 196px; padding: 0; overflow: visible; }
+  #q-stage { position: absolute; z-index: 0; pointer-events: none; }
+  #q-stage > img, #q-stage > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .question-prompt[data-scene] #q-body { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-sizing: border-box; z-index: 1; }
+  .question-prompt[data-scene] #question-prompt-text { display: block; font-size: var(--qfs, 16px); line-height: 1.2; }
+  .question-prompt[data-scene] .question-answer-line { margin-top: 3px; }
+  .question-prompt[data-scene] .answer-line-label { font-size: calc(var(--qfs, 16px) * .6); }
+  .question-prompt[data-scene] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.7); line-height: 1.1; }
+  .question-prompt[data-board="terminal"] { color: #7fe08a; font-family: 'Courier New', monospace; font-weight: 700; }
+  .question-prompt[data-board="terminal"] #q-body { align-items: flex-start; text-align: left; }
+  .question-prompt[data-board="terminal"] .answer-line-label, .question-prompt[data-board="terminal"] .answer-line-value { color: #7fe08a; font-family: 'Courier New', monospace; }
+  .question-prompt[data-board="terminal"] .question-answer-line { text-align: left; }
+  .question-prompt[data-board="terminal"] .qch.cur { background: #fff; color: transparent; }
+  .question-prompt[data-board="terminal"] .question-note { color: #7fe08a; }
+  .question-prompt[data-scene] .answer-line-label, .question-prompt[data-scene] .answer-line-value { color: inherit; font-family: inherit; }
+  .question-prompt[data-scene] .answer-line-picks { margin-top: 0; }
+  .question-prompt[data-scene] .answer-line-picks .avatar-icon { width: 16px; height: 16px; }
+  .question-prompt[data-scene] .qch { display: inline-block; }
+  .question-prompt[data-board="terminal"] #q-body { justify-content: flex-start; }
+  .question-prompt[data-board="tv"] { color: #bff5d0; font-weight: 600; }
+  .question-prompt[data-board="typewriter"] { color: #161616; font-family: 'Courier New', monospace; font-weight: 700; -webkit-text-stroke: .4px #161616; }
+  .question-prompt[data-board="typewriter"] #q-body { overflow: hidden; justify-content: flex-end; }
+  .question-prompt[data-board="letterboard"] { color: #f3f1e8; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .question-prompt[data-board="neon"] { color: #ffb3d9; font-weight: 600; text-shadow: 0 0 4px #ff4fa3, 0 0 10px #ff2d95; }
+  .question-prompt[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9), 0 -1px 0 rgba(120,70,20,.35); }
+  .question-prompt[data-board="scroll"] { color: #5b3a26; font-weight: 600; }
+  .question-prompt[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
+  .question-prompt[data-board="splitflap"] .qch { padding: 0 .06em; margin: 1px; background: linear-gradient(#2c2f36 49%, #111 49% 51%, #2c2f36 51%); border-radius: 3px; backface-visibility: hidden; }
+  .question-prompt[data-board="phone"] { font-weight: 600; }
+  .question-prompt[data-board="phone"] #q-body { justify-content: flex-start; align-items: stretch; text-align: left; gap: 5px; }
+  .question-prompt[data-board="phone"] #question-prompt-text { background: #e1ddd5; color: #333; border-radius: 12px; padding: .4em .7em; align-self: flex-start; max-width: 88%; }
+  .question-prompt[data-board="phone"] .question-answer-line { align-self: flex-end; background: #3a7bd5; color: #fff; border-radius: 12px; padding: .25em .8em; margin-top: 0; max-width: 88%; text-align: center; }
+  .question-prompt[data-board="phone"] .answer-line-label { display: none; }
+  .question-prompt[data-board="phone"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.15); }
+  .question-prompt[data-board="phone"] #question-prompt-text:empty { display: none; }
+  .sb-dots { position: absolute; display: flex; gap: 4px; background: #e1ddd5; border-radius: 12px; padding: .5em .7em; opacity: 0; }
+  .sb-dots.l { left: 0; top: 0; }
+  .sb-dots.r { right: 0; background: #bcd3f2; }
+  .sb-dots i { width: 6px; height: 6px; border-radius: 50%; background: #777; display: block; }
   .question-prompt[data-board="chalkboard"] { background-image: url(icons/board-chalk.webp); padding: 26px 33px 32px; color: #f7f7f0; }
   .question-prompt[data-board="chalkboard"] .question-note { color: rgba(240,240,230,.7); }
   .question-prompt[data-board="chalkboard"] .answer-line-label { color: #cfe3cf; }
@@ -4066,8 +4107,21 @@
       { id: "whiteboard", label: "Whiteboard" },
       { id: "curtains", label: "Stage Curtains" },
     ] },
+    { id: "boardpack2", label: "Question Board Pack 2", price: "$2.99", boards: [
+      { id: "terminal", label: "Computer Terminal" },
+      { id: "tv", label: "Old TV" },
+      { id: "typewriter", label: "Typewriter" },
+      { id: "phone", label: "Phone Chat" },
+      { id: "splitflap", label: "Split-Flap Sign" },
+    ] },
+    { id: "boardpack3", label: "Question Board Pack 3", price: "$2.99", boards: [
+      { id: "letterboard", label: "Letterboard" },
+      { id: "neon", label: "Neon Sign" },
+      { id: "sand", label: "Sand Writing" },
+      { id: "scroll", label: "Parchment Scroll" },
+    ] },
   ];
-  const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp" };
+  const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp", terminal: "icons/bd-terminal.webp", tv: "icons/bd-tv.webp", typewriter: "icons/bd-typewriter.webp", phone: "icons/bd-phone.webp", splitflap: "icons/bd-splitflap.webp", letterboard: "icons/bd-letterboard.webp", neon: "icons/bd-neon.webp", sand: "icons/bd-sand.webp", scroll: "icons/bd-scroll.webp" };
   function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards); }
   function boardPackOf(id) { return BOARD_PACK_CATALOG.find((p) => p.boards.some((b) => b.id === id)); }
   function ownsBoard(id) {
@@ -5396,6 +5450,309 @@
   function qDef() { return QB_DEFS[qBoard] || QB_DEFS.paper; }
   function qToolRest() { const r = qPromptEl.getBoundingClientRect(), d = qDef(); return { x: r.width * 0.5 + d.toolDx, y: r.height * d.ledge + d.toolDy }; }
   function qEraserRest() { const r = qPromptEl.getBoundingClientRect(), d = qDef(); return { x: r.width * 0.5 + d.erDx, y: r.height * d.ledge - 16 }; }
+
+  // ---- Scene boards: a fixed-size card with a picture fitted inside (contain) and the text laid in its screen/paper area ----
+  const qBodyEl = document.createElement("div");
+  qBodyEl.id = "q-body";
+  questionPromptTextEl.parentNode.insertBefore(qBodyEl, questionPromptTextEl);
+  qBodyEl.appendChild(questionPromptTextEl);
+  qBodyEl.appendChild(questionAnswerLineEl);
+  const SB_DEFS = {
+    terminal: { img: "icons/bd-terminal.webp", ar: 895 / 708, box: [14.5, 12.5, 14, 28.5] },
+    tv: { img: "icons/bd-tv.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5] },
+    typewriter: { img: "icons/bd-typewriter.webp", ar: 760 / 702, box: [22.9, 4, 22.8, 33.6] },
+    letterboard: { img: "icons/bd-letterboard.webp", ar: 760 / 574, box: [9, 12, 9, 14] },
+    neon: { img: "icons/bd-neon.webp", ar: 760 / 556, box: [19, 20, 19, 22] },
+    sand: { img: "icons/bd-sand.webp", ar: 760 / 554, box: [10, 20, 10, 15] },
+    scroll: { img: null, ar: 668 / 501, box: [12.5, 21.2, 12.5, 21] },
+    splitflap: { img: "icons/bd-splitflap.webp", ar: 760 / 560, box: [9, 12, 9, 13] },
+    phone: { img: "icons/bd-phone.webp", ar: 760 / 570, box: [21.5, 27.5, 21.5, 33], rsv: [2.4, 14] },
+  };
+  Object.keys(SB_DEFS).forEach((k) => { QB_DEFS[k] = { tool: null, scene: true }; });
+  const SB_CARD_H = 196;
+  let qSB = null;
+  const sbEase = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+  const sbC01 = (x) => Math.max(0, Math.min(1, x));
+  function sbTeardown() {
+    if (qSB && qSB.stage) qSB.stage.remove();
+    if (qSB && qSB.stick) qSB.stick.remove();
+    qBodyEl.querySelectorAll(".sb-dots").forEach((n) => n.remove());
+    [questionPromptTextEl, questionAnswerLineEl].forEach((e) => { e.style.transform = e.style.opacity = ""; });
+    qPromptEl.style.transform = "";
+    qSB = null;
+    qPromptEl.removeAttribute("data-scene");
+    qBodyEl.removeAttribute("style");
+    qBodyEl.style.removeProperty("--qfs");
+    qBodyEl.style.transform = qBodyEl.style.clipPath = qBodyEl.style.opacity = "";
+  }
+  function sbBuild(id) {
+    const def = SB_DEFS[id];
+    qPromptEl.dataset.scene = "1";
+    const stage = document.createElement("div");
+    stage.id = "q-stage";
+    const base = document.createElement("img");
+    base.className = "sb-base"; base.alt = "";
+    if (def.img) base.src = def.img; else base.style.display = "none";
+    stage.appendChild(base);
+    qPromptEl.insertBefore(stage, qPromptEl.firstChild);
+    qSB = { id, def, stage, base, chars: [], t0: 0, t1: 0, exiting: false, done: null, ansShown: false, sw: 0, sh: 0 };
+    const k = SB_KINDS[id];
+    if (k && k.build) k.build(qSB);
+    sbLayout();
+  }
+  function sbLayout() {
+    if (!qSB) return;
+    const W = qPromptEl.clientWidth, H = SB_CARD_H, ar = qSB.def.ar;
+    if (!W) return;
+    const sw = Math.min(W, H * ar), sh = sw / ar, sx = (W - sw) / 2, sy = (H - sh) / 2;
+    Object.assign(qSB.stage.style, { left: sx + "px", top: sy + "px", width: sw + "px", height: sh + "px" });
+    const b = qSB.def.box;
+    Object.assign(qBodyEl.style, { left: sx + b[0] / 100 * sw + "px", top: sy + b[1] / 100 * sh + "px", width: sw * (1 - (b[0] + b[2]) / 100) + "px", height: sh * (1 - (b[1] + b[3]) / 100) + "px" });
+    qSB.sw = sw; qSB.sh = sh; qSB.sx = sx; qSB.sy = sy;
+    const k = SB_KINDS[qSB.id];
+    if (k && k.layout) k.layout(qSB);
+    sbFit();
+  }
+  // largest font size (<=19px) at which the question plus the answer line still fit the text area
+  function sbFit() {
+    if (!qSB || !questionPromptTextEl.dataset.txt) return;
+    const bh = qBodyEl.clientHeight;
+    const rsv = qSB.def.rsv || [2.7, 24];
+    let fs = 19;
+    for (; fs > 8; fs -= 0.5) {
+      qBodyEl.style.setProperty("--qfs", fs + "px");
+      if (questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] <= bh) break;
+    }
+  }
+  if (window.ResizeObserver) new ResizeObserver(() => sbLayout()).observe(qPromptEl);
+  function sbSetText(text, animate) {
+    qSB.chars = []; qSB.exiting = false; qSB.done = null;
+    qBodyEl.style.opacity = ""; qBodyEl.style.transform = qBodyEl.style.clipPath = "";
+    const k = SB_KINDS[qSB.id] || {};
+    questionPromptTextEl.textContent = "";
+    if (!text) { return; }
+    if (k.perChar && animate && !qReduceMotion) {
+      text.split(/(\s+)/).forEach((word) => {
+        if (!word) return;
+        if (/^\s+$/.test(word)) { questionPromptTextEl.appendChild(document.createTextNode(" ")); return; }
+        const w = document.createElement("span"); w.style.whiteSpace = "nowrap";
+        for (const ch of word) { const c = document.createElement("span"); c.className = "qch"; c.textContent = ch; w.appendChild(c); qSB.chars.push(c); }
+        questionPromptTextEl.appendChild(w);
+      });
+    } else questionPromptTextEl.textContent = text;
+    sbFit();
+    qSB.t0 = (animate && !qReduceMotion) ? performance.now() + 150 : -1e9;
+    qSB.animated = !!(animate && !qReduceMotion);
+    if (k.enter) k.enter(qSB);
+    startBoardLoop();
+  }
+  function sbExit(finish) {
+    qSB.exiting = true; qSB.t1 = performance.now(); qSB.done = finish;
+    const k = SB_KINDS[qSB.id] || {};
+    if (k.exit) k.exit(qSB);
+    startBoardLoop();
+  }
+  function sbTick(now, dt) {
+    const k = SB_KINDS[qSB.id] || {};
+    const shown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML;
+    if (shown !== qSB.ansShown) { qSB.ansShown = shown; qSB.tAns = now; if (k.answer) k.answer(qSB, shown); }
+    if (k.tick) k.tick(qSB, now, dt);
+    if (qSB.exiting && k.exitDone && k.exitDone(qSB, now)) { const f = qSB.done; qSB.exiting = false; qSB.done = null; if (f) f(); }
+    else if (qSB.exiting && !k.exitDone && now - qSB.t1 > 400) { const f = qSB.done; qSB.exiting = false; qSB.done = null; if (f) f(); }
+  }
+  const sbBounce = (x) => { if (x < 1 / 2.75) return 7.5625 * x * x; if (x < 2 / 2.75) { x -= 1.5 / 2.75; return 7.5625 * x * x + 0.75; } if (x < 2.5 / 2.75) { x -= 2.25 / 2.75; return 7.5625 * x * x + 0.9375; } x -= 2.625 / 2.75; return 7.5625 * x * x + 0.984375; };
+  // A = ms since the entrance began (huge when the text just sits there), E = ms since the exit began (-1 when not exiting)
+  const sbA = (sb, now) => (sb.animated ? now - sb.t0 : 1e9);
+  const sbE = (sb, now) => (sb.exiting ? now - sb.t1 : -1);
+  const SB_KINDS = {
+    terminal: {
+      perChar: true,
+      tick(sb, now) {
+        const n = sb.chars.length;
+        if (!sb.animated && !sb.exiting) return;
+        let shownN;
+        if (sb.exiting) shownN = Math.max(0, n - Math.floor((now - sb.t1 - 200) / 22));
+        else shownN = Math.max(0, Math.min(n, Math.floor((now - sb.t0 - 100) / 55)));
+        sb.chars.forEach((c, i) => { c.classList.toggle("on", i < shownN); c.classList.toggle("cur", !sb.exiting && i === shownN && shownN < n); });
+        questionAnswerLineEl.style.opacity = sb.exiting ? String(sbC01(1 - (now - sb.t1) / 220)) : "";
+      },
+      exitDone(sb, now) { return now - sb.t1 > 350 + sb.chars.length * 22; },
+    },
+    tv: {
+      build(sb) {
+        const cv = document.createElement("canvas");
+        cv.width = 128; cv.height = 112;
+        cv.style.webkitMask = cv.style.mask = "url(icons/bd-tv-hole.webp) center/100% 100% no-repeat";
+        sb.stage.appendChild(cv); sb.cv = cv; sb.cx = cv.getContext("2d");
+      },
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), cx = sb.cx;
+        const staticOn = (sb.animated && A < 700) || E > 350;
+        const flick = (A > 700 && A < 1250) || (E >= 0 && E < 350) || (sb.ansShown && sb.tAns && now - sb.tAns < 380);
+        if (staticOn) {
+          const im = cx.createImageData(128, 112), d = im.data;
+          for (let k = 0; k < d.length; k += 4) { const v = Math.random() * 255 | 0; d[k] = d[k + 1] = d[k + 2] = v; d[k + 3] = 255; }
+          cx.putImageData(im, 0, 0);
+        } else { cx.fillStyle = "#10201d"; cx.fillRect(0, 0, 128, 112); }
+        let op = E >= 0 ? 1 - sbEase(E / 450) : (sb.animated ? sbEase((A - 800) / 450) : 1);
+        if (flick) {
+          for (let q = 0; q < 3; q++) if (Math.random() < 0.75) { cx.fillStyle = "rgba(255,255,255," + (0.25 + Math.random() * 0.45) + ")"; cx.fillRect(0, Math.random() * 112 | 0, 128, 1 + (Math.random() * 3 | 0)); }
+          qBodyEl.style.transform = "translateX(" + ((Math.random() - 0.5) * 5) + "px)";
+          op *= 0.6 + Math.random() * 0.4;
+        } else qBodyEl.style.transform = "";
+        qBodyEl.style.opacity = String(op);
+      },
+      exitDone(sb, now) { return now - sb.t1 > 1000; },
+    },
+    typewriter: {
+      build(sb) {
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "position:absolute;left:0;top:0;width:100%;height:69.5%;overflow:hidden";
+        const paper = document.createElement("div");
+        paper.style.cssText = "position:absolute;left:16.88%;width:66.37%;background:#fff7e2;border:3px solid #3d2b1c;border-bottom:none;box-sizing:border-box;clip-path:polygon(0 0,100% 0,100% 100%,92% calc(100% - 7px),84% 100%,76% calc(100% - 7px),68% 100%,60% calc(100% - 7px),52% 100%,44% calc(100% - 7px),36% 100%,28% calc(100% - 7px),20% 100%,12% calc(100% - 7px),0 100%)";
+        wrap.appendChild(paper);
+        sb.stage.insertBefore(wrap, sb.base);
+        sb.paper = paper; sb.pwrap = wrap;
+      },
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), bh = qBodyEl.clientHeight;
+        const els = [questionPromptTextEl, questionAnswerLineEl];
+        let ty = 0;
+        if (sb.animated) ty = A < 0 ? bh : bh * (1 - sbEase(A / 800));
+        if (sb.ansShown && sb.tAns) ty += (questionAnswerLineEl.offsetHeight + 4) * (1 - sbEase((now - sb.tAns) / 800));
+        if (E >= 0) { const u = Math.min(1, E / 650); ty = -(bh + 60) * u * u; }
+        els.forEach((e) => { e.style.transform = "translateY(" + ty + "px)"; });
+        const qr = questionPromptTextEl.getBoundingClientRect(), sr = sb.stage.getBoundingClientRect();
+        const top = qr.top - sr.top - 14;
+        sb.paper.style.top = top + "px";
+        sb.paper.style.height = sb.sh * 0.75 + "px";
+        const br = qBodyEl.getBoundingClientRect();
+        sb.paper.style.display = (questionPromptTextEl.dataset.txt && qr.top < br.bottom - 3) ? "" : "none";
+      },
+      exitDone(sb, now) { return now - sb.t1 > 750; },
+    },
+    letterboard: {
+      perChar: true,
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), n = sb.chars.length;
+        const st = Math.min(55, 1400 / Math.max(1, n)), st2 = Math.min(22, 500 / Math.max(1, n));
+        sb.chars.forEach((c, i) => {
+          let y, o, rot = 0;
+          if (E < 0) { const p = sbC01((A - i * st) / 520); if (p <= 0) { y = -80; o = 0; } else { o = sbC01(p * 5); y = -80 * (1 - sbBounce(p)); rot = (1 - p) * (i % 2 ? 14 : -14); } }
+          else { const p2 = sbEase((E - i * st2) / 300); y = -80 * p2; o = 1 - p2; rot = p2 * (i % 2 ? -10 : 10); }
+          c.style.transform = "translateY(" + y + "px) rotate(" + rot + "deg)"; c.style.opacity = String(o);
+        });
+        questionAnswerLineEl.style.opacity = E >= 0 ? String(sbC01(1 - E / 350)) : "";
+      },
+      exitDone(sb, now) { return now - sb.t1 > sb.chars.length * 22 + 450; },
+    },
+    neon: {
+      perChar: true,
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), n = sb.chars.length;
+        const st = Math.min(45, 1300 / Math.max(1, n)), st2 = Math.min(35, 900 / Math.max(1, n));
+        const allOn = 500 + n * st + 150;
+        const sl = Math.floor(now / 430), fa = n ? ((sl * 2654435761) >>> 0) % n : 0, fb = n ? (((sl * 40503 + 977) * 2246822519) >>> 0) % n : 0;
+        sb.base.style.filter = "brightness(" + (E >= 0 ? (E > n * st2 + 300 ? 0.5 : 1) : (sb.animated && A < 500 ? (Math.floor(A / 60) % 2 ? 1 : 0.6) : 1)) + ")";
+        sb.chars.forEach((c, i) => {
+          let o;
+          if (E < 0) { const d = A - (500 + i * st); o = d < 0 ? 0.08 : (d < 260 ? (Math.floor(d / 45) % 2 ? 0.15 : 1) : 1); if (A > allOn && (i === fa || i === fb)) { const ph = (now % 430) / 430; o = ph < 0.2 ? 0.15 : ph < 0.32 ? 1 : ph < 0.5 ? 0.25 : 1; } }
+          else { const d2 = E - i * st2; o = d2 < 0 ? 1 : (d2 < 260 ? (Math.floor(d2 / 45) % 2 ? 1 : 0.15) : 0.08); }
+          c.style.opacity = String(o);
+        });
+        if (E >= 0) questionAnswerLineEl.style.opacity = String(sbC01(1 - E / 500)); else questionAnswerLineEl.style.opacity = "";
+      },
+      exitDone(sb, now) { return now - sb.t1 > sb.chars.length * 35 + 700; },
+    },
+    sand: {
+      perChar: true,
+      build(sb) {
+        const wv = document.createElement("div");
+        wv.style.cssText = "position:absolute;inset:0;-webkit-mask:url(icons/bd-sand.webp) center/100% 100% no-repeat;mask:url(icons/bd-sand.webp) center/100% 100% no-repeat;background:linear-gradient(#52bfc0 0 80%,#e9fbfa 90%,rgba(255,255,255,0));transform:translateY(-110%)";
+        sb.stage.appendChild(wv); sb.wave = wv;
+        const st = document.createElement("img");
+        st.src = "icons/bd-stick.webp"; st.alt = "";
+        st.style.cssText = "position:absolute;left:0;top:0;width:78px;pointer-events:none;z-index:4;transform-origin:3px 8px;will-change:transform";
+        qPromptEl.appendChild(st); sb.stick = st; sb.spx = null;
+      },
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), n = sb.chars.length;
+        const nn = E >= 0 ? 0 : (sb.animated ? Math.floor(sbC01((A - 100) / Math.max(1, n * 52)) * n) : n);
+        sb.chars.forEach((c, i) => c.classList.toggle("on", E >= 0 ? E < 700 : i < nn));
+        const wp = E < 0 ? 0 : E < 700 ? sbEase(E / 700) : E < 850 ? 1 : 1 - sbEase((E - 850) / 700);
+        sb.wave.style.transform = "translateY(" + (-110 + 110 * wp) + "%)";
+        qBodyEl.style.opacity = E < 0 ? "" : String(1 - sbEase((E - 250) / 400));
+        const cr = qPromptEl.getBoundingClientRect();
+        let tx, ty, rot = 0;
+        if (sb.animated && E < 0 && A > 100 && A < n * 52 + 450 && nn > 0) { const r = sb.chars[Math.min(nn, n) - 1].getBoundingClientRect(); tx = r.right - cr.left + 8; ty = r.top - cr.top + r.height * 0.85; rot = -46; }
+        else { tx = sb.sx + sb.sw * 0.84; ty = sb.sy + sb.sh * 0.88; }
+        if (!isFinite(tx) || !isFinite(ty)) return;
+        if (sb.spx === null || !isFinite(sb.spx)) { sb.spx = tx; sb.spy = ty; sb.spr = rot; }
+        sb.spx += (tx - sb.spx) * 0.2; sb.spy += (ty - sb.spy) * 0.2; sb.spr += (rot - sb.spr) * 0.2;
+        sb.stick.style.transform = "translate(" + (sb.spx - 3) + "px," + (sb.spy - 8) + "px) rotate(" + sb.spr + "deg)";
+      },
+      exitDone(sb, now) { return now - sb.t1 > 1600; },
+    },
+    scroll: {
+      build(sb) {
+        const paper = document.createElement("div");
+        paper.style.cssText = "position:absolute;left:7.2%;width:85.8%;box-sizing:border-box;background:linear-gradient(90deg,#d9bf8a,#f6ead0 7%,#f6ead0 93%,#d9bf8a);border-left:2px solid #6b4a2c;border-right:2px solid #6b4a2c;box-shadow:inset 0 10px 10px -8px rgba(90,60,30,.5),inset 0 -10px 10px -8px rgba(90,60,30,.5)";
+        const top = new Image(), bot = new Image();
+        top.src = "icons/bd-scroll-top.webp"; bot.src = "icons/bd-scroll-bot.webp"; top.alt = bot.alt = "";
+        [top, bot].forEach((i) => { i.style.cssText = "position:absolute;left:0;width:100%;height:auto"; });
+        sb.stage.appendChild(paper); sb.stage.appendChild(top); sb.stage.appendChild(bot);
+        sb.paper = paper; sb.rtop = top; sb.rbot = bot;
+      },
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), has = !!questionPromptTextEl.dataset.txt;
+        let o;
+        if (E >= 0) o = 1 - sbEase(E / 1000); else if (!has) o = 0; else o = sb.animated ? sbEase(A / 1100) : 1;
+        const u = sb.sw / 668, Hp = 335 * u, hp = o * Hp, mid = sb.sh / 2;
+        sb.paper.style.top = mid - hp / 2 + "px"; sb.paper.style.height = hp + "px";
+        sb.rtop.style.top = mid - hp / 2 - 90 * u + 4 * u + "px"; sb.rbot.style.top = mid + hp / 2 - 4 * u + "px";
+        const bt = qBodyEl.offsetTop, bh = qBodyEl.offsetHeight, pt = sb.sy + mid - hp / 2, pb = sb.sy + mid + hp / 2;
+        qBodyEl.style.clipPath = "inset(" + Math.max(0, pt - bt) + "px 0 " + Math.max(0, bt + bh - pb) + "px 0)";
+      },
+      exitDone(sb, now) { return now - sb.t1 > 1050; },
+    },
+    splitflap: {
+      perChar: true,
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), n = sb.chars.length;
+        const st = Math.min(42, 1300 / Math.max(1, n)), st2 = Math.min(24, 700 / Math.max(1, n));
+        sb.chars.forEach((c, i) => {
+          const ang = E < 0 ? -90 * (1 - sbEase((A - i * st) / 280)) : 90 * sbEase((E - i * st2) / 260);
+          c.style.transform = "perspective(200px) rotateX(" + ang + "deg)"; c.style.opacity = Math.abs(ang) >= 89 ? "0" : "1";
+        });
+        questionAnswerLineEl.style.opacity = E >= 0 ? String(sbC01(1 - E / 300)) : "";
+      },
+      exitDone(sb, now) { return now - sb.t1 > sb.chars.length * 24 + 450; },
+    },
+    phone: {
+      build(sb) {
+        const mk = (cls) => { const d = document.createElement("div"); d.className = "sb-dots " + cls; d.innerHTML = "<i></i><i></i><i></i>"; qBodyEl.appendChild(d); return d; };
+        sb.d1 = mk("l"); sb.d2 = mk("r");
+      },
+      tick(sb, now) {
+        const A = sbA(sb, now), E = sbE(sb, now), ts = sb.animated;
+        const bob = (d) => Array.prototype.forEach.call(d.children, (x, k) => { x.style.transform = "translateY(" + (-4 * Math.max(0, Math.sin(now / 160 + k * 0.9))) + "px)"; });
+        let shake = 0;
+        const bub = (el, p, dir) => { el.style.opacity = String(p); el.style.transform = "translateX(" + dir * (1 - p) * 30 + "px) scale(" + (0.85 + 0.15 * p) + ")"; };
+        let pq = 1;
+        if (E >= 0) pq = 1 - sbEase(E / 380); else if (ts) pq = sbEase((A - 1000) / 320);
+        bub(questionPromptTextEl, pq, -1);
+        sb.d2.style.top = questionPromptTextEl.offsetHeight + 5 + "px";
+        sb.d1.style.opacity = (E < 0 && ts && A > 150 && A < 1000) ? "1" : "0"; bob(sb.d1);
+        if (E < 0 && ts && A > 1000 && A < 1420) shake = Math.sin((A - 1000) * 0.12 * Math.PI) * 3.5 * (1 - (A - 1000) / 420);
+        let pa = 1, dots2 = false;
+        if (sb.ansShown && sb.tAns) { const ta = now - sb.tAns; if (E >= 0) pa = 1 - sbEase(E / 380); else if (ta < 650) { pa = 0; dots2 = true; } else pa = sbEase((ta - 650) / 320); if (E < 0 && ta > 650 && ta < 1070) shake = Math.sin((ta - 650) * 0.12 * Math.PI) * 3.5 * (1 - (ta - 650) / 420); }
+        bub(questionAnswerLineEl, pa, 1);
+        sb.d2.style.opacity = dots2 ? "1" : "0"; bob(sb.d2);
+        qPromptEl.style.transform = shake ? "translate(" + shake + "px," + shake * 0.4 + "px) rotate(" + shake * 0.25 + "deg)" : "";
+      },
+      exitDone(sb, now) { return now - sb.t1 > 450; },
+    },
+  };
   function applyBoard(id) {
     if (!QB_DEFS[id]) id = "paper";
     if (qBoard === id && qPromptEl.dataset.board === id) return;
@@ -5407,6 +5764,8 @@
     qToolEl.style.display = qEraserEl.style.display = d.tool ? "" : "none";
     qCurtainEl.style.display = qCurtainTopEl.style.display = id === "curtains" ? "" : "none";
     qPlaced = false;
+    sbTeardown();
+    if (SB_DEFS[id]) sbBuild(id);
     qWrite = null; qErase = null; qClearing = false;
     qPromptEl.querySelectorAll("#question-prompt-text, #question-note, #question-answer-line").forEach((n) => { n.style.opacity = ""; });
     // curtains start covering the board unless there is a question showing
@@ -5418,6 +5777,7 @@
     const dt = Math.min(50, now - (qLastT || now)); qLastT = now;
     const cr = qPromptEl.getBoundingClientRect();
     const d = qDef();
+    if (qSB) { sbTick(now, dt); return; }
     // curtain
     if (qBoard === "curtains") {
       qCurtainO += Math.sign(qCurtainTarget - qCurtainO) * Math.min(Math.abs(qCurtainTarget - qCurtainO), dt / 1300);
@@ -5480,6 +5840,7 @@
     qWrite = null;
     qClearing = false; qErase = null;
     qPromptEl.querySelectorAll("#question-prompt-text, #question-note, #question-answer-line").forEach((n) => { n.style.opacity = ""; });
+    if (qSB) { sbSetText(text, animate); return; }
     if (qBoard === "curtains") {
       questionPromptTextEl.textContent = text;
       qCurtainTarget = text ? 1 : 0;
@@ -5508,6 +5869,7 @@
     if (!questionPromptTextEl.dataset.txt) { questionAnswerLineEl.style.display = "none"; return; }
     if (qReduceMotion) { finish(); return; }
     qClearing = true;
+    if (qSB) { sbExit(finish); return; }
     if (qBoard === "curtains") {
       qCurtainTarget = 0; startBoardLoop();
       const check = () => { if (!qClearing) return; if (qCurtainO <= 0.001) finish(); else setTimeout(check, 60); };
@@ -6887,7 +7249,7 @@
     july: ["\u{1F386}", "#ef5350", "#283593"], august: ["\u{1F3D6}\uFE0F", "#ffb74d", "#f06292"], september: ["\u{1F392}", "#ffa726", "#6d4c41"],
     halloween: ["\u{1F383}", "#ff9a3c", "#5a2a82"], thanksgiving: ["\u{1F983}", "#d98a3d", "#7a3b1c"], christmas: ["\u{1F384}", "#e53935", "#1b6b3a"],
     sampler: ["\u{1F381}", "#ab7df0", "#5a35b8"],
-    boards: ["\u{1F3AD}", "#4a9a6a", "#1d4d33"],
+    boards: ["\u{1F3AD}", "#4a9a6a", "#1d4d33"], boards2: ["\u{1F4BB}", "#6b7fd6", "#2b3a8a"], boards3: ["\u{1F4DC}", "#d9a15a", "#7a4a1c"],
   };
   function renderThemedPackShop() {
     const el = document.getElementById("themed-pack-shop");
@@ -6898,8 +7260,12 @@
       desc: "Free this month. Unlock to use it all year round.", tag: "THIS MONTH", has: !!owned[id] }));
     cards.push({ id: "sampler", title: SAMPLER_PACK.name,
       desc: "One favourite from every pack, all year round." + (season.length ? "" : " Free this month."), tag: "MIX", has: !!owned.sampler });
-    cards.push({ id: "boards", title: BOARD_PACK_NAME,
+    cards.push({ id: "boards", title: "Question Board Pack 1",
       desc: "Chalkboard, whiteboard and stage curtains for your questions, with writing, erasing and curtain animations. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack1 });
+    cards.push({ id: "boards2", title: "Question Board Pack 2",
+      desc: "Computer terminal, old TV, typewriter, phone chat and split-flap sign, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack2 });
+    cards.push({ id: "boards3", title: "Question Board Pack 3",
+      desc: "Letterboard, neon sign, sand writing and a parchment scroll, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack3 });
     el.innerHTML = cards.map((c) => {
       const look = PACK_LOOK[c.id] || PACK_LOOK.sampler;
       return `<div class="tp-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
@@ -6907,12 +7273,13 @@
         <div class="tp-badge">${look[0]}</div>
         <div class="tp-title">${c.title}</div>
         <p class="tp-desc">${c.desc}</p>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (c.id === "boards" ? BOARD_PACK_PRICE : "$1.99") + " · Unlock"}</button>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : "$1.99") + " · Unlock"}</button>
       </div>`;
     }).join("");
   }
   const BOARD_PACK_NAME = "Question Board Packs";
   const BOARD_PACK_PRICE = "$2.99";
+  const BOARD_SHOP_PACKS = { boards: "boardpack1", boards2: "boardpack2", boards3: "boardpack3" };
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -6924,9 +7291,10 @@
     const b = e.target.closest && e.target.closest(".themed-pack-buy");
     if (!b || b.disabled) return;
     const packId = b.dataset.pack;
-    if (packId === "boards") {
-      const bought = await showFakePurchase({ icon: PACK_LOOK.boards[0], title: BOARD_PACK_NAME, price: BOARD_PACK_PRICE });
-      if (bought) purchaseBoardPack("boardpack1");
+    if (BOARD_SHOP_PACKS[packId]) {
+      const t = b.closest(".tp-card"), title = t ? t.querySelector(".tp-title").textContent : BOARD_PACK_NAME;
+      const bought = await showFakePurchase({ icon: PACK_LOOK[packId][0], title, price: BOARD_PACK_PRICE });
+      if (bought) purchaseBoardPack(BOARD_SHOP_PACKS[packId]);
       return;
     }
     const pack = packId === "sampler" ? SAMPLER_PACK : MONTH_PACKS.find((x) => x.id === packId);
