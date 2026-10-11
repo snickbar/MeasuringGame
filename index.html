@@ -503,6 +503,7 @@
   button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 0 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   .cosm-rnd-sub { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+  #cosm-random-slot .cosm-rnd-row { margin: 8px 0 2px; }
   .cosm-random-on .cosm-row:not(.cosm-rnd-row) button.cosm-equip { opacity: .4; filter: grayscale(1); pointer-events: none; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
   .coming-soon-box {
@@ -2578,6 +2579,7 @@
       </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
+      <div id="cosm-random-slot"></div>
     </div>
     <div id="cosm-pane-emojis" class="cosm-pane">
       <div id="cosm-emojis-list" class="cosm-list"></div>
@@ -3645,6 +3647,21 @@
     row.appendChild(btn);
     return row;
   }
+  // The active tab's "Equip Random" row lives in the sticky header (not the scrolling list
+  // below it), so it stays put while that tab's items scroll underneath it.
+  function renderCosmRandomSlot() {
+    const slot = document.getElementById("cosm-random-slot");
+    if (!slot) return;
+    const activeTab = document.querySelector(".cosm-tab-btn.active");
+    const sub = activeTab ? activeTab.dataset.sub : "emojis";
+    const cat = sub === "emojis" ? "reactions" : sub;
+    const subText = cat === "reactions" ? `${ownedReactionSlots()} random reactions you own each game`
+      : cat === "flairs" ? "A random flair you own each game"
+      : cat === "backgrounds" ? "A random background you own each game"
+      : "A random board you own each game";
+    slot.innerHTML = "";
+    slot.appendChild(cosmRandomRow(cat, subText));
+  }
   function defaultProfile() {
     return {
       coins: 0,
@@ -4063,6 +4080,7 @@
     renderFlairRows(document.getElementById("cosm-flairs-list"));
     renderBackgroundRows(document.getElementById("cosm-backgrounds-list"));
     renderBoardRows(document.getElementById("cosm-boards-list"));
+    renderCosmRandomSlot();
   }
 
   // TEMP: same simulated-purchase pattern as the host-unlock button below -
@@ -4217,11 +4235,6 @@
     const equipped = equippedBackground();
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("backgrounds"));
-    container.appendChild(cosmRandomRow("backgrounds", "A random background you own each game"));
-    const label = document.createElement("div");
-    label.className = "cosm-group-label";
-    label.textContent = "Default";
-    container.appendChild(label);
     container.appendChild(cosmRow({
       leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Plain", owned: true, free: true, cost: 0,
       equipped: equipped === "none", onPreview: () => openBackgroundPreview("none", "Plain"), onEquip: () => equipBackground(equipped),
@@ -4301,11 +4314,6 @@
     const equipped = equippedBoard();
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("boards"));
-    container.appendChild(cosmRandomRow("boards", "A random board you own each game"));
-    const label = document.createElement("div");
-    label.className = "cosm-group-label";
-    label.textContent = "Default";
-    container.appendChild(label);
     container.appendChild(cosmRow({
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
       equipped: equipped === "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(equipped),
@@ -4451,7 +4459,6 @@
     const slots = ownedReactionSlots();
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("reactions"));
-    container.appendChild(cosmRandomRow("reactions", `${slots} random reactions you own each game`));
     const row = (e, cost) => cosmRow({
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e),
@@ -4473,10 +4480,6 @@
         owned: have, ownedLabel: "Unlocked", cost, onBuy: () => buyReactionSlot(n),
       }));
     });
-    const label = document.createElement("div");
-    label.className = "cosm-group-label";
-    label.textContent = "Free";
-    container.appendChild(label);
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
       // Also "owned" once every reaction in the pack has been bought
@@ -4505,12 +4508,7 @@
       onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
     });
     container.classList.toggle("cosm-random-on", rndOn("flairs"));
-    container.appendChild(cosmRandomRow("flairs", "A random flair you own each game"));
     const items = COSMETIC_CATALOG.effects;
-    const label = document.createElement("div");
-    label.className = "cosm-group-label";
-    label.textContent = "Free";
-    container.appendChild(label);
     items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
     FLAIR_PACK_CATALOG.forEach((pack) => {
       // Also "owned" once every flair in the pack has been bought
@@ -5525,6 +5523,7 @@
     document.getElementById("cosm-pane-backgrounds").hidden = btn.dataset.sub !== "backgrounds";
     document.getElementById("cosm-pane-boards").hidden = btn.dataset.sub !== "boards";
     document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== btn.dataset.sub; });
+    renderCosmRandomSlot();
   }));
   const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
   const presetSettingTimerInput = document.getElementById("preset-setting-timer");
