@@ -443,13 +443,15 @@
   .cosm-sticky-header { position: sticky; top: 0; z-index: 5; background: #fbfaf6; padding-top: 2px; }
   .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
   .cosm-pane[hidden] { display: none; }
-  .cosm-note { min-height: 1.3em; margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
+  .cosm-note:empty { display: none; }
+  .cosm-note { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
   .cosm-sub { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
   /* Emoji's live status line ("3/9 equipped...") is usually 1 line, the
      flair tab's static description is 2 - reserve 2 lines for both so
      switching tabs doesn't shift the sticky header's height under the list. */
   .cosm-sub-desc { min-height: 2.6em; line-height: 1.3; }
   .cosm-sub-desc[hidden] { display: none; }
+  .cosm-sub-desc.cosm-equip-bar { min-height: 0; }
   .cosm-equip-count { font-weight: 800; font-size: 1.15rem; color: #5b3a1e; background: #fff4dc; border: 2px solid #e2c48e; border-radius: 999px; padding: 4px 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .cosm-equip-count.full { background: #e3f6d8; border-color: #7bc65a; color: #2f6b17; }
   .cosm-equip-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -852,7 +854,7 @@
   .cosm-pv-host .question-prompt { flex: 1; width: 100%; }
   .cosm-pv-btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
   .cosm-pv-btns button { width: auto; margin: 0; padding: 8px 18px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; border: 2px solid #d9c3a3; border-radius: 10px; background: #fff; color: #5a4a3a; }
-  .cosm-pv-bg { position: relative; height: 290px; border-radius: 14px; overflow: hidden; background-size: cover; background-position: center; border: 2px solid #d9c3a3; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; box-sizing: border-box; }
+  .cosm-pv-bg { position: relative; height: min(62vh, 520px); border-radius: 14px; overflow: hidden; background-size: cover; background-position: center; border: 2px solid #d9c3a3; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; box-sizing: border-box; }
   .cosm-pv-bg .mk-q { background: url(icons/board-paper.webp) center / 100% 100% no-repeat; padding: 22px 22px 26px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #3a2a1a; }
   .cosm-pv-bg .mk-row { display: flex; gap: 8px; }
   .cosm-pv-bg .mk-chip { flex: 1; background: rgba(255,250,240,.95); border-radius: 12px; padding: 10px 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #5a4a3a; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
@@ -4193,7 +4195,7 @@
     bg.className = "cosm-pv-bg";
     bg.style.backgroundColor = getComputedStyle(document.body).backgroundColor;
     if (id !== "none") bg.style.backgroundImage = `url('${backgroundUrl(id)}')`;
-    bg.innerHTML = `<div class="mk-q">How many playing cards long is a canoe?</div><div class="mk-row"><div class="mk-chip">Player 1</div><div class="mk-chip">Player 2</div><div class="mk-chip">Player 3</div></div>`;
+    bg.innerHTML = `<div class="mk-q">How many playing cards long is a canoe?</div>`;
     const ov = cosmPreviewShell(label, bg);
     const close = document.createElement("button");
     close.type = "button"; close.textContent = "Close";
@@ -4745,10 +4747,13 @@
     { id: "human-eyelash", name: "human eyelash", plural: "human eyelashes", mm: 10, image: "items/human-eyelash.webp" },
     { id: "honeybee", name: "honeybee", plural: "honeybees", mm: 15, image: "items/honeybee.webp" },
     { id: "die", name: "die", plural: "dice", mm: 16, image: "items/die.webp" },
+    { id: "gummy-bear", name: "gummy bear", plural: "gummy bears", mm: 20, image: "items/gummy-bear.webp" },
+    { id: "chocolate-drop", name: "chocolate drop", plural: "chocolate drops", mm: 22, image: "items/chocolate-drop.webp" },
     { id: "quarter", name: "quarter", plural: "quarters", mm: 24, image: "items/quarter.webp" },
     { id: "paperclip", name: "paperclip", plural: "paperclips", mm: 33, image: "items/paperclip.webp" },
     { id: "chicken-nugget", name: "chicken nugget", plural: "chicken nuggets", mm: 35, image: "items/chicken-nugget.webp" },
     { id: "cockroach", name: "cockroach", plural: "cockroaches", mm: 38, image: "items/cockroach.webp" },
+    { id: "poker-chip", name: "poker chip", plural: "poker chips", mm: 39, image: "items/poker-chip.webp" },
     { id: "ping-pong-ball", name: "ping-pong ball", plural: "ping-pong balls", mm: 40, image: "items/ping-pong-ball.webp" },
     { id: "golf-ball", name: "golf ball", plural: "golf balls", mm: 43, image: "items/golf-ball.webp" },
     { id: "cork", name: "cork", plural: "corks", mm: 45, image: "items/cork.webp" },
@@ -4760,11 +4765,13 @@
     { id: "tennis-ball", name: "tennis ball", plural: "tennis balls", mm: 67, image: "items/tennis-ball.webp" },
     { id: "baseball", name: "baseball", plural: "baseballs", mm: 74, image: "items/baseball.webp" },
     { id: "hockey-puck", name: "hockey puck", plural: "hockey pucks", mm: 76, image: "items/hockey-puck.webp" },
+    { id: "sand-dollar", name: "sand dollar", plural: "sand dollars", mm: 80, image: "items/sand-dollar.webp" },
     { id: "credit-card", name: "credit card", plural: "credit cards", mm: 86, image: "items/credit-card.webp" },
     { id: "playing-card", name: "playing card", plural: "playing cards", mm: 89, image: "items/playing-card.webp" },
     { id: "rubber-duck", name: "rubber duck", plural: "rubber ducks", mm: 90, image: "items/rubber-duck.webp" },
     { id: "donut", name: "donut", plural: "donuts", mm: 95, image: "items/donut.webp" },
     { id: "frog", name: "frog", plural: "frogs", mm: 100, image: "items/frog.webp" },
+    { id: "pinecone", name: "pinecone", plural: "pinecones", mm: 100, image: "items/pinecone.webp" },
     { id: "toilet-paper-square", name: "toilet paper square", plural: "toilet paper squares", mm: 114, image: "items/toilet-paper-square.webp" },
     { id: "dvd", name: "DVD", plural: "DVDs", mm: 120, image: "items/dvd.webp" },
     { id: "index-card", name: "index card", plural: "index cards", mm: 127, image: "items/index-card.webp" },
@@ -4774,6 +4781,7 @@
     { id: "pencil", name: "pencil", plural: "pencils", mm: 175, image: "items/pencil.webp" },
     { id: "toothbrush", name: "toothbrush", plural: "toothbrushes", mm: 185, image: "items/toothbrush.webp" },
     { id: "banana", name: "banana", plural: "bananas", mm: 200, image: "items/banana.webp" },
+    { id: "tv-remote", name: "TV remote", plural: "TV remotes", mm: 200, image: "items/tv-remote.webp" },
     { id: "house-brick", name: "house brick", plural: "house bricks", mm: 215, image: "items/house-brick.webp" },
     { id: "bowling-ball", name: "bowling ball", plural: "bowling balls", mm: 218, image: "items/bowling-ball.webp" },
     { id: "soccer-ball", name: "soccer ball", plural: "soccer balls", mm: 220, image: "items/soccer-ball.webp" },
@@ -4796,6 +4804,7 @@
     { id: "trumpet", name: "trumpet", plural: "trumpets", mm: 550, image: "items/trumpet.webp" },
     { id: "violin", name: "violin", plural: "violins", mm: 600, image: "items/violin.webp" },
     { id: "long-stem-rose", name: "long-stem rose", plural: "long-stem roses", mm: 600, image: "items/long-stem-rose.webp" },
+    { id: "koi-fish", name: "koi fish", plural: "koi fish", mm: 600, image: "items/koi-fish.webp" },
     { id: "baguette", name: "baguette", plural: "baguettes", mm: 650, image: "items/baguette.webp" },
     { id: "baseball-bat", name: "baseball bat", plural: "baseball bats", mm: 700, image: "items/baseball-bat.webp" },
     { id: "traffic-cone", name: "traffic cone", plural: "traffic cones", mm: 711, image: "items/traffic-cone.webp" },
@@ -4849,6 +4858,7 @@
     { id: "fighter-jet", name: "fighter jet", plural: "fighter jets", mm: 15000, image: "items/fighter-jet.webp" },
     { id: "oak-tree", name: "oak tree", plural: "oak trees", mm: 20000, image: "items/oak-tree.webp" },
     { id: "semi-truck", name: "semi-truck", plural: "semi-trucks", mm: 22000, image: "items/semi-truck.webp" },
+    { id: "hot-air-balloon", name: "hot air balloon", plural: "hot air balloons", mm: 23000, image: "items/hot-air-balloon.webp" },
     { id: "blue-whale", name: "blue whale", plural: "blue whales", mm: 24000, image: "items/blue-whale.webp" },
     { id: "basketball-court", name: "basketball court", plural: "basketball courts", mm: 28650, image: "items/basketball-court.webp" },
     { id: "stonehenge", name: "Stonehenge", plural: "Stonehenges", properNoun: true, mm: 30000, image: "items/stonehenge.webp" },
