@@ -1958,7 +1958,8 @@
   /* one full-width column for up to five papers; only past five does it split into two so everything still fits */
   #answers-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; align-items: start; gap: 8px; margin: 8px 0; padding-left: 2px; }
   #answers-row.two-col { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 6px 8px; }
-  #answers-row .answer-slot { width: 100%; max-width: none; }
+  /* --fit (set by fitAnswerPapers) shrinks the papers so every one, plus the double down button, fits above the bottom bar */
+  #answers-row .answer-slot { width: calc(100% * var(--fit, 1)); max-width: none; justify-self: start; }
   .answer-slot {
     --paper: #f1e6cf; --paper-edge: #c9b48a; --rot: 0deg; --ar: 2.9; --img: none;
     position: relative; width: 100%; aspect-ratio: var(--ar); height: auto; padding: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none;
@@ -8872,7 +8873,30 @@
     doubleDownBtn.innerHTML = `<span class="dd-main">Double down on my answer</span>`
       + (myEntry ? `<span class="dd-guess-value">${myEntry.value}</span>` : "")
       + (isMyDoubleDown ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
+    fitAnswerPapers();
   }
+
+  // Shrink the answer papers (width, so height follows) until the whole column and the
+  // double down button sit above the bottom bar instead of running underneath it.
+  function fitAnswerPapers() {
+    if (!answersRowEl.children.length) return;
+    answersRowEl.style.setProperty("--fit", 1);
+    const bar = document.getElementById("bottom-toolbar");
+    const barTop = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    const rowRect = answersRowEl.getBoundingClientRect();
+    const ddH = doubleDownBtn.offsetHeight + 10;
+    const avail = barTop - rowRect.top - ddH - 8;
+    if (avail <= 0) return;
+    // the gaps between papers don't shrink with them, so nudge a few times until it settles
+    let fit = 1;
+    for (let i = 0; i < 4; i++) {
+      const h = answersRowEl.getBoundingClientRect().height;
+      if (h <= avail + 0.5) break;
+      fit = Math.max(0.5, fit * (avail / h) * 0.98);
+      answersRowEl.style.setProperty("--fit", fit.toFixed(3));
+    }
+  }
+  window.addEventListener("resize", () => { if (document.getElementById("answers-view").classList.contains("active")) fitAnswerPapers(); });
 
   async function choosePick(type, targetPlayerId, alreadyActive) {
     if (roomState.paused) return;
