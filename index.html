@@ -203,6 +203,7 @@
   body[data-bg]::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background: linear-gradient(rgba(255,250,240,.38), rgba(255,250,240,.38)), var(--game-bg) center / cover no-repeat; }
   body:has(#home-screen.active)::before { display: none; }
+  .cosm-board-pic { width: 72px; height: 46px; object-fit: contain; flex-shrink: 0; }
   .cosm-bg-pic { width: 34px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; flex-shrink: 0; }
   .cosm-bg-none { display: inline-block; background: linear-gradient(150deg, #fbfaf6, #f3f1ea 45%, #fdf6ec); }
   #home-title { display: none; }
@@ -491,7 +492,9 @@
     border-image-source: url(icons/btn-cream.png); border-image-slice: 0 155 fill; color: #5b3a26; text-shadow: none;
   }
   button.cosm-tab-btn { --pic-h: 40px; flex: 1; font-size: 15px; }
-  .cosm-tab-icon { margin-right: 6px; font-size: 16px; line-height: 1; }
+  .cosm-tabs { gap: 4px; }
+  button.cosm-tab-btn { --pic-h: 38px; border-width: 0 10px; font-size: 12.5px; }
+  .cosm-tab-icon { margin-right: 3px; font-size: 16px; line-height: 1; }
   button.cosm-equip, button.cosm-buy { width: 96px; }
   button.cosm-unlock { width: auto; min-width: 110px; }
   button.cosm-tab-btn.active, button.cosm-equip:not(:disabled):not(.is-on) {
@@ -2501,6 +2504,7 @@
         <button type="button" class="cosm-tab-btn fit-text active" data-sub="emojis"><span class="cosm-tab-icon" aria-hidden="true">👍</span>Reactions</button>
         <button type="button" class="cosm-tab-btn fit-text" data-sub="flairs"><span class="cosm-tab-icon" aria-hidden="true">⭐</span>Flairs</button>
         <button type="button" class="cosm-tab-btn fit-text" data-sub="backgrounds"><span class="cosm-tab-icon" aria-hidden="true">🖼️</span>Backgrounds</button>
+        <button type="button" class="cosm-tab-btn fit-text" data-sub="boards"><span class="cosm-tab-icon" aria-hidden="true">🎭</span>Boards</button>
       </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
@@ -2513,6 +2517,9 @@
     </div>
     <div id="cosm-pane-backgrounds" class="cosm-pane" hidden>
       <div id="cosm-backgrounds-list" class="cosm-list"></div>
+    </div>
+    <div id="cosm-pane-boards" class="cosm-pane" hidden>
+      <div id="cosm-boards-list" class="cosm-list"></div>
     </div>
     <div class="coming-soon-box">
       <p class="coming-soon-title">Coming Soon</p>
@@ -3463,8 +3470,8 @@
 
   function defaultCosmeticState() {
     return {
-      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {} },
-      equipped: { borders: "classic", effects: "classic", colors: "default", background: "none" },
+      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {}, boards: {} },
+      equipped: { borders: "classic", effects: "classic", colors: "default", background: "none", board: "none" },
     };
   }
   // The game's original fixed 9 reactions - always available regardless of
@@ -3537,7 +3544,7 @@
       flairPacks: {},
       backgroundPacks: {},
       holidayPacks: {},
-      boardPack: false,
+      boardPacks: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
@@ -3662,7 +3669,7 @@
           flairPacks: { ...(data.flairPacks || {}) },
           backgroundPacks: { ...(data.backgroundPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
-          boardPack: !!data.boardPack,
+          boardPacks: { ...(data.boardPacks || {}) },
           // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
           // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
           // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
@@ -3935,6 +3942,7 @@
     renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
     renderFlairRows(document.getElementById("cosm-flairs-list"));
     renderBackgroundRows(document.getElementById("cosm-backgrounds-list"));
+    renderBoardRows(document.getElementById("cosm-boards-list"));
   }
 
   // TEMP: same simulated-purchase pattern as the host-unlock button below -
@@ -4031,6 +4039,74 @@
         leadHtml: `<img class="cosm-bg-pic" src="${backgroundUrl(b.id)}" alt="" loading="lazy">`, name: b.label,
         owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
         onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
+      })));
+    });
+  }
+  // Question boards: what the question and answer are written on. Paper is the free default;
+  // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
+  const BOARD_COIN_COST = 200;
+  const BOARD_PACK_CATALOG = [
+    { id: "boardpack1", label: "Question Board Pack 1", price: "$2.99", boards: [
+      { id: "chalkboard", label: "Chalkboard" },
+      { id: "whiteboard", label: "Whiteboard" },
+      { id: "curtains", label: "Stage Curtains" },
+    ] },
+  ];
+  const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp" };
+  function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards); }
+  function boardPackOf(id) { return BOARD_PACK_CATALOG.find((p) => p.boards.some((b) => b.id === id)); }
+  function ownsBoard(id) {
+    const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.boards) || {};
+    const pk = boardPackOf(id);
+    return !!(own[id] || (pk && (myProfile.boardPacks || {})[pk.id]));
+  }
+  function equippedBoard() {
+    const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.board;
+    return id && id !== "none" && ownsBoard(id) && allBoards().some((b) => b.id === id) ? id : "none";
+  }
+  async function buyBoardWithCoins(b) {
+    if ((myProfile.coins || 0) < BOARD_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      const cosmetics = profile.cosmetics || defaultCosmeticState();
+      const owned = (cosmetics.owned && cosmetics.owned.boards) || {};
+      if (owned[b.id] || (profile.coins || 0) < BOARD_COIN_COST) return profile;
+      return { ...profile, coins: (profile.coins || 0) - BOARD_COIN_COST,
+        cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, boards: { ...owned, [b.id]: true } } } };
+    });
+  }
+  async function equipBoard(id) {
+    const now = equippedBoard();
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/board": now === id ? "none" : id });
+  }
+  async function purchaseBoardPack(packId) {
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      return { ...profile, boardPacks: { ...(profile.boardPacks || {}), [packId]: true } };
+    });
+  }
+  function renderBoardRows(container) {
+    if (!container) return;
+    const equipped = equippedBoard();
+    container.innerHTML = "";
+    const label = document.createElement("div");
+    label.className = "cosm-group-label";
+    label.textContent = "Default";
+    container.appendChild(label);
+    container.appendChild(cosmRow({
+      leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
+      equipped: equipped === "none", onEquip: () => equipBoard(equipped),
+    }));
+    BOARD_PACK_CATALOG.forEach((pack) => {
+      const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
+      container.appendChild(cosmPackHead(pack, owned, async () => {
+        const bought = await showFakePurchase({ icon: "\u{1F3AD}", title: pack.label, price: pack.price });
+        if (bought) purchaseBoardPack(pack.id);
+      }, `${pack.boards.length} boards, or buy each with coins`));
+      pack.boards.forEach((b) => container.appendChild(cosmRow({
+        leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
+        owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id,
+        onEquip: () => equipBoard(b.id), onBuy: () => buyBoardWithCoins(b),
       })));
     });
   }
@@ -5230,6 +5306,7 @@
     document.getElementById("cosm-pane-emojis").hidden = btn.dataset.sub !== "emojis";
     document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
     document.getElementById("cosm-pane-backgrounds").hidden = btn.dataset.sub !== "backgrounds";
+    document.getElementById("cosm-pane-boards").hidden = btn.dataset.sub !== "boards";
     document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== btn.dataset.sub; });
   }));
   const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
@@ -6698,7 +6775,7 @@
     cards.push({ id: "sampler", title: SAMPLER_PACK.name,
       desc: "One favourite from every pack, all year round." + (season.length ? "" : " Free this month."), tag: "MIX", has: !!owned.sampler });
     cards.push({ id: "boards", title: BOARD_PACK_NAME,
-      desc: "Answer on a chalkboard, a whiteboard or behind stage curtains, with writing, erasing and curtain animations.", tag: "NEW", has: !!myProfile.boardPack });
+      desc: "Chalkboard, whiteboard and stage curtains for your questions, with writing, erasing and curtain animations. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack1 });
     el.innerHTML = cards.map((c) => {
       const look = PACK_LOOK[c.id] || PACK_LOOK.sampler;
       return `<div class="tp-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
@@ -6710,14 +6787,8 @@
       </div>`;
     }).join("");
   }
-  const BOARD_PACK_NAME = "Game Show Boards";
+  const BOARD_PACK_NAME = "Question Board Packs";
   const BOARD_PACK_PRICE = "$2.99";
-  async function purchaseBoardPack() {
-    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
-      const profile = current || defaultProfile();
-      return { ...profile, boardPack: true };
-    });
-  }
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -6731,7 +6802,7 @@
     const packId = b.dataset.pack;
     if (packId === "boards") {
       const bought = await showFakePurchase({ icon: PACK_LOOK.boards[0], title: BOARD_PACK_NAME, price: BOARD_PACK_PRICE });
-      if (bought) purchaseBoardPack();
+      if (bought) purchaseBoardPack("boardpack1");
       return;
     }
     const pack = packId === "sampler" ? SAMPLER_PACK : MONTH_PACKS.find((x) => x.id === packId);
@@ -8032,6 +8103,7 @@
     const key = `${data.round}:${data.animStartAt}`;
     if (animPlayKey === key) return;
     animPlayKey = key;
+    clearReactionBubbles();
     const token = ++animToken;
     const pair = questionObjects(data.currentQuestion);
     const fail = (why) => {
@@ -8418,12 +8490,19 @@
     }
   }
 
+  // Rapid tapping used to skip whole screens (the round summary especially), because the
+  // next button appears under the finger the moment the last screen changes. Every screen
+  // change and every accepted click starts a short window where those buttons are ignored.
+  let navGuardAt = 0;
+  const NAV_GUARD_MS = 1100;
+  const navBlocked = () => nowMs() - navGuardAt < NAV_GUARD_MS;
   revealNextBtn.addEventListener("click", () => {
     if (revealAnimating) return;
+    navGuardAt = nowMs();
     advanceReveal(currentRoomCode);
   });
 
-  showSummaryBtn.addEventListener("click", () => { cancelRevealEffects(); goToSummary(currentRoomCode); });
+  showSummaryBtn.addEventListener("click", () => { if (navBlocked()) return; navGuardAt = nowMs(); cancelRevealEffects(); goToSummary(currentRoomCode); });
 
   // Live in-HUD auto-mode toggle — separate from the lobby's pre-game setting,
   // this one stays editable mid-game (no round-lock) so the host can flip
@@ -8474,7 +8553,7 @@
     advanceAfterSummary(roomCode).finally(() => { transitionInFlight = false; });
   }
 
-  nextRoundBtn.addEventListener("click", () => advanceAfterSummary(currentRoomCode));
+  nextRoundBtn.addEventListener("click", () => { if (navBlocked()) return; navGuardAt = nowMs(); advanceAfterSummary(currentRoomCode); });
 
   async function advanceAfterSummary(roomCode) {
     const nextRound = (roomState.round || 0) + 1;
@@ -8824,9 +8903,13 @@
   // One reaction per player at a time: a new one replaces the one still showing.
   const RX_STAGE = 96;          // px; the picture itself takes the middle 60%
   const rxShowing = {};         // playerId -> element
+  // A reaction sent just before the stacking animation starts must not keep playing over it.
+  function clearReactionBubbles() {
+    document.querySelectorAll(".rx-stage").forEach((el) => el.remove());
+  }
   function renderReactionBubble(r) {
     if (!r) return;
-    if (roomState && roomState.phase === "animation") return; // the cards are hidden during the reveal
+    if (roomState && roomState.phase === "animation") return; // nothing plays over the stacking animation
     playSound("emoji");
     const byId = r.rid && REACTION_BY_ID[r.rid];
     if (byId) r = { ...r, emoji: byId.emoji };
@@ -9205,7 +9288,9 @@
 
     if (isHost) {
       revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
-      showSummaryBtn.style.display = revealIndex >= order.length ? "flex" : "none";
+      const showSum = revealIndex >= order.length;
+      if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
+      showSummaryBtn.style.display = showSum ? "flex" : "none";
     }
   }
 
@@ -9390,6 +9475,7 @@
     if (isHost) {
       const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
       nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
+      if (nextRoundBtn.style.display !== "flex") navGuardAt = nowMs();
       nextRoundBtn.style.display = "flex";
     } else {
       nextRoundBtn.style.display = "none";
@@ -10156,6 +10242,8 @@
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
     if (phase !== lastSeenPhaseForSound) {
+      navGuardAt = nowMs();
+      if (phase === "animation") clearReactionBubbles();
       if (lastSeenPhaseForSound === "reveal") cancelRevealEffects();
       if (phase === "answers") {
         playSound("answers");
