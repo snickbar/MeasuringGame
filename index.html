@@ -946,6 +946,9 @@
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen { position: relative; }
+  /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
+  .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
+  .screen-lock .screen-back-btn { top: 0; right: 12px; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -2529,10 +2532,12 @@
 </div>
 
 <div id="settings-screen" class="screen">
+  <div class="screen-lock">
   <button id="settings-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header fancy-hdr">
     <img class="hdr-badge" src="icons/toolbar-settings.png" alt="">
     <div class="hdr-text"><h1>Settings</h1><span class="hdr-sub">Your profile and game options</span></div>
+  </div>
   </div>
 
   <div class="settings-card" id="settings-profile-card">
@@ -2877,6 +2882,7 @@
 </div>
 
 <div id="lobby-screen" class="screen">
+  <div class="screen-lock">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header fancy-hdr lobby-hdr">
     <img class="hdr-badge" src="icons/toolbar-home.png" alt="">
@@ -2904,6 +2910,7 @@
   </div>
   <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
+  </div>
   <ul id="player-list"></ul>
 </div>
 
@@ -6922,7 +6929,12 @@
     const isFirstRender = renderedPlayerListIds.size === 0;
     const newIds = new Set();
     playerList.innerHTML = "";
-    Object.entries(currentPlayers).forEach(([id, p]) => {
+    // You first, then everyone else in the order they joined (bots included).
+    const lobbyOrder = Object.entries(currentPlayers).sort(([ia, a], [ib, b]) =>
+      (ib === currentPlayerId) - (ia === currentPlayerId)
+      || ((a.joinedAt || Infinity) - (b.joinedAt || Infinity) || 0)
+      || ia.localeCompare(ib));
+    lobbyOrder.forEach(([id, p]) => {
       newIds.add(id);
       const li = document.createElement("li");
       if (!isFirstRender && !renderedPlayerListIds.has(id)) {
