@@ -455,7 +455,11 @@
   .cosm-unequip-all { font: inherit; font-weight: 700; color: #5b3a1e; background: #fff; border: 2px solid #d9c3a0; border-radius: 12px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
   .cosm-unequip-all:active { transform: scale(0.96); }
   .cosm-list { display: flex; flex-direction: column; gap: 8px; }
-  .cosm-group-label { margin: 8px 0 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
+  /* Category headings sit on top of the shop's background pictures, so they get a faint box and bold black text to stay readable. */
+  .cosm-group-label { width: 66.667%; box-sizing: border-box; margin: 12px auto 0; padding: 5px 10px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; color: #000; background: rgba(255,255,255,.62); border-radius: 12px; }
+  .cosm-pack-head > div:first-child { padding: 4px 10px; background: rgba(255,255,255,.62); border-radius: 12px; }
+  .cosm-pack-head .cosm-pack-title, .cosm-pack-head .cosm-pack-sub { color: #000; }
+  .cosm-pack-head .cosm-pack-title { font-weight: 800; }
   .cosm-pack-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
   .cosm-pack-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
   .cosm-pack-sub { font-size: 12px; color: var(--text-muted); }
@@ -2043,6 +2047,19 @@
      screen - content and visibility are both set in applyPhase(). */
   .question-note { margin-top: 10px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-style: italic; font-size: 14px; line-height: 1.3; color: rgba(74,51,28,.65); }
 
+  /* ---- Left / ended game screens: one centered card with a recap of the game ---- */
+  #left-screen.active, #ended-screen.active { display: flex; justify-content: center; padding: 22px 4px 40px; }
+  .exit-card { width: 100%; max-width: 380px; box-sizing: border-box; text-align: center; background: rgba(255,252,246,.94); border: 3px solid #d9c29a; border-radius: 26px; padding: 22px 18px 20px; box-shadow: 0 6px 0 rgba(120,85,40,.18), 0 10px 24px rgba(60,40,10,.18); }
+  .exit-icon { font-size: 54px; line-height: 1; margin-bottom: 6px; }
+  .exit-card h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.2; }
+  .exit-reason { margin: 0 0 14px; font-size: 17px; line-height: 1.35; color: var(--text); }
+  .exit-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0 0 14px; }
+  .exit-stat { background: #fff; border: 2px solid #ecdcbc; border-radius: 14px; padding: 8px 6px; min-width: 0; }
+  .exit-stat b { display: block; font-size: 22px; line-height: 1.15; color: var(--brand); overflow-wrap: anywhere; }
+  .exit-stat span { display: block; font-size: 12px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--text-muted); }
+  .exit-hint { margin: 0 0 16px; font-size: 14px; line-height: 1.35; color: var(--text-muted); }
+  .exit-btn { width: 100%; }
+
   /* ---- Reveal ---- */
   #reveal-list { perspective: 800px; padding: 30px 16px 0 2px; } /* room for the avatar stamp that overhangs each card's right edge */
   /* Reveal cards are the same paper scraps as the second-chance picks: blank at first, then the number is pencilled in. */
@@ -2931,15 +2948,25 @@
 </div>
 
 <div id="ended-screen" class="screen">
-  <h1>Game ended</h1>
-  <p>The host ended this game.</p>
-  <button id="ended-reload-btn">Back to start</button>
+  <div class="exit-card">
+    <div class="exit-icon" aria-hidden="true">&#127937;</div>
+    <h1>Game ended</h1>
+    <p class="exit-reason">The host ended this game.</p>
+    <div id="ended-stats" class="exit-stats" hidden></div>
+    <p class="exit-hint">Ready for another? Head back and join or start a new game.</p>
+    <button id="ended-reload-btn" class="exit-btn">Back to home</button>
+  </div>
 </div>
 
 <div id="left-screen" class="screen">
-  <h1>You have left the game</h1>
-  <p id="left-reason"></p>
-  <button id="left-reload-btn">Back to start</button>
+  <div class="exit-card">
+    <div id="left-icon" class="exit-icon" aria-hidden="true">&#128075;</div>
+    <h1 id="left-title">You left the game</h1>
+    <p id="left-reason" class="exit-reason"></p>
+    <div id="left-stats" class="exit-stats" hidden></div>
+    <p id="left-hint" class="exit-hint" hidden></p>
+    <button id="left-reload-btn" class="exit-btn">Back to home</button>
+  </div>
 </div>
 
 <div id="paused-overlay">
@@ -8451,7 +8478,31 @@
   });
   leftReloadBtn.addEventListener("click", () => location.reload());
 
-  function showLeftScreen(reason) {
+  // A small recap of the game for the screen shown after leaving: [value, label] tiles.
+  function gameRecapTiles() {
+    const me = currentPlayers[currentPlayerId];
+    if (!me || !currentRoomCode) return [];
+    const ids = Object.keys(currentPlayers);
+    const ranked = computeRanks(ids, (id) => currentPlayers[id].score || 0, (id) => { const p = currentPlayers[id]; return p.roundsCounted ? p.accuracySum / p.roundsCounted : null; }, false);
+    const mine = ranked.find((e) => e.id === currentPlayerId);
+    const total = (roomState.settings || currentSettings).totalRounds || 5;
+    const round = Math.min(roomState.round || 1, total);
+    const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
+    const tiles = [[`${me.score || 0}`, "Your score"]];
+    if (mine && ids.length > 1) tiles.push([`${ord(mine.rank)} of ${ids.length}`, "Rank"]);
+    tiles.push([`${round} of ${total}`, "Round reached"]);
+    if (me.roundsCounted) tiles.push([`${Math.round(me.accuracySum / me.roundsCounted)}%`, "Avg accuracy"]);
+    if (!(roomState.settings && roomState.settings.solo)) tiles.push([currentRoomCode, "Room code"]);
+    return tiles;
+  }
+  function fillExitStats(el, tiles) {
+    if (!el) return;
+    el.innerHTML = tiles.map(([v, l]) => `<div class="exit-stat"><b>${escapeHtml(String(v))}</b><span>${escapeHtml(l)}</span></div>`).join("");
+    el.hidden = !tiles.length;
+  }
+
+  // opts: { title, icon, tiles (recap, captured before leaving), hint }
+  function showLeftScreen(reason, opts = {}) {
     // Sweep the full screen list (same as openOverlay) rather than a
     // hand-picked subset - this used to miss any open overlay (Shop,
     // Settings, etc.), which stayed active and visually merged with this
@@ -8462,27 +8513,42 @@
     bottomToolbarEl.classList.remove("active");
     kickModalEl.classList.remove("active");
     pausedOverlayEl.classList.remove("active");
+    hudSubToolbarEl.classList.remove("active"); // the Pause/Exit bar must not sit on top of this screen
     leftReasonEl.textContent = reason;
+    document.getElementById("left-title").textContent = opts.title || "You left the game";
+    document.getElementById("left-icon").textContent = opts.icon || "\u{1F44B}";
+    fillExitStats(document.getElementById("left-stats"), opts.tiles || []);
+    const hintEl = document.getElementById("left-hint");
+    hintEl.textContent = opts.hint || "";
+    hintEl.hidden = !opts.hint;
     leftScreenEl.classList.add("active");
   }
 
   async function guestExit() {
+    const tiles = gameRecapTiles();
     leavingGame = true;
     const roomCode = currentRoomCode;
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
-    showLeftScreen("You left the room. The other players can keep playing without you.");
+    showLeftScreen("The other players can keep playing without you.", {
+      title: "You left the game", icon: "\u{1F44B}", tiles,
+      hint: `Want back in? Tap Join Game, then Rejoin under "Last game" (room ${roomCode}).`,
+    });
   }
 
   async function hostExit() {
+    const tiles = gameRecapTiles();
     leavingGame = true;
     const roomCode = currentRoomCode;
     await set(ref(db, `rooms/${roomCode}/phase`), "ended");
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
-    showLeftScreen("You ended the game for everyone in the room.");
+    showLeftScreen("The room is now closed for everyone.", {
+      title: "You ended the game", icon: "\u{1F3C1}", tiles,
+      hint: "Start a new game any time from the home screen.",
+    });
   }
 
   // ==================== Guess input (question phase) ====================
@@ -9898,6 +9964,7 @@
     reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
     finalScreenEl.classList.toggle("active", phase === "final");
+    if (phase === "ended") fillExitStats(document.getElementById("ended-stats"), gameRecapTiles());
     endedScreenEl.classList.toggle("active", phase === "ended");
 
     questionViewEl.classList.toggle("active", phase === "question");
@@ -10048,7 +10115,10 @@
           // removing someone who was disconnected/backgrounded too long - this
           // listener can't tell those apart, so the message stays neutral rather
           // than blaming the host for something that may have been a timeout.
-          showLeftScreen("You're no longer in this room. This happens if the host removed you, or if you were disconnected for too long.");
+          showLeftScreen("This happens if the host removed you, or if you were disconnected for too long.", {
+            title: "You're no longer in this room", icon: "\u{1F6AA}",
+            hint: "Ask the host for the room code if you'd like to join again.",
+          });
         }
         return;
       }
