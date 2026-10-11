@@ -2483,14 +2483,14 @@
             <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
           </div>
         </div>
-        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $9.99 &middot; One time</button>
+        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $4.99 &middot; One time</button>
       </div>
 
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
           <span class="shop-hero-badge">&#127916; Free</span>
           <img class="coin-pack-icon" src="icons/shop-coin-reward.png" alt="">
-          <div class="coin-pack-amount">+20</div>
+          <div class="coin-pack-amount">+25</div>
           <div class="coin-pack-label">Coins</div>
           <div id="watch-ad-status" class="coin-pack-status"></div>
           <button id="watch-ad-btn" type="button" class="coin-pack-buy-btn ad-reward-btn">Watch Ad</button>
@@ -2593,10 +2593,6 @@
     <div id="cosm-pane-boards" class="cosm-pane" hidden>
       <div id="cosm-boards-list" class="cosm-list"></div>
     </div>
-    <div class="coming-soon-box">
-      <p class="coming-soon-title">Coming Soon</p>
-      <p class="coming-soon-sub">Card borders and name colors are on the way.</p>
-    </div>
   </div>
 </div>
 
@@ -2678,6 +2674,22 @@
       <button id="debug-reset-flairs-btn" type="button" class="gacha-debug-btn">Reset flairs</button>
       <button id="debug-reset-reactions-btn" type="button" class="gacha-debug-btn">Reset reactions</button>
       <button id="debug-reset-holiday-btn" type="button" class="gacha-debug-btn">Reset holiday packs</button>
+      <button id="debug-reset-boards-btn" type="button" class="gacha-debug-btn">Reset boards</button>
+      <button id="debug-reset-backgrounds-btn" type="button" class="gacha-debug-btn">Reset backgrounds</button>
+    </div>
+    <h3>Debug: coins and progress</h3>
+    <div class="debug-btn-row">
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="10">+10 coins</button>
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="25">+25 coins</button>
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="50">+50 coins</button>
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="200">+200 coins</button>
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="500">+500 coins</button>
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="1000">+1,000 coins</button>
+      <button type="button" class="gacha-debug-btn" data-dbg-coins="-1">Coins to 0</button>
+      <button id="debug-reset-ads-btn" type="button" class="gacha-debug-btn">Reset daily ads</button>
+      <button id="debug-reset-awards-btn" type="button" class="gacha-debug-btn">Reset claimed awards</button>
+      <button id="debug-reset-seen-btn" type="button" class="gacha-debug-btn">Reset objects seen</button>
+      <button id="debug-reset-all-cosm-btn" type="button" class="gacha-debug-btn">Reset ALL purchases</button>
     </div>
   </div>
 
@@ -2976,7 +2988,7 @@
 
   <div id="host-unlock-banner">
     <p>Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
-    <button id="host-unlock-btn" type="button">Unlock for $9.99 &middot; One time</button>
+    <button id="host-unlock-btn" type="button">Unlock for $4.99 &middot; One time</button>
   </div>
 
   <div class="players-header">
@@ -3597,7 +3609,7 @@
   Object.entries(REACTIONS).forEach(([emoji, r]) => { REACTION_BY_ID[r.id] = { ...r, emoji }; });
   const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`; // sideeye.png is the "looking" eyes
   const REACTION_SLOTS_MAX = 7, REACTION_SLOTS_BASE = 5;
-  const REACTION_SLOT_COSTS = [200, 400]; // coins for slot 6 and slot 7
+  const REACTION_SLOT_COSTS = [200, 200]; // coins for slot 6 and slot 7
   const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
   // What is really equipped: only reactions that have pictures, and no more than the slots you own.
   const equippedReactions = () => ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, ownedReactionSlots());
@@ -3844,7 +3856,7 @@
   // "watch an ad" step is fake. Swap the instant grant for a real rewarded-ad
   // callback later; the cap-tracking logic underneath doesn't need to change.
   const DAILY_AD_COIN_CAP = 3;
-  const AD_REWARD_COINS = 20; // coins per ad (keep the "+20" on the shop card in step)
+  const AD_REWARD_COINS = 25; // coins per ad (keep the "+25" on the shop card in step)
   // Local calendar date, not UTC - toISOString() rolls over at UTC midnight,
   // which for most timezones is afternoon/evening local time, so the daily ad
   // cap looked like it "didn't reset" until well past when the player's own
@@ -4074,8 +4086,8 @@
   // don't), not coin-priced like the single-equip cosmetics above - more
   // packs just get appended here.
   const EMOJI_PACK_CATALOG = [
-    { id: "pack1", label: "Reaction Pack 1", price: "$2.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
-    { id: "pack2", label: "Reaction Pack 2", price: "$2.99", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}"] },
+    { id: "pack1", label: "Reaction Pack 1", price: "$1.49", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
+    { id: "pack2", label: "Reaction Pack 2", price: "$1.49", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}"] },
   ];
   function emojiPool() {
     return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
@@ -4083,7 +4095,7 @@
 
   // ---- Cosmetics rows: picture on the left, Equip in the middle, coin price on the right ----
   // Pack bundles are real-money (simulated for now, like the emoji pack was); each item can also be bought with coins.
-  const EMOJI_COIN_COST = 125;
+  const EMOJI_COIN_COST = 100; // reactions and flairs: one price
   const EMOJI_NAMES = {
     "\u{1F937}": "Shrug", "\u{1F600}": "Grin", "\u23F0": "Alarm clock", "\u{1F44F}": "Clap", "\u2764\uFE0F": "Heart",
     "\u{1F44D}": "Thumbs up", "\u{1F602}": "Laughing", "\u{1F525}": "Fire", "\u{1F389}": "Party popper",
@@ -4094,7 +4106,7 @@
   // art are listed; more are added here as their pictures arrive.
   const BACKGROUND_COIN_COST = 100;
   const BACKGROUND_PACK_CATALOG = [
-    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$2.99", backgrounds: [
+    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$1.99", backgrounds: [
       { id: "newyear-bg", label: "New Year's" },
       { id: "stpatrick-bg", label: "St. Patrick's Day" },
       { id: "may-bg", label: "May Fiesta" },
@@ -4102,7 +4114,7 @@
       { id: "september-bg", label: "Back to School" },
       { id: "thanksgiving-bg", label: "Thanksgiving" },
     ] },
-    { id: "bgpack4", label: "Tabletop Backgrounds", price: "$2.99", backgrounds: [
+    { id: "bgpack4", label: "Tabletop Backgrounds", price: "$1.99", backgrounds: [
       { id: "table-card", label: "Card Table" },
       { id: "table-coffee", label: "Coffee Table" },
       { id: "table-school", label: "School Desk" },
@@ -4110,14 +4122,15 @@
       { id: "table-dining", label: "Dining Table" },
       { id: "table-kitchen", label: "Kitchen Counter" },
     ] },
-    { id: "bgpack5", label: "Nature Backgrounds", price: "$2.99", backgrounds: [
+    { id: "bgpack5", label: "Nature Backgrounds", price: "$1.99", backgrounds: [
       { id: "nature-grass", label: "Grass" },
       { id: "nature-meadow", label: "Flower Meadow" },
       { id: "nature-snow", label: "Snow" },
       { id: "nature-beach", label: "Beach" },
+      { id: "nature-clouds", label: "Clouds" },
       { id: "nature-water", label: "Water" },
     ] },
-    { id: "bgpack6", label: "Candy Backgrounds", price: "$2.99", backgrounds: [
+    { id: "bgpack6", label: "Candy Backgrounds", price: "$1.99", backgrounds: [
       { id: "candy-lollipops", label: "Lollipops" },
       { id: "candy-cottoncandy", label: "Cotton Candy" },
       { id: "candy-gumdrops", label: "Gumdrops" },
@@ -4267,21 +4280,21 @@
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
-  const BOARD_COIN_COST = 200;
+  const BOARD_COIN_COST = 150;
   const BOARD_PACK_CATALOG = [
-    { id: "boardpack1", label: "Question Board Pack 1", price: "$2.99", boards: [
+    { id: "boardpack1", label: "Question Board Pack 1", price: "$1.99", boards: [
       { id: "chalkboard", label: "Chalkboard" },
       { id: "whiteboard", label: "Whiteboard" },
       { id: "curtains", label: "Stage Curtains" },
+      { id: "typewriter", label: "Typewriter" },
     ] },
-    { id: "boardpack2", label: "Question Board Pack 2", price: "$2.99", boards: [
+    { id: "boardpack2", label: "Question Board Pack 2", price: "$1.99", boards: [
       { id: "terminal", label: "Computer Terminal" },
       { id: "tv", label: "Old TV" },
-      { id: "typewriter", label: "Typewriter" },
       { id: "phone", label: "Phone Chat" },
       { id: "splitflap", label: "Split-Flap Sign" },
     ] },
-    { id: "boardpack3", label: "Question Board Pack 3", price: "$2.99", boards: [
+    { id: "boardpack3", label: "Question Board Pack 3", price: "$1.99", boards: [
       { id: "letterboard", label: "Letterboard" },
       { id: "neon", label: "Neon Sign" },
       { id: "sand", label: "Sand Writing" },
@@ -4349,8 +4362,8 @@
     });
   }
   const FLAIR_PACK_CATALOG = [
-    { id: "fpack1", label: "Flair Pack 1", price: "$2.99", flairs: ["hearts", "coinshower", "rainbow", "snow"] },
-    { id: "fpack2", label: "Flair Pack 2", price: "$2.99", flairs: ["fire", "lightning", "fireworks", "butterfly"] },
+    { id: "fpack1", label: "Flair Pack 1", price: "$1.49", flairs: ["hearts", "coinshower", "rainbow", "snow"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$1.49", flairs: ["fire", "lightning", "fireworks", "butterfly"] },
   ];
   const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
@@ -6891,7 +6904,10 @@
   }
   achTier("Collector", "Avatar fan", (n) => `Own ${n} avatars from the machine`, () => ownedNonDefaultAvatars().length, [[5, 20], [25, 60], [75, 150]]);
   achTier("Collector", "Ultra lucky", (n) => `Own ${n} ultra-rare avatar${n > 1 ? "s" : ""}`, () => ownedNonDefaultAvatars().filter((a) => AVATAR_TIERS[a] === "ultra").length, [[1, 50], [5, 150]]);
-  achTier("Collector", "Object spotter", (n) => `See ${n} different objects in rounds`, () => Object.keys((myProfile.seenObjects) || {}).length, [[25, 20], [75, 60], [OBJECTS.length, 200]]);
+  // CHECK THESE TARGETS whenever objects/avatars/packs are added: Object spotter's top tier is "every normal object"
+  // (OBJECTS.length, counted from the normal objects only so seasonal ones don't skip ahead); Combo hunter's top
+  // tier should stay well under the number of possible pairs (about 3,700 for normal objects alone, about 17,000 with every seasonal pack).
+  achTier("Collector", "Object spotter", (n) => `See ${n} different objects in rounds`, () => OBJECTS.filter((o) => ((myProfile.seenObjects) || {})[o.id]).length, [[25, 20], [75, 60], [OBJECTS.length, 200]]);
   achTier("Collector", "Combo hunter", (n) => `See ${n} different item combinations`, () => Object.keys((myProfile.seenCombos) || {}).length, [[50, 20], [250, 60], [1000, 200]]);
   achTier("Accuracy", "Spot on", (n) => `Land ${n} spot-on guess${n > 1 ? "es" : ""}`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]]);
   achTier("Accuracy", "Perfect", (n) => `Guess exactly right ${n} time${n > 1 ? "s" : ""}`, ACH_STAT("perfects"), [[1, 75], [5, 250]]);
@@ -7295,6 +7311,22 @@
   document.getElementById("debug-reset-holiday-btn").addEventListener("click", async () => {
     await update(ref(db, `profiles/${deviceId}`), { holidayPacks: {} });
   });
+  // Debug helpers for trying out coin values (the panel is hidden in release builds).
+  const dbgUpdate = (patch) => update(ref(db, `profiles/${deviceId}`), patch);
+  document.querySelectorAll("[data-dbg-coins]").forEach((btn) => btn.addEventListener("click", async () => {
+    const n = parseInt(btn.dataset.dbgCoins, 10);
+    if (n < 0) await dbgUpdate({ coins: 0 }); else await awardCoinsForGameEnd(n);
+  }));
+  document.getElementById("debug-reset-ads-btn").addEventListener("click", () => dbgUpdate({ adsWatchedCount: 0, adsWatchedDate: null }));
+  document.getElementById("debug-reset-awards-btn").addEventListener("click", () => dbgUpdate({ achClaimed: {} }));
+  document.getElementById("debug-reset-seen-btn").addEventListener("click", () => dbgUpdate({ seenObjects: {}, seenCombos: {} }));
+  document.getElementById("debug-reset-boards-btn").addEventListener("click", () => dbgUpdate({ boardPacks: {}, "cosmetics/owned/boards": {}, "cosmetics/equipped/board": "none" }));
+  document.getElementById("debug-reset-backgrounds-btn").addEventListener("click", () => dbgUpdate({ backgroundPacks: {}, "cosmetics/owned/backgrounds": {}, "cosmetics/equipped/background": "none" }));
+  document.getElementById("debug-reset-all-cosm-btn").addEventListener("click", () => dbgUpdate({
+    flairPacks: {}, emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS], boardPacks: {}, backgroundPacks: {}, holidayPacks: {}, hostUnlocked: false,
+    "cosmetics/owned": { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {}, boards: {} },
+    "cosmetics/equipped/effects": "classic", "cosmetics/equipped/background": "none", "cosmetics/equipped/board": "none",
+  }));
 
   async function copyTextToClipboard(text) {
     try {
@@ -7384,7 +7416,7 @@
     // even open, so this part doesn't depend on isHost like the rest below.
     const shopUnlocked = !!myProfile.hostUnlocked;
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
-    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $9.99 · One time";
+    hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $4.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
     homeCreateLockEl.hidden = shopUnlocked;
 
@@ -7429,7 +7461,7 @@
   async function confirmAndPurchaseHostUnlock() {
     if (myProfile.hostUnlocked) return true;
     const bought = await showFakePurchase({
-      icon: "\u{1F451}", title: "Host Party", price: "$9.99 · One time",
+      icon: "\u{1F451}", title: "Host Party", price: "$4.99 · One time",
       desc: "Host unlimited games with friends, plus 500 bonus coins.",
     });
     if (!bought) return false;
@@ -7455,9 +7487,9 @@
     cards.push({ id: "sampler", title: SAMPLER_PACK.name,
       desc: "One favourite from every pack, all year round." + (season.length ? "" : " Free this month."), tag: "MIX", has: !!owned.sampler });
     cards.push({ id: "boards", title: "Question Board Pack 1",
-      desc: "Chalkboard, whiteboard and stage curtains for your questions, with writing, erasing and curtain animations. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack1 });
+      desc: "Chalkboard, whiteboard, stage curtains and typewriter for your questions, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack1 });
     cards.push({ id: "boards2", title: "Question Board Pack 2",
-      desc: "Computer terminal, old TV, typewriter, phone chat and split-flap sign, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack2 });
+      desc: "Computer terminal, old TV, phone chat and split-flap sign, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack2 });
     cards.push({ id: "boards3", title: "Question Board Pack 3",
       desc: "Letterboard, neon sign, sand writing and a parchment scroll, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack3 });
     el.innerHTML = cards.map((c) => {
@@ -7467,12 +7499,12 @@
         <div class="tp-badge">${look[0]}</div>
         <div class="tp-title">${c.title}</div>
         <p class="tp-desc">${c.desc}</p>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : "$1.99") + " · Unlock"}</button>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$1.99" : "$1.49")) + " · Unlock"}</button>
       </div>`;
     }).join("");
   }
   const BOARD_PACK_NAME = "Question Board Packs";
-  const BOARD_PACK_PRICE = "$2.99";
+  const BOARD_PACK_PRICE = "$1.99";
   const BOARD_SHOP_PACKS = { boards: "boardpack1", boards2: "boardpack2", boards3: "boardpack3" };
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
