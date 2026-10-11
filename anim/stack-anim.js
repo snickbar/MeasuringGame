@@ -408,8 +408,15 @@ export function createStackAnimation(container, options = {}) {
   // ---- Pictures: each is turned so the object's length runs up and down ----
   const pics = new Map();
   function loadPicture(o) {
-    if (pics.has(o.id)) return pics.get(o.id).promise;
-    const entry = {};
+    const url = imageUrl(o);
+    const have = pics.get(o.id);
+    if (have && have.url === url) return have.promise;
+    if (have) {
+      // The same object came back with a different picture (an item with two looks): drop what was built from the old one.
+      pics.delete(o.id);
+      for (const k of [o.id, o.id + ':m']) { poseCache.delete(k); spriteCache.delete(k); }
+    }
+    const entry = { url };
     entry.promise = new Promise((resolve, reject) => {
       const im = new Image();
       im.onload = () => {
@@ -417,7 +424,7 @@ export function createStackAnimation(container, options = {}) {
         resolve(entry);
       };
       im.onerror = () => reject(new Error('Could not load the picture for ' + o.id));
-      im.src = imageUrl(o);
+      im.src = url;
     });
     pics.set(o.id, entry);
     return entry.promise;
