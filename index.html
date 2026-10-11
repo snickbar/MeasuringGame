@@ -840,6 +840,17 @@
   .fake-ad-body { font-size: 30px; font-weight: 700; text-align: center; padding: 0 24px; }
   .fake-ad-close { width: auto; min-width: 160px; margin: 0; font-family: inherit; font-size: 20px; font-weight: 700; padding: 12px 36px; border: none; border-radius: 12px; background: #7bce5a; color: #123; }
   .fake-ad-close:disabled { opacity: .35; }
+  #cosm-pv-overlay { position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); padding: 20px; }
+  .cosm-pv-card { width: 100%; max-width: 340px; box-sizing: border-box; background: #fffaf0; border-radius: 22px; padding: 14px 14px 16px; text-align: center; box-shadow: 0 14px 34px rgba(0,0,0,.4); animation: popIn 240ms cubic-bezier(.34,1.56,.64,1); }
+  .cosm-pv-title { margin: 0 0 10px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #000; text-shadow: none; }
+  .cosm-pv-host { display: flex; width: 100%; }
+  .cosm-pv-host .question-prompt { flex: 1; width: 100%; }
+  .cosm-pv-btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+  .cosm-pv-btns button { width: auto; margin: 0; padding: 8px 18px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; border: 2px solid #d9c3a3; border-radius: 10px; background: #fff; color: #5a4a3a; }
+  .cosm-pv-bg { position: relative; height: 290px; border-radius: 14px; overflow: hidden; background-size: cover; background-position: center; border: 2px solid #d9c3a3; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; box-sizing: border-box; }
+  .cosm-pv-bg .mk-q { background: url(icons/board-paper.webp) center / 100% 100% no-repeat; padding: 22px 22px 26px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #3a2a1a; }
+  .cosm-pv-bg .mk-row { display: flex; gap: 8px; }
+  .cosm-pv-bg .mk-chip { flex: 1; background: rgba(255,250,240,.95); border-radius: 12px; padding: 10px 6px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #5a4a3a; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
   #fake-purchase-overlay {
     position: fixed; inset: 0; z-index: 2100; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); padding: 20px;
@@ -4072,6 +4083,82 @@
     const now = equippedBackground();
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/background": now === id ? "none" : id });
   }
+  // ---- Cosmetics previews: a small pop-up window (not full screen) showing a background, or a question board in action ----
+  function cosmPreviewShell(title, bodyNode) {
+    const ov = document.createElement("div");
+    ov.id = "cosm-pv-overlay";
+    ov.innerHTML = `<div class="cosm-pv-card"><h3 class="cosm-pv-title"></h3><div class="cosm-pv-body"></div><div class="cosm-pv-btns"></div></div>`;
+    ov.querySelector(".cosm-pv-title").textContent = title;
+    ov.querySelector(".cosm-pv-body").appendChild(bodyNode);
+    document.body.appendChild(ov);
+    return ov;
+  }
+  function openBackgroundPreview(id, label) {
+    if (document.getElementById("cosm-pv-overlay")) return;
+    const bg = document.createElement("div");
+    bg.className = "cosm-pv-bg";
+    bg.style.backgroundColor = getComputedStyle(document.body).backgroundColor;
+    if (id !== "none") bg.style.backgroundImage = `url('${backgroundUrl(id)}')`;
+    bg.innerHTML = `<div class="mk-q">How many playing cards long is a canoe?</div><div class="mk-row"><div class="mk-chip">Player 1</div><div class="mk-chip">Player 2</div><div class="mk-chip">Player 3</div></div>`;
+    const ov = cosmPreviewShell(label, bg);
+    const close = document.createElement("button");
+    close.type = "button"; close.textContent = "Close";
+    close.addEventListener("click", () => ov.remove());
+    ov.querySelector(".cosm-pv-btns").appendChild(close);
+    ov.addEventListener("click", (e) => { if (e.target === ov) ov.remove(); });
+  }
+  // The real question card is borrowed for the preview (so every board animates exactly as in a game) and put back on close.
+  function openBoardPreview(id, label) {
+    if (document.getElementById("cosm-pv-overlay")) return;
+    const saved = { parent: qPromptEl.parentNode, next: qPromptEl.nextSibling, txt: questionPromptTextEl.dataset.txt || "",
+      ans: questionAnswerLineEl.innerHTML, ansDisp: questionAnswerLineEl.style.display };
+    const host = document.createElement("div");
+    host.className = "cosm-pv-host";
+    const ov = cosmPreviewShell(label, host);
+    host.appendChild(qPromptEl);
+    const SAMPLE = "How many playing cards long is a canoe?";
+    let token = 0, timers = [];
+    const later = (ms, fn) => { const my = token; timers.push(setTimeout(() => { if (my === token) fn(); }, ms)); };
+    const reset = () => {
+      token++; timers.forEach(clearTimeout); timers = [];
+      qClearing = false;
+      setPromptText("", false);
+      questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = "";
+    };
+    const play = () => {
+      reset();
+      applyBoard(id);
+      later(250, () => setPromptText(SAMPLE, true));
+      later(3400, () => {
+        const t0 = performance.now(), target = 54.23;
+        const step = () => {
+          const k = Math.min(1, (performance.now() - t0) / 1600), e = 1 - Math.pow(1 - k, 3);
+          setAnswerLineValue((target * e).toFixed(2));
+          if (k < 1) later(60, step);
+        };
+        step();
+      });
+      later(7000, () => clearBoard());
+      later(9800, play);
+    };
+    const replay = document.createElement("button");
+    replay.type = "button"; replay.textContent = "Replay";
+    replay.addEventListener("click", play);
+    const close = document.createElement("button");
+    close.type = "button"; close.textContent = "Close";
+    const done = () => {
+      reset();
+      saved.parent.insertBefore(qPromptEl, saved.next);
+      applyBoard(equippedBoard());
+      if (saved.txt) { setPromptText(saved.txt, false); questionAnswerLineEl.innerHTML = saved.ans; questionAnswerLineEl.style.display = saved.ansDisp; }
+      ov.remove();
+    };
+    close.addEventListener("click", done);
+    ov.addEventListener("click", (e) => { if (e.target === ov) done(); });
+    const btns = ov.querySelector(".cosm-pv-btns");
+    btns.appendChild(replay); btns.appendChild(close);
+    play();
+  }
   function renderBackgroundRows(container) {
     if (!container) return;
     const equipped = equippedBackground();
@@ -4082,7 +4169,7 @@
     container.appendChild(label);
     container.appendChild(cosmRow({
       leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Plain", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onEquip: () => equipBackground(equipped),
+      equipped: equipped === "none", onPreview: () => openBackgroundPreview("none", "Plain"), onEquip: () => equipBackground(equipped),
     }));
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
@@ -4094,7 +4181,7 @@
       pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-bg-pic" src="${backgroundUrl(b.id)}" alt="" loading="lazy">`, name: b.label,
         owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
-        onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
+        onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
       })));
     });
   }
@@ -4164,7 +4251,7 @@
     container.appendChild(label);
     container.appendChild(cosmRow({
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onEquip: () => equipBoard(equipped),
+      equipped: equipped === "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(equipped),
     }));
     BOARD_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
@@ -4175,7 +4262,7 @@
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
         owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id,
-        onEquip: () => equipBoard(b.id), onBuy: () => buyBoardWithCoins(b),
+        onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id), onBuy: () => buyBoardWithCoins(b),
       })));
     });
   }
@@ -5458,7 +5545,7 @@
   qBodyEl.appendChild(questionPromptTextEl);
   qBodyEl.appendChild(questionAnswerLineEl);
   const SB_DEFS = {
-    terminal: { img: "icons/bd-terminal-kb.webp", ar: 746 / 736, box: [14, 11, 14, 42] },
+    terminal: { img: "icons/bd-terminal-kb.webp", ar: 760 / 671, box: [14, 11.5, 14, 35.5] },
     tv: { img: "icons/bd-tv-dark.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5], fmax: 23 },
     typewriter: { img: "icons/bd-typewriter.webp", ar: 760 / 702, box: [22.9, 4, 22.8, 33.6] },
     letterboard: { img: "icons/bd-letterboard.webp", ar: 760 / 574, box: [9, 12, 9, 14], fmax: 25 },
