@@ -8032,6 +8032,7 @@
     const key = `${data.round}:${data.animStartAt}`;
     if (animPlayKey === key) return;
     animPlayKey = key;
+    clearReactionBubbles();
     const token = ++animToken;
     const pair = questionObjects(data.currentQuestion);
     const fail = (why) => {
@@ -8418,12 +8419,19 @@
     }
   }
 
+  // Rapid tapping used to skip whole screens (the round summary especially), because the
+  // next button appears under the finger the moment the last screen changes. Every screen
+  // change and every accepted click starts a short window where those buttons are ignored.
+  let navGuardAt = 0;
+  const NAV_GUARD_MS = 1100;
+  const navBlocked = () => nowMs() - navGuardAt < NAV_GUARD_MS;
   revealNextBtn.addEventListener("click", () => {
     if (revealAnimating) return;
+    navGuardAt = nowMs();
     advanceReveal(currentRoomCode);
   });
 
-  showSummaryBtn.addEventListener("click", () => { cancelRevealEffects(); goToSummary(currentRoomCode); });
+  showSummaryBtn.addEventListener("click", () => { if (navBlocked()) return; navGuardAt = nowMs(); cancelRevealEffects(); goToSummary(currentRoomCode); });
 
   // Live in-HUD auto-mode toggle — separate from the lobby's pre-game setting,
   // this one stays editable mid-game (no round-lock) so the host can flip
@@ -8474,7 +8482,7 @@
     advanceAfterSummary(roomCode).finally(() => { transitionInFlight = false; });
   }
 
-  nextRoundBtn.addEventListener("click", () => advanceAfterSummary(currentRoomCode));
+  nextRoundBtn.addEventListener("click", () => { if (navBlocked()) return; navGuardAt = nowMs(); advanceAfterSummary(currentRoomCode); });
 
   async function advanceAfterSummary(roomCode) {
     const nextRound = (roomState.round || 0) + 1;
@@ -8824,9 +8832,13 @@
   // One reaction per player at a time: a new one replaces the one still showing.
   const RX_STAGE = 96;          // px; the picture itself takes the middle 60%
   const rxShowing = {};         // playerId -> element
+  // A reaction sent just before the stacking animation starts must not keep playing over it.
+  function clearReactionBubbles() {
+    document.querySelectorAll(".rx-stage").forEach((el) => el.remove());
+  }
   function renderReactionBubble(r) {
     if (!r) return;
-    if (roomState && roomState.phase === "animation") return; // the cards are hidden during the reveal
+    if (roomState && roomState.phase === "animation") return; // nothing plays over the stacking animation
     playSound("emoji");
     const byId = r.rid && REACTION_BY_ID[r.rid];
     if (byId) r = { ...r, emoji: byId.emoji };
@@ -9205,7 +9217,9 @@
 
     if (isHost) {
       revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
-      showSummaryBtn.style.display = revealIndex >= order.length ? "flex" : "none";
+      const showSum = revealIndex >= order.length;
+      if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
+      showSummaryBtn.style.display = showSum ? "flex" : "none";
     }
   }
 
@@ -9390,6 +9404,7 @@
     if (isHost) {
       const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
       nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
+      if (nextRoundBtn.style.display !== "flex") navGuardAt = nowMs();
       nextRoundBtn.style.display = "flex";
     } else {
       nextRoundBtn.style.display = "none";
@@ -10156,6 +10171,8 @@
     summaryViewEl.classList.toggle("active", phase === "summary");
     countdownViewEl.classList.toggle("active", phase === "countdown");
     if (phase !== lastSeenPhaseForSound) {
+      navGuardAt = nowMs();
+      if (phase === "animation") clearReactionBubbles();
       if (lastSeenPhaseForSound === "reveal") cancelRevealEffects();
       if (phase === "answers") {
         playSound("answers");
