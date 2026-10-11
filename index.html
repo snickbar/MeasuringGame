@@ -8868,7 +8868,6 @@
             else if (entry.isSpotOn) playSound("roundwin");
             if (entry.consecutiveWins >= 2) playSound("streak");
             celebrate(confettiTierFor(entry));
-            spawnTrophyBurst(li);
             flairBurst(li, flairIdFor(entry));
             if (entry.isPerfect) {
               perfectFlashEl.classList.remove("flash");
@@ -8886,6 +8885,11 @@
               });
             }
             renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, idx + 1));
+            // The trophy lands on the winner's medal spot in the score column (once the column has settled), not on their answer card.
+            if (isWinner) setTimeout(() => {
+              const medalEl = scoreColEl.querySelector(`[data-id="${entry.playerId}"] .medal`);
+              spawnTrophyBurst(medalEl, undefined, true);
+            }, 450);
             resolve();
           }, 350);
         }, drawMs);
@@ -9685,13 +9689,13 @@
     requestAnimationFrame(frame);
   }
 
-  function spawnTrophyBurst(targetEl, iconSrc) {
+  function spawnTrophyBurst(targetEl, iconSrc, centered) {
     if (!targetEl) return;
     const rect = targetEl.getBoundingClientRect();
     const wrap = document.createElement("div");
     wrap.className = "trophy-burst";
-    wrap.style.left = `${rect.right - 24}px`;
-    wrap.style.top = `${rect.top + 6}px`;
+    wrap.style.left = `${centered ? rect.left + rect.width / 2 : rect.right - 24}px`;
+    wrap.style.top = `${centered ? rect.top + rect.height / 2 : rect.top + 6}px`;
     wrap.style.transform = "translate(-50%, -50%)";
     let rays = "";
     for (let i = 0; i < 8; i++) {
