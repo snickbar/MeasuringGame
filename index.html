@@ -946,6 +946,9 @@
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen { position: relative; }
+  /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
+  .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
+  .screen-lock .screen-back-btn { top: 0; right: 12px; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -988,6 +991,10 @@
   .settings-profile-name label { font-size: 13px; color: var(--text-muted); }
   .settings-profile-name input { margin: 0; width: 100%; }
   .settings-profile-hint { font-size: 12px; color: var(--text-muted); }
+  /* the join / host name + avatar screen reuses the profile row: big avatar left, name right (nothing to tap, so no pencil badge) */
+  .name-avatar-row { margin: 6px 0 10px; }
+  #name-avatar-big::after { display: none; }
+  #name-avatar-screen .settings-profile-name label, #name-avatar-screen .settings-profile-hint { color: #000; font-weight: 700; text-align: center; }
   .settings-preset-btn { margin: 20px 0 6px; }
   .settings-preset-hint { text-align: center; }
   #settings-avatar-picker { margin-top: 10px; }
@@ -2525,10 +2532,12 @@
 </div>
 
 <div id="settings-screen" class="screen">
+  <div class="screen-lock">
   <button id="settings-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header fancy-hdr">
     <img class="hdr-badge" src="icons/toolbar-settings.png" alt="">
     <div class="hdr-text"><h1>Settings</h1><span class="hdr-sub">Your profile and game options</span></div>
+  </div>
   </div>
 
   <div class="settings-card" id="settings-profile-card">
@@ -2857,7 +2866,14 @@
     <button id="join-lobby-btn">Join Lobby</button>
   </div>
 
-  <input id="name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" />
+  <div class="settings-profile-row name-avatar-row">
+    <div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div>
+    <div class="settings-profile-name">
+      <label for="name-input">Your name</label>
+      <input id="name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" />
+      <span class="settings-profile-hint">Pick your avatar below</span>
+    </div>
+  </div>
   <div id="name-keyboard" class="custom-kbd"></div>
 
   <div id="avatar-grid"></div>
@@ -2866,6 +2882,7 @@
 </div>
 
 <div id="lobby-screen" class="screen">
+  <div class="screen-lock">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="screen-header fancy-hdr lobby-hdr">
     <img class="hdr-badge" src="icons/toolbar-home.png" alt="">
@@ -2893,6 +2910,7 @@
   </div>
   <p id="lobby-player-count" class="lobby-player-count"></p>
   <p id="lobby-status"></p>
+  </div>
   <ul id="player-list"></ul>
 </div>
 
@@ -5440,6 +5458,7 @@
       if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
     }
     avatarGridEl.innerHTML = "";
+    document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar);
     // Only avatars the player has unlocked - the full catalog, locked ones
     // included, is only ever shown via the Shop's "View All Avatars".
     avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)).forEach((a) => {
@@ -6910,7 +6929,12 @@
     const isFirstRender = renderedPlayerListIds.size === 0;
     const newIds = new Set();
     playerList.innerHTML = "";
-    Object.entries(currentPlayers).forEach(([id, p]) => {
+    // You first, then everyone else in the order they joined (bots included).
+    const lobbyOrder = Object.entries(currentPlayers).sort(([ia, a], [ib, b]) =>
+      (ib === currentPlayerId) - (ia === currentPlayerId)
+      || ((a.joinedAt || Infinity) - (b.joinedAt || Infinity) || 0)
+      || ia.localeCompare(ib));
+    lobbyOrder.forEach(([id, p]) => {
       newIds.add(id);
       const li = document.createElement("li");
       if (!isFirstRender && !renderedPlayerListIds.has(id)) {
