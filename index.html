@@ -4771,6 +4771,13 @@
     return /^[aeiou]/i.test(obj.name) ? "an" : "a";
   }
 
+  // Items with two pictures (items/<id>.webp and items/<id>-2.webp) show one or the other at random each
+  // question. The host picks (stored on the question) so every player sees the same one. To add another
+  // item, drop its second picture in as items/<id>-2.webp and add its id here.
+  const ALT_ART_IDS = new Set(["donut"]);
+  function withAltArt(o, variant) {
+    return ALT_ART_IDS.has(o.id) && variant === 1 ? { ...o, image: o.image.replace(/\.webp$/, "-2.webp") } : o;
+  }
   function generateQuestion() {
     const pool = poolFor(roomState.activePacks, roomState.seasonPacks);
     const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair(pool) : pickRandomPair(pool);
@@ -4780,6 +4787,8 @@
       unitName: unit.name,
       targetName: target.name,
       answer: target.mm / unit.mm,
+      unitArt: Math.random() < 0.5 ? 0 : 1,
+      targetArt: Math.random() < 0.5 ? 0 : 1,
       prompt: `How many ${unit.plural} long is ${[articleFor(target), target.name].filter(Boolean).join(" ")}?`,
     };
   }
@@ -7743,7 +7752,7 @@
     if (!q || !q.unitId || !q.targetId || q.unitId === q.targetId) return null;
     const a = OBJECT_BY_ID.get(q.unitId);
     const b = OBJECT_BY_ID.get(q.targetId);
-    return a && b && a.image && b.image ? [a, b] : null;
+    return a && b && a.image && b.image ? [withAltArt(a, q.unitArt), withAltArt(b, q.targetArt)] : null;
   }
   // ---- Animation sounds: the engine announces cues; this plays them (Web Audio, so rapid
   // ticking stays light). Respects the player's sound setting. ----
