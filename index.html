@@ -456,11 +456,12 @@
   .cosm-unequip-all:active { transform: scale(0.96); }
   .cosm-list { display: flex; flex-direction: column; gap: 8px; }
   /* Category headings sit on top of the shop's background pictures, so they get a faint box and bold black text to stay readable. */
-  .cosm-group-label { width: 66.667%; box-sizing: border-box; margin: 12px auto 0; padding: 5px 10px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; color: #000; background: rgba(255,255,255,.62); border-radius: 12px; }
-  .cosm-pack-head > div:first-child { padding: 4px 10px; background: rgba(255,255,255,.62); border-radius: 12px; }
+  .cosm-group-label { display: flex; align-items: center; justify-content: center; width: 66.667%; min-height: 46px; box-sizing: border-box; margin: 14px auto 0; padding: 5px 10px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; color: #000; background: rgba(255,255,255,.62); border-radius: 12px; }
+  .cosm-pack-head > div:first-child { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 66.667%; min-height: 46px; box-sizing: border-box; padding: 4px 10px; text-align: center; background: rgba(255,255,255,.62); border-radius: 12px; }
+  .cosm-pack-head .cosm-unlock { width: 66.667%; }
   .cosm-pack-head .cosm-pack-title, .cosm-pack-head .cosm-pack-sub { color: #000; }
   .cosm-pack-head .cosm-pack-title { font-weight: 800; }
-  .cosm-pack-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+  .cosm-pack-head { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 14px; }
   .cosm-pack-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
   .cosm-pack-sub { font-size: 12px; color: var(--text-muted); }
   .cosm-row {
@@ -2278,6 +2279,32 @@
   #kick-modal button, #paused-overlay button { width: auto; margin-top: 12px; }
   #kick-timer { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; margin-top: 8px; }
   #kick-timer.low { color: #ffe066; animation: pulse 1s infinite; }
+
+  /* ---- House style for text that sits directly on a background: bold black, centered, in a faint pill. ----
+     One width per screen (sized for that screen's longest label) so every pill there matches. */
+  .shop-section-label, #gacha-collection-status, .collection-tier-title, .items-letter-title, .ach-cat-title,
+  #preset-settings-screen > h3, #lobby-player-count, .countdown-label, #summary-view > h3 {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px;
+    box-sizing: border-box; width: var(--pill-w, 66.667%); max-width: 100%; min-height: 40px;
+    margin-left: auto; margin-right: auto; padding: 5px 14px; text-align: center;
+    font-family: 'Fredoka', sans-serif; font-weight: 800; color: #000; text-shadow: none;
+    background: rgba(255,255,255,.62); border: 0; border-radius: 12px;
+  }
+  .shop-section-label { --pill-w: 66.667%; margin-top: 16px; margin-bottom: 0; font-size: 14px; }
+  #gacha-collection-status { --pill-w: 66.667%; margin-top: 8px; font-size: 15px; }
+  .collection-tier-title { --pill-w: 300px; margin-bottom: 8px; font-size: 14px; }
+  .collection-tier-count { color: #000; opacity: 1; font-weight: 700; }
+  .items-letter-title { --pill-w: 300px; margin-bottom: 8px; padding-bottom: 5px; font-size: 14px; }
+  .ach-cat-title { --pill-w: 66.667%; margin: 18px auto 8px; font-size: 15px; }
+  .ach-cat-title::after { display: none; }
+  #preset-settings-screen > h3 { --pill-w: 320px; margin-top: 12px; margin-bottom: 8px; font-size: 17px; }
+  #lobby-player-count { --pill-w: 320px; margin-top: 10px; margin-bottom: 8px; font-size: 17px; }
+  .countdown-label { --pill-w: 300px; padding-top: 7px; padding-bottom: 7px; font-size: 18px; }
+  #summary-view > h3 { --pill-w: 300px; margin-top: 8px; margin-bottom: 8px; font-size: 17px; }
+
+  /* Objects not found yet: a paper-like diagonal-stripe fill instead of see-through, with readable text. */
+  .items-row.locked { background: repeating-linear-gradient(135deg, #e9e0cf 0, #e9e0cf 7px, #f1eadb 7px, #f1eadb 14px); border-color: #cdbd9f; }
+  .items-row.locked .items-name { opacity: 1; color: #6b5a45; font-weight: 800; }
 </style>
 </head>
 <body>
@@ -2470,8 +2497,6 @@
       </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
-      <p id="cosm-flair-desc" class="cosm-sub cosm-sub-desc" data-sub="flairs" hidden>Your flair plays around your card when you win a round, and everyone in the room sees it.</p>
-      <p id="cosm-bg-desc" class="cosm-sub cosm-sub-desc" data-sub="backgrounds" hidden>A picture behind every screen except Home. Only you see it. Tap the equipped one again to go back to plain.</p>
     </div>
     <div id="cosm-pane-emojis" class="cosm-pane">
       <div id="cosm-emojis-list" class="cosm-list"></div>
