@@ -5818,7 +5818,9 @@
       build(sb) {
         const wv = document.createElement("div");
         wv.style.cssText = "position:absolute;inset:0;-webkit-mask:url(icons/bd-sand.webp) center/100% 100% no-repeat;mask:url(icons/bd-sand.webp) center/100% 100% no-repeat;background:linear-gradient(#52bfc0 0 80%,#e9fbfa 90%,rgba(255,255,255,0));transform:translateY(-110%)";
-        sb.stage.appendChild(wv); sb.wave = wv;
+        const wc = document.createElement("div"); // clips the wave to the card so it never shows above it
+        wc.style.cssText = "position:absolute;inset:0;overflow:hidden;pointer-events:none";
+        wc.appendChild(wv); sb.stage.appendChild(wc); sb.wave = wv;
         const st = document.createElement("img");
         st.src = "icons/bd-stick.webp"; st.alt = "";
         st.style.cssText = "position:absolute;left:0;top:0;width:78px;pointer-events:none;z-index:4;transform-origin:3px 8px;will-change:transform";
@@ -5830,6 +5832,7 @@
         sb.chars.forEach((c, i) => c.classList.toggle("on", E >= 0 ? E < 700 : i < nn));
         const wp = E < 0 ? 0 : E < 700 ? sbEase(E / 700) : E < 850 ? 1 : 1 - sbEase((E - 850) / 700);
         sb.wave.style.transform = "translateY(" + (-110 + 110 * wp) + "%)";
+        sb.wave.style.visibility = wp > 0 ? "visible" : "hidden";
         qBodyEl.style.opacity = E < 0 ? "" : String(1 - sbEase((E - 250) / 400));
         const cr = qPromptEl.getBoundingClientRect();
         let tx, ty, rot = 0;
