@@ -432,7 +432,14 @@
   .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; text-shadow: none; }
   .host-unlock-shop-box.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; }
   .emoji-pack-preview { width: 70px; flex-shrink: 0; font-size: 20px; line-height: 1.4; text-align: center; }
-  #shop-tabs { display: flex; gap: 6px; margin: 10px 56px 4px 0; flex-shrink: 0; height: 52px; }
+  #shop-tabs { display: flex; margin: 10px 56px 4px 0; flex-shrink: 0; }
+  #shop-tabs .shop-strip { flex: 1; min-width: 0; display: flex; }
+  #shop-tabs .shop-strip[hidden] { display: none; }
+  #shop-tabs .shop-strip { flex-wrap: wrap; row-gap: 4px; }
+  #shop-tabs .shop-strip .cosm-tab-btn { flex: 0 0 calc((100% - 8px) / 3); }
+  .shop-subpanel { padding-top: 6px; }
+  #toolbar-cosmetics-btn { position: relative; }
+  .tb-cosm-mark { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 20px; line-height: 1; pointer-events: none; }
   .shop-tab-btn {
     position: relative; flex: 1; width: auto; height: 100%; margin: 0; padding: 0; border: none; background: none;
     display: flex; align-items: center; justify-content: center; opacity: .65;
@@ -2587,6 +2594,7 @@
   <div id="toolbar-right-group">
     <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Stats"><img src="icons/toolbar-stats.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
+    <button id="toolbar-cosmetics-btn" class="toolbar-badge-btn" type="button" aria-label="Cosmetics"><img src="icons/toolbar-shop.png" alt="" style="filter:hue-rotate(250deg)"><span class="tb-cosm-mark" aria-hidden="true">&#127912;</span></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.png" alt=""></button>
   </div>
 </div>
@@ -2651,9 +2659,18 @@
 <div id="gacha-screen" class="screen">
   <button id="gacha-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="shop-tabs">
-    <button type="button" class="shop-tab-btn" data-tab="coins"><img src="icons/shop-tab-coins.png" alt="Purchases"><span class="shop-tab-text fit-text">Purchases</span></button>
-    <button type="button" class="shop-tab-btn" data-tab="avatars"><img src="icons/shop-tab-avatars.png" alt="Avatars"></button>
-    <button type="button" class="shop-tab-btn" data-tab="cosmetics"><img src="icons/shop-tab-cosmetics.png" alt="Cosmetics"></button>
+    <div class="cosm-tabs shop-strip" id="shop-strip-shop" role="group" aria-label="Shop">
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="coins">Coins</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="hosting">Hosting</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="packs">Packs</button>
+    </div>
+    <div class="cosm-tabs shop-strip" id="shop-strip-cosm" role="group" aria-label="Cosmetics" hidden>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="avatars">Avatars</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="emojis">Reactions</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="flairs">Flairs</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="boards">Boards</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="backgrounds">Backgrounds</button>
+    </div>
   </div>
 
   <div id="shop-tab-coins" class="shop-tab-panel">
@@ -2661,18 +2678,6 @@
     <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
 
     <div id="coin-acquire-panel">
-      <div id="host-unlock-shop-box" class="host-unlock-shop-box">
-        <span class="host-unlock-ribbon">&#128081; UNLOCK TO HOST</span>
-        <div class="host-unlock-top-row">
-          <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
-          <div class="host-unlock-text">
-            <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
-            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
-          </div>
-        </div>
-        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $4.99 &middot; One time</button>
-      </div>
-
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
           <span class="shop-hero-badge">&#127916; Free</span>
@@ -2707,6 +2712,28 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <div id="shop-tab-hosting" class="shop-tab-panel">
+    <div class="shop-subpanel">
+      <div id="host-unlock-shop-box" class="host-unlock-shop-box">
+        <span class="host-unlock-ribbon">&#128081; UNLOCK TO HOST</span>
+        <div class="host-unlock-top-row">
+          <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
+          <div class="host-unlock-text">
+            <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
+            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
+          </div>
+        </div>
+        <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $4.99 &middot; One time</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="shop-tab-packs" class="shop-tab-panel">
+    <div class="shop-subpanel">
       <section class="shop-box"><h3 class="shop-box-title">Monthly object packs</h3><div id="themed-pack-shop"></div></section>
       <section class="shop-box"><h3 class="shop-box-title">Question board packs</h3><div id="board-pack-shop"></div></section>
       <section class="shop-box"><h3 class="shop-box-title">Reaction packs</h3><div id="pack-row"></div></section>
@@ -2759,12 +2786,6 @@
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
     <div class="cosm-sticky-header">
-      <div class="cosm-tabs" role="group" aria-label="Cosmetics">
-        <button type="button" class="cosm-tab-btn fit-text active" data-sub="emojis"><span class="cosm-tab-icon" aria-hidden="true">👍</span>Reactions</button>
-        <button type="button" class="cosm-tab-btn fit-text" data-sub="flairs"><span class="cosm-tab-icon" aria-hidden="true">⭐</span>Flairs</button>
-        <button type="button" class="cosm-tab-btn fit-text" data-sub="backgrounds"><span class="cosm-tab-icon" aria-hidden="true">🖼️</span>Backgrounds</button>
-        <button type="button" class="cosm-tab-btn fit-text" data-sub="boards"><span class="cosm-tab-icon" aria-hidden="true">🎭</span>Boards</button>
-      </div>
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
       <div id="cosm-random-slot"></div>
@@ -3906,11 +3927,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // The active tab's "Equip Random" row lives in the sticky header (not the scrolling list
   // below it), so it stays put while that tab's items scroll underneath it.
+  let cosmSub = "emojis";
   function renderCosmRandomSlot() {
     const slot = document.getElementById("cosm-random-slot");
     if (!slot) return;
-    const activeTab = document.querySelector(".cosm-tab-btn.active");
-    const sub = activeTab ? activeTab.dataset.sub : "emojis";
+    const sub = cosmSub;
     const cat = sub === "emojis" ? "reactions" : sub;
     const subText = cat === "reactions" ? `${ownedReactionSlots()} random reactions you own each game`
       : cat === "flairs" ? "A random flair you own each game"
@@ -5737,6 +5758,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
   const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
+  const toolbarCosmeticsBtn = document.getElementById("toolbar-cosmetics-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const settingsHowtoBtn = document.getElementById("settings-howto-btn");
   document.getElementById("settings-privacy-btn").addEventListener("click", () => window.open("/privacy.html", "_blank", "noopener"));
@@ -6032,15 +6054,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await update(ref(db, `profiles/${deviceId}`), { activeEmojis: ["none"], activeReactions: ["none"] });
   });
 
-  document.querySelectorAll(".cosm-tab-btn").forEach((btn) => btn.addEventListener("click", () => {
-    document.querySelectorAll(".cosm-tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
-    document.getElementById("cosm-pane-emojis").hidden = btn.dataset.sub !== "emojis";
-    document.getElementById("cosm-pane-flairs").hidden = btn.dataset.sub !== "flairs";
-    document.getElementById("cosm-pane-backgrounds").hidden = btn.dataset.sub !== "backgrounds";
-    document.getElementById("cosm-pane-boards").hidden = btn.dataset.sub !== "boards";
-    document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== btn.dataset.sub; });
+  // Shows one Cosmetics list (reactions, flairs, backgrounds or boards) and its header bits.
+  function setCosmSub(sub) {
+    cosmSub = sub;
+    document.getElementById("cosm-pane-emojis").hidden = sub !== "emojis";
+    document.getElementById("cosm-pane-flairs").hidden = sub !== "flairs";
+    document.getElementById("cosm-pane-backgrounds").hidden = sub !== "backgrounds";
+    document.getElementById("cosm-pane-boards").hidden = sub !== "boards";
+    document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== sub; });
     renderCosmRandomSlot();
-  }));
+  }
   const presetHostModeControlsEl = document.getElementById("preset-host-mode-controls");
   const presetSettingTimerInput = document.getElementById("preset-setting-timer");
   const presetSettingRoundsInput = document.getElementById("preset-setting-rounds");
@@ -8127,13 +8150,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllButtonText);
   window.addEventListener("resize", fitAllButtonText);
 
+  // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
+  const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds"];
   function setShopTab(tab) {
-    document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.tab === tab);
-    });
-    document.querySelectorAll(".shop-tab-panel").forEach((panel) => {
-      panel.classList.toggle("active", panel.id === `shop-tab-${tab}`);
-    });
+    if (tab === "cosmetics") tab = "emojis";
+    if (!SHOP_TABS.includes(tab) && !COSM_TABS.includes(tab)) tab = "coins";
+    const isCosm = COSM_TABS.includes(tab);
+    document.getElementById("shop-strip-shop").hidden = isCosm;
+    document.getElementById("shop-strip-cosm").hidden = !isCosm;
+    document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tab));
+    const panelId = isCosm ? (tab === "avatars" ? "shop-tab-avatars" : "shop-tab-cosmetics") : `shop-tab-${tab}`;
+    document.querySelectorAll(".shop-tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === panelId));
+    if (isCosm && tab !== "avatars") setCosmSub(tab);
     fitGachaScene();
     fitAllButtonText();
   }
@@ -8168,14 +8196,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.body.classList.remove("gacha-pull-lock");
   }
   function openGachaScreen(tab) {
+    // Already showing (say, Shop open and the Cosmetics button tapped): just switch tabs.
+    if (gachaScreen.classList.contains("active")) { setShopTab(tab || "coins"); return; }
     gachaStatusEl.textContent = "";
     resetGachaScene();
     openOverlay(gachaScreen);
-    setShopTab(tab || "avatars");
+    setShopTab(tab || "coins");
   }
   toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
   toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
-  document.querySelectorAll(".shop-tab-btn").forEach((btn) => {
+  toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen("avatars")));
+  document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
   });
 
