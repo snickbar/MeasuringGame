@@ -409,8 +409,19 @@
     box-shadow: 0 2px 4px rgba(0,0,0,.2);
   }
   .host-unlock-top-row { position: relative; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-  .host-unlock-icon { width: 80px; height: 80px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+  .host-unlock-icon { width: 104px; height: 84px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
   .host-unlock-text { flex: 1; min-width: 0; }
+  .host-perks { position: relative; list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .host-perks li { display: block; margin: 0; border: 0; border-image: none; justify-content: flex-start; position: relative; padding: 0 0 0 22px; font-size: 13px; font-weight: 700; line-height: 1.25; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.2); }
+  .host-perks li::before { content: "\2713"; position: absolute; left: 0; top: -1px; width: 16px; height: 16px; border-radius: 50%; background: #fff; color: #e8521f; font-size: 11px; font-weight: 900; line-height: 16px; text-align: center; text-shadow: none; }
+  .host-bonus { position: relative; display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 8px 14px 8px 10px; border-radius: 16px; background: rgba(255,255,255,.92); border: 2px solid #ffd54f; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+  .host-bonus img { width: 52px; height: 56px; flex-shrink: 0; object-fit: contain; }
+  .host-bonus-text { display: flex; flex-direction: column; min-width: 0; color: #4a2800; }
+  .host-bonus-text b { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 24px; line-height: 1; }
+  .host-bonus-text span { margin-top: 2px; font-size: 12px; font-weight: 700; }
+  .host-unlock-shop-box.unlocked .host-perks li { color: #000; text-shadow: none; }
+  .host-unlock-shop-box.unlocked .host-perks li::before { background: #2e7d32; color: #fff; }
+
   .host-unlock-shop-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
   .host-unlock-shop-box p { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.4; color: #fff; }
   .host-unlock-shop-box .coin-pack-buy-btn {
@@ -2721,11 +2732,20 @@
       <div id="host-unlock-shop-box" class="host-unlock-shop-box">
         <span class="host-unlock-ribbon">&#128081; UNLOCK TO HOST</span>
         <div class="host-unlock-top-row">
-          <img class="host-unlock-icon" src="icons/shop-host-unlock.png" alt="">
+          <img class="host-unlock-icon" src="icons/shop-host-crown.webp" alt="">
           <div class="host-unlock-text">
-            <h3 id="host-unlock-shop-title">Host Unlimited Games</h3>
-            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
+            <h3 id="host-unlock-shop-title">Host Party</h3>
+            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends.</p>
           </div>
+        </div>
+        <ul class="host-perks">
+          <li>Host unlimited games, forever</li>
+          <li>Friends join for free with a room code</li>
+          <li>One-time purchase, no subscription</li>
+        </ul>
+        <div class="host-bonus">
+          <img src="icons/shop-host-coins.webp" alt="">
+          <div class="host-bonus-text"><b>+500 coins</b><span>added the moment you unlock</span></div>
         </div>
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $4.99 &middot; One time</button>
       </div>
@@ -9065,7 +9085,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function confirmAndPurchaseHostUnlock() {
     if (myProfile.hostUnlocked) return true;
     const bought = await showFakePurchase({
-      icon: "\u{1F451}", title: "Host Party", price: "$4.99 · One time",
+      icon: "icons/shop-host-crown.webp", title: "Host Party", price: "$4.99 · One time",
       desc: "Host unlimited games with friends, plus 500 bonus coins.",
     });
     if (!bought) return false;
