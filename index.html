@@ -673,8 +673,29 @@
   #monthly-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   #survival-screen.active #survival-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #survival-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
-  .sv-hearts { font-size: 30px; letter-spacing: 6px; margin: 2px 0 6px; color: #e23b3b; -webkit-text-stroke: .8px #4a2c12; }
-  .sv-hearts .off { color: #e7dcc4; }
+  .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
+  .sv-hearts { display: flex; justify-content: center; gap: 8px; }
+  .sv-heart { width: 38px; height: 35px; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
+  .sv-heart.drop { animation: svHeartDrop .5s ease-out; }
+  @keyframes svHeartDrop { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .sv-acc { font-size: 14px; color: #000; }
+  .sv-acc b { font-size: 16px; }
+  .sv-gauge { margin: 12px 4px 4px; }
+  .sv-gauge-bar { position: relative; height: 16px; border-radius: 9px; border: 2px solid #4a2c12; background: linear-gradient(90deg, #e0463c 0 60%, #f3c13a 60% 80%, #4fb85a 80% 100%); }
+  .sv-gauge-line { position: absolute; top: -5px; bottom: -5px; width: 0; border-left: 2px dashed #4a2c12; }
+  .sv-gauge-pin { position: absolute; top: -8px; width: 8px; height: 32px; margin-left: -4px; border-radius: 4px; background: #000; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .sv-gauge-labels { position: relative; height: 16px; margin-top: 4px; font-size: 11px; color: #000; }
+  .sv-gauge-labels span { position: absolute; white-space: nowrap; transform: translateX(-50%); }
+  .sv-crack { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(40,20,10,.22); animation: svDim 1.9s ease-out forwards; }
+  @keyframes svDim { 0% { opacity: 0; } 12% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+  .sv-crack-wrap { position: relative; width: 190px; height: 175px; animation: svPop .5s cubic-bezier(.2,1.5,.4,1) both, svShake .4s .55s linear; }
+  @keyframes svPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  @keyframes svShake { 0%,100% { transform: translateX(0) rotate(0); } 20% { transform: translateX(-6px) rotate(-3deg); } 40% { transform: translateX(6px) rotate(3deg); } 60% { transform: translateX(-4px) rotate(-2deg); } 80% { transform: translateX(4px) rotate(2deg); } }
+  .sv-crack-half { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 4px 4px rgba(74,44,18,.35)); }
+  .sv-crack-half.l { clip-path: polygon(0 0, 50% 0, 44% 22%, 55% 40%, 46% 60%, 54% 78%, 50% 100%, 0 100%); transform-origin: 50% 90%; animation: svSplitL .8s .95s ease-in forwards; }
+  .sv-crack-half.r { clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%, 54% 78%, 46% 60%, 55% 40%, 44% 22%); transform-origin: 50% 90%; animation: svSplitR .8s .95s ease-in forwards; }
+  @keyframes svSplitL { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 100% { transform: translate(-46px,70px) rotate(-26deg); opacity: 0; } }
+  @keyframes svSplitR { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 100% { transform: translate(46px,70px) rotate(26deg); opacity: 0; } }
   #daily-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   .dc-title { margin: 6px 0 2px; font-size: 24px; color: #000; text-shadow: none; }
   .dc-sub { margin: 0 0 12px; font-size: 14px; color: #6b3a05; }
@@ -7703,7 +7724,50 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const survivalBest = () => (myProfile.survival && myProfile.survival.best) || 0;
   function survivalSub() { const b = survivalBest(); return b ? `Your best: ${b} rounds` : "How far can you get?"; }
-  const survivalHeartsHtml = (n) => `<div class="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => (i < n ? "♥" : `<span class="off">♥</span>`)).join("")}</div>`;
+  // Heart picture (drawn here until the real heart art is added): a full red one or an empty cream one.
+  const SV_HEART_PATH = "M50 86 C8 56 0 30 17 14 C31 2 46 11 50 24 C54 11 69 2 83 14 C100 30 92 56 50 86 Z";
+  const svHeartSvg = (full, cls) => `<svg class="${cls || "sv-heart"}" viewBox="-4 -4 108 98" aria-hidden="true"><path d="${SV_HEART_PATH}" fill="${full ? "#e23b3b" : "#efe4cc"}" stroke="#4a2c12" stroke-width="5" stroke-linejoin="round"/>${full ? `<path d="M24 24 C28 17 36 15 41 19" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/><path d="M50 82 C70 66 90 48 90 32" fill="none" stroke="#a82424" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>` : ""}</svg>`;
+  // Running accuracy for the run: every guess so far averaged together (n = how many guesses to count).
+  function svRunAcc(n) {
+    const a = sv.accs.slice(0, n);
+    return a.length ? a.reduce((t, r) => t + roundAccuracy(r.r), 0) / a.length : null;
+  }
+  const svAccHtml = (a) => `Accuracy so far: <b>${a == null ? "-" : Math.round(a) + "%"}</b>`;
+  const survivalHeartsHtml = (n, acc) => `<div class="sv-hud"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < n)).join("")}</div><div class="sv-acc" id="sv-acc">${svAccHtml(acc)}</div></div>`;
+  // The heart that pops up in the middle of the screen when a life is lost, then cracks in half.
+  function svCrackHeart() {
+    const d = document.createElement("div"); d.className = "sv-crack";
+    d.innerHTML = `<div class="sv-crack-wrap">${svHeartSvg(true, "sv-crack-half l")}${svHeartSvg(true, "sv-crack-half r")}</div>`;
+    document.body.appendChild(d);
+    try { playSound("error"); } catch (e) {}
+    setTimeout(() => d.remove(), 1950);
+  }
+  // How safe was that guess? A bar from 0 to 100 % with the line you have to clear and a pin where you landed.
+  function svGaugeHtml(acc) {
+    const a = Math.max(0, Math.min(100, acc)), m = Math.round(a - SURVIVAL_PASS);
+    const msg = m >= 0 ? `Safe by ${m} point${m === 1 ? "" : "s"}` : `${-m} point${m === -1 ? "" : "s"} short`;
+    return `<div class="sv-gauge"><div class="sv-gauge-bar"><span class="sv-gauge-line" style="left:${SURVIVAL_PASS}%"></span><span class="sv-gauge-pin" style="left:${a}%"></span></div>
+      <div class="sv-gauge-labels"><span style="left:${SURVIVAL_PASS / 2}%">Lose a life</span><span style="left:${(SURVIVAL_PASS + 80) / 2}%">Safe</span><span style="left:90%">Great</span></div>
+      <div class="dc-note"><b>${msg}</b></div></div>`;
+  }
+  // Show the result of the round: the card with the gauge, then (if it cost a life) the cracking heart and the hearts update.
+  function svShowResult(m) {
+    if (!sv || sv.resultShown) return; sv.resultShown = true;
+    const q = sv.q, g = sv.g, acc = roundAccuracy(g / q.answer), ok = acc >= SURVIVAL_PASS, over = sv.lives <= 0;
+    const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
+    const host = document.getElementById("sv-result"); if (!host) return;
+    host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${ok ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div>${svGaugeHtml(acc)}</div>`;
+    const skip = document.getElementById("sv-skip");
+    if (skip) { skip.id = "sv-next"; skip.className = "dc-btn"; skip.textContent = over ? "See my score" : "Next round"; }
+    const accEl = document.getElementById("sv-acc"); if (accEl) accEl.innerHTML = svAccHtml(svRunAcc(sv.accs.length));
+    if (sv.lossPending) {
+      sv.lossPending = false; svCrackHeart();
+      setTimeout(() => {
+        const h = document.getElementById("sv-hearts");
+        if (h && sv) { h.innerHTML = Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < sv.lives)).join(""); const hs = h.querySelectorAll(".sv-heart"); if (hs[sv.lives]) hs[sv.lives].classList.add("drop"); }
+      }, 1100);
+    }
+  }
   function openSurvival() {
     const fromHub = soloScreenEl.classList.contains("active");
     sv = { phase: "intro", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 };
@@ -7729,7 +7793,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       survivalStop();
       if (!sv.q) sv.q = survivalNextQuestion();
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives)}
+      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives, svRunAcc(sv.accs.length))}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
@@ -7738,29 +7802,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives)}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button>`;
+      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button>`;
       survivalRunReveal();
       return;
     }
     survivalStop();
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
-      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note">${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note">${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
     survivalLoadBoard();
   }
   async function survivalRunReveal() {
-    const q = sv.q, g = sv.g, over = sv.lives <= 0;
-    const showResult = (m) => {
-      const acc = roundAccuracy(g / q.answer), ok = acc >= SURVIVAL_PASS;
-      const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
-      const host = document.getElementById("sv-result"); if (!host) return;
-      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${ok ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
-      const skip = document.getElementById("sv-skip");
-      if (skip) { skip.id = "sv-next"; skip.className = "dc-btn"; skip.textContent = over ? "See my score" : "Next round"; }
-    };
+    const q = sv.q;
+    const showResult = (m) => svShowResult(m);
     const pair = questionObjects(q);
     if (!pair) { showResult(null); return; }
     try {
@@ -7821,7 +7878,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "sv-submit") {
       const g = parseFloat(sv.input); if (!(g > 0)) return;
       const acc = roundAccuracy(g / sv.q.answer), ok = acc >= SURVIVAL_PASS;
-      sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok;
+      sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok; sv.resultShown = false; sv.lossPending = !ok;
       sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((g / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
       if (ok) sv.survived++; else sv.lives--;
       sv.phase = "reveal"; playSound("pick");
@@ -7830,10 +7887,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "sv-skip") {
       if (svAnim) { try { svAnim.stop(); } catch (err) {} }
-      const q = sv.q, g = sv.g, acc = roundAccuracy(g / q.answer), m = await loadAnimModule();
-      const host = document.getElementById("sv-result");
-      if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${acc >= SURVIVAL_PASS ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${m ? m.formatCount(q.answer, q.answer) : q.answer}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
-      b.id = "sv-next"; b.className = "dc-btn"; b.textContent = sv.lives <= 0 ? "See my score" : "Next round"; return;
+      const m = await loadAnimModule();
+      svShowResult(m); return;
     }
     if (b.id === "sv-next") { sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return; }
     if (b.id === "sv-share") {
