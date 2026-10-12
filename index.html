@@ -458,13 +458,13 @@
   .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; text-shadow: none; }
   .host-unlock-shop-box.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; }
   .emoji-pack-preview { width: 70px; flex-shrink: 0; font-size: 20px; line-height: 1.4; text-align: center; }
-  #shop-tabs { display: flex; margin: 10px 56px 4px 0; flex-shrink: 0; }
+  #shop-tabs { display: flex; margin: 10px 0 4px 0; flex-shrink: 0; }
   #shop-tabs .shop-strip { flex: 1; min-width: 0; display: flex; }
   #shop-tabs .shop-strip[hidden] { display: none; }
   #shop-tabs .shop-strip { flex-wrap: wrap; row-gap: 4px; }
   #shop-tabs .shop-strip .cosm-tab-btn { flex: 0 0 calc((100% - 8px) / 3); }
   #shop-tabs #shop-strip-cosm { flex-wrap: nowrap; gap: 3px; }
-  #shop-tabs #shop-strip-cosm .cosm-tab-btn { flex: 1 1 0; border-width: 0 4px; font-size: 10.5px; letter-spacing: -.2px; }
+  #shop-tabs #shop-strip-cosm .cosm-tab-btn { flex: 1 1 0; border-width: 0 5px; font-size: 12px; letter-spacing: -.2px; }
   .shop-subpanel { padding-top: 6px; }
   #toolbar-cosmetics-btn { position: relative; }
   .shop-tab-btn {
@@ -675,7 +675,7 @@
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Career: one screen, three tabs (Stats / Awards / Objects) ---- */
-  .career-tabs { position: sticky; top: 62px; z-index: 8; display: flex; gap: 6px; margin: 0 -6px; padding: 6px 60px 6px 6px; background: #fbfaf6; }
+  .career-tabs { position: sticky; top: 62px; z-index: 8; display: flex; gap: 6px; margin: 0 -6px; padding: 6px 6px; background: #fbfaf6; }
   .career-tab { flex: 1; min-width: 0; margin: 0; padding: 8px 4px; border: 3px solid #4a2c12; border-radius: 12px; background: #f1e4c8; color: #000; text-shadow: none; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; position: relative; }
   .career-tab.active { background: #ffc24a; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
   .career-tab.has-dot::after { content: ""; position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
@@ -1168,6 +1168,13 @@
     padding: 0; border: none; background: none;
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  /* Top-level screens opened from the toolbar (Shop, Cosmetics, Stats/Awards/Items) have no related previous menu:
+     switch with the toolbar buttons instead, so no Back button there. */
+  body:not(.overlay-has-return) #gacha-screen > .screen-back-btn, body:not(.overlay-has-return) #career-screen > .screen-back-btn,
+  body:not(.overlay-has-return) #achievements-screen > .screen-back-btn, body:not(.overlay-has-return) #items-screen > .screen-back-btn { display: none; }
+  /* ...except when one of them was opened from a lobby or room: then Back is the way to return to it. */
+  body.overlay-has-return #shop-tabs { margin-right: 56px; }
+  body.overlay-has-return .career-tabs { padding-right: 60px; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
@@ -4420,7 +4427,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs). Fixed items so nobody can cherry-pick rarities.
-  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F60E}", board: "chalkboard", background: "tile-dots" };
+  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F60E}", board: "chalkboard", background: "nature-grass" };
   function renderStarterBundle() {
     const box = document.getElementById("starter-bundle-box");
     if (!box) return;
@@ -4440,7 +4447,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const btn = document.getElementById("starter-bundle-btn");
     if (!owned) btn.addEventListener("click", async () => {
       const bought = await showFakePurchase({ icon: "icons/shop-starter-gift.webp", title: "Starter Bundle", price: B.price,
-        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, a reaction, the Chalkboard board and the Polka Dots background.` });
+        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, a reaction, the Chalkboard board and the Grass background.` });
       if (!bought) return;
       btn.disabled = true;
       await purchaseStarterBundle();
@@ -6966,6 +6973,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   let overlayReturnScreen = null;
+  // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
+  function syncOverlayReturnFlag() { document.body.classList.toggle("overlay-has-return", !!overlayReturnScreen && overlayReturnScreen !== homeScreen); }
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
       closeOverlay();
@@ -6982,6 +6991,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     screenEl.classList.add("active");
+    syncOverlayReturnFlag();
     playSound("popup-open");
   }
   function closeOverlay() {
@@ -6994,6 +7004,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (dest === gachaScreen) resetGachaScene();
     dest.classList.add("active");
     overlayReturnScreen = null;
+    syncOverlayReturnFlag();
     playSound("popup-close");
   }
   // Shared by three different "Yes" actions - quitting the app entirely
@@ -7122,6 +7133,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (currentActive && !OVERLAY_SCREENS.includes(currentActive)) overlayReturnScreen = currentActive;
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     target.classList.add("active");
+    syncOverlayReturnFlag();
     careerLastTab = tab;
     document.querySelectorAll(".career-tabs .career-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     if (!wasCareer) playSound("popup-open");
