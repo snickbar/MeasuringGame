@@ -752,10 +752,22 @@
   .dc-btn { display: block; width: 100%; margin: 12px 0 0; padding: 14px 10px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#ffd36a, #f2820f); color: #000; text-shadow: none; font: 700 18px 'Fredoka', sans-serif; text-align: center; box-shadow: 0 3px 0 rgba(74,44,18,.45); }
   .dc-btn:disabled { opacity: .45; }
   .dc-btn.dc-alt { background: #f1e4c8; font-size: 15px; padding: 10px; }
-  .dc-dots { display: flex; justify-content: center; gap: 8px; margin: 4px 0 10px; }
-  .dc-dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #4a2c12; background: #fffdf6; }
+  .dc-dots { display: flex; justify-content: center; gap: 22px; margin: 6px 0 14px; }
+  .dc-dots i { position: relative; width: 26px; height: 26px; border-radius: 50%; border: 3px solid #4a2c12; background: #fffdf6; box-sizing: border-box; }
   .dc-dots i.on { background: #f2820f; }
-  .dc-dots i.done { background: #6aa84f; }
+  .dc-dots i.done { background: #fffdf6; }
+  .res-mark { display: block; width: 100%; height: 100%; filter: drop-shadow(0 2px 0 rgba(74,44,18,.25)); }
+  .dc-dots .dot-mark { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; transform: translate(-42%, -58%); animation: markPop .35s ease-out; }
+  @keyframes markPop { 0% { transform: translate(-42%, -58%) scale(.2); opacity: 0; } 70% { transform: translate(-42%, -58%) scale(1.2); opacity: 1; } 100% { transform: translate(-42%, -58%) scale(1); } }
+  .dc-res-head { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 28px; color: #000; }
+  .dc-res-head .res-mark { flex: 0 0 52px; width: 52px; height: 52px; animation: markPop .4s ease-out; }
+  .dc-res-lines { margin-top: 8px; font-size: 20px; line-height: 1.35; color: #000; }
+  .dc-res-lines b { font-size: 22px; }
+  .dc-marks { display: flex; justify-content: center; gap: 12px; margin-top: 6px; }
+  .dc-marks .res-mark { width: 44px; height: 44px; }
+  .dc-row .dc-em .res-mark { width: 38px; height: 38px; }
+  .dc-lb-em { display: flex; gap: 2px; }
+  .dc-lb-em .res-mark { width: 20px; height: 20px; filter: none; }
   .dc-pics { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin: 6px 0; }
   .dc-pic { flex: 1; max-width: 150px; padding: 8px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
   .dc-pic img { display: block; margin: 0 auto 4px; width: 100%; height: 96px; object-fit: contain; }
@@ -768,14 +780,13 @@
   #daily-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; min-height: 120px; }
   .dc-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #ecdcc0; text-align: left; }
   .dc-row:last-child { border-bottom: 0; }
-  .dc-row .dc-em { font-size: 24px; }
+  .dc-row .dc-em { flex: 0 0 38px; }
   .dc-row .dc-rt { flex: 1; font-size: 14px; }
   .dc-row .dc-rv { font-size: 16px; }
   .dc-lb-row { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; text-align: left; font-size: 15px; }
   .dc-lb-row.me { background: #ffe9b8; }
   .dc-lb-rank { flex: 0 0 30px; text-align: center; }
   .dc-lb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dc-lb-em { font-size: 14px; letter-spacing: 1px; }
   .dc-lb-score { flex: 0 0 50px; text-align: right; font-variant-numeric: tabular-nums; }
   #career-content { padding: 6px 0 24px; font-weight: 700; color: #000; text-align: center; }
   .cs-level { margin: 8px 0 10px; padding: 12px; background: linear-gradient(#fff3d1, #ffe2a0); border: 2px solid #e8b95a; border-radius: 16px; }
@@ -7266,6 +7277,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const dailyContentEl = document.getElementById("daily-content");
   let daily = null;        // today's session: { date, questions, guesses, phase, input }
   let dailyAnim = null;    // the reveal animation's controller
+  // Result marks: the shape says right (check) or wrong (X), the colour says how close.
+  // 90%+ green check, 70-89% yellow check, 40-69% orange X, under 40% red X.
+  const MARK_LEVELS = { g: ["check", "#4fb83a"], y: ["check", "#f7c21b"], o: ["x", "#f58a1f"], r: ["x", "#e5322d"] };
+  const markLevel = (a) => (a >= 90 ? "g" : a >= 70 ? "y" : a >= 40 ? "o" : "r");
+  function markSvg(a, cls) {
+    const [shape, col] = MARK_LEVELS[markLevel(a)];
+    const d = shape === "check" ? "M9 26 L19.5 36.5 L39 11" : "M11 11 L37 37 M37 11 L11 37";
+    const hl = shape === "check" ? "M10.5 24.5 L19.5 33.5 L37 12.5" : "M13 12 L35 34";
+    return `<svg class="res-mark ${cls || ""}" viewBox="0 0 48 48" aria-hidden="true"><path d="${d}" fill="none" stroke="#4a2c12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="${hl}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  }
+  const accLabel = (a) => (a >= 99 ? "Spot on!" : a >= 90 ? "So close!" : a >= 70 ? "Nice guess" : a >= 40 ? "In the neighborhood" : "Way off");
+  // The card shown after a guess: big check or X, the verdict, then the numbers in large text.
+  function resultCardHtml(acc, g, ans, label) {
+    return `<div class="dc-card dc-hot dc-res"><div class="dc-res-head">${markSvg(acc)}<span>${label || accLabel(acc)}</span></div><div class="dc-res-lines"><div>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div><b>${Math.round(acc)}%</b> accurate</div></div></div>`;
+  }
   const dailyEmoji = (a) => (a >= 99 ? "\u{1F3AF}" : a >= 90 ? "\u{1F7E9}" : a >= 70 ? "\u{1F7E8}" : a >= 40 ? "\u{1F7E7}" : "\u{1F7E5}");
   function dailyShiftDate(str, delta) {
     const [y, m, d] = str.split("-").map(Number);
@@ -7335,7 +7361,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function dailyStop() { if (dailyAnim) { try { dailyAnim.destroy(); } catch (e) {} dailyAnim = null; } }
   function dailyAccuracies() { return daily.questions.map((q, i) => (daily.guesses[i] > 0 ? roundAccuracy(daily.guesses[i] / q.answer) : 0)); }
   function dailyDots(cur, doneN) {
-    return `<div class="dc-dots">${[0, 1, 2].map((i) => `<i class="${i < doneN ? "done" : (i === cur ? "on" : "")}"></i>`).join("")}</div>`;
+    const accs = dailyAccuracies();
+    return `<div class="dc-dots">${[0, 1, 2].map((i) => i < doneN ? `<i class="done">${markSvg(accs[i], "dot-mark")}</i>` : `<i class="${i === cur ? "on" : ""}"></i>`).join("")}</div>`;
   }
   function renderDaily() {
     if (!daily) return;
@@ -7370,9 +7397,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // done
     dailyStop();
     const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
-    const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${dailyEmoji(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
+    const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / 300</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div></div>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / 300</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>
       <div class="dc-card">${rows}</div>
       <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
       <button type="button" class="dc-btn" id="dc-share">Share my result</button>
@@ -7390,7 +7417,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("dc-result");
       if (!host) return;
-      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${label}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      const dots = dailyContentEl.querySelector(".dc-dots");
+      if (dots) dots.outerHTML = dailyDots(i, i + 1);
+      host.innerHTML = resultCardHtml(acc, g, ans, label);
       const skip = document.getElementById("dc-skip");
       if (skip) { skip.id = "dc-next"; skip.className = "dc-btn"; skip.textContent = lastQuestion ? "See my results" : "Next question"; }
     };
@@ -7452,7 +7481,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
-    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map(dailyEmoji).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
   }
 
   dailyContentEl.addEventListener("click", async (e) => {
@@ -7477,7 +7506,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderDaily();
       return;
     }
-    if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } const q = daily.questions[daily.guesses.length - 1]; const mod = await loadAnimModule(); const g = daily.guesses[daily.guesses.length - 1]; const acc = roundAccuracy(g / q.answer); const host = document.getElementById("dc-result"); if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${Math.round(acc)}% accurate</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${mod ? mod.formatCount(q.answer, q.answer) : q.answer}</b></div></div>`; b.id = "dc-next"; b.className = "dc-btn"; b.textContent = daily.guesses.length >= 3 ? "See my results" : "Next question"; return; }
+    if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } const q = daily.questions[daily.guesses.length - 1]; const mod = await loadAnimModule(); const g = daily.guesses[daily.guesses.length - 1]; const acc = roundAccuracy(g / q.answer); const host = document.getElementById("dc-result"); if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer); const dots = dailyContentEl.querySelector(".dc-dots"); if (dots) dots.outerHTML = dailyDots(daily.guesses.length - 1, daily.guesses.length); b.id = "dc-next"; b.className = "dc-btn"; b.textContent = daily.guesses.length >= 3 ? "See my results" : "Next question"; return; }
     if (b.id === "dc-next") { daily.phase = daily.guesses.length >= 3 ? "done" : "question"; renderDaily(); return; }
     if (b.id === "dc-share") {
       const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
@@ -7634,7 +7663,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     worldStop();
     const accs = wl.questions.map((q, k) => roundAccuracy(wl.guesses[k] / q.answer));
     const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
-    const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${dailyEmoji(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
+    const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
     const nextLevel = wl.level < WORLD_LEVELS && wl.stars >= 1;
     const worldDone = wl.level === WORLD_LEVELS && wl.stars >= 2 && wl.wi + 1 < WORLDS.length;
     el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>
@@ -7652,7 +7681,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("wl-result"); if (!host) return;
-      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${label}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      host.innerHTML = resultCardHtml(acc, g, ans, label);
       const skip = document.getElementById("wl-skip");
       if (skip) { skip.id = "wl-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
     };
@@ -7715,7 +7744,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (wlAnim) { try { wlAnim.stop(); } catch (err) {} }
       const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], acc = roundAccuracy(g / q.answer), mod = await loadAnimModule();
       const host = document.getElementById("wl-result");
-      if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${Math.round(acc)}% accurate</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${mod ? mod.formatCount(q.answer, q.answer) : q.answer}</b></div></div>`;
+      if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer);
       b.id = "wl-next"; b.className = "dc-btn"; b.textContent = wl.guesses.length >= WORLD_Q ? "See my results" : "Next question"; return;
     }
     if (b.id === "wl-next") { wl.phase = wl.guesses.length >= WORLD_Q ? "done" : "question"; renderWorlds(); return; }
@@ -7838,11 +7867,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     monthlyStop();
     const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
-    const rows = mo.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${dailyEmoji(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
+    const rows = mo.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
     const best = (myProfile.monthly && myProfile.monthly.key === mo.key && typeof myProfile.monthly.best === "number") ? myProfile.monthly.best : null;
     if (mo.practice) {
       el.innerHTML = `<h2 class="dc-title">${name} Practice</h2><p class="dc-sub">New questions every round. No coins, and the leaderboard keeps your first try.</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       <button type="button" class="dc-btn" id="mo-practice">Practice again</button>
       <button type="button" class="dc-btn" id="mo-main">Back to my challenge result</button>`;
@@ -7851,7 +7880,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
     const bgNote = mbg ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Cosmetics, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
     el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
       <button type="button" class="dc-btn" id="mo-practice">Practice with new questions</button>
@@ -7866,7 +7895,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("mo-result"); if (!host) return;
-      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${label}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      host.innerHTML = resultCardHtml(acc, g, ans, label);
       const skip = document.getElementById("mo-skip");
       if (skip) { skip.id = "mo-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
     };
@@ -7930,7 +7959,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
-    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map(dailyEmoji).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
   }
   monthlyContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
@@ -7958,7 +7987,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (moAnim) { try { moAnim.stop(); } catch (err) {} }
       const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], acc = roundAccuracy(g / q.answer), m = await loadAnimModule();
       const host = document.getElementById("mo-result");
-      if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${Math.round(acc)}% accurate</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${m ? m.formatCount(q.answer, q.answer) : q.answer}</b></div></div>`;
+      if (host) host.innerHTML = resultCardHtml(acc, g, m ? m.formatCount(q.answer, q.answer) : q.answer);
       b.id = "mo-next"; b.className = "dc-btn"; b.textContent = mo.guesses.length >= MONTHLY_Q ? "See my results" : "Next question"; return;
     }
     if (b.id === "mo-next") { mo.phase = mo.guesses.length >= MONTHLY_Q ? "done" : "question"; renderMonthly(); return; }
