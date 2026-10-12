@@ -1015,11 +1015,7 @@
   .code-name-row input { flex: 1; min-width: 0; }
 
   /* ---- Settings screen ---- */
-  #settings-toggles-panel {
-    padding: 10px; margin: 12px 0;
-    border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill;
-    color: var(--text);
-  }
+  #settings-toggles-panel { padding: 2px 4px 14px; margin: 0; color: var(--text); }
   #settings-toggles-panel label { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
   .settings-card { padding: 10px; margin: 12px 0; border-width: 12px; border-style: solid; border-image-source: var(--panel); border-image-slice: 55 fill; color: var(--text); }
   .settings-card > h3 { margin-top: 0; margin-bottom: 6px; }
@@ -1046,6 +1042,7 @@
   #settings-screen #settings-account-status, #settings-screen #settings-toggles-panel label,
   #settings-screen .google-account-row, #settings-screen input, #settings-screen .settings-footer-link a { color: #000; }
   .settings-footer-link { text-align: center; margin-top: 24px; font-size: 14px; }
+  #settings-game-card .settings-preset-hint, #settings-about-card .settings-preset-hint { margin: 0; }
   .settings-footer-link a { color: var(--brand); }
   .icon-toggle-btn {
     width: 30px; height: 30px; flex-shrink: 0; padding: 0; margin: 0; border: none;
@@ -2664,8 +2661,6 @@
     </div>
   </div>
 
-  <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
-
   <div class="settings-card">
   <h3>Account</h3>
   <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn google-account-btn" style="display:none;">
@@ -2682,8 +2677,13 @@
   <p id="settings-account-status"></p>
   </div>
 
-  <div id="settings-toggles-panel">
-    <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
+  <div class="settings-card" id="settings-game-card">
+    <h3>Game</h3>
+    <div id="settings-toggles-panel">
+      <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
+    </div>
+    <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
+    <p class="settings-profile-hint settings-preset-hint">Rules, scoring and what everything in the shop does</p>
   </div>
 
 
@@ -2719,7 +2719,11 @@
     </div>
   </div>
 
-  <p class="settings-footer-link"><a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>
+  <div class="settings-card" id="settings-about-card">
+    <h3>About</h3>
+    <button id="settings-privacy-btn" type="button" class="edit-preset-settings-btn">Privacy Policy</button>
+    <p class="settings-profile-hint settings-preset-hint">Size Em Up! &middot; version 1.0</p>
+  </div>
 </div>
 
 <div id="howto-screen" class="screen">
@@ -5334,6 +5338,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const toolbarItemsBtn = document.getElementById("toolbar-items-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const settingsHowtoBtn = document.getElementById("settings-howto-btn");
+  document.getElementById("settings-privacy-btn").addEventListener("click", () => window.open("/privacy.html", "_blank", "noopener"));
   const toolbarExitBtn = document.getElementById("toolbar-exit-btn");
   const exitConfirmOverlayEl = document.getElementById("exit-confirm-overlay");
   const exitConfirmTitleEl = document.getElementById("exit-confirm-title");
