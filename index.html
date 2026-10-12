@@ -7220,7 +7220,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "dc-share") {
       const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
       const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${total}/300`;
-      const url = "https://measuring-game.web.app";
+      const url = "https://measuring-game.web.app/?play=daily";
       const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
       if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
       else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
@@ -7670,7 +7670,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "mo-share") {
       const accs = monthlyAccs(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
       const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} Challenge ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${MONTHLY_Q * 100}`;
-      const url = "https://measuring-game.web.app";
+      const url = "https://measuring-game.web.app/?play=monthly";
       const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
       if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
       else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
@@ -7893,7 +7893,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "sv-next") { sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return; }
     if (b.id === "sv-share") {
       const text = `Size Em Up! Survival: ${sv.survived} round${sv.survived === 1 ? "" : "s"} survived`;
-      const url = "https://measuring-game.web.app";
+      const url = "https://measuring-game.web.app/?play=survival";
       const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
       if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your score" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
       else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
@@ -9286,15 +9286,48 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- Deep-link join: a shared "Share room" link lands here as
   // ?join=CODE, so send new visitors straight to the join screen with
   // the code already filled in instead of making them retype it.
+  // A shared link can arrive two ways: as the page address (browser, or the first load of the web app), or - inside the
+  // installed Android app - as an app link the system hands to the app (see the App plugin listener below).
+  // Someone opened a shared link in a browser. On Android that means the app is not installed (when it is, the system opens
+  // the link in the app instead), so offer the Play Store. The page behind it is already showing the right screen.
+  function maybeOfferAppInstall() {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (isNativeApp || standalone || !/Android/i.test(navigator.userAgent)) return;
+    const ov = document.createElement("div");
+    ov.id = "qr-overlay";
+    ov.innerHTML = `<div id="qr-card"><div class="qr-title">Get the Size Em Up! app</div><div class="qr-sub">Play with friends and keep your scores in the free app.</div><a class="qr-close" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin:0 auto 8px;width:210px;box-sizing:border-box" href="https://play.google.com/store/apps/details?id=com.snickbar.sizeemup" target="_blank" rel="noopener">Get it on Google Play</a><button type="button" class="qr-close" style="width:210px">Keep playing here</button></div>`;
+    ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("button.qr-close")) ov.remove(); });
+    document.body.appendChild(ov);
+  }
+  function routeDeepLink(search) {
+    const q = new URLSearchParams(search);
+    const deepLinkCode = q.get("join");
+    const play = q.get("play");
+    if (deepLinkCode) {
+      showJoinScreen();
+      codeInput.value = deepLinkCode.trim().toUpperCase();
+      // A shared link (or scanned QR code) skips the extra tap: go straight on to name and avatar once the page has finished setting up.
+      if (/^[A-Za-z0-9]{4}$/.test(codeInput.value)) setTimeout(() => joinContinueBtn.click(), 50);
+      return true;
+    }
+    if (play === "survival") { openSurvival(); return true; }
+    if (play === "daily") { openDaily(); return true; }
+    if (play === "monthly") { openMonthly(); return true; }
+    return false;
+  }
   (function handleJoinDeepLink() {
-    const deepLinkCode = new URLSearchParams(location.search).get("join");
-    if (!deepLinkCode) return;
+    const search = location.search;
+    if (!/[?&](join|play)=/.test(search)) return;
     history.replaceState({}, "", location.pathname);
-    showJoinScreen();
-    codeInput.value = deepLinkCode.trim().toUpperCase();
-    // A shared link (or scanned QR code) skips the extra tap: go straight on to name and avatar once the page has finished setting up.
-    if (/^[A-Za-z0-9]{4}$/.test(codeInput.value)) setTimeout(() => joinContinueBtn.click(), 50);
+    // Wait until the rest of the page has finished setting up (some screens use things defined further down).
+    setTimeout(() => { routeDeepLink(search); maybeOfferAppInstall(); }, 0);
   })();
+  if (isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    const appPlug = window.Capacitor.Plugins.App;
+    const openLink = (u) => { try { const i = String(u || "").indexOf("?"); if (i >= 0) routeDeepLink(String(u).slice(i)); } catch (err) {} };
+    try { appPlug.addListener("appUrlOpen", (ev) => openLink(ev && ev.url)); } catch (err) {}
+    try { appPlug.getLaunchUrl().then((r) => { if (r && r.url) openLink(r.url); }).catch(() => {}); } catch (err) {}
+  }
 
   // ==================== Lobby / join flow ====================
 
