@@ -9802,7 +9802,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       fg.animate([{ transform: "translate(-80%,60%)", opacity: 0, offset: 0 }, { transform: "translate(-80%,60%)", opacity: 0, offset: .1 }, y(0, .3), y(-10, .4), y(0, .48), y(-10, .58), y(0, .66), y(-10, .76), y(0, .86), y(0, 1)], { duration: 1600, easing: "ease-in-out" });
     },
     facepalm(piv) { // the hand smacks onto the face and the head droops
-      piv.innerHTML = rxPc("facepalm-face", rxPart("facepalm-hand", 38, 44, 14, ";transform-origin:50% 100%"));
+      piv.innerHTML = rxPc("facepalm-face", rxPart("facepalm-hand", 52, 38, 6, ";transform-origin:50% 100%"));
       const pc = piv.firstChild, hd = pc.querySelector(".rx-part");
       pc.animate([{ transform: "scale(.35)", offset: 0 }, { transform: "scale(1.1)", offset: .12 }, { transform: "none", offset: .2 }, { transform: "none", offset: .42 }, { transform: "translateY(5%) rotate(6deg)", offset: .6 }, { transform: "translateY(5%) rotate(6deg)", offset: .88 }, { transform: "none", offset: 1 }], { duration: 1700, easing: "ease-in-out" });
       hd.animate([{ transform: "translate(110%,-40%) rotate(25deg)", opacity: 0, offset: 0 }, { transform: "translate(110%,-40%) rotate(25deg)", opacity: 0, offset: .14 }, { transform: "translate(-12%,4%) rotate(-4deg)", opacity: 1, offset: .38, easing: "cubic-bezier(.5,0,1,.6)" }, { transform: "none", offset: .46 }, { transform: "none", offset: 1 }], { duration: 1700, easing: "ease-in" });
@@ -10633,10 +10633,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     leaves:    { pics: ["leaf-maple", "leaf-oak", "leaf-yellow"], move: "spin", burst: "fall", lap: 3000, size: 30, items: 12, burstN: 40, life: 5200 },
     planes:    { pics: ["plane-blue", "plane-white", "plane-white2"], move: "plane", burst: "glide", lap: 3000, size: 40, items: 9, burstN: 9, life: 5200 },
     popper:    { pics: ["popper"], move: "pulse", burst: "radial", burstPics: ["conf-1","conf-2","conf-3","conf-4","conf-5","conf-6","conf-7","conf-8","conf-9","conf-10","conf-11","conf-12","conf-13","conf-14","conf-15","conf-16","conf-17","conf-18"], lap: 2600, size: 40, items: 6, burstN: 70, life: 1500, burstSize: 14 },
-    soap:      { pics: ["soap", "bubble", "duck"], move: "bob", burst: "bubbleup", lap: 3000, size: 36, items: 12, burstN: 34, life: 5200 },
-    blossom:   { pics: ["blossom", "blossom-side", "petal"], move: "spin", burst: "fall", lap: 3200, size: 30, items: 12, burstN: 42, life: 5600 },
-    notes:     { pics: ["clef", "note-purple", "notes-blue"], move: "bob", burst: "flutterup", lap: 2800, size: 36, items: 9, burstN: 30, life: 5000 },
-    fireflies: { pics: ["firefly"], move: "glow", burst: "linger", glow: true, lap: 3600, size: 36, items: 9, burstN: 16, life: 7000 },
+    // Orbit uses only soap (the box circles with just soap bars); the bubbleup burst below picks its own mix (mostly bubbles, one duck).
+    soap:      { pics: ["soap"], move: "bob", burst: "bubbleup", lap: 3000, size: 36, items: 12, burstN: 34, life: 5200 },
+    // Orbit shows only the full flowers; the burst falls as petals only (see burstPics), a darker-pink subset via tintSome.
+    blossom:   { pics: ["blossom", "blossom-side"], burstPics: ["petal"], tintSome: { filter: "brightness(.72) saturate(1.35)", frac: 0.38 }, move: "spin", burst: "fall", lap: 3200, size: 30, items: 12, burstN: 72, life: 5600 },
+    // Orbit shows only the two notes (no clef); the clef joins the notes in the row-slide burst below.
+    notes:     { pics: ["note-purple", "notes-blue"], move: "bob", burst: "rows", lap: 2800, size: 34, items: 9, burstN: 30, life: 5200 },
+    fireflies: { pics: ["firefly"], move: "glow", burst: "linger", glow: true, mirrorRandom: true, lap: 3600, size: 26, items: 16, burstN: 32, life: 7000 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -10659,7 +10662,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     layer.className = "flair-layer";
     reactionsPanelEl.appendChild(layer);
     const items = [];
-    for (let k = 0; k < f.items; k++) items.push({ el: flairMakeItem(layer, f.pics[k % f.pics.length], size), off: k / f.items, ph: Math.random() * 6.28 });
+    for (let k = 0; k < f.items; k++) items.push({ el: flairMakeItem(layer, f.pics[k % f.pics.length], size), off: k / f.items, ph: Math.random() * 6.28, mir: f.mirrorRandom && Math.random() < 0.5 ? -1 : 1 });
     if (f.glow) items.forEach((it) => { it.el.style.filter = "drop-shadow(0 0 7px #d9ff3d)"; });
     const t0 = performance.now();
     function frame(now) {
@@ -10688,7 +10691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         else if (f.move === "glow") { op = 0.5 + 0.5 * Math.abs(Math.sin(sp * 0.9)); sc = 0.95 + 0.1 * Math.sin(sp * 2); dy = Math.sin(sp) * 3; }
         else if (f.move === "plane") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI; dy = Math.sin(sp * 2) * 2; }
         else if (f.move === "rocket") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI + 45; dy = Math.sin(sp * 3) * 1.5; }
-        it.el.style.transform = `translate(${x0 + px - size / 2}px, ${y0 + py - size / 2 + dy}px) rotate(${rot}deg) scale(${sc * sx}, ${sc})`;
+        it.el.style.transform = `translate(${x0 + px - size / 2}px, ${y0 + py - size / 2 + dy}px) rotate(${rot}deg) scale(${sc * sx * it.mir}, ${sc})`;
         it.el.style.opacity = op;
         if (f.rainbow) it.el.style.filter = `hue-rotate(${(t / 8 + k * 60) % 360}deg) saturate(1.3)`;
       });
@@ -10719,7 +10722,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Each particle's position is a function of time, so a longer "life" simply lasts longer. Returns true when it handled the flair.
   function flairBurstNew(layer, f, li, r, cx, cy) {
     const b = f.burst;
-    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger", "bubbleup", "glide"].includes(b)) return false;
+    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger", "bubbleup", "glide", "rows"].includes(b)) return false;
     const W = window.innerWidth, H = window.innerHeight, L = f.life || 3000, N = f.burstN, size = f.size;
     const rnd = (a, c) => a + Math.random() * (c - a);
     const tf = (x, y, rot, sx, sy) => `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
@@ -10812,10 +10815,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     if (b === "fall" || b === "coinfall") {
-      // snowflakes / coins all the way down the screen
-      const coin = b === "coinfall";
+      // snowflakes / coins / petals all the way down the screen
+      const coin = b === "coinfall", bp = f.burstPics || f.pics;
       for (let k = 0; k < N; k++) {
-        const el = item(f.pics[k % f.pics.length]), s = rnd(0.7, 1.25), x = rnd(-size / 2, W - size / 2);
+        const el = item(bp[k % bp.length]), s = rnd(0.7, 1.25), x = rnd(-size / 2, W - size / 2);
+        if (f.tintSome && Math.random() < f.tintSome.frac) el.style.filter = f.tintSome.filter;
         const dl = rnd(0, L * 0.4), fd = Math.max(900, L * rnd(0.5, 0.6)), sw = rnd(8, 26), fq = rnd(1.2, 2.6), ph = rnd(0, 6.28), vr = rnd(-90, 90), r0 = rnd(0, 360);
         add(el, (bt) => {
           const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
@@ -10848,9 +10852,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     if (b === "bubbleup") {
-      // bubbles float up from the bottom of the screen (with a few soap bars and rubber ducks riding along) and pop near the top
+      // a lot of bubbles float up from the bottom of the screen, with one rubber duck riding along, and pop near the top
       for (let k = 0; k < N; k++) {
-        const nm = k < 2 ? "duck" : k < 4 ? "soap" : "bubble", big = nm === "bubble", el = item(nm, big ? size * rnd(0.7, 1.7) : size * 1.1);
+        const nm = k === 0 ? "duck" : "bubble", big = nm === "bubble", el = item(nm, big ? size * rnd(0.7, 1.7) : size * 1.1);
         const x = rnd(0, W - size), dl = rnd(0, L * 0.4), fd = Math.max(1600, L * rnd(0.5, 0.6)), sw = rnd(10, 28), fq = rnd(0.8, 1.5), ph = rnd(0, 6.28);
         add(el, (bt) => {
           const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
@@ -10864,11 +10868,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     if (b === "glide") {
-      // paper airplanes glide down across the screen, each one swooping through a loop-the-loop on the way
+      // paper airplanes of different sizes glide down across the screen, each one looping at its own height on the way
       for (let k = 0; k < N; k++) {
-        const el = item(f.pics[k % f.pics.length]), dir = k % 2 ? -1 : 1, x0 = dir > 0 ? rnd(-0.05, 0.4) * W : rnd(0.6, 1.05) * W, y0 = -size - rnd(0, 60);
-        const dl = rnd(0, L * 0.35), fd = Math.max(2200, L * rnd(0.6, 0.7)), vx = dir * rnd(0.35, 0.6) * W, vy = rnd(0.8, 1.0) * (H + size * 2);
-        const R = rnd(46, 70), lp = rnd(0.25, 0.5), lw = 0.22, sway = rnd(10, 26), ph = rnd(0, 6.28);
+        const sz = size * rnd(0.6, 1.5);
+        const el = item(f.pics[k % f.pics.length], sz), dir = k % 2 ? -1 : 1, x0 = dir > 0 ? rnd(-0.05, 0.4) * W : rnd(0.6, 1.05) * W, y0 = -sz - rnd(0, 80);
+        const dl = rnd(0, L * 0.35), fd = Math.max(2200, L * rnd(0.6, 0.7)), vx = dir * rnd(0.35, 0.6) * W, vy = rnd(0.8, 1.0) * (H + sz * 2);
+        const R = rnd(36, 90), lp = rnd(0.12, 0.65), lw = 0.22, sway = rnd(10, 26), ph = rnd(0, 6.28);
         const pos = (p) => {
           const th = Math.max(0, Math.min(1, (p - lp) / lw)) * 6.2832;
           return [x0 + vx * p + Math.sin(p * 9 + ph) * sway + dir * R * Math.sin(th), y0 + vy * p - R * (1 - Math.cos(th))];
@@ -10877,9 +10882,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
           const a = pos(p), c = pos(Math.min(1, p + 0.01)), d = pos(Math.max(0, p - 0.01));
           const ang = Math.atan2(c[1] - d[1], c[0] - d[0]) * 57.3;
-          el.style.transform = tf(a[0] - size / 2, a[1] - size / 2, ang, 1, 1);
+          el.style.transform = tf(a[0] - sz / 2, a[1] - sz / 2, ang, 1, 1);
           el.style.opacity = Math.min(1, p * 10) * (p > 0.92 ? (1 - p) / 0.08 : 1); return true;
         });
+      }
+      runCust(); return true;
+    }
+
+    if (b === "rows") {
+      // notes (led by a clef) slide fully across the screen in horizontal rows at different heights,
+      // alternating left-to-right and right-to-left, each row starting a little after the last.
+      const rows = 6, perRow = Math.max(3, Math.round(N / rows)), rowH = H / rows;
+      for (let row = 0; row < rows; row++) {
+        const dir = row % 2 ? -1 : 1, y = rowH * (row + 0.5) + rnd(-rowH * 0.18, rowH * 0.18);
+        const rowDelay = row * (L * 0.11) + rnd(0, L * 0.04), fd = Math.max(1700, L * rnd(0.55, 0.65));
+        for (let j = 0; j < perRow; j++) {
+          const nm = j === 0 ? "clef" : f.pics[(j - 1) % f.pics.length], sz = nm === "clef" ? size * 1.25 : size;
+          const el = item(nm, sz), spacing = j / perRow;
+          const startX = dir > 0 ? -sz * 2 - spacing * W * 0.9 : W + sz * 2 + spacing * W * 0.9;
+          const endX = dir > 0 ? W + sz * 2 : -sz * 2;
+          add(el, (bt) => {
+            const p = (bt - rowDelay) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
+            const x = startX + (endX - startX) * ease(p), bob = Math.sin(p * 6 + spacing * 6) * (rowH * 0.08);
+            el.style.transform = tf(x - sz / 2, y - sz / 2 + bob, 0, 1, 1);
+            el.style.opacity = Math.min(1, p * 8) * (p > 0.88 ? (1 - p) / 0.12 : 1); return true;
+          });
+        }
       }
       runCust(); return true;
     }
@@ -10889,13 +10917,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       for (let k = 0; k < N; k++) {
         const el = item(f.pics[k % f.pics.length]), s = rnd(0.75, 1.2), ang = rnd(0, 6.28), R = rnd(0.2, 0.46) * Math.min(W, H) * 1.1;
         if (f.glow) el.style.filter = "drop-shadow(0 0 9px #d9ff3d)";
+        const mir = f.mirrorRandom && Math.random() < 0.5 ? -1 : 1;
         const ph = rnd(0, 6.28), f1 = rnd(0.5, 1.1), f2 = rnd(0.4, 0.9), wob = rnd(22, 46), flapSp = rnd(70, 110);
         add(el, (bt) => {
           if (bt >= L) return false;
           const e = 1 - Math.exp(-bt / 650), rr = R * e;
           const x = cx + Math.cos(ang) * rr + Math.sin(bt / 1000 * f1 + ph) * wob * e - size / 2, y = cy + Math.sin(ang) * rr + Math.cos(bt / 1000 * f2 + ph) * wob * 0.8 * e - bt * 0.006 - size / 2;
           const sx = f.glow ? 1 : 0.35 + 0.65 * Math.abs(Math.sin(bt / flapSp + ph)), rot = Math.sin(bt / 1000 * f1 + ph) * 18;
-          el.style.transform = tf(x, y, rot, sx * s, s); el.style.opacity = Math.min(1, bt / 200) * fadeOut(bt, L, 900) * (f.glow ? 0.35 + 0.65 * Math.abs(Math.sin(bt / 1000 * (f1 + 0.6) * 2.2 + ph)) : 1); return true;
+          el.style.transform = tf(x, y, rot, sx * s * mir, s); el.style.opacity = Math.min(1, bt / 200) * fadeOut(bt, L, 900) * (f.glow ? 0.35 + 0.65 * Math.abs(Math.sin(bt / 1000 * (f1 + 0.6) * 2.2 + ph)) : 1); return true;
         });
       }
       runCust(); return true;
