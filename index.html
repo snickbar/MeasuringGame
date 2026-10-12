@@ -9,6 +9,20 @@
 <title>Size Em Up!</title>
 <link rel="manifest" href="manifest.json" />
 <link rel="preload" as="image" href="home-bg.jpg" />
+<script>
+/* Home screen pictures rotate: a different one each time Home loads (never the same twice in a row). */
+(function () {
+  var L = ["home-bg.jpg", "home-bg-2.jpg", "home-bg-3.jpg"], i = 0;
+  try {
+    var last = +localStorage.getItem("mg_homeBg");
+    i = Math.floor(Math.random() * L.length);
+    if (L.length > 1 && i === last) i = (i + 1) % L.length;
+    localStorage.setItem("mg_homeBg", String(i));
+  } catch (e) { i = 0; }
+  document.documentElement.style.setProperty("--home-bg", "url('" + L[i] + "')");
+  var p = document.querySelector("link[rel=preload][as=image]"); if (p) p.setAttribute("href", L[i]);
+})();
+</script>
 <meta name="theme-color" content="#c17a54" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -199,7 +213,7 @@
        (a full reload each time) was making the background render visibly
        larger/more zoomed-in bit by bit. */
     position: fixed; inset: 0;
-    background-image: url('home-bg.jpg'); background-size: cover; background-position: center top; background-repeat: no-repeat;
+    background-image: var(--home-bg, url('home-bg.jpg')); background-size: cover; background-position: center top; background-repeat: no-repeat;
   }
   /* Picked shop background: a fixed picture behind every screen except Home. */
   body[data-bg]::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
