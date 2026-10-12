@@ -933,6 +933,9 @@
     box-shadow: 0 14px 34px rgba(0,0,0,.4); animation: popIn 240ms cubic-bezier(.34,1.56,.64,1);
   }
   .fake-purchase-icon { font-size: 44px; line-height: 1; margin-bottom: 6px; }
+  .fake-purchase-icon img { display: block; margin: 0 auto; height: 64px; width: auto; max-width: 110px; object-fit: contain; }
+  .tp-badge { width: 56px; height: 56px; margin-top: 14px; }
+  .tp-badge img { width: 80%; height: 80%; object-fit: contain; }
   .fake-purchase-title { margin: 0 0 6px; font-size: 19px; color: #000; text-shadow: none; }
   .fake-purchase-desc { margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text); }
   .fake-purchase-price { font-size: 22px; font-weight: 700; color: #9a5d0a; margin: 0 0 16px; }
@@ -4044,7 +4047,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ov = document.createElement("div");
       ov.id = "fake-purchase-overlay";
       ov.innerHTML = `<div class="fake-purchase-card">
-        <div class="fake-purchase-icon">${icon || "\u{1F6D2}"}</div>
+        <div class="fake-purchase-icon">${/\.(webp|png)$/.test(icon || "") ? `<img src="${icon}" alt="" draggable="false">` : (icon || "\u{1F6D2}")}</div>
         <h3 class="fake-purchase-title">${title}</h3>
         ${desc ? `<p class="fake-purchase-desc">${desc}</p>` : ""}
         <div class="fake-purchase-price">${price}</div>
@@ -7814,12 +7817,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
   const PACK_LOOK = {
-    newyear: ["\u{1F386}", "#5b6ee1", "#2a2f8f"], valentine: ["\u{1F495}", "#f48fb1", "#c2185b"], stpatrick: ["\u{1F340}", "#66bb6a", "#1b7a3a"],
-    easter: ["\u{1F423}", "#f6c85f", "#e08a3c"], may: ["\u{1F337}", "#f8a5c2", "#d6528a"], june: ["\u{1F3A3}", "#4fc3f7", "#1976d2"],
-    july: ["\u{1F386}", "#ef5350", "#283593"], august: ["\u{1F3D6}\uFE0F", "#ffb74d", "#f06292"], september: ["\u{1F392}", "#ffa726", "#6d4c41"],
-    halloween: ["\u{1F383}", "#ff9a3c", "#5a2a82"], thanksgiving: ["\u{1F983}", "#d98a3d", "#7a3b1c"], christmas: ["\u{1F384}", "#e53935", "#1b6b3a"],
-    sampler: ["\u{1F381}", "#ab7df0", "#5a35b8"],
-    boards: ["\u{1F3AD}", "#4a9a6a", "#1d4d33"], boards2: ["\u{1F4BB}", "#6b7fd6", "#2b3a8a"], boards3: ["\u{1F4DC}", "#d9a15a", "#7a4a1c"],
+    newyear: ["items/champagne-glass.webp", "#5b6ee1", "#2a2f8f"], valentine: ["items/heart.webp", "#f48fb1", "#c2185b"], stpatrick: ["items/four-leaf-clover.webp", "#66bb6a", "#1b7a3a"],
+    easter: ["items/easter-egg.webp", "#f6c85f", "#e08a3c"], may: ["items/sombrero.webp", "#f8a5c2", "#d6528a"], june: ["items/necktie.webp", "#4fc3f7", "#1976d2"],
+    july: ["items/fireworks.webp", "#ef5350", "#283593"], august: ["items/beach-umbrella.webp", "#ffb74d", "#f06292"], september: ["items/backpack.webp", "#ffa726", "#6d4c41"],
+    halloween: ["items/pumpkin.webp", "#ff9a3c", "#5a2a82"], thanksgiving: ["items/turkey.webp", "#d98a3d", "#7a3b1c"], christmas: ["items/christmas-tree.webp", "#e53935", "#1b6b3a"],
+    sampler: ["items/present.webp", "#ab7df0", "#5a35b8"],
+    boards: ["icons/board-chalk.webp", "#4a9a6a", "#1d4d33"], boards2: ["icons/bd-tv.webp", "#6b7fd6", "#2b3a8a"], boards3: ["icons/bd-scroll.webp", "#d9a15a", "#7a4a1c"],
   };
   function renderThemedPackShop() {
     const el = document.getElementById("themed-pack-shop");
@@ -7841,7 +7844,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const look = PACK_LOOK[c.id] || PACK_LOOK.sampler;
       return `<div class="tp-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
         <span class="tp-tag">${c.tag}</span>
-        <div class="tp-badge">${look[0]}</div>
+        <div class="tp-badge"><img src="${look[0]}" alt="" draggable="false"></div>
         <div class="tp-title">${c.title}</div>
         <p class="tp-desc">${c.desc}</p>
         <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$1.99" : "$1.49")) + " · Unlock"}</button>
