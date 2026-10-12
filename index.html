@@ -8,19 +8,25 @@
 <meta http-equiv="Expires" content="0" />
 <title>Size Em Up!</title>
 <link rel="manifest" href="manifest.json" />
-<link rel="preload" as="image" href="home-sunflower.jpg" />
+<link rel="preload" as="image" href="home-watermelon.jpg" />
 <script>
-/* Home screen pictures rotate: a different one each time Home loads (never the same twice in a row). */
+/* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
+   (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
-  var L = ["home-sunflower.jpg", "home-corgi.jpg", "home-cactus.jpg", "home-penguin.jpg", "home-lighthouse.jpg", "home-watermelon.jpg"], i = 0;
+  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", snacks: "home-snacks.jpg" }, id = "ants";
   try {
-    var last = +localStorage.getItem("mg_homeBg");
-    i = Math.floor(Math.random() * L.length);
-    if (L.length > 1 && i === last) i = (i + 1) % L.length;
-    localStorage.setItem("mg_homeBg", String(i));
-  } catch (e) { i = 0; }
-  document.documentElement.style.setProperty("--home-bg", "url('" + L[i] + "')");
-  var p = document.querySelector("link[rel=preload][as=image]"); if (p) p.setAttribute("href", L[i]);
+    var sel = localStorage.getItem("mg_homeSel") || "ants";
+    if (sel === "random") {
+      var pool = JSON.parse(localStorage.getItem("mg_homeOwned") || "[]").filter(function (k) { return F[k]; });
+      if (pool.indexOf("ants") < 0) pool.push("ants");
+      var last = localStorage.getItem("mg_homeLast"), other = pool.filter(function (k) { return k !== last; });
+      if (other.length) pool = other;
+      id = pool[Math.floor(Math.random() * pool.length)];
+    } else if (F[sel]) id = sel;
+    localStorage.setItem("mg_homeLast", id);
+  } catch (e) { id = "ants"; }
+  document.documentElement.style.setProperty("--home-bg", "url('" + F[id] + "')");
+  var p = document.querySelector("link[rel=preload][as=image]"); if (p) p.setAttribute("href", F[id]);
 })();
 </script>
 <meta name="theme-color" content="#c17a54" />
@@ -213,7 +219,7 @@
        (a full reload each time) was making the background render visibly
        larger/more zoomed-in bit by bit. */
     position: fixed; inset: 0;
-    background-image: var(--home-bg, url('home-sunflower.jpg')); background-size: cover; background-position: center top; background-repeat: no-repeat;
+    background-image: var(--home-bg, url('home-watermelon.jpg')); background-size: cover; background-position: center top; background-repeat: no-repeat;
   }
   /* Picked shop background: a fixed picture behind every screen except Home. */
   body[data-bg]::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
@@ -2705,6 +2711,7 @@
       <button type="button" class="cosm-tab-btn" data-tab="flairs">Flairs</button>
       <button type="button" class="cosm-tab-btn" data-tab="boards">Boards</button>
       <button type="button" class="cosm-tab-btn" data-tab="backgrounds">Scenes</button>
+      <button type="button" class="cosm-tab-btn" data-tab="homes">Home</button>
     </div>
   </div>
 
@@ -2843,6 +2850,9 @@
     </div>
     <div id="cosm-pane-backgrounds" class="cosm-pane" hidden>
       <div id="cosm-backgrounds-list" class="cosm-list"></div>
+    </div>
+    <div id="cosm-pane-homes" class="cosm-pane" hidden>
+      <div id="cosm-homes-list" class="cosm-list"></div>
     </div>
     <div id="cosm-pane-boards" class="cosm-pane" hidden>
       <div id="cosm-boards-list" class="cosm-list"></div>
@@ -3850,8 +3860,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function defaultCosmeticState() {
     return {
-      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {}, boards: {} },
-      equipped: { borders: "classic", effects: "classic", colors: "default", background: "none", board: "none" },
+      owned: { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {}, boards: {}, homeScreens: {} },
+      equipped: { borders: "classic", effects: "classic", colors: "default", background: "none", board: "none", homeScreen: "ants" },
     };
   }
   // The game's original fixed 9 reactions - always available regardless of
@@ -3977,10 +3987,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const slot = document.getElementById("cosm-random-slot");
     if (!slot) return;
     const sub = cosmSub;
-    const cat = sub === "emojis" ? "reactions" : sub;
+    const cat = sub === "emojis" ? "reactions" : sub === "homes" ? "homeScreens" : sub;
     const subText = cat === "reactions" ? `${ownedReactionSlots()} random reactions you own each game`
       : cat === "flairs" ? "A random flair you own each game"
       : cat === "backgrounds" ? "A random background you own each game"
+      : cat === "homeScreens" ? "A different home screen you own each time you open Home"
       : "A random board you own each game";
     slot.innerHTML = "";
     slot.appendChild(cosmRandomRow(cat, subText));
@@ -4105,6 +4116,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderFlairPackShop();
     renderBackgroundPackShop();
     renderStarterBundle();
+    syncHomeScreenPrefs();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -4128,6 +4140,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               colors: { ...defaults.owned.colors, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.colors) || {}) },
               backgrounds: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.backgrounds) || {}) },
               boards: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.boards) || {}) },
+              homeScreens: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.homeScreens) || {}) },
             },
             equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
           },
@@ -4496,6 +4509,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
     renderFlairRows(document.getElementById("cosm-flairs-list"));
     renderBackgroundRows(document.getElementById("cosm-backgrounds-list"));
+    renderHomeRows(document.getElementById("cosm-homes-list"));
     renderBoardRows(document.getElementById("cosm-boards-list"));
     renderCosmRandomSlot();
   }
@@ -4580,6 +4594,70 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   ];
   function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).concat(MONTH_BACKGROUNDS); }
   const monthBackgroundOf = (id) => MONTH_BACKGROUNDS.find((m) => m.id === id);
+
+  // ---- Home screens: the picture behind the Home menu. The ants are free from the start; every other
+  // scene is an achievement reward (world scenes: earn 13 stars in that world; the others have their own award). ----
+  // KEEP IN SYNC with the file map in the small script at the top of this page (it picks the picture before the app loads).
+  const HOME_DEFAULT = "ants";
+  const HOME_SCREENS = [
+    { id: "ants", file: "home-watermelon.jpg", name: "Ants & Watermelon", how: "Free from the start" },
+    { id: "sunflower", file: "home-sunflower.jpg", name: "Ladybugs & Sunflower", world: "tiny" },
+    { id: "games", file: "home-games.jpg", name: "Surfboard & Cubes", world: "games" },
+    { id: "house", file: "home-house.jpg", name: "Fridge & Soda Cans", world: "home" },
+    { id: "snacks", file: "home-snacks.jpg", name: "Ice Cream & Strawberries", world: "food" },
+    { id: "corgi", file: "home-corgi.jpg", name: "Corgi & Dog Bowls", world: "critters" },
+    { id: "wheels", file: "home-wheels.jpg", name: "Rocket & Cones", world: "wheels" },
+    { id: "lighthouse", file: "home-lighthouse.jpg", name: "Lighthouse & Mugs", world: "landmarks" },
+    { id: "penguin", file: "home-penguin.jpg", name: "Penguin & Ice Cubes", how: "Win 7 rounds in a row" },
+    { id: "cactus", file: "home-cactus.jpg", name: "Cactus & Cowboy Hats", how: "Survive 15 rounds in Survival" },
+    { id: "giraffe", file: "home-giraffe.jpg", name: "Giraffe & Rubber Ducks", how: "Land 100 spot-on guesses" },
+  ];
+  const homeScreenOf = (id) => HOME_SCREENS.find((h) => h.id === id);
+  const ownsHomeScreen = (id) => id === HOME_DEFAULT || !!(myProfile.cosmetics && myProfile.cosmetics.owned && (myProfile.cosmetics.owned.homeScreens || {})[id]);
+  function equippedHomeScreen() {
+    const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.homeScreen;
+    return id && homeScreenOf(id) && ownsHomeScreen(id) ? id : HOME_DEFAULT;
+  }
+  // The page picks its picture before the app (and the profile) has loaded, so what is chosen and what is owned
+  // are copied to this device each time the profile arrives; the top-of-page script reads them.
+  function syncHomeScreenPrefs() {
+    try {
+      localStorage.setItem("mg_homeSel", myProfile.randomEquip && myProfile.randomEquip.homeScreens ? "random" : equippedHomeScreen());
+      localStorage.setItem("mg_homeOwned", JSON.stringify(HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen)));
+    } catch (e) {}
+    // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
+    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(equippedHomeScreen()).file}')`);
+  }
+  const homeHowText = (h) => (h.world ? `Earn 13 stars in ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
+  async function equipHomeScreen(id) {
+    if (equippedHomeScreen() === id) return;
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/homeScreen": id });
+  }
+  function openHomePreview(h) {
+    if (document.getElementById("cosm-pv-overlay")) return;
+    const bg = document.createElement("div");
+    bg.className = "cosm-pv-bg";
+    bg.style.backgroundImage = `url('${h.file}')`; bg.style.backgroundPosition = "center top";
+    const ov = cosmPreviewShell(h.name, bg);
+    const close = document.createElement("button");
+    close.type = "button"; close.textContent = "Close";
+    close.addEventListener("click", () => ov.remove());
+    ov.querySelector(".cosm-pv-btns").appendChild(close);
+    ov.addEventListener("click", (e) => { if (e.target === ov) ov.remove(); });
+  }
+  function renderHomeRows(container) {
+    if (!container) return;
+    const equipped = equippedHomeScreen();
+    container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", !!(myProfile.randomEquip && myProfile.randomEquip.homeScreens));
+    // Owned scenes first, then the locked ones with how to earn them.
+    const owned = HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)), locked = HOME_SCREENS.filter((h) => !ownsHomeScreen(h.id));
+    owned.concat(locked).forEach((h) => container.appendChild(cosmRow({
+      leadHtml: `<img class="cosm-bg-pic" src="${h.file}" alt="" loading="lazy">`, name: h.name,
+      owned: ownsHomeScreen(h.id), lockedHint: homeHowText(h), equipped: equipped === h.id,
+      onPreview: () => openHomePreview(h), onEquip: () => equipHomeScreen(h.id),
+    })));
+  }
   function backgroundPackOf(id) { return BACKGROUND_PACK_CATALOG.find((p) => p.backgrounds.some((b) => b.id === id)); }
   function ownsBackground(id) {
     const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.backgrounds) || {};
@@ -6179,6 +6257,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("cosm-pane-flairs").hidden = sub !== "flairs";
     document.getElementById("cosm-pane-backgrounds").hidden = sub !== "backgrounds";
     document.getElementById("cosm-pane-boards").hidden = sub !== "boards";
+    document.getElementById("cosm-pane-homes").hidden = sub !== "homes";
     document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== sub; });
     renderCosmRandomSlot();
   }
@@ -8320,7 +8399,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", fitAllButtonText);
 
   // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
-  const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds"];
+  const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
   function setShopTab(tab) {
     if (tab === "cosmetics") tab = "emojis";
     if (!SHOP_TABS.includes(tab) && !COSM_TABS.includes(tab)) tab = "coins";
@@ -8583,7 +8662,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Monthly"];
+  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly"];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -8622,6 +8701,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ACHIEVEMENTS.push({ id: `monthly-${mm}`, cat: "Monthly", name: `${name} Challenge`, desc: `Finish the ${name} Monthly Challenge`, target: 1, reward: 0, bg: m.id, bgLabel: m.label,
       progress: () => (((myProfile.stats || {})["mc" + mm] || 0) >= 1 || (myProfile.monthly && myProfile.monthly.done && String(myProfile.monthly.key || "").slice(5) === mm)) ? 1 : 0 });
   });
+  // Worlds: 13 or more of the 15 stars beats a world and earns its home screen picture; all 15 stars pays coins.
+  WORLDS.forEach((w) => {
+    const hs = HOME_SCREENS.find((h) => h.world === w.id);
+    ACHIEVEMENTS.push({ id: `world-beat-${w.id}`, cat: "Worlds", name: `Beat ${w.name}`, desc: `Earn 13 stars in ${w.name}`, target: 1, reward: hs ? 0 : 100,
+      home: hs ? hs.id : undefined, homeLabel: hs ? hs.name : undefined, progress: () => (worldStarsOf(w.id) >= 13 ? 1 : 0) });
+    ACHIEVEMENTS.push({ id: `world-perfect-${w.id}`, cat: "Worlds", name: `Perfect ${w.name}`, desc: `Earn all 15 stars in ${w.name}`, target: 1, reward: 100,
+      progress: () => (worldStarsOf(w.id) >= 15 ? 1 : 0) });
+  });
+  // Three more home screens with their own awards.
+  ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 7 rounds in a row", target: 7, reward: 0, home: "penguin", homeLabel: "Penguin & Ice Cubes", progress: ACH_STAT("bestStreak") });
+  ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 15 rounds in Survival", target: 15, reward: 0, home: "cactus", homeLabel: "Cactus & Cowboy Hats", progress: () => survivalBest() });
+  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 100 spot-on guesses", target: 100, reward: 0, home: "giraffe", homeLabel: "Giraffe & Rubber Ducks", progress: ACH_STAT("spotOns") });
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
@@ -8656,7 +8747,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const waiting = real.filter(achClaimable).reduce((n, a) => n + a.reward, 0);
     const btn = document.getElementById("toolbar-awards-btn");
     if (btn) btn.classList.toggle("has-claim", real.some(achClaimable));
-    const rewardText = (a) => (a.bg ? `Scene: ${a.bgLabel}` : `+${a.reward} coins`);
+    const rewardText = (a) => (a.bg ? `Scene: ${a.bgLabel}` : a.home ? `Home screen: ${a.homeLabel}` : `+${a.reward} coins`);
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
       const done = p >= a.target, isClaimed = !!claimed[a.id];
@@ -8696,6 +8787,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if ((profile.achClaimed || {})[id]) return profile;
       const grant = { ...profile, coins: (profile.coins || 0) + a.reward, achClaimed: { ...(profile.achClaimed || {}), [id]: true } };
       if (a.bg) { const cosm = profile.cosmetics || defaultCosmeticState(), own = cosm.owned || {}; grant.cosmetics = { ...cosm, owned: { ...own, backgrounds: { ...(own.backgrounds || {}), [a.bg]: true } } }; }
+      if (a.home) { const cosm = grant.cosmetics || profile.cosmetics || defaultCosmeticState(), own = cosm.owned || {}; grant.cosmetics = { ...cosm, owned: { ...own, homeScreens: { ...(own.homeScreens || {}), [a.home]: true } } }; }
       return grant;
     }).catch(() => null);
     if (!res) achJustClaimed = null;
