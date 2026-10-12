@@ -7032,7 +7032,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (toolbar Exit outside a game), as host ending the current game for
   // everyone (in-game Exit), and leaving an in-progress game via any top
   // toolbar button - so an accidental tap doesn't silently end/leave a game.
-  let pendingExitAction = null; // "app" | "hostGame" | "leaveGame"
+  let pendingExitAction = null; // "app" | "hostGame" | "leaveGame" | "navFromLobby" | ...
+  let pendingNavAction = null; // the deferred callback for "navFromLobby"
   function openExitConfirm(action, title, message, yesLabel, noLabel) {
     pendingExitAction = action;
     exitConfirmYesBtn.textContent = yesLabel || "Yes";
@@ -7056,6 +7057,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // The final-results screen counts too: the game isn't over until you press Finish/Leave there.
     return hudEl.classList.contains("active") || finalScreenEl.classList.contains("active");
   }
+  function isInLobby() { return lobbyScreenEl.classList.contains("active"); }
   function openLeaveGameConfirm() {
     if (isHost) {
       openExitConfirm("leaveGame", "End the game?", "You're the host - leaving now ends the game and removes everyone from the room. Are you sure?");
@@ -7066,6 +7068,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function guardToolbarNav(action) {
     return () => {
       if (isInActiveGame()) { openLeaveGameConfirm(); return; }
+      if (isInLobby()) {
+        pendingNavAction = action;
+        openExitConfirm("navFromLobby", "Leave the lobby?",
+          "The game could start while you're away, and it may be hard to find your way back to this room. Continue?",
+          "Continue", "Stay here");
+        return;
+      }
       action();
     };
   }
@@ -7101,16 +7110,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   exitConfirmNoBtn.addEventListener("click", () => {
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
+    pendingNavAction = null;
   });
   exitConfirmYesBtn.addEventListener("click", () => {
     const action = pendingExitAction;
+    const nav = pendingNavAction;
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
+    pendingNavAction = null;
     if (action === "dismiss") return;
     if (action === "startGame") { startGameNow(); return; }
     if (action === "joinContinueConfirmed") { joinContinueBtn.click(); return; }
     if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
+    if (action === "navFromLobby") { if (nav) nav(); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
       return;
