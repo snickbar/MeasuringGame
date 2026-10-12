@@ -7145,6 +7145,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const WORLD_LEVELS = 5, WORLD_Q = 5, WORLD_STAR_AT = [60, 80, 92], WORLD_STAR_COINS = 5;
   const WORLD_LEVEL_NAMES = ["Warm-up", "Getting there", "Tricky", "Tough", "Expert"];
   const WORLD_ICON = { tiny: "ant", games: "soccer-ball", home: "toothbrush", food: "donut", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower" };
+  // Monthly/holiday objects that can also show up in a World, but ONLY while available to the player (this month's pack,
+  // a pack they own, or the sampler). They are extras: they never count toward a World's own object totals.
+  const WORLD_EXTRAS = {
+    tiny: "confetti cranberry candy-corn conversation-heart jelly-bean gold-coin four-leaf-clover chocolate".split(" "),
+    games: "beach-ball golf-club baseball-glove".split(" "),
+    home: "coffee-mug scissors candle calculator notebook lunchbox globe backpack suitcase clock crayon pencil-case sunglasses flip-flop napkin toolbox".split(" "),
+    food: "hamburger carrot taco popsicle dinner-roll pumpkin-pie corn-on-the-cob ribs chocolate-bunny chocolate mashed-potatoes candy-cane".split(" "),
+    critters: "baby-chick bat black-cat reindeer".split(" "),
+    wheels: "sleigh sailboat".split(" "),
+    landmarks: "rainbow fireworks".split(" "),
+  };
   const worldsContentEl = document.getElementById("worlds-content");
   let wl = { phase: "list", wi: 0, level: 1, questions: [], guesses: [], input: "", gain: 0, stars: 0 };
   let wlAnim = null;
@@ -7157,8 +7168,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldStarsFor = (avg) => (avg > WORLD_STAR_AT[2] ? 3 : avg > WORLD_STAR_AT[1] ? 2 : avg > WORLD_STAR_AT[0] ? 1 : 0);
   // Fresh questions every attempt. Pairs are ranked by how many times bigger the target is than the unit
   // (a bigger gap is harder), and each level draws from its own fifth of that ranking, easiest to hardest.
+  function worldObjects(w) {
+    const packs = activePackIdsFor(new Date(), myProfile.holidayPacks);
+    const extra = (WORLD_EXTRAS[w.id] || []).map((id) => OBJECT_BY_ID.get(id)).filter((o) => o && (packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))));
+    return w.ids.map((id) => OBJECT_BY_ID.get(id)).filter(Boolean).concat(extra);
+  }
   function worldQuestions(w, level) {
-    const objs = w.ids.map((id) => OBJECT_BY_ID.get(id)).filter(Boolean);
+    const objs = worldObjects(w);
     const pairs = [];
     for (let i = 0; i < objs.length; i++) for (let j = i + 1; j < objs.length; j++) {
       const [u, t] = objs[i].mm <= objs[j].mm ? [objs[i], objs[j]] : [objs[j], objs[i]];
