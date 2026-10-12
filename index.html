@@ -675,7 +675,7 @@
   #survival-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
-  .sv-heart { width: 38px; height: 35px; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
+  .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
   .sv-heart.drop { animation: svHeartDrop .5s ease-out; }
   @keyframes svHeartDrop { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .sv-acc { font-size: 14px; color: #000; }
@@ -691,9 +691,14 @@
   .sv-crack-wrap { position: relative; width: 190px; height: 175px; animation: svPop .5s cubic-bezier(.2,1.5,.4,1) both, svShake .4s .55s linear; }
   @keyframes svPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
   @keyframes svShake { 0%,100% { transform: translateX(0) rotate(0); } 20% { transform: translateX(-6px) rotate(-3deg); } 40% { transform: translateX(6px) rotate(3deg); } 60% { transform: translateX(-4px) rotate(-2deg); } 80% { transform: translateX(4px) rotate(2deg); } }
-  .sv-crack-half { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 4px 4px rgba(74,44,18,.35)); }
-  .sv-crack-half.l { clip-path: polygon(0 0, 50% 0, 44% 22%, 55% 40%, 46% 60%, 54% 78%, 50% 100%, 0 100%); transform-origin: 50% 90%; animation: svSplitL .8s .95s ease-in forwards; }
-  .sv-crack-half.r { clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%, 54% 78%, 46% 60%, 55% 40%, 44% 22%); transform-origin: 50% 90%; animation: svSplitR .8s .95s ease-in forwards; }
+  .sv-cr { position: absolute; display: block; filter: drop-shadow(0 4px 4px rgba(74,44,18,.35)); }
+  .sv-cr.whole { left: 0; top: 9px; width: 190px; height: auto; animation: svGone 0s .5s forwards; }
+  .sv-cr.cracked { left: 0; top: 0; width: 189px; height: auto; opacity: 0; animation: svCrackedShow .45s .5s forwards; }
+  .sv-cr.half { top: 9px; height: 157px; width: auto; opacity: 0; }
+  .sv-cr.half.l { left: -6px; transform-origin: 70% 90%; animation: svSplitL .8s .95s ease-in forwards; }
+  .sv-cr.half.r { right: -6px; transform-origin: 30% 90%; animation: svSplitR .8s .95s ease-in forwards; }
+  @keyframes svGone { to { opacity: 0; } }
+  @keyframes svCrackedShow { 0% { opacity: 1; } 99% { opacity: 1; } 100% { opacity: 0; } }
   @keyframes svSplitL { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 100% { transform: translate(-46px,70px) rotate(-26deg); opacity: 0; } }
   @keyframes svSplitR { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 100% { transform: translate(46px,70px) rotate(26deg); opacity: 0; } }
   #daily-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
@@ -7725,8 +7730,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const survivalBest = () => (myProfile.survival && myProfile.survival.best) || 0;
   function survivalSub() { const b = survivalBest(); return b ? `Your best: ${b} rounds` : "How far can you get?"; }
   // Heart picture (drawn here until the real heart art is added): a full red one or an empty cream one.
-  const SV_HEART_PATH = "M50 86 C8 56 0 30 17 14 C31 2 46 11 50 24 C54 11 69 2 83 14 C100 30 92 56 50 86 Z";
-  const svHeartSvg = (full, cls) => `<svg class="${cls || "sv-heart"}" viewBox="-4 -4 108 98" aria-hidden="true"><path d="${SV_HEART_PATH}" fill="${full ? "#e23b3b" : "#efe4cc"}" stroke="#4a2c12" stroke-width="5" stroke-linejoin="round"/>${full ? `<path d="M24 24 C28 17 36 15 41 19" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/><path d="M50 82 C70 66 90 48 90 32" fill="none" stroke="#a82424" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>` : ""}</svg>`;
+  const svHeartSvg = (full) => `<img class="sv-heart" src="icons/life-heart-${full ? "full" : "empty"}.webp" alt="" draggable="false">`;
   // Running accuracy for the run: every guess so far averaged together (n = how many guesses to count).
   function svRunAcc(n) {
     const a = sv.accs.slice(0, n);
@@ -7737,7 +7741,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The heart that pops up in the middle of the screen when a life is lost, then cracks in half.
   function svCrackHeart() {
     const d = document.createElement("div"); d.className = "sv-crack";
-    d.innerHTML = `<div class="sv-crack-wrap">${svHeartSvg(true, "sv-crack-half l")}${svHeartSvg(true, "sv-crack-half r")}</div>`;
+    d.innerHTML = `<div class="sv-crack-wrap"><img class="sv-cr whole" src="icons/life-heart-full.webp" alt=""><img class="sv-cr cracked" src="icons/life-heart-cracked.webp" alt=""><img class="sv-cr half l" src="icons/life-heart-left.webp" alt=""><img class="sv-cr half r" src="icons/life-heart-right.webp" alt=""></div>`;
     document.body.appendChild(d);
     try { playSound("error"); } catch (e) {}
     setTimeout(() => d.remove(), 1950);
