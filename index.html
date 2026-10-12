@@ -4427,7 +4427,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs). Fixed items so nobody can cherry-pick rarities.
-  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F60E}", board: "chalkboard", background: "nature-grass" };
+  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F624}", board: "chalkboard", background: "nature-grass" };
   function renderStarterBundle() {
     const box = document.getElementById("starter-bundle-box");
     if (!box) return;
@@ -4438,8 +4438,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="sb-top"><img src="icons/shop-starter-gift.webp" alt=""><div><h3>Starter Bundle</h3><p>A little of everything to get you started.</p></div></div>
       <div class="sb-grid">
         <div class="sb-item"><img src="icons/shop-host-coins.webp" alt=""><span>${B.coins} coins</span></div>
-        <div class="sb-item"><img src="${flair ? flairPic(flair.pic) : ""}" alt=""><span>${flair ? flair.label : "Flair"}</span></div>
-        <div class="sb-item"><img src="${reactionPic(B.reaction)}" alt=""><span>Reaction</span></div>
+        <div class="sb-item"><img src="${flair ? flairPic(flair.pic) : ""}" alt=""><span>${flair ? flair.label + " flair" : "Flair"}</span></div>
+        <div class="sb-item"><img src="${reactionPic(B.reaction)}" alt=""><span>Triumph</span></div>
         <div class="sb-item"><img src="${BOARD_PIC[B.board]}" alt=""><span>Chalkboard</span></div>
         <div class="sb-item">${bgThumbHtml(B.background, "bundle-thumb", 40)}<span>Background</span></div>
       </div>
@@ -4447,7 +4447,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const btn = document.getElementById("starter-bundle-btn");
     if (!owned) btn.addEventListener("click", async () => {
       const bought = await showFakePurchase({ icon: "icons/shop-starter-gift.webp", title: "Starter Bundle", price: B.price,
-        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, a reaction, the Chalkboard board and the Grass background.` });
+        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, the Triumph reaction, the Chalkboard board and the Grass background.` });
       if (!bought) return;
       btn.disabled = true;
       await purchaseStarterBundle();
@@ -4527,23 +4527,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // coins, or the whole pack unlocked at once (simulated purchase, like the flair packs). Only backgrounds with
   // art are listed; more are added here as their pictures arrive.
   const BACKGROUND_COIN_COST = 100;
+  // The 12 holiday backgrounds are not sold: each is the reward for finishing that month's Monthly Challenge
+  // (an achievement). legacyPack keeps them for anyone who already owns the old pack they used to be sold in.
+  const MONTH_BACKGROUNDS = [
+    { id: "newyear-bg", label: "New Year's", month: 1, legacyPack: "bgpack1" },
+    { id: "valentine-bg", label: "Valentine's Day", month: 2, legacyPack: "bgpack2" },
+    { id: "stpatrick-bg", label: "St. Patrick's Day", month: 3, legacyPack: "bgpack1" },
+    { id: "easter-bg", label: "Easter", month: 4, legacyPack: "bgpack2" },
+    { id: "may-bg", label: "May Fiesta", month: 5, legacyPack: "bgpack1" },
+    { id: "june-bg", label: "Summer Sun", month: 6, legacyPack: "bgpack2" },
+    { id: "july-bg", label: "Fourth of July", month: 7, legacyPack: "bgpack1" },
+    { id: "august-bg", label: "Beach Vacation", month: 8, legacyPack: "bgpack2" },
+    { id: "september-bg", label: "Back to School", month: 9, legacyPack: "bgpack1" },
+    { id: "halloween-bg", label: "Halloween", month: 10, legacyPack: "bgpack2" },
+    { id: "thanksgiving-bg", label: "Thanksgiving", month: 11, legacyPack: "bgpack1" },
+    { id: "christmas-bg", label: "Christmas", month: 12, legacyPack: "bgpack2" },
+  ];
   const BACKGROUND_PACK_CATALOG = [
-    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$0.99", backgrounds: [
-      { id: "newyear-bg", label: "New Year's" },
-      { id: "stpatrick-bg", label: "St. Patrick's Day" },
-      { id: "may-bg", label: "May Fiesta" },
-      { id: "july-bg", label: "Fourth of July" },
-      { id: "september-bg", label: "Back to School" },
-      { id: "thanksgiving-bg", label: "Thanksgiving" },
-    ] },
-    { id: "bgpack2", label: "Holiday Backgrounds 2", price: "$0.99", backgrounds: [
-      { id: "valentine-bg", label: "Valentine's Day" },
-      { id: "easter-bg", label: "Easter" },
-      { id: "june-bg", label: "Summer Sun" },
-      { id: "august-bg", label: "Beach Vacation" },
-      { id: "halloween-bg", label: "Halloween" },
-      { id: "christmas-bg", label: "Christmas" },
-    ] },
     { id: "bgpack3", label: "Tiled Backgrounds", price: "$0.99", backgrounds: [
       { id: "tile-dots", label: "Polka Dots" },
       { id: "tile-stripes", label: "Stripes" },
@@ -4577,12 +4577,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "candy-chocolate", label: "Chocolate Bars" },
     ] },
   ];
-  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds); }
+  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).concat(MONTH_BACKGROUNDS); }
+  const monthBackgroundOf = (id) => MONTH_BACKGROUNDS.find((m) => m.id === id);
   function backgroundPackOf(id) { return BACKGROUND_PACK_CATALOG.find((p) => p.backgrounds.some((b) => b.id === id)); }
   function ownsBackground(id) {
     const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.backgrounds) || {};
     const pk = backgroundPackOf(id);
-    return !!(own[id] || (pk && (myProfile.backgroundPacks || {})[pk.id]));
+    const mb = monthBackgroundOf(id);
+    return !!(own[id] || (pk && (myProfile.backgroundPacks || {})[pk.id]) || (mb && (myProfile.backgroundPacks || {})[mb.legacyPack]));
   }
   function equippedBackground() {
     const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.background;
@@ -4724,6 +4726,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
         onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
       })));
+    });
+    const grp = document.createElement("div");
+    grp.className = "cosm-group-label";
+    grp.textContent = "Monthly Challenge rewards";
+    container.appendChild(grp);
+    MONTH_BACKGROUNDS.forEach((m) => {
+      const have = ownsBackground(m.id);
+      container.appendChild(cosmRow({
+        leadHtml: bgThumbHtml(m.id, "cosm-bg-pic", 34), name: m.label,
+        owned: have, free: false, cost: 0, equipped: equipped === m.id,
+        lockedHint: `Finish the ${MONTH_NAMES[m.month - 1]} Challenge`,
+        onPreview: () => openBackgroundPreview(m.id, m.label), onEquip: () => equipBackground(m.id),
+      }));
     });
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
@@ -4891,6 +4906,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
       btn.textContent = o.equipped ? "Equipped" : "Equip";
       btn.addEventListener("click", o.onEquip);
+    } else if (o.lockedHint) {
+      btn.className = "cosm-unlock";
+      btn.disabled = true;
+      btn.textContent = "\u{1F512} Locked";
+      row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", `<span class="cosm-rnd-sub">${o.lockedHint}</span>`);
     } else {
       btn.className = "cosm-buy";
       btn.innerHTML = `<img class="cosm-coin" src="icons/coin.png" alt="">${o.cost}`;
