@@ -3659,6 +3659,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     "\u{1F449}": { id: "point", label: "Pointing" },
     "\u{1F48B}": { id: "kiss", label: "Kiss" },
     "\u23F3": { id: "hourglass", label: "Hourglass" },
+    // fourth pack
+    "\u{1F44E}": { id: "thumbsdown", label: "Thumbs down" },
+    "\u{1F92A}": { id: "zany", label: "Zany" },
+    "\u{1F370}": { id: "cake", label: "Cake" },
+    "\u{1F914}": { id: "think", label: "Thinking" },
+    "\u{1F926}": { id: "facepalm", label: "Facepalm" },
+    "\u{1F91E}": { id: "crossed", label: "Fingers crossed" },
   };
   // the same reactions looked up by short id (what is sent with each reaction alongside the old emoji character, so older app versions still show the emoji)
   const REACTION_BY_ID = {};
@@ -4037,6 +4044,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "lightning", label: "Lightning", cost: 250, pic: "bolt" },
       { id: "fireworks", label: "Fireworks", cost: 300, pic: "rocket" },
       { id: "butterfly", label: "Butterflies", cost: 350, pic: "butterfly-monarch" },
+      { id: "leaves", label: "Autumn Leaves", cost: 200, pic: "leaf-maple" },
+      { id: "planes", label: "Paper Airplanes", cost: 250, pic: "plane-blue" },
+      { id: "popper", label: "Party Poppers", cost: 180, pic: "popper" },
+      { id: "soap", label: "Soap and Bubbles", cost: 200, pic: "soap" },
+      { id: "blossom", label: "Cherry Blossoms", cost: 250, pic: "blossom" },
+      { id: "notes", label: "Music Notes", cost: 220, pic: "notes-blue" },
+      { id: "fireflies", label: "Fireflies", cost: 300, pic: "firefly" },
     ],
     colors: [
       { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
@@ -4186,6 +4200,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "pack1", label: "Reaction Pack 1", price: "$1.49", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
     { id: "pack2", label: "Reaction Pack 2", price: "$1.49", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}", "\u{1F92D}"] },
     { id: "pack3", label: "Reaction Pack 3", price: "$1.49", emojis: ["\u{1F60E}", "\u{1FAE3}", "\u{1F44B}", "\u{1F449}", "\u{1F48B}", "\u23F3"] },
+    { id: "pack4", label: "Reaction Pack 4", price: "$1.49", emojis: ["\u{1F44E}", "\u{1F92A}", "\u{1F370}", "\u{1F914}", "\u{1F926}", "\u{1F91E}"] },
   ];
   function emojiPool() {
     return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
@@ -4450,8 +4465,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   const FLAIR_PACK_CATALOG = [
-    { id: "fpack1", label: "Flair Pack 1", price: "$1.49", flairs: ["hearts", "coinshower", "rainbow", "snow"] },
-    { id: "fpack2", label: "Flair Pack 2", price: "$1.49", flairs: ["fire", "lightning", "fireworks", "butterfly"] },
+    { id: "fpack1", label: "Flair Pack 1", price: "$1.49", flairs: ["hearts", "coinshower", "rainbow", "snow", "leaves"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$1.49", flairs: ["fire", "lightning", "fireworks", "butterfly", "planes"] },
+    { id: "fpack3", label: "Flair Pack 3", price: "$1.49", flairs: ["popper", "soap", "blossom", "notes", "fireflies"] },
   ];
   const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
@@ -9758,6 +9774,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       piv.animate([{ transform: "scale(.3)", opacity: 0, offset: 0 }, { transform: "scale(1)", opacity: 1, offset: .16 }, { transform: "scale(1.65)", offset: .34 }, { transform: "scale(1.8,1.42)", offset: .42 }, { transform: "scale(1.7,1.5)", offset: .55 }, { transform: "scale(1)", offset: .78 }, { transform: "none", offset: 1 }], { duration: 1500, easing: "ease-in-out" });
       rxBurst(stage, { src: () => rxPick(["heart-2", "heart-5"]), n: 4, from: [.5, .4], ang: [-145, -35], dist: [30, 48], size: [12, 18], delay: 650, stagger: 110, spin: 30 });
     },
+    thumbsdown(piv) { // the thumb drops, bounces back up, then sinks again
+      piv.innerHTML = '<img alt="" src="icons/reactions/thumbsdown.png" style="width:50%;height:auto">';
+      const t = (y, r, o, sc) => ({ transform: "translateY(" + y + "px) rotate(" + r + "deg)" + (sc ? " scale(" + sc + ")" : ""), offset: o });
+      piv.animate([{ transform: "scale(.35)", offset: 0 }, t(-14, 0, .16, 1.1), t(10, 8, .34), t(-4, -6, .5), t(8, 6, .66), t(0, 0, .85), t(0, 0, 1)], { duration: 1500, easing: "ease-in-out" });
+    },
+    zany(piv) { // the face pops in, the tongue shoots out and waggles side to side
+      piv.innerHTML = rxPc("zany-face", rxPart("zany-tongue", 32, 37, 64, ";transform-origin:50% 0"));
+      const pc = piv.firstChild, tg = pc.querySelector(".rx-part");
+      pc.animate([...rxPopAt(.12), { transform: "none", offset: .35 }, ...rxShakeAt(.5, 8), { transform: "none", offset: 1 }].sort((a, b) => a.offset - b.offset), { duration: 1600, easing: "ease-in-out" });
+      const r = (d, o, y) => ({ transform: "translateY(" + (y || 0) + "%) rotate(" + d + "deg)", offset: o });
+      tg.animate([{ transform: "translateY(-45%) scaleY(.3)", offset: 0 }, { transform: "translateY(-45%) scaleY(.3)", offset: .1 }, { transform: "translateY(8%) scaleY(1.12)", offset: .26 }, r(0, .32), r(14, .44), r(-14, .56), r(14, .68), r(-12, .8), r(0, .9), r(0, 1)], { duration: 1600, easing: "ease-in-out" });
+    },
+    cake(piv) { // the cake bounces in and the candle flame flickers
+      piv.innerHTML = rxPc("cake", rxPart("cake-flame", 13, 44, -3, ";transform-origin:50% 100%"));
+      const pc = piv.firstChild, fl = pc.querySelector(".rx-part");
+      pc.animate([{ transform: "scale(.35)", offset: 0 }, { transform: "scale(1.14)", offset: .16 }, { transform: "scale(.96,1.05)", offset: .3 }, { transform: "none", offset: .42 }, { transform: "rotate(-4deg)", offset: .62 }, { transform: "rotate(4deg)", offset: .8 }, { transform: "none", offset: 1 }], { duration: 1600, easing: "ease-in-out" });
+      fl.animate([{ transform: "scale(0)", offset: 0 }, { transform: "scale(0)", offset: .2 }, { transform: "scale(1.2,1.4)", offset: .3 }, { transform: "scale(.9,1) rotate(-6deg)", offset: .42 }, { transform: "scale(1.1,1.35) rotate(5deg)", offset: .54 }, { transform: "scale(.92,1.05) rotate(-5deg)", offset: .66 }, { transform: "scale(1.1,1.3) rotate(4deg)", offset: .8 }, { transform: "scale(1,1.15)", offset: 1 }], { duration: 1600, easing: "ease-in-out" });
+    },
+    think(piv) { // one eyebrow up, the finger taps the chin
+      piv.innerHTML = rxPc("think-face", rxPart("think-finger", 36, 8, 52));
+      const pc = piv.firstChild, fg = pc.querySelector(".rx-part");
+      pc.animate([...rxPopAt(.12), { transform: "none", offset: .4 }, { transform: "rotate(-5deg)", offset: .6 }, { transform: "rotate(4deg)", offset: .8 }, { transform: "none", offset: 1 }].sort((a, b) => a.offset - b.offset), { duration: 1600, easing: "ease-in-out" });
+      const y = (v, o) => ({ transform: "translateY(" + v + "%)", offset: o });
+      fg.animate([{ transform: "translate(-80%,60%)", opacity: 0, offset: 0 }, { transform: "translate(-80%,60%)", opacity: 0, offset: .1 }, y(0, .3), y(-10, .4), y(0, .48), y(-10, .58), y(0, .66), y(-10, .76), y(0, .86), y(0, 1)], { duration: 1600, easing: "ease-in-out" });
+    },
+    facepalm(piv) { // the hand smacks onto the face and the head droops
+      piv.innerHTML = rxPc("facepalm-face", rxPart("facepalm-hand", 38, 44, 14, ";transform-origin:50% 100%"));
+      const pc = piv.firstChild, hd = pc.querySelector(".rx-part");
+      pc.animate([{ transform: "scale(.35)", offset: 0 }, { transform: "scale(1.1)", offset: .12 }, { transform: "none", offset: .2 }, { transform: "none", offset: .42 }, { transform: "translateY(5%) rotate(6deg)", offset: .6 }, { transform: "translateY(5%) rotate(6deg)", offset: .88 }, { transform: "none", offset: 1 }], { duration: 1700, easing: "ease-in-out" });
+      hd.animate([{ transform: "translate(110%,-40%) rotate(25deg)", opacity: 0, offset: 0 }, { transform: "translate(110%,-40%) rotate(25deg)", opacity: 0, offset: .14 }, { transform: "translate(-12%,4%) rotate(-4deg)", opacity: 1, offset: .38, easing: "cubic-bezier(.5,0,1,.6)" }, { transform: "none", offset: .46 }, { transform: "none", offset: 1 }], { duration: 1700, easing: "ease-in" });
+    },
+    crossed(piv) { // fingers crossed, wiggling hopefully
+      piv.innerHTML = '<img alt="" src="icons/reactions/crossed.png" style="width:30%;height:auto">';
+      const o = "50% 100%", r = (d, t, sc) => ({ transform: "rotate(" + d + "deg)" + (sc ? " scale(" + sc + ")" : ""), transformOrigin: o, offset: t });
+      piv.animate([{ transform: "scale(.35)", transformOrigin: o, offset: 0 }, r(0, .14, 1.12), r(-10, .26), r(10, .38), r(-10, .5), r(10, .62), r(-6, .76), r(0, .9), r(0, 1)], { duration: 1600, easing: "ease-in-out" });
+    },
     hourglass(piv) { // the sand runs down the whole time it shows (no flip)
       piv.innerHTML = '<div class="rx-pc" style="width:36%;aspect-ratio:568/842"><img alt="" src="icons/reactions/hourglass.png" style="inset:0;width:100%;height:100%"><div class="rx-sand" style="mix-blend-mode:multiply"><div class="rx-sand-top" style="top:14%;height:36%"></div><div class="rx-sand-bot" style="top:50%;height:36%"></div><div class="rx-sand-str" style="left:49%;width:2%;top:47%;height:39%"></div></div></div>';
       const pc = piv.firstChild, D = { duration: 1850, delay: 100, easing: "linear", fill: "both" };
@@ -10576,8 +10628,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     snow:      { pics: ["snow-simple", "snow-hex", "snow-leaf"], move: "spin", burst: "fall", lap: 3000, size: 27, items: 12, burstN: 40, life: 5000 },
     coinshower: { pics: ["coin"], move: "coin", burst: "coinfall", lap: 3000, size: 40, items: 12, burstN: 40, life: 4000 },
     fireworks: { pics: ["rocket"], move: "rocket", burst: "show", lap: 3000, size: 36, items: 10, burstN: 5, life: 2600 },
+    leaves:    { pics: ["leaf-maple", "leaf-oak", "leaf-yellow"], move: "spin", burst: "fall", lap: 3000, size: 30, items: 12, burstN: 40, life: 5200 },
+    planes:    { pics: ["plane-blue", "plane-white", "plane-white2"], move: "plane", burst: "glide", lap: 3000, size: 40, items: 9, burstN: 9, life: 5200 },
+    popper:    { pics: ["popper"], move: "pulse", burst: "radial", burstPics: ["conf-1","conf-2","conf-3","conf-4","conf-5","conf-6","conf-7","conf-8","conf-9","conf-10","conf-11","conf-12","conf-13","conf-14","conf-15","conf-16","conf-17","conf-18"], lap: 2600, size: 40, items: 6, burstN: 70, life: 1500, burstSize: 14 },
+    soap:      { pics: ["soap", "bubble", "duck"], move: "bob", burst: "bubbleup", lap: 3000, size: 36, items: 12, burstN: 34, life: 5200 },
+    blossom:   { pics: ["blossom", "blossom-side", "petal"], move: "spin", burst: "fall", lap: 3200, size: 30, items: 12, burstN: 42, life: 5600 },
+    notes:     { pics: ["clef", "note-purple", "notes-blue"], move: "bob", burst: "flutterup", lap: 2800, size: 36, items: 9, burstN: 30, life: 5000 },
+    fireflies: { pics: ["firefly"], move: "glow", burst: "linger", glow: true, lap: 3600, size: 36, items: 9, burstN: 16, life: 7000 },
   };
-  const flairPic = (n) => (n === "coin" ? "icons/coin.png" : `icons/flair/${n}.png`);
+  const flairPic = (n) => (n === "coin" ? "icons/coin.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // ?flair=hearts previews a flair in-game; otherwise the winner's own equipped flair (default Classic Stars).
   function flairIdFor(entry) {
@@ -10599,6 +10658,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     reactionsPanelEl.appendChild(layer);
     const items = [];
     for (let k = 0; k < f.items; k++) items.push({ el: flairMakeItem(layer, f.pics[k % f.pics.length], size), off: k / f.items, ph: Math.random() * 6.28 });
+    if (f.glow) items.forEach((it) => { it.el.style.filter = "drop-shadow(0 0 7px #d9ff3d)"; });
     const t0 = performance.now();
     function frame(now) {
       const t = now - t0;
@@ -10622,6 +10682,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         else if (f.move === "flap") { sx = 0.35 + 0.65 * Math.abs(Math.sin(sp * 2.4)); dy = Math.sin(sp) * 3; }
         else if (f.move === "spin") { rot = (t / 1000) * 120 + it.ph * 20; }
         else if (f.move === "coin") { sx = Math.cos(sp * 1.8); }
+        else if (f.move === "bob") { dy = Math.sin(sp * 1.5) * 4; rot = Math.sin(sp) * 10; }
+        else if (f.move === "glow") { op = 0.5 + 0.5 * Math.abs(Math.sin(sp * 0.9)); sc = 0.95 + 0.1 * Math.sin(sp * 2); dy = Math.sin(sp) * 3; }
+        else if (f.move === "plane") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI; dy = Math.sin(sp * 2) * 2; }
         else if (f.move === "rocket") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI + 45; dy = Math.sin(sp * 3) * 1.5; }
         it.el.style.transform = `translate(${x0 + px - size / 2}px, ${y0 + py - size / 2 + dy}px) rotate(${rot}deg) scale(${sc * sx}, ${sc})`;
         it.el.style.opacity = op;
@@ -10654,7 +10717,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Each particle's position is a function of time, so a longer "life" simply lasts longer. Returns true when it handled the flair.
   function flairBurstNew(layer, f, li, r, cx, cy) {
     const b = f.burst;
-    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger"].includes(b)) return false;
+    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger", "bubbleup", "glide"].includes(b)) return false;
     const W = window.innerWidth, H = window.innerHeight, L = f.life || 3000, N = f.burstN, size = f.size;
     const rnd = (a, c) => a + Math.random() * (c - a);
     const tf = (x, y, rot, sx, sy) => `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
@@ -10765,7 +10828,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b === "flutterup") {
       // hearts flutter up in a left-to-right cascade, and one big heart drifts down and swells toward you
       for (let k = 0; k < N; k++) {
-        const el = item("heart"), s = rnd(0.6, 1.2), x = rnd(0, W - size), cas = x / W;
+        const el = item(f.pics[k % f.pics.length]), s = rnd(0.6, 1.2), x = rnd(0, W - size), cas = x / W;
         const dl = cas * L * 0.32 + rnd(0, L * 0.08), fd = Math.max(1200, L * rnd(0.5, 0.58)), sw = rnd(14, 34), fq = rnd(0.8, 1.6), ph = rnd(0, 6.28);
         add(el, (bt) => {
           const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
@@ -10773,12 +10836,49 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           el.style.transform = tf(xx, y, rot, sc, sc); el.style.opacity = Math.min(1, p * 8) * (p > 0.85 ? (1 - p) / 0.15 : 1); return true;
         });
       }
-      const big = item("heart", size * 1.4), bd = Math.max(1400, L * 0.6), bl = 200;
-      add(big, (bt) => {
+      const big = item(f.pics[0], size * 1.4), bd = Math.max(1400, L * 0.6), bl = 200;
+      if (f.pics[0] === "heart") add(big, (bt) => {
         const p = (bt - bl) / bd; if (p >= 1) return false; if (p < 0) { big.style.opacity = 0; return true; }
         const q = p * p, sc = 0.6 + q * (Math.min(W, 520) / (size * 1.4)) * 0.95, y = cy - size * 0.7 + Math.pow(p, 1.3) * H * 0.4;
         big.style.transform = tf(cx - size * 0.7, y, 0, sc, sc); big.style.transformOrigin = "50% 50%"; big.style.opacity = Math.min(1, p * 6) * (p > 0.7 ? (1 - p) / 0.3 : 1); return true;
-      });
+      }); else big.remove();
+      runCust(); return true;
+    }
+
+    if (b === "bubbleup") {
+      // bubbles float up from the bottom of the screen (with a few soap bars and rubber ducks riding along) and pop near the top
+      for (let k = 0; k < N; k++) {
+        const nm = k < 2 ? "duck" : k < 4 ? "soap" : "bubble", big = nm === "bubble", el = item(nm, big ? size * rnd(0.7, 1.7) : size * 1.1);
+        const x = rnd(0, W - size), dl = rnd(0, L * 0.4), fd = Math.max(1600, L * rnd(0.5, 0.6)), sw = rnd(10, 28), fq = rnd(0.8, 1.5), ph = rnd(0, 6.28);
+        add(el, (bt) => {
+          const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
+          const y = H + size - ease(p) * (H + size * 2) * 0.88, xx = x + Math.sin(p * fq * 6 + ph) * sw;
+          const pop = big && p > 0.9 ? 1 + (p - 0.9) * 3 : 1;
+          el.style.transform = tf(xx, y, nm === "bubble" ? 0 : Math.sin(p * fq * 6 + ph) * 12, pop, pop);
+          el.style.opacity = Math.min(1, p * 8) * (p > 0.9 ? (1 - p) / 0.1 : 1); return true;
+        });
+      }
+      runCust(); return true;
+    }
+
+    if (b === "glide") {
+      // paper airplanes glide down across the screen, each one swooping through a loop-the-loop on the way
+      for (let k = 0; k < N; k++) {
+        const el = item(f.pics[k % f.pics.length]), dir = k % 2 ? -1 : 1, x0 = dir > 0 ? rnd(-0.05, 0.4) * W : rnd(0.6, 1.05) * W, y0 = -size - rnd(0, 60);
+        const dl = rnd(0, L * 0.35), fd = Math.max(2200, L * rnd(0.6, 0.7)), vx = dir * rnd(0.35, 0.6) * W, vy = rnd(0.8, 1.0) * (H + size * 2);
+        const R = rnd(46, 70), lp = rnd(0.25, 0.5), lw = 0.22, sway = rnd(10, 26), ph = rnd(0, 6.28);
+        const pos = (p) => {
+          const th = Math.max(0, Math.min(1, (p - lp) / lw)) * 6.2832;
+          return [x0 + vx * p + Math.sin(p * 9 + ph) * sway + dir * R * Math.sin(th), y0 + vy * p - R * (1 - Math.cos(th))];
+        };
+        add(el, (bt) => {
+          const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
+          const a = pos(p), c = pos(Math.min(1, p + 0.01)), d = pos(Math.max(0, p - 0.01));
+          const ang = Math.atan2(c[1] - d[1], c[0] - d[0]) * 57.3;
+          el.style.transform = tf(a[0] - size / 2, a[1] - size / 2, ang, 1, 1);
+          el.style.opacity = Math.min(1, p * 10) * (p > 0.92 ? (1 - p) / 0.08 : 1); return true;
+        });
+      }
       runCust(); return true;
     }
 
@@ -10786,13 +10886,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // butterflies scatter, then drift lazily around for a long while
       for (let k = 0; k < N; k++) {
         const el = item(f.pics[k % f.pics.length]), s = rnd(0.75, 1.2), ang = rnd(0, 6.28), R = rnd(0.2, 0.46) * Math.min(W, H) * 1.1;
+        if (f.glow) el.style.filter = "drop-shadow(0 0 9px #d9ff3d)";
         const ph = rnd(0, 6.28), f1 = rnd(0.5, 1.1), f2 = rnd(0.4, 0.9), wob = rnd(22, 46), flapSp = rnd(70, 110);
         add(el, (bt) => {
           if (bt >= L) return false;
           const e = 1 - Math.exp(-bt / 650), rr = R * e;
           const x = cx + Math.cos(ang) * rr + Math.sin(bt / 1000 * f1 + ph) * wob * e - size / 2, y = cy + Math.sin(ang) * rr + Math.cos(bt / 1000 * f2 + ph) * wob * 0.8 * e - bt * 0.006 - size / 2;
-          const sx = 0.35 + 0.65 * Math.abs(Math.sin(bt / flapSp + ph)), rot = Math.sin(bt / 1000 * f1 + ph) * 18;
-          el.style.transform = tf(x, y, rot, sx * s, s); el.style.opacity = Math.min(1, bt / 200) * fadeOut(bt, L, 900); return true;
+          const sx = f.glow ? 1 : 0.35 + 0.65 * Math.abs(Math.sin(bt / flapSp + ph)), rot = Math.sin(bt / 1000 * f1 + ph) * 18;
+          el.style.transform = tf(x, y, rot, sx * s, s); el.style.opacity = Math.min(1, bt / 200) * fadeOut(bt, L, 900) * (f.glow ? 0.35 + 0.65 * Math.abs(Math.sin(bt / 1000 * (f1 + 0.6) * 2.2 + ph)) : 1); return true;
         });
       }
       runCust(); return true;
@@ -10844,7 +10945,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bp = f.burstPics || f.pics;
     for (let k = 0; k < f.burstN; k++) {
       const s = 0.6 + Math.random() * 0.7, ang = Math.random() * 6.28, spd = 2 + Math.random() * 4;
-      const p = { el: flairMakeItem(layer, bp[k % bp.length], size), t0: now0 + Math.random() * 120, life: 1100 + Math.random() * 500, s, ph: Math.random() * 6,
+      const p = { el: flairMakeItem(layer, bp[k % bp.length], f.burstSize || size), t0: now0 + Math.random() * 120, life: 1100 + Math.random() * 500, s, ph: Math.random() * 6,
         r: Math.random() * 360, vr: (Math.random() - 0.5) * 8, g: 0, vx: 0, vy: 0, x: cx - size / 2, y: cy - size / 2 };
       if (f.burst === "radial") { p.vx = Math.cos(ang) * spd; p.vy = Math.sin(ang) * spd; p.g = 0.06; }
       else if (f.burst === "rise") { p.vx = (Math.random() - 0.5) * 2.4; p.vy = -1.5 - Math.random() * 2.5; p.g = -0.02; p.vr = (Math.random() - 0.5) * 2; p.x = cx - size / 2 + (Math.random() - 0.5) * r.width; p.y = cy; }
