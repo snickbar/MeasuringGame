@@ -428,6 +428,21 @@
     position: relative; border: 3px solid #fff; font-size: 13px; padding: 11px 4px;
     background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2800; text-shadow: none;
   }
+  .starter-bundle-box { position: relative; overflow: hidden; margin-bottom: 14px; padding: 16px 16px 16px; border-radius: 20px; color: #fff; text-align: left; border: 2px solid #fff4c2; background: linear-gradient(145deg, #3fd6c9 0%, #138f94 100%); box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .starter-bundle-box::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 25% -10%, rgba(255,255,255,.45), transparent 55%); }
+  .starter-bundle-box .host-unlock-ribbon { margin-bottom: 8px; }
+  .sb-top { position: relative; display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .sb-top img { width: 70px; height: 86px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+  .starter-bundle-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
+  .starter-bundle-box p { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.4; color: #fff; }
+  .sb-grid { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+  .sb-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px 5px; border-radius: 12px; background: rgba(255,255,255,.92); color: #4a2800; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,.15); }
+  .sb-item img, .sb-item .bundle-thumb { width: 100%; height: 40px; object-fit: contain; border-radius: 6px; }
+  .sb-item span { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; line-height: 1.1; }
+  .starter-bundle-box .coin-pack-buy-btn { position: relative; border: 3px solid #fff; font-size: 13px; padding: 11px 4px; background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2800; text-shadow: none; }
+  .starter-bundle-box.unlocked { background: #a5d6a7; border-color: transparent; }
+  .starter-bundle-box.unlocked h3, .starter-bundle-box.unlocked p { color: #000; text-shadow: none; }
+  .starter-bundle-box.unlocked .host-unlock-ribbon { display: none; }
   #themed-pack-shop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   #themed-pack-shop:empty, #board-pack-shop:empty { display: none; }
   .tp-card { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 8px 8px; border-radius: 14px; border: 2px solid rgba(255,255,255,.7); color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.18); background: linear-gradient(160deg, var(--tp-a), var(--tp-b)); }
@@ -2673,7 +2688,7 @@
   <div id="shop-tabs">
     <div class="cosm-tabs shop-strip" id="shop-strip-shop" role="group" aria-label="Shop">
       <button type="button" class="cosm-tab-btn fit-text" data-tab="coins">Coins</button>
-      <button type="button" class="cosm-tab-btn fit-text" data-tab="hosting">Hosting</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="hosting">Offers</button>
       <button type="button" class="cosm-tab-btn fit-text" data-tab="packs">Packs</button>
     </div>
     <div class="cosm-tabs shop-strip" id="shop-strip-cosm" role="group" aria-label="Cosmetics" hidden>
@@ -2749,6 +2764,7 @@
         </div>
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $4.99 &middot; One time</button>
       </div>
+      <div id="starter-bundle-box" class="starter-bundle-box"></div>
 
     </div>
   </div>
@@ -3977,6 +3993,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       backgroundPacks: {},
       holidayPacks: {},
       boardPacks: {},
+      starterBundle: false,
       randomEquip: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
@@ -4079,6 +4096,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderPackShop();
     renderFlairPackShop();
     renderBackgroundPackShop();
+    renderStarterBundle();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -4113,6 +4131,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           backgroundPacks: { ...(data.backgroundPacks || {}) },
           holidayPacks: { ...(data.holidayPacks || {}) },
           boardPacks: { ...(data.boardPacks || {}) },
+          starterBundle: !!data.starterBundle,
           randomEquip: { ...(data.randomEquip || {}) },
           // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
           // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
@@ -4398,6 +4417,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
       card.appendChild(btn);
       row.appendChild(card);
+    });
+  }
+  // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs). Fixed items so nobody can cherry-pick rarities.
+  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F60E}", board: "chalkboard", background: "tile-dots" };
+  function renderStarterBundle() {
+    const box = document.getElementById("starter-bundle-box");
+    if (!box) return;
+    const B = STARTER_BUNDLE, owned = !!myProfile.starterBundle;
+    const flair = COSMETIC_CATALOG.effects.find((x) => x.id === B.flair);
+    box.classList.toggle("unlocked", owned);
+    box.innerHTML = `<span class="host-unlock-ribbon">&#127873; ONE-TIME OFFER</span>
+      <div class="sb-top"><img src="icons/shop-starter-gift.webp" alt=""><div><h3>Starter Bundle</h3><p>A little of everything to get you started.</p></div></div>
+      <div class="sb-grid">
+        <div class="sb-item"><img src="icons/shop-host-coins.webp" alt=""><span>${B.coins} coins</span></div>
+        <div class="sb-item"><img src="${flair ? flairPic(flair.pic) : ""}" alt=""><span>${flair ? flair.label : "Flair"}</span></div>
+        <div class="sb-item"><img src="${reactionPic(B.reaction)}" alt=""><span>Reaction</span></div>
+        <div class="sb-item"><img src="${BOARD_PIC[B.board]}" alt=""><span>Chalkboard</span></div>
+        <div class="sb-item">${bgThumbHtml(B.background, "bundle-thumb", 40)}<span>Background</span></div>
+      </div>
+      <button type="button" class="coin-pack-buy-btn" id="starter-bundle-btn"${owned ? " disabled" : ""}>${owned ? "\u2713 Unlocked" : `${B.price} \u00B7 Buy`}</button>`;
+    const btn = document.getElementById("starter-bundle-btn");
+    if (!owned) btn.addEventListener("click", async () => {
+      const bought = await showFakePurchase({ icon: "icons/shop-starter-gift.webp", title: "Starter Bundle", price: B.price,
+        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, a reaction, the Chalkboard board and the Polka Dots background.` });
+      if (!bought) return;
+      btn.disabled = true;
+      await purchaseStarterBundle();
+    });
+  }
+  async function purchaseStarterBundle() {
+    const B = STARTER_BUNDLE, key = emojiKey(B.reaction);
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if (profile.starterBundle) return profile;
+      const cosmetics = profile.cosmetics || defaultCosmeticState(), own = cosmetics.owned || {};
+      return { ...profile, starterBundle: true, coins: (profile.coins || 0) + B.coins,
+        emojiOwned: { ...(profile.emojiOwned || {}), [key]: true },
+        cosmetics: { ...cosmetics, owned: { ...own,
+          effects: { ...(own.effects || {}), [B.flair]: true },
+          boards: { ...(own.boards || {}), [B.board]: true },
+          backgrounds: { ...(own.backgrounds || {}), [B.background]: true } } } };
     });
   }
   function renderBackgroundPackShop() {
@@ -8924,7 +8984,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("debug-reset-boards-btn").addEventListener("click", () => dbgUpdate({ boardPacks: {}, "cosmetics/owned/boards": {}, "cosmetics/equipped/board": "none" }));
   document.getElementById("debug-reset-backgrounds-btn").addEventListener("click", () => dbgUpdate({ backgroundPacks: {}, "cosmetics/owned/backgrounds": {}, "cosmetics/equipped/background": "none" }));
   document.getElementById("debug-reset-all-cosm-btn").addEventListener("click", () => dbgUpdate({
-    flairPacks: {}, emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS], boardPacks: {}, backgroundPacks: {}, holidayPacks: {}, hostUnlocked: false,
+    flairPacks: {}, emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS], boardPacks: {}, backgroundPacks: {}, holidayPacks: {}, starterBundle: false, hostUnlocked: false,
     "cosmetics/owned": { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {}, boards: {} },
     "cosmetics/equipped/effects": "classic", "cosmetics/equipped/background": "none", "cosmetics/equipped/board": "none",
   }));
