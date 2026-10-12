@@ -166,8 +166,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -671,6 +671,10 @@
   .wl-big { font-size: 40px; margin: 6px 0; }
   #monthly-screen.active #monthly-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #monthly-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  #survival-screen.active #survival-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #survival-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  .sv-hearts { font-size: 30px; letter-spacing: 6px; margin: 2px 0 6px; color: #e23b3b; -webkit-text-stroke: .8px #4a2c12; }
+  .sv-hearts .off { color: #e7dcc4; }
   #daily-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   .dc-title { margin: 6px 0 2px; font-size: 24px; color: #000; text-shadow: none; }
   .dc-sub { margin: 0 0 12px; font-size: 14px; color: #6b3a05; }
@@ -1105,7 +1109,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -2784,6 +2788,11 @@
   <div id="monthly-content"></div>
 </div>
 
+<div id="survival-screen" class="screen">
+  <button id="survival-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="survival-content"></div>
+</div>
+
 <div id="career-screen" class="screen">
   <button id="career-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="career-content"></div>
@@ -3910,6 +3919,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyStreak: null,
       worlds: {},
       monthly: null,
+      survival: null,
       achClaimed: {},
     };
   }
@@ -4050,6 +4060,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           dailyStreak: data.dailyStreak || null,
           worlds: data.worlds || {},
           monthly: data.monthly || null,
+          survival: data.survival || null,
           achClaimed: { ...(data.achClaimed || {}) },
         };
       }
@@ -5650,6 +5661,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const soloScreenEl = document.getElementById("solo-screen");
   const worldsScreenEl = document.getElementById("worlds-screen");
   const monthlyScreenEl = document.getElementById("monthly-screen");
+  const survivalScreenEl = document.getElementById("survival-screen");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -6729,8 +6741,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -7152,7 +7164,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed() })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`)}
       ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots")}
-      ${card("sh-survival", "items/t-rex.webp", "Survival", "Coming soon", { disabled: true })}`;
+      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub())}`;
   }
   function openSolo() {
     renderSoloHub();
@@ -7164,12 +7176,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "sh-daily") openDaily();
     else if (b.id === "sh-worlds") openWorlds();
     else if (b.id === "sh-monthly") openMonthly();
+    else if (b.id === "sh-survival") openSurvival();
     else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(); showCreateScreen("solo"); }
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
   try { updateDailyBadge(); } catch (e) {}
 
   // ==================== Worlds: themed levels with stars ====================
+  // Questions still get harder overall, but not in a strict climb: sort easiest to hardest, then nudge each one's
+  // position by a random amount so neighbours sometimes swap (1:2, 1:4, 1:3, 1:5 rather than 1:2, 1:3, 1:4, 1:5).
+  function staggerOrder(sortedArr, rng) {
+    return sortedArr.map((v, i) => ({ v, k: i + (rng() - 0.5) * 1.8 })).sort((a, b) => a.k - b.k).map((x) => x.v);
+  }
   const WORLD_LEVELS = 5, WORLD_Q = 5, WORLD_STAR_AT = [60, 80, 92], WORLD_STAR_COINS = 5;
   const WORLD_LEVEL_NAMES = ["Warm-up", "Getting there", "Tricky", "Tough", "Expert"];
   const WORLD_ICON = { tiny: "ant", games: "soccer-ball", home: "toothbrush", food: "donut", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower" };
@@ -7221,7 +7239,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     take(pairs.slice(lo, hi), false);
     take(pairs, false);
     out.sort((a, b) => a.r - b.r);
-    return out.map((p) => dailyQuestionFor({ unitId: p.u.id, targetId: p.t.id }));
+    return staggerOrder(out, Math.random).map((p) => dailyQuestionFor({ unitId: p.u.id, targetId: p.t.id }));
   }
   function worldStop() { if (wlAnim) { try { wlAnim.destroy(); } catch (e) {} wlAnim = null; } }
   function openWorlds() {
@@ -7414,7 +7432,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     MONTHLY_BANDS.forEach(([lo, hi]) => out.push(tryBand(lo, hi)));
     for (let i = 0; i < out.length; i++) if (!out[i]) out[i] = tryBand(1.5, 1e9) || tryBand(1.01, 1e9);
-    return out.filter(Boolean);
+    return staggerOrder(out.filter(Boolean), rng);
   }
   async function monthlyLoadCombos(key) {
     const valid = (c) => Array.isArray(c) && c.length === MONTHLY_Q && c.every((x) => x && x.unitId !== x.targetId && OBJECT_BY_ID.has(x.unitId) && OBJECT_BY_ID.has(x.targetId));
@@ -7584,6 +7602,199 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
   document.getElementById("monthly-close-btn").addEventListener("click", () => { monthlyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+
+  // ==================== Survival: endless, 3 lives, climb until you run out ====================
+  // A guess under SURVIVAL_PASS % accurate costs a life. Questions get bigger-gap (harder) the further you get,
+  // with random wobble so the climb isn't obvious. Score = rounds survived; the global board keeps each player's best.
+  const SURVIVAL_LIVES = 3, SURVIVAL_PASS = 60, SURVIVAL_COINS_PER = 2;
+  const survivalContentEl = document.getElementById("survival-content");
+  let sv = null, svAnim = null, svPairs = null;
+  function survivalPairs() {
+    if (svPairs) return svPairs;
+    svPairs = [];
+    for (let i = 0; i < OBJECTS.length; i++) for (let j = i + 1; j < OBJECTS.length; j++) {
+      const [u, t] = OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
+      if (u.mm === t.mm || t.mm / u.mm < 1.5) continue;
+      svPairs.push({ u: u.id, t: t.id, r: Math.log(t.mm / u.mm) });
+    }
+    svPairs.sort((a, b) => a.r - b.r);
+    return svPairs;
+  }
+  // Target gap (in ln units) for question number n (0-based): rises quickly at first then levels off, plus a wobble.
+  function survivalTarget(n) {
+    const lo = Math.log(1.5), hi = Math.log(60000);
+    const base = lo + (hi - lo) * (n / (n + 10));
+    return Math.max(lo, Math.min(hi, base + (Math.random() - 0.45) * 2.2));
+  }
+  function survivalNextQuestion() {
+    const pairs = survivalPairs(), target = survivalTarget(sv.asked);
+    let lo = 0, hi = pairs.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (pairs[mid].r < target) lo = mid + 1; else hi = mid; }
+    for (let w = 0.25; w < 8; w *= 1.8) {
+      const cand = [];
+      for (let k = Math.max(0, lo - 400); k < Math.min(pairs.length, lo + 400); k++) {
+        const p = pairs[k];
+        if (Math.abs(p.r - target) <= w && !sv.recent.includes(p.u) && !sv.recent.includes(p.t)) cand.push(p);
+      }
+      if (cand.length) {
+        const p = cand[Math.floor(Math.random() * cand.length)];
+        sv.recent.push(p.u, p.t); if (sv.recent.length > 12) sv.recent.splice(0, 2);
+        return dailyQuestionFor({ unitId: p.u, targetId: p.t });
+      }
+    }
+    const p = pairs[Math.floor(Math.random() * pairs.length)];
+    return dailyQuestionFor({ unitId: p.u, targetId: p.t });
+  }
+  const survivalBest = () => (myProfile.survival && myProfile.survival.best) || 0;
+  function survivalSub() { const b = survivalBest(); return b ? `Your best: ${b} rounds` : "How far can you get?"; }
+  const survivalHeartsHtml = (n) => `<div class="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => (i < n ? "♥" : `<span class="off">♥</span>`)).join("")}</div>`;
+  function openSurvival() {
+    const fromHub = soloScreenEl.classList.contains("active");
+    sv = { phase: "intro", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 };
+    renderSurvival();
+    openOverlay(survivalScreenEl);
+    if (fromHub) overlayReturnScreen = soloScreenEl;
+  }
+  function survivalStop() { if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
+  function renderSurvival() {
+    if (!sv) return;
+    const el = survivalContentEl;
+    if (sv.phase === "intro") {
+      survivalStop();
+      el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
+        <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
+        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you go past your own best.</div></div>
+        <button type="button" class="dc-btn" id="sv-start">Start</button>
+        <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+      survivalLoadBoard();
+      return;
+    }
+    if (sv.phase === "question") {
+      survivalStop();
+      if (!sv.q) sv.q = survivalNextQuestion();
+      const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
+      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives)}
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
+        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
+        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        <button type="button" class="dc-btn" id="sv-submit" disabled>Lock it in</button>`;
+      return;
+    }
+    if (sv.phase === "reveal") {
+      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives)}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button>`;
+      survivalRunReveal();
+      return;
+    }
+    survivalStop();
+    const best = survivalBest();
+    el.innerHTML = `<h2 class="dc-title">Game over</h2>
+      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note">${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
+      <button type="button" class="dc-btn" id="sv-again">Play again</button>
+      <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
+      <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+    survivalLoadBoard();
+  }
+  async function survivalRunReveal() {
+    const q = sv.q, g = sv.g, over = sv.lives <= 0;
+    const showResult = (m) => {
+      const acc = roundAccuracy(g / q.answer), ok = acc >= SURVIVAL_PASS;
+      const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
+      const host = document.getElementById("sv-result"); if (!host) return;
+      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${ok ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      const skip = document.getElementById("sv-skip");
+      if (skip) { skip.id = "sv-next"; skip.className = "dc-btn"; skip.textContent = over ? "See my score" : "Next round"; }
+    };
+    const pair = questionObjects(q);
+    if (!pair) { showResult(null); return; }
+    try {
+      const m = await loadAnimModule();
+      if (!m || sv.phase !== "reveal") { showResult(m); return; }
+      survivalStop();
+      const stage = document.getElementById("sv-stage"); if (!stage) return;
+      svAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
+      const ctl = svAnim;
+      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      if (svAnim !== ctl || sv.phase !== "reveal") return;
+      animAudioInit();
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
+    } catch (err) { console.warn("[measuring-game] survival animation failed", err); showResult(null); }
+  }
+  // Run over: save the best (coins only for rounds beyond the old best), post it, count the rounds.
+  async function survivalFinish() {
+    if (sv.finished) return; sv.finished = true;
+    const old = survivalBest(), s = sv.survived;
+    sv.newBest = s > old; sv.gain = sv.newBest ? (s - old) * SURVIVAL_COINS_PER : 0;
+    const runs = ((myProfile.survival && myProfile.survival.runs) || 0) + 1;
+    try { await update(ref(db, `profiles/${deviceId}`), { survival: { best: Math.max(old, s), runs } }); } catch (e) {}
+    if (sv.gain) { try { await addCoins(sv.gain); } catch (e) {} }
+    if (sv.newBest && s > 0) {
+      const name = (!currentName || checkName(currentName)) ? "Player" : currentName.trim().slice(0, 12);
+      try { await set(ref(db, `survival/${deviceId}`), { n: name, s, t: serverTimestamp() }); } catch (e) {}
+    }
+    bumpStats({ rounds: sv.accs.length, survivalRuns: 1 }, null);
+    for (const r of sv.accs) await appendRoundHistory(r);
+  }
+  async function survivalLoadBoard() {
+    let rows = null;
+    try {
+      const snap = await get(query(ref(db, "survival"), orderByChild("s"), limitToLast(50)));
+      rows = [];
+      snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") rows.push({ id: c.key, n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s }); });
+      rows.sort((x, y) => y.s - x.s);
+    } catch (e) { rows = null; }
+    const host = document.getElementById("sv-board");
+    if (!host || !sv) return;
+    if (!rows) { host.textContent = "The leaderboard isn't available right now."; return; }
+    if (!rows.length) { host.textContent = "No scores yet. Be the first!"; return; }
+    const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
+    host.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
+  }
+  survivalContentEl.addEventListener("click", async (e) => {
+    const b = e.target.closest("button");
+    if (!b || !sv) return;
+    if (b.id === "sv-start" || b.id === "sv-again") { sv = { phase: "question", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
+    if (b.classList.contains("dc-key")) {
+      const k = b.dataset.k;
+      if (k === "back") sv.input = sv.input.slice(0, -1);
+      else if (sv.input.length < 9 && !(k === "." && sv.input.includes("."))) sv.input = (sv.input === "0" && k !== ".") ? k : (sv.input === "" && k === "." ? "0." : sv.input + k);
+      document.getElementById("sv-display").textContent = sv.input || "0";
+      document.getElementById("sv-submit").disabled = !(parseFloat(sv.input) > 0);
+      return;
+    }
+    if (b.id === "sv-submit") {
+      const g = parseFloat(sv.input); if (!(g > 0)) return;
+      const acc = roundAccuracy(g / sv.q.answer), ok = acc >= SURVIVAL_PASS;
+      sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok;
+      sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((g / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
+      if (ok) sv.survived++; else sv.lives--;
+      sv.phase = "reveal"; playSound("pick");
+      if (sv.lives <= 0) await survivalFinish();
+      renderSurvival(); return;
+    }
+    if (b.id === "sv-skip") {
+      if (svAnim) { try { svAnim.stop(); } catch (err) {} }
+      const q = sv.q, g = sv.g, acc = roundAccuracy(g / q.answer), m = await loadAnimModule();
+      const host = document.getElementById("sv-result");
+      if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${acc >= SURVIVAL_PASS ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${m ? m.formatCount(q.answer, q.answer) : q.answer}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      b.id = "sv-next"; b.className = "dc-btn"; b.textContent = sv.lives <= 0 ? "See my score" : "Next round"; return;
+    }
+    if (b.id === "sv-next") { sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return; }
+    if (b.id === "sv-share") {
+      const text = `Size Em Up! Survival: ${sv.survived} round${sv.survived === 1 ? "" : "s"} survived`;
+      const url = "https://measuring-game.web.app";
+      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your score" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
+      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
+      const copied = await copyTextToClipboard(text + "\n" + url);
+      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my score"; }, 1800); }
+    }
+  });
+  document.getElementById("survival-close-btn").addEventListener("click", async () => {
+    // leaving mid-run ends it (and banks what you survived)
+    if (sv && (sv.phase === "question" || sv.phase === "reveal") && sv.survived > 0 && !sv.finished) await survivalFinish();
+    survivalStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
+  });
 
   // ---- Career > Stats ----
   // Accuracy of one round: how close your guess was, symmetric (half and double are equally far off).
