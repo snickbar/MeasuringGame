@@ -441,7 +441,6 @@
   #shop-tabs #shop-strip-cosm .cosm-tab-btn { flex: 1 1 0; border-width: 0 4px; font-size: 10.5px; letter-spacing: -.2px; }
   .shop-subpanel { padding-top: 6px; }
   #toolbar-cosmetics-btn { position: relative; }
-  .tb-cosm-mark { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 20px; line-height: 1; pointer-events: none; }
   .shop-tab-btn {
     position: relative; flex: 1; width: auto; height: 100%; margin: 0; padding: 0; border: none; background: none;
     display: flex; align-items: center; justify-content: center; opacity: .65;
@@ -2596,7 +2595,7 @@
   <div id="toolbar-right-group">
     <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Stats"><img src="icons/toolbar-stats.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
-    <button id="toolbar-cosmetics-btn" class="toolbar-badge-btn" type="button" aria-label="Cosmetics"><img src="icons/toolbar-shop.png" alt="" style="filter:hue-rotate(250deg)"><span class="tb-cosm-mark" aria-hidden="true">&#127912;</span></button>
+    <button id="toolbar-cosmetics-btn" class="toolbar-badge-btn" type="button" aria-label="Cosmetics"><img src="icons/toolbar-cosmetics.webp" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.png" alt=""></button>
   </div>
 </div>
@@ -3877,7 +3876,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   Object.entries(REACTIONS).forEach(([emoji, r]) => { REACTION_BY_ID[r.id] = { ...r, emoji }; });
   const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`; // sideeye.png is the "looking" eyes
   const REACTION_SLOTS_MAX = 7, REACTION_SLOTS_BASE = 5;
-  const REACTION_SLOT_COSTS = [200, 200]; // coins for slot 6 and slot 7
+  const REACTION_SLOT_COSTS = [100, 100]; // coins for slot 6 and slot 7
   const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
   // What is really equipped: only reactions that have pictures, and no more than the slots you own.
   const equippedReactions = () => ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, ownedReactionSlots());
@@ -4191,6 +4190,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Buy, false on Cancel or tapping the backdrop. Swap the caller's follow-up
   // (the actual profile write) for a real receipt-validated grant later -
   // this function itself doesn't need to change.
+  // Shown in a pack's purchase dialog when some of its items are already owned (bought with coins).
+  function packOwnedNote(have, total, noun) {
+    if (!have) return undefined;
+    return `You already own ${have} of the ${total} ${noun} in this pack. Buying it still unlocks all ${total}.`;
+  }
   function showFakePurchase({ icon, title, price, desc }) {
     return new Promise((resolve) => {
       const ov = document.createElement("div");
@@ -4243,9 +4247,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const COSMETIC_CATALOG = {
     borders: [
       { id: "classic", label: "Classic", cost: 0, color: "#C98A4D" },
-      { id: "neon", label: "Neon", cost: 150, color: "#39D6C8" },
-      { id: "gold", label: "Gold", cost: 300, color: "#E8B930" },
-      { id: "holiday", label: "Holiday", cost: 200, color: "#D9435B" },
+      { id: "neon", label: "Neon", cost: 100, color: "#39D6C8" },
+      { id: "gold", label: "Gold", cost: 100, color: "#E8B930" },
+      { id: "holiday", label: "Holiday", cost: 100, color: "#D9435B" },
     ],
     // Winner flairs: items that circle the winning card, then burst. id matches FLAIRS below; pic is the swatch.
     // Price escalation order (per request): rainbow/snow swapped (same tier,
@@ -4254,28 +4258,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // bumped down 2 rank spots into the tier butterfly/fireworks vacated.
     effects: [
       { id: "classic", label: "Classic Stars", cost: 0, pic: "star" },
-      { id: "hearts", label: "Hearts", cost: 150, pic: "heart" },
-      { id: "coinshower", label: "Coin Shower", cost: 180, pic: "coin" },
-      { id: "rainbow", label: "Rainbow Stars", cost: 200, pic: "star", rainbow: true },
-      { id: "snow", label: "Snowflakes", cost: 200, pic: "snow-simple" },
-      { id: "fire", label: "Fireballs", cost: 250, pic: "flame" },
-      { id: "lightning", label: "Lightning", cost: 250, pic: "bolt" },
-      { id: "fireworks", label: "Fireworks", cost: 300, pic: "rocket" },
-      { id: "butterfly", label: "Butterflies", cost: 350, pic: "butterfly-monarch" },
-      { id: "leaves", label: "Autumn Leaves", cost: 200, pic: "leaf-maple" },
-      { id: "planes", label: "Paper Airplanes", cost: 250, pic: "plane-blue" },
-      { id: "popper", label: "Party Poppers", cost: 180, pic: "popper" },
-      { id: "soap", label: "Soap and Bubbles", cost: 200, pic: "soap" },
-      { id: "blossom", label: "Cherry Blossoms", cost: 250, pic: "blossom" },
-      { id: "notes", label: "Music Notes", cost: 220, pic: "notes-blue" },
-      { id: "fireflies", label: "Fireflies", cost: 300, pic: "firefly" },
+      { id: "hearts", label: "Hearts", cost: 100, pic: "heart" },
+      { id: "coinshower", label: "Coin Shower", cost: 100, pic: "coin" },
+      { id: "rainbow", label: "Rainbow Stars", cost: 100, pic: "star", rainbow: true },
+      { id: "snow", label: "Snowflakes", cost: 100, pic: "snow-simple" },
+      { id: "fire", label: "Fireballs", cost: 100, pic: "flame" },
+      { id: "lightning", label: "Lightning", cost: 100, pic: "bolt" },
+      { id: "fireworks", label: "Fireworks", cost: 100, pic: "rocket" },
+      { id: "butterfly", label: "Butterflies", cost: 100, pic: "butterfly-monarch" },
+      { id: "leaves", label: "Autumn Leaves", cost: 100, pic: "leaf-maple" },
+      { id: "planes", label: "Paper Airplanes", cost: 100, pic: "plane-blue" },
+      { id: "popper", label: "Party Poppers", cost: 100, pic: "popper" },
+      { id: "soap", label: "Soap and Bubbles", cost: 100, pic: "soap" },
+      { id: "blossom", label: "Cherry Blossoms", cost: 100, pic: "blossom" },
+      { id: "notes", label: "Music Notes", cost: 100, pic: "notes-blue" },
+      { id: "fireflies", label: "Fireflies", cost: 100, pic: "firefly" },
     ],
     colors: [
       { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
-      { id: "crimson", label: "Crimson", cost: 50, color: "#C23F35" },
-      { id: "ocean", label: "Ocean", cost: 50, color: "#2E86AB" },
-      { id: "violet", label: "Violet", cost: 50, color: "#7B4FA6" },
-      { id: "forest", label: "Forest", cost: 50, color: "#3B7A3B" },
+      { id: "crimson", label: "Crimson", cost: 100, color: "#C23F35" },
+      { id: "ocean", label: "Ocean", cost: 100, color: "#2E86AB" },
+      { id: "violet", label: "Violet", cost: 100, color: "#7B4FA6" },
+      { id: "forest", label: "Forest", cost: 100, color: "#3B7A3B" },
     ],
   };
   async function buyOrEquipCosmetic(category, id) {
@@ -4340,7 +4344,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price, desc: packOwnedNote(pack.emojis.filter((e) => ownsEmoji(e)).length, pack.emojis.length, "reactions") });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
@@ -4367,7 +4371,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, price: pack.price, desc: packOwnedNote(pack.flairs.filter((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); }).length, pack.flairs.length, "flairs") });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
@@ -4391,7 +4395,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price, desc: packOwnedNote(pack.backgrounds.filter((b) => ownsBackground(b.id)).length, pack.backgrounds.length, "backgrounds") });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
@@ -4415,10 +4419,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // don't), not coin-priced like the single-equip cosmetics above - more
   // packs just get appended here.
   const EMOJI_PACK_CATALOG = [
-    { id: "pack1", label: "Reaction Pack 1", price: "$1.49", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
-    { id: "pack2", label: "Reaction Pack 2", price: "$1.49", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}", "\u{1F92D}"] },
-    { id: "pack3", label: "Reaction Pack 3", price: "$1.49", emojis: ["\u{1F60E}", "\u{1FAE3}", "\u{1F44B}", "\u{1F449}", "\u{1F48B}", "\u23F3"] },
-    { id: "pack4", label: "Reaction Pack 4", price: "$1.49", emojis: ["\u{1F44E}", "\u{1F92A}", "\u{1F370}", "\u{1F914}", "\u{1F926}", "\u{1F91E}"] },
+    { id: "pack1", label: "Reaction Pack 1", price: "$0.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
+    { id: "pack2", label: "Reaction Pack 2", price: "$0.99", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}", "\u{1F92D}"] },
+    { id: "pack3", label: "Reaction Pack 3", price: "$0.99", emojis: ["\u{1F60E}", "\u{1FAE3}", "\u{1F44B}", "\u{1F449}", "\u{1F48B}", "\u23F3"] },
+    { id: "pack4", label: "Reaction Pack 4", price: "$0.99", emojis: ["\u{1F44E}", "\u{1F92A}", "\u{1F370}", "\u{1F914}", "\u{1F926}", "\u{1F91E}"] },
   ];
   function emojiPool() {
     return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
@@ -4437,7 +4441,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // art are listed; more are added here as their pictures arrive.
   const BACKGROUND_COIN_COST = 100;
   const BACKGROUND_PACK_CATALOG = [
-    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$1.99", backgrounds: [
+    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$0.99", backgrounds: [
       { id: "newyear-bg", label: "New Year's" },
       { id: "stpatrick-bg", label: "St. Patrick's Day" },
       { id: "may-bg", label: "May Fiesta" },
@@ -4445,7 +4449,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "september-bg", label: "Back to School" },
       { id: "thanksgiving-bg", label: "Thanksgiving" },
     ] },
-    { id: "bgpack2", label: "Holiday Backgrounds 2", price: "$1.99", backgrounds: [
+    { id: "bgpack2", label: "Holiday Backgrounds 2", price: "$0.99", backgrounds: [
       { id: "valentine-bg", label: "Valentine's Day" },
       { id: "easter-bg", label: "Easter" },
       { id: "june-bg", label: "Summer Sun" },
@@ -4453,7 +4457,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "halloween-bg", label: "Halloween" },
       { id: "christmas-bg", label: "Christmas" },
     ] },
-    { id: "bgpack3", label: "Tiled Backgrounds", price: "$1.99", backgrounds: [
+    { id: "bgpack3", label: "Tiled Backgrounds", price: "$0.99", backgrounds: [
       { id: "tile-dots", label: "Polka Dots" },
       { id: "tile-stripes", label: "Stripes" },
       { id: "tile-checker", label: "Checkerboard" },
@@ -4461,7 +4465,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "tile-gingham", label: "Gingham" },
       { id: "tile-plus", label: "Plus Signs" },
     ] },
-    { id: "bgpack4", label: "Tabletop Backgrounds", price: "$1.99", backgrounds: [
+    { id: "bgpack4", label: "Tabletop Backgrounds", price: "$0.99", backgrounds: [
       { id: "table-card", label: "Card Table" },
       { id: "table-coffee", label: "Coffee Table" },
       { id: "table-school", label: "School Desk" },
@@ -4469,7 +4473,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "table-dining", label: "Dining Table" },
       { id: "table-kitchen", label: "Kitchen Counter" },
     ] },
-    { id: "bgpack5", label: "Nature Backgrounds", price: "$1.99", backgrounds: [
+    { id: "bgpack5", label: "Nature Backgrounds", price: "$0.99", backgrounds: [
       { id: "nature-grass", label: "Grass" },
       { id: "nature-meadow", label: "Flower Meadow" },
       { id: "nature-snow", label: "Snow" },
@@ -4477,7 +4481,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "nature-clouds", label: "Clouds" },
       { id: "nature-water", label: "Water" },
     ] },
-    { id: "bgpack6", label: "Candy Backgrounds", price: "$1.99", backgrounds: [
+    { id: "bgpack6", label: "Candy Backgrounds", price: "$0.99", backgrounds: [
       { id: "candy-lollipops", label: "Lollipops" },
       { id: "candy-cottoncandy", label: "Cotton Candy" },
       { id: "candy-gumdrops", label: "Gumdrops" },
@@ -4624,7 +4628,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price, desc: packOwnedNote(pack.backgrounds.filter((b) => ownsBackground(b.id)).length, pack.backgrounds.length, "backgrounds") });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
       }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
@@ -4637,21 +4641,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
-  const BOARD_COIN_COST = 150;
+  const BOARD_COIN_COST = 100;
   const BOARD_PACK_CATALOG = [
-    { id: "boardpack1", label: "Question Board Pack 1", price: "$1.99", boards: [
+    { id: "boardpack1", label: "Question Board Pack 1", price: "$0.99", boards: [
       { id: "chalkboard", label: "Chalkboard" },
       { id: "whiteboard", label: "Whiteboard" },
       { id: "curtains", label: "Stage Curtains" },
       { id: "typewriter", label: "Typewriter" },
     ] },
-    { id: "boardpack2", label: "Question Board Pack 2", price: "$1.99", boards: [
+    { id: "boardpack2", label: "Question Board Pack 2", price: "$0.99", boards: [
       { id: "terminal", label: "Computer Terminal" },
       { id: "tv", label: "Old TV" },
       { id: "phone", label: "Phone Chat" },
       { id: "splitflap", label: "Split-Flap Sign" },
     ] },
-    { id: "boardpack3", label: "Question Board Pack 3", price: "$1.99", boards: [
+    { id: "boardpack3", label: "Question Board Pack 3", price: "$0.99", boards: [
       { id: "letterboard", label: "Letterboard" },
       { id: "neon", label: "Neon Sign" },
       { id: "sand", label: "Sand Writing" },
@@ -4703,7 +4707,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BOARD_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F3AD}", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "\u{1F3AD}", title: pack.label, price: pack.price, desc: packOwnedNote(pack.boards.filter((b) => ownsBoard(b.id)).length, pack.boards.length, "boards") });
         if (bought) purchaseBoardPack(pack.id);
       }, `${pack.boards.length} boards, or buy each with coins`));
       pack.boards.forEach((b) => container.appendChild(cosmRow({
@@ -4714,9 +4718,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   const FLAIR_PACK_CATALOG = [
-    { id: "fpack1", label: "Flair Pack 1", price: "$1.49", flairs: ["hearts", "coinshower", "rainbow", "snow", "leaves"] },
-    { id: "fpack2", label: "Flair Pack 2", price: "$1.49", flairs: ["fire", "lightning", "fireworks", "butterfly", "planes"] },
-    { id: "fpack3", label: "Flair Pack 3", price: "$1.49", flairs: ["popper", "soap", "blossom", "notes", "fireflies"] },
+    { id: "fpack1", label: "Flair Pack 1", price: "$0.99", flairs: ["hearts", "coinshower", "rainbow", "snow", "leaves"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$0.99", flairs: ["fire", "lightning", "fireworks", "butterfly", "planes"] },
+    { id: "fpack3", label: "Flair Pack 3", price: "$0.99", flairs: ["popper", "soap", "blossom", "notes", "fireflies"] },
   ];
   const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
@@ -4865,7 +4869,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // individually with coins - the bundle would have nothing left to add.
       const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price, desc: packOwnedNote(pack.emojis.filter((e) => ownsEmoji(e)).length, pack.emojis.length, "reactions") });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
@@ -4895,7 +4899,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const owned = !!(myProfile.flairPacks || {})[pack.id]
         || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, price: pack.price });
+        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, price: pack.price, desc: packOwnedNote(pack.flairs.filter((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); }).length, pack.flairs.length, "flairs") });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       }, `${pack.flairs.length} flairs, or buy each with coins`));
@@ -7535,7 +7539,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const MONTHLY_Q = 5, MONTHLY_BASE_COINS = 20, MONTHLY_ACC_COINS = 30; // coins: base for finishing + up to 30 for accuracy
   const MONTHLY_BANDS = [[1.5, 4], [4, 12], [12, 40], [40, 150], [150, 1000]];
   const monthlyContentEl = document.getElementById("monthly-content");
-  let mo = null, moAnim = null;
+  let mo = null, moAnim = null, moMain = null; // moMain: the real challenge, kept aside while a practice round is on screen
   const monthlyKey = () => dailyDateStr().slice(0, 7); // "YYYY-MM" in US Eastern
   // Items from the month's own pack(s); a month with no pack of its own uses the sampler (like the real game).
   function monthlyObjects(key) {
@@ -7549,8 +7553,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const k = monthlyKey(), name = MONTH_NAMES[Number(k.slice(5)) - 1];
     return monthlyPlayed() ? `${name}: done` : `${name} items, 5 questions`;
   }
-  function monthlyCombosLocal(key) {
-    const rng = dailyRng("size-em-up-monthly-" + key);
+  function monthlyCombosLocal(key, rngOverride) {
+    const rng = rngOverride || dailyRng("size-em-up-monthly-" + key);
     const pool = monthlyObjects(key).slice().sort((a, b) => (a.id < b.id ? -1 : 1));
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const usedM = new Set(), usedN = new Set(), out = [];
@@ -7598,7 +7602,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!monthlyScreenEl.classList.contains("active")) return;
     const saved = (myProfile.monthly && myProfile.monthly.key === key) ? myProfile.monthly : null;
     const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, MONTHLY_Q) : [];
-    mo = { key, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro", coins: (saved && saved.coins) || 0 };
+    mo = { key, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro", coins: (saved && saved.coins) || 0, practice: false };
+    moMain = null;
     mo.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
     if (guesses.length >= MONTHLY_Q && !(saved && saved.done)) { await monthlyFinish(); mo.phase = "done"; }
     renderMonthly();
@@ -7612,7 +7617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mo.phase === "intro") {
       monthlyStop();
       el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-        <div class="dc-card dc-hot"><div class="dc-big">5 questions, one try</div><div class="dc-note">Each one features an item from this month's pack. Everyone gets the same 5, and they get harder as you go.</div></div>
+        <div class="dc-card dc-hot"><div class="dc-big">5 questions</div><div class="dc-note">Each one features an item from this month's pack. Everyone gets the same 5 on the first try, and that score counts. After that you can practice all month with new questions.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${MONTHLY_BASE_COINS} for finishing, plus up to ${MONTHLY_ACC_COINS} more for accuracy.</div></div>
         <button type="button" class="dc-btn" id="mo-start">Start</button>`;
       return;
@@ -7637,9 +7642,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     monthlyStop();
     const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
     const rows = mo.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${dailyEmoji(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
-    el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
+    const best = (myProfile.monthly && myProfile.monthly.key === mo.key && typeof myProfile.monthly.best === "number") ? myProfile.monthly.best : null;
+    if (mo.practice) {
+      el.innerHTML = `<h2 class="dc-title">${name} Practice</h2><p class="dc-sub">New questions every round. No coins, and the leaderboard keeps your first try.</p>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
+      <button type="button" class="dc-btn" id="mo-practice">Practice again</button>
+      <button type="button" class="dc-btn" id="mo-main">Back to my challenge result</button>`;
+      return;
+    }
+    el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
+      <div class="dc-card">${rows}</div>
+      <button type="button" class="dc-btn" id="mo-practice">Practice with new questions</button>
       <button type="button" class="dc-btn" id="mo-share">Share my result</button>
       <h3 class="cs-h">${name} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
     monthlyLoadBoard();
@@ -7686,6 +7701,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     updateDailyBadge();
   }
+  // Practice round (any time after the real attempt): fresh random questions, same one-holiday-item rule,
+  // no coins and no leaderboard entry. Only a personal best is kept.
+  function monthlyStartPractice() {
+    if (!mo) return;
+    const main = mo.practice ? moMain : mo;
+    moMain = main;
+    const rng = dailyRng("size-em-up-practice-" + main.key + "-" + Math.random());
+    mo = { key: main.key, questions: monthlyCombosLocal(main.key, rng).map(dailyQuestionFor), guesses: [], input: "", phase: "question", coins: 0, practice: true };
+    renderMonthly();
+  }
+  async function monthlyPracticeFinish() {
+    const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
+    const prev = (myProfile.monthly && myProfile.monthly.key === mo.key && typeof myProfile.monthly.best === "number") ? myProfile.monthly.best : 0;
+    if (total > prev) { try { await update(ref(db, `profiles/${deviceId}/monthly`), { best: total }); } catch (e) {} if (myProfile.monthly) myProfile.monthly.best = total; }
+    bumpStats({ rounds: MONTHLY_Q }, null);
+  }
   async function monthlyLoadBoard() {
     const key = mo && mo.key; let rows = null;
     try {
@@ -7705,6 +7736,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest("button");
     if (!b || !mo) return;
     if (b.id === "mo-start") { mo.phase = "question"; renderMonthly(); return; }
+    if (b.id === "mo-practice") { monthlyStartPractice(); return; }
+    if (b.id === "mo-main") { if (moMain) { mo = moMain; moMain = null; renderMonthly(); } return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
       if (k === "back") mo.input = mo.input.slice(0, -1);
@@ -7716,6 +7749,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "mo-submit") {
       const g = parseFloat(mo.input); if (!(g > 0)) return;
       mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick");
+      if (mo.practice) { if (mo.guesses.length >= MONTHLY_Q) await monthlyPracticeFinish(); renderMonthly(); return; }
       try { await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, guesses: mo.guesses, done: false }); } catch (err) {}
       if (mo.guesses.length >= MONTHLY_Q) await monthlyFinish();
       renderMonthly(); return;
@@ -9070,14 +9104,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="tp-badge"><img src="${look[0]}" alt="" draggable="false"></div>
         <div class="tp-title">${c.title}</div>
         <p class="tp-desc">${c.desc}</p>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$1.99" : "$1.49")) + " · Unlock"}</button>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$0.99" : "$0.99")) + " · Unlock"}</button>
       </div>`;
     }).join("");
     el.innerHTML = cardHtml(cards.filter((c) => !BOARD_SHOP_PACKS[c.id]));
     if (boardEl) boardEl.innerHTML = cardHtml(cards.filter((c) => BOARD_SHOP_PACKS[c.id]));
   }
   const BOARD_PACK_NAME = "Question Board Packs";
-  const BOARD_PACK_PRICE = "$1.99";
+  const BOARD_PACK_PRICE = "$0.99";
   const BOARD_SHOP_PACKS = { boards: "boardpack1", boards2: "boardpack2", boards3: "boardpack3" };
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
