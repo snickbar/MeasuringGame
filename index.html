@@ -166,8 +166,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -651,6 +651,19 @@
   #toolbar-daily-btn.has-todo::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
   #toolbar-daily-streak { position: absolute; left: 2px; top: 2px; min-width: 18px; padding: 0 4px; height: 18px; border-radius: 9px; background: #fff; border: 2px solid #4a2c12; font: 700 12px/14px 'Fredoka', sans-serif; color: #000; text-align: center; }
   #daily-screen.active #daily-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #solo-screen.active #solo-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #solo-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  .sh-card { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; margin: 12px 0 0; padding: 12px 14px; background: linear-gradient(#fffdf6, #f6ead0); border: 3px solid #4a2c12; border-radius: 18px; box-shadow: 0 3px 0 rgba(74,44,18,.45); font-family: inherit; color: #000; text-align: center; text-shadow: none; }
+  .sh-card:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(74,44,18,.45); }
+  .sh-card.sh-hot { background: linear-gradient(#fff3d1, #ffd36a); }
+  .sh-card[disabled] { opacity: .55; }
+  .sh-ic { flex: 0 0 64px; width: 64px; height: 64px; object-fit: contain; }
+  .sh-tx { flex: 1; min-width: 0; }
+  .sh-name { display: block; font-size: 20px; font-weight: 700; color: #000; }
+  .sh-sub { display: block; margin-top: 3px; font-size: 13px; font-weight: 700; color: #000; }
+  .sh-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+  .sh-dot[hidden] { display: none; }
+  #home-solo-btn.has-todo::after { content: ""; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; z-index: 2; }
   #daily-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   .dc-title { margin: 6px 0 2px; font-size: 24px; color: #000; text-shadow: none; }
   .dc-sub { margin: 0 0 12px; font-size: 14px; color: #6b3a05; }
@@ -1085,7 +1098,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -2535,8 +2548,7 @@
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
-    <button id="toolbar-daily-btn" class="toolbar-badge-btn" type="button" aria-label="Daily Challenge"><img src="icons/toolbar-daily.png" alt=""><span id="toolbar-daily-streak" hidden></span></button>
-    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Career"><img src="icons/toolbar-career.png" alt=""></button>
+    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Stats"><img src="icons/toolbar-career.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.png" alt=""></button>
   </div>
@@ -2748,6 +2760,11 @@
 <div id="daily-screen" class="screen">
   <button id="daily-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="daily-content"></div>
+</div>
+
+<div id="solo-screen" class="screen">
+  <button id="solo-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="solo-content"></div>
 </div>
 
 <div id="career-screen" class="screen">
@@ -5594,6 +5611,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const itemsScreen = document.getElementById("items-screen");
   const careerScreenEl = document.getElementById("career-screen");
   const dailyScreenEl = document.getElementById("daily-screen");
+  const soloScreenEl = document.getElementById("solo-screen");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -6673,8 +6691,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -6886,14 +6904,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const d = myProfile.daily;
     return !!(d && d.date === dailyDateStr() && d.done);
   }
-  // The toolbar button: a red dot until today's challenge is done, and the day streak on top.
+  // A red dot on the home screen's Solo tile (and the Daily card inside the Solo hub) until today's challenge is done.
   function updateDailyBadge() {
-    const btn = document.getElementById("toolbar-daily-btn"), st = document.getElementById("toolbar-daily-streak");
-    if (!btn || !st) return;
-    btn.classList.toggle("has-todo", !dailyPlayedToday());
-    const n = dailyStreakNow();
-    st.hidden = n <= 0;
-    st.textContent = String(n);
+    const tile = document.getElementById("home-solo-btn");
+    if (tile) tile.classList.toggle("has-todo", !dailyPlayedToday());
+    if (typeof renderSoloHub === "function" && soloScreenEl.classList.contains("active")) renderSoloHub();
   }
   setInterval(() => { try { updateDailyBadge(); } catch (e) {} }, 60000);
 
@@ -6916,7 +6931,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const date = dailyDateStr();
     if (dailyScreenEl.classList.contains("active")) return;
     dailyContentEl.innerHTML = '<div class="dc-card">Loading today\'s challenge...</div>';
+    const fromHub = soloScreenEl.classList.contains("active");
     openOverlay(dailyScreenEl);
+    if (fromHub) overlayReturnScreen = soloScreenEl; // Back from the challenge lands on the hub
     const combos = await dailyLoadCombos(date);
     if (!dailyScreenEl.classList.contains("active")) return;
     const saved = (myProfile.daily && myProfile.daily.date === date) ? myProfile.daily : null;
@@ -7083,10 +7100,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
     }
   });
-  document.getElementById("daily-close-btn").addEventListener("click", () => { dailyStop(); closeOverlay(); });
-  document.getElementById("toolbar-daily-btn").addEventListener("click", guardToolbarNav(() => {
-    if (dailyScreenEl.classList.contains("active")) { dailyStop(); closeOverlay(); } else openDaily();
-  }));
+  document.getElementById("daily-close-btn").addEventListener("click", () => { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+
+  // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
+  const soloContentEl = document.getElementById("solo-content");
+  function renderSoloHub() {
+    const played = dailyPlayedToday(), streak = dailyStreakNow();
+    const dailySub = played ? `Done for today${streak > 0 ? ` &middot; \u{1F525} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your \u{1F525} ${streak}-day streak alive` : "3 questions, same for everyone");
+    const card = (id, img, name, sub, extra) => `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
+    soloContentEl.innerHTML = `<h2 class="dc-title">Solo</h2><p class="dc-sub">Pick how you want to play</p>
+      ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played })}
+      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", "Coming soon", { disabled: true })}
+      ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots")}
+      ${card("sh-survival", "items/t-rex.webp", "Survival", "Coming soon", { disabled: true })}`;
+  }
+  function openSolo() {
+    renderSoloHub();
+    if (!soloScreenEl.classList.contains("active")) openOverlay(soloScreenEl);
+  }
+  soloContentEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".sh-card");
+    if (!b || b.disabled) return;
+    if (b.id === "sh-daily") openDaily();
+    else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(); showCreateScreen("solo"); }
+  });
+  document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
   try { updateDailyBadge(); } catch (e) {}
 
   // ---- Career > Stats ----
@@ -8917,14 +8955,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     btn.addEventListener("animationend", onEnd);
     setTimeout(run, BTN_BOUNCE_MS + 80);
   }
-  homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => showCreateScreen("solo")));
+  homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => openSolo()));
   homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, async () => {
     if (!(await confirmAndPurchaseHostUnlock())) return;
     showCreateScreen("party");
   }));
+  let soloFromHub = false; // the Solo hub's Quick Game card opened the create screen
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
+    if (soloFromHub && createMode === "solo") openSolo();
+    soloFromHub = false;
   });
 
   function showJoinScreen() {
