@@ -646,7 +646,33 @@
   .career-tab.active { background: #ffc24a; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
   .career-tab.has-dot::after { content: ""; position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
   #career-screen.active #career-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
-  #career-content { padding: 6px 0 24px; }
+  #career-content { padding: 6px 0 24px; font-weight: 700; color: #000; text-align: center; }
+  .cs-level { margin: 8px 0 10px; padding: 12px; background: linear-gradient(#fff3d1, #ffe2a0); border: 2px solid #e8b95a; border-radius: 16px; }
+  .cs-lvl-top { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+  .cs-lvl-num { font-size: 24px; color: #000; }
+  .cs-rank { font-size: 16px; color: #8a4a05; }
+  .cs-bar { height: 14px; margin: 8px 0 4px; border: 2px solid #8a6a3a; border-radius: 9px; background: #fffdf6; overflow: hidden; }
+  .cs-bar-fill { height: 100%; background: linear-gradient(#ffd36a, #f2820f); }
+  .cs-lvl-sub { font-size: 12px; color: #6b3a05; }
+  .cs-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 6px; }
+  .cs-tile { padding: 10px 4px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
+  .cs-num { font-size: 22px; color: #000; line-height: 1.1; }
+  .cs-lab { margin-top: 3px; font-size: 11px; letter-spacing: .3px; text-transform: uppercase; color: #9a5d0a; }
+  .cs-h { margin: 16px 0 6px; font-size: 16px; color: #000; text-shadow: none; text-align: center; }
+  .cs-card { padding: 12px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
+  .cs-chart { display: block; width: 100%; height: auto; }
+  .cs-note { margin-top: 8px; font-size: 13px; color: #000; }
+  .cs-big { font-size: 20px; color: #000; }
+  .cs-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .cs-row-name { flex: 0 0 96px; font-size: 13px; text-align: left; }
+  .cs-row-bar { flex: 1; height: 12px; border: 2px solid #8a6a3a; border-radius: 8px; background: #fffdf6; overflow: hidden; }
+  .cs-row-bar span { display: block; height: 100%; background: linear-gradient(#ffd36a, #f2820f); }
+  .cs-row-val { flex: 0 0 40px; font-size: 13px; text-align: right; }
+  .cs-obj { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+  .cs-obj img { width: 44px; height: 44px; object-fit: contain; }
+  .cs-obj-name { flex: 1; text-align: left; font-size: 14px; }
+  .cs-obj-val { font-size: 15px; }
+  .cs-empty { margin-top: 12px; padding: 14px; background: rgba(90,74,58,.07); border-radius: 14px; font-size: 14px; }
   /* ---- Achievements ---- */
   #toolbar-awards-btn { position: relative; }
   #toolbar-awards-btn.has-claim::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
@@ -2466,9 +2492,9 @@
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
-    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Career"><img src="icons/toolbar-awards.png" alt=""></button>
+    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Career"><img src="icons/toolbar-career.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
-    <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-settings.png" alt=""></button>
+    <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.png" alt=""></button>
   </div>
 </div>
 <div id="toolbar-menu" hidden role="menu">
@@ -3795,6 +3821,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       seenObjects: {},
       seenCombos: {},
       stats: {},
+      history: [],
       achClaimed: {},
     };
   }
@@ -3929,6 +3956,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           seenObjects: { ...(data.seenObjects || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
           stats: { ...(data.stats || {}) },
+          history: Array.isArray(data.history) ? data.history : (data.history ? Object.values(data.history) : []),
           achClaimed: { ...(data.achClaimed || {}) },
         };
       }
@@ -6690,8 +6718,82 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (Object.values(CAREER_TABS).some((el) => el.classList.contains("active"))) closeOverlay();
     else showCareerTab(careerLastTab);
   }));
+  // ---- Career > Stats ----
+  // Accuracy of one round: how close your guess was, symmetric (half and double are equally far off).
+  const roundAccuracy = (r) => Math.max(0, 100 - (Math.max(r, 1 / r) - 1) * 100);
+  const CAREER_RANKS = [[1, "Rookie"], [5, "Eyeballer"], [10, "Estimator"], [20, "Sharpshooter"], [35, "Measuring Master"]];
+  function careerXp(st) {
+    return (st.rounds || 0) * 5 + (st.roundWins || 0) * 10 + (st.spotOns || 0) * 25 + (st.perfects || 0) * 50 + (st.gamesPlayed || 0) * 10;
+  }
+  function careerLevel(xp) {
+    const lvl = Math.floor(Math.sqrt(xp / 40)) + 1;
+    const lo = 40 * (lvl - 1) * (lvl - 1), hi = 40 * lvl * lvl;
+    let rank = CAREER_RANKS[0][1];
+    CAREER_RANKS.forEach(([minLvl, name]) => { if (lvl >= minLvl) rank = name; });
+    return { lvl, rank, into: xp - lo, span: hi - lo };
+  }
+  function careerHistory() {
+    const h = myProfile.history;
+    const list = Array.isArray(h) ? h : (h ? Object.values(h) : []);
+    return list.filter((x) => x && x.r > 0 && OBJECT_BY_ID.has(x.u) && OBJECT_BY_ID.has(x.g));
+  }
+  function careerChartSvg(points) {
+    const W = 320, H = 150, L = 34, R = 10, T = 10, B = 22;
+    const x = (i) => L + (points.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (points.length - 1));
+    const y = (v) => T + (H - T - B) * (1 - v / 100);
+    const line = points.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    const area = `${x(0).toFixed(1)},${y(0)} ${line} ${x(points.length - 1).toFixed(1)},${y(0)}`;
+    const grid = [0, 50, 100].map((g) => `<line x1="${L}" x2="${W - R}" y1="${y(g)}" y2="${y(g)}" stroke="#d8c7a6" stroke-width="1"/><text x="${L - 6}" y="${y(g) + 4}" text-anchor="end" font-size="10" font-weight="700" fill="#6b3a05">${g}%</text>`).join("");
+    const dots = points.length <= 16 ? points.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="#fff" stroke="#c9660a" stroke-width="2"/>`).join("") : "";
+    return `<svg class="cs-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Accuracy over time">${grid}<polygon points="${area}" fill="rgba(224,138,30,.18)"/><polyline points="${line}" fill="none" stroke="#c9660a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}<text x="${L}" y="${H - 5}" font-size="10" font-weight="700" fill="#6b3a05">Older</text><text x="${W - R}" y="${H - 5}" text-anchor="end" font-size="10" font-weight="700" fill="#6b3a05">Recent</text></svg>`;
+  }
   function renderCareerStats() {
-    document.getElementById("career-content").innerHTML = "";
+    const el = document.getElementById("career-content");
+    if (!el) return;
+    const st = myProfile.stats || {};
+    const hist = careerHistory();
+    const rounds = Math.max(st.rounds || 0, hist.length);
+    const lv = careerLevel(careerXp({ ...st, rounds }));
+    const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
+    let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div></div>`;
+    html += `<div class="cs-tiles">${tile(rounds, "Rounds played")}${tile(st.gamesPlayed || 0, "Games played")}${tile(st.roundWins || 0, "Round wins")}${tile(st.spotOns || 0, "Spot-ons")}${tile(st.perfects || 0, "Perfects")}${tile(st.bestStreak || 0, "Best win streak")}</div>`;
+    if (hist.length < 3) {
+      html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
+      el.innerHTML = html; return;
+    }
+    // Accuracy over time: average per bucket so a long history still reads as a trend.
+    const acc = hist.map((h) => roundAccuracy(h.r));
+    const per = acc.length > 40 ? Math.ceil(acc.length / 20) : (acc.length > 20 ? 2 : 1);
+    const pts = [];
+    for (let i = 0; i < acc.length; i += per) { const sl = acc.slice(i, i + per); pts.push(sl.reduce((a, b) => a + b, 0) / sl.length); }
+    const avg = (arr) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+    const recent = acc.slice(-20), before = acc.slice(-40, -20);
+    let trend = "";
+    if (before.length >= 5) { const d = Math.round(avg(recent) - avg(before)); trend = d === 0 ? " (steady)" : (d > 0 ? ` (up ${d} from the 20 before)` : ` (down ${-d} from the 20 before)`); }
+    html += `<h3 class="cs-h">Accuracy over time</h3><div class="cs-card">${careerChartSvg(pts)}<div class="cs-note">Last ${recent.length} rounds: <b>${Math.round(avg(recent))}%</b> accurate${trend}</div></div>`;
+    // Guessing habit: geometric mean of guess / answer.
+    const bias = Math.exp(avg(hist.map((h) => Math.log(h.r)))) - 1;
+    const biasPct = Math.round(Math.abs(bias) * 100);
+    html += `<h3 class="cs-h">Your guessing habit</h3><div class="cs-card"><div class="cs-big">${biasPct < 5 ? "Right on target" : (bias > 0 ? `You guess ${biasPct}% too high` : `You guess ${biasPct}% too low`)}</div><div class="cs-note">${biasPct < 5 ? "Your guesses are balanced between high and low." : "On average, across your recent rounds. Adjust a little the other way to climb."}</div></div>`;
+    // By size scale (the bigger of the two objects).
+    const scales = [["Tiny things", 0, 20], ["Small things", 20, 1000], ["Person-sized", 1000, 10000], ["Big things", 10000, 300000], ["Giants", 300000, Infinity]];
+    const rows = scales.map(([name, lo, hi]) => {
+      const sub = hist.filter((h) => { const m = Math.max(OBJECT_BY_ID.get(h.u).mm, OBJECT_BY_ID.get(h.g).mm); return m >= lo && m < hi; });
+      return { name, n: sub.length, a: sub.length ? avg(sub.map((h) => roundAccuracy(h.r))) : 0 };
+    }).filter((r) => r.n >= 3);
+    if (rows.length) {
+      html += `<h3 class="cs-h">By size</h3><div class="cs-card">${rows.map((r) => `<div class="cs-row"><span class="cs-row-name">${r.name}</span><span class="cs-row-bar"><span style="width:${Math.round(r.a)}%"></span></span><span class="cs-row-val">${Math.round(r.a)}%</span></div>`).join("")}<div class="cs-note">Average accuracy, from rounds where the bigger object falls in that size range.</div></div>`;
+    }
+    // Best / toughest objects (3+ appearances).
+    const agg = new Map();
+    hist.forEach((h) => { const a = roundAccuracy(h.r); [h.u, h.g].forEach((id) => { const o = agg.get(id) || { n: 0, sum: 0 }; o.n++; o.sum += a; agg.set(id, o); }); });
+    const objs = [...agg.entries()].filter(([, o]) => o.n >= 3).map(([id, o]) => ({ id, n: o.n, a: o.sum / o.n })).sort((x, y) => y.a - x.a);
+    if (objs.length >= 2) {
+      const mk = (o) => { const ob = OBJECT_BY_ID.get(o.id); return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase() + ob.name.slice(1))}</span><span class="cs-obj-val">${Math.round(o.a)}%</span></div>`; };
+      const k = Math.min(3, Math.floor(objs.length / 2));
+      html += `<h3 class="cs-h">Your best objects</h3><div class="cs-card">${objs.slice(0, k).map(mk).join("")}</div><h3 class="cs-h">Toughest objects</h3><div class="cs-card">${objs.slice(-k).reverse().map(mk).join("")}</div>`;
+    }
+    el.innerHTML = html;
   }
   // Per-award art lives in icons/ach/<id>.png; the trophy stays until a file exists.
   document.getElementById("achievements-content").addEventListener("load", (e) => {
