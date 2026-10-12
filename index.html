@@ -253,6 +253,7 @@
   .ht-host { flex: 1.28; --c1: #ffc24a; --c2: #f2820f; --edge: #b4570a; }
   .ht-join { --c1: #6cc4ff; --c2: #2f86e0; --edge: #1b5aa8; }
   /* Badge hangs off the right edge of the "Host Party" cloud, overlapping its rightmost lobe. */
+  .home-lock-badge img { display: block; width: 32px; height: auto; }
   .home-lock-badge {
     position: absolute; top: -10px; right: -8px;
     pointer-events: none; font-size: 30px; line-height: 1;
@@ -768,6 +769,8 @@
   .dc-row .dc-em .res-mark { width: 38px; height: 38px; }
   .dc-lb-em { display: flex; gap: 2px; }
   .dc-lb-em .res-mark { width: 20px; height: 20px; filter: none; }
+  .fire-ic { height: 1.1em; width: auto; vertical-align: -0.2em; }
+  .lock-ic { height: 1.1em; width: auto; vertical-align: -0.2em; }
   .dc-pics { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin: 6px 0; }
   .dc-pic { flex: 1; max-width: 150px; padding: 8px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
   .dc-pic img { display: block; margin: 0 auto 4px; width: 100%; height: 96px; object-fit: contain; }
@@ -2375,6 +2378,7 @@
   #left-screen.active, #ended-screen.active { display: flex; justify-content: center; padding: 22px 4px 40px; }
   .exit-card { width: 100%; max-width: 380px; box-sizing: border-box; text-align: center; background: rgba(255,252,246,.94); border: 3px solid #d9c29a; border-radius: 26px; padding: 22px 18px 20px; box-shadow: 0 6px 0 rgba(120,85,40,.18), 0 10px 24px rgba(60,40,10,.18); }
   .exit-icon { font-size: 54px; line-height: 1; margin-bottom: 6px; }
+  .exit-icon img { display: block; margin: 0 auto; height: 64px; width: auto; max-width: 90px; object-fit: contain; }
   .exit-card h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.2; }
   .exit-reason { margin: 0 0 14px; font-size: 17px; line-height: 1.35; color: var(--text); }
   .exit-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0 0 14px; }
@@ -2704,7 +2708,7 @@
 
   <div id="home-btn-row">
     <button id="home-solo-btn" class="home-tile ht-solo" aria-label="Solo Game"><img class="ht-ic" src="icons/home-solo.png" alt=""><span class="ht-lb">Solo Game</span></button>
-    <button id="home-create-btn" class="home-tile ht-host" aria-label="Host Party"><img class="ht-ic" src="icons/home-host.png" alt=""><span class="ht-lb">Host Party</span><span id="home-create-lock" class="home-lock-badge" hidden>&#128274;</span></button>
+    <button id="home-create-btn" class="home-tile ht-host" aria-label="Host Party"><img class="ht-ic" src="icons/home-host.png" alt=""><span class="ht-lb">Host Party</span><span id="home-create-lock" class="home-lock-badge" hidden><img src="icons/reactions/padlock.png" alt=""></span></button>
     <button id="home-join-btn" class="home-tile ht-join" aria-label="Join Game"><img class="ht-ic" src="icons/home-join.png" alt=""><span class="ht-lb">Join Game</span></button>
   </div>
 </div>
@@ -3397,7 +3401,7 @@
 
 <div id="ended-screen" class="screen">
   <div class="exit-card">
-    <div class="exit-icon" aria-hidden="true">&#127937;</div>
+    <div class="exit-icon" aria-hidden="true"><img src="icons/reactions/trophy.png" alt=""></div>
     <h1>Game ended</h1>
     <p class="exit-reason">The host ended this game.</p>
     <div id="ended-stats" class="exit-stats" hidden></div>
@@ -3408,7 +3412,7 @@
 
 <div id="left-screen" class="screen">
   <div class="exit-card">
-    <div id="left-icon" class="exit-icon" aria-hidden="true">&#128075;</div>
+    <div id="left-icon" class="exit-icon" aria-hidden="true"><img src="icons/reactions/wave.png" alt=""></div>
     <h1 id="left-title">You left the game</h1>
     <p id="left-reason" class="exit-reason"></p>
     <div id="left-stats" class="exit-stats" hidden></div>
@@ -3979,7 +3983,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const on = rndOn(cat);
     const row = document.createElement("div");
     row.className = "cosm-row cosm-rnd-row" + (on ? " equipped" : "");
-    row.innerHTML = `<div class="cosm-lead"><span class="cosm-emoji">\u{1F3B2}</span><span class="cosm-name">Equip Random<span class="cosm-rnd-sub">${subText}</span></span></div>`;
+    row.innerHTML = `<div class="cosm-lead"><span class="cosm-emoji"><svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg></span><span class="cosm-name">Equip Random<span class="cosm-rnd-sub">${subText}</span></span></div>`;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "cosm-equip cosm-rnd-btn" + (on ? " is-on" : "");
@@ -5000,7 +5004,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (o.lockedHint) {
       btn.className = "cosm-unlock";
       btn.disabled = true;
-      btn.textContent = "\u{1F512} Locked";
+      btn.innerHTML = `<img class="lock-ic" src="icons/reactions/padlock.png" alt=""> Locked`;
       row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", `<span class="cosm-rnd-sub">${o.lockedHint}</span>`);
     } else {
       btn.className = "cosm-buy";
@@ -7287,6 +7291,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const hl = shape === "check" ? "M10.5 24.5 L19.5 33.5 L37 12.5" : "M13 12 L35 34";
     return `<svg class="res-mark ${cls || ""}" viewBox="0 0 48 48" aria-hidden="true"><path d="${d}" fill="none" stroke="#4a2c12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="${hl}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.8" stroke-linecap="round"/></svg>`;
   }
+  const FIRE_IC = `<img class="fire-ic" src="icons/reactions/fire.png" alt="">`;
   const accLabel = (a) => (a >= 99 ? "Spot on!" : a >= 90 ? "So close!" : a >= 70 ? "Nice guess" : a >= 40 ? "In the neighborhood" : "Way off");
   // The card shown after a guess: big check or X, the verdict, then the numbers in large text.
   function resultCardHtml(acc, g, ans, label) {
@@ -7372,7 +7377,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyStop();
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. They start easy and get harder. You can only play once, so make your guesses count.</div></div>
-        <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
+        <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
         <button type="button" class="dc-btn" id="dc-start">Start</button>`;
       return;
     }
@@ -7401,7 +7406,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
       <div class="dc-card dc-hot"><div class="dc-big">${total} / 300</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>
       <div class="dc-card">${rows}</div>
-      <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
+      <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
       <button type="button" class="dc-btn" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
     dailyLoadBoard();
@@ -7480,7 +7485,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!now || !daily || daily.date !== date) return;
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
-    const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
+    const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
   }
 
@@ -7525,7 +7530,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const soloContentEl = document.getElementById("solo-content");
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
-    const dailySub = played ? `Done for today${streak > 0 ? ` &middot; \u{1F525} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your \u{1F525} ${streak}-day streak alive` : "3 questions, same for everyone");
+    const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
     const card = (id, img, name, sub, extra) => `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     soloContentEl.innerHTML = `<h2 class="dc-title">Solo</h2><p class="dc-sub">Pick how you want to play</p>
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played })}
@@ -7958,7 +7963,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!now || !mo || mo.key !== key) return;
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
-    const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
+    const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
   }
   monthlyContentEl.addEventListener("click", async (e) => {
@@ -8183,7 +8188,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!host || !sv) return;
     if (!rows) { host.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { host.textContent = "No scores yet. Be the first!"; return; }
-    const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
+    const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     host.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
   }
   survivalContentEl.addEventListener("click", async (e) => {
@@ -8367,7 +8372,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     btn.addEventListener("click", async () => {
       const amount = parseInt(btn.dataset.coins, 10);
       const priceText = (btn.textContent.split("·")[0] || "").trim();
-      const bought = await showFakePurchase({ icon: "\u{1FA99}", title: `${amount.toLocaleString()} Coins`, price: priceText || "Buy Now" });
+      const bought = await showFakePurchase({ icon: "icons/coin.png", title: `${amount.toLocaleString()} Coins`, price: priceText || "Buy Now" });
       if (!bought) return;
       btn.disabled = true;
       await addCoins(amount);
@@ -11338,7 +11343,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudSubToolbarEl.classList.remove("active"); // the Pause/Exit bar must not sit on top of this screen
     leftReasonEl.textContent = reason;
     document.getElementById("left-title").textContent = opts.title || "You left the game";
-    document.getElementById("left-icon").textContent = opts.icon || "\u{1F44B}";
+    document.getElementById("left-icon").innerHTML = `<img src="${opts.icon || "icons/reactions/wave.png"}" alt="">`;
     fillExitStats(document.getElementById("left-stats"), opts.tiles || []);
     const hintEl = document.getElementById("left-hint");
     hintEl.textContent = opts.hint || "";
@@ -11354,7 +11359,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("The other players can keep playing without you.", {
-      title: "You left the game", icon: "\u{1F44B}", tiles,
+      title: "You left the game", icon: "icons/reactions/wave.png", tiles,
       hint: `Want back in? Tap Join Game, then Rejoin under "Last game" (room ${roomCode}).`,
     });
   }
@@ -11368,7 +11373,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("The room is now closed for everyone.", {
-      title: "You ended the game", icon: "\u{1F3C1}", tiles,
+      title: "You ended the game", icon: "icons/reactions/trophy.png", tiles,
       hint: "Start a new game any time from the home screen.",
     });
   }
@@ -13167,7 +13172,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           // listener can't tell those apart, so the message stays neutral rather
           // than blaming the host for something that may have been a timeout.
           showLeftScreen("This happens if the host removed you, or if you were disconnected for too long.", {
-            title: "You're no longer in this room", icon: "\u{1F6AA}",
+            title: "You're no longer in this room", icon: "items/door.webp",
             hint: "Ask the host for the room code if you'd like to join again.",
           });
         }
