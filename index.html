@@ -6957,7 +6957,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
       <div class="dc-card dc-hot"><div class="dc-big">${total} / 300</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div></div>
       <div class="dc-card">${rows}</div>
-      <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div></div>
+      <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
       <button type="button" class="dc-btn" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
     dailyLoadBoard();
@@ -6997,6 +6997,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   }
 
+  const DAILY_STREAK_BONUS = { 3: 20, 7: 50, 30: 200 };  // coins paid when the day streak reaches exactly this many days
   function dailyUpdateStreak(date) {
     const cur = myProfile.dailyStreak || { count: 0, best: 0, last: null };
     const count = cur.last === date ? (cur.count || 1) : (cur.last === dailyShiftDate(date, -1) ? (cur.count || 0) + 1 : 1);
@@ -7006,9 +7007,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function dailyFinish() {
     const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
     const streak = dailyUpdateStreak(daily.date);
+    const bonus = DAILY_STREAK_BONUS[streak.count] || 0;
+    daily.bonus = bonus;
     try { await update(ref(db, `profiles/${deviceId}`), { daily: { date: daily.date, guesses: daily.guesses, done: true, total }, dailyStreak: streak }); } catch (e) {}
     const name = (!currentName || checkName(currentName)) ? "Player" : currentName.trim().slice(0, 12);
     try { await set(ref(db, `daily/${daily.date}/${deviceId}`), { n: name, s: total, a: accs.map((x) => Math.round(x)), t: serverTimestamp() }); } catch (e) { /* already posted today, or offline */ }
+    if (bonus) { try { await addCoins(bonus); } catch (e) {} }
     bumpStats({ rounds: 3, dailies: 1 }, null);
     for (let i = 0; i < 3; i++) {
       const q = daily.questions[i];
