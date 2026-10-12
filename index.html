@@ -166,8 +166,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -669,6 +669,8 @@
   .wl-stars { letter-spacing: 2px; color: #e8a30c; -webkit-text-stroke: .6px #4a2c12; }
   .wl-stars .off { color: #e7dcc4; }
   .wl-big { font-size: 40px; margin: 6px 0; }
+  #monthly-screen.active #monthly-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #monthly-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   #daily-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   .dc-title { margin: 6px 0 2px; font-size: 24px; color: #000; text-shadow: none; }
   .dc-sub { margin: 0 0 12px; font-size: 14px; color: #6b3a05; }
@@ -1103,7 +1105,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -2777,6 +2779,11 @@
   <div id="worlds-content"></div>
 </div>
 
+<div id="monthly-screen" class="screen">
+  <button id="monthly-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="monthly-content"></div>
+</div>
+
 <div id="career-screen" class="screen">
   <button id="career-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="career-content"></div>
@@ -3902,6 +3909,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       daily: null,
       dailyStreak: null,
       worlds: {},
+      monthly: null,
       achClaimed: {},
     };
   }
@@ -4041,6 +4049,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           daily: data.daily || null,
           dailyStreak: data.dailyStreak || null,
           worlds: data.worlds || {},
+          monthly: data.monthly || null,
           achClaimed: { ...(data.achClaimed || {}) },
         };
       }
@@ -5625,6 +5634,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const dailyScreenEl = document.getElementById("daily-screen");
   const soloScreenEl = document.getElementById("solo-screen");
   const worldsScreenEl = document.getElementById("worlds-screen");
+  const monthlyScreenEl = document.getElementById("monthly-screen");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -6704,8 +6714,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -6920,7 +6930,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A red dot on the home screen's Solo tile (and the Daily card inside the Solo hub) until today's challenge is done.
   function updateDailyBadge() {
     const tile = document.getElementById("home-solo-btn");
-    if (tile) tile.classList.toggle("has-todo", !dailyPlayedToday());
+    if (tile) tile.classList.toggle("has-todo", !dailyPlayedToday() || !monthlyPlayed());
     if (typeof renderSoloHub === "function" && soloScreenEl.classList.contains("active")) renderSoloHub();
   }
   setInterval(() => { try { updateDailyBadge(); } catch (e) {} }, 60000);
@@ -6953,6 +6963,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, 3) : [];
     daily = { date, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro" };
     daily.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
+    if (guesses.length >= 3 && !(saved && saved.done)) { await dailyFinish(); daily.phase = "done"; } // closed right after the last guess
     renderDaily();
   }
   function dailyStop() { if (dailyAnim) { try { dailyAnim.destroy(); } catch (e) {} dailyAnim = null; } }
@@ -7123,6 +7134,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const card = (id, img, name, sub, extra) => `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     soloContentEl.innerHTML = `<h2 class="dc-title">Solo</h2><p class="dc-sub">Pick how you want to play</p>
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played })}
+      ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed() })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`)}
       ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots")}
       ${card("sh-survival", "items/t-rex.webp", "Survival", "Coming soon", { disabled: true })}`;
@@ -7136,6 +7148,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!b || b.disabled) return;
     if (b.id === "sh-daily") openDaily();
     else if (b.id === "sh-worlds") openWorlds();
+    else if (b.id === "sh-monthly") openMonthly();
     else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(); showCreateScreen("solo"); }
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
@@ -7344,6 +7357,218 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (wl.phase !== "list") { wl.phase = "world"; renderWorlds(); return; }
     closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
   });
+
+  // ==================== Monthly Challenge: 5 questions, one try a month, same for everyone ====================
+  // Every question pairs one of THIS month's pack items with an ordinary object. Questions get harder
+  // (a bigger size gap) as you go. Finishing pays coins; a global leaderboard ranks the month.
+  const MONTHLY_Q = 5, MONTHLY_BASE_COINS = 20, MONTHLY_ACC_COINS = 30; // coins: base for finishing + up to 30 for accuracy
+  const MONTHLY_BANDS = [[1.5, 4], [4, 12], [12, 40], [40, 150], [150, 1000]];
+  const monthlyContentEl = document.getElementById("monthly-content");
+  let mo = null, moAnim = null;
+  const monthlyKey = () => dailyDateStr().slice(0, 7); // "YYYY-MM" in US Eastern
+  // Items from the month's own pack(s); a month with no pack of its own uses the sampler (like the real game).
+  function monthlyObjects(key) {
+    const [y, m] = key.split("-").map(Number);
+    const packs = seasonPackIds(new Date(y, m - 1, 15));
+    return packs.length ? HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack)) : HOLIDAY_OBJECTS.filter((o) => SAMPLER_IDS.has(o.id));
+  }
+  function monthlyPlayed() { const d = myProfile.monthly; return !!(d && d.key === monthlyKey() && d.done); }
+  function monthlyIcon() { const o = monthlyObjects(monthlyKey())[0]; return o ? o.image : "items/ant.webp"; }
+  function monthlySub() {
+    const k = monthlyKey(), name = MONTH_NAMES[Number(k.slice(5)) - 1];
+    return monthlyPlayed() ? `${name}: done` : `${name} items, 5 questions`;
+  }
+  function monthlyCombosLocal(key) {
+    const rng = dailyRng("size-em-up-monthly-" + key);
+    const pool = monthlyObjects(key).slice().sort((a, b) => (a.id < b.id ? -1 : 1));
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const usedM = new Set(), usedN = new Set(), out = [];
+    const tryBand = (lo, hi) => {
+      for (const m of pool) {
+        if (usedM.has(m.id)) continue;
+        const cand = [];
+        for (const n of OBJECTS) {
+          if (usedN.has(n.id)) continue;
+          const [u, t] = m.mm <= n.mm ? [m, n] : [n, m];
+          const r = t.mm / u.mm;
+          if (r >= lo && r < hi) cand.push([u.id, t.id, n.id]);
+        }
+        if (cand.length) { const c = cand[Math.floor(rng() * cand.length)]; usedM.add(m.id); usedN.add(c[2]); return { unitId: c[0], targetId: c[1] }; }
+      }
+      return null;
+    };
+    MONTHLY_BANDS.forEach(([lo, hi]) => out.push(tryBand(lo, hi)));
+    for (let i = 0; i < out.length; i++) if (!out[i]) out[i] = tryBand(1.5, 1e9) || tryBand(1.01, 1e9);
+    return out.filter(Boolean);
+  }
+  async function monthlyLoadCombos(key) {
+    const valid = (c) => Array.isArray(c) && c.length === MONTHLY_Q && c.every((x) => x && x.unitId !== x.targetId && OBJECT_BY_ID.has(x.unitId) && OBJECT_BY_ID.has(x.targetId));
+    const local = monthlyCombosLocal(key);
+    const read = async () => { const snap = await get(ref(db, `monthlyCombos/${key}`)); if (!snap.exists()) return null; const v = snap.val(); const arr = Array.isArray(v) ? v : Object.values(v); return valid(arr) ? arr : null; };
+    try {
+      const have = await read();
+      if (have) return have;
+      if (valid(local)) await runTransaction(ref(db, `monthlyCombos/${key}`), (cur) => (cur == null ? local : undefined));
+      return (await read()) || local;
+    } catch (e) { return local; }
+  }
+  function monthDaysLeft() {
+    const [y, m, d] = dailyDateStr().split("-").map(Number);
+    return new Date(Date.UTC(y, m, 0)).getUTCDate() - d + 1;
+  }
+  async function openMonthly() {
+    const key = monthlyKey();
+    if (monthlyScreenEl.classList.contains("active")) return;
+    monthlyContentEl.innerHTML = '<div class="dc-card">Loading this month\'s challenge...</div>';
+    const fromHub = soloScreenEl.classList.contains("active");
+    openOverlay(monthlyScreenEl);
+    if (fromHub) overlayReturnScreen = soloScreenEl;
+    const combos = await monthlyLoadCombos(key);
+    if (!monthlyScreenEl.classList.contains("active")) return;
+    const saved = (myProfile.monthly && myProfile.monthly.key === key) ? myProfile.monthly : null;
+    const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, MONTHLY_Q) : [];
+    mo = { key, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro", coins: (saved && saved.coins) || 0 };
+    mo.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
+    if (guesses.length >= MONTHLY_Q && !(saved && saved.done)) { await monthlyFinish(); mo.phase = "done"; }
+    renderMonthly();
+  }
+  function monthlyStop() { if (moAnim) { try { moAnim.destroy(); } catch (e) {} moAnim = null; } }
+  function monthlyAccs() { return mo.questions.map((q, i) => (mo.guesses[i] > 0 ? roundAccuracy(mo.guesses[i] / q.answer) : 0)); }
+  function renderMonthly() {
+    if (!mo) return;
+    const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
+    const dots = (i) => `<div class="dc-dots">${Array.from({ length: MONTHLY_Q }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
+    if (mo.phase === "intro") {
+      monthlyStop();
+      el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
+        <div class="dc-card dc-hot"><div class="dc-big">5 questions, one try</div><div class="dc-note">Each one features an item from this month's pack. Everyone gets the same 5, and they get harder as you go.</div></div>
+        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${MONTHLY_BASE_COINS} for finishing, plus up to ${MONTHLY_ACC_COINS} more for accuracy.</div></div>
+        <button type="button" class="dc-btn" id="mo-start">Start</button>`;
+      return;
+    }
+    if (mo.phase === "question") {
+      monthlyStop();
+      const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
+      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${MONTHLY_Q}</h2>${dots(i)}
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
+        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
+        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        <button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button>`;
+      return;
+    }
+    if (mo.phase === "reveal") {
+      const i = mo.guesses.length - 1;
+      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${MONTHLY_Q}</h2>${dots(i)}<p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button>`;
+      monthlyRunReveal();
+      return;
+    }
+    monthlyStop();
+    const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
+    const rows = mo.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${dailyEmoji(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
+    el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
+      <div class="dc-card">${rows}</div>
+      <button type="button" class="dc-btn" id="mo-share">Share my result</button>
+      <h3 class="cs-h">${name} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+    monthlyLoadBoard();
+  }
+  async function monthlyRunReveal() {
+    const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], last = mo.guesses.length >= MONTHLY_Q;
+    const showResult = (m) => {
+      const acc = roundAccuracy(g / q.answer);
+      const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
+      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
+      const host = document.getElementById("mo-result"); if (!host) return;
+      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${label}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      const skip = document.getElementById("mo-skip");
+      if (skip) { skip.id = "mo-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
+    };
+    const pair = questionObjects(q);
+    if (!pair) { showResult(null); return; }
+    try {
+      const m = await loadAnimModule();
+      if (!m || mo.phase !== "reveal") { showResult(m); return; }
+      monthlyStop();
+      const stage = document.getElementById("mo-stage"); if (!stage) return;
+      moAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
+      const ctl = moAnim;
+      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      if (moAnim !== ctl || mo.phase !== "reveal") return;
+      animAudioInit();
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (moAnim === ctl) showResult(m); } });
+    } catch (err) { console.warn("[measuring-game] monthly animation failed", err); showResult(null); }
+  }
+  // Once, after the fifth guess: save the month, pay coins, post to the leaderboard, count the rounds.
+  async function monthlyFinish() {
+    const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
+    const coins = MONTHLY_BASE_COINS + Math.round((total / (MONTHLY_Q * 100)) * MONTHLY_ACC_COINS);
+    mo.coins = coins;
+    try { await update(ref(db, `profiles/${deviceId}`), { monthly: { key: mo.key, guesses: mo.guesses, done: true, total, coins } }); } catch (e) {}
+    try { await addCoins(coins); } catch (e) {}
+    const name = (!currentName || checkName(currentName)) ? "Player" : currentName.trim().slice(0, 12);
+    try { await set(ref(db, `monthly/${mo.key}/${deviceId}`), { n: name, s: total, a: accs.map((x) => Math.round(x)), t: serverTimestamp() }); } catch (e) {}
+    bumpStats({ rounds: MONTHLY_Q, monthlies: 1 }, null);
+    for (let i = 0; i < MONTHLY_Q; i++) {
+      const q = mo.questions[i];
+      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((mo.guesses[i] / q.answer) * 10000) / 10000, p: 0, f: accs[i] >= 99 ? 1 : 0, s: 4 });
+    }
+    updateDailyBadge();
+  }
+  async function monthlyLoadBoard() {
+    const key = mo && mo.key; let rows = null;
+    try {
+      const snap = await get(query(ref(db, `monthly/${key}`), orderByChild("s"), limitToLast(50)));
+      rows = [];
+      snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") rows.push({ id: c.key, n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s, a: Array.isArray(v.a) ? v.a : [] }); });
+      rows.sort((x, y) => y.s - x.s);
+    } catch (e) { rows = null; }
+    const now = document.getElementById("mo-board");
+    if (!now || !mo || mo.key !== key) return;
+    if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
+    if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
+    const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
+    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map(dailyEmoji).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+  }
+  monthlyContentEl.addEventListener("click", async (e) => {
+    const b = e.target.closest("button");
+    if (!b || !mo) return;
+    if (b.id === "mo-start") { mo.phase = "question"; renderMonthly(); return; }
+    if (b.classList.contains("dc-key")) {
+      const k = b.dataset.k;
+      if (k === "back") mo.input = mo.input.slice(0, -1);
+      else if (mo.input.length < 9 && !(k === "." && mo.input.includes("."))) mo.input = (mo.input === "0" && k !== ".") ? k : (mo.input === "" && k === "." ? "0." : mo.input + k);
+      document.getElementById("mo-display").textContent = mo.input || "0";
+      document.getElementById("mo-submit").disabled = !(parseFloat(mo.input) > 0);
+      return;
+    }
+    if (b.id === "mo-submit") {
+      const g = parseFloat(mo.input); if (!(g > 0)) return;
+      mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick");
+      try { await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, guesses: mo.guesses, done: false }); } catch (err) {}
+      if (mo.guesses.length >= MONTHLY_Q) await monthlyFinish();
+      renderMonthly(); return;
+    }
+    if (b.id === "mo-skip") {
+      if (moAnim) { try { moAnim.stop(); } catch (err) {} }
+      const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], acc = roundAccuracy(g / q.answer), m = await loadAnimModule();
+      const host = document.getElementById("mo-result");
+      if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${Math.round(acc)}% accurate</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${m ? m.formatCount(q.answer, q.answer) : q.answer}</b></div></div>`;
+      b.id = "mo-next"; b.className = "dc-btn"; b.textContent = mo.guesses.length >= MONTHLY_Q ? "See my results" : "Next question"; return;
+    }
+    if (b.id === "mo-next") { mo.phase = mo.guesses.length >= MONTHLY_Q ? "done" : "question"; renderMonthly(); return; }
+    if (b.id === "mo-share") {
+      const accs = monthlyAccs(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
+      const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} Challenge ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${MONTHLY_Q * 100}`;
+      const url = "https://measuring-game.web.app";
+      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
+      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
+      const copied = await copyTextToClipboard(text + "\n" + url);
+      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
+    }
+  });
+  document.getElementById("monthly-close-btn").addEventListener("click", () => { monthlyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
 
   // ---- Career > Stats ----
   // Accuracy of one round: how close your guess was, symmetric (half and double are equally far off).
