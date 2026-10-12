@@ -1440,6 +1440,17 @@
   @media (prefers-reduced-motion: reduce) {
     #toolbar-settings-btn.hint-pulse { animation: none; }
   }
+  #toolbar-menu {
+    position: fixed; top: 64px; right: 8px; z-index: 560; width: 150px; display: flex; flex-direction: column; gap: 6px;
+    padding: 8px; background: #fffaf0; border: 3px solid #4a2c12; border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.35);
+  }
+  #toolbar-menu[hidden] { display: none; }
+  #toolbar-menu .menu-pill {
+    width: 100%; margin: 0; text-align: center; color: #000; text-shadow: none;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; padding: 10px 14px;
+    border-width: 9px; border-style: solid; border-image-slice: 55 fill; border-image-source: var(--btn2);
+  }
+  #toolbar-menu .menu-exit { border-image-source: var(--btn-hex-red); color: #fff; }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -2451,9 +2462,12 @@
     <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Awards"><img src="icons/toolbar-awards.png" alt=""></button>
     <button id="toolbar-items-btn" class="toolbar-badge-btn" type="button" aria-label="Objects"><img src="icons/toolbar-items.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
-    <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
-    <button id="toolbar-exit-btn" class="toolbar-badge-btn" type="button" aria-label="Exit"><img src="icons/toolbar-exit.png" alt=""></button>
+    <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-settings.png" alt=""></button>
   </div>
+</div>
+<div id="toolbar-menu" hidden role="menu">
+  <button id="menu-settings-btn" class="menu-pill" type="button" role="menuitem">Settings</button>
+  <button id="toolbar-exit-btn" class="menu-pill menu-exit" type="button" role="menuitem">Exit</button>
 </div>
 
 <div id="exit-confirm-overlay">
@@ -6557,7 +6571,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       action();
     };
   }
-  toolbarSettingsBtn.addEventListener("click", guardToolbarNav(() => openOverlay(settingsScreen)));
+  // The gear is now the toolbar's menu button: Settings + Exit live in a small popup under it.
+  const toolbarMenuEl = document.getElementById("toolbar-menu");
+  function setToolbarMenu(open) {
+    toolbarMenuEl.hidden = !open;
+    toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  toolbarSettingsBtn.addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(toolbarMenuEl.hidden); });
+  document.addEventListener("click", (e) => { if (!toolbarMenuEl.hidden && !toolbarMenuEl.contains(e.target)) setToolbarMenu(false); });
+  document.getElementById("menu-settings-btn").addEventListener("click", () => { setToolbarMenu(false); guardToolbarNav(() => openOverlay(settingsScreen))(); });
   // How to Play moved into Settings - the first-open nudge (a pulsing ring) now
   // lives on the Settings icon itself instead, since that's the toolbar button
   // that actually gets you there now.
@@ -6574,6 +6596,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   settingsCloseBtn.addEventListener("click", closeOverlay);
   howtoCloseBtn.addEventListener("click", closeOverlay);
   toolbarExitBtn.addEventListener("click", () => {
+    setToolbarMenu(false);
     if (isInActiveGame()) { openLeaveGameConfirm(); return; }
     openExitConfirm("app", "Exit the game?", "Are you sure you want to exit?");
   });
