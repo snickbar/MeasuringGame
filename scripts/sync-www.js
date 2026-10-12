@@ -8,7 +8,7 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
 
-const FILES = ["index.html", "manifest.json", "sw.js", "privacy.html", "icon-192.png", "icon-512.png", "home-bg.jpg", "home-bg-2.jpg", "home-bg-3.jpg", "home-sunflower.jpg", "home-corgi.jpg", "home-cactus.jpg", "home-penguin.jpg", "home-lighthouse.jpg"];
+const FILES = ["index.html", "manifest.json", "sw.js", "privacy.html", "icon-192.png", "icon-512.png", "home-bg.jpg", "home-bg-2.jpg", "home-bg-3.jpg", "home-sunflower.jpg", "home-corgi.jpg", "home-cactus.jpg", "home-penguin.jpg", "home-lighthouse.jpg", "home-watermelon.jpg"];
 const DIRS = ["icons", "avatars", "sfx", "items", "anim", "backgrounds"];
 
 function copyDir(src, dest) {
