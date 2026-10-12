@@ -3660,7 +3660,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     "\u{1F48B}": { id: "kiss", label: "Kiss" },
     "\u23F3": { id: "hourglass", label: "Hourglass" },
     // fourth pack
-    "\u{1F44E}": { id: "thumbsdown", label: "Thumbs down" },
+    "\u{1F44E}": { id: "thumbsdown", label: "Thumbs down", mirror: true },
     "\u{1F92A}": { id: "zany", label: "Zany" },
     "\u{1F370}": { id: "cake", label: "Cake" },
     "\u{1F914}": { id: "think", label: "Thinking" },
@@ -9775,7 +9775,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       rxBurst(stage, { src: () => rxPick(["heart-2", "heart-5"]), n: 4, from: [.5, .4], ang: [-145, -35], dist: [30, 48], size: [12, 18], delay: 650, stagger: 110, spin: 30 });
     },
     thumbsdown(piv) { // the thumb drops, bounces back up, then sinks again
-      piv.innerHTML = '<img alt="" src="icons/reactions/thumbsdown.png" style="width:50%;height:auto">';
+      piv.innerHTML = '<img alt="" src="icons/reactions/thumbsdown.png" style="width:50%;height:auto;transform:scaleX(-1)">';
       const t = (y, r, o, sc) => ({ transform: "translateY(" + y + "px) rotate(" + r + "deg)" + (sc ? " scale(" + sc + ")" : ""), offset: o });
       piv.animate([{ transform: "scale(.35)", offset: 0 }, t(-14, 0, .16, 1.1), t(10, 8, .34), t(-4, -6, .5), t(8, 6, .66), t(0, 0, .85), t(0, 0, 1)], { duration: 1500, easing: "ease-in-out" });
     },
@@ -9784,7 +9784,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const pc = piv.firstChild, tg = pc.querySelector(".rx-part");
       pc.animate([...rxPopAt(.12), { transform: "none", offset: .35 }, ...rxShakeAt(.5, 8), { transform: "none", offset: 1 }].sort((a, b) => a.offset - b.offset), { duration: 1600, easing: "ease-in-out" });
       const r = (d, o, y) => ({ transform: "translateY(" + (y || 0) + "%) rotate(" + d + "deg)", offset: o });
-      tg.animate([{ transform: "translateY(-45%) scaleY(.3)", offset: 0 }, { transform: "translateY(-45%) scaleY(.3)", offset: .1 }, { transform: "translateY(8%) scaleY(1.12)", offset: .26 }, r(0, .32), r(14, .44), r(-14, .56), r(14, .68), r(-12, .8), r(0, .9), r(0, 1)], { duration: 1600, easing: "ease-in-out" });
+      // Anchored at its own top edge (transform-origin above), so scaling it up from near-zero
+      // grows it straight down out of the mouth instead of sliding down into place from above the face.
+      tg.animate([{ transform: "scaleY(.05)", offset: 0 }, { transform: "scaleY(.05)", offset: .1 }, { transform: "scaleY(1.12)", offset: .26 }, r(0, .32), r(14, .44), r(-14, .56), r(14, .68), r(-12, .8), r(0, .9), r(0, 1)], { duration: 1600, easing: "ease-in-out" });
     },
     cake(piv) { // the cake bounces in and the candle flame flickers
       piv.innerHTML = rxPc("cake", rxPart("cake-flame", 13, 44, -3, ";transform-origin:50% 100%"));
