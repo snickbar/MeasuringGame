@@ -13,7 +13,7 @@
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
    (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
-  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg" }, id = "ants";
+  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg" }, id = "ants";
   try {
     var sel = localStorage.getItem("mg_homeSel") || "ants";
     if (sel === "random") {
@@ -2711,6 +2711,7 @@
       <button type="button" class="cosm-tab-btn" data-tab="flairs">Flairs</button>
       <button type="button" class="cosm-tab-btn" data-tab="boards">Boards</button>
       <button type="button" class="cosm-tab-btn" data-tab="backgrounds">Scenes</button>
+      <button type="button" class="cosm-tab-btn" data-tab="homes">Home</button>
     </div>
   </div>
 
@@ -2849,6 +2850,9 @@
     </div>
     <div id="cosm-pane-backgrounds" class="cosm-pane" hidden>
       <div id="cosm-backgrounds-list" class="cosm-list"></div>
+    </div>
+    <div id="cosm-pane-homes" class="cosm-pane" hidden>
+      <div id="cosm-homes-list" class="cosm-list"></div>
     </div>
     <div id="cosm-pane-boards" class="cosm-pane" hidden>
       <div id="cosm-boards-list" class="cosm-list"></div>
@@ -3983,10 +3987,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const slot = document.getElementById("cosm-random-slot");
     if (!slot) return;
     const sub = cosmSub;
-    const cat = sub === "emojis" ? "reactions" : sub;
+    const cat = sub === "emojis" ? "reactions" : sub === "homes" ? "homeScreens" : sub;
     const subText = cat === "reactions" ? `${ownedReactionSlots()} random reactions you own each game`
       : cat === "flairs" ? "A random flair you own each game"
       : cat === "backgrounds" ? "A random background you own each game"
+      : cat === "homeScreens" ? "A different home screen you own each time you open Home"
       : "A random board you own each game";
     slot.innerHTML = "";
     slot.appendChild(cosmRandomRow(cat, subText));
@@ -4504,6 +4509,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
     renderFlairRows(document.getElementById("cosm-flairs-list"));
     renderBackgroundRows(document.getElementById("cosm-backgrounds-list"));
+    renderHomeRows(document.getElementById("cosm-homes-list"));
     renderBoardRows(document.getElementById("cosm-boards-list"));
     renderCosmRandomSlot();
   }
@@ -4603,6 +4609,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "lighthouse", file: "home-lighthouse.jpg", name: "Lighthouse & Mugs", world: "landmarks" },
     { id: "penguin", file: "home-penguin.jpg", name: "Penguin & Ice Cubes", how: "Win 7 rounds in a row" },
     { id: "cactus", file: "home-cactus.jpg", name: "Cactus & Cowboy Hats", how: "Survive 15 rounds in Survival" },
+    { id: "giraffe", file: "home-giraffe.jpg", name: "Giraffe & Rubber Ducks", how: "Land 100 spot-on guesses" },
   ];
   const homeScreenOf = (id) => HOME_SCREENS.find((h) => h.id === id);
   const ownsHomeScreen = (id) => id === HOME_DEFAULT || !!(myProfile.cosmetics && myProfile.cosmetics.owned && (myProfile.cosmetics.owned.homeScreens || {})[id]);
@@ -4617,6 +4624,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       localStorage.setItem("mg_homeSel", myProfile.randomEquip && myProfile.randomEquip.homeScreens ? "random" : equippedHomeScreen());
       localStorage.setItem("mg_homeOwned", JSON.stringify(HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen)));
     } catch (e) {}
+    // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
+    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(equippedHomeScreen()).file}')`);
+  }
+  const homeHowText = (h) => (h.world ? `Earn 13 stars in ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
+  async function equipHomeScreen(id) {
+    if (equippedHomeScreen() === id) return;
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/homeScreen": id });
+  }
+  function openHomePreview(h) {
+    if (document.getElementById("cosm-pv-overlay")) return;
+    const bg = document.createElement("div");
+    bg.className = "cosm-pv-bg";
+    bg.style.backgroundImage = `url('${h.file}')`; bg.style.backgroundPosition = "center top";
+    const ov = cosmPreviewShell(h.name, bg);
+    const close = document.createElement("button");
+    close.type = "button"; close.textContent = "Close";
+    close.addEventListener("click", () => ov.remove());
+    ov.querySelector(".cosm-pv-btns").appendChild(close);
+    ov.addEventListener("click", (e) => { if (e.target === ov) ov.remove(); });
+  }
+  function renderHomeRows(container) {
+    if (!container) return;
+    const equipped = equippedHomeScreen();
+    container.innerHTML = "";
+    container.classList.toggle("cosm-random-on", !!(myProfile.randomEquip && myProfile.randomEquip.homeScreens));
+    // Owned scenes first, then the locked ones with how to earn them.
+    const owned = HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)), locked = HOME_SCREENS.filter((h) => !ownsHomeScreen(h.id));
+    owned.concat(locked).forEach((h) => container.appendChild(cosmRow({
+      leadHtml: `<img class="cosm-bg-pic" src="${h.file}" alt="" loading="lazy">`, name: h.name,
+      owned: ownsHomeScreen(h.id), lockedHint: homeHowText(h), equipped: equipped === h.id,
+      onPreview: () => openHomePreview(h), onEquip: () => equipHomeScreen(h.id),
+    })));
   }
   function backgroundPackOf(id) { return BACKGROUND_PACK_CATALOG.find((p) => p.backgrounds.some((b) => b.id === id)); }
   function ownsBackground(id) {
@@ -6217,6 +6256,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("cosm-pane-flairs").hidden = sub !== "flairs";
     document.getElementById("cosm-pane-backgrounds").hidden = sub !== "backgrounds";
     document.getElementById("cosm-pane-boards").hidden = sub !== "boards";
+    document.getElementById("cosm-pane-homes").hidden = sub !== "homes";
     document.querySelectorAll(".cosm-sub-desc").forEach((p) => { p.hidden = p.dataset.sub !== sub; });
     renderCosmRandomSlot();
   }
@@ -8345,7 +8385,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", fitAllButtonText);
 
   // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
-  const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds"];
+  const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
   function setShopTab(tab) {
     if (tab === "cosmetics") tab = "emojis";
     if (!SHOP_TABS.includes(tab) && !COSM_TABS.includes(tab)) tab = "coins";
@@ -8656,9 +8696,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ACHIEVEMENTS.push({ id: `world-perfect-${w.id}`, cat: "Worlds", name: `Perfect ${w.name}`, desc: `Earn all 15 stars in ${w.name}`, target: 1, reward: 100,
       progress: () => (worldStarsOf(w.id) >= 15 ? 1 : 0) });
   });
-  // Two more home screens with their own awards.
+  // Three more home screens with their own awards.
   ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 7 rounds in a row", target: 7, reward: 0, home: "penguin", homeLabel: "Penguin & Ice Cubes", progress: ACH_STAT("bestStreak") });
   ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 15 rounds in Survival", target: 15, reward: 0, home: "cactus", homeLabel: "Cactus & Cowboy Hats", progress: () => survivalBest() });
+  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 100 spot-on guesses", target: 100, reward: 0, home: "giraffe", homeLabel: "Giraffe & Rubber Ducks", progress: ACH_STAT("spotOns") });
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
