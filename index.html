@@ -4727,19 +4727,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
       })));
     });
-    const grp = document.createElement("div");
-    grp.className = "cosm-group-label";
-    grp.textContent = "Monthly Challenge rewards";
-    container.appendChild(grp);
-    MONTH_BACKGROUNDS.forEach((m) => {
-      const have = ownsBackground(m.id);
-      container.appendChild(cosmRow({
+    // Monthly Challenge rewards only appear once earned (and are never for sale); locked months stay hidden.
+    const earned = MONTH_BACKGROUNDS.filter((m) => ownsBackground(m.id));
+    if (earned.length) {
+      const grp = document.createElement("div");
+      grp.className = "cosm-group-label";
+      grp.textContent = "Monthly Challenge rewards";
+      container.appendChild(grp);
+      earned.forEach((m) => container.appendChild(cosmRow({
         leadHtml: bgThumbHtml(m.id, "cosm-bg-pic", 34), name: m.label,
-        owned: have, free: false, cost: 0, equipped: equipped === m.id,
-        lockedHint: `Finish the ${MONTH_NAMES[m.month - 1]} Challenge`,
+        owned: true, free: false, cost: 0, equipped: equipped === m.id,
         onPreview: () => openBackgroundPreview(m.id, m.label), onEquip: () => equipBackground(m.id),
-      }));
-    });
+      })));
+    }
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
