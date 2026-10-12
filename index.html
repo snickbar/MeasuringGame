@@ -166,8 +166,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -646,6 +646,46 @@
   .career-tab.active { background: #ffc24a; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
   .career-tab.has-dot::after { content: ""; position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
   #career-screen.active #career-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  /* ---- Daily Challenge ---- */
+  #toolbar-daily-btn { position: relative; }
+  #toolbar-daily-btn.has-todo::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+  #toolbar-daily-streak { position: absolute; left: 2px; top: 2px; min-width: 18px; padding: 0 4px; height: 18px; border-radius: 9px; background: #fff; border: 2px solid #4a2c12; font: 700 12px/14px 'Fredoka', sans-serif; color: #000; text-align: center; }
+  #daily-screen.active #daily-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #daily-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  .dc-title { margin: 6px 0 2px; font-size: 24px; color: #000; text-shadow: none; }
+  .dc-sub { margin: 0 0 12px; font-size: 14px; color: #6b3a05; }
+  .dc-card { margin: 10px 0; padding: 14px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 16px; }
+  .dc-card.dc-hot { background: linear-gradient(#fff3d1, #ffe2a0); border-color: #e8b95a; }
+  .dc-big { font-size: 22px; color: #000; }
+  .dc-note { margin-top: 6px; font-size: 13px; color: #000; }
+  .dc-btn { display: block; width: 100%; margin: 12px 0 0; padding: 14px 10px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#ffd36a, #f2820f); color: #000; text-shadow: none; font: 700 18px 'Fredoka', sans-serif; text-align: center; box-shadow: 0 3px 0 rgba(74,44,18,.45); }
+  .dc-btn:disabled { opacity: .45; }
+  .dc-btn.dc-alt { background: #f1e4c8; font-size: 15px; padding: 10px; }
+  .dc-dots { display: flex; justify-content: center; gap: 8px; margin: 4px 0 10px; }
+  .dc-dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #4a2c12; background: #fffdf6; }
+  .dc-dots i.on { background: #f2820f; }
+  .dc-dots i.done { background: #6aa84f; }
+  .dc-pics { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin: 6px 0; }
+  .dc-pic { flex: 1; max-width: 150px; padding: 8px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
+  .dc-pic img { display: block; margin: 0 auto 4px; width: 100%; height: 96px; object-fit: contain; }
+  .dc-pic span { font-size: 12px; color: #6b3a05; text-transform: uppercase; letter-spacing: .3px; }
+  .dc-prompt { margin: 8px 0; font-size: 17px; color: #000; }
+  .dc-display { margin: 6px 0 8px; padding: 8px; font-size: 32px; background: #fffdf6; border: 3px solid #4a2c12; border-radius: 14px; min-height: 44px; font-variant-numeric: tabular-nums; }
+  .dc-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .dc-key { padding: 12px 0; font: 700 22px 'Fredoka', sans-serif; color: #000; text-shadow: none; background: #f1e4c8; border: 3px solid #4a2c12; border-radius: 12px; box-shadow: 0 2px 0 rgba(74,44,18,.4); }
+  .dc-key:active { transform: translateY(2px); box-shadow: none; }
+  #daily-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; min-height: 120px; }
+  .dc-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #ecdcc0; text-align: left; }
+  .dc-row:last-child { border-bottom: 0; }
+  .dc-row .dc-em { font-size: 24px; }
+  .dc-row .dc-rt { flex: 1; font-size: 14px; }
+  .dc-row .dc-rv { font-size: 16px; }
+  .dc-lb-row { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; text-align: left; font-size: 15px; }
+  .dc-lb-row.me { background: #ffe9b8; }
+  .dc-lb-rank { flex: 0 0 30px; text-align: center; }
+  .dc-lb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dc-lb-em { font-size: 14px; letter-spacing: 1px; }
+  .dc-lb-score { flex: 0 0 50px; text-align: right; font-variant-numeric: tabular-nums; }
   #career-content { padding: 6px 0 24px; font-weight: 700; color: #000; text-align: center; }
   .cs-level { margin: 8px 0 10px; padding: 12px; background: linear-gradient(#fff3d1, #ffe2a0); border: 2px solid #e8b95a; border-radius: 16px; }
   .cs-lvl-top { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
@@ -1045,7 +1085,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -2495,6 +2535,7 @@
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
+    <button id="toolbar-daily-btn" class="toolbar-badge-btn" type="button" aria-label="Daily Challenge"><img src="icons/toolbar-daily.png" alt=""><span id="toolbar-daily-streak" hidden></span></button>
     <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Career"><img src="icons/toolbar-career.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-menu.png" alt=""></button>
@@ -2702,6 +2743,11 @@
 <div id="items-screen" class="screen">
   <button id="items-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="items-content"></div>
+</div>
+
+<div id="daily-screen" class="screen">
+  <button id="daily-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="daily-content"></div>
 </div>
 
 <div id="career-screen" class="screen">
@@ -3238,7 +3284,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction
+    getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction, query, orderByChild, limitToLast
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
@@ -3826,6 +3872,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       seenCombos: {},
       stats: {},
       history: [],
+      daily: null,
+      dailyStreak: null,
       achClaimed: {},
     };
   }
@@ -3906,6 +3954,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderHostUnlockUi();
     renderThemedPackShop();
     renderCosmeticsShop();
+    try { updateDailyBadge(); } catch (e) { /* daily module not ready yet */ }
     applyBackground();
     try { applyBoard(activeBoard()); } catch (e) { /* board module not initialised yet */ }
     renderReactionStrip();
@@ -3961,6 +4010,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           seenCombos: { ...(data.seenCombos || {}) },
           stats: { ...(data.stats || {}) },
           history: Array.isArray(data.history) ? data.history : (data.history ? Object.values(data.history) : []),
+          daily: data.daily || null,
+          dailyStreak: data.dailyStreak || null,
           achClaimed: { ...(data.achClaimed || {}) },
         };
       }
@@ -5386,6 +5437,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
   }
 
+  // ---- Daily Challenge: the same 3 questions for everyone, new ones every US Eastern day ----
+  const DAILY_TZ = "America/New_York";
+  function dailyDateStr(d) {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: DAILY_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d || new Date());
+  }
+  // Small seeded random generator (xmur3 hash feeding mulberry32): same date in, same numbers out, on every device.
+  function dailyRng(seedStr) {
+    let h = 1779033703 ^ seedStr.length;
+    for (let i = 0; i < seedStr.length; i++) { h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    let a = (Math.imul(h ^ (h >>> 16), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909)) >>> 0;
+    return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  // Three combos that build in difficulty (how many times bigger the target is than the unit):
+  // a warm-up, a middle one, and a stretch. Only the standard objects are used, so nobody's packs matter.
+  const DAILY_BANDS = [[1.5, 12], [12, 150], [150, 2500]];
+  function dailyCombosLocal(dateStr) {
+    const rng = dailyRng("size-em-up-daily-" + dateStr);
+    const used = new Set(), out = [];
+    DAILY_BANDS.forEach(([lo, hi]) => {
+      const cand = [];
+      for (let i = 0; i < OBJECTS.length; i++) {
+        for (let j = i + 1; j < OBJECTS.length; j++) {
+          const [u, t] = OBJECTS[i].mm <= OBJECTS[j].mm ? [OBJECTS[i], OBJECTS[j]] : [OBJECTS[j], OBJECTS[i]];
+          const r = t.mm / u.mm;
+          if (r >= lo && r < hi && !used.has(u.id) && !used.has(t.id)) cand.push([u.id, t.id]);
+        }
+      }
+      const pick = cand[Math.floor(rng() * cand.length)];
+      used.add(pick[0]); used.add(pick[1]); out.push({ unitId: pick[0], targetId: pick[1] });
+    });
+    return out;
+  }
+  function dailyQuestionFor(c) {
+    const unit = OBJECT_BY_ID.get(c.unitId), target = OBJECT_BY_ID.get(c.targetId);
+    return {
+      unitId: unit.id, targetId: target.id, unitName: unit.name, targetName: target.name,
+      answer: target.mm / unit.mm, unitArt: 0, targetArt: 0,
+      prompt: `How many ${unit.plural} long is ${[articleFor(target), target.name].filter(Boolean).join(" ")}?`,
+    };
+  }
+
   // ---- DOM refs ----
   const homeScreen = document.getElementById("home-screen");
   const homeSoloBtn = document.getElementById("home-solo-btn");
@@ -5491,6 +5583,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const collectionContentEl = document.getElementById("collection-content");
   const itemsScreen = document.getElementById("items-screen");
   const careerScreenEl = document.getElementById("career-screen");
+  const dailyScreenEl = document.getElementById("daily-screen");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -6570,8 +6663,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -6752,6 +6845,236 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (Object.values(CAREER_TABS).some((el) => el.classList.contains("active"))) closeOverlay();
     else showCareerTab(careerLastTab);
   }));
+  // ==================== Daily Challenge: play, results, streak, leaderboard ====================
+  const dailyContentEl = document.getElementById("daily-content");
+  let daily = null;        // today's session: { date, questions, guesses, phase, input }
+  let dailyAnim = null;    // the reveal animation's controller
+  const dailyEmoji = (a) => (a >= 99 ? "\u{1F3AF}" : a >= 90 ? "\u{1F7E9}" : a >= 70 ? "\u{1F7E8}" : a >= 40 ? "\u{1F7E7}" : "\u{1F7E5}");
+  function dailyShiftDate(str, delta) {
+    const [y, m, d] = str.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
+  }
+  function dailyPretty(str) {
+    const [y, m, d] = str.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+  // Time left until midnight US Eastern, as "5h 12m".
+  function dailyResetText() {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: DAILY_TZ, hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(new Date());
+    const g = (t) => Number((parts.find((x) => x.type === t) || {}).value || 0);
+    const secs = (24 * 3600) - (g("hour") * 3600 + g("minute") * 60 + g("second"));
+    const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+  function dailyStreakNow() {
+    const st = myProfile.dailyStreak;
+    if (!st || !st.last) return 0;
+    const today = dailyDateStr();
+    return (st.last === today || st.last === dailyShiftDate(today, -1)) ? (st.count || 0) : 0;
+  }
+  function dailyPlayedToday() {
+    const d = myProfile.daily;
+    return !!(d && d.date === dailyDateStr() && d.done);
+  }
+  // The toolbar button: a red dot until today's challenge is done, and the day streak on top.
+  function updateDailyBadge() {
+    const btn = document.getElementById("toolbar-daily-btn"), st = document.getElementById("toolbar-daily-streak");
+    if (!btn || !st) return;
+    btn.classList.toggle("has-todo", !dailyPlayedToday());
+    const n = dailyStreakNow();
+    st.hidden = n <= 0;
+    st.textContent = String(n);
+  }
+  setInterval(() => { try { updateDailyBadge(); } catch (e) {} }, 60000);
+
+  // Everyone gets the same three questions: the first player of the day stores them, everyone after reads them
+  // (so an out-of-date app still shows today's real questions); if the database is unreachable, the same
+  // date-seeded pick is made locally.
+  async function dailyLoadCombos(date) {
+    const valid = (c) => Array.isArray(c) && c.length === 3 && c.every((x) => x && x.unitId !== x.targetId && OBJECT_BY_ID.has(x.unitId) && OBJECT_BY_ID.has(x.targetId));
+    const local = dailyCombosLocal(date);
+    const read = async () => { const snap = await get(ref(db, `dailyCombos/${date}`)); if (!snap.exists()) return null; const v = snap.val(); const arr = Array.isArray(v) ? v : Object.values(v); return valid(arr) ? arr : null; };
+    try {
+      const have = await read();
+      if (have) return have;
+      await runTransaction(ref(db, `dailyCombos/${date}`), (cur) => (cur == null ? local : undefined));
+      return (await read()) || local;
+    } catch (e) { return local; }
+  }
+
+  async function openDaily() {
+    const date = dailyDateStr();
+    if (dailyScreenEl.classList.contains("active")) return;
+    dailyContentEl.innerHTML = '<div class="dc-card">Loading today\'s challenge...</div>';
+    openOverlay(dailyScreenEl);
+    const combos = await dailyLoadCombos(date);
+    if (!dailyScreenEl.classList.contains("active")) return;
+    const saved = (myProfile.daily && myProfile.daily.date === date) ? myProfile.daily : null;
+    const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, 3) : [];
+    daily = { date, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro" };
+    daily.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
+    renderDaily();
+  }
+  function dailyStop() { if (dailyAnim) { try { dailyAnim.destroy(); } catch (e) {} dailyAnim = null; } }
+  function dailyAccuracies() { return daily.questions.map((q, i) => (daily.guesses[i] > 0 ? roundAccuracy(daily.guesses[i] / q.answer) : 0)); }
+  function dailyDots(cur, doneN) {
+    return `<div class="dc-dots">${[0, 1, 2].map((i) => `<i class="${i < doneN ? "done" : (i === cur ? "on" : "")}"></i>`).join("")}</div>`;
+  }
+  function renderDaily() {
+    if (!daily) return;
+    const el = dailyContentEl;
+    const streak = dailyStreakNow();
+    if (daily.phase === "intro") {
+      dailyStop();
+      el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
+        <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. They start easy and get harder. You can only play once, so make your guesses count.</div></div>
+        <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
+        <button type="button" class="dc-btn" id="dc-start">Start</button>`;
+      return;
+    }
+    if (daily.phase === "question") {
+      dailyStop();
+      const i = daily.guesses.length, q = daily.questions[i];
+      const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
+      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}
+        <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
+        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
+        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        <button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button>`;
+      return;
+    }
+    if (daily.phase === "reveal") {
+      const i = daily.guesses.length - 1;
+      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}<p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button>`;
+      dailyRunReveal();
+      return;
+    }
+    // done
+    dailyStop();
+    const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
+    const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${dailyEmoji(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
+    el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / 300</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div></div>
+      <div class="dc-card">${rows}</div>
+      <div class="dc-card"><div class="dc-big">${streak > 0 ? `\u{1F525} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div></div>
+      <button type="button" class="dc-btn" id="dc-share">Share my result</button>
+      <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
+    dailyLoadBoard();
+  }
+
+  async function dailyRunReveal() {
+    const i = daily.guesses.length - 1, q = daily.questions[i];
+    const lastQuestion = daily.guesses.length >= 3;
+    const g = daily.guesses[i];
+    const showResult = (mod) => {
+      const acc = roundAccuracy(g / q.answer);
+      const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
+      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
+      const host = document.getElementById("dc-result");
+      if (!host) return;
+      host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${label}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div></div>`;
+      const skip = document.getElementById("dc-skip");
+      if (skip) { skip.id = "dc-next"; skip.className = "dc-btn"; skip.textContent = lastQuestion ? "See my results" : "Next question"; }
+    };
+    const pair = questionObjects(q);
+    if (!pair) { showResult(null); return; }
+    try {
+      const mod = await loadAnimModule();
+      if (!mod || daily.phase !== "reveal") { showResult(mod); return; }
+      dailyStop();
+      const stage = document.getElementById("daily-stage");
+      if (!stage) return;
+      dailyAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
+      const ctl = dailyAnim;
+      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      if (dailyAnim !== ctl || daily.phase !== "reveal") return;
+      animAudioInit();
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (dailyAnim === ctl) showResult(mod); } });
+    } catch (err) {
+      console.warn("[measuring-game] daily animation failed", err);
+      showResult(null);
+    }
+  }
+
+  function dailyUpdateStreak(date) {
+    const cur = myProfile.dailyStreak || { count: 0, best: 0, last: null };
+    const count = cur.last === date ? (cur.count || 1) : (cur.last === dailyShiftDate(date, -1) ? (cur.count || 0) + 1 : 1);
+    return { count, best: Math.max(cur.best || 0, count), last: date };
+  }
+  // Called once, as the third guess is locked in: saves the day, updates the streak and posts to the leaderboard.
+  async function dailyFinish() {
+    const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
+    const streak = dailyUpdateStreak(daily.date);
+    try { await update(ref(db, `profiles/${deviceId}`), { daily: { date: daily.date, guesses: daily.guesses, done: true, total }, dailyStreak: streak }); } catch (e) {}
+    const name = (!currentName || checkName(currentName)) ? "Player" : currentName.trim().slice(0, 12);
+    try { await set(ref(db, `daily/${daily.date}/${deviceId}`), { n: name, s: total, a: accs.map((x) => Math.round(x)), t: serverTimestamp() }); } catch (e) { /* already posted today, or offline */ }
+    bumpStats({ rounds: 3, dailies: 1 }, null);
+    for (let i = 0; i < 3; i++) {
+      const q = daily.questions[i];
+      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((daily.guesses[i] / q.answer) * 10000) / 10000, p: 0, f: accs[i] >= 99 ? 1 : 0, s: 2 });
+    }
+    updateDailyBadge();
+  }
+  async function dailyLoadBoard() {
+    const host = document.getElementById("dc-board");
+    const date = daily && daily.date;
+    let rows = null;
+    try {
+      const snap = await get(query(ref(db, `daily/${date}`), orderByChild("s"), limitToLast(50)));
+      rows = [];
+      snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") rows.push({ id: c.key, n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s, a: Array.isArray(v.a) ? v.a : [] }); });
+      rows.sort((x, y) => y.s - x.s);
+    } catch (e) { rows = null; }
+    const now = document.getElementById("dc-board");
+    if (!now || !daily || daily.date !== date) return;
+    if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
+    if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
+    const medal = (n) => (n === 1 ? "\u{1F947}" : n === 2 ? "\u{1F948}" : n === 3 ? "\u{1F949}" : String(n));
+    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map(dailyEmoji).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+  }
+
+  dailyContentEl.addEventListener("click", async (e) => {
+    const b = e.target.closest("button");
+    if (!b || !daily) return;
+    if (b.id === "dc-start") { daily.phase = "question"; renderDaily(); return; }
+    if (b.classList.contains("dc-key")) {
+      const k = b.dataset.k;
+      if (k === "back") daily.input = daily.input.slice(0, -1);
+      else if (daily.input.length < 9 && !(k === "." && daily.input.includes("."))) daily.input = (daily.input === "0" && k !== ".") ? k : (daily.input === "" && k === "." ? "0." : daily.input + k);
+      document.getElementById("dc-display").textContent = daily.input || "0";
+      document.getElementById("dc-submit").disabled = !(parseFloat(daily.input) > 0);
+      return;
+    }
+    if (b.id === "dc-submit") {
+      const g = parseFloat(daily.input);
+      if (!(g > 0)) return;
+      daily.guesses.push(g); daily.input = ""; daily.phase = "reveal";
+      playSound("pick");
+      try { await update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses, done: false }); } catch (err) {}
+      if (daily.guesses.length >= 3) await dailyFinish();
+      renderDaily();
+      return;
+    }
+    if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } const q = daily.questions[daily.guesses.length - 1]; const mod = await loadAnimModule(); const g = daily.guesses[daily.guesses.length - 1]; const acc = roundAccuracy(g / q.answer); const host = document.getElementById("dc-result"); if (host) host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${dailyEmoji(acc)} ${Math.round(acc)}% accurate</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${mod ? mod.formatCount(q.answer, q.answer) : q.answer}</b></div></div>`; b.id = "dc-next"; b.className = "dc-btn"; b.textContent = daily.guesses.length >= 3 ? "See my results" : "Next question"; return; }
+    if (b.id === "dc-next") { daily.phase = daily.guesses.length >= 3 ? "done" : "question"; renderDaily(); return; }
+    if (b.id === "dc-share") {
+      const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
+      const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${total}/300`;
+      const url = "https://measuring-game.web.app";
+      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
+      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
+      const copied = await copyTextToClipboard(text + "\n" + url);
+      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
+    }
+  });
+  document.getElementById("daily-close-btn").addEventListener("click", () => { dailyStop(); closeOverlay(); });
+  document.getElementById("toolbar-daily-btn").addEventListener("click", guardToolbarNav(() => {
+    if (dailyScreenEl.classList.contains("active")) { dailyStop(); closeOverlay(); } else openDaily();
+  }));
+  try { updateDailyBadge(); } catch (e) {}
+
   // ---- Career > Stats ----
   // Accuracy of one round: how close your guess was, symmetric (half and double are equally far off).
   const roundAccuracy = (r) => Math.max(0, 100 - (Math.max(r, 1 / r) - 1) * 100);
