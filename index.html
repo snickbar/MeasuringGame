@@ -217,7 +217,7 @@
   }
   /* Picked shop background: a fixed picture behind every screen except Home. */
   body[data-bg]::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    background: linear-gradient(rgba(255,250,240,.38), rgba(255,250,240,.38)), var(--game-bg) center / cover no-repeat; }
+    background: linear-gradient(rgba(255,250,240,.38), rgba(255,250,240,.38)), var(--game-bg) var(--game-bg-pos, center) / var(--game-bg-size, cover) var(--game-bg-repeat, no-repeat); }
   body:has(#home-screen.active)::before { display: none; }
   .cosm-board-pic { width: 72px; height: 46px; object-fit: contain; flex-shrink: 0; }
   .cosm-bg-pic { width: 34px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; flex-shrink: 0; }
@@ -364,7 +364,7 @@
   #bg-pack-row > .pack-card, #pack-row > .pack-card, #flair-pack-row > .pack-card { align-content: start; }
   #board-pack-shop > :last-child:nth-child(odd), #bg-pack-row > :last-child:nth-child(odd), #themed-pack-shop > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .bg-pack-thumbs { grid-area: emo; display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; width: 100%; margin-top: 4px; }
-  .bg-pack-thumbs img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 4px; border: 1px solid rgba(60,40,20,.35); }
+  .bg-pack-thumbs img, .bg-pack-thumbs .bg-pack-thumb { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 4px; border: 1px solid rgba(60,40,20,.35); box-sizing: border-box; }
   .shop-section-label { margin: 16px 0 -4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
   .pack-card { grid-template-columns: 1fr; grid-template-areas: "ttl" "emo" "btn"; justify-items: center; text-align: center; background: linear-gradient(180deg, #d9e8ff 0%, #b9d2f5 100%); }
   .pack-title { grid-area: ttl; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; color: #1f3558; }
@@ -4361,7 +4361,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
       const card = document.createElement("div");
       card.className = "coin-pack-card pack-card";
-      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="bg-pack-thumbs">${pack.backgrounds.map((b) => `<img alt="" loading="lazy" src="${backgroundUrl(b.id)}">`).join("")}</div>`;
+      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="bg-pack-thumbs">${pack.backgrounds.map((b) => bgThumbHtml(b.id, "bg-pack-thumb", 56)).join("")}</div>`;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "coin-pack-buy-btn";
@@ -4430,6 +4430,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "halloween-bg", label: "Halloween" },
       { id: "christmas-bg", label: "Christmas" },
     ] },
+    { id: "bgpack3", label: "Tiled Backgrounds", price: "$1.99", backgrounds: [
+      { id: "tile-dots", label: "Polka Dots" },
+      { id: "tile-stripes", label: "Stripes" },
+      { id: "tile-checker", label: "Checkerboard" },
+      { id: "tile-argyle", label: "Argyle" },
+      { id: "tile-gingham", label: "Gingham" },
+      { id: "tile-plus", label: "Plus Signs" },
+    ] },
     { id: "bgpack4", label: "Tabletop Backgrounds", price: "$1.99", backgrounds: [
       { id: "table-card", label: "Card Table" },
       { id: "table-coffee", label: "Coffee Table" },
@@ -4467,12 +4475,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return id && id !== "none" && ownsBackground(id) && allBackgrounds().some((b) => b.id === id) ? id : "none";
   }
   const backgroundUrl = (id) => `backgrounds/${id}.webp`;
+  // Tiled backgrounds are a small square picture that repeats across the screen. Size = pixels on a 390-wide phone.
+  const TILE_PX = { "tile-dots": 80, "tile-stripes": 120, "tile-checker": 155, "tile-argyle": 110, "tile-gingham": 90, "tile-plus": 100 };
+  const isTileBg = (id) => Object.prototype.hasOwnProperty.call(TILE_PX, id);
+  // A small picture of a background for lists: a cropped picture, or the repeating tile scaled to a w-pixel-wide phone.
+  const bgThumbHtml = (id, cls, w, extra) => isTileBg(id)
+    ? `<div class="${cls}" style="background:url('${backgroundUrl(id)}') 0 0 / ${(TILE_PX[id] * w * 1.7 / 390).toFixed(1)}px repeat;${extra || ""}"></div>`
+    : `<img class="${cls}" ${extra ? `style="${extra}" ` : ""}src="${backgroundUrl(id)}" alt="" loading="lazy">`;
   // Shows the picked background behind every screen except Home (Home keeps its own picture; see the CSS).
   function applyBackground() {
     const id = activeBackground();
-    if (id === "none") { delete document.body.dataset.bg; document.body.style.removeProperty("--game-bg"); return; }
+    if (id === "none") { delete document.body.dataset.bg; ["--game-bg", "--game-bg-pos", "--game-bg-repeat", "--game-bg-size"].forEach((k) => document.body.style.removeProperty(k)); return; }
     document.body.dataset.bg = id;
     document.body.style.setProperty("--game-bg", `url('${backgroundUrl(id)}')`);
+    if (isTileBg(id)) {
+      document.body.style.setProperty("--game-bg-pos", "0 0");
+      document.body.style.setProperty("--game-bg-repeat", "repeat");
+      document.body.style.setProperty("--game-bg-size", `calc(min(100vw, 430px) * ${(TILE_PX[id] / 390).toFixed(4)})`);
+    } else {
+      ["--game-bg-pos", "--game-bg-repeat", "--game-bg-size"].forEach((k) => document.body.style.removeProperty(k));
+    }
   }
   async function buyBackgroundWithCoins(bg) {
     if ((myProfile.coins || 0) < BACKGROUND_COIN_COST) { cosmNote("Not enough coins yet."); return; }
@@ -4508,6 +4530,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (id !== "none") bg.style.backgroundImage = `url('${backgroundUrl(id)}')`;
     bg.innerHTML = `<div class="mk-q">How many playing cards long is a canoe?</div>`;
     const ov = cosmPreviewShell(label, bg);
+    if (isTileBg(id)) { bg.style.backgroundRepeat = "repeat"; bg.style.backgroundPosition = "0 0"; bg.style.backgroundSize = `${TILE_PX[id] * bg.clientWidth / 390}px`; }
     const close = document.createElement("button");
     close.type = "button"; close.textContent = "Close";
     close.addEventListener("click", () => ov.remove());
@@ -4583,7 +4606,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
       }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
       pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
-        leadHtml: `<img class="cosm-bg-pic" src="${backgroundUrl(b.id)}" alt="" loading="lazy">`, name: b.label,
+        leadHtml: bgThumbHtml(b.id, "cosm-bg-pic", 34), name: b.label,
         owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
         onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
       })));
