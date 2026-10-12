@@ -2727,6 +2727,7 @@
       <div class="settings-profile-name">
         <label for="settings-name-input">Default name</label>
         <input id="settings-name-input" placeholder="Your name" maxlength="12" />
+        <span id="settings-name-status" class="settings-profile-hint" style="color:#b3261e"></span>
         <span class="settings-profile-hint">Tap your avatar to change it</span>
       </div>
     </div>
@@ -4892,7 +4893,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return pick;
   }
 
+
+  // ---- Name screening ----
+  // Lenient on purpose: blocks slurs, the f-word, sexual/hate terms and contact info; mild swearing
+  // (damn, hell, crap, ass, shit...) is allowed. Words are stored ROT13 so the source isn't a wall of
+  // slurs. Whole-word matching for short words avoids false hits like "Scunthorpe" or "raccoon".
+  const _rot = (s) => s.replace(/[a-z]/g, (c) => String.fromCharCode(((c.charCodeAt(0) - 97 + 13) % 26) + 97));
+  const _nameRx = (w) => new RegExp(w.replace(/(.)\1+/g, "$1{2,}").replace(/([a-z])(?!\{)/g, "$1+"), "");
+  const NAME_BLOCK_SUBSTR = "shpx avtt snttbg juber uvgyre crqbcuvyr jrgonpx gbjryurnq genaal furznyr zbyrfg oybjwbo pbpxfhpx cbea phzfubg".split(" ").map((w) => _nameRx(_rot(w)));
+  const NAME_BLOCK_LONG = "snttbg juber uvgyre crqbcuvyr jrgonpx gbjryurnq genaal furznyr oybjwbo pbpxfhpx".split(" ").map((w) => _nameRx(_rot(w)));
+  const NAME_BLOCK_WORDS = "phag pbba puvax fcvp fcvpx xvxr qlxr snt snttl ergneq ergneqrq gneq anmv cbea chffl fyhg phz wvmm qvyqb tbbx ornare cnxv xxx crqb encr encrl encvfg".split(" ").map((w) => new RegExp("^" + _nameRx(_rot(w)).source + "s?$"));
+  // Returns null if the name is fine, otherwise a short message to show the player.
+  function checkName(raw) {
+    const name = String(raw || "").normalize("NFKD").replace(/[\u0300-\u036f\u200b-\u200f\ufeff]/g, "").toLowerCase();
+    if (/@|https?:|www\.|\.(com|net|org|io|gg|co)\b/.test(name) || /\d(?:\D*\d){6,}/.test(name)) return "Please don't put contact info in a name.";
+    const leet = name.replace(/[0@$!1345|7]/g, (c) => ({ "0": "o", "@": "a", "$": "s", "!": "i", "1": "i", "3": "e", "4": "a", "5": "s", "|": "i", "7": "t" })[c]);
+    const spaced = leet.replace(/[^a-z\s]/g, "");
+    const tokens = spaced.split(/\s+/).filter(Boolean);
+    const joined = tokens.join("");
+    const bad = tokens.some((t) => NAME_BLOCK_SUBSTR.some((rx) => rx.test(t)) || NAME_BLOCK_WORDS.some((rx) => rx.test(t))) || NAME_BLOCK_LONG.some((rx) => rx.test(joined));
+    return bad ? "That name isn't allowed. Try another one." : null;
+  }
+  // For showing names that arrived from elsewhere (leaderboards): swap a blocked name for a neutral one.
+  const safeDisplayName = (n) => (checkName(n) ? "Player" : n);
   let currentName = localStorage.getItem("mg_name") || "";
+  if (checkName(currentName)) { currentName = ""; try { localStorage.removeItem("mg_name"); } catch (e) {} }
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
   if (!AVATARS.includes(currentAvatar)) { currentAvatar = AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0]; localStorage.setItem("mg_avatar", currentAvatar); }
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
@@ -6482,6 +6507,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   nameInput.value = currentName;
   nameInput.addEventListener("input", () => {
+    const badName = checkName(nameInput.value);
+    nameAvatarStatusEl.textContent = badName || "";
+    if (badName) return; // never save a blocked name
     currentName = nameInput.value;
     localStorage.setItem("mg_name", currentName);
     settingsNameInput.value = currentName;
@@ -6520,6 +6548,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   settingsNameInput.value = currentName;
   settingsNameInput.addEventListener("input", () => {
+    const badName = checkName(settingsNameInput.value);
+    document.getElementById("settings-name-status").textContent = badName || "";
+    if (badName) return; // never save a blocked name
     currentName = settingsNameInput.value;
     localStorage.setItem("mg_name", currentName);
     nameInput.value = currentName;
@@ -8680,6 +8711,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   joinLobbyBtn.addEventListener("click", async () => {
     const name = nameInput.value.trim().slice(0, 12);
     if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
+    const badName = checkName(name);
+    if (badName) { nameAvatarStatusEl.textContent = badName; return; }
     if (editingFromLobby) {
       // A lightweight update to the existing player record, not the full
       // join flow below - re-running that here (which only knows how to
