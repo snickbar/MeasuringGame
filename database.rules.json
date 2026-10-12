@@ -17,6 +17,29 @@
         ".read": "$id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)",
         ".write": "$id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)"
       }
+    },
+    "dailyCombos": {
+      ".read": true,
+      ".write": false,
+      "$date": {
+        ".read": true,
+        ".validate": "$date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
+        ".write": "!data.exists() && $date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+      }
+    },
+    "daily": {
+      ".read": false,
+      ".write": false,
+      "$date": {
+        ".read": true,
+        ".indexOn": [
+          "s"
+        ],
+        "$id": {
+          ".write": "$id.matches(/^[a-f0-9]{32}$/) && !data.exists()",
+          ".validate": "newData.hasChildren(['n','s','a','t']) && newData.child('n').isString() && newData.child('n').val().length <= 12 && newData.child('s').isNumber() && newData.child('s').val() >= 0 && newData.child('s').val() <= 300"
+        }
+      }
     }
   }
 }
