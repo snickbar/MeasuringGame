@@ -166,8 +166,8 @@
   @keyframes screenEnter { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -624,10 +624,10 @@
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
   /* Tab toggle and stat boxes are pinned together as ONE sticky unit (not two separately-offset
      sticky rows) so their stuck positions can never drift apart and overlap while scrolling. */
-  #items-content .items-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px; padding: 4px 60px 0 6px; background: #fbfaf6; }
+  #items-content .items-sticky-head { position: sticky; top: 112px; z-index: 6; margin: 0 -6px; padding: 4px 60px 0 6px; background: #fbfaf6; }
   #items-content .items-sticky-head .items-stats { margin: 0 0 12px; padding: 6px 0 8px; }
   /* Back button rides in the pinned header, right of the Combinations box */
-  #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
+  #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   .items-tabs { display: flex; gap: 6px; margin: 0 0 6px; }
   .items-tab { flex: 1; font: inherit; font-weight: 700; padding: 7px 0; border-radius: 10px; border: 2px solid #f0b32e; background: #fff8e1; color: #9a5d0a; cursor: pointer; }
   .items-tab.active { background: #f0b32e; color: #fff; }
@@ -640,6 +640,13 @@
   button.items-stat-box.items-jump { flex: 0 0 23%; width: auto; margin: 0; display: flex; align-items: center; justify-content: center; font: inherit; font-size: 10px; font-weight: 700; letter-spacing: .3px; line-height: 1.15; text-transform: uppercase; color: #9a5d0a; cursor: pointer; }
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
+  /* ---- Career: one screen, three tabs (Stats / Awards / Objects) ---- */
+  .career-tabs { position: sticky; top: 62px; z-index: 8; display: flex; gap: 6px; margin: 0 -6px; padding: 6px 60px 6px 6px; background: #fbfaf6; }
+  .career-tab { flex: 1; min-width: 0; margin: 0; padding: 8px 4px; border: 3px solid #4a2c12; border-radius: 12px; background: #f1e4c8; color: #000; text-shadow: none; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; position: relative; }
+  .career-tab.active { background: #ffc24a; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
+  .career-tab.has-dot::after { content: ""; position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
+  #career-screen.active #career-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #career-content { padding: 6px 0 24px; }
   /* ---- Achievements ---- */
   #toolbar-awards-btn { position: relative; }
   #toolbar-awards-btn.has-claim::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
@@ -647,9 +654,9 @@
      Hide Completed toggle stay put while the award list scrolls underneath,
      and the back button rides fixed in that same strip instead of its own
      (now-removed) title row. */
-  #achievements-content .ach-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
+  #achievements-content .ach-sticky-head { position: sticky; top: 112px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
   #achievements-content .ach-sticky-head .items-stats { padding-right: 54px; }
-  #achievements-screen.active #achievements-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
+  #achievements-screen.active #achievements-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   .ach-filter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; padding: 8px 12px; background: rgba(90,74,58,.07); border-radius: 10px; font-weight: 700; font-size: 14px; }
   .ach-switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; border: 2px solid #8a6a3a; border-radius: 14px; background: #d9cdb8; padding: 0; margin: 0; cursor: pointer; transition: background 160ms; }
   .ach-switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform 160ms; }
@@ -1009,7 +1016,7 @@
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -2459,8 +2466,7 @@
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
   </div>
   <div id="toolbar-right-group">
-    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Awards"><img src="icons/toolbar-awards.png" alt=""></button>
-    <button id="toolbar-items-btn" class="toolbar-badge-btn" type="button" aria-label="Objects"><img src="icons/toolbar-items.png" alt=""></button>
+    <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Career"><img src="icons/toolbar-awards.png" alt=""></button>
     <button id="toolbar-shop-btn" class="toolbar-badge-btn" type="button" aria-label="Shop"><img src="icons/toolbar-shop.png" alt=""></button>
     <button id="toolbar-settings-btn" class="toolbar-badge-btn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><img src="icons/toolbar-settings.png" alt=""></button>
   </div>
@@ -2667,6 +2673,11 @@
 <div id="items-screen" class="screen">
   <button id="items-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="items-content"></div>
+</div>
+
+<div id="career-screen" class="screen">
+  <button id="career-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="career-content"></div>
 </div>
 
 <div id="achievements-screen" class="screen">
@@ -5391,7 +5402,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const recentRoomsListEl = document.getElementById("recent-rooms-list");
   const toolbarHomeBtn = document.getElementById("toolbar-home-btn");
   const toolbarShopBtn = document.getElementById("toolbar-shop-btn");
-  const toolbarItemsBtn = document.getElementById("toolbar-items-btn");
   const toolbarSettingsBtn = document.getElementById("toolbar-settings-btn");
   const settingsHowtoBtn = document.getElementById("settings-howto-btn");
   document.getElementById("settings-privacy-btn").addEventListener("click", () => window.open("/privacy.html", "_blank", "noopener"));
@@ -5424,6 +5434,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const collectionCloseBtn = document.getElementById("collection-close-btn");
   const collectionContentEl = document.getElementById("collection-content");
   const itemsScreen = document.getElementById("items-screen");
+  const careerScreenEl = document.getElementById("career-screen");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -6497,8 +6508,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl];
   let overlayReturnScreen = null;
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
@@ -6644,10 +6655,44 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   itemsCloseBtn.addEventListener("click", closeOverlay);
   document.getElementById("achievements-close-btn").addEventListener("click", closeOverlay);
+  // Career: Stats / Awards / Objects share one toolbar button and one tab strip.
+  const CAREER_TABS = { stats: careerScreenEl, awards: achievementsScreen, objects: itemsScreen };
+  let careerLastTab = "stats";
+  function showCareerTab(tab) {
+    const target = CAREER_TABS[tab];
+    if (!target) return;
+    if (tab === "stats") renderCareerStats(); else if (tab === "awards") renderAchievementsScreen(); else renderItemsScreen();
+    const wasCareer = Object.values(CAREER_TABS).some((el) => el.classList.contains("active"));
+    const currentActive = ALL_SCREEN_ELS.find((el) => el.classList.contains("active"));
+    if (currentActive && !OVERLAY_SCREENS.includes(currentActive)) overlayReturnScreen = currentActive;
+    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+    target.classList.add("active");
+    careerLastTab = tab;
+    document.querySelectorAll(".career-tabs .career-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+    if (!wasCareer) playSound("popup-open");
+    updateCareerDot();
+  }
+  function updateCareerDot() {
+    const claim = document.getElementById("toolbar-awards-btn").classList.contains("has-claim");
+    document.querySelectorAll('.career-tab[data-tab="awards"]').forEach((b) => b.classList.toggle("has-dot", claim));
+  }
+  // The same tab strip sits at the top of all three screens.
+  [careerScreenEl, achievementsScreen, itemsScreen].forEach((scr) => {
+    const strip = document.createElement("div");
+    strip.className = "career-tabs";
+    strip.innerHTML = '<button type="button" class="career-tab" data-tab="stats">Stats</button><button type="button" class="career-tab" data-tab="awards">Awards</button><button type="button" class="career-tab" data-tab="objects">Objects</button>';
+    const back = scr.querySelector(".screen-back-btn");
+    back.insertAdjacentElement("afterend", strip);
+    strip.addEventListener("click", (e) => { const b = e.target.closest(".career-tab"); if (b && !b.classList.contains("active")) showCareerTab(b.dataset.tab); });
+  });
+  document.getElementById("career-close-btn").addEventListener("click", closeOverlay);
   document.getElementById("toolbar-awards-btn").addEventListener("click", guardToolbarNav(() => {
-    renderAchievementsScreen();
-    openOverlay(achievementsScreen);
+    if (Object.values(CAREER_TABS).some((el) => el.classList.contains("active"))) closeOverlay();
+    else showCareerTab(careerLastTab);
   }));
+  function renderCareerStats() {
+    document.getElementById("career-content").innerHTML = "";
+  }
   // Per-award art lives in icons/ach/<id>.png; the trophy stays until a file exists.
   document.getElementById("achievements-content").addEventListener("load", (e) => {
     if (e.target.classList && e.target.classList.contains("ach-icon")) e.target.parentNode.classList.add("has-img");
@@ -6663,10 +6708,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderAchievementsScreen();
     }
   });
-  toolbarItemsBtn.addEventListener("click", guardToolbarNav(() => {
-    renderItemsScreen();
-    openOverlay(itemsScreen);
-  }));
   gachaBackBtn.addEventListener("click", closeOverlay);
   gachaViewAllBtn.addEventListener("click", () => {
     renderCollectionScreen();
@@ -7187,7 +7228,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mine.isClosest) inc.roundWins = 1;
     if (mine.doubleDownPoints > 0) inc.doubleDowns = 1;
     if (chips.includes("second chance")) inc.secondChances = 1;
+    inc.rounds = 1;
     bumpStats(inc, mine.isClosest ? { bestStreak: mine.consecutiveWins || 1 } : null);
+    // Per-round history for the Career screen (kept compact: last HISTORY_MAX rounds).
+    const q = data.currentQuestion;
+    if (q && q.unitId && q.targetId && q.answer > 0 && mine.guess > 0) {
+      appendRoundHistory({
+        t: Date.now(), u: q.unitId, g: q.targetId,
+        r: Math.round((mine.guess / q.answer) * 10000) / 10000,        // your guess as a multiple of the true answer (1 = exact)
+        p: (data.lastRoundPoints && data.lastRoundPoints[currentPlayerId]) || 0,
+        f: (mine.basePoints === 5 ? 1 : 0) | (mine.isPerfect ? 2 : 0) | (mine.isClosest ? 4 : 0),
+        s: (roomState && roomState.settings && roomState.settings.solo) ? 1 : 0,
+      });
+    }
+  }
+  const HISTORY_MAX = 300;
+  function appendRoundHistory(rec) {
+    return runTransaction(ref(db, `profiles/${deviceId}/history`), (cur) => {
+      const list = Array.isArray(cur) ? cur.slice() : (cur ? Object.values(cur) : []);
+      list.push(rec);
+      return list.slice(-HISTORY_MAX);
+    }).catch(() => {});
   }
 
   document.querySelectorAll("#howto-screen .howto-section").forEach((d) => {
