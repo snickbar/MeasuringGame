@@ -458,13 +458,13 @@
   .host-unlock-shop-box.unlocked h3, .host-unlock-shop-box.unlocked p { color: #000; text-shadow: none; }
   .host-unlock-shop-box.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; }
   .emoji-pack-preview { width: 70px; flex-shrink: 0; font-size: 20px; line-height: 1.4; text-align: center; }
-  #shop-tabs { display: flex; margin: 10px 56px 4px 0; flex-shrink: 0; }
+  #shop-tabs { display: flex; margin: 10px 0 4px 0; flex-shrink: 0; }
   #shop-tabs .shop-strip { flex: 1; min-width: 0; display: flex; }
   #shop-tabs .shop-strip[hidden] { display: none; }
   #shop-tabs .shop-strip { flex-wrap: wrap; row-gap: 4px; }
   #shop-tabs .shop-strip .cosm-tab-btn { flex: 0 0 calc((100% - 8px) / 3); }
   #shop-tabs #shop-strip-cosm { flex-wrap: nowrap; gap: 3px; }
-  #shop-tabs #shop-strip-cosm .cosm-tab-btn { flex: 1 1 0; border-width: 0 4px; font-size: 10.5px; letter-spacing: -.2px; }
+  #shop-tabs #shop-strip-cosm .cosm-tab-btn { flex: 1 1 0; border-width: 0 5px; font-size: 12px; letter-spacing: -.2px; }
   .shop-subpanel { padding-top: 6px; }
   #toolbar-cosmetics-btn { position: relative; }
   .shop-tab-btn {
@@ -675,7 +675,7 @@
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Career: one screen, three tabs (Stats / Awards / Objects) ---- */
-  .career-tabs { position: sticky; top: 62px; z-index: 8; display: flex; gap: 6px; margin: 0 -6px; padding: 6px 60px 6px 6px; background: #fbfaf6; }
+  .career-tabs { position: sticky; top: 62px; z-index: 8; display: flex; gap: 6px; margin: 0 -6px; padding: 6px 6px; background: #fbfaf6; }
   .career-tab { flex: 1; min-width: 0; margin: 0; padding: 8px 4px; border: 3px solid #4a2c12; border-radius: 12px; background: #f1e4c8; color: #000; text-shadow: none; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; position: relative; }
   .career-tab.active { background: #ffc24a; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
   .career-tab.has-dot::after { content: ""; position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
@@ -1168,6 +1168,13 @@
     padding: 0; border: none; background: none;
   }
   .screen-back-btn img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  /* Top-level screens opened from the toolbar (Shop, Cosmetics, Stats/Awards/Items) have no related previous menu:
+     switch with the toolbar buttons instead, so no Back button there. */
+  body:not(.overlay-has-return) #gacha-screen > .screen-back-btn, body:not(.overlay-has-return) #career-screen > .screen-back-btn,
+  body:not(.overlay-has-return) #achievements-screen > .screen-back-btn, body:not(.overlay-has-return) #items-screen > .screen-back-btn { display: none; }
+  /* ...except when one of them was opened from a lobby or room: then Back is the way to return to it. */
+  body.overlay-has-return #shop-tabs { margin-right: 56px; }
+  body.overlay-has-return .career-tabs { padding-right: 60px; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
@@ -4420,7 +4427,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs). Fixed items so nobody can cherry-pick rarities.
-  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F60E}", board: "chalkboard", background: "tile-dots" };
+  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F624}", board: "chalkboard", background: "nature-grass" };
   function renderStarterBundle() {
     const box = document.getElementById("starter-bundle-box");
     if (!box) return;
@@ -4431,8 +4438,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="sb-top"><img src="icons/shop-starter-gift.webp" alt=""><div><h3>Starter Bundle</h3><p>A little of everything to get you started.</p></div></div>
       <div class="sb-grid">
         <div class="sb-item"><img src="icons/shop-host-coins.webp" alt=""><span>${B.coins} coins</span></div>
-        <div class="sb-item"><img src="${flair ? flairPic(flair.pic) : ""}" alt=""><span>${flair ? flair.label : "Flair"}</span></div>
-        <div class="sb-item"><img src="${reactionPic(B.reaction)}" alt=""><span>Reaction</span></div>
+        <div class="sb-item"><img src="${flair ? flairPic(flair.pic) : ""}" alt=""><span>${flair ? flair.label + " flair" : "Flair"}</span></div>
+        <div class="sb-item"><img src="${reactionPic(B.reaction)}" alt=""><span>Triumph</span></div>
         <div class="sb-item"><img src="${BOARD_PIC[B.board]}" alt=""><span>Chalkboard</span></div>
         <div class="sb-item">${bgThumbHtml(B.background, "bundle-thumb", 40)}<span>Background</span></div>
       </div>
@@ -4440,7 +4447,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const btn = document.getElementById("starter-bundle-btn");
     if (!owned) btn.addEventListener("click", async () => {
       const bought = await showFakePurchase({ icon: "icons/shop-starter-gift.webp", title: "Starter Bundle", price: B.price,
-        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, a reaction, the Chalkboard board and the Polka Dots background.` });
+        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, the Triumph reaction, the Chalkboard board and the Grass background.` });
       if (!bought) return;
       btn.disabled = true;
       await purchaseStarterBundle();
@@ -4520,23 +4527,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // coins, or the whole pack unlocked at once (simulated purchase, like the flair packs). Only backgrounds with
   // art are listed; more are added here as their pictures arrive.
   const BACKGROUND_COIN_COST = 100;
+  // The 12 holiday backgrounds are not sold: each is the reward for finishing that month's Monthly Challenge
+  // (an achievement). legacyPack keeps them for anyone who already owns the old pack they used to be sold in.
+  const MONTH_BACKGROUNDS = [
+    { id: "newyear-bg", label: "New Year's", month: 1, legacyPack: "bgpack1" },
+    { id: "valentine-bg", label: "Valentine's Day", month: 2, legacyPack: "bgpack2" },
+    { id: "stpatrick-bg", label: "St. Patrick's Day", month: 3, legacyPack: "bgpack1" },
+    { id: "easter-bg", label: "Easter", month: 4, legacyPack: "bgpack2" },
+    { id: "may-bg", label: "May Fiesta", month: 5, legacyPack: "bgpack1" },
+    { id: "june-bg", label: "Summer Sun", month: 6, legacyPack: "bgpack2" },
+    { id: "july-bg", label: "Fourth of July", month: 7, legacyPack: "bgpack1" },
+    { id: "august-bg", label: "Beach Vacation", month: 8, legacyPack: "bgpack2" },
+    { id: "september-bg", label: "Back to School", month: 9, legacyPack: "bgpack1" },
+    { id: "halloween-bg", label: "Halloween", month: 10, legacyPack: "bgpack2" },
+    { id: "thanksgiving-bg", label: "Thanksgiving", month: 11, legacyPack: "bgpack1" },
+    { id: "christmas-bg", label: "Christmas", month: 12, legacyPack: "bgpack2" },
+  ];
   const BACKGROUND_PACK_CATALOG = [
-    { id: "bgpack1", label: "Holiday Backgrounds 1", price: "$0.99", backgrounds: [
-      { id: "newyear-bg", label: "New Year's" },
-      { id: "stpatrick-bg", label: "St. Patrick's Day" },
-      { id: "may-bg", label: "May Fiesta" },
-      { id: "july-bg", label: "Fourth of July" },
-      { id: "september-bg", label: "Back to School" },
-      { id: "thanksgiving-bg", label: "Thanksgiving" },
-    ] },
-    { id: "bgpack2", label: "Holiday Backgrounds 2", price: "$0.99", backgrounds: [
-      { id: "valentine-bg", label: "Valentine's Day" },
-      { id: "easter-bg", label: "Easter" },
-      { id: "june-bg", label: "Summer Sun" },
-      { id: "august-bg", label: "Beach Vacation" },
-      { id: "halloween-bg", label: "Halloween" },
-      { id: "christmas-bg", label: "Christmas" },
-    ] },
     { id: "bgpack3", label: "Tiled Backgrounds", price: "$0.99", backgrounds: [
       { id: "tile-dots", label: "Polka Dots" },
       { id: "tile-stripes", label: "Stripes" },
@@ -4570,12 +4577,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "candy-chocolate", label: "Chocolate Bars" },
     ] },
   ];
-  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds); }
+  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).concat(MONTH_BACKGROUNDS); }
+  const monthBackgroundOf = (id) => MONTH_BACKGROUNDS.find((m) => m.id === id);
   function backgroundPackOf(id) { return BACKGROUND_PACK_CATALOG.find((p) => p.backgrounds.some((b) => b.id === id)); }
   function ownsBackground(id) {
     const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.backgrounds) || {};
     const pk = backgroundPackOf(id);
-    return !!(own[id] || (pk && (myProfile.backgroundPacks || {})[pk.id]));
+    const mb = monthBackgroundOf(id);
+    return !!(own[id] || (pk && (myProfile.backgroundPacks || {})[pk.id]) || (mb && (myProfile.backgroundPacks || {})[mb.legacyPack]));
   }
   function equippedBackground() {
     const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.background;
@@ -4718,6 +4727,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
       })));
     });
+    // Monthly Challenge rewards only appear once earned (and are never for sale); locked months stay hidden.
+    const earned = MONTH_BACKGROUNDS.filter((m) => ownsBackground(m.id));
+    if (earned.length) {
+      const grp = document.createElement("div");
+      grp.className = "cosm-group-label";
+      grp.textContent = "Monthly Challenge rewards";
+      container.appendChild(grp);
+      earned.forEach((m) => container.appendChild(cosmRow({
+        leadHtml: bgThumbHtml(m.id, "cosm-bg-pic", 34), name: m.label,
+        owned: true, free: false, cost: 0, equipped: equipped === m.id,
+        onPreview: () => openBackgroundPreview(m.id, m.label), onEquip: () => equipBackground(m.id),
+      })));
+    }
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
@@ -4884,6 +4906,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
       btn.textContent = o.equipped ? "Equipped" : "Equip";
       btn.addEventListener("click", o.onEquip);
+    } else if (o.lockedHint) {
+      btn.className = "cosm-unlock";
+      btn.disabled = true;
+      btn.textContent = "\u{1F512} Locked";
+      row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", `<span class="cosm-rnd-sub">${o.lockedHint}</span>`);
     } else {
       btn.className = "cosm-buy";
       btn.innerHTML = `<img class="cosm-coin" src="icons/coin.png" alt="">${o.cost}`;
@@ -6966,6 +6993,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   let overlayReturnScreen = null;
+  // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
+  function syncOverlayReturnFlag() { document.body.classList.toggle("overlay-has-return", !!overlayReturnScreen && overlayReturnScreen !== homeScreen); }
   function openOverlay(screenEl) {
     if (screenEl.classList.contains("active")) {
       closeOverlay();
@@ -6982,6 +7011,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     screenEl.classList.add("active");
+    syncOverlayReturnFlag();
     playSound("popup-open");
   }
   function closeOverlay() {
@@ -6994,6 +7024,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (dest === gachaScreen) resetGachaScene();
     dest.classList.add("active");
     overlayReturnScreen = null;
+    syncOverlayReturnFlag();
     playSound("popup-close");
   }
   // Shared by three different "Yes" actions - quitting the app entirely
@@ -7122,6 +7153,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (currentActive && !OVERLAY_SCREENS.includes(currentActive)) overlayReturnScreen = currentActive;
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     target.classList.add("active");
+    syncOverlayReturnFlag();
     careerLastTab = tab;
     document.querySelectorAll(".career-tabs .career-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     if (!wasCareer) playSound("popup-open");
@@ -7731,9 +7763,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn" id="mo-main">Back to my challenge result</button>`;
       return;
     }
+    const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
+    const bgNote = mbg ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Cosmetics, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
     el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-note">${accs.map(dailyEmoji).join(" ")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
+      ${bgNote}
       <button type="button" class="dc-btn" id="mo-practice">Practice with new questions</button>
       <button type="button" class="dc-btn" id="mo-share">Share my result</button>
       <h3 class="cs-h">${name} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
@@ -7774,7 +7809,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try { await addCoins(coins); } catch (e) {}
     const name = (!currentName || checkName(currentName)) ? "Player" : currentName.trim().slice(0, 12);
     try { await set(ref(db, `monthly/${mo.key}/${deviceId}`), { n: name, s: total, a: accs.map((x) => Math.round(x)), t: serverTimestamp() }); } catch (e) {}
-    bumpStats({ rounds: MONTHLY_Q, monthlies: 1 }, null);
+    bumpStats({ rounds: MONTHLY_Q, monthlies: 1 }, { ["mc" + mo.key.slice(5)]: 1 });
     for (let i = 0; i < MONTHLY_Q; i++) {
       const q = mo.questions[i];
       await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((mo.guesses[i] / q.answer) * 10000) / 10000, p: 0, f: accs[i] >= 99 ? 1 : 0, s: 4 });
@@ -8530,7 +8565,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun"];
+  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Monthly"];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -8562,6 +8597,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]]);
   achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]]);
 
+  // One per month: finish that month's Monthly Challenge (first try) to earn its background. No coins, the scene is the reward.
+  // (A challenge already finished this month counts too, in case it was played before this existed.)
+  MONTH_BACKGROUNDS.forEach((m) => {
+    const mm = String(m.month).padStart(2, "0"), name = MONTH_NAMES[m.month - 1];
+    ACHIEVEMENTS.push({ id: `monthly-${mm}`, cat: "Monthly", name: `${name} Challenge`, desc: `Finish the ${name} Monthly Challenge`, target: 1, reward: 0, bg: m.id, bgLabel: m.label,
+      progress: () => (((myProfile.stats || {})["mc" + mm] || 0) >= 1 || (myProfile.monthly && myProfile.monthly.done && String(myProfile.monthly.key || "").slice(5) === mm)) ? 1 : 0 });
+  });
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
@@ -8595,13 +8637,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const doneCount = real.filter((a) => claimed[a.id]).length;
     const waiting = real.filter(achClaimable).reduce((n, a) => n + a.reward, 0);
     const btn = document.getElementById("toolbar-awards-btn");
-    if (btn) btn.classList.toggle("has-claim", waiting > 0);
+    if (btn) btn.classList.toggle("has-claim", real.some(achClaimable));
+    const rewardText = (a) => (a.bg ? `Scene: ${a.bgLabel}` : `+${a.reward} coins`);
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
       const done = p >= a.target, isClaimed = !!claimed[a.id];
       const side = isClaimed ? (a.test ? `<button type="button" class="ach-undo" data-id="${a.id}">Unclaim</button>` : `<div class="ach-claimed">Claimed</div>`)
-        : done ? `<div class="ach-reward">+${a.reward} coins</div><button type="button" class="ach-claim" data-id="${a.id}">${TROPHY_SVG}Claim</button>`
-        : `<div class="ach-reward">+${a.reward} coins</div>`;
+        : done ? `<div class="ach-reward">${rewardText(a)}</div><button type="button" class="ach-claim" data-id="${a.id}">${TROPHY_SVG}Claim</button>`
+        : `<div class="ach-reward">${rewardText(a)}</div>`;
       const cls = isClaimed ? "done" : done ? "ready" : "";
       const just = achJustClaimed === a.id;
       return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal">${ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.png" alt="" draggable="false">` : ""}${TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
@@ -8633,7 +8676,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const res = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
       if ((profile.achClaimed || {})[id]) return profile;
-      return { ...profile, coins: (profile.coins || 0) + a.reward, achClaimed: { ...(profile.achClaimed || {}), [id]: true } };
+      const grant = { ...profile, coins: (profile.coins || 0) + a.reward, achClaimed: { ...(profile.achClaimed || {}), [id]: true } };
+      if (a.bg) { const cosm = profile.cosmetics || defaultCosmeticState(), own = cosm.owned || {}; grant.cosmetics = { ...cosm, owned: { ...own, backgrounds: { ...(own.backgrounds || {}), [a.bg]: true } } }; }
+      return grant;
     }).catch(() => null);
     if (!res) achJustClaimed = null;
   }
