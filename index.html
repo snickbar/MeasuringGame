@@ -3096,7 +3096,8 @@
   </div></details>
 
   <details class="howto-section"><summary>Awards</summary><div class="howto-body">
-    <p>Tap the <b>Awards</b> icon in the toolbar to see achievements across six categories - Collector, Accuracy, Winning, Second chance, Social, and Fun - each with a few tiers that get harder (and pay out more coins) as you go. A red dot on the toolbar icon means you've got a reward ready to <b>claim</b>; tap the achievement to collect its coins. A Hide Completed toggle keeps the list focused on what's still in progress.</p>
+    <p>Tap the <b>Awards</b> icon in the toolbar to see achievements across categories - Collector, Accuracy, Winning, Second chance, Social, Fun, Worlds, Monthly, and Fantasy - each with a few tiers that get harder (and pay out more coins) as you go. A red dot on the toolbar icon means you've got a reward ready to <b>claim</b>; tap the achievement to collect its coins. A Hide Completed toggle keeps the list focused on what's still in progress.</p>
+    <p>The <b>Fantasy</b> awards are different: instead of coins, each one unlocks a mythical creature - a goblin, yeti, Bigfoot, dragon or kraken. Unlocked creatures can pop up as objects in <b>Host Party</b> and <b>Quick Game</b> rounds (when the host has unlocked them), and never in Daily, Monthly, Worlds or Survival challenges. Once you've seen one in a round, it shows up in your Objects list with the rest.</p>
   </div></details>
 
   <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
@@ -8763,18 +8764,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"${itemRotStyle(o.id)}></span><span class="items-name">${o.display}</span></div>`
       : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
     const comboKeys = Object.keys(myProfile.seenCombos || {});
-    const normalTotal = OBJECTS.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
+    const NORMAL_LIST = OBJECTS.concat(FANTASY_OBJECTS);
+    const normalTotal = NORMAL_LIST.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
     let seenCount, totalCount, seenComboCount, comboCount, listHtml;
     if (!isHoliday) {
       const groups = {};
-      OBJECTS.forEach((obj) => {
+      NORMAL_LIST.forEach((obj) => {
         const o = mk(obj.id, obj.name, obj.image, seenSet[obj.id]);
         (groups[o.display.charAt(0).toUpperCase()] = groups[o.display.charAt(0).toUpperCase()] || []).push(o);
       });
       const letters = Object.keys(groups).sort();
       letters.forEach((l) => groups[l].sort((a, b) => a.display.localeCompare(b.display)));
       totalCount = normalTotal;
-      seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
+      seenCount = NORMAL_LIST.filter((o) => seenSet[o.id]).length;
       comboCount = (normalTotal * (normalTotal - 1)) / 2;
       seenComboCount = comboKeys.filter((k) => !k.split("|").some((id) => holidayIds.has(id))).length;
       listHtml = letters.map((letter) => `
