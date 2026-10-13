@@ -3096,7 +3096,8 @@
   </div></details>
 
   <details class="howto-section"><summary>Awards</summary><div class="howto-body">
-    <p>Tap the <b>Awards</b> icon in the toolbar to see achievements across six categories - Collector, Accuracy, Winning, Second chance, Social, and Fun - each with a few tiers that get harder (and pay out more coins) as you go. A red dot on the toolbar icon means you've got a reward ready to <b>claim</b>; tap the achievement to collect its coins. A Hide Completed toggle keeps the list focused on what's still in progress.</p>
+    <p>Tap the <b>Awards</b> icon in the toolbar to see achievements across categories - Collector, Accuracy, Winning, Second chance, Social, Fun, Worlds, Monthly, and Fantasy - each with a few tiers that get harder (and pay out more coins) as you go. A red dot on the toolbar icon means you've got a reward ready to <b>claim</b>; tap the achievement to collect its coins. A Hide Completed toggle keeps the list focused on what's still in progress.</p>
+    <p>The <b>Fantasy</b> awards are different: instead of coins, each one unlocks a mythical creature - a goblin, yeti, Bigfoot, dragon or kraken. Unlocked creatures can pop up as objects in <b>Host Party</b> and <b>Quick Game</b> rounds (when the host has unlocked them), and never in Daily, Monthly, Worlds or Survival challenges. Once you've seen one in a round, it shows up in your Objects list with the rest.</p>
   </div></details>
 
   <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
@@ -5803,7 +5804,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const HOLIDAY_IMAGE_IDS = new Set(["reindeer", "christmas-stocking", "present", "santa-hat", "mistletoe", "candy-cane", "christmas-tree", "sleigh", "bat", "pumpkin", "turkey", "cornucopia", "candy-corn", "skeleton", "ghost", "pilgrim-hat", "casserole-dish", "stuffing", "black-cat", "cranberry", "dinner-roll", "pumpkin-pie", "mashed-potatoes", "cauldron", "witch-hat", "cupid", "disco-ball", "valentines-card", "party-hat", "bouquet", "cupids-arrow", "balloon", "gingerbread-house", "confetti", "snow-globe", "champagne-glass", "teddy-bear", "jewelry-box", "heart", "clock", "noisemaker", "conversation-heart", "fireworks", "shamrock", "pot-of-gold", "leprechaun-hat", "gold-coin", "candle", "easter-egg", "shillelagh", "baby-chick", "green-beer-mug", "rainbow", "leprechaun", "four-leaf-clover", "horseshoe", "plastic-egg", "bunny-ears", "chocolate-bunny", "egg-basket", "easter-basket", "marshmallow-chick", "jelly-bean", "carrot", "breakfast-tray", "sombrero", "maraca", "mothers-day-card", "handbag", "tulip", "pearl-necklace", "pinata", "chili-pepper", "toolbox", "grill-spatula", "coffee-mug", "taco", "necktie", "fishing-rod", "coffin", "fall-leaf", "chocolate-box", "times-square-ball", "novelty-glasses", "tombstone", "golf-club", "napkin", "chocolate", "streamer", "uncle-sam-hat", "lemonade-pitcher", "beach-ball", "corn-on-the-cob", "popsicle", "hamburger", "sparkler", "ribs", "flip-flop", "baseball-glove", "sunglasses", "beach-umbrella", "sandcastle", "barbecue-grill", "ketchup-bottle", "sunscreen-bottle", "sailboat", "cooler", "school-bell", "crayon", "snorkel-mask", "hammock", "scissors", "calculator", "lunchbox", "globe", "suitcase", "backpack", "pencil-case", "firecracker", "locker", "american-flag", "sweet-potato-casserole", "countdown-sign", "notebook", "seashell"]);
   const HOLIDAY_OBJECTS = HOLIDAY_OBJECT_DEFS.filter((d) => HOLIDAY_IMAGE_IDS.has(d[1]))
     .map((d) => ({ id: d[1], pack: d[0], name: d[2], plural: d[3], mm: d[4], image: `items/${d[1]}.webp` }));
-  const OBJECT_BY_ID = new Map(OBJECTS.concat(HOLIDAY_OBJECTS).map((o) => [o.id, o]));
+  // Fantasy objects, just for fun. Each one is unlocked by claiming its award (see the Fantasy awards) and only turns up in
+  // Host Party and Quick Game rounds, when the host has unlocked it. Daily, Monthly, Worlds and Survival use OBJECTS alone,
+  // so they never see these. [id, name, plural, mm, award id, proper noun?]
+  const FANTASY_OBJECT_DEFS = [
+    ["goblin", "goblin", "goblins", 1000, "fantasy-goblin"],
+    ["yeti", "yeti", "yetis", 2000, "fantasy-yeti"],
+    ["bigfoot", "Bigfoot", "Bigfoots", 2400, "fantasy-bigfoot", true],
+    ["western-dragon", "dragon", "dragons", 15000, "fantasy-dragon"],
+    ["kraken", "kraken", "krakens", 30000, "fantasy-kraken"],
+  ];
+  const FANTASY_OBJECTS = FANTASY_OBJECT_DEFS.map((d) => ({ id: d[0], fantasy: true, awardId: d[4], name: d[1], plural: d[2], ...(d[5] ? { properNoun: true } : {}), mm: d[3], image: `items/${d[0]}.webp` }));
+  const OBJECT_BY_ID = new Map(OBJECTS.concat(HOLIDAY_OBJECTS, FANTASY_OBJECTS).map((o) => [o.id, o]));
+  // The fantasy objects this player has unlocked (the host's list is what a room uses).
+  const unlockedFantasyIds = () => FANTASY_OBJECTS.filter((o) => (myProfile.achClaimed || {})[o.awardId]).map((o) => o.id);
 
   // Anonymous Gregorian algorithm for Easter Sunday's month (0-11).
   function easterMonth(year) {
@@ -5881,13 +5895,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // random over any longer run. The pool (and its bags) depend on which packs
   // the room is using, so each distinct pack set keeps its own.
   const poolCache = new Map();
-  function poolFor(activePacks, seasonPacks) {
+  function poolFor(activePacks, seasonPacks, fantasyIds) {
     const packs = (activePacks || []).slice().sort();
     const season = (seasonPacks || []).slice().sort();
-    const key = packs.join(",") + "|" + season.join(",");
+    const fantasy = (fantasyIds || []).slice().sort();
+    const key = packs.join(",") + "|" + season.join(",") + "|" + fantasy.join(",");
     let pool = poolCache.get(key);
     if (!pool) {
-      const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))));
+      const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))), FANTASY_OBJECTS.filter((o) => fantasy.includes(o.id)));
       pool = { objects, seasonal: objects.filter((o) => o.pack && season.includes(o.pack)), bag: [], relBag: [], partners: null };
       poolCache.set(key, pool);
     }
@@ -5930,7 +5945,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return ALT_ART_IDS.has(o.id) && variant === 1 ? { ...o, image: o.image.replace(/\.webp$/, "-2.webp") } : o;
   }
   function generateQuestion() {
-    const pool = poolFor(roomState.activePacks, roomState.seasonPacks);
+    const pool = poolFor(roomState.activePacks, roomState.seasonPacks, roomState.fantasyIds);
     const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair(pool) : pickRandomPair(pool);
     return {
       unitId: unit.id,
@@ -5947,13 +5962,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- Daily Challenge: the same 3 questions for everyone, new ones every US Eastern day ----
   // ---- Worlds (solo career mode): each is a themed pool of objects; questions are drawn from the pool ----
   const WORLDS = [
-    { id: "tiny", name: "Tiny Things", ids: "grain-of-sand poppy-seed sesame-seed ant grain-of-rice ladybug human-eyelash honeybee die gummy-bear chocolate-drop quarter paperclip cockroach poker-chip ping-pong-ball golf-ball cork aa-battery snail domino blueberry marble penny button acorn ice-cube peanut lego-brick".split(" ") },
-    { id: "games", name: "Games & Sports", ids: "die poker-chip ping-pong-ball golf-ball rubiks-cube tennis-ball baseball hockey-puck bowling-ball soccer-ball basketball frisbee football bowling-pin baseball-bat skateboard surfboard pool-noodle domino playing-card vinyl-record basketball-court football-field olympic-pool checkers-piece wooden-block shuttlecock volleyball boxing-glove tennis-racket pool-cue hockey-stick snowboard whistle jumbotron".split(" ") },
-    { id: "home", name: "Around the House", ids: "quarter paperclip aa-battery credit-card playing-card toilet-paper-square dvd index-card smartphone pencil toothbrush dog-bowl tv-remote house-brick sheet-of-paper-a4 vinyl-record plunger umbrella broom convenient-receipt yoga-mat door queen-size-bed grand-piano key light-bulb soda-can sneaker pillow laptop ladder couch bathtub refrigerator".split(" ") },
-    { id: "food", name: "Snack Time", ids: "poppy-seed sesame-seed grain-of-rice gummy-bear chocolate-drop chicken-nugget donut hot-dog banana foot-long-sub baguette cork corn-stalk sunflower long-stem-rose daisy pinecone strawberry egg apple french-fry ice-cream-cone pizza-slice cucumber pineapple watermelon".split(" ") },
-    { id: "critters", name: "Critters", ids: "ant ladybug honeybee cockroach snail frog seahorse turtle jellyfish starfish pufferfish koi-fish dachshund corgi domestic-cat octopus capybara flamingo ostrich horse cow polar-bear komodo-dragon lion alligator saltwater-crocodile great-white-shark green-anaconda giraffe t-rex elephant killer-whale giant-squid blue-whale giant-anthill hamster hedgehog owl rabbit penguin kangaroo panda dolphin zebra hippopotamus rhinoceros whale-shark".split(" ") },
-    { id: "wheels", name: "Wheels & Wings", ids: "skateboard bicycle car canoe minivan shipping-container fire-truck double-decker-bus school-bus telephone-pole semi-truck fighter-jet hot-air-balloon space-shuttle boeing-737 blimp titanic aircraft-carrier scooter motorcycle rowboat tractor ambulance helicopter locomotive airliner saturn-rocket cruise-ship".split(" ") },
-    { id: "landmarks", name: "Landmarks", ids: "moai teepee stonehenge statue-of-liberty castle leaning-tower-of-pisa big-ben great-pyramid washington-monument space-needle colosseum gateway-arch eiffel-tower empire-state-building angel-falls brooklyn-bridge grand-canyon mount-fuji central-park mount-everest mariana-trench football-field olympic-pool basketball-court palm-tree oak-tree cactus lighthouse windmill christ-statue niagara-falls taj-mahal london-eye sydney-opera-house hoover-dam cn-tower burj-khalifa golden-gate-bridge mount-kilimanjaro".split(" ") },
+    { id: "tiny", name: "Tiny Things", ids: "grain-of-sand poppy-seed sesame-seed ant grain-of-rice ladybug human-eyelash honeybee die gummy-bear chocolate-drop quarter paperclip cockroach poker-chip ping-pong-ball golf-ball cork aa-battery snail domino blueberry marble penny button acorn ice-cube peanut lego-brick cheerio tooth".split(" ") },
+    { id: "games", name: "Games & Sports", ids: "die poker-chip ping-pong-ball golf-ball rubiks-cube tennis-ball baseball hockey-puck bowling-ball soccer-ball basketball frisbee football bowling-pin baseball-bat skateboard surfboard pool-noodle domino playing-card vinyl-record basketball-court football-field olympic-pool checkers-piece wooden-block shuttlecock volleyball boxing-glove tennis-racket pool-cue hockey-stick snowboard whistle jumbotron letter-block toy-car retro-cartridge game-controller football-helmet magic-wand basketball-backboard".split(" ") },
+    { id: "home", name: "Around the House", ids: "quarter paperclip aa-battery credit-card playing-card toilet-paper-square dvd index-card smartphone pencil toothbrush dog-bowl tv-remote house-brick sheet-of-paper-a4 vinyl-record plunger umbrella broom convenient-receipt yoga-mat door queen-size-bed grand-piano key light-bulb soda-can sneaker pillow laptop ladder couch bathtub refrigerator earbuds-case whiskey-glass scrunchie lottery-ticket toothpaste comb baby-bottle wine-glass handcuffs beer-bottle hairbrush paintbrush baseball-cap wine-bottle exit-sign fire-extinguisher stethoscope trash-can barstool folding-chair jeans mailbox earbuds mop beach-towel".split(" ") },
+    { id: "food", name: "Snack Time", ids: "poppy-seed sesame-seed grain-of-rice gummy-bear chocolate-drop chicken-nugget donut hot-dog banana foot-long-sub baguette cork corn-stalk sunflower long-stem-rose daisy pinecone strawberry egg apple french-fry ice-cream-cone pizza-slice cucumber pineapple watermelon bagel butter-stick teacup pancakes blade-of-grass drinking-straw cotton-candy pizza-pie".split(" ") },
+    { id: "critters", name: "Critters", ids: "ant ladybug honeybee cockroach snail frog seahorse turtle jellyfish starfish pufferfish koi-fish dachshund corgi domestic-cat octopus capybara flamingo ostrich horse cow polar-bear komodo-dragon lion alligator saltwater-crocodile great-white-shark green-anaconda giraffe t-rex elephant killer-whale giant-squid blue-whale giant-anthill hamster hedgehog owl rabbit penguin kangaroo panda dolphin zebra hippopotamus rhinoceros whale-shark duck stork barracuda stingray pig black-bear gorilla deer electric-eel brown-bear swordfish hammerhead-shark manta-ray".split(" ") },
+    { id: "wheels", name: "Wheels & Wings", ids: "skateboard bicycle car canoe minivan shipping-container fire-truck double-decker-bus school-bus telephone-pole semi-truck fighter-jet hot-air-balloon space-shuttle boeing-737 blimp titanic aircraft-carrier scooter motorcycle rowboat tractor ambulance helicopter locomotive airliner saturn-rocket cruise-ship license-plate manhole-cover car-tire traffic-light dumpster streetlight garbage-truck excavator fishing-boat tower-crane".split(" ") },
+    { id: "landmarks", name: "Landmarks", ids: "moai teepee stonehenge statue-of-liberty castle leaning-tower-of-pisa big-ben great-pyramid washington-monument space-needle colosseum gateway-arch eiffel-tower empire-state-building angel-falls brooklyn-bridge grand-canyon mount-fuji central-park mount-everest mariana-trench football-field olympic-pool basketball-court palm-tree oak-tree cactus lighthouse windmill christ-statue niagara-falls taj-mahal london-eye sydney-opera-house hoover-dam cn-tower burj-khalifa golden-gate-bridge mount-kilimanjaro flagpole carousel barn-silo water-tower power-line-tower notre-dame wind-turbine".split(" ") },
   ];
   const DAILY_TZ = "America/New_York";
   function dailyDateStr(d) {
@@ -8749,18 +8764,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"${itemRotStyle(o.id)}></span><span class="items-name">${o.display}</span></div>`
       : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
     const comboKeys = Object.keys(myProfile.seenCombos || {});
-    const normalTotal = OBJECTS.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
+    const NORMAL_LIST = OBJECTS.concat(FANTASY_OBJECTS);
+    const normalTotal = NORMAL_LIST.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
     let seenCount, totalCount, seenComboCount, comboCount, listHtml;
     if (!isHoliday) {
       const groups = {};
-      OBJECTS.forEach((obj) => {
+      NORMAL_LIST.forEach((obj) => {
         const o = mk(obj.id, obj.name, obj.image, seenSet[obj.id]);
         (groups[o.display.charAt(0).toUpperCase()] = groups[o.display.charAt(0).toUpperCase()] || []).push(o);
       });
       const letters = Object.keys(groups).sort();
       letters.forEach((l) => groups[l].sort((a, b) => a.display.localeCompare(b.display)));
       totalCount = normalTotal;
-      seenCount = OBJECTS.filter((o) => seenSet[o.id]).length;
+      seenCount = NORMAL_LIST.filter((o) => seenSet[o.id]).length;
       comboCount = (normalTotal * (normalTotal - 1)) / 2;
       seenComboCount = comboKeys.filter((k) => !k.split("|").some((id) => holidayIds.has(id))).length;
       listHtml = letters.map((letter) => `
@@ -8831,7 +8847,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly"];
+  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy"];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -8878,6 +8894,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ACHIEVEMENTS.push({ id: `world-perfect-${w.id}`, cat: "Worlds", name: `Perfect ${w.name}`, desc: `Earn all 15 stars in ${w.name}`, target: 1, reward: 100,
       progress: () => (worldStarsOf(w.id) >= 15 ? 1 : 0) });
   });
+  // Fantasy: each award unlocks one fantasy creature for Host Party and Quick Game rounds (no coins).
+  const FANTASY_AWARDS = {
+    goblin: ["Goblin hunter", "Finish 10 games", 10, ACH_STAT("gamesPlayed")],
+    yeti: ["Yeti tracker", "Win 10 games", 10, ACH_STAT("gamesWon")],
+    bigfoot: ["Bigfoot spotter", "Land 5 spot-on guesses", 5, ACH_STAT("spotOns")],
+    "western-dragon": ["Dragon rider", "Survive 20 rounds in Survival", 20, () => survivalBest()],
+    kraken: ["Kraken slayer", "Guess exactly right 3 times", 3, ACH_STAT("perfects")],
+  };
+  FANTASY_OBJECTS.forEach((o) => {
+    const f = FANTASY_AWARDS[o.id];
+    ACHIEVEMENTS.push({ id: o.awardId, cat: "Fantasy", name: f[0], desc: f[1], target: f[2], reward: 0, fantasy: o.id, fantasyLabel: o.name, progress: f[3] });
+  });
   // Three more home screens with their own awards.
   ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 7 rounds in a row", target: 7, reward: 0, home: "penguin", homeLabel: "Arctic", progress: ACH_STAT("bestStreak") });
   ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 15 rounds in Survival", target: 15, reward: 0, home: "cactus", homeLabel: "Western", progress: () => survivalBest() });
@@ -8918,7 +8946,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const waiting = real.filter(achClaimable).reduce((n, a) => n + a.reward, 0);
     const btn = document.getElementById("toolbar-awards-btn");
     if (btn) btn.classList.toggle("has-claim", real.some(achClaimable));
-    const rewardText = (a) => (a.bg ? `Scene: ${a.bgLabel}` : a.home ? `Home screen: ${a.homeLabel}` : `+${a.reward} coins`);
+    const rewardText = (a) => (a.fantasy ? `Unlocks the ${a.fantasyLabel}` : a.bg ? `Scene: ${a.bgLabel}` : a.home ? `Home screen: ${a.homeLabel}` : `+${a.reward} coins`);
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
       const done = p >= a.target, isClaimed = !!claimed[a.id];
@@ -10507,7 +10535,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = new Date();
     await update(ref(db, `rooms/${currentRoomCode}`), {
       phase: "countdown", countdownRound: 1, countdownEndsAt,
-      activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now),
+      activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
     });
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
   }
