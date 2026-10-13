@@ -13,7 +13,7 @@
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
    (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
-  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", snacks: "home-snacks.jpg" }, id = "ants";
+  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg" }, id = "ants";
   try {
     var sel = localStorage.getItem("mg_homeSel") || "ants";
     if (sel === "random") {
@@ -1285,6 +1285,7 @@
     list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 4px 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: var(--text);
   }
+  .howto-section { scroll-margin-top: 76px; }
   .howto-section summary::-webkit-details-marker { display: none; }
   .howto-section summary::after { content: "\25BE"; font-size: 18px; color: var(--brand); transition: transform .2s ease; }
   .howto-section[open] summary::after { transform: rotate(180deg); }
@@ -3076,6 +3077,14 @@
     <p>At the very end of the game, the top 3 players by <b>average guess accuracy</b> (how close their guesses ran to exactly 100% of the real answer, on average) get a one-time bonus: +10 / +6 / +3.</p>
   </div></details>
 
+  <details class="howto-section" id="howto-accuracy"><summary>Accuracy &amp; Survival</summary><div class="howto-body">
+    <p><b>Accuracy</b> is based on how many <b>times off</b> your guess was, not on the plain difference. Exactly right is <b>100%</b>. The further off you are, the lower it goes, and it hits <b>0%</b> once your guess is <b>double</b> the answer or <b>half</b> of it (or further out than that).</p>
+    <p>Too high and too low are measured the same way. Guessing 3 when the answer is 10 is over 3 times too low, so it's 0%, not 30%.</p>
+    <p><b>Examples</b> for an answer of 10: guess 11 is 90%, guess 12 is 80%, guess 8 is 75%, guess 7 is about 57%, guess 5 or 20 is 0%.</p>
+    <p><b>The marks</b> you see on results: a green check is 90% or better, a yellow check is 70% to 89%, an orange X is 40% to 69%, and a red X is under 40%.</p>
+    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from about 7.2 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The % beside your hearts is your running average accuracy for the run.</p>
+  </div></details>
+
   <details class="howto-section"><summary>Tiebreakers</summary><div class="howto-body">
     <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever's average guess accuracy is closer to 100%; if that's tied too, they stay tied there as well.</p>
   </div></details>
@@ -4637,7 +4646,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "lighthouse", file: "home-lighthouse.jpg", name: "Seaside", world: "landmarks" },
     { id: "penguin", file: "home-penguin.jpg", name: "Arctic", how: "Win 7 rounds in a row" },
     { id: "cactus", file: "home-cactus.jpg", name: "Western", how: "Survive 15 rounds in Survival" },
-    { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 100 spot-on guesses" },
+    { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 25 spot-on guesses" },
+    { id: "dragon", file: "home-dragon.jpg", name: "Kingdom", how: "Reach 30 in Survival" },
+    { id: "space", file: "home-space.jpg", name: "Space", how: "Earn every star in every world" },
   ];
   const homeScreenOf = (id) => HOME_SCREENS.find((h) => h.id === id);
   const ownsHomeScreen = (id) => id === HOME_DEFAULT || !!(myProfile.cosmetics && myProfile.cosmetics.owned && (myProfile.cosmetics.owned.homeScreens || {})[id]);
@@ -5341,12 +5352,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "ladybug", name: "ladybug", plural: "ladybugs", mm: 8, image: "items/ladybug.webp" },
     { id: "human-eyelash", name: "human eyelash", plural: "human eyelashes", mm: 10, image: "items/human-eyelash.webp" },
     { id: "blueberry", name: "blueberry", plural: "blueberries", mm: 12, image: "items/blueberry.webp" },
+    { id: "cheerio", name: "piece of oat cereal", plural: "pieces of oat cereal", mm: 12, image: "items/cheerio.webp" },
     { id: "honeybee", name: "honeybee", plural: "honeybees", mm: 15, image: "items/honeybee.webp" },
     { id: "die", name: "die", plural: "dice", mm: 16, image: "items/die.webp" },
     { id: "marble", name: "marble", plural: "marbles", mm: 16, image: "items/marble.webp" },
     { id: "penny", name: "penny", plural: "pennies", mm: 19, image: "items/penny.webp" },
     { id: "gummy-bear", name: "gummy bear", plural: "gummy bears", mm: 20, image: "items/gummy-bear.webp" },
     { id: "button", name: "button", plural: "buttons", mm: 20, image: "items/button.webp" },
+    { id: "tooth", name: "tooth", plural: "teeth", mm: 20, image: "items/tooth.webp" },
     { id: "chocolate-drop", name: "chocolate drop", plural: "chocolate drops", mm: 22, image: "items/chocolate-drop.webp" },
     { id: "quarter", name: "quarter", plural: "quarters", mm: 24, image: "items/quarter.webp" },
     { id: "acorn", name: "acorn", plural: "acorns", mm: 25, image: "items/acorn.webp" },
@@ -5365,15 +5378,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "clown-nose", name: "clown nose", plural: "clown noses", mm: 48, image: "items/clown-nose.webp" },
     { id: "aa-battery", name: "AA battery", plural: "AA batteries", mm: 50, image: "items/aa-battery.webp" },
     { id: "snail", name: "snail", plural: "snails", mm: 50, image: "items/snail.webp" },
+    { id: "letter-block", name: "letter block", plural: "letter blocks", mm: 50, image: "items/letter-block.webp" },
     { id: "domino", name: "domino", plural: "dominoes", mm: 51, image: "items/domino.webp" },
     { id: "key", name: "house key", plural: "house keys", mm: 55, image: "items/key.webp" },
     { id: "whistle", name: "referee whistle", plural: "referee whistles", mm: 55, image: "items/whistle.webp" },
     { id: "rubiks-cube", name: "Rubik's Cube", plural: "Rubik's Cubes", mm: 57, image: "items/rubiks-cube.webp" },
     { id: "egg", name: "egg", plural: "eggs", mm: 57, image: "items/egg.webp" },
+    { id: "earbuds-case", name: "pair of wireless earbuds", plural: "pairs of wireless earbuds", mm: 60, image: "items/earbuds-case.webp" },
     { id: "shuttlecock", name: "badminton shuttlecock", plural: "badminton shuttlecocks", mm: 65, image: "items/shuttlecock.webp" },
     { id: "tennis-ball", name: "tennis ball", plural: "tennis balls", mm: 67, image: "items/tennis-ball.webp" },
     { id: "baseball", name: "baseball", plural: "baseballs", mm: 74, image: "items/baseball.webp" },
     { id: "wooden-block", name: "wooden block", plural: "wooden blocks", mm: 75, image: "items/wooden-block.webp" },
+    { id: "toy-car", name: "toy car", plural: "toy cars", mm: 75, image: "items/toy-car.webp" },
     { id: "hockey-puck", name: "hockey puck", plural: "hockey pucks", mm: 76, image: "items/hockey-puck.webp" },
     { id: "sand-dollar", name: "sand dollar", plural: "sand dollars", mm: 80, image: "items/sand-dollar.webp" },
     { id: "apple", name: "apple", plural: "apples", mm: 80, image: "items/apple.webp" },
@@ -5381,35 +5397,56 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "credit-card", name: "credit card", plural: "credit cards", mm: 86, image: "items/credit-card.webp" },
     { id: "playing-card", name: "playing card", plural: "playing cards", mm: 89, image: "items/playing-card.webp" },
     { id: "rubber-duck", name: "rubber duck", plural: "rubber ducks", mm: 90, image: "items/rubber-duck.webp" },
+    { id: "whiskey-glass", name: "whiskey glass", plural: "whiskey glasses", mm: 90, image: "items/whiskey-glass.webp" },
     { id: "donut", name: "donut", plural: "donuts", mm: 95, image: "items/donut.webp" },
     { id: "frog", name: "frog", plural: "frogs", mm: 100, image: "items/frog.webp" },
     { id: "pinecone", name: "pinecone", plural: "pinecones", mm: 100, image: "items/pinecone.webp" },
     { id: "hamster", name: "hamster", plural: "hamsters", mm: 100, image: "items/hamster.webp" },
+    { id: "bagel", name: "bagel", plural: "bagels", mm: 100, image: "items/bagel.webp" },
+    { id: "scrunchie", name: "scrunchie", plural: "scrunchies", mm: 100, image: "items/scrunchie.webp" },
     { id: "light-bulb", name: "light bulb", plural: "light bulbs", mm: 110, image: "items/light-bulb.webp" },
     { id: "toilet-paper-square", name: "toilet paper square", plural: "toilet paper squares", mm: 114, image: "items/toilet-paper-square.webp" },
     { id: "dvd", name: "DVD", plural: "DVDs", mm: 120, image: "items/dvd.webp" },
+    { id: "butter-stick", name: "stick of butter", plural: "sticks of butter", mm: 120, image: "items/butter-stick.webp" },
     { id: "soda-can", name: "soda can", plural: "soda cans", mm: 123, image: "items/soda-can.webp" },
     { id: "index-card", name: "index card", plural: "index cards", mm: 127, image: "items/index-card.webp" },
+    { id: "lottery-ticket", name: "lottery ticket", plural: "lottery tickets", mm: 130, image: "items/lottery-ticket.webp" },
+    { id: "retro-cartridge", name: "retro game cartridge", plural: "retro game cartridges", mm: 135, image: "items/retro-cartridge.webp" },
+    { id: "teacup", name: "teacup", plural: "teacups", mm: 140, image: "items/teacup.webp" },
     { id: "smartphone", name: "smartphone", plural: "smartphones", mm: 150, image: "items/smartphone.webp" },
     { id: "hot-dog", name: "hot dog", plural: "hot dogs", mm: 150, image: "items/hot-dog.webp" },
     { id: "seahorse", name: "seahorse", plural: "seahorses", mm: 150, image: "items/seahorse.webp" },
+    { id: "pancakes", name: "stack of pancakes", plural: "stacks of pancakes", mm: 150, image: "items/pancakes.webp" },
+    { id: "blade-of-grass", name: "blade of grass", plural: "blades of grass", mm: 150, image: "items/blade-of-grass.webp" },
+    { id: "game-controller", name: "video game controller", plural: "video game controllers", mm: 155, image: "items/game-controller.webp" },
     { id: "ice-cream-cone", name: "ice cream cone", plural: "ice cream cones", mm: 160, image: "items/ice-cream-cone.webp" },
     { id: "pencil", name: "pencil", plural: "pencils", mm: 175, image: "items/pencil.webp" },
+    { id: "toothpaste", name: "tube of toothpaste", plural: "tubes of toothpaste", mm: 175, image: "items/toothpaste.webp" },
     { id: "toothbrush", name: "toothbrush", plural: "toothbrushes", mm: 185, image: "items/toothbrush.webp" },
+    { id: "comb", name: "comb", plural: "combs", mm: 190, image: "items/comb.webp" },
     { id: "dog-bowl", name: "dog bowl", plural: "dog bowls", mm: 200, image: "items/dog-bowl.webp" },
     { id: "banana", name: "banana", plural: "bananas", mm: 200, image: "items/banana.webp" },
     { id: "tv-remote", name: "TV remote", plural: "TV remotes", mm: 200, image: "items/tv-remote.webp" },
     { id: "pizza-slice", name: "pizza slice", plural: "pizza slices", mm: 200, image: "items/pizza-slice.webp" },
     { id: "cucumber", name: "cucumber", plural: "cucumbers", mm: 200, image: "items/cucumber.webp" },
+    { id: "baby-bottle", name: "baby bottle", plural: "baby bottles", mm: 200, image: "items/baby-bottle.webp" },
+    { id: "wine-glass", name: "wine glass", plural: "wine glasses", mm: 200, image: "items/wine-glass.webp" },
     { id: "volleyball", name: "volleyball", plural: "volleyballs", mm: 210, image: "items/volleyball.webp" },
+    { id: "drinking-straw", name: "drinking straw", plural: "drinking straws", mm: 210, image: "items/drinking-straw.webp" },
     { id: "house-brick", name: "house brick", plural: "house bricks", mm: 215, image: "items/house-brick.webp" },
     { id: "bowling-ball", name: "bowling ball", plural: "bowling balls", mm: 218, image: "items/bowling-ball.webp" },
     { id: "soccer-ball", name: "soccer ball", plural: "soccer balls", mm: 220, image: "items/soccer-ball.webp" },
+    { id: "handcuffs", name: "pair of handcuffs", plural: "pairs of handcuffs", mm: 220, image: "items/handcuffs.webp" },
     { id: "hedgehog", name: "hedgehog", plural: "hedgehogs", mm: 230, image: "items/hedgehog.webp" },
+    { id: "beer-bottle", name: "beer bottle", plural: "beer bottles", mm: 230, image: "items/beer-bottle.webp" },
+    { id: "hairbrush", name: "hairbrush", plural: "hairbrushes", mm: 230, image: "items/hairbrush.webp" },
     { id: "basketball", name: "basketball", plural: "basketballs", mm: 240, image: "items/basketball.webp" },
     { id: "turtle", name: "turtle", plural: "turtles", mm: 250, image: "items/turtle.webp" },
+    { id: "paintbrush", name: "paintbrush", plural: "paintbrushes", mm: 250, image: "items/paintbrush.webp" },
+    { id: "gold-bar", name: "gold bar", plural: "gold bars", mm: 250, image: "items/gold-bar.webp" },
     { id: "frisbee", name: "frisbee", plural: "frisbees", mm: 270, image: "items/frisbee.webp" },
     { id: "football", name: "football", plural: "footballs", mm: 280, image: "items/football.webp" },
+    { id: "baseball-cap", name: "baseball cap", plural: "baseball caps", mm: 280, image: "items/baseball-cap.webp" },
     { id: "sheet-of-paper-a4", name: "sheet of paper (A4)", plural: "sheets of paper (A4)", mm: 297, image: "items/sheet-of-paper-a4.webp" },
     { id: "jellyfish", name: "jellyfish", plural: "jellyfish", mm: 300, image: "items/jellyfish.webp" },
     { id: "starfish", name: "starfish", plural: "starfish", mm: 300, image: "items/starfish.webp" },
@@ -5417,38 +5454,62 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "boxing-glove", name: "boxing glove", plural: "boxing gloves", mm: 300, image: "items/boxing-glove.webp" },
     { id: "pineapple", name: "pineapple", plural: "pineapples", mm: 300, image: "items/pineapple.webp" },
     { id: "sneaker", name: "sneaker", plural: "sneakers", mm: 300, image: "items/sneaker.webp" },
+    { id: "football-helmet", name: "football helmet", plural: "football helmets", mm: 300, image: "items/football-helmet.webp" },
+    { id: "wine-bottle", name: "bottle of wine", plural: "bottles of wine", mm: 300, image: "items/wine-bottle.webp" },
     { id: "vinyl-record", name: "vinyl record", plural: "vinyl records", mm: 302, image: "items/vinyl-record.webp" },
     { id: "foot-long-sub", name: "foot-long sub", plural: "foot-long subs", mm: 305, image: "items/foot-long-sub.webp" },
+    { id: "exit-sign", name: "exit sign", plural: "exit signs", mm: 305, image: "items/exit-sign.webp" },
+    { id: "license-plate", name: "license plate", plural: "license plates", mm: 305, image: "items/license-plate.webp" },
     { id: "laptop", name: "laptop", plural: "laptops", mm: 330, image: "items/laptop.webp" },
+    { id: "magic-wand", name: "magic wand", plural: "magic wands", mm: 330, image: "items/magic-wand.webp" },
     { id: "watermelon", name: "watermelon", plural: "watermelons", mm: 350, image: "items/watermelon.webp" },
+    { id: "cotton-candy", name: "cotton candy", plural: "cotton candies", mm: 350, image: "items/cotton-candy.webp" },
+    { id: "pizza-pie", name: "whole pizza", plural: "whole pizzas", mm: 355, image: "items/pizza-pie.webp" },
     { id: "bowling-pin", name: "bowling pin", plural: "bowling pins", mm: 381, image: "items/bowling-pin.webp" },
     { id: "rubber-chicken", name: "rubber chicken", plural: "rubber chickens", mm: 400, image: "items/rubber-chicken.webp" },
     { id: "cowboy-hat", name: "cowboy hat", plural: "cowboy hats", mm: 400, image: "items/cowboy-hat.webp" },
     { id: "owl", name: "owl", plural: "owls", mm: 400, image: "items/owl.webp" },
     { id: "rabbit", name: "rabbit", plural: "rabbits", mm: 400, image: "items/rabbit.webp" },
+    { id: "drum-stick", name: "drumstick", plural: "drumsticks", mm: 400, image: "items/drum-stick.webp" },
     { id: "dachshund", name: "dachshund", plural: "dachshunds", mm: 500, image: "items/dachshund.webp" },
     { id: "daisy", name: "daisy", plural: "daisies", mm: 500, image: "items/daisy.webp" },
     { id: "plunger", name: "plunger", plural: "plungers", mm: 500, image: "items/plunger.webp" },
+    { id: "fire-extinguisher", name: "fire extinguisher", plural: "fire extinguishers", mm: 500, image: "items/fire-extinguisher.webp" },
     { id: "trumpet", name: "trumpet", plural: "trumpets", mm: 550, image: "items/trumpet.webp" },
     { id: "violin", name: "violin", plural: "violins", mm: 600, image: "items/violin.webp" },
     { id: "long-stem-rose", name: "long-stem rose", plural: "long-stem roses", mm: 600, image: "items/long-stem-rose.webp" },
     { id: "koi-fish", name: "koi fish", plural: "koi fish", mm: 600, image: "items/koi-fish.webp" },
     { id: "pillow", name: "pillow", plural: "pillows", mm: 600, image: "items/pillow.webp" },
+    { id: "stethoscope", name: "stethoscope", plural: "stethoscopes", mm: 600, image: "items/stethoscope.webp" },
+    { id: "duck", name: "duck", plural: "ducks", mm: 600, image: "items/duck.webp" },
+    { id: "manhole-cover", name: "manhole cover", plural: "manhole covers", mm: 610, image: "items/manhole-cover.webp" },
     { id: "baguette", name: "baguette", plural: "baguettes", mm: 650, image: "items/baguette.webp" },
+    { id: "car-tire", name: "car tire", plural: "car tires", mm: 650, image: "items/car-tire.webp" },
     { id: "tennis-racket", name: "tennis racket", plural: "tennis rackets", mm: 685, image: "items/tennis-racket.webp" },
     { id: "baseball-bat", name: "baseball bat", plural: "baseball bats", mm: 700, image: "items/baseball-bat.webp" },
+    { id: "trash-can", name: "trash can", plural: "trash cans", mm: 700, image: "items/trash-can.webp" },
+    { id: "saxophone", name: "saxophone", plural: "saxophones", mm: 700, image: "items/saxophone.webp" },
     { id: "corgi", name: "corgi", plural: "corgis", mm: 700, image: "items/corgi.webp" },
     { id: "traffic-cone", name: "traffic cone", plural: "traffic cones", mm: 711, image: "items/traffic-cone.webp" },
     { id: "domestic-cat", name: "domestic cat", plural: "domestic cats", mm: 750, image: "items/domestic-cat.webp" },
+    { id: "barstool", name: "barstool", plural: "barstools", mm: 760, image: "items/barstool.webp" },
     { id: "skateboard", name: "skateboard", plural: "skateboards", mm: 800, image: "items/skateboard.webp" },
+    { id: "folding-chair", name: "folding chair", plural: "folding chairs", mm: 800, image: "items/folding-chair.webp" },
     { id: "umbrella", name: "umbrella", plural: "umbrellas", mm: 850, image: "items/umbrella.webp" },
     { id: "barrel", name: "barrel", plural: "barrels", mm: 900, image: "items/barrel.webp" },
     { id: "scooter", name: "kick scooter", plural: "kick scooters", mm: 900, image: "items/scooter.webp" },
     { id: "octopus", name: "octopus", plural: "octopuses", mm: 1000, image: "items/octopus.webp" },
     { id: "penguin", name: "penguin", plural: "penguins", mm: 1000, image: "items/penguin.webp" },
     { id: "acoustic-guitar", name: "acoustic guitar", plural: "acoustic guitars", mm: 1010, image: "items/acoustic-guitar.webp" },
+    { id: "jeans", name: "pair of jeans", plural: "pairs of jeans", mm: 1050, image: "items/jeans.webp" },
+    { id: "traffic-light", name: "traffic light", plural: "traffic lights", mm: 1050, image: "items/traffic-light.webp" },
+    { id: "stork", name: "stork", plural: "storks", mm: 1100, image: "items/stork.webp" },
+    { id: "mailbox", name: "mailbox", plural: "mailboxes", mm: 1150, image: "items/mailbox.webp" },
     { id: "capybara", name: "capybara", plural: "capybaras", mm: 1200, image: "items/capybara.webp" },
+    { id: "earbuds", name: "pair of earbuds", plural: "pairs of earbuds", mm: 1200, image: "items/earbuds.webp" },
+    { id: "barracuda", name: "barracuda", plural: "barracudas", mm: 1200, image: "items/barracuda.webp" },
     { id: "flamingo", name: "flamingo", plural: "flamingos", mm: 1300, image: "items/flamingo.webp" },
+    { id: "mop", name: "mop", plural: "mops", mm: 1300, image: "items/mop.webp" },
     { id: "broom", name: "broom", plural: "brooms", mm: 1400, image: "items/broom.webp" },
     { id: "pool-cue", name: "pool cue", plural: "pool cues", mm: 1470, image: "items/pool-cue.webp" },
     { id: "pool-noodle", name: "pool noodle", plural: "pool noodles", mm: 1500, image: "items/pool-noodle.webp" },
@@ -5457,15 +5518,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "hockey-stick", name: "hockey stick", plural: "hockey sticks", mm: 1500, image: "items/hockey-stick.webp" },
     { id: "kangaroo", name: "kangaroo", plural: "kangaroos", mm: 1500, image: "items/kangaroo.webp" },
     { id: "panda", name: "giant panda", plural: "giant pandas", mm: 1500, image: "items/panda.webp" },
+    { id: "beach-towel", name: "beach towel", plural: "beach towels", mm: 1500, image: "items/beach-towel.webp" },
+    { id: "stingray", name: "stingray", plural: "stingrays", mm: 1500, image: "items/stingray.webp" },
+    { id: "pig", name: "pig", plural: "pigs", mm: 1500, image: "items/pig.webp" },
     { id: "snowboard", name: "snowboard", plural: "snowboards", mm: 1550, image: "items/snowboard.webp" },
+    { id: "black-bear", name: "black bear", plural: "black bears", mm: 1600, image: "items/black-bear.webp" },
     { id: "adult-human", name: "adult human", plural: "adult humans", mm: 1700, image: "items/adult-human.webp" },
     { id: "bathtub", name: "bathtub", plural: "bathtubs", mm: 1700, image: "items/bathtub.webp" },
+    { id: "gorilla", name: "gorilla", plural: "gorillas", mm: 1700, image: "items/gorilla.webp" },
     { id: "yoga-mat", name: "yoga mat", plural: "yoga mats", mm: 1730, image: "items/yoga-mat.webp" },
     { id: "bicycle", name: "bicycle", plural: "bicycles", mm: 1800, image: "items/bicycle.webp" },
     { id: "refrigerator", name: "refrigerator", plural: "refrigerators", mm: 1800, image: "items/refrigerator.webp" },
+    { id: "deer", name: "deer", plural: "deer", mm: 1800, image: "items/deer.webp" },
+    { id: "dumpster", name: "dumpster", plural: "dumpsters", mm: 1800, image: "items/dumpster.webp" },
+    { id: "basketball-backboard", name: "basketball backboard", plural: "basketball backboards", mm: 1830, image: "items/basketball-backboard.webp" },
     { id: "surfboard", name: "surfboard", plural: "surfboards", mm: 2000, image: "items/surfboard.webp" },
     { id: "ladder", name: "stepladder", plural: "stepladders", mm: 2000, image: "items/ladder.webp" },
     { id: "couch", name: "couch", plural: "couches", mm: 2000, image: "items/couch.webp" },
+    { id: "electric-eel", name: "electric eel", plural: "electric eels", mm: 2000, image: "items/electric-eel.webp" },
     { id: "door", name: "door", plural: "doors", mm: 2030, image: "items/door.webp" },
     { id: "queen-size-bed", name: "queen-size bed", plural: "queen-size beds", mm: 2030, image: "items/queen-size-bed.webp" },
     { id: "motorcycle", name: "motorcycle", plural: "motorcycles", mm: 2100, image: "items/motorcycle.webp" },
@@ -5474,6 +5544,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "horse", name: "horse", plural: "horses", mm: 2400, image: "items/horse.webp" },
     { id: "cow", name: "cow", plural: "cows", mm: 2400, image: "items/cow.webp" },
     { id: "zebra", name: "zebra", plural: "zebras", mm: 2400, image: "items/zebra.webp" },
+    { id: "brown-bear", name: "brown bear", plural: "brown bears", mm: 2400, image: "items/brown-bear.webp" },
     { id: "polar-bear", name: "polar bear", plural: "polar bears", mm: 2450, image: "items/polar-bear.webp" },
     { id: "komodo-dragon", name: "Komodo dragon", plural: "Komodo dragons", mm: 2500, image: "items/komodo-dragon.webp" },
     { id: "lion", name: "lion", plural: "lions", mm: 2500, image: "items/lion.webp" },
@@ -5481,37 +5552,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "grand-piano", name: "grand piano", plural: "grand pianos", mm: 2740, image: "items/grand-piano.webp" },
     { id: "sunflower", name: "sunflower", plural: "sunflowers", mm: 3000, image: "items/sunflower.webp" },
     { id: "rowboat", name: "rowboat", plural: "rowboats", mm: 3000, image: "items/rowboat.webp" },
+    { id: "swordfish", name: "swordfish", plural: "swordfish", mm: 3000, image: "items/swordfish.webp" },
     { id: "alligator", name: "alligator", plural: "alligators", mm: 3400, image: "items/alligator.webp" },
     { id: "hippopotamus", name: "hippopotamus", plural: "hippopotamuses", mm: 3500, image: "items/hippopotamus.webp" },
     { id: "rhinoceros", name: "rhinoceros", plural: "rhinoceroses", mm: 3700, image: "items/rhinoceros.webp" },
     { id: "moai", name: "moai statue", plural: "moai statues", mm: 4000, image: "items/moai.webp" },
     { id: "teepee", name: "teepee", plural: "teepees", mm: 4000, image: "items/teepee.webp" },
+    { id: "hammerhead-shark", name: "hammerhead shark", plural: "hammerhead sharks", mm: 4000, image: "items/hammerhead-shark.webp" },
     { id: "saltwater-crocodile", name: "saltwater crocodile", plural: "saltwater crocodiles", mm: 4300, image: "items/saltwater-crocodile.webp" },
     { id: "tractor", name: "tractor", plural: "tractors", mm: 4500, image: "items/tractor.webp" },
     { id: "great-white-shark", name: "great white shark", plural: "great white sharks", mm: 4600, image: "items/great-white-shark.webp" },
     { id: "car", name: "car", plural: "cars", mm: 4700, image: "items/car.webp" },
     { id: "canoe", name: "canoe", plural: "canoes", mm: 4880, image: "items/canoe.webp" },
     { id: "green-anaconda", name: "green anaconda", plural: "green anacondas", mm: 5000, image: "items/green-anaconda.webp" },
+    { id: "manta-ray", name: "manta ray", plural: "manta rays", mm: 5000, image: "items/manta-ray.webp" },
     { id: "minivan", name: "minivan", plural: "minivans", mm: 5080, image: "items/minivan.webp" },
     { id: "giraffe", name: "giraffe", plural: "giraffes", mm: 5500, image: "items/giraffe.webp" },
     { id: "ambulance", name: "ambulance", plural: "ambulances", mm: 5500, image: "items/ambulance.webp" },
     { id: "t-rex", name: "T. rex", plural: "T. rexes", mm: 5600, image: "items/t-rex.webp" },
     { id: "jumbotron", name: "arena video board", plural: "arena video boards", mm: 6000, image: "items/jumbotron.webp" },
+    { id: "flagpole", name: "flagpole", plural: "flagpoles", mm: 6000, image: "items/flagpole.webp" },
     { id: "shipping-container", name: "shipping container", plural: "shipping containers", mm: 6060, image: "items/shipping-container.webp" },
     { id: "elephant", name: "African elephant", plural: "African elephants", mm: 6500, image: "items/elephant.webp" },
     { id: "cactus", name: "cactus", plural: "cacti", mm: 7000, image: "items/cactus.webp" },
     { id: "killer-whale", name: "killer whale", plural: "killer whales", mm: 7000, image: "items/killer-whale.webp" },
+    { id: "streetlight", name: "streetlight", plural: "streetlights", mm: 8000, image: "items/streetlight.webp" },
+    { id: "carousel", name: "carousel", plural: "carousels", mm: 8000, image: "items/carousel.webp" },
+    { id: "garbage-truck", name: "garbage truck", plural: "garbage trucks", mm: 8500, image: "items/garbage-truck.webp" },
     { id: "fire-truck", name: "fire truck", plural: "fire trucks", mm: 9000, image: "items/fire-truck.webp" },
+    { id: "excavator", name: "excavator", plural: "excavators", mm: 9000, image: "items/excavator.webp" },
     { id: "palm-tree", name: "palm tree", plural: "palm trees", mm: 10000, image: "items/palm-tree.webp" },
     { id: "double-decker-bus", name: "double-decker bus", plural: "double-decker buses", mm: 11230, image: "items/double-decker-bus.webp" },
     { id: "school-bus", name: "school bus", plural: "school buses", mm: 12000, image: "items/school-bus.webp" },
     { id: "whale-shark", name: "whale shark", plural: "whale sharks", mm: 12000, image: "items/whale-shark.webp" },
     { id: "helicopter", name: "helicopter", plural: "helicopters", mm: 12000, image: "items/helicopter.webp" },
+    { id: "fishing-boat", name: "fishing boat", plural: "fishing boats", mm: 12000, image: "items/fishing-boat.webp" },
     { id: "telephone-pole", name: "telephone pole", plural: "telephone poles", mm: 12200, image: "items/telephone-pole.webp" },
     { id: "giant-squid", name: "giant squid", plural: "giant squids", mm: 13000, image: "items/giant-squid.webp" },
     { id: "fighter-jet", name: "fighter jet", plural: "fighter jets", mm: 15000, image: "items/fighter-jet.webp" },
     { id: "oak-tree", name: "oak tree", plural: "oak trees", mm: 20000, image: "items/oak-tree.webp" },
     { id: "locomotive", name: "train locomotive", plural: "train locomotives", mm: 20000, image: "items/locomotive.webp" },
+    { id: "barn-silo", name: "barn with silo", plural: "barns with silos", mm: 20000, image: "items/barn-silo.webp" },
     { id: "semi-truck", name: "semi-truck", plural: "semi-trucks", mm: 22000, image: "items/semi-truck.webp" },
     { id: "hot-air-balloon", name: "hot air balloon", plural: "hot air balloons", mm: 23000, image: "items/hot-air-balloon.webp" },
     { id: "blue-whale", name: "blue whale", plural: "blue whales", mm: 24000, image: "items/blue-whale.webp" },
@@ -5522,17 +5603,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "space-shuttle", name: "Space Shuttle", plural: "Space Shuttles", mm: 37200, image: "items/space-shuttle.webp" },
     { id: "christ-statue", name: "Christ the Redeemer", plural: "Christ the Redeemers", properNoun: true, mm: 38000, image: "items/christ-statue.webp" },
     { id: "boeing-737", name: "Boeing 737", plural: "Boeing 737s", mm: 39500, image: "items/boeing-737.webp" },
+    { id: "water-tower", name: "water tower", plural: "water towers", mm: 40000, image: "items/water-tower.webp" },
+    { id: "power-line-tower", name: "power line tower", plural: "power line towers", mm: 45000, image: "items/power-line-tower.webp" },
     { id: "statue-of-liberty", name: "Statue of Liberty", plural: "Statues of Liberty", properNoun: true, mm: 46000, image: "items/statue-of-liberty.webp" },
     { id: "olympic-pool", name: "Olympic swimming pool", plural: "Olympic swimming pools", mm: 50000, image: "items/olympic-pool.webp" },
     { id: "castle", name: "castle", plural: "castles", mm: 50000, image: "items/castle.webp" },
     { id: "niagara-falls", name: "Niagara Falls", plural: "Niagara Falls", properNoun: true, mm: 51000, image: "items/niagara-falls.webp" },
     { id: "leaning-tower-of-pisa", name: "Leaning Tower of Pisa", plural: "Leaning Towers of Pisa", properNoun: true, mm: 55860, image: "items/leaning-tower-of-pisa.webp" },
+    { id: "notre-dame", name: "Notre-Dame Cathedral", plural: "Notre-Dame Cathedrals", properNoun: true, mm: 69000, image: "items/notre-dame.webp" },
     { id: "airliner", name: "jumbo jet", plural: "jumbo jets", mm: 70000, image: "items/airliner.webp" },
     { id: "taj-mahal", name: "Taj Mahal", plural: "Taj Mahals", properNoun: true, mm: 73000, image: "items/taj-mahal.webp" },
     { id: "blimp", name: "blimp", plural: "blimps", mm: 75000, image: "items/blimp.webp" },
+    { id: "tower-crane", name: "tower crane", plural: "tower cranes", mm: 80000, image: "items/tower-crane.webp" },
     { id: "big-ben", name: "Big Ben", plural: "Big Bens", properNoun: true, mm: 96000, image: "items/big-ben.webp" },
     { id: "football-field", name: "football field", plural: "football fields", mm: 109700, image: "items/football-field.webp" },
     { id: "saturn-rocket", name: "moon rocket", plural: "moon rockets", mm: 110000, image: "items/saturn-rocket.webp" },
+    { id: "wind-turbine", name: "wind turbine", plural: "wind turbines", mm: 120000, image: "items/wind-turbine.webp" },
     { id: "london-eye", name: "London Eye", plural: "London Eyes", properNoun: true, mm: 135000, image: "items/london-eye.webp" },
     { id: "great-pyramid", name: "Great Pyramid of Giza", plural: "Great Pyramids of Giza", properNoun: true, mm: 138800, image: "items/great-pyramid.webp" },
     { id: "washington-monument", name: "Washington Monument", plural: "Washington Monuments", properNoun: true, mm: 169300, image: "items/washington-monument.webp" },
@@ -7207,11 +7293,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       localStorage.setItem(HAS_SEEN_HOWTO_KEY, "1");
       toolbarSettingsBtn.classList.remove("hint-pulse");
     }
+    howtoReturnEl = null;
     openOverlay(howtoScreen);
     overlayReturnScreen = settingsScreen;
   });
   settingsCloseBtn.addEventListener("click", closeOverlay);
-  howtoCloseBtn.addEventListener("click", closeOverlay);
+  // The scoring explainer can be opened from a game screen (Survival's "How scoring works" button); Back from
+  // there returns to that same screen, with the run exactly as it was, instead of dumping you on the hub.
+  let howtoReturnEl = null;
+  function openScoringHelp(fromEl) {
+    const keep = overlayReturnScreen;
+    howtoReturnEl = fromEl;
+    openOverlay(howtoScreen);
+    overlayReturnScreen = keep;
+    syncOverlayReturnFlag();
+    const sec = document.getElementById("howto-accuracy");
+    if (sec) { sec.open = true; setTimeout(() => sec.scrollIntoView({ block: "start" }), 0); }
+  }
+  howtoCloseBtn.addEventListener("click", () => {
+    if (howtoReturnEl) {
+      const back = howtoReturnEl; howtoReturnEl = null;
+      ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+      back.classList.add("active");
+      playSound("popup-close");
+      return;
+    }
+    closeOverlay();
+  });
   toolbarExitBtn.addEventListener("click", () => {
     setToolbarMenu(false);
     if (isInActiveGame()) { openLeaveGameConfirm(); return; }
@@ -8137,6 +8245,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you go past your own best.</div></div>
         <button type="button" class="dc-btn" id="sv-start">Start</button>
+        <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
       return;
@@ -8154,7 +8263,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button>`;
+      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button><button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>`;
       survivalRunReveal();
       return;
     }
@@ -8218,6 +8327,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   survivalContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b || !sv) return;
+    if (b.id === "sv-help") { openScoringHelp(survivalScreenEl); return; }
     if (b.id === "sv-start" || b.id === "sv-again") { sv = { phase: "question", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
@@ -8771,7 +8881,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Three more home screens with their own awards.
   ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 7 rounds in a row", target: 7, reward: 0, home: "penguin", homeLabel: "Arctic", progress: ACH_STAT("bestStreak") });
   ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 15 rounds in Survival", target: 15, reward: 0, home: "cactus", homeLabel: "Western", progress: () => survivalBest() });
-  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 100 spot-on guesses", target: 100, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
+  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 25 spot-on guesses", target: 25, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
+  ACHIEVEMENTS.push({ id: "home-dragon", cat: "Fun", name: "Dragon slayer", desc: "Reach 30 in Survival", target: 30, reward: 0, home: "dragon", homeLabel: "Kingdom", progress: () => survivalBest() });
+  ACHIEVEMENTS.push({ id: "home-space", cat: "Worlds", name: "Star collector", desc: "Earn every star in every world", target: WORLDS.length * WORLD_LEVELS * 3, reward: 0, home: "space", homeLabel: "Space", progress: () => worldTotalStars() });
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
@@ -9635,7 +9747,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("popstate", () => {
     history.pushState({ appGuard: true }, "", location.href);
     if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
-      closeOverlay();
+      if (howtoScreen.classList.contains("active")) howtoCloseBtn.click(); else closeOverlay();
     } else if (createScreenEl.classList.contains("active")) {
       createBackBtn.click();
     } else if (joinScreen.classList.contains("active")) {
