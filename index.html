@@ -1285,6 +1285,7 @@
     list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 4px 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: var(--text);
   }
+  .howto-section { scroll-margin-top: 76px; }
   .howto-section summary::-webkit-details-marker { display: none; }
   .howto-section summary::after { content: "\25BE"; font-size: 18px; color: var(--brand); transition: transform .2s ease; }
   .howto-section[open] summary::after { transform: rotate(180deg); }
@@ -3074,6 +3075,14 @@
     <p><b>Crowd favorite:</b> +1 to whoever got 2 or more second-chance picks that round (whichever count is highest), whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
     <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
     <p>At the very end of the game, the top 3 players by <b>average guess accuracy</b> (how close their guesses ran to exactly 100% of the real answer, on average) get a one-time bonus: +10 / +6 / +3.</p>
+  </div></details>
+
+  <details class="howto-section" id="howto-accuracy"><summary>Accuracy &amp; Survival</summary><div class="howto-body">
+    <p><b>Accuracy</b> is based on how many <b>times off</b> your guess was, not on the plain difference. Exactly right is <b>100%</b>. The further off you are, the lower it goes, and it hits <b>0%</b> once your guess is <b>double</b> the answer or <b>half</b> of it (or further out than that).</p>
+    <p>Too high and too low are measured the same way. Guessing 3 when the answer is 10 is over 3 times too low, so it's 0%, not 30%.</p>
+    <p><b>Examples</b> for an answer of 10: guess 11 is 90%, guess 12 is 80%, guess 8 is 75%, guess 7 is about 57%, guess 5 or 20 is 0%.</p>
+    <p><b>The marks</b> you see on results: a green check is 90% or better, a yellow check is 70% to 89%, an orange X is 40% to 69%, and a red X is under 40%.</p>
+    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from about 7.2 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The % beside your hearts is your running average accuracy for the run.</p>
   </div></details>
 
   <details class="howto-section"><summary>Tiebreakers</summary><div class="howto-body">
@@ -7200,11 +7209,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       localStorage.setItem(HAS_SEEN_HOWTO_KEY, "1");
       toolbarSettingsBtn.classList.remove("hint-pulse");
     }
+    howtoReturnEl = null;
     openOverlay(howtoScreen);
     overlayReturnScreen = settingsScreen;
   });
   settingsCloseBtn.addEventListener("click", closeOverlay);
-  howtoCloseBtn.addEventListener("click", closeOverlay);
+  // The scoring explainer can be opened from a game screen (Survival's "How scoring works" button); Back from
+  // there returns to that same screen, with the run exactly as it was, instead of dumping you on the hub.
+  let howtoReturnEl = null;
+  function openScoringHelp(fromEl) {
+    const keep = overlayReturnScreen;
+    howtoReturnEl = fromEl;
+    openOverlay(howtoScreen);
+    overlayReturnScreen = keep;
+    syncOverlayReturnFlag();
+    const sec = document.getElementById("howto-accuracy");
+    if (sec) { sec.open = true; setTimeout(() => sec.scrollIntoView({ block: "start" }), 0); }
+  }
+  howtoCloseBtn.addEventListener("click", () => {
+    if (howtoReturnEl) {
+      const back = howtoReturnEl; howtoReturnEl = null;
+      ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+      back.classList.add("active");
+      playSound("popup-close");
+      return;
+    }
+    closeOverlay();
+  });
   toolbarExitBtn.addEventListener("click", () => {
     setToolbarMenu(false);
     if (isInActiveGame()) { openLeaveGameConfirm(); return; }
@@ -8126,6 +8157,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you go past your own best.</div></div>
         <button type="button" class="dc-btn" id="sv-start">Start</button>
+        <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
       return;
@@ -8143,7 +8175,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button>`;
+      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button><button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>`;
       survivalRunReveal();
       return;
     }
@@ -8207,6 +8239,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   survivalContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b || !sv) return;
+    if (b.id === "sv-help") { openScoringHelp(survivalScreenEl); return; }
     if (b.id === "sv-start" || b.id === "sv-again") { sv = { phase: "question", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
@@ -9626,7 +9659,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("popstate", () => {
     history.pushState({ appGuard: true }, "", location.href);
     if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
-      closeOverlay();
+      if (howtoScreen.classList.contains("active")) howtoCloseBtn.click(); else closeOverlay();
     } else if (createScreenEl.classList.contains("active")) {
       createBackBtn.click();
     } else if (joinScreen.classList.contains("active")) {
