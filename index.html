@@ -855,8 +855,8 @@
   .ach-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #f0a830, #e4761b); border-radius: 5px; }
   .ach-row.done .ach-bar > i { background: #6aa84f; }
   .ach-count { font-size: 11px; opacity: .7; margin-top: 2px; }
-  .ach-side { position: relative; flex-shrink: 0; text-align: center; min-width: 78px; z-index: 1; }
-  .ach-reward { font-size: 13px; font-weight: 700; margin-bottom: 3px; color: #a8620f; }
+  .ach-side { position: relative; flex-shrink: 0; text-align: center; width: 86px; z-index: 1; }
+  .ach-reward { font-size: 13px; font-weight: 700; margin-bottom: 3px; color: #a8620f; line-height: 1.15; }
   .ach-claim { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 4px; font-family: inherit; font-weight: 700; font-size: 13px; background: linear-gradient(180deg, #ffd45a, #f0a020); color: #5a3300; border: 2px solid #a8620f; border-radius: 10px; padding: 5px 10px; width: auto; margin: 0; cursor: pointer; box-shadow: 0 2px 0 #a8620f; }
   .ach-claim svg { width: 17px; height: 17px; flex-shrink: 0; }
   .ach-claim::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.7), transparent); transform: skewX(-20deg); animation: achShine 2.2s ease-in-out infinite; }
@@ -5489,8 +5489,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "baseball-bat", name: "baseball bat", plural: "baseball bats", mm: 700, image: "items/baseball-bat.webp" },
     { id: "trash-can", name: "trash can", plural: "trash cans", mm: 700, image: "items/trash-can.webp" },
     { id: "saxophone", name: "saxophone", plural: "saxophones", mm: 700, image: "items/saxophone.webp" },
-    { id: "traffic-cone", name: "traffic cone", plural: "traffic cones", mm: 711, image: "items/traffic-cone.webp" },
     { id: "corgi", name: "corgi", plural: "corgis", mm: 700, image: "items/corgi.webp" },
+    { id: "traffic-cone", name: "traffic cone", plural: "traffic cones", mm: 711, image: "items/traffic-cone.webp" },
     { id: "domestic-cat", name: "domestic cat", plural: "domestic cats", mm: 750, image: "items/domestic-cat.webp" },
     { id: "barstool", name: "barstool", plural: "barstools", mm: 760, image: "items/barstool.webp" },
     { id: "skateboard", name: "skateboard", plural: "skateboards", mm: 800, image: "items/skateboard.webp" },
@@ -5572,9 +5572,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "t-rex", name: "T. rex", plural: "T. rexes", mm: 5600, image: "items/t-rex.webp" },
     { id: "jumbotron", name: "arena video board", plural: "arena video boards", mm: 6000, image: "items/jumbotron.webp" },
     { id: "flagpole", name: "flagpole", plural: "flagpoles", mm: 6000, image: "items/flagpole.webp" },
-    { id: "cactus", name: "cactus", plural: "cacti", mm: 7000, image: "items/cactus.webp" },
     { id: "shipping-container", name: "shipping container", plural: "shipping containers", mm: 6060, image: "items/shipping-container.webp" },
     { id: "elephant", name: "African elephant", plural: "African elephants", mm: 6500, image: "items/elephant.webp" },
+    { id: "cactus", name: "cactus", plural: "cacti", mm: 7000, image: "items/cactus.webp" },
     { id: "killer-whale", name: "killer whale", plural: "killer whales", mm: 7000, image: "items/killer-whale.webp" },
     { id: "streetlight", name: "streetlight", plural: "streetlights", mm: 8000, image: "items/streetlight.webp" },
     { id: "carousel", name: "carousel", plural: "carousels", mm: 8000, image: "items/carousel.webp" },
@@ -7228,7 +7228,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (toolbar Exit outside a game), as host ending the current game for
   // everyone (in-game Exit), and leaving an in-progress game via any top
   // toolbar button - so an accidental tap doesn't silently end/leave a game.
-  let pendingExitAction = null; // "app" | "hostGame" | "leaveGame"
+  let pendingExitAction = null; // "app" | "hostGame" | "leaveGame" | "navFromLobby" | ...
+  let pendingNavAction = null; // the deferred callback for "navFromLobby"
   function openExitConfirm(action, title, message, yesLabel, noLabel) {
     pendingExitAction = action;
     exitConfirmYesBtn.textContent = yesLabel || "Yes";
@@ -7252,6 +7253,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // The final-results screen counts too: the game isn't over until you press Finish/Leave there.
     return hudEl.classList.contains("active") || finalScreenEl.classList.contains("active");
   }
+  function isInLobby() { return lobbyScreenEl.classList.contains("active"); }
   function openLeaveGameConfirm() {
     if (isHost) {
       openExitConfirm("leaveGame", "End the game?", "You're the host - leaving now ends the game and removes everyone from the room. Are you sure?");
@@ -7262,6 +7264,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function guardToolbarNav(action) {
     return () => {
       if (isInActiveGame()) { openLeaveGameConfirm(); return; }
+      if (isInLobby()) {
+        pendingNavAction = action;
+        openExitConfirm("navFromLobby", "Leave the lobby?",
+          "The game could start while you're away, and it may be hard to find your way back to this room. Continue?",
+          "Continue", "Stay here");
+        return;
+      }
       action();
     };
   }
@@ -7319,16 +7328,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   exitConfirmNoBtn.addEventListener("click", () => {
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
+    pendingNavAction = null;
   });
   exitConfirmYesBtn.addEventListener("click", () => {
     const action = pendingExitAction;
+    const nav = pendingNavAction;
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
+    pendingNavAction = null;
     if (action === "dismiss") return;
     if (action === "startGame") { startGameNow(); return; }
     if (action === "joinContinueConfirmed") { joinContinueBtn.click(); return; }
     if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
+    if (action === "navFromLobby") { if (nav) nav(); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
       return;
