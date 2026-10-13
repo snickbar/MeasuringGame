@@ -3465,7 +3465,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction, query, orderByChild, limitToLast
+    getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction, query, orderByChild, limitToLast, limitToFirst, startAfter
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
@@ -7665,6 +7665,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     updateDailyBadge();
   }
+  // Shown under a top-50 board when you're not on it: your own row, plus how many scores beat it (counted up to a cap).
+  async function boardMyRankHtml(path, rows, fmt) {
+    if (rows.some((r) => r.id === deviceId)) return "";
+    try {
+      const mine = (await get(ref(db, `${path}/${deviceId}`))).val();
+      if (!mine || typeof mine.s !== "number") return "";
+      const CAP = 1000;
+      const above = await get(query(ref(db, path), orderByChild("s"), startAfter(mine.s), limitToFirst(CAP)));
+      const n = above.size, rank = n >= CAP ? `${CAP}+` : String(n + 1);
+      return `<div class="dc-lb-row me" style="margin-top:8px"><span class="dc-lb-rank">${rank}</span><span class="dc-lb-name">Your rank</span><span class="dc-lb-score">${fmt(mine.s)}</span></div>`;
+    } catch (e) { return ""; }
+  }
   async function dailyLoadBoard() {
     const host = document.getElementById("dc-board");
     const date = daily && daily.date;
@@ -7680,7 +7692,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    now.innerHTML = html;
+    const mineHtml = await boardMyRankHtml(`daily/${date}`, rows, (v) => Math.round(v * 10) / 10);
+    const again = document.getElementById("dc-board");
+    if (mineHtml && again === now && daily && daily.date === date) now.innerHTML = html + mineHtml;
   }
 
   dailyContentEl.addEventListener("click", async (e) => {
@@ -8164,7 +8180,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    now.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    now.innerHTML = html;
+    const mineHtml = await boardMyRankHtml(`monthly/${key}`, rows, (v) => Math.round(v * 10) / 10);
+    if (mineHtml && document.getElementById("mo-board") === now && mo && mo.key === key) now.innerHTML = html + mineHtml;
   }
   monthlyContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
@@ -8390,7 +8409,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { host.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { host.textContent = "No scores yet. Be the first!"; return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    host.innerHTML = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
+    host.innerHTML = html;
+    const mineHtml = await boardMyRankHtml("survival", rows, (v) => v);
+    if (mineHtml && document.getElementById("sv-board") === host && sv) host.innerHTML = html + mineHtml;
   }
   survivalContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
