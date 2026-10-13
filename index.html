@@ -2178,9 +2178,9 @@
   .score-card.frame-10 { border-image-source: var(--frame10); }
   /* your guess is a paper scrap in your own colour, pencilled in as you type */
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
-  #q-preview .qp { flex: 1; min-width: 0; padding: 3px 1px 2px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; }
-  #q-preview .qp img { display: block; margin: 0 auto 1px; width: 40px; height: 40px; object-fit: contain; }
-  #q-preview .qp span { display: block; font-size: 8.5px; font-weight: 700; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; color: #6b3a05; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 2.2em; }
+  #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
+  #q-preview .qp img { display: block; margin: 0 auto; width: 62px; height: 62px; object-fit: contain; }
+  #q-preview .qp span { position: absolute; left: 1px; right: 1px; bottom: 1px; font-size: 8.5px; font-weight: 700; line-height: 1.05; text-transform: uppercase; letter-spacing: 0; color: #6b3a05; text-shadow: 0 0 3px #fffdf6, 0 0 3px #fffdf6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   #question-view #guess-display.answer-slot { margin: 3px 0; aspect-ratio: 3.4; }
   #question-view #guess-display .hand-num { padding: 4% 8%; }
   #question-view #numpad { gap: 2px; }
@@ -8604,8 +8604,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Turn the stored picture so it stands the way the Object Orientation page says (degrees clockwise). Pictures
   // are stored lying down for the game's rulers; the Objects list and its popup show them upright.
-  const ITEM_ROT = {"aa-battery":270,"acoustic-guitar":270,"baguette":270,"baseball-bat":90,"basketball-court":270,"big-ben":270,"bowling-pin":270,"broom":90,"carrot":90,"domino":180,"foot-long-sub":270,"football-field":90,"giant-squid":90,"house-brick":180,"olympic-pool":90,"scissors":270,"sesame-seed":270,"shillelagh":90,"toilet-paper-square":270,"toothbrush":90,"umbrella":90,"peanut":90,"pizza-slice":90,"key":270,"boxing-glove":90,"pineapple":90,"pinecone":90,"hockey-stick":90,"tennis-racket":90,"tv-remote":90,"snowboard":90};
-  const itemRotStyle = (id) => ITEM_ROT[id] ? ` style="transform:rotate(${ITEM_ROT[id]}deg)"` : "";
+  // How each object stands in the animation (saved from the Object Orientation page): turned, then mirrored, so it
+  // faces right on the left side and, if set, faces the other way on the right side. Loaded once, shared with the animation.
+  let ORIENT_MAP = {};
+  import("./anim/orient-data.js").then((m) => { ORIENT_MAP = m.ORIENT || {}; }).catch(() => {});
+  function poseStyle(id, onRight) {
+    const st = ORIENT_MAP[id];
+    if (!st) return "";
+    const flip = !!st.flip !== !!(onRight && st.mirR), rot = st.rot || 0;
+    return flip || rot ? ` style="transform:${flip ? "scaleX(-1) " : ""}rotate(${rot}deg)"` : "";
+  }
+  const itemRotStyle = (id) => poseStyle(id, false);
   function renderItemsScreen() {
     if (!itemsContentEl) return;
     const seenSet = myProfile.seenObjects || {};
@@ -11403,7 +11412,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The two objects of this round, shown where the answer strip used to be.
   function renderQuestionPreview(q) {
     const pair = questionObjects(q);
-    qPreviewEl.innerHTML = pair ? pair.map((o) => `<div class="qp"><img src="${o.image}" alt="" draggable="false"${itemRotStyle(o.id)}><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
+    qPreviewEl.innerHTML = pair ? pair.map((o, k) => `<div class="qp"><img src="${o.image}" alt="" draggable="false"${poseStyle(o.id, k === 1)}><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
   }
 
   numpadEl.addEventListener("click", (e) => {
