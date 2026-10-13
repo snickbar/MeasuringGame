@@ -2177,6 +2177,16 @@
   .score-card.frame-9 { border-image-source: var(--frame9); }
   .score-card.frame-10 { border-image-source: var(--frame10); }
   /* your guess is a paper scrap in your own colour, pencilled in as you type */
+  #q-preview { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
+  #q-preview .qp { flex: 1; min-width: 0; padding: 4px 3px 3px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; }
+  #q-preview .qp img { display: block; margin: 0 auto 2px; width: 52px; height: 52px; object-fit: contain; }
+  #q-preview .qp span { display: block; font-size: 9px; font-weight: 700; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; color: #6b3a05; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 2.2em; }
+  #question-typed { position: relative; z-index: 1; height: 44px; margin-top: 4px; color: inherit; }
+  #question-typed .hand-num { position: static; padding: 0; height: 100%; }
+  #question-typed .hand-num svg { height: 100%; max-height: 44px; }
+  #question-typed .hand-num path { stroke: currentColor; }
+  #question-typed .hand-num path.ghost { stroke: currentColor; }
+  .question-prompt[data-board="phone"] #question-typed { color: #2f6fd0; }
   #guess-display.answer-slot { width: 100%; margin: 6px 0; cursor: default; --rot: -.6deg; }
   #guess-display.digit-pop { animation: digitPop 150ms ease-out; }
   @keyframes digitPop { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
@@ -3348,7 +3358,8 @@
     <div class="main-col">
 
       <div id="question-view">
-        <div id="guess-display">0</div>
+        <div id="q-preview" aria-hidden="true"></div>
+        <div id="guess-display" hidden>0</div>
         <div id="numpad">
           <button class="num-btn" data-val="1">1</button>
           <button class="num-btn" data-val="2">2</button>
@@ -6355,6 +6366,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   qBodyEl.id = "q-body";
   questionPromptTextEl.parentNode.insertBefore(qBodyEl, questionPromptTextEl);
   qBodyEl.appendChild(questionPromptTextEl);
+  const questionTypedEl = document.createElement("div");
+  questionTypedEl.id = "question-typed";
+  questionTypedEl.style.display = "none";
+  qBodyEl.appendChild(questionTypedEl);
   qBodyEl.appendChild(questionAnswerLineEl);
   const SB_DEFS = {
     terminal: { img: "icons/bd-terminal-kb.webp", ar: 760 / 671, box: [14, 11.5, 14, 35.5] },
@@ -11388,6 +11403,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     guessDisplayEl.setAttribute("aria-label", "Your guess " + shown);
     // numbers shrink to fit the paper on their own (the svg scales); only the newest digit is drawn in
     guessDisplayEl.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(shown, "guess", currentGuessStr === "" ? false : "last");
+    // Your answer is also pencilled on the question board, right under the question.
+    questionTypedEl.innerHTML = currentGuessStr === "" ? "" : handNumberHtml(currentGuessStr, "typed", "last");
+  }
+  const qPreviewEl = document.getElementById("q-preview");
+  // The two objects of this round, shown where the answer strip used to be.
+  function renderQuestionPreview(q) {
+    const pair = questionObjects(q);
+    qPreviewEl.innerHTML = pair ? pair.map((o) => `<div class="qp"><img src="${o.image}" alt="" draggable="false"${itemRotStyle(o.id)}><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
   }
 
   numpadEl.addEventListener("click", (e) => {
@@ -13098,10 +13121,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updateWaitingUi();
     }
     lastSeenPhaseForReset = phase;
+    questionTypedEl.style.display = phase === "question" ? "" : "none";
 
     if (phase === "question") {
       const q = data.currentQuestion;
       setPromptText(q ? q.prompt : "", true);
+      renderQuestionPreview(q);
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
       preloadAnimation(q);
