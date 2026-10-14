@@ -4036,6 +4036,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function defaultProfile() {
     return {
       coins: 0,
+      freePulls: 0,
+      levelPaid: 0,
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
       adsWatchedDate: null,
@@ -4166,6 +4168,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const defaults = defaultCosmeticState();
         myProfile = {
           coins: data.coins || 0,
+          freePulls: Math.max(0, data.freePulls | 0),
+          levelPaid: Math.max(0, data.levelPaid | 0),
           unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
           hostUnlocked: !!data.hostUnlocked,
           adsWatchedDate: data.adsWatchedDate || null,
@@ -4211,6 +4215,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       saveCachedProfile(deviceId, myProfile);
       renderProfileDependentUi();
+      grantLevelRewards();
     });
   }
 
@@ -5152,16 +5157,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   async function pullGacha() {
-    if (myProfile.coins < GACHA_COST) return null;
+    if (myProfile.coins < GACHA_COST && !(myProfile.freePulls > 0)) return null;
     const result = pickGachaResult();
     if (!result) return null;
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
-      if ((profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
+      const useFree = (profile.freePulls | 0) > 0; // free pulls (from level-ups) are spent before any coins
+      if (!useFree && (profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
       if (profile.unlockedAvatars && profile.unlockedAvatars[result]) return profile; // abort: already unlocked (race)
       return {
         ...profile,
-        coins: (profile.coins || 0) - GACHA_COST,
+        coins: useFree ? (profile.coins || 0) : (profile.coins || 0) - GACHA_COST,
+        freePulls: useFree ? (profile.freePulls | 0) - 1 : (profile.freePulls | 0),
         unlockedAvatars: { ...(profile.unlockedAvatars || {}), [result]: true },
       };
     });
@@ -8502,7 +8509,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rounds = Math.max(st.rounds || 0, hist.length);
     const lv = careerLevel(careerXp({ ...st, rounds }));
     const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
-    let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div></div>`;
+    let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div><div class="cs-lvl-sub">Every new level: a free avatar pull and ${levelRewardCoins(lv.lvl + 1)} coins</div></div>`;
     html += `<div class="cs-tiles">${tile(rounds, "Rounds played")}${tile(st.gamesPlayed || 0, "Games played")}${tile(st.roundWins || 0, "Round wins")}${tile(st.spotOns || 0, "Spot-ons")}${tile(st.perfects || 0, "Perfects")}${tile(st.bestStreak || 0, "Best win streak")}</div>`;
     if (hist.length < 3) {
       html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
@@ -8761,7 +8768,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // gives a "not enough" shake/error instead of silently doing nothing.
         gachaPullBtn.disabled = false;
         gachaPullBtn.classList.remove("soldout");
-        gachaPullBtnTextEl.textContent = `Pull for ${GACHA_COST} coins`;
+        gachaPullBtnTextEl.textContent = myProfile.freePulls > 0 ? `Free pull (${myProfile.freePulls})` : `Pull for ${GACHA_COST} coins`;
       }
     }
 
@@ -9126,6 +9133,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     showAchToast(fresh.length === 1 ? `Award unlocked: ${fresh[0].name}! +${fresh[0].reward} coins ready` : `${fresh.length} awards unlocked! Check the Awards button`);
   }
 
+  // Level-ups pay out: each new level gives a free avatar pull plus coins that grow with the level (10 per level, up to 100).
+  // levelPaid remembers the highest level already paid, so a level is never paid twice (and existing players get their past levels once).
+  const levelRewardCoins = (l) => Math.min(100, 10 * l);
+  let levelGrantBusy = false;
+  async function grantLevelRewards() {
+    if (levelGrantBusy || !myProfile || !myProfile.stats) return;
+    const st = myProfile.stats;
+    const lvl = careerLevel(careerXp({ ...st, rounds: Math.max(st.rounds || 0, careerHistory().length) })).lvl;
+    if (lvl <= (myProfile.levelPaid || 0)) return;
+    levelGrantBusy = true;
+    try {
+      let gained = null;
+      await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
+        if (!cur) return cur;
+        const paid = cur.levelPaid | 0;
+        if (lvl <= paid) return cur;
+        let coins = 0;
+        for (let l = Math.max(paid, 1) + 1; l <= lvl; l++) coins += levelRewardCoins(l);
+        gained = { from: Math.max(paid, 1) + 1, to: lvl, coins, pulls: lvl - Math.max(paid, 1) };
+        return { ...cur, levelPaid: lvl, coins: (cur.coins || 0) + coins, freePulls: (cur.freePulls | 0) + gained.pulls };
+      });
+      if (gained && gained.pulls > 0) showAchToast(gained.pulls === 1 ? `Level ${gained.to}! +${gained.coins} coins and a free avatar pull` : `Level ${gained.to}! +${gained.coins} coins and ${gained.pulls} free avatar pulls`);
+    } catch (e) { /* retried on the next profile update */ }
+    levelGrantBusy = false;
+  }
+
   // inc: counters to add; max: counters that keep the highest value seen.
   function bumpStats(inc, max) {
     return runTransaction(ref(db, `profiles/${deviceId}/stats`), (cur) => {
@@ -9133,7 +9166,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       Object.keys(inc || {}).forEach((k) => { s[k] = (s[k] || 0) + inc[k]; });
       Object.keys(max || {}).forEach((k) => { s[k] = Math.max(s[k] || 0, max[k]); });
       return s;
-    }).catch(() => {});
+    }).then((r) => { grantLevelRewards(); return r; }).catch(() => {});
   }
   // Called each time a round summary renders; counted once per round.
   function recordRoundStats(data) {
@@ -9306,7 +9339,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   gachaPullBtn.addEventListener("click", async () => {
-    if (myProfile.coins < GACHA_COST) {
+    if (myProfile.coins < GACHA_COST && !(myProfile.freePulls > 0)) {
       gachaStatusEl.textContent = "Not enough coins!";
       gachaStatusEl.classList.add("error");
       gachaRetrigger(gachaPullBtn, "shake");
