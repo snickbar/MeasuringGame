@@ -715,6 +715,12 @@
   .sh-sub { display: block; margin-top: 3px; font-size: 13px; font-weight: 700; color: #000; }
   .sh-dot { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
   .sh-dot[hidden] { display: none; }
+  /* Banner-style Solo tiles (Daily/Monthly/Worlds/Survival): the picture is the whole button (its own
+     border and gloss baked in), sized by its own natural aspect ratio, with the label overlaid on top. */
+  .sh-card.sh-banner, .sh-card.sh-banner.sh-hot { display: block; padding: 0; background: none; border: none; box-shadow: none; }
+  .sh-card.sh-banner .sh-bimg { display: block; width: 100%; height: auto; border-radius: 18px; }
+  .sh-card.sh-banner .sh-tx { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6% 0 34%; text-align: left; }
+  .sh-card.sh-banner:active { transform: translateY(2px); box-shadow: none; }
   #home-solo-btn.has-todo::after { content: ""; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; z-index: 2; }
   #worlds-screen.active #worlds-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #worlds-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
@@ -1661,6 +1667,11 @@
     --pic-h: 44px; height: var(--pic-h); padding: 0 2px; border-width: 0 calc(var(--pic-h) / 2); border-image-slice: 0 155 fill; border-image-source: url(icons/btn-red.png); color: #fff;
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
+  #toolbar-menu .menu-settings {
+    aspect-ratio: 1000 / 139; height: auto; padding: 0 8% 0 38%; border: none; border-image: none;
+    background-image: url(icons/banner-settings.png); background-size: 100% 100%; background-repeat: no-repeat;
+    color: #4a2c12; text-align: left; text-shadow: none;
+  }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -1864,6 +1875,11 @@
   }
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on) { border-image-source: url(icons/btn-cream.png); }
+  button.howto-banner-btn {
+    aspect-ratio: 1000 / 122; height: auto; padding: 0 8% 0 32%; border: none; border-image: none;
+    background-image: url(icons/banner-howto.png); background-size: 100% 100%; background-repeat: no-repeat;
+    color: #4a2c12; text-align: left; text-shadow: none;
+  }
   button.preset-slot-action-btn[data-action="save"], button#preset-save-confirm-btn, button#hud-auto-toggle.is-on {
     border-image-source: url(icons/btn-bot-easy.png); border-image-slice: 0 137 0 137 fill;
   }
@@ -2690,7 +2706,7 @@
   </div>
 </div>
 <div id="toolbar-menu" hidden role="menu">
-  <button id="menu-settings-btn" class="menu-pill" type="button" role="menuitem">Settings</button>
+  <button id="menu-settings-btn" class="menu-pill menu-settings" type="button" role="menuitem">Settings</button>
   <button id="toolbar-exit-btn" class="menu-pill menu-exit" type="button" role="menuitem">Exit</button>
 </div>
 
@@ -3004,7 +3020,7 @@
     <div id="settings-toggles-panel">
       <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
     </div>
-    <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn">How to Play</button>
+    <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn howto-banner-btn">How to Play</button>
     <p class="settings-profile-hint settings-preset-hint">Rules, scoring and what everything in the shop does</p>
   </div>
 
@@ -7805,13 +7821,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
-    const card = (id, img, name, sub, extra) => `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
+    const card = (id, img, name, sub, extra) => {
+      const banner = extra && extra.banner;
+      const cls = `sh-card${extra && extra.hot ? " sh-hot" : ""}${banner ? " sh-banner" : ""}`;
+      const pic = banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
+      return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
+    };
     soloContentEl.innerHTML = `<h2 class="dc-title">Solo</h2><p class="dc-sub">Pick how you want to play</p>
-      ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played })}
-      ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed() })}
-      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`)}
+      ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
+      ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
+      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png" })}
       ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots")}
-      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub())}`;
+      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}`;
   }
   function openSolo() {
     renderSoloHub();
