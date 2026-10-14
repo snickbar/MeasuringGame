@@ -1311,6 +1311,9 @@
     box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08);
     color: var(--text);
   }
+  .preset-box { margin: 12px 0 0; padding: 10px 14px 12px; background: #fffdfa; border-radius: 14px; box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08); }
+  .preset-box-label { margin: 0 0 6px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
+  .preset-box .preset-slot-row { margin: 0; }
   .settings-group + .settings-group { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(90,74,58,.14); }
   .settings-eyebrow {
     font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
@@ -1700,7 +1703,7 @@
   }
 
   /* Picture buttons: the artwork is the background and the words are live text on top. */
-  #create-room-btn, #join-lobby-btn, #host-start-btn {
+  #create-room-btn, #join-lobby-btn, #join-game-title, #host-start-btn {
     display: flex; align-items: center; justify-content: center; text-align: center;
     border: none; border-image: none; box-sizing: border-box;
     background-color: transparent; background-repeat: no-repeat; background-position: center; background-size: 100% 100%;
@@ -1721,10 +1724,14 @@
   .setup-header #create-room-btn {
     aspect-ratio: auto; width: 100%; height: calc((min(100vw, 520px) - 24px) * 0.157); margin: 0;
   }
-  #join-lobby-btn {
+  #join-lobby-btn, #join-game-title {
     aspect-ratio: 900 / 163; padding: 0 6% 0 17%; font-size: 24px;
     background-image: url(icons/btn-join-lobby.png);
   }
+  #join-game-title { width: 100%; margin: 0; }
+  /* Room code: only four characters, so a big centred box instead of a full-width bar. */
+  #code-input { display: block; width: min(100%, 300px); margin: 14px auto 10px; padding: 14px 10px; font-size: 44px; line-height: 1.1; text-align: center; letter-spacing: .22em; text-indent: .22em; }
+  #code-input::placeholder { font-size: 22px; letter-spacing: .06em; text-indent: 0; }
   /* Taller than the other two picture buttons on this screen, per request -
      switched from a plain stretched background-image (which only had its
      aspect-ratio to define height, tied to width) to a real border-image
@@ -2388,7 +2395,7 @@
      (a typing tip while guessing, the second-chance instructions while
      picking) instead of leaving it empty or showing it elsewhere on the
      screen - content and visibility are both set in applyPhase(). */
-  .question-note { margin-top: 8px; padding: 5px 3px; overflow-wrap: anywhere; min-width: 0; box-sizing: border-box; width: 100%; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10.5px; line-height: 1.15; color: #5b3a26; background: rgba(255,248,230,.92); border: 2px solid #d9c29a; border-radius: 10px; }
+  .question-note { margin-top: 8px; padding: 5px 3px; overflow-wrap: anywhere; min-width: 0; box-sizing: border-box; width: 100%; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10.5px; line-height: 1.15; color: #1a1208; background: rgba(255,248,230,.92); border: 2px solid #d9c29a; border-radius: 10px; }
 
   /* ---- Left / ended game screens: one centered card with a recap of the game ---- */
   #left-screen.active, #ended-screen.active { display: flex; justify-content: center; padding: 22px 4px 40px; }
@@ -3125,10 +3132,13 @@
     <button id="create-room-btn">Create Room</button>
   </div>
 
-  <div id="create-preset-row" class="preset-slot-row">
-    <button type="button" class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></button>
-    <button type="button" class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></button>
-    <button type="button" class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></button>
+  <div class="preset-box">
+    <div class="preset-box-label">Preset settings</div>
+    <div id="create-preset-row" class="preset-slot-row">
+      <button type="button" class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></button>
+      <button type="button" class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></button>
+      <button type="button" class="preset-slot-btn" data-slot="3"><img src="icons/preset-3.png" alt=""><span class="preset-slot-label"></span></button>
+    </div>
   </div>
 
   <div id="settings-panel">
@@ -3282,9 +3292,8 @@
 
 <div id="join-screen" class="screen">
   <button id="join-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header fancy-hdr">
-    <img class="hdr-badge" src="icons/toolbar-home.png" alt="">
-    <div class="hdr-text"><h1>Join Game</h1><span class="hdr-sub">Enter the host's room code</span></div>
+  <div class="setup-header">
+    <div id="join-game-title" role="heading" aria-level="1">Join Game</div>
   </div>
 
   <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" readonly inputmode="none" />
@@ -6484,6 +6493,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const exitBtnGuest = document.getElementById("exit-btn-guest");
   const questionPromptTextEl = document.getElementById("question-prompt-text");
   const questionNoteEl = document.getElementById("question-note");
+  // A different tip on each question, in order, starting at a random one so the first tip isn't always the same.
+  const QUESTION_TIPS = [
+    "Tip: Decimals count!",
+    "Tip: The closest guess wins the round.",
+    "Tip: A spot-on guess earns bonus points.",
+    "Tip: Picture the small object lined up end to end.",
+    "Tip: Break a big guess into steps, like 10 of these, then 10 of those.",
+    "Tip: Check which object is the unit. A tiny unit means a big number.",
+    "Tip: A guess between two others can still be the closest.",
+  ];
+  const tipOffset = Math.floor(Math.random() * QUESTION_TIPS.length);
+  const questionTip = (round) => QUESTION_TIPS[(tipOffset + Math.max(0, round - 1)) % QUESTION_TIPS.length];
   const questionAnswerLineEl = document.getElementById("question-answer-line");
   // ---- Question boards: paper (default), chalkboard, whiteboard, stage curtains ----
   // The question card is a board picture with a writing tool resting on its ledge. The tool writes
@@ -13343,7 +13364,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Hidden the rest of the time since #question-answer-line takes over
     // that same spot once the real answer is revealed.
     if (phase === "question") {
-      questionNoteEl.textContent = "Decimals count!";
+      questionNoteEl.textContent = questionTip(roomState.round || 1);
       questionNoteEl.style.display = "block";
     } else if (phase === "answers") {
       questionNoteEl.textContent = "Pick one that isn't yours, or double down!";
