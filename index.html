@@ -5312,14 +5312,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
 
   // ---- Name screening ----
-  // Lenient on purpose: blocks slurs, the f-word, sexual/hate terms and contact info; mild swearing
-  // (damn, hell, crap, ass, shit...) is allowed. Words are stored ROT13 so the source isn't a wall of
+  // Blocks slurs, the f-word, sexual/hate terms, contact info, and now mild swearing too
+  // (damn, hell, crap, ass, shit). Words are stored ROT13 so the source isn't a wall of
   // slurs. Whole-word matching for short words avoids false hits like "Scunthorpe" or "raccoon".
   const _rot = (s) => s.replace(/[a-z]/g, (c) => String.fromCharCode(((c.charCodeAt(0) - 97 + 13) % 26) + 97));
   const _nameRx = (w) => new RegExp(w.replace(/(.)\1+/g, "$1{2,}").replace(/([a-z])(?!\{)/g, "$1+"), "");
   const NAME_BLOCK_SUBSTR = "shpx avtt snttbg juber uvgyre crqbcuvyr jrgonpx gbjryurnq genaal furznyr zbyrfg oybjwbo pbpxfhpx cbea phzfubg".split(" ").map((w) => _nameRx(_rot(w)));
   const NAME_BLOCK_LONG = "snttbg juber uvgyre crqbcuvyr jrgonpx gbjryurnq genaal furznyr oybjwbo pbpxfhpx".split(" ").map((w) => _nameRx(_rot(w)));
-  const NAME_BLOCK_WORDS = "phag pbba puvax fcvp fcvpx xvxr qlxr snt snttl ergneq ergneqrq gneq anmv cbea chffl fyhg phz wvmm qvyqb tbbx ornare cnxv xxx crqb encr encrl encvfg".split(" ").map((w) => new RegExp("^" + _nameRx(_rot(w)).source + "s?$"));
+  const NAME_BLOCK_WORDS = "phag pbba puvax fcvp fcvpx xvxr qlxr snt snttl ergneq ergneqrq gneq anmv cbea chffl fyhg phz wvmm qvyqb tbbx ornare cnxv xxx crqb encr encrl encvfg fuvg nff penc qnza uryy".split(" ").map((w) => new RegExp("^" + _nameRx(_rot(w)).source + "s?$"));
   // Returns null if the name is fine, otherwise a short message to show the player.
   function checkName(raw) {
     const name = String(raw || "").normalize("NFKD").replace(/[\u0300-\u036f\u200b-\u200f\ufeff]/g, "").toLowerCase();
