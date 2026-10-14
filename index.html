@@ -386,6 +386,10 @@
   .pack-flairs .pf { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; hyphens: auto; font-size: 8px; font-weight: 700; line-height: 1.05; color: #2c466e; text-align: center; }
   .pack-flairs .pf img { width: 100%; max-width: 36px; height: 34px; object-fit: contain; }
   .pack-flairs .pf img.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
+  .board-pack .pack-title { color: #fff; font-size: 16px; text-shadow: 0 2px 2px rgba(0,0,0,.25); }
+  .board-pack { border: 2px solid rgba(255,255,255,.7); }
+  .pack-boards { grid-area: emo; display: flex; justify-content: center; gap: 5px; margin-top: 4px; width: 100%; min-width: 0; }
+  .pack-boards img { flex: 0 1 44px; min-width: 0; aspect-ratio: 1; object-fit: contain; padding: 3px; box-sizing: border-box; border-radius: 9px; background: rgba(255,255,255,.88); }
   .pack-emojis { grid-area: emo; display: flex; justify-content: center; gap: 3px; margin-top: 4px; }
   .pack-emojis img { width: 24px; height: 24px; object-fit: contain; }
   .pack-card > .coin-pack-buy-btn { width: 100%; --pic-h: 32px; font-size: 13px; }
@@ -4450,10 +4454,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const row = document.getElementById("pack-row");
     if (!row) return;
     row.innerHTML = "";
-    EMOJI_PACK_CATALOG.forEach((pack) => {
+    EMOJI_PACK_CATALOG.forEach((pack, pi) => {
       const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       const card = document.createElement("div");
       card.className = "coin-pack-card pack-card";
+      tintPackCard(card, pi);
       card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-emojis">${pack.emojis.filter((e) => REACTIONS[e]).map((e) => `<img alt="" src="${reactionPic(e)}">`).join("")}</div>`;
       const btn = document.createElement("button");
       btn.type = "button";
@@ -4475,12 +4480,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!row) return;
     row.innerHTML = "";
     const items = COSMETIC_CATALOG.effects;
-    FLAIR_PACK_CATALOG.forEach((pack) => {
+    FLAIR_PACK_CATALOG.forEach((pack, pi) => {
       const owned = !!(myProfile.flairPacks || {})[pack.id]
         || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       const flairHtml = pack.flairs.map((id) => { const it = items.find((x) => x.id === id); return it ? `<span class="pf"><img alt="" class="${it.rainbow ? "rainbow" : ""}" src="${flairPic(it.pic)}"></span>` : ""; }).join("");
       const card = document.createElement("div");
       card.className = "coin-pack-card pack-card";
+      tintPackCard(card, pi + 1);
       card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-flairs">${flairHtml}</div>`;
       const btn = document.createElement("button");
       btn.type = "button";
@@ -4542,10 +4548,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const row = document.getElementById("bg-pack-row");
     if (!row) return;
     row.innerHTML = "";
-    BACKGROUND_PACK_CATALOG.forEach((pack) => {
+    BACKGROUND_PACK_CATALOG.forEach((pack, pi) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
       const card = document.createElement("div");
       card.className = "coin-pack-card pack-card";
+      tintPackCard(card, pi + 2);
       card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="bg-pack-thumbs">${pack.backgrounds.map((b) => bgThumbHtml(b.id, "bg-pack-thumb", 56)).join("")}</div>`;
       const btn = document.createElement("button");
       btn.type = "button";
@@ -9670,6 +9677,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return true;
   }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
+  // Soft colour for each reaction / flair / background pack card, cycling through the set (the board packs have their own bolder colours).
+  const PACK_TINTS = [["#d9e8ff", "#b9d2f5"], ["#ffdce8", "#f5b9d0"], ["#dcf3d2", "#b5e0a3"], ["#fff0c2", "#f5d98a"], ["#e6dcff", "#c9b8f2"], ["#ffe0c4", "#f5bd8c"], ["#d2f1f0", "#a3dbd9"]];
+  const tintPackCard = (card, i) => { const t = PACK_TINTS[i % PACK_TINTS.length]; card.style.background = `linear-gradient(180deg, ${t[0]} 0%, ${t[1]} 100%)`; };
   const PACK_LOOK = {
     newyear: ["items/champagne-glass.webp", "#5b6ee1", "#2a2f8f"], valentine: ["items/heart.webp", "#f48fb1", "#c2185b"], stpatrick: ["items/four-leaf-clover.webp", "#66bb6a", "#1b7a3a"],
     easter: ["items/easter-egg.webp", "#f6c85f", "#e08a3c"], may: ["items/sombrero.webp", "#f8a5c2", "#d6528a"], june: ["items/necktie.webp", "#4fc3f7", "#1976d2"],
@@ -9704,8 +9714,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$0.99" : "$0.99")) + " · Unlock"}</button>
       </div>`;
     }).join("");
+    const boardCardHtml = (list) => list.map((c) => {
+      const look = PACK_LOOK[c.id], pack = BOARD_PACK_CATALOG.find((p) => p.id === BOARD_SHOP_PACKS[c.id]);
+      const pics = pack.boards.map((b) => `<img src="${BOARD_PIC[b.id]}" alt="${b.label}" title="${b.label}" draggable="false">`).join("");
+      return `<div class="coin-pack-card pack-card board-pack${c.has ? " unlocked" : ""}" style="background:linear-gradient(180deg, ${look[1]} 0%, ${look[2]} 100%)">
+        <div class="pack-title">${c.title}</div>
+        <div class="pack-boards">${pics}</div>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : BOARD_PACK_PRICE + " · Unlock"}</button>
+      </div>`;
+    }).join("");
     el.innerHTML = cardHtml(cards.filter((c) => !BOARD_SHOP_PACKS[c.id]));
-    if (boardEl) boardEl.innerHTML = cardHtml(cards.filter((c) => BOARD_SHOP_PACKS[c.id]));
+    if (boardEl) boardEl.innerHTML = boardCardHtml(cards.filter((c) => BOARD_SHOP_PACKS[c.id]));
   }
   const BOARD_PACK_NAME = "Question Board Packs";
   const BOARD_PACK_PRICE = "$0.99";
@@ -9722,7 +9741,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!b || b.disabled) return;
     const packId = b.dataset.pack;
     if (BOARD_SHOP_PACKS[packId]) {
-      const t = b.closest(".tp-card"), title = t ? t.querySelector(".tp-title").textContent : BOARD_PACK_NAME;
+      const t = b.closest(".tp-card, .pack-card"), tt = t && t.querySelector(".tp-title, .pack-title"), title = tt ? tt.textContent : BOARD_PACK_NAME;
       const bought = await showFakePurchase({ icon: PACK_LOOK[packId][0], title, price: BOARD_PACK_PRICE });
       if (bought) purchaseBoardPack(BOARD_SHOP_PACKS[packId]);
       return;
