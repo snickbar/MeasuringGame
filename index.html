@@ -721,12 +721,6 @@
   .sh-card.sh-banner .sh-bimg { display: block; width: 100%; height: auto; border-radius: 18px; }
   .sh-card.sh-banner .sh-tx { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6% 0 34%; text-align: left; }
   .sh-card.sh-banner:active { transform: translateY(2px); box-shadow: none; }
-  /* Solo hub: every button is the same size and taller than the pictures' natural shape (the banner pictures are
-     stretched a little to fit), so the five rows line up. */
-  #solo-content > .sh-card { box-sizing: border-box; width: 100%; aspect-ratio: 1000 / 165; margin: 12px 0 0; }
-  #solo-content > .sh-card.sh-banner .sh-bimg { height: 100%; }
-  #solo-content > .sh-card:not(.sh-banner) { padding: 0 14px; }
-  #solo-content > .sh-card:not(.sh-banner) .sh-ic { width: 56px; height: 56px; flex-basis: 56px; }
   #home-solo-btn.has-todo::after { content: ""; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; z-index: 2; }
   #worlds-screen.active #worlds-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #worlds-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
@@ -1661,26 +1655,15 @@
     #toolbar-settings-btn.hint-pulse { animation: none; }
   }
   #toolbar-menu {
-    position: fixed; top: 64px; right: 8px; z-index: 560; width: 180px; display: flex; flex-direction: column; gap: 6px;
+    position: fixed; top: 64px; right: 8px; z-index: 560; width: max-content; max-width: calc(100vw - 16px); display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px;
     padding: 8px; background: #fffaf0; border: 3px solid #4a2c12; border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.35);
   }
   #toolbar-menu[hidden] { display: none; }
-  #toolbar-menu .menu-pill {
-    width: 100%; margin: 0; text-align: center; color: #000; text-shadow: none;
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; padding: 10px 14px;
-    border-width: 9px; border-style: solid; border-image-slice: 55 fill; border-image-source: var(--btn2);
-  }
-  #toolbar-menu .menu-exit {
-    --pic-h: 44px; height: var(--pic-h); padding: 0 2px; border-width: 0 calc(var(--pic-h) / 2); border-image-slice: 0 155 fill; border-image-source: url(icons/btn-red.png); color: #fff;
-    text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
-  }
-  #toolbar-menu .menu-settings {
-    display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 12px 0 6px; box-sizing: border-box;
-    border: 3px solid #d9c29a; border-image: none; border-radius: 16px; background: linear-gradient(#fffdf6, #f8edd6);
-    box-shadow: 0 3px 0 #c9ad7c; color: #1a1208; text-align: left; text-shadow: none; font-size: 17px;
-  }
-  #toolbar-menu .menu-settings img { width: 44px; height: 44px; flex-shrink: 0; object-fit: contain; }
-  #toolbar-menu .menu-settings:active { transform: translateY(2px); box-shadow: 0 1px 0 #c9ad7c; }
+  /* Menu items are picture tiles like Home/Shop (icon only, the name is baked into the picture). To add one,
+     drop another <button class="menu-tile"><img src="icons/toolbar-xxx.png"></button> into #toolbar-menu. */
+  #toolbar-menu .menu-tile { width: 64px; height: 64px; margin: 0; padding: 0; border: none; border-image: none; border-radius: 0; background: none; box-shadow: none; flex: 0 0 auto; }
+  #toolbar-menu .menu-tile img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  #toolbar-menu .menu-tile:active { transform: translateY(2px); }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -2715,8 +2698,8 @@
   </div>
 </div>
 <div id="toolbar-menu" hidden role="menu">
-  <button id="menu-settings-btn" class="menu-pill menu-settings" type="button" role="menuitem"><img src="icons/toolbar-settings.png" alt="">Settings</button>
-  <button id="toolbar-exit-btn" class="menu-pill menu-exit" type="button" role="menuitem">Exit</button>
+  <button id="menu-settings-btn" class="menu-tile" type="button" role="menuitem" aria-label="Settings"><img src="icons/toolbar-settings.png" alt=""></button>
+  <button id="toolbar-exit-btn" class="menu-tile" type="button" role="menuitem" aria-label="Exit"><img src="icons/toolbar-exit.png" alt=""></button>
 </div>
 
 <div id="exit-confirm-overlay">
