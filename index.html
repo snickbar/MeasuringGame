@@ -12825,8 +12825,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     fireflies: { pics: ["firefly"], move: "glow", burst: "linger", glow: true, mirrorRandom: true, lap: 3600, size: 26, items: 16, burstN: 32, life: 7000 },
     // Flair Pack 4
     balloons:  { pics: ["balloon-red", "balloon-blue", "balloon-yellow"], move: "bob", burst: "flutterup", lap: 3200, size: 34, items: 9, burstN: 26, life: 6500 },
-    gems:      { pics: ["gem-diamond", "gem-ruby", "gem-emerald"], move: "twinkle", burst: "gemfall", lap: 3000, size: 32, items: 12, burstN: 40, life: 5000 },
-    paws:      { pics: ["paw-dog", "paw-cat", "paw-bear"], move: "pulse", burst: "trail", lap: 3000, size: 38, items: 10, burstN: 40, life: 7000 },
+    gems:      { pics: ["gem-diamond", "gem-ruby", "gem-emerald"], move: "gemspin", burst: "gemfall", lap: 3000, size: 32, items: 12, burstN: 40, life: 5000 },
+    paws:      { pics: ["paw-dog", "paw-cat", "paw-bear"], move: "pulse", burst: "trail", lap: 3000, size: 38, items: 10, burstN: 27, life: 7000 },
     food:      { pics: ["pizza", "donut", "cookie"], move: "bob", burst: "fall", lap: 3000, size: 36, items: 9, burstN: 36, life: 5200 },
     applause:  { pics: ["clap-left", "clap-right"], move: "clap", burst: "claps", lap: 3000, size: 34, items: 10, burstN: 16, life: 4200 },
   };
@@ -12876,6 +12876,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         else if (f.move === "flap") { sx = 0.35 + 0.65 * Math.abs(Math.sin(sp * 2.4)); dy = Math.sin(sp) * 3; }
         else if (f.move === "spin") { rot = (t / 1000) * 120 + it.ph * 20; }
         else if (f.move === "coin") { sx = Math.cos(sp * 1.8); }
+        else if (f.move === "gemspin") { rot = (k % 2 ? -1 : 1) * (t / 1000) * 130 + it.ph * 20; }
         else if (f.move === "bob") { dy = Math.sin(sp * 1.5) * 4; rot = Math.sin(sp) * 10; }
         else if (f.move === "clap") { const c = 0.5 - 0.5 * Math.cos(sp * 3), sgn = k % 2 ? -1 : 1; rot = sgn * (-8 + 24 * c); sc = 0.95 + 0.1 * c; }
         else if (f.move === "glow") { op = 0.5 + 0.5 * Math.abs(Math.sin(sp * 0.9)); sc = 0.95 + 0.1 * Math.sin(sp * 2); dy = Math.sin(sp) * 3; }
@@ -13081,10 +13082,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     if (b === "trail") {
       // paw prints walk across the screen in a few separate trails: each print pops in one after another, stays a moment, then fades
-      const trails = 5, per = Math.max(5, Math.round(N / trails)), step = size * 1.7, life1 = 1900, gap = 250;
+      const trails = f.pics.length, per = Math.max(5, Math.round(N / trails)), step = size * 1.7, life1 = 1900, gap = 250;
       for (let t = 0; t < trails; t++) {
         const nm = f.pics[t % f.pics.length], ang = rnd(0, 6.2832), dx = Math.cos(ang), dy = Math.sin(ang);
-        const mx = rnd(0.15, 0.85) * W, my = rnd(0.15, 0.85) * H, d0 = rnd(0, L * 0.18);
+        const mx = (0.2 + 0.6 * (t + 0.5) / trails + rnd(-0.06, 0.06)) * W, my = rnd(0.3, 0.7) * H, d0 = rnd(0, L * 0.18);
         for (let k = 0; k < per; k++) {
           const el = item(nm), side = (k % 2 ? 1 : -1) * size * 0.4, along = (k - per / 2) * step;
           const x = mx + dx * along - dy * side, y = my + dy * along + dx * side, ap = d0 + k * gap;
