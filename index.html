@@ -4410,6 +4410,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "blossom", label: "Cherry Blossoms", cost: 100, pic: "blossom" },
       { id: "notes", label: "Music Notes", cost: 100, pic: "notes-blue" },
       { id: "fireflies", label: "Fireflies", cost: 100, pic: "firefly" },
+      { id: "balloons", label: "Balloons", cost: 100, pic: "balloon-red" },
+      { id: "gems", label: "Gems", cost: 100, pic: "gem-ruby" },
+      { id: "paws", label: "Paw Prints", cost: 100, pic: "paw-dog" },
+      { id: "food", label: "Food Rain", cost: 100, pic: "pizza" },
+      { id: "applause", label: "Applause", cost: 100, pic: "clap-left" },
     ],
     colors: [
       { id: "default", label: "Default", cost: 0, color: "#3B2A1A" },
@@ -4985,6 +4990,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "fpack1", label: "Flair Pack 1", price: "$0.99", flairs: ["hearts", "coinshower", "rainbow", "snow", "leaves"] },
     { id: "fpack2", label: "Flair Pack 2", price: "$0.99", flairs: ["fire", "lightning", "fireworks", "butterfly", "planes"] },
     { id: "fpack3", label: "Flair Pack 3", price: "$0.99", flairs: ["popper", "soap", "blossom", "notes", "fireflies"] },
+    { id: "fpack4", label: "Flair Pack 4", price: "$0.99", flairs: ["balloons", "gems", "paws", "food", "applause"] },
   ];
   const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
@@ -12817,6 +12823,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Orbit shows only the two notes (no clef); the clef joins the notes in the row-slide burst below.
     notes:     { pics: ["note-purple", "notes-blue"], move: "bob", burst: "rows", lap: 2800, size: 34, items: 9, burstN: 30, life: 5200 },
     fireflies: { pics: ["firefly"], move: "glow", burst: "linger", glow: true, mirrorRandom: true, lap: 3600, size: 26, items: 16, burstN: 32, life: 7000 },
+    // Flair Pack 4
+    balloons:  { pics: ["balloon-red", "balloon-blue", "balloon-yellow"], move: "bob", burst: "flutterup", lap: 3200, size: 34, items: 9, burstN: 26, life: 6500 },
+    gems:      { pics: ["gem-diamond", "gem-ruby", "gem-emerald"], move: "twinkle", burst: "gemfall", lap: 3000, size: 32, items: 12, burstN: 40, life: 5000 },
+    paws:      { pics: ["paw-dog", "paw-cat", "paw-bear"], move: "pulse", burst: "trail", lap: 3000, size: 38, items: 10, burstN: 40, life: 7000 },
+    food:      { pics: ["pizza", "donut", "cookie"], move: "bob", burst: "fall", lap: 3000, size: 36, items: 9, burstN: 36, life: 5200 },
+    applause:  { pics: ["clap-left", "clap-right"], move: "clap", burst: "claps", lap: 3000, size: 34, items: 10, burstN: 16, life: 4200 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -12865,6 +12877,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         else if (f.move === "spin") { rot = (t / 1000) * 120 + it.ph * 20; }
         else if (f.move === "coin") { sx = Math.cos(sp * 1.8); }
         else if (f.move === "bob") { dy = Math.sin(sp * 1.5) * 4; rot = Math.sin(sp) * 10; }
+        else if (f.move === "clap") { const c = 0.5 - 0.5 * Math.cos(sp * 3), sgn = k % 2 ? -1 : 1; rot = sgn * (-8 + 24 * c); sc = 0.95 + 0.1 * c; }
         else if (f.move === "glow") { op = 0.5 + 0.5 * Math.abs(Math.sin(sp * 0.9)); sc = 0.95 + 0.1 * Math.sin(sp * 2); dy = Math.sin(sp) * 3; }
         else if (f.move === "plane") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI; dy = Math.sin(sp * 2) * 2; }
         else if (f.move === "rocket") { const A = at(u + 0.015), B = at(u - 0.015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI + 45; dy = Math.sin(sp * 3) * 1.5; }
@@ -12899,7 +12912,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Each particle's position is a function of time, so a longer "life" simply lasts longer. Returns true when it handled the flair.
   function flairBurstNew(layer, f, li, r, cx, cy) {
     const b = f.burst;
-    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger", "bubbleup", "glide", "rows"].includes(b)) return false;
+    if (!["spiral", "zigzag", "show", "fall", "coinfall", "flutterup", "linger", "bubbleup", "glide", "rows", "trail", "claps", "gemfall"].includes(b)) return false;
     const W = window.innerWidth, H = window.innerHeight, L = f.life || 3000, N = f.burstN, size = f.size;
     const rnd = (a, c) => a + Math.random() * (c - a);
     const tf = (x, y, rot, sx, sy) => `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${sx}, ${sy})`;
@@ -12991,18 +13004,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return true;
     }
 
-    if (b === "fall" || b === "coinfall") {
+    if (b === "fall" || b === "coinfall" || b === "gemfall") {
       // snowflakes / coins / petals all the way down the screen
-      const coin = b === "coinfall", bp = f.burstPics || f.pics;
+      const coin = b === "coinfall", gem = b === "gemfall", bp = f.burstPics || f.pics;
       for (let k = 0; k < N; k++) {
         const el = item(bp[k % bp.length]), s = rnd(0.7, 1.25), x = rnd(-size / 2, W - size / 2);
         if (f.tintSome && Math.random() < f.tintSome.frac) el.style.filter = f.tintSome.filter;
         const dl = rnd(0, L * 0.4), fd = Math.max(900, L * rnd(0.5, 0.6)), sw = rnd(8, 26), fq = rnd(1.2, 2.6), ph = rnd(0, 6.28), vr = rnd(-90, 90), r0 = rnd(0, 360);
         add(el, (bt) => {
           const p = (bt - dl) / fd; if (p >= 1) return false; if (p < 0) { el.style.opacity = 0; return true; }
-          const q = coin ? Math.pow(p, 1.35) : p, y = -size * 1.2 + q * (H + size * 2.4);
-          const xx = x + (coin ? Math.sin(p * fq * 3 + ph) * sw * 0.35 : Math.sin(p * fq * 5 + ph) * sw), sx = coin ? Math.cos(bt / 110 + ph) : 1;
-          el.style.transform = tf(xx, y, r0 + vr * bt / 1000, sx * s, s); el.style.opacity = p > 0.9 ? (1 - p) / 0.1 : 1; return true;
+          const q = coin ? Math.pow(p, 1.35) : gem ? Math.pow(p, 1.15) : p, y = -size * 1.2 + q * (H + size * 2.4);
+          const xx = gem ? x : x + (coin ? Math.sin(p * fq * 3 + ph) * sw * 0.35 : Math.sin(p * fq * 5 + ph) * sw), sx = coin ? Math.cos(bt / 110 + ph) : 1;
+          el.style.transform = tf(xx, y, r0 + (gem ? (k % 2 ? -1 : 1) * Math.abs(vr) * 1.6 : vr) * bt / 1000, sx * s, s); el.style.opacity = p > 0.9 ? (1 - p) / 0.1 : 1; return true;
         });
       }
       runCust(); return true;
@@ -13062,6 +13075,46 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           el.style.transform = tf(a[0] - sz / 2, a[1] - sz / 2, ang, 1, 1);
           el.style.opacity = Math.min(1, p * 10) * (p > 0.92 ? (1 - p) / 0.08 : 1); return true;
         });
+      }
+      runCust(); return true;
+    }
+
+    if (b === "trail") {
+      // paw prints walk across the screen in a few separate trails: each print pops in one after another, stays a moment, then fades
+      const trails = 5, per = Math.max(5, Math.round(N / trails)), step = size * 1.7, life1 = 1900, gap = 250;
+      for (let t = 0; t < trails; t++) {
+        const nm = f.pics[t % f.pics.length], ang = rnd(0, 6.2832), dx = Math.cos(ang), dy = Math.sin(ang);
+        const mx = rnd(0.15, 0.85) * W, my = rnd(0.15, 0.85) * H, d0 = rnd(0, L * 0.18);
+        for (let k = 0; k < per; k++) {
+          const el = item(nm), side = (k % 2 ? 1 : -1) * size * 0.4, along = (k - per / 2) * step;
+          const x = mx + dx * along - dy * side, y = my + dy * along + dx * side, ap = d0 + k * gap;
+          add(el, (bt) => {
+            const p = bt - ap; if (p < 0) { el.style.opacity = 0; return true; } if (p > life1) return false;
+            const sc = 0.6 + 0.4 * Math.min(1, p / 150);
+            el.style.transform = tf(x - size / 2, y - size / 2, ang * 57.3 + 90, sc, sc); el.style.opacity = Math.min(1, p / 120) * fadeOut(p, life1, 600); return true;
+          });
+        }
+      }
+      runCust(); return true;
+    }
+
+    if (b === "claps") {
+      // pairs of hands pop in all over the screen and clap together a few times, then fade
+      const pairs = Math.max(3, Math.round(N / 2)), T = 430, claps = 4, dur = T * claps + 500;
+      for (let k = 0; k < pairs; k++) {
+        const mx = rnd(0.12, 0.88) * W, my = rnd(0.12, 0.85) * H, w = size * rnd(1.0, 1.8), dl = k * (L * 0.09) + rnd(0, 160);
+        const a = item("clap-left", w), c = item("clap-right", w), h = w * 256 / 179;
+        let live = true;
+        const hands = (p) => {
+          if (p < 0) { a.style.opacity = 0; c.style.opacity = 0; return true; }
+          if (p > dur) return false;
+          const u = 0.5 - 0.5 * Math.cos(Math.min(p, T * claps) / T * 6.2832 + 3.1416) , off = w * (0.64 - 0.36 * u), tilt = -10 + 16 * u;
+          const op = Math.min(1, p / 160) * fadeOut(p, dur, 400);
+          a.style.transform = tf(mx - off - w / 2, my - h / 2, tilt, 1, 1); a.style.opacity = op;
+          c.style.transform = tf(mx + off - w / 2, my - h / 2, -tilt, 1, 1); c.style.opacity = op; return true;
+        };
+        add(a, (bt) => { live = hands(bt - dl); return live; });
+        add(c, () => live);
       }
       runCust(); return true;
     }
