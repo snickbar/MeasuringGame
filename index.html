@@ -13112,18 +13112,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // pairs of hands pop in all over the screen and clap together a few times, then fade
       const pairs = Math.max(3, Math.round(N / 2)), T = 430, claps = 4, dur = T * claps + 500;
       for (let k = 0; k < pairs; k++) {
-        const mx = rnd(0.12, 0.88) * W, my = rnd(0.12, 0.85) * H, w = size * rnd(2.0, 3.2), dl = k * (L * 0.09) + rnd(0, 160), lean = rnd(-10, 10);
+        const mx = rnd(0.12, 0.88) * W, my = rnd(0.12, 0.85) * H, w = size * rnd(2.0, 3.2), dl = k * (L * 0.09) + rnd(0, 160), lean = rnd(-10, 10), mir = Math.random() < 0.5 ? -1 : 1;
         // the back hand (palm showing) sways a little while the front hand (fingernails showing) swings in around its wrist and claps onto it
         const a = item("clap-back", w), c = item("clap-front", w), h = w * 300 / 280;
-        a.style.transformOrigin = c.style.transformOrigin = "60.8% 91.7%";
+        a.style.transformOrigin = c.style.transformOrigin = (mir < 0 ? "39.2%" : "60.8%") + " 91.7%";
+        // a mirrored pair is flipped left-to-right about its own middle, so its wrists are at the other side
+        const fm = (x, y, r, s) => "translate(" + x + "px, " + y + "px) rotate(" + (r * mir) + "deg) translate(" + (mir < 0 ? w * 0.216 : 0) + "px, 0px) scale(" + (s * mir) + ", " + s + ")";
         let live = true;
         const hands = (p) => {
           if (p < 0) { a.style.opacity = 0; c.style.opacity = 0; return true; }
           if (p > dur) return false;
           const u = 0.5 - 0.5 * Math.cos(Math.min(p, T * claps) / T * 6.2832 + 3.1416), swing = 30 * (1 - u), bump = 1 + 0.06 * u;
           const op = Math.min(1, p / 160) * fadeOut(p, dur, 400);
-          a.style.transform = tf(mx - w / 2, my - h / 2, lean - 10 * (1 - u), 1 + 0.03 * u, 1 + 0.03 * u); a.style.opacity = op;
-          c.style.transform = tf(mx - w / 2, my - h / 2, lean + swing, bump, bump); c.style.opacity = op; return true;
+          a.style.transform = fm(mx - w / 2, my - h / 2, lean - 10 * (1 - u), 1 + 0.03 * u); a.style.opacity = op;
+          c.style.transform = fm(mx - w / 2, my - h / 2, lean + swing, bump); c.style.opacity = op; return true;
         };
         add(a, (bt) => { live = hands(bt - dl); return live; });
         add(c, () => live);
