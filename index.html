@@ -2142,7 +2142,9 @@
   /* Two independent scrollers: the answers/board on the left and the player cards docked on the right (swipe up on the cards to scroll them) */
   .game-body { display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
   .main-col { flex: 1 1 0; min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
-  .game-body.anim-wide .score-col { display: none; }
+  .game-body.anim-wide .score-sidebar { display: none; }
+  .score-sidebar { flex:0 0 150px; min-width:0; min-height:0; display:flex; flex-direction:column; }
+  .score-sidebar .score-col { flex:1 1 0; min-height:0; }
   .game-body.anim-wide .main-col { flex: 1 1 100%; }
   .score-col { flex: 0 0 150px; min-width: 0; display: flex; flex-direction: column; gap: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding-bottom: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .score-col::-webkit-scrollbar { display: none; }
@@ -2677,9 +2679,14 @@
   .items-row.locked { background: repeating-linear-gradient(135deg, #e9e0cf 0, #e9e0cf 7px, #f1eadb 7px, #f1eadb 14px); border-color: #cdbd9f; }
   .items-row.locked .items-name { opacity: 1; color: #6b5a45; font-weight: 800; }
 
-  /* Compact, contextual solo power-ups. Prices and details never move the keypad. */
+  /* Contextual power-ups stay above the player cards, beside the objects/keypad. */
   .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
-  #quick-powerups { flex:none; }
+  #quick-powerups { flex:none; padding:4px; margin:0 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
+  #quick-powerups .pu-row { grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; padding:0; margin:2px 0 0; border:0; background:none; }
+  #quick-powerups .pu-button { min-height:52px; font-size:10px; }
+  #quick-powerups .pu-button img { width:25px; height:25px; }
+  #quick-powerups .pu-button small { font-size:8px; }
+  .pu-box-title { display:block; text-align:center; font:700 10px/1.2 system-ui,sans-serif; color:#85572b; }
   .pu-button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; min-height:60px; margin:0; padding:2px 0; border:0; border-radius:9px; background:#fffdf7; color:#583015; font:700 11px/1.15 system-ui,sans-serif; cursor:pointer; box-shadow:none; }
   .pu-button img { width:30px; height:30px; object-fit:contain; }
   .pu-button small { font-size:9px; color:#85572b; white-space:nowrap; }
@@ -2687,15 +2694,7 @@
   .pu-button:disabled { opacity:.45; cursor:default; }
   .pu-inline { flex-direction:row; gap:5px; width:100%; min-height:44px; padding:4px; margin:4px 0; background:#fff7e7; }
   .pu-inline img { width:26px; height:26px; }
-  #quick-powerups[hidden], #second-powerup[hidden], .pu-toast[hidden] { display:none !important; }
-  .pu-dialog { max-width:310px; width:calc(100% - 48px); border:3px solid #674027; border-radius:22px; padding:20px; background:#fff9ec; color:#583015; text-align:center; font:16px/1.4 system-ui,sans-serif; }
-  .pu-dialog::backdrop { background:#2e1a16b8; }
-  .pu-dialog h2 { margin:4px 0; font-size:22px; }
-  .pu-dialog-icon { width:92px; height:92px; object-fit:contain; }
-  .pu-actions { display:flex; gap:10px; }
-  .pu-actions button { flex:1; min-height:44px; padding:8px; border:1px solid #b9946b; border-radius:12px; background:#eed9b8; color:#583015; font:700 14px system-ui,sans-serif; }
-  .pu-actions button:last-child { background:#b7df7c; }
-  .pu-actions button:disabled { opacity:.5; }
+  #quick-powerups[hidden], .pu-toast[hidden] { display:none !important; }
   .pu-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); z-index:20000; max-width:85vw; padding:10px 16px; border-radius:14px; background:#51311f; color:white; text-align:center; font:14px system-ui,sans-serif; pointer-events:none; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
@@ -3122,6 +3121,13 @@
     <p>Questions name the dimension being compared: <b>length, height, width, diameter, depth, wingspan, or edge length</b>. Extra wording tells you when a cord, tail, pedestal, or post is included. Wired earbuds include the full cord; the wireless earbuds case is measured on its own. A tied necktie is measured from knot to tip.</p>
   </div></details>
 
+  <details class="howto-section" id="howto-powerups"><summary>Power-ups</summary><div class="howto-body">
+    <p>Available in <b>Quick Game, Worlds, and Survival</b>. Tap an available power-up to use it immediately for the displayed coin price. There is no confirmation pop-up. Unaffordable power-ups are dimmed.</p>
+    <p>Use rerolls, buffer, and reveal before submitting. In Quick Game, you can still add a buffer while waiting, before Second Chance begins. Only 50/50 is available during Second Chance. Used power-ups disappear; only one reroll is allowed per question.</p>
+    <div id="howto-powerup-list"></div>
+    <p>Worlds and Survival stay untimed and have no Second Chance. A reroll does not add a timer. Power-ups are unavailable in Party, Daily, and Monthly challenges, including practice.</p>
+  </div></details>
+
   <details class="howto-section"><summary>Second chances</summary><div class="howto-body">
     <p>Every round, after guesses lock, everyone gets a few seconds to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly the <b>real answer</b>, and picking it earns a bonus point, or <b>double down</b> on your own guess. Doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
   </div></details>
@@ -3423,7 +3429,6 @@
   </div>
   </div>
 
-  <div id="quick-powerups" hidden></div>
   <div class="game-body">
     <div class="main-col">
 
@@ -3449,7 +3454,6 @@
       </div>
 
       <div id="answers-view">
-        <div id="second-powerup" hidden></div>
         <div id="answers-row"></div>
         <button id="double-down-btn"><span class="dd-main">Double down on my answer</span></button>
       </div>
@@ -3472,7 +3476,10 @@
       </div>
 
     </div>
-    <div class="score-col" id="score-col"></div>
+    <div class="score-sidebar">
+      <div id="quick-powerups" hidden></div>
+      <div class="score-col" id="score-col"></div>
+    </div>
   </div>
 </div>
 
@@ -13630,7 +13637,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     animationViewEl.classList.toggle("active", phase === "animation");
     animSkipBtn.style.display = (isHost && phase === "animation") ? "block" : "none";
-    scoreColEl.parentElement.classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
+    scoreColEl.closest(".game-body").classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");

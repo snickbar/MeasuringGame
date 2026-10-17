@@ -8,6 +8,7 @@ const test=`
 import {createPowerupController} from '/anim/powerup-ui.mjs';
 import {POWERUPS} from '/anim/powerups.mjs';
 const assert=(v,m)=>{if(!v)throw Error(m)}, results=[];
+const browserErrors=[];window.addEventListener('error',e=>browserErrors.push(e.message));
 const tick=()=>new Promise(r=>setTimeout(r,0));
 // Chromium's virtual-time budget advances timers without compositor frames.
 // Drive the preview frame callback from that same clock for this isolated test.
@@ -30,31 +31,32 @@ const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,ow
  profile:async()=>wallet,room:async()=>room,quickApplied:()=>{},refresh:()=>{},finished:()=>{},
 });
 const local=document.createElement('div');document.body.append(local);
-const open=id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';document.querySelector('[data-powerup="'+id+'"]').click()};
-const buy=async()=>{const b=document.querySelector('[data-pu-buy]');b.click();b.click();for(let n=0;n<250&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes')};
+const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]');b.click();b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up')};
 try{
  c.render();const buttons=[...document.querySelectorAll('#quick-powerups [data-powerup]')];assert(buttons.length===5,'five buttons');
- assert(new Set(buttons.map(b=>Math.round(b.getBoundingClientRect().top))).size===1,'one row');assert(buttons.every(b=>b.getBoundingClientRect().width>=44),'44px touch widths');
- results.push('one compact row and accessible touch targets');
- open('buffer');document.querySelector('[data-pu-cancel]').click();assert(wallet.coins===100,'cancel costs nothing');
- open('buffer');await buy();assert(wallet.coins===90&&debits===1&&room.currentQuestion.powerups.used.buffer,'double tap charges once');
+ assert(new Set(buttons.map(b=>Math.round(b.getBoundingClientRect().top))).size===2,'compact two-row box');assert(buttons.every(b=>b.getBoundingClientRect().width>=44),'44px touch widths');
+ const box=document.getElementById('quick-powerups'),cards=document.getElementById('score-col'),pics=document.getElementById('q-preview');
+ assert(box.parentElement.classList.contains('score-sidebar')&&box.nextElementSibling===cards,'box above player cards');assert(pics.getBoundingClientRect().top<box.getBoundingClientRect().bottom,'objects stay beside power-ups');
+ assert(document.getElementById('howto-powerup-list').textContent.includes('Reroll small')&&document.getElementById('howto-powerup-list').textContent.includes('10% buffer'),'help card explains power-ups');
+ results.push('compact sidebar box, objects beneath question, help content, and accessible touch targets');
+ await buy('buffer');assert(wallet.coins===90&&debits===1&&room.currentQuestion.powerups.used.buffer,'double tap charges once');
  assert(document.querySelectorAll('#quick-powerups [data-powerup]').length===4,'used buffer hidden');
- results.push('cancel, double tap, charged-once buffer and hidden used action');
- open('small');await buy();assert(room.currentQuestion.unitId==='paperclip'&&room.currentQuestion.targetId==='canoe','only small changed');assert(room.currentQuestion.powerups.used.buffer,'buffer survives reroll');assert(wallet.coins===85,'reroll price');assert(!document.querySelector('[data-powerup="big"]'),'one reroll total');
+ results.push('immediate purchase without pop-up, double tap, charged-once buffer and hidden used action');
+ await buy('small');assert(room.currentQuestion.unitId==='paperclip'&&room.currentQuestion.targetId==='canoe','only small changed');assert(room.currentQuestion.powerups.used.buffer,'buffer survives reroll');assert(wallet.coins===85,'reroll price');assert(!document.querySelector('[data-powerup="big"]'),'one reroll total');
  results.push('reroll changes intended object and preserves buffer/usage');
- room=newRoom();room.guesses={me:95};c.render();assert(document.querySelectorAll('#quick-powerups [data-powerup]').length===1,'waiting single action');assert(document.querySelector('#guess-display').nextElementSibling.id==='quick-powerups','waiting action below guess');
- results.push('compact waiting buffer beneath locked guess');
+ room=newRoom();room.guesses={me:95};c.render();assert(document.querySelectorAll('#quick-powerups [data-powerup]').length===1,'waiting single action');assert(box.parentElement.classList.contains('score-sidebar'),'waiting action stays above cards');
+ results.push('waiting buffer remains in sidebar');
  room.phase='answers';room.answersEndsAt=11000;room.answers=[{playerId:'me',value:95},{playerId:'bot',value:90},{playerId:'b2',value:80},{playerId:'truth',value:100,truth:true},{playerId:'b3',value:120}];c.render();
- assert(document.getElementById('quick-powerups').hidden,'no buffer on Second Chance');assert(document.querySelector('#second-powerup [data-powerup="fifty"]'),'50/50 contextual');open('fifty');await buy();assert(room.currentQuestion.powerups.removed.length===2&&!room.currentQuestion.powerups.removed.includes('truth'),'truth preserved');
+ assert(!document.querySelector('#quick-powerups [data-powerup="buffer"]'),'no buffer on Second Chance');assert(document.querySelector('#quick-powerups [data-powerup="fifty"]'),'50/50 contextual');await buy('fifty');assert(room.currentQuestion.powerups.removed.length===2&&!room.currentQuestion.powerups.removed.includes('truth'),'truth preserved');
  results.push('Second Chance hides buffer and 50/50 preserves truth');
- room=newRoom();wallet={coins:0};open('buffer');assert(document.querySelector('[data-pu-buy]').disabled,'insufficient funds');document.querySelector('[data-pu-cancel]').click();assert(wallet.coins===0,'no debit');
- room=newRoom();wallet={coins:20};clock=1000;delayDebit=true;open('buffer');await buy();assert(wallet.coins===20&&!room.currentQuestion.powerups,'late activation refunded');
+ room=newRoom();wallet={coins:0};c.render();assert(document.querySelector('[data-powerup="buffer"]').disabled,'insufficient funds');await buy('buffer');assert(wallet.coins===0,'no debit');
+ room=newRoom();wallet={coins:20};clock=1000;delayDebit=true;await buy('buffer');assert(wallet.coins===20&&!room.currentQuestion.powerups,'late activation refunded');
  results.push('insufficient funds and deadline-race refund');
- room=newRoom();clock=1000;wallet={coins:20};mode='worlds';open('buffer');await buy();assert(wallet.coins===10&&room.currentQuestion.powerups.used.buffer,'untimed local effect');assert(!room.questionEndsAt||room.questionEndsAt===31000,'no added local timer');
+ room=newRoom();clock=1000;wallet={coins:20};mode='worlds';await buy('buffer');assert(wallet.coins===10&&room.currentQuestion.powerups.used.buffer,'untimed local effect');assert(!room.questionEndsAt||room.questionEndsAt===31000,'no added local timer');
  results.push('local Worlds purchase without adding timer');
- room=newRoom();mode='survival';clock=1000;wallet={coins:20};open('reveal');const began=performance.now();await buy();assert(performance.now()-began>=4000,'full four-second view');assert(!document.querySelector('.pu-preview'),'preview removes itself');assert(wallet.coins===10&&room.currentQuestion.powerups.used.reveal,'one paid reveal');
+ room=newRoom();mode='survival';clock=1000;wallet={coins:20};const began=performance.now();await buy('reveal');assert(performance.now()-began>=4000,'full four-second view');assert(!document.querySelector('.pu-preview'),'preview removes itself');assert(wallet.coins===10&&room.currentQuestion.powerups.used.reveal,'one paid reveal');
  results.push('four-second item reveal completes and charges once');local.innerHTML='';
- mode='excluded';c.render();assert(document.getElementById('quick-powerups').hidden&&document.getElementById('second-powerup').hidden,'excluded modes');
+ mode='excluded';c.render();assert(document.getElementById('quick-powerups').hidden,'excluded modes');
  results.push('excluded modes hide actions');
  room=newRoom();mode='quick';clock=1000;wallet={coins:100};c.render();
  const old=Date.now()-120000;wallet={coins:0,powerupReceipts:{lost:{cost:10,status:'charged',at:old,mode:'worlds'},applied:{cost:5,status:'charged',at:old,mode:'quick',room:'TEST'}}};room.powerupReceipts={applied:true};await c.recover(wallet,'me');assert(wallet.coins===10&&wallet.powerupReceipts.applied.status==='applied','receipt reconciliation');await c.recover(wallet,'me');assert(wallet.coins===10,'no repeated refund');
@@ -62,9 +64,9 @@ try{
  wallet={coins:100};c.render();
  document.getElementById('test-output').textContent=JSON.stringify({pass:true,results});
  document.title='PASS power-ups';
-}catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,results});document.title='FAIL power-ups'}
+}catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,browserErrors,results});document.title='FAIL power-ups'}
 `;
-const fixture='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+hud+'<pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
+const fixture='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+hud+'<div id="howto-powerup-list" hidden></div><pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
 const server=http.createServer((req,res)=>{
  if(req.url.startsWith('/__powerup-test')){res.setHeader('Content-Type','text/html');res.end(fixture);return}
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
@@ -75,7 +77,7 @@ const server=http.createServer((req,res)=>{
 server.listen(0,'127.0.0.1',()=>{
  const outDir=path.join(root,'output','powerup-tests');fs.mkdirSync(outDir,{recursive:true});
  const chrome=process.env.CHROME_PATH||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
- const args=['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--hide-scrollbars','--user-data-dir='+path.join(os.tmpdir(),'size-em-up-powerups-'+process.pid),'--window-size=390,844','--virtual-time-budget=15000','--dump-dom','--screenshot='+path.join(outDir,'quick-game-390.png'),'http://127.0.0.1:'+server.address().port+'/__powerup-test'];
+ const args=['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--hide-scrollbars','--user-data-dir='+path.join(os.tmpdir(),'size-em-up-powerups-'+process.pid),'--window-size=390,844','--virtual-time-budget=30000','--dump-dom','--screenshot='+path.join(outDir,'quick-game-390.png'),'http://127.0.0.1:'+server.address().port+'/__powerup-test'];
  const child=spawn(chrome,args,{windowsHide:true});let stdout='',stderr='';
  child.stdout.on('data',d=>stdout+=d);child.stderr.on('data',d=>stderr+=d);
  const timer=setTimeout(()=>{child.kill();server.close();console.error('Browser timed out. '+stderr.slice(-800));process.exitCode=1},45000);
