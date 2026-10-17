@@ -2737,7 +2737,10 @@
   .pu-boost-verdict { display:flex; gap:6px; justify-content:center; align-items:center; font-size:16px; font-weight:600; margin-top:6px; }
   .pu-boost-verdict .res-mark { width:26px; height:26px; }
   .pu-boost-card .sv-gauge { margin-top:10px; }
-  .reveal-card:has(.pu-result-note) .rv-badges { position:relative; left:auto; bottom:auto; margin:8px 0; flex-wrap:wrap; }
+  .reveal-card:has(.pu-result-note) .rv-paper { z-index:1; }
+  .reveal-card > .pu-result-note { position:relative; z-index:0; margin-top:-8px; padding-top:12px; border-radius:0 0 10px 10px; }
+  .pu-result-note .pickedby-avatars { display:flex; justify-content:center; align-items:center; gap:2px; margin-top:4px; }
+  .pu-result-note .pickedby-avatars .avatar-icon { width:20px; height:20px; }
   .reveal-card .pu-boost-accuracy b,.summary-row .pu-boost-accuracy b { font-size:16px; }
   .reveal-card .pu-boost-accuracy,.summary-row .pu-boost-accuracy { gap:3px; }
   .reveal-card .pu-boost-accuracy .pu-result-icon,.summary-row .pu-boost-accuracy .pu-result-icon { width:18px; height:18px; }
@@ -12585,7 +12588,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pickedHtml = pickedBy.length
       ? `<div class="pickedby-avatars">${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join("")}</div>`
       : "";
-    return `<div class="rv-badges"><span class="acc-badge">${formatAccuracy(entry.accuracyPercent)}%${entry.bufferUsed ? " with buffer" : ""}</span>${pickedHtml}</div>${entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId, (entry.basePoints || 0) + (entry.doubleDownPoints || 0) + (entry.crowdFavoritePoints || 0)) : ""}`;
+    const boost = entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId) : "";
+    if (boost) return boost.replace(/<\/div>\s*$/, `${pickedHtml}</div>`);
+    return `<div class="rv-badges"><span class="acc-badge">${formatAccuracy(entry.accuracyPercent)}%</span>${pickedHtml}</div>`;
   }
 
   function revealCardFinalHtml(entry) {
