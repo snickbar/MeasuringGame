@@ -19,7 +19,7 @@
 // axis 'height': the picture already has the object's length running up and down (a door, a
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
 import { ORIENT } from './orient-data.js';
-import { landingStyleFor, landingPose, sceneryFor, SCENERY, drawScenery } from './reveal-style.mjs';
+import { landingStyleFor, landingPose } from './reveal-style.mjs';
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
 // Object Orientation page). It is kept here for reference.
@@ -186,6 +186,14 @@ const FAST_TICK_AT = 0.25;  // ...and only once this share of the stack-up has g
 const K_MAX = 18;          // objects that hop in one by one before the stack starts to stream
 const PEAK_RATE = 1500;    // fastest the stream normally goes, in objects per second
 const PAN_PX = 450;        // fastest the stack may rise on screen (pixels per second) before the camera backs off
+
+const GRASS_W = 220;       // width of one grass tile on screen
+const GRASS_DIRT = 127 / 145;   // how far down the picture the dirt begins
+
+const CLOUDS = [
+  { x: 0.14, y: 0.10, s: 1.0 }, { x: 0.62, y: 0.18, s: 1.3 }, { x: 0.88, y: 0.42, s: 0.8 },
+  { x: 0.30, y: 0.50, s: 1.1 }, { x: 0.72, y: 0.74, s: 0.9 }, { x: 0.10, y: 0.88, s: 0.7 },
+];
 
 // The hop: where the object is, as a share of the way in from the left, and how it squashes on landing.
 const HOPS = [
@@ -484,7 +492,7 @@ export function createStackAnimation(container, options = {}) {
     const smallSprite = spriteFor(unit, flipFacing);
     const bigSprite = spriteFor(target, !flipFacing);
     const bigLanding = landingStyleFor(target), smallLanding = landingStyleFor(unit);
-    const scenery = Object.hasOwn(SCENERY, options.scenery) ? options.scenery : sceneryFor(target);
+    const scenery = 'original grass and clouds';
     // Read the silhouette once so transparent margins do not hide the large object's edge
     // when its true-scale width is much wider than the viewport.
     const silhouette = bigSprite.getContext('2d').getImageData(0, 0, bigSprite.width, bigSprite.height).data;
@@ -494,13 +502,14 @@ export function createStackAnimation(container, options = {}) {
     }
     let lastOpaqueRow = bigSprite.height - 1;
     while (lastOpaqueRow > 0 && leftEdge[lastOpaqueRow] < 0) lastOpaqueRow--;
+    const lockedEdge = Math.max(0, leftEdge[lastOpaqueRow]) / bigSprite.width;
     const bigLean = leanOf(target, !flipFacing);
     const smLean = leanOf(unit, flipFacing);
     const bigLying = bigLean ? lyingSprite(target, !flipFacing, bigLean) : null;
     const smLying = smLean ? lyingSprite(unit, flipFacing, smLean) : null;
     const bigKind = MOTION[target.id] || 'slide';
     const smKind = MOTION[unit.id] || 'slide';
-    const { cloudAlpha, guide } = theme;
+    const { skyTop, skyBottom, ground: groundCol, cloudAlpha, guide } = theme;
 
     // ---- Final view: the big object at most H_MAX tall, the stack beside it ----
     const W = container.clientWidth || 360;
@@ -694,18 +703,14 @@ export function createStackAnimation(container, options = {}) {
       const y = cam.sy0 - height + height * (1 - (lastOpaqueRow + .5) / bigSprite.height) * weight;
       // Keep at least a narrow band of the target's silhouette beside the unchanged stack.
       // The measured vertical scale stays true throughout.
-      let edge = Infinity;
-      const lo = clamp(Math.floor(-y / height * bigSprite.height), 0, bigSprite.height - 1);
-      const hi = clamp(Math.ceil((stageH - PAD_BOTTOM - y) / height * bigSprite.height), 0, bigSprite.height - 1);
-      for (let row = lo; row <= hi; row++) if (leftEdge[row] >= 0) edge = Math.min(edge, leftEdge[row] / bigSprite.width);
-      const pinnedX = Number.isFinite(edge) ? Math.min(naturalX, W * .76 - width * edge) : naturalX;
+      const pinnedX = Math.min(naturalX, W * .76 - width * lockedEdge);
       const needsPin = pinnedX < naturalX;
       return { x: naturalX + (pinnedX - naturalX) * weight, y, width, height,
         // Restrict the close-up to the right-hand quarter. Magnified antialiased
         // pixels must not smear across the stack or the running-count area.
         clipLeft: needsPin ? weight * Math.max(W * .72, cam.sx0 + Math.max(tw * cam.c, stripW) / 2 + 12) : 0,
         clipBottom: cam.sy0,
-        visibleEdge: Number.isFinite(edge) ? naturalX + (pinnedX - naturalX) * weight + width * edge : null };
+        anchorX: naturalX + (pinnedX - naturalX) * weight + width * lockedEdge };
     }
 
     // ---- Canvas ----
@@ -782,9 +787,40 @@ export function createStackAnimation(container, options = {}) {
       const Ls = wcol / aSm;
       const count = stackCount(t);
 
-      drawScenery(ctx, { kind: scenery, width: W, height: stageH, floorY: sy0,
-        time: t, reduced: reduceMotion, dark: !!theme.dark,
-        cloudImage: cloudImg, grassImage: grassImg, cloudAlpha });
+      // Background: sky, clouds that drift down gently as the camera climbs, and the ground.
+      const sky = ctx.createLinearGradient(0, 0, 0, stageH);
+      sky.addColorStop(0, skyTop);
+      sky.addColorStop(1, skyBottom);
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, stageH);
+      const span = stageH + 160;
+      const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
+      if (cloudImg.complete && cloudImg.naturalWidth) {
+        ctx.globalAlpha = cloudAlpha;
+        for (const cl of CLOUDS) {
+          const raw = cl.y * stageH + (sy0 - floorY) * 0.18;
+          const cy = ((raw % span) + span) % span - 80;
+          const cx = cl.x * W + (sx0 - colCenterX) * 0.1;
+          const cw = 78 * cl.s * cloudScale;
+          const ch = cw * cloudImg.naturalHeight / cloudImg.naturalWidth;
+          ctx.drawImage(cloudImg, cx - cw / 2, cy - ch / 2, cw, ch);
+        }
+        ctx.globalAlpha = 1;
+      }
+      if (sy0 < stageH) {
+        const gy = Math.max(0, sy0);
+        ctx.fillStyle = groundCol;
+        ctx.fillRect(0, gy, W, stageH - gy);
+      }
+      // Grass along the ground, behind everything that stands on it.
+      if (grassImg.complete && grassImg.naturalWidth) {
+        const gh = GRASS_W * grassImg.naturalHeight / grassImg.naturalWidth;
+        const gTop = sy0 - gh * GRASS_DIRT;
+        if (gTop < stageH && gTop + gh > 0) {
+          const x0 = (((colCenterX - sx0) % GRASS_W) + GRASS_W) % GRASS_W - GRASS_W;
+          for (let gx = x0; gx < W; gx += GRASS_W) ctx.drawImage(grassImg, gx, gTop, GRASS_W + 1, gh);
+        }
+      }
 
       // The dashed line at the big object's height.
       const topLineY = sy0 - Hw * c;
@@ -858,7 +894,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (bigKind !== 'fly' && bigKind !== 'sail') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm);
-      shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 2, 6), .30);
+      if (count >= 1) shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 2, 6), .30);
 
       // Anything of the stack above the big object's height line is cut off.
       ctx.save();
@@ -939,7 +975,7 @@ export function createStackAnimation(container, options = {}) {
 
     return {
       unit, target, R, fast, stageH, width: W, scenery,
-      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd); return { ...targetFrame(t, cameraAt(t)), stackX: cameraAt(t).sx0 }; },
+      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd); return { ...targetFrame(t, cameraAt(t)), stackX: cameraAt(t).sx0, floorY: cameraAt(t).sy0 }; },
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,

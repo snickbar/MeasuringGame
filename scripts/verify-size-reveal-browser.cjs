@@ -6,7 +6,7 @@ const objects=source.match(/const OBJECTS = (\[[\s\S]*?\n\s*\]);/)[1];
 const test=`
 import {createStackAnimation,animationDuration} from '/anim/stack-anim.js';
 import {createStackAnimation as baselineCreate,animationDuration as baselineDuration} from '/anim/__baseline.js';
-import {landingStyleFor,landingPose,sceneryFor,drawScenery,SCENERY} from '/anim/reveal-style.mjs';
+import {landingStyleFor,landingPose} from '/anim/reveal-style.mjs';
 const objects=${objects};
 const assert=(v,m)=>{if(!v)throw Error(m)},stage=document.getElementById('stage'),checks=[];
 const make=(id,mm)=>({...objects.find(o=>o.id===id),mm});
@@ -18,16 +18,18 @@ globalThis.preview=async(kind='worlds')=>{
  const unit=pair?objects.find(o=>o.id===pair[0]):make('poppy-seed',1),target=pair?objects.find(o=>o.id===pair[1]):make('cork',45);
  const scene=await ctl.prepare(unit,target,{hMax:260,minStageH:330});
  scene.render(kind==='city'?scene.cues.find(c=>c.name==='tap').t+.12:kind==='soft'||kind==='round'?scene.cues.filter(c=>c.name==='swipe')[1].t-.18:scene.duration);
- document.getElementById('caption').textContent=scene.scenery+' · '+(kind==='city'?'rice and Statue of Liberty close-up':'different scenery, same comparison');
+ document.getElementById('caption').textContent=scene.scenery+' · '+(kind==='city'?'rice and Statue of Liberty close-up':'original background, fixed target anchor');
  globalThis.currentScene=scene;return scene.duration;
 };
 try{
- const backdrop=document.createElement('canvas');backdrop.width=300;backdrop.height=330;
- const bx=backdrop.getContext('2d');
- for(const kind of Object.keys(SCENERY)){
-  const renderBg=(time,reduced)=>{drawScenery(bx,{kind,width:300,height:330,floorY:278,time,reduced,dark:false,cloudAlpha:1});return backdrop.toDataURL()};
-  assert(renderBg(0,true)===renderBg(9,true),'reduced scenery stays still '+kind);
- }
+ const watched=new WeakMap(),drawImage=CanvasRenderingContext2D.prototype.drawImage;
+ CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
+  if(/(?:grass|cloud)\\.png$/.test(image.src||''))watched.get(this)?.push({image:image.src.split('/').pop(),args});
+  return drawImage.call(this,image,...args);
+ };
+ const gradients=new WeakMap(),radial=CanvasRenderingContext2D.prototype.createRadialGradient;
+ CanvasRenderingContext2D.prototype.createRadialGradient=function(...args){gradients.get(this)?.push(this.getTransform());return radial.apply(this,args)};
+ await Promise.all(['/anim/cloud.png','/anim/grass.png'].map(src=>new Promise((yes,no)=>{const i=new Image();i.onload=yes;i.onerror=no;i.src=src})));
  assert(landingStyleFor({id:'tennis-ball',mm:65})==='round','round landing');
  assert(landingStyleFor({id:'marshmallow',mm:25})==='soft','soft landing');
  assert(landingStyleFor({id:'statue-of-liberty',mm:93000})==='heavy','heavy landing');
@@ -46,7 +48,11 @@ try{
   assert(oldScene.R===scene.R&&oldScene.stageH===scene.stageH&&oldScene.width===scene.width,'same scale and dimensions '+name);
   assert(JSON.stringify(oldScene.cues.map(c=>({...c,t:c.t*1.2})))===JSON.stringify(scene.cues),'sound cues follow slower clock '+name);
   for(const t of [0,scene.duration*.2,scene.duration*.7,scene.duration-.35,scene.duration]){
-   scene.render(t);oldScene.render(t/1.2);assert(Math.abs(scene.getShown()-oldScene.getShown())<1e-6,'stacking unchanged '+name);
+   const currentBg=[],priorBg=[];watched.set(ctl.canvas.getContext('2d'),currentBg);watched.set(old.canvas.getContext('2d'),priorBg);
+   scene.render(t);oldScene.render(t/1.2);
+   assert(currentBg.length>0&&currentBg.length===priorBg.length,'original background artwork '+name);
+   currentBg.forEach((draw,i)=>{assert(draw.image===priorBg[i].image,'original artwork');draw.args.forEach((v,j)=>assert(Math.abs(v-priorBg[i].args[j])<1e-6,'original cloud/grass movement '+name))});
+   assert(Math.abs(scene.getShown()-oldScene.getShown())<1e-6,'stacking unchanged '+name);
   }
   old.destroy();holder.remove();
   assert(Math.abs(scene.getShown()-R)<1e-6,'same final count '+name);
@@ -61,12 +67,27 @@ try{
   const taps=scene.cues.filter(c=>c.name==='tap');
   for(const time of [taps[0].t+.1,taps[Math.floor(taps.length/2)].t]){
    const f=scene.getFraming(time);scene.render(time);
-   assert(f.visibleEdge!==null&&f.visibleEdge<=scene.width*.79,'large silhouette stays visible '+a+'/'+b+' '+time+' '+JSON.stringify(f));
+   assert(Math.abs(f.anchorX-scene.width*.76)<1e-6,'large target stays on one horizontal anchor '+a+'/'+b);
    assert(f.clipLeft>f.stackX,'target never covers the stack');
+  }
+  const first=taps[0].t+.1,last=scene.cues.find(c=>c.name==='zoomback').t-.01;
+  let previousX,previousDelta;
+  for(let step=0;step<=100;step++){
+   const time=first+(last-first)*step/100,f=scene.getFraming(time);
+   assert(Math.abs(f.anchorX-scene.width*.76)<1e-6,'fixed horizontal anchor throughout stacking');
+   if(previousX!==undefined){const delta=f.x-previousX;if(Math.abs(delta)>1e-6){assert(previousDelta===undefined||delta*previousDelta>=0,'no horizontal direction reversals');previousDelta=delta}}
+   previousX=f.x;
+  }
+  // The destination shadow appears only after the first object lands.
+  const ctx=ctl.canvas.getContext('2d'),firstLanding=taps[0].t;
+  for(const time of [0,firstLanding-.05,firstLanding+.05]){
+   const shadows=[];gradients.set(ctx,shadows);scene.render(time);const f=scene.getFraming(time),dpr=ctl.canvas.width/scene.width;
+   const destination=shadows.some(m=>Math.abs(m.e/dpr-f.stackX)<.01&&Math.abs(m.f/dpr-(f.floorY+2))<.01);
+   assert(destination===(time>firstLanding),'no destination shadow before arrival');
   }
   const final=scene.getFraming(scene.duration);
   assert(final.x>=0&&final.x+final.width<=scene.width+.001,'final target fits');
-  assert(scene.scenery===sceneryFor(scene.target),'stable context scenery');
+  assert(scene.scenery==='original grass and clouds','original background in every comparison');
  }
  ctl?.destroy();ctl=createStackAnimation(stage,{...opts,reduceMotion:true});
  const reduced=await ctl.prepare(make('ant',1),make('door',100),{hMax:260,minStageH:330,guess:{raw:95,answer:100,adjusted:100}});
