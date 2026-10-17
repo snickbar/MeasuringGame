@@ -3247,7 +3247,8 @@
 
   <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
     <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). <b>Flairs</b> are the burst of effects (hearts, fireworks, snow...) that plays around your card for everyone to see when you win a round - equip one from the Shop's Cosmetics tab. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
-    <p>Signing in with <b>Google</b> (Settings &gt; Account) saves your coins, avatars, and unlocks to your account instead of just this device, so you can pick up where you left off on a new phone.</p>
+    <p>Play immediately as a guest. <b>Welcome to Size Em Up!</b> automatically gives you <b>100 coins</b> when your profile is established. Connecting Google is optional: the separate <b>Account Connected</b> achievement automatically adds <b>50 coins</b> the first time. Both appear in Awards and pay only once.</p>
+    <p>Signing in with <b>Google</b> (Settings &gt; Account) saves your coins, avatars, and unlocks to your account instead of just this device, so you can pick up where you left off on a new phone. A new account inherits your guest progress and reward history. If the account already has progress, its saved progress takes precedence. Reopening the game or signing in again does not repeat either starter reward.</p>
   </div></details>
 
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
@@ -3616,6 +3617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
+  import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   var gameRewards;
   var powerups;
@@ -4286,6 +4288,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // signing in/out repeatedly stacks a new listener on the old path every
   // time instead of replacing it.
   let unwatchProfile = null;
+  const starterAwardJobs = new Map();
+  const PENDING_ACCOUNT_UPGRADE_KEY = "mg_pending_account_upgrade_" + localDeviceId;
+  let resolveStarterAuth;
+  const starterAuthReady = auth ? new Promise(resolve => { resolveStarterAuth = resolve; }) : Promise.resolve();
+  async function grantStarterAchievements(profileId) {
+    if (starterAwardJobs.has(profileId)) return starterAwardJobs.get(profileId);
+    const job = (async () => {
+      // Do not mint a guest reward while a persisted Google session is still
+      // restoring. Guest play itself remains available immediately.
+      await starterAuthReady;
+      const user = auth?.currentUser;
+      if (user && user.uid !== profileId) return;
+      const connected = user?.uid === profileId && user.providerData?.some(p => p.providerId === "google.com");
+      let awarded = [];
+      const result = await runTransaction(ref(db, `profiles/${profileId}`), current => {
+        const profile = current || defaultProfile();
+        awarded = STARTER_AWARDS.filter(a => (a.id !== "account-connected" || connected) && !profile.achClaimed?.[a.id]);
+        return starterAwardProfile(profile, { connected }) || (current ? undefined : profile);
+      }, { applyLocally: false });
+      if (result.committed && awarded.length && deviceId === profileId) {
+        showAchToast(awarded.map(a => `${a.name} +${a.reward} coins`).join(" · "));
+      }
+    })().catch(error => console.warn("[measuring-game] Starter awards will retry on the next profile update", error))
+      .finally(() => starterAwardJobs.delete(profileId));
+    starterAwardJobs.set(profileId, job);
+    return job;
+  }
   // Single shared list of "something about the profile changed, repaint
   // everything that depends on it" calls - both the live Firebase listener
   // below and the offline-cache priming on sign-in/out need to trigger the
@@ -4334,11 +4363,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
-    unwatchProfile = onValue(ref(db, `profiles/${deviceId}`), (snap) => {
+    const profileId = deviceId;
+    unwatchProfile = onValue(ref(db, `profiles/${profileId}`), (snap) => {
+      if (profileId !== deviceId) return;
       const data = snap.val();
       if (!data) {
         myProfile = defaultProfile();
-        set(ref(db, `profiles/${deviceId}`), myProfile);
+        // Creation and starter coins are committed atomically below; never
+        // overwrite a concurrent device's profile with an empty default.
       } else {
         const defaults = defaultCosmeticState();
         myProfile = {
@@ -4386,6 +4418,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           monthly: data.monthly || null,
           survival: data.survival || null,
           achClaimed: { ...(data.achClaimed || {}) },
+          accountUpgrade: data.accountUpgrade || null,
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -4393,6 +4426,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       grantLevelRewards();
       powerups?.recover(data, deviceId);
       gameRewards?.recover();
+      void grantStarterAchievements(profileId);
     });
   }
 
@@ -6505,11 +6539,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // even though the UI correctly said "signed in," and the only way to
     // get the real account data was to explicitly sign out and back in
     // (which does repoint it, inside signInWithGoogle()). Fixed by doing
-    // the same repoint here. Deliberately no merge-claim logic here, only
-    // in signInWithGoogle() itself - merging is for the moment of an
-    // explicit new sign-in, not something that should re-run every time
-    // auth state is merely restored/confirmed.
-    onAuthStateChanged(auth, (user) => {
+    // the same repoint here. A pending guest upgrade is resumed first;
+    // ordinary session restores do not repeat the merge.
+    onAuthStateChanged(auth, async (user) => {
+      resolveStarterAuth?.();
       accountUser = user;
       renderAccountUi();
       // Skip while an explicit sign-in/out is already running: signInCredential
@@ -6520,6 +6553,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // (which only claims local progress if the account has NO profile yet)
       // find one already there and wrongly skip claiming it.
       if (authFlowInProgress) return;
+      if (user) {
+        // Resume an interrupted upgrade before an account listener can create
+        // an empty profile and mask the guest data waiting to be transferred.
+        let pendingUpgrade = false;
+        const pendingAccountId = localStorage.getItem(PENDING_ACCOUNT_UPGRADE_KEY);
+        try {
+          const guest = (await get(ref(db, `profiles/${localDeviceId}`))).val();
+          if (pendingAccountId === user.uid || (guest?.accountUpgrade?.accountId === user.uid && !guest.accountUpgrade.completed)) {
+            pendingUpgrade = true;
+            const restored = await upgradeGuestProfile({ sourceId: localDeviceId, accountId: user.uid,
+              transaction: (id, change) => runTransaction(ref(db, `profiles/${id}`), change, { applyLocally: false }), defaults: defaultProfile });
+            if (restored?.guest) saveCachedProfile(localDeviceId, restored.guest);
+            localStorage.removeItem(PENDING_ACCOUNT_UPGRADE_KEY);
+          }
+        } catch (error) {
+          console.warn("[measuring-game] Account upgrade needs retry", error);
+          // An unavailable guest read alone must not block a normal offline
+          // account restore; a known pending upgrade stays on its guest data.
+          const pending = loadCachedProfile(localDeviceId)?.accountUpgrade;
+          if (pendingUpgrade || pendingAccountId === user.uid || (pending && pending.accountId === user.uid && !pending.completed)) {
+            accountUser = null; renderAccountUi(); return;
+          }
+        }
+        if (auth.currentUser?.uid !== user.uid || authFlowInProgress) return;
+      }
       const targetId = user ? user.uid : localDeviceId;
       if (targetId !== deviceId) {
         const cached = loadCachedProfile(targetId);
@@ -6548,23 +6606,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const webResult = await signInWithCredential(auth, credential);
       const uid = webResult.user.uid;
 
-      // One-time-per-pairing merge: claim this device's local progress into
-      // the account only if the account doesn't already have its own profile.
-      // If it does (e.g. this Google account signed in before, on another
-      // phone), leave it alone - account data wins. Safe to run on every
-      // sign-in: returning undefined when `current` already exists is a
-      // clean no-op transaction (no write, nothing changes).
-      const localSnap = await get(ref(db, `profiles/${localDeviceId}`));
-      const localProfileData = localSnap.val();
-      if (localProfileData) {
-        await runTransaction(ref(db, `profiles/${uid}`), (current) => {
-          if (current) return; // abort: account already has its own profile
-          return localProfileData;
-        });
-      }
+      // Upgrade the guest into a new account, or keep existing account data.
+      // Carry reward receipts and retire the duplicate guest wallet only
+      // after the target is durable; interruptions can resume on cold start.
+      if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
+      // Remember pending work before any network request, including a lost
+      // response to the first transaction. Offline restore must not bypass it.
+      localStorage.setItem(PENDING_ACCOUNT_UPGRADE_KEY, uid);
+      saveCachedProfile(localDeviceId, { ...(loadCachedProfile(localDeviceId) || defaultProfile()),
+        accountUpgrade: { accountId: uid, completed: false } });
+      const upgraded = await upgradeGuestProfile({ sourceId: localDeviceId, accountId: uid,
+        transaction: (id, change) => runTransaction(ref(db, `profiles/${id}`), change, { applyLocally: false }), defaults: defaultProfile });
+      if (upgraded?.guest) saveCachedProfile(localDeviceId, upgraded.guest);
+      localStorage.removeItem(PENDING_ACCOUNT_UPGRADE_KEY);
 
       deviceId = uid;
       watchMyProfile();
+    } catch (error) {
+      accountUser = null; renderAccountUi();
+      watchMyProfile();
+      throw error;
     } finally {
       authFlowInProgress = false;
     }
@@ -6576,7 +6637,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
       await FirebaseAuthentication.signOut();
       await firebaseSignOut(auth);
-      // Local progress was never touched or deleted - just point back at it.
+      // The upgraded account retains progress; the retired guest record
+      // resumes guest play without a duplicate spendable starter wallet.
       deviceId = localDeviceId;
       watchMyProfile();
     } finally {
@@ -9249,13 +9311,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy"];
+  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy"];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
   }
   const ACH_STAT = (k) => () => ((myProfile.stats || {})[k] || 0);
   const ACHIEVEMENTS = [];
+  ACHIEVEMENTS.push(...STARTER_AWARDS.map(a => ({ ...a, auto: true, target: 1,
+    progress: () => a.id === "welcome-size-em-up" || myProfile.achClaimed?.[a.id] ? 1 : 0 })));
   function achTier(cat, base, desc, prog, steps) {
     const romans = ["", " II", " III"];
     steps.forEach(([target, reward], i) => {
@@ -9332,7 +9396,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   ACHIEVEMENTS.push({ id: "home-dragon", cat: "Fun", name: "Dragon slayer", desc: "Reach 30 in Survival", target: 30, reward: 0, home: "dragon", homeLabel: "Kingdom", progress: () => survivalBest() });
   ACHIEVEMENTS.push({ id: "home-space", cat: "Worlds", name: "Star collector", desc: "Earn every star in every world", target: WORLDS.length * WORLD_LEVELS * 3, reward: 0, home: "space", homeLabel: "Space", progress: () => worldTotalStars() });
   function achDone(a) { return a.progress() >= a.target; }
-  function achClaimable(a) { return achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
+  function achClaimable(a) { return !a.auto && achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
   // ids that have art in icons/ach/<id>.png (add each id here when its file is added)
   const ACH_ICON_IDS = new Set(["social-party_time-25", "fun-gacha_fan-10", "fun-gacha_fan-50", "fun-ad_watcher-10", "winning-round_winner-1", "winning-round_winner-10", "winning-round_winner-50", "winning-on_a_roll-3", "second_chance-second_look-25", "second_chance-double_down-5", "second_chance-double_down-25", "social-party_time-5", "winning-on_a_roll-5", "winning-champion-1", "winning-champion-10", "winning-champion-50", "accuracy-spot_on-10", "accuracy-spot_on-50", "accuracy-perfect-1", "accuracy-perfect-5", "winning-regular-5", "winning-regular-25", "winning-regular-100", "second_chance-second_look-5", "collector-ultra_lucky-5", "collector-object_spotter-25", "collector-object_spotter-75", "collector-object_spotter-116", "collector-combo_hunter-50", "collector-combo_hunter-250", "collector-combo_hunter-1000", "accuracy-spot_on-1", "collector-avatar_fan-5", "collector-avatar_fan-25", "collector-avatar_fan-75", "collector-ultra_lucky-1"]);
@@ -9369,8 +9433,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
       const done = p >= a.target, isClaimed = !!claimed[a.id];
-      const side = isClaimed ? (a.test ? `<button type="button" class="ach-undo" data-id="${a.id}">Unclaim</button>` : `<div class="ach-claimed">Claimed</div>`)
-        : done ? `<div class="ach-reward">${rewardText(a)}</div><button type="button" class="ach-claim" data-id="${a.id}">${TROPHY_SVG}Claim</button>`
+      const side = isClaimed ? (a.test ? `<button type="button" class="ach-undo" data-id="${a.id}">Unclaim</button>` : `<div class="ach-claimed">${a.auto ? `Awarded<br>+${a.reward} coins` : "Claimed"}</div>`)
+        : done ? `<div class="ach-reward">${rewardText(a)}</div>${a.auto ? `<div class="ach-claimed">Added automatically</div>` : `<button type="button" class="ach-claim" data-id="${a.id}">${TROPHY_SVG}Claim</button>`}`
         : `<div class="ach-reward">${rewardText(a)}</div>`;
       const cls = isClaimed ? "done" : done ? "ready" : "";
       const just = achJustClaimed === a.id;
@@ -9436,12 +9500,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function checkAchievementToasts() {
     let seen = null;
     try { seen = JSON.parse(localStorage.getItem("mg_ach_seen") || "null"); } catch (e) {}
-    const doneIds = ACHIEVEMENTS.filter((a) => !a.test && achDone(a)).map((a) => a.id);
+    const doneIds = ACHIEVEMENTS.filter((a) => !a.test && !a.auto && achDone(a)).map((a) => a.id);
     if (!seen) {
       try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
       return;
     }
-    const fresh = ACHIEVEMENTS.filter((a) => !a.test && achDone(a) && !seen.includes(a.id));
+    const fresh = ACHIEVEMENTS.filter((a) => !a.test && !a.auto && achDone(a) && !seen.includes(a.id));
     if (!fresh.length) return;
     try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
     showAchToast(fresh.length === 1 ? `Award unlocked: ${fresh[0].name}! +${fresh[0].reward} coins ready` : `${fresh.length} awards unlocked! Check the Awards button`);
