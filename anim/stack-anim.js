@@ -20,6 +20,8 @@
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
 import { ORIENT } from './orient-data.js';
 import { landingStyleFor, landingPose } from './reveal-style.mjs';
+import { loadScenery, drawSceneryLayers, drawSceneryFloor } from './scenery.mjs';
+import { FLOOR_DATA } from './scenery-data.mjs';
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
 // Object Orientation page). It is kept here for reference.
@@ -409,6 +411,11 @@ export function createStackAnimation(container, options = {}) {
   grassImg.src = sceneryBase + 'grass.png';
   const cloudImg = new Image();
   cloudImg.src = sceneryBase + 'cloud.png';
+  const originalSceneryReady = Promise.all([grassImg, cloudImg].map(image =>
+    image.complete ? Promise.resolve() : new Promise(resolve => {
+      image.addEventListener('load', resolve, { once: true });
+      image.addEventListener('error', resolve, { once: true });
+    })));
 
   // ---- Pictures: each is turned so the object's length runs up and down ----
   const pics = new Map();
@@ -480,11 +487,11 @@ export function createStackAnimation(container, options = {}) {
     let unit = unitIn;
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
-    await Promise.all([loadPicture(unit), loadPicture(target)]);
-    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0);
+    const [kit] = await Promise.all([loadScenery(target, sceneryBase + 'scenery/'), loadPicture(unit), loadPicture(target), originalSceneryReady]);
+    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, kit);
   }
 
-  function buildScene(unit, target, hMax, minStageH) {
+  function buildScene(unit, target, hMax, minStageH, kit) {
     const R = target.mm / unit.mm;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
@@ -492,7 +499,7 @@ export function createStackAnimation(container, options = {}) {
     const smallSprite = spriteFor(unit, flipFacing);
     const bigSprite = spriteFor(target, !flipFacing);
     const bigLanding = landingStyleFor(target), smallLanding = landingStyleFor(unit);
-    const scenery = 'original grass and clouds';
+    const scenery = kit.id;
     // Read the silhouette once so transparent margins do not hide the large object's edge
     // when its true-scale width is much wider than the viewport.
     const silhouette = bigSprite.getContext('2d').getImageData(0, 0, bigSprite.width, bigSprite.height).data;
@@ -509,7 +516,12 @@ export function createStackAnimation(container, options = {}) {
     const smLying = smLean ? lyingSprite(unit, flipFacing, smLean) : null;
     const bigKind = MOTION[target.id] || 'slide';
     const smKind = MOTION[unit.id] || 'slide';
-    const { skyTop, skyBottom, ground: groundCol, cloudAlpha, guide } = theme;
+    const dark = !!theme.dark;
+    const earthyFloor = scenery === 'forest' || scenery === 'farm';
+    const [skyTop, skyBottom] = !dark && kit.config.sky ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const groundCol = kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
+    const { cloudAlpha } = theme;
+    const guide = scenery === 'space' ? '#ada5ce' : theme.guide;
 
     // ---- Final view: the big object at most H_MAX tall, the stack beside it ----
     const W = container.clientWidth || 360;
@@ -722,7 +734,7 @@ export function createStackAnimation(container, options = {}) {
     tally.style.top = (floorY + 10) + 'px';
     tally.style.fontFamily = 'inherit';
     nEl.style.color = theme.ink;
-    uEl.style.color = theme.muted;
+    uEl.style.color = earthyFloor ? '#fff7e5' : theme.muted;
     uEl.textContent = unit.plural;
     nEl.textContent = '0';
 
@@ -793,9 +805,11 @@ export function createStackAnimation(container, options = {}) {
       sky.addColorStop(1, skyBottom);
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, shiftY: sy0 - floorY,
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
-      if (cloudImg.complete && cloudImg.naturalWidth) {
+      if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
         ctx.globalAlpha = cloudAlpha;
         for (const cl of CLOUDS) {
           const raw = cl.y * stageH + (sy0 - floorY) * 0.18;
@@ -813,14 +827,17 @@ export function createStackAnimation(container, options = {}) {
         ctx.fillRect(0, gy, W, stageH - gy);
       }
       // Grass along the ground, behind everything that stands on it.
-      if (grassImg.complete && grassImg.naturalWidth) {
+      if (!kit.config.floor && grassImg.complete && grassImg.naturalWidth) {
         const gh = GRASS_W * grassImg.naturalHeight / grassImg.naturalWidth;
-        const gTop = sy0 - gh * GRASS_DIRT;
+        const gTop = sy0 - gh * GRASS_DIRT - 6;
         if (gTop < stageH && gTop + gh > 0) {
           const x0 = (((colCenterX - sx0) % GRASS_W) + GRASS_W) % GRASS_W - GRASS_W;
           for (let gx = x0; gx < W; gx += GRASS_W) ctx.drawImage(grassImg, gx, gTop, GRASS_W + 1, gh);
         }
       }
+      if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
+        width: W, height: stageH, floorY: sy0, shiftX: colCenterX - sx0,
+      });
 
       // The dashed line at the big object's height.
       const topLineY = sy0 - Hw * c;
@@ -970,7 +987,7 @@ export function createStackAnimation(container, options = {}) {
         if (Math.abs(count - shown) < 0.02) shown = count;
       }
       nEl.textContent = formatCount(shown, R);
-      nEl.style.color = t >= tEnd ? theme.warm : theme.ink;
+      nEl.style.color = t >= tEnd ? (earthyFloor ? '#fff2a9' : theme.warm) : (earthyFloor ? '#fff7e5' : theme.ink);
     }
 
     return {

@@ -7,6 +7,8 @@ const test=`
 import {createStackAnimation,animationDuration} from '/anim/stack-anim.js';
 import {createStackAnimation as baselineCreate,animationDuration as baselineDuration} from '/anim/__baseline.js';
 import {landingStyleFor,landingPose} from '/anim/reveal-style.mjs';
+import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery} from '/anim/scenery.mjs';
+import {FLOOR_DATA} from '/anim/scenery-data.mjs';
 const objects=${objects};
 const assert=(v,m)=>{if(!v)throw Error(m)},stage=document.getElementById('stage'),checks=[];
 const make=(id,mm)=>({...objects.find(o=>o.id===id),mm});
@@ -14,22 +16,53 @@ const opts={imageUrl:o=>'/'+o.image};
 let ctl;
 globalThis.preview=async(kind='worlds')=>{
  ctl?.destroy();ctl=createStackAnimation(stage,{...opts,...(kind==='dark'?{theme:(await import('/anim/stack-anim.js')).DARK_THEME}:{})});
- const pair={city:['grain-of-rice','statue-of-liberty'],room:['ant','door'],park:['paperclip','elephant'],seaside:['rubber-duck','blue-whale'],soft:['poppy-seed','rubber-duck'],round:['ant','tennis-ball']}[kind];
+ const pair={city:['grain-of-rice','statue-of-liberty'],room:['ant','door'],park:['paperclip','elephant'],forest:['paperclip','deer'],seaside:['rubber-duck','blue-whale'],soft:['poppy-seed','rubber-duck'],round:['ant','tennis-ball'],beach:['grain-of-rice','great-white-shark'],kitchen:['paperclip','refrigerator'],tabletop:['ant','paperclip'],farm:['ant','tractor'],snow:['ant','polar-bear'],desert:['ant','cactus'],underwater:['ant','octopus'],space:['ant','saturn-rocket'],enchanted:['ant','pegasus'],grass:['poppy-seed','ant']}[kind];
  const unit=pair?objects.find(o=>o.id===pair[0]):make('poppy-seed',1),target=pair?objects.find(o=>o.id===pair[1]):make('cork',45);
  const scene=await ctl.prepare(unit,target,{hMax:260,minStageH:330});
  scene.render(kind==='city'?scene.cues.find(c=>c.name==='tap').t+.12:kind==='soft'||kind==='round'?scene.cues.filter(c=>c.name==='swipe')[1].t-.18:scene.duration);
- document.getElementById('caption').textContent=scene.scenery+' · '+(kind==='city'?'rice and Statue of Liberty close-up':'original background, fixed target anchor');
+ document.getElementById('caption').textContent=scene.scenery+' · '+(kind==='city'?'rice and Statue of Liberty close-up':'setting from larger object · fixed target anchor');
  globalThis.currentScene=scene;return scene.duration;
 };
 try{
  const watched=new WeakMap(),drawImage=CanvasRenderingContext2D.prototype.drawImage;
  CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
-  if(/(?:grass|cloud)\\.png$/.test(image.src||''))watched.get(this)?.push({image:image.src.split('/').pop(),args});
+  if(/(?:grass|cloud)\\.png$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image});
   return drawImage.call(this,image,...args);
  };
  const gradients=new WeakMap(),radial=CanvasRenderingContext2D.prototype.createRadialGradient;
  CanvasRenderingContext2D.prototype.createRadialGradient=function(...args){gradients.get(this)?.push(this.getTransform());return radial.apply(this,args)};
  await Promise.all(['/anim/cloud.png','/anim/grass.png'].map(src=>new Promise((yes,no)=>{const i=new Image();i.onload=yes;i.onerror=no;i.src=src})));
+ assert(objects.every(o=>SCENERY_BY_OBJECT[o.id]),'every game object has an explicit setting');
+ assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
+ const fallback=await loadScenery({id:'door'},'/missing-scenery/');assert(fallback.id==='grass','missing required floor falls back safely');
+ const examples={grass:'ant',beach:'great-white-shark',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'octopus',space:'saturn-rocket',enchanted:'pegasus'};
+ for(const [expected,id] of Object.entries(examples)){
+  ctl?.destroy();ctl=createStackAnimation(stage,opts);
+  const target=objects.find(o=>o.id===id),small=make('poppy-seed',.01);
+  const scene=await ctl.prepare(target,small,{hMax:260,minStageH:330});
+  assert(scene.target.id===id&&scene.scenery===expected,'setting uses larger object after input swap '+id);
+  const startDraws=[];watched.set(ctl.canvas.getContext('2d'),startDraws);scene.render(0);
+  const floorName=SETTINGS[expected].floor;
+  if(floorName){
+   const floor=startDraws.find(d=>d.image===floorName+'.png');assert(floor,'floor is ready on first frame '+id);
+   const f=scene.getFraming(0),surface=floor.args[1]+floor.args[3]*FLOOR_DATA[floorName].surface;
+   assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);
+   const sample=document.createElement('canvas');sample.width=floor.source.naturalWidth;sample.height=floor.source.naturalHeight;
+   const sx=sample.getContext('2d');sx.drawImage(floor.source,0,0);
+   const row=Math.floor((f.floorY-floor.args[1])/floor.args[3]*sample.height);
+   for(const fraction of [.1,.3,.5,.7,.9]){
+    const pixel=sx.getImageData(Math.floor(sample.width*fraction),row,1,1).data;
+    assert(pixel[3]>180,'solid ground beneath object '+id);
+    if(expected==='forest')assert(pixel[0]>pixel[1],'forest object meets brown soil '+id);
+   }
+  }
+  const snapshots=[];
+  for(const time of [0,scene.cues.find(c=>c.name==='tap').t,scene.duration*.65,scene.duration]){
+   scene.render(time);snapshots.push(ctl.canvas.toDataURL());
+  }
+  assert(snapshots[1]!==snapshots[2],'camera and artwork animate '+id);
+  scene.renderEnd();assert(ctl.canvas.toDataURL()===snapshots[3],'stable end scene '+id);
+ }
  assert(landingStyleFor({id:'tennis-ball',mm:65})==='round','round landing');
  assert(landingStyleFor({id:'marshmallow',mm:25})==='soft','soft landing');
  assert(landingStyleFor({id:'statue-of-liberty',mm:93000})==='heavy','heavy landing');
@@ -37,9 +70,9 @@ try{
   for(const age of [-1,0,1,10])assert(JSON.stringify(landingPose(style,age))===JSON.stringify({squash:0,rock:0,lift:0}),'settled exact pose');
   assert(JSON.stringify(landingPose(style,.15,true))===JSON.stringify({squash:0,rock:0,lift:0}),'reduced motion landing');
  }
- for(const [name,R,guess] of [['fraction',3.4,null],['large',1000000,null],['upright',100,null],['worlds',45,{raw:35,answer:45,adjusted:39.5}],['over',1.5,{raw:3,answer:1.5,adjusted:2.85}],['exact',10,{raw:10,answer:10}]]){
+ for(const [name,R,guess] of [['fraction',3.4,null],['large',1000000,null],['upright',100,null],['worlds',45,{raw:35,answer:45,adjusted:39.5}],['over',1.5,{raw:3,answer:1.5,adjusted:2.85}],['exact',10,{raw:10,answer:10}],['garden',100,null]]){
   ctl?.destroy();ctl=createStackAnimation(stage,opts);
-  const unit=make('poppy-seed',1),target=make(name==='upright'?'door':'cork',R),sizing={hMax:260,minStageH:330,...(guess?{guess}:{} )};
+  const unit=make('poppy-seed',1),target=make(name==='upright'?'door':name==='garden'?'ant':'cork',R),sizing={hMax:260,minStageH:330,...(guess?{guess}:{} )};
   const scene=await ctl.prepare(unit,target,sizing);
   assert(Math.abs(scene.duration/baselineDuration(unit,target)-1.2)<1e-9,'20% longer pacing '+name);
   assert(scene.duration===animationDuration(unit,target),'shared deadline matches playback '+name);
@@ -50,8 +83,7 @@ try{
   for(const t of [0,scene.duration*.2,scene.duration*.7,scene.duration-.35,scene.duration]){
    const currentBg=[],priorBg=[];watched.set(ctl.canvas.getContext('2d'),currentBg);watched.set(old.canvas.getContext('2d'),priorBg);
    scene.render(t);oldScene.render(t/1.2);
-   assert(currentBg.length>0&&currentBg.length===priorBg.length,'original background artwork '+name);
-   currentBg.forEach((draw,i)=>{assert(draw.image===priorBg[i].image,'original artwork');draw.args.forEach((v,j)=>assert(Math.abs(v-priorBg[i].args[j])<1e-6,'original cloud/grass movement '+name))});
+   if(scene.scenery==='grass'){assert(currentBg.length>0&&currentBg.length===priorBg.length,'original background artwork '+name);currentBg.forEach((draw,i)=>{assert(draw.image===priorBg[i].image,'original artwork');draw.args.forEach((v,j)=>assert(Math.abs(v-(priorBg[i].args[j]-(draw.image==='grass.png'&&j===1?6:0)))<1e-6,'original cloud/grass movement '+name))})}
    assert(Math.abs(scene.getShown()-oldScene.getShown())<1e-6,'stacking unchanged '+name);
   }
   old.destroy();holder.remove();
@@ -87,12 +119,12 @@ try{
   }
   const final=scene.getFraming(scene.duration);
   assert(final.x>=0&&final.x+final.width<=scene.width+.001,'final target fits');
-  assert(scene.scenery==='original grass and clouds','original background in every comparison');
+  assert(scene.scenery===sceneryFor(scene.target),'larger object chooses background');
  }
  ctl?.destroy();ctl=createStackAnimation(stage,{...opts,reduceMotion:true});
  const reduced=await ctl.prepare(make('ant',1),make('door',100),{hMax:260,minStageH:330,guess:{raw:95,answer:100,adjusted:100}});
  let done=0;ctl.start(reduced,{onDone:()=>done++});assert(done===1&&reduced.getShown()===100,'reduced motion static final');
- await preview('dark');assert(ctl.canvas.getContext('2d').getImageData(0,0,1,1).data[0]<50,'dark scenery palette');
+ await preview('dark');assert(ctl.canvas.getContext('2d').getImageData(0,0,1,1).data[0]<50,'dark scenery palette '+ctl.canvas.getContext('2d').getImageData(0,0,1,1).data.join(','));
  await preview('worlds');
  document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,cases:checks,durationScale:1.2});
 }catch(e){document.getElementById('result').textContent=JSON.stringify({pass:false,error:e.stack})}
@@ -125,7 +157,7 @@ server.listen(0,'127.0.0.1',()=>{
     }
     if(!result)throw Error('No browser result');console.log(result);if(!result.pass)throw Error(result.error);
     await call('Runtime.evaluate',{expression:'document.fonts.ready',awaitPromise:true},sessionId);
-    for(const mode of ['worlds','city','room','park','seaside','soft','round','dark']){
+    for(const mode of ['grass','beach','room','kitchen','tabletop','city','forest','park','farm','snow','desert','underwater','space','enchanted','dark']){
      await call('Runtime.evaluate',{expression:'preview('+JSON.stringify(mode)+')',awaitPromise:true},sessionId);
      const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(out,mode+'-'+width+'.png'),Buffer.from(shot.data,'base64'));
     }
