@@ -28,3 +28,5 @@ City adds a soft indigo skyline with lit windows, generated with the built-in im
 Kitchen now uses kitchen-bw.png with measured surface metadata; its wall tiles have neutral charcoal coloring. The original green floor is retained as an unused source. Night pavement uses brightness filtering at full opacity, preventing the skyline from showing through the stones.
 
 Terrain zoom follows the camera through a smooth compressed curve capped at 1.35×, returning to 1× at the final comparison. Grass, repeating floor tiles and rooted background art share the scale and horizontal pivot; contact depths scale with them. The measured objects, stack positions, camera and timing remain unchanged. Tests cover scale bounds, actual tile/backdrop sizes, attachment and 60fps zoom-out continuity at three phone widths.
+
+Kitchen floor tile pitch is doubled (760-pixel repeat before gentle camera zoom) for larger black-and-white squares. The wall returns to softer cream-and-sage tiles so the wall and floor have different contrast and scale. Ground surface anchoring and camera-linked zoom are preserved.

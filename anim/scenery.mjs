@@ -25,7 +25,7 @@ export const SETTINGS = {
   grass: { clouds: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'] },
-  kitchen: { floor: 'kitchen-bw', sky: ['#e9e6e1', '#faf8f3'], wallpaper: 'tiles', layers: ['dust-motes'] },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'] },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid' },
   city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
@@ -68,9 +68,9 @@ export function drawWallpaper(ctx, style, { width, height, shiftY, shiftX, dark 
     for (let y = oy - tile; y < height; y += tile) {
       const light = dark ? .7 : 1;
       if (style === 'tiles') {
-        ctx.globalAlpha = .3 * light; ctx.fillStyle = '#484747';
+        ctx.globalAlpha = .23 * light; ctx.fillStyle = '#789488';
         ctx.fillRect(x + 1, y + 1, 26, 26); ctx.fillRect(x + 29, y + 29, 26, 26);
-        ctx.globalAlpha = .22 * light; ctx.strokeStyle = '#777572'; ctx.lineWidth = 1;
+        ctx.globalAlpha = .18 * light; ctx.strokeStyle = '#929b88'; ctx.lineWidth = 1;
         ctx.strokeRect(x + .5, y + .5, 28, 28); ctx.strokeRect(x + 28.5, y + .5, 28, 28);
         ctx.strokeRect(x + .5, y + 28.5, 28, 28); ctx.strokeRect(x + 28.5, y + 28.5, 28, 28);
       } else if (style === 'plaid') {
@@ -165,7 +165,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
 
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2 }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
-  const tile = 380 * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
+  const tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
   const inset = (kit.config.floor === 'forest-floor' ? 20 : 14) * groundScale;
