@@ -3165,19 +3165,19 @@
     <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top - as long as someone else guessed that round too, so it can't be earned for free in a solo practice game with no bots.</p>
     <p><b>Crowd favorite:</b> +1 to whoever got 2 or more second-chance picks that round (whichever count is highest), whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
     <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
-    <p>At the very end of the game, the top 3 players by <b>average guess accuracy</b> (how close their guesses ran to exactly 100% of the real answer, on average) get a one-time bonus: +10 / +6 / +3.</p>
+    <p>At the very end of the game, the top 3 players by <b>average accuracy</b> get a one-time bonus: +10 / +6 / +3. Calculate accuracy separately for each round, then average those percentages. Overestimates and underestimates never cancel each other out.</p>
   </div></details>
 
   <details class="howto-section" id="howto-accuracy"><summary>Accuracy &amp; Survival</summary><div class="howto-body">
-    <p><b>Accuracy</b> is based on how many <b>times off</b> your guess was, not on the plain difference. Exactly right is <b>100%</b>. The further off you are, the lower it goes, and it hits <b>0%</b> once your guess is <b>double</b> the answer or <b>half</b> of it (or further out than that).</p>
-    <p>Too high and too low are measured the same way. Guessing 3 when the answer is 10 is over 3 times too low, so it's 0%, not 30%.</p>
-    <p><b>Examples</b> for an answer of 10: guess 11 is 90%, guess 12 is 80%, guess 8 is 75%, guess 7 is about 57%, guess 5 or 20 is 0%.</p>
+    <p><b>Accuracy</b> starts at <b>100%</b>. Subtract how far your guess is from the answer, as a percentage of that answer. Accuracy stays between <b>0% and 100%</b>.</p>
+    <p>For an answer of 100, guessing <b>75 is 75% accurate</b> and guessing <b>150 is 50% accurate</b>. Across those two rounds, your average accuracy is <b>62.5%</b>. A very large miss earns 0%, never a negative percentage.</p>
+    <p><b>Examples</b> for an answer of 10: guess 11 is 90%, guess 12 is 80%, guess 8 is 80%, guess 7 is 70%, guess 5 is 50%, and guess 0 or 20 is 0%.</p>
     <p><b>The marks</b> you see on results: a green check is 90% or better, a yellow check is 70% to 89%, an orange X is 40% to 69%, and a red X is under 40%.</p>
-    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from about 7.2 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The % beside your hearts is your running average accuracy for the run.</p>
+    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from 6 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The % beside your hearts is your running average accuracy for the run.</p>
   </div></details>
 
   <details class="howto-section"><summary>Tiebreakers</summary><div class="howto-body">
-    <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever's average guess accuracy is closer to 100%; if that's tied too, they stay tied there as well.</p>
+    <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever has the higher average accuracy; if that's tied too, they stay tied there as well.</p>
   </div></details>
 
   <details class="howto-section"><summary>Objects &amp; collections</summary><div class="howto-body">
@@ -3562,6 +3562,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
+  import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   var gameRewards;
   var powerups;
   const powerupSeen = new Set();
@@ -7296,7 +7297,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let previousScoreColumnRanks = {};
 
   // Sorts players by score (highest first). Ties share the same rank/medal unless
-  // useAccuracyTiebreak is set, in which case avg-accuracy-closest-to-100% breaks
+  // useAccuracyTiebreak is set, in which case the higher average accuracy breaks
   // the tie (marking tiebreakUsed on both players it separates) — used only for
   // final results, since mid-game ties should just be shown as ties.
   function computeRanks(ids, scoreFn, avgFn, useAccuracyTiebreak) {
@@ -7304,9 +7305,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     entries.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (useAccuracyTiebreak) {
-        const da = a.avg == null ? Infinity : Math.abs(a.avg - 100);
-        const db = b.avg == null ? Infinity : Math.abs(b.avg - 100);
-        if (da !== db) return da - db;
+        const aa = a.avg == null ? -Infinity : a.avg;
+        const ba = b.avg == null ? -Infinity : b.avg;
+        if (aa !== ba) return ba - aa;
       }
       return 0;
     });
@@ -8706,8 +8707,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   // ---- Career > Stats ----
-  // Accuracy of one round: how close your guess was, symmetric (half and double are equally far off).
-  const roundAccuracy = (r) => Math.max(0, 100 - (Math.max(r, 1 / r) - 1) * 100);
+  // Career history stores the original guess/answer ratio; use the same
+  // per-round accuracy calculation as gameplay before averaging it.
   const CAREER_RANKS = [[1, "Rookie"], [5, "Eyeballer"], [10, "Estimator"], [20, "Sharpshooter"], [35, "Measuring Master"]];
   function careerXp(st) {
     return (st.rounds || 0) * 5 + (st.roundWins || 0) * 10 + (st.spotOns || 0) * 25 + (st.perfects || 0) * 50 + (st.gamesPlayed || 0) * 10;
@@ -11536,7 +11537,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       e.isClosest = !!closest && e.playerId === closest.playerId;
       e.isSpotOn = e.error <= answer * 0.01;
       e.isPerfect = e.error < 0.005;
-      e.accuracyPercent = Math.round((e.effectiveGuess / answer) * 100);
+      e.accuracyPercent = roundAccuracy(e.effectiveGuess / answer);
       const within09 = e.error <= 0.9;
       e.basePoints = e.isClosest ? (within09 ? 5 : 3) : 0;
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
@@ -11743,7 +11744,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ranked = Object.keys(players)
         .filter((id) => players[id].roundsCounted)
         .map((id) => ({ id, avg: players[id].accuracySum / players[id].roundsCounted }))
-        .sort((a, b) => Math.abs(a.avg - 100) - Math.abs(b.avg - 100));
+        .sort((a, b) => b.avg - a.avg);
       const accuracyBonuses = [10, 6, 3];
       const updates = { phase: "final" };
       ranked.forEach((r, idx) => {
@@ -11876,7 +11877,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const tiles = [[`${me.score || 0}`, "Your score"]];
     if (mine && ids.length > 1) tiles.push([`${ord(mine.rank)} of ${ids.length}`, "Rank"]);
     tiles.push([`${round} of ${total}`, "Round reached"]);
-    if (me.roundsCounted) tiles.push([`${Math.round(me.accuracySum / me.roundsCounted)}%`, "Avg accuracy"]);
+    if (me.roundsCounted) tiles.push([`${formatAccuracy(me.accuracySum / me.roundsCounted)}%`, "Avg accuracy"]);
     if (!(roomState.settings && roomState.settings.solo)) tiles.push([currentRoomCode, "Room code"]);
     return tiles;
   }
@@ -12415,7 +12416,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pickedHtml = pickedBy.length
       ? `<div class="pickedby-avatars">${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join("")}</div>`
       : "";
-    return `<div class="rv-badges"><span class="acc-badge">${entry.accuracyPercent}%</span>${pickedHtml}</div>${entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId) : ""}`;
+    return `<div class="rv-badges"><span class="acc-badge">${formatAccuracy(entry.accuracyPercent)}%</span>${pickedHtml}</div>${entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId) : ""}`;
   }
 
   function revealCardFinalHtml(entry) {
@@ -12623,7 +12624,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
         const frameIndex = p.frameIndex || 1;
-        const avgAcc = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
+        const avgAcc = p.roundsCounted ? formatAccuracy(p.accuracySum / p.roundsCounted) : null;
         const accHtml = avgAcc == null ? "" : `<span class="acc">${avgAcc}%</span>`;
         const box = document.createElement("div");
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
@@ -12839,13 +12840,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
       const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
-      const avgAccuracy = p.roundsCounted ? Math.round(p.accuracySum / p.roundsCounted) : null;
+      const avgAccuracy = p.roundsCounted ? formatAccuracy(p.accuracySum / p.roundsCounted) : null;
       const bonusNote = p.accuracyBonus ? `<div class="final-bonus-note">+${p.accuracyBonus} accuracy bonus</div>` : "";
-      const tiebreakNote = tiebreakUsed ? `<div class="final-tiebreak-note">\<span class="icon-target-inline"></span> Tied on score — ranked by closer avg accuracy</div>` : "";
+      const tiebreakNote = tiebreakUsed ? `<div class="final-tiebreak-note">\<span class="icon-target-inline"></span> Tied on score — ranked by higher avg accuracy</div>` : "";
       const avgPctHtml = avgAccuracy == null ? "" : `<span class="final-avg-pct">${avgAccuracy}%</span>`;
       const statsHtml = `
         <div class="final-row-stats">
-          ${p.bestGuess ? `<span>\<span class="icon-target-inline"></span> Best guess: ${p.bestGuess.guess} on "${p.bestGuess.prompt}" (${p.bestGuess.percent}%)</span>` : ""}
+          ${p.bestGuess ? `<span>\<span class="icon-target-inline"></span> Best guess: ${p.bestGuess.guess} on "${p.bestGuess.prompt}" (${formatAccuracy(p.bestGuess.percent)}% accurate)</span>` : ""}
         </div>
         ${bonusNote}
         ${tiebreakNote}
