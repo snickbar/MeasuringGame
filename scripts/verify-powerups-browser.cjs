@@ -69,9 +69,9 @@ globalThis.showSoloCompactPreview=which=>{
  const submit=host.querySelector(which==='worlds'?'#wl-submit':'#sv-submit');
  return {mode:which,keypadHeight:pad.getBoundingClientRect().height,submitBottom:Math.round(submit.getBoundingClientRect().bottom),viewportHeight:innerHeight};
 };
-globalThis.showWorldProgressPreview=()=>{
+globalThis.showWorldProgressPreview=(accuracy=null)=>{
  showSoloCompactPreview('worlds');
- wl.questions=Array.from({length:5},()=>({...room.currentQuestion}));wl.guesses=[75,90];
+ wl.questions=Array.from({length:5},()=>({...room.currentQuestion}));wl.guesses=accuracy==null?[75,90]:[accuracy,accuracy];
  room.currentQuestion=wl.questions[2];room.currentQuestion.powerups={owner:'me',used:{buffer:true}};renderWorlds();
  return worldsContentEl.querySelector('.wl-progress').textContent;
 };
@@ -153,6 +153,7 @@ try{
   wl={guesses:[avg],questions:[{answer:100}]};temp.innerHTML=worldProgressHtml();
   assert(Math.abs(Number(temp.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'))-avg)<1e-9,'running percent '+avg);
   assert(temp.querySelectorAll('.wl-progress-marker.earned').length===stars,'strict star threshold '+avg);
+  assert(temp.querySelector('.wl-progress').classList.contains('three-stars')===(avg>92),'blue shine only above 92');
  }
  wl={guesses:[75,150],questions:[{answer:100},{answer:100}]};temp.innerHTML=worldProgressHtml();assert(temp.textContent.includes('62.5%'),'average per-round accuracy');
  wl={guesses:[95],questions:[{answer:100,powerups:{owner:'me',used:{buffer:true}}}]};temp.innerHTML=worldProgressHtml();assert(temp.textContent.includes('100%'),'progress includes buffer');
@@ -216,6 +217,9 @@ server.listen(0,'127.0.0.1',()=>{
      if(running.exceptionDetails||!running.result.value.includes('82.5%'))throw Error('Running progress preview failed');
      const runningShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
      fs.writeFileSync(path.join(outDir,'worlds-progress-'+width+'.png'),Buffer.from(runningShot.data,'base64'));
+     await call('Runtime.evaluate',{expression:'showWorldProgressPreview(95)',returnByValue:true},sessionId);
+     const blueShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(outDir,'worlds-blue-'+width+'.png'),Buffer.from(blueShot.data,'base64'));
     }
     await call('Target.closeTarget',{targetId});
    }

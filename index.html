@@ -2741,15 +2741,18 @@
   .wl-progress { margin:5px 0 8px; padding:8px 10px 5px; background:rgba(255,250,237,.9); border:1px solid #e0c99d; border-radius:14px; color:#593a1f; }
   .wl-progress-heading { display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:13px; line-height:1.25; }
   .wl-progress-heading strong { color:#6a328c; font-size:16px; }
-  .wl-progress-scale { position:relative; height:12px; margin:8px 0 22px; background:#e4d7c1; border-radius:8px; }
-  .wl-progress-fill { display:block; height:100%; border-radius:8px; background:linear-gradient(90deg,#e5a43a,#f5c94f); transition:width .3s ease; }
+  .wl-progress-scale { position:relative; height:12px; margin:8px 0 22px; background:linear-gradient(90deg,#f2c4c0 0 60%,#f5d6b1 60% 80%,#cce4b6 80% 92%,#c6ddf8 92% 100%); border-radius:8px; }
+  .wl-progress-fill { display:block; position:relative; width:100%; height:100%; border-radius:8px; background:linear-gradient(90deg,#e95048 0 60%,#f39432 60% 80%,#65b94e 80% 92%,#3999ef 92% 100%); clip-path:inset(0 calc(100% - var(--accuracy,0%)) 0 0 round 8px); transition:clip-path .3s ease; }
+  .wl-progress.three-stars .wl-progress-fill::after { content:''; position:absolute; left:92%; right:0; top:0; bottom:0; background:linear-gradient(110deg,transparent 25%,#fff 48%,transparent 70%); background-size:300% 100%; animation:wlStarShine 2.4s ease-in-out infinite; }
+  .wl-progress.three-stars .wl-progress-marker:last-child img { filter:drop-shadow(0 0 3px #4daaff); }
+  @keyframes wlStarShine { 0%,15% { background-position:150% 0; } 75%,100% { background-position:-100% 0; } }
   .wl-progress-marker { position:absolute; top:-6px; transform:translateX(-50%); text-align:center; }
   .wl-progress-star { position:relative; display:block; width:24px; height:24px; margin:auto; filter:grayscale(1); opacity:.6; }
   .wl-progress-star img { display:block; width:24px; height:24px; }
   .wl-progress-star b { position:absolute; inset:0; display:grid; place-items:center; padding-top:2px; font-size:11px; color:#573015; }
   .wl-progress-marker.earned .wl-progress-star { filter:none; opacity:1; }
   .wl-progress-threshold { display:block; margin-top:2px; font-size:11px; line-height:1.2; white-space:nowrap; }
-  @media(prefers-reduced-motion:reduce) { .wl-progress-fill { transition:none; } }
+  @media(prefers-reduced-motion:reduce) { .wl-progress-fill { transition:none; } .wl-progress.three-stars .wl-progress-fill::after { animation:none; background-position:50% 0; } }
   /* Compact solo input screens: keep generous tap targets without tall gutters. */
   :is(#worlds-content,#survival-content) .dc-prompt { margin:6px 0; padding:8px 12px; border:1px solid rgba(217,194,154,.7); border-radius:24px; background:rgba(255,253,246,.82); font-size:15px; line-height:1.25; }
   :is(#worlds-content,#survival-content) .dc-keys { gap:4px; }
@@ -8114,10 +8117,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
     const stars = avg == null ? 0 : worldStarsFor(avg);
     const text = avg == null ? 'No answers yet' : formatAccuracy(avg) + '%';
-    return `<div class="wl-progress" aria-label="Worlds running accuracy and star requirements">
+    return `<div class="wl-progress${stars === 3 ? ' three-stars' : ''}" aria-label="Worlds running accuracy and star requirements">
       <div class="wl-progress-heading"><span>Accuracy so far</span><strong>${text}</strong></div>
       <div class="wl-progress-scale" role="progressbar" aria-label="Average accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${avg ?? 0}" aria-valuetext="${avg == null ? text : text + ' accurate, currently ' + stars + ' of 3 stars'}">
-        <span class="wl-progress-fill" style="width:${avg ?? 0}%"></span>
+        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%"></span>
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
   }
