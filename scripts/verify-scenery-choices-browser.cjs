@@ -9,7 +9,7 @@ try{
  for(let i=0;i<500&&!frame.contentWindow?.__sceneryReviewReady;i++)await wait(20);
  const w=frame.contentWindow,d=frame.contentDocument,api=w.__sceneryReview,$=id=>d.getElementById(id);
  assert(api,'page becomes ready');assert(api.data.objects.length===479,'all object packs included');
- assert(api.data.objects.filter(o=>!o.explicit).length===146,'fallbacks are explicit in inventory');
+ assert(api.data.objects.filter(o=>!o.explicit).length===0,'all approved selections are explicit');
  const search=value=>{$('search').value=value;$('search').dispatchEvent(new w.Event('input'))};
  search('flying saucer');assert(d.querySelectorAll('.object').length===1,'search finds fantasy object');
  let select=d.querySelector('.object select');assert(select.options.length===14&&select.value==='space','flying saucer corrected to space; all settings available');
@@ -31,9 +31,10 @@ try{
  assert(!$('stage').textContent.includes('undefined'),'object plurals available');
  $('close').click();
  $('fallback').checked=true;$('fallback').dispatchEvent(new w.Event('change'));search('');
- assert(d.querySelectorAll('.object .tag').length===40,'fallback filter and pagination');
+ assert(d.querySelectorAll('.object').length===0,'no objects remain on grass fallback');
+ $('fallback').checked=false;$('fallback').dispatchEvent(new w.Event('change'));
  $('next').click();assert($('page').textContent.startsWith('2 /'),'pagination works');
- $('group').value='Fantasy';$('group').dispatchEvent(new w.Event('change'));assert([...d.querySelectorAll('.object')].every(el=>el.textContent.includes('Fantasy')),'group filter');
+ $('group').value='Fantasy';$('group').dispatchEvent(new w.Event('change'));assert([...d.querySelectorAll('.object')].every(el=>el.textContent.includes('Fantasy'))&&d.querySelectorAll('.object').length>0,'group filter');
  $('group').value='';$('group').dispatchEvent(new w.Event('change'));$('fallback').checked=false;$('fallback').dispatchEvent(new w.Event('change'));search('flying saucer');
  assert(d.documentElement.scrollWidth<=innerWidth,'no horizontal overflow');
  frame.src='/anim/stadium-preview.html';
@@ -51,6 +52,16 @@ try{
   assert(stands.args[7]>=295,'stadium is tall');assert(turf.alpha===1,'turf remains opaque');
  }
  stadium.scene.renderEnd();assert(sw.document.documentElement.scrollWidth<=innerWidth,'stadium preview fits phone');
+ frame.src='/anim/scenery-objects.html';
+ for(let i=0;i<500&&!frame.contentWindow?.__sceneryReviewReady;i++)await wait(20);
+ const hw=frame.contentWindow,hd=frame.contentDocument,hs=hd.getElementById('search');
+ hs.value='hammock';hs.dispatchEvent(new hw.Event('input'));
+ assert(hd.querySelector('.object select').value==='beach','approved hammock scenery is beach');
+ hd.querySelector('.object button').click();
+ for(let i=0;i<500&&!hd.getElementById('preview-status').textContent.startsWith('Ready');i++)await wait(20);
+ assert(hd.getElementById('preview-status').textContent.startsWith('Ready'),'replacement hammock loads in real renderer');
+ assert(hd.getElementById('stage').querySelector('canvas'),'hammock comparison drawn');
+
  document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'479 objects, 14 scenes, fallback/group/search filters, persistence, export/import, validation, actual preview and attached tall stadium'});
 }catch(error){document.getElementById('result').textContent=JSON.stringify({pass:false,error:error.stack})}
 </script></html>`;
