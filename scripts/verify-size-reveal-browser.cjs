@@ -7,7 +7,7 @@ const test=`
 import {createStackAnimation,animationDuration} from '/anim/stack-anim.js';
 import {createStackAnimation as baselineCreate,animationDuration as baselineDuration} from '/anim/__baseline.js';
 import {landingStyleFor,landingPose} from '/anim/reveal-style.mjs';
-import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery} from '/anim/scenery.mjs';
+import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery,drawWallpaper} from '/anim/scenery.mjs';
 import {FLOOR_DATA} from '/anim/scenery-data.mjs';
 const objects=${objects};
 const assert=(v,m)=>{if(!v)throw Error(m)},stage=document.getElementById('stage'),checks=[];
@@ -20,7 +20,7 @@ globalThis.preview=async(kind='worlds')=>{
  const unit=pair?objects.find(o=>o.id===pair[0]):make('poppy-seed',1),target=pair?objects.find(o=>o.id===pair[1]):make('cork',45);
  const scene=await ctl.prepare(unit,target,{hMax:260,minStageH:330});
  scene.render(kind==='city'?scene.cues.find(c=>c.name==='tap').t+.12:kind==='soft'||kind==='round'?scene.cues.filter(c=>c.name==='swipe')[1].t-.18:scene.duration);
- document.getElementById('caption').textContent=scene.scenery+' · '+(kind==='city'?'rice and Statue of Liberty close-up':'setting from larger object · fixed target anchor');
+ document.getElementById('caption').textContent=scene.scenery+' · '+(kind==='city'?'rice and Statue of Liberty':'setting from larger object · original camera');
  globalThis.currentScene=scene;return scene.duration;
 };
 try{
@@ -36,6 +36,17 @@ try{
  assert(['great-white-shark','hammerhead-shark','whale-shark'].every(id=>sceneryFor({id})==='underwater'),'sharks use underwater scenery');
  assert(SETTINGS.city.night===true&&SETTINGS.city.sky[0]==='#111d36','city is always nighttime');
  assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
+ const wallCanvas=document.createElement('canvas');wallCanvas.width=390;wallCanvas.height=330;
+ const wallCtx=wallCanvas.getContext('2d'),wallPatterns=[];
+ for(const style of ['stripes','diamonds','dots']){
+  const wall=(shiftY=0,shiftX=0)=>{wallCtx.clearRect(0,0,390,330);drawWallpaper(wallCtx,style,{width:390,height:330,shiftY,shiftX,dark:false});return wallCanvas.toDataURL()};
+  const original=wall();wallPatterns.push(original);
+  assert(original===wall(1400,4200),'wallpaper repeats without seams '+style);
+  assert(original!==wall(100,100),'wallpaper follows camera '+style);
+ }
+ assert(new Set(wallPatterns).size===3,'three distinct indoor wallpapers');
+ const roomA=await loadScenery({id:'door'},'/anim/scenery/'),roomB=await loadScenery({id:'door'},'/anim/scenery/');
+ assert(roomA.images['wall-picture']&&roomA.decorSeed===roomB.decorSeed,'wall artwork ready and stable on replay');
  const fallback=await loadScenery({id:'door'},'/missing-scenery/');assert(fallback.id==='grass','missing required floor falls back safely');
  const examples={grass:'ant',beach:'lighthouse',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'great-white-shark',space:'saturn-rocket',enchanted:'pegasus'};
  for(const [expected,id] of Object.entries(examples)){
@@ -48,10 +59,10 @@ try{
   if(floorName){
    const floor=startDraws.find(d=>d.image===floorName+'.png');assert(floor,'floor is ready on first frame '+id);
    const f=scene.getFraming(0),surface=floor.args[1]+floor.args[3]*FLOOR_DATA[floorName].surface;
-   if(expected==='underwater')assert(surface>=f.floorY+13,'marine object swims above seabed '+id);else assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);
+   assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);
    const sample=document.createElement('canvas');sample.width=floor.source.naturalWidth;sample.height=floor.source.naturalHeight;
    const sx=sample.getContext('2d');sx.drawImage(floor.source,0,0);
-   const row=Math.floor(((f.floorY+(expected==='underwater'?28:0))-floor.args[1])/floor.args[3]*sample.height);
+   const row=Math.floor(((f.floorY)-floor.args[1])/floor.args[3]*sample.height);
    for(const fraction of [.1,.3,.5,.7,.9]){
     const pixel=sx.getImageData(Math.floor(sample.width*fraction),row,1,1).data;
     assert(pixel[3]>180,'solid ground beneath object '+id);
@@ -80,12 +91,17 @@ try{
   assert(scene.duration===animationDuration(unit,target),'shared deadline matches playback '+name);
   const holder=document.createElement('div');holder.style.cssText='position:absolute;left:-10000px;width:'+stage.clientWidth+'px';document.body.append(holder);
   const old=baselineCreate(holder,opts),oldScene=await old.prepare(unit,target,sizing);
-  assert(oldScene.R===scene.R&&oldScene.stageH===scene.stageH&&oldScene.width===scene.width,'same scale and dimensions '+name);
+  assert(oldScene.R===scene.R&&scene.stageH>=330&&oldScene.width===scene.width,'same scale and dimensions '+name);
   assert(JSON.stringify(oldScene.cues.map(c=>({...c,t:c.t*1.2})))===JSON.stringify(scene.cues),'sound cues follow slower clock '+name);
   for(const t of [0,scene.duration*.2,scene.duration*.7,scene.duration-.35,scene.duration]){
    const currentBg=[],priorBg=[];watched.set(ctl.canvas.getContext('2d'),currentBg);watched.set(old.canvas.getContext('2d'),priorBg);
    scene.render(t);oldScene.render(t/1.2);
-   if(scene.scenery==='grass'){assert(currentBg.length>0&&currentBg.length===priorBg.length,'original background artwork '+name);currentBg.forEach((draw,i)=>{assert(draw.image===priorBg[i].image,'original artwork');draw.args.forEach((v,j)=>assert(Math.abs(v-(priorBg[i].args[j]-(draw.image==='grass.png'&&j===1?6:0)))<1e-6,'original cloud/grass movement '+name))})}
+   if(scene.scenery==='grass'){
+    const f=scene.getFraming(t),end=scene.getFraming(scene.duration),cloud=currentBg.find(d=>d.image==='cloud.png'),grass=currentBg.find(d=>d.image==='grass.png');
+    assert(cloud,'original cloud artwork');const span=scene.stageH+160,raw=.1*scene.stageH+(f.floorY-end.floorY)*.18,cy=((raw%span)+span)%span-80;
+    assert(Math.abs(cloud.args[1]+cloud.args[3]/2-cy)<1e-6,'original downward cloud parallax');
+    if(grass)assert(Math.abs(grass.args[1]-(f.floorY-grass.args[3]*127/145-6))<1e-6,'grass remains attached to ground');
+   }
    assert(Math.abs(scene.getShown()-oldScene.getShown())<1e-6,'stacking unchanged '+name);
   }
   old.destroy();holder.remove();
@@ -101,16 +117,15 @@ try{
   const taps=scene.cues.filter(c=>c.name==='tap');
   for(const time of [taps[0].t+.1,taps[Math.floor(taps.length/2)].t]){
    const f=scene.getFraming(time);scene.render(time);
-   assert(Math.abs(f.anchorX-scene.width*.76)<1e-6,'large target stays on one horizontal anchor '+a+'/'+b);
-   assert(f.clipLeft>f.stackX,'target never covers the stack');
+   assert(f.x>scene.width,'large target can naturally leave the close-up '+a+'/'+b);
+   assert(f.clipLeft===0,'no special target clipping');
   }
   const first=taps[0].t+.1,last=scene.cues.find(c=>c.name==='zoomback').t-.01;
-  let previousX,previousDelta;
+  let gapRatio;
   for(let step=0;step<=100;step++){
-   const time=first+(last-first)*step/100,f=scene.getFraming(time);
-   assert(Math.abs(f.anchorX-scene.width*.76)<1e-6,'fixed horizontal anchor throughout stacking');
-   if(previousX!==undefined){const delta=f.x-previousX;if(Math.abs(delta)>1e-6){assert(previousDelta===undefined||delta*previousDelta>=0,'no horizontal direction reversals');previousDelta=delta}}
-   previousX=f.x;
+   const time=first+(last-first)*step/100,f=scene.getFraming(time),ratio=(f.x-f.stackX)/f.height;
+   if(gapRatio!==undefined)assert(Math.abs(ratio-gapRatio)<1e-9,'target uses original world-space position throughout stacking');
+   gapRatio=ratio;assert(f.clipLeft===0,'no pinning or viewport-relative crop');
   }
   // The destination shadow appears only after the first object lands.
   const ctx=ctl.canvas.getContext('2d'),firstLanding=taps[0].t;
@@ -122,6 +137,20 @@ try{
   const final=scene.getFraming(scene.duration);
   assert(final.x>=0&&final.x+final.width<=scene.width+.001,'final target fits');
   assert(scene.scenery===sceneryFor(scene.target),'larger object chooses background');
+ }
+ // Capture the actual drawn small-object bounds immediately before and after landing.
+ for(const id of ['grain-of-rice','ant','paperclip','tennis-ball']){
+  ctl?.destroy();ctl=createStackAnimation(stage,opts);
+  const scene=await ctl.prepare(make(id,1),make('cork',1000000),{hMax:260,minStageH:330});
+  const ctx=ctl.canvas.getContext('2d'),originalDraw=ctx.drawImage;
+  let draws=[];ctx.drawImage=function(image,...args){if(image instanceof HTMLCanvasElement)draws.push({image,args,m:this.getTransform()});return originalDraw.call(this,image,...args)};
+  const land=scene.cues.find(c=>c.name==='tap').t;
+  const boxAt=time=>{draws=[];scene.render(time);assert(scene.getFraming(time).x>scene.width,'target is offscreen for continuity check');const draw=draws[0];assert(draw,'unit actually drawn');const [x,y,w,h]=draw.args,m=draw.m,dpr=ctl.canvas.width/scene.width;
+   const pts=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]].map(([a,b])=>[(m.a*a+m.c*b+m.e)/dpr,(m.b*a+m.d*b+m.f)/dpr]);
+   return {x:(Math.min(...pts.map(p=>p[0]))+Math.max(...pts.map(p=>p[0])))/2,y:(Math.min(...pts.map(p=>p[1]))+Math.max(...pts.map(p=>p[1])))/2};};
+  const before=boxAt(land-.0001),after=boxAt(land+.0001);
+  assert(Math.hypot(before.x-after.x,before.y-after.y)<2,'small object does not teleport on landing '+id);
+  ctx.drawImage=originalDraw;
  }
  ctl?.destroy();ctl=createStackAnimation(stage,{...opts,reduceMotion:true});
  const reduced=await ctl.prepare(make('ant',1),make('door',100),{hMax:260,minStageH:330,guess:{raw:95,answer:100,adjusted:100}});

@@ -1,6 +1,6 @@
 # Scenery sample prompts
 
-Generated with the built-in image generator, with transparent_background=true. Original outputs preserved as PNGs. These are visual samples, not integrated game assets.
+Generated with the built-in image generator, with transparent_background=true. Original outputs preserved as PNGs. These assets are integrated into the reveal renderer.
 
 ## Shared style included with every generation
 Use case: stylized-concept. Supporting scenery for Size Em Up!, a playful illustrated mobile game. Rounded cartoon forms, gentle hand-painted shading, muted pastel colors, soft color-matched outlines. Scenery quieter and lower contrast than the main measured game objects. No text, numbers, watermark, white background, or baked checkerboard. Genuine transparent alpha.
@@ -123,3 +123,8 @@ Use case: stylized-concept. Create supporting scenery for Size Em Up!, a playful
 Transparent background: true
 
 Use case: stylized-concept. Create supporting scenery for Size Em Up!, a playful illustrated mobile game. Match rounded cartoon forms, gentle hand-painted shading, muted pastel colors and soft color-matched outlines. Keep scenery quieter and lower contrast than the main measured game objects. No text, numbers, measurement marks, characters, logos or watermark. One production game asset, not a screenshot, mockup or contact sheet. ONE sparse cluster of five tiny floating magical motes on a genuinely transparent background. Pale warm gold, cream and faint lilac, small soft centers, restrained translucent glows, generous empty space between and around motes. Quiet firefly lights, not bold glitter. No insects, large starbursts, glitter trails, confetti, lens flares, scenery, white background or baked checkerboard.
+
+## Indoor wall picture
+Supporting scenery for Size Em Up!, a playful illustrated mobile game. Rounded cartoon forms, gentle hand-painted shading, muted pastel colors, soft color-matched outlines. One small square framed botanical wall picture: rounded honey-colored wooden frame, cream paper, a simple muted sage botanical sprig. Front view, no perspective, generous transparent padding. Quiet low-contrast background decoration, not a main game object. No text, numbers, watermark, white background, or baked checkerboard. Genuine transparent alpha. Generated with the built-in image generator; original PNG preserved as wall-picture.png.
+
+Indoor wallpaper is drawn as seamless repeating geometry by the renderer: living-room stripes, kitchen diamonds, tabletop dots.
