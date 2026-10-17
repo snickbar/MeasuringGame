@@ -168,6 +168,8 @@ const MIN_THICK = 14;      // thinnest a true-scale stack may be before the came
 const STRIP_W = 18;        // widest the stack may be in the final view when it is too thin to see
 const STRIP_W_MIN = 9;     // ...and the thinnest
 const STRIP_LEN = 40;       // about how long each copy is drawn there, so thin things (rice) are not drawn huge
+// Playback, sound cues and shared room deadlines use the same slower clock.
+const PLAYBACK_TIME_SCALE = 1.2;
 const BIG_S = 1.1;         // seconds for an object that already stands upright (a door, a tower) to hop in
 const BIG_WALK = 1.3;      // seconds the big object spends walking, driving or gliding in
 const BIG_LEAN = 0.9;      // seconds it takes to lean back upright
@@ -362,7 +364,7 @@ export function animationDuration(unitIn, targetIn) {
   if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
   const bigLean = leanOf(target, true);
   const smLean = leanOf(unit, false);
-  return timelineFor(target.mm / unit.mm, bigLean, smLean).tEnd;
+  return timelineFor(target.mm / unit.mm, bigLean, smLean).tEnd * PLAYBACK_TIME_SCALE;
 }
 
 export function createStackAnimation(container, options = {}) {
@@ -476,14 +478,10 @@ export function createStackAnimation(container, options = {}) {
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
     await Promise.all([loadPicture(unit), loadPicture(target)]);
-    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, sizing.guess);
+    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0);
   }
 
-  function buildScene(unit, target, hMax, minStageH, guess) {
-    const comparison = guess && Number.isFinite(guess.raw) && guess.raw >= 0 && guess.answer > 0
-      ? { raw: guess.raw, answer: guess.answer, adjusted: Number.isFinite(guess.adjusted) ? guess.adjusted : guess.raw } : null;
-    const bufferIcon = comparison && comparison.adjusted !== comparison.raw ? new Image() : null;
-    if (bufferIcon) bufferIcon.src = new URL('../icons/powerups/percentage-buffer.png', import.meta.url).href;
+  function buildScene(unit, target, hMax, minStageH) {
     const R = target.mm / unit.mm;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
@@ -695,22 +693,24 @@ export function createStackAnimation(container, options = {}) {
     let shown = 0;
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', 'Animated object size comparison');
-    function shadow(x, y, width, height, alpha = .15) {
+    function shadow(x, y, width, height, alpha = .28) {
       ctx.save(); ctx.translate(x, y); ctx.scale(Math.max(2, width / 2), Math.max(1, height));
       const shade = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-      shade.addColorStop(0, `rgba(52,42,32,${alpha})`); shade.addColorStop(.55, `rgba(52,42,32,${alpha * .6})`); shade.addColorStop(1, 'rgba(52,42,32,0)');
+      shade.addColorStop(0, `rgba(52,42,32,${alpha})`); shade.addColorStop(.55, `rgba(52,42,32,${alpha * .75})`); shade.addColorStop(1, 'rgba(52,42,32,0)');
       ctx.fillStyle = shade; ctx.beginPath(); ctx.ellipse(0, 0, 1, 1, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
     function landing(age, strength) {
       if (reduceMotion || age < 0 || age > .32) return 0;
       return strength * Math.sin(Math.PI * age / .32) * Math.exp(-3 * age / .32);
     }
-    function dust(x, y, age, width) {
-      if (reduceMotion || age < 0 || age > .32) return;
-      const p = age / .32;
-      ctx.save(); ctx.fillStyle = theme.ground; ctx.globalAlpha = .5 * (1 - p);
+    function dust(x, y, age, width, objectMm) {
+      const heft = clamp(.8 + Math.log10(Math.max(1, objectMm)) / 3, .85, 2.4);
+      const lifetime = .32 + .08 * heft;
+      if (reduceMotion || age < 0 || age > lifetime) return;
+      const p = age / lifetime;
+      ctx.save(); ctx.fillStyle = theme.dust || '#e9dcc0'; ctx.globalAlpha = .65 * (1 - p);
       for (const dir of [-1, 1]) for (let j = 0; j < 3; j++) {
-        ctx.beginPath(); ctx.ellipse(x + dir * (width * .25 + p * (10 + j * 6)), y - p * (4 + j * 4), 2 + p * 3, 1.5 + p * 2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + dir * (width * .25 + p * (10 + j * 6) * heft), y - p * (4 + j * 4) * heft, (2 + p * 3) * heft, (1.5 + p * 2) * heft, 0, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
@@ -718,7 +718,8 @@ export function createStackAnimation(container, options = {}) {
     // Draws the picture of time t (in seconds). dt is how long since the last frame, used only to
     // let the count under the floor catch up smoothly; leave it out to jump straight to the right count.
     function render(t, dt) {
-      t = clamp(t, 0, tEnd);
+      t = clamp(t / PLAYBACK_TIME_SCALE, 0, tEnd);
+      if (dt != null) dt /= PLAYBACK_TIME_SCALE;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, stageH);
       ctx.imageSmoothingEnabled = true;
@@ -819,7 +820,7 @@ export function createStackAnimation(container, options = {}) {
         const lift = travelLift(bigKind, wu, T, d0);
         const footprint = sc * (L * Math.cos(ang) + T * Math.sin(ang));
         const shadowX = px + sc * d + (cw ? -1 : 1) * sc * (L * Math.cos(ang) - T * Math.sin(ang)) / 2;
-        shadow(shadowX, pvy + 2, footprint * .8, clamp(T * sc * .06, 2, 7), .12);
+        shadow(shadowX, pvy + 2, footprint * .8, clamp(T * sc * .06, 3, 9), .30);
         ctx.save();
         ctx.translate(px, pvy);
         ctx.scale(sc, sc);
@@ -833,13 +834,13 @@ export function createStackAnimation(container, options = {}) {
         const hu = bigLean ? 1 : clamp(t / BIG_S, 0, 1);
         const slide = (1 - hu) * (1 - hu) * (W - bigX + 30);
         const hop = bigLean ? 0 : travelLift('slide', hu, bw, 0);
-        shadow(bx + slide + bw / 2, sy0 + 2, bw * .85, clamp(bw * .055, 2, 8), .16 / (1 + hop / 12));
+        shadow(bx + slide + bw / 2, sy0 + 2, bw * .95, clamp(bw * .07, 3, 10), .36 / (1 + hop / 12));
         if (bx + slide < W && bx + bw > 0 && by < stageH && by + bh > 0) {
           ctx.drawImage(bigSprite, bx + slide - bw * settle / 4, by - hop + bh * settle, bw * (1 + settle / 2), bh * (1 - settle));
         }
       }
-      if (bigKind !== 'fly' && bigKind !== 'sail') dust(bx + bw / 2, sy0, t - tLeanEnd, bw);
-      shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 1.5, 5), .14);
+      if (bigKind !== 'fly' && bigKind !== 'sail') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm);
+      shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 2, 6), .30);
 
       // Anything of the stack above the big object's height line is cut off.
       ctx.save();
@@ -870,7 +871,7 @@ export function createStackAnimation(container, options = {}) {
       // Objects hopping in.
       const dHop = sx0 + wcol / 2 + 24;
       const landed = landedAt(t);
-      if (!reduceMotion) for (let i = 0; i < nHop; i++) dust(sx0, sy0 - i * Ls, t - starts[i] - durs[i], wcol);
+      if (!reduceMotion) for (let i = 0; i < nHop; i++) dust(sx0, sy0 - i * Ls, t - starts[i] - durs[i], wcol, unit.mm);
       for (let i = landed; i < nHop && starts[i] <= t; i++) {
         if (t >= starts[i] + durs[i]) continue;
         if (i === 0 && smLean) {
@@ -898,7 +899,7 @@ export function createStackAnimation(container, options = {}) {
         }
         const h = hopAt((t - starts[i]) / durs[i]);
         const bottom = sy0 - i * Ls;
-        shadow(sx0 - dHop * h.x, bottom + 1, wcol * .85, clamp(wcol * .07, 1, 4), .12 / (1 + Math.abs(h.y) / 10));
+        shadow(sx0 - dHop * h.x, bottom + 1, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + Math.abs(h.y) / 10));
         ctx.save();
         ctx.translate(sx0 - dHop * h.x, bottom + h.y);
         ctx.scale(h.sx, h.sy);
@@ -906,44 +907,8 @@ export function createStackAnimation(container, options = {}) {
         ctx.restore();
       }
 
-      // A finishing sweep uses the existing final zoom: it adds no waiting time.
-      const finish = reduceMotion ? 1 : smooth(clamp((t - (tEnd - .7)) / .7, 0, 1));
-      if (finish > 0) {
-        const left = Math.max(G, sx0 - wcol / 2), right = Math.min(W - G, bx + bw);
-        ctx.save(); ctx.strokeStyle = '#e4a32f'; ctx.lineWidth = 2.5; ctx.shadowColor = '#fff0a3'; ctx.shadowBlur = 5;
-        ctx.beginPath(); ctx.moveTo(left, topLineY); ctx.lineTo(left + (right - left) * finish, topLineY); ctx.stroke();
-        for (const x of [left, right]) { ctx.beginPath(); ctx.moveTo(x, topLineY - 6); ctx.lineTo(x, topLineY + 6); ctx.stroke(); }
-        if (!reduceMotion && finish < 1) {
-          ctx.globalAlpha = Math.sin(Math.PI * finish); ctx.strokeStyle = '#fff8c7';
-          for (let j = 0; j < 4; j++) {
-            const x = left + (right - left) * (j + .5) / 4, y = topLineY - 8 - Math.sin(j * 2 + finish * Math.PI) * 7;
-            const r = 2 + Math.sin(Math.PI * finish) * 2;
-            ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.moveTo(x, y - r); ctx.lineTo(x, y + r); ctx.stroke();
-          }
-        }
-        ctx.restore();
-        if (comparison) {
-          const progress = reduceMotion ? 1 : smooth(clamp((t - (tEnd - .55)) / .55, 0, 1));
-          const value = comparison.raw + (comparison.adjusted - comparison.raw) * progress;
-          const trueY = sy0 - bh * value / comparison.answer;
-          const y = clamp(trueY, 12, stageH - PAD_BOTTOM);
-          const boosted = comparison.adjusted !== comparison.raw && progress > .5;
-          const label = `${boosted ? 'With buffer' : 'Your guess'}: ${formatCount(value, comparison.answer)}${trueY < 12 ? ' ↑' : ''}`;
-          ctx.save(); ctx.globalAlpha = finish; ctx.strokeStyle = '#7542a5'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
-          ctx.beginPath(); ctx.moveTo(G, y); ctx.lineTo(W - G, y); ctx.stroke(); ctx.setLineDash([]);
-          ctx.font = "600 13px 'Fredoka', sans-serif";
-          const hasIcon = boosted && bufferIcon?.complete && bufferIcon.naturalWidth;
-          const inset = hasIcon ? 29 : 8;
-          const labelW = Math.min(W - 2 * G, ctx.measureText(label).width + inset + 8), labelY = clamp(y + 5, 5, stageH - PAD_BOTTOM - 25);
-          ctx.fillStyle = '#fff7e9'; ctx.beginPath(); ctx.roundRect(G, labelY, labelW, 23, 7); ctx.fill();
-          if (hasIcon) ctx.drawImage(bufferIcon, G + 6, labelY + 3, 18, 18);
-          ctx.fillStyle = '#61338b'; ctx.fillText(label, G + inset, labelY + 16, labelW - inset - 8); ctx.restore();
-        }
-      }
-      const description = t >= tEnd ? `${formatCount(R, R)} ${unit.plural} match ${target.name}.${comparison ? ' Your guess: ' + comparison.raw + (comparison.adjusted !== comparison.raw ? '. With buffer: ' + comparison.adjusted : '') : ''}` : 'Animated object size comparison';
+      const description = t >= tEnd ? `${formatCount(R, R)} ${unit.plural} match ${target.name}.` : 'Animated object size comparison';
       if (canvas.getAttribute('aria-label') !== description) canvas.setAttribute('aria-label', description);
-      tally.style.transformOrigin = 'left center';
-      tally.style.transform = `scale(${reduceMotion ? 1 : 1 + .12 * Math.sin(Math.PI * finish)})`;
       // The running count under the floor.
       if (t >= tB0 || !(dt > 0 && dt < 0.25)) {
         shown = count;
@@ -957,10 +922,10 @@ export function createStackAnimation(container, options = {}) {
 
     return {
       unit, target, R, fast, stageH, width: W,
-      duration: tEnd,
-      cues,
+      duration: tEnd * PLAYBACK_TIME_SCALE,
+      cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,
-      renderEnd() { render(tEnd); },
+      renderEnd() { render(tEnd * PLAYBACK_TIME_SCALE); },
       getShown: () => shown,
     };
   }

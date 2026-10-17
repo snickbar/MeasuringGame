@@ -8238,8 +8238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("wl-stage"); if (!stage) return;
       wlAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = wlAnim;
-      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300,
-        guess: { raw: g, answer: q.answer, adjusted: effectiveGuess(q, g, deviceId) } });
+      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
       if (wlAnim !== ctl || wl.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (wlAnim === ctl) showResult(mod); } });
@@ -8703,8 +8702,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("sv-stage"); if (!stage) return;
       svAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = svAnim;
-      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300,
-        guess: { raw: sv.g, answer: q.answer, adjusted: effectiveGuess(q, sv.g, deviceId) } });
+      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
       if (svAnim !== ctl || sv.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
@@ -11406,12 +11404,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (token !== animToken || !roomState || roomState.phase !== "animation") return;
           animDoneKey = key;
           const q = roomState.currentQuestion;
-          if (q) {
-            setAnswerLineValue(mod.formatCount(q.answer, animScene.R));
-            if (!matchMedia('(prefers-reduced-motion: reduce)').matches) questionAnswerLineEl.animate?.([
-              { transform: 'scale(.96)' }, { transform: 'scale(1.06)', offset: .45 }, { transform: 'scale(1)' },
-            ], { duration: 400, easing: 'ease-out' });
-          }
+          if (q) setAnswerLineValue(mod.formatCount(q.answer, animScene.R));
         },
       });
     } catch (err) {
