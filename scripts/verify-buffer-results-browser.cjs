@@ -46,12 +46,15 @@ try{
  assert(revealInfoHtml({accuracyPercent:50}).includes('acc-badge'),'ordinary result pills retained');
  assert(!preview.textContent.includes('points with your boosted guess')&&!preview.querySelector('.pu-boost-gain'),'no repeated points or gain message');
  assert(preview.querySelector('.pu-result-note').getBoundingClientRect().height<130,'compact even in a narrow reveal column');
+ const boostIcon=preview.querySelector('.pu-boost-accuracy > .pu-result-icon');
+ assert(getComputedStyle(boostIcon).gridRow==='1 / span 2'&&boostIcon.getBoundingClientRect().height>=36,'icon spans both related rows');
  sv={q:exact,g:55,lives:3,accs:[],lossPending:false};svShowResult(null);
  assert(document.querySelector('#sv-result .dc-card>.pu-result-note'),'Survival boost inside main card');
  assert(document.getElementById('sv-result').textContent.includes('Safe with buffer!'),'Survival result explained');
  for(const host of [document.getElementById('wl-result'),document.getElementById('sv-result'),preview]){
   assert(host.scrollWidth<=host.clientWidth+(host===preview?12:0),'result fits phone width (including avatar stamp overhang)');
   for(const el of host.querySelectorAll('.pu-result-note,.pu-boost-head,.pu-boost-accuracy,.pu-boost-counted,.pu-boost-score')){
+   if(getComputedStyle(el).display==='contents')continue;
    const r=el.getBoundingClientRect(),h=host.getBoundingClientRect();
    assert(r.left>=h.left-1&&r.right<=h.right+1,'boost stays inside card');
   }

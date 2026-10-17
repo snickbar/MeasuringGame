@@ -10,7 +10,7 @@ export const OBJECT_GROUPS = {
   snow: `mount-everest penguin polar-bear snowboard`,
   desert: `cactus elephant giraffe grand-canyon great-pyramid hippopotamus lion moai mount-fuji mount-kilimanjaro ostrich rhinoceros stonehenge zebra`,
   underwater: `barracuda blue-whale dolphin electric-eel giant-squid great-white-shark hammerhead-shark jellyfish killer-whale koi-fish manta-ray mariana-trench octopus pufferfish seahorse stingray swordfish whale-shark`,
-  space: `saturn-rocket space-shuttle`,
+  space: `flying-saucer saturn-rocket space-shuttle`,
   enchanted: `castle magic-wand pegasus`,
   tabletop: `aa-battery baseball baseball-bat baseball-cap basketball bowling-ball bowling-pin boxing-glove button chattering-teeth checkers-piece clown-nose convenient-receipt cork cowboy-hat credit-card die domino dvd earbuds earbuds-case fake-mustache foam-finger football football-helmet frisbee game-controller grain-of-rice hairbrush hockey-puck hockey-stick human-eyelash index-card jack-in-the-box key laptop lego-brick letter-block light-bulb lottery-ticket marble paintbrush paperclip pencil penny ping-pong-ball playing-card poker-chip pool-cue poppy-seed quarter retro-cartridge rubber-chicken rubber-duck rubiks-cube scrunchie sesame-seed sheet-of-paper-a4 shuttlecock smartphone sneaker soccer-ball stethoscope tennis-ball tennis-racket toilet-paper-square tooth toy-car vinyl-record volleyball whistle whoopee-cushion wooden-block`,
 };
