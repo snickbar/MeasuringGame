@@ -2045,12 +2045,13 @@
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; padding: 8px 12px; width: auto; margin: 0; color: var(--text);
     border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
   }
-  .hud-timer-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+  .hud-timer-row { position:relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
   /* The timer box shows "--" (empty/unused) during the reveal animation, so the
      host's Skip button lives right under it instead of its old spot below the
      whole animation picture - frees up room there for the ticking answer (now
      on the question paper) and the full-size picture itself. */
-  .hud-timer-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 72px; } /* locked to the timer's width so the question card is the same (biggest) size on every screen; the note wraps inside */
+  .hud-timer-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; width: 72px; } /* locked to the timer's width so the question card is the same (biggest) size on every screen; the note wraps inside */
+  .hud-timer-col .question-note { margin-top:0; padding-top:4px; padding-bottom:4px; }
   .hud-timer {
     font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
@@ -2140,7 +2141,7 @@
   .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 42px; color: #000; line-height: 1.05; }
 
   /* Two independent scrollers: the answers/board on the left and the player cards docked on the right (swipe up on the cards to scroll them) */
-  .game-body { display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
+  .game-body { position:relative; display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
   .main-col { flex: 1 1 0; min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
   .game-body.anim-wide .score-sidebar { display: none; }
   .score-sidebar { flex:0 0 150px; min-width:0; min-height:0; display:flex; flex-direction:column; }
@@ -2682,11 +2683,18 @@
   /* Contextual power-ups stay above the player cards, beside the objects/keypad. */
   .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
   #quick-powerups { flex:none; padding:4px; margin:0 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
-  #quick-powerups .pu-row { grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; padding:0; margin:2px 0 0; border:0; background:none; }
-  #quick-powerups .pu-button { min-height:52px; font-size:10px; }
+  #quick-powerups .pu-row { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:minmax(44px,1fr); gap:3px; padding:0; margin:0; border:0; background:none; overflow-x:auto; overscroll-behavior-x:contain; }
+  #quick-powerups .pu-button { min-height:48px; font-size:10px; }
   #quick-powerups .pu-button img { width:25px; height:25px; }
   #quick-powerups .pu-button small { font-size:8px; }
   .pu-box-title { display:block; text-align:center; font:700 10px/1.2 system-ui,sans-serif; color:#85572b; }
+  #quick-powerups.pu-scrollable::before { content:'Power-ups ↔'; display:block; text-align:center; font:700 9px/1.2 system-ui,sans-serif; color:#85572b; }
+  .pu-spare { position:absolute; display:grid; gap:3px; z-index:3; }
+  #header-powerups { right:0; width:72px; }
+  #gap-powerups { top:4px; width:44px; }
+  .pu-spare .pu-button { box-sizing:border-box; min-height:44px; height:44px; padding:0; font-size:9px; border:1px solid #decaa9; background:#fff7e7; }
+  .pu-spare .pu-button img { width:20px; height:20px; }
+  .pu-spare .pu-button small { font-size:8px; }
   .pu-button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; min-height:60px; margin:0; padding:2px 0; border:0; border-radius:9px; background:#fffdf7; color:#583015; font:700 11px/1.15 system-ui,sans-serif; cursor:pointer; box-shadow:none; }
   .pu-button img { width:30px; height:30px; object-fit:contain; }
   .pu-button small { font-size:9px; color:#85572b; white-space:nowrap; }
@@ -2694,7 +2702,7 @@
   .pu-button:disabled { opacity:.45; cursor:default; }
   .pu-inline { flex-direction:row; gap:5px; width:100%; min-height:44px; padding:4px; margin:4px 0; background:#fff7e7; }
   .pu-inline img { width:26px; height:26px; }
-  #quick-powerups[hidden], .pu-toast[hidden] { display:none !important; }
+  #quick-powerups[hidden], .pu-spare[hidden], .pu-toast[hidden] { display:none !important; }
   .pu-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); z-index:20000; max-width:85vw; padding:10px 16px; border-radius:14px; background:#51311f; color:white; text-align:center; font:14px system-ui,sans-serif; pointer-events:none; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
@@ -3427,9 +3435,11 @@
     <button id="anim-skip-btn" type="button">Skip</button>
     <div id="question-note" class="question-note" style="display:none;"></div>
   </div>
+  <div id="header-powerups" class="pu-spare" aria-label="Power-ups beneath tips" hidden></div>
   </div>
 
   <div class="game-body">
+    <div id="gap-powerups" class="pu-spare" aria-label="Power-up beside objects" hidden></div>
     <div class="main-col">
 
       <div id="question-view">

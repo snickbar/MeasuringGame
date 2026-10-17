@@ -1,10 +1,12 @@
-import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairs, eliminationChoices, debitPowerup, settlePowerup } from './powerups.mjs';
+import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairs, eliminationChoices, debitPowerup, settlePowerup, powerupPlacement } from './powerups.mjs';
 
 // The controller owns immediate purchases and the reveal; the game owns scoring.
 export function createPowerupController(ports) {
   let busy = false, toastTimer, messagePhase = null;
   const active = new Set(), recovering = new Set();
   const tray = document.getElementById('quick-powerups');
+  const headerTray = document.getElementById('header-powerups');
+  const gapTray = document.getElementById('gap-powerups');
   const help = document.getElementById('howto-powerup-list');
   if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p><b>${p.name} · ${p.cost} coins:</b> ${p.description}</p>`).join('');
   const message = document.createElement('div');
@@ -34,11 +36,28 @@ export function createPowerupController(ports) {
     const c = context(), quick = c?.mode === 'quick';
     if (messagePhase && messagePhase !== c?.phase) message.hidden = true;
     tray.hidden = true;
+    if (headerTray) headerTray.hidden = true;
+    if (gapTray) gapTray.hidden = true;
     if (!quick) return;
     const available = ids(c);
-    const content = available.length ? `<span class="pu-box-title">Power-ups</span>${html(c)}` : '';
+    const row = document.querySelector('.hud-timer-row'), col = document.querySelector('.hud-timer-col');
+    const main = document.querySelector('.main-col'), side = document.querySelector('.score-sidebar'), pics = document.getElementById('q-preview');
+    const rowRect = row.getBoundingClientRect(), colRect = col.getBoundingClientRect();
+    const mainRect = main.getBoundingClientRect(), sideRect = side.getBoundingClientRect();
+    const placement = powerupPlacement(available, rowRect.bottom - colRect.bottom - 2, sideRect.left - mainRect.right - 12, pics.getBoundingClientRect().height);
+    const fill = (host, list) => {
+      if (!host) return;
+      const content = list.map(id => button(id, false)).join('');
+      if (host.innerHTML !== content) host.innerHTML = content;
+      host.hidden = !list.length;
+    };
+    fill(headerTray, placement.header); fill(gapTray, placement.gap);
+    if (headerTray) headerTray.style.top = `${colRect.bottom - rowRect.top + 2}px`;
+    if (gapTray) gapTray.style.left = `${mainRect.right - main.parentElement.getBoundingClientRect().left + 6}px`;
+    const content = placement.sidebar.length ? `<div class="pu-row" aria-label="Power-ups">${placement.sidebar.map(id => button(id, false)).join('')}</div>` : '';
     if (tray.innerHTML !== content) tray.innerHTML = content;
-    tray.hidden = !available.length;
+    tray.hidden = !placement.sidebar.length;
+    tray.classList.toggle('pu-scrollable', placement.sidebar.length > 3);
   }
   function same(c) {
     const live = context();
@@ -211,5 +230,9 @@ export function createPowerupController(ports) {
   document.addEventListener('keydown', e => {
     if (busy) { e.preventDefault(); e.stopImmediatePropagation(); }
   }, true);
+  if (typeof ResizeObserver !== 'undefined') {
+    const observer = new ResizeObserver(() => render());
+    for (const el of [document.querySelector('.hud-timer-row'), document.querySelector('.hud-timer-col'), document.querySelector('.game-body')]) if (el) observer.observe(el);
+  }
   return { get busy() { return busy; }, html, render, recover };
 }
