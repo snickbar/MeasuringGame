@@ -2676,6 +2676,30 @@
   /* Objects not found yet: a paper-like diagonal-stripe fill instead of see-through, with readable text. */
   .items-row.locked { background: repeating-linear-gradient(135deg, #e9e0cf 0, #e9e0cf 7px, #f1eadb 7px, #f1eadb 14px); border-color: #cdbd9f; }
   .items-row.locked .items-name { opacity: 1; color: #6b5a45; font-weight: 800; }
+
+  /* Compact, contextual solo power-ups. Prices and details never move the keypad. */
+  .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
+  #quick-powerups { flex:none; }
+  .pu-button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; min-height:60px; margin:0; padding:2px 0; border:0; border-radius:9px; background:#fffdf7; color:#583015; font:700 11px/1.15 system-ui,sans-serif; cursor:pointer; box-shadow:none; }
+  .pu-button img { width:30px; height:30px; object-fit:contain; }
+  .pu-button small { font-size:9px; color:#85572b; white-space:nowrap; }
+  .pu-button:focus-visible { outline:3px solid #8c48b9; outline-offset:1px; }
+  .pu-button:disabled { opacity:.45; cursor:default; }
+  .pu-inline { flex-direction:row; gap:5px; width:100%; min-height:44px; padding:4px; margin:4px 0; background:#fff7e7; }
+  .pu-inline img { width:26px; height:26px; }
+  #quick-powerups[hidden], #second-powerup[hidden], .pu-toast[hidden] { display:none !important; }
+  .pu-dialog { max-width:310px; width:calc(100% - 48px); border:3px solid #674027; border-radius:22px; padding:20px; background:#fff9ec; color:#583015; text-align:center; font:16px/1.4 system-ui,sans-serif; }
+  .pu-dialog::backdrop { background:#2e1a16b8; }
+  .pu-dialog h2 { margin:4px 0; font-size:22px; }
+  .pu-dialog-icon { width:92px; height:92px; object-fit:contain; }
+  .pu-actions { display:flex; gap:10px; }
+  .pu-actions button { flex:1; min-height:44px; padding:8px; border:1px solid #b9946b; border-radius:12px; background:#eed9b8; color:#583015; font:700 14px system-ui,sans-serif; }
+  .pu-actions button:last-child { background:#b7df7c; }
+  .pu-actions button:disabled { opacity:.5; }
+  .pu-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); z-index:20000; max-width:85vw; padding:10px 16px; border-radius:14px; background:#51311f; color:white; text-align:center; font:14px system-ui,sans-serif; pointer-events:none; }
+  .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
+  .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
+  .pu-result-note { font:700 11px/1.3 system-ui,sans-serif; color:#70348c; margin:5px 0; }
 </style>
 </head>
 <body>
@@ -3095,6 +3119,7 @@
   <details class="howto-section"><summary>How sizes are measured</summary><div class="howto-body">
     <p>Every object uses whatever dimension you'd naturally measure it by in real life, not just whichever number happens to be biggest.</p>
     <p>Anything naturally low and horizontal - like a <b>fire truck</b> or an <b>ant</b> - is measured by its length (bumper-to-bumper, nose-to-tail), not how tall it stands. Anything naturally tall and upright - like a <b>giraffe</b> or a <b>skyscraper</b> - is measured by height instead.</p>
+    <p>Questions name the dimension being compared: <b>length, height, width, diameter, depth, wingspan, or edge length</b>. Extra wording tells you when a cord, tail, pedestal, or post is included. Wired earbuds include the full cord; the wireless earbuds case is measured on its own. A tied necktie is measured from knot to tip.</p>
   </div></details>
 
   <details class="howto-section"><summary>Second chances</summary><div class="howto-body">
@@ -3398,6 +3423,7 @@
   </div>
   </div>
 
+  <div id="quick-powerups" hidden></div>
   <div class="game-body">
     <div class="main-col">
 
@@ -3423,6 +3449,7 @@
       </div>
 
       <div id="answers-view">
+        <div id="second-powerup" hidden></div>
         <div id="answers-row"></div>
         <button id="double-down-btn"><span class="dd-main">Double down on my answer</span></button>
       </div>
@@ -3498,6 +3525,18 @@
 var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
 </script>
 <script type="module">
+  import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
+  import { createPowerupController } from "./anim/powerup-ui.mjs";
+  var powerups;
+  const powerupSeen = new Set();
+  function effectiveGuess(q, raw, playerId) {
+    return bufferedGuess(raw, q.answer, !!q.powerups?.used?.buffer && q.powerups.owner === playerId);
+  }
+  function bufferResultNote(q, raw, playerId) {
+    if (!q.powerups?.used?.buffer || q.powerups.owner !== playerId) return "";
+    return '<div class="pu-result-note">10% buffer: ' + Number(raw).toLocaleString("en-US", { maximumFractionDigits: 2 }) + ' → ' + Number(effectiveGuess(q, raw, playerId)).toLocaleString("en-US", { maximumFractionDigits: 2 }) + '</div>';
+  }
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
     getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction, query, orderByChild, limitToLast, limitToFirst, startAfter
@@ -4191,6 +4230,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderBackgroundPackShop();
     renderStarterBundle();
     syncHomeScreenPrefs();
+    powerups?.render();
   }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
@@ -4251,6 +4291,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       saveCachedProfile(deviceId, myProfile);
       renderProfileDependentUi();
       grantLevelRewards();
+      powerups?.recover(data, deviceId);
     });
   }
 
@@ -4811,7 +4852,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     bg.className = "cosm-pv-bg";
     bg.style.backgroundColor = getComputedStyle(document.body).backgroundColor;
     if (id !== "none") bg.style.backgroundImage = `url('${backgroundUrl(id)}')`;
-    bg.innerHTML = `<div class="mk-q">How many playing cards long is a canoe?</div>`;
+    bg.innerHTML = `<div class="mk-q">How many playing cards long is the length of a canoe?</div>`;
     const ov = cosmPreviewShell(label, bg);
     if (isTileBg(id)) { bg.style.backgroundRepeat = "repeat"; bg.style.backgroundPosition = "0 0"; bg.style.backgroundSize = `${TILE_PX[id] * bg.clientWidth / 390}px`; }
     const close = document.createElement("button");
@@ -4829,7 +4870,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     host.className = "cosm-pv-host";
     const ov = cosmPreviewShell(label, host);
     host.appendChild(qPromptEl);
-    const SAMPLE = "How many playing cards long is a canoe?";
+    const SAMPLE = "How many playing cards long is the length of a canoe?";
     let token = 0, timers = [];
     const later = (ms, fn) => { const my = token; timers.push(setTimeout(() => { if (my === token) fn(); }, ms)); };
     const reset = () => {
@@ -5442,8 +5483,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "whistle", name: "referee whistle", plural: "referee whistles", mm: 55, image: "items/whistle.webp" },
     { id: "rubiks-cube", name: "Rubik's Cube", plural: "Rubik's Cubes", mm: 57, image: "items/rubiks-cube.webp" },
     { id: "egg", name: "egg", plural: "eggs", mm: 57, image: "items/egg.webp" },
-    { id: "earbuds-case", name: "pair of wireless earbuds", plural: "pairs of wireless earbuds", mm: 60, image: "items/earbuds-case.webp" },
-    { id: "shuttlecock", name: "badminton shuttlecock", plural: "badminton shuttlecocks", mm: 65, image: "items/shuttlecock.webp" },
+    { id: "earbuds-case", name: "wireless earbuds case", plural: "wireless earbuds cases", mm: 60, image: "items/earbuds-case.webp" },
+    { id: "shuttlecock", name: "badminton shuttlecock", plural: "badminton shuttlecocks", mm: 85, image: "items/shuttlecock.webp" },
     { id: "tennis-ball", name: "tennis ball", plural: "tennis balls", mm: 67, image: "items/tennis-ball.webp" },
     { id: "baseball", name: "baseball", plural: "baseballs", mm: 74, image: "items/baseball.webp" },
     { id: "wooden-block", name: "wooden block", plural: "wooden blocks", mm: 75, image: "items/wooden-block.webp" },
@@ -5555,7 +5596,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "baguette", name: "baguette", plural: "baguettes", mm: 650, image: "items/baguette.webp" },
     { id: "car-tire", name: "car tire", plural: "car tires", mm: 650, image: "items/car-tire.webp" },
     { id: "tennis-racket", name: "tennis racket", plural: "tennis rackets", mm: 685, image: "items/tennis-racket.webp" },
-    { id: "baseball-bat", name: "baseball bat", plural: "baseball bats", mm: 700, image: "items/baseball-bat.webp" },
+    { id: "baseball-bat", name: "adult baseball bat", plural: "adult baseball bats", mm: 840, image: "items/baseball-bat.webp" },
     { id: "trash-can", name: "trash can", plural: "trash cans", mm: 700, image: "items/trash-can.webp" },
     { id: "saxophone", name: "saxophone", plural: "saxophones", mm: 700, image: "items/saxophone.webp" },
     { id: "corgi", name: "corgi", plural: "corgis", mm: 700, image: "items/corgi.webp" },
@@ -5577,9 +5618,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "jeans", name: "pair of jeans", plural: "pairs of jeans", mm: 1050, image: "items/jeans.webp" },
     { id: "traffic-light", name: "traffic light", plural: "traffic lights", mm: 1050, image: "items/traffic-light.webp" },
     { id: "stork", name: "stork", plural: "storks", mm: 1100, image: "items/stork.webp" },
-    { id: "mailbox", name: "mailbox", plural: "mailboxes", mm: 1150, image: "items/mailbox.webp" },
+    { id: "mailbox", name: "mailbox on a post", plural: "mailboxes on posts", mm: 1400, image: "items/mailbox.webp" },
     { id: "capybara", name: "capybara", plural: "capybaras", mm: 1200, image: "items/capybara.webp" },
-    { id: "earbuds", name: "pair of earbuds", plural: "pairs of earbuds", mm: 1200, image: "items/earbuds.webp" },
+    { id: "earbuds", name: "wired earbuds", plural: "wired earbuds", mm: 1200, image: "items/earbuds.webp" },
     { id: "barracuda", name: "barracuda", plural: "barracudas", mm: 1200, image: "items/barracuda.webp" },
     { id: "flamingo", name: "flamingo", plural: "flamingos", mm: 1300, image: "items/flamingo.webp" },
     { id: "mop", name: "mop", plural: "mops", mm: 1300, image: "items/mop.webp" },
@@ -5657,7 +5698,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "minivan", name: "minivan", plural: "minivans", mm: 5080, image: "items/minivan.webp" },
     { id: "giraffe", name: "giraffe", plural: "giraffes", mm: 5500, image: "items/giraffe.webp" },
     { id: "ambulance", name: "ambulance", plural: "ambulances", mm: 5500, image: "items/ambulance.webp" },
-    { id: "t-rex", name: "T. rex", plural: "T. rexes", mm: 5600, image: "items/t-rex.webp" },
+    { id: "t-rex", name: "T. rex", plural: "T. rexes", mm: 12000, image: "items/t-rex.webp" },
     { id: "ice-cream-truck", name: "ice cream truck", plural: "ice cream trucks", mm: 5800, image: "items/ice-cream-truck.webp" },
     { id: "jumbotron", name: "arena video board", plural: "arena video boards", mm: 6000, image: "items/jumbotron.webp" },
     { id: "flagpole", name: "flagpole", plural: "flagpoles", mm: 6000, image: "items/flagpole.webp" },
@@ -5696,7 +5737,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "boeing-737", name: "Boeing 737", plural: "Boeing 737s", mm: 39500, image: "items/boeing-737.webp" },
     { id: "water-tower", name: "water tower", plural: "water towers", mm: 40000, image: "items/water-tower.webp" },
     { id: "power-line-tower", name: "power line tower", plural: "power line towers", mm: 45000, image: "items/power-line-tower.webp" },
-    { id: "statue-of-liberty", name: "Statue of Liberty", plural: "Statues of Liberty", properNoun: true, mm: 46000, image: "items/statue-of-liberty.webp" },
+    { id: "statue-of-liberty", name: "Statue of Liberty", plural: "Statues of Liberty", properNoun: true, mm: 93000, image: "items/statue-of-liberty.webp" },
     { id: "olympic-pool", name: "Olympic swimming pool", plural: "Olympic swimming pools", mm: 50000, image: "items/olympic-pool.webp" },
     { id: "castle", name: "castle", plural: "castles", mm: 50000, image: "items/castle.webp" },
     { id: "niagara-falls", name: "Niagara Falls", plural: "Niagara Falls", properNoun: true, mm: 51000, image: "items/niagara-falls.webp" },
@@ -5850,7 +5891,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["may", "pinata", "piñata", "piñatas", 600],
     ["may", "chili-pepper", "chili pepper", "chili peppers", 120],
     ["may", "taco", "taco", "tacos", 150],
-    ["june", "necktie", "necktie", "neckties", 1400],
+    ["june", "necktie", "tied necktie", "tied neckties", 500],
     ["june", "toolbox", "toolbox", "toolboxes", 400],
     ["june", "fishing-rod", "fishing rod", "fishing rods", 2100],
     ["june", "coffee-mug", "coffee mug", "coffee mugs", 110],
@@ -5922,7 +5963,65 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   ["kaiju","giant kaiju","giant kaijus",50000,"fantasy-kaiju"],
   ];
   const FANTASY_OBJECTS = FANTASY_OBJECT_DEFS.map((d) => ({ id: d[0], fantasy: true, awardId: d[4], name: d[1], plural: d[2], ...(d[5] ? { properNoun: true } : {}), mm: d[3], image: `items/${d[0]}.webp` }));
-  const OBJECT_BY_ID = new Map(OBJECTS.concat(HOLIDAY_OBJECTS, FANTASY_OBJECTS).map((o) => [o.id, o]));
+  // Each mm value represents one declared dimension, not a universal bounding-box size.
+  // Unlisted objects use end-to-end length; explicit groups describe other dimensions.
+  const MEASUREMENT_GROUPS = {
+    height: `earbuds-case light-bulb soda-can baby-bottle wine-glass boba-tea ice-cream-cone pineapple wine-bottle cotton-candy lava-lamp daisy long-stem-rose foam-finger trash-can traffic-cone barstool fire-hydrant folding-chair lawn-flamingo barrel penguin newspaper-box pogo-stick traffic-light stork mailbox flamingo mop parking-meter broom giant-anthill kangaroo unicycle adult-human gorilla refrigerator robot scarecrow vending-machine ladder door stop-sign ostrich phone-booth porta-potty corn-stalk sunflower moai teepee giraffe cactus streetlight palm-tree telephone-pole flagpole oak-tree barn-silo hot-air-balloon lighthouse windmill christ-statue water-tower power-line-tower statue-of-liberty castle niagara-falls leaning-tower-of-pisa notre-dame taj-mahal tower-crane big-ben saturn-rocket wind-turbine london-eye great-pyramid washington-monument space-needle gateway-arch hoover-dam eiffel-tower empire-state-building cn-tower burj-khalifa angel-falls mount-fuji mount-kilimanjaro mount-everest christmas-tree christmas-stocking santa-hat reindeer witch-hat skeleton ghost pilgrim-hat tombstone cupid candle leprechaun-hat pot-of-gold green-beer-mug leprechaun chocolate-bunny bunny-ears marshmallow-chick baby-chick champagne-glass party-hat balloon countdown-sign tulip handbag coffee-mug lemonade-pitcher ketchup-bottle uncle-sam-hat beach-umbrella sandcastle suitcase backpack locker goblin yeti bigfoot fairy baby-dragon garden-gnome dwarf alien mermaid mummy werewolf unicorn minotaur centaur troll cyclops kaiju`.split(/\s+/),
+    width: `fake-mustache game-controller laptop basketball-backboard soccer-goal jumbotron billboard american-flag novelty-glasses sunglasses snorkel-mask shamrock four-leaf-clover heart`.split(/\s+/),
+    diameter: `grain-of-sand poppy-seed blueberry cheerio penny button quarter checkers-piece poker-chip ping-pong-ball golf-ball clown-nose hockey-puck sand-dollar apple scrunchie donut bagel dvd dog-bowl volleyball bowling-ball soccer-ball basketball cream-pie frisbee starfish vinyl-record pizza-pie watermelon cheese-wheel manhole-cover car-tire carousel snow-globe cauldron pumpkin pumpkin-pie cranberry gold-coin clock disco-ball times-square-ball beach-ball hamburger globe flying-saucer`.split(/\s+/),
+    edge: ["ice-cube", "letter-block", "rubiks-cube", "wooden-block"],
+    depth: ["grand-canyon", "mariana-trench"],
+    wingspan: ["bat", "phoenix"],
+  };
+  const MEASUREMENT_DETAILS = {
+    "earbuds": { subject: "wired earbuds" },
+    "earbuds-case": { qualifier: "case only" },
+    "t-rex": { qualifier: "nose to tail" },
+    "shuttlecock": { qualifier: "cork to feather tips" },
+    "statue-of-liberty": { qualifier: "including the pedestal" },
+    "christ-statue": { qualifier: "including the pedestal" },
+    "mailbox": { qualifier: "including the above-ground post" },
+    "necktie": { qualifier: "knot to tip" },
+    "soccer-goal": { qualifier: "between the inside edges of the posts" },
+    "basketball-backboard": { qualifier: "board only" },
+    "football-field": { qualifier: "including both end zones" },
+    "basketball-court": { qualifier: "full court" },
+    "olympic-pool": { qualifier: "end to end" },
+    "pearl-necklace": { qualifier: "laid straight" },
+    "napkin": { qualifier: "unfolded" },
+    "pancakes": { dimension: "diameter", qualifier: "across the pancakes" },
+    "teacup": { dimension: "diameter", qualifier: "across the saucer" },
+    "stonehenge": { dimension: "diameter", qualifier: "outer stone circle" },
+    "manta-ray": { dimension: "width", qualifier: "wingtip to wingtip" },
+    "stingray": { qualifier: "including the tail" },
+    "giant-squid": { qualifier: "including the extended tentacles" },
+    "octopus": { qualifier: "with arms extended" },
+    "kraken": { qualifier: "with tentacles extended" },
+    "domestic-cat": { qualifier: "including the tail" },
+    "black-cat": { qualifier: "body only, excluding the tail" },
+    "mount-fuji": { qualifier: "summit elevation above sea level" },
+    "mount-kilimanjaro": { qualifier: "summit elevation above sea level" },
+    "mount-everest": { qualifier: "summit elevation above sea level" },
+    "rainbow": { dimension: "width", qualifier: "the game's holiday rainbow" },
+    "fireworks": { dimension: "diameter", qualifier: "the game's representative burst" },
+  };
+  const MEASUREMENT_TYPES = {
+    length: { noun: "length", adjective: "long" },
+    height: { noun: "height", adjective: "tall" },
+    width: { noun: "width", adjective: "wide" },
+    diameter: { noun: "diameter", adjective: "across" },
+    depth: { noun: "depth", adjective: "deep" },
+    wingspan: { noun: "wingspan", adjective: "across" },
+    edge: { noun: "edge length", adjective: "long" },
+  };
+  const MEASUREMENT_DEFINITE_IDS = new Set(`statue-of-liberty grand-canyon mariana-trench eiffel-tower empire-state-building cn-tower burj-khalifa colosseum gateway-arch titanic golden-gate-bridge brooklyn-bridge space-needle great-pyramid washington-monument sydney-opera-house taj-mahal leaning-tower-of-pisa london-eye`.split(/\s+/));
+  const ALL_OBJECTS = OBJECTS.concat(HOLIDAY_OBJECTS, FANTASY_OBJECTS);
+  const dimensionById = new Map(Object.entries(MEASUREMENT_GROUPS).flatMap(([dimension, ids]) => ids.map((id) => [id, dimension])));
+  ALL_OBJECTS.forEach((o) => {
+    const detail = MEASUREMENT_DETAILS[o.id] || {};
+    o.measurement = { dimension: dimensionById.get(o.id) || "length", ...detail };
+  });
+  const OBJECT_BY_ID = new Map(ALL_OBJECTS.map((o) => [o.id, o]));
   // The fantasy objects this player has unlocked (the host's list is what a room uses).
   const unlockedFantasyIds = () => FANTASY_OBJECTS.filter((o) => (myProfile.achClaimed || {})[o.awardId]).map((o) => o.id);
 
@@ -6044,6 +6143,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return /^[aeiou]/i.test(obj.name) ? "an" : "a";
   }
 
+  function measurementQuestionPrompt(unit, target) {
+    const unitMeasure = unit.measurement || { dimension: "length" };
+    const targetMeasure = target.measurement || { dimension: "length" };
+    const unitType = MEASUREMENT_TYPES[unitMeasure.dimension];
+    const targetType = MEASUREMENT_TYPES[targetMeasure.dimension];
+    const unitNote = unitMeasure.qualifier ? ` (${unitMeasure.qualifier})` : "";
+    const targetNote = targetMeasure.qualifier ? ` (${targetMeasure.qualifier})` : "";
+    const targetArticle = MEASUREMENT_DEFINITE_IDS.has(target.id) ? "the" : articleFor(target);
+    const targetSubject = targetMeasure.subject || [targetArticle, target.name].filter(Boolean).join(" ");
+    return `How many ${unit.plural}${unitNote} ${unitType.adjective} is the ${targetType.noun} of ${targetSubject}${targetNote}?`;
+  }
+
   // Items with two pictures (items/<id>.webp and items/<id>-2.webp) show one or the other at random each
   // question. The host picks (stored on the question) so every player sees the same one. To add another
   // item, drop its second picture in as items/<id>-2.webp and add its id here.
@@ -6062,7 +6173,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       answer: target.mm / unit.mm,
       unitArt: Math.random() < 0.5 ? 0 : 1,
       targetArt: Math.random() < 0.5 ? 0 : 1,
-      prompt: `How many ${unit.plural} long is ${[articleFor(target), target.name].filter(Boolean).join(" ")}?`,
+      prompt: measurementQuestionPrompt(unit, target),
     };
   }
 
@@ -6115,7 +6226,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return {
       unitId: unit.id, targetId: target.id, unitName: unit.name, targetName: target.name,
       answer: target.mm / unit.mm, unitArt: 0, targetArt: 0,
-      prompt: `How many ${unit.plural} long is ${[articleFor(target), target.name].filter(Boolean).join(" ")}?`,
+      prompt: measurementQuestionPrompt(unit, target),
     };
   }
 
@@ -7954,9 +8065,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${i + 1} of ${WORLD_Q}</p>${dots(i)}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${powerups?.html(powerupContext()) || ""}
         <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
-        <button type="button" class="dc-btn" id="wl-submit" disabled>Lock it in</button>`;
+        <button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button>`;
       return;
     }
     if (wl.phase === "reveal") {
@@ -7967,7 +8079,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     // done
     worldStop();
-    const accs = wl.questions.map((q, k) => roundAccuracy(wl.guesses[k] / q.answer));
+    const accs = wl.questions.map((q, k) => roundAccuracy(effectiveGuess(q, wl.guesses[k], deviceId) / q.answer));
     const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
     const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
     const nextLevel = wl.level < WORLD_LEVELS && wl.stars >= 1;
@@ -7983,11 +8095,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function worldRunReveal() {
     const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], last = wl.guesses.length >= WORLD_Q;
     const showResult = (mod) => {
-      const acc = roundAccuracy(g / q.answer);
+      const acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer);
       const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("wl-result"); if (!host) return;
-      host.innerHTML = resultCardHtml(acc, g, ans, label);
+      host.innerHTML = resultCardHtml(acc, g, ans, label) + bufferResultNote(q, g, deviceId);
       const skip = document.getElementById("wl-skip");
       if (skip) { skip.id = "wl-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
     };
@@ -8009,7 +8121,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // After the fifth guess: stars (best run counts), coins for each NEW star, stats and history.
   async function worldFinish() {
     const w = WORLDS[wl.wi];
-    const accs = wl.questions.map((q, k) => roundAccuracy(wl.guesses[k] / q.answer));
+    const accs = wl.questions.map((q, k) => roundAccuracy(effectiveGuess(q, wl.guesses[k], deviceId) / q.answer));
     const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
     const stars = worldStarsFor(avg), prev = worldLevelStars(w.id, wl.level), best = Math.max(prev, stars);
     wl.stars = stars; wl.gain = (best - prev) * WORLD_STAR_COINS;
@@ -8020,7 +8132,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     bumpStats({ rounds: WORLD_Q, worldLevels: 1 }, null);
     for (let k = 0; k < WORLD_Q; k++) {
       const q = wl.questions[k];
-      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((wl.guesses[k] / q.answer) * 10000) / 10000, p: 0, f: accs[k] >= 99 ? 1 : 0, s: 3 });
+      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((effectiveGuess(q, wl.guesses[k], deviceId) / q.answer) * 10000) / 10000, p: 0, f: accs[k] >= 99 ? 1 : 0, s: 3 });
     }
   }
   function worldStartLevel(level) {
@@ -8048,9 +8160,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "wl-skip") {
       if (wlAnim) { try { wlAnim.stop(); } catch (err) {} }
-      const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], acc = roundAccuracy(g / q.answer), mod = await loadAnimModule();
+      const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), mod = await loadAnimModule();
       const host = document.getElementById("wl-result");
-      if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer);
+      if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer) + bufferResultNote(q, g, deviceId);
       b.id = "wl-next"; b.className = "dc-btn"; b.textContent = wl.guesses.length >= WORLD_Q ? "See my results" : "Next question"; return;
     }
     if (b.id === "wl-next") { wl.phase = wl.guesses.length >= WORLD_Q ? "done" : "question"; renderWorlds(); return; }
@@ -8385,10 +8497,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Show the result of the round: the card with the gauge, then (if it cost a life) the cracking heart and the hearts update.
   function svShowResult(m) {
     if (!sv || sv.resultShown) return; sv.resultShown = true;
-    const q = sv.q, g = sv.g, acc = roundAccuracy(g / q.answer), ok = acc >= SURVIVAL_PASS, over = sv.lives <= 0;
+    const q = sv.q, g = sv.g, acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), ok = acc >= SURVIVAL_PASS, over = sv.lives <= 0;
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     const host = document.getElementById("sv-result"); if (!host) return;
-    host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${ok ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div>${svGaugeHtml(acc)}</div>`;
+    host.innerHTML = `<div class="dc-card dc-hot"><div class="dc-big">${ok ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div>${svGaugeHtml(acc)}${bufferResultNote(q, g, deviceId)}</div>`;
     const skip = document.getElementById("sv-skip");
     if (skip) { skip.id = "sv-next"; skip.className = "dc-btn"; skip.textContent = over ? "See my score" : "Next round"; }
     const accEl = document.getElementById("sv-acc"); if (accEl) accEl.innerHTML = svAccHtml(svRunAcc(sv.accs.length));
@@ -8429,9 +8541,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives, svRunAcc(sv.accs.length))}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${powerups?.html(powerupContext()) || ""}
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
-        <button type="button" class="dc-btn" id="sv-submit" disabled>Lock it in</button>`;
+        <button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button>`;
       return;
     }
     if (sv.phase === "reveal") {
@@ -8514,9 +8627,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "sv-submit") {
       const g = parseFloat(sv.input); if (!(g > 0)) return;
-      const acc = roundAccuracy(g / sv.q.answer), ok = acc >= SURVIVAL_PASS;
+      const acc = roundAccuracy(effectiveGuess(sv.q, g, deviceId) / sv.q.answer), ok = acc >= SURVIVAL_PASS;
       sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok; sv.resultShown = false; sv.lossPending = !ok;
-      sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((g / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
+      sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((effectiveGuess(sv.q, g, deviceId) / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
       if (ok) sv.survived++; else sv.lives--;
       sv.phase = "reveal"; playSound("pick");
       if (sv.lives <= 0) await survivalFinish();
@@ -9265,7 +9378,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (q && q.unitId && q.targetId && q.answer > 0 && mine.guess > 0) {
       appendRoundHistory({
         t: Date.now(), u: q.unitId, g: q.targetId,
-        r: Math.round((mine.guess / q.answer) * 10000) / 10000,        // your guess as a multiple of the true answer (1 = exact)
+        r: Math.round(((mine.effectiveGuess ?? mine.guess) / q.answer) * 10000) / 10000,        // your guess as a multiple of the true answer (1 = exact)
         p: (data.lastRoundPoints && data.lastRoundPoints[currentPlayerId]) || 0,
         f: (mine.basePoints === 5 ? 1 : 0) | (mine.isPerfect ? 2 : 0) | (mine.isClosest ? 4 : 0),
         s: (roomState && roomState.settings && roomState.settings.solo) ? 1 : 0,
@@ -9472,7 +9585,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaRevealWrapEl.classList.add("show");
     gachaStatusEl.textContent = "New avatar unlocked!";
 
-    playSound(tier === "ultra" ? "perfect" : tier === "rare" ? "roundwin" : "reveal");
+    playSound(tier === "ultra" ? "avatar-ultra" : tier === "rare" ? "roundwin" : "avatar-unlock");
     celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
     spawnTrophyBurst(gachaRevealWrapEl, "icons/gacha-capsule-open.png");
     if (tier === "ultra") gachaRetrigger(gachaFlashEl, "go");
@@ -11003,8 +11116,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       animAudio = { ctx: new AC(), bufs: {} };
-      ["swipe", "tap", "tick", "cardflip"].forEach((name) => {
-        fetch(SFX_FILES[name])
+      Object.keys(ANIM_SFX_FILES).forEach((name) => {
+        fetch(ANIM_SFX_FILES[name])
           .then((r) => r.arrayBuffer())
           .then((ab) => new Promise((ok, no) => animAudio.ctx.decodeAudioData(ab, ok, no)))
           .then((buf) => { animAudio.bufs[name] = buf; })
@@ -11059,7 +11172,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try {
       animAudioInit();
       if (!animAudio) return;
-      if (ANIM_SYNTH[cue.name]) { ANIM_SYNTH[cue.name](cue.vol); return; }
+      if (!ANIM_SFX_FILES[cue.name] && ANIM_SYNTH[cue.name]) { ANIM_SYNTH[cue.name](cue.vol); return; }
       const buf = animAudio.bufs[cue.name];
       if (!buf) return;
       const ctx = animAudio.ctx;
@@ -11230,6 +11343,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (roomState.phase === "question") deadline = roomState.graceEndsAt || roomState.questionEndsAt;
       else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
       if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); return; }
+      powerups?.render();
       const remaining = Math.max(0, deadline - nowMs());
       hudTimerEl.textContent = Math.ceil(remaining / 1000).toString();
       hudTimerEl.classList.toggle("low", remaining <= 5000);
@@ -11245,20 +11359,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }, 200);
   }
 
-  function lockOwnGuessIfNeeded() {
-    if (guessLocked) return;
+  async function lockOwnGuessIfNeeded() {
+    if (guessLocked || powerups?.busy) return;
     guessLocked = true;
     playSound("timesup");
     if (!hasSubmittedThisRound) {
       const val = parseFloat(currentGuessStr);
-      if (!isNaN(val)) set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), val);
+      if (!isNaN(val)) await set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), val);
     }
   }
 
   // ==================== Host-authoritative round transitions ====================
 
   async function startRound(roomCode, roundNum) {
-    const q = generateQuestion();
+    const q = { ...generateQuestion(), powerupKey: crypto.randomUUID() };
     const endsAt = nowMs() + (currentSettings.timerSeconds || 30) * 1000;
     console.log("[measuring-game] starting round", roundNum, q);
     await update(ref(db, `rooms/${roomCode}`), {
@@ -11283,7 +11397,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkQuestionAdvance(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionInFlight || powerups?.busy) return;
     if (roomState.phase !== "question") return;
     if (roomState.paused) return;
     const players = roomState.players || {};
@@ -11339,7 +11453,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkAnswersAdvance(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionInFlight || powerups?.busy) return;
     if (roomState.phase !== "answers") return;
     if (roomState.paused) return;
     if (nowMs() < roomState.answersEndsAt) return;
@@ -11362,7 +11476,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         name: (playersSnap[id] && playersSnap[id].name) || "Player",
         flair: (playersSnap[id] && playersSnap[id].flair) || "classic",
         guess: guesses[id],
-        error: Math.abs(guesses[id] - answer),
+        effectiveGuess: effectiveGuess(q, guesses[id], id),
+        bufferUsed: !!q.powerups?.used?.buffer && q.powerups.owner === id,
+        error: Math.abs(effectiveGuess(q, guesses[id], id) - answer),
       }))
       .sort((a, b) => b.error - a.error); // furthest first, closest last
 
@@ -11371,7 +11487,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       e.isClosest = !!closest && e.playerId === closest.playerId;
       e.isSpotOn = e.error <= answer * 0.01;
       e.isPerfect = e.error < 0.005;
-      e.accuracyPercent = Math.round((e.guess / answer) * 100);
+      e.accuracyPercent = Math.round((e.effectiveGuess / answer) * 100);
       const within09 = e.error <= 0.9;
       e.basePoints = e.isClosest ? (within09 ? 5 : 3) : 0;
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
@@ -11457,7 +11573,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updates[`players/${e.playerId}/roundsCounted`] = (p.roundsCounted || 0) + 1;
       updates[`players/${e.playerId}/consecutiveWins`] = e.consecutiveWins;
       if (!p.bestGuess || Math.abs(e.accuracyPercent - 100) < Math.abs(p.bestGuess.percent - 100)) {
-        updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.guess, answer, prompt: q.prompt };
+        updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.effectiveGuess, rawGuess: e.guess, answer, prompt: q.prompt };
       }
     });
     console.log("[measuring-game] scoring computed", entries, lastRoundPoints);
@@ -11812,7 +11928,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   submitGuessBtn.addEventListener("click", async () => {
-    if (guessLocked || roomState.paused) return;
+    if (guessLocked || hasSubmittedThisRound || roomState.paused || powerups?.busy) return;
     const guessNum = parseFloat(currentGuessStr);
     if (isNaN(guessNum)) { setGuessStatus("Enter a number first."); playSound("error"); return; }
     hasSubmittedThisRound = true;
@@ -11826,6 +11942,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const waiting = hasSubmittedThisRound && !guessLocked && roomState.phase === "question";
     numpadEl.style.display = waiting ? "none" : "grid";
     submitGuessBtn.style.display = waiting ? "none" : "flex";
+    powerups?.render();
   }
 
   // ==================== Emoji reactions ====================
@@ -12138,7 +12255,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let seed = 0;
     for (const c of `${currentRoomCode}:${data.answersEndsAt || data.round || 0}`) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
     const seededRand = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    const shuffled = answers.filter((e) => e.playerId !== currentPlayerId).slice();
+    const removed = data.currentQuestion?.powerups?.owner === currentPlayerId ? (data.currentQuestion.powerups.removed || []) : [];
+    const shuffled = answers.filter((e) => e.playerId !== currentPlayerId && !removed.includes(e.playerId)).slice();
     for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(seededRand() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
     shuffled.forEach((entry) => {
       const isMyPick = !!myPick && myPick.type === "pick" && myPick.targetPlayerId === entry.playerId;
@@ -12167,6 +12285,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       + `<span class="dd-pill">Double down +2</span>`
       + (isMyDoubleDown ? `<span class="pick-stamp">${avatarHtml(currentAvatar)}</span>` : "");
     doubleDownBtn.setAttribute("aria-label", "Double down on my answer");
+    powerups?.render();
     fitAnswerPapers();
   }
 
@@ -12192,8 +12311,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", () => { if (document.getElementById("answers-view").classList.contains("active")) fitAnswerPapers(); });
 
   async function choosePick(type, targetPlayerId, alreadyActive) {
-    if (roomState.paused) return;
+    if (roomState.paused || powerups?.busy || roomState.phase !== "answers" || nowMs() >= roomState.answersEndsAt) return;
     if (nowMs() < answersPhaseInputLockedUntil) return;
+    if ((roomState.currentQuestion?.powerups?.removed || []).includes(targetPlayerId)) return;
     const pickRef = ref(db, `rooms/${currentRoomCode}/picks/${currentPlayerId}`);
     if (alreadyActive) {
       await remove(pickRef);
@@ -12241,7 +12361,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pickedHtml = pickedBy.length
       ? `<div class="pickedby-avatars">${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join("")}</div>`
       : "";
-    return `<div class="rv-badges"><span class="acc-badge">${entry.accuracyPercent}%</span>${pickedHtml}</div>`;
+    return `<div class="rv-badges"><span class="acc-badge">${entry.accuracyPercent}%</span>${pickedHtml}</div>${entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId) : ""}`;
   }
 
   function revealCardFinalHtml(entry) {
@@ -12323,7 +12443,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // paint above the separate .score-col cards) for the drumroll, then the card flips.
         const drumMs = flairDrumMs();
         playSound("drumroll");
-        if (drumMs > 1100) setTimeout(() => { if (!stale()) playSound("drumroll"); }, 1000);
         flairOrbit(li, flairIdFor(entry), drumMs);
         setTimeout(() => { li.classList.remove("drumroll"); doFlips(); }, drumMs);
       } else {
@@ -13309,29 +13428,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   const SFX_FILES = {
-    tap: "sfx/tap.mp3",
+    tap: "sfx/crisp/tap.wav",
     select: "sfx/select.mp3",
-    cancel: "sfx/cancel.mp3",
-    error: "sfx/error.mp3",
-    "popup-open": "sfx/popup-open.mp3",
-    "popup-close": "sfx/popup-close.mp3",
+    cancel: "sfx/crisp/cancel.wav",
+    error: "sfx/crisp/error.wav",
+    "popup-open": "sfx/crisp/popup-open.wav",
+    "popup-close": "sfx/crisp/popup-close.wav",
     swipe: "sfx/swipe.mp3",
-    shuffle: "sfx/shuffle.mp3",
+    shuffle: "sfx/crisp/shuffle.wav",
+    drumroll: "sfx/shuffle.mp3",
+    "drumroll-end": "sfx/crisp/drumroll-end.wav",
     cardflip: "sfx/cardflip.mp3",
+    "avatar-unlock": "sfx/crisp/avatar-unlock.wav",
+    "avatar-ultra": "sfx/crisp/shuffle.wav",
     win: "sfx/win.mp3",
-    roundwin: "sfx/roundwin.mp3",
-    count: "sfx/count.mp3",
-    tick: "sfx/tick.mp3",
+    roundwin: "sfx/crisp/roundwin.wav",
+    count: "sfx/crisp/count.wav",
+    tick: "sfx/crisp/tick.wav",
     go: "sfx/go.mp3",
     timesup: "sfx/timesup.mp3",
     join: "sfx/join.mp3",
-    leave: "sfx/leave.mp3",
-    perfect: "sfx/perfect.mp3",
+    leave: "sfx/crisp/leave.wav",
+    perfect: "sfx/crisp/perfect.wav",
     streak: "sfx/streak.mp3",
     answers: "sfx/answers.mp3",
-    winner: "sfx/winner.mp3",
-    emoji: "sfx/emoji.mp3",
+    winner: "sfx/crisp/winner.wav",
+    emoji: "sfx/crisp/emoji.wav",
     start: "sfx/start.mp3",
+  };
+  // Animation choices are independent of UI choices, including original files kept in the review.
+  // The answer-reveal bell remains synthesized; zoomback now uses the selected Cozy sample.
+  const ANIM_SFX_FILES = {
+    swipe: "sfx/crisp/anim-swipe.wav",
+    tap: "sfx/tap.mp3",
+    tick: "sfx/crisp/anim-tick.wav",
+    cardflip: "sfx/cardflip.mp3",
+    zoomback: "sfx/crisp/anim-zoomback.wav",
   };
   // Some of the new sounds are very short/quiet at the source; per-sound gain.
   const SFX_VOLUME = { tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7 };
@@ -13343,7 +13475,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   const activeSfx = new Set();
-  function sfx(name) {
+  function sfx(name, onEnded) {
     if (!localSoundEnabled) return;
     const base = sfxPool[name];
     if (!base) return;
@@ -13352,7 +13484,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       node.volume = SFX_VOLUME[name] ?? 0.6;
       activeSfx.add(node);
       const done = () => activeSfx.delete(node);
-      node.addEventListener("ended", done);
+      node.addEventListener("ended", () => {
+        const wasActive = activeSfx.delete(node);
+        if (wasActive && onEnded) onEnded();
+      }, { once: true });
+      node.addEventListener("error", done, { once: true });
       node.play().catch(done /* ignore autoplay-policy rejection */);
     } catch (e) { /* ignore audio errors */ }
   }
@@ -13374,7 +13510,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function playSound(kind) {
-    if (kind === "submit" || kind === "select") sfx("select");
+    // Winner suspense is the original shuffle once, followed by Crisp UI level-up.
+    // stopAllSfx clears active nodes, so leaving the reveal also cancels the follow-up.
+    if (kind === "drumroll") sfx("drumroll", () => sfx("drumroll-end"));
+    else if (kind === "submit" || kind === "select") sfx("select");
     else if (kind === "pick" || kind === "tap") sfx("tap");
     else if (kind === "cancel") sfx("cancel");
     else if (kind === "error") sfx("error");
@@ -13385,7 +13524,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (kind === "win") sfx("win");
     else if (kind === "roundwin") sfx("roundwin");
     else if (SFX_FILES[kind]) sfx(kind);
-    else if (kind === "drumroll") sfx("shuffle");
   }
 
   // Springy release bounce on every button, everywhere — one delegated listener.
@@ -13554,6 +13692,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     lastSeenPhaseForReset = phase;
 
+    powerups?.render();
     if (phase === "question") {
       const q = data.currentQuestion;
       setPromptText(q ? q.prompt : "", true);
@@ -13688,6 +13827,69 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     });
   }
+
+
+  function powerupContext() {
+    if (worldsScreenEl.classList.contains("active") && wl.phase === "question") {
+      const q = wl.questions[wl.guesses.length];
+      if (!q.powerupKey) q.powerupKey = crypto.randomUUID();
+      powerupSeen.add(q.unitId + "|" + q.targetId);
+      return { mode: "worlds", phase: "question", q, playerId: deviceId, objects: worldObjects(WORLDS[wl.wi]),
+        allowed: (u, t) => t.mm / u.mm >= 1.5, seen: powerupSeen,
+        apply: (next, id) => { wl.questions[wl.guesses.length] = next; if (["small", "big", "both"].includes(id)) wl.input = ""; } };
+    }
+    if (survivalScreenEl.classList.contains("active") && sv?.phase === "question" && sv.q) {
+      const q = sv.q;
+      if (!q.powerupKey) q.powerupKey = crypto.randomUUID();
+      powerupSeen.add(q.unitId + "|" + q.targetId);
+      return { mode: "survival", phase: "question", q, playerId: deviceId, objects: OBJECTS,
+        allowed: (u, t) => t.mm / u.mm >= 1.5, seen: powerupSeen,
+        apply: (next, id) => { sv.q = next; if (["small", "big", "both"].includes(id)) sv.input = ""; } };
+    }
+    if (!hudEl.classList.contains("active") || OVERLAY_SCREENS.some(el => el.classList.contains("active")) || !quickEligible(roomState, currentPlayerId, isHost)) return null;
+    const q = roomState.currentQuestion;
+    if (!q) return null;
+    powerupSeen.add(q.unitId + "|" + q.targetId);
+    const pool = poolFor(roomState.activePacks, roomState.seasonPacks, roomState.fantasyIds);
+    const relative = currentSettings.itemSelectionMode === "relative" ? (pool.partners || (pool.partners = buildRelativeIndex(pool.objects))) : null;
+    return { mode: "quick", q, phase: roomState.phase, playerId: currentPlayerId, roomCode: currentRoomCode,
+      submitted: hasSubmittedThisRound || roomState.guesses?.[currentPlayerId] !== undefined || guessLocked,
+      paused: roomState.paused || transitionInFlight,
+      deadline: roomState.phase === "answers" ? roomState.answersEndsAt : (roomState.graceEndsAt || roomState.questionEndsAt),
+      answers: roomState.answers || [], objects: pool.objects, seen: powerupSeen,
+      allowed: (u, t) => !relative || relative.get(u.name).some(pair => pair[0].id === u.id && pair[1].id === t.id),
+    };
+  }
+  powerups = createPowerupController({
+    context: powerupContext, now: nowMs, coins: () => myProfile.coins || 0, owner: () => deviceId,
+    question: (u, t) => ({ ...dailyQuestionFor({ unitId: u.id, targetId: t.id }), unitArt: Math.random() < .5 ? 0 : 1, targetArt: Math.random() < .5 ? 0 : 1 }),
+    object: (id, art) => withAltArt(OBJECT_BY_ID.get(id), art),
+    profileTransaction: (owner, fn) => runTransaction(ref(db, 'profiles/' + owner), fn, { applyLocally: false }),
+    roomTransaction: (code, fn) => runTransaction(ref(db, 'rooms/' + code), fn, { applyLocally: false }),
+    profile: async owner => (await get(ref(db, 'profiles/' + owner))).val(),
+    room: async code => (await get(ref(db, 'rooms/' + code))).val(),
+    quickApplied: (id, room) => {
+      roomState = room;
+      if (["small", "big", "both"].includes(id)) {
+        currentGuessStr = ""; guessLocked = false; hasSubmittedThisRound = false;
+        renderGuessDisplay(); setGuessStatus("New objects. Timer restarted.");
+        markObjectsSeen(room.currentQuestion.unitId, room.currentQuestion.targetId);
+        scheduleBotGuesses(currentRoomCode, room.currentQuestion);
+        if (room.questionEndsAt) scheduleHostDeadline(room.questionEndsAt, () => checkQuestionAdvance(currentRoomCode));
+      }
+    },
+    refresh: mode => { if (mode === "worlds" && worldsScreenEl.classList.contains("active")) renderWorlds(); else if (mode === "survival" && survivalScreenEl.classList.contains("active")) renderSurvival(); else if (currentRoomCode) { applyPhase(roomState); if (roomState.phase === "answers") renderAnswersScreen(roomState); } },
+    finished: async () => {
+      if (!currentRoomCode) return;
+      if (roomState.phase === "question" && nowMs() >= (roomState.graceEndsAt || roomState.questionEndsAt)) {
+        try { await lockOwnGuessIfNeeded(); } catch (e) { console.warn("Could not lock the final guess", e); }
+      }
+      checkQuestionAdvance(currentRoomCode); checkAnswersAdvance(currentRoomCode);
+    },
+  });
+  powerups.render();
+  // Retry old pending receipts even when the profile itself has not changed.
+  setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
