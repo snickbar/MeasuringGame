@@ -4,12 +4,15 @@ const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'
 const root=path.resolve(__dirname,'..'), source=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=source.match(/<style>([\s\S]*?)<\/style>/)[1];
 const hud=source.slice(source.indexOf('<div id="hud">'),source.indexOf('<script type="module">'));
+const actualTips=source.match(/const QUESTION_TIPS = (\[[\s\S]*?\n  \]);/);
+if(!actualTips)throw Error('Cannot find game tip list');
 const test=`
 import {createPowerupController} from '/anim/powerup-ui.mjs';
 import {POWERUPS} from '/anim/powerups.mjs';
 const assert=(v,m)=>{if(!v)throw Error(m)}, results=[];
 const browserErrors=[];window.addEventListener('error',e=>browserErrors.push(e.message));
 const tick=()=>new Promise(r=>setTimeout(r,0));
+const actualTips=${actualTips[1]};
 // This fixture runs with real compositor frames and an emulated mobile viewport.
 const objects=[{id:'ant',mm:10,image:'/items/ant.webp'},{id:'paperclip',mm:30,image:'/items/paperclip.webp'},{id:'canoe',mm:1000,image:'/items/canoe.webp'},{id:'school-bus',mm:3000,image:'/items/school-bus.webp'}];
 let wallet={coins:100},room,clock=1000,mode='quick',debits=0,delayDebit=false,owner='me';
@@ -46,6 +49,19 @@ try{
  assert(box.getBoundingClientRect().right<=innerWidth+1,'power-up box stays within viewport');
  assert(buttons.every(b=>b.getBoundingClientRect().left>=0&&(b.getBoundingClientRect().right<=innerWidth+1||b.closest('#quick-powerups'))),'spare-space controls stay within mobile viewport');
  const note=document.getElementById('question-note'),board=document.getElementById('question-prompt'),normalTip=note.textContent;
+ const tipCases=[];
+ for(const boardHeight of [184,196,280])for(const tip of actualTips){
+  board.style.minHeight=boardHeight+'px';note.textContent=tip;c.render();
+  const p=box.getBoundingClientRect(),n=note.getBoundingClientRect(),card=cards.getBoundingClientRect();
+  const controls=[...box.querySelectorAll('[data-powerup]')].map(b=>b.getBoundingClientRect());
+  const label=boardHeight+'px board, '+tip;
+  assert(box.children.length===5&&box.classList.contains('pu-l-shape'),'all controls and L shape: '+label);
+  assert(p.top>=n.bottom&&card.top>=p.bottom,'no overlap: '+label);
+  assert(p.left>=pics.getBoundingClientRect().right&&p.right<=innerWidth+1,'horizontal fit: '+label);
+  assert(controls.every(r=>r.width>=44&&r.height===44&&Math.abs(r.width-controls[0].width)<1),'equal touch targets: '+label);
+  tipCases.push({tip,boardHeight,tipHeight:n.height,playerOffset:Math.round(card.top-document.querySelector('.game-body').getBoundingClientRect().top)});
+ }
+ results.push('all '+actualTips.length+' actual tips × 3 board heights: '+tipCases.length+' layout cases');
  board.style.minHeight='280px';c.render();assert(box.getBoundingClientRect().height===92,'same L shape on tall boards');
  board.style.minHeight='';note.textContent='Tip: This longer tip wraps onto many lines to check that no power-up can ever overlap the timer or the tip text on a narrow phone.';c.render();assert(box.getBoundingClientRect().top>=note.getBoundingClientRect().bottom,'long tips do not overlap panel');assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'cards remain below connected box');
  note.textContent=normalTip;c.render();
@@ -74,7 +90,7 @@ try{
  const old=Date.now()-120000;wallet={coins:0,powerupReceipts:{lost:{cost:10,status:'charged',at:old,mode:'worlds'},applied:{cost:5,status:'charged',at:old,mode:'quick',room:'TEST'}}};room.powerupReceipts={applied:true};await c.recover(wallet,'me');assert(wallet.coins===10&&wallet.powerupReceipts.applied.status==='applied','receipt reconciliation');await c.recover(wallet,'me');assert(wallet.coins===10,'no repeated refund');
  results.push('interrupted purchase reconciliation is idempotent');
  wallet={coins:100};c.render();
- document.getElementById('test-output').textContent=JSON.stringify({pass:true,viewport:innerWidth,results});
+ document.getElementById('test-output').textContent=JSON.stringify({pass:true,viewport:innerWidth,tipCases:tipCases.length,tipHeightRange:[Math.min(...tipCases.map(x=>x.tipHeight)),Math.max(...tipCases.map(x=>x.tipHeight))],playerOffsetRange:[Math.min(...tipCases.map(x=>x.playerOffset)),Math.max(...tipCases.map(x=>x.playerOffset))],results});
  document.title='PASS power-ups';
 }catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,browserErrors,results});document.title='FAIL power-ups'}
 `;
