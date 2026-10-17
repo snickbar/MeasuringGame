@@ -25,7 +25,7 @@ export const SETTINGS = {
   grass: { clouds: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'] },
-  kitchen: { floor: 'kitchen', sky: ['#f1e9d7', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'] },
+  kitchen: { floor: 'kitchen-bw', sky: ['#e9e6e1', '#faf8f3'], wallpaper: 'tiles', layers: ['dust-motes'] },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid' },
   city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
@@ -63,9 +63,9 @@ export function drawWallpaper(ctx, style, { width, height, shiftY, shiftX, dark 
     for (let y = oy - tile; y < height; y += tile) {
       const light = dark ? .7 : 1;
       if (style === 'tiles') {
-        ctx.globalAlpha = .27 * light; ctx.fillStyle = '#789488';
+        ctx.globalAlpha = .3 * light; ctx.fillStyle = '#484747';
         ctx.fillRect(x + 1, y + 1, 26, 26); ctx.fillRect(x + 29, y + 29, 26, 26);
-        ctx.globalAlpha = .22 * light; ctx.strokeStyle = '#8c9d8d'; ctx.lineWidth = 1;
+        ctx.globalAlpha = .22 * light; ctx.strokeStyle = '#777572'; ctx.lineWidth = 1;
         ctx.strokeRect(x + .5, y + .5, 28, 28); ctx.strokeRect(x + 28.5, y + .5, 28, 28);
         ctx.strokeRect(x + .5, y + 28.5, 28, 28); ctx.strokeRect(x + 28.5, y + 28.5, 28, 28);
       } else if (style === 'plaid') {
@@ -167,7 +167,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   if (top >= height || top + tileH <= 0) return;
   const offset = ((shiftX % tile) + tile) % tile - tile;
   ctx.save();
-  if (kit.config.night) ctx.globalAlpha = .65;
+  if (kit.config.night) ctx.filter = 'brightness(65%)';
   for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
   ctx.restore();
 }

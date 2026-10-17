@@ -26,7 +26,7 @@ globalThis.preview=async(kind='worlds')=>{
 try{
  const watched=new WeakMap(),drawImage=CanvasRenderingContext2D.prototype.drawImage;
  CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
-  if(/(?:grass|cloud)\\.png$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image,alpha:this.globalAlpha});
+  if(/(?:grass|cloud)\\.png$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image,alpha:this.globalAlpha,filter:this.filter});
   return drawImage.call(this,image,...args);
  };
  const gradients=new WeakMap(),radial=CanvasRenderingContext2D.prototype.createRadialGradient;
@@ -97,6 +97,7 @@ try{
   const floorName=SETTINGS[expected].floor;
   if(floorName){
    const floor=startDraws.find(d=>d.image===floorName+'.png');assert(floor,'floor is ready on first frame '+id);
+   if(expected==='city')assert(floor.alpha===1&&floor.filter==='brightness(65%)','night pavement stays opaque while darkened');
    const f=scene.getFraming(0),surface=floor.args[1]+floor.args[3]*FLOOR_DATA[floorName].surface;
    assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);
    const sample=document.createElement('canvas');sample.width=floor.source.naturalWidth;sample.height=floor.source.naturalHeight;

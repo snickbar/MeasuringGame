@@ -9,11 +9,11 @@ Run `npm run preview:scenery` from the project, then open http://127.0.0.1:4173/
 
 The example selector covers all 13 settings. Play replays the reveal; the slider supports inspection. `node scripts/verify-reveal-test-page.cjs` exercises those controls while the preview server is running. `node scripts/verify-size-reveal-browser.cjs` independently tests the renderer at three phone widths.
 
-City uses a permanent nighttime palette with restrained stars/clouds and dimmed pavement. Marine animals, including all sharks, use underwater scenery with a baseline inside the seabed surface; beach settings remain for coastal objects and boats.
+City uses a permanent nighttime palette with restrained stars/clouds and opaque, brightness-darkened pavement. Marine animals, including all sharks, use underwater scenery with a baseline inside the seabed surface; beach settings remain for coastal objects and boats.
 
 The original camera and natural object positions are used throughout; no larger-object pinning or rescaling during stacking. Shared trimmed sprite poses remove transparent export margins before entry and stacking.
 
-Indoor walls use seamless, low-contrast geometric patterns: a warm living-room diamond lattice, cream-and-sage kitchen tiles, and woven tabletop plaid. Framed artwork is removed from every indoor setting. The tabletop uses a more visible warm woven plaid treatment. Underwater uses bubbles only, with slightly increased visibility.
+Indoor walls use seamless, low-contrast geometric patterns: a warm living-room diamond lattice, neutral kitchen wall tiles above a black-and-white checkerboard floor, and woven tabletop plaid. Framed artwork is removed from every indoor setting. The tabletop uses a more visible warm woven plaid treatment. Underwater uses bubbles only, with slightly increased visibility.
 
 ## Background details
 
@@ -24,3 +24,5 @@ Open /anim/scenery-gallery.html on the local server to compare all settings with
 Desert uses a four-stop hazy lavender, pink, peach and warm cream sky gradient, without clouds, behind large restored dunes. Atmospheric PNGs have stronger opacity and denser snow/bubble placement so their slow motion is visible behind measured objects.
 
 City adds a soft indigo skyline with lit windows, generated with the built-in image generator. Original PNG: city-skyline.png; prompt: city-skyline-prompt.md. The skyline shares the ground translation and remains attached during scrolling. Dunes use a 155-pixel backdrop height. Indoor patterns have stronger contrast and continue to repeat seamlessly at all tested phone widths.
+
+Kitchen now uses kitchen-bw.png with measured surface metadata; its wall tiles have neutral charcoal coloring. The original green floor is retained as an unused source. Night pavement uses brightness filtering at full opacity, preventing the skyline from showing through the stones.

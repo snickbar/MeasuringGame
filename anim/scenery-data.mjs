@@ -83,5 +83,9 @@ export const FLOOR_DATA = {
   "magic-motes": {
     "surface": 0.4677734375,
     "color": "#000000"
+  },
+  "kitchen-bw": {
+    "surface": 0.494475138121547,
+    "color": "#80796f"
   }
 };
