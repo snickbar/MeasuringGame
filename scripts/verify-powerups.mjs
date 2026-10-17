@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { POWERUPS, bufferedGuess, quickEligible, availablePowerups, eliminationChoices, replacementPairs, debitPowerup, settlePowerup } from '../anim/powerups.mjs';
 import { createPowerupController } from '../anim/powerup-ui.mjs';
+import { roundAccuracy } from '../anim/accuracy.mjs';
 
 for (const [raw, expected] of [[85,95],[95,100],[100,100],[120,110],[0,10],[200,190]]) {
   assert.equal(bufferedGuess(raw,100,true),expected);
@@ -63,7 +64,7 @@ const getFunction=name=>{
 };
 let updates;
 const room={...solo,currentQuestion:{answer:100,prompt:'Test',powerups:{owner:'me',used:{buffer:true}}},settings:{solo:true},players:{me:{name:'Me'},bot:{name:'Bot',isBot:true}}};
-const sandbox={bufferedGuess,roomState:room,currentSettings:room.settings,console,nowMs:()=>1000,
+const sandbox={bufferedGuess,roundAccuracy,roomState:room,currentSettings:room.settings,console,nowMs:()=>1000,
   questionObjects:()=>null,loadAnimModule:async()=>null,db:{},ref:(_,path)=>path,
   update:async(_,v)=>{updates=v},scheduleHostDeadline:()=>{},checkRevealAdvance:()=>{},
 };

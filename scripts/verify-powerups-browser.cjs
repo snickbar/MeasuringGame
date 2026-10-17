@@ -10,14 +10,15 @@ const extractFunction=name=>{const start=source.indexOf('  function '+name+'('),
 const extractLine=prefix=>{const start=source.indexOf(prefix);if(start<0)throw Error('Missing '+prefix);return source.slice(start,source.indexOf('\n',start))};
 const test=`
 import {createPowerupController} from '/anim/powerup-ui.mjs';
-import {POWERUPS} from '/anim/powerups.mjs';
+import {POWERUPS,bufferedGuess} from '/anim/powerups.mjs';
+import {roundAccuracy,formatAccuracy} from '/anim/accuracy.mjs';
 const assert=(v,m)=>{if(!v)throw Error(m)}, results=[];
 const browserErrors=[];window.addEventListener('error',e=>browserErrors.push(e.message));
 const tick=()=>new Promise(r=>setTimeout(r,0));
 const actualTips=${actualTips[1]};
 // This fixture runs with real compositor frames and an emulated mobile viewport.
 const objects=[{id:'ant',mm:10,image:'/items/ant.webp'},{id:'paperclip',mm:30,image:'/items/paperclip.webp'},{id:'canoe',mm:1000,image:'/items/canoe.webp'},{id:'school-bus',mm:3000,image:'/items/school-bus.webp'}];
-let wallet={coins:100},room,clock=1000,mode='quick',debits=0,delayDebit=false,owner='me';
+let wallet={coins:100},room,clock=1000,mode='quick',debits=0,delayDebit=false,owner='me',sounds=0;
 const newRoom=()=>({settings:{solo:true,timerSeconds:30},players:{me:{},bot:{isBot:true}},phase:'question',questionEndsAt:31000,currentQuestion:{unitId:'ant',targetId:'canoe',answer:100,powerupKey:crypto.randomUUID()}});
 room=newRoom();
 document.querySelectorAll('.active').forEach(el=>el.classList.remove('active'));
@@ -29,13 +30,17 @@ document.getElementById('score-col').innerHTML=['You','Milo','Luna','Pip'].map((
 document.getElementById('q-preview').innerHTML=objects.filter(o=>['ant','canoe'].includes(o.id)).map(o=>'<div class="qp"><img src="'+o.image+'"><span>'+o.id+'</span></div>').join('');
 const context=()=>mode==='excluded'?null:({mode,q:room.currentQuestion,playerId:owner,phase:room.phase,roomCode:mode==='quick'?'TEST':null,deadline:mode==='quick'?(room.phase==='answers'?room.answersEndsAt:room.questionEndsAt):null,submitted:!!room.guesses?.me,answers:room.answers||[],objects,apply:q=>{room.currentQuestion=q}});
 const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,owner:()=>owner,
+ onUsed:()=>{sounds++},
  question:(u,t)=>({unitId:u.id,targetId:t.id,answer:t.mm/u.mm}),object:id=>objects.find(o=>o.id===id),
  profileTransaction:async(_,fn)=>{const next=fn(structuredClone(wallet));if(!next)return {committed:false};if(next.coins<wallet.coins)debits++;wallet=next;if(delayDebit&&next.powerupReceipts&&Object.values(next.powerupReceipts).some(r=>r.status==='charged')){clock=40000;delayDebit=false}return {committed:true}},
  roomTransaction:async(_,fn)=>{const next=fn(structuredClone(room));if(!next)return {committed:false,snapshot:{val:()=>room}};room=next;return {committed:true,snapshot:{val:()=>room}}},
  profile:async()=>wallet,room:async()=>room,quickApplied:()=>{},refresh:()=>{},finished:()=>{},
 });
 const local=document.createElement('div');document.body.append(local);
-const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3;
+const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3,WORLD_STAR_AT=[60,80,92],deviceId='me';
+${extractLine('  const worldStarsFor =')}
+${extractFunction('effectiveGuess')}
+${extractFunction('worldProgressHtml')}
 const worldsContentEl=document.getElementById('worlds-content'),survivalContentEl=document.getElementById('survival-content');
 const OBJECT_BY_ID=new Map(objects.map(o=>[o.id,{...o,name:o.id,plural:o.id+'s'}]));
 const escapeHtml=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
@@ -64,7 +69,13 @@ globalThis.showSoloCompactPreview=which=>{
  const submit=host.querySelector(which==='worlds'?'#wl-submit':'#sv-submit');
  return {mode:which,keypadHeight:pad.getBoundingClientRect().height,submitBottom:Math.round(submit.getBoundingClientRect().bottom),viewportHeight:innerHeight};
 };
-const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]');b.click();b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up')};
+globalThis.showWorldProgressPreview=(accuracy=null)=>{
+ showSoloCompactPreview('worlds');
+ wl.questions=Array.from({length:5},()=>({...room.currentQuestion}));wl.guesses=accuracy==null?[75,90]:[accuracy,accuracy];
+ room.currentQuestion=wl.questions[2];room.currentQuestion.powerups={owner:'me',used:{buffer:true}};renderWorlds();
+ return worldsContentEl.querySelector('.wl-progress').textContent;
+};
+const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]');b.click();b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up');if(mode==='worlds'||mode==='survival')local.innerHTML=c.html(context())};
 try{
  c.render();const buttons=[...document.querySelectorAll('[data-powerup]')];assert(buttons.length===5,'five buttons');
  assert(buttons.every(b=>b.getBoundingClientRect().width>=44),'44px touch widths');
@@ -98,22 +109,36 @@ try{
  note.textContent=normalTip;c.render();
  assert(document.getElementById('howto-powerup-list').textContent.includes('Reroll small')&&document.getElementById('howto-powerup-list').textContent.includes('10% buffer'),'help card explains power-ups');
  results.push('one connected L-shaped box, five equal controls, four across bottom, no overlap, and accessible touch targets');
+ const initialPositions=Object.fromEntries([...document.querySelectorAll('[data-powerup]')].map(b=>[b.dataset.powerup,{x:b.getBoundingClientRect().left,y:b.getBoundingClientRect().top}]));
  await buy('buffer');assert(wallet.coins===90&&debits===1&&room.currentQuestion.powerups.used.buffer,'double tap charges once');
- assert(document.querySelectorAll('[data-powerup]').length===4,'used buffer hidden');
- results.push('immediate purchase without pop-up, double tap, charged-once buffer and hidden used action');
- await buy('small');assert(room.currentQuestion.unitId==='paperclip'&&room.currentQuestion.targetId==='canoe','only small changed');assert(room.currentQuestion.powerups.used.buffer,'buffer survives reroll');assert(wallet.coins===85,'reroll price');assert(!document.querySelector('[data-powerup="big"]'),'one reroll total');
+ assert(document.querySelectorAll('[data-powerup]').length===5&&document.querySelector('[data-powerup="buffer"]').disabled,'used buffer stays disabled');
+ assert([...document.querySelectorAll('[data-powerup]')].every(b=>b.getBoundingClientRect().left===initialPositions[b.dataset.powerup].x&&b.getBoundingClientRect().top===initialPositions[b.dataset.powerup].y),'no icon movement after use');
+ assert(sounds===1,'one successful-use sound');
+ const feedback=document.querySelector('.pu-feedback');assert(feedback&&!feedback.hidden&&!document.querySelector('.pu-toast'),'anchored feedback replaces old toast');
+ assert(feedback.querySelector('img').getAttribute('src').endsWith('percentage-buffer.png'),'buffer feedback has its icon');
+ const animation=feedback.getAnimations()[0],frames=animation.effect.getKeyframes();
+ assert(frames[0].transform.includes('.035')&&frames.at(-1).transform.includes('-28px'),'expands from dot and rises');
+ const fb=feedback.getBoundingClientRect();assert(fb.left>=0&&fb.right<=innerWidth,'feedback stays on screen');
+ results.push('stable disabled used icons, no duplicate charge/sound, anchored expanding/rising feedback');
+ await buy('small');assert(room.currentQuestion.unitId==='paperclip'&&room.currentQuestion.targetId==='canoe','only small changed');assert(room.currentQuestion.powerups.used.buffer,'buffer survives reroll');assert(wallet.coins===85,'reroll price');assert(document.querySelector('[data-powerup="big"]').disabled&&document.querySelector('[data-powerup="both"]').disabled,'all rerolls remain disabled');
  results.push('reroll changes intended object and preserves buffer/usage');
- room=newRoom();room.guesses={me:95};c.render();assert(document.querySelectorAll('[data-powerup]').length===1,'waiting single action');assert(box.parentElement.id==='hud','waiting action stays in common panel');
+ assert(feedback.querySelector('img').getAttribute('src').endsWith('reroll-small.png'),'reroll feedback has matching icon');
+ room=newRoom();room.guesses={me:95};c.render();assert(document.querySelectorAll('[data-powerup]').length===5&&document.querySelectorAll('[data-powerup]:not(:disabled)').length===1,'waiting tray remains stable with only buffer enabled');assert(box.parentElement.id==='hud','waiting action stays in common panel');
  results.push('waiting buffer remains in sidebar');
  room.phase='answers';room.answersEndsAt=11000;room.answers=[{playerId:'me',value:95},{playerId:'bot',value:90},{playerId:'b2',value:80},{playerId:'truth',value:100,truth:true},{playerId:'b3',value:120}];c.render();
  assert(!document.querySelector('#quick-powerups [data-powerup="buffer"]'),'no buffer on Second Chance');assert(document.querySelector('#quick-powerups [data-powerup="fifty"]'),'50/50 contextual');await buy('fifty');assert(room.currentQuestion.powerups.removed.length===2&&!room.currentQuestion.powerups.removed.includes('truth'),'truth preserved');
+ assert(document.querySelector('#quick-powerups [data-powerup="fifty"]').disabled,'used 50/50 stays in place');
+ assert(feedback.querySelector('img').getAttribute('src').endsWith('fifty-fifty.png'),'50/50 feedback has matching icon');
  results.push('Second Chance hides buffer and 50/50 preserves truth');
  room=newRoom();wallet={coins:0};c.render();assert(document.querySelector('[data-powerup="buffer"]').disabled,'insufficient funds');await buy('buffer');assert(wallet.coins===0,'no debit');
  room=newRoom();wallet={coins:20};clock=1000;delayDebit=true;await buy('buffer');assert(wallet.coins===20&&!room.currentQuestion.powerups,'late activation refunded');
+ assert(sounds===3,'failed or unaffordable purchases do not play success sound');
  results.push('insufficient funds and deadline-race refund');
  room=newRoom();clock=1000;wallet={coins:20};mode='worlds';await buy('buffer');assert(wallet.coins===10&&room.currentQuestion.powerups.used.buffer,'untimed local effect');assert(!room.questionEndsAt||room.questionEndsAt===31000,'no added local timer');
+ assert(local.querySelectorAll('[data-powerup]').length===5&&local.querySelector('[data-powerup="buffer"]').disabled,'Worlds retains grey used buffer');
  results.push('local Worlds purchase without adding timer');
  room=newRoom();mode='survival';clock=1000;wallet={coins:20};const began=performance.now();await buy('reveal');assert(performance.now()-began>=4000,'full four-second view');assert(!document.querySelector('.pu-preview'),'preview removes itself');assert(wallet.coins===10&&room.currentQuestion.powerups.used.reveal,'one paid reveal');
+ assert(local.querySelectorAll('[data-powerup]').length===5&&local.querySelector('[data-powerup="reveal"]').disabled,'Survival retains grey used reveal');
  results.push('four-second item reveal completes and charges once');local.innerHTML='';
  mode='excluded';c.render();assert(document.getElementById('quick-powerups').hidden,'excluded modes');
  results.push('excluded modes hide actions');
@@ -122,6 +147,22 @@ try{
  results.push('interrupted purchase reconciliation is idempotent');
  wallet={coins:100};c.render();
  const soloLayouts=['worlds','survival'].map(showSoloCompactPreview);results.push('actual Worlds and Survival renderers: compact keypads, 44px targets, translucent question pills');
+ showSoloCompactPreview('worlds');
+ let progress=worldsContentEl.querySelector('.wl-progress');assert(progress&&progress.textContent.includes('No answers yet'),'empty progress state');
+ assert(progress.compareDocumentPosition(worldsContentEl.querySelector('.dc-pics'))&Node.DOCUMENT_POSITION_FOLLOWING,'bar above objects');
+ assert(worldsContentEl.querySelector('.dc-dots').compareDocumentPosition(progress)&Node.DOCUMENT_POSITION_FOLLOWING,'bar below round dots');
+ const temp=document.createElement('div');document.body.append(temp);
+ for(const [avg,stars] of [[0,0],[60,0],[60.1,1],[80,1],[80.1,2],[92,2],[92.1,3],[100,3]]){
+  wl={guesses:[avg],questions:[{answer:100}]};temp.innerHTML=worldProgressHtml();
+  assert(Math.abs(Number(temp.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'))-avg)<1e-9,'running percent '+avg);
+  assert(temp.querySelectorAll('.wl-progress-marker.earned').length===stars,'strict star threshold '+avg);
+  assert(temp.querySelector('.wl-progress').classList.contains('three-stars')===(avg>92),'blue shine only above 92');
+ }
+ wl={guesses:[75,150],questions:[{answer:100},{answer:100}]};temp.innerHTML=worldProgressHtml();assert(temp.textContent.includes('62.5%'),'average per-round accuracy');
+ wl={guesses:[95],questions:[{answer:100,powerups:{owner:'me',used:{buffer:true}}}]};temp.innerHTML=worldProgressHtml();assert(temp.textContent.includes('100%'),'progress includes buffer');
+ temp.remove();results.push('Worlds running bar, actual star artwork, strict 60/80/92 requirements, per-round averaging and buffer-adjusted accuracy');
+ const audio=new Audio('/sfx/crisp/powerup.wav');await new Promise((resolve,reject)=>{audio.onloadedmetadata=resolve;audio.onerror=()=>reject(Error('power-up sound decode failed'));audio.load()});
+ assert(audio.duration>0&&Number.isFinite(audio.duration),'power-up sound decodes');results.push('successful-use sound once only, failures silent, dedicated audio decodes');
  document.getElementById('worlds-screen').classList.remove('active');document.getElementById('survival-screen').classList.remove('active');document.getElementById('hud').classList.add('active');mode='quick';c.render();
  document.getElementById('test-output').textContent=JSON.stringify({pass:true,viewport:innerWidth,tipCases:tipCases.length,soloLayouts,results});
  document.title='PASS power-ups';
@@ -133,7 +174,7 @@ const server=http.createServer((req,res)=>{
  if(req.url.startsWith('/__powerup-test')){res.setHeader('Content-Type','text/html');res.end(fixture);return}
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
  if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
- const type={'.mjs':'text/javascript','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2'}[path.extname(file)]||'application/octet-stream';
+ const type={'.mjs':'text/javascript','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.wav':'audio/wav'}[path.extname(file)]||'application/octet-stream';
  try{res.setHeader('Content-Type',type);res.end(fs.readFileSync(file))}catch{res.writeHead(404);res.end()}
 });
 server.listen(0,'127.0.0.1',()=>{
@@ -173,6 +214,15 @@ server.listen(0,'127.0.0.1',()=>{
      if(checked.exceptionDetails)throw Error('Solo layout check failed at '+width+'×'+height);
      const soloShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
      fs.writeFileSync(path.join(outDir,mode+'-'+width+'x'+height+'.png'),Buffer.from(soloShot.data,'base64'));
+    }
+    if(result.pass){
+     const running=await call('Runtime.evaluate',{expression:'showWorldProgressPreview()',returnByValue:true},sessionId);
+     if(running.exceptionDetails||!running.result.value.includes('82.5%'))throw Error('Running progress preview failed');
+     const runningShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(outDir,'worlds-progress-'+width+'.png'),Buffer.from(runningShot.data,'base64'));
+     await call('Runtime.evaluate',{expression:'showWorldProgressPreview(95)',returnByValue:true},sessionId);
+     const blueShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(outDir,'worlds-blue-'+width+'.png'),Buffer.from(blueShot.data,'base64'));
     }
     await call('Target.closeTarget',{targetId});
    }
