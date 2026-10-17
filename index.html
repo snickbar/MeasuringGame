@@ -2723,34 +2723,24 @@
   .pu-preview-title img { width:32px; height:32px; object-fit:contain; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
-  .pu-result-note { box-sizing:border-box; width:100%; min-width:0; overflow-wrap:anywhere; color:#542573; margin:0; padding:10px; border:2px solid #b983dc; border-radius:14px; background:linear-gradient(135deg,#fbf0ff,#e9d5ff); font-family:'Fredoka',sans-serif; text-align:center; container-type:inline-size; }
-  .pu-boost-accuracy { display:grid; grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr); gap:5px; align-items:center; }
-  .pu-boost-accuracy span { display:block; font-size:12px; line-height:1.3; }
-  .pu-boost-accuracy b { display:block; font-size:28px; line-height:1.2; font-weight:700; }
-  .pu-boost-accuracy .pu-boost-before { color:#795589; }
-  .pu-boost-accuracy .pu-boost-after { color:#4a186d; }
-  .pu-boost-accuracy .pu-boost-after b { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; }
+  .pu-result-note { box-sizing:border-box; width:100%; min-width:0; color:#542573; margin:0; padding:7px 8px; border:1px solid #d8bde6; border-radius:10px; background:#f7effb; font-family:'Fredoka',sans-serif; text-align:center; }
+  .pu-boost-accuracy { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px; line-height:1.25; }
+  .pu-boost-accuracy b { font-size:18px; font-weight:700; white-space:nowrap; }
+  .pu-boost-before { color:#806f88; font-weight:500 !important; }
+  .pu-boost-after { color:#4a186d; }
   .pu-result-icon { width:24px; height:24px; object-fit:contain; vertical-align:middle; flex:none; }
-  .pu-boost-arrow { font-size:24px; }
-  .pu-boost-gain { display:inline-block; background:#fff8d9; color:#643921; border-radius:10px; padding:3px 8px; margin-top:6px; font-size:13px; font-weight:600; }
-  .pu-boost-counted { margin-top:6px; font-size:13px; line-height:1.3; }
-  .pu-boost-score { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; font-size:16px; font-weight:700; margin-top:6px; }
-  .dc-card.pu-boost-card { border:3px solid #b983dc; background:#fff8ed; padding:10px; }
+  .pu-boost-accuracy .pu-result-icon { width:20px; height:20px; }
+  .pu-boost-arrow { font-size:15px; color:#8b7397; }
+  .pu-boost-counted { margin-top:3px; font-size:12px; line-height:1.3; overflow-wrap:anywhere; color:#75637d; }
+  .dc-card.pu-boost-card { border:2px solid #d8bde6; background:#fff8ed; padding:10px; }
   .pu-boost-card .dc-res-lines { font-size:16px; margin-top:8px; }
   .pu-boost-verdict { display:flex; gap:6px; justify-content:center; align-items:center; font-size:16px; font-weight:600; margin-top:6px; }
   .pu-boost-verdict .res-mark { width:26px; height:26px; }
   .pu-boost-card .sv-gauge { margin-top:10px; }
   .reveal-card:has(.pu-result-note) .rv-badges { position:relative; left:auto; bottom:auto; margin:8px 0; flex-wrap:wrap; }
-  .reveal-card .pu-result-note { padding:8px; }
-  .reveal-card .pu-result-icon { width:18px; height:18px; }
-  .reveal-card .pu-boost-accuracy { grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr); gap:3px; }
-  .reveal-card .pu-boost-accuracy b { font-size:clamp(18px,5vw,24px); }
-  .reveal-card .pu-boost-arrow { font-size:18px; }
-  @container (max-width:180px) {
-    .pu-boost-accuracy { grid-template-columns:1fr !important; }
-    .pu-boost-arrow { transform:rotate(90deg); }
-    .pu-boost-score { font-size:14px; }
-  }
+  .reveal-card .pu-boost-accuracy b,.summary-row .pu-boost-accuracy b { font-size:16px; }
+  .reveal-card .pu-boost-accuracy,.summary-row .pu-boost-accuracy { gap:3px; }
+  .reveal-card .pu-boost-accuracy .pu-result-icon,.summary-row .pu-boost-accuracy .pu-result-icon { width:18px; height:18px; }
   .wl-stars img { display:inline-block; width:22px; height:22px; object-fit:contain; vertical-align:middle; }
   .wl-stars .off img { filter:grayscale(1); }
   .wl-progress { margin:5px 0 8px; padding:8px 10px 5px; background:rgba(255,250,237,.9); border:1px solid #e0c99d; border-radius:14px; color:#593a1f; }
@@ -3644,17 +3634,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function effectiveGuess(q, raw, playerId) {
     return bufferedGuess(raw, q.answer, !!q.powerups?.used?.buffer && q.powerups.owner === playerId);
   }
-  function bufferResultNote(q, raw, playerId, points = null) {
+  function bufferResultNote(q, raw, playerId) {
     if (!q?.powerups?.used?.buffer || q.powerups.owner !== playerId) return "";
     const improved = effectiveGuess(q, raw, playerId);
     const before = roundAccuracy(raw / q.answer), after = roundAccuracy(improved / q.answer);
-    const gain = after - before;
     const fmt = n => Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
     return `<div class="pu-result-note" aria-label="Buffer result">
-      <div class="pu-boost-accuracy"><div class="pu-boost-before"><span>Before buffer</span><b>${formatAccuracy(before)}%</b></div><span class="pu-boost-arrow" aria-hidden="true">→</span><div class="pu-boost-after"><span>With buffer</span><b><img class="pu-result-icon" src="icons/powerups/percentage-buffer.png" alt="">${formatAccuracy(after)}%</b></div></div>
-      ${gain > 0.000001 ? `<div class="pu-boost-gain">+${formatAccuracy(gain)} accuracy points!</div>` : `<div class="pu-boost-gain">${improved === raw ? "You were already spot on!" : "Your guess moved closer to the answer"}</div>`}
-      <div class="pu-boost-counted">Your guess <b>${fmt(raw)}</b> → counted as <b>${fmt(improved)}</b></div>
-      ${points == null ? "" : `<div class="pu-boost-score"><img class="pu-result-icon" src="icons/powerups/percentage-buffer.png" alt=""><span>${points} point${points === 1 ? "" : "s"} with your boosted guess</span></div>`}
+      <div class="pu-boost-accuracy" aria-label="Accuracy: ${formatAccuracy(before)}% before buffer, ${formatAccuracy(after)}% with buffer"><img class="pu-result-icon" src="icons/powerups/percentage-buffer.png" alt="Buffer" title="Buffer applied"><b class="pu-boost-before">${formatAccuracy(before)}%</b><span class="pu-boost-arrow" aria-hidden="true">→</span><b class="pu-boost-after">${formatAccuracy(after)}%</b></div>
+      <div class="pu-boost-counted">${improved === raw ? 'Already spot on' : 'Guess'} <b>${fmt(raw)}</b>${improved === raw ? '' : ` → <b>${fmt(improved)}</b>`}</div>
     </div>`;
   }
 
