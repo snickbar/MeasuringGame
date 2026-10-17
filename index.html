@@ -3169,7 +3169,8 @@
   </div>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
-    <p>Tap <b>Solo Game</b> from the home screen to practice by yourself - no room code, no waiting on anyone. It starts you off with 4 bots, and you can add or remove them from the lobby before you begin. Solo games are always free, even before Host Party is unlocked.</p>
+    <p>Tap <b>Solo Game</b> from the home screen to practice by yourself - no room code, no waiting on anyone. It starts you off with 3 Medium bots. You can add more bots, remove extras, or choose Easy, Medium or Hard in the lobby before you begin. Solo games are always free, even before Host Party is unlocked.</p>
+    <p>Round XP depends on your opponents: <b>Easy ×0.8</b>, <b>Medium or people ×1.1</b>, and <b>Hard ×1.2</b>. Mixed lobbies average the opponents who submitted a guess. XP already earned stays unchanged. Game-completion XP and Daily, Worlds, Monthly and Survival XP keep their usual rates.</p>
   </div></details>
 
   <details class="howto-section"><summary>Hosting a party</summary><div class="howto-body">
@@ -3618,6 +3619,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
+  import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   var gameRewards;
   var powerups;
@@ -5412,9 +5414,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
     })[c]);
   }
-  const SOLO_MIN_BOTS = 4;
+  const SOLO_MIN_BOTS = 3;
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
-  const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.6, 1.4] };
+  const BOT_DIFFICULTY_RANGES = { easy: [0, 4], medium: [0.3, 1.7], hard: [0.6, 1.4] };
   const BOT_NAMES = [
     "RoboRex", "ByteBuddy", "CircuitSam", "PixelPete", "TurboTina", "ByteBecca", "ChipChester",
     "VoltVera", "GizmoGus", "NanoNina", "CogCarl", "SparkySue", "BitBarry", "ZapZoe", "MegaMo",
@@ -8853,7 +8855,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // per-round accuracy calculation as gameplay before averaging it.
   const CAREER_RANKS = [[1, "Rookie"], [5, "Eyeballer"], [10, "Estimator"], [20, "Sharpshooter"], [35, "Measuring Master"]];
   function careerXp(st) {
-    return (st.rounds || 0) * 5 + (st.roundWins || 0) * 10 + (st.spotOns || 0) * 25 + (st.perfects || 0) * 50 + (st.gamesPlayed || 0) * 10;
+    return careerXpTotal(st);
   }
   function careerLevel(xp) {
     const lvl = Math.floor(Math.sqrt(xp / 40)) + 1;
@@ -9547,40 +9549,51 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).then((r) => { grantLevelRewards(); return r; }).catch(() => {});
   }
   // Called each time a round summary renders; counted once per round.
-  function recordRoundStats(data) {
-    if (!data || !currentPlayerId || !currentPlayers[currentPlayerId]) return;
-    const key = `${currentRoomCode}:${data.round || 0}:${data.animStartAt || ""}`;
+  const roundStatsPending = new Set();
+  async function recordRoundStats(data) {
+    const playerId = currentPlayerId, owner = deviceId;
+    if (!data || !playerId || !currentPlayers[playerId]) return;
+    const legacyKey = `${currentRoomCode}:${data.round || 0}:${data.animStartAt || ""}`;
     let done = [];
     try { done = JSON.parse(localStorage.getItem("mg_ach_rounds") || "[]"); } catch (e) {}
-    if (done.includes(key)) return;
-    const mine = (data.revealOrder || []).find((e) => e.playerId === currentPlayerId);
-    if (!mine) return;
-    done.push(key);
-    try { localStorage.setItem("mg_ach_rounds", JSON.stringify(done.slice(-30))); } catch (e) {}
-    const chips = (computeRoundBreakdown(data)[currentPlayerId] || []).map((c) => c.label);
-    const inc = {};
+    let receiptKey;
+    try { receiptKey = `${gameRewardKey(currentRoomCode, data)}_round_${data.round || 0}`; } catch { return; }
+    if (done.includes(legacyKey) || done.includes(receiptKey)) return;
+    const mine = (data.revealOrder || []).find(e => e.playerId === playerId);
+    const pendingKey = owner + ":" + receiptKey;
+    if (!mine || roundStatsPending.has(pendingKey)) return;
+    const chips = (computeRoundBreakdown(data)[playerId] || []).map(c => c.label);
+    const inc = { rounds: 1 };
     if (mine.basePoints === 5) inc.spotOns = 1;
     if (mine.isPerfect) inc.perfects = 1;
     if (mine.isClosest) inc.roundWins = 1;
     if (mine.doubleDownPoints > 0) inc.doubleDowns = 1;
     if (chips.includes("second chance")) inc.secondChances = 1;
-    inc.rounds = 1;
-    bumpStats(inc, mine.isClosest ? { bestStreak: mine.consecutiveWins || 1 } : null);
-    // Per-round history for the Career screen (kept compact: last HISTORY_MAX rounds).
+    // Only opponents who actually submitted a guess affect this round's XP.
+    const participants = Object.fromEntries((data.revealOrder || []).map(e => [e.playerId, (data.players || currentPlayers)[e.playerId]]).filter(([, p]) => p));
     const q = data.currentQuestion;
-    if (q && q.unitId && q.targetId && q.answer > 0 && mine.guess > 0) {
-      appendRoundHistory({
-        t: Date.now(), u: q.unitId, g: q.targetId,
-        r: Math.round(((mine.effectiveGuess ?? mine.guess) / q.answer) * 10000) / 10000,        // your guess as a multiple of the true answer (1 = exact)
-        p: (data.lastRoundPoints && data.lastRoundPoints[currentPlayerId]) || 0,
-        f: (mine.basePoints === 5 ? 1 : 0) | (mine.isPerfect ? 2 : 0) | (mine.isClosest ? 4 : 0),
-        s: (roomState && roomState.settings && roomState.settings.solo) ? 1 : 0,
-      });
-    }
+    const history = q && q.unitId && q.targetId && q.answer > 0 && mine.guess > 0 ? {
+      t: Date.now(), u: q.unitId, g: q.targetId,
+      r: Math.round(((mine.effectiveGuess ?? mine.guess) / q.answer) * 10000) / 10000,
+      p: data.lastRoundPoints?.[playerId] || 0,
+      f: (mine.basePoints === 5 ? 1 : 0) | (mine.isPerfect ? 2 : 0) | (mine.isClosest ? 4 : 0),
+      s: data.settings?.solo ? 1 : 0,
+    } : null;
+    roundStatsPending.add(pendingKey);
+    try {
+      const saved = await runTransaction(ref(db, `profiles/${owner}`), profile =>
+        roundCareerProfile(profile, receiptKey, inc, mine.isClosest ? { bestStreak: mine.consecutiveWins || 1 } : null, participants, playerId, history), { applyLocally: false });
+      if (!saved.snapshot.val()?.careerRounds?.[receiptKey]) return;
+      done.push(receiptKey);
+      try { localStorage.setItem("mg_ach_rounds", JSON.stringify(done.slice(-30))); } catch (e) {}
+      if (saved.committed && deviceId === owner) grantLevelRewards();
+    } catch (error) {
+      console.warn("[measuring-game] Round XP will retry when the summary is rendered again", error);
+    } finally { roundStatsPending.delete(pendingKey); }
   }
   const HISTORY_MAX = 300;
-  function appendRoundHistory(rec) {
-    return runTransaction(ref(db, `profiles/${deviceId}/history`), (cur) => {
+  function appendRoundHistory(rec, owner = deviceId) {
+    return runTransaction(ref(db, `profiles/${owner}/history`), (cur) => {
       const list = Array.isArray(cur) ? cur.slice() : (cur ? Object.values(cur) : []);
       list.push(rec);
       return list.slice(-HISTORY_MAX);
@@ -10983,7 +10996,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (pendingIsHost) {
       await joinRoomAsPlayer(pendingRoomCode, name, true, { settings: pendingSettings });
       if (pendingSettings && pendingSettings.solo) {
-        // Solo Game starts with 4 bots (one at a time so frames/avatars/names don't collide).
+        // Solo Game starts with 3 bots (one at a time so frames/avatars/names don't collide).
         for (let i = 0; i < SOLO_MIN_BOTS; i++) await addBot("medium");
       }
       return;
