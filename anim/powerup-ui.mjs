@@ -8,13 +8,17 @@ export function createPowerupController(ports) {
   const hud = document.getElementById('hud');
   if (hud && tray.parentElement !== hud) hud.append(tray);
   const help = document.getElementById('howto-powerup-list');
-  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p><b>${p.name} · ${p.cost} coins:</b> ${p.description}</p>`).join('');
+  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p class="pu-help-item"><img src="icons/powerups/${p.icon}.png" alt=""><span><b>${p.name} · ${p.cost} coins:</b> ${p.description}</span></p>`).join('');
   const message = document.createElement('div');
   message.className = 'pu-feedback'; message.setAttribute('role', 'status'); document.body.append(message);
-  const say = (text, origin) => {
+  const say = (text, origin, id) => {
     const c = context(); messagePhase = c?.phase; messageQuestion = c?.q?.powerupKey;
     clearTimeout(messageTimer); message.getAnimations?.().forEach(a => a.cancel());
-    message.textContent = text; message.hidden = false;
+    message.textContent = '';
+    if (POWERUPS[id]) {
+      const icon = document.createElement('img'); icon.src = `icons/powerups/${POWERUPS[id].icon}.png`; icon.alt = ''; message.append(icon);
+    }
+    const copy = document.createElement('span'); copy.textContent = text; message.append(copy); message.hidden = false;
     const rect = message.getBoundingClientRect();
     const start = origin || { x: innerWidth / 2, y: innerHeight / 2 };
     const left = Math.max(10, Math.min(innerWidth - rect.width - 10, start.x - rect.width / 2));
@@ -185,7 +189,7 @@ export function createPowerupController(ports) {
       if (id === 'reveal') await preview(previewImages);
       await settle(owner, operation, true);
       const result = { small: 'Small object replaced', big: 'Big object replaced', both: 'Both objects replaced', buffer: '10% buffer ready for your result!', reveal: 'Size preview complete', fifty: 'Wrong choices removed' }[id];
-      say(result + (REROLLS.includes(id) && c.mode === 'quick' ? ' · timer restarted' : ''), origin);
+      say(result + (REROLLS.includes(id) && c.mode === 'quick' ? ' · timer restarted' : ''), origin, id);
     } catch (err) {
       // A network failure can leave an acknowledged debit or room write uncertain.
       // Reconcile from server state before refunding; never guess about a debit.
@@ -194,9 +198,9 @@ export function createPowerupController(ports) {
         charged = !!p?.powerupReceipts?.[operation];
         if (c.roomCode && charged) applied = (await ports.room(c.roomCode))?.powerupReceipts?.[operation] === true;
         if (charged) await settle(owner, operation, applied);
-      } catch { say('Connection interrupted. Your purchase will be checked when you reconnect.', origin); }
+      } catch { say('Connection interrupted. Your purchase will be checked when you reconnect.', origin, id); }
       if (applied) successSound();
-      say(applied ? 'Power-up applied.' : (err.message || 'Could not use this power-up.'), origin);
+      say(applied ? 'Power-up applied.' : (err.message || 'Could not use this power-up.'), origin, id);
     } finally {
       active.delete(operation); busy = false; ports.refresh(c.mode); render(); ports.finished();
     }
@@ -205,7 +209,7 @@ export function createPowerupController(ports) {
     const [u, t] = images.map(x => x.object);
     const layer = document.createElement('div'); layer.className = 'pu-preview';
     layer.setAttribute('role', 'status'); layer.setAttribute('aria-label', 'Four-second relative size preview');
-    layer.innerHTML = '<p>Look closely!</p><canvas class="pu-stage" width="1200" height="620"></canvas>';
+    layer.innerHTML = '<p class="pu-preview-title"><img src="icons/powerups/item-reveal.png" alt="">Look closely!</p><canvas class="pu-stage" width="1200" height="620"></canvas>';
     document.body.append(layer);
     // The shared stage uses measured edges, not arbitrary equal-size thumbnails.
     // Log interpolation gives extreme ratios time to zoom without extending the view.

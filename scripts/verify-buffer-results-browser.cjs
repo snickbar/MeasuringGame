@@ -19,7 +19,7 @@ try{
  assert(!bufferResultNote(q,35,'other'),'not another player’s buffer');
  assert(!bufferResultNote({answer:45},35,'me'),'no boost when unused');
  const html=resultCardHtml(roundAccuracy(39.5/45),35,'45',null,q,'me');
- assert(html.includes('Smart move!')&&html.includes('77.8%')&&html.includes('87.8%'),'original screenshot gains explained');
+ assert(!html.includes('Smart move!')&&!html.includes('10% BUFFER BOOST')&&html.includes('77.8%')&&html.includes('87.8%'),'compact boost without headline');
  assert(html.includes('39.5')&&html.includes('+10 accuracy points!'),'counted guess and gain');
  assert(!resultCardHtml(80,80,'100').includes('pu-result-note'),'ordinary results preserved');
  const exact={answer:100,powerups:{owner:'me',used:{buffer:true}}};
@@ -27,6 +27,9 @@ try{
  assert(bufferResultNote(exact,100,'me').includes('already spot on'),'no false benefit for exact guesses');
  document.getElementById('wl-result').innerHTML=html;
  assert(document.querySelector('#wl-result .dc-card>.pu-result-note'),'Worlds boost inside main card');
+ assert(document.querySelector('#wl-result .pu-boost-after b>.pu-result-icon'),'buffer icon beside accuracy');
+ const compactHeight=document.querySelector('#wl-result .dc-card').getBoundingClientRect().height;
+ assert(compactHeight<260,'compact result height: '+compactHeight);
  const preview=document.getElementById('quick-preview');
  preview.innerHTML=revealInfoHtml({guess:35,playerId:'me',accuracyPercent:roundAccuracy(39.5/45),bufferUsed:true,basePoints:5,doubleDownPoints:2,crowdFavoritePoints:0});
  assert(preview.textContent.includes('7 points with your boosted guess'),'Quick Game points attributed');
