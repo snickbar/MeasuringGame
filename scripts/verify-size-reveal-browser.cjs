@@ -35,11 +35,11 @@ try{
  assert(objects.every(o=>SCENERY_BY_OBJECT[o.id]),'every game object has an explicit setting');
  assert(['great-white-shark','hammerhead-shark','whale-shark'].every(id=>sceneryFor({id})==='underwater'),'sharks use underwater scenery');
  assert(SETTINGS.city.night===true&&SETTINGS.city.sky[0]==='#111d36','city is always nighttime');
- assert(!SETTINGS.desert.clouds&&!SETTINGS.desert.backdrop&&SETTINGS.desert.sky.length===4,'desert uses only a four-color hazy sky above ground');
+ assert(!SETTINGS.desert.clouds&&SETTINGS.desert.backdrop==='desert-dunes'&&SETTINGS.desert.sky.length===4,'desert combines large dunes with hazy sky and no clouds');
  assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
  const wallCanvas=document.createElement('canvas');wallCanvas.width=390;wallCanvas.height=330;
  const wallCtx=wallCanvas.getContext('2d'),wallPatterns=[];
- for(const style of ['stripes','diamonds','linen']){
+ for(const style of ['lattice','tiles','plaid']){
   const wall=(shiftY=0,shiftX=0)=>{wallCtx.clearRect(0,0,390,330);drawWallpaper(wallCtx,style,{width:390,height:330,shiftY,shiftX,dark:false});return wallCanvas.toDataURL()};
   const original=wall();wallPatterns.push(original);
   assert(original===wall(1400,4200),'wallpaper repeats without seams '+style);

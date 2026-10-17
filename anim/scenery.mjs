@@ -24,14 +24,14 @@ export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'gra
 export const SETTINGS = {
   grass: { clouds: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'stripes', layers: ['dust-motes'] },
-  kitchen: { floor: 'kitchen', sky: ['#f1e9d7', '#fff9ed'], wallpaper: 'diamonds', layers: ['dust-motes'] },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'linen' },
-  city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'] },
+  kitchen: { floor: 'kitchen', sky: ['#f1e9d7', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'] },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid' },
+  city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
   farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'] },
-  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'] },
+  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], backdrop: 'desert-dunes' },
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
@@ -55,26 +55,31 @@ export async function loadScenery(object, base) {
 // Repeating wall details share one camera offset.
 // Geometry keeps these quiet patterns seamless at every phone width.
 export function drawWallpaper(ctx, style, { width, height, shiftY, shiftX, dark }) {
-  const tile = style === 'stripes' ? 48 : 56;
+  const tile = 56;
   const ox = ((shiftX * .08) % tile + tile) % tile;
   const oy = ((shiftY * .12) % tile + tile) % tile;
   ctx.save();
-  ctx.globalAlpha = dark ? .045 : .085;
-  ctx.fillStyle = style === 'diamonds' ? '#728e83' : style === 'dots' ? '#a18b70' : '#ae8d78';
-  if (style === 'linen') {
-    ctx.strokeStyle = '#9b927e'; ctx.lineWidth = .6;
-    // A softly woven wall treatment for the tabletop, with no framed decoration.
-    for (let x = ox - tile; x < width; x += tile / 4) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
-    for (let y = oy - tile; y < height; y += tile / 4) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
-    ctx.restore(); return;
-  }
   for (let x = ox - tile; x < width; x += tile) {
-    if (style === 'stripes') { ctx.fillRect(x, 0, 13, height); continue; }
     for (let y = oy - tile; y < height; y += tile) {
-      ctx.beginPath();
-      if (style === 'dots') ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-      else { ctx.moveTo(x, y - 5); ctx.lineTo(x + 4, y); ctx.lineTo(x, y + 5); ctx.lineTo(x - 4, y); ctx.closePath(); }
-      ctx.fill();
+      const light = dark ? .7 : 1;
+      if (style === 'tiles') {
+        ctx.globalAlpha = .27 * light; ctx.fillStyle = '#789488';
+        ctx.fillRect(x + 1, y + 1, 26, 26); ctx.fillRect(x + 29, y + 29, 26, 26);
+        ctx.globalAlpha = .22 * light; ctx.strokeStyle = '#8c9d8d'; ctx.lineWidth = 1;
+        ctx.strokeRect(x + .5, y + .5, 28, 28); ctx.strokeRect(x + 28.5, y + .5, 28, 28);
+        ctx.strokeRect(x + .5, y + 28.5, 28, 28); ctx.strokeRect(x + 28.5, y + 28.5, 28, 28);
+      } else if (style === 'plaid') {
+        ctx.globalAlpha = .13 * light; ctx.fillStyle = '#a88867';
+        ctx.fillRect(x + 8, y, 10, tile); ctx.fillRect(x, y + 8, tile, 10);
+        ctx.globalAlpha = .24 * light; ctx.strokeStyle = '#9b8061'; ctx.lineWidth = .8;
+        ctx.beginPath(); ctx.moveTo(x + 28, y); ctx.lineTo(x + 28, y + tile);
+        ctx.moveTo(x, y + 28); ctx.lineTo(x + tile, y + 28); ctx.stroke();
+      } else {
+        ctx.globalAlpha = .26 * light; ctx.strokeStyle = '#ad8c83'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(x, y + 28); ctx.lineTo(x + 28, y);
+        ctx.lineTo(x + 56, y + 28); ctx.lineTo(x + 28, y + 56); ctx.closePath(); ctx.stroke();
+        ctx.globalAlpha = .2 * light; ctx.fillStyle = '#ad8c83'; ctx.beginPath(); ctx.arc(x + 28, y + 28, 2, 0, Math.PI * 2); ctx.fill();
+      }
     }
   }
   ctx.restore();
@@ -102,7 +107,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark })
   const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
   const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 + shiftY;
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': .65,
-    'desert-dunes': .65, 'enchanted-grove': .65, 'underwater-seaweed': .44 }[name];
+    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85 }[name];
   ctx.save(); ctx.globalAlpha = alpha * (dark ? .45 : 1);
   if (name === 'farm-hay' || name === 'underwater-seaweed') {
     const h = name === 'farm-hay' ? 58 : 95;
@@ -112,7 +117,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark })
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const h = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 105, 'enchanted-grove': 180 }[name];
+    const h = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160 }[name];
     const w = Math.max(width + 100, h * bounds[2] / bounds[3]);
     ctx.drawImage(image, ...bounds, (width - w) / 2 - shiftX, base - h, w, h);
   }
