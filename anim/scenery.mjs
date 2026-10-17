@@ -111,9 +111,10 @@ function visibleBounds(image) {
 function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2 }) {
   const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
   const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 * groundScale + shiftY;
-  const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': .65,
+  const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
     'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85 }[name];
-  ctx.save(); ctx.globalAlpha = alpha * (dark ? .45 : 1);
+  ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' ? .45 : 1);
+  if (dark && name === 'farm-hay') ctx.filter = 'brightness(55%)';
   if (name === 'farm-hay' || name === 'underwater-seaweed') {
     const h = (name === 'farm-hay' ? 58 : 95) * groundScale;
     const w = h * bounds[2] / bounds[3];
@@ -131,18 +132,20 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
 }
 
 // Atmospheric layers follow the climb with the original cloud parallax.
-export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2 }) {
+export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all' }) {
   const { config, images } = kit;
   ctx.save();
-  if (config.wallpaper) {
+  if (pass !== 'foreground' && config.wallpaper) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
   }
-  if (images[config.texture]) {
+  if (pass !== 'foreground' && images[config.texture]) {
     const tile = 360, offsetY = ((shiftY * .12) % tile + tile) % tile;
     const offsetX = ((shiftX * .08) % tile + tile) % tile;
     ctx.globalAlpha = (config.texture === 'star-field' ? (config.night ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images[config.texture], x, y, tile, tile);
   }
+  // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
+  if (pass === 'background') { ctx.restore(); return; }
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;

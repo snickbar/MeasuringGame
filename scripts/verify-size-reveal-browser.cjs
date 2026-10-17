@@ -102,6 +102,14 @@ try{
   }
   assert(scene.getFraming(scene.duration).groundScale===1,'final ground size restored '+id);
   const startDraws=[];watched.set(ctl.canvas.getContext('2d'),startDraws);scene.render(0);
+  if(expected==='farm'||expected==='city'){
+   const cloudIndex=startDraws.findIndex(d=>d.image==='cloud.png');
+   const backdropIndex=startDraws.findIndex(d=>d.image===SETTINGS[expected].backdrop+'.png');
+   assert(cloudIndex>=0&&backdropIndex>cloudIndex,'clouds behind rooted scenery '+id);
+   if(expected==='farm')assert(startDraws[backdropIndex].alpha===1,'hay bales opaque over background clouds');
+   assert(startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.png').length===(expected==='farm'?2:1),'backdrop drawn only once per placement '+id);
+   if(expected==='city')assert(startDraws.findIndex(d=>d.image==='star-field.png')<cloudIndex,'stars behind clouds');
+  }
   if(SETTINGS[expected].backdrop){
    const backdrop=startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.png');
    assert(backdrop.length>0,'background scenery ready on first frame '+id);

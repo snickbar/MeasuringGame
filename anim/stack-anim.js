@@ -781,7 +781,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX });
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background' });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
@@ -796,6 +796,8 @@ export function createStackAnimation(container, options = {}) {
         }
         ctx.globalAlpha = 1;
       }
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground' });
       const sceneryFloorY = sy0;
       if (sceneryFloorY < stageH) {
         const gy = Math.max(0, sceneryFloorY);
