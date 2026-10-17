@@ -144,9 +144,10 @@
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     transition: transform 100ms ease;
   }
-  button:active { transform: scale(.93); transition: transform 60ms ease-out; }
+  button { transition: scale 160ms cubic-bezier(.2,1.6,.4,1); }
+  button:active:not(:disabled) { scale: .94; transition: scale 60ms ease-out; }
   button.btn-bounce { animation: btnBounce 220ms ease-out; }
-  @keyframes btnBounce { 0% { transform: scale(.93); } 55% { transform: scale(1.06); } 80% { transform: scale(.98); } 100% { transform: scale(1); } }
+  @keyframes btnBounce { 0% { scale: .94; } 55% { scale: 1.075; } 80% { scale: .985; } 100% { scale: 1; } }
 
   /* Custom in-app keyboard (room code + name entry) - the inputs it drives
      are `readonly` with inputmode="none" so the OS keyboard never appears. */
@@ -2058,7 +2059,22 @@
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     padding: 6px 4px; font-size: 26px; width: 72px; box-sizing: border-box; text-align: center; color: #fff;
   }
-  .hud-timer.low { color: #ffe066; animation: pulse 0.6s infinite; }
+  .hud-timer.low { color: #fff3a8; text-shadow: 0 1px 3px #732514; animation: timerUrgency .85s ease-in-out infinite; }
+  .hud-timer.timer-paused { animation-play-state: paused; }
+  @keyframes timerUrgency {
+    0%,100% { scale: 1; filter: drop-shadow(0 0 2px #ffbb4c); }
+    50% { scale: 1.055; filter: drop-shadow(0 0 7px #ff8a35); }
+  }
+  #toolbar-coin-balance { position: relative; }
+  .coin-sparkle { position: absolute; z-index: 3; color: #ffcf35; text-shadow: 0 0 2px #8f5810; font-size: 13px; pointer-events: none; }
+  .lead-celebration { position: absolute; right: 2px; top: 1px; z-index: 4; padding: 2px 5px; border: 1px solid #b77d16; border-radius: 9px; background: #fff0a6; color: #65400b; font: 700 10px 'Fredoka',sans-serif; pointer-events: none; animation: leadLabel 2.2s ease both; }
+  @keyframes leadLabel { 0% { opacity: 0; translate: 0 5px; } 15%,80% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 0 -4px; } }
+  @media (prefers-reduced-motion: reduce) {
+    button, button:active:not(:disabled) { scale: 1; transition: none; }
+    button.btn-bounce { animation: none; }
+    .hud-timer.low { animation: none; outline: 2px solid #ffcf35; border-radius: 12px; }
+    .lead-celebration { animation: none; }
+  }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 
   .question-prompt {
@@ -3620,6 +3636,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
+  import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   var gameRewards;
   var powerups;
@@ -4285,6 +4302,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const coinCountEl = document.getElementById("toolbar-coin-count");
   if (coinCountEl) coinCountEl.textContent = myProfile.coins > 9999 ? "9999+" : String(myProfile.coins || 0);
+  let observedCoinOwner = deviceId, observedCoinBalance = myProfile.coins || 0;
   // Set once watchMyProfile() has an active subscription - must be called
   // (if set) before ever reassigning `deviceId` and re-subscribing, or
   // signing in/out repeatedly stacks a new listener on the old path every
@@ -9103,6 +9121,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return n > COIN_DISPLAY_CAP ? COIN_DISPLAY_CAP + "+" : String(n);
   }
   function renderCoinBalance() {
+    if (observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance) {
+      sparkleCoins(toolbarCoinBalanceEl, matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+    observedCoinOwner = deviceId;
+    observedCoinBalance = myProfile.coins || 0;
     // Skipped mid-tween so the final-screen coin-fly's own count-up animation
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
@@ -11532,6 +11555,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } else {
         kickTimerEl.textContent = "";
       }
+      hudTimerEl.classList.toggle("timer-paused", !!roomState?.paused);
+      updateSubmissionMotion();
       if (!roomState || roomState.paused) return;
       if (isHost && roomState.phase === "animation") checkAnimationAdvance(currentRoomCode);
       if (roomState.phase === "countdown" && roomState.countdownEndsAt) {
@@ -12745,6 +12770,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Score column / HUD top ====================
 
   let lastScoreColumnSignature = null;
+  const newLeader = createLeadMotion();
+  const submissionMotion = createSubmissionMotion({ bounce(id) {
+    const card = Array.from(scoreColEl.children).find(el => el.dataset.id === id);
+    playSubmissionBounce(card, matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }});
+  function updateSubmissionMotion() {
+    submissionMotion.update({ ...roomState, roomCode: currentRoomCode }, nowMs());
+  }
   // The round's winner keeps a gold pulse on their player card from the reveal until the next round starts.
   let roundWinnerId = null;
   function setRoundWinner(id) {
@@ -12752,7 +12785,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && c.dataset.id === id));
   }
   function renderScoreColumn(overrideScores) {
-    const signature = Object.keys(currentPlayers).map((id) => {
+    const gameMotionKey = `${currentRoomCode}:${roomState.gameId || ''}`;
+    const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
       const p = currentPlayers[id];
       const score = overrideScores ? (overrideScores[id] || 0) : (p.score || 0);
       return `${id}:${score}:${p.avatar || ""}:${p.name}`;
@@ -12766,6 +12800,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
       };
       const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, false);
+      const celebratingId = newLeader(gameMotionKey, ranked);
       scoreColEl.innerHTML = "";
       ranked.forEach((entry) => {
         const { id, score, rank, medal: medalType } = entry;
@@ -12794,6 +12829,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         `;
         scoreColEl.appendChild(box);
         fitNameToCard(box.querySelector(".name"));
+        if (id === celebratingId && roomState.phase !== "waiting") {
+          celebrateLead(box, matchMedia('(prefers-reduced-motion: reduce)').matches);
+        }
         const prevScore = previousDisplayedScores[id];
         if (prevScore !== undefined && prevScore !== score) {
           const ptsEl = box.querySelector(".pts");
@@ -13699,7 +13737,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Springy release bounce on every button, everywhere — one delegated listener.
   function triggerBtnBounce(e) {
     const btn = e.target.closest && e.target.closest("button");
-    if (!btn) return;
+    if (!btn || btn.disabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     btn.classList.remove("btn-bounce");
     void btn.offsetWidth;
     btn.classList.add("btn-bounce");
@@ -13984,6 +14022,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (data.phase === "final") {
         renderFinal();
       }
+      updateSubmissionMotion();
 
       if (isHost) {
         checkQuestionAdvance(roomCode);
