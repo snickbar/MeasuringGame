@@ -8,6 +8,7 @@
 <meta http-equiv="Expires" content="0" />
 <title>Size Em Up!</title>
 <link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="anim/game-rewards.css" />
 <link rel="preload" as="image" href="home-watermelon.jpg" />
 <script>
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
@@ -3560,6 +3561,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module">
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
+  import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
+  var gameRewards;
   var powerups;
   const powerupSeen = new Set();
   function effectiveGuess(q, raw, playerId) {
@@ -4325,6 +4328,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderProfileDependentUi();
       grantLevelRewards();
       powerups?.recover(data, deviceId);
+      gameRewards?.recover();
     });
   }
 
@@ -7232,6 +7236,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const finalDoubleCoinsBtn = document.getElementById("final-double-coins-btn");
   const finalHomeBtn = document.getElementById("final-home-btn");
   const playAgainBtn = document.getElementById("play-again-btn");
+  gameRewards = createGameRewards({
+    owner: () => deviceId,
+    transaction: (id, change) => runTransaction(ref(db, `profiles/${id}`), change),
+    ad: showFakeAd,
+    finish: finishCompletedGame,
+  });
+  // The first profile event may have arrived before UI initialization.
+  gameRewards.recover();
   const endedScreenEl = document.getElementById("ended-screen");
   const leftScreenEl = document.getElementById("left-screen");
   const leftReasonEl = document.getElementById("left-reason");
@@ -7548,6 +7560,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function guardToolbarNav(action) {
     return () => {
+      if (gameRewards?.active) return;
+      if (finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
       if (isInActiveGame()) { openLeaveGameConfirm(); return; }
       if (isInLobby()) {
         pendingNavAction = action;
@@ -7562,6 +7576,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The gear is now the toolbar's menu button: Settings + Exit live in a small popup under it.
   const toolbarMenuEl = document.getElementById("toolbar-menu");
   function setToolbarMenu(open) {
+    if (open && finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
     toolbarMenuEl.hidden = !open;
     toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -10896,6 +10911,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = new Date();
     await update(ref(db, `rooms/${currentRoomCode}`), {
       phase: "countdown", countdownRound: 1, countdownEndsAt,
+      gameId: crypto.randomUUID(),
       activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
     });
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
@@ -11757,7 +11773,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function playAgain(roomCode) {
     if (!isHost) return;
     const players = roomState.players || {};
-    const updates = { previousRankOrder: null, rankDeltas: null };
+    const updates = { previousRankOrder: null, rankDeltas: null, gameId: crypto.randomUUID() };
     Object.keys(players).forEach((id) => {
       updates[`players/${id}/score`] = 0;
       updates[`players/${id}/accuracySum`] = null;
@@ -11822,24 +11838,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });
   endedReloadBtn.addEventListener("click", () => location.reload());
-  // Host: "Finish game" fully closes the room, not just this one client's
-  // view - it used to be a plain reload, which left the room (and this
-  // player's record in it) sitting in Firebase forever with phase still
-  // "final", which is exactly what let a stale "Rejoin last game" tap drop
-  // someone right back onto a long-finished results screen.
-  // Guest: a guest can't close the room for everyone else, so their button
-  // just leaves (same as guestExit mid-game) - the room stays open for
-  // whoever's left, including the host potentially hitting Play Again.
-  finalHomeBtn.addEventListener("click", async () => {
-    if (!isHost) { await guestExit(); return; }
+  // Results lead to each player's receipt. After collecting, the host closes
+  // this completed game; guests remove their own slot and return home too.
+  finalHomeBtn.addEventListener("click", () => gameRewards.open());
+  async function finishCompletedGame(reward) {
     leavingGame = true;
-    const roomCode = currentRoomCode;
-    await update(ref(db, `rooms/${roomCode}`), { phase: "ended" });
-    onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
-    await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
-    await maybeDeleteEmptyRoom(roomCode);
-    location.reload();
-  });
+    const roomCode = reward.roomCode;
+    try {
+      // Finishing an old receipt must never close a newer game in the room.
+      if (reward.host) await runTransaction(ref(db, `rooms/${roomCode}`), room => {
+        if (!room || room.phase !== "final" || gameRewardKey(roomCode, room) !== reward.key) return;
+        return { ...room, phase: "ended" };
+      });
+      const room = (await get(ref(db, `rooms/${roomCode}`))).val();
+      if (room && (room.gameId || room.currentQuestion?.powerupKey || room.animStartAt || room.countdownEndsAt)
+          && gameRewardKey(roomCode, room) === reward.key) {
+        await onDisconnect(ref(db, `rooms/${roomCode}/players/${reward.playerId}`)).cancel();
+        await remove(ref(db, `rooms/${roomCode}/players/${reward.playerId}`));
+        await maybeDeleteEmptyRoom(roomCode);
+      }
+      // Let the controller clear its pending receipt before navigation.
+      setTimeout(() => location.reload(), 0);
+    } catch (error) { leavingGame = false; throw error; }
+  }
   leftReloadBtn.addEventListener("click", () => location.reload());
 
   // A small recap of the game for the screen shown after leaving: [value, label] tiles.
@@ -12787,22 +12808,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   let finalRendered = false;
-  let finalCoinsDoubled = false;
   function renderFinal() {
     if (finalRendered) return;
     finalRendered = true;
     const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
-    const coinsBeforeAward = myProfile.coins;
-    const willAnimateCoins = myFinalScore > 0;
-    finalScoreForDouble = myFinalScore;
-    finalDoubleCoinsBtn.disabled = false;
     updateFinalButtons();
-    // Set before awardCoinsForGameEnd fires, not after: the Firebase round-trip
-    // can resolve (and renderCoinBalance() can snap the toolbar number to its
-    // final value) before our own delayed animation below even starts, which
-    // would make animateCoinCount visibly flicker back down first.
-    if (willAnimateCoins) coinCountTweenActive = true;
-    awardCoinsForGameEnd(myFinalScore);
+    // The receipt transaction replaces the old unguarded score credit. Base
+    // coins are still credited here, before either reward-screen button.
+    void gameRewards.prepare({ key: gameRewardKey(currentRoomCode, roomState), score: myFinalScore,
+      roomCode: currentRoomCode, playerId: currentPlayerId, host: isHost });
     {
       const ids = Object.keys(currentPlayers);
       const top = Math.max(...ids.map((id) => currentPlayers[id].score || 0));
@@ -12821,8 +12835,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
     let rank1Delay = 0;
-    let myRowDelay = 0;
-    let myLi = null;
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
@@ -12843,7 +12855,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const delayMs = idx * 150;
       li.style.animationDelay = `${delayMs}ms`;
       if (rank === 1) rank1Delay = delayMs;
-      if (id === currentPlayerId) myRowDelay = delayMs;
       const winnerStars = rank === 1 && score > 0
         ? `<div class="drumroll-stars"><span></span><span></span><span></span><span></span></div>`
         : "";
@@ -12853,53 +12864,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
-      if (id === currentPlayerId) myLi = li;
     });
-    // Only your own coin haul flies up to the toolbar - everyone else's score
-    // becoming coins happens on their own screen, not visibly here.
-    if (willAnimateCoins && myLi) {
-      setTimeout(() => {
-        const ptsEl = myLi.querySelector(".pts");
-        spawnCoinFly(ptsEl, toolbarCoinBalanceEl, { count: 8, durationMs: 1100, staggerMs: 90 });
-        spawnCoinAwardPopup(ptsEl, myFinalScore);
-        setTimeout(() => animateCoinCount(coinsBeforeAward, coinsBeforeAward + myFinalScore, 600), 1400);
-      }, myRowDelay + 400);
-    } else if (willAnimateCoins) {
-      coinCountTweenActive = false; // no row found to fly from - don't leave the toolbar stuck
-    }
     setTimeout(() => {
       celebrate("spotOn");
       spawnStreamerConfetti();
       playSound("win");
     }, rank1Delay + 350);
   }
-  // TEMP: no real ad SDK wired up yet, same simulated-watch pattern as
-  // watchAdForCoins - one-time per game (finalCoinsDoubled, reset alongside
-  // finalRendered whenever a new game/round starts), not a repeatable
-  // daily-cap mechanic like the other ad button.
-  let finalScoreForDouble = 0;
-  // The coins from the game are already in the player's balance by the time the
-  // results show (see renderFinal), so "Collect" just states the amount and
-  // finishes, and the ad button adds the same amount a second time, then finishes.
   function updateFinalButtons() {
-    const n = finalScoreForDouble;
-    finalDoubleCoinsBtn.style.display = n > 0 ? "flex" : "none";
-    if (!finalCoinsDoubled) {
-      finalDoubleCoinsBtn.innerHTML = `<span>&#9654; Watch Ad</span><span class="fbtn-sub">Double to +${n * 2}</span>`;
-    }
-    finalHomeBtn.innerHTML = n > 0
-      ? `<span>Collect +${n}</span><span class="fbtn-sub">& ${isHost ? "Finish" : "Leave"}</span>`
-      : `<span>${isHost ? "Finish Game" : "Leave Game"}</span>`;
+    finalDoubleCoinsBtn.style.display = "none";
+    playAgainBtn.style.display = "none";
+    finalHomeBtn.textContent = "Continue";
   }
-  finalDoubleCoinsBtn.addEventListener("click", async () => {
-    if (finalCoinsDoubled || finalScoreForDouble <= 0) return;
-    finalDoubleCoinsBtn.disabled = true;
-    await showFakeAd();
-    finalCoinsDoubled = true;
-    finalDoubleCoinsBtn.textContent = "Doubled!";
-    await addCoins(finalScoreForDouble);
-    setTimeout(() => finalHomeBtn.click(), 700);
-  });
 
   // ==================== Sound / confetti ====================
 
@@ -13690,13 +13666,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (phase !== "summary") nextRoundBtn.style.display = "none";
     finalHomeBtn.style.display = phase === "final" ? "flex" : "none";
-    // Only the host can close the room for everyone - a guest's button
-    // does the same thing it always did (just leave, room stays open for
-    // whoever's left), so it keeps the old label instead of claiming to
-    // "finish" something it can't actually finish for the group.
+    // Every player reads the results first, then continues to their receipt.
     if (phase === "final") updateFinalButtons();
-    finalDoubleCoinsBtn.style.display = (phase === "final" && finalScoreForDouble > 0) ? "flex" : "none";
-    playAgainBtn.style.display = (phase === "final" && isHost) ? "flex" : "none";
+    finalDoubleCoinsBtn.style.display = "none";
+    playAgainBtn.style.display = "none";
 
     // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
     // straight back to round 1, which is indistinguishable from "still on round
@@ -13719,7 +13692,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       revealAnimating = false;
       summaryScrollStarted = false;
       finalRendered = false;
-      finalCoinsDoubled = false;
       renderGuessDisplay();
       updateWaitingUi();
     }
@@ -13790,6 +13762,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (data.phase === "countdown" && data.countdownRound === 1 && data.countdownEndsAt !== lastRandomRollKey) { lastRandomRollKey = data.countdownEndsAt; rollRandomEquips(); }
       currentPlayers = data.players || {};
       currentSettings = data.settings || currentSettings;
+      // Another player's Finish can close the party room while this player is
+      // still reading the results. Their own saved reward remains available.
+      if (gameRewards.pending && (data.phase === "ended" || !data.players)) gameRewards.open();
 
       if (currentPlayers[currentPlayerId]) everSeenSelfInPlayers = true;
       if (everSeenSelfInPlayers && !currentPlayers[currentPlayerId] && data.phase !== "ended") {
