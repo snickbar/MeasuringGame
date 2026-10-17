@@ -92,7 +92,7 @@ await sandbox.worldFinish();assert.equal(world.stars,3);assert.equal(sandbox.wor
 for(const p of Object.values(POWERUPS))assert(fs.existsSync(new URL('../icons/powerups/'+p.icon+'.png',import.meta.url)));
 // Reconnect recovery uses atomic cancellation markers, so a late room write
 // cannot give away an effect after another tab refunded its receipt.
-globalThis.document={getElementById:()=>({}),createElement:()=>({setAttribute:()=>{}}),body:{append:()=>{}},addEventListener:()=>{}};
+globalThis.document={getElementById:()=>({append:()=>{}}),createElement:()=>({setAttribute:()=>{}}),body:{append:()=>{}},addEventListener:()=>{}};
 let recoveredWallet={coins:0,powerupReceipts:{lost:{...receipt,status:'charged',at:Date.now()-120000},used:{...receipt,status:'charged',at:Date.now()-120000},local:{...receipt,room:undefined,mode:'worlds',status:'charged',at:Date.now()-120000}}};
 let recoveredRoom={powerupReceipts:{used:true}};
 const controller=createPowerupController({context:()=>null,

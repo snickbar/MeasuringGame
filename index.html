@@ -8,6 +8,7 @@
 <meta http-equiv="Expires" content="0" />
 <title>Size Em Up!</title>
 <link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="anim/game-rewards.css" />
 <link rel="preload" as="image" href="home-watermelon.jpg" />
 <script>
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
@@ -2045,12 +2046,13 @@
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; padding: 8px 12px; width: auto; margin: 0; color: var(--text);
     border-width: 8px; border-style: solid; border-image-source: var(--btn); border-image-slice: 55 fill; flex: none;
   }
-  .hud-timer-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+  .hud-timer-row { position:relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
   /* The timer box shows "--" (empty/unused) during the reveal animation, so the
      host's Skip button lives right under it instead of its old spot below the
      whole animation picture - frees up room there for the ticking answer (now
      on the question paper) and the full-size picture itself. */
-  .hud-timer-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 72px; } /* locked to the timer's width so the question card is the same (biggest) size on every screen; the note wraps inside */
+  .hud-timer-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; width: 72px; } /* locked to the timer's width so the question card is the same (biggest) size on every screen; the note wraps inside */
+  .hud-timer-col .question-note { margin-top:0; padding-top:4px; padding-bottom:4px; }
   .hud-timer {
     font-family: 'Fredoka', sans-serif; font-weight: 700; flex-shrink: 0;
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
@@ -2140,9 +2142,11 @@
   .answer-line-value { display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 42px; color: #000; line-height: 1.05; }
 
   /* Two independent scrollers: the answers/board on the left and the player cards docked on the right (swipe up on the cards to scroll them) */
-  .game-body { display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
+  .game-body { position:relative; display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
   .main-col { flex: 1 1 0; min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
-  .game-body.anim-wide .score-col { display: none; }
+  .game-body.anim-wide .score-sidebar { display: none; }
+  .score-sidebar { flex:0 0 150px; min-width:0; min-height:0; display:flex; flex-direction:column; }
+  .score-sidebar .score-col { flex:1 1 0; min-height:0; }
   .game-body.anim-wide .main-col { flex: 1 1 100%; }
   .score-col { flex: 0 0 150px; min-width: 0; display: flex; flex-direction: column; gap: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding-bottom: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .score-col::-webkit-scrollbar { display: none; }
@@ -2677,9 +2681,17 @@
   .items-row.locked { background: repeating-linear-gradient(135deg, #e9e0cf 0, #e9e0cf 7px, #f1eadb 7px, #f1eadb 14px); border-color: #cdbd9f; }
   .items-row.locked .items-name { opacity: 1; color: #6b5a45; font-weight: 800; }
 
-  /* Compact, contextual solo power-ups. Prices and details never move the keypad. */
+  /* Contextual power-ups stay above the player cards, beside the objects/keypad. */
   .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
-  #quick-powerups { flex:none; }
+  #quick-powerups { position:absolute; z-index:4; box-sizing:border-box; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-rows:44px; column-gap:2px; padding:2px; margin:0; background:#fff7e7; border-radius:8px; }
+  #quick-powerups.pu-l-shape { height:92px; clip-path:polygon(75% 0,100% 0,100% 100%,0 100%,0 50%,75% 50%); border-radius:0; }
+  #quick-powerups.pu-l-shape .pu-button:first-child { grid-column:4; grid-row:1; }
+  #quick-powerups.pu-l-shape .pu-button:not(:first-child) { grid-row:2; }
+  #quick-powerups .pu-button { box-sizing:border-box; height:44px; min-height:44px; padding:0; font-size:9px; background:transparent; }
+  #quick-powerups .pu-button:only-child { grid-column:1 / -1; }
+  #quick-powerups .pu-button img { width:20px; height:20px; }
+  #quick-powerups .pu-button small { font-size:8px; }
+  .pu-box-title { display:block; text-align:center; font:700 10px/1.2 system-ui,sans-serif; color:#85572b; }
   .pu-button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; min-height:60px; margin:0; padding:2px 0; border:0; border-radius:9px; background:#fffdf7; color:#583015; font:700 11px/1.15 system-ui,sans-serif; cursor:pointer; box-shadow:none; }
   .pu-button img { width:30px; height:30px; object-fit:contain; }
   .pu-button small { font-size:9px; color:#85572b; white-space:nowrap; }
@@ -2687,19 +2699,33 @@
   .pu-button:disabled { opacity:.45; cursor:default; }
   .pu-inline { flex-direction:row; gap:5px; width:100%; min-height:44px; padding:4px; margin:4px 0; background:#fff7e7; }
   .pu-inline img { width:26px; height:26px; }
-  #quick-powerups[hidden], #second-powerup[hidden], .pu-toast[hidden] { display:none !important; }
-  .pu-dialog { max-width:310px; width:calc(100% - 48px); border:3px solid #674027; border-radius:22px; padding:20px; background:#fff9ec; color:#583015; text-align:center; font:16px/1.4 system-ui,sans-serif; }
-  .pu-dialog::backdrop { background:#2e1a16b8; }
-  .pu-dialog h2 { margin:4px 0; font-size:22px; }
-  .pu-dialog-icon { width:92px; height:92px; object-fit:contain; }
-  .pu-actions { display:flex; gap:10px; }
-  .pu-actions button { flex:1; min-height:44px; padding:8px; border:1px solid #b9946b; border-radius:12px; background:#eed9b8; color:#583015; font:700 14px system-ui,sans-serif; }
-  .pu-actions button:last-child { background:#b7df7c; }
-  .pu-actions button:disabled { opacity:.5; }
+  #quick-powerups[hidden], .pu-toast[hidden] { display:none !important; }
   .pu-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); z-index:20000; max-width:85vw; padding:10px 16px; border-radius:14px; background:#51311f; color:white; text-align:center; font:14px system-ui,sans-serif; pointer-events:none; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
   .pu-result-note { font:700 11px/1.3 system-ui,sans-serif; color:#70348c; margin:5px 0; }
+  /* Compact solo input screens: keep generous tap targets without tall gutters. */
+  :is(#worlds-content,#survival-content) .dc-prompt { margin:6px 0; padding:8px 12px; border:1px solid rgba(217,194,154,.7); border-radius:24px; background:rgba(255,253,246,.82); font-size:15px; line-height:1.25; }
+  :is(#worlds-content,#survival-content) .dc-keys { gap:4px; }
+  :is(#worlds-content,#survival-content) .dc-key { box-sizing:border-box; height:44px; min-height:44px; padding:3px 6px; margin:0; font-size:20px; line-height:1; border-radius:12px; }
+  :is(#worlds-content,#survival-content) .dc-display { box-sizing:border-box; min-height:44px; padding:3px 8px; margin:5px 0; font-size:28px; line-height:1.2; border-width:2px; }
+  :is(#worlds-content,#survival-content) .dc-pics { gap:10px; margin:4px 0; }
+  :is(#worlds-content,#survival-content) .dc-pic { max-width:130px; padding:5px; }
+  :is(#worlds-content,#survival-content) .dc-pic img { height:72px; margin-bottom:2px; }
+  :is(#worlds-content,#survival-content) .dc-pic span { display:block; font-size:10px; line-height:1.15; }
+  :is(#worlds-content,#survival-content) .pu-row { margin:4px 0; padding:3px; gap:3px; }
+  :is(#worlds-content,#survival-content) .pu-button { min-height:48px; font-size:10px; }
+  :is(#worlds-content,#survival-content) .pu-button img { width:23px; height:23px; }
+  :is(#worlds-content,#survival-content) .pu-button small { font-size:8px; }
+  :is(#wl-submit,#sv-submit) { box-sizing:border-box; min-height:44px; margin-top:7px; padding:8px 10px; font-size:17px; }
+  :is(#worlds-content,#survival-content) .dc-dots { gap:14px; margin:4px 0 7px; }
+  #survival-content .sv-heart { width:30px; }
+  #survival-content .sv-hud { gap:1px; margin:2px 0 4px; }
+  @media (max-height:740px) {
+    :is(#worlds-content,#survival-content) .dc-pic img { height:60px; }
+    :is(#worlds-content,#survival-content) .dc-title { margin-top:2px; font-size:22px; }
+    :is(#worlds-content,#survival-content) .dc-sub { margin-bottom:6px; }
+  }
 </style>
 </head>
 <body>
@@ -3122,6 +3148,13 @@
     <p>Questions name the dimension being compared: <b>length, height, width, diameter, depth, wingspan, or edge length</b>. Extra wording tells you when a cord, tail, pedestal, or post is included. Wired earbuds include the full cord; the wireless earbuds case is measured on its own. A tied necktie is measured from knot to tip.</p>
   </div></details>
 
+  <details class="howto-section" id="howto-powerups"><summary>Power-ups</summary><div class="howto-body">
+    <p>Available in <b>Quick Game, Worlds, and Survival</b>. Tap an available power-up to use it immediately for the displayed coin price. There is no confirmation pop-up. Unaffordable power-ups are dimmed.</p>
+    <p>Use rerolls, buffer, and reveal before submitting. In Quick Game, you can still add a buffer while waiting, before Second Chance begins. Only 50/50 is available during Second Chance. Used power-ups disappear; only one reroll is allowed per question.</p>
+    <div id="howto-powerup-list"></div>
+    <p>Worlds and Survival stay untimed and have no Second Chance. A reroll does not add a timer. Power-ups are unavailable in Party, Daily, and Monthly challenges, including practice.</p>
+  </div></details>
+
   <details class="howto-section"><summary>Second chances</summary><div class="howto-body">
     <p>Every round, after guesses lock, everyone gets a few seconds to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly the <b>real answer</b>, and picking it earns a bonus point, or <b>double down</b> on your own guess. Doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
   </div></details>
@@ -3423,7 +3456,6 @@
   </div>
   </div>
 
-  <div id="quick-powerups" hidden></div>
   <div class="game-body">
     <div class="main-col">
 
@@ -3449,7 +3481,6 @@
       </div>
 
       <div id="answers-view">
-        <div id="second-powerup" hidden></div>
         <div id="answers-row"></div>
         <button id="double-down-btn"><span class="dd-main">Double down on my answer</span></button>
       </div>
@@ -3472,7 +3503,10 @@
       </div>
 
     </div>
-    <div class="score-col" id="score-col"></div>
+    <div class="score-sidebar">
+      <div id="quick-powerups" hidden></div>
+      <div class="score-col" id="score-col"></div>
+    </div>
   </div>
 </div>
 
@@ -3527,6 +3561,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module">
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
+  import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
+  var gameRewards;
   var powerups;
   const powerupSeen = new Set();
   function effectiveGuess(q, raw, playerId) {
@@ -4292,6 +4328,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderProfileDependentUi();
       grantLevelRewards();
       powerups?.recover(data, deviceId);
+      gameRewards?.recover();
     });
   }
 
@@ -7199,6 +7236,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const finalDoubleCoinsBtn = document.getElementById("final-double-coins-btn");
   const finalHomeBtn = document.getElementById("final-home-btn");
   const playAgainBtn = document.getElementById("play-again-btn");
+  gameRewards = createGameRewards({
+    owner: () => deviceId,
+    transaction: (id, change) => runTransaction(ref(db, `profiles/${id}`), change),
+    ad: showFakeAd,
+    finish: finishCompletedGame,
+  });
+  // The first profile event may have arrived before UI initialization.
+  gameRewards.recover();
   const endedScreenEl = document.getElementById("ended-screen");
   const leftScreenEl = document.getElementById("left-screen");
   const leftReasonEl = document.getElementById("left-reason");
@@ -7515,6 +7560,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function guardToolbarNav(action) {
     return () => {
+      if (gameRewards?.active) return;
+      if (finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
       if (isInActiveGame()) { openLeaveGameConfirm(); return; }
       if (isInLobby()) {
         pendingNavAction = action;
@@ -7529,6 +7576,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The gear is now the toolbar's menu button: Settings + Exit live in a small popup under it.
   const toolbarMenuEl = document.getElementById("toolbar-menu");
   function setToolbarMenu(open) {
+    if (open && finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
     toolbarMenuEl.hidden = !open;
     toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -10863,6 +10911,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = new Date();
     await update(ref(db, `rooms/${currentRoomCode}`), {
       phase: "countdown", countdownRound: 1, countdownEndsAt,
+      gameId: crypto.randomUUID(),
       activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
     });
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
@@ -11724,7 +11773,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function playAgain(roomCode) {
     if (!isHost) return;
     const players = roomState.players || {};
-    const updates = { previousRankOrder: null, rankDeltas: null };
+    const updates = { previousRankOrder: null, rankDeltas: null, gameId: crypto.randomUUID() };
     Object.keys(players).forEach((id) => {
       updates[`players/${id}/score`] = 0;
       updates[`players/${id}/accuracySum`] = null;
@@ -11789,24 +11838,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });
   endedReloadBtn.addEventListener("click", () => location.reload());
-  // Host: "Finish game" fully closes the room, not just this one client's
-  // view - it used to be a plain reload, which left the room (and this
-  // player's record in it) sitting in Firebase forever with phase still
-  // "final", which is exactly what let a stale "Rejoin last game" tap drop
-  // someone right back onto a long-finished results screen.
-  // Guest: a guest can't close the room for everyone else, so their button
-  // just leaves (same as guestExit mid-game) - the room stays open for
-  // whoever's left, including the host potentially hitting Play Again.
-  finalHomeBtn.addEventListener("click", async () => {
-    if (!isHost) { await guestExit(); return; }
+  // Results lead to each player's receipt. After collecting, the host closes
+  // this completed game; guests remove their own slot and return home too.
+  finalHomeBtn.addEventListener("click", () => gameRewards.open());
+  async function finishCompletedGame(reward) {
     leavingGame = true;
-    const roomCode = currentRoomCode;
-    await update(ref(db, `rooms/${roomCode}`), { phase: "ended" });
-    onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
-    await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
-    await maybeDeleteEmptyRoom(roomCode);
-    location.reload();
-  });
+    const roomCode = reward.roomCode;
+    try {
+      // Finishing an old receipt must never close a newer game in the room.
+      if (reward.host) await runTransaction(ref(db, `rooms/${roomCode}`), room => {
+        if (!room || room.phase !== "final" || gameRewardKey(roomCode, room) !== reward.key) return;
+        return { ...room, phase: "ended" };
+      });
+      const room = (await get(ref(db, `rooms/${roomCode}`))).val();
+      if (room && (room.gameId || room.currentQuestion?.powerupKey || room.animStartAt || room.countdownEndsAt)
+          && gameRewardKey(roomCode, room) === reward.key) {
+        await onDisconnect(ref(db, `rooms/${roomCode}/players/${reward.playerId}`)).cancel();
+        await remove(ref(db, `rooms/${roomCode}/players/${reward.playerId}`));
+        await maybeDeleteEmptyRoom(roomCode);
+      }
+      // Let the controller clear its pending receipt before navigation.
+      setTimeout(() => location.reload(), 0);
+    } catch (error) { leavingGame = false; throw error; }
+  }
   leftReloadBtn.addEventListener("click", () => location.reload());
 
   // A small recap of the game for the screen shown after leaving: [value, label] tiles.
@@ -12754,22 +12808,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   let finalRendered = false;
-  let finalCoinsDoubled = false;
   function renderFinal() {
     if (finalRendered) return;
     finalRendered = true;
     const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
-    const coinsBeforeAward = myProfile.coins;
-    const willAnimateCoins = myFinalScore > 0;
-    finalScoreForDouble = myFinalScore;
-    finalDoubleCoinsBtn.disabled = false;
     updateFinalButtons();
-    // Set before awardCoinsForGameEnd fires, not after: the Firebase round-trip
-    // can resolve (and renderCoinBalance() can snap the toolbar number to its
-    // final value) before our own delayed animation below even starts, which
-    // would make animateCoinCount visibly flicker back down first.
-    if (willAnimateCoins) coinCountTweenActive = true;
-    awardCoinsForGameEnd(myFinalScore);
+    // The receipt transaction replaces the old unguarded score credit. Base
+    // coins are still credited here, before either reward-screen button.
+    void gameRewards.prepare({ key: gameRewardKey(currentRoomCode, roomState), score: myFinalScore,
+      roomCode: currentRoomCode, playerId: currentPlayerId, host: isHost });
     {
       const ids = Object.keys(currentPlayers);
       const top = Math.max(...ids.map((id) => currentPlayers[id].score || 0));
@@ -12788,8 +12835,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
     let rank1Delay = 0;
-    let myRowDelay = 0;
-    let myLi = null;
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
@@ -12810,7 +12855,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const delayMs = idx * 150;
       li.style.animationDelay = `${delayMs}ms`;
       if (rank === 1) rank1Delay = delayMs;
-      if (id === currentPlayerId) myRowDelay = delayMs;
       const winnerStars = rank === 1 && score > 0
         ? `<div class="drumroll-stars"><span></span><span></span><span></span><span></span></div>`
         : "";
@@ -12820,53 +12864,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
-      if (id === currentPlayerId) myLi = li;
     });
-    // Only your own coin haul flies up to the toolbar - everyone else's score
-    // becoming coins happens on their own screen, not visibly here.
-    if (willAnimateCoins && myLi) {
-      setTimeout(() => {
-        const ptsEl = myLi.querySelector(".pts");
-        spawnCoinFly(ptsEl, toolbarCoinBalanceEl, { count: 8, durationMs: 1100, staggerMs: 90 });
-        spawnCoinAwardPopup(ptsEl, myFinalScore);
-        setTimeout(() => animateCoinCount(coinsBeforeAward, coinsBeforeAward + myFinalScore, 600), 1400);
-      }, myRowDelay + 400);
-    } else if (willAnimateCoins) {
-      coinCountTweenActive = false; // no row found to fly from - don't leave the toolbar stuck
-    }
     setTimeout(() => {
       celebrate("spotOn");
       spawnStreamerConfetti();
       playSound("win");
     }, rank1Delay + 350);
   }
-  // TEMP: no real ad SDK wired up yet, same simulated-watch pattern as
-  // watchAdForCoins - one-time per game (finalCoinsDoubled, reset alongside
-  // finalRendered whenever a new game/round starts), not a repeatable
-  // daily-cap mechanic like the other ad button.
-  let finalScoreForDouble = 0;
-  // The coins from the game are already in the player's balance by the time the
-  // results show (see renderFinal), so "Collect" just states the amount and
-  // finishes, and the ad button adds the same amount a second time, then finishes.
   function updateFinalButtons() {
-    const n = finalScoreForDouble;
-    finalDoubleCoinsBtn.style.display = n > 0 ? "flex" : "none";
-    if (!finalCoinsDoubled) {
-      finalDoubleCoinsBtn.innerHTML = `<span>&#9654; Watch Ad</span><span class="fbtn-sub">Double to +${n * 2}</span>`;
-    }
-    finalHomeBtn.innerHTML = n > 0
-      ? `<span>Collect +${n}</span><span class="fbtn-sub">& ${isHost ? "Finish" : "Leave"}</span>`
-      : `<span>${isHost ? "Finish Game" : "Leave Game"}</span>`;
+    finalDoubleCoinsBtn.style.display = "none";
+    playAgainBtn.style.display = "none";
+    finalHomeBtn.textContent = "Continue";
   }
-  finalDoubleCoinsBtn.addEventListener("click", async () => {
-    if (finalCoinsDoubled || finalScoreForDouble <= 0) return;
-    finalDoubleCoinsBtn.disabled = true;
-    await showFakeAd();
-    finalCoinsDoubled = true;
-    finalDoubleCoinsBtn.textContent = "Doubled!";
-    await addCoins(finalScoreForDouble);
-    setTimeout(() => finalHomeBtn.click(), 700);
-  });
 
   // ==================== Sound / confetti ====================
 
@@ -13630,7 +13639,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     animationViewEl.classList.toggle("active", phase === "animation");
     animSkipBtn.style.display = (isHost && phase === "animation") ? "block" : "none";
-    scoreColEl.parentElement.classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
+    scoreColEl.closest(".game-body").classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
@@ -13657,13 +13666,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (phase !== "summary") nextRoundBtn.style.display = "none";
     finalHomeBtn.style.display = phase === "final" ? "flex" : "none";
-    // Only the host can close the room for everyone - a guest's button
-    // does the same thing it always did (just leave, room stays open for
-    // whoever's left), so it keeps the old label instead of claiming to
-    // "finish" something it can't actually finish for the group.
+    // Every player reads the results first, then continues to their receipt.
     if (phase === "final") updateFinalButtons();
-    finalDoubleCoinsBtn.style.display = (phase === "final" && finalScoreForDouble > 0) ? "flex" : "none";
-    playAgainBtn.style.display = (phase === "final" && isHost) ? "flex" : "none";
+    finalDoubleCoinsBtn.style.display = "none";
+    playAgainBtn.style.display = "none";
 
     // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
     // straight back to round 1, which is indistinguishable from "still on round
@@ -13686,7 +13692,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       revealAnimating = false;
       summaryScrollStarted = false;
       finalRendered = false;
-      finalCoinsDoubled = false;
       renderGuessDisplay();
       updateWaitingUi();
     }
@@ -13757,6 +13762,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (data.phase === "countdown" && data.countdownRound === 1 && data.countdownEndsAt !== lastRandomRollKey) { lastRandomRollKey = data.countdownEndsAt; rollRandomEquips(); }
       currentPlayers = data.players || {};
       currentSettings = data.settings || currentSettings;
+      // Another player's Finish can close the party room while this player is
+      // still reading the results. Their own saved reward remains available.
+      if (gameRewards.pending && (data.phase === "ended" || !data.players)) gameRewards.open();
 
       if (currentPlayers[currentPlayerId]) everSeenSelfInPlayers = true;
       if (everSeenSelfInPlayers && !currentPlayers[currentPlayerId] && data.phase !== "ended") {

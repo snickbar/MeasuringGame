@@ -4,14 +4,18 @@ const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'
 const root=path.resolve(__dirname,'..'), source=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=source.match(/<style>([\s\S]*?)<\/style>/)[1];
 const hud=source.slice(source.indexOf('<div id="hud">'),source.indexOf('<script type="module">'));
+const actualTips=source.match(/const QUESTION_TIPS = (\[[\s\S]*?\n  \]);/);
+if(!actualTips)throw Error('Cannot find game tip list');
+const extractFunction=name=>{const start=source.indexOf('  function '+name+'('),end=source.indexOf('\n  }',start);if(start<0||end<0)throw Error('Missing '+name);return source.slice(start,end+4)};
+const extractLine=prefix=>{const start=source.indexOf(prefix);if(start<0)throw Error('Missing '+prefix);return source.slice(start,source.indexOf('\n',start))};
 const test=`
 import {createPowerupController} from '/anim/powerup-ui.mjs';
 import {POWERUPS} from '/anim/powerups.mjs';
 const assert=(v,m)=>{if(!v)throw Error(m)}, results=[];
+const browserErrors=[];window.addEventListener('error',e=>browserErrors.push(e.message));
 const tick=()=>new Promise(r=>setTimeout(r,0));
-// Chromium's virtual-time budget advances timers without compositor frames.
-// Drive the preview frame callback from that same clock for this isolated test.
-window.requestAnimationFrame=fn=>setTimeout(()=>fn(performance.now()),16);
+const actualTips=${actualTips[1]};
+// This fixture runs with real compositor frames and an emulated mobile viewport.
 const objects=[{id:'ant',mm:10,image:'/items/ant.webp'},{id:'paperclip',mm:30,image:'/items/paperclip.webp'},{id:'canoe',mm:1000,image:'/items/canoe.webp'},{id:'school-bus',mm:3000,image:'/items/school-bus.webp'}];
 let wallet={coins:100},room,clock=1000,mode='quick',debits=0,delayDebit=false,owner='me';
 const newRoom=()=>({settings:{solo:true,timerSeconds:30},players:{me:{},bot:{isBot:true}},phase:'question',questionEndsAt:31000,currentQuestion:{unitId:'ant',targetId:'canoe',answer:100,powerupKey:crypto.randomUUID()}});
@@ -20,7 +24,8 @@ document.querySelectorAll('.active').forEach(el=>el.classList.remove('active'));
 document.getElementById('hud').classList.add('active');document.getElementById('question-view').classList.add('active');
 document.getElementById('question-prompt-text').textContent='How many ants long is the length of a canoe?';
 document.getElementById('hud-timer').textContent='30';
-document.getElementById('score-col').innerHTML=['You','Milo','Luna','Pip'].map((n,i)=>'<div class="score-card"><img style="width:40px" src="/avatars/'+['cat','dog','frog','fox'][i]+'.png"><b>'+n+'</b><span>'+i+' pts · 95%</span></div>').join('');
+document.getElementById('question-note').style.display='block';document.getElementById('question-note').textContent='Tip: Best average accuracy: +10, +6, +3';
+document.getElementById('score-col').innerHTML=['You','Milo','Luna','Pip'].map((n,i)=>'<div class="score-card"><img style="width:40px" src="/avatars/'+['av01','av02','av03','av04'][i]+'.png"><b>'+n+'</b><span>'+i+' pts · 95%</span></div>').join('');
 document.getElementById('q-preview').innerHTML=objects.filter(o=>['ant','canoe'].includes(o.id)).map(o=>'<div class="qp"><img src="'+o.image+'"><span>'+o.id+'</span></div>').join('');
 const context=()=>mode==='excluded'?null:({mode,q:room.currentQuestion,playerId:owner,phase:room.phase,roomCode:mode==='quick'?'TEST':null,deadline:mode==='quick'?(room.phase==='answers'?room.answersEndsAt:room.questionEndsAt):null,submitted:!!room.guesses?.me,answers:room.answers||[],objects,apply:q=>{room.currentQuestion=q}});
 const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,owner:()=>owner,
@@ -30,41 +35,100 @@ const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,ow
  profile:async()=>wallet,room:async()=>room,quickApplied:()=>{},refresh:()=>{},finished:()=>{},
 });
 const local=document.createElement('div');document.body.append(local);
-const open=id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';document.querySelector('[data-powerup="'+id+'"]').click()};
-const buy=async()=>{const b=document.querySelector('[data-pu-buy]');b.click();b.click();for(let n=0;n<250&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes')};
+const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3;
+const worldsContentEl=document.getElementById('worlds-content'),survivalContentEl=document.getElementById('survival-content');
+const OBJECT_BY_ID=new Map(objects.map(o=>[o.id,{...o,name:o.id,plural:o.id+'s'}]));
+const escapeHtml=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const worldStop=()=>{},survivalStop=()=>{},svRunAcc=()=>null;
+const powerups=c,powerupContext=()=>context();
+let wl,sv;
+${extractLine('  const svHeartSvg =')}
+${extractLine('  const svAccHtml =')}
+${extractLine('  const survivalHeartsHtml =')}
+${extractFunction('renderWorlds')}
+${extractFunction('renderSurvival')}
+globalThis.showSoloCompactPreview=which=>{
+ document.getElementById('hud').classList.remove('active');local.innerHTML='';mode=which;room=newRoom();
+ room.currentQuestion.prompt='How many ants long is the length of a canoe?';
+ document.getElementById('worlds-screen').classList.toggle('active',which==='worlds');
+ document.getElementById('survival-screen').classList.toggle('active',which==='survival');
+ if(which==='worlds'){wl={phase:'question',wi:0,level:1,questions:[room.currentQuestion],guesses:[],input:''};renderWorlds()}
+ else{sv={phase:'question',asked:0,lives:3,q:room.currentQuestion,accs:[],input:''};renderSurvival()}
+ const host=which==='worlds'?worldsContentEl:survivalContentEl,keys=[...host.querySelectorAll('.dc-key')];
+ const pad=host.querySelector('.dc-keys'),pill=host.querySelector('.dc-prompt');
+ assert(keys.length===12&&keys.every(b=>b.getBoundingClientRect().height>=44),'solo keypad touch targets');
+ assert(pad.getBoundingClientRect().height<=200,'compact keypad height');
+ assert(keys.every(b=>getComputedStyle(b).marginTop==='0px'&&getComputedStyle(b).marginBottom==='0px'),'no hidden keypad margins');
+ assert(getComputedStyle(pill).backgroundColor.startsWith('rgba(')&&parseFloat(getComputedStyle(pill).borderRadius)>=20,'semi-transparent question pill');
+ assert(host.scrollWidth<=innerWidth,'solo content fits horizontally');
+ const submit=host.querySelector(which==='worlds'?'#wl-submit':'#sv-submit');
+ return {mode:which,keypadHeight:pad.getBoundingClientRect().height,submitBottom:Math.round(submit.getBoundingClientRect().bottom),viewportHeight:innerHeight};
+};
+const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]');b.click();b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up')};
 try{
- c.render();const buttons=[...document.querySelectorAll('#quick-powerups [data-powerup]')];assert(buttons.length===5,'five buttons');
- assert(new Set(buttons.map(b=>Math.round(b.getBoundingClientRect().top))).size===1,'one row');assert(buttons.every(b=>b.getBoundingClientRect().width>=44),'44px touch widths');
- results.push('one compact row and accessible touch targets');
- open('buffer');document.querySelector('[data-pu-cancel]').click();assert(wallet.coins===100,'cancel costs nothing');
- open('buffer');await buy();assert(wallet.coins===90&&debits===1&&room.currentQuestion.powerups.used.buffer,'double tap charges once');
- assert(document.querySelectorAll('#quick-powerups [data-powerup]').length===4,'used buffer hidden');
- results.push('cancel, double tap, charged-once buffer and hidden used action');
- open('small');await buy();assert(room.currentQuestion.unitId==='paperclip'&&room.currentQuestion.targetId==='canoe','only small changed');assert(room.currentQuestion.powerups.used.buffer,'buffer survives reroll');assert(wallet.coins===85,'reroll price');assert(!document.querySelector('[data-powerup="big"]'),'one reroll total');
+ c.render();const buttons=[...document.querySelectorAll('[data-powerup]')];assert(buttons.length===5,'five buttons');
+ assert(buttons.every(b=>b.getBoundingClientRect().width>=44),'44px touch widths');
+ const box=document.getElementById('quick-powerups'),cards=document.getElementById('score-col'),pics=document.getElementById('q-preview');
+ assert(box.parentElement.id==='hud'&&box.children.length===5&&box.classList.contains('pu-l-shape'),'one connected L-shaped panel');
+ const rects=buttons.map(b=>b.getBoundingClientRect());
+ assert(rects.every(r=>Math.abs(r.width-rects[0].width)<1&&r.height===44),'all controls same size');
+ const buffer=document.querySelector('[data-powerup="buffer"]'),lower=buttons.filter(b=>b!==buffer);
+ assert(new Set(lower.map(b=>Math.round(b.getBoundingClientRect().top))).size===1&&buffer.getBoundingClientRect().bottom<=lower[0].getBoundingClientRect().top+1,'one raised control and four across bottom');
+ assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'no player-card overlap');
+ assert(box.getBoundingClientRect().top>=document.getElementById('question-note').getBoundingClientRect().bottom,'no tip overlap');
+ assert(lower[0].getBoundingClientRect().left>=pics.getBoundingClientRect().right,'no object overlap');
+ assert(box.getBoundingClientRect().right<=innerWidth+1,'power-up box stays within viewport');
+ assert(buttons.every(b=>b.getBoundingClientRect().left>=0&&(b.getBoundingClientRect().right<=innerWidth+1||b.closest('#quick-powerups'))),'spare-space controls stay within mobile viewport');
+ const note=document.getElementById('question-note'),board=document.getElementById('question-prompt'),normalTip=note.textContent;
+ const tipCases=[];
+ for(const boardHeight of [184,196,280])for(const tip of actualTips){
+  board.style.minHeight=boardHeight+'px';note.textContent=tip;c.render();
+  const p=box.getBoundingClientRect(),n=note.getBoundingClientRect(),card=cards.getBoundingClientRect();
+  const controls=[...box.querySelectorAll('[data-powerup]')].map(b=>b.getBoundingClientRect());
+  const label=boardHeight+'px board, '+tip;
+  assert(box.children.length===5&&box.classList.contains('pu-l-shape'),'all controls and L shape: '+label);
+  assert(p.top>=n.bottom&&card.top>=p.bottom,'no overlap: '+label);
+  assert(p.left>=pics.getBoundingClientRect().right&&p.right<=innerWidth+1,'horizontal fit: '+label);
+  assert(controls.every(r=>r.width>=44&&r.height===44&&Math.abs(r.width-controls[0].width)<1),'equal touch targets: '+label);
+  tipCases.push({tip,boardHeight,tipHeight:n.height,playerOffset:Math.round(card.top-document.querySelector('.game-body').getBoundingClientRect().top)});
+ }
+ results.push('all '+actualTips.length+' actual tips × 3 board heights: '+tipCases.length+' layout cases');
+ board.style.minHeight='280px';c.render();assert(box.getBoundingClientRect().height===92,'same L shape on tall boards');
+ board.style.minHeight='';note.textContent='Tip: This longer tip wraps onto many lines to check that no power-up can ever overlap the timer or the tip text on a narrow phone.';c.render();assert(box.getBoundingClientRect().top>=note.getBoundingClientRect().bottom,'long tips do not overlap panel');assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'cards remain below connected box');
+ note.textContent=normalTip;c.render();
+ assert(document.getElementById('howto-powerup-list').textContent.includes('Reroll small')&&document.getElementById('howto-powerup-list').textContent.includes('10% buffer'),'help card explains power-ups');
+ results.push('one connected L-shaped box, five equal controls, four across bottom, no overlap, and accessible touch targets');
+ await buy('buffer');assert(wallet.coins===90&&debits===1&&room.currentQuestion.powerups.used.buffer,'double tap charges once');
+ assert(document.querySelectorAll('[data-powerup]').length===4,'used buffer hidden');
+ results.push('immediate purchase without pop-up, double tap, charged-once buffer and hidden used action');
+ await buy('small');assert(room.currentQuestion.unitId==='paperclip'&&room.currentQuestion.targetId==='canoe','only small changed');assert(room.currentQuestion.powerups.used.buffer,'buffer survives reroll');assert(wallet.coins===85,'reroll price');assert(!document.querySelector('[data-powerup="big"]'),'one reroll total');
  results.push('reroll changes intended object and preserves buffer/usage');
- room=newRoom();room.guesses={me:95};c.render();assert(document.querySelectorAll('#quick-powerups [data-powerup]').length===1,'waiting single action');assert(document.querySelector('#guess-display').nextElementSibling.id==='quick-powerups','waiting action below guess');
- results.push('compact waiting buffer beneath locked guess');
+ room=newRoom();room.guesses={me:95};c.render();assert(document.querySelectorAll('[data-powerup]').length===1,'waiting single action');assert(box.parentElement.id==='hud','waiting action stays in common panel');
+ results.push('waiting buffer remains in sidebar');
  room.phase='answers';room.answersEndsAt=11000;room.answers=[{playerId:'me',value:95},{playerId:'bot',value:90},{playerId:'b2',value:80},{playerId:'truth',value:100,truth:true},{playerId:'b3',value:120}];c.render();
- assert(document.getElementById('quick-powerups').hidden,'no buffer on Second Chance');assert(document.querySelector('#second-powerup [data-powerup="fifty"]'),'50/50 contextual');open('fifty');await buy();assert(room.currentQuestion.powerups.removed.length===2&&!room.currentQuestion.powerups.removed.includes('truth'),'truth preserved');
+ assert(!document.querySelector('#quick-powerups [data-powerup="buffer"]'),'no buffer on Second Chance');assert(document.querySelector('#quick-powerups [data-powerup="fifty"]'),'50/50 contextual');await buy('fifty');assert(room.currentQuestion.powerups.removed.length===2&&!room.currentQuestion.powerups.removed.includes('truth'),'truth preserved');
  results.push('Second Chance hides buffer and 50/50 preserves truth');
- room=newRoom();wallet={coins:0};open('buffer');assert(document.querySelector('[data-pu-buy]').disabled,'insufficient funds');document.querySelector('[data-pu-cancel]').click();assert(wallet.coins===0,'no debit');
- room=newRoom();wallet={coins:20};clock=1000;delayDebit=true;open('buffer');await buy();assert(wallet.coins===20&&!room.currentQuestion.powerups,'late activation refunded');
+ room=newRoom();wallet={coins:0};c.render();assert(document.querySelector('[data-powerup="buffer"]').disabled,'insufficient funds');await buy('buffer');assert(wallet.coins===0,'no debit');
+ room=newRoom();wallet={coins:20};clock=1000;delayDebit=true;await buy('buffer');assert(wallet.coins===20&&!room.currentQuestion.powerups,'late activation refunded');
  results.push('insufficient funds and deadline-race refund');
- room=newRoom();clock=1000;wallet={coins:20};mode='worlds';open('buffer');await buy();assert(wallet.coins===10&&room.currentQuestion.powerups.used.buffer,'untimed local effect');assert(!room.questionEndsAt||room.questionEndsAt===31000,'no added local timer');
+ room=newRoom();clock=1000;wallet={coins:20};mode='worlds';await buy('buffer');assert(wallet.coins===10&&room.currentQuestion.powerups.used.buffer,'untimed local effect');assert(!room.questionEndsAt||room.questionEndsAt===31000,'no added local timer');
  results.push('local Worlds purchase without adding timer');
- room=newRoom();mode='survival';clock=1000;wallet={coins:20};open('reveal');const began=performance.now();await buy();assert(performance.now()-began>=4000,'full four-second view');assert(!document.querySelector('.pu-preview'),'preview removes itself');assert(wallet.coins===10&&room.currentQuestion.powerups.used.reveal,'one paid reveal');
+ room=newRoom();mode='survival';clock=1000;wallet={coins:20};const began=performance.now();await buy('reveal');assert(performance.now()-began>=4000,'full four-second view');assert(!document.querySelector('.pu-preview'),'preview removes itself');assert(wallet.coins===10&&room.currentQuestion.powerups.used.reveal,'one paid reveal');
  results.push('four-second item reveal completes and charges once');local.innerHTML='';
- mode='excluded';c.render();assert(document.getElementById('quick-powerups').hidden&&document.getElementById('second-powerup').hidden,'excluded modes');
+ mode='excluded';c.render();assert(document.getElementById('quick-powerups').hidden,'excluded modes');
  results.push('excluded modes hide actions');
  room=newRoom();mode='quick';clock=1000;wallet={coins:100};c.render();
  const old=Date.now()-120000;wallet={coins:0,powerupReceipts:{lost:{cost:10,status:'charged',at:old,mode:'worlds'},applied:{cost:5,status:'charged',at:old,mode:'quick',room:'TEST'}}};room.powerupReceipts={applied:true};await c.recover(wallet,'me');assert(wallet.coins===10&&wallet.powerupReceipts.applied.status==='applied','receipt reconciliation');await c.recover(wallet,'me');assert(wallet.coins===10,'no repeated refund');
  results.push('interrupted purchase reconciliation is idempotent');
  wallet={coins:100};c.render();
- document.getElementById('test-output').textContent=JSON.stringify({pass:true,results});
+ const soloLayouts=['worlds','survival'].map(showSoloCompactPreview);results.push('actual Worlds and Survival renderers: compact keypads, 44px targets, translucent question pills');
+ document.getElementById('worlds-screen').classList.remove('active');document.getElementById('survival-screen').classList.remove('active');document.getElementById('hud').classList.add('active');mode='quick';c.render();
+ document.getElementById('test-output').textContent=JSON.stringify({pass:true,viewport:innerWidth,tipCases:tipCases.length,soloLayouts,results});
  document.title='PASS power-ups';
-}catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,results});document.title='FAIL power-ups'}
+}catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,browserErrors,results});document.title='FAIL power-ups'}
 `;
-const fixture='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+hud+'<pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
+// Measure settled layout, rather than the brief scale-in entrance animation.
+const fixture='<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+' #worlds-content,#survival-content{animation:none!important}</style></head><body>'+hud+'<div id="worlds-screen" class="screen"><div id="worlds-content"></div></div><div id="survival-screen" class="screen"><div id="survival-content"></div></div><div id="howto-powerup-list" hidden></div><pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
 const server=http.createServer((req,res)=>{
  if(req.url.startsWith('/__powerup-test')){res.setHeader('Content-Type','text/html');res.end(fixture);return}
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
@@ -75,10 +139,44 @@ const server=http.createServer((req,res)=>{
 server.listen(0,'127.0.0.1',()=>{
  const outDir=path.join(root,'output','powerup-tests');fs.mkdirSync(outDir,{recursive:true});
  const chrome=process.env.CHROME_PATH||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
- const args=['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--hide-scrollbars','--user-data-dir='+path.join(os.tmpdir(),'size-em-up-powerups-'+process.pid),'--window-size=390,844','--virtual-time-budget=15000','--dump-dom','--screenshot='+path.join(outDir,'quick-game-390.png'),'http://127.0.0.1:'+server.address().port+'/__powerup-test'];
- const child=spawn(chrome,args,{windowsHide:true});let stdout='',stderr='';
- child.stdout.on('data',d=>stdout+=d);child.stderr.on('data',d=>stderr+=d);
+ const args=['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--hide-scrollbars','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'size-em-up-powerups-'+process.pid),'about:blank'];
+ const child=spawn(chrome,args,{windowsHide:true});let stderr='',started=false,socket;
  const timer=setTimeout(()=>{child.kill();server.close();console.error('Browser timed out. '+stderr.slice(-800));process.exitCode=1},45000);
  child.on('error',e=>{clearTimeout(timer);server.close();throw e});
- child.on('exit',()=>{clearTimeout(timer);server.close();fs.writeFileSync(path.join(outDir,'browser-dom.html'),stdout);const match=stdout.match(/<pre id="test-output"[^>]*>([\s\S]*?)<\/pre>/);if(!match||!match[1]){console.error('No test result. '+stderr.slice(-800));process.exitCode=1;return}const result=JSON.parse(match[1].replaceAll('&quot;','"').replaceAll('&amp;','&').replaceAll('&gt;','>').replaceAll('&lt;','<'));console.log(JSON.stringify(result,null,2));if(!result.pass)process.exitCode=1;});
+ child.stderr.on('data',async chunk=>{
+  stderr+=chunk;const match=stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/);
+  if(started||!match)return;started=true;
+  try{
+   socket=new WebSocket(match[1]);await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject});
+   let serial=0;const pending=new Map();
+   socket.onmessage=e=>{const r=JSON.parse(e.data);if(!r.id)return;const p=pending.get(r.id);if(!p)return;pending.delete(r.id);r.error?p.reject(Error(r.error.message)):p.resolve(r.result)};
+   const call=(method,params={},sessionId)=>new Promise((resolve,reject)=>{const id=++serial;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}))});
+   const widths=process.env.POWERUP_TEST_WIDTH?[Number(process.env.POWERUP_TEST_WIDTH)]:[320,390,430];
+   for(const width of widths){
+    const {targetId}=await call('Target.createTarget',{url:'about:blank'});
+    const {sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});
+    await call('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},sessionId);
+    await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/__powerup-test'},sessionId);
+    let result;
+    for(let n=0;n<350;n++){
+     await new Promise(r=>setTimeout(r,40));
+     const evaluated=await call('Runtime.evaluate',{expression:'document.getElementById("test-output")?.textContent',returnByValue:true},sessionId);
+     if(evaluated.result?.value){result=JSON.parse(evaluated.result.value);break}
+    }
+    if(!result)throw Error('No test result at '+width+'px');
+    const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+    fs.writeFileSync(path.join(outDir,'quick-game-'+width+'.png'),Buffer.from(shot.data,'base64'));
+    console.log(JSON.stringify(result,null,2));if(!result.pass)process.exitCode=1;
+    if(result.pass)for(const height of [700,844])for(const mode of ['worlds','survival']){
+     await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);
+     const checked=await call('Runtime.evaluate',{expression:'showSoloCompactPreview('+JSON.stringify(mode)+')',returnByValue:true},sessionId);
+     if(checked.exceptionDetails)throw Error('Solo layout check failed at '+width+'×'+height);
+     const soloShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(outDir,mode+'-'+width+'x'+height+'.png'),Buffer.from(soloShot.data,'base64'));
+    }
+    await call('Target.closeTarget',{targetId});
+   }
+  }catch(e){console.error(e.stack);process.exitCode=1}
+  finally{clearTimeout(timer);if(socket)socket.close();child.kill();server.close()}
+ });
 });

@@ -1,11 +1,14 @@
 import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairs, eliminationChoices, debitPowerup, settlePowerup } from './powerups.mjs';
 
-// The controller owns purchases and overlays; the game owns questions and scoring.
+// The controller owns immediate purchases and the reveal; the game owns scoring.
 export function createPowerupController(ports) {
-  let busy = false, dialog = null, opener = null, toastTimer, detailContext = null, detailId = null, messagePhase = null;
+  let busy = false, toastTimer, messagePhase = null;
   const active = new Set(), recovering = new Set();
   const tray = document.getElementById('quick-powerups');
-  const second = document.getElementById('second-powerup');
+  const hud = document.getElementById('hud');
+  if (hud && tray.parentElement !== hud) hud.append(tray);
+  const help = document.getElementById('howto-powerup-list');
+  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p><b>${p.name} · ${p.cost} coins:</b> ${p.description}</p>`).join('');
   const message = document.createElement('div');
   message.className = 'pu-toast'; message.setAttribute('role', 'status'); document.body.append(message);
   const say = text => { messagePhase = context()?.phase; message.textContent = text; message.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { message.hidden = true; }, 4000); };
@@ -23,7 +26,7 @@ export function createPowerupController(ports) {
   }
   function button(id, compact) {
     const p = POWERUPS[id];
-    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}" data-powerup="${id}" aria-label="${p.name}, ${p.cost} coins" ${busy ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.png" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${p.cost} coins</small></button>`;
+    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}" data-powerup="${id}" aria-label="Use ${p.name}, ${p.cost} coins" ${busy || ports.coins() < p.cost ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.png" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${p.cost} coins</small></button>`;
   }
   function html(c) {
     const available = ids(c);
@@ -32,41 +35,30 @@ export function createPowerupController(ports) {
   function render() {
     const c = context(), quick = c?.mode === 'quick';
     if (messagePhase && messagePhase !== c?.phase) message.hidden = true;
-    if (dialog && (!same(detailContext) || !ids(c).includes(detailId))) dismiss();
-    tray.hidden = true; second.hidden = true;
-    if (!quick) return;
+    tray.hidden = true;
+    const side = document.querySelector('.score-sidebar');
+    if (side) side.style.paddingTop = '';
+    if (!quick) { tray.innerHTML = ''; return; }
     const available = ids(c);
-    if (c.phase === 'answers') {
-      const content = available.map(id => button(id, true)).join('');
-      if (second.innerHTML !== content) second.innerHTML = content;
-      second.hidden = !available.length;
-    } else if (c.phase === 'question') {
-      const parent = c.submitted ? document.getElementById('question-view') : document.getElementById('hud');
-      if (c.submitted && tray.previousElementSibling?.id !== 'guess-display') document.getElementById('guess-display').after(tray);
-      else if (!c.submitted && tray.parentElement !== parent) parent.insertBefore(tray, parent.querySelector('.game-body'));
-      const content = c.submitted ? available.map(id => button(id, true)).join('') : html(c);
-      if (tray.innerHTML !== content) tray.innerHTML = content;
-      tray.hidden = !available.length;
-    }
-  }
-  function dismiss() {
-    if (dialog) { dialog.remove(); dialog = null; }
-    detailContext = null; detailId = null;
-    if (opener?.isConnected) opener.focus();
-  }
-  function details(id, source) {
-    const c = context();
-    if (!ids(c).includes(id)) return;
-    dismiss(); opener = source; detailContext = c; detailId = id;
-    const p = POWERUPS[id], enough = ports.coins() >= p.cost;
-    dialog = document.createElement('dialog'); dialog.className = 'pu-dialog';
-    const description = c.deadline ? p.description : p.description.replace(' your timer starts fresh.', ' no timer is added.').replace(' The game timer keeps running.', '');
-    dialog.innerHTML = `<img class="pu-dialog-icon" src="icons/powerups/${p.icon}.png" alt=""><h2>${p.name}</h2><p>${description}</p><p>${enough ? `Use for ${p.cost} coins?` : `You need ${p.cost} coins. Balance: ${ports.coins()}.`}</p><div class="pu-actions"><button type="button" data-pu-cancel>Cancel</button><button type="button" data-pu-buy ${enough ? '' : 'disabled'}>Use · ${p.cost} coins</button></div>`;
-    dialog.setAttribute('aria-label', p.name);
-    dialog.addEventListener('cancel', e => { e.preventDefault(); if (!busy) dismiss(); });
-    dialog.querySelector('[data-pu-cancel]').onclick = dismiss;
-    dialog.querySelector('[data-pu-buy]').onclick = () => purchase(id, c);
-    document.body.append(dialog); dialog.showModal();
+    if (!available.length) { tray.innerHTML = ''; return; }
+    const col = document.querySelector('.hud-timer-col'), main = document.querySelector('.main-col');
+    const pics = document.getElementById('q-preview'), body = document.querySelector('.game-body');
+    const hudRect = hud.getBoundingClientRect(), colRect = col.getBoundingClientRect();
+    const mainRect = main.getBoundingClientRect(), sideRect = side.getBoundingClientRect();
+    const raised = available.includes('buffer') && available.length > 1;
+    const lower = ['reveal', 'small', 'big', 'both', 'fifty'].filter(id => available.includes(id));
+    const ordered = raised ? ['buffer', ...lower] : available;
+    const width = sideRect.right - mainRect.right - 6;
+    const cell = (width - 10) / 4;
+    const top = raised ? Math.max(colRect.bottom + 2, pics.getBoundingClientRect().top - 46) : body.getBoundingClientRect().top + 4;
+    const content = ordered.map(id => button(id, false)).join('');
+    if (tray.innerHTML !== content) tray.innerHTML = content;
+    tray.classList.toggle('pu-l-shape', raised);
+    tray.style.width = `${available.length === 1 ? cell + 4 : width}px`;
+    tray.style.left = `${(available.length === 1 ? sideRect.right - cell - 4 : mainRect.right + 6) - hudRect.left}px`;
+    tray.style.top = `${top - hudRect.top}px`;
+    tray.hidden = false;
+    side.style.paddingTop = `${Math.max(0, top + (raised ? 92 : 48) - body.getBoundingClientRect().top + 6)}px`;
   }
   function same(c) {
     const live = context();
@@ -100,10 +92,10 @@ export function createPowerupController(ports) {
     return ports.profileTransaction(owner, p => settlePowerup(p, id, applied));
   }
   async function purchase(id, c) {
-    if (busy || !same(c) || !ids(context()).includes(id)) { dismiss(); return; }
+    if (busy || !c || !same(c) || !ids(context()).includes(id) || ports.coins() < POWERUPS[id].cost) return;
     const owner = ports.owner(), operation = crypto.randomUUID();
     let charged = false, applied = false;
-    busy = true; active.add(operation); dismiss(); render();
+    busy = true; active.add(operation); render();
     try {
       const transform = effect(c, id);
       // Decode before spending: missing artwork must not sell an empty preview.
@@ -234,10 +226,14 @@ export function createPowerupController(ports) {
   document.addEventListener('click', e => {
     if (busy) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     const b = e.target.closest('[data-powerup]');
-    if (b) { e.preventDefault(); e.stopImmediatePropagation(); details(b.dataset.powerup, b); }
+    if (b && !b.disabled) { e.preventDefault(); e.stopImmediatePropagation(); purchase(b.dataset.powerup, context()); }
   }, true);
   document.addEventListener('keydown', e => {
     if (busy) { e.preventDefault(); e.stopImmediatePropagation(); }
   }, true);
+  if (typeof ResizeObserver !== 'undefined') {
+    const observer = new ResizeObserver(() => render());
+    for (const el of [document.querySelector('.hud-timer-row'), document.querySelector('.hud-timer-col'), document.querySelector('.game-body')]) if (el) observer.observe(el);
+  }
   return { get busy() { return busy; }, html, render, recover };
 }
