@@ -1,30 +1,24 @@
 // Scenery follows the larger object's identity. Measurements never select a biome.
 export const OBJECT_GROUPS = {
-  grass: `grain-of-sand ant ladybug honeybee acorn snail frog pinecone hamster blade-of-grass hedgehog turtle pigeon rabbit daisy long-stem-rose duck lawn-flamingo stork flamingo capybara adult-human giant-anthill kangaroo picnic-table park-bench sunflower central-park hot-air-balloon wind-turbine windmill`,
-  beach: `sand-dollar seahorse starfish surfboard beach-towel pool-noodle umbrella palm-tree lighthouse dolphin barracuda stingray swordfish hammerhead-shark great-white-shark manta-ray killer-whale whale-shark blue-whale rowboat canoe fishing-boat titanic cruise-ship aircraft-carrier`,
-  living: `tv-remote lava-lamp pillow acoustic-guitar trumpet violin saxophone drum-stick barstool folding-chair jeans broom mop ladder couch door queen-size-bed grand-piano yoga-mat`,
-  kitchen: `blueberry cheerio gummy-bear chocolate-drop ice-cube strawberry chicken-nugget peanut egg apple french-fry whiskey-glass donut bagel butter-stick soda-can teacup hot-dog pancakes ice-cream-cone toothpaste toothbrush comb dog-bowl banana pizza-slice cucumber baby-bottle wine-glass boba-tea drinking-straw beer-bottle cream-pie pineapple wine-bottle foot-long-sub watermelon cotton-candy pizza-pie cheese-wheel baguette plunger bathtub refrigerator`,
-  city: `house-brick handcuffs gold-bar exit-sign license-plate fire-extinguisher anvil manhole-cover car-tire trash-can traffic-cone fire-hydrant skateboard scooter newspaper-box traffic-light mailbox parking-meter hot-dog-cart unicycle bicycle dumpster robot basketball-backboard vending-machine motorcycle stop-sign phone-booth porta-potty bus-shelter town-fountain car taxi minivan ambulance ice-cream-truck jumbotron flagpole shipping-container soccer-goal streetlight carousel garbage-truck fire-truck excavator double-decker-bus school-bus helicopter telephone-pole billboard fighter-jet locomotive semi-truck basketball-court space-shuttle christ-statue boeing-737 water-tower power-line-tower statue-of-liberty olympic-pool leaning-tower-of-pisa notre-dame airliner taj-mahal blimp tower-crane big-ben football-field washington-monument sydney-opera-house space-needle colosseum gateway-arch eiffel-tower empire-state-building cn-tower burj-khalifa brooklyn-bridge golden-gate-bridge`,
-  forest: `owl black-bear panda gorilla deer brown-bear komodo-dragon green-anaconda oak-tree t-rex alligator saltwater-crocodile niagara-falls angel-falls hoover-dam`,
-  farm: `scarecrow pig horse cow corn-stalk tractor barn-silo teepee barrel`,
-  snow: `penguin polar-bear snowboard mount-everest`,
-  desert: `cactus great-pyramid grand-canyon mount-kilimanjaro ostrich zebra giraffe lion rhinoceros hippopotamus elephant moai stonehenge mount-fuji`,
-  underwater: `jellyfish pufferfish koi-fish octopus electric-eel giant-squid mariana-trench`,
-  space: `saturn-rocket`,
-  enchanted: `magic-wand pegasus castle`,
-  tabletop: `poppy-seed sesame-seed grain-of-rice human-eyelash die marble penny button tooth quarter checkers-piece lego-brick paperclip poker-chip ping-pong-ball cork clown-nose aa-battery letter-block domino key whistle rubiks-cube earbuds-case shuttlecock tennis-ball baseball wooden-block toy-car hockey-puck chattering-teeth credit-card playing-card rubber-duck scrunchie fake-mustache light-bulb toilet-paper-square dvd index-card lottery-ticket retro-cartridge smartphone game-controller pencil jack-in-the-box whoopee-cushion volleyball bowling-ball soccer-ball hairbrush basketball paintbrush frisbee football baseball-cap sheet-of-paper-a4 boxing-glove sneaker football-helmet vinyl-record laptop bowling-pin rubber-chicken cowboy-hat foam-finger tennis-racket baseball-bat earbuds pool-cue convenient-receipt hockey-stick`,
+  grass: `acorn adult-human ant blade-of-grass capybara central-park cockroach daisy duck flamingo frog giant-anthill golf-ball grain-of-sand hamster hedgehog honeybee hot-air-balloon kangaroo ladybug lawn-flamingo long-stem-rose park-bench picnic-table pigeon pinecone pogo-stick rabbit snail stork sunflower turtle wind-turbine windmill`,
+  beach: `aircraft-carrier beach-towel canoe cruise-ship fishing-boat lighthouse palm-tree pool-noodle rowboat sand-dollar starfish surfboard titanic umbrella`,
+  living: `acoustic-guitar barstool broom corgi couch dachshund domestic-cat door drum-stick folding-chair grand-piano jeans ladder lava-lamp mop pillow queen-size-bed saxophone trumpet tv-remote violin yoga-mat`,
+  kitchen: `apple baby-bottle bagel baguette banana bathtub beer-bottle blueberry boba-tea butter-stick cheerio cheese-wheel chicken-nugget chocolate-drop comb cotton-candy cream-pie cucumber dog-bowl donut drinking-straw egg foot-long-sub french-fry gummy-bear hot-dog ice-cream-cone ice-cube pancakes peanut pineapple pizza-pie pizza-slice plunger refrigerator soda-can strawberry teacup toothbrush toothpaste watermelon whiskey-glass wine-bottle wine-glass`,
+  city: `airliner ambulance anvil basketball-backboard basketball-court bicycle big-ben billboard blimp boeing-737 brooklyn-bridge burj-khalifa bus-shelter car car-tire carousel christ-statue cn-tower colosseum double-decker-bus dumpster eiffel-tower empire-state-building excavator exit-sign fighter-jet fire-extinguisher fire-hydrant fire-truck flagpole football-field garbage-truck gateway-arch gold-bar golden-gate-bridge handcuffs helicopter hot-dog-cart house-brick ice-cream-truck jumbotron leaning-tower-of-pisa license-plate locomotive london-eye mailbox manhole-cover minivan motorcycle newspaper-box notre-dame olympic-pool parking-meter phone-booth porta-potty power-line-tower robot school-bus scooter semi-truck shipping-container skateboard soccer-goal space-needle statue-of-liberty stop-sign streetlight sydney-opera-house taj-mahal taxi telephone-pole tower-crane town-fountain traffic-cone traffic-light trash-can unicycle vending-machine washington-monument water-tower`,
+  forest: `alligator angel-falls black-bear brown-bear deer gorilla green-anaconda hoover-dam komodo-dragon niagara-falls oak-tree owl panda saltwater-crocodile t-rex`,
+  farm: `barn-silo barrel corn-stalk cow horse pig scarecrow teepee tractor`,
+  snow: `mount-everest penguin polar-bear snowboard`,
+  desert: `cactus elephant giraffe grand-canyon great-pyramid hippopotamus lion moai mount-fuji mount-kilimanjaro ostrich rhinoceros stonehenge zebra`,
+  underwater: `barracuda blue-whale dolphin electric-eel giant-squid great-white-shark hammerhead-shark jellyfish killer-whale koi-fish manta-ray mariana-trench octopus pufferfish seahorse stingray swordfish whale-shark`,
+  space: `saturn-rocket space-shuttle`,
+  enchanted: `castle magic-wand pegasus`,
+  tabletop: `aa-battery baseball baseball-bat baseball-cap basketball bowling-ball bowling-pin boxing-glove button chattering-teeth checkers-piece clown-nose convenient-receipt cork cowboy-hat credit-card die domino dvd earbuds earbuds-case fake-mustache foam-finger football football-helmet frisbee game-controller grain-of-rice hairbrush hockey-puck hockey-stick human-eyelash index-card jack-in-the-box key laptop lego-brick letter-block light-bulb lottery-ticket marble paintbrush paperclip pencil penny ping-pong-ball playing-card poker-chip pool-cue poppy-seed quarter retro-cartridge rubber-chicken rubber-duck rubiks-cube scrunchie sesame-seed sheet-of-paper-a4 shuttlecock smartphone sneaker soccer-ball stethoscope tennis-ball tennis-racket toilet-paper-square tooth toy-car vinyl-record volleyball whistle whoopee-cushion wooden-block`,
 };
 export const SCENERY_BY_OBJECT = Object.create(null);
 for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of words.split(/\s+/)) {
   if (SCENERY_BY_OBJECT[id]) throw new Error('Duplicate scenery assignment: ' + id);
   SCENERY_BY_OBJECT[id] = scene;
 }
-// The shuttle is a space object even though it launches from a city/airfield.
-SCENERY_BY_OBJECT['space-shuttle'] = 'space';
-for (const id of ['cockroach', 'golf-ball', 'pogo-stick']) SCENERY_BY_OBJECT[id] = 'grass';
-for (const id of ['dachshund', 'corgi', 'domestic-cat']) SCENERY_BY_OBJECT[id] = 'living';
-SCENERY_BY_OBJECT.stethoscope = 'tabletop';
-SCENERY_BY_OBJECT['london-eye'] = 'city';
 export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'grass'; }
 
 export const SETTINGS = {
@@ -33,7 +27,7 @@ export const SETTINGS = {
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], texture: 'indoor-wall', layers: ['dust-motes'] },
   kitchen: { floor: 'kitchen', sky: ['#f1e9d7', '#fff9ed'], texture: 'indoor-wall', layers: ['dust-motes'] },
   tabletop: { floor: 'tabletop', sky: ['#f3e7d2', '#fff8e9'], texture: 'indoor-wall' },
-  city: { floor: 'pavement', sky: ['#c3d9e9', '#ecf2f3'], clouds: true },
+  city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'] },
   farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'] },
@@ -65,7 +59,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, dar
   if (images[config.texture]) {
     const tile = 360, offsetY = ((shiftY * .12) % tile + tile) % tile;
     const offsetX = ((shiftX * .08) % tile + tile) % tile;
-    ctx.globalAlpha = (config.texture === 'star-field' ? .85 : .14) * (dark && kit.id !== 'space' ? .5 : 1);
+    ctx.globalAlpha = (config.texture === 'star-field' ? (config.night ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images[config.texture], x, y, tile, tile);
   }
   for (const [index, name] of (config.layers || []).entries()) {
@@ -94,5 +88,8 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const top = floorY - tileH * meta.surface - inset;
   if (top >= height || top + tileH <= 0) return;
   const offset = ((shiftX % tile) + tile) % tile - tile;
+  ctx.save();
+  if (kit.config.night) ctx.globalAlpha = .65;
   for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
+  ctx.restore();
 }

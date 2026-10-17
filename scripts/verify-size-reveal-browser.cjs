@@ -16,7 +16,7 @@ const opts={imageUrl:o=>'/'+o.image};
 let ctl;
 globalThis.preview=async(kind='worlds')=>{
  ctl?.destroy();ctl=createStackAnimation(stage,{...opts,...(kind==='dark'?{theme:(await import('/anim/stack-anim.js')).DARK_THEME}:{})});
- const pair={city:['grain-of-rice','statue-of-liberty'],room:['ant','door'],park:['paperclip','elephant'],forest:['paperclip','deer'],seaside:['rubber-duck','blue-whale'],soft:['poppy-seed','rubber-duck'],round:['ant','tennis-ball'],beach:['grain-of-rice','great-white-shark'],kitchen:['paperclip','refrigerator'],tabletop:['ant','paperclip'],farm:['ant','tractor'],snow:['ant','polar-bear'],desert:['ant','cactus'],underwater:['ant','octopus'],space:['ant','saturn-rocket'],enchanted:['ant','pegasus'],grass:['poppy-seed','ant']}[kind];
+ const pair={city:['grain-of-rice','statue-of-liberty'],room:['ant','door'],park:['paperclip','elephant'],forest:['paperclip','deer'],seaside:['rubber-duck','blue-whale'],soft:['poppy-seed','rubber-duck'],round:['ant','tennis-ball'],beach:['grain-of-rice','lighthouse'],kitchen:['paperclip','refrigerator'],tabletop:['ant','paperclip'],farm:['ant','tractor'],snow:['ant','polar-bear'],desert:['ant','cactus'],underwater:['ant','great-white-shark'],space:['ant','saturn-rocket'],enchanted:['ant','pegasus'],grass:['poppy-seed','ant']}[kind];
  const unit=pair?objects.find(o=>o.id===pair[0]):make('poppy-seed',1),target=pair?objects.find(o=>o.id===pair[1]):make('cork',45);
  const scene=await ctl.prepare(unit,target,{hMax:260,minStageH:330});
  scene.render(kind==='city'?scene.cues.find(c=>c.name==='tap').t+.12:kind==='soft'||kind==='round'?scene.cues.filter(c=>c.name==='swipe')[1].t-.18:scene.duration);
@@ -33,9 +33,11 @@ try{
  CanvasRenderingContext2D.prototype.createRadialGradient=function(...args){gradients.get(this)?.push(this.getTransform());return radial.apply(this,args)};
  await Promise.all(['/anim/cloud.png','/anim/grass.png'].map(src=>new Promise((yes,no)=>{const i=new Image();i.onload=yes;i.onerror=no;i.src=src})));
  assert(objects.every(o=>SCENERY_BY_OBJECT[o.id]),'every game object has an explicit setting');
+ assert(['great-white-shark','hammerhead-shark','whale-shark'].every(id=>sceneryFor({id})==='underwater'),'sharks use underwater scenery');
+ assert(SETTINGS.city.night===true&&SETTINGS.city.sky[0]==='#111d36','city is always nighttime');
  assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
  const fallback=await loadScenery({id:'door'},'/missing-scenery/');assert(fallback.id==='grass','missing required floor falls back safely');
- const examples={grass:'ant',beach:'great-white-shark',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'octopus',space:'saturn-rocket',enchanted:'pegasus'};
+ const examples={grass:'ant',beach:'lighthouse',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'great-white-shark',space:'saturn-rocket',enchanted:'pegasus'};
  for(const [expected,id] of Object.entries(examples)){
   ctl?.destroy();ctl=createStackAnimation(stage,opts);
   const target=objects.find(o=>o.id===id),small=make('poppy-seed',.01);
@@ -46,10 +48,10 @@ try{
   if(floorName){
    const floor=startDraws.find(d=>d.image===floorName+'.png');assert(floor,'floor is ready on first frame '+id);
    const f=scene.getFraming(0),surface=floor.args[1]+floor.args[3]*FLOOR_DATA[floorName].surface;
-   assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);
+   if(expected==='underwater')assert(surface>=f.floorY+13,'marine object swims above seabed '+id);else assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);
    const sample=document.createElement('canvas');sample.width=floor.source.naturalWidth;sample.height=floor.source.naturalHeight;
    const sx=sample.getContext('2d');sx.drawImage(floor.source,0,0);
-   const row=Math.floor((f.floorY-floor.args[1])/floor.args[3]*sample.height);
+   const row=Math.floor(((f.floorY+(expected==='underwater'?28:0))-floor.args[1])/floor.args[3]*sample.height);
    for(const fraction of [.1,.3,.5,.7,.9]){
     const pixel=sx.getImageData(Math.floor(sample.width*fraction),row,1,1).data;
     assert(pixel[3]>180,'solid ground beneath object '+id);

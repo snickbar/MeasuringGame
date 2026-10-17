@@ -1,71 +1,40 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Animation test</title>
-<style>
-  body { font-family: system-ui, sans-serif; margin: 0; padding: 12px; background: #f4f7fc; color: #16223a; }
-  .wrap { max-width: 360px; margin: 0 auto; }
-  .row { display: flex; gap: 6px; margin: 6px 0; }
-  select, button, input { font: inherit; padding: 6px; min-width: 0; }
-  select { flex: 1; }
-  #stage { margin-top: 8px; border-radius: 12px; }
-  #info { font-size: 13px; color: #55657f; margin-top: 6px; }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="row"><select id="unit"></select><select id="target"></select></div>
-  <div class="row"><button id="play">Play</button><input id="t" type="range" min="0" max="1000" value="0" style="flex:1"><button id="dark">Dark</button></div>
-  <div id="stage"></div>
-  <div id="info"></div>
-</div>
-<script type="module">
-import { createStackAnimation, LIGHT_THEME, DARK_THEME } from './stack-anim.js';
-
-// The game's own object list, read out of index.html so this page never drifts from it.
-const html = await (await fetch('../index.html')).text();
-const m = html.match(/const OBJECTS = (\[[\s\S]*?\n\s*\]);/);
-const OBJECTS = (0, eval)('(' + m[1] + ')').map((o) => ({ ...o, image: '../' + o.image }));
-
-const q = new URLSearchParams(location.search);
-if (q.get('w')) document.querySelector('.wrap').style.maxWidth = q.get('w') + 'px';
-const unitSel = document.getElementById('unit');
-const targetSel = document.getElementById('target');
-for (const sel of [unitSel, targetSel]) {
-  for (const o of OBJECTS) sel.add(new Option(o.name, o.id));
-}
-unitSel.value = q.get('unit') || 'ant';
-targetSel.value = q.get('target') || 'door';
-let dark = q.get('dark') === '1';
-let anim = null;
-let scene = null;
-const stage = document.getElementById('stage');
-const slider = document.getElementById('t');
-const info = document.getElementById('info');
-
-async function load() {
-  if (anim) anim.destroy();
-  stage.innerHTML = '';
-  anim = createStackAnimation(stage, { theme: dark ? DARK_THEME : LIGHT_THEME, imageUrl: (o) => o.image });
-  const u = OBJECTS.find((o) => o.id === unitSel.value);
-  const t = OBJECTS.find((o) => o.id === targetSel.value);
-  scene = await anim.prepare(u, t, { minStageH: +q.get('minh') || 0 });
-  info.textContent = scene.scenery + ' · R = ' + scene.R.toFixed(2) + ', ' + scene.duration.toFixed(1) + ' s' + (scene.fast ? ' (thin stack)' : '');
-  scene.render(0);
-  slider.value = 0;
-  window.__scene = scene;   // for automated checks
-  window.__ready = true;
-}
-function play() { anim.start(scene, { onFrame: (t) => { slider.value = Math.round(t / scene.duration * 1000); } }); }
-unitSel.onchange = targetSel.onchange = load;
-document.getElementById('play').onclick = play;
-document.getElementById('dark').onclick = () => { dark = !dark; document.body.style.background = dark ? '#0b1220' : '#f4f7fc'; load(); };
-slider.oninput = () => { anim.stop(); scene.render(slider.value / 1000 * scene.duration); };
-await load();
-if (q.get('t') != null) scene.render(parseFloat(q.get('t')));
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Size Em Up! — Reveal test</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;padding:16px;background:#faf5eb;color:#493525}.wrap{max-width:430px;margin:auto}h1{font-size:23px;margin:0 0 8px}.row{display:flex;gap:8px;margin:10px 0;align-items:center}select,button{font:inherit;padding:10px;min-width:0;min-height:44px;border:1px solid #d4c4aa;border-radius:9px;background:#fffaf0;color:inherit}select{flex:1;width:100%}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}#play{background:#e6b969;font-weight:700}#t{flex:1;min-width:50px}#stage{position:relative;min-height:200px;border:1px solid #d8c8ae;border-radius:12px;overflow:hidden}#status,#info{font-size:13px;line-height:1.5;color:#77634b}#error{color:#a3342c;background:#fff1e9;border-radius:8px;padding:12px}a{color:#775730}.help{font-size:12px;color:#8b765d}</style></head>
+<body><main class="wrap"><h1>Size reveal test</h1><p id="status" role="status">Loading the game artwork…</p><div id="error" hidden></div><div class="row"><select id="example" aria-label="Example setting"><option value="forest">Forest deer</option><option value="city">Night city</option><option value="underwater">Underwater shark</option><option value="grass">Original grass</option><option value="beach">Beach</option><option value="living">Living room</option><option value="kitchen">Kitchen</option><option value="tabletop">Tabletop</option><option value="farm">Farm</option><option value="snow">Snow</option><option value="desert">Desert</option><option value="space">Space</option><option value="enchanted">Enchanted meadow</option></select></div><div class="row"><select id="unit" aria-label="Smaller object"></select><select id="target" aria-label="Larger object"></select></div><div class="row"><button id="play" disabled>Play reveal</button><input id="t" aria-label="Animation position" type="range" min="0" max="1000" value="1000" disabled><button id="dark" disabled>Dark</button></div><div id="stage"></div><p id="info"></p><p class="help">Choose an example or any two objects. Play replays the whole reveal; the slider lets you inspect any moment.</p><a href="../output/scenery-concepts-v1/index.html">Scenery artwork gallery</a></main>
+<script>
+if(location.protocol==='file:'){document.getElementById('status').innerHTML='This live test needs the local preview server. <a href="http://127.0.0.1:4173/anim/test.html">Open the working test page</a>.';}
 </script>
-</body>
-</html>
+<script type="module">
+if(location.protocol!=='file:'){
+try{
+ const mod=await import('./stack-anim.js');
+ const response=await fetch('../index.html');if(!response.ok)throw Error('Could not load the game objects.');
+ const html=await response.text(),match=html.match(/const OBJECTS = (\[[\s\S]*?\n\s*\]);/);if(!match)throw Error('Game object list was not found.');
+ const objects=(0,eval)('('+match[1]+')').map(o=>({...o,image:'../'+o.image}));
+ const q=new URLSearchParams(location.search),unit=document.getElementById('unit'),target=document.getElementById('target'),example=document.getElementById('example'),stage=document.getElementById('stage'),slider=document.getElementById('t'),playButton=document.getElementById('play'),darkButton=document.getElementById('dark'),status=document.getElementById('status'),error=document.getElementById('error');
+ const presets={forest:['paperclip','deer'],city:['grain-of-rice','statue-of-liberty'],underwater:['grain-of-rice','great-white-shark'],grass:['poppy-seed','ant'],beach:['paperclip','lighthouse'],living:['ant','door'],kitchen:['paperclip','refrigerator'],tabletop:['ant','paperclip'],farm:['ant','tractor'],snow:['ant','polar-bear'],desert:['ant','cactus'],space:['ant','saturn-rocket'],enchanted:['ant','pegasus']};
+ for(const select of [unit,target])for(const o of objects)select.add(new Option(o.name,o.id));
+ const initial=presets[q.get('example')]||presets.forest;example.value=q.get('example') in presets?q.get('example'):'forest';unit.value=objects.some(o=>o.id===q.get('unit'))?q.get('unit'):initial[0];target.value=objects.some(o=>o.id===q.get('target'))?q.get('target'):initial[1];
+ if(q.get('w'))document.querySelector('.wrap').style.maxWidth=Math.max(260,Math.min(1000,+q.get('w')||430))+'px';
+ let dark=q.get('dark')==='1',anim=null,scene=null,generation=0;
+ function play(){if(!scene||!anim)return;const active=scene;anim.start(active,{onFrame:t=>{if(scene===active)slider.value=Math.round(t/active.duration*1000)}})}
+ async function load(autoplay=false){
+  const token=++generation;window.__ready=false;scene=null;playButton.disabled=slider.disabled=darkButton.disabled=true;error.hidden=true;status.textContent='Loading the selected setting…';anim?.destroy();stage.innerHTML='';
+  const control=mod.createStackAnimation(stage,{theme:dark?mod.DARK_THEME:mod.LIGHT_THEME,imageUrl:o=>o.image});anim=control;
+  try{
+   const next=await control.prepare(objects.find(o=>o.id===unit.value),objects.find(o=>o.id===target.value),{minStageH:+q.get('minh')||300,hMax:260});
+   if(token!==generation||anim!==control)return;scene=next;scene.renderEnd();slider.value=1000;
+   status.textContent=(scene.scenery==='city'?'Night city':scene.scenery==='underwater'?'Underwater':scene.scenery)+' · '+scene.target.name;
+   document.getElementById('info').textContent='Answer: '+mod.formatCount(scene.R,scene.R)+' '+scene.unit.plural+' · '+scene.duration.toFixed(1)+' seconds';
+   window.__scene=scene;window.__ready=true;playButton.disabled=slider.disabled=darkButton.disabled=false;if(autoplay)play();
+  }catch(e){if(token!==generation)return;status.textContent='The reveal could not load.';error.textContent=e.message;error.hidden=false;}
+ }
+ example.onchange=()=>{[unit.value,target.value]=presets[example.value];load(true)};
+ unit.onchange=target.onchange=()=>load();playButton.onclick=play;
+ slider.oninput=()=>{if(scene){anim.stop();scene.render(slider.value/1000*scene.duration)}};
+ darkButton.onclick=()=>{dark=!dark;darkButton.textContent=dark?'Light':'Dark';load()};
+ await load();if(q.get('t')!==null&&scene){scene.render(+q.get('t'));slider.value=Math.round(+q.get('t')/scene.duration*1000)}
+}catch(e){document.getElementById('status').textContent='The test could not start.';const error=document.getElementById('error');error.textContent=e.message;error.hidden=false;}
+}
+</script></body></html>

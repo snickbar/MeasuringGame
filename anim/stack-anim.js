@@ -517,11 +517,11 @@ export function createStackAnimation(container, options = {}) {
     const bigKind = MOTION[target.id] || 'slide';
     const smKind = MOTION[unit.id] || 'slide';
     const dark = !!theme.dark;
-    const earthyFloor = scenery === 'forest' || scenery === 'farm';
-    const [skyTop, skyBottom] = !dark && kit.config.sky ? kit.config.sky : [theme.skyTop, theme.skyBottom];
-    const groundCol = kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
+    const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
+    const [skyTop, skyBottom] = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const groundCol = kit.config.night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
     const { cloudAlpha } = theme;
-    const guide = scenery === 'space' ? '#ada5ce' : theme.guide;
+    const guide = scenery === 'space' || kit.config.night ? '#adafd4' : theme.guide;
 
     // ---- Final view: the big object at most H_MAX tall, the stack beside it ----
     const W = container.clientWidth || 360;
@@ -810,7 +810,7 @@ export function createStackAnimation(container, options = {}) {
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
-        ctx.globalAlpha = cloudAlpha;
+        ctx.globalAlpha = kit.config.night ? cloudAlpha * .28 : cloudAlpha;
         for (const cl of CLOUDS) {
           const raw = cl.y * stageH + (sy0 - floorY) * 0.18;
           const cy = ((raw % span) + span) % span - 80;
@@ -821,8 +821,9 @@ export function createStackAnimation(container, options = {}) {
         }
         ctx.globalAlpha = 1;
       }
-      if (sy0 < stageH) {
-        const gy = Math.max(0, sy0);
+      const sceneryFloorY = sy0 + (scenery === 'underwater' ? 28 : 0);
+      if (sceneryFloorY < stageH) {
+        const gy = Math.max(0, sceneryFloorY);
         ctx.fillStyle = groundCol;
         ctx.fillRect(0, gy, W, stageH - gy);
       }
@@ -836,7 +837,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sy0, shiftX: colCenterX - sx0,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0,
       });
 
       // The dashed line at the big object's height.
