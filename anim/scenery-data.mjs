@@ -1,5 +1,9 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  "stadium-turf": {
+    "surface": 0.4695767195767196,
+    "color": "#4d6f2f"
+  },
   "beach": {
     "surface": 0.5511049723756906,
     "color": "#e7b873"

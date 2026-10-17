@@ -12,7 +12,7 @@ try{
  assert(api.data.objects.filter(o=>!o.explicit).length===146,'fallbacks are explicit in inventory');
  const search=value=>{$('search').value=value;$('search').dispatchEvent(new w.Event('input'))};
  search('flying saucer');assert(d.querySelectorAll('.object').length===1,'search finds fantasy object');
- let select=d.querySelector('.object select');assert(select.options.length===13&&select.value==='space','flying saucer corrected to space; all settings available');
+ let select=d.querySelector('.object select');assert(select.options.length===14&&select.value==='space','flying saucer corrected to space; all settings available');
  select.value='underwater';select.dispatchEvent(new w.Event('change'));
  assert(api.getDraft()['flying-saucer']==='underwater','choice retained');
  const saved=JSON.parse(w.localStorage.getItem('size-em-up-scenery-draft-v1'));assert(saved.objects.length===479,'full inventory saved');
@@ -36,7 +36,22 @@ try{
  $('group').value='Fantasy';$('group').dispatchEvent(new w.Event('change'));assert([...d.querySelectorAll('.object')].every(el=>el.textContent.includes('Fantasy')),'group filter');
  $('group').value='';$('group').dispatchEvent(new w.Event('change'));$('fallback').checked=false;$('fallback').dispatchEvent(new w.Event('change'));search('flying saucer');
  assert(d.documentElement.scrollWidth<=innerWidth,'no horizontal overflow');
- document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'479 objects, 13 scenes, fallback/group/search filters, persistence, export/import, validation and actual preview'});
+ frame.src='/anim/stadium-preview.html';
+ for(let i=0;i<500&&!frame.contentWindow?.__stadiumPreviewReady;i++)await wait(20);
+ const sw=frame.contentWindow,stadium=sw.__stadiumPreview;assert(stadium?.scene.scenery==='stadium','new stadium uses real renderer');
+ const prototype=sw.CanvasRenderingContext2D.prototype,originalDraw=prototype.drawImage,draws=[];
+ prototype.drawImage=function(image,...args){if((image.src||'').includes('stadium-'))draws.push({file:image.src.split('/').pop(),args,alpha:this.globalAlpha});return originalDraw.call(this,image,...args)};
+ for(const t of [stadium.scene.duration,stadium.scene.duration*.45,stadium.scene.duration*.65]){
+  draws.length=0;stadium.scene.render(t);
+  const stands=draws.find(d=>d.file==='stadium-stands.png'),turf=draws.find(d=>d.file==='stadium-turf.png');
+  assert(stands,'stadium stands are drawn');
+  if(!turf){assert(stands.args[5]+stands.args[7]-10*(stands.args[7]/300)>=sw.document.querySelector('canvas').height,'turf is outside the frame during the climb');continue;}
+  const scale=turf.args[2]/760,standsBase=stands.args[5]+stands.args[7],turfSurface=turf.args[1]+turf.args[3]*.4695767195767196;
+  assert(Math.abs((standsBase-turfSurface)/scale-10)<1,'stadium stays attached to turf through camera movement');
+  assert(stands.args[7]>=295,'stadium is tall');assert(turf.alpha===1,'turf remains opaque');
+ }
+ stadium.scene.renderEnd();assert(sw.document.documentElement.scrollWidth<=innerWidth,'stadium preview fits phone');
+ document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'479 objects, 14 scenes, fallback/group/search filters, persistence, export/import, validation, actual preview and attached tall stadium'});
 }catch(error){document.getElementById('result').textContent=JSON.stringify({pass:false,error:error.stack})}
 </script></html>`;
 const server=http.createServer((req,res)=>{

@@ -18,7 +18,7 @@ const objects = [
   current:sceneryFor(o), explicit:!!SCENERY_BY_OBJECT[o.id], imageAvailable:fs.existsSync(new URL(o.image, root))
 })).sort((a,b) => a.name.localeCompare(b.name));
 if (new Set(objects.map(o => o.id)).size !== objects.length) throw Error('Duplicate object IDs');
-const names = { grass:'Grass', beach:'Sunset beach', living:'Living room', kitchen:'Kitchen', tabletop:'Tabletop', city:'Night city', forest:'Forest', farm:'Farm', snow:'Snow', desert:'Desert', underwater:'Underwater', space:'Space', enchanted:'Enchanted meadow' };
+const names = { grass:'Grass', beach:'Sunset beach', living:'Living room', kitchen:'Kitchen', tabletop:'Tabletop', city:'Night city', forest:'Forest', farm:'Farm', snow:'Snow', desert:'Desert', underwater:'Underwater', space:'Space', enchanted:'Enchanted meadow', stadium:'Sports stadium' };
 const data = { version:1, scenes:Object.keys(SETTINGS).map(id => ({id, name:names[id]})), objects };
 fs.writeFileSync(new URL('anim/scenery-object-data.json', root), JSON.stringify(data,null,2)+'\n');
 console.log(`${objects.length} objects; ${objects.filter(o=>!o.explicit).length} currently fall back to grass. Flying saucer: ${sceneryFor({id:'flying-saucer'})}.`);

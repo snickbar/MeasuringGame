@@ -35,6 +35,7 @@ export const SETTINGS = {
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
+  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands' },
 };
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
@@ -112,7 +113,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
   const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
   const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
-    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85 }[name];
+    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75 }[name];
   ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' ? .45 : 1);
   if (dark && name === 'farm-hay') ctx.filter = 'brightness(55%)';
   if (name === 'farm-hay' || name === 'underwater-seaweed') {
@@ -123,7 +124,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160 }[name];
+    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300 }[name];
     const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
     const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
     ctx.drawImage(image, ...bounds, center - w / 2, base - h, w, h);
