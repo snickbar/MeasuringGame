@@ -13,4 +13,10 @@ City uses a permanent nighttime palette with restrained stars/clouds and dimmed 
 
 The original camera and natural object positions are used throughout; no larger-object pinning or rescaling during stacking. Shared trimmed sprite poses remove transparent export margins before entry and stacking.
 
-Indoor walls use seamless, low-contrast geometric patterns: warm living-room stripes, sage kitchen diamonds, and tabletop dots. Occasional botanical artwork is chosen deterministically from the larger object so it stays attached to the wall and stable on replay. Underwater uses bubbles only, with slightly increased visibility.
+Indoor walls use seamless, low-contrast geometric patterns: warm living-room stripes, sage kitchen diamonds, and woven tabletop linen. Framed artwork is removed from every indoor setting. The tabletop uses a soft woven linen treatment. Underwater uses bubbles only, with slightly increased visibility.
+
+## Background details
+
+Six new original PNG layers add dense forest greenery, a beach sunset/ocean horizon, farm hay bales, distant sand dunes, an enchanted grove and underwater seaweed. They have fixed sizes and one distant baseline, move down with camera parallax, and never wrap independently. Export padding is excluded from their placement bounds. Snowflakes fall at 7 pixels/second; bubbles rise at 5 pixels/second. Reduced-motion mode freezes ambient drift. The measured objects and camera are unaffected.
+
+Open /anim/scenery-gallery.html on the local server to compare all settings with the actual renderer and individual replay buttons. Generation prompts are saved in background-details-prompts.json. Original PNGs remain unedited.

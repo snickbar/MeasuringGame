@@ -7,7 +7,7 @@ const test=`
 import {createStackAnimation,animationDuration} from '/anim/stack-anim.js';
 import {createStackAnimation as baselineCreate,animationDuration as baselineDuration} from '/anim/__baseline.js';
 import {landingStyleFor,landingPose} from '/anim/reveal-style.mjs';
-import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery,drawWallpaper} from '/anim/scenery.mjs';
+import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery,drawWallpaper,drawSceneryLayers} from '/anim/scenery.mjs';
 import {FLOOR_DATA} from '/anim/scenery-data.mjs';
 const objects=${objects};
 const assert=(v,m)=>{if(!v)throw Error(m)},stage=document.getElementById('stage'),checks=[];
@@ -38,15 +38,28 @@ try{
  assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
  const wallCanvas=document.createElement('canvas');wallCanvas.width=390;wallCanvas.height=330;
  const wallCtx=wallCanvas.getContext('2d'),wallPatterns=[];
- for(const style of ['stripes','diamonds','dots']){
+ for(const style of ['stripes','diamonds','linen']){
   const wall=(shiftY=0,shiftX=0)=>{wallCtx.clearRect(0,0,390,330);drawWallpaper(wallCtx,style,{width:390,height:330,shiftY,shiftX,dark:false});return wallCanvas.toDataURL()};
   const original=wall();wallPatterns.push(original);
   assert(original===wall(1400,4200),'wallpaper repeats without seams '+style);
   assert(original!==wall(100,100),'wallpaper follows camera '+style);
  }
  assert(new Set(wallPatterns).size===3,'three distinct indoor wallpapers');
- const roomA=await loadScenery({id:'door'},'/anim/scenery/'),roomB=await loadScenery({id:'door'},'/anim/scenery/');
- assert(roomA.images['wall-picture']&&roomA.decorSeed===roomB.decorSeed,'wall artwork ready and stable on replay');
+ for(const id of ['door','refrigerator','paperclip']){
+  const room=await loadScenery({id},'/anim/scenery/');
+  assert(!room.images['wall-picture']&&!room.config.artwork,'indoor artwork removed '+id);
+ }
+ for(const [id,name,dy] of [['polar-bear','snowflakes',7],['great-white-shark','bubbles',-5]]){
+  const kit=await loadScenery({id},'/anim/scenery/');
+  const positions=(time,reduced=false,shiftY=0)=>{
+   const draws=[];watched.set(wallCtx,draws);
+   drawSceneryLayers(wallCtx,kit,{width:390,height:330,floorY:290,shiftY,shiftX:0,dark:false,time,reduced});
+   return draws.filter(d=>d.image===name+'.png').map(d=>d.args[1]);
+  };
+  const a=positions(3),b=positions(4);
+  assert(a.length===3&&b.some((y,i)=>Math.abs(y-a[i]-dy)<.01),name+' drift direction and speed');
+  assert(JSON.stringify(positions(3,true))===JSON.stringify(positions(9,true)),name+' respects reduced motion');
+ }
  const fallback=await loadScenery({id:'door'},'/missing-scenery/');assert(fallback.id==='grass','missing required floor falls back safely');
  const examples={grass:'ant',beach:'lighthouse',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'great-white-shark',space:'saturn-rocket',enchanted:'pegasus'};
  for(const [expected,id] of Object.entries(examples)){
@@ -55,6 +68,17 @@ try{
   const scene=await ctl.prepare(target,small,{hMax:260,minStageH:330});
   assert(scene.target.id===id&&scene.scenery===expected,'setting uses larger object after input swap '+id);
   const startDraws=[];watched.set(ctl.canvas.getContext('2d'),startDraws);scene.render(0);
+  if(SETTINGS[expected].backdrop){
+   const backdrop=startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.png');
+   assert(backdrop.length>0,'background scenery ready on first frame '+id);
+   const initial=backdrop[0],later=[];watched.set(ctl.canvas.getContext('2d'),later);
+   scene.render(scene.cues.find(c=>c.name==='tap').t);
+   const moved=later.find(d=>d.image===initial.image);
+   assert(moved,'background retained through camera motion '+id);
+   // Source bounds and destination size stay fixed: no rescaling or wrapping scenery.
+   assert(initial.args[6]===moved.args[6]&&initial.args[7]===moved.args[7],'stable backdrop scale '+id);
+   scene.render(0);
+  }
   const floorName=SETTINGS[expected].floor;
   if(floorName){
    const floor=startDraws.find(d=>d.image===floorName+'.png');assert(floor,'floor is ready on first frame '+id);

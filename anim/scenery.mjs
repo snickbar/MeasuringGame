@@ -23,18 +23,18 @@ export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'gra
 
 export const SETTINGS = {
   grass: { clouds: true },
-  beach: { floor: 'beach', sky: ['#b5d9ee', '#edf6f6'], clouds: true },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'stripes', artwork: true, layers: ['dust-motes'] },
-  kitchen: { floor: 'kitchen', sky: ['#f1e9d7', '#fff9ed'], wallpaper: 'diamonds', artwork: true, layers: ['dust-motes'] },
-  tabletop: { floor: 'tabletop', sky: ['#f3e7d2', '#fff8e9'], wallpaper: 'dots', artwork: true },
+  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'stripes', layers: ['dust-motes'] },
+  kitchen: { floor: 'kitchen', sky: ['#f1e9d7', '#fff9ed'], wallpaper: 'diamonds', layers: ['dust-motes'] },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'linen' },
   city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field' },
-  forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'] },
-  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true },
+  forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
+  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'] },
-  desert: { floor: 'desert-floor', sky: ['#ead5be', '#fff0da'], clouds: true },
-  underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'] },
+  desert: { floor: 'desert-floor', sky: ['#ead5be', '#fff0da'], clouds: true, backdrop: 'desert-dunes' },
+  underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
-  enchanted: { sky: ['#d8d0e9', '#f0e7ef'], clouds: true, layers: ['enchanted-mist', 'magic-motes'] },
+  enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
 };
 const imageCache = new Map();
 function loadImage(url) {
@@ -46,14 +46,13 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = sceneryFor(object), config = SETTINGS[id];
-  const names = [config.floor, config.texture, config.artwork && 'wall-picture', ...(config.layers || [])].filter(Boolean);
+  const names = [config.floor, config.texture, config.backdrop, ...(config.layers || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.png')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
-  const decorSeed = [...object.id].reduce((seed, ch) => (seed * 31 + ch.charCodeAt(0)) >>> 0, 0);
-  return { id, config, images, decorSeed };
+  return { id, config, images };
 }
 
-// Repeating wall details share one camera offset; pictures stay attached to the wall.
+// Repeating wall details share one camera offset.
 // Geometry keeps these quiet patterns seamless at every phone width.
 export function drawWallpaper(ctx, style, { width, height, shiftY, shiftX, dark }) {
   const tile = style === 'stripes' ? 48 : 56;
@@ -62,6 +61,13 @@ export function drawWallpaper(ctx, style, { width, height, shiftY, shiftX, dark 
   ctx.save();
   ctx.globalAlpha = dark ? .045 : .085;
   ctx.fillStyle = style === 'diamonds' ? '#728e83' : style === 'dots' ? '#a18b70' : '#ae8d78';
+  if (style === 'linen') {
+    ctx.strokeStyle = '#9b927e'; ctx.lineWidth = .6;
+    // A softly woven wall treatment for the tabletop, with no framed decoration.
+    for (let x = ox - tile; x < width; x += tile / 4) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+    for (let y = oy - tile; y < height; y += tile / 4) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+    ctx.restore(); return;
+  }
   for (let x = ox - tile; x < width; x += tile) {
     if (style === 'stripes') { ctx.fillRect(x, 0, 13, height); continue; }
     for (let y = oy - tile; y < height; y += tile) {
@@ -74,21 +80,51 @@ export function drawWallpaper(ctx, style, { width, height, shiftY, shiftX, dark 
   ctx.restore();
 }
 
-// Image layers follow the climb with the same downward parallax as the original clouds.
-export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, dark, time, reduced }) {
+const backdropBounds = new WeakMap();
+function visibleBounds(image) {
+  if (backdropBounds.has(image)) return backdropBounds.get(image);
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+  const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0);
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let left = canvas.width, top = canvas.height, right = -1, bottom = -1;
+  for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+    if (data[(y * canvas.width + x) * 4 + 3] < 12) continue;
+    left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+  }
+  const bounds = right < left ? [0, 0, canvas.width, canvas.height] : [left, top, right - left + 1, bottom - top + 1];
+  backdropBounds.set(image, bounds); return bounds;
+}
+
+// Scenery has one distant baseline; rooted decorations never wrap or drift independently.
+// It descends more slowly than the foreground as the camera climbs, like distant clouds.
+function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark }) {
+  const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
+  const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 + shiftY * .28;
+  const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': .65,
+    'desert-dunes': .65, 'enchanted-grove': .65, 'underwater-seaweed': .44 }[name];
+  ctx.save(); ctx.globalAlpha = alpha * (dark ? .45 : 1);
+  if (name === 'farm-hay' || name === 'underwater-seaweed') {
+    const h = name === 'farm-hay' ? 58 : 95;
+    const w = h * bounds[2] / bounds[3];
+    for (const [i, fraction] of [.14, .88].entries()) {
+      const scale = i ? .8 : 1, x = width * fraction + shiftX * .12;
+      ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
+    }
+  } else {
+    const h = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 105, 'enchanted-grove': 180 }[name];
+    const w = Math.max(width + 100, h * bounds[2] / bounds[3]);
+    ctx.drawImage(image, ...bounds, (width - w) / 2 + shiftX * .1, base - h, w, h);
+  }
+  ctx.restore();
+}
+
+// Atmospheric layers follow the climb with the original cloud parallax.
+export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced }) {
   const { config, images } = kit;
   ctx.save();
   if (config.wallpaper) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
-    // Stable variation per larger object avoids flickering on replay or redraw.
-    if (images['wall-picture'] && kit.decorSeed % 3 !== 0) {
-      const size = kit.id === 'tabletop' ? 150 : 180;
-      const period = height + size;
-      const y = ((height * .15 + shiftY * .12) % period + period) % period - size * .3;
-      const x = width * (kit.decorSeed % 2 ? .22 : .78) + shiftX * .08;
-      ctx.globalAlpha = dark ? .16 : .3;
-      ctx.drawImage(images['wall-picture'], x - size / 2, y, size, size);
-    }
   }
   if (images[config.texture]) {
     const tile = 360, offsetY = ((shiftY * .12) % tile + tile) % tile;
@@ -96,6 +132,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, dar
     ctx.globalAlpha = (config.texture === 'star-field' ? (config.night ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images[config.texture], x, y, tile, tile);
   }
+  drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
@@ -104,7 +141,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, dar
     ctx.globalAlpha = (wisp ? .12 : name === 'bubbles' ? .24 : .22) * (dark ? .65 : 1);
     const span = height + size * aspect + 60;
     for (let i = 0; i < 3; i++) {
-      const drift = reduced ? 0 : time * (name === 'bubbles' ? -.9 : .6);
+      const drift = reduced ? 0 : time * (name === 'bubbles' ? -5 : name === 'snowflakes' ? 7 : .6);
       const y = (((i * height * .43 + index * 61 + shiftY * .18 + drift) % span) + span) % span - size * aspect;
       const x = width * [.1, .72, .4][i] + shiftX * .1;
       ctx.drawImage(image, x - size / 2, y, size, size * aspect);

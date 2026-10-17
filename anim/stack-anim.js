@@ -780,7 +780,7 @@ export function createStackAnimation(container, options = {}) {
       sky.addColorStop(1, skyBottom);
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
-      drawSceneryLayers(ctx, kit, { width: W, height: stageH, shiftY: sy0 - floorY,
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
         shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
