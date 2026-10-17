@@ -19,6 +19,9 @@
 // axis 'height': the picture already has the object's length running up and down (a door, a
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
 import { ORIENT } from './orient-data.js';
+import { landingStyleFor, landingPose } from './reveal-style.mjs';
+import { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor } from './scenery.mjs';
+import { FLOOR_DATA } from './scenery-data.mjs';
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
 // Object Orientation page). It is kept here for reference.
@@ -154,6 +157,7 @@ export const LIGHT_THEME = {
   guide: '#6c86b4', ink: '#16223a', muted: '#55657f', warm: '#d96a06',
 };
 export const DARK_THEME = {
+  dark: true,
   stage: '#111b31', skyTop: '#0b1730', skyBottom: '#1c3158', ground: '#16261f', cloudAlpha: 0.28,
   guide: '#4a6490', ink: '#eaf0fb', muted: '#9db0cf', warm: '#ffa24d',
 };
@@ -168,6 +172,8 @@ const MIN_THICK = 14;      // thinnest a true-scale stack may be before the came
 const STRIP_W = 18;        // widest the stack may be in the final view when it is too thin to see
 const STRIP_W_MIN = 9;     // ...and the thinnest
 const STRIP_LEN = 40;       // about how long each copy is drawn there, so thin things (rice) are not drawn huge
+// Playback, sound cues and shared room deadlines use the same slower clock.
+const PLAYBACK_TIME_SCALE = 1.2;
 const BIG_S = 1.1;         // seconds for an object that already stands upright (a door, a tower) to hop in
 const BIG_WALK = 1.3;      // seconds the big object spends walking, driving or gliding in
 const BIG_LEAN = 0.9;      // seconds it takes to lean back upright
@@ -182,6 +188,7 @@ const FAST_TICK_AT = 0.25;  // ...and only once this share of the stack-up has g
 const K_MAX = 18;          // objects that hop in one by one before the stack starts to stream
 const PEAK_RATE = 1500;    // fastest the stream normally goes, in objects per second
 const PAN_PX = 450;        // fastest the stack may rise on screen (pixels per second) before the camera backs off
+
 const GRASS_W = 220;       // width of one grass tile on screen
 const GRASS_DIRT = 127 / 145;   // how far down the picture the dirt begins
 
@@ -362,7 +369,7 @@ export function animationDuration(unitIn, targetIn) {
   if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
   const bigLean = leanOf(target, true);
   const smLean = leanOf(unit, false);
-  return timelineFor(target.mm / unit.mm, bigLean, smLean).tEnd;
+  return timelineFor(target.mm / unit.mm, bigLean, smLean).tEnd * PLAYBACK_TIME_SCALE;
 }
 
 export function createStackAnimation(container, options = {}) {
@@ -404,6 +411,11 @@ export function createStackAnimation(container, options = {}) {
   grassImg.src = sceneryBase + 'grass.png';
   const cloudImg = new Image();
   cloudImg.src = sceneryBase + 'cloud.png';
+  const originalSceneryReady = Promise.all([grassImg, cloudImg].map(image =>
+    image.complete ? Promise.resolve() : new Promise(resolve => {
+      image.addEventListener('load', resolve, { once: true });
+      image.addEventListener('error', resolve, { once: true });
+    })));
 
   // ---- Pictures: each is turned so the object's length runs up and down ----
   const pics = new Map();
@@ -436,7 +448,21 @@ export function createStackAnimation(container, options = {}) {
     const key = o.id + (extraMirror ? ':m' : '');
     if (!poseCache.has(key)) {
       const st = orientOf(o);
-      poseCache.set(key, poseOf(pics.get(o.id).img, st, extraMirror && st.mirR));
+      const pose = poseOf(pics.get(o.id).img, st, extraMirror && st.mirR);
+      // Transparent export margins must not act as invisible space under an object.
+      // Use the same trimmed pose for its travelling, turning and stacked sprites.
+      const pixels = pose.getContext('2d').getImageData(0, 0, pose.width, pose.height).data;
+      let left = pose.width, right = -1, top = pose.height, bottom = -1;
+      for (let y = 0; y < pose.height; y++) for (let x = 0; x < pose.width; x++) {
+        if (pixels[(y * pose.width + x) * 4 + 3] < 48) continue;
+        left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+      }
+      if (right >= left && bottom >= top) {
+        const trimmed = document.createElement('canvas');
+        trimmed.width = right - left + 1; trimmed.height = bottom - top + 1;
+        trimmed.getContext('2d').drawImage(pose, left, top, trimmed.width, trimmed.height, 0, 0, trimmed.width, trimmed.height);
+        poseCache.set(key, trimmed);
+      } else poseCache.set(key, pose);
     }
     return poseCache.get(key);
   }
@@ -475,24 +501,31 @@ export function createStackAnimation(container, options = {}) {
     let unit = unitIn;
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
-    await Promise.all([loadPicture(unit), loadPicture(target)]);
-    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0);
+    const [kit] = await Promise.all([loadScenery(target, sceneryBase + 'scenery/'), loadPicture(unit), loadPicture(target), originalSceneryReady]);
+    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, kit);
   }
 
-  function buildScene(unit, target, hMax, minStageH) {
+  function buildScene(unit, target, hMax, minStageH, kit) {
     const R = target.mm / unit.mm;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
     const stripW = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);   // width of the stack when it is shown as a strip
     const smallSprite = spriteFor(unit, flipFacing);
     const bigSprite = spriteFor(target, !flipFacing);
+    const bigLanding = landingStyleFor(target), smallLanding = landingStyleFor(unit);
+    const scenery = kit.id;
     const bigLean = leanOf(target, !flipFacing);
     const smLean = leanOf(unit, flipFacing);
     const bigLying = bigLean ? lyingSprite(target, !flipFacing, bigLean) : null;
     const smLying = smLean ? lyingSprite(unit, flipFacing, smLean) : null;
     const bigKind = MOTION[target.id] || 'slide';
     const smKind = MOTION[unit.id] || 'slide';
-    const { skyTop, skyBottom, ground: groundCol, cloudAlpha, guide } = theme;
+    const dark = !!theme.dark;
+    const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
+    const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const groundCol = kit.config.night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
+    const { cloudAlpha } = theme;
+    const guide = scenery === 'space' || kit.config.night ? '#adafd4' : theme.guide;
 
     // ---- Final view: the big object at most H_MAX tall, the stack beside it ----
     const W = container.clientWidth || 360;
@@ -675,6 +708,11 @@ export function createStackAnimation(container, options = {}) {
       return { c, sx0: axClimb + (colCenterX - axClimb) * e, sy0: topY + Hw * c };
     }
 
+    function targetFrame(t, cam) {
+      return { x: cam.sx0 + bigLeftWorld * cam.c, y: cam.sy0 - Hw * cam.c,
+        width: Tw * cam.c, height: Hw * cam.c, clipLeft: 0, clipBottom: cam.sy0 };
+    }
+
     // ---- Canvas ----
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     container.style.height = stageH + 'px';
@@ -684,16 +722,43 @@ export function createStackAnimation(container, options = {}) {
     tally.style.top = (floorY + 10) + 'px';
     tally.style.fontFamily = 'inherit';
     nEl.style.color = theme.ink;
-    uEl.style.color = theme.muted;
+    uEl.style.color = earthyFloor ? '#fff7e5' : theme.muted;
     uEl.textContent = unit.plural;
     nEl.textContent = '0';
 
     let shown = 0;
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', 'Animated object size comparison');
+    function shadow(x, y, width, height, alpha = .28) {
+      ctx.save(); ctx.translate(x, y); ctx.scale(Math.max(2, width / 2), Math.max(1, height));
+      const shade = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      shade.addColorStop(0, `rgba(52,42,32,${alpha})`); shade.addColorStop(.55, `rgba(52,42,32,${alpha * .75})`); shade.addColorStop(1, 'rgba(52,42,32,0)');
+      ctx.fillStyle = shade; ctx.beginPath(); ctx.ellipse(0, 0, 1, 1, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    function drawLanded(sprite, x, bottom, width, height, style, age) {
+      const pose = landingPose(style, age, reduceMotion);
+      ctx.save(); ctx.translate(x + width / 2, bottom - height * pose.lift); ctx.rotate(pose.rock);
+      ctx.drawImage(sprite, -width * (1 + pose.squash / 2) / 2, -height * (1 - pose.squash), width * (1 + pose.squash / 2), height * (1 - pose.squash));
+      ctx.restore();
+    }
+
+    function dust(x, y, age, width, objectMm) {
+      const heft = clamp(.8 + Math.log10(Math.max(1, objectMm)) / 3, .85, 2.4);
+      const lifetime = .32 + .08 * heft;
+      if (reduceMotion || age < 0 || age > lifetime) return;
+      const p = age / lifetime;
+      ctx.save(); ctx.fillStyle = theme.dust || '#e9dcc0'; ctx.globalAlpha = .65 * (1 - p);
+      for (const dir of [-1, 1]) for (let j = 0; j < 3; j++) {
+        ctx.beginPath(); ctx.ellipse(x + dir * (width * .25 + p * (10 + j * 6) * heft), y - p * (4 + j * 4) * heft, (2 + p * 3) * heft, (1.5 + p * 2) * heft, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
 
     // Draws the picture of time t (in seconds). dt is how long since the last frame, used only to
     // let the count under the floor catch up smoothly; leave it out to jump straight to the right count.
     function render(t, dt) {
-      t = clamp(t, 0, tEnd);
+      t = clamp(t / PLAYBACK_TIME_SCALE, 0, tEnd);
+      if (dt != null) dt /= PLAYBACK_TIME_SCALE;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, stageH);
       ctx.imageSmoothingEnabled = true;
@@ -701,6 +766,7 @@ export function createStackAnimation(container, options = {}) {
 
       const cam = cameraAt(t);
       const c = cam.c;
+      const groundScale = groundScaleFor(c, cEnd);
       const sx0 = cam.sx0;
       const sy0 = cam.sy0;
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
@@ -711,14 +777,15 @@ export function createStackAnimation(container, options = {}) {
 
       // Background: sky, clouds that drift down gently as the camera climbs, and the ground.
       const sky = ctx.createLinearGradient(0, 0, 0, stageH);
-      sky.addColorStop(0, skyTop);
-      sky.addColorStop(1, skyBottom);
+      skyColors.forEach((color, i) => sky.addColorStop(i / (skyColors.length - 1), color));
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background' });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
-      if (cloudImg.complete && cloudImg.naturalWidth) {
-        ctx.globalAlpha = cloudAlpha;
+      if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
+        ctx.globalAlpha = kit.config.night ? cloudAlpha * .28 : cloudAlpha;
         for (const cl of CLOUDS) {
           const raw = cl.y * stageH + (sy0 - floorY) * 0.18;
           const cy = ((raw % span) + span) % span - 80;
@@ -729,20 +796,28 @@ export function createStackAnimation(container, options = {}) {
         }
         ctx.globalAlpha = 1;
       }
-      if (sy0 < stageH) {
-        const gy = Math.max(0, sy0);
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground' });
+      const sceneryFloorY = sy0;
+      if (sceneryFloorY < stageH) {
+        const gy = Math.max(0, sceneryFloorY);
         ctx.fillStyle = groundCol;
         ctx.fillRect(0, gy, W, stageH - gy);
       }
       // Grass along the ground, behind everything that stands on it.
-      if (grassImg.complete && grassImg.naturalWidth) {
-        const gh = GRASS_W * grassImg.naturalHeight / grassImg.naturalWidth;
-        const gTop = sy0 - gh * GRASS_DIRT;
+      if (!kit.config.floor && grassImg.complete && grassImg.naturalWidth) {
+        const grassW = GRASS_W * groundScale;
+        const gh = grassW * grassImg.naturalHeight / grassImg.naturalWidth;
+        const gTop = sy0 - gh * GRASS_DIRT - 6 * groundScale;
         if (gTop < stageH && gTop + gh > 0) {
-          const x0 = (((colCenterX - sx0) % GRASS_W) + GRASS_W) % GRASS_W - GRASS_W;
-          for (let gx = x0; gx < W; gx += GRASS_W) ctx.drawImage(grassImg, gx, gTop, GRASS_W + 1, gh);
+          const phase = colCenterX - sx0 + colCenterX * (1 - groundScale);
+          const x0 = ((phase % grassW) + grassW) % grassW - grassW;
+          for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
         }
       }
+      if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
+        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX,
+      });
 
       // The dashed line at the big object's height.
       const topLineY = sy0 - Hw * c;
@@ -762,8 +837,10 @@ export function createStackAnimation(container, options = {}) {
       // The big object.
       const bw = Tw * c;
       const bh = Hw * c;
-      const bx = sx0 + bigLeftWorld * c;
-      const by = sy0 - bh;
+      const frame = targetFrame(t, cam);
+      const bx = frame.x;
+      const by = frame.y;
+      const targetAge = t - tLeanEnd;
       if (bigLean && t < tLeanEnd) {
         // Lying down it walks, drives or glides in from the right, then rears up to stand.
         // The view starts zoomed out so the lying object fits, and settles as it stands.
@@ -791,6 +868,9 @@ export function createStackAnimation(container, options = {}) {
         const wu = clamp(t / BIG_WALK, 0, 1);
         const d = d0 * (1 - wu) * (1 - wu);
         const lift = travelLift(bigKind, wu, T, d0);
+        const footprint = sc * (L * Math.cos(ang) + T * Math.sin(ang));
+        const shadowX = px + sc * d + (cw ? -1 : 1) * sc * (L * Math.cos(ang) - T * Math.sin(ang)) / 2;
+        shadow(shadowX, pvy + 2, footprint * .8, clamp(T * sc * .06, 3, 9), .30);
         ctx.save();
         ctx.translate(px, pvy);
         ctx.scale(sc, sc);
@@ -804,10 +884,13 @@ export function createStackAnimation(container, options = {}) {
         const hu = bigLean ? 1 : clamp(t / BIG_S, 0, 1);
         const slide = (1 - hu) * (1 - hu) * (W - bigX + 30);
         const hop = bigLean ? 0 : travelLift('slide', hu, bw, 0);
+        shadow(bx + slide + bw / 2, sy0 + 2, bw * .95, clamp(bw * .07, 3, 10), .36 / (1 + hop / 12));
         if (bx + slide < W && bx + bw > 0 && by < stageH && by + bh > 0) {
-          ctx.drawImage(bigSprite, bx + slide, by - hop, bw, bh);
+          drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
         }
       }
+      if (bigKind !== 'fly' && bigKind !== 'sail') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm);
+      if (count >= 1) shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 2, 6), .30);
 
       // Anything of the stack above the big object's height line is cut off.
       ctx.save();
@@ -822,7 +905,7 @@ export function createStackAnimation(container, options = {}) {
       for (let i = iStart; i <= iEnd; i++) {
         if (i < nHop && t < starts[i] + durs[i]) continue;   // still hopping in
         const bottom = sy0 - i * Ls;
-        ctx.drawImage(smallSprite, sx0 - wcol / 2, bottom - Ls - 0.5, wcol, Ls + 0.5);
+        drawLanded(smallSprite, sx0 - wcol / 2, bottom, wcol, Ls + .5, smallLanding, i < nHop ? t - starts[i] - durs[i] : 100);
       }
       if (frac > 1e-6) {
         const bottom = sy0 - full * Ls;
@@ -837,6 +920,7 @@ export function createStackAnimation(container, options = {}) {
       // Objects hopping in.
       const dHop = sx0 + wcol / 2 + 24;
       const landed = landedAt(t);
+      if (!reduceMotion) for (let i = 0; i < nHop; i++) dust(sx0, sy0 - i * Ls, t - starts[i] - durs[i], wcol, unit.mm);
       for (let i = landed; i < nHop && starts[i] <= t; i++) {
         if (t >= starts[i] + durs[i]) continue;
         if (i === 0 && smLean) {
@@ -864,6 +948,7 @@ export function createStackAnimation(container, options = {}) {
         }
         const h = hopAt((t - starts[i]) / durs[i]);
         const bottom = sy0 - i * Ls;
+        shadow(sx0 - dHop * h.x, bottom + 1, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + Math.abs(h.y) / 10));
         ctx.save();
         ctx.translate(sx0 - dHop * h.x, bottom + h.y);
         ctx.scale(h.sx, h.sy);
@@ -871,6 +956,8 @@ export function createStackAnimation(container, options = {}) {
         ctx.restore();
       }
 
+      const description = t >= tEnd ? `${formatCount(R, R)} ${unit.plural} match ${target.name}.` : 'Animated object size comparison';
+      if (canvas.getAttribute('aria-label') !== description) canvas.setAttribute('aria-label', description);
       // The running count under the floor.
       if (t >= tB0 || !(dt > 0 && dt < 0.25)) {
         shown = count;
@@ -879,15 +966,16 @@ export function createStackAnimation(container, options = {}) {
         if (Math.abs(count - shown) < 0.02) shown = count;
       }
       nEl.textContent = formatCount(shown, R);
-      nEl.style.color = t >= tEnd ? theme.warm : theme.ink;
+      nEl.style.color = t >= tEnd ? (earthyFloor ? '#fff2a9' : theme.warm) : (earthyFloor ? '#fff7e5' : theme.ink);
     }
 
     return {
-      unit, target, R, fast, stageH, width: W,
-      duration: tEnd,
-      cues,
+      unit, target, R, fast, stageH, width: W, scenery,
+      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd), cam = cameraAt(t); return { ...targetFrame(t, cam), stackX: cam.sx0, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
+      duration: tEnd * PLAYBACK_TIME_SCALE,
+      cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,
-      renderEnd() { render(tEnd); },
+      renderEnd() { render(tEnd * PLAYBACK_TIME_SCALE); },
       getShown: () => shown,
     };
   }

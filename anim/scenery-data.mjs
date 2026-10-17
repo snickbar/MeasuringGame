@@ -1,0 +1,91 @@
+// Measured alpha-surface positions and lower-edge colors from the approved PNGs.
+export const FLOOR_DATA = {
+  "beach": {
+    "surface": 0.5511049723756906,
+    "color": "#e7b873"
+  },
+  "kitchen": {
+    "surface": 0.5,
+    "color": "#c8be9f"
+  },
+  "pavement": {
+    "surface": 0.4958563535911602,
+    "color": "#81766b"
+  },
+  "mist": {
+    "surface": 0.457182320441989,
+    "color": "#000000"
+  },
+  "hardwood": {
+    "surface": 0.5814917127071824,
+    "color": "#d69c5c"
+  },
+  "tabletop": {
+    "surface": 0.6104972375690608,
+    "color": "#c38952"
+  },
+  "indoor-wall": {
+    "surface": 0,
+    "color": "#f7e6ca"
+  },
+  "dust-motes": {
+    "surface": 0.4462890625,
+    "color": "#000000"
+  },
+  "forest-floor": {
+    "surface": 0.6408839779005525,
+    "color": "#8f6f53"
+  },
+  "farm-floor": {
+    "surface": 0.6629834254143646,
+    "color": "#b88757"
+  },
+  "snow-floor": {
+    "surface": 0.6546961325966851,
+    "color": "#b5d4fa"
+  },
+  "snowflakes": {
+    "surface": 0.3759765625,
+    "color": "#000000"
+  },
+  "desert-floor": {
+    "surface": 0.5939226519337016,
+    "color": "#e2966f"
+  },
+  "seabed": {
+    "surface": 0.6243093922651933,
+    "color": "#adc3b1"
+  },
+  "bubbles": {
+    "surface": 0.337890625,
+    "color": "#020303"
+  },
+  "water-light": {
+    "surface": 0,
+    "color": "#61ccd7"
+  },
+  "moon-floor": {
+    "surface": 0.6049723756906077,
+    "color": "#9790ab"
+  },
+  "star-field": {
+    "surface": 0,
+    "color": "#24254f"
+  },
+  "nebula": {
+    "surface": 0.5107102593010147,
+    "color": "#000000"
+  },
+  "enchanted-mist": {
+    "surface": 0.3314917127071823,
+    "color": "#000000"
+  },
+  "magic-motes": {
+    "surface": 0.4677734375,
+    "color": "#000000"
+  },
+  "kitchen-bw": {
+    "surface": 0.494475138121547,
+    "color": "#80796f"
+  }
+};
