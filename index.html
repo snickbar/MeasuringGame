@@ -2696,11 +2696,11 @@
   .pu-button img { width:30px; height:30px; object-fit:contain; }
   .pu-button small { font-size:9px; color:#85572b; white-space:nowrap; }
   .pu-button:focus-visible { outline:3px solid #8c48b9; outline-offset:1px; }
-  .pu-button:disabled { opacity:.45; cursor:default; }
+  .pu-button:disabled { opacity:.45; filter:grayscale(1); cursor:default; }
   .pu-inline { flex-direction:row; gap:5px; width:100%; min-height:44px; padding:4px; margin:4px 0; background:#fff7e7; }
   .pu-inline img { width:26px; height:26px; }
-  #quick-powerups[hidden], .pu-toast[hidden] { display:none !important; }
-  .pu-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); z-index:20000; max-width:85vw; padding:10px 16px; border-radius:14px; background:#51311f; color:white; text-align:center; font:14px system-ui,sans-serif; pointer-events:none; }
+  #quick-powerups[hidden], .pu-feedback[hidden] { display:none !important; }
+  .pu-feedback { position:fixed; z-index:20000; box-sizing:border-box; width:max-content; max-width:min(240px,calc(100vw - 20px)); padding:10px 14px; border:2px solid #a26ac4; border-radius:10px; background:#fff8e8; color:#542573; text-align:center; font:600 14px/1.3 'Fredoka',sans-serif; box-shadow:0 4px 10px #593a2430; pointer-events:none; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
   .pu-result-note { box-sizing:border-box; width:100%; min-width:0; overflow-wrap:anywhere; color:#542573; margin:0; padding:12px; border:2px solid #b983dc; border-radius:18px; background:linear-gradient(135deg,#fbf0ff,#e9d5ff); font-family:'Fredoka',sans-serif; text-align:center; container-type:inline-size; }
@@ -2736,6 +2736,20 @@
     .pu-boost-head strong { font-size:18px; }
     .pu-boost-score { font-size:14px; }
   }
+  .wl-stars img { display:inline-block; width:22px; height:22px; object-fit:contain; vertical-align:middle; }
+  .wl-stars .off img { filter:grayscale(1); }
+  .wl-progress { margin:5px 0 8px; padding:8px 10px 5px; background:rgba(255,250,237,.9); border:1px solid #e0c99d; border-radius:14px; color:#593a1f; }
+  .wl-progress-heading { display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:13px; line-height:1.25; }
+  .wl-progress-heading strong { color:#6a328c; font-size:16px; }
+  .wl-progress-scale { position:relative; height:12px; margin:8px 0 22px; background:#e4d7c1; border-radius:8px; }
+  .wl-progress-fill { display:block; height:100%; border-radius:8px; background:linear-gradient(90deg,#e5a43a,#f5c94f); transition:width .3s ease; }
+  .wl-progress-marker { position:absolute; top:-6px; transform:translateX(-50%); text-align:center; }
+  .wl-progress-star { position:relative; display:block; width:24px; height:24px; margin:auto; filter:grayscale(1); opacity:.6; }
+  .wl-progress-star img { display:block; width:24px; height:24px; }
+  .wl-progress-star b { position:absolute; inset:0; display:grid; place-items:center; padding-top:2px; font-size:11px; color:#573015; }
+  .wl-progress-marker.earned .wl-progress-star { filter:none; opacity:1; }
+  .wl-progress-threshold { display:block; margin-top:2px; font-size:11px; line-height:1.2; white-space:nowrap; }
+  @media(prefers-reduced-motion:reduce) { .wl-progress-fill { transition:none; } }
   /* Compact solo input screens: keep generous tap targets without tall gutters. */
   :is(#worlds-content,#survival-content) .dc-prompt { margin:6px 0; padding:8px 12px; border:1px solid rgba(217,194,154,.7); border-radius:24px; background:rgba(255,253,246,.82); font-size:15px; line-height:1.25; }
   :is(#worlds-content,#survival-content) .dc-keys { gap:4px; }
@@ -2754,7 +2768,13 @@
   #survival-content .sv-heart { width:30px; }
   #survival-content .sv-hud { gap:1px; margin:2px 0 4px; }
   @media (max-height:740px) {
+    #worlds-content { padding-top:2px; }
+    #worlds-content .dc-dots i { width:20px; height:20px; border-width:2px; }
+    #worlds-content .wl-progress { padding:4px 10px; margin:3px 0 6px; }
+    #worlds-content .wl-progress-heading strong { font-size:14px; }
+    #worlds-content .wl-progress-scale { height:10px; }
     :is(#worlds-content,#survival-content) .dc-pic img { height:60px; }
+    #worlds-content .dc-pic img { height:50px; }
     :is(#worlds-content,#survival-content) .dc-title { margin-top:2px; font-size:22px; }
     :is(#worlds-content,#survival-content) .dc-sub { margin-bottom:6px; }
   }
@@ -3182,7 +3202,7 @@
 
   <details class="howto-section" id="howto-powerups"><summary>Power-ups</summary><div class="howto-body">
     <p>Available in <b>Quick Game, Worlds, and Survival</b>. Tap an available power-up to use it immediately for the displayed coin price. There is no confirmation pop-up. Unaffordable power-ups are dimmed.</p>
-    <p>Use rerolls, buffer, and reveal before submitting. In Quick Game, you can still add a buffer while waiting, before Second Chance begins. Only 50/50 is available during Second Chance. Used power-ups disappear; only one reroll is allowed per question.</p>
+    <p>Use rerolls, buffer, and reveal before submitting. In Quick Game, you can still add a buffer while waiting, before Second Chance begins. Only 50/50 is available during Second Chance. Used power-ups stay in their places, greyed out and marked Used; only one reroll is allowed per question.</p>
     <div id="howto-powerup-list"></div>
     <p>Worlds and Survival stay untimed and have no Second Chance. A reroll does not add a timer. Power-ups are unavailable in Party, Daily, and Monthly challenges, including practice.</p>
   </div></details>
@@ -8087,8 +8107,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return wi === 0 || worldLevelStars(WORLDS[wi - 1].id, WORLD_LEVELS) >= 2;
   };
   const worldLevelUnlocked = (wid, l) => l === 1 || worldLevelStars(wid, l - 1) >= 1;
-  const worldStarsHtml = (n) => `<span class="wl-stars">${[1, 2, 3].map((i) => (i <= n ? "★" : `<span class="off">★</span>`)).join("")}</span>`;
+  const worldStarsHtml = (n) => `<span class="wl-stars" aria-label="${n} of 3 stars">${[1, 2, 3].map((i) => `<span${i > n ? ' class="off"' : ''}><img src="icons/flair/star.png" alt=""></span>`).join("")}</span>`;
   const worldStarsFor = (avg) => (avg > WORLD_STAR_AT[2] ? 3 : avg > WORLD_STAR_AT[1] ? 2 : avg > WORLD_STAR_AT[0] ? 1 : 0);
+  function worldProgressHtml() {
+    const accs = wl.guesses.map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
+    const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
+    const stars = avg == null ? 0 : worldStarsFor(avg);
+    const text = avg == null ? 'No answers yet' : formatAccuracy(avg) + '%';
+    return `<div class="wl-progress" aria-label="Worlds running accuracy and star requirements">
+      <div class="wl-progress-heading"><span>Accuracy so far</span><strong>${text}</strong></div>
+      <div class="wl-progress-scale" role="progressbar" aria-label="Average accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${avg ?? 0}" aria-valuetext="${avg == null ? text : text + ' accurate, currently ' + stars + ' of 3 stars'}">
+        <span class="wl-progress-fill" style="width:${avg ?? 0}%"></span>
+        ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
+      </div></div>`;
+  }
   // Fresh questions every attempt. Pairs are ranked by how many times bigger the target is than the unit
   // (a bigger gap is harder), and each level draws from its own fifth of that ranking, easiest to hardest.
   function worldObjects(w) {
@@ -8155,7 +8187,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       worldStop();
       const i = wl.guesses.length;
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${i + 1} of ${WORLD_Q}</p>${dots(i)}
+      el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${i + 1} of ${WORLD_Q}</p>${dots(i)}${worldProgressHtml()}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         ${powerups?.html(powerupContext()) || ""}
@@ -8166,7 +8198,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
-      el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${k + 1} of ${WORLD_Q}</p>${dots(k)}<p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button>`;
+      el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${k + 1} of ${WORLD_Q}</p>${dots(k)}${worldProgressHtml()}<p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button>`;
       worldRunReveal();
       return;
     }
@@ -8177,7 +8209,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
     const nextLevel = wl.level < WORLD_LEVELS && wl.stars >= 1;
     const worldDone = wl.level === WORLD_LEVELS && wl.stars >= 2 && wl.wi + 1 < WORLDS.length && !WORLDS[wl.wi + 1].unlockCount;
-    el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>
+    el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
       <div class="dc-card dc-hot"><div class="wl-big">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div><div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "Perfect run!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${worldDone ? `<div class="dc-card dc-hot"><div class="dc-big">${escapeHtml(WORLDS[wl.wi + 1].name)} unlocked!</div></div>` : ""}
@@ -13514,6 +13546,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     winner: "sfx/crisp/winner.wav",
     emoji: "sfx/crisp/emoji.wav",
     start: "sfx/start.mp3",
+    powerup: "sfx/crisp/powerup.wav",
   };
   // Animation choices are independent of UI choices, including original files kept in the review.
   // The answer-reveal bell remains synthesized; zoomback now uses the selected Cozy sample.
@@ -13919,6 +13952,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
   }
   powerups = createPowerupController({
+    onUsed: () => playSound("powerup"),
     context: powerupContext, now: nowMs, coins: () => myProfile.coins || 0, owner: () => deviceId,
     question: (u, t) => ({ ...dailyQuestionFor({ unitId: u.id, targetId: t.id }), unitArt: Math.random() < .5 ? 0 : 1, targetArt: Math.random() < .5 ? 0 : 1 }),
     object: (id, art) => withAltArt(OBJECT_BY_ID.get(id), art),
