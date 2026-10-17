@@ -6,6 +6,8 @@ const css=source.match(/<style>([\s\S]*?)<\/style>/)[1];
 const hud=source.slice(source.indexOf('<div id="hud">'),source.indexOf('<script type="module">'));
 const actualTips=source.match(/const QUESTION_TIPS = (\[[\s\S]*?\n  \]);/);
 if(!actualTips)throw Error('Cannot find game tip list');
+const extractFunction=name=>{const start=source.indexOf('  function '+name+'('),end=source.indexOf('\n  }',start);if(start<0||end<0)throw Error('Missing '+name);return source.slice(start,end+4)};
+const extractLine=prefix=>{const start=source.indexOf(prefix);if(start<0)throw Error('Missing '+prefix);return source.slice(start,source.indexOf('\n',start))};
 const test=`
 import {createPowerupController} from '/anim/powerup-ui.mjs';
 import {POWERUPS} from '/anim/powerups.mjs';
@@ -33,6 +35,35 @@ const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,ow
  profile:async()=>wallet,room:async()=>room,quickApplied:()=>{},refresh:()=>{},finished:()=>{},
 });
 const local=document.createElement('div');document.body.append(local);
+const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3;
+const worldsContentEl=document.getElementById('worlds-content'),survivalContentEl=document.getElementById('survival-content');
+const OBJECT_BY_ID=new Map(objects.map(o=>[o.id,{...o,name:o.id,plural:o.id+'s'}]));
+const escapeHtml=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const worldStop=()=>{},survivalStop=()=>{},svRunAcc=()=>null;
+const powerups=c,powerupContext=()=>context();
+let wl,sv;
+${extractLine('  const svHeartSvg =')}
+${extractLine('  const svAccHtml =')}
+${extractLine('  const survivalHeartsHtml =')}
+${extractFunction('renderWorlds')}
+${extractFunction('renderSurvival')}
+globalThis.showSoloCompactPreview=which=>{
+ document.getElementById('hud').classList.remove('active');local.innerHTML='';mode=which;room=newRoom();
+ room.currentQuestion.prompt='How many ants long is the length of a canoe?';
+ document.getElementById('worlds-screen').classList.toggle('active',which==='worlds');
+ document.getElementById('survival-screen').classList.toggle('active',which==='survival');
+ if(which==='worlds'){wl={phase:'question',wi:0,level:1,questions:[room.currentQuestion],guesses:[],input:''};renderWorlds()}
+ else{sv={phase:'question',asked:0,lives:3,q:room.currentQuestion,accs:[],input:''};renderSurvival()}
+ const host=which==='worlds'?worldsContentEl:survivalContentEl,keys=[...host.querySelectorAll('.dc-key')];
+ const pad=host.querySelector('.dc-keys'),pill=host.querySelector('.dc-prompt');
+ assert(keys.length===12&&keys.every(b=>b.getBoundingClientRect().height>=44),'solo keypad touch targets');
+ assert(pad.getBoundingClientRect().height<=200,'compact keypad height');
+ assert(keys.every(b=>getComputedStyle(b).marginTop==='0px'&&getComputedStyle(b).marginBottom==='0px'),'no hidden keypad margins');
+ assert(getComputedStyle(pill).backgroundColor.startsWith('rgba(')&&parseFloat(getComputedStyle(pill).borderRadius)>=20,'semi-transparent question pill');
+ assert(host.scrollWidth<=innerWidth,'solo content fits horizontally');
+ const submit=host.querySelector(which==='worlds'?'#wl-submit':'#sv-submit');
+ return {mode:which,keypadHeight:pad.getBoundingClientRect().height,submitBottom:Math.round(submit.getBoundingClientRect().bottom),viewportHeight:innerHeight};
+};
 const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]');b.click();b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up')};
 try{
  c.render();const buttons=[...document.querySelectorAll('[data-powerup]')];assert(buttons.length===5,'five buttons');
@@ -90,11 +121,14 @@ try{
  const old=Date.now()-120000;wallet={coins:0,powerupReceipts:{lost:{cost:10,status:'charged',at:old,mode:'worlds'},applied:{cost:5,status:'charged',at:old,mode:'quick',room:'TEST'}}};room.powerupReceipts={applied:true};await c.recover(wallet,'me');assert(wallet.coins===10&&wallet.powerupReceipts.applied.status==='applied','receipt reconciliation');await c.recover(wallet,'me');assert(wallet.coins===10,'no repeated refund');
  results.push('interrupted purchase reconciliation is idempotent');
  wallet={coins:100};c.render();
- document.getElementById('test-output').textContent=JSON.stringify({pass:true,viewport:innerWidth,tipCases:tipCases.length,tipHeightRange:[Math.min(...tipCases.map(x=>x.tipHeight)),Math.max(...tipCases.map(x=>x.tipHeight))],playerOffsetRange:[Math.min(...tipCases.map(x=>x.playerOffset)),Math.max(...tipCases.map(x=>x.playerOffset))],results});
+ const soloLayouts=['worlds','survival'].map(showSoloCompactPreview);results.push('actual Worlds and Survival renderers: compact keypads, 44px targets, translucent question pills');
+ document.getElementById('worlds-screen').classList.remove('active');document.getElementById('survival-screen').classList.remove('active');document.getElementById('hud').classList.add('active');mode='quick';c.render();
+ document.getElementById('test-output').textContent=JSON.stringify({pass:true,viewport:innerWidth,tipCases:tipCases.length,soloLayouts,results});
  document.title='PASS power-ups';
 }catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,browserErrors,results});document.title='FAIL power-ups'}
 `;
-const fixture='<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+hud+'<div id="howto-powerup-list" hidden></div><pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
+// Measure settled layout, rather than the brief scale-in entrance animation.
+const fixture='<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+' #worlds-content,#survival-content{animation:none!important}</style></head><body>'+hud+'<div id="worlds-screen" class="screen"><div id="worlds-content"></div></div><div id="survival-screen" class="screen"><div id="survival-content"></div></div><div id="howto-powerup-list" hidden></div><pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
 const server=http.createServer((req,res)=>{
  if(req.url.startsWith('/__powerup-test')){res.setHeader('Content-Type','text/html');res.end(fixture);return}
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
@@ -133,6 +167,13 @@ server.listen(0,'127.0.0.1',()=>{
     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
     fs.writeFileSync(path.join(outDir,'quick-game-'+width+'.png'),Buffer.from(shot.data,'base64'));
     console.log(JSON.stringify(result,null,2));if(!result.pass)process.exitCode=1;
+    if(result.pass)for(const height of [700,844])for(const mode of ['worlds','survival']){
+     await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);
+     const checked=await call('Runtime.evaluate',{expression:'showSoloCompactPreview('+JSON.stringify(mode)+')',returnByValue:true},sessionId);
+     if(checked.exceptionDetails)throw Error('Solo layout check failed at '+width+'×'+height);
+     const soloShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(outDir,mode+'-'+width+'x'+height+'.png'),Buffer.from(soloShot.data,'base64'));
+    }
     await call('Target.closeTarget',{targetId});
    }
   }catch(e){console.error(e.stack);process.exitCode=1}
