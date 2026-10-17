@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { POWERUPS, bufferedGuess, quickEligible, availablePowerups, eliminationChoices, replacementPairs, debitPowerup, settlePowerup, powerupPlacement } from '../anim/powerups.mjs';
+import { POWERUPS, bufferedGuess, quickEligible, availablePowerups, eliminationChoices, replacementPairs, debitPowerup, settlePowerup } from '../anim/powerups.mjs';
 import { createPowerupController } from '../anim/powerup-ui.mjs';
 
 for (const [raw, expected] of [[85,95],[95,100],[100,100],[120,110],[0,10],[200,190]]) {
@@ -15,15 +15,6 @@ for (let answer = .01; answer < 1e10; answer *= 2.37) for (const ratio of [.1,.8
   if (Math.abs(raw-answer) <= answer*.1) assert.equal(improved,answer);
 }
 const solo = { settings:{solo:true}, players:{me:{}, bot:{isBot:true}} };
-const allActions=['small','big','both','buffer','reveal'];
-assert.deepEqual(powerupPlacement(allActions,55,44,72),{header:['buffer'],gap:['reveal'],sidebar:['small','big','both']});
-assert.deepEqual(powerupPlacement(allActions,110,44,72),{header:['buffer','reveal'],gap:[],sidebar:['small','big','both']});
-for(const h of [0,20,47,48,50,99,100,150])for(const w of [0,30,43,44,56]) {
- const p=powerupPlacement(allActions,h,w,72);
- assert.equal(new Set([...p.header,...p.gap,...p.sidebar]).size,5);
- assert(p.header.length===0||p.header.length*44+(p.header.length-1)*3<=h);
- assert(!p.gap.length||w>=44);
-}
 assert(quickEligible(solo,'me',true));
 for (const room of [{...solo,settings:{}},{...solo,players:{...solo.players,human:{}}},{}]) assert(!quickEligible(room,'me',true));
 assert(!quickEligible(solo,'me',false));
@@ -101,7 +92,7 @@ await sandbox.worldFinish();assert.equal(world.stars,3);assert.equal(sandbox.wor
 for(const p of Object.values(POWERUPS))assert(fs.existsSync(new URL('../icons/powerups/'+p.icon+'.png',import.meta.url)));
 // Reconnect recovery uses atomic cancellation markers, so a late room write
 // cannot give away an effect after another tab refunded its receipt.
-globalThis.document={getElementById:()=>({}),createElement:()=>({setAttribute:()=>{}}),body:{append:()=>{}},addEventListener:()=>{}};
+globalThis.document={getElementById:()=>({append:()=>{}}),createElement:()=>({setAttribute:()=>{}}),body:{append:()=>{}},addEventListener:()=>{}};
 let recoveredWallet={coins:0,powerupReceipts:{lost:{...receipt,status:'charged',at:Date.now()-120000},used:{...receipt,status:'charged',at:Date.now()-120000},local:{...receipt,room:undefined,mode:'worlds',status:'charged',at:Date.now()-120000}}};
 let recoveredRoom={powerupReceipts:{used:true}};
 const controller=createPowerupController({context:()=>null,

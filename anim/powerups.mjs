@@ -8,14 +8,6 @@ export const POWERUPS = Object.freeze({
   fifty: { label: '50/50', name: '50/50', cost: 2, icon: 'fifty-fifty', description: 'Remove half the available choices where possible. The correct answer stays, and at least two choices remain.' },
 });
 export const REROLLS = ['small', 'big', 'both'];
-// Reserve real empty space only; long tips and smaller boards get fewer slots.
-export function powerupPlacement(available, headerSpace, gapWidth, gapHeight) {
-  const extras = ['buffer', 'reveal'].filter(id => available.includes(id));
-  const count = Math.max(0, Math.min(2, Math.floor((headerSpace + 3) / 47)));
-  const header = extras.slice(0, count);
-  const gap = gapWidth >= 44 && gapHeight >= 48 ? extras.filter(id => !header.includes(id)).slice(0, 1) : [];
-  return { header, gap, sidebar: available.filter(id => !header.includes(id) && !gap.includes(id)) };
-}
 export function bufferedGuess(raw, answer, active) {
   if (!active || !Number.isFinite(raw) || !(answer > 0)) return raw;
   if (Math.abs(answer - raw) <= answer * 0.1) return answer;

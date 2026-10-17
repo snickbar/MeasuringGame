@@ -2682,19 +2682,15 @@
 
   /* Contextual power-ups stay above the player cards, beside the objects/keypad. */
   .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
-  #quick-powerups { flex:none; padding:4px; margin:0 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
-  #quick-powerups .pu-row { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:minmax(44px,1fr); gap:3px; padding:0; margin:0; border:0; background:none; overflow-x:auto; overscroll-behavior-x:contain; }
-  #quick-powerups .pu-button { min-height:48px; font-size:10px; }
-  #quick-powerups .pu-button img { width:25px; height:25px; }
+  #quick-powerups { position:absolute; z-index:4; box-sizing:border-box; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-rows:44px; column-gap:2px; padding:2px; margin:0; background:#fff7e7; border-radius:8px; }
+  #quick-powerups.pu-l-shape { height:92px; clip-path:polygon(75% 0,100% 0,100% 100%,0 100%,0 50%,75% 50%); border-radius:0; }
+  #quick-powerups.pu-l-shape .pu-button:first-child { grid-column:4; grid-row:1; }
+  #quick-powerups.pu-l-shape .pu-button:not(:first-child) { grid-row:2; }
+  #quick-powerups .pu-button { box-sizing:border-box; height:44px; min-height:44px; padding:0; font-size:9px; background:transparent; }
+  #quick-powerups .pu-button:only-child { grid-column:1 / -1; }
+  #quick-powerups .pu-button img { width:20px; height:20px; }
   #quick-powerups .pu-button small { font-size:8px; }
   .pu-box-title { display:block; text-align:center; font:700 10px/1.2 system-ui,sans-serif; color:#85572b; }
-  #quick-powerups.pu-scrollable::before { content:'Power-ups ↔'; display:block; text-align:center; font:700 9px/1.2 system-ui,sans-serif; color:#85572b; }
-  .pu-spare { position:absolute; display:grid; gap:3px; z-index:3; }
-  #header-powerups { right:0; width:72px; }
-  #gap-powerups { top:4px; width:44px; }
-  .pu-spare .pu-button { box-sizing:border-box; min-height:44px; height:44px; padding:0; font-size:9px; border:1px solid #decaa9; background:#fff7e7; }
-  .pu-spare .pu-button img { width:20px; height:20px; }
-  .pu-spare .pu-button small { font-size:8px; }
   .pu-button { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; min-height:60px; margin:0; padding:2px 0; border:0; border-radius:9px; background:#fffdf7; color:#583015; font:700 11px/1.15 system-ui,sans-serif; cursor:pointer; box-shadow:none; }
   .pu-button img { width:30px; height:30px; object-fit:contain; }
   .pu-button small { font-size:9px; color:#85572b; white-space:nowrap; }
@@ -2702,7 +2698,7 @@
   .pu-button:disabled { opacity:.45; cursor:default; }
   .pu-inline { flex-direction:row; gap:5px; width:100%; min-height:44px; padding:4px; margin:4px 0; background:#fff7e7; }
   .pu-inline img { width:26px; height:26px; }
-  #quick-powerups[hidden], .pu-spare[hidden], .pu-toast[hidden] { display:none !important; }
+  #quick-powerups[hidden], .pu-toast[hidden] { display:none !important; }
   .pu-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); z-index:20000; max-width:85vw; padding:10px 16px; border-radius:14px; background:#51311f; color:white; text-align:center; font:14px system-ui,sans-serif; pointer-events:none; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
@@ -3435,11 +3431,9 @@
     <button id="anim-skip-btn" type="button">Skip</button>
     <div id="question-note" class="question-note" style="display:none;"></div>
   </div>
-  <div id="header-powerups" class="pu-spare" aria-label="Power-ups beneath tips" hidden></div>
   </div>
 
   <div class="game-body">
-    <div id="gap-powerups" class="pu-spare" aria-label="Power-up beside objects" hidden></div>
     <div class="main-col">
 
       <div id="question-view">
