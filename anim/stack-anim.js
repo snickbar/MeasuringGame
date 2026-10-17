@@ -522,7 +522,7 @@ export function createStackAnimation(container, options = {}) {
     const smKind = MOTION[unit.id] || 'slide';
     const dark = !!theme.dark;
     const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
-    const [skyTop, skyBottom] = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
     const groundCol = kit.config.night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
     const { cloudAlpha } = theme;
     const guide = scenery === 'space' || kit.config.night ? '#adafd4' : theme.guide;
@@ -776,8 +776,7 @@ export function createStackAnimation(container, options = {}) {
 
       // Background: sky, clouds that drift down gently as the camera climbs, and the ground.
       const sky = ctx.createLinearGradient(0, 0, 0, stageH);
-      sky.addColorStop(0, skyTop);
-      sky.addColorStop(1, skyBottom);
+      skyColors.forEach((color, i) => sky.addColorStop(i / (skyColors.length - 1), color));
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,

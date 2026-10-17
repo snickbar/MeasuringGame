@@ -26,7 +26,7 @@ globalThis.preview=async(kind='worlds')=>{
 try{
  const watched=new WeakMap(),drawImage=CanvasRenderingContext2D.prototype.drawImage;
  CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
-  if(/(?:grass|cloud)\\.png$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image});
+  if(/(?:grass|cloud)\\.png$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image,alpha:this.globalAlpha});
   return drawImage.call(this,image,...args);
  };
  const gradients=new WeakMap(),radial=CanvasRenderingContext2D.prototype.createRadialGradient;
@@ -35,6 +35,7 @@ try{
  assert(objects.every(o=>SCENERY_BY_OBJECT[o.id]),'every game object has an explicit setting');
  assert(['great-white-shark','hammerhead-shark','whale-shark'].every(id=>sceneryFor({id})==='underwater'),'sharks use underwater scenery');
  assert(SETTINGS.city.night===true&&SETTINGS.city.sky[0]==='#111d36','city is always nighttime');
+ assert(!SETTINGS.desert.clouds&&!SETTINGS.desert.backdrop&&SETTINGS.desert.sky.length===4,'desert uses only a four-color hazy sky above ground');
  assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
  const wallCanvas=document.createElement('canvas');wallCanvas.width=390;wallCanvas.height=330;
  const wallCtx=wallCanvas.getContext('2d'),wallPatterns=[];
@@ -57,8 +58,19 @@ try{
    return draws.filter(d=>d.image===name+'.png').map(d=>d.args[1]);
   };
   const a=positions(3),b=positions(4);
-  assert(a.length===3&&b.some((y,i)=>Math.abs(y-a[i]-dy)<.01),name+' drift direction and speed');
+  assert(a.length===(name==='bubbles'?4:5)&&b.some((y,i)=>Math.abs(y-a[i]-dy)<.01),name+' drift direction and speed');
   assert(JSON.stringify(positions(3,true))===JSON.stringify(positions(9,true)),name+' respects reduced motion');
+ }
+ for(const [id,name,minAlpha] of [['deer','mist',.3],['polar-bear','snowflakes',.65],['great-white-shark','bubbles',.65]]){
+  const kit=await loadScenery({id},'/anim/scenery/'),draws=[];watched.set(wallCtx,draws);
+  drawSceneryLayers(wallCtx,kit,{width:390,height:330,floorY:290,shiftY:0,shiftX:0,dark:false,time:3,reduced:false});
+  assert(draws.some(d=>d.image===name+'.png'&&d.alpha>=minAlpha),name+' readable atmospheric opacity');
+  if(kit.config.backdrop){
+   const first=draws.find(d=>d.image===kit.config.backdrop+'.png'),moved=[];watched.set(wallCtx,moved);
+   drawSceneryLayers(wallCtx,kit,{width:390,height:330,floorY:290,shiftY:100,shiftX:40,dark:false,time:3,reduced:false});
+   const next=moved.find(d=>d.image===first.image);
+   assert(Math.abs(next.args[5]-first.args[5]-100)<.001&&Math.abs(next.args[4]-first.args[4]+40)<.001,'rooted scenery follows floor translation '+id);
+  }
  }
  const fallback=await loadScenery({id:'door'},'/missing-scenery/');assert(fallback.id==='grass','missing required floor falls back safely');
  const examples={grass:'ant',beach:'lighthouse',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'great-white-shark',space:'saturn-rocket',enchanted:'pegasus'};
@@ -77,6 +89,9 @@ try{
    assert(moved,'background retained through camera motion '+id);
    // Source bounds and destination size stay fixed: no rescaling or wrapping scenery.
    assert(initial.args[6]===moved.args[6]&&initial.args[7]===moved.args[7],'stable backdrop scale '+id);
+   const bottom=d=>d.args[5]+d.args[7];
+   assert(Math.abs(bottom(initial)-scene.getFraming(0).floorY+4)<.001,'scenery starts attached to floor '+id);
+   assert(Math.abs(bottom(moved)-scene.getFraming(scene.cues.find(c=>c.name==='tap').t).floorY+4)<.001,'scenery stays attached during climb '+id);
    scene.render(0);
   }
   const floorName=SETTINGS[expected].floor;

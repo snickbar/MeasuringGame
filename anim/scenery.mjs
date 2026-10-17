@@ -31,7 +31,7 @@ export const SETTINGS = {
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
   farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'] },
-  desert: { floor: 'desert-floor', sky: ['#ead5be', '#fff0da'], clouds: true, backdrop: 'desert-dunes' },
+  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'] },
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
@@ -96,11 +96,11 @@ function visibleBounds(image) {
   backdropBounds.set(image, bounds); return bounds;
 }
 
-// Scenery has one distant baseline; rooted decorations never wrap or drift independently.
-// It descends more slowly than the foreground as the camera climbs, like distant clouds.
+// Rooted scenery shares the floor's exact camera translation on both axes.
+// Atmospheric particles alone use slower parallax; vegetation must never leave its ground.
 function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark }) {
   const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
-  const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 + shiftY * .28;
+  const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 + shiftY;
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': .65,
     'desert-dunes': .65, 'enchanted-grove': .65, 'underwater-seaweed': .44 }[name];
   ctx.save(); ctx.globalAlpha = alpha * (dark ? .45 : 1);
@@ -108,13 +108,13 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark })
     const h = name === 'farm-hay' ? 58 : 95;
     const w = h * bounds[2] / bounds[3];
     for (const [i, fraction] of [.14, .88].entries()) {
-      const scale = i ? .8 : 1, x = width * fraction + shiftX * .12;
+      const scale = i ? .8 : 1, x = width * fraction - shiftX;
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
     const h = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 105, 'enchanted-grove': 180 }[name];
     const w = Math.max(width + 100, h * bounds[2] / bounds[3]);
-    ctx.drawImage(image, ...bounds, (width - w) / 2 + shiftX * .1, base - h, w, h);
+    ctx.drawImage(image, ...bounds, (width - w) / 2 - shiftX, base - h, w, h);
   }
   ctx.restore();
 }
@@ -136,14 +136,16 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
-    const size = wisp ? 240 : name === 'bubbles' ? 80 : 140;
+    const size = wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 110 : name === 'snowflakes' ? 170 : 140;
     const aspect = image.naturalHeight / image.naturalWidth;
-    ctx.globalAlpha = (wisp ? .12 : name === 'bubbles' ? .24 : .22) * (dark ? .65 : 1);
+    ctx.globalAlpha = (name === 'mist' ? .45 : name === 'enchanted-mist' ? .38 : wisp ? .12 :
+      name === 'bubbles' ? .72 : name === 'snowflakes' ? 1 : .22) * (dark ? .8 : 1);
     const span = height + size * aspect + 60;
-    for (let i = 0; i < 3; i++) {
+    const copies = name === 'snowflakes' ? 5 : name === 'bubbles' ? 4 : 3;
+    for (let i = 0; i < copies; i++) {
       const drift = reduced ? 0 : time * (name === 'bubbles' ? -5 : name === 'snowflakes' ? 7 : .6);
-      const y = (((i * height * .43 + index * 61 + shiftY * .18 + drift) % span) + span) % span - size * aspect;
-      const x = width * [.1, .72, .4][i] + shiftX * .1;
+      const y = (((i * span / copies + index * 61 + shiftY * .18 + drift) % span) + span) % span - size * aspect;
+      const x = width * [.12, .85, .4, .64, .26][i] + shiftX * .1;
       ctx.drawImage(image, x - size / 2, y, size, size * aspect);
     }
   }
