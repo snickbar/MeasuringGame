@@ -25,6 +25,6 @@ Purchases debit a profile transaction, save a receipt, and validate the question
 
 Run `npm test` for measurement/prompt checks, power-up rules, wallet idempotency, actual host scoring, and actual Worlds rewards/history. Run `npm run sync-www` to refresh the generated Android input.
 
-The isolated Chromium controller check covered the five-button row, purchases/cancellation, double taps, reroll state, waiting layout, Second Chance visibility, insufficient funds, and deadline refunds. The extended browser run was not completed. A live Firebase and native Android smoke test remains appropriate before merging, especially for interrupted-network recovery and the four-second preview.
+Run `node scripts/verify-powerups-browser.cjs` for the isolated Chromium controller check (Windows Chrome by default, or set `CHROME_PATH`). It passed the five-button row, purchases/cancellation, double taps, reroll state, waiting layout, Second Chance visibility, insufficient funds, deadline refunds, untimed Worlds purchases, four-second reveal, excluded modes, and idempotent interrupted-purchase recovery. The isolated test uses an in-memory wallet/room and drives animation frames from Chromium's virtual test clock. A live Firebase and native Android smoke test remains appropriate before merging.
 
 The separate welcome/account achievements and end-of-game coin-screen plan are not implemented by this change.
