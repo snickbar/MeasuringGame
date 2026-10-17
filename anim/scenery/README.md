@@ -17,12 +17,14 @@ Indoor walls use seamless, low-contrast geometric patterns: a warm living-room d
 
 ## Background details
 
-Six new original PNG layers add dense forest greenery, a beach sunset/ocean horizon, farm hay bales, distant sand dunes, an enchanted grove and underwater seaweed. They have fixed sizes and share the floor’s exact camera translation on both axes, so scenery remains attached during stacking and never wraps independently. Export padding is excluded from their placement bounds. Snowflakes fall at 7 pixels/second; bubbles rise at 5 pixels/second. Reduced-motion mode freezes ambient drift. The measured objects and camera are unaffected.
+Six new original PNG layers add dense forest greenery, a beach sunset/ocean horizon, farm hay bales, distant sand dunes, an enchanted grove and underwater seaweed. They share a gentle camera-driven scale and the floor’s exact camera translation on both axes, so scenery remains attached during stacking and never wraps independently. Export padding is excluded from their placement bounds. Snowflakes fall at 7 pixels/second; bubbles rise at 5 pixels/second. Reduced-motion mode freezes ambient drift. The measured objects and camera are unaffected.
 
 Open /anim/scenery-gallery.html on the local server to compare all settings with the actual renderer and individual replay buttons. Generation prompts are saved in background-details-prompts.json. Original PNGs remain unedited.
 
 Desert uses a four-stop hazy lavender, pink, peach and warm cream sky gradient, without clouds, behind large restored dunes. Atmospheric PNGs have stronger opacity and denser snow/bubble placement so their slow motion is visible behind measured objects.
 
-City adds a soft indigo skyline with lit windows, generated with the built-in image generator. Original PNG: city-skyline.png; prompt: city-skyline-prompt.md. The skyline shares the ground translation and remains attached during scrolling. Dunes use a 155-pixel backdrop height. Indoor patterns have stronger contrast and continue to repeat seamlessly at all tested phone widths.
+City adds a soft indigo skyline with lit windows, generated with the built-in image generator. Original PNG: city-skyline.png; prompt: city-skyline-prompt.md. The skyline shares the ground translation and gentle scale, remaining attached during scrolling. Dunes use a 155-pixel backdrop height. Indoor patterns have stronger contrast and continue to repeat seamlessly at all tested phone widths.
 
 Kitchen now uses kitchen-bw.png with measured surface metadata; its wall tiles have neutral charcoal coloring. The original green floor is retained as an unused source. Night pavement uses brightness filtering at full opacity, preventing the skyline from showing through the stones.
+
+Terrain zoom follows the camera through a smooth compressed curve capped at 1.35×, returning to 1× at the final comparison. Grass, repeating floor tiles and rooted background art share the scale and horizontal pivot; contact depths scale with them. The measured objects, stack positions, camera and timing remain unchanged. Tests cover scale bounds, actual tile/backdrop sizes, attachment and 60fps zoom-out continuity at three phone widths.

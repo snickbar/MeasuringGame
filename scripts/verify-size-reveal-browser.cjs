@@ -7,7 +7,7 @@ const test=`
 import {createStackAnimation,animationDuration} from '/anim/stack-anim.js';
 import {createStackAnimation as baselineCreate,animationDuration as baselineDuration} from '/anim/__baseline.js';
 import {landingStyleFor,landingPose} from '/anim/reveal-style.mjs';
-import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery,drawWallpaper,drawSceneryLayers} from '/anim/scenery.mjs';
+import {sceneryFor,SCENERY_BY_OBJECT,SETTINGS,loadScenery,drawWallpaper,drawSceneryLayers,groundScaleFor,drawSceneryFloor} from '/anim/scenery.mjs';
 import {FLOOR_DATA} from '/anim/scenery-data.mjs';
 const objects=${objects};
 const assert=(v,m)=>{if(!v)throw Error(m)},stage=document.getElementById('stage'),checks=[];
@@ -37,6 +37,11 @@ try{
  assert(SETTINGS.city.night===true&&SETTINGS.city.sky[0]==='#111d36','city is always nighttime');
  assert(!SETTINGS.desert.clouds&&SETTINGS.desert.backdrop==='desert-dunes'&&SETTINGS.desert.sky.length===4,'desert combines large dunes with hazy sky and no clouds');
  assert(sceneryFor({id:'future-object'})==='grass','unknown objects fall back to original grass');
+ assert(groundScaleFor(1,1)===1,'ground returns to original final scale');
+ let priorScale=1;
+ for(const zoom of [1,2,10,100,1e6]){
+  const scale=groundScaleFor(zoom,1);assert(scale>=priorScale&&scale<=1.35,'ground zoom is gentle and bounded');priorScale=scale;
+ }
  const wallCanvas=document.createElement('canvas');wallCanvas.width=390;wallCanvas.height=330;
  const wallCtx=wallCanvas.getContext('2d'),wallPatterns=[];
  for(const style of ['lattice','tiles','plaid']){
@@ -74,11 +79,28 @@ try{
  }
  const fallback=await loadScenery({id:'door'},'/missing-scenery/');assert(fallback.id==='grass','missing required floor falls back safely');
  const examples={grass:'ant',beach:'lighthouse',living:'door',kitchen:'refrigerator',tabletop:'paperclip',city:'taxi',forest:'deer',farm:'tractor',snow:'polar-bear',desert:'cactus',underwater:'great-white-shark',space:'saturn-rocket',enchanted:'pegasus'};
+ for(const id of ['deer','great-white-shark','taxi']){
+  const kit=await loadScenery({id},'/anim/scenery/');
+  const capture=groundScale=>{const draws=[];watched.set(wallCtx,draws);const view={width:390,height:330,floorY:290,shiftY:0,shiftX:0,groundScale,dark:false,time:0,reduced:true};drawSceneryLayers(wallCtx,kit,view);drawSceneryFloor(wallCtx,kit,FLOOR_DATA[kit.config.floor],view);return draws};
+  const a=capture(1),b=capture(1.3),floor=kit.config.floor+'.png',back=kit.config.backdrop+'.png';
+  assert(Math.abs(b.find(d=>d.image===floor).args[3]/a.find(d=>d.image===floor).args[3]-1.3)<.001,'floor artwork zooms '+id);
+  const first=a.find(d=>d.image===back),next=b.find(d=>d.image===back);
+  assert(Math.abs(next.args[7]/first.args[7]-1.3)<.001,'rooted backdrop scales with floor '+id);
+  assert(Math.abs(next.args[5]+next.args[7]-(290-4*1.3))<.001,'scaled backdrop remains grounded '+id);
+ }
  for(const [expected,id] of Object.entries(examples)){
   ctl?.destroy();ctl=createStackAnimation(stage,opts);
   const target=objects.find(o=>o.id===id),small=make('poppy-seed',.01);
   const scene=await ctl.prepare(target,small,{hMax:260,minStageH:330});
   assert(scene.target.id===id&&scene.scenery===expected,'setting uses larger object after input swap '+id);
+  const zoomback=scene.cues.find(c=>c.name==='zoomback').t;
+  let lastGroundScale=scene.getFraming(Math.max(0,zoomback-.2)).groundScale;
+  assert(lastGroundScale>1,'ground visibly zooms with close-up '+id);
+  for(let seconds=Math.max(0,zoomback-.2);seconds<=scene.duration;seconds+=1/60){
+   const scale=scene.getFraming(seconds).groundScale;
+   assert(Math.abs(scale-lastGroundScale)<.03,'ground zoom returns smoothly '+id);lastGroundScale=scale;
+  }
+  assert(scene.getFraming(scene.duration).groundScale===1,'final ground size restored '+id);
   const startDraws=[];watched.set(ctl.canvas.getContext('2d'),startDraws);scene.render(0);
   if(SETTINGS[expected].backdrop){
    const backdrop=startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.png');
@@ -87,11 +109,12 @@ try{
    scene.render(scene.cues.find(c=>c.name==='tap').t);
    const moved=later.find(d=>d.image===initial.image);
    assert(moved,'background retained through camera motion '+id);
-   // Source bounds and destination size stay fixed: no rescaling or wrapping scenery.
-   assert(initial.args[6]===moved.args[6]&&initial.args[7]===moved.args[7],'stable backdrop scale '+id);
+   // Rooted scenery and floor share the same bounded zoom.
+   const gs0=scene.getFraming(0).groundScale,gs1=scene.getFraming(scene.cues.find(c=>c.name==='tap').t).groundScale;
+   assert(Math.abs(initial.args[6]/gs0-moved.args[6]/gs1)<.001&&Math.abs(initial.args[7]/gs0-moved.args[7]/gs1)<.001,'backdrop follows gentle ground zoom '+id);
    const bottom=d=>d.args[5]+d.args[7];
-   assert(Math.abs(bottom(initial)-scene.getFraming(0).floorY+4)<.001,'scenery starts attached to floor '+id);
-   assert(Math.abs(bottom(moved)-scene.getFraming(scene.cues.find(c=>c.name==='tap').t).floorY+4)<.001,'scenery stays attached during climb '+id);
+   assert(Math.abs(bottom(initial)-scene.getFraming(0).floorY+4*gs0)<.001,'scenery starts attached to floor '+id);
+   assert(Math.abs(bottom(moved)-scene.getFraming(scene.cues.find(c=>c.name==='tap').t).floorY+4*gs1)<.001,'scenery stays attached during climb '+id);
    scene.render(0);
   }
   const floorName=SETTINGS[expected].floor;
@@ -140,7 +163,7 @@ try{
     const f=scene.getFraming(t),end=scene.getFraming(scene.duration),cloud=currentBg.find(d=>d.image==='cloud.png'),grass=currentBg.find(d=>d.image==='grass.png');
     assert(cloud,'original cloud artwork');const span=scene.stageH+160,raw=.1*scene.stageH+(f.floorY-end.floorY)*.18,cy=((raw%span)+span)%span-80;
     assert(Math.abs(cloud.args[1]+cloud.args[3]/2-cy)<1e-6,'original downward cloud parallax');
-    if(grass)assert(Math.abs(grass.args[1]-(f.floorY-grass.args[3]*127/145-6))<1e-6,'grass remains attached to ground');
+    if(grass)assert(Math.abs(grass.args[1]-(f.floorY-grass.args[3]*127/145-6*f.groundScale))<1e-6,'grass remains attached to ground');
    }
    assert(Math.abs(scene.getShown()-oldScene.getShown())<1e-6,'stacking unchanged '+name);
   }

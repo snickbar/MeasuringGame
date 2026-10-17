@@ -37,6 +37,11 @@ export const SETTINGS = {
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
 };
 const imageCache = new Map();
+// Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
+export function groundScaleFor(cameraScale, finalScale) {
+  const zoom = Math.max(0, Math.log(Math.max(cameraScale / finalScale, 1)));
+  return 1 + .35 * (1 - Math.exp(-zoom * .22));
+}
 function loadImage(url) {
   if (!imageCache.has(url)) imageCache.set(url, new Promise(resolve => {
     const image = new Image(); image.onload = () => resolve(image); image.onerror = () => resolve(null); image.src = url;
@@ -103,29 +108,30 @@ function visibleBounds(image) {
 
 // Rooted scenery shares the floor's exact camera translation on both axes.
 // Atmospheric particles alone use slower parallax; vegetation must never leave its ground.
-function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark }) {
+function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2 }) {
   const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
-  const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 + shiftY;
+  const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': .65,
     'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85 }[name];
   ctx.save(); ctx.globalAlpha = alpha * (dark ? .45 : 1);
   if (name === 'farm-hay' || name === 'underwater-seaweed') {
-    const h = name === 'farm-hay' ? 58 : 95;
+    const h = (name === 'farm-hay' ? 58 : 95) * groundScale;
     const w = h * bounds[2] / bounds[3];
     for (const [i, fraction] of [.14, .88].entries()) {
-      const scale = i ? .8 : 1, x = width * fraction - shiftX;
+      const scale = i ? .8 : 1, x = anchorX + (width * fraction - anchorX) * groundScale - shiftX;
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const h = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160 }[name];
-    const w = Math.max(width + 100, h * bounds[2] / bounds[3]);
-    ctx.drawImage(image, ...bounds, (width - w) / 2 - shiftX, base - h, w, h);
+    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160 }[name];
+    const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
+    const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
+    ctx.drawImage(image, ...bounds, center - w / 2, base - h, w, h);
   }
   ctx.restore();
 }
 
 // Atmospheric layers follow the climb with the original cloud parallax.
-export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced }) {
+export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2 }) {
   const { config, images } = kit;
   ctx.save();
   if (config.wallpaper) {
@@ -137,7 +143,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     ctx.globalAlpha = (config.texture === 'star-field' ? (config.night ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images[config.texture], x, y, tile, tile);
   }
-  drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark });
+  drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
@@ -157,15 +163,16 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   ctx.restore();
 }
 
-export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX }) {
+export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2 }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
-  const tile = 380, tileH = tile * image.naturalHeight / image.naturalWidth;
+  const tile = 380 * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
-  const inset = kit.config.floor === 'forest-floor' ? 20 : 14;
+  const inset = (kit.config.floor === 'forest-floor' ? 20 : 14) * groundScale;
   const top = floorY - tileH * meta.surface - inset;
   if (top >= height || top + tileH <= 0) return;
-  const offset = ((shiftX % tile) + tile) % tile - tile;
+  const phase = shiftX + anchorX * (1 - groundScale);
+  const offset = ((phase % tile) + tile) % tile - tile;
   ctx.save();
   if (kit.config.night) ctx.filter = 'brightness(65%)';
   for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);

@@ -20,7 +20,7 @@
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
 import { ORIENT } from './orient-data.js';
 import { landingStyleFor, landingPose } from './reveal-style.mjs';
-import { loadScenery, drawSceneryLayers, drawSceneryFloor } from './scenery.mjs';
+import { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor } from './scenery.mjs';
 import { FLOOR_DATA } from './scenery-data.mjs';
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
@@ -766,6 +766,7 @@ export function createStackAnimation(container, options = {}) {
 
       const cam = cameraAt(t);
       const c = cam.c;
+      const groundScale = groundScaleFor(c, cEnd);
       const sx0 = cam.sx0;
       const sy0 = cam.sy0;
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
@@ -780,7 +781,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion });
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
@@ -803,15 +804,17 @@ export function createStackAnimation(container, options = {}) {
       }
       // Grass along the ground, behind everything that stands on it.
       if (!kit.config.floor && grassImg.complete && grassImg.naturalWidth) {
-        const gh = GRASS_W * grassImg.naturalHeight / grassImg.naturalWidth;
-        const gTop = sy0 - gh * GRASS_DIRT - 6;
+        const grassW = GRASS_W * groundScale;
+        const gh = grassW * grassImg.naturalHeight / grassImg.naturalWidth;
+        const gTop = sy0 - gh * GRASS_DIRT - 6 * groundScale;
         if (gTop < stageH && gTop + gh > 0) {
-          const x0 = (((colCenterX - sx0) % GRASS_W) + GRASS_W) % GRASS_W - GRASS_W;
-          for (let gx = x0; gx < W; gx += GRASS_W) ctx.drawImage(grassImg, gx, gTop, GRASS_W + 1, gh);
+          const phase = colCenterX - sx0 + colCenterX * (1 - groundScale);
+          const x0 = ((phase % grassW) + grassW) % grassW - grassW;
+          for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
         }
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX,
       });
 
       // The dashed line at the big object's height.
@@ -966,7 +969,7 @@ export function createStackAnimation(container, options = {}) {
 
     return {
       unit, target, R, fast, stageH, width: W, scenery,
-      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd); return { ...targetFrame(t, cameraAt(t)), stackX: cameraAt(t).sx0, floorY: cameraAt(t).sy0 }; },
+      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd), cam = cameraAt(t); return { ...targetFrame(t, cam), stackX: cam.sx0, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,
