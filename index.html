@@ -144,9 +144,10 @@
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     transition: transform 100ms ease;
   }
-  button:active { transform: scale(.93); transition: transform 60ms ease-out; }
+  button { transition: scale 160ms cubic-bezier(.2,1.6,.4,1); }
+  button:active:not(:disabled) { scale: .94; transition: scale 60ms ease-out; }
   button.btn-bounce { animation: btnBounce 220ms ease-out; }
-  @keyframes btnBounce { 0% { transform: scale(.93); } 55% { transform: scale(1.06); } 80% { transform: scale(.98); } 100% { transform: scale(1); } }
+  @keyframes btnBounce { 0% { scale: .94; } 55% { scale: 1.075; } 80% { scale: .985; } 100% { scale: 1; } }
 
   /* Custom in-app keyboard (room code + name entry) - the inputs it drives
      are `readonly` with inputmode="none" so the OS keyboard never appears. */
@@ -2058,7 +2059,22 @@
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     padding: 6px 4px; font-size: 26px; width: 72px; box-sizing: border-box; text-align: center; color: #fff;
   }
-  .hud-timer.low { color: #ffe066; animation: pulse 0.6s infinite; }
+  .hud-timer.low { color: #fff3a8; text-shadow: 0 1px 3px #732514; animation: timerUrgency .85s ease-in-out infinite; }
+  .hud-timer.timer-paused { animation-play-state: paused; }
+  @keyframes timerUrgency {
+    0%,100% { scale: 1; filter: drop-shadow(0 0 2px #ffbb4c); }
+    50% { scale: 1.055; filter: drop-shadow(0 0 7px #ff8a35); }
+  }
+  #toolbar-coin-balance { position: relative; }
+  .coin-sparkle { position: absolute; z-index: 3; color: #ffcf35; text-shadow: 0 0 2px #8f5810; font-size: 13px; pointer-events: none; }
+  .lead-celebration { position: absolute; right: 2px; top: 1px; z-index: 4; padding: 2px 5px; border: 1px solid #b77d16; border-radius: 9px; background: #fff0a6; color: #65400b; font: 700 10px 'Fredoka',sans-serif; pointer-events: none; animation: leadLabel 2.2s ease both; }
+  @keyframes leadLabel { 0% { opacity: 0; translate: 0 5px; } 15%,80% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 0 -4px; } }
+  @media (prefers-reduced-motion: reduce) {
+    button, button:active:not(:disabled) { scale: 1; transition: none; }
+    button.btn-bounce { animation: none; }
+    .hud-timer.low { animation: none; outline: 2px solid #ffcf35; border-radius: 12px; }
+    .lead-celebration { animation: none; }
+  }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 
   .question-prompt {
@@ -2707,34 +2723,39 @@
   .pu-preview-title img { width:32px; height:32px; object-fit:contain; }
   .pu-preview { position:fixed; inset:0; z-index:19999; display:flex; align-items:center; justify-content:center; flex-direction:column; overflow:hidden; background:#fff7e8; color:#583015; font:700 22px system-ui,sans-serif; }
   .pu-stage { display:block; width:min(90vw,600px); height:auto; aspect-ratio:60 / 31; }
-  .pu-result-note { box-sizing:border-box; width:100%; min-width:0; overflow-wrap:anywhere; color:#542573; margin:0; padding:10px; border:2px solid #b983dc; border-radius:14px; background:linear-gradient(135deg,#fbf0ff,#e9d5ff); font-family:'Fredoka',sans-serif; text-align:center; container-type:inline-size; }
-  .pu-boost-accuracy { display:grid; grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr); gap:5px; align-items:center; }
-  .pu-boost-accuracy span { display:block; font-size:12px; line-height:1.3; }
-  .pu-boost-accuracy b { display:block; font-size:28px; line-height:1.2; font-weight:700; }
-  .pu-boost-accuracy .pu-boost-before { color:#795589; }
-  .pu-boost-accuracy .pu-boost-after { color:#4a186d; }
-  .pu-boost-accuracy .pu-boost-after b { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; }
+  .pu-result-note { box-sizing:border-box; width:100%; min-width:0; color:#542573; margin:0; padding:7px 8px; border:1px solid #d8bde6; border-radius:10px; background:#f7effb; font-family:'Fredoka',sans-serif; text-align:center; }
+  .pu-boost-accuracy { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px; line-height:1.25; }
+  .pu-boost-accuracy b { font-size:18px; font-weight:700; white-space:nowrap; }
+  .pu-boost-before { color:#806f88; font-weight:500 !important; }
+  .pu-boost-after { color:#4a186d; }
   .pu-result-icon { width:24px; height:24px; object-fit:contain; vertical-align:middle; flex:none; }
-  .pu-boost-arrow { font-size:24px; }
-  .pu-boost-gain { display:inline-block; background:#fff8d9; color:#643921; border-radius:10px; padding:3px 8px; margin-top:6px; font-size:13px; font-weight:600; }
-  .pu-boost-counted { margin-top:6px; font-size:13px; line-height:1.3; }
-  .pu-boost-score { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:5px; font-size:16px; font-weight:700; margin-top:6px; }
-  .dc-card.pu-boost-card { border:3px solid #b983dc; background:#fff8ed; padding:10px; }
+  .pu-boost-accuracy .pu-result-icon { width:20px; height:20px; }
+  .pu-boost-values { display:inline-flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:3px; min-width:0; }
+  .pu-boost-arrow { font-size:15px; color:#8b7397; }
+  .pu-boost-counted { margin-top:3px; font-size:12px; line-height:1.3; overflow-wrap:anywhere; color:#75637d; }
+  .dc-card.pu-boost-card { border:2px solid #d8bde6; background:#fff8ed; padding:10px; }
   .pu-boost-card .dc-res-lines { font-size:16px; margin-top:8px; }
   .pu-boost-verdict { display:flex; gap:6px; justify-content:center; align-items:center; font-size:16px; font-weight:600; margin-top:6px; }
   .pu-boost-verdict .res-mark { width:26px; height:26px; }
   .pu-boost-card .sv-gauge { margin-top:10px; }
-  .reveal-card:has(.pu-result-note) .rv-badges { position:relative; left:auto; bottom:auto; margin:8px 0; flex-wrap:wrap; }
-  .reveal-card .pu-result-note { padding:8px; }
-  .reveal-card .pu-result-icon { width:18px; height:18px; }
-  .reveal-card .pu-boost-accuracy { grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr); gap:3px; }
-  .reveal-card .pu-boost-accuracy b { font-size:clamp(18px,5vw,24px); }
-  .reveal-card .pu-boost-arrow { font-size:18px; }
-  @container (max-width:180px) {
-    .pu-boost-accuracy { grid-template-columns:1fr !important; }
-    .pu-boost-arrow { transform:rotate(90deg); }
-    .pu-boost-score { font-size:14px; }
+  .reveal-card:has(.pu-result-note) .rv-paper { z-index:1; }
+  .reveal-card > .pu-result-note { position:relative; z-index:0; margin-top:-8px; padding-top:12px; border-radius:0 0 10px 10px; }
+  .reveal-card > .pu-result-note { display:grid; grid-template-columns:minmax(24px,20%) minmax(0,1fr); column-gap:5px; align-items:center; container-type:inline-size; }
+  .reveal-card > .pu-result-note .pu-boost-accuracy { display:contents; }
+  .reveal-card > .pu-result-note .pu-boost-accuracy > .pu-result-icon { grid-column:1; grid-row:1 / span 2; width:100%; height:100%; min-height:36px; max-height:48px; }
+  .reveal-card > .pu-result-note .pu-boost-values { grid-column:2; grid-row:1; }
+  .reveal-card > .pu-result-note .pu-boost-counted { grid-column:2; grid-row:2; }
+  .reveal-card > .pu-result-note .pickedby-avatars { grid-column:1 / -1; }
+  @container (max-width:120px) {
+    .reveal-card .pu-result-note .pu-boost-values b { font-size:11px; }
+    .reveal-card .pu-boost-arrow { font-size:10px; }
+    .reveal-card .pu-boost-counted { font-size:10px; }
   }
+  .pu-result-note .pickedby-avatars { display:flex; justify-content:center; align-items:center; gap:2px; margin-top:4px; }
+  .pu-result-note .pickedby-avatars .avatar-icon { width:20px; height:20px; }
+  .reveal-card .pu-boost-accuracy b,.summary-row .pu-boost-accuracy b { font-size:16px; }
+  .reveal-card .pu-boost-accuracy,.summary-row .pu-boost-accuracy { gap:3px; }
+  .reveal-card .pu-boost-accuracy .pu-result-icon,.summary-row .pu-boost-accuracy .pu-result-icon { width:18px; height:18px; }
   .wl-stars img { display:inline-block; width:22px; height:22px; object-fit:contain; vertical-align:middle; }
   .wl-stars .off img { filter:grayscale(1); }
   .wl-progress { margin:5px 0 8px; padding:8px 10px 5px; background:rgba(255,250,237,.9); border:1px solid #e0c99d; border-radius:14px; color:#593a1f; }
@@ -3620,6 +3641,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
+  import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   var gameRewards;
   var powerups;
@@ -3627,17 +3649,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function effectiveGuess(q, raw, playerId) {
     return bufferedGuess(raw, q.answer, !!q.powerups?.used?.buffer && q.powerups.owner === playerId);
   }
-  function bufferResultNote(q, raw, playerId, points = null) {
+  function bufferResultNote(q, raw, playerId) {
     if (!q?.powerups?.used?.buffer || q.powerups.owner !== playerId) return "";
     const improved = effectiveGuess(q, raw, playerId);
     const before = roundAccuracy(raw / q.answer), after = roundAccuracy(improved / q.answer);
-    const gain = after - before;
     const fmt = n => Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
     return `<div class="pu-result-note" aria-label="Buffer result">
-      <div class="pu-boost-accuracy"><div class="pu-boost-before"><span>Before buffer</span><b>${formatAccuracy(before)}%</b></div><span class="pu-boost-arrow" aria-hidden="true">→</span><div class="pu-boost-after"><span>With buffer</span><b><img class="pu-result-icon" src="icons/powerups/percentage-buffer.png" alt="">${formatAccuracy(after)}%</b></div></div>
-      ${gain > 0.000001 ? `<div class="pu-boost-gain">+${formatAccuracy(gain)} accuracy points!</div>` : `<div class="pu-boost-gain">${improved === raw ? "You were already spot on!" : "Your guess moved closer to the answer"}</div>`}
-      <div class="pu-boost-counted">Your guess <b>${fmt(raw)}</b> → counted as <b>${fmt(improved)}</b></div>
-      ${points == null ? "" : `<div class="pu-boost-score"><img class="pu-result-icon" src="icons/powerups/percentage-buffer.png" alt=""><span>${points} point${points === 1 ? "" : "s"} with your boosted guess</span></div>`}
+      <div class="pu-boost-accuracy" aria-label="Accuracy: ${formatAccuracy(before)}% before buffer, ${formatAccuracy(after)}% with buffer"><img class="pu-result-icon" src="icons/powerups/percentage-buffer.png" alt="Buffer" title="Buffer applied"><span class="pu-boost-values"><b class="pu-boost-before">${formatAccuracy(before)}%</b><span class="pu-boost-arrow" aria-hidden="true">→</span><b class="pu-boost-after">${formatAccuracy(after)}%</b></span></div>
+      <div class="pu-boost-counted">${improved === raw ? 'Already spot on' : 'Guess'} <b>${fmt(raw)}</b>${improved === raw ? '' : ` → <b>${fmt(improved)}</b>`}</div>
     </div>`;
   }
 
@@ -4285,6 +4304,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const coinCountEl = document.getElementById("toolbar-coin-count");
   if (coinCountEl) coinCountEl.textContent = myProfile.coins > 9999 ? "9999+" : String(myProfile.coins || 0);
+  let observedCoinOwner = deviceId, observedCoinBalance = myProfile.coins || 0;
   // Set once watchMyProfile() has an active subscription - must be called
   // (if set) before ever reassigning `deviceId` and re-subscribing, or
   // signing in/out repeatedly stacks a new listener on the old path every
@@ -9103,6 +9123,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return n > COIN_DISPLAY_CAP ? COIN_DISPLAY_CAP + "+" : String(n);
   }
   function renderCoinBalance() {
+    if (observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance) {
+      sparkleCoins(toolbarCoinBalanceEl, matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+    observedCoinOwner = deviceId;
+    observedCoinBalance = myProfile.coins || 0;
     // Skipped mid-tween so the final-screen coin-fly's own count-up animation
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
@@ -11532,6 +11557,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } else {
         kickTimerEl.textContent = "";
       }
+      hudTimerEl.classList.toggle("timer-paused", !!roomState?.paused);
+      updateSubmissionMotion();
       if (!roomState || roomState.paused) return;
       if (isHost && roomState.phase === "animation") checkAnimationAdvance(currentRoomCode);
       if (roomState.phase === "countdown" && roomState.countdownEndsAt) {
@@ -12573,7 +12600,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pickedHtml = pickedBy.length
       ? `<div class="pickedby-avatars">${pickedBy.map((p) => p.avatar ? avatarHtml(p.avatar) : '<span class="pickedby-star-icon"></span>').join("")}</div>`
       : "";
-    return `<div class="rv-badges"><span class="acc-badge">${formatAccuracy(entry.accuracyPercent)}%${entry.bufferUsed ? " with buffer" : ""}</span>${pickedHtml}</div>${entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId, (entry.basePoints || 0) + (entry.doubleDownPoints || 0) + (entry.crowdFavoritePoints || 0)) : ""}`;
+    const boost = entry.bufferUsed ? bufferResultNote(roomState.currentQuestion, entry.guess, entry.playerId) : "";
+    if (boost) return boost.replace(/<\/div>\s*$/, `${pickedHtml}</div>`);
+    return `<div class="rv-badges"><span class="acc-badge">${formatAccuracy(entry.accuracyPercent)}%</span>${pickedHtml}</div>`;
   }
 
   function revealCardFinalHtml(entry) {
@@ -12745,6 +12774,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Score column / HUD top ====================
 
   let lastScoreColumnSignature = null;
+  const newLeader = createLeadMotion();
+  const submissionMotion = createSubmissionMotion({ bounce(id) {
+    const card = Array.from(scoreColEl.children).find(el => el.dataset.id === id);
+    playSubmissionBounce(card, matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }});
+  function updateSubmissionMotion() {
+    submissionMotion.update({ ...roomState, roomCode: currentRoomCode }, nowMs());
+  }
   // The round's winner keeps a gold pulse on their player card from the reveal until the next round starts.
   let roundWinnerId = null;
   function setRoundWinner(id) {
@@ -12752,7 +12789,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && c.dataset.id === id));
   }
   function renderScoreColumn(overrideScores) {
-    const signature = Object.keys(currentPlayers).map((id) => {
+    const gameMotionKey = `${currentRoomCode}:${roomState.gameId || ''}`;
+    const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
       const p = currentPlayers[id];
       const score = overrideScores ? (overrideScores[id] || 0) : (p.score || 0);
       return `${id}:${score}:${p.avatar || ""}:${p.name}`;
@@ -12766,6 +12804,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
       };
       const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, false);
+      const celebratingId = newLeader(gameMotionKey, ranked);
       scoreColEl.innerHTML = "";
       ranked.forEach((entry) => {
         const { id, score, rank, medal: medalType } = entry;
@@ -12794,6 +12833,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         `;
         scoreColEl.appendChild(box);
         fitNameToCard(box.querySelector(".name"));
+        if (id === celebratingId && roomState.phase !== "waiting") {
+          celebrateLead(box, matchMedia('(prefers-reduced-motion: reduce)').matches);
+        }
         const prevScore = previousDisplayedScores[id];
         if (prevScore !== undefined && prevScore !== score) {
           const ptsEl = box.querySelector(".pts");
@@ -13699,7 +13741,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Springy release bounce on every button, everywhere — one delegated listener.
   function triggerBtnBounce(e) {
     const btn = e.target.closest && e.target.closest("button");
-    if (!btn) return;
+    if (!btn || btn.disabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     btn.classList.remove("btn-bounce");
     void btn.offsetWidth;
     btn.classList.add("btn-bounce");
@@ -13984,6 +14026,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (data.phase === "final") {
         renderFinal();
       }
+      updateSubmissionMotion();
 
       if (isHost) {
         checkQuestionAdvance(roomCode);

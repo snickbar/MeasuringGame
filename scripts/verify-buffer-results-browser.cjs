@@ -9,36 +9,52 @@ import {bufferedGuess} from '/anim/powerups.mjs';
 import {roundAccuracy,formatAccuracy} from '/anim/accuracy.mjs';
 ${source.match(/  const MARK_LEVELS = .*;/)[0]}
 ${source.match(/  const markLevel = .*;/)[0]}
-${['effectiveGuess','bufferResultNote','markSvg','resultCardHtml','svShowResult','revealInfoHtml'].map(extract).join('\n')}
+${['effectiveGuess','bufferResultNote','markSvg','resultCardHtml','svShowResult','revealPaperHtml','revealInfoHtml'].map(extract).join('\n')}
+${source.match(/  const PAPER_STYLES = .*;/)[0]}
+const currentPlayers={me:{frameIndex:3}},handNumberHtml=n=>'<span style="position:absolute;inset:0;display:grid;place-items:center;font-size:40px">'+n+'</span>';
 const accLabel=a=>a>=99?'Spot on!':a>=90?'So close!':a>=70?'Nice guess':a>=40?'In the neighborhood':'Way off';
 const assert=(v,m)=>{if(!v)throw Error(m)},q={answer:45,powerups:{owner:'me',used:{buffer:true}}};
 const SURVIVAL_PASS=60,deviceId='me';let sv,roomState={currentQuestion:q};
 const svGaugeHtml=acc=>'<div class="dc-note">'+formatAccuracy(acc)+'% accurate · safe at 60%</div>';
-const svRunAcc=()=>null,svAccHtml=()=>'',avatarHtml=()=>'';
+ const svRunAcc=()=>null,svAccHtml=()=>'',avatarHtml=()=>'<img class="avatar-icon" src="/avatars/av01.png" alt="Player">';
 try{
  assert(!bufferResultNote(q,35,'other'),'not another player’s buffer');
  assert(!bufferResultNote({answer:45},35,'me'),'no boost when unused');
  const html=resultCardHtml(roundAccuracy(39.5/45),35,'45',null,q,'me');
  assert(!html.includes('Smart move!')&&!html.includes('10% BUFFER BOOST')&&html.includes('77.8%')&&html.includes('87.8%'),'compact boost without headline');
- assert(html.includes('39.5')&&html.includes('+10 accuracy points!'),'counted guess and gain');
+ assert(html.includes('39.5')&&!html.includes('accuracy points!')&&!html.includes('Before buffer</span>'),'counted guess without repeated labels');
  assert(!resultCardHtml(80,80,'100').includes('pu-result-note'),'ordinary results preserved');
  const exact={answer:100,powerups:{owner:'me',used:{buffer:true}}};
- const clamped=bufferResultNote(exact,95,'me');assert(clamped.includes('100%')&&clamped.includes('+5 accuracy points!'),'stop at exact');
- assert(bufferResultNote(exact,100,'me').includes('already spot on'),'no false benefit for exact guesses');
+ const clamped=bufferResultNote(exact,95,'me');assert(clamped.includes('100%')&&!clamped.includes('accuracy points!'),'stop at exact');
+ assert(bufferResultNote(exact,100,'me').includes('Already spot on'),'no false benefit for exact guesses');
  document.getElementById('wl-result').innerHTML=html;
  assert(document.querySelector('#wl-result .dc-card>.pu-result-note'),'Worlds boost inside main card');
- assert(document.querySelector('#wl-result .pu-boost-after b>.pu-result-icon'),'buffer icon beside accuracy');
+ assert(document.querySelectorAll('#wl-result .pu-boost-accuracy>.pu-result-icon').length===1,'single buffer icon beside accuracy');
  const compactHeight=document.querySelector('#wl-result .dc-card').getBoundingClientRect().height;
  assert(compactHeight<260,'compact result height: '+compactHeight);
  const preview=document.getElementById('quick-preview');
- preview.innerHTML=revealInfoHtml({guess:35,playerId:'me',accuracyPercent:roundAccuracy(39.5/45),bufferUsed:true,basePoints:5,doubleDownPoints:2,crowdFavoritePoints:0});
- assert(preview.textContent.includes('7 points with your boosted guess'),'Quick Game points attributed');
+ const bufferedEntry={guess:35,playerId:'me',accuracyPercent:roundAccuracy(39.5/45),bufferUsed:true,pickedBy:[{avatar:'av01'}]};
+ preview.innerHTML=revealPaperHtml(bufferedEntry,true,false)+revealInfoHtml(bufferedEntry);
+ assert(!preview.querySelector('.acc-badge')&&!preview.querySelector('.rv-badges'),'no duplicate accuracy pill');
+ assert(preview.querySelector('.pu-result-note .pickedby-avatars'),'picker avatars stay inside attached details');
+ for(let frame=0;frame<PAPER_STYLES.length;frame++){
+  currentPlayers.me.frameIndex=frame;
+  preview.querySelector('.rv-paper').outerHTML=revealPaperHtml(bufferedEntry,true,false);
+  const paper=preview.querySelector('.rv-paper').getBoundingClientRect(),note=preview.querySelector('.pu-result-note').getBoundingClientRect();
+  assert(note.top<paper.bottom&&note.top>paper.bottom-18,'details overlap bottom of paper style '+frame);
+ }
+ assert(revealInfoHtml({accuracyPercent:50}).includes('acc-badge'),'ordinary result pills retained');
+ assert(!preview.textContent.includes('points with your boosted guess')&&!preview.querySelector('.pu-boost-gain'),'no repeated points or gain message');
+ assert(preview.querySelector('.pu-result-note').getBoundingClientRect().height<130,'compact even in a narrow reveal column');
+ const boostIcon=preview.querySelector('.pu-boost-accuracy > .pu-result-icon');
+ assert(getComputedStyle(boostIcon).gridRow==='1 / span 2'&&boostIcon.getBoundingClientRect().height>=36,'icon spans both related rows');
  sv={q:exact,g:55,lives:3,accs:[],lossPending:false};svShowResult(null);
  assert(document.querySelector('#sv-result .dc-card>.pu-result-note'),'Survival boost inside main card');
  assert(document.getElementById('sv-result').textContent.includes('Safe with buffer!'),'Survival result explained');
  for(const host of [document.getElementById('wl-result'),document.getElementById('sv-result'),preview]){
-  assert(host.scrollWidth<=host.clientWidth,'result fits phone width');
+  assert(host.scrollWidth<=host.clientWidth+(host===preview?12:0),'result fits phone width (including avatar stamp overhang)');
   for(const el of host.querySelectorAll('.pu-result-note,.pu-boost-head,.pu-boost-accuracy,.pu-boost-counted,.pu-boost-score')){
+   if(getComputedStyle(el).display==='contents')continue;
    const r=el.getBoundingClientRect(),h=host.getBoundingClientRect();
    assert(r.left>=h.left-1&&r.right<=h.right+1,'boost stays inside card');
   }

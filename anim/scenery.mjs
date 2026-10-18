@@ -1,18 +1,19 @@
 // Scenery follows the larger object's identity. Measurements never select a biome.
 export const OBJECT_GROUPS = {
-  grass: `acorn adult-human ant blade-of-grass capybara central-park cockroach daisy duck flamingo frog giant-anthill golf-ball grain-of-sand hamster hedgehog honeybee hot-air-balloon kangaroo ladybug lawn-flamingo long-stem-rose park-bench picnic-table pigeon pinecone pogo-stick rabbit snail stork sunflower turtle wind-turbine windmill`,
-  beach: `aircraft-carrier beach-towel canoe cruise-ship fishing-boat lighthouse palm-tree pool-noodle rowboat sand-dollar starfish surfboard titanic umbrella`,
-  living: `acoustic-guitar barstool broom corgi couch dachshund domestic-cat door drum-stick folding-chair grand-piano jeans ladder lava-lamp mop pillow queen-size-bed saxophone trumpet tv-remote violin yoga-mat`,
-  kitchen: `apple baby-bottle bagel baguette banana bathtub beer-bottle blueberry boba-tea butter-stick cheerio cheese-wheel chicken-nugget chocolate-drop comb cotton-candy cream-pie cucumber dog-bowl donut drinking-straw egg foot-long-sub french-fry gummy-bear hot-dog ice-cream-cone ice-cube pancakes peanut pineapple pizza-pie pizza-slice plunger refrigerator soda-can strawberry teacup toothbrush toothpaste watermelon whiskey-glass wine-bottle wine-glass`,
-  city: `airliner ambulance anvil basketball-backboard basketball-court bicycle big-ben billboard blimp boeing-737 brooklyn-bridge burj-khalifa bus-shelter car car-tire carousel christ-statue cn-tower colosseum double-decker-bus dumpster eiffel-tower empire-state-building excavator exit-sign fighter-jet fire-extinguisher fire-hydrant fire-truck flagpole football-field garbage-truck gateway-arch gold-bar golden-gate-bridge handcuffs helicopter hot-dog-cart house-brick ice-cream-truck jumbotron leaning-tower-of-pisa license-plate locomotive london-eye mailbox manhole-cover minivan motorcycle newspaper-box notre-dame olympic-pool parking-meter phone-booth porta-potty power-line-tower robot school-bus scooter semi-truck shipping-container skateboard soccer-goal space-needle statue-of-liberty stop-sign streetlight sydney-opera-house taj-mahal taxi telephone-pole tower-crane town-fountain traffic-cone traffic-light trash-can unicycle vending-machine washington-monument water-tower`,
-  forest: `alligator angel-falls black-bear brown-bear deer gorilla green-anaconda hoover-dam komodo-dragon niagara-falls oak-tree owl panda saltwater-crocodile t-rex`,
-  farm: `barn-silo barrel corn-stalk cow horse pig scarecrow teepee tractor`,
-  snow: `mount-everest penguin polar-bear snowboard`,
-  desert: `cactus elephant giraffe grand-canyon great-pyramid hippopotamus lion moai mount-fuji mount-kilimanjaro ostrich rhinoceros stonehenge zebra`,
-  underwater: `barracuda blue-whale dolphin electric-eel giant-squid great-white-shark hammerhead-shark jellyfish killer-whale koi-fish manta-ray mariana-trench octopus pufferfish seahorse stingray swordfish whale-shark`,
-  space: `saturn-rocket space-shuttle`,
-  enchanted: `castle magic-wand pegasus`,
-  tabletop: `aa-battery baseball baseball-bat baseball-cap basketball bowling-ball bowling-pin boxing-glove button chattering-teeth checkers-piece clown-nose convenient-receipt cork cowboy-hat credit-card die domino dvd earbuds earbuds-case fake-mustache foam-finger football football-helmet frisbee game-controller grain-of-rice hairbrush hockey-puck hockey-stick human-eyelash index-card jack-in-the-box key laptop lego-brick letter-block light-bulb lottery-ticket marble paintbrush paperclip pencil penny ping-pong-ball playing-card poker-chip pool-cue poppy-seed quarter retro-cartridge rubber-chicken rubber-duck rubiks-cube scrunchie sesame-seed sheet-of-paper-a4 shuttlecock smartphone sneaker soccer-ball stethoscope tennis-ball tennis-racket toilet-paper-square tooth toy-car vinyl-record volleyball whistle whoopee-cushion wooden-block`,
+  grass: `adult-human ant backpack balloon barbecue-grill blade-of-grass bowling-ball bowling-pin bunny-ears capybara chocolate-bunny cockroach coffin confetti conversation-heart cupid cupids-arrow daisy duck easter-basket easter-egg egg-basket firecracker flamingo four-leaf-clover frisbee garden-gnome giant-anthill globe grill-spatula hamster heart hedgehog honeybee hot-air-balloon jelly-bean kangaroo ladybug lawn-flamingo locker long-stem-rose maraca marshmallow-chick mount-kilimanjaro noisemaker park-bench picnic-table pigeon pilgrim-hat pinata plastic-egg pogo-stick porta-potty rabbit school-bell shamrock skeleton snail sparkler stork suitcase sunflower teddy-bear tombstone tulip turtle uncle-sam-hat wind-turbine windmill`,
+  beach: `aircraft-carrier beach-ball beach-towel beach-umbrella canoe cooler cruise-ship fishing-boat flip-flop grain-of-sand hammock lemonade-pitcher lighthouse mermaid palm-tree pool-noodle popsicle rowboat sailboat sand-dollar sandcastle seashell starfish sunglasses sunscreen-bottle surfboard titanic umbrella`,
+  living: `acoustic-guitar bouquet broom candle clock comb corgi couch crayon dachshund disco-ball domestic-cat door drum-stick fake-mustache folding-chair grand-piano jeans jewelry-box ladder lava-lamp letter-block lunchbox mop necktie pearl-necklace pillow present queen-size-bed retro-cartridge saxophone sneaker toolbox trumpet tv-remote violin yoga-mat`,
+  kitchen: `apple baby-bottle bagel baguette banana barstool bathtub beer-bottle blueberry boba-tea breakfast-tray butter-stick casserole-dish cheerio cheese-wheel chicken-nugget chili-pepper chocolate-drop cotton-candy cream-pie cucumber dinner-roll dog-bowl donut drinking-straw egg foot-long-sub french-fry grain-of-rice gummy-bear hamburger hot-dog ice-cream-cone ice-cube ketchup-bottle mashed-potatoes napkin pancakes peanut pineapple pizza-pie pizza-slice plunger pumpkin-pie refrigerator ribs soda-can strawberry stuffing sweet-potato-casserole taco teacup toothbrush toothpaste turkey watermelon wine-bottle`,
+  tabletop: `aa-battery boxing-glove button calculator champagne-glass chattering-teeth checkers-piece chocolate chocolate-box clown-nose coffee-mug convenient-receipt cork credit-card die domino dvd earbuds earbuds-case game-controller gold-coin green-beer-mug hairbrush handbag human-eyelash index-card jack-in-the-box key laptop lego-brick light-bulb lottery-ticket marble mothers-day-card notebook paintbrush paperclip pencil pencil-case penny ping-pong-ball playing-card poker-chip pool-cue poppy-seed quarter rubber-chicken rubber-duck rubiks-cube scissors scrunchie sesame-seed sheet-of-paper-a4 smartphone stethoscope toilet-paper-square tooth toy-car valentines-card vinyl-record whiskey-glass whoopee-cushion wine-glass wooden-block`,
+  city: `airliner ambulance american-flag anvil bicycle big-ben billboard black-cat boeing-737 brooklyn-bridge burj-khalifa bus-shelter car car-tire carousel central-park christ-statue cn-tower colosseum countdown-sign double-decker-bus dumpster eiffel-tower empire-state-building excavator exit-sign fighter-jet fire-extinguisher fire-hydrant fire-truck fireworks flagpole garbage-truck gateway-arch ghost gold-bar golden-gate-bridge handcuffs helicopter hot-dog-cart house-brick ice-cream-truck kaiju leaning-tower-of-pisa license-plate locomotive london-eye mailbox manhole-cover minivan motorcycle newspaper-box notre-dame novelty-glasses olympic-pool parking-meter party-hat phone-booth power-line-tower robot school-bus scooter semi-truck shipping-container skateboard space-needle statue-of-liberty stop-sign streamer streetlight sydney-opera-house taj-mahal taxi telephone-pole times-square-ball tower-crane town-fountain traffic-cone traffic-light trash-can unicycle vending-machine washington-monument water-tower`,
+  forest: `acorn alligator angel-falls bat bigfoot black-bear brown-bear deer dwarf fall-leaf frog gorilla green-anaconda komodo-dragon leprechaun-hat niagara-falls oak-tree owl panda pinecone saltwater-crocodile t-rex werewolf witch-hat`,
+  farm: `baby-chick barn-silo barrel candy-corn carrot corn-on-the-cob corn-stalk cornucopia cow horse horseshoe pig pumpkin scarecrow teepee tractor`,
+  snow: `candy-cane christmas-stocking christmas-tree cranberry gingerbread-house mistletoe mount-everest penguin polar-bear reindeer santa-hat sleigh snow-globe snowboard yeti`,
+  desert: `cactus cowboy-hat elephant giraffe grand-canyon great-pyramid hippopotamus hoover-dam lion moai mount-fuji mummy ostrich rhinoceros sombrero stonehenge zebra`,
+  underwater: `barracuda blue-whale dolphin electric-eel fishing-rod giant-squid great-white-shark hammerhead-shark jellyfish killer-whale koi-fish kraken loch-ness-monster manta-ray mariana-trench octopus pufferfish seahorse snorkel-mask stingray swordfish whale-shark`,
+  space: `alien flying-saucer saturn-rocket space-shuttle`,
+  enchanted: `baby-dragon castle cauldron centaur cyclops fairy goblin leprechaun magic-wand minotaur pegasus phoenix pot-of-gold rainbow shillelagh troll unicorn western-dragon`,
+  stadium: `baseball baseball-bat baseball-cap baseball-glove basketball basketball-backboard basketball-court blimp foam-finger football football-field football-helmet golf-ball golf-club hockey-puck hockey-stick jumbotron shuttlecock soccer-ball soccer-goal tennis-ball tennis-racket volleyball whistle`,
 };
 export const SCENERY_BY_OBJECT = Object.create(null);
 for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of words.split(/\s+/)) {
@@ -35,6 +36,7 @@ export const SETTINGS = {
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
+  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands' },
 };
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
@@ -112,7 +114,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
   const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
   const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
-    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85 }[name];
+    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75 }[name];
   ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' ? .45 : 1);
   if (dark && name === 'farm-hay') ctx.filter = 'brightness(55%)';
   if (name === 'farm-hay' || name === 'underwater-seaweed') {
@@ -123,7 +125,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160 }[name];
+    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300 }[name];
     const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
     const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
     ctx.drawImage(image, ...bounds, center - w / 2, base - h, w, h);
