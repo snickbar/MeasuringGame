@@ -2,11 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>Size Em Up!</title>
+<script>
+// A directly opened HTML file cannot load the game's browser modules. When
+// the local launcher is running, send that file to the working browser game.
+if (location.protocol === "file:") {
+  const browserGameUrl = "http://127.0.0.1:4180/";
+  document.addEventListener("DOMContentLoaded", () => {
+    const notice = document.createElement("div");
+    notice.id = "browser-file-notice";
+    notice.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:20px;background:#faf3df;color:#493224;font:18px system-ui,sans-serif";
+    notice.innerHTML = '<section style="max-width:440px;padding:24px;border:2px solid #c5a274;border-radius:20px;background:#fffbee;text-align:center"><h1 style="font:700 28px system-ui;margin:0 0 18px">Open Size Em Up!</h1><p>Double-click <b>Play Size Em Up.cmd</b> in the game folder to play in your browser.</p><p style="font-size:15px">Opening index.html directly prevents the game from loading.</p><a href="'+browserGameUrl+'" style="display:inline-block;padding:14px 20px;border-radius:12px;background:#4d8b32;color:white;font-weight:bold;text-decoration:none">Open browser game</a></section>';
+    document.body.appendChild(notice);
+    const ready = new Image();
+    ready.onload = () => location.replace(browserGameUrl + location.search + location.hash);
+    ready.src = browserGameUrl + "__game/ready.png?check=" + Date.now();
+  }, { once: true });
+}
+</script>
 <link rel="manifest" href="manifest.json" />
 <link rel="stylesheet" href="anim/game-rewards.css" />
 <link rel="preload" as="image" href="home-watermelon.jpg" />
@@ -14,7 +31,7 @@
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
    (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
-  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg" }, id = "ants";
+  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg", underwater: "home-underwater.jpg", "toy-box": "home-toy-box.jpg" }, id = "ants";
   try {
     var sel = localStorage.getItem("mg_homeSel") || "ants";
     if (sel === "random") {
@@ -50,7 +67,7 @@
 <meta name="twitter:image" content="https://size-em-up.web.app/og-image.jpg" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="anim/fonts/fredoka.css">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
   :root {
@@ -203,7 +220,7 @@
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 19px; color: var(--brand);
   }
   .countdown-number {
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 72px; line-height: 1; color: #fff;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 72px; line-height: 1; color: #fff;
     letter-spacing: 2px;
     min-width: 150px; height: 150px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
     background: #4a3324; border-radius: 18px;
@@ -299,7 +316,7 @@
      "500"/"1,200"/"3,000" and "COINS" labels out of alignment with the Free
      card's even though the buttons below them still matched up (pinned to
      the bottom via margin-top:auto). */
-  .coin-pack-status { color: #c9542f; font-weight: 800; font-size: 11px; margin-top: 2px; }
+  .coin-pack-status { color: #c9542f; font-weight: 700; font-size: 11px; margin-top: 2px; }
   .ad-reward-btn { background: linear-gradient(180deg, #7bce5a 0%, #58a83c 100%) !important; }
   /* 2x2: the free-coins card and all 3 purchasable packs are one unified
      family of same-size tiles now, instead of a separate full-width hero
@@ -375,7 +392,7 @@
   #pack-row, #flair-pack-row, #bg-pack-row, #board-pack-shop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   /* Purchases: each kind of pack sits in its own slim rounded box with a small title inside. */
   .shop-box { margin: 10px 0 0; padding: 6px 8px 8px; border: 2px solid rgba(60,40,20,.28); border-radius: 18px; background: rgba(255,255,255,.34); }
-  .shop-box-title { margin: 0 0 6px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: .4px; text-transform: uppercase; color: #000; text-shadow: none; }
+  .shop-box-title { margin: 0 0 6px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .4px; text-transform: uppercase; color: #000; text-shadow: none; }
   .shop-box .coin-pack-card { margin: 0; }
   #bg-pack-row > .pack-card, #pack-row > .pack-card, #flair-pack-row > .pack-card { align-content: start; }
   #board-pack-shop > :last-child:nth-child(odd), #bg-pack-row > :last-child:nth-child(odd), #themed-pack-shop > :last-child:nth-child(odd) { grid-column: 1 / -1; }
@@ -437,12 +454,12 @@
   .host-bonus { position: relative; display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 8px 14px 8px 10px; border-radius: 16px; background: rgba(255,255,255,.92); border: 2px solid #ffd54f; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
   .host-bonus img { width: 52px; height: 56px; flex-shrink: 0; object-fit: contain; }
   .host-bonus-text { display: flex; flex-direction: column; min-width: 0; color: #4a2800; }
-  .host-bonus-text b { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 24px; line-height: 1; }
+  .host-bonus-text b { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; line-height: 1; }
   .host-bonus-text span { margin-top: 2px; font-size: 12px; font-weight: 700; }
   .host-unlock-shop-box.unlocked .host-perks li { color: #000; text-shadow: none; }
   .host-unlock-shop-box.unlocked .host-perks li::before { background: #2e7d32; color: #fff; }
 
-  .host-unlock-shop-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
+  .host-unlock-shop-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
   .host-unlock-shop-box p { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.4; color: #fff; }
   .host-unlock-shop-box .coin-pack-buy-btn {
     position: relative; border: 3px solid #fff; font-size: 13px; padding: 11px 4px;
@@ -453,7 +470,7 @@
   .starter-bundle-box .host-unlock-ribbon { margin-bottom: 8px; }
   .sb-top { position: relative; display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
   .sb-top img { width: 70px; height: 86px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
-  .starter-bundle-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
+  .starter-bundle-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
   .starter-bundle-box p { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.4; color: #fff; }
   .sb-grid { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
   .sb-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px 5px; border-radius: 12px; background: rgba(255,255,255,.92); color: #4a2800; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,.15); }
@@ -469,7 +486,7 @@
   .tp-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 25% -10%, rgba(255,255,255,.4), transparent 55%); }
   .tp-badge { position: relative; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; background: radial-gradient(circle at 35% 30%, #fff, rgba(255,255,255,.55) 70%); border: 3px solid rgba(255,255,255,.9); box-shadow: 0 3px 6px rgba(0,0,0,.25), inset 0 -3px 6px rgba(0,0,0,.08); }
   .tp-tag { position: absolute; top: 6px; left: 6px; padding: 2px 7px; border-radius: 999px; background: linear-gradient(180deg, #ffd54f, #f9a825); color: #4a2800; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: .04em; }
-  .tp-title { position: relative; margin: 4px 0 2px; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 14px; line-height: 1.1; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
+  .tp-title { position: relative; margin: 4px 0 2px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; line-height: 1.1; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
   .tp-desc { position: relative; margin: 0 0 6px; font-size: 10.5px; font-weight: 600; line-height: 1.3; flex: 1; }
   .tp-card .coin-pack-buy-btn { position: relative; border: 2px solid #fff; font-size: 12px; padding: 9px 2px; background: linear-gradient(180deg, #ffd54f 0%, #f9a825 100%); color: #4a2800; text-shadow: none; }
   .tp-card.unlocked .coin-pack-buy-btn:disabled { opacity: 1; filter: none; background: linear-gradient(180deg, #e8f5e9, #a5d6a7); }
@@ -539,18 +556,18 @@
   .cosm-sub-desc { min-height: 2.6em; line-height: 1.3; }
   .cosm-sub-desc[hidden] { display: none; }
   .cosm-sub-desc.cosm-equip-bar { min-height: 0; }
-  .cosm-equip-count { font-weight: 800; font-size: 1.15rem; color: #5b3a1e; background: #fff4dc; border: 2px solid #e2c48e; border-radius: 999px; padding: 4px 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .cosm-equip-count { font-weight: 700; font-size: 1.15rem; color: #5b3a1e; background: #fff4dc; border: 2px solid #e2c48e; border-radius: 999px; padding: 4px 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .cosm-equip-count.full { background: #e3f6d8; border-color: #7bc65a; color: #2f6b17; }
   .cosm-equip-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .cosm-unequip-all { font: inherit; font-weight: 700; color: #5b3a1e; background: #fff; border: 2px solid #d9c3a0; border-radius: 12px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
   .cosm-unequip-all:active { transform: scale(0.96); }
   .cosm-list { display: flex; flex-direction: column; gap: 8px; }
   /* Category headings sit on top of the shop's background pictures, so they get a faint box and bold black text to stay readable. */
-  .cosm-group-label { display: flex; align-items: center; justify-content: center; width: 66.667%; min-height: 46px; box-sizing: border-box; margin: 14px auto 0; padding: 5px 10px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; color: #000; background: rgba(255,255,255,.62); border-radius: 12px; }
+  .cosm-group-label { display: flex; align-items: center; justify-content: center; width: 66.667%; min-height: 46px; box-sizing: border-box; margin: 14px auto 0; padding: 5px 10px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; color: #000; background: rgba(255,255,255,.62); border-radius: 12px; }
   .cosm-pack-head > div:first-child { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0; min-width: 0; min-height: 46px; box-sizing: border-box; padding: 4px 8px; text-align: center; background: rgba(255,255,255,.62); border-radius: 12px; }
   .cosm-pack-head .cosm-unlock { flex: 0 0 auto; width: 41%; min-width: 0; }
   .cosm-pack-head .cosm-pack-title, .cosm-pack-head .cosm-pack-sub { color: #000; }
-  .cosm-pack-head .cosm-pack-title { font-weight: 800; }
+  .cosm-pack-head .cosm-pack-title { font-weight: 700; }
   .cosm-pack-head { display: flex; flex-direction: row; align-items: center; gap: 8px; margin-top: 14px; }
   .cosm-pack-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
   .cosm-pack-sub { font-size: 12px; color: var(--text-muted); }
@@ -788,6 +805,12 @@
   .dc-row .dc-em .res-mark { width: 38px; height: 38px; }
   .dc-lb-em { display: flex; gap: 2px; }
   .dc-lb-em .res-mark { width: 20px; height: 20px; filter: none; }
+  #monthly-content .dc-dots { flex-wrap: wrap; gap: 10px; }
+  #monthly-content .dc-dots i { width: 22px; height: 22px; flex-shrink: 0; }
+  #monthly-content .dc-marks { flex-wrap: wrap; gap: 6px; }
+  #monthly-content .dc-marks .res-mark { width: 32px; height: 32px; }
+  #monthly-content .dc-lb-em { flex-wrap: wrap; max-width: 100px; }
+  #monthly-content .dc-lb-em .res-mark { width: 16px; height: 16px; }
   .fire-ic { height: 1.1em; width: auto; vertical-align: -0.2em; }
   .lock-ic { height: 1.1em; width: auto; vertical-align: -0.2em; }
   .dc-pics { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin: 6px 0; }
@@ -1182,15 +1205,13 @@
   .fancy-hdr .hdr-text { min-width: 0; display: flex; flex-direction: column; }
   .fancy-hdr h1 { font-size: 24px; line-height: 1.15; }
   .fancy-hdr .hdr-sub { font-size: 13px; color: var(--text-muted); line-height: 1.2; }
-  .fancy-hdr.lobby-hdr #share-room-btn { margin: 0 0 0 auto; flex-shrink: 0; }
-  .fancy-hdr.lobby-hdr #qr-room-btn { margin: 0 0 0 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; height: 34px; min-width: 48px; padding: 0 12px; box-sizing: border-box; border-radius: 17px; border: 3px solid #d9a441; background: #ffe9a8; color: #000; font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 14px; }
   #share-room-btn[style*="none"] + #qr-room-btn { display: none !important; }
   #qr-overlay { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(40,25,15,.72); }
   #qr-card { width: min(88vw, 340px); box-sizing: border-box; padding: 16px; border-radius: 22px; background: #fffaf0; border: 4px solid #d9a441; box-shadow: 0 10px 30px rgba(0,0,0,.4); text-align: center; color: #000; font-family: 'Fredoka', sans-serif; font-weight: 700; }
-  #qr-card .qr-title { font-size: 22px; font-weight: 800; }
+  #qr-card .qr-title { font-size: 22px; font-weight: 700; }
   #qr-card .qr-img { margin: 10px auto; padding: 8px; background: #fff; border-radius: 12px; }
   #qr-card .qr-img svg { display: block; width: 100%; height: auto; }
-  #qr-card .qr-code { font-size: 26px; font-weight: 800; letter-spacing: 4px; }
+  #qr-card .qr-code { font-size: 26px; font-weight: 700; letter-spacing: 4px; }
   #qr-card .qr-sub { font-size: 14px; margin: 2px 0 12px; }
   #qr-card .qr-close { min-width: 120px; height: 38px; padding: 0 18px; border-radius: 19px; border: 3px solid #d9a441; background: #ffe9a8; color: #000; font: 800 15px 'Fredoka', sans-serif; }
   /* Ribbon variant */
@@ -1257,6 +1278,7 @@
   /* Warm cream cards instead of the grey panel picture, to match the rest of the app. */
   .settings-card, .howto-section { border: 3px solid #d9c29a; border-image: none; border-radius: 18px; background: linear-gradient(#fffdf6, #f8edd6); box-shadow: 0 3px 0 #c9ad7c, 0 8px 18px rgba(90,58,38,.10); color: #1a1208; }
   .settings-card { padding: 12px 14px; margin: 14px 0; color: #1a1208; }
+  body.overlay-has-return #settings-screen { padding-top: 48px; }
   .settings-card > h3 { margin-top: 0; margin-bottom: 6px; }
   .settings-card .edit-preset-settings-btn:last-child, .settings-card #settings-account-status { margin-bottom: 0; }
   .settings-profile-row { display: flex; align-items: center; gap: 14px; }
@@ -1378,10 +1400,11 @@
   .solo-lobby #host-start-btn { font-size: 14px; padding: 8px 6px; max-width: none; }
   .solo-lobby .lobby-bots-row { margin: 8px 0 0; }
   .bot-row-ctl { display: flex; align-items: center; gap: 3px; margin-left: 0; flex-shrink: 0; }
-  .bot-row-ctl .bot-btn { height: 26px; min-width: 44px; font-size: 11px; border-width: 0 9px; opacity: .45; filter: grayscale(.5); }
+  .bot-row-ctl .bot-btn { flex:0 0 44px;width:44px;height:32px;min-width:0;padding:0;font-size:10px;border-width:0 4px;opacity:.45;filter:grayscale(.5); }
   .bot-row-ctl .bot-btn.selected { opacity: 1; filter: none; transform: scale(1.06); }
-  .bot-x-btn { position: absolute; top: -8px; right: -6px; width: 22px; height: 22px; padding: 0; margin: 0; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid #8a3a2a; font-weight: 700; font-size: 12px; line-height: 1; }
-  .bot-x-btn:disabled { background: #bbb; border-color: #999; opacity: .6; }
+  .bot-x-btn { position:static;display:flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;min-width:44px;padding:0;margin:0 0 0 2px;box-sizing:border-box;border-radius:10px;background:linear-gradient(#ff7869,#df3e34);color:#fff;border:2px solid #a33329;border-image:none;box-shadow:0 2px 0 #8a3025;line-height:1;text-shadow:none; }
+  .bot-x-btn:disabled { opacity:.4;box-shadow:none; }
+  .bot-x-btn:focus-visible { outline:3px solid #287cb8;outline-offset:2px; }
   #bot-controls { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
   #bot-controls span { font-size: 14px; color: var(--text-muted); font-weight: 600; }
   .bot-btn {
@@ -1820,7 +1843,6 @@
   .bot-btn[data-difficulty="hard"] { border-image-source: url(icons/btn-bot-hard.png); }
   /* Coloured pill buttons (green = go on, red = leave, yellow = coins), as 9-slice pictures:
      the round ends keep their shape and only the middle stretches. Height comes from --pic-h. */
-  #join-continue-btn,
   #reveal-next-btn,
   #show-summary-btn,
   #next-round-btn,
@@ -1837,7 +1859,6 @@
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
-  button#join-continue-btn,
   button#reveal-next-btn,
   button#show-summary-btn,
   button#next-round-btn,
@@ -1845,7 +1866,6 @@
   button#final-home-btn,
   button#exit-confirm-yes-btn { border-image-source: url(icons/btn-bot-hard.png); }
   .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn) { border-image-source: url(icons/btn-bot-medium.png); }
-  #join-continue-btn { --pic-h: 50px; width: 100%; margin: 6px 0; font-size: 20px; }
   #exit-confirm-yes-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
   .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn):disabled { opacity: .6; filter: grayscale(.4); }
   /* The rule above resets margin to 0, which cancels the margin-top:auto that's
@@ -1992,7 +2012,7 @@
   .dd-pill {
     position: absolute; top: -13px; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap;
     padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,.88); border: 1.5px solid rgba(90,60,30,.35);
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; line-height: 1.25; color: #000; text-align: center;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; line-height: 1.25; color: #000; text-align: center;
   }
   button#double-down-btn .hand-num { padding-top: 12%; }
 
@@ -2333,7 +2353,7 @@
   }
   .coin-award-popup {
     position: fixed; z-index: 951; transform: translateX(-50%);
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: #d9a441;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #d9a441;
     text-shadow: 0 2px 0 rgba(0,0,0,.15), 0 0 8px rgba(217,164,65,.5);
     pointer-events: none; animation: coinAwardPopup 1.4s ease-out forwards;
   }
@@ -2597,7 +2617,7 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden; text-overflow: ellipsis; overflow-wrap: break-word;
   }
-  .final-avg-pct { font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); flex-shrink: 0; white-space: nowrap; }
+  .final-avg-pct { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); flex-shrink: 0; white-space: nowrap; }
   .final-row-top .pts { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: var(--pts); flex-shrink: 0; margin-left: auto; }
   .final-row-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 13px; color: var(--text-muted); font-weight: 600; }
   .final-bonus-note { font-size: 13px; font-weight: 700; color: var(--green); }
@@ -2637,20 +2657,20 @@
   .summary-row .avatar { font-size: 20px; flex-shrink: 0; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; }
   .summary-row .avatar .avatar-icon { width: 100%; height: 100%; }
   .summary-row .name {
-    flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 800; color: #000; line-height: 1.1;
+    flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 700; color: #000; line-height: 1.1;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .summary-row-body { display: flex; align-items: center; gap: 4px; }
   .summary-row .breakdown { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 3px; }
   .summary-row .roundpts {
-    flex: 0 0 auto; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 800; line-height: .9; color: #000;
+    flex: 0 0 auto; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; line-height: .9; color: #000;
     font-size: 34px; opacity: 0; animation: popIn 320ms ease-out both;
   }
   .summary-row-body.lines-2 .roundpts { font-size: 56px; }
   .summary-row-body.lines-3 .roundpts { font-size: 72px; }
   .summary-row .roundpts.zero { color: var(--text-faint); }
   .breakdown-chip {
-    font-family: 'Fredoka', sans-serif; font-weight: 800; font-size: 12px; line-height: 1.2; padding: 2px 8px; color: #000; text-align: center;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 12px; line-height: 1.2; padding: 2px 8px; color: #000; text-align: center;
     background: rgba(255,255,255,.6); border: 1.5px solid rgba(90,60,30,.25); border-radius: 12px;
     opacity: 0; animation: popIn 320ms ease-out both;
   }
@@ -2678,7 +2698,7 @@
     display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px;
     box-sizing: border-box; width: var(--pill-w, 66.667%); max-width: 100%; min-height: 40px;
     margin-left: auto; margin-right: auto; padding: 5px 14px; text-align: center;
-    font-family: 'Fredoka', sans-serif; font-weight: 800; color: #000; text-shadow: none;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; color: #000; text-shadow: none;
     background: rgba(255,255,255,.62); border: 0; border-radius: 12px;
   }
   .shop-section-label { --pill-w: 66.667%; margin-top: 16px; margin-bottom: 0; font-size: 14px; }
@@ -2695,7 +2715,7 @@
 
   /* Objects not found yet: a paper-like diagonal-stripe fill instead of see-through, with readable text. */
   .items-row.locked { background: repeating-linear-gradient(135deg, #e9e0cf 0, #e9e0cf 7px, #f1eadb 7px, #f1eadb 14px); border-color: #cdbd9f; }
-  .items-row.locked .items-name { opacity: 1; color: #6b5a45; font-weight: 800; }
+  .items-row.locked .items-name { opacity: 1; color: #6b5a45; font-weight: 700; }
 
   /* Contextual power-ups stay above the player cards, beside the objects/keypad. */
   .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
@@ -2758,12 +2778,14 @@
   .reveal-card .pu-boost-accuracy .pu-result-icon,.summary-row .pu-boost-accuracy .pu-result-icon { width:18px; height:18px; }
   .wl-stars img { display:inline-block; width:22px; height:22px; object-fit:contain; vertical-align:middle; }
   .wl-stars .off img { filter:grayscale(1); }
+  #worlds-content .wl-run-title { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:4px 8px; margin:3px 0 5px; font-size:18px; line-height:1.25; }
+  .wl-level-badge { flex-shrink:0; padding:3px 8px; border:1px solid rgba(171,133,78,.35); border-radius:12px; background:rgba(255,253,246,.85); font-size:12px; color:#6b3a05; }
   .wl-progress { margin:5px 0 8px; padding:8px 10px 5px; background:rgba(255,250,237,.9); border:1px solid #e0c99d; border-radius:14px; color:#593a1f; }
   .wl-progress-heading { display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:13px; line-height:1.25; }
   .wl-progress-heading strong { color:#6a328c; font-size:16px; }
-  .wl-progress-scale { position:relative; height:12px; margin:8px 0 22px; background:linear-gradient(90deg,#f2c4c0 0 60%,#f5d6b1 60% 80%,#cce4b6 80% 92%,#c6ddf8 92% 100%); border-radius:8px; }
-  .wl-progress-fill { display:block; position:relative; width:100%; height:100%; border-radius:8px; background:linear-gradient(90deg,#e95048 0 60%,#f39432 60% 80%,#65b94e 80% 92%,#3999ef 92% 100%); clip-path:inset(0 calc(100% - var(--accuracy,0%)) 0 0 round 8px); transition:clip-path .3s ease; }
-  .wl-progress.three-stars .wl-progress-fill::after { content:''; position:absolute; left:92%; right:0; top:0; bottom:0; background:linear-gradient(110deg,transparent 25%,#fff 48%,transparent 70%); background-size:300% 100%; animation:wlStarShine 2.4s ease-in-out infinite; }
+  .wl-progress-scale { position:relative; height:12px; margin:8px 0 22px; background:linear-gradient(90deg,#f2c4c0 0 60%,#f5d6b1 60% 75%,#cce4b6 75% 90%,#c6ddf8 90% 100%); border-radius:8px; }
+  .wl-progress-fill { display:block; position:relative; width:100%; height:100%; border-radius:8px; background:linear-gradient(90deg,#e95048 0 60%,#f39432 60% 75%,#65b94e 75% 90%,#3999ef 90% 100%); clip-path:inset(0 calc(100% - var(--accuracy,0%)) 0 0 round 8px); transition:clip-path .3s ease; }
+  .wl-progress.three-stars .wl-progress-fill::after { content:''; position:absolute; left:90%; right:0; top:0; bottom:0; background:linear-gradient(110deg,transparent 25%,#fff 48%,transparent 70%); background-size:300% 100%; animation:wlStarShine 2.4s ease-in-out infinite; }
   .wl-progress.three-stars .wl-progress-marker:last-child img { filter:drop-shadow(0 0 3px #4daaff); }
   @keyframes wlStarShine { 0%,15% { background-position:150% 0; } 75%,100% { background-position:-100% 0; } }
   .wl-progress-marker { position:absolute; top:-6px; transform:translateX(-50%); text-align:center; }
@@ -2802,6 +2824,9 @@
     :is(#worlds-content,#survival-content) .dc-sub { margin-bottom:6px; }
   }
 </style>
+<link rel="stylesheet" href="anim/game-setup.css">
+<link rel="stylesheet" href="anim/settings-page.css">
+<link rel="stylesheet" href="anim/cozy-system.css">
 </head>
 <body>
 
@@ -3090,27 +3115,23 @@
 </div>
 
 <div id="settings-screen" class="screen">
-  <div class="screen-lock">
   <button id="settings-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header fancy-hdr">
-    <img class="hdr-badge" src="icons/toolbar-settings.png" alt="">
-    <div class="hdr-text"><h1>Settings</h1><span class="hdr-sub">Your profile and game options</span></div>
-  </div>
-  </div>
 
   <div class="settings-card" id="settings-profile-card">
     <h3>Profile</h3>
     <div class="settings-profile-row">
-      <button id="settings-avatar-big" type="button" class="settings-avatar-big" aria-label="Change default avatar" aria-expanded="false"></button>
+      <div class="settings-avatar-wrap"><button id="settings-avatar-big" type="button" class="settings-avatar-big" aria-label="Change default avatar" aria-expanded="false"></button><small>Change avatar</small></div>
       <div class="settings-profile-name">
         <label for="settings-name-input">Default name</label>
-        <input id="settings-name-input" placeholder="Your name" maxlength="12" />
-        <span id="settings-name-status" class="settings-profile-hint" style="color:#b3261e"></span>
-        <span class="settings-profile-hint">Tap your avatar to change it</span>
+        <div class="settings-name-row"><input id="settings-name-input" placeholder="Your name" maxlength="12" readonly inputmode="none" autocomplete="off" aria-describedby="settings-name-status" /><button id="settings-name-edit" type="button" class="settings-cream-btn" aria-controls="settings-name-editor" aria-expanded="false">Edit</button></div>
+        <span id="settings-name-status" class="settings-profile-hint" role="status" style="color:#b3261e"></span>
+        <span class="settings-profile-hint">Used when you start a new game.</span>
       </div>
     </div>
-    <button id="edit-preset-settings-btn" type="button" class="edit-preset-settings-btn settings-preset-btn">Custom Game Presets</button>
-    <p class="settings-profile-hint settings-preset-hint">Your saved timer, rounds and item settings for new games</p>
+    <div id="settings-name-editor" hidden>
+      <div class="settings-keyboard-tools"><span>Type your name</span><button id="settings-name-clear" type="button" class="settings-cream-btn">Clear</button><button id="settings-name-cancel" type="button" class="settings-cream-btn">Cancel</button></div>
+      <div id="settings-name-keyboard" class="custom-kbd"></div>
+    </div>
     <div id="settings-avatar-picker" hidden>
       <h3>Default avatar</h3>
       <div id="settings-avatar-grid"></div>
@@ -3119,7 +3140,9 @@
 
   <div class="settings-card">
   <h3>Account</h3>
-  <button id="settings-sign-in-btn" type="button" class="edit-preset-settings-btn google-account-btn" style="display:none;">
+  <p id="settings-account-label" class="settings-account-label">Playing as a guest</p>
+  <p id="settings-account-hint" class="settings-account-hint">Your progress is saved on this device.</p>
+  <button id="settings-sign-in-btn" type="button" class="settings-cream-btn google-account-btn" style="display:none;">
     <svg class="google-g-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
     <span>Sign in with Google</span>
   </button>
@@ -3128,7 +3151,7 @@
       <svg class="google-g-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       <span id="settings-signed-in-email-text"></span>
     </p>
-    <button id="settings-sign-out-btn" type="button" class="edit-preset-settings-btn">Sign out</button>
+    <button id="settings-sign-out-btn" type="button" class="settings-cream-btn">Sign out</button>
   </div>
   <p id="settings-account-status"></p>
   </div>
@@ -3136,10 +3159,13 @@
   <div class="settings-card" id="settings-game-card">
     <h3>Game</h3>
     <div id="settings-toggles-panel">
-      <label>Sound effects <button id="settings-sound-toggle" type="button" class="icon-toggle-btn"></button></label>
+      <label>Sound effects <span class="settings-sound-control"><span id="settings-sound-label">On</span><button id="settings-sound-toggle" type="button" class="icon-toggle-btn" aria-label="Sound effects"></button></span></label>
     </div>
-    <button id="settings-howto-btn" type="button" class="edit-preset-settings-btn howto-banner-btn">How to Play</button>
-    <p class="settings-profile-hint settings-preset-hint">Rules, scoring and what everything in the shop does</p>
+    <label class="comfort-control">Effects volume <input id="effects-volume" type="range" min="0" max="100" step="5" aria-label="Sound effects volume"></label>
+    <label class="comfort-control">Animation <select id="motion-choice"><option value="auto">Use device setting</option><option value="reduce">Reduced motion</option><option value="full">Full animation</option></select></label>
+    <label class="comfort-control">Menu text <select id="text-choice"><option value="normal">Standard</option><option value="large">Larger</option></select></label>
+    <button id="edit-preset-settings-btn" type="button" class="settings-nav-row"><span>Game presets<small>Saved timer, rounds, and object rules</small></span></button>
+    <button id="settings-howto-btn" type="button" class="settings-nav-row"><span>How to Play<small>Rules, scoring, and power-ups</small></span></button>
   </div>
 
 
@@ -3176,9 +3202,9 @@
   </div>
 
   <div class="settings-card" id="settings-about-card">
-    <h3>About</h3>
-    <button id="settings-privacy-btn" type="button" class="edit-preset-settings-btn">Privacy Policy</button>
-    <p class="settings-profile-hint settings-preset-hint">Size Em Up! &middot; version 1.0</p>
+    <div class="settings-about-row"><h3>About</h3>
+    <button id="settings-privacy-btn" type="button">Privacy Policy</button></div>
+    <p class="settings-profile-hint settings-preset-hint">Size Em Up! &middot; Test build 2026.10.18 · Game polish</p>
   </div>
 </div>
 
@@ -3190,7 +3216,7 @@
   </div>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
-    <p>Tap <b>Solo Game</b> from the home screen to practice by yourself - no room code, no waiting on anyone. It starts you off with 3 Medium bots. You can add more bots, remove extras, or choose Easy, Medium or Hard in the lobby before you begin. Solo games are always free, even before Host Party is unlocked.</p>
+    <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Easy, Medium or Hard in the lobby before you begin. Solo games are always free, even before Host Party is unlocked.</p>
     <p>Round XP depends on your opponents: <b>Easy ×0.8</b>, <b>Medium or people ×1.1</b>, and <b>Hard ×1.2</b>. Mixed lobbies average the opponents who submitted a guess. XP already earned stays unchanged. Game-completion XP and Daily, Worlds, Monthly and Survival XP keep their usual rates.</p>
   </div></details>
 
@@ -3253,11 +3279,11 @@
   </div></details>
 
   <details class="howto-section"><summary>Tiebreakers</summary><div class="howto-body">
-    <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever has the higher average accuracy; if that's tied too, they stay tied there as well.</p>
+    <p>During the game, tied scores just stay tied - same medal, no resolution needed. In the <b>final results</b>, a tied score is broken by whoever has the higher average accuracy; if that's tied too, both receive the win. Completed rounds count toward stats and object discovery even if you leave early; only a finished game counts as a game played or won.</p>
   </div></details>
 
   <details class="howto-section"><summary>Objects &amp; collections</summary><div class="howto-body">
-    <p>Tap the <b>Objects</b> icon in the top toolbar to see every object that can show up in a round, grouped alphabetically - ones you haven't seen yet show as a locked "????" row. The stat boxes at the top track how many objects you've discovered and how many different <b>pairings</b> you've been asked to compare, with a <b>Hide Undiscovered</b> toggle to see only what you've found so far.</p>
+    <p>Open <b>Stats &gt; Objects</b> from the top toolbar to see every object that can show up in a round, grouped alphabetically - ones you haven't seen yet show as a locked "????" row. The stat boxes at the top track how many objects you've discovered and how many different <b>pairings</b> you've been asked to compare, with a <b>Hide Undiscovered</b> toggle to see only what you've found so far.</p>
     <p>The <b>Monthly</b> tab (next to Objects) holds seasonal items, like Christmas or Halloween props, in a pack for each month. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Yearly Object Sampler Pack) from the Shop to keep it in rotation all year.</p>
     <p>Your avatar collection works the same way: open it from the <b>View All Avatars</b> button on the Shop's Avatars tab to see every avatar grouped by rarity, with a Discovered count and its own Hide Undiscovered toggle.</p>
   </div></details>
@@ -3268,27 +3294,30 @@
   </div></details>
 
   <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
-    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). <b>Flairs</b> are the burst of effects (hearts, fireworks, snow...) that plays around your card for everyone to see when you win a round - equip one from the Shop's Cosmetics tab. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). <b>Flairs</b> are the burst of effects (hearts, fireworks, snow...) that plays around your card for everyone to see when you win a round - equip one from <b>Style</b>. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
     <p>Play immediately as a guest. <b>Welcome to Size Em Up!</b> automatically gives you <b>100 coins</b> when your profile is established. Connecting Google is optional: the separate <b>Account Connected</b> achievement automatically adds <b>50 coins</b> the first time. Both appear in Awards and pay only once.</p>
     <p>Signing in with <b>Google</b> (Settings &gt; Account) saves your coins, avatars, and unlocks to your account instead of just this device, so you can pick up where you left off on a new phone. A new account inherits your guest progress and reward history. If the account already has progress, its saved progress takes precedence. Reopening the game or signing in again does not repeat either starter reward.</p>
   </div></details>
 
+  <details class="howto-section"><summary>Progress and playing again</summary><div class="howto-body"><p>Use <b>Stats</b> for Games won, finished games, win rate, accuracy and records. Choose a mode to see Worlds stars, Survival best runs, or Daily streaks. Accuracy includes power-up adjustments. Accuracy averages include submitted guesses; missed submissions are counted separately.</p><p>Worlds award stars above <b>60%, 75%, and 90%</b>. Earn <b>13 stars</b> in a World to claim its home screen in Awards or on the World page, and all 15 stars for mastery. Survival keeps you safe at 60% or above. Worlds and Survival offer Resume for unfinished attempts.</p><p>In a party lobby, mark yourself <b>Ready</b> and check the room rules. After the final results, each player collects their own coins. The host can then start a rematch with the same group or leave.</p><p>Settings offers effects volume, reduced motion and larger menu text. Object search uses the game's keyboard; tap Done to minimize it.</p></div></details>
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
-    <p>Your score becomes coins when a game ends, win or lose. Open the <b>Shop</b> from the toolbar to spend them, across three tabs:</p>
-    <p><b>Purchases</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
+    <p>Your score becomes coins when a game ends, win or lose. Open <b>Shop</b> for coins, offers, and monthly packs. Open <b>Style</b> for avatars, reactions, flairs, boards, backgrounds, and home screens:</p>
+    <p><b>Shop</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
     <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
-    <p><b>Cosmetics</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
+    <p><b>Style</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
   </div></details>
 </div>
 
-<div id="create-screen" class="screen">
+<div id="create-screen" class="screen cozy-setup" data-setup-mode="party">
   <button id="create-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="setup-header">
-    <button id="create-room-btn">Create Room</button>
+  <div class="cozy-setup-header create-action-header">
+    <button id="create-room-btn" type="button">Create Room</button>
   </div>
+  <p id="create-settings-summary" class="cozy-settings-summary"></p>
+  <p id="create-status" aria-live="polite"></p>
 
   <div class="preset-box">
-    <div class="preset-box-label">Preset settings</div>
+    <div class="preset-box-label">Your presets</div>
     <div id="create-preset-row" class="preset-slot-row">
       <button type="button" class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></button>
       <button type="button" class="preset-slot-btn" data-slot="2"><img src="icons/preset-2.png" alt=""><span class="preset-slot-label"></span></button>
@@ -3298,24 +3327,15 @@
 
   <div id="settings-panel">
     <div class="settings-group">
-      <div class="settings-eyebrow">Host</div>
-      <label class="settings-row-stack">If host disconnects
-        <div id="host-mode-controls" class="hostmode-row">
-          <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
-          <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
-        </div>
-      </label>
-    </div>
-    <div class="settings-group">
-      <div class="settings-eyebrow">Round</div>
-      <label>Timer (sec)
+      <h2 class="settings-eyebrow">Round settings</h2>
+      <label><span class="cozy-setting-label">Timer<small>Seconds to guess</small></span>
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
           <input id="setting-timer" type="number" min="10" max="90" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
         </span>
       </label>
-      <label>Rounds
+      <label><span class="cozy-setting-label">Rounds<small>Questions in the game</small></span>
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-rounds" data-step="-1">&minus;</button>
           <input id="setting-rounds" type="number" min="1" max="20" readonly />
@@ -3324,20 +3344,20 @@
       </label>
     </div>
     <div class="settings-group">
-      <div class="settings-eyebrow">Gameplay</div>
-      <label class="settings-row-stack">Item selection
+      <h2 class="settings-eyebrow">Play your way</h2>
+      <label class="settings-row-stack">Objects
         <span class="itemmode-row">
           <button type="button" id="setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
           <button type="button" id="setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
         </span>
       </label>
-      <label class="settings-row-stack">Round advance
+      <label class="settings-row-stack">Next round
         <span class="itemmode-row">
-          <button type="button" id="setting-auto-advance-auto" class="itemmode-btn" data-mode="auto">Auto Mode</button>
-          <button type="button" id="setting-auto-advance-manual" class="itemmode-btn" data-mode="manual">Manual Host Mode</button>
+          <button type="button" id="setting-auto-advance-auto" class="itemmode-btn" data-mode="auto">Auto</button>
+          <button type="button" id="setting-auto-advance-manual" class="itemmode-btn" data-mode="manual">Manual</button>
         </span>
       </label>
-      <label>Auto-advance delay (sec)
+      <label><span class="cozy-setting-label">Wait between rounds<small>Seconds after the results</small></span>
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-auto-advance-seconds" data-step="-1">&minus;</button>
           <input id="setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
@@ -3345,70 +3365,29 @@
         </span>
       </label>
     </div>
-  </div>
-
-  <p id="create-status"></p>
-</div>
-
-<div id="preset-settings-screen" class="screen">
-  <button id="preset-settings-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header fancy-hdr">
-    <img class="hdr-badge" src="icons/toolbar-settings.png" alt="">
-    <div class="hdr-text"><h1>Game Presets</h1><span class="hdr-sub">Saved timer, rounds and item rules</span></div>
-  </div>
-
-  <div id="preset-settings-panel">
-    <div class="settings-group">
-      <div class="settings-eyebrow">Host</div>
+    <details class="cozy-host-settings" id="host-settings-card">
+      <summary>Host disconnect settings</summary>
       <label class="settings-row-stack">If host disconnects
-        <div id="preset-host-mode-controls" class="hostmode-row">
-          <button type="button" class="hostmode-btn selected" data-mode="reassign">Give another player host</button>
-          <button type="button" class="hostmode-btn" data-mode="reclaim">Save my host spot</button>
+        <div id="host-mode-controls" class="hostmode-row">
+          <button type="button" class="hostmode-btn selected" data-mode="reassign">Pass host</button>
+          <button type="button" class="hostmode-btn" data-mode="reclaim">Keep my spot</button>
         </div>
       </label>
-    </div>
-    <div class="settings-group">
-      <div class="settings-eyebrow">Round</div>
-      <label>Timer (sec)
-        <span class="stepper">
-          <button type="button" class="stepper-btn minus" data-for="preset-setting-timer" data-step="-5">&minus;</button>
-          <input id="preset-setting-timer" type="number" min="10" max="90" readonly />
-          <button type="button" class="stepper-btn plus" data-for="preset-setting-timer" data-step="5">+</button>
-        </span>
-      </label>
-      <label>Rounds
-        <span class="stepper">
-          <button type="button" class="stepper-btn minus" data-for="preset-setting-rounds" data-step="-1">&minus;</button>
-          <input id="preset-setting-rounds" type="number" min="1" max="20" readonly />
-          <button type="button" class="stepper-btn plus" data-for="preset-setting-rounds" data-step="1">+</button>
-        </span>
-      </label>
-    </div>
-    <div class="settings-group">
-      <div class="settings-eyebrow">Gameplay</div>
-      <label class="settings-row-stack">Item selection
-        <span class="itemmode-row">
-          <button type="button" id="preset-setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
-          <button type="button" id="preset-setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
-        </span>
-      </label>
-      <label class="settings-row-stack">Round advance
-        <span class="itemmode-row">
-          <button type="button" id="preset-setting-auto-advance-auto" class="itemmode-btn" data-mode="auto">Auto Mode</button>
-          <button type="button" id="preset-setting-auto-advance-manual" class="itemmode-btn" data-mode="manual">Manual Host Mode</button>
-        </span>
-      </label>
-      <label>Auto-advance delay (sec)
-        <span class="stepper">
-          <button type="button" class="stepper-btn minus" data-for="preset-setting-auto-advance-seconds" data-step="-1">&minus;</button>
-          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
-          <button type="button" class="stepper-btn plus" data-for="preset-setting-auto-advance-seconds" data-step="1">+</button>
-        </span>
-      </label>
-    </div>
+      <p class="cozy-setting-hint">Pass host lets another player keep the party going. Keep my spot reserves your role while you reconnect.</p>
+    </details>
   </div>
 
-  <h3>Save or load a preset slot</h3>
+</div>
+
+<div id="preset-settings-screen" class="screen cozy-setup">
+  <button id="preset-settings-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div class="cozy-setup-header">
+    <img src="icons/toolbar-settings.png" alt="">
+    <div><h1>Game Presets</h1><p>Save your favorite way to play</p></div>
+  </div>
+
+  <section class="cozy-preset-card">
+  <h2>Your presets</h2>
   <div id="preset-edit-slot-row" class="preset-slot-row">
     <div class="preset-slot-col">
       <div class="preset-slot-btn" data-slot="1"><img src="icons/preset-1.png" alt=""><span class="preset-slot-label"></span></div>
@@ -3432,6 +3411,61 @@
       </div>
     </div>
   </div>
+  </section>
+
+  <div id="preset-settings-panel">
+    <div class="settings-group">
+      <h2 class="settings-eyebrow">Round settings</h2>
+      <label><span class="cozy-setting-label">Timer<small>Seconds to guess</small></span>
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="preset-setting-timer" data-step="-5">&minus;</button>
+          <input id="preset-setting-timer" type="number" min="10" max="90" readonly />
+          <button type="button" class="stepper-btn plus" data-for="preset-setting-timer" data-step="5">+</button>
+        </span>
+      </label>
+      <label><span class="cozy-setting-label">Rounds<small>Questions in the game</small></span>
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="preset-setting-rounds" data-step="-1">&minus;</button>
+          <input id="preset-setting-rounds" type="number" min="1" max="20" readonly />
+          <button type="button" class="stepper-btn plus" data-for="preset-setting-rounds" data-step="1">+</button>
+        </span>
+      </label>
+    </div>
+    <div class="settings-group">
+      <h2 class="settings-eyebrow">Play your way</h2>
+      <label class="settings-row-stack">Objects
+        <span class="itemmode-row">
+          <button type="button" id="preset-setting-item-anything" class="itemmode-btn" data-mode="anything">Anything goes</button>
+          <button type="button" id="preset-setting-item-relative" class="itemmode-btn" data-mode="relative">Keep it relative</button>
+        </span>
+      </label>
+      <label class="settings-row-stack">Next round
+        <span class="itemmode-row">
+          <button type="button" id="preset-setting-auto-advance-auto" class="itemmode-btn" data-mode="auto">Auto</button>
+          <button type="button" id="preset-setting-auto-advance-manual" class="itemmode-btn" data-mode="manual">Manual</button>
+        </span>
+      </label>
+      <label><span class="cozy-setting-label">Wait between rounds<small>Seconds after the results</small></span>
+        <span class="stepper">
+          <button type="button" class="stepper-btn minus" data-for="preset-setting-auto-advance-seconds" data-step="-1">&minus;</button>
+          <input id="preset-setting-auto-advance-seconds" type="number" min="1" max="15" readonly />
+          <button type="button" class="stepper-btn plus" data-for="preset-setting-auto-advance-seconds" data-step="1">+</button>
+        </span>
+      </label>
+    </div>
+    <details class="cozy-host-settings" id="preset-host-settings-card">
+      <summary>Host disconnect settings</summary>
+      <label class="settings-row-stack">If host disconnects
+        <div id="preset-host-mode-controls" class="hostmode-row">
+          <button type="button" class="hostmode-btn selected" data-mode="reassign">Pass host</button>
+          <button type="button" class="hostmode-btn" data-mode="reclaim">Keep my spot</button>
+        </div>
+      </label>
+      <p class="cozy-setting-hint">Pass host lets another player keep the party going. Keep my spot reserves your role while you reconnect.</p>
+    </details>
+  </div>
+
+
 </div>
 
 <div id="preset-save-overlay">
@@ -3448,10 +3482,13 @@
 <div id="join-screen" class="screen">
   <button id="join-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div class="setup-header">
-    <div id="join-game-title" role="heading" aria-level="1">Join Game</div>
+    <button id="join-game-title" type="button">Join Game</button>
   </div>
 
-  <input id="code-input" placeholder="Room code" style="text-transform: uppercase;" readonly inputmode="none" />
+  <div class="join-code-row">
+    <input id="code-input" aria-label="Room code" placeholder="Room code" style="text-transform: uppercase;" readonly inputmode="none" />
+    <button id="scan-room-qr-btn" type="button"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2h7v7H2zM15 2h7v7h-7zM2 15h7v7H2z"/><path d="M15 13v4h-3v5h5v-3h5v-6h-3M19 22h3M12 2v8M2 12h8"/></g></svg><span>Scan QR</span></button>
+  </div>
   <div id="code-keyboard" class="custom-kbd"></div>
 
   <div id="recent-rooms-section" style="display:none;">
@@ -3459,8 +3496,7 @@
     <div id="recent-rooms-list"></div>
   </div>
 
-  <p id="join-status"></p>
-  <button id="join-continue-btn">Continue</button>
+  <p id="join-status" role="status" aria-live="polite"></p>
 </div>
 
 <div id="name-avatar-screen" class="screen">
@@ -3487,9 +3523,12 @@
 <div id="lobby-screen" class="screen">
   <div class="screen-lock">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="screen-header fancy-hdr lobby-hdr">
-    <img class="hdr-badge" src="icons/toolbar-home.png" alt="">
-    <div class="hdr-text"><h1><span id="lobby-title-room">Room: <span id="room-code-display"></span></span><span id="lobby-title-solo" style="display:none;">Solo Game</span></h1></div>
+  <div class="players-header lobby-start-row">
+    <button id="host-start-btn" type="button" style="display:none;">Start game</button>
+  </div>
+  <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
+  <div class="lobby-room-box">
+    <span id="lobby-title-room">Room: <strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
     <button id="qr-room-btn" type="button" class="back-btn">QR</button>
   </div>
@@ -3499,9 +3538,6 @@
     <button id="host-unlock-btn" type="button">Unlock for $4.99 &middot; One time</button>
   </div>
 
-  <div class="players-header">
-    <button id="host-start-btn" type="button" style="display:none;">Everyone is ready, let's go!</button>
-  </div>
   <div class="lobby-bots-row">
     <div id="bot-controls">
       <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium">+ Add bot</button>
@@ -3643,6 +3679,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
+  import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
+  import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
+  import { createCareerLedger, MODE_NAMES, MODE_CODE } from "./anim/career-ledger.mjs";
+  import { mountRoomQr } from "./anim/room-qr.mjs";
+  const TEST_BUILD=true;
+  var careerLedger;
   var gameRewards;
   var powerups;
   const powerupSeen = new Set();
@@ -4381,6 +4423,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderBackgroundPackShop();
     renderStarterBundle();
     syncHomeScreenPrefs();
+    if(careerScreenEl?.classList.contains('active'))renderCareerStats();
+    if(worldsScreenEl?.classList.contains('active')&&['list','world','done'].includes(wl.phase))renderWorlds();
+    if(survivalScreenEl?.classList.contains('active')&&sv&&['intro','over'].includes(sv.phase))renderSurvival();
     powerups?.render();
   }
   function watchMyProfile() {
@@ -4433,6 +4478,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           seenObjects: { ...(data.seenObjects || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
           stats: { ...(data.stats || {}) },
+          modeStats:data.modeStats||{},difficultyStats:data.difficultyStats||{},worldRecords:data.worldRecords||{},
+          attemptHistory:Array.isArray(data.attemptHistory)?data.attemptHistory:Object.values(data.attemptHistory||{}),
+          matches:Array.isArray(data.matches)?data.matches:Object.values(data.matches||{}),
           history: Array.isArray(data.history) ? data.history : (data.history ? Object.values(data.history) : []),
           daily: data.daily || null,
           dailyStreak: data.dailyStreak || null,
@@ -4448,6 +4496,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       grantLevelRewards();
       powerups?.recover(data, deviceId);
       gameRewards?.recover();
+      void careerLedger?.flush();
       void grantStarterAchievements(profileId);
     });
   }
@@ -4892,6 +4941,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "corgi", file: "home-corgi.jpg", name: "Dog Park", world: "critters" },
     { id: "wheels", file: "home-wheels.jpg", name: "Launch Pad", world: "wheels" },
     { id: "lighthouse", file: "home-lighthouse.jpg", name: "Seaside", world: "landmarks" },
+    { id: "underwater", file: "home-underwater.jpg", name: "Underwater", world: "under-the-sea" },
+    { id: "toy-box", file: "home-toy-box.jpg", name: "Playroom", world: "toy-box" },
     { id: "penguin", file: "home-penguin.jpg", name: "Arctic", how: "Win 7 rounds in a row" },
     { id: "cactus", file: "home-cactus.jpg", name: "Western", how: "Survive 15 rounds in Survival" },
     { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 25 spot-on guesses" },
@@ -5600,6 +5651,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Each object has an id, its real length in mm, and a cartoon picture used by the answer animation.
   const OBJECTS = [
+    { id: "potato-chip-tube", name: "potato chip tube", plural: "potato chip tubes", mm: 260, image: "items/potato-chip-tube.webp" },
+    { id: "single-use-snack-bag", name: "single-use snack bag", plural: "single-use snack bags", mm: 180, image: "items/single-use-snack-bag.webp" },
+    { id: "soft-pretzel", name: "soft pretzel", plural: "soft pretzels", mm: 150, image: "items/soft-pretzel.webp" },
+    { id: "nail", name: "nail", plural: "nails", mm: 75, image: "items/nail.webp" },
+    { id: "hammer", name: "hammer", plural: "hammers", mm: 330, image: "items/hammer.webp" },
+    { id: "action-figure", name: "action figure", plural: "action figures", mm: 150, image: "items/action-figure.webp" },
+    { id: "laser-sword", name: "laser sword", plural: "laser swords", mm: 1000, image: "items/laser-sword.webp" },
     { id: "grain-of-sand", name: "grain of sand", plural: "grains of sand", mm: 0.5, image: "items/grain-of-sand.webp" },
     { id: "poppy-seed", name: "poppy seed", plural: "poppy seeds", mm: 1, image: "items/poppy-seed.webp" },
     { id: "sesame-seed", name: "sesame seed", plural: "sesame seeds", mm: 3, image: "items/sesame-seed.webp" },
@@ -5855,7 +5913,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "minivan", name: "minivan", plural: "minivans", mm: 5080, image: "items/minivan.webp" },
     { id: "giraffe", name: "giraffe", plural: "giraffes", mm: 5500, image: "items/giraffe.webp" },
     { id: "ambulance", name: "ambulance", plural: "ambulances", mm: 5500, image: "items/ambulance.webp" },
-    { id: "t-rex", name: "T. rex", plural: "T. rexes", mm: 12000, image: "items/t-rex.webp" },
+    { id: "t-rex", name: "T. rex", plural: "T. rexes", mm: 4600, image: "items/t-rex.webp" },
     { id: "ice-cream-truck", name: "ice cream truck", plural: "ice cream trucks", mm: 5800, image: "items/ice-cream-truck.webp" },
     { id: "jumbotron", name: "arena video board", plural: "arena video boards", mm: 6000, image: "items/jumbotron.webp" },
     { id: "flagpole", name: "flagpole", plural: "flagpoles", mm: 6000, image: "items/flagpole.webp" },
@@ -6131,36 +6189,118 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wingspan: ["bat", "phoenix"],
   };
   const MEASUREMENT_DETAILS = {
-    "earbuds": { subject: "wired earbuds" },
-    "earbuds-case": { qualifier: "case only" },
-    "t-rex": { qualifier: "nose to tail" },
-    "shuttlecock": { qualifier: "cork to feather tips" },
-    "statue-of-liberty": { qualifier: "including the pedestal" },
-    "christ-statue": { qualifier: "including the pedestal" },
-    "mailbox": { qualifier: "including the above-ground post" },
-    "necktie": { qualifier: "knot to tip" },
-    "soccer-goal": { qualifier: "between the inside edges of the posts" },
-    "basketball-backboard": { qualifier: "board only" },
-    "football-field": { qualifier: "including both end zones" },
-    "basketball-court": { qualifier: "full court" },
-    "olympic-pool": { qualifier: "end to end" },
-    "pearl-necklace": { qualifier: "laid straight" },
-    "napkin": { qualifier: "unfolded" },
-    "pancakes": { dimension: "diameter", qualifier: "across the pancakes" },
-    "teacup": { dimension: "diameter", qualifier: "across the saucer" },
-    "stonehenge": { dimension: "diameter", qualifier: "outer stone circle" },
-    "manta-ray": { dimension: "width", qualifier: "wingtip to wingtip" },
-    "stingray": { qualifier: "including the tail" },
-    "giant-squid": { qualifier: "including the extended tentacles" },
-    "octopus": { qualifier: "with arms extended" },
-    "kraken": { qualifier: "with tentacles extended" },
-    "domestic-cat": { qualifier: "including the tail" },
-    "black-cat": { qualifier: "body only, excluding the tail" },
-    "mount-fuji": { qualifier: "summit elevation above sea level" },
-    "mount-kilimanjaro": { qualifier: "summit elevation above sea level" },
-    "mount-everest": { qualifier: "summit elevation above sea level" },
-    "rainbow": { dimension: "width", qualifier: "the game's holiday rainbow" },
-    "fireworks": { dimension: "diameter", qualifier: "the game's representative burst" },
+    "potato-chip-tube": {"dimension": "height", "qualifier": "full-size tube"},
+    "single-use-snack-bag": {"dimension": "height", "qualifier": "sealed single-serving bag"},
+    "soft-pretzel": {"dimension": "width", "qualifier": "across the widest part"},
+    "nail": {"dimension": "length", "qualifier": "head to tip"},
+    "hammer": {"dimension": "length", "qualifier": "end of handle to top of head"},
+    "action-figure": {"dimension": "height", "qualifier": "standing upright"},
+    "laser-sword": {"dimension": "length", "qualifier": "including the handle"},
+    "earbuds": {
+      "subject": "wired earbuds"
+    },
+    "earbuds-case": {
+      "qualifier": "case only"
+    },
+    "t-rex": { "dimension": "height" },
+    "shuttlecock": {
+      "qualifier": "cork to feather tips"
+    },
+    "statue-of-liberty": {
+      "qualifier": "including the pedestal"
+    },
+    "christ-statue": {
+      "qualifier": "including the pedestal"
+    },
+    "mailbox": {
+      "qualifier": "including the above-ground post"
+    },
+    "necktie": {
+      "qualifier": "knot to tip"
+    },
+    "soccer-goal": {
+      "qualifier": "between the inside edges of the posts"
+    },
+    "basketball-backboard": {
+      "qualifier": "board only"
+    },
+    "football-field": {
+      "qualifier": "including both end zones"
+    },
+    "basketball-court": {
+      "qualifier": "full court"
+    },
+    "olympic-pool": {
+      "qualifier": "end to end"
+    },
+    "pearl-necklace": {
+      "qualifier": "laid straight"
+    },
+    "napkin": {
+      "dimension": "length"
+    },
+    "pancakes": {
+      "dimension": "diameter",
+      "qualifier": "across the pancakes"
+    },
+    "teacup": {
+      "dimension": "diameter",
+      "qualifier": "across the saucer"
+    },
+    "stonehenge": {
+      "dimension": "diameter",
+      "qualifier": "outer stone circle"
+    },
+    "manta-ray": {
+      "dimension": "width",
+      "qualifier": "wingtip to wingtip"
+    },
+    "stingray": {
+      "qualifier": "including the tail"
+    },
+    "giant-squid": {
+      "qualifier": "including the extended tentacles"
+    },
+    "octopus": {
+      "qualifier": "with arms extended"
+    },
+    "kraken": {
+      "qualifier": "with tentacles extended"
+    },
+    "domestic-cat": {
+      "qualifier": "including the tail"
+    },
+    "black-cat": {
+      "dimension": "height"
+    },
+    "mount-fuji": {
+      "qualifier": "summit elevation above sea level"
+    },
+    "mount-kilimanjaro": {
+      "qualifier": "summit elevation above sea level"
+    },
+    "mount-everest": {
+      "qualifier": "summit elevation above sea level"
+    },
+    "rainbow": {
+      "dimension": "width"
+    },
+    "fireworks": {
+      "dimension": "diameter",
+      "qualifier": "the game's representative burst"
+    },
+    "bat": {
+      "dimension": "width"
+    },
+    "mashed-potatoes": {
+      "dimension": "height"
+    },
+    "stuffing": {
+      "dimension": "height"
+    },
+    "brown-bear": {
+      "dimension": "height"
+    }
   };
   const MEASUREMENT_TYPES = {
     length: { noun: "length", adjective: "long" },
@@ -6345,6 +6485,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "critters", name: "Critters", ids: "ant ladybug honeybee cockroach snail frog seahorse turtle jellyfish starfish pufferfish koi-fish dachshund corgi domestic-cat octopus capybara flamingo ostrich horse cow polar-bear komodo-dragon lion alligator saltwater-crocodile great-white-shark green-anaconda giraffe t-rex elephant killer-whale giant-squid blue-whale giant-anthill hamster hedgehog owl rabbit penguin kangaroo panda dolphin zebra hippopotamus rhinoceros whale-shark duck stork barracuda stingray pig black-bear gorilla deer electric-eel brown-bear swordfish hammerhead-shark manta-ray pigeon".split(" ") },
     { id: "wheels", name: "Wheels & Wings", ids: "skateboard bicycle car canoe minivan shipping-container fire-truck double-decker-bus school-bus telephone-pole semi-truck fighter-jet hot-air-balloon space-shuttle boeing-737 blimp titanic aircraft-carrier scooter motorcycle rowboat tractor ambulance helicopter locomotive airliner saturn-rocket cruise-ship license-plate manhole-cover car-tire traffic-light dumpster streetlight garbage-truck excavator fishing-boat tower-crane ice-cream-truck pegasus".split(" ") },
     { id: "landmarks", name: "Landmarks", ids: "moai teepee stonehenge statue-of-liberty castle leaning-tower-of-pisa big-ben great-pyramid washington-monument space-needle colosseum gateway-arch eiffel-tower empire-state-building angel-falls brooklyn-bridge grand-canyon mount-fuji central-park mount-everest mariana-trench football-field olympic-pool basketball-court palm-tree oak-tree cactus lighthouse windmill christ-statue niagara-falls taj-mahal london-eye sydney-opera-house hoover-dam cn-tower burj-khalifa golden-gate-bridge mount-kilimanjaro flagpole carousel barn-silo water-tower power-line-tower notre-dame wind-turbine".split(" ") },
+    { id: "under-the-sea", name: "Under the Sea", ids: "starfish seahorse jellyfish pufferfish koi-fish octopus barracuda stingray electric-eel swordfish dolphin hammerhead-shark great-white-shark manta-ray killer-whale giant-squid whale-shark blue-whale".split(" ") },
+    { id: "toy-box", name: "Toy Box", ids: "die marble lego-brick domino checkers-piece wooden-block letter-block toy-car rubiks-cube rubber-duck action-figure game-controller retro-cartridge jack-in-the-box chattering-teeth pogo-stick laser-sword".split(" ") },
     { id: "make-believe", name: "Make Believe", unlockCount: 20, ids: FANTASY_OBJECTS.map((o) => o.id) },
   ];
   const DAILY_TZ = "America/New_York";
@@ -6400,7 +6542,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hostModeControlsEl = document.getElementById("host-mode-controls");
   const joinScreen = document.getElementById("join-screen");
   const joinBackBtn = document.getElementById("join-back-btn");
-  const joinContinueBtn = document.getElementById("join-continue-btn");
+  const joinContinueBtn = document.getElementById("join-game-title");
   const joinStatusEl = document.getElementById("join-status");
   const codeInput = document.getElementById("code-input");
   const codeKeyboardEl = document.getElementById("code-keyboard");
@@ -6544,7 +6686,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderAccountUi() {
     if (!isNativeApp) return;
     const signedIn = !!accountUser;
-    settingsSignInBtn.style.display = signedIn ? "none" : "block";
+    settingsSignInBtn.style.display = signedIn ? "none" : "flex";
+    document.getElementById("settings-account-label").textContent = signedIn ? "Account connected" : "Playing as a guest";
+    document.getElementById("settings-account-hint").textContent = signedIn ? "Your progress is connected to Google." : "Connect with Google to keep your progress across devices.";
     settingsSignOutBox.style.display = signedIn ? "flex" : "none";
     if (signedIn) settingsSignedInEmailEl.textContent = "Signed in with Google";
   }
@@ -6613,6 +6757,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
+  function confirmAccountProgress(account){return new Promise(resolve=>{
+    const dialog=document.createElement('dialog');dialog.className='cozy-dialog';dialog.setAttribute('aria-label','Use saved Google progress');
+    dialog.innerHTML=`<h2>This account has saved progress</h2><p>Connecting will use its saved coins, avatars, and World stars. This device's guest progress is kept as a backup; the two coin balances are not added together.</p><p>Saved account: <b>${account.coins||0} coins</b></p><div class="cozy-actions"><button data-choice="yes">Use saved account</button><button data-choice="no">Keep playing as guest</button></div>`;
+    let answered=false;const finish=ok=>{if(answered)return;answered=true;dialog.remove();resolve(ok);};dialog.onclick=e=>{const b=e.target.closest('[data-choice]');if(b)finish(b.dataset.choice==='yes');};dialog.oncancel=e=>{e.preventDefault();finish(false);};document.body.append(dialog);dialog.showModal();
+  });}
   async function signInWithGoogle() {
     authFlowInProgress = true;
     try {
@@ -6627,6 +6776,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const credential = GoogleAuthProvider.credential(idToken);
       const webResult = await signInWithCredential(auth, credential);
       const uid = webResult.user.uid;
+      await careerLedger?.flush();
+      const existingAccount=(await get(ref(db,'profiles/'+uid))).val();
+      if(existingAccount&&uid!==localDeviceId){const accepted=await confirmAccountProgress(existingAccount);if(!accepted){await FirebaseAuthentication.signOut();await firebaseSignOut(auth);accountUser=null;watchMyProfile();return;}}
 
       // Upgrade the guest into a new account, or keep existing account data.
       // Carry reward receipts and retire the duplicate guest wallet only
@@ -6876,7 +7028,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const qCurtainTopEl = document.createElement("img");
   qCurtainTopEl.id = "q-curtain-top"; qCurtainTopEl.src = "icons/board-curtain-top.webp"; qCurtainTopEl.alt = "";
   [qCurtainEl, qCurtainTopEl, qDustEl, qEraserEl, qToolEl].forEach((n) => qPromptEl.appendChild(n));
-  const qReduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let qReduceMotion = window.matchMedia && prefersReducedMotion();
   let qBoard = "paper";
   let qPx = 0, qPy = 0, qPr = 0, qEx = 0, qEy = 0, qLastT = 0, qRaf = 0, qWrite = null, qPlaced = false;
   let qErase = null, qClearing = false, qCurtainO = 0, qCurtainTarget = 0, qDust = [];
@@ -7611,18 +7763,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  settingsNameInput.value = currentName;
-  settingsNameInput.addEventListener("input", () => {
-    const badName = checkName(settingsNameInput.value);
-    document.getElementById("settings-name-status").textContent = badName || "";
-    if (badName) return; // never save a blocked name
-    currentName = settingsNameInput.value;
-    localStorage.setItem("mg_name", currentName);
-    nameInput.value = currentName;
+  mountSettingsNameEditor({
+    screen: settingsScreen, input: settingsNameInput,
+    button: document.getElementById("settings-name-edit"),
+    panel: document.getElementById("settings-name-editor"),
+    keyboard: document.getElementById("settings-name-keyboard"),
+    status: document.getElementById("settings-name-status"),
+    clear: document.getElementById("settings-name-clear"),
+    cancel: document.getElementById("settings-name-cancel"),
+    getName: () => currentName, validateName: checkName, renderKeyboard: renderCustomKeyboard,
+    saveName: (name) => {
+      currentName = name;
+      localStorage.setItem("mg_name", name);
+      nameInput.value = name;
+    }
   });
 
+  function prefersReducedMotion(){const value=localStorage.getItem('mg_motion')||'auto';return value==='reduce'||(value==='auto'&&!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);}
+  function applyComfortSettings(){qReduceMotion=prefersReducedMotion();document.documentElement.dataset.motion=prefersReducedMotion()?'reduce':'full';document.documentElement.dataset.largeText=String(localStorage.getItem('mg_text')==='large');}
+  applyComfortSettings();
+  document.getElementById('effects-volume').value=localStorage.getItem('mg_effects_volume')??100;
+  document.getElementById('motion-choice').value=localStorage.getItem('mg_motion')||'auto';
+  document.getElementById('text-choice').value=localStorage.getItem('mg_text')||'normal';
+  document.getElementById('effects-volume').addEventListener('input',e=>localStorage.setItem('mg_effects_volume',e.target.value));
+  document.getElementById('motion-choice').addEventListener('change',e=>{localStorage.setItem('mg_motion',e.target.value);applyComfortSettings();});
+  document.getElementById('text-choice').addEventListener('change',e=>{localStorage.setItem('mg_text',e.target.value);applyComfortSettings();});
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change',applyComfortSettings);
   function renderSoundToggleIcon() {
     settingsSoundToggle.classList.toggle("is-on", localSoundEnabled);
+    document.getElementById("settings-sound-label").textContent = localSoundEnabled ? "On" : "Off";
     settingsSoundToggle.setAttribute("aria-pressed", String(localSoundEnabled));
   }
   renderSoundToggleIcon();
@@ -7635,6 +7804,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
   let overlayReturnScreen = null;
+  let overlayFocusReturn=null;
   // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
   function syncOverlayReturnFlag() { document.body.classList.toggle("overlay-has-return", !!overlayReturnScreen && overlayReturnScreen !== homeScreen); }
   function openOverlay(screenEl) {
@@ -7642,6 +7812,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       closeOverlay();
       return;
     }
+    overlayFocusReturn=document.activeElement;
     const currentActive = ALL_SCREEN_ELS.find((el) => el.classList.contains("active"));
     // Only remember a non-overlay screen to return to - if we're already in
     // an overlay (e.g. opening Settings from How to Play), keep whatever
@@ -7653,6 +7824,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     screenEl.classList.add("active");
+    const heading=screenEl.querySelector("h1,h2,[role=heading]");if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
     syncOverlayReturnFlag();
     playSound("popup-open");
   }
@@ -7665,6 +7837,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // never re-show the last pull's leftover capsule/reveal animation state.
     if (dest === gachaScreen) resetGachaScene();
     dest.classList.add("active");
+    if(overlayFocusReturn?.isConnected)overlayFocusReturn.focus({preventScroll:true});
+    overlayFocusReturn=null;
     overlayReturnScreen = null;
     syncOverlayReturnFlag();
     playSound("popup-close");
@@ -7682,7 +7856,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     exitConfirmNoBtn.style.display = noLabel === null ? "none" : "";
     exitConfirmTitleEl.textContent = title;
     exitConfirmMessageEl.textContent = message;
-    exitConfirmOverlayEl.classList.add("show");
+    exitConfirmOverlayEl.setAttribute("role","dialog");exitConfirmOverlayEl.setAttribute("aria-modal","true");exitConfirmOverlayEl.setAttribute("aria-labelledby","exit-confirm-title");
+    exitConfirmOverlayEl.classList.add("show");exitConfirmNoBtn.focus();
   }
   // The top toolbar (Home/Items/Shop/Help/Settings/Exit) is visible on every
   // screen, including mid-game - clicking one used to just barrel through its
@@ -7805,6 +7980,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   collectionCloseBtn.addEventListener("click", closeOverlay);
   collectionContentEl.addEventListener("click", (e) => {
+    if(e.target.closest("[data-avatar-filter]")){collectionOwnership=e.target.closest("[data-avatar-filter]").dataset.avatarFilter;collectionHideLocked=collectionOwnership==="owned";renderCollectionScreen();return;}
     if (e.target.closest("#collection-hide-switch")) {
       collectionHideLocked = !collectionHideLocked;
       try { localStorage.setItem("mg_coll_hide", collectionHideLocked ? "1" : "0"); } catch (err) {}
@@ -7855,7 +8031,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("career-close-btn").addEventListener("click", closeOverlay);
   document.getElementById("toolbar-awards-btn").addEventListener("click", guardToolbarNav(() => {
     if (Object.values(CAREER_TABS).some((el) => el.classList.contains("active"))) closeOverlay();
-    else showCareerTab(careerLastTab);
+    else showCareerTab("stats");
   }));
   // ==================== Daily Challenge: play, results, streak, leaderboard ====================
   const dailyContentEl = document.getElementById("daily-content");
@@ -7960,7 +8136,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. They start easy and get harder. You can only play once, so make your guesses count.</div></div>
         <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
-        <button type="button" class="dc-btn" id="dc-start">Start</button>`;
+        <button type="button" class="dc-btn" id="dc-start">Start</button>
+        <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
+      dailyLoadBoard();
       return;
     }
     if (daily.phase === "question") {
@@ -7986,7 +8164,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
     const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / 300</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>
+      <div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>
       <div class="dc-card">${rows}</div>
       <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
       <button type="button" class="dc-btn" id="dc-share">Share my result</button>
@@ -8038,19 +8216,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Called once, as the third guess is locked in: saves the day, updates the streak and posts to the leaderboard.
   async function dailyFinish() {
-    const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
-    const streak = dailyUpdateStreak(daily.date);
-    const bonus = DAILY_STREAK_BONUS[streak.count] || 0;
-    daily.bonus = bonus;
-    try { await update(ref(db, `profiles/${deviceId}`), { daily: { date: daily.date, guesses: daily.guesses, done: true, total }, dailyStreak: streak }); } catch (e) {}
-    const name = (!currentName || checkName(currentName)) ? soloDisplayName() : currentName.trim().slice(0, 12);
-    try { await set(ref(db, `daily/${daily.date}/${deviceId}`), { n: name, s: total, a: accs.map((x) => Math.round(x)), t: serverTimestamp() }); } catch (e) { /* already posted today, or offline */ }
-    if (bonus) { try { await addCoins(bonus); } catch (e) {} }
-    bumpStats({ rounds: 3, dailies: 1 }, null);
-    for (let i = 0; i < 3; i++) {
-      const q = daily.questions[i];
-      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((daily.guesses[i] / q.answer) * 10000) / 10000, p: 0, f: accs[i] >= 99 ? 1 : 0, s: 2 });
-    }
+    const accs=dailyAccuracies(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10,streak=dailyUpdateStreak(daily.date);
+    daily.bonus=DAILY_STREAK_BONUS[streak.count]||0;
+    const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
+    completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,
+      saved:{date:daily.date,guesses:daily.guesses,done:true,total},board:{path:'daily/'+daily.date+'/'+deviceId,value:{n:name,s:total,a:accs.map(Math.round),t:Date.now()}}});
     updateDailyBadge();
   }
   // Shown under a top-50 board when you're not on it: your own row, plus how many scores beat it (counted up to a cap).
@@ -8068,6 +8238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function dailyLoadBoard() {
     const host = document.getElementById("dc-board");
     const date = daily && daily.date;
+    if (!host || !date) return;
     let rows = null;
     try {
       const snap = await get(query(ref(db, `daily/${date}`), orderByChild("s"), limitToLast(50)));
@@ -8076,13 +8247,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       rows.sort((x, y) => y.s - x.s);
     } catch (e) { rows = null; }
     const now = document.getElementById("dc-board");
-    if (!now || !daily || daily.date !== date) return;
+    if (now !== host || !daily || daily.date !== date) return;
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${formatAccuracy(r.s / 3)}%</span></div>`).join("");
     now.innerHTML = html;
-    const mineHtml = await boardMyRankHtml(`daily/${date}`, rows, (v) => Math.round(v * 10) / 10);
+    const mineHtml = await boardMyRankHtml(`daily/${date}`, rows, (v) => formatAccuracy(v / 3)+"%");
     const again = document.getElementById("dc-board");
     if (mineHtml && again === now && daily && daily.date === date) now.innerHTML = html + mineHtml;
   }
@@ -8102,6 +8273,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "dc-submit") {
       const g = parseFloat(daily.input);
       if (!(g > 0)) return;
+      saveSoloRound('daily',daily.questions[daily.guesses.length],g,daily.guesses.length,'daily_'+daily.date);
       daily.guesses.push(g); daily.input = ""; daily.phase = "reveal";
       playSound("pick");
       try { await update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses, done: false }); } catch (err) {}
@@ -8113,7 +8285,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "dc-next") { daily.phase = daily.guesses.length >= 3 ? "done" : "question"; renderDaily(); return; }
     if (b.id === "dc-share") {
       const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
-      const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${total}/300`;
+      const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${formatAccuracy(total / 3)}% accurate`;
       const url = "https://size-em-up.web.app/?play=daily";
       const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
       if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
@@ -8126,6 +8298,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
+  function nextWorldGoalHtml(){
+    const next=WORLDS.find((w,i)=>worldUnlocked(i)&&worldStarsOf(w.id)>0&&worldStarsOf(w.id)<13);
+    if(!next)return '';const home=HOME_SCREENS.find(h=>h.world===next.id);if(!home)return '';
+    return `<div class="cozy-panel next-goal"><b>Your next home screen</b><p>${escapeHtml(next.name)} · ${worldStarsOf(next.id)}/13 stars toward ${escapeHtml(home.name)}</p><button data-next-world="${next.id}">Continue World</button></div>`;
+  }
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
@@ -8135,18 +8312,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const pic = banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
       return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
-    soloContentEl.innerHTML = `<h2 class="dc-title">Solo</h2><p class="dc-sub">Pick how you want to play</p>
+    soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png" })}
       ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots", { banner: "icons/banner-quick.png" })}
-      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}`;
+      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}${nextWorldGoalHtml()}`;
   }
   function openSolo() {
     renderSoloHub();
     if (!soloScreenEl.classList.contains("active")) openOverlay(soloScreenEl);
   }
   soloContentEl.addEventListener("click", (e) => {
+    const goal=e.target.closest('[data-next-world]');if(goal){openWorlds();wl.wi=WORLDS.findIndex(w=>w.id===goal.dataset.nextWorld);wl.phase='world';renderWorlds();return;}
     const b = e.target.closest(".sh-card");
     if (!b || b.disabled) return;
     if (b.id === "sh-daily") openDaily();
@@ -8164,9 +8342,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function staggerOrder(sortedArr, rng) {
     return sortedArr.map((v, i) => ({ v, k: i + (rng() - 0.5) * 2.4 })).sort((a, b) => a.k - b.k).map((x) => x.v);
   }
-  const WORLD_LEVELS = 5, WORLD_Q = 5, WORLD_STAR_AT = [60, 80, 92], WORLD_STAR_COINS = 5;
+  const WORLD_LEVELS = 5, WORLD_Q = 5, WORLD_STAR_AT = [60, 75, 90], WORLD_STAR_COINS = 5;
   const WORLD_LEVEL_NAMES = ["Warm-up", "Getting there", "Tricky", "Tough", "Expert"];
-  const WORLD_ICON = { tiny: "ant", games: "soccer-ball", home: "toothbrush", food: "donut", town: "traffic-light", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower", "make-believe": "unicorn" };
+  const WORLD_ICON = { tiny: "ant", games: "soccer-ball", home: "toothbrush", food: "donut", town: "traffic-light", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower", "under-the-sea": "seahorse", "toy-box": "action-figure", "make-believe": "unicorn" };
   // Monthly/holiday objects that can also show up in a World, but ONLY while available to the player (this month's pack,
   // a pack they own, or the sampler). They are extras: they never count toward a World's own object totals.
   const WORLD_EXTRAS = {
@@ -8235,6 +8413,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     out.sort((a, b) => a.r - b.r);
     return staggerOrder(out, Math.random).map((p) => dailyQuestionFor({ unitId: p.u.id, targetId: p.t.id }));
   }
+  function persistSoloSession(mode,state){
+    try{if(state.runId)localStorage.setItem('mg_resume_'+deviceId+'_'+mode,JSON.stringify(state));}catch{}
+  }
+  function clearSoloSession(mode){try{localStorage.removeItem('mg_resume_'+deviceId+'_'+mode);}catch{}}
+  function readSoloSession(mode){
+    try{const state=JSON.parse(localStorage.getItem('mg_resume_'+deviceId+'_'+mode));if(!state?.runId||!['question','reveal'].includes(state.phase))return null;
+      const qs=mode==='worlds'?state.questions:[state.q].filter(Boolean);if(!qs?.length||qs.some(q=>!OBJECT_BY_ID.has(q.unitId)||!OBJECT_BY_ID.has(q.targetId)))return null;
+      if(mode==='worlds'&&!WORLDS[state.wi])return null;return state;
+    }catch{return null;}
+  }
+  function soloResumeHtml(mode,worldId){
+    const state=readSoloSession(mode);if(!state||(worldId&&WORLDS[state.wi]?.id!==worldId))return '';
+    const prefix=mode==='worlds'?'wl':'sv',label=mode==='worlds'?WORLDS[state.wi].name+' · Level '+state.level:'Survival · '+state.survived+' rounds survived';
+    return '<div class="cozy-panel resume-card"><b>Continue your attempt</b><p>'+escapeHtml(label)+'</p><div class="cozy-actions"><button type="button" id="'+prefix+'-resume">Resume</button><button type="button" id="'+prefix+'-discard">Discard attempt</button></div><small>Completed rounds stay in your stats.</small></div>';
+  }
+  function worldRewardCard(world){
+    const home=HOME_SCREENS.find(h=>h.world===world.id);if(!home)return '';
+    const stars=worldStarsOf(world.id),owned=ownsHomeScreen(home.id),equipped=equippedHomeScreen()===home.id;
+    const bests=Object.values(myProfile.worldRecords?.[world.id]||{}),best=bests.length?Math.max(...bests.map(r=>r.bestAccuracy||0)):null;
+    return `<div class="cozy-panel world-reward"><button class="home-reward-preview" data-world-reward="${home.id}" aria-label="Preview ${home.name} home screen"><img src="${home.file}" alt="${home.name} home screen"></button><div><b>${escapeHtml(home.name)} home screen</b><p>${stars}/13 stars to unlock · ${stars}/15 mastered</p>${best===null?'':`<p>Best level accuracy: ${formatAccuracy(best)}%</p>`}<div class="cozy-actions"><button data-world-reward="${home.id}">Preview</button>${owned?`<button data-equip-world="${home.id}" ${equipped?'disabled':''}>${equipped?'Equipped':'Equip'}</button>`:stars>=13?`<button data-claim-world="${world.id}">Claim home screen</button>`:''}</div></div></div>`;
+  }
+  function survivalRecordsHtml(){
+    const data=myProfile.survival||{},stats=myProfile.modeStats?.survival||{},history=(myProfile.attemptHistory||[]).filter(r=>r.mode==='survival').slice(-5).reverse();
+    return `<div class="cozy-panel"><div class="cs-tiles">${statTile(data.best||0,'Best run')}${statTile(data.runs||0,'Runs finished')}${statTile(stats.answered?formatAccuracy(stats.accuracyTotal/stats.answered)+'%':'—','Average accuracy')}</div>${history.length?'<h3>Recent runs</h3>'+history.map(r=>'<p>'+r.survived+' survived · '+formatAccuracy(r.accuracy)+'% accurate</p>').join(''):''}</div>`;
+  }
   function worldStop() { if (wlAnim) { try { wlAnim.destroy(); } catch (e) {} wlAnim = null; } }
   function openWorlds() {
     wl.phase = "list";
@@ -8247,10 +8450,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
   function renderWorlds() {
+    if(['question','reveal'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
-      el.innerHTML = `<h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p>` +
+      el.innerHTML = `<h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p>${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? `${st} / ${WORLD_LEVELS * 3} stars` : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
@@ -8260,19 +8464,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "world") {
       worldStop();
-      el.innerHTML = `<h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p>` +
+      el.innerHTML = `<h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
         [1, 2, 3, 4, 5].map((l) => {
           const open = worldLevelUnlocked(w.id, l), st = worldLevelStars(w.id, l);
-          return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}</span></span></button>`;
+          return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
         }).join("");
       return;
     }
-    const dots = (i) => `<div class="dc-dots">${[0, 1, 2, 3, 4].map((k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
+    const header = `<h2 class="dc-title wl-run-title"><span>${escapeHtml(w.name)}</span><span class="wl-level-badge">Level ${wl.level}</span></h2>`;
+    const dots = (i) => `<div class="dc-dots" role="img" aria-label="Question ${i + 1} of ${WORLD_Q}">${[0, 1, 2, 3, 4].map((k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
     if (wl.phase === "question") {
       worldStop();
       const i = wl.guesses.length;
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${i + 1} of ${WORLD_Q}</p>${dots(i)}${worldProgressHtml()}
+      el.innerHTML = `${header}${dots(i)}${worldProgressHtml()}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         ${powerups?.html(powerupContext()) || ""}
@@ -8283,7 +8488,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
-      el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2><p class="dc-sub">Question ${k + 1} of ${WORLD_Q}</p>${dots(k)}${worldProgressHtml()}<p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button>`;
+      el.innerHTML = `${header}${dots(k)}${worldProgressHtml()}<p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button>`;
       worldRunReveal();
       return;
     }
@@ -8297,6 +8502,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
       <div class="dc-card dc-hot"><div class="wl-big">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div><div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "Perfect run!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
+      ${worldRewardCard(w)}
       ${worldDone ? `<div class="dc-card dc-hot"><div class="dc-big">${escapeHtml(WORLDS[wl.wi + 1].name)} unlocked!</div></div>` : ""}
       ${nextLevel ? '<button type="button" class="dc-btn" id="wl-nextlevel">Next level</button>' : ""}
       <button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>
@@ -8330,28 +8536,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // After the fifth guess: stars (best run counts), coins for each NEW star, stats and history.
   async function worldFinish() {
-    const w = WORLDS[wl.wi];
-    const accs = wl.questions.map((q, k) => roundAccuracy(effectiveGuess(q, wl.guesses[k], deviceId) / q.answer));
-    const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
-    const stars = worldStarsFor(avg), prev = worldLevelStars(w.id, wl.level), best = Math.max(prev, stars);
-    wl.stars = stars; wl.gain = (best - prev) * WORLD_STAR_COINS;
-    if (best > prev) {
-      try { await set(ref(db, `profiles/${deviceId}/worlds/${w.id}/l${wl.level}`), best); } catch (e) {}
-      if (wl.gain) { try { await addCoins(wl.gain); } catch (e) {} }
-    }
-    bumpStats({ rounds: WORLD_Q, worldLevels: 1 }, null);
-    for (let k = 0; k < WORLD_Q; k++) {
-      const q = wl.questions[k];
-      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((effectiveGuess(q, wl.guesses[k], deviceId) / q.answer) * 10000) / 10000, p: 0, f: accs[k] >= 99 ? 1 : 0, s: 3 });
-    }
+    const w=WORLDS[wl.wi],accs=wl.questions.map((q,k)=>roundAccuracy(effectiveGuess(q,wl.guesses[k],deviceId)/q.answer));
+    const avg=accs.reduce((a,b)=>a+b,0)/accs.length;wl.stars=worldStarsFor(avg);wl.gain=Math.max(0,wl.stars-worldLevelStars(w.id,wl.level))*WORLD_STAR_COINS;
+    completedAttempt({key:wl.runId,mode:'worlds',world:w.id,level:wl.level,stars:wl.stars,accuracy:avg});
+    clearSoloSession('worlds');
   }
   function worldStartLevel(level) {
+    wl.runId=crypto.randomUUID();
     wl.level = level; wl.questions = worldQuestions(WORLDS[wl.wi], level); wl.guesses = []; wl.input = ""; wl.gain = 0; wl.stars = 0; wl.phase = "question";
     renderWorlds();
   }
   worldsContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b) return;
+    if(b.id==='wl-resume'){const saved=readSoloSession('worlds');if(saved){wl=saved;renderWorlds();}return;}
+    if(b.id==='wl-discard'){clearSoloSession('worlds');renderWorlds();return;}
+    if(b.dataset.worldReward){openHomePreview(homeScreenOf(b.dataset.worldReward));return;}
+    if(b.dataset.claimWorld){await claimAchievement('world-beat-'+b.dataset.claimWorld);renderWorlds();return;}
+    if(b.dataset.equipWorld){await equipHomeScreen(b.dataset.equipWorld);renderWorlds();return;}
     if (b.id.startsWith("wl-world-")) { wl.wi = Number(b.id.slice(9)); wl.phase = "world"; renderWorlds(); return; }
     if (b.id.startsWith("wl-level-")) { worldStartLevel(Number(b.id.slice(9))); return; }
     if (b.classList.contains("dc-key")) {
@@ -8359,11 +8561,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (k === "back") wl.input = wl.input.slice(0, -1);
       else if (wl.input.length < 9 && !(k === "." && wl.input.includes("."))) wl.input = (wl.input === "0" && k !== ".") ? k : (wl.input === "" && k === "." ? "0." : wl.input + k);
       document.getElementById("wl-display").textContent = wl.input || "0";
+      persistSoloSession("worlds",wl);
       document.getElementById("wl-submit").disabled = !(parseFloat(wl.input) > 0);
       return;
     }
     if (b.id === "wl-submit") {
+      if(wl.phase!=="question")return;
       const g = parseFloat(wl.input); if (!(g > 0)) return;
+      saveSoloRound('worlds',wl.questions[wl.guesses.length],g,wl.guesses.length,wl.runId);
       wl.guesses.push(g); wl.input = ""; wl.phase = "reveal"; playSound("pick");
       if (wl.guesses.length >= WORLD_Q) await worldFinish();
       renderWorlds(); return;
@@ -8387,10 +8592,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
   });
 
-  // ==================== Monthly Challenge: 5 questions, one try a month, same for everyone ====================
+  // ==================== Monthly Challenge: every monthly object once, one scored try a month ====================
   // Every question pairs one of THIS month's pack items with an ordinary object. Questions get harder
   // (a bigger size gap) as you go. Finishing pays coins; a global leaderboard ranks the month.
-  const MONTHLY_Q = 5, MONTHLY_BASE_COINS = 20, MONTHLY_ACC_COINS = 30; // coins: base for finishing + up to 30 for accuracy
+  const MONTHLY_BASE_COINS = 20, MONTHLY_ACC_COINS = 30; // coins: base for finishing + up to 30 for accuracy
   const MONTHLY_BANDS = [[1.5, 4], [4, 12], [12, 40], [40, 150], [150, 1000]];
   const monthlyContentEl = document.getElementById("monthly-content");
   let mo = null, moAnim = null, moMain = null; // moMain: the real challenge, kept aside while a practice round is on screen
@@ -8401,13 +8606,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const packs = seasonPackIds(new Date(y, m - 1, 15));
     return packs.length ? HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack)) : HOLIDAY_OBJECTS.filter((o) => SAMPLER_IDS.has(o.id));
   }
-  function monthlyPlayed() { const d = myProfile.monthly; return !!(d && d.key === monthlyKey() && d.done); }
+  function monthlyPlayed() { const d = myProfile.monthly; return !!(d && d.key === monthlyKey() && d.format === MONTHLY_FORMAT && d.done); }
   function monthlyIcon() { const o = monthlyObjects(monthlyKey())[0]; return o ? o.image : "items/ant.webp"; }
   function monthlySub() {
     const k = monthlyKey(), name = MONTH_NAMES[Number(k.slice(5)) - 1];
-    return monthlyPlayed() ? `${name}: done` : `${name} items, 5 questions`;
+    return monthlyPlayed() ? `${name}: done` : `${name} items, ${monthlyObjects(k).length} questions`;
   }
-  function monthlyCombosLocal(key, rngOverride) {
+  function monthlyLegacyCombosLocal(key, rngOverride) {
     const rng = rngOverride || dailyRng("size-em-up-monthly-" + key);
     const pool = monthlyObjects(key).slice().sort((a, b) => (a.id < b.id ? -1 : 1));
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
@@ -8430,16 +8635,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     for (let i = 0; i < out.length; i++) if (!out[i]) out[i] = tryBand(1.5, 1e9) || tryBand(1.01, 1e9);
     return staggerOrder(out.filter(Boolean), rng);
   }
-  async function monthlyLoadCombos(key) {
-    const valid = (c) => Array.isArray(c) && c.length === MONTHLY_Q && c.every((x) => x && x.unitId !== x.targetId && OBJECT_BY_ID.has(x.unitId) && OBJECT_BY_ID.has(x.targetId));
-    const local = monthlyCombosLocal(key);
-    const read = async () => { const snap = await get(ref(db, `monthlyCombos/${key}`)); if (!snap.exists()) return null; const v = snap.val(); const arr = Array.isArray(v) ? v : Object.values(v); return valid(arr) ? arr : null; };
+  function monthlyCombosLocal(key, rngOverride) {
+    const rng = rngOverride || dailyRng("size-em-up-monthly-all-items-v2-" + key);
+    return staggerOrder(createMonthlyPairs({ monthly: monthlyObjects(key), ordinary: OBJECTS, rng, bands: MONTHLY_BANDS }), rng);
+  }
+  async function monthlyLoadCombos(key, saved) {
+    const rules = { monthly: monthlyObjects(key), ordinary: OBJECTS, objects: OBJECT_BY_ID };
+    const generated = monthlyCombosLocal(key);
+    let shared = null;
     try {
-      const have = await read();
-      if (have) return have;
-      if (valid(local)) await runTransaction(ref(db, `monthlyCombos/${key}`), (cur) => (cur == null ? local : undefined));
-      return (await read()) || local;
-    } catch (e) { return local; }
+      const snap = await get(ref(db, `monthlyCombos/${key}`));
+      if (snap.exists()) { const value = snap.val(); shared = Array.isArray(value) ? value : Object.values(value); }
+      if (!shared && validMonthlyPairs(generated, rules)) {
+        const result = await runTransaction(ref(db, `monthlyCombos/${key}`), cur => cur == null ? generated : undefined);
+        if (result.snapshot.exists()) { const value = result.snapshot.val(); shared = Array.isArray(value) ? value : Object.values(value); }
+      }
+    } catch (e) { /* The seeded local list is identical for everyone offline too. */ }
+    return restoreMonthlyPairs({ saved, shared, generated, legacy: monthlyLegacyCombosLocal(key), ...rules });
   }
   function monthDaysLeft() {
     const [y, m, d] = dailyDateStr().split("-").map(Number);
@@ -8452,14 +8664,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const fromHub = soloScreenEl.classList.contains("active");
     openOverlay(monthlyScreenEl);
     if (fromHub) overlayReturnScreen = soloScreenEl;
-    const combos = await monthlyLoadCombos(key);
+    let saved = (myProfile.monthly && myProfile.monthly.key === key) ? myProfile.monthly : null;
+    if (saved && saved.format !== MONTHLY_FORMAT) {
+      try {
+        const reset = await runTransaction(ref(db, `profiles/${deviceId}`), profile => {
+          const next = resetMonthlyProgress(profile, key);
+          return next === profile ? undefined : next;
+        });
+        saved = reset.snapshot.val()?.monthly || null;
+      } catch (e) {
+        monthlyContentEl.innerHTML = '<div class="dc-card">Could not reset the old Monthly Challenge. Please close this page and try again when connected.</div>';
+        return;
+      }
+    }
+    const combos = await monthlyLoadCombos(key, saved);
     if (!monthlyScreenEl.classList.contains("active")) return;
-    const saved = (myProfile.monthly && myProfile.monthly.key === key) ? myProfile.monthly : null;
-    const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, MONTHLY_Q) : [];
+    const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, combos.length) : [];
     mo = { key, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro", coins: (saved && saved.coins) || 0, practice: false };
     moMain = null;
     mo.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
-    if (guesses.length >= MONTHLY_Q && !(saved && saved.done)) { await monthlyFinish(); mo.phase = "done"; }
+    if (guesses.length >= mo.questions.length && !(saved && saved.done)) { await monthlyFinish(); mo.phase = "done"; }
     renderMonthly();
   }
   function monthlyStop() { if (moAnim) { try { moAnim.destroy(); } catch (e) {} moAnim = null; } }
@@ -8467,11 +8691,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderMonthly() {
     if (!mo) return;
     const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
-    const dots = (i) => `<div class="dc-dots">${Array.from({ length: MONTHLY_Q }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
+    const dots = (i) => `<div class="dc-dots">${Array.from({ length: mo.questions.length }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
     if (mo.phase === "intro") {
       monthlyStop();
       el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-        <div class="dc-card dc-hot"><div class="dc-big">5 questions</div><div class="dc-note">Each one features an item from this month's pack. Everyone gets the same 5 on the first try, and that score counts. After that you can practice all month with new questions.</div></div>
+        <div class="dc-card dc-hot"><div class="dc-big">${mo.questions.length} questions</div><div class="dc-note">See every object in this month's pack once, as the big or small object. Each is paired with an object outside the pack. Everyone gets the same questions on their first try. After that, practice with new comparisons all month.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${MONTHLY_BASE_COINS} for finishing, plus up to ${MONTHLY_ACC_COINS} more for accuracy.</div></div>
         <button type="button" class="dc-btn" id="mo-start">Start</button>`;
       return;
@@ -8479,7 +8703,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mo.phase === "question") {
       monthlyStop();
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${MONTHLY_Q}</h2>${dots(i)}
+      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
@@ -8489,7 +8713,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (mo.phase === "reveal") {
       const i = mo.guesses.length - 1;
-      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${MONTHLY_Q}</h2>${dots(i)}<p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button>`;
+      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}<p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button>`;
       monthlyRunReveal();
       return;
     }
@@ -8499,7 +8723,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const best = (myProfile.monthly && myProfile.monthly.key === mo.key && typeof myProfile.monthly.best === "number") ? myProfile.monthly.best : null;
     if (mo.practice) {
       el.innerHTML = `<h2 class="dc-title">${name} Practice</h2><p class="dc-sub">New questions every round. No coins, and the leaderboard keeps your first try.</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${best !== null ? `<div class="dc-note">Your practice best: ${Math.round(best / ((myProfile.monthly && myProfile.monthly.bestRounds) || 5) * 10) / 10}%</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       <button type="button" class="dc-btn" id="mo-practice">Practice again</button>
       <button type="button" class="dc-btn" id="mo-main">Back to my challenge result</button>`;
@@ -8508,7 +8732,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
     const bgNote = mbg ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Cosmetics, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
     el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${MONTHLY_Q * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${best}</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${Math.round(best / ((myProfile.monthly && myProfile.monthly.bestRounds) || 5) * 10) / 10}%</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
       <button type="button" class="dc-btn" id="mo-practice">Practice with new questions</button>
@@ -8517,7 +8741,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     monthlyLoadBoard();
   }
   async function monthlyRunReveal() {
-    const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], last = mo.guesses.length >= MONTHLY_Q;
+    const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], last = mo.guesses.length >= mo.questions.length;
     const showResult = (m) => {
       const acc = roundAccuracy(g / q.answer);
       const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
@@ -8542,20 +8766,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (moAnim === ctl) showResult(m); } });
     } catch (err) { console.warn("[measuring-game] monthly animation failed", err); showResult(null); }
   }
-  // Once, after the fifth guess: save the month, pay coins, post to the leaderboard, count the rounds.
+  // Once, after the final guess: save the month, pay coins, post to the leaderboard, count the rounds.
   async function monthlyFinish() {
-    const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
-    const coins = MONTHLY_BASE_COINS + Math.round((total / (MONTHLY_Q * 100)) * MONTHLY_ACC_COINS);
-    mo.coins = coins;
-    try { await update(ref(db, `profiles/${deviceId}`), { monthly: { key: mo.key, guesses: mo.guesses, done: true, total, coins } }); } catch (e) {}
-    try { await addCoins(coins); } catch (e) {}
-    const name = (!currentName || checkName(currentName)) ? soloDisplayName() : currentName.trim().slice(0, 12);
-    try { await set(ref(db, `monthly/${mo.key}/${deviceId}`), { n: name, s: total, a: accs.map((x) => Math.round(x)), t: serverTimestamp() }); } catch (e) {}
-    bumpStats({ rounds: MONTHLY_Q, monthlies: 1 }, { ["mc" + mo.key.slice(5)]: 1 });
-    for (let i = 0; i < MONTHLY_Q; i++) {
-      const q = mo.questions[i];
-      await appendRoundHistory({ t: Date.now(), u: q.unitId, g: q.targetId, r: Math.round((mo.guesses[i] / q.answer) * 10000) / 10000, p: 0, f: accs[i] >= 99 ? 1 : 0, s: 4 });
-    }
+    const accs=monthlyAccs(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10;
+    const coins=MONTHLY_BASE_COINS+Math.round(total/(mo.questions.length*100)*MONTHLY_ACC_COINS);mo.coins=coins;
+    const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
+    completedAttempt({key:'monthly_'+mo.key+'_'+MONTHLY_FORMAT,mode:'monthly',month:mo.key,accuracy:total/mo.questions.length,coins,
+      saved:{key:mo.key,format:MONTHLY_FORMAT,combos:mo.questions.map(q=>({unitId:q.unitId,targetId:q.targetId})),guesses:mo.guesses,done:true,total,coins},
+      board:{path:'monthly/'+monthlyBoardKey(mo.key)+'/'+deviceId,value:{n:name,s:monthlyBoardScore(total,mo.questions.length),a:accs.map(Math.round),t:Date.now()}}});
     updateDailyBadge();
   }
   // Practice round (any time after the real attempt): fresh random questions, same one-holiday-item rule,
@@ -8565,19 +8783,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const main = mo.practice ? moMain : mo;
     moMain = main;
     const rng = dailyRng("size-em-up-practice-" + main.key + "-" + Math.random());
-    mo = { key: main.key, questions: monthlyCombosLocal(main.key, rng).map(dailyQuestionFor), guesses: [], input: "", phase: "question", coins: 0, practice: true };
+    mo = { key: main.key, questions: monthlyCombosLocal(main.key, rng).map(dailyQuestionFor), guesses: [], input: "", phase: "question", coins: 0, practice: true, runId:crypto.randomUUID() };
     renderMonthly();
   }
   async function monthlyPracticeFinish() {
-    const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
-    const prev = (myProfile.monthly && myProfile.monthly.key === mo.key && typeof myProfile.monthly.best === "number") ? myProfile.monthly.best : 0;
-    if (total > prev) { try { await update(ref(db, `profiles/${deviceId}/monthly`), { best: total }); } catch (e) {} if (myProfile.monthly) myProfile.monthly.best = total; }
-    bumpStats({ rounds: MONTHLY_Q }, null);
+    const accs=monthlyAccs(),total=accs.reduce((a,b)=>a+b,0);
+    completedAttempt({key:mo.runId,mode:'practice',month:mo.key,accuracy:total/mo.questions.length,total,rounds:mo.questions.length});
   }
   async function monthlyLoadBoard() {
     const key = mo && mo.key; let rows = null;
     try {
-      const snap = await get(query(ref(db, `monthly/${key}`), orderByChild("s"), limitToLast(50)));
+      const snap = await get(query(ref(db, `monthly/${monthlyBoardKey(key)}`), orderByChild("s"), limitToLast(50)));
       rows = [];
       snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") rows.push({ id: c.key, n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s, a: Array.isArray(v.a) ? v.a : [] }); });
       rows.sort((x, y) => y.s - x.s);
@@ -8587,9 +8803,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s * 10) / 10}</span></div>`).join("");
+    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s / 5 * 10) / 10}%</span></div>`).join("");
     now.innerHTML = html;
-    const mineHtml = await boardMyRankHtml(`monthly/${key}`, rows, (v) => Math.round(v * 10) / 10);
+    const mineHtml = await boardMyRankHtml(`monthly/${monthlyBoardKey(key)}`, rows, (v) => `${Math.round(v / 5 * 10) / 10}%`);
     if (mineHtml && document.getElementById("mo-board") === now && mo && mo.key === key) now.innerHTML = html + mineHtml;
   }
   monthlyContentEl.addEventListener("click", async (e) => {
@@ -8607,11 +8823,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (b.id === "mo-submit") {
+      if (mo.phase !== "question") return;
       const g = parseFloat(mo.input); if (!(g > 0)) return;
+      saveSoloRound(mo.practice?'practice':'monthly',mo.questions[mo.guesses.length],g,mo.guesses.length,mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT);
       mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick");
-      if (mo.practice) { if (mo.guesses.length >= MONTHLY_Q) await monthlyPracticeFinish(); renderMonthly(); return; }
-      try { await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, guesses: mo.guesses, done: false }); } catch (err) {}
-      if (mo.guesses.length >= MONTHLY_Q) await monthlyFinish();
+      if (mo.practice) { if (mo.guesses.length >= mo.questions.length) await monthlyPracticeFinish(); renderMonthly(); return; }
+      try { await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.questions.map(q => ({ unitId: q.unitId, targetId: q.targetId })), guesses: mo.guesses, done: false }); } catch (err) {}
+      if (mo.guesses.length >= mo.questions.length) await monthlyFinish();
       renderMonthly(); return;
     }
     if (b.id === "mo-skip") {
@@ -8619,12 +8837,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], acc = roundAccuracy(g / q.answer), m = await loadAnimModule();
       const host = document.getElementById("mo-result");
       if (host) host.innerHTML = resultCardHtml(acc, g, m ? m.formatCount(q.answer, q.answer) : q.answer);
-      b.id = "mo-next"; b.className = "dc-btn"; b.textContent = mo.guesses.length >= MONTHLY_Q ? "See my results" : "Next question"; return;
+      b.id = "mo-next"; b.className = "dc-btn"; b.textContent = mo.guesses.length >= mo.questions.length ? "See my results" : "Next question"; return;
     }
-    if (b.id === "mo-next") { mo.phase = mo.guesses.length >= MONTHLY_Q ? "done" : "question"; renderMonthly(); return; }
+    if (b.id === "mo-next") { mo.phase = mo.guesses.length >= mo.questions.length ? "done" : "question"; renderMonthly(); return; }
     if (b.id === "mo-share") {
       const accs = monthlyAccs(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
-      const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} Challenge ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${MONTHLY_Q * 100}`;
+      const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} Challenge ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${mo.questions.length * 100}`;
       const url = "https://size-em-up.web.app/?play=monthly";
       const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
       if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
@@ -8735,13 +8953,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function survivalStop() { if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
   function renderSurvival() {
     if (!sv) return;
+    if(['question','reveal'].includes(sv.phase)&&!sv.finished&&sv.lives>0)persistSoloSession('survival',sv);
     const el = survivalContentEl;
     if (sv.phase === "intro") {
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you go past your own best.</div></div>
-        <button type="button" class="dc-btn" id="sv-start">Start</button>
+        ${survivalRecordsHtml()}${soloResumeHtml("survival")}<button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
@@ -8750,6 +8969,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "question") {
       survivalStop();
       if (!sv.q) sv.q = survivalNextQuestion();
+      persistSoloSession("survival",sv);
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives, svRunAcc(sv.accs.length))}
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
@@ -8794,18 +9014,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Run over: save the best (coins only for rounds beyond the old best), post it, count the rounds.
   async function survivalFinish() {
-    if (sv.finished) return; sv.finished = true;
-    const old = survivalBest(), s = sv.survived;
-    sv.newBest = s > old; sv.gain = sv.newBest ? (s - old) * SURVIVAL_COINS_PER : 0;
-    const runs = ((myProfile.survival && myProfile.survival.runs) || 0) + 1;
-    try { await update(ref(db, `profiles/${deviceId}`), { survival: { best: Math.max(old, s), runs } }); } catch (e) {}
-    if (sv.gain) { try { await addCoins(sv.gain); } catch (e) {} }
-    if (sv.newBest && s > 0) {
-      const name = (!currentName || checkName(currentName)) ? soloDisplayName() : currentName.trim().slice(0, 12);
-      try { await set(ref(db, `survival/${deviceId}`), { n: name, s, t: serverTimestamp() }); } catch (e) {}
-    }
-    bumpStats({ rounds: sv.accs.length, survivalRuns: 1 }, null);
-    for (const r of sv.accs) await appendRoundHistory(r);
+    if(sv.finished)return;sv.finished=true;
+    const old=survivalBest(),score=sv.survived;sv.newBest=score>old;sv.gain=Math.max(0,score-old)*SURVIVAL_COINS_PER;
+    const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
+    completedAttempt({key:sv.runId,mode:'survival',survived:score,accuracy:svRunAcc(sv.accs.length)||0,
+      ...(score>0?{board:{path:'survival/'+deviceId,value:{n:name,s:score,t:Date.now()},best:true}}:{})});
+    clearSoloSession('survival');
   }
   async function survivalLoadBoard() {
     let rows = null;
@@ -8828,20 +9042,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   survivalContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b || !sv) return;
+    if(b.id==='sv-resume'){const saved=readSoloSession('survival');if(saved){sv=saved;renderSurvival();}return;}
+    if(b.id==='sv-discard'){clearSoloSession('survival');renderSurvival();return;}
     if (b.id === "sv-help") { openScoringHelp(survivalScreenEl); return; }
-    if (b.id === "sv-start" || b.id === "sv-again") { sv = { phase: "question", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
+    if (b.id === "sv-start" || b.id === "sv-again") { sv = { runId:crypto.randomUUID(),phase: "question", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
       if (k === "back") sv.input = sv.input.slice(0, -1);
       else if (sv.input.length < 9 && !(k === "." && sv.input.includes("."))) sv.input = (sv.input === "0" && k !== ".") ? k : (sv.input === "" && k === "." ? "0." : sv.input + k);
       document.getElementById("sv-display").textContent = sv.input || "0";
+      persistSoloSession("survival",sv);
       document.getElementById("sv-submit").disabled = !(parseFloat(sv.input) > 0);
       return;
     }
     if (b.id === "sv-submit") {
+      if(sv.phase!=="question")return;
       const g = parseFloat(sv.input); if (!(g > 0)) return;
       const acc = roundAccuracy(effectiveGuess(sv.q, g, deviceId) / sv.q.answer), ok = acc >= SURVIVAL_PASS;
       sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok; sv.resultShown = false; sv.lossPending = !ok;
+      saveSoloRound('survival',sv.q,g,sv.asked-1,sv.runId);
       sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((effectiveGuess(sv.q, g, deviceId) / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
       if (ok) sv.survived++; else sv.lives--;
       sv.phase = "reveal"; playSound("pick");
@@ -8865,8 +9084,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
   document.getElementById("survival-close-btn").addEventListener("click", async () => {
-    // leaving mid-run ends it (and banks what you survived)
-    if (sv && (sv.phase === "question" || sv.phase === "reveal") && sv.survived > 0 && !sv.finished) await survivalFinish();
+    if(sv&&!sv.finished&&['question','reveal'].includes(sv.phase))persistSoloSession('survival',sv);
     survivalStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
   });
 
@@ -8887,7 +9105,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function careerHistory() {
     const h = myProfile.history;
     const list = Array.isArray(h) ? h : (h ? Object.values(h) : []);
-    return list.filter((x) => x && x.r > 0 && OBJECT_BY_ID.has(x.u) && OBJECT_BY_ID.has(x.g));
+    return list.filter((x) => x && Number.isFinite(x.r) && x.r >= 0 && x.answered !== false && OBJECT_BY_ID.has(x.u) && OBJECT_BY_ID.has(x.g));
   }
   function careerChartSvg(points) {
     const W = 320, H = 150, L = 34, R = 10, T = 10, B = 22;
@@ -8899,16 +9117,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const dots = points.length <= 16 ? points.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="#fff" stroke="#c9660a" stroke-width="2"/>`).join("") : "";
     return `<svg class="cs-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Accuracy over time">${grid}<polygon points="${area}" fill="rgba(224,138,30,.18)"/><polyline points="${line}" fill="none" stroke="#c9660a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}<text x="${L}" y="${H - 5}" font-size="10" font-weight="700" fill="#6b3a05">Older</text><text x="${W - R}" y="${H - 5}" text-anchor="end" font-size="10" font-weight="700" fill="#6b3a05">Recent</text></svg>`;
   }
+  let statsMode="all";
+  const statTile=(value,label)=>`<div class="cs-tile"><strong>${value}</strong><span>${label}</span></div>`;
   function renderCareerStats() {
     const el = document.getElementById("career-content");
     if (!el) return;
     const st = myProfile.stats || {};
-    const hist = careerHistory();
+    const hist = careerHistory().filter(h=>statsMode==="all"||(h.mode||Object.keys(MODE_CODE).find(m=>MODE_CODE[m]===h.s))===statsMode);
     const rounds = Math.max(st.rounds || 0, hist.length);
     const lv = careerLevel(careerXp({ ...st, rounds }));
     const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
     let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div><div class="cs-lvl-sub">Every new level: a free avatar pull and ${levelRewardCoins(lv.lvl + 1)} coins</div></div>`;
-    html += `<div class="cs-tiles">${tile(rounds, "Rounds played")}${tile(st.gamesPlayed || 0, "Games played")}${tile(st.roundWins || 0, "Round wins")}${tile(st.spotOns || 0, "Spot-ons")}${tile(st.perfects || 0, "Perfects")}${tile(st.bestStreak || 0, "Best win streak")}</div>`;
+    const scoped=myProfile.modeStats?.[statsMode]||{},roomMode=['all','quick','party'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
+    const average=hist.length?hist.reduce((n,h)=>n+roundAccuracy(h.r),0)/hist.length:null;
+    html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-pressed="${statsMode===id}">${name}</button>`).join('')}</div>`;
+    html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(scoped.attempts||0,'Attempts finished')+statTile(scoped.rounds||0,'Rounds completed')+statTile(scoped.bestAccuracy?formatAccuracy(scoped.bestAccuracy)+'%':'—','Best accuracy')}${statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
+    html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'Quick Game and Party':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
+    html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Spot-ons')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
+    if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot difficulty</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(level.charAt(0).toUpperCase()+level.slice(1))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
+    if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
+    if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml();
+    if(['all','daily'].includes(statsMode))html+=`<h3 class="cs-h">Daily Challenge</h3><div class="cozy-panel cs-tiles">${statTile(dailyStreakNow(),'Current streak')}${statTile(myProfile.dailyStreak?.best||0,'Best streak')}${statTile(st.dailies||0,'Challenges finished')}</div>`;
+    if(statsMode==='all')html+=`<h3 class="cs-h">Your collection</h3><div class="cozy-panel cs-tiles">${statTile(Object.keys(myProfile.seenObjects||{}).length,'Objects seen')}${statTile(Object.keys(myProfile.seenCombos||{}).length,'Combinations seen')}${statTile(ownedNonDefaultAvatars().length,'Avatars collected')}</div>`;
+    const attempts=(myProfile.attemptHistory||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
+    if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cozy-panel">'+attempts.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode]||'Monthly practice')+' · '+formatAccuracy(r.accuracy)+'%'+(r.survived!==null?' · '+r.survived+' survived':'')+'</p>').join('')+'</div>';
+    const matches=(myProfile.matches||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
+    if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cozy-panel">'+matches.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode])+' · '+(r.won?'Won':'Place '+r.place)+' · '+formatAccuracy(r.accuracy)+'%</p>').join('')+'</div>';
+
     if (hist.length < 3) {
       html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
       el.innerHTML = html; return;
@@ -8922,9 +9157,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const recent = acc.slice(-20), before = acc.slice(-40, -20);
     let trend = "";
     if (before.length >= 5) { const d = Math.round(avg(recent) - avg(before)); trend = d === 0 ? " (steady)" : (d > 0 ? ` (up ${d} from the 20 before)` : ` (down ${-d} from the 20 before)`); }
-    html += `<h3 class="cs-h">Accuracy over time</h3><div class="cs-card">${careerChartSvg(pts)}<div class="cs-note">Last ${recent.length} rounds: <b>${Math.round(avg(recent))}%</b> accurate${trend}</div></div>`;
+    html += `<p class="cs-note">Showing ${hist.length} matching guesses from your last 300 recorded rounds.</p><h3 class="cs-h">Accuracy over time</h3><div class="cs-card">${careerChartSvg(pts)}<div class="cs-note">Last ${recent.length} rounds: <b>${Math.round(avg(recent))}%</b> accurate${trend}</div></div>`;
     // Guessing habit: geometric mean of guess / answer.
-    const bias = Math.exp(avg(hist.map((h) => Math.log(h.r)))) - 1;
+    const bias = Math.exp(avg(hist.filter(h=>h.r>0).map((h) => Math.log(h.r)))) - 1;
     const biasPct = Math.round(Math.abs(bias) * 100);
     html += `<h3 class="cs-h">Your guessing habit</h3><div class="cs-card"><div class="cs-big">${biasPct < 5 ? "Right on target" : (bias > 0 ? `You guess ${biasPct}% too high` : `You guess ${biasPct}% too low`)}</div><div class="cs-note">${biasPct < 5 ? "Your guesses are balanced between high and low." : "On average, across your recent rounds. Adjust a little the other way to climb."}</div></div>`;
     // By size scale (the bigger of the two objects).
@@ -8934,7 +9169,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return { name, n: sub.length, a: sub.length ? avg(sub.map((h) => roundAccuracy(h.r))) : 0 };
     }).filter((r) => r.n >= 3);
     if (rows.length) {
-      html += `<h3 class="cs-h">By size</h3><div class="cs-card">${rows.map((r) => `<div class="cs-row"><span class="cs-row-name">${r.name}</span><span class="cs-row-bar"><span style="width:${Math.round(r.a)}%"></span></span><span class="cs-row-val">${Math.round(r.a)}%</span></div>`).join("")}<div class="cs-note">Average accuracy, from rounds where the bigger object falls in that size range.</div></div>`;
+      html += `<h3 class="cs-h">By size</h3><div class="cs-card">${rows.map((r) => `<div class="cs-row"><span class="cs-row-name">${r.name}</span><span class="cs-row-bar"><span style="width:${Math.round(r.a)}%"></span></span><span class="cs-row-val">${Math.round(r.a)}%</span></div>`).join("")}<div class="cs-note">Average accuracy, from rounds where the bigger object falls in that size range. Each row needs at least 3 recorded guesses.</div></div>`;
     }
     // Best / toughest objects (3+ appearances).
     const agg = new Map();
@@ -8947,6 +9182,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     el.innerHTML = html;
   }
+  document.getElementById('career-content').addEventListener('click',e=>{const button=e.target.closest('[data-stats-view]');if(!button)return;statsMode=button.dataset.statsView;renderCareerStats();document.querySelector(`[data-stats-view="${statsMode}"]`)?.focus({preventScroll:true});});
   // Per-award art lives in icons/ach/<id>.png; the trophy stays until a file exists.
   document.getElementById("achievements-content").addEventListener("load", (e) => {
     if (e.target.classList && e.target.classList.contains("ach-icon")) e.target.parentNode.classList.add("has-img");
@@ -9124,7 +9360,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderCoinBalance() {
     if (observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance) {
-      sparkleCoins(toolbarCoinBalanceEl, matchMedia('(prefers-reduced-motion: reduce)').matches);
+      sparkleCoins(toolbarCoinBalanceEl, prefersReducedMotion());
     }
     observedCoinOwner = deviceId;
     observedCoinBalance = myProfile.coins || 0;
@@ -9191,13 +9427,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const GACHA_TIER_ORDER = ["default", "common", "rare", "ultra"];
   const GACHA_TIER_DISPLAY_LABELS = { default: "Default", common: "Common", rare: "Rare", ultra: "Ultra-rare" };
   const GACHA_TIER_DOT_COLORS = { default: "#8a9a6f", common: "#7a8fa6", rare: "#9a6fc1", ultra: "#d9a441" };
+  let collectionOwnership="all";
   let collectionHideLocked = false;
   try { collectionHideLocked = localStorage.getItem("mg_coll_hide") === "1"; } catch (e) {}
   function renderCollectionScreen() {
     const byTier = { default: [], common: [], rare: [], ultra: [] };
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
     const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
-    const head = `<div class="collection-sticky-head">
+    const head = `<div class="collection-sticky-head"><div class="cozy-actions" role="group" aria-label="Avatar ownership">${["all","owned","locked"].map(id=>`<button data-avatar-filter="${id}" aria-pressed="${collectionOwnership===id}">${id==="all"?"All avatars":id==="owned"?"Owned":"Locked"}</button>`).join("")}</div>
       <div class="items-stats">
         <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       </div>
@@ -9207,7 +9444,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const list = byTier[tier];
       if (!list.length) return "";
       const unlockedCount = list.filter(isAvatarUnlocked).length;
-      const shown = collectionHideLocked ? list.filter(isAvatarUnlocked) : list;
+      const shown = list.filter(a=>collectionOwnership==="locked"?!isAvatarUnlocked(a):(collectionHideLocked||collectionOwnership==="owned")?isAvatarUnlocked(a):true);
       if (!shown.length) return "";
       const tiles = shown.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}" role="button" tabindex="0">${avatarHtml(a)}</div>`).join("");
       return `
@@ -9245,8 +9482,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return flip || rot ? ` style="transform:${flip ? "scaleX(-1) " : ""}rotate(${rot}deg)"` : "";
   }
   const itemRotStyle = (id) => poseStyle(id, false);
+  function ensureObjectSearch(){
+    let panel=document.getElementById('object-search-panel');if(panel)return;
+    panel=document.createElement('div');panel.id='object-search-panel';panel.className='search-editor';
+    panel.innerHTML='<div class="search-line"><input id="object-search" readonly inputmode="none" aria-label="Search discovered objects" placeholder="Search discovered objects"><button id="object-search-edit">Search</button><button id="object-search-clear">Clear</button></div><div id="object-search-keys" class="custom-kbd" hidden></div><p id="object-search-count" class="search-count" role="status"></p>';
+    itemsContentEl.before(panel);const input=panel.querySelector('input'),keys=panel.querySelector('.custom-kbd');
+    for(const type of ['keydown','paste','drop','beforeinput'])input.addEventListener(type,e=>{if(type==='keydown'&&e.key==='Tab')return;e.preventDefault();});input.onfocus=()=>input.blur();
+    renderCustomKeyboard(keys,input,{maxLength:40,onDone:()=>{keys.hidden=true;panel.querySelector('#object-search-edit').focus();}});
+    const space=document.createElement('button');space.type='button';space.textContent='Space';space.className='kbd-key';space.onclick=()=>{if(input.value.length<40){input.value+=' ';applyObjectSearch();}};keys.append(space);
+    input.addEventListener('input',applyObjectSearch);panel.querySelector('#object-search-edit').onclick=()=>{keys.hidden=!keys.hidden;};panel.querySelector('#object-search-clear').onclick=()=>{input.value='';applyObjectSearch();};
+  }
+  function applyObjectSearch(){
+    const input=document.getElementById('object-search');if(!input)return;const query=input.value.trim().toLowerCase();let matches=0;
+    itemsContentEl.querySelectorAll('.items-row').forEach(row=>{const found=!query||(!row.classList.contains('locked')&&row.textContent.toLowerCase().includes(query));row.hidden=!found;if(found)matches++;});
+    itemsContentEl.querySelectorAll('.items-letter-group').forEach(group=>group.hidden=![...group.querySelectorAll('.items-row')].some(row=>!row.hidden));
+    document.getElementById('object-search-count').textContent=query?matches+' matching discovered objects':'';
+  }
   function renderItemsScreen() {
     if (!itemsContentEl) return;
+    ensureObjectSearch();
     const seenSet = myProfile.seenObjects || {};
     const holidayIds = new Set(HOLIDAY_OBJECT_DEFS.map((d) => d[1]));
     const isHoliday = itemsTab === "holiday";
@@ -9316,6 +9570,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ${isHoliday ? `<button type="button" class="items-stat-box items-jump" id="items-jump-btn">Jump to current month</button>` : ""}
         </div>
       </div>` + listHtml;
+    applyObjectSearch();
   }
   if (itemsContentEl) {
     itemsContentEl.addEventListener("click", (e) => {
@@ -9429,8 +9684,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ACH_ICON_IDS = new Set(["social-party_time-25", "fun-gacha_fan-10", "fun-gacha_fan-50", "fun-ad_watcher-10", "winning-round_winner-1", "winning-round_winner-10", "winning-round_winner-50", "winning-on_a_roll-3", "second_chance-second_look-25", "second_chance-double_down-5", "second_chance-double_down-25", "social-party_time-5", "winning-on_a_roll-5", "winning-champion-1", "winning-champion-10", "winning-champion-50", "accuracy-spot_on-10", "accuracy-spot_on-50", "accuracy-perfect-1", "accuracy-perfect-5", "winning-regular-5", "winning-regular-25", "winning-regular-100", "second_chance-second_look-5", "collector-ultra_lucky-5", "collector-object_spotter-25", "collector-object_spotter-75", "collector-object_spotter-116", "collector-combo_hunter-50", "collector-combo_hunter-250", "collector-combo_hunter-1000", "accuracy-spot_on-1", "collector-avatar_fan-5", "collector-avatar_fan-25", "collector-avatar_fan-75", "collector-ultra_lucky-1"]);
   const TROPHY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none" stroke="#8a4f00" stroke-width="1.6"/><path d="M12 14v4M8 21h8M9 18h6v3H9z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/></svg>';
   // Temporary: always claimable, tap to claim, tap again to unclaim (for testing the UI).
-  ACHIEVEMENTS.unshift({ id: "test_achievement", cat: "Test", name: "Test achievement", desc: "Always ready. Tap to claim, tap again to unclaim.", target: 1, reward: 10, progress: () => 1, test: true });
-  ACH_CATS.unshift("Test");
+  if(TEST_BUILD)ACHIEVEMENTS.unshift({ id: "test_achievement", cat: "Test", name: "Test achievement", desc: "Always ready. Tap to claim, tap again to unclaim.", target: 1, reward: 10, progress: () => 1, test: true });
+  if(TEST_BUILD)ACH_CATS.unshift("Test");
   let achHideDone = false;
   try { achHideDone = localStorage.getItem("mg_ach_hide") === "1"; } catch (e) {}
   let achJustClaimed = null;
@@ -9517,7 +9772,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const old = document.getElementById("ach-toast");
     if (old) old.remove();
     const t = document.createElement("div");
-    t.id = "ach-toast";
+    t.id = "ach-toast";t.setAttribute("role","status");t.setAttribute("aria-live","polite");
     t.textContent = text;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3300);
@@ -9576,46 +9831,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Called each time a round summary renders; counted once per round.
   const roundStatsPending = new Set();
   async function recordRoundStats(data) {
-    const playerId = currentPlayerId, owner = deviceId;
-    if (!data || !playerId || !currentPlayers[playerId]) return;
-    const legacyKey = `${currentRoomCode}:${data.round || 0}:${data.animStartAt || ""}`;
-    let done = [];
-    try { done = JSON.parse(localStorage.getItem("mg_ach_rounds") || "[]"); } catch (e) {}
-    let receiptKey;
-    try { receiptKey = `${gameRewardKey(currentRoomCode, data)}_round_${data.round || 0}`; } catch { return; }
-    if (done.includes(legacyKey) || done.includes(receiptKey)) return;
-    const mine = (data.revealOrder || []).find(e => e.playerId === playerId);
-    const pendingKey = owner + ":" + receiptKey;
-    if (!mine || roundStatsPending.has(pendingKey)) return;
-    const chips = (computeRoundBreakdown(data)[playerId] || []).map(c => c.label);
-    const inc = { rounds: 1 };
-    if (mine.basePoints === 5) inc.spotOns = 1;
-    if (mine.isPerfect) inc.perfects = 1;
-    if (mine.isClosest) inc.roundWins = 1;
-    if (mine.doubleDownPoints > 0) inc.doubleDowns = 1;
-    if (chips.includes("second chance")) inc.secondChances = 1;
-    // Only opponents who actually submitted a guess affect this round's XP.
-    const participants = Object.fromEntries((data.revealOrder || []).map(e => [e.playerId, (data.players || currentPlayers)[e.playerId]]).filter(([, p]) => p));
-    const q = data.currentQuestion;
-    const history = q && q.unitId && q.targetId && q.answer > 0 && mine.guess > 0 ? {
-      t: Date.now(), u: q.unitId, g: q.targetId,
-      r: Math.round(((mine.effectiveGuess ?? mine.guess) / q.answer) * 10000) / 10000,
-      p: data.lastRoundPoints?.[playerId] || 0,
-      f: (mine.basePoints === 5 ? 1 : 0) | (mine.isPerfect ? 2 : 0) | (mine.isClosest ? 4 : 0),
-      s: data.settings?.solo ? 1 : 0,
-    } : null;
-    roundStatsPending.add(pendingKey);
-    try {
-      const saved = await runTransaction(ref(db, `profiles/${owner}`), profile =>
-        roundCareerProfile(profile, receiptKey, inc, mine.isClosest ? { bestStreak: mine.consecutiveWins || 1 } : null, participants, playerId, history), { applyLocally: false });
-      if (!saved.snapshot.val()?.careerRounds?.[receiptKey]) return;
-      done.push(receiptKey);
-      try { localStorage.setItem("mg_ach_rounds", JSON.stringify(done.slice(-30))); } catch (e) {}
-      if (saved.committed && deviceId === owner) grantLevelRewards();
-    } catch (error) {
-      console.warn("[measuring-game] Round XP will retry when the summary is rendered again", error);
-    } finally { roundStatsPending.delete(pendingKey); }
+    const playerId=currentPlayerId, players=data?.players||currentPlayers;
+    if(!careerLedger||!data?.currentQuestion||!players?.[playerId])return;
+    let matchKey;try{matchKey=gameRewardKey(currentRoomCode,data);}catch{return;}
+    const mine=(data.revealOrder||[]).find(e=>e.playerId===playerId),q=data.currentQuestion;
+    const mode=data.settings?.solo?'quick':'party',answered=!!mine;
+    const isSpot=answered&&roundAccuracy((mine.effectiveGuess??mine.guess)/q.answer)>=99;
+    const history={t:Date.now(),u:q.unitId,g:q.targetId,r:answered?(mine.effectiveGuess??mine.guess)/q.answer:null,
+      rawR:answered?mine.guess/q.answer:null,answered,p:data.lastRoundPoints?.[playerId]||0,
+      f:mine?((isSpot?1:0)|(mine.isPerfect?2:0)|(mine.isClosest?4:0)):0,s:MODE_CODE[mode],mode,buffer:!!mine?.bufferUsed,
+      match:matchKey,round:data.round||0};
+    const participants=Object.fromEntries((data.revealOrder||[]).map(e=>[e.playerId,players[e.playerId]]).filter(([,p])=>p));
+    const chips=(computeRoundBreakdown(data)[playerId]||[]).map(c=>c.label);
+    careerLedger.save({kind:'round',key:matchKey+'_round_'+(data.round||0),mode,playerId,players:participants,history,
+      inc:{spotOns:isSpot?1:0,perfects:mine?.isPerfect?1:0,roundWins:mine?.isClosest?1:0,
+        doubleDowns:mine?.doubleDownPoints>0?1:0,secondChances:chips.includes('second chance')?1:0},
+      maxima:mine?.isClosest?{bestStreak:mine.consecutiveWins||1}:null});
   }
+  function saveSoloRound(mode,q,guess,index,runId) {
+    const actualMode=mode==='practice'?'monthly':mode,effective=effectiveGuess(q,guess,deviceId),accuracy=roundAccuracy(effective/q.answer);
+    careerLedger.save({kind:'round',key:runId+'_round_'+index,mode:actualMode,history:{t:Date.now(),u:q.unitId,g:q.targetId,r:effective/q.answer,
+      rawR:guess/q.answer,answered:true,p:0,f:accuracy>=99?1:0,s:MODE_CODE[actualMode],mode:actualMode,buffer:effective!==guess},
+      inc:{spotOns:accuracy>=99?1:0,perfects:Math.abs(effective-q.answer)<.005?1:0}});
+  }
+  function completedAttempt(record) { careerLedger.save({kind:'attempt',t:Date.now(),...record}); }
+
   const HISTORY_MAX = 300;
   function appendRoundHistory(rec, owner = deviceId) {
     return runTransaction(ref(db, `profiles/${owner}/history`), (cur) => {
@@ -9843,7 +10083,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // unlock from the installed phone app, where there's no address bar to
   // append a ?debug=1 to and no console access either - always visible in
   // Settings for now. Remove before launch (see launch-blockers memory).
-  document.getElementById("debug-coins-panel").style.display = "block";
+  document.getElementById("debug-coins-panel").style.display = TEST_BUILD ? "block" : "none";
+  gachaDebugAddCoinsBtn.hidden=!TEST_BUILD;
   document.getElementById("debug-coins-btn").addEventListener("click", async () => {
     const val = Math.max(0, parseInt(document.getElementById("debug-coins-input").value, 10) || 0);
     await update(ref(db, `profiles/${deviceId}`), { coins: val });
@@ -10315,12 +10556,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // level. touchmove covers Chrome/Android multi-touch pinch; the
   // gesture* events are Safari-only (iOS pinch reports as a "gesture",
   // not a multi-touch move) and are simply never fired elsewhere.
-  document.addEventListener("touchmove", (e) => {
-    if (e.touches.length > 1) e.preventDefault();
-  }, { passive: false });
-  document.addEventListener("gesturestart", (e) => e.preventDefault());
-  document.addEventListener("gesturechange", (e) => e.preventDefault());
-  document.addEventListener("gestureend", (e) => e.preventDefault());
+  // Menu zoom remains available for readable text and collection artwork.
+
 
   // ---- Prevent the phone's back button/gesture from closing the app (a
   // real PWA complaint: with no history entries to go back to, back exits
@@ -10444,8 +10681,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const nameSpan = document.createElement("span");
       const botRowsOn = isHost && p.isBot && roomState && roomState.phase === "waiting";
-      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span>${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}`;
+      nameSpan.className='lobby-player-identity';
+      const party=!roomState.settings?.solo;
+      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
+      if(id===currentPlayerId&&party&&roomState.phase==='waiting'){
+        const ready=document.createElement('button');ready.type='button';ready.id='lobby-ready-btn';ready.textContent=p.ready?'Ready ✓':"I'm ready";ready.setAttribute('aria-pressed',String(!!p.ready));ready.title=p.ready?'Tap to undo ready':'Mark yourself ready';li.appendChild(ready);
+      }
       if (botRowsOn) {
         li.classList.add("bot-row");
         const ctl = document.createElement("div");
@@ -10462,8 +10704,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const x = document.createElement("button");
         x.type = "button";
         x.className = "bot-x-btn";
-        x.textContent = "\u2715";
-        x.setAttribute("aria-label", "Remove bot");
+        x.innerHTML = '<svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>';
+        x.setAttribute("aria-label", "Remove " + p.name);
+        x.title = "Remove " + p.name;
         const isSolo = !!(roomState.settings && roomState.settings.solo);
         const botCount = Object.values(currentPlayers).filter((q) => q.isBot).length;
         x.disabled = isSolo && botCount <= SOLO_MIN_BOTS;
@@ -10494,6 +10737,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // created on the create screen — there's no room to write to yet.
   function renderLocalSettingsPanel() {
     const s = currentSettings;
+    document.getElementById("create-settings-summary").textContent = `${s.totalRounds} rounds · ${s.timerSeconds} sec · ${s.itemSelectionMode === "relative" ? "Keep it relative" : "Anything goes"}`;
     if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
@@ -10829,7 +11073,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let createMode = "party";
   function showCreateScreen(mode) {
     createMode = mode === "solo" ? "solo" : "party";
+    createScreenEl.dataset.setupMode = createMode;
     createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
+    document.getElementById("host-settings-card").hidden = createMode === "solo";
+    document.getElementById("host-settings-card").open = false;
     currentSettings = DEFAULT_SETTINGS();
     if (createMode === "solo") currentSettings.autoAdvanceEnabled = true; // solo has no host to tap Next
     hostTransferModeChoice = "reassign";
@@ -10988,6 +11235,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingSettings = null;
     showNameAvatarScreen("join");
   });
+  mountRoomQr({button:document.getElementById('scan-room-qr-btn'),input:codeInput,status:joinStatusEl,joinButton:joinContinueBtn,
+    isActive:()=>joinScreen.classList.contains('active'),
+    scanner:isNativeApp?async()=>{
+      const cap=window.Capacitor,plugin=cap.registerPlugin?cap.registerPlugin('RoomQrScanner'):cap.Plugins?.RoomQrScanner;
+      if(!plugin)throw Error('Scanner unavailable');return plugin.scan();
+    }:null});
   renderCustomKeyboard(codeKeyboardEl, codeInput, {
     maxLength: 4,
     charset: new Set(ROOM_CODE_CHARSET.split("")),
@@ -11087,6 +11340,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     joinRoomAsPlayer(code, currentName, false, data);
   }
 
+  playerList.addEventListener('click',async e=>{
+    if(!e.target.closest('#lobby-ready-btn')||roomState.phase!=='waiting')return;
+    const button=e.target.closest('button');button.disabled=true;
+    try{await update(ref(db,'rooms/'+currentRoomCode+'/players/'+currentPlayerId),{ready:!currentPlayers[currentPlayerId]?.ready});}
+    catch{lobbyStatusEl.textContent='Could not save Ready. Please try again.';}
+    finally{button.disabled=false;}
+  });
   async function startGameNow() {
     playSound("start");
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
@@ -11104,7 +11364,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // tap doesn't skip straight into the countdown.
   hostStartBtn.addEventListener("click", () => {
     if (hostStartBtn.disabled) return;
-    openExitConfirm("startGame", "Start game?", "Make sure everyone's ready to begin.");
+    const humans=Object.values(currentPlayers).filter(p=>!p.isBot),ready=humans.filter(p=>p.ready).length;
+    openExitConfirm('startGame','Start game?',roomState.settings?.solo||ready===humans.length?"Everyone is ready. Let's play!":`${ready} of ${humans.length} players are ready. Start anyway?`);
   });
 
   function maybeReassignHost(data, roomCode) {
@@ -11412,7 +11673,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       src.buffer = buf;
       src.playbackRate.value = cue.rate || 1;
       const g = ctx.createGain();
-      g.gain.value = cue.vol;
+      g.gain.value = cue.vol * (Number(localStorage.getItem("mg_effects_volume") ?? 100)/100);
       src.connect(g);
       g.connect(ctx.destination);
       src.start();
@@ -11970,14 +12231,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Go through the same countdown phase a fresh game start uses, instead
     // of jumping straight into round 1 - otherwise "Play again" skipped the
     // "Round 1 starting in" beat entirely.
-    const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
-    updates.phase = "countdown";
-    updates.countdownRound = 1;
-    updates.countdownEndsAt = countdownEndsAt;
-    await update(ref(db, `rooms/${roomCode}`), updates);
-    scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(roomCode));
+    Object.keys(players).forEach(id=>{updates['players/'+id+'/ready']=false;updates['players/'+id+'/rewardCollected']=false;});
+    updates.phase='waiting';updates.countdownEndsAt=null;updates.currentQuestion=null;updates.revealOrder=null;updates.lastRoundPoints=null;updates.round=0;
+    await update(ref(db,`rooms/${roomCode}`),updates);
   }
-  playAgainBtn.addEventListener("click", () => playAgain(currentRoomCode));
+  playAgainBtn.addEventListener('click',()=>{if(!currentPlayers[currentPlayerId]?.rewardCollected){gameRewards.open();return;}if(isHost)playAgain(currentRoomCode);});
 
   // ==================== Pause / Exit ====================
 
@@ -12025,10 +12283,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   endedReloadBtn.addEventListener("click", () => location.reload());
   // Results lead to each player's receipt. After collecting, the host closes
   // this completed game; guests remove their own slot and return home too.
-  finalHomeBtn.addEventListener("click", () => gameRewards.open());
+  finalHomeBtn.addEventListener('click',()=>{if(currentPlayers[currentPlayerId]?.rewardCollected&&!roomState.settings?.solo){if(isHost)openExitConfirm('hostGame','Leave party?','You are the host. This ends the party for everyone.');else guestExit();}else gameRewards.open();});
   async function finishCompletedGame(reward) {
+    const roomCode=reward.roomCode;
+    const live=(await get(ref(db,'rooms/'+roomCode))).val();
+    if(live&&!live.settings?.solo&&live.phase!=='ended'){
+      let sameGame=false;try{sameGame=gameRewardKey(roomCode,live)===reward.key;}catch{}
+      if(sameGame&&live.players?.[reward.playerId])await update(ref(db,'rooms/'+roomCode+'/players/'+reward.playerId),{rewardCollected:true,ready:false});
+      if(currentRoomCode===roomCode){currentPlayers[reward.playerId]={...currentPlayers[reward.playerId],rewardCollected:true};updateFinalButtons();}
+      return;
+    }
     leavingGame = true;
-    const roomCode = reward.roomCode;
     try {
       // Finishing an old receipt must never close a newer game in the room.
       if (reward.host) await runTransaction(ref(db, `rooms/${roomCode}`), room => {
@@ -12777,7 +13042,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const newLeader = createLeadMotion();
   const submissionMotion = createSubmissionMotion({ bounce(id) {
     const card = Array.from(scoreColEl.children).find(el => el.dataset.id === id);
-    playSubmissionBounce(card, matchMedia('(prefers-reduced-motion: reduce)').matches);
+    playSubmissionBounce(card, prefersReducedMotion());
   }});
   function updateSubmissionMotion() {
     submissionMotion.update({ ...roomState, roomCode: currentRoomCode }, nowMs());
@@ -12834,7 +13099,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         scoreColEl.appendChild(box);
         fitNameToCard(box.querySelector(".name"));
         if (id === celebratingId && roomState.phase !== "waiting") {
-          celebrateLead(box, matchMedia('(prefers-reduced-motion: reduce)').matches);
+          celebrateLead(box, prefersReducedMotion());
         }
         const prevScore = previousDisplayedScores[id];
         if (prevScore !== undefined && prevScore !== score) {
@@ -13019,17 +13284,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // coins are still credited here, before either reward-screen button.
     void gameRewards.prepare({ key: gameRewardKey(currentRoomCode, roomState), score: myFinalScore,
       roomCode: currentRoomCode, playerId: currentPlayerId, host: isHost });
-    {
-      const ids = Object.keys(currentPlayers);
-      const top = Math.max(...ids.map((id) => currentPlayers[id].score || 0));
-      const inc = { gamesPlayed: 1 };
-      if (ids.length >= 2 && myFinalScore === top) inc.gamesWon = 1;
-      const humans = ids.filter((id) => !currentPlayers[id].isBot).length;
-      const isSoloGame = !!(roomState.settings && roomState.settings.solo);
-      if (!isSoloGame && humans >= 2 && ids.length >= 3) inc.groupGames = 1; // Party time counts Host Party games only
-      bumpStats(inc);
-    }
+    const standings=computeRanks(Object.keys(currentPlayers),id=>currentPlayers[id].score||0,id=>currentPlayers[id].roundsCounted?currentPlayers[id].accuracySum/currentPlayers[id].roundsCounted:null,true);
+    const myPlace=standings.find(p=>p.id===currentPlayerId),humans=Object.values(currentPlayers).filter(p=>!p.isBot).length;
+    const mode=roomState.settings?.solo?'quick':'party';
+    careerLedger.save({kind:'match',key:gameRewardKey(currentRoomCode,roomState),mode,t:Date.now(),won:standings.length>=2&&myPlace?.rank===1,
+      place:myPlace?.rank||standings.length,group:mode==='party'&&humans>=2&&standings.length>=3,score:myFinalScore,
+      accuracy:myPlace?.avg||0,opponents:Object.values(currentPlayers).filter(p=>p!==currentPlayers[currentPlayerId]).map(p=>p.isBot?p.botDifficulty||'medium':'human')});
     finalListEl.innerHTML = "";
+    const previousRecap=document.getElementById('final-session-recap');if(previousRecap)previousRecap.remove();
+    const recap=document.createElement('div');recap.id='final-session-recap';recap.className='cozy-panel';
+    const me=currentPlayers[currentPlayerId],best=me?.bestGuess;
+    recap.innerHTML=`<b>Your game</b><p>${myFinalScore} points · ${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
+    finalListEl.after(recap);
+    recap.querySelector('button').onclick=async()=>{const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const share=isNativeApp&&window.Capacitor?.Plugins?.Share;if(share){try{await share.share({title:'Size Em Up!',text});}catch{}}else if(navigator.share){try{await navigator.share({title:'Size Em Up!',text});}catch{}}else if(await copyTextToClipboard(text))showAchToast('Result copied!');};
     const scoreFn = (id) => currentPlayers[id].score || 0;
     const avgFn = (id) => {
       const p = currentPlayers[id];
@@ -13074,9 +13341,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }, rank1Delay + 350);
   }
   function updateFinalButtons() {
-    finalDoubleCoinsBtn.style.display = "none";
-    playAgainBtn.style.display = "none";
-    finalHomeBtn.textContent = "Continue";
+    finalDoubleCoinsBtn.style.display='none';
+    const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo;
+    playAgainBtn.style.display=party&&isHost&&collected?'flex':'none';playAgainBtn.textContent='Play again with this party';
+    finalHomeBtn.textContent=collected&&party?'Leave party':'Collect coins';
+    let note=document.getElementById('final-party-note');if(!note){note=document.createElement('p');note.id='final-party-note';note.className='cs-note';finalListEl.after(note);}
+    note.textContent=party?(collected?(isHost?'Start a rematch to keep this party together.':'Coins collected. Waiting for the host to start a rematch.'):'Collect your coins, then stay for the next game.'):'Your completed game and coins are saved once.';
   }
 
   // ==================== Sound / confetti ====================
@@ -13161,7 +13431,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     applause:  { pics: ["clap"], move: "clap", burst: "claps", lap: 3000, size: 34, items: 10, burstN: 16, life: 4200 },
   };
   const flairPic = (n) => (n === "coin" ? "icons/coin.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
-  const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion = () => window.matchMedia && prefersReducedMotion();
   // ?flair=hearts previews a flair in-game; otherwise the winner's own equipped flair (default Classic Stars).
   function flairIdFor(entry) {
     const test = new URLSearchParams(location.search).get("flair");
@@ -13693,7 +13963,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!base) return;
     try {
       const node = base.cloneNode(true);
-      node.volume = SFX_VOLUME[name] ?? 0.6;
+      node.volume = (SFX_VOLUME[name] ?? 0.6) * (Number(localStorage.getItem("mg_effects_volume") ?? 100)/100);
       activeSfx.add(node);
       const done = () => activeSfx.delete(node);
       node.addEventListener("ended", () => {
@@ -13741,7 +14011,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Springy release bounce on every button, everywhere — one delegated listener.
   function triggerBtnBounce(e) {
     const btn = e.target.closest && e.target.closest("button");
-    if (!btn || btn.disabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!btn || btn.disabled || prefersReducedMotion()) return;
     btn.classList.remove("btn-bounce");
     void btn.offsetWidth;
     btn.classList.add("btn-bounce");
@@ -13762,8 +14032,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function applyLobbyMode(data) {
     const solo = !!(data.settings && data.settings.solo);
     lobbyScreenEl.classList.toggle("solo-lobby", solo);
-    document.getElementById("lobby-title-room").style.display = solo ? "none" : "";
-    document.getElementById("lobby-title-solo").style.display = solo ? "" : "none";
+    document.querySelector('.lobby-room-box').hidden=solo;
     if (solo) {
       shareRoomBtn.style.display = "none";
       hostUnlockBannerEl.classList.remove("active");
@@ -13775,11 +14044,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Host Party needs at least one other real player before it can start.
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
     const needsFriend = !solo && humans < 2;
+    const real=Object.values(data.players||{}).filter(p=>!p.isBot),ready=real.filter(p=>p.ready).length;
+    const rules=document.getElementById('lobby-rules');rules.innerHTML=`<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}${solo?'':` · ${ready}/${real.length} ready`}</p>`;
+    hostStartBtn.textContent='Start game';
     hostStartBtn.disabled = needsFriend;
     hostStartBtn.style.opacity = needsFriend ? ".5" : "";
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? "Waiting for at least one friend to join. Share the room code!" : "";
   }
   function applyPhase(data) {
+    if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
     // The game actually starting (or anything else moving the phase off
@@ -13872,7 +14145,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Every player reads the results first, then continues to their receipt.
     if (phase === "final") updateFinalButtons();
     finalDoubleCoinsBtn.style.display = "none";
-    playAgainBtn.style.display = "none";
+    if(phase!=="final")playAgainBtn.style.display="none";
 
     // "data.round !== lastSeenRound" alone misses a Play Again restart: it goes
     // straight back to round 1, which is indistinguishable from "still on round
@@ -13882,7 +14155,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const enteringQuestionPhase = phase === "question" && lastSeenPhaseForReset !== "question";
     if (phase === "question" && (data.round !== lastSeenRound || enteringQuestionPhase)) {
       lastSeenRound = data.round;
-      if (data.currentQuestion) markObjectsSeen(data.currentQuestion.unitId, data.currentQuestion.targetId);
+
       currentGuessStr = "";
       hasSubmittedThisRound = false;
       guessLocked = false;
@@ -13898,6 +14171,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderGuessDisplay();
       updateWaitingUi();
     }
+    if (["animation","reveal","summary","final"].includes(phase) && data.lastRoundPoints) void recordRoundStats(data);
     lastSeenPhaseForReset = phase;
 
     powerups?.render();
@@ -14086,7 +14360,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (["small", "big", "both"].includes(id)) {
         currentGuessStr = ""; guessLocked = false; hasSubmittedThisRound = false;
         renderGuessDisplay(); setGuessStatus("New objects. Timer restarted.");
-        markObjectsSeen(room.currentQuestion.unitId, room.currentQuestion.targetId);
+
         scheduleBotGuesses(currentRoomCode, room.currentQuestion);
         if (room.questionEndsAt) scheduleHostDeadline(room.questionEndsAt, () => checkQuestionAdvance(currentRoomCode));
       }
@@ -14103,6 +14377,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   powerups.render();
   // Retry old pending receipts even when the profile itself has not changed.
   setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
+
+  careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
+    onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
+    onSaved:async row=>{if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
+  void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});

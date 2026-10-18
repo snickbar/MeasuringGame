@@ -1,8 +1,10 @@
+import {createCareerLedger,MODE_CODE} from '../anim/career-ledger.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { baseCareerXp, careerXpTotal, opponentXpMultiplier, roundCareerProfile } from '../anim/opponent-xp.mjs';
 import { gameRewardKey } from '../anim/game-rewards.mjs';
+import { roundAccuracy } from '../anim/accuracy.mjs';
 
 const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const extract=name=>{let i=source.indexOf('  function '+name+'(');if(i<0)i=source.indexOf('  async function '+name+'(');assert(i>=0);return source.slice(i,source.indexOf('\n  }',i)+4)};
@@ -45,17 +47,18 @@ let profile=fresh(),failure=false,lostResponse=false,transactions=0,levels=0;
 const store=new Map(),data={gameId:'game',round:1,animStartAt:1,settings:{solo:true},
  players:{me,easy,afk:hard},currentQuestion:{unitId:'ant',targetId:'door',answer:100},
  revealOrder:[{playerId:'me',guess:70,basePoints:3,isClosest:true,consecutiveWins:2},{playerId:'easy',guess:220}],lastRoundPoints:{me:3}};
-const context=vm.createContext({currentPlayerId:'me',deviceId:'owner',currentPlayers:data.players,currentRoomCode:'ROOM',roundStatsPending:new Set(),
+const context=vm.createContext({roundAccuracy,MODE_CODE,currentPlayerId:'me',deviceId:'owner',currentPlayers:data.players,currentRoomCode:'ROOM',roundStatsPending:new Set(),
  gameRewardKey,roundCareerProfile,computeRoundBreakdown:()=>({}),grantLevelRewards:()=>levels++,
  localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)},db:{},ref:(_,p)=>p,
  runTransaction:async(_,change)=>{transactions++;await Promise.resolve();if(failure)throw Error('offline');const next=change(structuredClone(profile));if(next)profile=next;if(lostResponse){lostResponse=false;throw Error('lost response')}return {committed:!!next,snapshot:{val:()=>structuredClone(profile)}}},console:{warn(){}}});
+context.careerLedger=createCareerLedger({owner:()=>context.deviceId,storage:context.localStorage,transaction:(id,fn)=>context.runTransaction(id,fn),onSaved:()=>{levels++}});
 vm.runInContext(extract('recordRoundStats'),context);
-await Promise.all([context.recordRoundStats(data),context.recordRoundStats(data)]);
+await Promise.all([context.recordRoundStats(data),context.recordRoundStats(data)]);await context.careerLedger.flush();
 assert.equal(transactions,1);assert.equal(careerXpTotal(profile.stats),12,'AFK Hard bot excluded; active Easy gives 0.8×');
 assert.equal(profile.history.length,1);assert.equal(levels,1);
-store.clear();await context.recordRoundStats(data);assert.equal(profile.stats.rounds,1);assert.equal(profile.history.length,1,'reopened summary does not duplicate history');
-data.round=2;failure=true;await context.recordRoundStats(data);assert.equal(profile.stats.rounds,1);
-failure=false;lostResponse=true;await context.recordRoundStats(data);assert.equal(profile.stats.rounds,2);
-await context.recordRoundStats(data);assert.equal(profile.stats.rounds,2);assert.equal(profile.history.length,2,'lost response retry stays atomic');
+store.clear();await context.recordRoundStats(data);await context.careerLedger.flush();assert.equal(profile.stats.rounds,1);assert.equal(profile.history.length,1,'reopened summary does not duplicate history');
+data.round=2;failure=true;await context.recordRoundStats(data);await context.careerLedger.flush();assert.equal(profile.stats.rounds,1);
+failure=false;lostResponse=true;await context.recordRoundStats(data);await context.careerLedger.flush();assert.equal(profile.stats.rounds,2);
+await context.recordRoundStats(data);await context.careerLedger.flush();assert.equal(profile.stats.rounds,2);assert.equal(profile.history.length,2,'lost response retry stays atomic');
 assert.equal(baseCareerXp(profile.stats),30);assert.equal(careerXpTotal(profile.stats),24);
 console.log('PASS: widened Easy range, unchanged Medium/Hard guesses, three-bot default, opponent XP rates, historical XP, mixed/fractional XP, real round recorder, AFK exclusion, atomic counters/history and retry receipts.');

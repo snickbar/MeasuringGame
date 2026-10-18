@@ -46,14 +46,14 @@ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const start=source.indexOf('  async function finishCompletedGame(');
 const finishSource=source.slice(start,source.indexOf('\n  }',start)+4);
 for(const [host,room,expectedEnds,expectedRemoves] of [
-  [true,{phase:'final',gameId:'game'},1,1],
-  [false,{phase:'final',gameId:'game'},0,1],
+  [true,{phase:'final',gameId:'game',settings:{solo:true}},1,1],
+  [false,{phase:'final',gameId:'game',settings:{solo:true}},0,1],
   [true,null,0,0],
   [true,{phase:'question',gameId:'new-game'},0,0],
   [false,{phase:'waiting'},0,0],
 ]) {
   let savedRoom=room,ends=0,removes=0,reloads=0;
-  const context=vm.createContext({gameRewardKey,leavingGame:false,db:{},ref:(_,p)=>p,
+  const context=vm.createContext({currentRoomCode:'ABCD',currentPlayers:{me:{}},updateFinalButtons:()=>{},update:async()=>{},gameRewardKey,leavingGame:false,db:{},ref:(_,p)=>p,
     runTransaction:async(_,fn)=>{const next=fn(savedRoom);if(next){ends++;savedRoom=next}},
     get:async()=>({val:()=>savedRoom}),onDisconnect:()=>({cancel:async()=>{}}),
     remove:async()=>{removes++},maybeDeleteEmptyRoom:async()=>{},
@@ -61,6 +61,6 @@ for(const [host,room,expectedEnds,expectedRemoves] of [
   });
   vm.runInContext(finishSource,context);
   await context.finishCompletedGame({roomCode:'ABCD',key:'ABCD_game',playerId:'me',host});
-  assert.equal(ends,expectedEnds);assert.equal(removes,expectedRemoves);assert.equal(reloads,1);
+  assert.equal(ends,expectedEnds);assert.equal(removes,expectedRemoves);assert.equal(reloads,room&&!room.settings?.solo&&room.phase!=='ended'?0:1);
 }
 console.log('Game reward receipts: minimum, breakdown, atomic base/ad credit, retries, completion, independent game IDs passed.');

@@ -147,9 +147,26 @@ const VISUAL = {
 // How each object travels in: 'walk' bounces along, 'drive' rattles along, 'fly' lifts off and
 // lands, 'sail' rocks gently, and anything else gives a few hops.
 const MOTION = {
-  'ant': 'walk', 'cockroach': 'walk', 'ladybug': 'walk', 'domestic-cat': 'walk', 'elephant': 'walk',
-  'car': 'drive', 'bicycle': 'drive', 'double-decker-bus': 'drive',
-  'boeing-737': 'fly', 'blimp': 'fly', 'honeybee': 'fly',
+  "potato-chip-tube": "slide",
+  "single-use-snack-bag": "slide",
+  "soft-pretzel": "slide",
+  "nail": "slide",
+  "hammer": "slide",
+  "action-figure": "slide",
+  "laser-sword": "slide",
+  "ant": "walk",
+  "cockroach": "walk",
+  "ladybug": "walk",
+  "domestic-cat": "walk",
+  "elephant": "walk",
+  "car": "drive",
+  "bicycle": "drive",
+  "double-decker-bus": "drive",
+  "boeing-737": "fly",
+  "blimp": "fly",
+  "honeybee": "fly",
+  "seahorse": "fly",
+  "stingray": "fly"
 };
 
 export const LIGHT_THEME = {
@@ -266,8 +283,7 @@ const ORIENT_DEFAULT = { rot: 0, flip: false, leanL: 'ccw', leanR: 'cw', mirR: f
 function orientOf(o) { return ORIENT[o.id] || ORIENT_DEFAULT; }
 // extraMirror is true for the big object on the right. Returns how it swings up to stand: 'ccw' on the
 // left and 'cw' on the right by default, or null when it does not turn (it already stands as it is).
-function leanOf(o, extraMirror) {
-  const st = orientOf(o);
+function leanOf(o, extraMirror, st = orientOf(o)) {
   const l = extraMirror ? st.leanR : st.leanL;
   return l === 'cw' || l === 'ccw' ? l : null;
 }
@@ -373,11 +389,18 @@ export function animationDuration(unitIn, targetIn) {
 }
 
 export function createStackAnimation(container, options = {}) {
+  // Review tools may supply isolated draft settings; normal game callers use saved data.
+  const orientationFor = options.orientationFor || orientOf;
+  const leanFor = (o, right) => leanOf(o, right, orientationFor(o));
+  const motionFor = options.motionFor || ((o, right) => {
+    const saved = MOTION[o.id];
+    return typeof saved === 'string' ? saved : saved?.[right ? 'big' : 'small'] || 'slide';
+  });
   const theme = { ...LIGHT_THEME, ...(options.theme || {}) };
   const imageUrl = options.imageUrl || ((o) => o.image);
   const reduceMotion = options.reduceMotion != null
     ? options.reduceMotion
-    : !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    : (document.documentElement.dataset.motion==='reduce'||(document.documentElement.dataset.motion!=='full'&&!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)));
   const flipFacing = !!options.flipFacing;   // swaps which of the two pictures is mirrored
   // The caller can mirror the running count elsewhere (via start()'s onFrame,
   // which now also receives the current shown value) instead of showing it
@@ -447,7 +470,7 @@ export function createStackAnimation(container, options = {}) {
   function poseFor(o, extraMirror) {
     const key = o.id + (extraMirror ? ':m' : '');
     if (!poseCache.has(key)) {
-      const st = orientOf(o);
+      const st = orientationFor(o);
       const pose = poseOf(pics.get(o.id).img, st, extraMirror && st.mirR);
       // Transparent export margins must not act as invisible space under an object.
       // Use the same trimmed pose for its travelling, turning and stacked sprites.
@@ -472,7 +495,7 @@ export function createStackAnimation(container, options = {}) {
   function spriteFor(o, extraMirror) {
     const key = o.id + (extraMirror ? ':m' : '');
     if (spriteCache.has(key)) return spriteCache.get(key);
-    const lean = leanOf(o, extraMirror);
+    const lean = leanFor(o, extraMirror);
     const p = poseFor(o, extraMirror);
     let c = p;
     if (lean) {
@@ -514,12 +537,12 @@ export function createStackAnimation(container, options = {}) {
     const bigSprite = spriteFor(target, !flipFacing);
     const bigLanding = landingStyleFor(target), smallLanding = landingStyleFor(unit);
     const scenery = kit.id;
-    const bigLean = leanOf(target, !flipFacing);
-    const smLean = leanOf(unit, flipFacing);
+    const bigLean = leanFor(target, !flipFacing);
+    const smLean = leanFor(unit, flipFacing);
     const bigLying = bigLean ? lyingSprite(target, !flipFacing, bigLean) : null;
     const smLying = smLean ? lyingSprite(unit, flipFacing, smLean) : null;
-    const bigKind = MOTION[target.id] || 'slide';
-    const smKind = MOTION[unit.id] || 'slide';
+    const bigKind = motionFor(target, !flipFacing);
+    const smKind = motionFor(unit, flipFacing);
     const dark = !!theme.dark;
     const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
     const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
@@ -883,7 +906,7 @@ export function createStackAnimation(container, options = {}) {
         // Objects that already stand upright just hop in from the right.
         const hu = bigLean ? 1 : clamp(t / BIG_S, 0, 1);
         const slide = (1 - hu) * (1 - hu) * (W - bigX + 30);
-        const hop = bigLean ? 0 : travelLift('slide', hu, bw, 0);
+        const hop = bigLean ? 0 : travelLift(bigKind, hu, bw, 0);
         shadow(bx + slide + bw / 2, sy0 + 2, bw * .95, clamp(bw * .07, 3, 10), .36 / (1 + hop / 12));
         if (bx + slide < W && bx + bw > 0 && by < stageH && by + bh > 0) {
           drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
@@ -947,6 +970,11 @@ export function createStackAnimation(container, options = {}) {
           continue;
         }
         const h = hopAt((t - starts[i]) / durs[i]);
+        // An upright first arrival still honors its selected walking/flying style.
+        // Later copies keep the established stacking hops and landing times.
+        if (i === 0 && !smLean && smKind !== 'slide') {
+          h.y = -travelLift(smKind, clamp((t - starts[i]) / durs[i], 0, 1), wcol, dHop);
+        }
         const bottom = sy0 - i * Ls;
         shadow(sx0 - dHop * h.x, bottom + 1, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + Math.abs(h.y) / 10));
         ctx.save();

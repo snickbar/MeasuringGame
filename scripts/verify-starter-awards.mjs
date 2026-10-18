@@ -98,7 +98,7 @@ assert.equal(db.records.guest.coins,before,'cold Google restore does not mint an
 for(const failAt of [-1,1,'cancel']){
  const signDb=database({guest:progress},failAt,true),cache=new Map([['guest',clone(progress)]]),storage=new Map();
  let restoredCallback;
- const sign=vm.createContext({auth:{currentUser:null},authFlowInProgress:false,accountUser:null,deviceId:'guest',localDeviceId:'guest',
+ const sign=vm.createContext({careerLedger:undefined,confirmAccountProgress:async()=>true,auth:{currentUser:null},authFlowInProgress:false,accountUser:null,deviceId:'guest',localDeviceId:'guest',
   PENDING_ACCOUNT_UPGRADE_KEY:'pending',unwatchProfile:()=>{},db:{},defaultProfile:defaults,upgradeGuestProfile,
   window:{Capacitor:{Plugins:{FirebaseAuthentication:{signInWithGoogle:async()=>{if(failAt==='cancel')throw Error('cancelled');return {credential:{idToken:'test-token'}}}}}}},
   GoogleAuthProvider:{credential:token=>token},signInWithCredential:async()=>{sign.auth.currentUser={uid:'google1',providerData:[{providerId:'google.com'}]};return {user:sign.auth.currentUser}},

@@ -28,15 +28,17 @@ vm.runInContext([
   'globalThis.api = {ALL_OBJECTS,OBJECT_BY_ID,MEASUREMENT_GROUPS,MEASUREMENT_DETAILS,MEASUREMENT_TYPES,measurementQuestionPrompt,dailyQuestionFor};',
 ].join('\n'), sandbox);
 const {ALL_OBJECTS: all, OBJECT_BY_ID: objects, MEASUREMENT_GROUPS: groups, MEASUREMENT_DETAILS: details, MEASUREMENT_TYPES: types, measurementQuestionPrompt: prompt, dailyQuestionFor: question} = sandbox.api;
-assert.equal(all.length, 479);
-assert.equal(objects.size, 479);
+assert.equal(all.length, 486);
+assert.equal(objects.size, 486);
 const ids = new Set();
 for (const [dimension, members] of Object.entries(groups)) {
   assert(types[dimension]);
   for (const id of members) { assert(objects.has(id), 'Unknown measurement ID: '+id); assert(!ids.has(id), 'Duplicate dimension assignment: '+id); ids.add(id); }
 }
 for (const id of Object.keys(details)) assert(objects.has(id), 'Unknown detail ID: '+id);
-for (const [id, mm] of Object.entries({'t-rex':12000,'statue-of-liberty':93000,shuttlecock:85,'baseball-bat':840,necktie:500,mailbox:1400,earbuds:1200,'earbuds-case':60,'grand-canyon':1857000,rainbow:6000000,'soccer-goal':7320,'boeing-737':39500})) assert.equal(objects.get(id).mm, mm, id);
+for (const [id, mm] of Object.entries({'t-rex':4600,'statue-of-liberty':93000,shuttlecock:85,'baseball-bat':840,necktie:500,mailbox:1400,earbuds:1200,'earbuds-case':60,'grand-canyon':1857000,rainbow:6000000,'soccer-goal':7320,'boeing-737':39500})) assert.equal(objects.get(id).mm, mm, id);
+assert.equal(objects.get('t-rex').measurement.dimension,'height');
+assert(prompt(objects.get('penny'),objects.get('t-rex')).endsWith('height of a T. rex?'));
 assert.equal(objects.get('earbuds').name, 'wired earbuds');
 assert.equal(objects.get('earbuds-case').name, 'wireless earbuds case');
 assert.equal(objects.get('necktie').name, 'tied necktie');
@@ -71,5 +73,5 @@ for(const [i,m]of [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].fil
   try { fs.writeFileSync(temp,m[2]); require('child_process').execFileSync(process.execPath,['--check',temp]); }
   finally { if(fs.existsSync(temp))fs.unlinkSync(temp); }
 }
-console.log(`PASS: 479 object definitions, ${pairs.toLocaleString()} pair prompts/ratios, requested corrections, preserved values, dimension coverage and inline script syntax.`);
+console.log(`PASS: 486 object definitions, ${pairs.toLocaleString()} pair prompts/ratios, requested corrections, preserved values, dimension coverage and inline script syntax.`);
 console.log('Example: '+example.prompt);

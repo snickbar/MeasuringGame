@@ -7,6 +7,7 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    registerPlugin(RoomQrScannerPlugin.class);
     super.onCreate(savedInstanceState);
     // Overriding onBackPressed() alone isn't enough on modern Android
     // (targeting API 33+) - the predictive back gesture and hardware back
