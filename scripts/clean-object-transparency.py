@@ -36,6 +36,10 @@ RULES={
  'tower-crane':dict(boxes=[(.35,.29,.51,.965),(.04,.13,.96,.17)],min_area=8,max_area=1000,max_span=55,threshold=235),
  'shuttlecock':dict(boxes=[(.12,.37,.87,.70)],min_area=80,max_area=1500,max_span=85,threshold=238,compact=True),
  'brooklyn-bridge':dict(boxes=[(.015,.07,.98,.63)],protect=[(58,0,148,209),(370,0,426,209),(431,0,445,209)],min_area=6,max_area=600,max_span=55,threshold=238),
+ 'excavator':dict(boxes=[(.44,.40,.55,.64)],seeds=[(248,155)],min_area=1,max_area=1000,max_span=100,threshold=235),
+ 'barstool':dict(boxes=[(.20,.575,.80,.63)],seeds=[(70,307),(160,307)],min_area=1,max_area=1000,max_span=100,threshold=235),
+ 'folding-chair':dict(boxes=[(.44,.57,.64,.70)],seeds=[(155,304),(180,330)],min_area=1,max_area=1000,max_span=100,threshold=235),
+ 'motorcycle':dict(boxes=[(0,0,1,1)],rings=[(77,213,25,56),(439,213,25,56)],min_area=12,max_area=800,max_span=55,threshold=235),
 }
 
 report=[]
@@ -53,11 +57,17 @@ for oid,rule in RULES.items():
         poly=Image.new('1',im.size);ImageDraw.Draw(poly).polygon([(round(x*im.width),round(y*im.height)) for x,y in rule['polygon']],fill=1)
         allowed &= np.asarray(poly).astype(bool)
     for x0,y0,x1,y1 in rule.get('protect',[]):allowed[y0:y1,x0:x1]=False
+    if rule.get('rings'):
+        yy,xx=np.indices(alpha.shape);ring_area=np.zeros_like(allowed)
+        for cx,cy,inner,outer in rule['rings']:
+            radius=(xx-cx)**2+(yy-cy)**2;ring_area|=(radius>=inner**2)&(radius<=outer**2)
+        allowed &= ring_area
     erase=np.zeros_like(eligible);selected=[]
     for points in components(eligible):
         xs=np.array([p[0] for p in points]);ys=np.array([p[1] for p in points]);w=int(xs.max()-xs.min()+1);h=int(ys.max()-ys.min()+1)
         if not(rule['min_area']<=len(points)<=rule['max_area'] and max(w,h)<=rule['max_span']):continue
         if not np.all(allowed[ys,xs]):continue
+        if rule.get('seeds') and not any((x,y) in points for x,y in rule['seeds']):continue
         if rule.get('compact') and (min(w,h)<4 or max(w,h)>min(w,h)*4):continue
         if oid in ('soccer-goal','tennis-racket') and (max(w,h)>min(w,h)*4 or len(points)/(w*h)<.3):continue
         erase[ys,xs]=True;selected.append(dict(area=len(points),box=[int(xs.min()),int(ys.min()),int(xs.max()+1),int(ys.max()+1)]))

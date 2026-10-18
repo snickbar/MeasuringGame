@@ -1,9 +1,16 @@
 # Reviewed object transparency cleanup
 
 480 runtime WebP images were audited: 479 objects plus the alternate donut.
-Seven images received alpha-only corrections in reviewed empty openings:
+Eleven images received alpha-only corrections in reviewed empty openings:
 soccer goal, tennis racket, teacup, power-line tower, tower crane, shuttlecock,
-and Brooklyn Bridge. The other 473 runtime files remain byte-identical.
+Brooklyn Bridge, excavator, barstool, folding chair and motorcycle.
+The other 469 runtime files remain byte-identical.
+
+The initial visual pass missed four enclosed openings; its completeness claim
+was too strong. Edge/padding statistics cannot certify interior cutout quality.
+The closer follow-up focuses on open geometry. Pixel verification proves that
+reviewed changes preserve artwork; it does not prove every possible unwanted
+background pocket has been identified.
 
 Original compressed files are retained in `originals/`. `manifest.json` records
 all original file hashes, corrected components, dimensions and changed counts.

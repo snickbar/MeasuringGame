@@ -37,5 +37,5 @@ for name,group in [('white-border',suspects),('padding',padding)]:
             d.text((x+4,y+101),r['id'][:22],fill='#252525')
             d.text((x+4,y+114),f"empty {r['emptyArea']:.0%} white {r['whiteBorder']:.0%}",fill='#555555')
         sheet.save(out/f'{name}-{page//60+1}.jpg')
-print(json.dumps(dict(total=len(rows),whiteBorderSuspects=len(suspects),largeTransparentPadding=len(padding),
+print(json.dumps(dict(scope='Outer border/padding signals only; interior gaps require visual review',total=len(rows),whiteBorderSuspects=len(suspects),largeTransparentPadding=len(padding),
                      whiteIDs=[r['id'] for r in suspects],largestPadding=[(r['id'],r['emptyArea']) for r in padding[:20]])))
