@@ -2193,10 +2193,10 @@ if (location.protocol === "file:") {
   /* Two independent scrollers: the answers/board on the left and the player cards docked on the right (swipe up on the cards to scroll them) */
   .game-body { position:relative; display: flex; gap: 56px; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; }
   .main-col { flex: 1 1 0; min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
-  .game-body.anim-wide .score-sidebar { display: none; }
+  .game-body.anim-wide .score-sidebar, .game-body.tw-no-score .score-sidebar { display: none; }
   .score-sidebar { flex:0 0 150px; min-width:0; min-height:0; display:flex; flex-direction:column; }
   .score-sidebar .score-col { flex:1 1 0; min-height:0; }
-  .game-body.anim-wide .main-col { flex: 1 1 100%; }
+  .game-body.anim-wide .main-col, .game-body.tw-no-score .main-col { flex: 1 1 100%; }
   .score-col { flex: 0 0 150px; min-width: 0; display: flex; flex-direction: column; gap: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding-bottom: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .score-col::-webkit-scrollbar { display: none; }
   /* Compact card: avatar on the left across two rows; name on top, then medal | points + percent. Cards stack with no gaps. */
@@ -2273,6 +2273,14 @@ if (location.protocol === "file:") {
   .score-card.frame-9 { border-image-source: var(--frame9); }
   .score-card.frame-10 { border-image-source: var(--frame10); }
   /* your guess is a paper scrap in your own colour, pencilled in as you type */
+  /* Team Worlds: replaces the power-up row (not eligible in this mode) with a half/half split
+     of each player's own avatar + running individual accuracy, same spot Solo Worlds' power-ups
+     would occupy. */
+  #tw-question-stats { display: flex; gap: 10px; margin: 8px 0; }
+  .tw-qs-half { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
+  .tw-qs-half .avatar { font-size: 28px; }
+  .tw-qs-half .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
   #q-preview .qp img { display: block; margin: 0 auto; width: 62px; height: 62px; object-fit: contain; }
@@ -2720,15 +2728,12 @@ if (location.protocol === "file:") {
      (their avatar + their own chip), stacked above the team's single shared total. */
   .team-breakdown-line { display: flex; align-items: center; gap: 5px; }
   .team-breakdown-line .avatar.team-line-avatar { width: 22px; height: 22px; font-size: 13px; flex-shrink: 0; }
-  /* Team Worlds' reveal columns - left player, right player, each fading in as revealIndex
-     advances rather than Party's face-down flip-card choreography. */
-  .tw-reveal-row { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
-  .tw-reveal-col { flex: 1; max-width: 160px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; border: 3px solid #d9c29a; border-radius: 16px; background: #fffdf6; opacity: .35; transition: opacity 400ms ease; }
-  .tw-reveal-col.shown { opacity: 1; }
-  .tw-reveal-col .avatar { font-size: 36px; }
-  .tw-reveal-col .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; text-align: center; }
-  .tw-reveal-guess { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; }
-  .tw-reveal-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--brand); }
+  /* Small "whose result is this" label sitting above each Solo-Worlds-style result card
+     (resultCardHtml) in Team Worlds' reveal/summary - the card itself needs no new styling,
+     it's the same component Solo Worlds/Daily/Monthly/Survival already use. */
+  .tw-reveal-player { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 14px 0 4px; }
+  .tw-reveal-player .avatar { font-size: 22px; }
+  .tw-reveal-player .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; }
 
 
   /* ---- Paused overlay / kick modal / left screen ---- */
@@ -3613,6 +3618,8 @@ if (location.protocol === "file:") {
 
       <div id="question-view">
         <div id="q-preview" aria-hidden="true"></div>
+        <div id="tw-question-progress" hidden></div>
+        <div id="tw-question-stats" hidden></div>
         <div id="guess-display">0</div>
         <div id="numpad">
           <button class="num-btn" data-val="1">1</button>
@@ -12809,6 +12816,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pair = questionObjects(q);
     qPreviewEl.innerHTML = pair ? pair.map((o, k) => `<div class="qp"><img src="${o.image}" alt="" draggable="false"${poseStyle(o.id, k === 1)}><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
   }
+  const twQuestionProgressEl = document.getElementById("tw-question-progress");
+  const twQuestionStatsEl = document.getElementById("tw-question-stats");
+  // Team Worlds' "question" phase: the running accuracy-so-far/star progress bar (same as Solo
+  // Worlds), and - in place of the power-up row this mode doesn't have - a half/half split of
+  // each player's own avatar + their own running (un-averaged) individual accuracy.
+  function renderTeamWorldsQuestionStats() {
+    const isTw = roomState.settings?.mode === "teamworlds";
+    twQuestionProgressEl.hidden = !isTw;
+    twQuestionStatsEl.hidden = !isTw;
+    if (!isTw) return;
+    const me = currentPlayers[currentPlayerId];
+    const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
+    twQuestionProgressEl.innerHTML = worldProgressBarHtml(teamAvg);
+    const ids = Object.keys(currentPlayers);
+    twQuestionStatsEl.innerHTML = ids.map((id) => {
+      const p = currentPlayers[id];
+      const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
+      return `<div class="tw-qs-half"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="tw-qs-acc">${acc}</span></div>`;
+    }).join("");
+  }
 
   numpadEl.addEventListener("click", (e) => {
     if (!e.target.classList.contains("num-btn")) return;
@@ -13371,30 +13398,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  // Team Worlds' reveal: two side-by-side columns (left/right), revealed one at a time using
-  // the SAME revealIndex-driven auto-advance timing every other mode already uses (no changes
-  // to that shared machinery) - no face-down flip-card suspense, no "closest guess"/"second
-  // chance" picking, none of which applies to a cooperative averaging game.
+  // Team Worlds' reveal: one player's result at a time, using Solo Worlds' own result-card
+  // component (resultCardHtml - the same big check/X, verdict label, "you said/answer/%
+  // accurate" lines) instead of Party's face-down flip cards - no "closest guess"/"second
+  // chance" picking, none of which applies to a cooperative averaging game. Sequenced via the
+  // SAME revealIndex-driven auto-advance timing every other mode already uses (no changes to
+  // that shared machinery), one player then the other, same fixed order all game.
   function renderTeamWorldsReveal(data) {
     const order = data.revealOrder || [];
     const revealIndex = data.revealIndex || 0;
+    const q = data.currentQuestion;
+    const ans = q ? String(Math.round(q.answer * 100) / 100) : "";
     if (isHost) {
       revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
       const showSum = revealIndex >= order.length;
       if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
       showSummaryBtn.style.display = showSum ? "flex" : "none";
     }
-    const cols = order.map((e, i) => {
-      const shown = i < revealIndex;
+    const cards = order.slice(0, revealIndex).map((e) => {
       const p = currentPlayers[e.playerId] || {};
-      return `<div class="tw-reveal-col${shown ? " shown" : ""}">
-        <span class="avatar">${avatarHtml(p.avatar)}</span>
-        <span class="name">${escapeHtml(e.name)}</span>
-        <span class="tw-reveal-guess">${shown ? e.guess : "?"}</span>
-        ${shown ? `<span class="tw-reveal-acc">${formatAccuracy(e.accuracyPercent)}%</span>` : ""}
-      </div>`;
+      return `<div class="tw-reveal-player"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(e.name)}</span></div>${resultCardHtml(e.accuracyPercent, e.guess, ans)}`;
     }).join("");
-    revealListEl.innerHTML = `<div class="tw-reveal-row">${cols}</div>`;
+    revealListEl.innerHTML = cards;
   }
 
   function renderRevealChoreography(data) {
@@ -13502,7 +13527,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && (c.dataset.id === id || !!c.dataset.members?.split(" ").includes(id))));
   }
   function renderScoreColumn(overrideScores) {
-    if (roomState.settings?.mode === "teamworlds") { renderTeamWorldsScoreColumn(); return; }
+    // No score column at all in this mode (see the .tw-no-score layout toggle) - nothing to render.
+    if (roomState.settings?.mode === "teamworlds") { return; }
     if (roomState.settings?.mode === "teamvteam") { renderTeamScoreColumn(overrideScores); return; }
     const gameMotionKey = `${currentRoomCode}:${roomState.gameId || ''}`;
     const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
@@ -13650,29 +13676,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  // Team Worlds: one combined box for the whole team (always exactly 2 players, no competing
-  // teams, no points) - shows the running average accuracy so far instead of a score.
-  function renderTeamWorldsScoreColumn() {
-    const ids = Object.keys(currentPlayers);
-    const anyCounted = ids.find((id) => currentPlayers[id].roundsCounted);
-    const avg = anyCounted ? currentPlayers[anyCounted].accuracySum / currentPlayers[anyCounted].roundsCounted : null;
-    scoreColEl.innerHTML = "";
-    const box = document.createElement("div");
-    box.className = "score-card team-card";
-    box.style.setProperty("--tc", "#8e7cf2");
-    // Without data-id/data-members, scoreCardFor() (reactions, coin-fly, trophy-burst) can't
-    // find this box for ANY player - everything lands at the generic fallback position instead.
-    box.dataset.id = "team";
-    box.dataset.members = ids.join(" ");
-    const avatars = ids.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
-    box.innerHTML = `
-      <div class="team-card-avatars">${avatars}</div>
-      <div class="sc-top"><span class="name">Team accuracy</span></div>
-      <div class="sc-bot"><span class="pts">${avg == null ? "--" : formatAccuracy(avg) + "%"}</span></div>
-    `;
-    scoreColEl.appendChild(box);
-    fitNameToCard(box.querySelector(".name"));
-  }
 
   function renderHudTop(data) {
     renderHudRoomCode();
@@ -13870,26 +13873,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     recordRoundStats(data);
     const entries = data.revealOrder || [];
     const roundAccuracyPct = data.lastRoundAccuracy || 0;
+    const q = data.currentQuestion;
+    const ans = q ? String(Math.round(q.answer * 100) / 100) : "";
     summaryListEl.innerHTML = "";
-    // Recaps the same two columns from the reveal (both already shown by this point), then the
-    // team average as its own step, then the running accuracy-so-far/star progress bar - same
-    // component Solo Worlds uses, fed the room's (not solo's local `wl`) running average.
-    const cols = entries.map((e) => {
+    // Recaps both players' Solo-Worlds-style result cards (same ones the reveal just showed),
+    // then the team average as its own step, then the running accuracy-so-far/star progress
+    // bar - same component Solo Worlds uses, fed the room's (not solo's local `wl`) average.
+    const cards = entries.map((e) => {
       const p = currentPlayers[e.playerId] || {};
-      return `<div class="tw-reveal-col shown">
-        <span class="avatar">${avatarHtml(p.avatar)}</span>
-        <span class="name">${escapeHtml(e.name)}</span>
-        <span class="tw-reveal-guess">${e.guess}</span>
-        <span class="tw-reveal-acc">${formatAccuracy(e.accuracyPercent)}%</span>
-      </div>`;
+      return `<div class="tw-reveal-player"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(e.name)}</span></div>${resultCardHtml(e.accuracyPercent, e.guess, ans)}`;
     }).join("");
     const me = currentPlayers[currentPlayerId];
     const runningAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
     const li = document.createElement("li");
     li.className = "summary-row";
     li.innerHTML = `
-      <div class="tw-reveal-row">${cols}</div>
-      <div class="dc-card dc-hot" style="margin-top:12px"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div></div>
+      ${cards}
+      <div class="dc-card dc-hot"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div></div>
       ${worldProgressBarHtml(runningAvg)}
     `;
     summaryListEl.appendChild(li);
@@ -14895,10 +14895,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // answer" line (moved up from #answers-view) during second chance.
     // Hidden the rest of the time since #question-answer-line takes over
     // that same spot once the real answer is revealed.
-    if (phase === "question") {
+    // None of Party's points/double-down/second-chance tips apply to Team Worlds.
+    if (phase === "question" && roomState.settings?.mode !== "teamworlds") {
       questionNoteEl.textContent = questionTip(roomState.round || 1);
       questionNoteEl.style.display = "block";
-    } else if (phase === "answers") {
+    } else if (phase === "answers" && roomState.settings?.mode !== "teamworlds") {
       questionNoteEl.textContent = "Pick one that isn't yours, or double down!";
       questionNoteEl.style.display = "block";
     } else {
@@ -14907,6 +14908,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     animationViewEl.classList.toggle("active", phase === "animation");
     animSkipBtn.style.display = (isHost && phase === "animation") ? "block" : "none";
     scoreColEl.closest(".game-body").classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
+    // Team Worlds has no points/ranks for a combined score box to show at all - mimic Solo
+    // Worlds' own full-width layout throughout, not just during the animation.
+    scoreColEl.closest(".game-body").classList.toggle("tw-no-score", roomState.settings?.mode === "teamworlds");
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
@@ -14970,6 +14974,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = data.currentQuestion;
       setPromptText(q ? q.prompt : "", true);
       renderQuestionPreview(q);
+      renderTeamWorldsQuestionStats();
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
       preloadAnimation(q);
