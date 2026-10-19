@@ -284,6 +284,14 @@ if (location.protocol === "file:") {
     pointer-events: none; font-size: 30px; line-height: 1;
     filter: drop-shadow(0 2px 3px rgba(0,0,0,.45));
   }
+  /* Same corner as the lock badge (they're mutually exclusive - never both shown at once), but a text pill instead of a bare icon. */
+  .home-free-badge {
+    position: absolute; top: -10px; right: -8px;
+    pointer-events: none; white-space: nowrap;
+    background: linear-gradient(#fff6d8, #ffe08a); color: #7a4a00; border: 2px solid #c9850a; border-radius: 999px;
+    padding: 3px 8px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px;
+    box-shadow: 0 2px 3px rgba(0,0,0,.3);
+  }
   .home-ph-btn {
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse at 50% 30%, #fff 0%, #dcecf8 70%, #b9d6ec 100%);
@@ -2895,7 +2903,7 @@ if (location.protocol === "file:") {
 
   <div id="home-btn-row">
     <button id="home-solo-btn" class="home-tile ht-solo" aria-label="Solo Game"><img class="ht-ic" src="icons/home-solo.png" alt=""><span class="ht-lb">Solo Game</span></button>
-    <button id="home-create-btn" class="home-tile ht-host" aria-label="Host Party"><img class="ht-ic" src="icons/home-host.png" alt=""><span class="ht-lb">Host Party</span><span id="home-create-lock" class="home-lock-badge" hidden><img src="icons/reactions/padlock.png" alt=""></span></button>
+    <button id="home-create-btn" class="home-tile ht-host" aria-label="Host Party"><img class="ht-ic" src="icons/home-host.png" alt=""><span class="ht-lb">Host Party</span><span id="home-create-lock" class="home-lock-badge" hidden><img src="icons/reactions/padlock.png" alt=""></span><span id="home-create-free" class="home-free-badge" hidden>&#11088; 1 free today!</span></button>
     <button id="home-join-btn" class="home-tile ht-join" aria-label="Join Game"><img class="ht-ic" src="icons/home-join.png" alt=""><span class="ht-lb">Join Game</span></button>
   </div>
 </div>
@@ -4236,6 +4244,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       levelPaid: 0,
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
+      hostFreeDate: null,
       adsWatchedDate: null,
       adsWatchedCount: 0,
       cosmetics: defaultCosmeticState(),
@@ -4403,6 +4412,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           levelPaid: Math.max(0, data.levelPaid | 0),
           unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
           hostUnlocked: !!data.hostUnlocked,
+          hostFreeDate: data.hostFreeDate || null,
           adsWatchedDate: data.adsWatchedDate || null,
           adsWatchedCount: data.adsWatchedCount || 0,
           cosmetics: {
@@ -6491,6 +6501,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const homeSoloBtn = document.getElementById("home-solo-btn");
   const homeCreateBtn = document.getElementById("home-create-btn");
   const homeCreateLockEl = document.getElementById("home-create-lock");
+  const homeCreateFreeEl = document.getElementById("home-create-free");
   const homeJoinBtn = document.getElementById("home-join-btn");
   const createScreenEl = document.getElementById("create-screen");
   const createBackBtn = document.getElementById("create-back-btn");
@@ -10167,7 +10178,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
     hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $4.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
-    homeCreateLockEl.hidden = shopUnlocked;
+    const freeToday = !shopUnlocked && myProfile.hostFreeDate !== todayDateStr();
+    homeCreateLockEl.hidden = shopUnlocked || freeToday;
+    homeCreateFreeEl.hidden = !freeToday;
 
     if (!isHost) {
       hostUnlockBannerEl.classList.remove("active");
@@ -10207,8 +10220,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Shared by every host-unlock entry point (shop box, shop tab, the lock on
   // the home button) so they all show the same purchase popup and copy.
   // Returns true once hostUnlocked is actually set (already owned counts).
-  async function confirmAndPurchaseHostUnlock() {
+  // One free hosted game per device per day (local calendar day, same as the
+  // ad-coin cap) before the purchase prompt ever shows - advertised on the
+  // Home tile by #home-create-free.
+  async function claimFreeHostToday() {
+    const today = todayDateStr();
+    if (myProfile.hostFreeDate === today) return false;
+    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      const profile = current || defaultProfile();
+      if (profile.hostUnlocked || profile.hostFreeDate === today) return profile;
+      return { ...profile, hostFreeDate: today };
+    });
+    return true;
+  }
+  // allowFree is false for the Shop tab's own unlock button: just browsing the
+  // shop (with no lobby/room actually about to open) should never silently
+  // spend today's free host game - only an entry point that's actually about
+  // to host (the Home tile, the in-lobby banner) may claim it.
+  async function confirmAndPurchaseHostUnlock(allowFree = true) {
     if (myProfile.hostUnlocked) return true;
+    if (allowFree && (await claimFreeHostToday())) return true;
     const bought = await showFakePurchase({
       icon: "icons/shop-host-crown.webp", title: "Host Party", price: "$4.99 · One time",
       desc: "Host unlimited games with friends, plus 500 bonus coins.",
@@ -10294,8 +10325,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bought = await showFakePurchase({ icon: look[0], title: pack.name, price: priceText || "Unlock" });
     if (bought) purchaseThemedPack(packId);
   });
-  hostUnlockBtn.addEventListener("click", confirmAndPurchaseHostUnlock);
-  hostUnlockShopBtn.addEventListener("click", confirmAndPurchaseHostUnlock);
+  hostUnlockBtn.addEventListener("click", () => confirmAndPurchaseHostUnlock(true));
+  hostUnlockShopBtn.addEventListener("click", () => confirmAndPurchaseHostUnlock(false));
 
   // ---- "Install app" banner, driven by the browser's own install
   // eligibility signal rather than a fixed schedule. Suppressed while the
