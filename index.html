@@ -1394,10 +1394,10 @@ if (location.protocol === "file:") {
   .team-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; background: var(--tc); border: 2px solid rgba(0,0,0,.25); vertical-align: middle; }
   .team-picker-label { font-weight: 700; margin: 0 0 6px; }
   #team-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
-  /* border-image: none overrides the generic themed button's border-image (which paints its
-     own "fill" over the whole face, masking any plain border-color/background) - without it
-     every swatch rendered as the same tan button graphic regardless of --tc. */
-  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 3px solid var(--tc); border-image: none; border-radius: 14px; background: var(--tc-bg, #fff); font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
+  /* Border/background are set inline per-button (see renderTeamPicker), not here - the
+     generic themed button{border-image-source:...} rule kept winning over a class rule for
+     these two properties specifically, so this only covers the swatch's layout/typography. */
+  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border-radius: 14px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
   .team-swatch:disabled { opacity: .45; }
   .team-swatch-name { font-size: 13px; }
   .team-swatch-members { display: flex; gap: 2px; min-height: 22px; }
@@ -2659,7 +2659,13 @@ if (location.protocol === "file:") {
   .team-final-avatars { display: flex; gap: 2px; flex-shrink: 0; }
   .team-final-members { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; padding-top: 6px; border-top: 2px dashed rgba(90,60,30,.2); }
   .team-final-member { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
-  .team-final-member .avatar { width: 22px; height: 22px; font-size: 14px; flex-shrink: 0; }
+  /* Sized via the icon's own width/height (not font-size/em) on purpose: .final-row.rank-1
+     .avatar{font-size:34px} has higher specificity (3 classes vs. 2) than a plain descendant
+     rule here could ever win against, which blew the icon up to ~60px and let it spill over
+     the member name text for the winning team specifically - this sidesteps that fight
+     entirely instead of trying to out-specify it. */
+  .team-final-member .avatar { width: 22px; height: 22px; flex-shrink: 0; }
+  .team-final-member .avatar .avatar-icon { width: 100%; height: 100%; }
   .team-final-member .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .team-final-member .member-pts, .team-final-member .member-acc { flex-shrink: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; }
   .final-row.rank-2 { padding: 9px 13px 13px; }
@@ -6632,7 +6638,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const mine = members.some(([id]) => id === currentPlayerId);
       const full = members.length >= 2;
       const avatars = members.map(([, p]) => `<span class="avatar">${avatarHtml(p.avatar)}</span>`).join("");
-      return `<button type="button" class="team-swatch" data-team="${color}" style="--tc:${TEAM_COLOR_HEX[color]};--tc-bg:${TEAM_COLOR_BG[color]}"${full && !mine ? " disabled" : ""}><span class="team-swatch-name">${TEAM_COLOR_NAMES[color]}</span><span class="team-swatch-members">${avatars}</span></button>`;
+      // border/background set directly inline rather than through --tc/--tc-bg custom
+      // properties referenced from the stylesheet - the generic button{border-image-source:...}
+      // rule kept winning over the class rule in testing despite border-image:none there, so
+      // this sets them with the highest-precedence mechanism available (inline style) instead
+      // of continuing to fight that cascade.
+      return `<button type="button" class="team-swatch" data-team="${color}" style="border:3px solid ${TEAM_COLOR_HEX[color]};border-image:none;background:${TEAM_COLOR_BG[color]}"${full && !mine ? " disabled" : ""}><span class="team-swatch-name">${TEAM_COLOR_NAMES[color]}</span><span class="team-swatch-members">${avatars}</span></button>`;
     }).join("");
   }
   teamPickerGridEl.addEventListener("click", (e) => {
