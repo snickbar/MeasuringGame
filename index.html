@@ -3711,6 +3711,7 @@ if (location.protocol === "file:") {
     <p id="left-reason" class="exit-reason"></p>
     <div id="left-stats" class="exit-stats" hidden></div>
     <p id="left-hint" class="exit-hint" hidden></p>
+    <button id="left-rejoin-btn" class="exit-btn" hidden>Rejoin room</button>
     <button id="left-reload-btn" class="exit-btn">Back to home</button>
   </div>
 </div>
@@ -12062,7 +12063,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const top = animStageEl.getBoundingClientRect().top;
         if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; }
         const avail = window.innerHeight - 58 - top - 8;
-        animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)), minStageH: Math.max(260, avail) });
+        // minStageH used to just be `avail` uncapped - fine for the decorated board (plenty
+        // above the stage eats into `avail`), but Team Worlds' compact layout leaves so much
+        // room above the stage that this stretched the stage to fill most of the screen, with
+        // the actual drawing pinned to the bottom and a wall of blank sky above it. Capped to
+        // match the flat 300 solo Worlds/Quick/Daily/Monthly already use (still shrinks further
+        // on short screens via the existing Math.max floor).
+        animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)), minStageH: Math.max(260, Math.min(300, avail)) });
         animSceneRound = data.round;
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
@@ -12796,8 +12803,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const hintEl = document.getElementById("left-hint");
     hintEl.textContent = opts.hint || "";
     hintEl.hidden = !opts.hint;
+    const rejoinBtn = document.getElementById("left-rejoin-btn");
+    rejoinBtn.hidden = !opts.roomCode;
+    rejoinBtn.dataset.code = opts.roomCode || "";
     leftScreenEl.classList.add("active");
   }
+  document.getElementById("left-rejoin-btn").addEventListener("click", () => {
+    const code = document.getElementById("left-rejoin-btn").dataset.code;
+    if (!code) return;
+    leftScreenEl.classList.remove("active");
+    showJoinScreen();
+    codeInput.value = code;
+    rejoinRoom(code);
+  });
 
   async function guestExit() {
     const tiles = gameRecapTiles();
@@ -12871,7 +12889,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionPicsEl.style.display = isTw ? "" : "none";
     twQuestionPromptEl.style.display = isTw ? "" : "none";
     twQuestionStatsEl.style.display = isTw ? "" : "none";
-    twGuessDisplayEl.style.display = isTw ? "" : "none";
+    // This one has the `hidden` attribute in its initial markup (unlike its siblings
+    // above, which all have an author display:flex rule beating [hidden] already) -
+    // style.display:"" only clears an inline override, it doesn't remove the attribute,
+    // so [hidden]'s display:none still won. Needs an explicit non-empty value to win.
+    twGuessDisplayEl.style.display = isTw ? "block" : "none";
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
@@ -15133,8 +15155,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           // listener can't tell those apart, so the message stays neutral rather
           // than blaming the host for something that may have been a timeout.
           showLeftScreen("This happens if the host removed you, or if you were disconnected for too long.", {
-            title: "You're no longer in this room", icon: "items/door.webp",
-            hint: "Ask the host for the room code if you'd like to join again.",
+            title: "You're no longer in this room", icon: "icons/reactions/padlock.png",
+            hint: "Ask the host for the room code if you'd like to join again.", roomCode,
           });
         }
         return;
