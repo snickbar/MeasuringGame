@@ -290,12 +290,6 @@ if (location.protocol === "file:") {
     border: 3px solid #a9cbe4; border-radius: 48% / 50%;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #1b1b1b;
   }
-  .gacha-debug-btn {
-    display: block; margin: 6px auto 10px; width: auto; padding: 6px 12px; font-size: 12px; font-weight: 600;
-    background: #fff3cd; color: #7a4a00; border: 2px dashed var(--red); border-radius: 8px;
-  }
-  .debug-btn-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-  .debug-btn-row .gacha-debug-btn { margin: 0 0 6px; }
   #coin-acquire-panel { margin: 0 0 12px; }
   /* Absolutely positioned (like .coin-pack-ribbon on the other 3 cards) so it
      hangs off the card's top edge instead of sitting in-flow - the real
@@ -2925,9 +2919,6 @@ if (location.protocol === "file:") {
   </div>
 
   <div id="shop-tab-coins" class="shop-tab-panel">
-    <!-- TEMP: testing-only, gives free coins with no cost. Remove this button before launch. -->
-    <button id="gacha-debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins (debug &mdash; remove before launch)</button>
-
     <div id="coin-acquire-panel">
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
@@ -3166,39 +3157,6 @@ if (location.protocol === "file:") {
     <label class="comfort-control">Menu text <select id="text-choice"><option value="normal">Standard</option><option value="large">Larger</option></select></label>
     <button id="edit-preset-settings-btn" type="button" class="settings-nav-row"><span>Game presets<small>Saved timer, rounds, and object rules</small></span></button>
     <button id="settings-howto-btn" type="button" class="settings-nav-row"><span>How to Play<small>Rules, scoring, and power-ups</small></span></button>
-  </div>
-
-
-  <div id="debug-coins-panel" style="display:none;">
-    <h3>Debug: set coins</h3>
-    <input id="debug-coins-input" type="number" min="0" step="1" placeholder="Coin amount" />
-    <button id="debug-coins-btn" type="button">Set</button>
-    <h3>Debug: reset purchases</h3>
-    <div class="debug-btn-row">
-      <button id="debug-add-coins-btn" type="button" class="gacha-debug-btn">+100 coins</button>
-      <button id="debug-reset-host-unlock-btn" type="button" class="gacha-debug-btn">Reset host</button>
-      <button id="debug-reset-avatars-btn" type="button" class="gacha-debug-btn">Reset avatars</button>
-      <button id="debug-unlock-avatars-btn" type="button" class="gacha-debug-btn">Unlock all avatars</button>
-      <button id="debug-reset-flairs-btn" type="button" class="gacha-debug-btn">Reset flairs</button>
-      <button id="debug-reset-reactions-btn" type="button" class="gacha-debug-btn">Reset reactions</button>
-      <button id="debug-reset-holiday-btn" type="button" class="gacha-debug-btn">Reset holiday packs</button>
-      <button id="debug-reset-boards-btn" type="button" class="gacha-debug-btn">Reset boards</button>
-      <button id="debug-reset-backgrounds-btn" type="button" class="gacha-debug-btn">Reset backgrounds</button>
-    </div>
-    <h3>Debug: coins and progress</h3>
-    <div class="debug-btn-row">
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="10">+10 coins</button>
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="25">+25 coins</button>
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="50">+50 coins</button>
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="200">+200 coins</button>
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="500">+500 coins</button>
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="1000">+1,000 coins</button>
-      <button type="button" class="gacha-debug-btn" data-dbg-coins="-1">Coins to 0</button>
-      <button id="debug-reset-ads-btn" type="button" class="gacha-debug-btn">Reset daily ads</button>
-      <button id="debug-reset-awards-btn" type="button" class="gacha-debug-btn">Reset claimed awards</button>
-      <button id="debug-reset-seen-btn" type="button" class="gacha-debug-btn">Reset objects seen</button>
-      <button id="debug-reset-all-cosm-btn" type="button" class="gacha-debug-btn">Reset ALL purchases</button>
-    </div>
   </div>
 
   <div class="settings-card" id="settings-about-card">
@@ -3683,7 +3641,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores } from "./anim/career-ledger.mjs";
   import { mountRoomQr } from "./anim/room-qr.mjs";
-  const TEST_BUILD=true;
   var careerLedger;
   var gameRewards;
   var powerups;
@@ -6622,7 +6579,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const howtoCloseBtn = document.getElementById("howto-close-btn");
   const toolbarCoinBalanceEl = document.getElementById("toolbar-coin-balance");
   const toolbarCoinCountEl = document.getElementById("toolbar-coin-count");
-  const gachaDebugAddCoinsBtn = document.getElementById("gacha-debug-add-coins-btn");
   const watchAdBtn = document.getElementById("watch-ad-btn");
   const watchAdStatusEl = document.getElementById("watch-ad-status");
   const coinPackBtns = document.querySelectorAll(".coin-pack-buy-btn");
@@ -9234,10 +9190,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // nesting specifically should return to the shop, not home.
     overlayReturnScreen = gachaScreen;
   });
-  // TEMP: testing-only, gives free coins with no cost. Remove this handler
-  // (and the matching button in #gacha-screen) before launch.
-  gachaDebugAddCoinsBtn.addEventListener("click", () => { awardCoinsForGameEnd(100); });
-
   function renderWatchAdStatus() {
     const today = todayDateStr();
     const countToday = myProfile.adsWatchedDate === today ? myProfile.adsWatchedCount : 0;
@@ -9709,9 +9661,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ids that have art in icons/ach/<id>.png (add each id here when its file is added)
   const ACH_ICON_IDS = new Set(["social-party_time-25", "fun-gacha_fan-10", "fun-gacha_fan-50", "fun-ad_watcher-10", "winning-round_winner-1", "winning-round_winner-10", "winning-round_winner-50", "winning-on_a_roll-3", "second_chance-second_look-25", "second_chance-double_down-5", "second_chance-double_down-25", "social-party_time-5", "winning-on_a_roll-5", "winning-champion-1", "winning-champion-10", "winning-champion-50", "accuracy-spot_on-10", "accuracy-spot_on-50", "accuracy-perfect-1", "accuracy-perfect-5", "winning-regular-5", "winning-regular-25", "winning-regular-100", "second_chance-second_look-5", "collector-ultra_lucky-5", "collector-object_spotter-25", "collector-object_spotter-75", "collector-object_spotter-116", "collector-combo_hunter-50", "collector-combo_hunter-250", "collector-combo_hunter-1000", "accuracy-spot_on-1", "collector-avatar_fan-5", "collector-avatar_fan-25", "collector-avatar_fan-75", "collector-ultra_lucky-1"]);
   const TROPHY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none" stroke="#8a4f00" stroke-width="1.6"/><path d="M12 14v4M8 21h8M9 18h6v3H9z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-  // Temporary: always claimable, tap to claim, tap again to unclaim (for testing the UI).
-  if(TEST_BUILD)ACHIEVEMENTS.unshift({ id: "test_achievement", cat: "Test", name: "Test achievement", desc: "Always ready. Tap to claim, tap again to unclaim.", target: 1, reward: 10, progress: () => 1, test: true });
-  if(TEST_BUILD)ACH_CATS.unshift("Test");
   let achHideDone = false;
   try { achHideDone = localStorage.getItem("mg_ach_hide") === "1"; } catch (e) {}
   let achJustClaimed = null;
@@ -10104,58 +10053,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     resetGachaScene();
     renderGachaScreen();
   });
-
-  // TEMP: dev convenience for testing the coin economy and the room-code
-  // unlock from the installed phone app, where there's no address bar to
-  // append a ?debug=1 to and no console access either - always visible in
-  // Settings for now. Remove before launch (see launch-blockers memory).
-  document.getElementById("debug-coins-panel").style.display = TEST_BUILD ? "block" : "none";
-  gachaDebugAddCoinsBtn.hidden=!TEST_BUILD;
-  document.getElementById("debug-coins-btn").addEventListener("click", async () => {
-    const val = Math.max(0, parseInt(document.getElementById("debug-coins-input").value, 10) || 0);
-    await update(ref(db, `profiles/${deviceId}`), { coins: val });
-  });
-  document.getElementById("debug-reset-host-unlock-btn").addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { hostUnlocked: false });
-  });
-  document.getElementById("debug-add-coins-btn").addEventListener("click", () => { awardCoinsForGameEnd(100); });
-  document.getElementById("debug-reset-avatars-btn").addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: defaultUnlockedAvatars() });
-  });
-  document.getElementById("debug-unlock-avatars-btn").addEventListener("click", async () => {
-    const all = {};
-    AVATARS.forEach((a) => { all[a] = true; });
-    await update(ref(db, `profiles/${deviceId}`), { unlockedAvatars: all });
-  });
-  document.getElementById("debug-reset-flairs-btn").addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), {
-      flairPacks: {}, "cosmetics/owned/effects": { classic: true }, "cosmetics/equipped/effects": "classic",
-    });
-  });
-  document.getElementById("debug-reset-reactions-btn").addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), {
-      emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS],
-    });
-  });
-  document.getElementById("debug-reset-holiday-btn").addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { holidayPacks: {} });
-  });
-  // Debug helpers for trying out coin values (the panel is hidden in release builds).
-  const dbgUpdate = (patch) => update(ref(db, `profiles/${deviceId}`), patch);
-  document.querySelectorAll("[data-dbg-coins]").forEach((btn) => btn.addEventListener("click", async () => {
-    const n = parseInt(btn.dataset.dbgCoins, 10);
-    if (n < 0) await dbgUpdate({ coins: 0 }); else await awardCoinsForGameEnd(n);
-  }));
-  document.getElementById("debug-reset-ads-btn").addEventListener("click", () => dbgUpdate({ adsWatchedCount: 0, adsWatchedDate: null }));
-  document.getElementById("debug-reset-awards-btn").addEventListener("click", () => dbgUpdate({ achClaimed: {} }));
-  document.getElementById("debug-reset-seen-btn").addEventListener("click", () => dbgUpdate({ seenObjects: {}, seenCombos: {} }));
-  document.getElementById("debug-reset-boards-btn").addEventListener("click", () => dbgUpdate({ boardPacks: {}, "cosmetics/owned/boards": {}, "cosmetics/equipped/board": "none" }));
-  document.getElementById("debug-reset-backgrounds-btn").addEventListener("click", () => dbgUpdate({ backgroundPacks: {}, "cosmetics/owned/backgrounds": {}, "cosmetics/equipped/background": "none" }));
-  document.getElementById("debug-reset-all-cosm-btn").addEventListener("click", () => dbgUpdate({
-    flairPacks: {}, emojiPacks: {}, emojiOwned: {}, reactionSlotsExtra: 0, activeEmojis: [...START_EMOJIS], boardPacks: {}, backgroundPacks: {}, holidayPacks: {}, starterBundle: false, hostUnlocked: false,
-    "cosmetics/owned": { borders: { classic: true }, effects: { classic: true }, colors: { default: true }, backgrounds: {}, boards: {} },
-    "cosmetics/equipped/effects": "classic", "cosmetics/equipped/background": "none", "cosmetics/equipped/board": "none",
-  }));
 
   async function copyTextToClipboard(text) {
     try {
