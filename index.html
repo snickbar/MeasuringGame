@@ -1240,7 +1240,7 @@ if (location.protocol === "file:") {
   body.overlay-has-return #shop-tabs { margin-right: 56px; }
   body.overlay-has-return .career-tabs { padding-right: 60px; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #teamvteam-screen, #teamworlds-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -2173,6 +2173,16 @@ if (location.protocol === "file:") {
   .question-prompt[data-board="whiteboard"] .answer-line-label { color: #3b5bb0; }
   .question-prompt[data-board="whiteboard"] .answer-line-value { color: #1d3f9a; }
   .question-prompt[data-board="curtains"] { background-image: url(icons/board-curtain.webp); padding: 34px 62px 40px; color: #5b3a26; }
+  /* Team Worlds: a plain box for the running count during the animation phase, regardless of
+     whatever board cosmetic is equipped - !important throughout since the equipped board's own
+     attribute-selector rules above (and the profile listener that keeps re-applying it) can't be
+     reliably beaten by clearing the attribute/inline style alone (see the comment where .tw-plain
+     is toggled). Wins regardless of what data-board/data-scene the element still carries. */
+  .question-prompt.tw-plain { background: #fffdf6 !important; border: 1px solid rgba(217,194,154,.7) !important; border-radius: 24px !important; min-height: 0 !important; box-shadow: none !important; padding: 8px 12px !important; }
+  .question-prompt.tw-plain #question-prompt-text, .question-prompt.tw-plain .answer-line-label,
+  .question-prompt.tw-plain #q-pencil, .question-prompt.tw-plain #q-eraser, .question-prompt.tw-plain #q-dust,
+  .question-prompt.tw-plain #q-curtain, .question-prompt.tw-plain #q-curtain-top { display: none !important; }
+  .question-prompt.tw-plain .answer-line-value { color: #000 !important; background: none !important; -webkit-text-fill-color: #000 !important; font-size: 42px !important; }
   .qch { opacity: 0; }
   .qch.on { opacity: 1; }
   /* Used to be a small inline line, with a separate big standalone "THE
@@ -2752,6 +2762,10 @@ if (location.protocol === "file:") {
      (#tw-avg-progress, filled via animateWorldProgress with the actual .wl-progress component -
      same one Solo Worlds/the question phase/info screens use) fades in and fills live. */
   .tw-avg-reveal { margin: 10px 0; opacity: 0; animation: twAvgIn 400ms ease-out forwards; }
+  /* Reserves the slot's real final height (pre-filled with the pre-round value) before its own
+     reveal step - invisible and un-animated until then, so the gap between the two cards is
+     already correct the moment both are up instead of growing a beat later. */
+  .tw-avg-pending { opacity: 0; animation: none; }
   /* "Your best teams"/Team Worlds' top-5 card rows (twBestRowHtml) - both avatars side by side
      on the left, names beside them, the score line underneath in the same box. */
   .tw-best-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; text-align: left; }
@@ -3406,7 +3420,7 @@ if (location.protocol === "file:") {
 
 <div id="create-screen" class="screen cozy-setup" data-setup-mode="party">
   <button id="create-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div class="cozy-setup-header create-action-header">
+  <div class="setup-header">
     <button id="create-room-btn" type="button">Create Room</button>
   </div>
   <p id="create-settings-summary" class="cozy-settings-summary"></p>
@@ -11478,7 +11492,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
     if (soloFromHub && createMode === "solo") openSolo();
-    else if (partyFromHub && (createMode === "classic" || createMode === "teamvteam")) openPartyHub();
+    else if (partyFromHub && (createMode === "classic" || createMode === "teamvteam" || createMode === "teamworlds")) openPartyHub();
     soloFromHub = false;
     partyFromHub = false;
     pendingFreeGame = false;
@@ -13629,18 +13643,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const e = order[i], p = currentPlayers[e.playerId] || {};
       return twResultCardHtml(e.accuracyPercent, e.guess, ans, p, e.name);
     };
-    // The team score doesn't appear until its OWN deliberate step, one beat after both cards are
-    // up (a host-clicked "Reveal team score", or auto-advanced like any other step) - it used to
-    // appear in the same instant as the second card, which read as both landing at once.
-    const showAverage = order.length > 0 && revealIndex >= totalSteps;
-    const avgHtml = showAverage ? `<div class="tw-avg-reveal"><div id="tw-avg-progress"></div></div>` : "";
+    // The team score doesn't reveal (fill in/light up) until its OWN deliberate step, one beat
+    // after both cards are up (a host-clicked "Reveal team score", or auto-advanced like any
+    // other step). Its SLOT still appears the moment both cards are up, though, pre-filled with
+    // the pre-round value and invisible (.tw-avg-pending) - the gap between the two cards is
+    // already the right size from that point on, so nothing shifts when the real value fades in;
+    // it used to only exist once revealed, which pushed the bottom card down a beat later.
+    const bothCardsUp = order.length > 0 && revealIndex >= order.length;
+    const showAverage = bothCardsUp && revealIndex >= totalSteps;
+    const avgHtml = bothCardsUp ? `<div class="tw-avg-reveal${showAverage ? "" : " tw-avg-pending"}"><div id="tw-avg-progress"></div></div>` : "";
     revealListEl.innerHTML = cardFor(0) + avgHtml + cardFor(1);
-    if (showAverage) {
+    if (bothCardsUp) {
       const me = currentPlayers[currentPlayerId];
       const newAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
       const container = document.getElementById("tw-avg-progress");
-      if (twAvgAnimatedRound !== data.round) {
-        // First time this round's average becomes visible - animate the REAL star-progress
+      if (!showAverage) {
+        // Reserving the slot only - show the pre-round value so the box is already at its real
+        // final height, nothing animated yet.
+        if (container) container.innerHTML = worldProgressBarHtml(twPreRoundAvg);
+      } else if (twAvgAnimatedRound !== data.round) {
+        // First time this round's average is actually revealed - animate the REAL star-progress
         // meter (same one the question phase/Solo Worlds/the info screens use) filling from
         // where it stood before this round to where it stands now, same component throughout
         // rather than a one-off bar that doesn't match it.
@@ -15171,27 +15193,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // stripped of all the board decoration - specifically during "animation".
     const twShowPrompt = isTeamWorlds && phase === "animation";
     qPromptEl.style.display = (isTeamWorlds && !twShowPrompt) ? "none" : "";
-    // Only ever touched for Team Worlds - leaving these untouched the rest of the time matters,
-    // since setPromptText() itself already owns them for every other mode (it no-ops when the
-    // text hasn't changed, so unconditionally resetting them here on every snapshot would fight
-    // it and could un-hide a board element a prior real board update had deliberately hidden).
-    if (isTeamWorlds) {
-      questionPromptTextEl.style.display = "none";
-      [qCurtainEl, qCurtainTopEl, qDustEl, qEraserEl, qToolEl].forEach((n) => { n.style.display = "none"; });
-      qPromptEl.style.background = "#fffdf6";
-      qPromptEl.style.border = "1px solid rgba(217,194,154,.7)";
-      qPromptEl.style.borderRadius = "24px";
-      qPromptEl.style.minHeight = "0";
-      qPromptEl.style.boxShadow = "none";
-      qPromptEl.style.padding = "8px 12px";
-      // The equipped board cosmetic (chalkboard/letterboard/etc.) styles .answer-line-value
-      // itself via [data-board=...]/[data-scene] attribute selectors - clearing the inline
-      // style above doesn't touch those, so the running count kept showing in whatever
-      // rainbow/colored-chalk look the player's board skin uses instead of a plain bold black
-      // number. Clearing the attributes themselves falls back to the plain base style.
-      qPromptEl.removeAttribute("data-board");
-      qPromptEl.removeAttribute("data-scene");
-    }
+    // Clearing data-board/data-scene directly (an earlier attempt) didn't stick - this player's
+    // profile listener re-fires often (any profile field changing at all) and calls
+    // applyBoard(activeBoard()) again each time, which re-sets the attribute AND re-shows
+    // qToolEl/qEraserEl/qCurtainEl's inline display whenever the equipped board has its own
+    // tool/curtain (chalkboard does), overwriting the clear with whatever random timing that
+    // listener happens to fire on. A CSS class with !important sidesteps the race entirely -
+    // it keeps winning regardless of what applyBoard resets the attribute/inline styles to,
+    // as long as the class itself stays on, which only this code ever touches.
+    qPromptEl.classList.toggle("tw-plain", isTeamWorlds);
     hudTimerColEl.style.display = isTeamWorlds ? "none" : "";
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
