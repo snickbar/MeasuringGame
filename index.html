@@ -2277,10 +2277,10 @@ if (location.protocol === "file:") {
      of each player's own avatar + running individual accuracy, same spot Solo Worlds' power-ups
      would occupy. */
   #tw-question-stats { display: flex; gap: 10px; margin: 8px 0; }
-  .tw-qs-half { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; }
-  .tw-qs-half .avatar { font-size: 28px; }
-  .tw-qs-half .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: var(--brand); }
+  .tw-qs-half { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; }
+  .tw-qs-half .avatar { font-size: 20px; }
+  .tw-qs-half .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
   #q-preview .qp img { display: block; margin: 0 auto; width: 62px; height: 62px; object-fit: contain; }
@@ -2855,15 +2855,17 @@ if (location.protocol === "file:") {
   .wl-progress-marker.earned .wl-progress-star { filter:none; opacity:1; }
   .wl-progress-threshold { display:block; margin-top:2px; font-size:11px; line-height:1.2; white-space:nowrap; }
   @media(prefers-reduced-motion:reduce) { .wl-progress-fill { transition:none; } .wl-progress.three-stars .wl-progress-fill::after { animation:none; background-position:50% 0; } }
-  /* Compact solo input screens: keep generous tap targets without tall gutters. */
-  :is(#worlds-content,#survival-content) .dc-prompt { margin:6px 0; padding:8px 12px; border:1px solid rgba(217,194,154,.7); border-radius:24px; background:rgba(255,253,246,.82); font-size:15px; line-height:1.25; }
+  /* Compact solo input screens: keep generous tap targets without tall gutters. Team Worlds'
+     own question screen (#question-view) reuses these exact same classes/sizing on purpose -
+     it's meant to look like Solo Worlds, not get its own separate styling. */
+  :is(#worlds-content,#survival-content,#question-view) .dc-prompt { margin:6px 0; padding:8px 12px; border:1px solid rgba(217,194,154,.7); border-radius:24px; background:rgba(255,253,246,.82); font-size:15px; line-height:1.25; }
   :is(#worlds-content,#survival-content) .dc-keys { gap:4px; }
   :is(#worlds-content,#survival-content) .dc-key { box-sizing:border-box; height:44px; min-height:44px; padding:3px 6px; margin:0; font-size:20px; line-height:1; border-radius:12px; }
-  :is(#worlds-content,#survival-content) .dc-display { box-sizing:border-box; min-height:44px; padding:3px 8px; margin:5px 0; font-size:28px; line-height:1.2; border-width:2px; }
-  :is(#worlds-content,#survival-content) .dc-pics { gap:10px; margin:4px 0; }
-  :is(#worlds-content,#survival-content) .dc-pic { max-width:130px; padding:5px; }
-  :is(#worlds-content,#survival-content) .dc-pic img { height:72px; margin-bottom:2px; }
-  :is(#worlds-content,#survival-content) .dc-pic span { display:block; font-size:10px; line-height:1.15; }
+  :is(#worlds-content,#survival-content,#question-view) .dc-display { box-sizing:border-box; min-height:44px; padding:3px 8px; margin:5px 0; font-size:28px; line-height:1.2; border-width:2px; }
+  :is(#worlds-content,#survival-content,#question-view) .dc-pics { gap:10px; margin:4px 0; }
+  :is(#worlds-content,#survival-content,#question-view) .dc-pic { max-width:130px; padding:5px; }
+  :is(#worlds-content,#survival-content,#question-view) .dc-pic img { height:72px; margin-bottom:2px; }
+  :is(#worlds-content,#survival-content,#question-view) .dc-pic span { display:block; font-size:10px; line-height:1.15; }
   :is(#worlds-content,#survival-content) .pu-row { margin:4px 0; padding:3px; gap:3px; }
   :is(#worlds-content,#survival-content) .pu-button { min-height:48px; font-size:10px; }
   :is(#worlds-content,#survival-content) .pu-button img { width:23px; height:23px; }
@@ -3618,9 +3620,16 @@ if (location.protocol === "file:") {
 
       <div id="question-view">
         <div id="q-preview" aria-hidden="true"></div>
+        <!-- Team Worlds mimics Solo Worlds' own screen directly instead of Party's decorated
+             prompt board/picture cards/paper guess display - in this exact order: star progress
+             meter, the two objects, the question, both players' avatar+accuracy, then the guess
+             input. -->
         <div id="tw-question-progress" hidden></div>
+        <div id="tw-question-pics" class="dc-pics" hidden></div>
+        <p id="tw-question-prompt" class="dc-prompt" hidden></p>
         <div id="tw-question-stats" hidden></div>
         <div id="guess-display">0</div>
+        <div id="tw-guess-display" class="dc-display" hidden>0</div>
         <div id="numpad">
           <button class="num-btn" data-val="1">1</button>
           <button class="num-btn" data-val="2">2</button>
@@ -12809,6 +12818,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     guessDisplayEl.setAttribute("aria-label", "Your guess " + shown);
     // numbers shrink to fit the paper on their own (the svg scales); only the newest digit is drawn in
     guessDisplayEl.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(shown, "guess", currentGuessStr === "" ? false : "last");
+    // Team Worlds' own plain text display (Solo Worlds style) - updated alongside the fancy
+    // paper one above regardless of which is actually visible, same as the rest of this mode's
+    // rendering never special-cases "don't bother, it's hidden".
+    twGuessDisplayEl.textContent = shown;
   }
   const qPreviewEl = document.getElementById("q-preview");
   // The two objects of this round, shown where the answer strip used to be.
@@ -12817,18 +12830,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     qPreviewEl.innerHTML = pair ? pair.map((o, k) => `<div class="qp"><img src="${o.image}" alt="" draggable="false"${poseStyle(o.id, k === 1)}><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
   }
   const twQuestionProgressEl = document.getElementById("tw-question-progress");
+  const twQuestionPicsEl = document.getElementById("tw-question-pics");
+  const twQuestionPromptEl = document.getElementById("tw-question-prompt");
   const twQuestionStatsEl = document.getElementById("tw-question-stats");
-  // Team Worlds' "question" phase: the running accuracy-so-far/star progress bar (same as Solo
-  // Worlds), and - in place of the power-up row this mode doesn't have - a half/half split of
-  // each player's own avatar + their own running (un-averaged) individual accuracy.
-  function renderTeamWorldsQuestionStats() {
+  const twGuessDisplayEl = document.getElementById("tw-guess-display");
+  // Team Worlds' "question" phase mimics Solo Worlds' own screen directly instead of reusing
+  // Party's decorated prompt board/picture previews/paper guess display - in this exact order:
+  // star progress meter, the two objects, the question, then (standing in for the power-up row
+  // this mode doesn't have) a half/half split of each player's own avatar + their own running
+  // (un-averaged) individual accuracy.
+  function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
+    qPreviewEl.hidden = isTw;
+    guessDisplayEl.hidden = isTw;
     twQuestionProgressEl.hidden = !isTw;
+    twQuestionPicsEl.hidden = !isTw;
+    twQuestionPromptEl.hidden = !isTw;
     twQuestionStatsEl.hidden = !isTw;
+    twGuessDisplayEl.hidden = !isTw;
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
     twQuestionProgressEl.innerHTML = worldProgressBarHtml(teamAvg);
+    const pair = q ? questionObjects(q) : null;
+    twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
+    twQuestionPromptEl.textContent = q ? q.prompt : "";
     const ids = Object.keys(currentPlayers);
     twQuestionStatsEl.innerHTML = ids.map((id) => {
       const p = currentPlayers[id];
@@ -14910,7 +14936,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     scoreColEl.closest(".game-body").classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
     // Team Worlds has no points/ranks for a combined score box to show at all - mimic Solo
     // Worlds' own full-width layout throughout, not just during the animation.
-    scoreColEl.closest(".game-body").classList.toggle("tw-no-score", roomState.settings?.mode === "teamworlds");
+    const isTeamWorlds = roomState.settings?.mode === "teamworlds";
+    scoreColEl.closest(".game-body").classList.toggle("tw-no-score", isTeamWorlds);
+    // Party's decorated prompt board (typewriter/terminal/tv/etc.) never applies to this mode -
+    // Team Worlds renders its own plain prompt text instead, positioned after the two objects
+    // like Solo Worlds does (see renderTeamWorldsQuestionStats()).
+    qPromptEl.hidden = isTeamWorlds;
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
     summaryViewEl.classList.toggle("active", phase === "summary");
@@ -14974,7 +15005,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = data.currentQuestion;
       setPromptText(q ? q.prompt : "", true);
       renderQuestionPreview(q);
-      renderTeamWorldsQuestionStats();
+      renderTeamWorldsQuestionStats(q);
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
       preloadAnimation(q);
