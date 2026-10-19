@@ -2278,8 +2278,13 @@ if (location.protocol === "file:") {
      would occupy. */
   /* A real gutter in the middle (not just a small gap) - this is where a reaction sent by
      either player actually renders, next to their own box. */
-  #tw-question-stats { display: flex; justify-content: center; gap: 40px; margin: 8px 0; }
-  .tw-qs-half { flex: 0 1 42%; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; }
+  #tw-question-stats { display: flex; justify-content: center; gap: 14px; margin: 8px 0; }
+  /* Each player's box gets its OWN dedicated empty space to its left for reaction emojis to land
+     in (per the user's drawing - two separate boxes, each paired with its own left-side slot),
+     not one shared gutter in the middle between two centered boxes. */
+  .tw-qs-pair { display: flex; align-items: center; gap: 0; flex: 0 1 46%; min-width: 0; }
+  .tw-qs-gutter { flex: 0 0 26px; width: 26px; }
+  .tw-qs-half { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; }
   .tw-qs-half .avatar { font-size: 20px; }
   .tw-qs-half .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
@@ -2730,12 +2735,16 @@ if (location.protocol === "file:") {
      (their avatar + their own chip), stacked above the team's single shared total. */
   .team-breakdown-line { display: flex; align-items: center; gap: 5px; }
   .team-breakdown-line .avatar.team-line-avatar { width: 22px; height: 22px; font-size: 13px; flex-shrink: 0; }
-  /* Small "whose result is this" label sitting above each Solo-Worlds-style result card
-     (resultCardHtml) in Team Worlds' reveal/summary - the card itself needs no new styling,
-     it's the same component Solo Worlds/Daily/Monthly/Survival already use. */
-  .tw-reveal-player { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 14px 0 4px; }
-  .tw-reveal-player .avatar { font-size: 22px; }
-  .tw-reveal-player .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; }
+  /* Team Worlds' own reveal/summary result card (twResultCardHtml) - a dc-res card with the
+     avatar/name folded into its own header instead of a separate label floating above it, and
+     the checkmark+verdict moved to sit to the right of the accuracy score instead of over the
+     top of the whole card. */
+  .tw-res-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .tw-res-head .avatar { font-size: 20px; }
+  .tw-res-head .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; }
+  .tw-res-verdict { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tw-res-verdict .tw-res-check { display: flex; align-items: center; gap: 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; white-space: nowrap; }
+  .tw-res-verdict .tw-res-check .res-mark { width: 20px; height: 20px; flex-shrink: 0; }
   /* The third reveal beat, once both player cards are up: the team's average fills in live. */
   .tw-avg-reveal { margin: 18px 0 6px; text-align: center; opacity: 0; animation: twAvgIn 400ms ease-out forwards; }
   @keyframes twAvgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -2884,16 +2893,38 @@ if (location.protocol === "file:") {
   :is(#worlds-content,#survival-content) .dc-dots { gap:14px; margin:4px 0 7px; }
   #survival-content .sv-heart { width:30px; }
   #survival-content .sv-hud { gap:1px; margin:2px 0 4px; }
+  /* Team Worlds reuses Party's actual #numpad/#submit-guess-btn elements (the real input wiring
+     stays shared across every Party mode) but restyled here, under .tw-mode, to be visually
+     identical to Solo Worlds' own .dc-keys/.dc-key/.dc-btn calculator instead of Party's carved-
+     wood number keys and green "Submit guess" pill - this is the actual fix for "mimic Solo
+     Worlds", which until now only copied the surrounding cards/prompt/display, never the
+     calculator or submit button themselves. border-image:none needs an explicit background
+     alongside it or the element goes fully transparent (border-image's "fill" slice was quietly
+     doing double duty as the background) - see feedback_new_screen_checklist's border-image gotcha. */
+  #question-view.tw-mode #numpad { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  #question-view.tw-mode .num-btn, #question-view.tw-mode #backspace-btn {
+    border-image: none; background: #f1e4c8; border: 3px solid #4a2c12; border-radius: 12px;
+    box-shadow: 0 2px 0 rgba(74,44,18,.4); color: #000; text-shadow: none; font-size: 20px; height: 44px; padding: 0;
+  }
+  #question-view.tw-mode #backspace-btn { background-image: none; font-size: 20px; color: #000; }
+  #question-view.tw-mode #submit-guess-btn {
+    border-image: none; background: linear-gradient(#ffd36a, #f2820f) !important; border: 3px solid #4a2c12; border-radius: 16px;
+    box-shadow: 0 3px 0 rgba(74,44,18,.45); color: #000; text-shadow: none; font-size: 18px; height: auto; padding: 10px; margin-top: 7px;
+  }
+  #question-view.tw-mode #submit-guess-btn:disabled { opacity: .45; }
   @media (max-height:740px) {
     #worlds-content { padding-top:2px; }
     #worlds-content .dc-dots i { width:20px; height:20px; border-width:2px; }
     #worlds-content .wl-progress { padding:4px 10px; margin:3px 0 6px; }
     #worlds-content .wl-progress-heading strong { font-size:14px; }
     #worlds-content .wl-progress-scale { height:10px; }
-    :is(#worlds-content,#survival-content) .dc-pic img { height:60px; }
+    :is(#worlds-content,#survival-content,#question-view) .dc-pic img { height:60px; }
     #worlds-content .dc-pic img { height:50px; }
     :is(#worlds-content,#survival-content) .dc-title { margin-top:2px; font-size:22px; }
     :is(#worlds-content,#survival-content) .dc-sub { margin-bottom:6px; }
+    #question-view.tw-mode #tw-question-stats { margin: 4px 0; }
+    #question-view.tw-mode .tw-qs-half { padding: 3px 5px; }
+    #question-view.tw-mode .num-btn, #question-view.tw-mode #backspace-btn { height: 38px; font-size: 18px; }
   }
 </style>
 <link rel="stylesheet" href="anim/game-setup.css">
@@ -8168,6 +8199,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (boost) return `<div class="dc-card dc-hot dc-res pu-boost-card">${boost}<div class="dc-res-lines"><div>Answer <b>${ans}</b></div></div><div class="pu-boost-verdict">${markSvg(acc)}<span>${label || accLabel(acc)} with buffer</span></div></div>`;
     return `<div class="dc-card dc-hot dc-res"><div class="dc-res-head">${markSvg(acc)}<span>${label || accLabel(acc)}</span></div><div class="dc-res-lines"><div>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div><b>${Math.round(acc)}%</b> accurate</div></div></div>`;
   }
+  // Team Worlds' own variant of the card above: the avatar/name move inside the card's own
+  // header (instead of a separate label floating over it), and the checkmark+verdict move to
+  // sit beside the accuracy score instead of across the top of the whole card.
+  function twResultCardHtml(acc, g, ans, p, name) {
+    return `<div class="dc-card dc-hot dc-res"><div class="tw-res-head"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(name || "")}</span></div><div class="dc-res-lines"><div>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div class="tw-res-verdict"><span><b>${Math.round(acc)}%</b> accurate</span><span class="tw-res-check">${markSvg(acc)}${accLabel(acc)}</span></div></div></div>`;
+  }
   const dailyEmoji = (a) => (a >= 99 ? "\u{1F3AF}" : a >= 90 ? "\u{1F7E9}" : a >= 70 ? "\u{1F7E8}" : a >= 40 ? "\u{1F7E7}" : "\u{1F7E5}");
   function dailyShiftDate(str, delta) {
     const [y, m, d] = str.split("-").map(Number);
@@ -12894,6 +12931,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // style.display:"" only clears an inline override, it doesn't remove the attribute,
     // so [hidden]'s display:none still won. Needs an explicit non-empty value to win.
     twGuessDisplayEl.style.display = isTw ? "block" : "none";
+    // This mode reuses Party's shared numpad/submit button (the actual input wiring - no
+    // sense duplicating that), but styled and labeled to match Solo Worlds' own calculator and
+    // "Lock it in" button exactly, via the tw-mode class (see the #question-view.tw-mode CSS).
+    questionViewEl.classList.toggle("tw-mode", isTw);
+    submitGuessBtn.textContent = isTw ? "Lock it in" : "Submit guess";
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
@@ -12902,10 +12944,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
     twQuestionPromptEl.textContent = q ? q.prompt : "";
     const ids = Object.keys(currentPlayers);
+    // Each player's box is wrapped with its own dedicated empty gutter to its left (a reaction's
+    // landing spot, per the user's own drawing of two separate boxes each paired with their own
+    // slot) instead of one shared gap between two centered boxes.
     twQuestionStatsEl.innerHTML = ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-half" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="tw-qs-acc">${acc}</span></div>`;
+      return `<div class="tw-qs-pair"><div class="tw-qs-gutter"></div><div class="tw-qs-half" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="tw-qs-acc">${acc}</span></div></div>`;
     }).join("");
   }
 
@@ -13474,12 +13519,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // Team Worlds' reveal: one player's result at a time (top box, then bottom box), using Solo
-  // Worlds' own result-card component (resultCardHtml - the same big check/X, verdict label,
-  // "you said/answer/% accurate" lines) instead of Party's face-down flip cards - no "closest
-  // guess"/"second chance" picking, none of which applies to a cooperative averaging game.
-  // Sequenced via the SAME revealIndex-driven auto-advance timing every other mode already uses
-  // (no changes to that shared machinery), same fixed order all game. Once both are up, a third
-  // beat plays locally (no extra server round-trip needed) - the team's average accuracy fills
+  // Worlds' own result-card component (twResultCardHtml - the same big check/X, verdict label,
+  // "you said/answer/% accurate" lines, with the avatar folded into the card and the verdict
+  // beside the score) instead of Party's face-down flip cards - no "closest guess"/"second
+  // chance" picking, none of which applies to a cooperative averaging game. Sequenced via the
+  // SAME revealIndex-driven auto-advance timing every other mode already uses (no changes to
+  // that shared machinery), same fixed order all game. The average's slot is always rendered
+  // BETWEEN the two cards in the markup (top card / average / bottom card, a fixed three-slot
+  // layout), not appended after both - it just stays empty until both cards are up, then fills
   // in live via a bar animation, "exciting to see what happens" per the user's own spec.
   function renderTeamWorldsReveal(data) {
     const order = data.revealOrder || [];
@@ -13492,10 +13539,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
       showSummaryBtn.style.display = showSum ? "flex" : "none";
     }
-    const cards = order.slice(0, revealIndex).map((e) => {
-      const p = currentPlayers[e.playerId] || {};
-      return `<div class="tw-reveal-player"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(e.name)}</span></div>${resultCardHtml(e.accuracyPercent, e.guess, ans)}`;
-    }).join("");
+    const cardFor = (i) => {
+      if (i >= order.length || revealIndex <= i) return "";
+      const e = order[i], p = currentPlayers[e.playerId] || {};
+      return twResultCardHtml(e.accuracyPercent, e.guess, ans, p, e.name);
+    };
     const showAverage = order.length > 0 && revealIndex >= order.length;
     const avgHtml = showAverage ? `
       <div class="tw-avg-reveal">
@@ -13503,7 +13551,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="tw-avg-bar"><span class="tw-avg-fill" id="tw-avg-fill"></span></div>
         <div class="tw-avg-value" id="tw-avg-value">0%</div>
       </div>` : "";
-    revealListEl.innerHTML = cards + avgHtml;
+    revealListEl.innerHTML = cardFor(0) + avgHtml + cardFor(1);
     if (showAverage) {
       const accuracy = formatAccuracy(data.lastRoundAccuracy || 0);
       // Start the bar at 0 width (already painted that way) and only THEN set the real width,
@@ -13976,19 +14024,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = q ? String(Math.round(q.answer * 100) / 100) : "";
     summaryListEl.innerHTML = "";
     // Recaps both players' Solo-Worlds-style result cards (same ones the reveal just showed),
-    // then the team average as its own step, then the running accuracy-so-far/star progress
-    // bar - same component Solo Worlds uses, fed the room's (not solo's local `wl`) average.
-    const cards = entries.map((e) => {
+    // with the round's team average sitting between them (same top/middle/bottom layout the
+    // reveal screen uses), then the running accuracy-so-far/star progress bar - same component
+    // Solo Worlds uses, fed the room's (not solo's local `wl`) average.
+    const cardFor = (i) => {
+      const e = entries[i];
+      if (!e) return "";
       const p = currentPlayers[e.playerId] || {};
-      return `<div class="tw-reveal-player"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(e.name)}</span></div>${resultCardHtml(e.accuracyPercent, e.guess, ans)}`;
-    }).join("");
+      return twResultCardHtml(e.accuracyPercent, e.guess, ans, p, e.name);
+    };
     const me = currentPlayers[currentPlayerId];
     const runningAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
     const li = document.createElement("li");
     li.className = "summary-row";
     li.innerHTML = `
-      ${cards}
+      ${cardFor(0)}
       <div class="dc-card dc-hot"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div></div>
+      ${cardFor(1)}
       ${worldProgressBarHtml(runningAvg)}
     `;
     summaryListEl.appendChild(li);
@@ -15016,7 +15068,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // like Solo Worlds does (see renderTeamWorldsQuestionStats()). Also no visible countdown at
     // all in this mode - the round only ever advances once both players submit, so a ticking
     // timer is actively misleading pressure that doesn't reflect how the mode actually works.
-    qPromptEl.style.display = isTeamWorlds ? "none" : "";
+    // One exception: the running count during the stack animation lives INSIDE this same box
+    // (#question-answer-line is a child of #question-prompt) - hiding the whole box for every
+    // phase hid that too, with nothing else to show it. So it's only hidden for the phases where
+    // Team Worlds has its own on-screen prompt instead (question/reveal/summary, where
+    // #question-view or the reveal/summary screens are the active view) and shown - but
+    // stripped of all the board decoration - specifically during "animation".
+    const twShowPrompt = isTeamWorlds && phase === "animation";
+    qPromptEl.style.display = (isTeamWorlds && !twShowPrompt) ? "none" : "";
+    // Only ever touched for Team Worlds - leaving these untouched the rest of the time matters,
+    // since setPromptText() itself already owns them for every other mode (it no-ops when the
+    // text hasn't changed, so unconditionally resetting them here on every snapshot would fight
+    // it and could un-hide a board element a prior real board update had deliberately hidden).
+    if (isTeamWorlds) {
+      questionPromptTextEl.style.display = "none";
+      [qCurtainEl, qCurtainTopEl, qDustEl, qEraserEl, qToolEl].forEach((n) => { n.style.display = "none"; });
+      qPromptEl.style.background = "#fffdf6";
+      qPromptEl.style.border = "1px solid rgba(217,194,154,.7)";
+      qPromptEl.style.borderRadius = "24px";
+      qPromptEl.style.minHeight = "0";
+      qPromptEl.style.boxShadow = "none";
+      qPromptEl.style.padding = "8px 12px";
+    }
     hudTimerColEl.style.display = isTeamWorlds ? "none" : "";
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
