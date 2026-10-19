@@ -11818,6 +11818,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return Math.max(0, Math.round(answer * ratio * 100) / 100);
   }
 
+  // Bots occasionally react during the round too - any emoji, at most once per round each
+  // (rolled once right here, alongside their guess, rather than from its own separate call site,
+  // since this already runs exactly once per bot per round across every mode that HAS bots -
+  // Quick Game included, which is a real room under the hood, just without a shareable code).
+  // Purely cosmetic, makes them feel more alive without turning into chatter.
+  function maybeBotReaction(roomCode, id, p) {
+    if (Math.random() >= 0.35) return;
+    const emojis = Object.keys(REACTIONS);
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const delay = 500 + Math.random() * 6000;
+    setTimeout(() => {
+      if (currentRoomCode !== roomCode || roomState.phase !== "question") return;
+      const newRef = push(ref(db, `rooms/${roomCode}/reactions`));
+      set(newRef, { playerId: id, name: p.name, avatar: p.avatar, emoji, rid: (REACTIONS[emoji] && REACTIONS[emoji].id) || null, sentAt: nowMs() });
+      setTimeout(() => remove(newRef), 1500);
+    }, delay);
+  }
+
   function scheduleBotGuesses(roomCode, q) {
     const players = roomState.players || {};
     const existingGuesses = roomState.guesses || {};
@@ -11826,6 +11844,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const p = players[id];
       if (!p || !p.isBot) return;
       if (existingGuesses[id] !== undefined) return; // already guessed - e.g. re-triggered after a host handoff
+      maybeBotReaction(roomCode, id, p);
       const delay = Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
