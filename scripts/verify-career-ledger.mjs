@@ -79,7 +79,8 @@ assert(!source.includes('if (ids.length >= 2 && myFinalScore === top)'));
 // finishRoundScoring (not a reimplementation) and run it against fixtures - a
 // round's points must end up identical for every member of the same team, and
 // untouched for anyone with no team (not every room is Team vs Team).
-const teamStart=source.indexOf('    if ((roomState.settings || currentSettings).mode === "teamvteam") {');
+const redistComment=source.indexOf("credit the round's points to the whole team");
+const teamStart=source.indexOf('    if ((roomState.settings || currentSettings).mode === "teamvteam") {',redistComment);
 const teamEnd=source.indexOf('\r\n    }\r\n',teamStart)+8;
 assert(teamStart>0&&teamEnd>teamStart,'team redistribution block must still be present verbatim');
 const teamBlock=source.slice(teamStart,teamEnd);

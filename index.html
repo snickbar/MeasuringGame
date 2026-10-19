@@ -1394,7 +1394,10 @@ if (location.protocol === "file:") {
   .team-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; background: var(--tc); border: 2px solid rgba(0,0,0,.25); vertical-align: middle; }
   .team-picker-label { font-weight: 700; margin: 0 0 6px; }
   #team-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
-  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 3px solid var(--tc); border-radius: 14px; background: var(--tc-bg, #fff); font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
+  /* border-image: none overrides the generic themed button's border-image (which paints its
+     own "fill" over the whole face, masking any plain border-color/background) - without it
+     every swatch rendered as the same tan button graphic regardless of --tc. */
+  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 3px solid var(--tc); border-image: none; border-radius: 14px; background: var(--tc-bg, #fff); font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
   .team-swatch:disabled { opacity: .45; }
   .team-swatch-name { font-size: 13px; }
   .team-swatch-members { display: flex; gap: 2px; min-height: 22px; }
@@ -2234,7 +2237,10 @@ if (location.protocol === "file:") {
   /* Team vs Team's combined box: both teammates' avatars stacked in the same
      slot a single avatar normally fills, with a solid team-color border
      instead of the usual 9-slice frame artwork. */
-  .team-card { border-image: none; border-width: 4px; border-color: var(--tc); border-radius: 10px; }
+  /* border-image: none drops the normal score-card's themed border graphic, which was also
+     what filled its background (border-image-slice's "fill" keyword) - so this needs an
+     explicit solid background of its own, or the page pattern behind it shows through. */
+  .team-card { border-image: none; border-width: 4px; border-color: var(--tc); border-radius: 10px; background: #fffdf6; }
   .team-card-avatars { grid-row: 1 / 3; grid-column: 1; display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center; padding: 1px 0; }
   .team-card-avatars .avatar { font-size: 15px; width: 32px; height: auto; min-height: 22px; display: flex; align-items: center; justify-content: center; }
   .medal {
@@ -2647,6 +2653,15 @@ if (location.protocol === "file:") {
   .final-row.rank-1 .avatar { font-size: 34px; }
   .final-row.rank-1 .pts { font-size: 28px; }
   .final-row.rank-1 .final-avg-pct { font-size: 26px; }
+  /* Team vs Team's final results row: one combined box per team instead of one per player.
+     Same border-image-none/explicit-background lesson as .team-card/.team-swatch above. */
+  .team-final-row { border-image: none; border-width: 3px; border-style: solid; border-color: var(--tc); border-radius: 14px; background: #fffdf6; }
+  .team-final-avatars { display: flex; gap: 2px; flex-shrink: 0; }
+  .team-final-members { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; padding-top: 6px; border-top: 2px dashed rgba(90,60,30,.2); }
+  .team-final-member { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+  .team-final-member .avatar { width: 22px; height: 22px; font-size: 14px; flex-shrink: 0; }
+  .team-final-member .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .team-final-member .member-pts, .team-final-member .member-acc { flex-shrink: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; }
   .final-row.rank-2 { padding: 9px 13px 13px; }
   .final-row.rank-2 .medal { width: 26px; height: 26px; }
   .final-row.rank-2 .name { font-size: 19px; }
@@ -11856,6 +11871,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try {
       const ctl = await getAnimCtl();
       if (!ctl) { fail("engine not loaded"); return; }
+      // The canvas is one persistent element reused every round - its pixels are
+      // whatever the previous round's final frame left behind until start()'s own
+      // render() first runs. That first render can be delayed by real async work
+      // below (loading this round's pair of pictures if preload hadn't finished
+      // yet), so clear it immediately here rather than let the stale frame show
+      // for however long that takes - a blank stage reads better than a flash of
+      // last round's animation.
+      const stageCtx = ctl.canvas.getContext("2d");
+      stageCtx.clearRect(0, 0, ctl.canvas.width, ctl.canvas.height);
       const mod = await loadAnimModule();
       if (animSceneRound !== data.round || !animScene) {
         animScene = null;
@@ -12178,6 +12202,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         console.warn("[measuring-game] animation skipped:", err);
         animEndsAt = null;
       }
+    }
+    // Team vs Team: track each player's own un-pooled contribution too (before the team
+    // redistribution below overwrites lastRoundPoints), so the final results screen can
+    // show "how many points YOU personally put in" alongside the team's combined total.
+    if ((roomState.settings || currentSettings).mode === "teamvteam") {
+      Object.keys(playersSnap).forEach((id) => {
+        if (playersSnap[id].team) updates[`players/${id}/individualPoints`] = (playersSnap[id].individualPoints || 0) + (lastRoundPoints[id] || 0);
+      });
     }
     // Team vs Team: credit the round's points to the whole team, not just whichever
     // teammate actually guessed closest - redistribute before the score write below so
@@ -13591,15 +13623,58 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     recap.innerHTML=`<b>Your game</b><p>${myFinalScore} points · ${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
     finalListEl.after(recap);
     recap.querySelector('button').onclick=async()=>{const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const share=isNativeApp&&window.Capacitor?.Plugins?.Share;if(share){try{await share.share({title:'Size Em Up!',text});}catch{}}else if(navigator.share){try{await navigator.share({title:'Size Em Up!',text});}catch{}}else if(await copyTextToClipboard(text))showAchToast('Result copied!');};
+    let rank1Delay = 0;
+    if (roomState.settings?.mode === "teamvteam") {
+      // One combined box per team: the shared score + average accuracy stay prominent
+      // (the actual rank/medal basis), each teammate's own individual contribution and
+      // own accuracy are listed underneath as secondary stats.
+      const teamOf = {};
+      Object.entries(currentPlayers).forEach(([id, p]) => { if (p.team) teamOf[p.team] = [...(teamOf[p.team] || []), id]; });
+      const teamScoreFn = (team) => currentPlayers[teamOf[team][0]].score || 0;
+      const teamAvgFn = (team) => {
+        const avgs = teamOf[team].map((id) => {
+          const p = currentPlayers[id];
+          return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
+        }).filter((v) => v != null);
+        return avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
+      };
+      const teamRanked = computeRanks(Object.keys(teamOf), teamScoreFn, teamAvgFn, false);
+      teamRanked.forEach((entry, idx) => {
+        const { id: team, score, rank, medal: medalType } = entry;
+        const members = teamOf[team];
+        const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
+        const avg = teamAvgFn(team);
+        const avgPctHtml = avg == null ? "" : `<span class="final-avg-pct">${formatAccuracy(avg)}%</span>`;
+        const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+        const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+        const memberRows = members.map((id) => {
+          const p = currentPlayers[id];
+          const acc = p.roundsCounted ? formatAccuracy(p.accuracySum / p.roundsCounted) : null;
+          return `<div class="team-final-member"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="member-pts">+${p.individualPoints || 0}</span>${acc == null ? "" : `<span class="member-acc">${acc}%</span>`}</div>`;
+        }).join("");
+        const li = document.createElement("li");
+        li.className = "final-row team-final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
+        li.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
+        const delayMs = idx * 150;
+        li.style.animationDelay = `${delayMs}ms`;
+        if (rank === 1) rank1Delay = delayMs;
+        const winnerStars = rank === 1 && score > 0
+          ? `<div class="drumroll-stars"><span></span><span></span><span></span><span></span></div>`
+          : "";
+        li.innerHTML = `
+          ${winnerStars}
+          <div class="final-row-top">${medal}<div class="team-final-avatars">${avatars}</div><span class="name">${names}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+          <div class="team-final-members">${memberRows}</div>
+        `;
+        finalListEl.appendChild(li);
+      });
+    } else {
     const scoreFn = (id) => currentPlayers[id].score || 0;
     const avgFn = (id) => {
       const p = currentPlayers[id];
       return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
     };
-    // Same team-tie fix as the recap panel above: don't let individual accuracy split
-    // two same-score teammates into different final ranks.
-    const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, roomState.settings?.mode !== "teamvteam");
-    let rank1Delay = 0;
+    const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
@@ -13630,6 +13705,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `;
       finalListEl.appendChild(li);
     });
+    }
     setTimeout(() => {
       celebrate("spotOn");
       spawnStreamerConfetti();
