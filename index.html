@@ -2720,6 +2720,15 @@ if (location.protocol === "file:") {
      (their avatar + their own chip), stacked above the team's single shared total. */
   .team-breakdown-line { display: flex; align-items: center; gap: 5px; }
   .team-breakdown-line .avatar.team-line-avatar { width: 22px; height: 22px; font-size: 13px; flex-shrink: 0; }
+  /* Team Worlds' reveal columns - left player, right player, each fading in as revealIndex
+     advances rather than Party's face-down flip-card choreography. */
+  .tw-reveal-row { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+  .tw-reveal-col { flex: 1; max-width: 160px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; border: 3px solid #d9c29a; border-radius: 16px; background: #fffdf6; opacity: .35; transition: opacity 400ms ease; }
+  .tw-reveal-col.shown { opacity: 1; }
+  .tw-reveal-col .avatar { font-size: 36px; }
+  .tw-reveal-col .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; text-align: center; }
+  .tw-reveal-guess { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; }
+  .tw-reveal-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--brand); }
 
 
   /* ---- Paused overlay / kick modal / left screen ---- */
@@ -8519,9 +8528,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldLevelUnlocked = (wid, l) => l === 1 || worldLevelStars(wid, l - 1) >= 1;
   const worldStarsHtml = (n) => `<span class="wl-stars" aria-label="${n} of 3 stars">${[1, 2, 3].map((i) => `<span${i > n ? ' class="off"' : ''}><img src="icons/flair/star.png" alt=""></span>`).join("")}</span>`;
   const worldStarsFor = (avg) => (avg > WORLD_STAR_AT[2] ? 3 : avg > WORLD_STAR_AT[1] ? 2 : avg > WORLD_STAR_AT[0] ? 1 : 0);
-  function worldProgressHtml() {
-    const accs = wl.guesses.map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
-    const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
+  // Takes the average directly, so it's reusable outside solo Worlds' own local `wl` state
+  // (Team Worlds' room-based accuracy below).
+  function worldProgressBarHtml(avg) {
     const stars = avg == null ? 0 : worldStarsFor(avg);
     const text = avg == null ? 'No answers yet' : formatAccuracy(avg) + '%';
     return `<div class="wl-progress${stars === 3 ? ' three-stars' : ''}" aria-label="Worlds running accuracy and star requirements">
@@ -8530,6 +8539,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%"></span>
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
+  }
+  function worldProgressHtml() {
+    const accs = wl.guesses.map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
+    const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
+    return worldProgressBarHtml(avg);
   }
   // Fresh questions every attempt. Pairs are ranked by how many times bigger the target is than the unit
   // (a bigger gap is harder), and each level draws from its own fifth of that ranking, easiest to hardest.
@@ -8783,7 +8797,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for each new star your team earns here, same as Solo Worlds.</div></div>
       <button type="button" class="dc-btn" id="tw-start">Create Room</button>
-      <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Choose a different World</button>
+      <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}`;
   }
   function openTeamWorldsScreen() {
@@ -12273,11 +12287,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     // Both players' accuracySum/roundsCounted get the SAME team accuracy this round - the exact
     // same redistribution trick proven for Team vs Team's score, just applied to accuracy, so
-    // accuracySum/roundsCounted at game end already IS the team's shared average for free.
+    // accuracySum/roundsCounted at game end already IS the team's shared average for free (this
+    // drives the star rating/coins, which are based on the TEAM's averaged guess).
     activeIds.forEach((id) => {
       const p = playersSnap[id] || {};
       updates[`players/${id}/accuracySum`] = (p.accuracySum || 0) + accuracy;
       updates[`players/${id}/roundsCounted`] = (p.roundsCounted || 0) + 1;
+    });
+    // Separately, each player's own UN-averaged accuracy (their own guess vs the answer) is
+    // tracked too - shown per-player on the reveal/final screens, distinct from the shared
+    // team accuracy above.
+    entries.forEach((e) => {
+      const p = playersSnap[e.playerId] || {};
+      updates[`players/${e.playerId}/individualAccuracySum`] = (p.individualAccuracySum || 0) + e.accuracyPercent;
+      updates[`players/${e.playerId}/individualRoundsCounted`] = (p.individualRoundsCounted || 0) + 1;
     });
     try {
       await update(ref(db, `rooms/${roomCode}`), updates);
@@ -12678,14 +12701,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function gameRecapTiles() {
     const me = currentPlayers[currentPlayerId];
     if (!me || !currentRoomCode) return [];
-    const ids = Object.keys(currentPlayers);
-    const ranked = computeRanks(ids, (id) => currentPlayers[id].score || 0, (id) => { const p = currentPlayers[id]; return p.roundsCounted ? p.accuracySum / p.roundsCounted : null; }, false);
-    const mine = ranked.find((e) => e.id === currentPlayerId);
     const total = (roomState.settings || currentSettings).totalRounds || 5;
     const round = Math.min(roomState.round || 1, total);
-    const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
-    const tiles = [[`${me.score || 0}`, "Your score"]];
-    if (mine && ids.length > 1) tiles.push([`${ord(mine.rank)} of ${ids.length}`, "Rank"]);
+    const tiles = [];
+    if (roomState.settings?.mode === "teamworlds") {
+      // No score/rank in this mode - stars (same rating as Solo Worlds) stands in for both.
+      if (me.roundsCounted) tiles.push([`${worldStarsFor(me.accuracySum / me.roundsCounted)} / 3`, "Stars"]);
+    } else {
+      const ids = Object.keys(currentPlayers);
+      const ranked = computeRanks(ids, (id) => currentPlayers[id].score || 0, (id) => { const p = currentPlayers[id]; return p.roundsCounted ? p.accuracySum / p.roundsCounted : null; }, false);
+      const mine = ranked.find((e) => e.id === currentPlayerId);
+      const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
+      tiles.push([`${me.score || 0}`, "Your score"]);
+      if (mine && ids.length > 1) tiles.push([`${ord(mine.rank)} of ${ids.length}`, "Rank"]);
+    }
     tiles.push([`${round} of ${total}`, "Round reached"]);
     if (me.roundsCounted) tiles.push([`${formatAccuracy(me.accuracySum / me.roundsCounted)}%`, "Avg accuracy"]);
     if (!(roomState.settings && roomState.settings.solo)) tiles.push([currentRoomCode, "Room code"]);
@@ -13112,6 +13141,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function renderAnswersScreen(data) {
+    // No points in this mode, so no "second chance" picking or double-down bonus make sense -
+    // just wait for your partner, nothing to tap.
+    if (data.settings?.mode === "teamworlds") {
+      answersRowEl.innerHTML = "";
+      doubleDownBtn.style.display = "none";
+      return;
+    }
+    doubleDownBtn.style.display = "";
     const answers = data.answers || [];
     const myPick = (data.picks || {})[currentPlayerId];
     const myEntry = answers.find((a) => a.playerId === currentPlayerId);
@@ -13316,6 +13353,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         doFlips();
       }
     });
+  }
+
+  // Team Worlds' reveal: two side-by-side columns (left/right), revealed one at a time using
+  // the SAME revealIndex-driven auto-advance timing every other mode already uses (no changes
+  // to that shared machinery) - no face-down flip-card suspense, no "closest guess"/"second
+  // chance" picking, none of which applies to a cooperative averaging game.
+  function renderTeamWorldsReveal(data) {
+    const order = data.revealOrder || [];
+    const revealIndex = data.revealIndex || 0;
+    if (isHost) {
+      revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
+      const showSum = revealIndex >= order.length;
+      if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
+      showSummaryBtn.style.display = showSum ? "flex" : "none";
+    }
+    const cols = order.map((e, i) => {
+      const shown = i < revealIndex;
+      const p = currentPlayers[e.playerId] || {};
+      return `<div class="tw-reveal-col${shown ? " shown" : ""}">
+        <span class="avatar">${avatarHtml(p.avatar)}</span>
+        <span class="name">${escapeHtml(e.name)}</span>
+        <span class="tw-reveal-guess">${shown ? e.guess : "?"}</span>
+        ${shown ? `<span class="tw-reveal-acc">${formatAccuracy(e.accuracyPercent)}%</span>` : ""}
+      </div>`;
+    }).join("");
+    revealListEl.innerHTML = `<div class="tw-reveal-row">${cols}</div>`;
   }
 
   function renderRevealChoreography(data) {
@@ -13581,6 +13644,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const box = document.createElement("div");
     box.className = "score-card team-card";
     box.style.setProperty("--tc", "#8e7cf2");
+    // Without data-id/data-members, scoreCardFor() (reactions, coin-fly, trophy-burst) can't
+    // find this box for ANY player - everything lands at the generic fallback position instead.
+    box.dataset.id = "team";
+    box.dataset.members = ids.join(" ");
     const avatars = ids.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
     box.innerHTML = `
       <div class="team-card-avatars">${avatars}</div>
@@ -13785,15 +13852,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // once (not per player), since there's always exactly one team in this mode.
   function renderTeamWorldsSummary(data) {
     recordRoundStats(data);
-    const accuracy = data.lastRoundAccuracy || 0;
-    summaryListEl.innerHTML = "";
     const entries = data.revealOrder || [];
-    const names = entries.map((e) => escapeHtml(e.name)).join(" &amp; ") || "Your team";
+    const roundAccuracyPct = data.lastRoundAccuracy || 0;
+    summaryListEl.innerHTML = "";
+    // Recaps the same two columns from the reveal (both already shown by this point), then the
+    // team average as its own step, then the running accuracy-so-far/star progress bar - same
+    // component Solo Worlds uses, fed the room's (not solo's local `wl`) running average.
+    const cols = entries.map((e) => {
+      const p = currentPlayers[e.playerId] || {};
+      return `<div class="tw-reveal-col shown">
+        <span class="avatar">${avatarHtml(p.avatar)}</span>
+        <span class="name">${escapeHtml(e.name)}</span>
+        <span class="tw-reveal-guess">${e.guess}</span>
+        <span class="tw-reveal-acc">${formatAccuracy(e.accuracyPercent)}%</span>
+      </div>`;
+    }).join("");
+    const me = currentPlayers[currentPlayerId];
+    const runningAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
     const li = document.createElement("li");
     li.className = "summary-row";
     li.innerHTML = `
-      <div class="summary-row-top"><span class="name">${names}</span></div>
-      <div class="summary-row-body"><span class="roundpts">${formatAccuracy(accuracy)}%</span></div>
+      <div class="tw-reveal-row">${cols}</div>
+      <div class="dc-card dc-hot" style="margin-top:12px"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div></div>
+      ${worldProgressBarHtml(runningAvg)}
     `;
     summaryListEl.appendChild(li);
     if (isHost) {
@@ -13985,12 +14066,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const previousRecap = document.getElementById("final-session-recap"); if (previousRecap) previousRecap.remove();
     const avatars = Object.keys(currentPlayers).map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
     const names = Object.keys(currentPlayers).map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+    // Each player's own (un-averaged) accuracy, alongside the shared team accuracy above -
+    // distinct numbers, since this is each person's own guess vs the answer.
+    const memberRows = Object.keys(currentPlayers).map((id) => {
+      const p = currentPlayers[id];
+      const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) : null;
+      return `<div class="team-final-member"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${acc == null ? "" : `<span class="member-acc">${acc}%</span>`}</div>`;
+    }).join("");
     const li = document.createElement("li");
     li.className = "final-row team-final-row rank-1";
     li.style.setProperty("--tc", "#8e7cf2");
     li.innerHTML = `
       <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
       <div class="dc-card dc-hot"><div class="wl-big">${worldStarsHtml(stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div><div class="dc-note">${escapeHtml(w?.name || "")}${gain ? ` &middot; +${gain} coins` : ""}</div></div>
+      <div class="team-final-members">${memberRows}</div>
     `;
     finalListEl.appendChild(li);
     setTimeout(() => {
@@ -14977,7 +15066,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         runAnimation(data);
       }
       if (data.phase === "reveal") {
-        renderRevealChoreography(data);
+        if (data.settings?.mode === "teamworlds") renderTeamWorldsReveal(data);
+        else renderRevealChoreography(data);
       }
       if (data.phase === "summary") {
         renderSummary(data);
