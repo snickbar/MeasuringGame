@@ -38,6 +38,18 @@ assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:88,t:7},'2026-11':{s:95,t:
 profile=applyCareerRecord(profile,{kind:'attempt',key:'practice1',mode:'practice',month:'2026-11',accuracy:99,total:99,rounds:10,t:9});
 assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:88,t:7},'2026-11':{s:95,t:8}},'a practice round is not a monthly completion');
 
+// Team vs Team match records keep a per-GAME history (not per-date, like daily/monthly) -
+// every team game played, not one slot per day, for the info screen's "your best teams" card.
+const gamesBefore=profile.stats.gamesPlayed;
+const teamMatch={kind:'match',key:'room1_g1',mode:'teamvteam',won:true,place:1,score:12,t:9};
+profile=applyCareerRecord(profile,teamMatch);profile=applyCareerRecord(profile,teamMatch);
+assert.equal(profile.stats.gamesPlayed,gamesBefore+1,'duplicate delivery of the same match is a no-op');
+assert.deepEqual(profile.teamHistory,{room1_g1:{s:12,t:9}});
+profile=applyCareerRecord(profile,{...teamMatch,key:'room2_g1',score:20,t:10});
+assert.equal(profile.stats.gamesPlayed,gamesBefore+2);
+assert.deepEqual(profile.teamHistory,{room1_g1:{s:12,t:9},room2_g1:{s:20,t:10}},'every team game kept, not just the most recent');
+assert.deepEqual(topScores(historyRows(profile.teamHistory),3),[{key:'room2_g1',s:20,t:10},{key:'room1_g1',s:12,t:9}],'teamHistory sorts by actual time, not by its non-chronological keys');
+
 // historyRows: newest first, nothing evicted. topScores: highest first, ties go to the newer row (stable sort over already-recency-sorted rows).
 assert.deepEqual(historyRows(profile.dailyHistory),[{key:'2026-10-19',s:70,t:6},{key:'2026-10-18',s:90,t:5}]);
 const tieRows=historyRows({'2026-01-01':{s:80,t:1},'2026-01-02':{s:95,t:2},'2026-01-03':{s:80,t:3}});
@@ -63,8 +75,26 @@ for(const [a,b,winnerCount]of [[50,90,1],[90,90,2],[90,89.99,1]]){
 }
 assert(source.includes("won:standings.length>=2&&myPlace?.rank===1"));
 assert(!source.includes('if (ids.length >= 2 && myFinalScore === top)'));
+// Team vs Team's round-scoring redistribution: extract the real block from
+// finishRoundScoring (not a reimplementation) and run it against fixtures - a
+// round's points must end up identical for every member of the same team, and
+// untouched for anyone with no team (not every room is Team vs Team).
+const teamStart=source.indexOf('    if ((roomState.settings || currentSettings).mode === "teamvteam") {');
+const teamEnd=source.indexOf('\r\n    }\r\n',teamStart)+8;
+assert(teamStart>0&&teamEnd>teamStart,'team redistribution block must still be present verbatim');
+const teamBlock=source.slice(teamStart,teamEnd);
+const redistribute=(playersSnap,lastRoundPoints,mode='teamvteam')=>{
+  const ctx=vm.createContext({roomState:{settings:{mode}},currentSettings:{},playersSnap,lastRoundPoints});
+  vm.runInContext(teamBlock,ctx);
+  return ctx.lastRoundPoints;
+};
+assert.deepEqual(redistribute({a:{team:'red'},b:{team:'red'},c:{team:'blue'}},{a:5}),{a:5,b:5,c:0},'the closest guesser\'s teammate gets credited too, not just them (the other team scored 0 this round)');
+assert.deepEqual(redistribute({a:{team:'red'},b:{team:'red'}},{a:3,b:1}),{a:4,b:4},'each teammate\'s own points (e.g. crowd favorite) pool into one shared team total');
+assert.deepEqual(redistribute({a:{},b:{team:'red'},c:{team:'red'}},{a:5,b:2}),{a:5,b:2,c:2},'a player with no team (not a Team vs Team room) is left untouched');
+assert.deepEqual(redistribute({a:{team:'red'},b:{team:'red'}},{a:3},'party'),{a:3},'classic Party rooms never run the redistribution at all');
+
 // Actual rematch preserves the roster and returns to waiting with readiness cleared.
 let update;const replay=vm.createContext({isHost:true,roomState:{players:{me:{isHost:true},friend:{},bot:{isBot:true}}},crypto:{randomUUID:()=> 'next-id'},db:{},ref:(_,p)=>p,update:async(_,v)=>update=v});
 const start=source.indexOf('  async function playAgain(');vm.runInContext(source.slice(start,source.indexOf('\n  }',start)+4),replay);await replay.playAgain('TEST');
 assert.equal(update.phase,'waiting');assert.equal(update.gameId,'next-id');assert.equal(update['players/friend/ready'],false);assert(!Object.keys(update).includes('players'));
-console.log('PASS: abandoned-round discovery/stats, once-only finishes, score/accuracy/shared wins, solo star/streak/best payouts, lost-response recovery, leaderboard retries, same-roster rematch, and daily/monthly score history with recency tiebreaks.');
+console.log('PASS: abandoned-round discovery/stats, once-only finishes, score/accuracy/shared wins, solo star/streak/best payouts, lost-response recovery, leaderboard retries, same-roster rematch, and daily/monthly/team score history with recency tiebreaks.');

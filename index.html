@@ -1391,6 +1391,14 @@ if (location.protocol === "file:") {
     display: inline-block; width: 13px; height: 13px;
     background-image: var(--icon-bot); background-repeat: no-repeat; background-position: center; background-size: contain;
   }
+  .team-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; background: var(--tc); border: 2px solid rgba(0,0,0,.25); vertical-align: middle; }
+  .team-picker-label { font-weight: 700; margin: 0 0 6px; }
+  #team-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
+  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 3px solid var(--tc); border-radius: 14px; background: color-mix(in srgb, var(--tc) 18%, #fff); font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
+  .team-swatch:disabled { opacity: .45; }
+  .team-swatch-name { font-size: 13px; }
+  .team-swatch-members { display: flex; gap: 2px; min-height: 22px; }
+  .team-swatch-members .avatar { font-size: 18px; }
 
   #player-list li.bot-row { position: relative; flex-wrap: nowrap; gap: 4px; padding-block: 6px; min-height: 0; }
   #player-list li.bot-row > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
@@ -2223,6 +2231,12 @@ if (location.protocol === "file:") {
     flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.15; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* Team vs Team's combined box: both teammates' avatars stacked in the same
+     slot a single avatar normally fills, with a solid team-color border
+     instead of the usual 9-slice frame artwork. */
+  .team-card { border-image: none; border-width: 4px; border-color: var(--tc); border-radius: 10px; }
+  .team-card-avatars { grid-row: 1 / 3; grid-column: 1; display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center; padding: 1px 0; }
+  .team-card-avatars .avatar { font-size: 15px; width: 32px; height: auto; min-height: 22px; display: flex; align-items: center; justify-content: center; }
   .medal {
     width: 20px; height: 20px; flex-shrink: 0;
     background-repeat: no-repeat; background-position: center; background-size: contain;
@@ -2903,7 +2917,7 @@ if (location.protocol === "file:") {
 
   <div id="home-btn-row">
     <button id="home-solo-btn" class="home-tile ht-solo" aria-label="Solo Game"><img class="ht-ic" src="icons/home-solo.png" alt=""><span class="ht-lb">Solo Game</span></button>
-    <button id="home-create-btn" class="home-tile ht-host" aria-label="Host Party"><img class="ht-ic" src="icons/home-host.png" alt=""><span class="ht-lb">Host Party</span><span id="home-create-lock" class="home-lock-badge" hidden><img src="icons/reactions/padlock.png" alt=""></span><span id="home-create-free" class="home-free-badge" hidden>&#11088; 1 free today!</span></button>
+    <button id="home-create-btn" class="home-tile ht-host" aria-label="Party Mode"><img class="ht-ic" src="icons/home-host.png" alt=""><span class="ht-lb">Party Mode</span></button>
     <button id="home-join-btn" class="home-tile ht-join" aria-label="Join Game"><img class="ht-ic" src="icons/home-join.png" alt=""><span class="ht-lb">Join Game</span></button>
   </div>
 </div>
@@ -2972,8 +2986,8 @@ if (location.protocol === "file:") {
         <div class="host-unlock-top-row">
           <img class="host-unlock-icon" src="icons/shop-host-crown.webp" alt="">
           <div class="host-unlock-text">
-            <h3 id="host-unlock-shop-title">Host Party</h3>
-            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Host Party to play with friends.</p>
+            <h3 id="host-unlock-shop-title">Party Mode</h3>
+            <p id="host-unlock-shop-desc">Solo games are always free. Unlock Party Mode to play with friends.</p>
           </div>
         </div>
         <ul class="host-perks">
@@ -3103,6 +3117,16 @@ if (location.protocol === "file:") {
   <div id="survival-content"></div>
 </div>
 
+<div id="party-screen" class="screen">
+  <button id="party-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="party-content"></div>
+</div>
+
+<div id="teamvteam-screen" class="screen">
+  <button id="teamvteam-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="teamvteam-content"></div>
+</div>
+
 <div id="career-screen" class="screen">
   <button id="career-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="career-content"></div>
@@ -3182,12 +3206,12 @@ if (location.protocol === "file:") {
   </div>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
-    <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Easy, Medium or Hard in the lobby before you begin. Solo games are always free, even before Host Party is unlocked.</p>
+    <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Easy, Medium or Hard in the lobby before you begin. Solo games are always free, even before Party Mode is unlocked.</p>
     <p>Round XP depends on your opponents: <b>Easy ×0.8</b>, <b>Medium or people ×1.1</b>, and <b>Hard ×1.2</b>. Mixed lobbies average the opponents who submitted a guess. XP already earned stays unchanged. Game-completion XP and Daily, Worlds, Monthly and Survival XP keep their usual rates.</p>
   </div></details>
 
   <details class="howto-section"><summary>Hosting a party</summary><div class="howto-body">
-    <p>Tap <b>Host Party</b> to choose the room settings and what happens if you disconnect, then tap <b>Create Room</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
+    <p>Tap <b>Party Mode</b>, then pick a mode (Classic Party, or Team vs Team to play 2v2) to choose the room settings and what happens if you disconnect, then tap <b>Create Room</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
   </div></details>
 
   <details class="howto-section"><summary>Joining a room</summary><div class="howto-body">
@@ -3268,7 +3292,7 @@ if (location.protocol === "file:") {
   <details class="howto-section"><summary>Progress and playing again</summary><div class="howto-body"><p>Use <b>Stats</b> for Games won, finished games, win rate, accuracy and records. Choose a mode to see Worlds stars, Survival best runs, or Daily streaks. Accuracy includes power-up adjustments. Accuracy averages include submitted guesses; missed submissions are counted separately.</p><p>Worlds award stars above <b>60%, 75%, and 90%</b>. Earn <b>13 stars</b> in a World to claim its home screen in Awards or on the World page, and all 15 stars for mastery. Survival keeps you safe at 60% or above. Worlds and Survival offer Resume for unfinished attempts.</p><p>In a party lobby, mark yourself <b>Ready</b> and check the room rules. After the final results, each player collects their own coins. The host can then start a rematch with the same group or leave.</p><p>Settings offers effects volume, reduced motion and larger menu text. Object search uses the game's keyboard; tap Done to minimize it.</p></div></details>
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
     <p>Your score becomes coins when a game ends, win or lose. Open <b>Shop</b> for coins, offers, and monthly packs. Open <b>Style</b> for avatars, reactions, flairs, boards, backgrounds, and home screens:</p>
-    <p><b>Shop</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Host Party games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
+    <p><b>Shop</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Party Mode games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
     <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
     <p><b>Style</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
   </div></details>
@@ -3500,8 +3524,13 @@ if (location.protocol === "file:") {
   </div>
 
   <div id="host-unlock-banner">
-    <p>Solo games are always free. Unlock Host Party to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
+    <p>Solo games are always free. Unlock Party Mode to play with friends: one-time purchase, host unlimited games forever, plus 500 bonus coins.</p>
     <button id="host-unlock-btn" type="button">Unlock for $4.99 &middot; One time</button>
+  </div>
+
+  <div id="team-picker-row" class="cozy-panel" hidden>
+    <p class="team-picker-label">Pick your team</p>
+    <div id="team-picker-grid"></div>
   </div>
 
   <div class="lobby-bots-row">
@@ -4244,7 +4273,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       levelPaid: 0,
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
-      hostFreeDate: null,
+      hostFreeDates: {},
       adsWatchedDate: null,
       adsWatchedCount: 0,
       cosmetics: defaultCosmeticState(),
@@ -4412,7 +4441,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           levelPaid: Math.max(0, data.levelPaid | 0),
           unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
           hostUnlocked: !!data.hostUnlocked,
-          hostFreeDate: data.hostFreeDate || null,
+          hostFreeDates: data.hostFreeDates || {},
           adsWatchedDate: data.adsWatchedDate || null,
           adsWatchedCount: data.adsWatchedCount || 0,
           cosmetics: {
@@ -4456,6 +4485,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           survival: data.survival || null,
           achClaimed: { ...(data.achClaimed || {}) },
           accountUpgrade: data.accountUpgrade || null,
+          // Were missing from this normalization entirely until now - every real
+          // profile update from the server was silently dropping them back to
+          // undefined right after load, even though applyCareerRecord writes them
+          // correctly. Caught while wiring up teamHistory below.
+          dailyHistory: data.dailyHistory || {},
+          monthlyHistory: data.monthlyHistory || {},
+          teamHistory: data.teamHistory || {},
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -6500,8 +6536,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const homeScreen = document.getElementById("home-screen");
   const homeSoloBtn = document.getElementById("home-solo-btn");
   const homeCreateBtn = document.getElementById("home-create-btn");
-  const homeCreateLockEl = document.getElementById("home-create-lock");
-  const homeCreateFreeEl = document.getElementById("home-create-free");
   const homeJoinBtn = document.getElementById("home-join-btn");
   const createScreenEl = document.getElementById("create-screen");
   const createBackBtn = document.getElementById("create-back-btn");
@@ -6561,6 +6595,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hostUnlockShopBtn = document.getElementById("host-unlock-shop-btn");
   const playerList = document.getElementById("player-list");
   const lobbyPlayerCountEl = document.getElementById("lobby-player-count");
+  const teamPickerRowEl = document.getElementById("team-picker-row");
+  const teamPickerGridEl = document.getElementById("team-picker-grid");
+  const TEAM_COLORS = ["red", "blue", "green", "yellow", "purple"];
+  const TEAM_COLOR_NAMES = { red: "Red", blue: "Blue", green: "Green", yellow: "Yellow", purple: "Purple" };
+  const TEAM_COLOR_HEX = { red: "#e74c3c", blue: "#3498db", green: "#2ecc71", yellow: "#e8c520", purple: "#9b59b6" };
+  function renderTeamPicker(data) {
+    const isTeamMode = data.settings?.mode === "teamvteam";
+    teamPickerRowEl.hidden = !isTeamMode;
+    if (!isTeamMode) return;
+    const players = data.players || {};
+    teamPickerGridEl.innerHTML = TEAM_COLORS.map((color) => {
+      const members = Object.entries(players).filter(([, p]) => p.team === color);
+      const mine = members.some(([id]) => id === currentPlayerId);
+      const full = members.length >= 2;
+      const avatars = members.map(([, p]) => `<span class="avatar">${avatarHtml(p.avatar)}</span>`).join("");
+      return `<button type="button" class="team-swatch" data-team="${color}" style="--tc:${TEAM_COLOR_HEX[color]}"${full && !mine ? " disabled" : ""}><span class="team-swatch-name">${TEAM_COLOR_NAMES[color]}</span><span class="team-swatch-members">${avatars}</span></button>`;
+    }).join("");
+  }
+  teamPickerGridEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".team-swatch");
+    if (!b || b.disabled || !currentRoomCode) return;
+    update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { team: b.dataset.team });
+  });
   const hostStartBtn = document.getElementById("host-start-btn");
   const botControlsEl = document.getElementById("bot-controls");
   const lobbyStatusEl = document.getElementById("lobby-status");
@@ -6607,6 +6664,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldsScreenEl = document.getElementById("worlds-screen");
   const monthlyScreenEl = document.getElementById("monthly-screen");
   const survivalScreenEl = document.getElementById("survival-screen");
+  const partyScreenEl = document.getElementById("party-screen");
+  const partyContentEl = document.getElementById("party-content");
+  const teamvteamScreenEl = document.getElementById("teamvteam-screen");
+  const teamvteamContentEl = document.getElementById("teamvteam-content");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -7768,8 +7829,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl];
   let overlayReturnScreen = null;
   let overlayFocusReturn=null;
   // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
@@ -8303,6 +8364,72 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
   try { updateDailyBadge(); } catch (e) {}
+
+  // ==================== Party Mode hub: Classic Party, Team vs Team ====================
+  function partyModeFreeToday(mode) {
+    return !myProfile.hostUnlocked && (myProfile.hostFreeDates || {})[mode] !== todayDateStr();
+  }
+  function renderPartyHub() {
+    const card = (id, img, name, sub, mode) => {
+      const badge = myProfile.hostUnlocked ? "" : partyModeFreeToday(mode)
+        ? `<span class="home-free-badge">&#11088; 1 free today!</span>`
+        : `<span class="home-lock-badge"><img src="icons/reactions/padlock.png" alt=""></span>`;
+      return `<button type="button" class="sh-card" id="${id}"><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
+    };
+    partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
+      ${card("pm-classic", "icons/home-host.png", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic")}
+      ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam")}`;
+  }
+  function openPartyHub() {
+    renderPartyHub();
+    openOverlay(partyScreenEl);
+  }
+  partyContentEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".sh-card");
+    if (!b) return;
+    if (b.id === "pm-classic") {
+      afterBtnBounce(b, async () => {
+        const granted = await confirmAndPurchaseHostUnlock("classic");
+        if (!granted) return;
+        pendingFreeGame = granted === "free";
+        closeOverlay();
+        showCreateScreen("classic");
+      });
+    } else if (b.id === "pm-teamvteam") {
+      afterBtnBounce(b, () => openTeamVTeamInfo());
+    }
+  });
+  document.getElementById("party-close-btn").addEventListener("click", () => closeOverlay());
+
+  function teamVTeamBestHtml() {
+    const rows = topScores(historyRows(myProfile.teamHistory || {}), 3);
+    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
+    return `<div class="dc-card">${rows.map((r) => `<div class="dc-lb-row"><span class="dc-lb-score">${r.s} points</span><span class="dc-lb-name">${new Date(r.t).toLocaleDateString()}</span></div>`).join("")}</div>`;
+  }
+  function renderTeamVTeamInfo() {
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2><p class="dc-sub">2 teams of 2 &mdash; bots can fill in</p>
+      <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves.</div></div>
+      <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
+      <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
+      <button type="button" class="dc-btn" id="tvt-start">Create Room</button>
+      <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}`;
+  }
+  function openTeamVTeamInfo() {
+    renderTeamVTeamInfo();
+    openOverlay(teamvteamScreenEl);
+    overlayReturnScreen = partyScreenEl;
+  }
+  teamvteamContentEl.addEventListener("click", (e) => {
+    if (!e.target.closest("#tvt-start")) return;
+    afterBtnBounce(e.target.closest("#tvt-start"), async () => {
+      const granted = await confirmAndPurchaseHostUnlock("teamvteam");
+      if (!granted) return;
+      pendingFreeGame = granted === "free";
+      closeOverlay();
+      showCreateScreen("teamvteam");
+    });
+  });
+  document.getElementById("teamvteam-close-btn").addEventListener("click", () => closeOverlay());
 
   // ==================== Worlds: themed levels with stars ====================
   // Questions still get harder overall, but not in a strict climb: sort easiest to hardest, then nudge each one's
@@ -9612,7 +9739,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   achTier("Winning", "Regular", (n) => `Finish ${n} games`, ACH_STAT("gamesPlayed"), [[5, 15], [25, 50], [100, 150]]);
   achTier("Second chance", "Second look", (n) => `Earn points from a second chance in ${n} rounds`, ACH_STAT("secondChances"), [[5, 25], [25, 100]]);
   achTier("Second chance", "Double down", (n) => `Win double-down points in ${n} rounds`, ACH_STAT("doubleDowns"), [[5, 25], [25, 100]]);
-  achTier("Social", "Party time", (n) => `Finish ${n} Host Party games with friends`, ACH_STAT("groupGames"), [[5, 30], [25, 120]]);
+  achTier("Social", "Party time", (n) => `Finish ${n} Party Mode games with friends`, ACH_STAT("groupGames"), [[5, 30], [25, 120]]);
   achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]]);
   achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]]);
 
@@ -9640,7 +9767,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     kraken: ["Kraken slayer", "Guess exactly right 3 times", 3, ACH_STAT("perfects")],
     fairy: ["Fairy friend", "See 40 different objects in rounds", 40, () => Object.keys(myProfile.seenObjects || {}).length],
     "baby-dragon": ["Dragon hatchling", "Finish 5 games", 5, ACH_STAT("gamesPlayed")],
-    "garden-gnome": ["Gnome sweet gnome", "Finish 3 Host Party games with friends", 3, ACH_STAT("groupGames")],
+    "garden-gnome": ["Gnome sweet gnome", "Finish 3 Party Mode games with friends", 3, ACH_STAT("groupGames")],
     mermaid: ["Mermaid's catch", "Pull from the avatar machine 10 times", 10, ACH_STAT("pulls")],
     alien: ["First contact", "Finish 3 Daily Challenges", 3, ACH_STAT("dailies")],
     "flying-saucer": ["Space cadet", "Complete 10 World levels", 10, ACH_STAT("worldLevels")],
@@ -10178,9 +10305,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hostUnlockShopBoxEl.classList.toggle("unlocked", shopUnlocked);
     hostUnlockShopBtn.textContent = shopUnlocked ? "✓ Unlocked" : "Unlock for $4.99 · One time";
     hostUnlockShopBtn.disabled = shopUnlocked;
-    const freeToday = !shopUnlocked && myProfile.hostFreeDate !== todayDateStr();
-    homeCreateLockEl.hidden = shopUnlocked || freeToday;
-    homeCreateFreeEl.hidden = !freeToday;
+    // Each Party Mode card (Classic Party, Team vs Team) carries its own lock/free
+    // badge now, rendered by renderPartyHub() itself - refresh it here too so the
+    // badges stay in sync if the profile changes while that hub screen is open.
+    if (partyScreenEl.classList.contains("active")) renderPartyHub();
 
     if (!isHost) {
       hostUnlockBannerEl.classList.remove("active");
@@ -10217,36 +10345,41 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return { ...profile, hostUnlocked: true, coins: (profile.coins || 0) + HOST_UNLOCK_BONUS_COINS };
     });
   }
-  // Shared by every host-unlock entry point (shop box, shop tab, the lock on
-  // the home button) so they all show the same purchase popup and copy.
+  // Shared by every host-unlock entry point (shop box, shop tab, each Party
+  // Mode card) so they all show the same purchase popup and copy.
   // Returns true once hostUnlocked is actually set (already owned counts).
-  // One free hosted game per device per day (local calendar day, same as the
-  // ad-coin cap) before the purchase prompt ever shows - advertised on the
-  // Home tile by #home-create-free.
-  async function claimFreeHostToday() {
+  // One free hosted game per device per day per MODE (local calendar day,
+  // same as the ad-coin cap) before the purchase prompt ever shows -
+  // advertised on that mode's own card in the Party Mode hub.
+  async function claimFreeHostToday(mode) {
     const today = todayDateStr();
-    if (myProfile.hostFreeDate === today) return false;
+    if ((myProfile.hostFreeDates || {})[mode] === today) return false;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
-      if (profile.hostUnlocked || profile.hostFreeDate === today) return profile;
-      return { ...profile, hostFreeDate: today };
+      if (profile.hostUnlocked || (profile.hostFreeDates || {})[mode] === today) return profile;
+      return { ...profile, hostFreeDates: { ...profile.hostFreeDates, [mode]: today } };
     });
     return true;
   }
   // allowFree is false for the Shop tab's own unlock button: just browsing the
   // shop (with no lobby/room actually about to open) should never silently
   // spend today's free host game - only an entry point that's actually about
-  // to host (the Home tile, the in-lobby banner) may claim it.
-  async function confirmAndPurchaseHostUnlock(allowFree = true) {
-    if (myProfile.hostUnlocked) return true;
-    if (allowFree && (await claimFreeHostToday())) return true;
+  // to host (a Party Mode card, the in-lobby banner) may claim it.
+  // Returns false (declined) or one of three truthy strings telling the caller HOW
+  // access was granted - "unlocked" (already owned), "free" (today's per-mode free
+  // game, just claimed) or "purchased" (bought just now) - since the Party Mode hub
+  // needs to know specifically whether this was the free path, to force that
+  // created room down to 5 rounds.
+  async function confirmAndPurchaseHostUnlock(mode, allowFree = true) {
+    if (myProfile.hostUnlocked) return "unlocked";
+    if (allowFree && (await claimFreeHostToday(mode))) return "free";
     const bought = await showFakePurchase({
-      icon: "icons/shop-host-crown.webp", title: "Host Party", price: "$4.99 · One time",
+      icon: "icons/shop-host-crown.webp", title: "Party Mode", price: "$4.99 · One time",
       desc: "Host unlimited games with friends, plus 500 bonus coins.",
     });
     if (!bought) return false;
     await purchaseHostUnlock();
-    return true;
+    return "purchased";
   }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
   // Soft colour for each reaction / flair / background pack card, cycling through the set (the board packs have their own bolder colours).
@@ -10325,8 +10458,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bought = await showFakePurchase({ icon: look[0], title: pack.name, price: priceText || "Unlock" });
     if (bought) purchaseThemedPack(packId);
   });
-  hostUnlockBtn.addEventListener("click", () => confirmAndPurchaseHostUnlock(true));
-  hostUnlockShopBtn.addEventListener("click", () => confirmAndPurchaseHostUnlock(false));
+  hostUnlockBtn.addEventListener("click", () => confirmAndPurchaseHostUnlock(roomState.settings?.mode === "teamvteam" ? "teamvteam" : "classic", true));
+  // allowFree is false here, so the mode argument is never actually read (claimFreeHostToday
+  // is skipped entirely) - null makes that "not tied to a specific mode" explicit.
+  hostUnlockShopBtn.addEventListener("click", () => confirmAndPurchaseHostUnlock(null, false));
 
   // ---- "Install app" banner, driven by the browser's own install
   // eligibility signal rather than a fixed schedule. Suppressed while the
@@ -10637,7 +10772,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const botRowsOn = isHost && p.isBot && roomState && roomState.phase === "waiting";
       nameSpan.className='lobby-player-identity';
       const party=!roomState.settings?.solo;
-      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
+      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       if(id===currentPlayerId&&party&&roomState.phase==='waiting'){
         const ready=document.createElement('button');ready.type='button';ready.id='lobby-ready-btn';ready.textContent=p.ready?'Ready ✓':"I'm ready";ready.setAttribute('aria-pressed',String(!!p.ready));ready.title=p.ready?'Tap to undo ready':'Mark yourself ready';li.appendChild(ready);
@@ -11013,6 +11149,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let pendingRoomCode = null;
   let pendingIsHost = false;
   let pendingSettings = null;
+  // Set by the Party Mode hub's card handlers right before showCreateScreen() when
+  // this room is being created using today's free game for that mode - forces the
+  // 5-round cap regardless of whatever the settings panel/saved preset says.
+  let pendingFreeGame = false;
   let nameAvatarCameFrom = null; // "create" | "join" | "lobby" — for the back button
   // True while viewing the name/avatar screen reached via the Lobby's own
   // back button (editing your already-submitted name/avatar in place,
@@ -11024,15 +11164,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let editingFromLobby = false;
 
   // "solo" = Solo Game (bots, no room code); "party" = Host Party.
-  let createMode = "party";
+  let createMode = "classic";
   function showCreateScreen(mode) {
-    createMode = mode === "solo" ? "solo" : "party";
+    createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
     createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
     document.getElementById("host-settings-card").hidden = createMode === "solo";
     document.getElementById("host-settings-card").open = false;
     currentSettings = DEFAULT_SETTINGS();
     if (createMode === "solo") currentSettings.autoAdvanceEnabled = true; // solo has no host to tap Next
+    if (pendingFreeGame) currentSettings.totalRounds = 5; // today's free game: fixed 5 rounds
     hostTransferModeChoice = "reassign";
     hostModeControlsEl.querySelectorAll(".hostmode-btn").forEach((b) => {
       b.classList.toggle("selected", b.dataset.mode === "reassign");
@@ -11065,16 +11206,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(run, BTN_BOUNCE_MS + 80);
   }
   homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => openSolo()));
-  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, async () => {
-    if (!(await confirmAndPurchaseHostUnlock())) return;
-    showCreateScreen("party");
-  }));
+  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, () => openPartyHub()));
   let soloFromHub = false; // the Solo hub's Quick Game card opened the create screen
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
     if (soloFromHub && createMode === "solo") openSolo();
     soloFromHub = false;
+    pendingFreeGame = false;
   });
 
   function showJoinScreen() {
@@ -11146,6 +11285,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     createStatusEl.textContent = "Creating room...";
     const settings = { ...currentSettings, hostTransferMode: hostTransferModeChoice };
     if (createMode === "solo") settings.solo = true;
+    if (createMode === "teamvteam") settings.mode = "teamvteam";
+    if (pendingFreeGame) settings.totalRounds = 5;
+    pendingFreeGame = false;
     // Claim a code atomically (transaction only commits if the path is still
     // empty) and retry on the rare collision, rather than blindly set()-ing a
     // random code and risking a silent overwrite of someone else's room.
@@ -11402,10 +11544,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const themedName = BOT_NAME_BY_AVATAR[avatar];
     const name = (themedName && themedName.length <= 12 && !usedNames.has(themedName)) ? themedName : botNameFor(avatar, usedNames);
     const botId = "bot_" + Math.random().toString(36).slice(2, 10);
-    await set(ref(db, `rooms/${currentRoomCode}/players/${botId}`), {
+    const newPlayer = {
       name, avatar, isHost: false, score: 0, frameIndex, isBot: true, botDifficulty: difficulty,
       joinedAt: serverTimestamp(),
-    });
+    };
+    // Team vs Team: auto-assign the new bot to the first team with fewer than 2
+    // members, so a host can fill an uneven team without any extra bot-side UI.
+    if (roomState.settings?.mode === "teamvteam") {
+      const teamCounts = {};
+      Object.values(existingPlayers).forEach((p) => { if (p.team) teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
+      const openTeam = TEAM_COLORS.find((c) => (teamCounts[c] || 0) < 2);
+      if (openTeam) newPlayer.team = openTeam;
+    }
+    await set(ref(db, `rooms/${currentRoomCode}/players/${botId}`), newPlayer);
   }
   document.querySelectorAll(".bot-btn:not(.bot-all-btn)").forEach((btn) => {
     btn.addEventListener("click", () => addBot(btn.dataset.difficulty));
@@ -12011,6 +12162,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         console.warn("[measuring-game] animation skipped:", err);
         animEndsAt = null;
       }
+    }
+    // Team vs Team: credit the round's points to the whole team, not just whichever
+    // teammate actually guessed closest - redistribute before the score write below so
+    // every other system that already keys off a player's own score (ranks, the
+    // combined team box, final-screen coin rewards) just works unmodified.
+    if ((roomState.settings || currentSettings).mode === "teamvteam") {
+      const teamTotals = {};
+      Object.keys(playersSnap).forEach((id) => {
+        const team = playersSnap[id].team;
+        if (team) teamTotals[team] = (teamTotals[team] || 0) + (lastRoundPoints[id] || 0);
+      });
+      Object.keys(playersSnap).forEach((id) => {
+        const team = playersSnap[id].team;
+        if (team) lastRoundPoints[id] = teamTotals[team];
+      });
     }
     Object.keys(playersSnap).forEach((id) => {
       const newScore = (playersSnap[id].score || 0) + (lastRoundPoints[id] || 0);
@@ -13008,6 +13174,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && c.dataset.id === id));
   }
   function renderScoreColumn(overrideScores) {
+    if (roomState.settings?.mode === "teamvteam") { renderTeamScoreColumn(overrideScores); return; }
     const gameMotionKey = `${currentRoomCode}:${roomState.gameId || ''}`;
     const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
       const p = currentPlayers[id];
@@ -13063,6 +13230,87 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ptsEl.classList.add("score-pop");
         }
         previousDisplayedScores[id] = score;
+      });
+      if (roomState.phase !== "waiting") {
+        const newRanks = {};
+        ranked.forEach((entry) => { newRanks[entry.id] = entry.rank; });
+        previousScoreColumnRanks = newRanks;
+      }
+    });
+  }
+
+  // Team vs Team's combined score box: same ranking/FLIP-reorder/lead-celebration
+  // machinery as renderScoreColumn, just keyed by team color instead of player id,
+  // with both teammates' avatars+names drawn into one shared box. Both teammates'
+  // own score fields are always identical (finishRoundScoring credits the whole
+  // team), so either member's score/accuracy is safe to read as the team's.
+  function renderTeamScoreColumn(overrideScores) {
+    const gameMotionKey = `${currentRoomCode}:${roomState.gameId || ''}`;
+    const teamOf = {};
+    Object.entries(currentPlayers).forEach(([id, p]) => { if (p.team) teamOf[p.team] = [...(teamOf[p.team] || []), id]; });
+    const teams = Object.keys(teamOf);
+    const signature = gameMotionKey + teams.map((team) => {
+      const members = teamOf[team];
+      const score = overrideScores ? (overrideScores[members[0]] || 0) : (currentPlayers[members[0]].score || 0);
+      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name).join(",")}`;
+    }).sort().join("|");
+    if (signature === lastScoreColumnSignature) return;
+    lastScoreColumnSignature = signature;
+    flipReorder(scoreColEl, () => {
+      const scoreFn = (team) => {
+        const id = teamOf[team][0];
+        return overrideScores ? (overrideScores[id] || 0) : (currentPlayers[id].score || 0);
+      };
+      const avgFn = (team) => {
+        const avgs = teamOf[team].map((id) => {
+          const p = currentPlayers[id];
+          return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
+        }).filter((v) => v != null);
+        return avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
+      };
+      const ranked = computeRanks(teams, scoreFn, avgFn, false);
+      const celebratingId = newLeader(gameMotionKey, ranked);
+      scoreColEl.innerHTML = "";
+      ranked.forEach((entry) => {
+        const { id: team, score, rank, medal: medalType } = entry;
+        const members = teamOf[team];
+        const prevRank = roomState.phase === "waiting" ? undefined : previousScoreColumnRanks[team];
+        let arrow = "";
+        if (prevRank !== undefined) {
+          if (rank < prevRank) arrow = '<span class="arrow move-icon up"></span>';
+          else if (rank > prevRank) arrow = '<span class="arrow move-icon down"></span>';
+          else arrow = '<span class="arrow"></span>';
+        } else {
+          arrow = '<span class="arrow"></span>';
+        }
+        const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
+        const avg = avgFn(team);
+        const accHtml = avg == null ? "" : `<span class="acc">${formatAccuracy(avg)}%</span>`;
+        const box = document.createElement("div");
+        box.className = "score-card team-card" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
+        box.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
+        box.dataset.id = team;
+        if (members.includes(roundWinnerId)) box.classList.add("round-winner");
+        const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+        const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+        box.innerHTML = `
+          <div class="team-card-avatars">${avatars}</div>
+          <div class="sc-top"><span class="name">${names}</span></div>
+          <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
+        `;
+        scoreColEl.appendChild(box);
+        fitNameToCard(box.querySelector(".name"));
+        if (team === celebratingId && roomState.phase !== "waiting") {
+          celebrateLead(box, prefersReducedMotion());
+        }
+        const prevScore = previousDisplayedScores[team];
+        if (prevScore !== undefined && prevScore !== score) {
+          const ptsEl = box.querySelector(".pts");
+          ptsEl.classList.remove("score-pop");
+          void ptsEl.offsetWidth;
+          ptsEl.classList.add("score-pop");
+        }
+        previousDisplayedScores[team] = score;
       });
       if (roomState.phase !== "waiting") {
         const newRanks = {};
@@ -13238,9 +13486,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // coins are still credited here, before either reward-screen button.
     void gameRewards.prepare({ key: gameRewardKey(currentRoomCode, roomState), score: myFinalScore,
       roomCode: currentRoomCode, playerId: currentPlayerId, host: isHost });
-    const standings=computeRanks(Object.keys(currentPlayers),id=>currentPlayers[id].score||0,id=>currentPlayers[id].roundsCounted?currentPlayers[id].accuracySum/currentPlayers[id].roundsCounted:null,true);
+    // Team vs Team: two teammates always share the exact same score (see finishRoundScoring),
+    // so their individual accuracy must NOT break the tie between them here - that would let
+    // one teammate land on "Winner" and the other on "Place 2" despite an identical result.
+    const standings=computeRanks(Object.keys(currentPlayers),id=>currentPlayers[id].score||0,id=>currentPlayers[id].roundsCounted?currentPlayers[id].accuracySum/currentPlayers[id].roundsCounted:null,roomState.settings?.mode!=="teamvteam");
     const myPlace=standings.find(p=>p.id===currentPlayerId),humans=Object.values(currentPlayers).filter(p=>!p.isBot).length;
-    const mode=roomState.settings?.solo?'quick':'party';
+    const mode=roomState.settings?.mode==='teamvteam'?'teamvteam':(roomState.settings?.solo?'quick':'party');
     careerLedger.save({kind:'match',key:gameRewardKey(currentRoomCode,roomState),mode,t:Date.now(),won:standings.length>=2&&myPlace?.rank===1,
       place:myPlace?.rank||standings.length,group:mode==='party'&&humans>=2&&standings.length>=3,score:myFinalScore,
       accuracy:myPlace?.avg||0,opponents:Object.values(currentPlayers).filter(p=>p!==currentPlayers[currentPlayerId]).map(p=>p.isBot?p.botDifficulty||'medium':'human')});
@@ -13256,7 +13507,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const p = currentPlayers[id];
       return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
     };
-    const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
+    // Same team-tie fix as the recap panel above: don't let individual accuracy split
+    // two same-score teammates into different final ranks.
+    const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, roomState.settings?.mode !== "teamvteam");
     let rank1Delay = 0;
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
@@ -13985,6 +14238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Easy/Medium/Hard add buttons (difficulty is set per bot row).
   function applyLobbyMode(data) {
     const solo = !!(data.settings && data.settings.solo);
+    const teamMode = data.settings?.mode === "teamvteam";
     lobbyScreenEl.classList.toggle("solo-lobby", solo);
     document.querySelector('.lobby-room-box').hidden=solo;
     if (solo) {
@@ -13995,15 +14249,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     addBtn.style.display = "";
     document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) && isHost ? "flex" : "none";
     addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
-    // Host Party needs at least one other real player before it can start.
+    renderTeamPicker(data);
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
-    const needsFriend = !solo && humans < 2;
     const real=Object.values(data.players||{}).filter(p=>!p.isBot),ready=real.filter(p=>p.ready).length;
-    const rules=document.getElementById('lobby-rules');rules.innerHTML=`<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}${solo?'':` · ${ready}/${real.length} ready`}</p>`;
+    let needsFriend, waitingMsg;
+    if (teamMode) {
+      // Team vs Team needs at least 2 full (2-member) teams before it can start -
+      // an uneven/incomplete team blocks Start same as "needs a friend" does for
+      // Classic Party, but counted by team fullness instead of headcount.
+      const teamCounts = {};
+      Object.values(data.players || {}).forEach((p) => { if (p.team) teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
+      const fullTeams = Object.values(teamCounts).filter((n) => n >= 2).length;
+      needsFriend = fullTeams < 2;
+      waitingMsg = "Need at least 2 full teams of 2 to start — pick a color above, or add bots to fill a team.";
+    } else {
+      // Host Party needs at least one other real player before it can start.
+      needsFriend = !solo && humans < 2;
+      waitingMsg = "Waiting for at least one friend to join. Share the room code!";
+    }
+    const rules=document.getElementById('lobby-rules');
+    rules.innerHTML = teamMode
+      ? `<p>${data.settings?.totalRounds||5} rounds · Team vs Team</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
+      : `<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}${solo?'':` · ${ready}/${real.length} ready`}</p>`;
     hostStartBtn.textContent='Start game';
     hostStartBtn.disabled = needsFriend;
     hostStartBtn.style.opacity = needsFriend ? ".5" : "";
-    lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? "Waiting for at least one friend to join. Share the room code!" : "";
+    lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
   }
   function applyPhase(data) {
     if(data.phase==='waiting')finalRendered=false;

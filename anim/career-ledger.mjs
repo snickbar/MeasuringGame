@@ -1,13 +1,15 @@
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 
-export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival'};
-export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5};
+export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team'};
+export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
-// Every date (daily) or month (monthly) ever played, newest first - never evicted.
+// Every entry ever recorded, newest first by actual timestamp - never evicted. Works for
+// date-keyed maps (daily/monthly, where key order and t order happen to agree) and for
+// per-game-keyed maps (teamHistory, where keys aren't chronological) alike.
 export function historyRows(historyMap){
-  return Object.keys(historyMap||{}).sort((a,b)=>b<a?-1:1).map(key=>({key,s:historyMap[key].s,t:historyMap[key].t}));
+  return Object.keys(historyMap||{}).map(key=>({key,s:historyMap[key].s,t:historyMap[key].t})).sort((a,b)=>b.t-a.t);
 }
 // Highest scores first; Array#sort is stable, so among equal scores the one
 // earlier in `rows` (the more recent one, since historyRows sorts newest-first) stays first.
@@ -48,7 +50,11 @@ export function applyCareerRecord(profile,record){
     return {...profile,stats,careerGames:{...profile.careerGames,[key]:record},
       ...(mode==='quick'?{difficultyStats:{...profile.difficultyStats,[difficulty]:{games:(prior.games||0)+1,wins:(prior.wins||0)+(record.won?1:0)}}}:{}),
       modeStats:{...profile.modeStats,[mode]:{...old,games:(old.games||0)+1,wins:(old.wins||0)+(record.won?1:0),podiums:(old.podiums||0)+(record.place<=3?1:0)}},
-      matches:[...list(profile.matches),record].slice(-100)};
+      matches:[...list(profile.matches),record].slice(-100),
+      // Every Team vs Team game ever played, keyed by its own unique game key (not a
+      // calendar date like dailyHistory/monthlyHistory) since "your best teams" wants
+      // every game, not one slot per day - feeds the info screen's best-teams card.
+      ...(mode==='teamvteam'?{teamHistory:{...profile.teamHistory,[key]:{s:record.score||0,t:record.t}}}:{})};
   }
   if(record.kind!=='attempt'||profile.attemptReceipts?.[key])return profile;
   let result={...profile},coins=0;
