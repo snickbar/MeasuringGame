@@ -194,11 +194,11 @@ if (location.protocol === "file:") {
      Here the slide-in runs on everything except the Back button, so the button is in place from the first frame. */
   #collection-screen, #items-screen, #career-screen, #achievements-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { animation: none; }
   #collection-screen.active > :not(.screen-back-btn), #items-screen.active > :not(.screen-back-btn), #career-screen.active > :not(.screen-back-btn), #achievements-screen.active > :not(.screen-back-btn),
-  #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn), #party-screen.active > :not(.screen-back-btn), #teamvteam-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
+  #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn), #party-screen.active > :not(.screen-back-btn), #teamvteam-screen.active > :not(.screen-back-btn), #teamworlds-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen, #teamworlds-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active, #teamworlds-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -3157,6 +3157,11 @@ if (location.protocol === "file:") {
   <div id="teamvteam-content"></div>
 </div>
 
+<div id="teamworlds-screen" class="screen">
+  <button id="teamworlds-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="teamworlds-content"></div>
+</div>
+
 <div id="career-screen" class="screen">
   <button id="career-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="career-content"></div>
@@ -4522,6 +4527,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           dailyHistory: data.dailyHistory || {},
           monthlyHistory: data.monthlyHistory || {},
           teamHistory: data.teamHistory || {},
+          teamWorlds: data.teamWorlds || {},
+          teamWorldsHistory: data.teamWorldsHistory || {},
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -6706,6 +6713,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const partyContentEl = document.getElementById("party-content");
   const teamvteamScreenEl = document.getElementById("teamvteam-screen");
   const teamvteamContentEl = document.getElementById("teamvteam-content");
+  const teamworldsScreenEl = document.getElementById("teamworlds-screen");
+  const teamworldsContentEl = document.getElementById("teamworlds-content");
   const achievementsScreen = document.getElementById("achievements-screen");
   const itemsCloseBtn = document.getElementById("items-close-btn");
   const itemsContentEl = document.getElementById("items-content");
@@ -7867,8 +7876,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
   let overlayReturnScreen = null;
   let overlayFocusReturn=null;
   // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
@@ -8416,7 +8425,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
       ${card("pm-classic", "icons/home-host.png", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic")}
-      ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam")}`;
+      ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam")}
+      ${card("pm-teamworlds", "items/hot-air-balloon.webp", "Team Worlds", "You and a partner guess together &mdash; we average you", "teamworlds")}`;
   }
   function openPartyHub() {
     renderPartyHub();
@@ -8436,6 +8446,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
     } else if (b.id === "pm-teamvteam") {
       afterBtnBounce(b, () => openTeamVTeamInfo());
+    } else if (b.id === "pm-teamworlds") {
+      afterBtnBounce(b, () => openTeamWorldsScreen());
     }
   });
   document.getElementById("party-close-btn").addEventListener("click", () => closeOverlay());
@@ -8725,6 +8737,85 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (wl.phase === "world") { wl.phase = "list"; renderWorlds(); return; }
     if (wl.phase !== "list") { wl.phase = "world"; renderWorlds(); return; }
     closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
+  });
+
+  // ==================== Team Worlds: two players average their guesses, same Worlds pool/stars as Solo ====================
+  // Samples a fixed 5 unique-object pairs across a World's WHOLE pool (no difficulty-band
+  // slicing like solo's worldQuestions(w, level) - this is the single-pass redesign: one
+  // repeatable attempt per World, not a 5-level progression, so there's no "level" to resume
+  // and no confusion about whose progress counts when you switch partners.
+  function teamWorldQuestions(w) {
+    const objs = worldObjects(w);
+    const pairs = [];
+    for (let i = 0; i < objs.length; i++) for (let j = i + 1; j < objs.length; j++) {
+      const [u, t] = objs[i].mm <= objs[j].mm ? [objs[i], objs[j]] : [objs[j], objs[i]];
+      if (u.mm === t.mm || t.mm / u.mm < 1.5) continue;
+      pairs.push({ u, t });
+    }
+    const shuffled = pairs.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+    const out = [], used = new Set();
+    for (const p of shuffled) {
+      if (out.length >= WORLD_Q) break;
+      if (used.has(p.u.id) || used.has(p.t.id)) continue;
+      out.push(p); used.add(p.u.id); used.add(p.t.id);
+    }
+    return out.map((p) => dailyQuestionFor({ unitId: p.u.id, targetId: p.t.id }));
+  }
+  let twWorldId = null; // which World is picked while its info screen is open
+  function teamWorldsBestHtml(worldId) {
+    const rows = topScores(historyRows(myProfile.teamWorldsHistory?.[worldId] || {}), 5);
+    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
+    return `<div class="dc-card">${rows.map((r) => `<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(r.partnerName || "Partner")}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join("")}</div>`;
+  }
+  function renderTeamWorldsScreen() {
+    const el = teamworldsContentEl;
+    if (!twWorldId) {
+      el.innerHTML = `<h2 class="dc-title">Team Worlds</h2><p class="dc-sub">Pick a World to play together</p>` +
+        WORLDS.map((x, i) => {
+          const open = worldUnlocked(i);
+          return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : "Unlock this World in Solo first", { disabled: !open });
+        }).join("");
+      return;
+    }
+    const w = WORLDS.find((x) => x.id === twWorldId);
+    el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2><p class="dc-sub">Team Worlds</p>
+      <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
+      <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for each new star your team earns here, same as Solo Worlds.</div></div>
+      <button type="button" class="dc-btn" id="tw-start">Create Room</button>
+      <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Choose a different World</button>
+      <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}`;
+  }
+  function openTeamWorldsScreen() {
+    twWorldId = null;
+    renderTeamWorldsScreen();
+    openOverlay(teamworldsScreenEl);
+    overlayReturnScreen = partyScreenEl;
+  }
+  teamworldsContentEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || b.disabled) return;
+    if (b.id.startsWith("tw-world-")) {
+      twWorldId = WORLDS[Number(b.id.slice(9))].id;
+      renderTeamWorldsScreen();
+      return;
+    }
+    if (b.id === "tw-back-to-list") { twWorldId = null; renderTeamWorldsScreen(); return; }
+    if (b.id === "tw-start") {
+      afterBtnBounce(b, async () => {
+        const granted = await confirmAndPurchaseHostUnlock("teamworlds");
+        if (!granted) return;
+        pendingFreeGame = granted === "free";
+        partyFromHub = true;
+        pendingWorldId = twWorldId;
+        closeOverlay();
+        showCreateScreen("teamworlds");
+      });
+    }
+  });
+  document.getElementById("teamworlds-close-btn").addEventListener("click", () => {
+    if (twWorldId) { twWorldId = null; renderTeamWorldsScreen(); return; }
+    closeOverlay();
   });
 
   // ==================== Monthly Challenge: every monthly object once, one scored try a month ====================
@@ -9988,7 +10079,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(!careerLedger||!data?.currentQuestion||!players?.[playerId])return;
     let matchKey;try{matchKey=gameRewardKey(currentRoomCode,data);}catch{return;}
     const mine=(data.revealOrder||[]).find(e=>e.playerId===playerId),q=data.currentQuestion;
-    const mode=data.settings?.mode==='teamvteam'?'teamvteam':(data.settings?.solo?'quick':'party'),answered=!!mine;
+    const mode=data.settings?.mode==='teamvteam'?'teamvteam':data.settings?.mode==='teamworlds'?'teamworlds':(data.settings?.solo?'quick':'party'),answered=!!mine;
     const isSpot=answered&&roundAccuracy((mine.effectiveGuess??mine.guess)/q.answer)>=99;
     const history={t:Date.now(),u:q.unitId,g:q.targetId,r:answered?(mine.effectiveGuess??mine.guess)/q.answer:null,
       rawR:answered?mine.guess/q.answer:null,answered,p:data.lastRoundPoints?.[playerId]||0,
@@ -11193,6 +11284,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // this room is being created using today's free game for that mode - forces the
   // 5-round cap regardless of whatever the settings panel/saved preset says.
   let pendingFreeGame = false;
+  // Set by the Team Worlds info screen's "Create Room" handler - which World was picked,
+  // carried through to createRoomBtn's handler to seed the room's pre-generated question set.
+  let pendingWorldId = null;
   let nameAvatarCameFrom = null; // "create" | "join" | "lobby" — for the back button
   // True while viewing the name/avatar screen reached via the Lobby's own
   // back button (editing your already-submitted name/avatar in place,
@@ -11209,7 +11303,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
     createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
-    document.getElementById("host-settings-card").hidden = createMode === "solo";
+    // Team Worlds has no configurable rounds/timer/item-selection - always exactly 5 questions
+    // from the chosen World's pool, same as Solo having no settings to show either.
+    document.getElementById("host-settings-card").hidden = createMode === "solo" || createMode === "teamworlds";
     document.getElementById("host-settings-card").open = false;
     currentSettings = DEFAULT_SETTINGS();
     if (createMode === "solo") currentSettings.autoAdvanceEnabled = true; // solo has no host to tap Next
@@ -11333,6 +11429,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const settings = { ...currentSettings, hostTransferMode: hostTransferModeChoice };
     if (createMode === "solo") settings.solo = true;
     if (createMode === "teamvteam") settings.mode = "teamvteam";
+    let teamWorldQuestionsOut = null;
+    if (createMode === "teamworlds") {
+      settings.mode = "teamworlds";
+      settings.worldId = pendingWorldId;
+      settings.totalRounds = 5; // always exactly 5 - no level/round-count choice in this mode
+      teamWorldQuestionsOut = teamWorldQuestions(WORLDS.find((w) => w.id === pendingWorldId));
+    }
     if (pendingFreeGame) settings.totalRounds = 5;
     pendingFreeGame = false;
     // Claim a code atomically (transaction only commits if the path is still
@@ -11343,7 +11446,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const candidate = generateRoomCode();
       const result = await runTransaction(ref(db, `rooms/${candidate}`), (existing) => {
         if (existing !== null) return; // abort — code taken, try another
-        return { phase: "waiting", round: 0, settings };
+        return teamWorldQuestionsOut
+          ? { phase: "waiting", round: 0, settings, teamWorldQuestions: teamWorldQuestionsOut }
+          : { phase: "waiting", round: 0, settings };
       });
       if (result.committed) { roomCode = candidate; break; }
     }
@@ -12028,7 +12133,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Host-authoritative round transitions ====================
 
   async function startRound(roomCode, roundNum) {
-    const q = { ...generateQuestion(), powerupKey: crypto.randomUUID() };
+    // Team Worlds plays through a fixed, pre-generated set of 5 questions sampled from the
+    // chosen World at room creation (teamWorldQuestions()) rather than the general pool -
+    // every other mode still calls generateQuestion() as before.
+    const q = (roomState.settings || currentSettings).mode === "teamworlds"
+      ? { ...roomState.teamWorldQuestions[roundNum - 1], powerupKey: crypto.randomUUID() }
+      : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
     const endsAt = nowMs() + (currentSettings.timerSeconds || 30) * 1000;
     console.log("[measuring-game] starting round", roundNum, q);
     await update(ref(db, `rooms/${roomCode}`), {
@@ -12115,8 +12225,67 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (nowMs() < roomState.answersEndsAt) return;
     transitionInFlight = true;
     const activeIds = Object.keys(roomState.players || {});
-    finishRoundScoring(roomCode, activeIds, roomState.guesses || {}, roomState.picks || {})
+    const scoreRound = (roomState.settings || currentSettings).mode === "teamworlds" ? finishTeamWorldsScoring : finishRoundScoring;
+    scoreRound(roomCode, activeIds, roomState.guesses || {}, roomState.picks || {})
       .finally(() => { transitionInFlight = false; });
+  }
+
+  // Team Worlds' round scoring: no winner, no points - both players' guesses (whichever were
+  // actually submitted) are averaged and scored for accuracy together. Doesn't fit inside
+  // finishRoundScoring's closest-guess-ranking logic below, so this is its own simpler path,
+  // kept reveal/animation-compatible (same entries/revealOrder shape, just with every
+  // points-related field zeroed) so the existing flip-card reveal choreography still runs.
+  async function finishTeamWorldsScoring(roomCode, activeIds, guesses) {
+    const q = roomState.currentQuestion;
+    const playersSnap = roomState.players || {};
+    if (!q) { console.error("[measuring-game] no currentQuestion, aborting scoring"); return; }
+    const answer = q.answer;
+    const answered = activeIds.filter((id) => guesses[id] !== undefined);
+    const avgGuess = answered.length ? answered.reduce((sum, id) => sum + guesses[id], 0) / answered.length : 0;
+    const accuracy = answered.length ? roundAccuracy(avgGuess / answer) : 0;
+    const entries = answered.map((id) => ({
+      playerId: id, name: (playersSnap[id] && playersSnap[id].name) || "Player",
+      flair: (playersSnap[id] && playersSnap[id].flair) || "classic",
+      guess: guesses[id], effectiveGuess: guesses[id], error: Math.abs(guesses[id] - answer),
+      isClosest: false, isSpotOn: false, isPerfect: false, accuracyPercent: roundAccuracy(guesses[id] / answer),
+      basePoints: 0, doubleDownPoints: 0, crowdFavoritePoints: 0, pickedBy: [], consecutiveWins: 0,
+    })).sort((a, b) => b.error - a.error);
+    const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
+    let revealAdvanceAt = nowMs() + revealDelayMs;
+    const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints: {}, lastRoundAccuracy: accuracy, truthPickedBy: null, phase: "reveal", revealAdvanceAt };
+    let animEndsAt = null;
+    const animPair = entries.length ? questionObjects(q) : null;
+    const animMod = animPair ? await loadAnimModule() : null;
+    if (animPair && animMod) {
+      try {
+        const animStartAt = nowMs() + ANIM_LEAD_MS;
+        const endsAt = animStartAt + animMod.animationDuration(animPair[0], animPair[1]) * 1000 + ANIM_HOLD_MS;
+        if (!isFinite(endsAt)) throw new Error("bad animation length");
+        animEndsAt = endsAt;
+        updates.phase = "animation";
+        updates.animStartAt = animStartAt;
+        updates.animEndsAt = animEndsAt;
+        updates.revealAdvanceAt = null;
+      } catch (err) {
+        console.warn("[measuring-game] animation skipped:", err);
+        animEndsAt = null;
+      }
+    }
+    // Both players' accuracySum/roundsCounted get the SAME team accuracy this round - the exact
+    // same redistribution trick proven for Team vs Team's score, just applied to accuracy, so
+    // accuracySum/roundsCounted at game end already IS the team's shared average for free.
+    activeIds.forEach((id) => {
+      const p = playersSnap[id] || {};
+      updates[`players/${id}/accuracySum`] = (p.accuracySum || 0) + accuracy;
+      updates[`players/${id}/roundsCounted`] = (p.roundsCounted || 0) + 1;
+    });
+    try {
+      await update(ref(db, `rooms/${roomCode}`), updates);
+      if (animEndsAt) scheduleHostDeadline(animEndsAt, () => checkAnimationAdvance(roomCode));
+      else scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
+    } catch (err) {
+      console.error("[measuring-game] failed to write team worlds scoring update", err, updates);
+    }
   }
 
   async function finishRoundScoring(roomCode, activeIds, guesses, picks) {
@@ -12369,6 +12538,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const nextRound = (roomState.round || 0) + 1;
     const totalRounds = (roomState.settings || currentSettings).totalRounds || 5;
     if (nextRound > totalRounds) {
+      // Team Worlds has no points to hand an accuracy bonus into - stars/coins are computed
+      // from accuracySum/roundsCounted directly on the final screen instead.
+      if ((roomState.settings || currentSettings).mode === "teamworlds") {
+        await update(ref(db, `rooms/${roomCode}`), { phase: "final" });
+        return;
+      }
       const players = roomState.players || {};
       const ranked = Object.keys(players)
         .filter((id) => players[id].roundsCounted)
@@ -12417,6 +12592,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // "Round 1 starting in" beat entirely.
     Object.keys(players).forEach(id=>{updates['players/'+id+'/ready']=false;updates['players/'+id+'/rewardCollected']=false;});
     updates.phase='waiting';updates.countdownEndsAt=null;updates.currentQuestion=null;updates.revealOrder=null;updates.lastRoundPoints=null;updates.round=0;
+    // A rematch needs a fresh set of 5 questions too, or it'd silently replay the exact same ones.
+    if (roomState.settings?.mode === "teamworlds") updates.teamWorldQuestions = teamWorldQuestions(WORLDS.find((w) => w.id === roomState.settings.worldId));
     await update(ref(db,`rooms/${roomCode}`),updates);
   }
   playAgainBtn.addEventListener('click',()=>{if(!currentPlayers[currentPlayerId]?.rewardCollected){gameRewards.open();return;}if(isHost)playAgain(currentRoomCode);});
@@ -13246,6 +13423,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && (c.dataset.id === id || !!c.dataset.members?.split(" ").includes(id))));
   }
   function renderScoreColumn(overrideScores) {
+    if (roomState.settings?.mode === "teamworlds") { renderTeamWorldsScoreColumn(); return; }
     if (roomState.settings?.mode === "teamvteam") { renderTeamScoreColumn(overrideScores); return; }
     const gameMotionKey = `${currentRoomCode}:${roomState.gameId || ''}`;
     const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
@@ -13393,6 +13571,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
+  // Team Worlds: one combined box for the whole team (always exactly 2 players, no competing
+  // teams, no points) - shows the running average accuracy so far instead of a score.
+  function renderTeamWorldsScoreColumn() {
+    const ids = Object.keys(currentPlayers);
+    const anyCounted = ids.find((id) => currentPlayers[id].roundsCounted);
+    const avg = anyCounted ? currentPlayers[anyCounted].accuracySum / currentPlayers[anyCounted].roundsCounted : null;
+    scoreColEl.innerHTML = "";
+    const box = document.createElement("div");
+    box.className = "score-card team-card";
+    box.style.setProperty("--tc", "#8e7cf2");
+    const avatars = ids.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+    box.innerHTML = `
+      <div class="team-card-avatars">${avatars}</div>
+      <div class="sc-top"><span class="name">Team accuracy</span></div>
+      <div class="sc-bot"><span class="pts">${avg == null ? "--" : formatAccuracy(avg) + "%"}</span></div>
+    `;
+    scoreColEl.appendChild(box);
+    fitNameToCard(box.querySelector(".name"));
+  }
+
   function renderHudTop(data) {
     renderHudRoomCode();
     const totalRounds = (data.settings || currentSettings).totalRounds || 5;
@@ -13468,6 +13666,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function renderSummary(data) {
+    if (roomState.settings?.mode === "teamworlds") { renderTeamWorldsSummary(data); return; }
     if (roomState.settings?.mode === "teamvteam") { renderTeamSummary(data); return; }
     recordRoundStats(data);
     { const w = (data.revealOrder || []).slice(-1)[0]; if (w && w.isClosest && roundWinnerId !== w.playerId) setRoundWinner(w.playerId); }
@@ -13582,6 +13781,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   }
 
+  // Team Worlds has no points/chips to break down - just this round's team accuracy, shown
+  // once (not per player), since there's always exactly one team in this mode.
+  function renderTeamWorldsSummary(data) {
+    recordRoundStats(data);
+    const accuracy = data.lastRoundAccuracy || 0;
+    summaryListEl.innerHTML = "";
+    const entries = data.revealOrder || [];
+    const names = entries.map((e) => escapeHtml(e.name)).join(" &amp; ") || "Your team";
+    const li = document.createElement("li");
+    li.className = "summary-row";
+    li.innerHTML = `
+      <div class="summary-row-top"><span class="name">${names}</span></div>
+      <div class="summary-row-body"><span class="roundpts">${formatAccuracy(accuracy)}%</span></div>
+    `;
+    summaryListEl.appendChild(li);
+    if (isHost) {
+      const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
+      nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
+      if (nextRoundBtn.style.display !== "flex") navGuardAt = nowMs();
+      nextRoundBtn.style.display = "flex";
+    } else {
+      nextRoundBtn.style.display = "none";
+    }
+    if (!summaryScrollStarted) {
+      summaryScrollStarted = true;
+      startSummaryScrollChoreography();
+    }
+  }
+
   function animateScrollTop(container, targetTop, durationMs) {
     const startTop = container.scrollTop;
     const delta = targetTop - startTop;
@@ -13617,8 +13845,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderFinal() {
     if (finalRendered) return;
     finalRendered = true;
-    const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
     updateFinalButtons();
+    if (roomState.settings?.mode === "teamworlds") { renderTeamWorldsFinal(); return; }
+    const myFinalScore = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].score) || 0;
     // The receipt transaction replaces the old unguarded score credit. Base
     // coins are still credited here, before either reward-screen button.
     void gameRewards.prepare({ key: gameRewardKey(currentRoomCode, roomState), score: myFinalScore,
@@ -13728,6 +13957,49 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       playSound("win");
     }, rank1Delay + 350);
   }
+
+  // Team Worlds' final screen: a Solo-Worlds-style stars/accuracy/coins result (one shared
+  // result, not a ranked list - there's only ever one team in this mode) instead of the
+  // points-based standings. Doesn't call gameRewards.prepare() at all (that pipeline is for
+  // Party's held-back "tap to collect" score-based coins; Team Worlds' coins already apply
+  // unconditionally via the attempt record below) - rewardCollected is set directly instead, so
+  // the existing Leave Party/Play Again buttons still work without a pointless empty "collect
+  // 0 coins" screen in between.
+  function renderTeamWorldsFinal() {
+    const w = WORLDS.find((x) => x.id === roomState.settings?.worldId);
+    const me = currentPlayers[currentPlayerId];
+    const avg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : 0;
+    const stars = worldStarsFor(avg);
+    const oldBest = myProfile.teamWorlds?.[w?.id]?.bestStars || 0;
+    const gain = Math.max(0, stars - oldBest) * WORLD_STAR_COINS;
+    const partnerId = Object.keys(currentPlayers).find((id) => id !== currentPlayerId);
+    const partnerName = partnerId ? currentPlayers[partnerId].name : "Partner";
+    careerLedger.save({ kind: "attempt", mode: "teamworlds", key: gameRewardKey(currentRoomCode, roomState),
+      world: w?.id, stars, accuracy: avg, partnerName, t: Date.now() });
+    if (!currentPlayers[currentPlayerId]?.rewardCollected) {
+      update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { rewardCollected: true }).catch(() => {});
+      currentPlayers[currentPlayerId] = { ...currentPlayers[currentPlayerId], rewardCollected: true };
+      updateFinalButtons();
+    }
+    finalListEl.innerHTML = "";
+    const previousRecap = document.getElementById("final-session-recap"); if (previousRecap) previousRecap.remove();
+    const avatars = Object.keys(currentPlayers).map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+    const names = Object.keys(currentPlayers).map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+    const li = document.createElement("li");
+    li.className = "final-row team-final-row rank-1";
+    li.style.setProperty("--tc", "#8e7cf2");
+    li.innerHTML = `
+      <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
+      <div class="dc-card dc-hot"><div class="wl-big">${worldStarsHtml(stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div><div class="dc-note">${escapeHtml(w?.name || "")}${gain ? ` &middot; +${gain} coins` : ""}</div></div>
+    `;
+    finalListEl.appendChild(li);
+    setTimeout(() => {
+      celebrate("spotOn");
+      spawnStreamerConfetti();
+      playSound("win");
+    }, 350);
+  }
+
   function updateFinalButtons() {
     finalDoubleCoinsBtn.style.display='none';
     const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo;
@@ -14420,6 +14692,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function applyLobbyMode(data) {
     const solo = !!(data.settings && data.settings.solo);
     const teamMode = data.settings?.mode === "teamvteam";
+    const worldsMode = data.settings?.mode === "teamworlds";
     lobbyScreenEl.classList.toggle("solo-lobby", solo);
     document.querySelector('.lobby-room-box').hidden=solo;
     if (solo) {
@@ -14429,7 +14702,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const addBtn = document.getElementById("solo-add-bot-btn");
     addBtn.style.display = "";
     document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) && isHost ? "flex" : "none";
-    addBtn.disabled = Object.keys(data.players || {}).length >= FRAME_COUNT;
+    // Team Worlds is always exactly 2 players (you + one partner, no up-to-5-teams concept
+    // like Team vs Team) - cap joining/adding bots there instead of the usual room-wide FRAME_COUNT.
+    addBtn.disabled = Object.keys(data.players || {}).length >= (worldsMode ? 2 : FRAME_COUNT);
     renderTeamPicker(data);
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
     const real=Object.values(data.players||{}).filter(p=>!p.isBot),ready=real.filter(p=>p.ready).length;
@@ -14443,6 +14718,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const fullTeams = Object.values(teamCounts).filter((n) => n >= 2).length;
       needsFriend = fullTeams < 2;
       waitingMsg = "Need at least 2 full teams of 2 to start — pick a color above, or add bots to fill a team.";
+    } else if (worldsMode) {
+      needsFriend = Object.keys(data.players || {}).length < 2;
+      waitingMsg = "Need exactly one partner to start — add a friend or a bot.";
     } else {
       // Host Party needs at least one other real player before it can start.
       needsFriend = !solo && humans < 2;
@@ -14451,6 +14729,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rules=document.getElementById('lobby-rules');
     rules.innerHTML = teamMode
       ? `<p>${data.settings?.totalRounds||5} rounds · Team vs Team</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
+      : worldsMode
+      ? `<p>5 questions · ${escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || "")}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
       : `<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}${solo?'':` · ${ready}/${real.length} ready`}</p>`;
     hostStartBtn.textContent='Start game';
     hostStartBtn.disabled = needsFriend;

@@ -1,8 +1,8 @@
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 
-export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team'};
-export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6};
+export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds'};
+export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
 // Every entry ever recorded, newest first by actual timestamp - never evicted. Works for
@@ -67,6 +67,17 @@ export function applyCareerRecord(profile,record){
     const old=profile.worldRecords?.[record.world]?.['l'+record.level]||{};
     result.worldRecords={...profile.worldRecords,[record.world]:{...profile.worldRecords?.[record.world],
       ['l'+record.level]:{bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy),attempts:(old.attempts||0)+1,lastAccuracy:record.accuracy}}};
+  }else if(record.mode==='teamworlds'){
+    // Mirrors the solo 'worlds' branch above: a running best-stars-per-World purely to decide
+    // coin gain (never shown directly), kept separate from the immutable per-attempt history
+    // below (which IS shown - "your top 5" - and is never updated in place, per the user's own
+    // spec: "if you play again with them it'll be a new entry").
+    const levels=profile.teamWorlds?.[record.world]||{},previous=levels.bestStars||0,best=Math.max(previous,record.stars);
+    coins=(best-previous)*5;
+    result.teamWorlds={...profile.teamWorlds,[record.world]:{...levels,bestStars:best}};
+    stats.teamWorldsAttempts=(stats.teamWorldsAttempts||0)+1;
+    result.teamWorldsHistory={...profile.teamWorldsHistory,[record.world]:{...profile.teamWorldsHistory?.[record.world],
+      [key]:{s:record.accuracy||0,t:record.t,partnerName:record.partnerName||'Partner'}}};
   }else if(record.mode==='survival'){
     const old=profile.survival||{};coins=Math.max(0,record.survived-(old.best||0))*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};
