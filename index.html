@@ -2752,7 +2752,6 @@ if (location.protocol === "file:") {
      (#tw-avg-progress, filled via animateWorldProgress with the actual .wl-progress component -
      same one Solo Worlds/the question phase/info screens use) fades in and fills live. */
   .tw-avg-reveal { margin: 10px 0; opacity: 0; animation: twAvgIn 400ms ease-out forwards; }
-  .tw-avg-guess { text-align: center; font-size: 14px; margin-bottom: 6px; }
   /* "Your best teams"/Team Worlds' top-5 card rows (twBestRowHtml) - both avatars side by side
      on the left, names beside them, the score line underneath in the same box. */
   .tw-best-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; text-align: left; }
@@ -12412,8 +12411,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!q) { console.error("[measuring-game] no currentQuestion, aborting scoring"); return; }
     const answer = q.answer;
     const answered = activeIds.filter((id) => guesses[id] !== undefined);
-    const avgGuess = answered.length ? answered.reduce((sum, id) => sum + guesses[id], 0) / answered.length : 0;
-    const accuracy = answered.length ? roundAccuracy(avgGuess / answer) : 0;
+    // The team's accuracy is the AVERAGE OF THE TWO ACCURACY PERCENTAGES, not the accuracy of
+    // the averaged guess - those are different numbers (two guesses landing on opposite sides of
+    // the answer can average their raw guesses very close to it despite both individually being
+    // way off, which doesn't match "takes the average percent of the 2 guesses" at all).
+    const accuracy = answered.length ? answered.reduce((sum, id) => sum + roundAccuracy(guesses[id] / answer), 0) / answered.length : 0;
     // Same left/right order every round of this game (randomized once at game start, see
     // randomTeamWorldsOrder()) - sorting by error instead would put whoever guessed worse THIS
     // round in the same spot every time, making it predictable and inconsistent round to round.
@@ -13631,11 +13633,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // up (a host-clicked "Reveal team score", or auto-advanced like any other step) - it used to
     // appear in the same instant as the second card, which read as both landing at once.
     const showAverage = order.length > 0 && revealIndex >= totalSteps;
-    // The combined/averaged guess the team's score is actually based on - shown alongside the
-    // percentage since two guesses landing on opposite sides of the answer can average out to a
-    // surprisingly high accuracy that doesn't obviously follow from either card alone.
-    const avgGuessText = order.length === 2 ? Number((order[0].guess + order[1].guess) / 2).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "";
-    const avgHtml = showAverage ? `<div class="tw-avg-reveal">${avgGuessText ? `<div class="tw-avg-guess">Team's combined guess: <b>${avgGuessText}</b></div>` : ""}<div id="tw-avg-progress"></div></div>` : "";
+    const avgHtml = showAverage ? `<div class="tw-avg-reveal"><div id="tw-avg-progress"></div></div>` : "";
     revealListEl.innerHTML = cardFor(0) + avgHtml + cardFor(1);
     if (showAverage) {
       const me = currentPlayers[currentPlayerId];
@@ -14125,7 +14123,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     const me = currentPlayers[currentPlayerId];
     const runningAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
-    const avgGuessText = entries.length === 2 ? Number((entries[0].guess + entries[1].guess) / 2).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "";
     const li = document.createElement("li");
     li.className = "summary-row";
     // "This round" text and the running accuracy-so-far meter live together in one box (not two
@@ -14133,7 +14130,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // animation back on the reveal screen), so it's just rendered plainly here.
     li.innerHTML = `
       ${cardFor(0)}
-      <div class="dc-card dc-hot"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div>${avgGuessText ? `<div class="tw-avg-guess">Team's combined guess: <b>${avgGuessText}</b></div>` : ""}${worldProgressBarHtml(runningAvg)}</div>
+      <div class="dc-card dc-hot"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div>${worldProgressBarHtml(runningAvg)}</div>
       ${cardFor(1)}
     `;
     summaryListEl.appendChild(li);
