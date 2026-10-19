@@ -11609,16 +11609,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     catch{lobbyStatusEl.textContent='Could not save Ready. Please try again.';}
     finally{button.disabled=false;}
   });
+  // Random once, which player's column shows on the left vs right for the whole game - picked
+  // here (game start) rather than per-round, so it can't be re-derived from who guessed worse
+  // that round (which would make it predictable and inconsistent round to round).
+  function randomTeamWorldsOrder() {
+    const ids = Object.keys(roomState.players || {});
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    return ids;
+  }
   async function startGameNow() {
     playSound("start");
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
     // The room's object pool is fixed now, from the host's date and owned packs; a later host change doesn't alter it.
     const now = new Date();
-    await update(ref(db, `rooms/${currentRoomCode}`), {
+    const updates = {
       phase: "countdown", countdownRound: 1, countdownEndsAt,
       gameId: crypto.randomUUID(),
       activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
-    });
+    };
+    if (roomState.settings?.mode === "teamworlds") updates.teamWorldsOrder = randomTeamWorldsOrder();
+    await update(ref(db, `rooms/${currentRoomCode}`), updates);
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
   }
   // Confirmed via the shared exit-confirm dialog (same pattern already reused
@@ -12257,13 +12267,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const answered = activeIds.filter((id) => guesses[id] !== undefined);
     const avgGuess = answered.length ? answered.reduce((sum, id) => sum + guesses[id], 0) / answered.length : 0;
     const accuracy = answered.length ? roundAccuracy(avgGuess / answer) : 0;
+    // Same left/right order every round of this game (randomized once at game start, see
+    // randomTeamWorldsOrder()) - sorting by error instead would put whoever guessed worse THIS
+    // round in the same spot every time, making it predictable and inconsistent round to round.
+    const order = roomState.teamWorldsOrder || activeIds;
     const entries = answered.map((id) => ({
       playerId: id, name: (playersSnap[id] && playersSnap[id].name) || "Player",
       flair: (playersSnap[id] && playersSnap[id].flair) || "classic",
       guess: guesses[id], effectiveGuess: guesses[id], error: Math.abs(guesses[id] - answer),
       isClosest: false, isSpotOn: false, isPerfect: false, accuracyPercent: roundAccuracy(guesses[id] / answer),
       basePoints: 0, doubleDownPoints: 0, crowdFavoritePoints: 0, pickedBy: [], consecutiveWins: 0,
-    })).sort((a, b) => b.error - a.error);
+    })).sort((a, b) => order.indexOf(a.playerId) - order.indexOf(b.playerId));
     const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
     let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints: {}, lastRoundAccuracy: accuracy, truthPickedBy: null, phase: "reveal", revealAdvanceAt };
@@ -12606,6 +12620,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updates[`players/${id}/score`] = 0;
       updates[`players/${id}/accuracySum`] = null;
       updates[`players/${id}/roundsCounted`] = null;
+      updates[`players/${id}/individualAccuracySum`] = null;
+      updates[`players/${id}/individualRoundsCounted`] = null;
       updates[`players/${id}/bestGuess`] = null;
       updates[`players/${id}/accuracyBonus`] = null;
       updates[`players/${id}/consecutiveWins`] = null;
