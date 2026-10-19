@@ -7,9 +7,11 @@ export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
 // Every entry ever recorded, newest first by actual timestamp - never evicted. Works for
 // date-keyed maps (daily/monthly, where key order and t order happen to agree) and for
-// per-game-keyed maps (teamHistory, where keys aren't chronological) alike.
+// per-game-keyed maps (teamHistory, where keys aren't chronological) alike. Keeps every field
+// each record carries (not just s/t) - teamHistory/teamWorldsHistory rows also carry
+// partnerName/myAvatar/partnerAvatar/accuracy for the info screens' best-list cards.
 export function historyRows(historyMap){
-  return Object.keys(historyMap||{}).map(key=>({key,s:historyMap[key].s,t:historyMap[key].t})).sort((a,b)=>b.t-a.t);
+  return Object.keys(historyMap||{}).map(key=>({key,...historyMap[key]})).sort((a,b)=>b.t-a.t);
 }
 // Highest scores first; Array#sort is stable, so among equal scores the one
 // earlier in `rows` (the more recent one, since historyRows sorts newest-first) stays first.
@@ -54,7 +56,8 @@ export function applyCareerRecord(profile,record){
       // Every Team vs Team game ever played, keyed by its own unique game key (not a
       // calendar date like dailyHistory/monthlyHistory) since "your best teams" wants
       // every game, not one slot per day - feeds the info screen's best-teams card.
-      ...(mode==='teamvteam'?{teamHistory:{...profile.teamHistory,[key]:{s:record.score||0,t:record.t}}}:{})};
+      ...(mode==='teamvteam'?{teamHistory:{...profile.teamHistory,[key]:{s:record.score||0,t:record.t,accuracy:record.accuracy||0,
+        myAvatar:record.myAvatar||null,partnerName:record.partnerName||'Partner',partnerAvatar:record.partnerAvatar||null}}}:{})};
   }
   if(record.kind!=='attempt'||profile.attemptReceipts?.[key])return profile;
   let result={...profile},coins=0;
@@ -77,7 +80,7 @@ export function applyCareerRecord(profile,record){
     result.teamWorlds={...profile.teamWorlds,[record.world]:{...levels,bestStars:best}};
     stats.teamWorldsAttempts=(stats.teamWorldsAttempts||0)+1;
     result.teamWorldsHistory={...profile.teamWorldsHistory,[record.world]:{...profile.teamWorldsHistory?.[record.world],
-      [key]:{s:record.accuracy||0,t:record.t,partnerName:record.partnerName||'Partner'}}};
+      [key]:{s:record.accuracy||0,t:record.t,myAvatar:record.myAvatar||null,partnerName:record.partnerName||'Partner',partnerAvatar:record.partnerAvatar||null}}};
   }else if(record.mode==='survival'){
     const old=profile.survival||{};coins=Math.max(0,record.survived-(old.best||0))*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};

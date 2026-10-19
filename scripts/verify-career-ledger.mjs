@@ -24,15 +24,15 @@ profile=applyCareerRecord(profile,{kind:'attempt',key:'run2',mode:'survival',sur
 
 // Team Worlds: a running best-stars-per-World (coin gain only, never shown) kept separate from
 // an immutable per-attempt history (shown as "your top 5", never deduped by partner).
-const teamWorld={kind:'attempt',key:'tw1',mode:'teamworlds',world:'tiny',stars:2,accuracy:80,partnerName:'Bob',t:6};
+const teamWorld={kind:'attempt',key:'tw1',mode:'teamworlds',world:'tiny',stars:2,accuracy:80,partnerName:'Bob',myAvatar:'fox',partnerAvatar:'owl',t:6};
 profile=applyCareerRecord(profile,teamWorld);profile=applyCareerRecord(profile,teamWorld);
 assert.equal(profile.coins,141,'duplicate delivery is a no-op; first delivery pays 2 stars * 5 coins');
 assert.equal(profile.teamWorlds.tiny.bestStars,2);
-assert.deepEqual(profile.teamWorldsHistory.tiny,{tw1:{s:80,t:6,partnerName:'Bob'}});
-profile=applyCareerRecord(profile,{...teamWorld,key:'tw2',stars:1,accuracy:60,partnerName:'Carol',t:7});
+assert.deepEqual(profile.teamWorldsHistory.tiny,{tw1:{s:80,t:6,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'}});
+profile=applyCareerRecord(profile,{...teamWorld,key:'tw2',stars:1,accuracy:60,partnerName:'Carol',myAvatar:'fox',partnerAvatar:'cat',t:7});
 assert.equal(profile.coins,141,'a worse attempt (1 star < best of 2) earns no further coins');
 assert.equal(profile.teamWorlds.tiny.bestStars,2,'best-stars tracker never decreases');
-assert.deepEqual(profile.teamWorldsHistory.tiny,{tw1:{s:80,t:6,partnerName:'Bob'},tw2:{s:60,t:7,partnerName:'Carol'}},'every attempt kept, even a worse one, keyed by its own attempt - not deduped per partner');
+assert.deepEqual(profile.teamWorldsHistory.tiny,{tw1:{s:80,t:6,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'},tw2:{s:60,t:7,myAvatar:'fox',partnerName:'Carol',partnerAvatar:'cat'}},'every attempt kept, even a worse one, keyed by its own attempt - not deduped per partner');
 profile=applyCareerRecord(profile,{...teamWorld,key:'tw3',stars:3,accuracy:95,partnerName:'Bob',t:8});
 assert.equal(profile.coins,146,'beating the best (2->3 stars) pays again, even with a repeat partner - a new entry, not an update');
 assert.equal(Object.keys(profile.teamWorldsHistory.tiny).length,3);
@@ -58,14 +58,17 @@ assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:88,t:7},'2026-11':{s:95,t:
 // Team vs Team match records keep a per-GAME history (not per-date, like daily/monthly) -
 // every team game played, not one slot per day, for the info screen's "your best teams" card.
 const gamesBefore=profile.stats.gamesPlayed;
-const teamMatch={kind:'match',key:'room1_g1',mode:'teamvteam',won:true,place:1,score:12,t:9};
+const teamMatch={kind:'match',key:'room1_g1',mode:'teamvteam',won:true,place:1,score:12,accuracy:72,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl',t:9};
 profile=applyCareerRecord(profile,teamMatch);profile=applyCareerRecord(profile,teamMatch);
 assert.equal(profile.stats.gamesPlayed,gamesBefore+1,'duplicate delivery of the same match is a no-op');
-assert.deepEqual(profile.teamHistory,{room1_g1:{s:12,t:9}});
-profile=applyCareerRecord(profile,{...teamMatch,key:'room2_g1',score:20,t:10});
+assert.deepEqual(profile.teamHistory,{room1_g1:{s:12,t:9,accuracy:72,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'}});
+profile=applyCareerRecord(profile,{...teamMatch,key:'room2_g1',score:20,accuracy:85,t:10});
 assert.equal(profile.stats.gamesPlayed,gamesBefore+2);
-assert.deepEqual(profile.teamHistory,{room1_g1:{s:12,t:9},room2_g1:{s:20,t:10}},'every team game kept, not just the most recent');
-assert.deepEqual(topScores(historyRows(profile.teamHistory),3),[{key:'room2_g1',s:20,t:10},{key:'room1_g1',s:12,t:9}],'teamHistory sorts by actual time, not by its non-chronological keys');
+assert.deepEqual(profile.teamHistory,{room1_g1:{s:12,t:9,accuracy:72,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'},room2_g1:{s:20,t:10,accuracy:85,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'}},'every team game kept, not just the most recent');
+assert.deepEqual(topScores(historyRows(profile.teamHistory),3),[
+  {key:'room2_g1',s:20,t:10,accuracy:85,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'},
+  {key:'room1_g1',s:12,t:9,accuracy:72,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'},
+],'teamHistory sorts by actual time, not by its non-chronological keys, and keeps every field (partner/avatar/accuracy) for the best-list card');
 
 // historyRows: newest first, nothing evicted. topScores: highest first, ties go to the newer row (stable sort over already-recency-sorted rows).
 assert.deepEqual(historyRows(profile.dailyHistory),[{key:'2026-10-19',s:70,t:6},{key:'2026-10-18',s:90,t:5}]);

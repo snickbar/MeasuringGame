@@ -2752,6 +2752,19 @@ if (location.protocol === "file:") {
      (#tw-avg-progress, filled via animateWorldProgress with the actual .wl-progress component -
      same one Solo Worlds/the question phase/info screens use) fades in and fills live. */
   .tw-avg-reveal { margin: 10px 0; opacity: 0; animation: twAvgIn 400ms ease-out forwards; }
+  .tw-avg-guess { text-align: center; font-size: 14px; margin-bottom: 6px; }
+  /* "Your best teams"/Team Worlds' top-5 card rows (twBestRowHtml) - both avatars side by side
+     on the left, names beside them, the score line underneath in the same box. */
+  .tw-best-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; text-align: left; }
+  .tw-best-row:not(:last-child) { margin-bottom: 6px; border-bottom: 1px solid rgba(217,194,154,.5); padding-bottom: 12px; }
+  .tw-best-avatars { display: flex; flex-shrink: 0; }
+  .tw-best-avatars .avatar { font-size: 24px; }
+  .tw-best-avatars .avatar:nth-child(2) { margin-left: -10px; }
+  .tw-best-info { flex: 1; min-width: 0; }
+  .tw-best-names { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tw-best-stats { font-size: 12px; color: #6b5a46; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .tw-best-stats .wl-stars { display: inline-flex; gap: 1px; }
+  .tw-best-stats .wl-stars img { width: 13px; height: 13px; }
   @keyframes twAvgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .tw-avg-reveal { animation: none; opacity: 1; } }
 
@@ -8530,10 +8543,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   document.getElementById("party-close-btn").addEventListener("click", () => closeOverlay());
 
+  // Shared by both "best list" cards (Team vs Team's best teams, Team Worlds' top 5 for a
+  // World): both avatars side by side on the left, both names next to them, then the score
+  // line (whatever's relevant per mode) underneath in the same box.
+  function twBestRowHtml(myAvatar, partnerName, partnerAvatar, statsHtml, dateMs) {
+    return `<div class="tw-best-row"><div class="tw-best-avatars"><span class="avatar">${avatarHtml(myAvatar)}</span><span class="avatar">${avatarHtml(partnerAvatar)}</span></div>
+      <div class="tw-best-info"><div class="tw-best-names">You &amp; ${escapeHtml(partnerName || "Partner")}</div><div class="tw-best-stats">${statsHtml} &middot; ${new Date(dateMs).toLocaleDateString()}</div></div></div>`;
+  }
   function teamVTeamBestHtml() {
     const rows = topScores(historyRows(myProfile.teamHistory || {}), 3);
     if (!rows.length) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
-    return `<div class="dc-card">${rows.map((r) => `<div class="dc-lb-row"><span class="dc-lb-score">${r.s} points</span><span class="dc-lb-name">${new Date(r.t).toLocaleDateString()}</span></div>`).join("")}</div>`;
+    return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
+      `${r.s} points${r.accuracy ? ` &middot; ${formatAccuracy(r.accuracy)}% avg` : ""}`, r.t)).join("")}</div>`;
   }
   function renderTeamVTeamInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2><p class="dc-sub">2 teams of 2 &mdash; bots can fill in</p>
@@ -8870,7 +8891,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function teamWorldsBestHtml(worldId) {
     const rows = topScores(historyRows(myProfile.teamWorldsHistory?.[worldId] || {}), 5);
     if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
-    return `<div class="dc-card">${rows.map((r) => `<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(r.partnerName || "Partner")}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join("")}</div>`;
+    return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
+      `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}%`, r.t)).join("")}</div>`;
   }
   function renderTeamWorldsScreen() {
     const el = teamworldsContentEl;
@@ -11849,10 +11871,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Quick Game included, which is a real room under the hood, just without a shareable code).
   // Purely cosmetic, makes them feel more alive without turning into chatter.
   function maybeBotReaction(roomCode, id, p) {
-    if (Math.random() >= 0.35) return;
+    if (Math.random() >= 0.45) return;
     const emojis = Object.keys(REACTIONS);
     const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const delay = 500 + Math.random() * 6000;
+    // Kept short - a mode like Team Worlds advances the instant both players answer, so a long
+    // random delay here frequently landed after the phase had already moved on and got silently
+    // dropped by the phase check below (the likely reason these went unnoticed).
+    const delay = 300 + Math.random() * 1800;
     setTimeout(() => {
       if (currentRoomCode !== roomCode || roomState.phase !== "question") return;
       const newRef = push(ref(db, `rooms/${roomCode}/reactions`));
@@ -12598,9 +12623,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const COUNTDOWN_SECONDS = 3;
   const SUMMARY_SCROLL_MS = 2000;
 
+  // Team Worlds has one extra reveal step beyond its two player cards - a "Reveal team score"
+  // beat that has to be its own deliberate pause (host-clicked, or auto-advanced like any other
+  // step) instead of the average appearing in the same instant as the second card.
+  function revealStepCount(order) {
+    return order.length + (roomState.settings?.mode === "teamworlds" && order.length > 0 ? 1 : 0);
+  }
   function advanceReveal(roomCode) {
     const next = (roomState.revealIndex || 0) + 1;
-    const orderLength = (roomState.revealOrder || []).length;
+    const orderLength = revealStepCount(roomState.revealOrder || []);
     const baseDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
     // The winner's card has its own drumroll + flip animation on top of the base
     // delay (per playCardReveal), so give it extra breathing room before the
@@ -12620,7 +12651,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (nowMs() < (roomState.revealAdvanceAt || Infinity)) return;
     const order = roomState.revealOrder || [];
     const idx = roomState.revealIndex || 0;
-    if (idx < order.length) {
+    if (idx < revealStepCount(order)) {
       advanceReveal(roomCode);
     } else {
       transitionInFlight = true;
@@ -13583,9 +13614,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const revealIndex = data.revealIndex || 0;
     const q = data.currentQuestion;
     const ans = q ? String(Math.round(q.answer * 100) / 100) : "";
+    const totalSteps = revealStepCount(order);
     if (isHost) {
-      revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
-      const showSum = revealIndex >= order.length;
+      revealNextBtn.style.display = revealIndex < totalSteps ? "flex" : "none";
+      revealNextBtn.textContent = revealIndex === order.length ? "Reveal team score" : "Reveal next";
+      const showSum = revealIndex >= totalSteps;
       if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
       showSummaryBtn.style.display = showSum ? "flex" : "none";
     }
@@ -13594,8 +13627,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const e = order[i], p = currentPlayers[e.playerId] || {};
       return twResultCardHtml(e.accuracyPercent, e.guess, ans, p, e.name);
     };
-    const showAverage = order.length > 0 && revealIndex >= order.length;
-    const avgHtml = showAverage ? `<div class="tw-avg-reveal"><div id="tw-avg-progress"></div></div>` : "";
+    // The team score doesn't appear until its OWN deliberate step, one beat after both cards are
+    // up (a host-clicked "Reveal team score", or auto-advanced like any other step) - it used to
+    // appear in the same instant as the second card, which read as both landing at once.
+    const showAverage = order.length > 0 && revealIndex >= totalSteps;
+    // The combined/averaged guess the team's score is actually based on - shown alongside the
+    // percentage since two guesses landing on opposite sides of the answer can average out to a
+    // surprisingly high accuracy that doesn't obviously follow from either card alone.
+    const avgGuessText = order.length === 2 ? Number((order[0].guess + order[1].guess) / 2).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "";
+    const avgHtml = showAverage ? `<div class="tw-avg-reveal">${avgGuessText ? `<div class="tw-avg-guess">Team's combined guess: <b>${avgGuessText}</b></div>` : ""}<div id="tw-avg-progress"></div></div>` : "";
     revealListEl.innerHTML = cardFor(0) + avgHtml + cardFor(1);
     if (showAverage) {
       const me = currentPlayers[currentPlayerId];
@@ -14085,6 +14125,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     const me = currentPlayers[currentPlayerId];
     const runningAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
+    const avgGuessText = entries.length === 2 ? Number((entries[0].guess + entries[1].guess) / 2).toLocaleString("en-US", { maximumFractionDigits: 2 }) : "";
     const li = document.createElement("li");
     li.className = "summary-row";
     // "This round" text and the running accuracy-so-far meter live together in one box (not two
@@ -14092,7 +14133,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // animation back on the reveal screen), so it's just rendered plainly here.
     li.innerHTML = `
       ${cardFor(0)}
-      <div class="dc-card dc-hot"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div>${worldProgressBarHtml(runningAvg)}</div>
+      <div class="dc-card dc-hot"><div class="dc-big">Team average this round: ${formatAccuracy(roundAccuracyPct)}%</div>${avgGuessText ? `<div class="tw-avg-guess">Team's combined guess: <b>${avgGuessText}</b></div>` : ""}${worldProgressBarHtml(runningAvg)}</div>
       ${cardFor(1)}
     `;
     summaryListEl.appendChild(li);
@@ -14158,9 +14199,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const standings=computeRanks(Object.keys(currentPlayers),id=>currentPlayers[id].score||0,id=>currentPlayers[id].roundsCounted?currentPlayers[id].accuracySum/currentPlayers[id].roundsCounted:null,roomState.settings?.mode!=="teamvteam");
     const myPlace=standings.find(p=>p.id===currentPlayerId),humans=Object.values(currentPlayers).filter(p=>!p.isBot).length;
     const mode=roomState.settings?.mode==='teamvteam'?'teamvteam':(roomState.settings?.solo?'quick':'party');
+    // For the "your best teams" card - the teammate who shares my own team color (teamvteam
+    // only; harmless/unused for every other mode).
+    const teamPartner=mode==='teamvteam'?Object.entries(currentPlayers).find(([id,p])=>id!==currentPlayerId&&p.team===currentPlayers[currentPlayerId]?.team):null;
     careerLedger.save({kind:'match',key:gameRewardKey(currentRoomCode,roomState),mode,t:Date.now(),won:standings.length>=2&&myPlace?.rank===1,
       place:myPlace?.rank||standings.length,group:mode==='party'&&humans>=2&&standings.length>=3,score:myFinalScore,
-      accuracy:myPlace?.avg||0,opponents:Object.values(currentPlayers).filter(p=>p!==currentPlayers[currentPlayerId]).map(p=>p.isBot?p.botDifficulty||'medium':'human')});
+      accuracy:myPlace?.avg||0,myAvatar:currentPlayers[currentPlayerId]?.avatar,partnerName:teamPartner?.[1]?.name,partnerAvatar:teamPartner?.[1]?.avatar,
+      opponents:Object.values(currentPlayers).filter(p=>p!==currentPlayers[currentPlayerId]).map(p=>p.isBot?p.botDifficulty||'medium':'human')});
     finalListEl.innerHTML = "";
     const previousRecap=document.getElementById('final-session-recap');if(previousRecap)previousRecap.remove();
     const recap=document.createElement('div');recap.id='final-session-recap';recap.className='cozy-panel';
@@ -14274,8 +14319,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const gain = Math.max(0, stars - oldBest) * WORLD_STAR_COINS;
     const partnerId = Object.keys(currentPlayers).find((id) => id !== currentPlayerId);
     const partnerName = partnerId ? currentPlayers[partnerId].name : "Partner";
+    const partnerAvatar = partnerId ? currentPlayers[partnerId].avatar : null;
     careerLedger.save({ kind: "attempt", mode: "teamworlds", key: gameRewardKey(currentRoomCode, roomState),
-      world: w?.id, stars, accuracy: avg, partnerName, t: Date.now() });
+      world: w?.id, stars, accuracy: avg, myAvatar: me?.avatar, partnerName, partnerAvatar, t: Date.now() });
     if (!currentPlayers[currentPlayerId]?.rewardCollected) {
       update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { rewardCollected: true }).catch(() => {});
       currentPlayers[currentPlayerId] = { ...currentPlayers[currentPlayerId], rewardCollected: true };
