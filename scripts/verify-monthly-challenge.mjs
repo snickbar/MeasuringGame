@@ -73,9 +73,11 @@ vm.runInContext('const MONTHLY_BASE_COINS=20,MONTHLY_ACC_COINS=30;let mo=null;'+
 const questions=Array.from({length:10},(_,i)=>({unitId:'m'+i,targetId:'base'+i,answer:1}));
 runtime.runtime.setRun({key:'2026-10',questions,guesses:Array(10).fill(1)});await runtime.runtime.finish();await runtime.runtime.finish();
 assert.equal(wallet.coins,50);assert.equal(wallet.stats.monthlies,1);assert.equal(wallet.monthly.format,MONTHLY_FORMAT);assert.equal(wallet.monthly.combos.length,10);assert(wallet.monthly.done);
+assert.deepEqual(wallet.monthlyHistory,{'2026-10':{s:100,t:1}},'the real finish (not the idempotent retry) records this month in history');
 assert.equal(attempts[0].board.value.s,500,'leaderboard stays within existing database bounds');
 runtime.runtime.setRun({runId:'practice1',key:'2026-10',questions,guesses:Array(10).fill(.7)});await runtime.runtime.practice();assert.equal(wallet.coins,50);assert.equal(wallet.monthly.best,400);
 runtime.runtime.setRun({runId:'practice2',key:'2026-10',questions,guesses:Array(10).fill(.9)});await runtime.runtime.practice();assert.equal(wallet.monthly.bestRounds,10);assert.equal(wallet.monthly.best,900);
+assert.deepEqual(wallet.monthlyHistory,{'2026-10':{s:100,t:1}},'practice rounds never touch monthly history');
 assert(!source.includes('MONTHLY_Q'));
 console.log(`PASS: ${runs} full-pack challenge/practice runs across all 12 months and Easter dates; one monthly item per round, complete unique coverage, both sizes, deterministic starts, one-time progress reset, backups/resume preservation, rewards/history and comparable leaderboard scores.`);
 console.log(counts.join(' · '));

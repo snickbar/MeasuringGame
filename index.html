@@ -3681,7 +3681,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
-  import { createCareerLedger, MODE_NAMES, MODE_CODE } from "./anim/career-ledger.mjs";
+  import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores } from "./anim/career-ledger.mjs";
   import { mountRoomQr } from "./anim/room-qr.mjs";
   const TEST_BUILD=true;
   var careerLedger;
@@ -8003,6 +8003,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function showCareerTab(tab) {
     const target = CAREER_TABS[tab];
     if (!target) return;
+    statsHistoryMode = null;
     if (tab === "stats") renderCareerStats(); else if (tab === "awards") renderAchievementsScreen(); else renderItemsScreen();
     const wasCareer = Object.values(CAREER_TABS).some((el) => el.classList.contains("active"));
     const currentActive = ALL_SCREEN_ELS.find((el) => el.classList.contains("active"));
@@ -9117,11 +9118,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const dots = points.length <= 16 ? points.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="#fff" stroke="#c9660a" stroke-width="2"/>`).join("") : "";
     return `<svg class="cs-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Accuracy over time">${grid}<polygon points="${area}" fill="rgba(224,138,30,.18)"/><polyline points="${line}" fill="none" stroke="#c9660a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}<text x="${L}" y="${H - 5}" font-size="10" font-weight="700" fill="#6b3a05">Older</text><text x="${W - R}" y="${H - 5}" text-anchor="end" font-size="10" font-weight="700" fill="#6b3a05">Recent</text></svg>`;
   }
-  let statsMode="all";
+  let statsMode="all",statsHistoryMode=null; // statsHistoryMode: null | 'daily' | 'monthly' - drills into the full date/month list
   const statTile=(value,label)=>`<div class="cs-tile"><strong>${value}</strong><span>${label}</span></div>`;
+  const dailyHistoryRows=()=>historyRows(myProfile.dailyHistory);
+  const monthlyHistoryRows=()=>historyRows(myProfile.monthlyHistory);
+  const monthlyKeyLabel=(key)=>`${MONTH_NAMES[Number(key.slice(5))-1]} ${key.slice(0,4)}`;
+  // The "See all scores" drill-down shared by Daily and Monthly: every date/month ever played, most recent first.
+  function renderStatsHistory(el,mode){
+    const isDaily=mode==='daily',rows=isDaily?dailyHistoryRows():monthlyHistoryRows();
+    const rowsHtml=rows.map(r=>`<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(isDaily?dailyPretty(r.key):monthlyKeyLabel(r.key))}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join('');
+    el.innerHTML=`<button type="button" class="dc-btn dc-alt" data-stats-history-back>&larr; Back to Stats</button><h3 class="cs-h">${isDaily?'Daily Challenge':'Monthly Challenge'} history</h3>`+
+      (rows.length?`<div class="cozy-panel">${rowsHtml}</div>`:`<div class="cs-empty">Play the ${isDaily?'Daily':'Monthly'} Challenge to start your history.</div>`);
+  }
   function renderCareerStats() {
     const el = document.getElementById("career-content");
     if (!el) return;
+    if (statsHistoryMode) { renderStatsHistory(el, statsHistoryMode); return; }
     const st = myProfile.stats || {};
     const hist = careerHistory().filter(h=>statsMode==="all"||(h.mode||Object.keys(MODE_CODE).find(m=>MODE_CODE[m]===h.s))===statsMode);
     const rounds = Math.max(st.rounds || 0, hist.length);
@@ -9137,7 +9149,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot difficulty</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(level.charAt(0).toUpperCase()+level.slice(1))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
     if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml();
-    if(['all','daily'].includes(statsMode))html+=`<h3 class="cs-h">Daily Challenge</h3><div class="cozy-panel cs-tiles">${statTile(dailyStreakNow(),'Current streak')}${statTile(myProfile.dailyStreak?.best||0,'Best streak')}${statTile(st.dailies||0,'Challenges finished')}</div>`;
+    if(['all','daily'].includes(statsMode)){
+      html+=`<h3 class="cs-h">Daily Challenge</h3><div class="cozy-panel cs-tiles">${statTile(dailyStreakNow(),'Current streak')}${statTile(myProfile.dailyStreak?.best||0,'Best streak')}${statTile(st.dailies||0,'Challenges finished')}</div>`;
+      const dTop=topScores(dailyHistoryRows(),3);
+      if(dTop.length)html+=`<p class="cs-note">Your top 3 scores</p><div class="cozy-panel">${dTop.map(r=>`<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(dailyPretty(r.key))}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join('')}</div><button type="button" class="dc-btn dc-alt" data-stats-history="daily">See all daily scores</button>`;
+    }
+    if(['all','monthly'].includes(statsMode)){
+      html+=`<h3 class="cs-h">Monthly Challenge</h3><div class="cozy-panel cs-tiles">${statTile(st.monthlies||0,'Challenges finished')}</div>`;
+      const mTop=topScores(monthlyHistoryRows(),3);
+      if(mTop.length)html+=`<p class="cs-note">Your top 3 scores</p><div class="cozy-panel">${mTop.map(r=>`<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(monthlyKeyLabel(r.key))}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join('')}</div><button type="button" class="dc-btn dc-alt" data-stats-history="monthly">See all monthly scores</button>`;
+    }
     if(statsMode==='all')html+=`<h3 class="cs-h">Your collection</h3><div class="cozy-panel cs-tiles">${statTile(Object.keys(myProfile.seenObjects||{}).length,'Objects seen')}${statTile(Object.keys(myProfile.seenCombos||{}).length,'Combinations seen')}${statTile(ownedNonDefaultAvatars().length,'Avatars collected')}</div>`;
     const attempts=(myProfile.attemptHistory||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
     if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cozy-panel">'+attempts.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode]||'Monthly practice')+' · '+formatAccuracy(r.accuracy)+'%'+(r.survived!==null?' · '+r.survived+' survived':'')+'</p>').join('')+'</div>';
@@ -9182,7 +9203,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     el.innerHTML = html;
   }
-  document.getElementById('career-content').addEventListener('click',e=>{const button=e.target.closest('[data-stats-view]');if(!button)return;statsMode=button.dataset.statsView;renderCareerStats();document.querySelector(`[data-stats-view="${statsMode}"]`)?.focus({preventScroll:true});});
+  document.getElementById('career-content').addEventListener('click',e=>{
+    if(e.target.closest('[data-stats-history-back]')){statsHistoryMode=null;renderCareerStats();return;}
+    const histBtn=e.target.closest('[data-stats-history]');
+    if(histBtn){statsHistoryMode=histBtn.dataset.statsHistory;renderCareerStats();return;}
+    const button=e.target.closest('[data-stats-view]');if(!button)return;statsMode=button.dataset.statsView;renderCareerStats();document.querySelector(`[data-stats-view="${statsMode}"]`)?.focus({preventScroll:true});
+  });
   // Per-award art lives in icons/ach/<id>.png; the trophy stays until a file exists.
   document.getElementById("achievements-content").addEventListener("load", (e) => {
     if (e.target.classList && e.target.classList.contains("ach-icon")) e.target.parentNode.classList.add("has-img");

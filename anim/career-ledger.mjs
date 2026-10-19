@@ -5,6 +5,15 @@ export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds
 export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
+// Every date (daily) or month (monthly) ever played, newest first - never evicted.
+export function historyRows(historyMap){
+  return Object.keys(historyMap||{}).sort((a,b)=>b<a?-1:1).map(key=>({key,s:historyMap[key].s,t:historyMap[key].t}));
+}
+// Highest scores first; Array#sort is stable, so among equal scores the one
+// earlier in `rows` (the more recent one, since historyRows sorts newest-first) stays first.
+export function topScores(rows,n=3){
+  return rows.slice().sort((a,b)=>b.s-a.s).slice(0,n);
+}
 export function discover(profile,u,g){
   if(!u||!g)return profile;
   return {...profile,seenObjects:{...profile.seenObjects,[u]:true,[g]:true},
@@ -61,9 +70,11 @@ export function applyCareerRecord(profile,record){
     coins=({3:20,7:50,30:200})[count]||0;
     result.dailyStreak={count,best:Math.max(old.best||0,count),last:record.date};
     result.daily={...record.saved,done:true};stats.dailies=(stats.dailies||0)+1;
+    result.dailyHistory={...profile.dailyHistory,[record.date]:{s:record.accuracy||0,t:record.t}};
   }else if(record.mode==='monthly'){
     result.monthly={...profile.monthly,...record.saved,done:true};coins=record.coins;
     stats.monthlies=(stats.monthlies||0)+1;stats['mc'+record.month.slice(5)]=1;
+    result.monthlyHistory={...profile.monthlyHistory,[record.month]:{s:record.accuracy||0,t:record.t}};
   }else if(record.mode==='practice'){
     const old=profile.monthly||{},prev=(old.best||0)/(old.bestRounds||5);
     if(record.total/record.rounds>prev)result.monthly={...old,best:record.total,bestRounds:record.rounds};
