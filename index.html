@@ -194,11 +194,11 @@ if (location.protocol === "file:") {
      Here the slide-in runs on everything except the Back button, so the button is in place from the first frame. */
   #collection-screen, #items-screen, #career-screen, #achievements-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { animation: none; }
   #collection-screen.active > :not(.screen-back-btn), #items-screen.active > :not(.screen-back-btn), #career-screen.active > :not(.screen-back-btn), #achievements-screen.active > :not(.screen-back-btn),
-  #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
+  #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn), #party-screen.active > :not(.screen-back-btn), #teamvteam-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -1235,7 +1235,7 @@ if (location.protocol === "file:") {
      switch with the toolbar buttons instead, so no Back button there. */
   body:not(.overlay-has-return) #gacha-screen > .screen-back-btn, body:not(.overlay-has-return) #career-screen > .screen-back-btn,
   body:not(.overlay-has-return) #achievements-screen > .screen-back-btn, body:not(.overlay-has-return) #items-screen > .screen-back-btn,
-  body:not(.overlay-has-return) #settings-screen .screen-back-btn, body:not(.overlay-has-return) #solo-screen > .screen-back-btn { display: none; }
+  body:not(.overlay-has-return) #settings-screen .screen-back-btn, body:not(.overlay-has-return) #solo-screen > .screen-back-btn, body:not(.overlay-has-return) #party-screen > .screen-back-btn { display: none; }
   /* ...except when one of them was opened from a lobby or room: then Back is the way to return to it. */
   body.overlay-has-return #shop-tabs { margin-right: 56px; }
   body.overlay-has-return .career-tabs { padding-right: 60px; }
@@ -1394,7 +1394,7 @@ if (location.protocol === "file:") {
   .team-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; background: var(--tc); border: 2px solid rgba(0,0,0,.25); vertical-align: middle; }
   .team-picker-label { font-weight: 700; margin: 0 0 6px; }
   #team-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
-  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 3px solid var(--tc); border-radius: 14px; background: color-mix(in srgb, var(--tc) 18%, #fff); font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
+  .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border: 3px solid var(--tc); border-radius: 14px; background: var(--tc-bg, #fff); font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
   .team-swatch:disabled { opacity: .45; }
   .team-swatch-name { font-size: 13px; }
   .team-swatch-members { display: flex; gap: 2px; min-height: 22px; }
@@ -2690,6 +2690,10 @@ if (location.protocol === "file:") {
     background: rgba(255,255,255,.6); border: 1.5px solid rgba(90,60,30,.25); border-radius: 12px;
     opacity: 0; animation: popIn 320ms ease-out both;
   }
+  /* Team vs Team's round summary: each teammate's own contribution gets one line
+     (their avatar + their own chip), stacked above the team's single shared total. */
+  .team-breakdown-line { display: flex; align-items: center; gap: 5px; }
+  .team-breakdown-line .avatar.team-line-avatar { width: 22px; height: 22px; font-size: 13px; flex-shrink: 0; }
 
 
   /* ---- Paused overlay / kick modal / left screen ---- */
@@ -6600,6 +6604,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const TEAM_COLORS = ["red", "blue", "green", "yellow", "purple"];
   const TEAM_COLOR_NAMES = { red: "Red", blue: "Blue", green: "Green", yellow: "Yellow", purple: "Purple" };
   const TEAM_COLOR_HEX = { red: "#e74c3c", blue: "#3498db", green: "#2ecc71", yellow: "#e8c520", purple: "#9b59b6" };
+  // Precomputed light tints rather than CSS color-mix() - some Android WebView versions
+  // don't support color-mix(), which silently fell back to an uncolored background.
+  const TEAM_COLOR_BG = { red: "#fde2de", blue: "#dceefb", green: "#def8e6", yellow: "#fbf3cf", purple: "#f0e3f7" };
   function renderTeamPicker(data) {
     const isTeamMode = data.settings?.mode === "teamvteam";
     teamPickerRowEl.hidden = !isTeamMode;
@@ -6610,7 +6617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const mine = members.some(([id]) => id === currentPlayerId);
       const full = members.length >= 2;
       const avatars = members.map(([, p]) => `<span class="avatar">${avatarHtml(p.avatar)}</span>`).join("");
-      return `<button type="button" class="team-swatch" data-team="${color}" style="--tc:${TEAM_COLOR_HEX[color]}"${full && !mine ? " disabled" : ""}><span class="team-swatch-name">${TEAM_COLOR_NAMES[color]}</span><span class="team-swatch-members">${avatars}</span></button>`;
+      return `<button type="button" class="team-swatch" data-team="${color}" style="--tc:${TEAM_COLOR_HEX[color]};--tc-bg:${TEAM_COLOR_BG[color]}"${full && !mine ? " disabled" : ""}><span class="team-swatch-name">${TEAM_COLOR_NAMES[color]}</span><span class="team-swatch-members">${avatars}</span></button>`;
     }).join("");
   }
   teamPickerGridEl.addEventListener("click", (e) => {
@@ -8392,6 +8399,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const granted = await confirmAndPurchaseHostUnlock("classic");
         if (!granted) return;
         pendingFreeGame = granted === "free";
+        partyFromHub = true;
         closeOverlay();
         showCreateScreen("classic");
       });
@@ -8425,6 +8433,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const granted = await confirmAndPurchaseHostUnlock("teamvteam");
       if (!granted) return;
       pendingFreeGame = granted === "free";
+      partyFromHub = true;
       closeOverlay();
       showCreateScreen("teamvteam");
     });
@@ -9948,7 +9957,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(!careerLedger||!data?.currentQuestion||!players?.[playerId])return;
     let matchKey;try{matchKey=gameRewardKey(currentRoomCode,data);}catch{return;}
     const mine=(data.revealOrder||[]).find(e=>e.playerId===playerId),q=data.currentQuestion;
-    const mode=data.settings?.solo?'quick':'party',answered=!!mine;
+    const mode=data.settings?.mode==='teamvteam'?'teamvteam':(data.settings?.solo?'quick':'party'),answered=!!mine;
     const isSpot=answered&&roundAccuracy((mine.effectiveGuess??mine.guess)/q.answer)>=99;
     const history={t:Date.now(),u:q.unitId,g:q.targetId,r:answered?(mine.effectiveGuess??mine.guess)/q.answer:null,
       rawR:answered?mine.guess/q.answer:null,answered,p:data.lastRoundPoints?.[playerId]||0,
@@ -11180,7 +11189,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     renderLocalSettingsPanel();
     createStatusEl.textContent = "";
-    homeScreen.classList.remove("active");
+    // Clear EVERY screen, not just homeScreen - this can be reached from the Party Mode
+    // hub or the Team vs Team info screen too (via closeOverlay(), which reactivates
+    // whichever screen is recorded as that overlay's own return screen, not always Home),
+    // so only clearing homeScreen left the hub/info screen stuck visible underneath.
+    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     createScreenEl.classList.add("active");
   }
   // A fixed setTimeout here raced the .btn-bounce CSS animation (see
@@ -11208,11 +11221,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => openSolo()));
   homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, () => openPartyHub()));
   let soloFromHub = false; // the Solo hub's Quick Game card opened the create screen
+  let partyFromHub = false; // a Party Mode hub card (Classic Party/Team vs Team) opened the create screen
   createBackBtn.addEventListener("click", () => {
     createScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
     if (soloFromHub && createMode === "solo") openSolo();
+    else if (partyFromHub && (createMode === "classic" || createMode === "teamvteam")) openPartyHub();
     soloFromHub = false;
+    partyFromHub = false;
     pendingFreeGame = false;
   });
 
@@ -12768,7 +12784,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const byId = r.rid && REACTION_BY_ID[r.rid];
     if (byId) r = { ...r, emoji: byId.emoji };
     const def = REACTIONS[r.emoji];
-    const card = scoreColEl.querySelector(`[data-id="${r.playerId}"]`);
+    const card = scoreCardFor(r.playerId);
     let left = 0, top = 70;
     if (card) {
       const rect = card.getBoundingClientRect();
@@ -13048,7 +13064,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             if (isWinner) {
               order.slice(0, idx + 1).forEach((e) => {
                 const cardLi = revealListEl.querySelector(`[data-id="${e.playerId}"]`);
-                const scoreCard = scoreColEl.querySelector(`[data-id="${e.playerId}"]`);
+                const scoreCard = scoreCardFor(e.playerId);
                 if (cardLi && scoreCard) spawnCoinFly(cardLi, scoreCard);
               });
             }
@@ -13056,7 +13072,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             // The trophy lands on the winner's medal spot in the score column (once the column has settled), not on their answer card.
             if (isWinner) setTimeout(() => {
               if (stale()) return;
-              const medalEl = scoreColEl.querySelector(`[data-id="${entry.playerId}"] .medal`);
+              const medalEl = scoreCardFor(entry.playerId)?.querySelector(".medal");
               spawnTrophyBurst(medalEl, undefined, true);
             }, 450);
             resolve();
@@ -13158,11 +13174,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Score column / HUD top ====================
 
+  // Finds a player's own score-card box, whether it's rendered per-player (data-id IS
+  // the player's id, the normal case) or as a shared Team vs Team box (data-id is the
+  // team color instead, with every member's id listed in data-members) - anything that
+  // positions an effect at "this player's card" (reactions, coin-fly, trophy burst,
+  // submission bounce) has to resolve through this, not a raw [data-id] lookup, now
+  // that one box can represent two players.
+  function scoreCardFor(id) {
+    return scoreColEl.querySelector(`[data-id="${id}"]`) || scoreColEl.querySelector(`[data-members~="${id}"]`);
+  }
   let lastScoreColumnSignature = null;
   const newLeader = createLeadMotion();
   const submissionMotion = createSubmissionMotion({ bounce(id) {
-    const card = Array.from(scoreColEl.children).find(el => el.dataset.id === id);
-    playSubmissionBounce(card, prefersReducedMotion());
+    playSubmissionBounce(scoreCardFor(id), prefersReducedMotion());
   }});
   function updateSubmissionMotion() {
     submissionMotion.update({ ...roomState, roomCode: currentRoomCode }, nowMs());
@@ -13171,7 +13195,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let roundWinnerId = null;
   function setRoundWinner(id) {
     roundWinnerId = id || null;
-    document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && c.dataset.id === id));
+    document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && (c.dataset.id === id || !!c.dataset.members?.split(" ").includes(id))));
   }
   function renderScoreColumn(overrideScores) {
     if (roomState.settings?.mode === "teamvteam") { renderTeamScoreColumn(overrideScores); return; }
@@ -13290,6 +13314,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         box.className = "score-card team-card" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
         box.dataset.id = team;
+        box.dataset.members = members.join(" ");
         if (members.includes(roundWinnerId)) box.classList.add("round-winner");
         const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
         const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
@@ -13395,6 +13420,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function renderSummary(data) {
+    if (roomState.settings?.mode === "teamvteam") { renderTeamSummary(data); return; }
     recordRoundStats(data);
     { const w = (data.revealOrder || []).slice(-1)[0]; if (w && w.isClosest && roundWinnerId !== w.playerId) setRoundWinner(w.playerId); }
     const breakdown = computeRoundBreakdown(data);
@@ -13426,6 +13452,69 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${bufferedEntry ? bufferResultNote(data.currentQuestion, bufferedEntry.guess, id, roundPts) : ""}
         <div class="summary-row-body lines-${Math.min(lineCount, 3)}">
           <div class="breakdown">${chipHtml}</div>
+          <span class="roundpts${roundPts === 0 ? " zero" : ""}" style="animation-delay:${idx * 90 + 180}ms">+${roundPts}</span>
+        </div>
+      `;
+      summaryListEl.appendChild(li);
+    });
+    if (isHost) {
+      const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
+      nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
+      if (nextRoundBtn.style.display !== "flex") navGuardAt = nowMs();
+      nextRoundBtn.style.display = "flex";
+    } else {
+      nextRoundBtn.style.display = "none";
+    }
+    if (!summaryScrollStarted) {
+      summaryScrollStarted = true;
+      startSummaryScrollChoreography();
+    }
+  }
+
+  // Team vs Team's round summary: one row per TEAM (not per player) - every chip stays
+  // attributed to whichever teammate actually earned it (own small avatar beside each
+  // line), stacked above the one shared team total - instead of both teammates'
+  // separate rows repeating the same already-pooled total next to only their own chip,
+  // which read as if each of them had independently earned the full amount.
+  function renderTeamSummary(data) {
+    recordRoundStats(data);
+    { const w = (data.revealOrder || []).slice(-1)[0]; if (w && w.isClosest && roundWinnerId !== w.playerId) setRoundWinner(w.playerId); }
+    const breakdown = computeRoundBreakdown(data);
+    const lastRoundPoints = data.lastRoundPoints || {};
+    summaryListEl.innerHTML = "";
+    const teamOf = {};
+    Object.entries(currentPlayers).forEach(([id, p]) => { if (p.team) teamOf[p.team] = [...(teamOf[p.team] || []), id]; });
+    const teams = Object.keys(teamOf).sort((a, b) => {
+      const ra = lastRoundPoints[teamOf[a][0]] || 0, rb = lastRoundPoints[teamOf[b][0]] || 0;
+      if (rb !== ra) return rb - ra;
+      return (currentPlayers[teamOf[b][0]].score || 0) - (currentPlayers[teamOf[a][0]].score || 0);
+    });
+    const SHORT = { "closest guess": "Closest", "second chance": "Second chance", "double down": "Double down", "crowd favorite": "Crowd fave", "spot on": "Spot on", "perfect!": "Perfect!" };
+    teams.forEach((team, idx) => {
+      const members = teamOf[team];
+      const roundPts = lastRoundPoints[members[0]] || 0;
+      let chipCount = 0;
+      const lineHtml = members.map((id) => {
+        const p = currentPlayers[id];
+        return (breakdown[id] || []).map((c) => {
+          const delay = idx * 90 + 260 + chipCount++ * 90;
+          return `<div class="team-breakdown-line"><span class="avatar team-line-avatar">${avatarHtml(p.avatar)}</span><span class="breakdown-chip" style="animation-delay:${delay}ms">+${c.amount} ${SHORT[c.label] || c.label}</span></div>`;
+        }).join("");
+      }).join("");
+      const bufferMember = members.find((id) => (data.revealOrder || []).some((e) => e.playerId === id && e.bufferUsed));
+      const bufferedEntry = bufferMember ? (data.revealOrder || []).find((e) => e.playerId === bufferMember && e.bufferUsed) : null;
+      const li = document.createElement("li");
+      li.className = "summary-row team-summary-row";
+      li.dataset.id = team;
+      li.style.animationDelay = `${idx * 90}ms`;
+      if (roundPts > 0 && idx === 0 && members.some((id) => (data.revealOrder || []).some((e) => e.playerId === id && e.isClosest))) li.classList.add("round-winner");
+      const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+      const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+      li.innerHTML = `
+        <div class="summary-row-top">${avatars}<span class="name">${names}</span></div>
+        ${bufferedEntry ? bufferResultNote(data.currentQuestion, bufferedEntry.guess, bufferMember, roundPts) : ""}
+        <div class="summary-row-body lines-${Math.min(Math.max(chipCount, 1), 3)}">
+          <div class="breakdown team-breakdown">${lineHtml}</div>
           <span class="roundpts${roundPts === 0 ? " zero" : ""}" style="animation-delay:${idx * 90 + 180}ms">+${roundPts}</span>
         </div>
       `;
