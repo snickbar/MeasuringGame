@@ -2380,8 +2380,8 @@ if (location.protocol === "file:") {
   .hl-br-num { font-family: 'Fredoka', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.05; color: #000; }
   .hl-br-num.ok { color: #1f7a1f; } .hl-br-num.bad { color: #b3261e; }
   .hl-br-ans { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; font-size: 14px; font-weight: 700; color: #000; }
-  .hl-br-ans u { display: inline-block; width: 4px; height: 16px; border-radius: 2px; background: #1c1208; }
-  .hl-br-ans.out { color: #b3261e; } .hl-br-ans.out u { background: #b3261e; }
+  .hl-br-ans u { display: inline-block; width: 6px; height: 16px; border-radius: 3px; background: linear-gradient(90deg, #ffe27a, #f5b700 55%, #c98a00); box-shadow: 0 0 0 1.5px #8a5a00, 0 0 6px rgba(255,200,40,.8); }
+  .hl-br-ans.out { color: #b3261e; }
   .hl-nl { position: relative; height: 104px; margin: 4px 14px 0; }
   .hl-nl-line { position: absolute; left: 0; right: 0; top: 50px; height: 4px; border-radius: 2px; background: #d9c8a6; }
   .hl-nl-band { position: absolute; top: 43px; height: 18px; box-sizing: border-box; border-radius: 9px; background: #8fd18a; border: 2px solid #1f7a1f; }
@@ -2392,9 +2392,11 @@ if (location.protocol === "file:") {
   .hl-nl-tag i { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
   .hl-nl-tag.lo i { color: #2a74d6; } .hl-nl-tag.hi i { color: #c23a22; }
   .hl-nl-tag.hi { flex-direction: column-reverse; }
-  .hl-nl-ans { position: absolute; top: 36px; transform: translateX(-50%); }
-  .hl-nl-ans u { display: block; width: 4px; height: 32px; border-radius: 2px; background: #1c1208; }
-  .hl-nl-ans.out u { background: #b3261e; }
+  .hl-nl-ans { position: absolute; top: 34px; transform: translateX(-50%); }
+  .hl-nl-ans u { position: relative; display: block; width: 7px; height: 36px; border-radius: 4px; overflow: hidden; background: linear-gradient(90deg, #fff1a8, #f5b700 50%, #c98a00); box-shadow: 0 0 0 2px #8a5a00, 0 0 9px rgba(255,200,40,.9); }
+  .hl-nl-ans u::after { content: ""; position: absolute; left: -60%; top: -30%; width: 220%; height: 40%; background: linear-gradient(180deg, transparent, rgba(255,255,255,.95), transparent); transform: rotate(-20deg); animation: hlGoldShine 2.4s ease-in-out infinite; }
+  @keyframes hlGoldShine { 0% { top: -50%; } 60%, 100% { top: 130%; } }
+  @media (prefers-reduced-motion: reduce) { .hl-nl-ans u::after { animation: none; display: none; } }
   .hl-wm { position: relative; margin: 8px 6px 0; padding-bottom: 36px; }
   .hl-wm-bar { position: relative; height: 14px; border-radius: 8px; background: #f2c4c0; overflow: hidden; }
   .hl-wm-safe { position: absolute; left: 0; top: 0; bottom: 0; background: #cfe9c4; }
@@ -11243,7 +11245,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         revealShuffled = false;
         lastChoreographedIndex = -1;
         revealAnimating = false;
-        renderRevealChoreography(roomState);
+        // Team Worlds / High/Low Survival have their own reveal screen - the classic papers must never draw there.
+        if (roomState.settings?.mode === "teamworlds") { twRevealSig = null; renderTeamWorldsReveal(roomState); }
+        else renderRevealChoreography(roomState);
       }
       if (phase === "summary") {
         renderSummary(roomState);
