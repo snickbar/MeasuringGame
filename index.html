@@ -2356,6 +2356,7 @@ if (location.protocol === "file:") {
   .hl-role { display: block; margin: 6px auto 0; padding: 4px 12px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; border: 2px solid #4a2c12; }
   .hl-role.hl-high { background: linear-gradient(180deg, #ffd9c8, #ffb59a); }
   .hl-role.hl-low { background: linear-gradient(180deg, #d4ebff, #a9d2fb); }
+  .hl-limit { display: block; margin: 4px auto 0; padding: 2px 12px; width: fit-content; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; background: #fff3d6; border: 2px solid #4a2c12; }
   .hl-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 10px 1px 7px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: #fff; text-shadow: 0 1px 0 #4a2c12, 1px 0 0 #4a2c12, -1px 0 0 #4a2c12, 0 -1px 0 #4a2c12; border: 2px solid #4a2c12; box-shadow: 0 2px 0 #4a2c12; line-height: 1.25; }
   .hl-chip svg { width: 12px; height: 12px; fill: #fff; stroke: #4a2c12; stroke-width: 2.2; stroke-linejoin: round; paint-order: stroke; flex: none; }
   .hl-chip.hl-high { background: linear-gradient(180deg, #ff9a6b, #e8452c); }
@@ -2364,15 +2365,32 @@ if (location.protocol === "file:") {
   .hl-sum-stats > div { display: flex; flex-direction: column; align-items: center; }
   .hl-sum-stats b { font-family: 'Fredoka', sans-serif; font-size: 22px; color: var(--brand); }
   .hl-sum-stats span { font-size: 11px; font-weight: 700; color: #000; }
-  .hl-meter { width: 100%; padding: 4px 8px 24px; box-sizing: border-box; }
-  .hl-meter-scale { position: relative; height: 14px; border-radius: 8px; background: linear-gradient(90deg,#f2c4c0 0 var(--pass),#cce4b6 var(--pass) 100%); }
-  .hl-meter-fill { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg,#e95048 0 var(--pass),#65b94e var(--pass) 100%); clip-path: inset(0 calc(100% - var(--accuracy,0%)) 0 0 round 8px); transition: clip-path 1.1s cubic-bezier(.25,.8,.25,1); }
-  .hl-meter-mark { position: absolute; left: var(--pass); top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
-  .hl-meter-mark i { display: block; width: 4px; height: 22px; border-radius: 2px; background: #4a2c12; }
-  .hl-meter-mark b { margin-top: 3px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; color: #000; opacity: .75; }
-  .hl-meter-mark.safe b { color: #1f7a1f; opacity: 1; }
-  .hl-meter-mark.pop b { animation: twStarPop .9s cubic-bezier(.2,1.6,.4,1) both; }
-  @media (prefers-reduced-motion: reduce) { .hl-meter-fill { transition: none; } .hl-meter-mark.pop b { animation: none; } }
+  .hl-br { text-align: center; }
+  .hl-br-label { font-size: 14px; font-weight: 700; color: #000; }
+  .hl-br-num { font-family: 'Fredoka', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.05; color: #000; }
+  .hl-br-num.ok { color: #1f7a1f; } .hl-br-num.bad { color: #b3261e; }
+  .hl-nl { position: relative; height: 86px; margin: 6px 6px 0; }
+  .hl-nl-line { position: absolute; left: 0; right: 0; top: 41px; height: 4px; border-radius: 2px; background: #d9c8a6; }
+  .hl-nl-band { position: absolute; top: 34px; height: 18px; box-sizing: border-box; border-radius: 9px; background: #8fd18a; border: 2px solid #1f7a1f; }
+  .hl-nl-band.bad { background: #f2a39b; border-color: #b3261e; }
+  .hl-nl-tag { position: absolute; top: 52px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+  .hl-nl-tag b { font-family: 'Fredoka', sans-serif; font-size: 16px; color: #000; }
+  .hl-nl-tag i { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+  .hl-nl-tag.lo i { color: #2a74d6; } .hl-nl-tag.hi i { color: #c23a22; }
+  .hl-nl-ans { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+  .hl-nl-ans em { font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; color: #000; }
+  .hl-nl-ans u { display: block; width: 4px; height: 38px; margin-top: 2px; border-radius: 2px; background: #1c1208; }
+  .hl-nl-ans.out em { color: #b3261e; } .hl-nl-ans.out u { background: #b3261e; }
+  .hl-wm { position: relative; margin: 8px 6px 0; padding-bottom: 36px; }
+  .hl-wm-bar { position: relative; height: 14px; border-radius: 8px; background: #f2c4c0; overflow: hidden; }
+  .hl-wm-safe { position: absolute; left: 0; top: 0; bottom: 0; background: #cfe9c4; }
+  .hl-wm-fill { position: absolute; left: 0; top: 0; bottom: 0; width: var(--w, 0%); border-radius: 8px 0 0 8px; background: #65b94e; transition: width 1.1s cubic-bezier(.25,.8,.25,1); }
+  .hl-wm-fill.bad { background: #e95048; }
+  .hl-wm-tick { position: absolute; top: -4px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+  .hl-wm-tick i { display: block; width: 4px; height: 22px; border-radius: 2px; background: #4a2c12; }
+  .hl-wm-tick b { margin-top: 2px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; color: #1f7a1f; }
+  .hl-wm-ends { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #000; opacity: .7; }
+  @media (prefers-reduced-motion: reduce) { .hl-wm-fill { transition: none; } }
   .hl-verdict { text-align: center; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .hl-verdict-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: #000; }
   .hl-verdict.ok .hl-verdict-title { color: #1f7a1f; }
@@ -5851,14 +5869,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.7, 1.3] };
   const BOT_LEVEL_LABEL = { easy: "Low", medium: "Medium", hard: "High", mixed: "Mixed" };
   const botLevelLabel = (level) => BOT_LEVEL_LABEL[level] || (level ? level.charAt(0).toUpperCase() + level.slice(1) : "");
-  // High/Low Survival bots: how far off the answer a partner is (as a fraction of it) and how often it lands on the wrong side.
-  const HL_BOT_LEVELS = { easy: { lo: 0.1, hi: 2.0, miss: 0.30 }, medium: { lo: 0.05, hi: 0.7, miss: 0.15 }, hard: { lo: 0.05, hi: 0.3, miss: 0.05 } };
-  function hlBotGuess(answer, difficulty, role) {
+  // High/Low Survival bots. A bot's pick sits on its own side of the answer, using a share of the round's
+  // slack (limit - 1): High-accuracy bots stay close (tight bracket), Low-accuracy bots use most of the slack
+  // (so the human must be sharp to keep the bracket within the limit), and each level sometimes lands on the
+  // wrong side of the answer. Capped below 100% of the slack so a perfect human partner can always survive.
+  const HL_BOT_LEVELS = { easy: { lo: 0.35, hi: 0.85, miss: 0.18 }, medium: { lo: 0.15, hi: 0.55, miss: 0.08 }, hard: { lo: 0.05, hi: 0.25, miss: 0.03 } };
+  function hlBotGuess(answer, difficulty, role, limit) {
     const c = HL_BOT_LEVELS[difficulty] || HL_BOT_LEVELS.medium;
-    const e = c.lo + Math.random() * (c.hi - c.lo);
+    const slack = Math.max(0.1, (limit || HL_LIMIT_START) - 1);
+    const e = (c.lo + Math.random() * (c.hi - c.lo)) * slack;
     const wrongSide = Math.random() < c.miss;
     const above = (role === "high") !== wrongSide; // HIGH aims above the answer, LOW below - unless it misses
-    const ratio = above ? 1 + e : Math.max(0.02, 1 - Math.min(e, 0.98));
+    const ratio = above ? 1 + e : 1 / (1 + e); // multiplicative, so HIGH/LOW of the two picks stays comparable to the limit
     return Math.max(0, Math.round(answer * ratio * 100) / 100);
   }
   const BOT_NAMES = [
@@ -8761,7 +8783,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Hidden from the Party hub until it is finished: add ?hl=1 to the address (or set localStorage
   // mg_hl_preview to "1") to try it early.
   const HL_PREVIEW = true; // High/Low Survival is visible to everyone while it's only being tested by a few people (re-gate before launch if wanted)
-  const HL_LIVES = 3, HL_PASS = 60, HL_FREE_CAP = 5;
+  const HL_LIVES = 3, HL_FREE_CAP = 5;
+  // Bracket-tightness rule: the team survives when the real answer sits between LOW and HIGH AND
+  // HIGH / LOW stays within the current limit. The limit starts at HL_LIMIT_START and tightens by
+  // HL_LIMIT_STEP for every round the team has survived, down to HL_LIMIT_FLOOR (10 wins). Losing a
+  // life never tightens it.
+  const HL_LIMIT_START = 2.5, HL_LIMIT_STEP = 0.1, HL_LIMIT_FLOOR = 1.5;
+  const hlLimit = (wins) => Math.max(HL_LIMIT_FLOOR, Math.round((HL_LIMIT_START - HL_LIMIT_STEP * Math.max(0, wins || 0)) * 100) / 100);
   const isHlSettings = (st) => !!(st && st.mode === "teamworlds" && st.variant === "hl");
   function renderPartyHub() {
     const card = (id, img, name, sub, mode) => {
@@ -8824,7 +8852,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function openHlInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
-      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. If the real answer sits between your two picks and your team's average accuracy clears ${HL_PASS}%, you survive. Cross your picks, miss the range or fall short and you lose a life.</div></div>
+      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <button type="button" class="dc-btn" id="hl-start">Create Room</button>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}`;
@@ -11981,7 +12009,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       settings.mode = "teamworlds";
       settings.variant = "hl";
       settings.lives = HL_LIVES;
-      settings.passPct = HL_PASS;
       settings.cap = pendingFreeGame ? HL_FREE_CAP : 0; // 0 = endless (Party Mode unlocked)
     }
     if (createMode === "teamworlds") {
@@ -12349,7 +12376,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
         let val = botGuessValue(q.answer, p.botDifficulty);
         // High/Low Survival: a bot partner plays its role, and how tight a bracket it makes depends on its accuracy level.
-        if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id]);
+        if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id], hlLimit(roomState.hlSurvived || 0));
         set(ref(db, `rooms/${roomCode}/guesses/${id}`), val);
       }, delay);
     });
@@ -12939,14 +12966,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints: {}, lastRoundAccuracy: accuracy, truthPickedBy: null, phase: "reveal", revealAdvanceAt };
     if (hl) {
-      // The team passes when the AVERAGE accuracy of the two picks is at least the pass mark, unless the picks
-      // are crossed (LOW higher than HIGH), which always costs a life. "In sync" = the real answer sits between them.
+      // The team survives when the real answer sits between the picks AND HIGH / LOW is within this round's limit
+      // (hlLimit). Crossed picks (LOW higher than HIGH) always cost a life. Accuracy is still recorded for stats.
       const highId = Object.keys(hlRoles).find((id) => hlRoles[id] === "high"), lowId = Object.keys(hlRoles).find((id) => hlRoles[id] === "low");
       const hv = guesses[highId], lv = guesses[lowId];
       const bothIn = typeof hv === "number" && typeof lv === "number";
       const crossed = bothIn && lv > hv;
       const inSync = bothIn && lv <= answer && answer <= hv;
-      const passed = bothIn && !crossed && accuracy >= (roomState.settings?.passPct || HL_PASS);
+      const limit = hlLimit(roomState.hlSurvived || 0);
+      const ratio = bothIn && lv > 0 ? hv / lv : Infinity;
+      const tooWide = bothIn && !crossed && ratio > limit;
+      const passed = bothIn && !crossed && inSync && !tooWide;
       const lives = (roomState.hlLives ?? roomState.settings?.lives ?? HL_LIVES) - (passed ? 0 : 1);
       updates.hlLives = Math.max(0, lives);
       updates.hlSurvived = (roomState.hlSurvived || 0) + (passed ? 1 : 0);
@@ -12955,7 +12985,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updates.hlSyncStreak = syncSurvived ? (roomState.hlSyncStreak || 0) + 1 : 0;
       updates.hlBestSyncStreak = Math.max(roomState.hlBestSyncStreak || 0, updates.hlSyncStreak);
       updates.hlSyncTotal = (roomState.hlSyncTotal || 0) + (syncSurvived ? 1 : 0);
-      updates.hlLast = { passed, crossed, inSync, accuracy };
+      updates.hlLast = { passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
     }
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
@@ -13520,7 +13550,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
   function hlHeartsHtml(room) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
-    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div></div>`;
+    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div><div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div></div>`;
   }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
@@ -14179,26 +14209,55 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const arrow = high ? "M12 4 L21 17 H3 Z" : "M12 20 L3 7 H21 Z";
     return `<span class="hl-chip hl-${high ? "high" : "low"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${arrow}"/></svg>${high ? "HIGH" : "LOW"}</span>`;
   }
-  // High/Low Survival: a meter under the team average. Red below the pass mark, green from it up; the SAFE
-  // marker sits at the pass mark. The fill is animated by setting --accuracy (see renderTeamWorldsReveal).
-  function hlMeterHtml(pct, passPct) {
-    const pass = Math.round(passPct || HL_PASS);
-    return `<div class="hl-meter" style="--pass:${pass}%"><div class="hl-meter-scale" role="progressbar" aria-label="Team accuracy, safe from ${pass}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><span class="hl-meter-fill" style="--accuracy:${pct}%"></span><span class="hl-meter-mark${pct >= pass ? " safe" : ""}"><i></i><b>SAFE ${pass}%</b></span></div></div>`;
+  // High/Low Survival: the "Your bracket" card between the two picks. A number line shows the answer against the
+  // LOW-HIGH band, and a width meter (1x to 4.5x) fills up to how wide the bracket was with a tick at this round's
+  // limit. The fill is animated by setting --w (see renderTeamWorldsReveal).
+  const HL_METER_MAX = 4.5;
+  function hlBracketHtml(data) {
+    const l = data.hlLast || {}, q = data.currentQuestion, ans = q ? q.answer : 0;
+    const lo = l.low, hi = l.high, limit = l.limit || HL_LIMIT_START;
+    if (typeof lo !== "number" || typeof hi !== "number") return `<div class="dc-card dc-hot tw-avg hl-br"><div class="hl-br-label">Your bracket</div><div class="hl-br-num">No pick</div></div>`;
+    const bottom = Math.min(lo, hi), top = Math.max(lo, hi), max = Math.max(ans, top) * 1.15 || 1;
+    const pos = (v) => Math.max(0, Math.min(100, (v / max) * 100));
+    const meterPct = (r) => Math.max(0, Math.min(100, ((r - 1) / (HL_METER_MAX - 1)) * 100));
+    const tooWide = !!l.tooWide, crossed = !!l.crossed, ratio = l.ratio;
+    const numTxt = crossed ? "Crossed" : ratio == null ? "&mdash;" : `${ratio.toFixed(1)}&times;`;
+    const fillPct = crossed || ratio == null ? 100 : meterPct(ratio);
+    const bad = !l.passed;
+    const numCls = crossed || tooWide ? "bad" : l.passed ? "ok" : "";
+    const answerCls = l.inSync ? "" : " out";
+    return `<div class="dc-card dc-hot tw-avg hl-br">
+      <div class="hl-br-label">Your bracket</div>
+      <div class="hl-br-num ${numCls}" data-ratio="${ratio == null ? "" : ratio}">${numTxt}</div>
+      <div class="hl-nl">
+        <span class="hl-nl-line"></span>
+        <span class="hl-nl-band${bad ? " bad" : ""}" style="left:${pos(bottom)}%;width:${Math.max(1, pos(top) - pos(bottom))}%"></span>
+        <span class="hl-nl-tag lo" style="left:${pos(bottom)}%"><b>${twFmt(bottom)}</b><i>${bottom === lo ? "LOW" : "HIGH"}</i></span>
+        <span class="hl-nl-tag hi" style="left:${pos(top)}%"><b>${twFmt(top)}</b><i>${top === hi ? "HIGH" : "LOW"}</i></span>
+        <span class="hl-nl-ans${answerCls}" style="left:${pos(ans)}%"><em>ANSWER ${twFmt(ans)}${l.inSync ? "" : " - OUTSIDE"}</em><u></u></span>
+      </div>
+      <div class="hl-wm" role="progressbar" aria-label="Bracket width against the limit" aria-valuemin="1" aria-valuemax="${HL_METER_MAX}" aria-valuenow="${ratio == null ? HL_METER_MAX : ratio}">
+        <div class="hl-wm-bar"><span class="hl-wm-safe" style="width:${meterPct(limit)}%"></span><span class="hl-wm-fill${tooWide || crossed ? " bad" : ""}" style="--w:0%" data-w="${fillPct}"></span></div>
+        <span class="hl-wm-tick" style="left:${meterPct(limit)}%"><i></i><b>LIMIT ${limit.toFixed(1)}&times;</b></span>
+        <div class="hl-wm-ends"><span>1&times; (tightest)</span><span>${HL_METER_MAX}&times;</span></div>
+      </div>
+    </div>`;
   }
   // High/Low Survival: what the round meant for the team - in sync or not, survived or lost a life, hearts left.
   function hlVerdictHtml(data, shown) {
     const l = data.hlLast || {};
-    const pass = Math.round((data.settings && data.settings.passPct) || HL_PASS);
+    const q = data.currentQuestion, ans = q ? twFmt(q.answer) : "";
+    const limit = (l.limit || HL_LIMIT_START).toFixed(1);
     let cls, title, sub;
     if (l.passed) {
       cls = "ok"; title = "Survived!";
-      sub = l.inSync ? `In sync${data.hlSyncStreak > 1 ? ` · ${data.hlSyncStreak} in a row` : ""}` : "Close enough - just outside your range";
+      sub = `Answer inside your bracket${data.hlSyncStreak > 1 ? ` · ${data.hlSyncStreak} in a row` : ""}`;
     } else if (l.crossed) {
       cls = "bad"; title = "Lost a life"; sub = "Your picks crossed - LOW went above HIGH";
     } else if (!l.inSync) {
-      cls = "bad"; title = "Lost a life"; sub = "The answer fell outside your range";
+      cls = "bad"; title = "Lost a life"; sub = `The answer (${ans}) fell outside your bracket`;
     } else {
-      cls = "bad"; title = "Lost a life"; sub = `In sync, but under the ${pass}% pass mark`;
+      cls = "bad"; title = "Lost a life"; sub = `Answer was inside, but the bracket is ${l.ratio == null ? "too" : Number(l.ratio).toFixed(1) + "&times;"} wide. Limit is ${limit}&times;.`;
     }
     return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data)}</div></div></div>`;
   }
@@ -14289,30 +14348,39 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         timers.push([150, "tap"], [1150, "tap"], [2050, hi ? "roundwin" : "select"]);
       }
     });
-    const avgCard = `<div class="tw-slot${showAverage ? "" : " tw-ph"}"><div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average</div><div class="tw-avg-num">${showAverage ? "0%" : "00.0%"}</div>${isHlSettings(data.settings) ? hlMeterHtml(showAverage && twRevealAnimated[prefix + "avg"] ? (data.lastRoundAccuracy || 0) : 0, data.settings.passPct) : ""}</div></div>`;
+    const avgCard = isHlSettings(data.settings)
+      ? `<div class="tw-slot${showAverage ? "" : " tw-ph"}">${hlBracketHtml(data)}</div>`
+      : `<div class="tw-slot${showAverage ? "" : " tw-ph"}"><div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average</div><div class="tw-avg-num">${showAverage ? "0%" : "00.0%"}</div></div></div>`;
     revealListEl.innerHTML = twHeadHtml("Round Summary") + '<div class="tw-sum">' + twQTopHtml(q, ans) + (cards[0] || "") + (order.length > 1 ? avgCard : "") + (cards[1] || "") + (isHlSettings(data.settings) ? hlVerdictHtml(data, showAverage && !!twRevealAnimated[prefix + "avg"]) : "") + "</div>";
     timers.forEach(([ms, snd]) => setTimeout(() => { if (twRevealSig === sig) playSound(snd); }, ms));
-    if (showAverage) {
+    if (showAverage && isHlSettings(data.settings)) {
+      const card = revealListEl.querySelector(".tw-avg"), fill = revealListEl.querySelector(".hl-wm-fill"), num = revealListEl.querySelector(".hl-br-num");
+      const k = prefix + "avg", fresh = !twRevealAnimated[k];
+      twRevealAnimated[k] = true;
+      const target = fill ? Number(fill.dataset.w) || 0 : 0;
+      if (!fresh) { if (fill) fill.style.setProperty("--w", target + "%"); }
+      else {
+        setTimeout(() => { if (twRevealSig === sig && fill) fill.style.setProperty("--w", target + "%"); }, 60);
+        setTimeout(() => {
+          if (twRevealSig !== sig) return;
+          if (num) num.classList.add("pop");
+          if (card) card.classList.add("glow");
+          const v = revealListEl.querySelector(".hl-verdict");
+          if (v) { v.parentElement.classList.remove("tw-ph"); playSound(data.hlLast && data.hlLast.passed ? "roundwin" : "error"); }
+          if (data.hlLast && data.hlLast.passed) celebrate("normal");
+        }, 1100);
+      }
+    } else if (showAverage) {
       const avg = data.lastRoundAccuracy || 0, card = revealListEl.querySelector(".tw-avg"), num = revealListEl.querySelector(".tw-avg-num");
       const k = prefix + "avg", fresh = !twRevealAnimated[k];
       twRevealAnimated[k] = true;
       if (!fresh) { num.textContent = formatAccuracy(avg) + "%"; }
       else {
         twCountUp(num, avg, 1100, "%");
-        if (isHlSettings(data.settings)) {
-          const fill = revealListEl.querySelector(".hl-meter-fill");
-          const mark = revealListEl.querySelector(".hl-meter-mark");
-          const passNow = Math.round(data.settings.passPct || HL_PASS);
-          setTimeout(() => { if (twRevealSig === sig && fill) fill.style.setProperty("--accuracy", avg + "%"); }, 60);
-          if (mark && avg >= passNow) setTimeout(() => { if (twRevealSig === sig) { mark.classList.add("safe", "pop"); playSound("select"); } }, 1100 * (passNow / Math.max(avg, 1)));
-        }
         setTimeout(() => {
           if (twRevealSig !== sig) return;
           num.classList.add("pop"); card.classList.add("glow");
-          if (isHlSettings(data.settings)) {
-            const v = revealListEl.querySelector(".hl-verdict");
-            if (v) { v.parentElement.classList.remove("tw-ph"); playSound(data.hlLast && data.hlLast.passed ? "roundwin" : "error"); }
-          } else twShowQuip(card.parentElement, avg, gameKey);
+          twShowQuip(card.parentElement, avg, gameKey);
           playSound(avg >= 75 ? "roundwin" : "select");
           if (avg >= 75) celebrate(avg >= 90 ? "spotOn" : "normal");
         }, 1100);
