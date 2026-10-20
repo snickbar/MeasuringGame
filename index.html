@@ -13548,9 +13548,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // this mode doesn't have) a half/half split of each player's own avatar + their own running
   // (un-averaged) individual accuracy.
   // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
-  function hlHeartsHtml(room) {
+  function hlHeartsHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
-    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div><div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div></div>`;
+    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>`;
   }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
@@ -14238,8 +14238,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="hl-wm" role="progressbar" aria-label="Bracket width against the limit" aria-valuemin="1" aria-valuemax="${HL_METER_MAX}" aria-valuenow="${ratio == null ? HL_METER_MAX : ratio}">
         <div class="hl-wm-bar"><span class="hl-wm-safe" style="width:${meterPct(limit)}%"></span><span class="hl-wm-fill${tooWide || crossed ? " bad" : ""}" style="--w:0%" data-w="${fillPct}"></span></div>
-        <span class="hl-wm-tick" style="left:${meterPct(limit)}%"><i></i><b>LIMIT ${limit.toFixed(1)}&times;</b></span>
-        <div class="hl-wm-ends"><span>1&times; (tightest)</span><span>${HL_METER_MAX}&times;</span></div>
+        <span class="hl-wm-tick" style="left:${meterPct(limit)}%"><i></i><b>MAX GAP ${limit.toFixed(1)}&times;</b></span>
+        <div class="hl-wm-ends"><span>Tight</span><span>Wide</span></div>
       </div>
     </div>`;
   }
@@ -14259,7 +14259,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else {
       cls = "bad"; title = "Lost a life"; sub = `Answer was inside, but the bracket is ${l.ratio == null ? "too" : Number(l.ratio).toFixed(1) + "&times;"} wide. Limit is ${limit}&times;.`;
     }
-    return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data)}</div></div></div>`;
+    return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data, true)}</div></div></div>`;
   }
   // Counts a number up (e.g. the team average) so it lands with a little drama.
   function twCountUp(el, to, ms, suffix) {
@@ -14911,7 +14911,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       sLi.className = "summary-row tw-sum";
       sLi.innerHTML = twQTopHtml(q, ans)
         + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
-        + `<div class="dc-card dc-hot tw-avg hl-sum-card"><div class="tw-avg-label">${over ? "Game over" : "Team lives"}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data)}</div>`
+        + `<div class="dc-card dc-hot tw-avg hl-sum-card"><div class="tw-avg-label">${over ? "Game over" : "Team lives"}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data, true)}</div>`
         + `<div class="hl-sum-stats"><div><b>${data.hlSyncStreak || 0}</b><span>In sync streak</span></div><div><b>${data.hlBestSyncStreak || 0}</b><span>Best streak</span></div></div></div>`
         + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
       summaryListEl.appendChild(sLi);
