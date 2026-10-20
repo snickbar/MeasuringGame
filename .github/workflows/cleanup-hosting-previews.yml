@@ -1,0 +1,32 @@
+# Manual one-off: deletes every Firebase Hosting preview channel (never the live channel) to free storage.
+# Run it from the Actions tab (Run workflow). Uses the same service account the deploy workflow uses.
+name: Clean up Hosting preview channels
+on: workflow_dispatch
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Delete preview channels
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MEASURING_GAME }}
+        run: |
+          set -u
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@latest hosting:channel:list --site size-em-up --project measuring-game --json > "$RUNNER_TEMP/channels.json"
+          node -e '
+            const j = JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP + "/channels.json", "utf8"));
+            const list = (j.result && j.result.channels) || [];
+            const names = list.map((c) => String(c.name).split("/").pop()).filter((n) => n && n !== "live");
+            console.log(names.join("\n"));
+          ' > "$RUNNER_TEMP/names.txt"
+          echo "Preview channels to delete: $(wc -l < "$RUNNER_TEMP/names.txt")"
+          while read -r ch; do
+            [ -z "$ch" ] && continue
+            echo "Deleting $ch"
+            npx --yes firebase-tools@latest hosting:channel:delete "$ch" --site size-em-up --project measuring-game --force || echo "could not delete $ch"
+          done < "$RUNNER_TEMP/names.txt"
+          rm -f "$RUNNER_TEMP/sa.json"
