@@ -2185,11 +2185,12 @@ if (location.protocol === "file:") {
      board's picture (and #q-body's absolute box tied to it) still shows/misplaces through. */
   .question-prompt.tw-plain #q-stage { display: none !important; }
   .question-prompt.tw-plain #q-body { position: static !important; left: auto !important; top: auto !important; width: auto !important; height: auto !important; display: block !important; }
-  .question-prompt.tw-plain .answer-line-label,
+  /* The running count no longer mirrors here at all (see getAnimCtl/runAnimation) - the stack
+     animation's own built-in tally shows it instead, same as Solo Worlds, so #question-answer-line
+     just stays at its default display:none and nothing in here needs to style it any more. */
   .question-prompt.tw-plain #q-pencil, .question-prompt.tw-plain #q-eraser, .question-prompt.tw-plain #q-dust,
   .question-prompt.tw-plain #q-curtain, .question-prompt.tw-plain #q-curtain-top { display: none !important; }
-  .question-prompt.tw-plain #question-prompt-text { display: block !important; font-size: 16px !important; margin-bottom: 4px !important; }
-  .question-prompt.tw-plain .answer-line-value { color: #000 !important; background: none !important; -webkit-text-fill-color: #000 !important; font-size: 42px !important; }
+  .question-prompt.tw-plain #question-prompt-text { display: block !important; font-size: 16px !important; }
   .qch { opacity: 0; }
   .qch.on { opacity: 1; }
   /* Used to be a small inline line, with a separate big standalone "THE
@@ -2705,6 +2706,19 @@ if (location.protocol === "file:") {
   .team-final-member .member-pts, .team-final-member .member-acc { flex-shrink: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
   .team-final-member .member-pts { min-width: 32px; }
   .team-final-member .member-acc { min-width: 54px; }
+  /* Team Worlds' own final-results row (always exactly one, never ranked against others) -
+     centers everything as a block and sizes it up instead of the ranked list's left-aligned,
+     pts-on-the-right layout, which left a lot of blank space to the right of a short name line
+     with nothing there to balance it, and left the avatars/name looking misaligned against each
+     other under align-items:flex-start. */
+  .tw-final-row { padding: 16px; }
+  .tw-final-row .final-row-top { flex-direction: column; align-items: center; gap: 8px; }
+  .tw-final-row .team-final-avatars { font-size: 38px; gap: 6px; }
+  .tw-final-row .final-row-top .name { flex: none; font-size: 22px; text-align: center; }
+  .tw-final-row .team-final-members { align-items: center; width: fit-content; margin-left: auto; margin-right: auto; }
+  .tw-final-row .team-final-member { font-size: 16px; gap: 10px; }
+  .tw-final-row .team-final-member .avatar { width: 30px; height: 30px; }
+  .tw-final-row .team-final-member .member-acc { font-size: 19px; min-width: 70px; }
   .final-row.rank-2 { padding: 9px 13px 13px; }
   .final-row.rank-2 .medal { width: 26px; height: 26px; }
   .final-row.rank-2 .name { font-size: 19px; }
@@ -2765,28 +2779,19 @@ if (location.protocol === "file:") {
   .tw-res-verdict .tw-res-pct { font-size: 20px; }
   .tw-res-verdict .tw-res-check { display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; }
   .tw-res-verdict .tw-res-check .res-mark { width: 36px; height: 36px; }
-  /* The third reveal beat, once both player cards are up: the real star-progress meter
-     (#tw-avg-progress, filled via animateWorldProgress with the actual .wl-progress component -
-     same one Solo Worlds/the question phase/info screens use) fades in and fills live. */
-  .tw-avg-reveal { margin: 10px 0; opacity: 0; animation: twAvgIn 400ms ease-out forwards; }
-  /* Reserves the slot's real final height (pre-filled with the pre-round value) before its own
-     reveal step - invisible and un-animated until then, so the gap between the two cards is
-     already correct the moment both are up instead of growing a beat later. */
-  .tw-avg-pending { opacity: 0; animation: none; }
   /* "Your best teams"/Team Worlds' top-5 card rows (twBestRowHtml) - both avatars side by side
-     on the left, names beside them, the score line underneath in the same box. */
-  .tw-best-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; text-align: left; }
-  .tw-best-row:not(:last-child) { margin-bottom: 6px; border-bottom: 1px solid rgba(217,194,154,.5); padding-bottom: 12px; }
-  .tw-best-avatars { display: flex; flex-shrink: 0; }
-  .tw-best-avatars .avatar { font-size: 24px; }
-  .tw-best-avatars .avatar:nth-child(2) { margin-left: -10px; }
-  .tw-best-info { flex: 1; min-width: 0; }
-  .tw-best-names { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tw-best-stats { font-size: 12px; color: #6b5a46; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+     on the left with real breathing room between them (not overlapped), names beside them, the
+     score line underneath, the whole row centered as one block instead of stretching the text
+     column to the far edge of a much wider card. */
+  .tw-best-row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 10px 8px; border-radius: 12px; text-align: left; }
+  .tw-best-row:not(:last-child) { margin-bottom: 6px; border-bottom: 1px solid rgba(217,194,154,.5); padding-bottom: 14px; }
+  .tw-best-avatars { display: flex; gap: 6px; flex-shrink: 0; }
+  .tw-best-avatars .avatar { font-size: 30px; }
+  .tw-best-info { flex: 0 1 auto; min-width: 0; }
+  .tw-best-names { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tw-best-stats { font-size: 13px; color: #6b5a46; margin-top: 3px; display: flex; align-items: center; gap: 4px; }
   .tw-best-stats .wl-stars { display: inline-flex; gap: 1px; }
-  .tw-best-stats .wl-stars img { width: 13px; height: 13px; }
-  @keyframes twAvgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  @media (prefers-reduced-motion: reduce) { .tw-avg-reveal { animation: none; opacity: 1; } }
+  .tw-best-stats .wl-stars img { width: 14px; height: 14px; }
 
 
   /* ---- Paused overlay / kick modal / left screen ---- */
@@ -8650,27 +8655,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
   }
-  // Renders the real progress meter at oldAvg, then (after the browser has painted that starting
-  // state) mutates it in place to newAvg - the exact same component Solo Worlds/the question
-  // phase/the info screens already use, just animated between two values instead of always
-  // snapping straight to the final one. Used by Team Worlds' reveal screen so the bar visibly
-  // fills and any newly-earned star visibly lights up, instead of building a separate one-off
-  // bar that doesn't match the "normal star one" used everywhere else.
-  function animateWorldProgress(container, oldAvg, newAvg) {
-    if (!container) return;
-    container.innerHTML = worldProgressBarHtml(oldAvg);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const wrap = container.querySelector(".wl-progress");
-      const fillEl = container.querySelector(".wl-progress-fill");
-      if (!wrap || !fillEl) return;
-      const newStars = newAvg == null ? 0 : worldStarsFor(newAvg);
-      fillEl.style.setProperty("--accuracy", (newAvg ?? 0) + "%");
-      const headingStrong = container.querySelector(".wl-progress-heading strong");
-      if (headingStrong) headingStrong.textContent = newAvg == null ? "No answers yet" : formatAccuracy(newAvg) + "%";
-      container.querySelectorAll(".wl-progress-marker").forEach((m, i) => m.classList.toggle("earned", i < newStars));
-      wrap.classList.toggle("three-stars", newStars === 3);
-    }));
-  }
   function worldProgressHtml() {
     const accs = wl.guesses.map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
     const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
@@ -12001,6 +11985,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ANIM_HOLD_MS = 4500;   // time to look at the finished picture and the answer
   let animModulePromise = null;
   let animCtl = null;
+  let animCtlHideTally = null; // which mode animCtl was built for - see getAnimCtl()
   let animModuleResolved = null; // settled copy of loadAnimModule()'s promise, for the synchronous formatCount use in applyPhase()
   let animScene = null;
   let animSceneRound = null;
@@ -12119,12 +12104,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mod = await loadAnimModule();
     if (!mod) return null;
     animModuleResolved = mod;
-    if (!animCtl) {
-      animCtl = mod.createStackAnimation(animStageEl, {
-        theme: mod.LIGHT_THEME,
-        imageUrl: (o) => o.image,
-        hideTally: true, // the running count is mirrored onto the question paper instead (see runAnimation's onFrame)
-      });
+    // Party mirrors the running count onto the question paper instead (see runAnimation's
+    // onFrame) - Team Worlds shows nothing there at all, so it needs the animation engine's own
+    // built-in tally (same as Solo Worlds/Quick/Daily/Monthly) instead of hiding it. animCtl is
+    // one persistent instance reused every round - rebuilt only if the mode actually changed
+    // since it was created (e.g. leaving a Team Worlds room for a Party one in the same session).
+    const hideTally = roomState.settings?.mode !== "teamworlds";
+    if (!animCtl || animCtlHideTally !== hideTally) {
+      if (animCtl) try { animCtl.destroy(); } catch (e) { /* rebuilding anyway */ }
+      animCtl = mod.createStackAnimation(animStageEl, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image, hideTally });
+      animCtlHideTally = hideTally;
     }
     return animCtl;
   }
@@ -12180,11 +12169,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stageCtx = ctl.canvas.getContext("2d");
       stageCtx.clearRect(0, 0, ctl.canvas.width, ctl.canvas.height);
       const mod = await loadAnimModule();
+      const isTw = roomState.settings?.mode === "teamworlds";
       if (animSceneRound !== data.round || !animScene) {
         animScene = null;
         // The answer line appears under the question when the animation ends and pushes the stage
-        // down, so measure with it showing to leave room for it now.
-        const lineWasHidden = questionAnswerLineEl.style.display === "none";
+        // down, so measure with it showing to leave room for it now. Team Worlds never shows this
+        // line at all (its count lives in the animation engine's own built-in tally instead, same
+        // as Solo Worlds - see getAnimCtl/below), so there's nothing to reserve room for.
+        const lineWasHidden = !isTw && questionAnswerLineEl.style.display === "none";
         if (lineWasHidden) { questionAnswerLineEl.innerHTML = answerLineHtml("0.00"); questionAnswerLineEl.style.display = "block"; }
         const top = animStageEl.getBoundingClientRect().top;
         if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; }
@@ -12200,22 +12192,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
       animAudioInit();
-      // The running count used to live under the picture (the animation engine's own
-      // "tally", now suppressed via hideTally) - it ticks up on the question paper
-      // instead, through to completion, so the final "Answer:" line is just where the
-      // ticking stops rather than a separate value popping in afterward.
-      setAnswerLineValue(mod.formatCount(0, animScene.R));
+      // Party mirrors the running count onto the question paper, ticking up through to
+      // completion so the final "Answer:" line is just where the ticking stops. Team Worlds
+      // shows nothing there at all - the animation engine's own built-in tally (hideTally:false
+      // for this mode, see getAnimCtl) already draws the count under the floor, same as Solo
+      // Worlds, so there's nothing left to mirror.
+      if (!isTw) {
+        setAnswerLineValue(mod.formatCount(0, animScene.R));
+      }
       ctl.start(animScene, {
         startAt: data.animStartAt,
         now: animClock,
         onCue: playAnimCue,
-        onFrame: (t, shown) => {
+        onFrame: isTw ? undefined : (t, shown) => {
           if (token !== animToken) return;
           questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(shown, animScene.R));
         },
         onDone: () => {
           if (token !== animToken || !roomState || roomState.phase !== "animation") return;
           animDoneKey = key;
+          if (isTw) return;
           const q = roomState.currentQuestion;
           if (q) setAnswerLineValue(mod.formatCount(q.answer, animScene.R));
         },
@@ -13005,11 +13001,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const twQuestionPromptEl = document.getElementById("tw-question-prompt");
   const twQuestionStatsEl = document.getElementById("tw-question-stats");
   const twGuessDisplayEl = document.getElementById("tw-guess-display");
-  // The running game-average as of just before this round counted - captured here (the last
-  // point it's known) so the reveal screen can animate the real star-progress meter filling
-  // from this starting point up to the post-round value, instead of just snapping to it.
-  let twPreRoundAvg = null;
-  let twAvgAnimatedRound = null;
   // Team Worlds' "question" phase mimics Solo Worlds' own screen directly instead of reusing
   // Party's decorated prompt board/picture previews/paper guess display - in this exact order:
   // star progress meter, the two objects, the question, then (standing in for the power-up row
@@ -13047,7 +13038,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
-    twPreRoundAvg = teamAvg;
     twQuestionProgressEl.innerHTML = worldProgressBarHtml(teamAvg);
     const pair = q ? questionObjects(q) : null;
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
@@ -13633,10 +13623,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // beside the score) instead of Party's face-down flip cards - no "closest guess"/"second
   // chance" picking, none of which applies to a cooperative averaging game. Sequenced via the
   // SAME revealIndex-driven auto-advance timing every other mode already uses (no changes to
-  // that shared machinery), same fixed order all game. The average's slot is always rendered
-  // BETWEEN the two cards in the markup (top card / average / bottom card, a fixed three-slot
+  // that shared machinery), same fixed order all game. The team score's slot is always rendered
+  // BETWEEN the two cards in the markup (top card / score / bottom card, a fixed three-slot
   // layout), not appended after both - it just stays empty until both cards are up, then fills
-  // in live via a bar animation, "exciting to see what happens" per the user's own spec.
+  // in once its own deliberate reveal step arrives.
+  // This middle slot used to be the running star-progress meter ("Accuracy so far") - the user
+  // said no to that here explicitly ("I just want to know what the average accuracy for this
+  // round was"), so it's just this ROUND's team accuracy (data.lastRoundAccuracy, already
+  // computed once by finishTeamWorldsScoring) in a plain dc-card, matching Solo Worlds' own
+  // "X% accurate" styling. The cumulative star meter still belongs on the summary screen right
+  // after this (renderTeamWorldsSummary already shows it there) and on the question screen.
   function renderTeamWorldsReveal(data) {
     const order = data.revealOrder || [];
     const revealIndex = data.revealIndex || 0;
@@ -13655,37 +13651,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const e = order[i], p = currentPlayers[e.playerId] || {};
       return twResultCardHtml(e.accuracyPercent, e.guess, ans, p, e.name);
     };
-    // The team score doesn't reveal (fill in/light up) until its OWN deliberate step, one beat
-    // after both cards are up (a host-clicked "Reveal team score", or auto-advanced like any
-    // other step). Its SLOT still appears the moment both cards are up, though, pre-filled with
-    // the pre-round value and invisible (.tw-avg-pending) - the gap between the two cards is
-    // already the right size from that point on, so nothing shifts when the real value fades in;
-    // it used to only exist once revealed, which pushed the bottom card down a beat later.
     const bothCardsUp = order.length > 0 && revealIndex >= order.length;
     const showAverage = bothCardsUp && revealIndex >= totalSteps;
-    const avgHtml = bothCardsUp ? `<div class="tw-avg-reveal${showAverage ? "" : " tw-avg-pending"}"><div id="tw-avg-progress"></div></div>` : "";
+    const avgHtml = bothCardsUp
+      ? `<div class="dc-card dc-hot"><div class="dc-big">${showAverage ? `Team average: ${formatAccuracy(data.lastRoundAccuracy || 0)}%` : "&nbsp;"}</div></div>`
+      : "";
     revealListEl.innerHTML = cardFor(0) + avgHtml + cardFor(1);
-    if (bothCardsUp) {
-      const me = currentPlayers[currentPlayerId];
-      const newAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
-      const container = document.getElementById("tw-avg-progress");
-      if (!showAverage) {
-        // Reserving the slot only - show the pre-round value so the box is already at its real
-        // final height, nothing animated yet.
-        if (container) container.innerHTML = worldProgressBarHtml(twPreRoundAvg);
-      } else if (twAvgAnimatedRound !== data.round) {
-        // First time this round's average is actually revealed - animate the REAL star-progress
-        // meter (same one the question phase/Solo Worlds/the info screens use) filling from
-        // where it stood before this round to where it stands now, same component throughout
-        // rather than a one-off bar that doesn't match it.
-        twAvgAnimatedRound = data.round;
-        animateWorldProgress(container, twPreRoundAvg, newAvg);
-      } else if (container) {
-        // Already played the animation once for this round (e.g. a re-render from some other
-        // room update while still sitting on this screen) - just show the settled end state.
-        container.innerHTML = worldProgressBarHtml(newAvg);
-      }
-    }
   }
 
   function renderRevealChoreography(data) {
@@ -14370,7 +14341,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<div class="team-final-member"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${acc == null ? "" : `<span class="member-acc">${acc}%</span>`}</div>`;
     }).join("");
     const li = document.createElement("li");
-    li.className = "final-row team-final-row rank-1";
+    // No rank-1/medal/pts here - Team Worlds games are always just the one team/one result, not
+    // a ranked list like Team vs Team (which shares these same .team-final-row/.final-row-top
+    // base classes) - tw-final-row centers and enlarges everything instead of the ranked list's
+    // left-aligned, pts-on-the-right layout, which otherwise left a lot of empty space to the
+    // right of a short "Name & Name" line with nothing to balance it.
+    li.className = "final-row team-final-row tw-final-row";
     li.style.setProperty("--tc", "#8e7cf2");
     li.innerHTML = `
       <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
