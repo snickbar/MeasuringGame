@@ -47,7 +47,7 @@ let profile=fresh(),failure=false,lostResponse=false,transactions=0,levels=0;
 const store=new Map(),data={gameId:'game',round:1,animStartAt:1,settings:{solo:true},
  players:{me,easy,afk:hard},currentQuestion:{unitId:'ant',targetId:'door',answer:100},
  revealOrder:[{playerId:'me',guess:70,basePoints:3,isClosest:true,consecutiveWins:2},{playerId:'easy',guess:220}],lastRoundPoints:{me:3}};
-const context=vm.createContext({roundAccuracy,MODE_CODE,currentPlayerId:'me',deviceId:'owner',currentPlayers:data.players,currentRoomCode:'ROOM',roundStatsPending:new Set(),
+const context=vm.createContext({isHlSettings:()=>false,roundAccuracy,MODE_CODE,currentPlayerId:'me',deviceId:'owner',currentPlayers:data.players,currentRoomCode:'ROOM',roundStatsPending:new Set(),
  gameRewardKey,roundCareerProfile,computeRoundBreakdown:()=>({}),grantLevelRewards:()=>levels++,
  localStorage:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)},db:{},ref:(_,p)=>p,
  runTransaction:async(_,change)=>{transactions++;await Promise.resolve();if(failure)throw Error('offline');const next=change(structuredClone(profile));if(next)profile=next;if(lostResponse){lostResponse=false;throw Error('lost response')}return {committed:!!next,snapshot:{val:()=>structuredClone(profile)}}},console:{warn(){}}});
