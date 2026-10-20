@@ -15648,6 +15648,41 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     onSaved:async row=>{if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
+  // ==================== Live updates (native app only) ====================
+  // Every deploy publishes live/version.json + live/bundle.zip (scripts/build-live-bundle.js).
+  // On launch the native app compares that version with the one it is running
+  // (app-version.json, stamped into every build), downloads a newer bundle in
+  // the background and switches to it the NEXT time the app starts - never
+  // mid-game. notifyAppReady() tells the plugin this bundle booted fine; if it
+  // never arrives the plugin rolls back to the previous bundle by itself.
+  (function liveUpdates() {
+    const updater = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+    if (!updater) return;
+    try { updater.notifyAppReady(); } catch (err) {}
+    const MANIFEST_URL = "https://size-em-up.web.app/live/version.json";
+    async function check() {
+      try {
+        // Bundles are ~100 MB: wait for Wi-Fi rather than burn mobile data.
+        const conn = navigator.connection;
+        if (conn && (conn.type === "cellular" || conn.saveData)) return;
+        const mine = await (await fetch("app-version.json", { cache: "no-store" })).json();
+        const remote = await (await fetch(MANIFEST_URL + "?t=" + Date.now(), { cache: "no-store" })).json();
+        if (!mine.version || !remote.version || !remote.url || remote.version <= mine.version) return;
+        const { bundles } = await updater.list();
+        if ((bundles || []).some((b) => b.version === remote.version)) return; // already downloaded
+        const bundle = await updater.download({ url: remote.url, version: remote.version });
+        await updater.next({ id: bundle.id });
+        // Tidy up: keep only the running bundle and the one waiting for next launch.
+        const cur = await updater.current();
+        const keep = new Set([bundle.id, cur && cur.bundle && cur.bundle.id]);
+        for (const b of (await updater.list()).bundles || []) {
+          if (!keep.has(b.id) && b.id !== "builtin") { try { await updater.delete({ id: b.id }); } catch (err) {} }
+        }
+      } catch (err) { /* offline or manifest missing - try again next launch */ }
+    }
+    setTimeout(check, 8000);
+  })();
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
