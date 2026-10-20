@@ -1264,7 +1264,9 @@ if (location.protocol === "file:") {
   .avatar-choice .avatar-icon, .collection-tile .avatar-icon { filter: none; }
   #recent-rooms-section { margin: 12px 0 0; padding: 10px 14px 12px; background: #fffdfa; border-radius: 14px; box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08); text-align: center; }
   #recent-rooms-section h3 { margin: 0 0 6px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
-  .recent-room-row { display: flex; justify-content: center; align-items: center; gap: 14px; }
+  .recent-room-row { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 4px 0; }
+  .recent-room-row .rr-info { display: flex; flex-direction: column; align-items: center; }
+  .recent-room-row .rr-sub { font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; color: #1a1208; }
   .recent-room-row span { font-family: 'Fredoka', sans-serif; font-size: 24px; font-weight: 600; letter-spacing: .12em; color: #1a1208; }
   .recent-room-row button {
     --pic-h: 40px; width: auto; min-width: 110px; height: var(--pic-h); margin: 0; padding: 0 2px; font-size: 15px; font-family: 'Fredoka', sans-serif; color: #fff;
@@ -3753,7 +3755,7 @@ if (location.protocol === "file:") {
   <div id="code-keyboard" class="custom-kbd"></div>
 
   <div id="recent-rooms-section" style="display:none;">
-    <h3>Rejoin last game</h3>
+    <h3>My games</h3>
     <div id="recent-rooms-list"></div>
   </div>
 
@@ -5944,12 +5946,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
 
   function loadRecentRooms() {
-    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 1); } catch (e) { return []; }
+    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 5); } catch (e) { return []; }
   }
   function addRecentRoom(code) {
     const list = loadRecentRooms().filter((r) => r.code !== code);
     list.unshift({ code, joinedAt: Date.now() });
-    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 1)));
+    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 5)));
+  }
+  function removeRecentRoom(code) {
+    try { localStorage.setItem("mg_recentRooms", JSON.stringify(loadRecentRooms().filter((r) => r.code !== code))); } catch (e) {}
   }
 
   // Each object has an id, its real length in mm, and a cartoon picture used by the answer animation.
@@ -11120,19 +11125,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const row = document.createElement("div");
       row.className = "recent-room-row";
       row.style.display = "none";
+      const info = document.createElement("div");
+      info.className = "rr-info";
       const label = document.createElement("span");
       label.textContent = r.code;
+      const sub = document.createElement("div");
+      sub.className = "rr-sub";
+      info.appendChild(label);
+      info.appendChild(sub);
       const btn = document.createElement("button");
       btn.textContent = "Rejoin";
       btn.addEventListener("click", () => rejoinRoom(r.code));
-      row.appendChild(label);
+      row.appendChild(info);
       row.appendChild(btn);
       recentRoomsListEl.appendChild(row);
-      onValue(ref(db, `rooms/${r.code}/phase`), (snap) => {
-        const phase = snap.val();
-        if (phase !== null && phase !== "ended") {
+      onValue(ref(db, `rooms/${r.code}`), (snap) => {
+        const d = snap.val();
+        if (d && d.phase && d.phase !== "ended") {
+          const n = Object.values(d.players || {}).filter((p) => p && !p.isBot).length;
+          const where = d.phase === "waiting" ? "In the lobby" : (d.round ? `Round ${d.round}` : "In progress");
+          sub.textContent = `${where} \u00b7 ${n} player${n === 1 ? "" : "s"}`;
           row.style.display = "";
           recentRoomsSection.style.display = "block";
+        } else {
+          // Room is gone or finished: forget it so the list doesn't pile up.
+          removeRecentRoom(r.code);
         }
       }, { onlyOnce: true });
     });
@@ -13159,7 +13176,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("The other players can keep playing without you.", {
       title: "You left the game", icon: "icons/reactions/wave.png", tiles,
-      hint: `Want back in? Tap Join Game, then Rejoin under "Last game" (room ${roomCode}).`,
+      hint: `Want back in? Tap Join Game, then Rejoin under "My games" (room ${roomCode}).`,
     });
   }
 
