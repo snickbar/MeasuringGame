@@ -2827,6 +2827,12 @@ if (location.protocol === "file:") {
   .tw-rc.anim .tw-rc-pct { animation: twRise .5s cubic-bezier(.2,1.2,.4,1) 1.15s both; }
   .tw-rc.anim .tw-res-check { animation: twVerdict .6s cubic-bezier(.2,1.5,.4,1) 2.05s both; }
   .tw-ph { visibility: hidden; }
+  /* A short comment on the team average ("So close!") that pops over the card, then floats away on its own. */
+  .tw-slot { position: relative; }
+  .tw-quip { position: absolute; left: 50%; top: 50%; z-index: 5; transform: translate(-50%, -50%) rotate(-3deg); padding: 6px 18px; border-radius: 999px; background: #fff3b8; border: 3px solid #f0a81c; box-shadow: 0 4px 14px rgba(0,0,0,.25); font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; line-height: 1.15; color: #6a328c; white-space: nowrap; pointer-events: none; animation: twQuip 2.4s ease-out both; }
+  .tw-quip.good { background: #d9f7c4; border-color: #5aa83a; color: #2d6a14; }
+  .tw-quip.bad { background: #ffe0d6; border-color: #e0654a; color: #9b2c14; }
+  @keyframes twQuip { 0% { opacity: 0; transform: translate(-50%, -30%) rotate(-3deg) scale(.3); } 14% { opacity: 1; transform: translate(-50%, -50%) rotate(-3deg) scale(1.2); } 24% { transform: translate(-50%, -50%) rotate(-3deg) scale(1); } 78% { opacity: 1; transform: translate(-50%, -50%) rotate(-3deg) scale(1); } 100% { opacity: 0; transform: translate(-50%, -95%) rotate(-3deg) scale(1); } }
   /* Heading pill at the top of the Round Summary / Game Progress screens (same look as the app's other pill headings). */
   .tw-head { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 300px; max-width: 100%; min-height: 38px; margin: 0 auto 8px; padding: 4px 14px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #000; text-align: center; background: rgba(255,255,255,.62); border-radius: 12px; }
   #reveal-list > .tw-head { margin-top: -14px; }
@@ -2865,7 +2871,7 @@ if (location.protocol === "file:") {
   @keyframes twAvgGlow { 0% { box-shadow: 0 0 0 0 rgba(255,200,60,.9); } 100% { box-shadow: 0 0 0 26px rgba(255,200,60,0); } }
   @keyframes twStarPop { 0% { transform: scale(1) rotate(0); filter: grayscale(1); } 45% { transform: scale(1.9) rotate(-14deg); filter: none; } 100% { transform: scale(1) rotate(0); filter: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .tw-rr.anim .tw-sumrow-said, .tw-rr.anim .tw-sumrow-pct, .tw-rr.anim .res-mark, .tw-qtop-a b, .tw-avg-num.pop, .tw-avg.glow, .tw-sum .wl-progress-marker.pop .wl-progress-star { animation: none; }
+    .tw-rr.anim .tw-sumrow-said, .tw-rr.anim .tw-sumrow-pct, .tw-rr.anim .res-mark, .tw-quip, .tw-qtop-a b, .tw-avg-num.pop, .tw-avg.glow, .tw-sum .wl-progress-marker.pop .wl-progress-star { animation: none; }
     .tw-sum .wl-progress-fill { transition: none; }
   }
   /* "Your best teams"/Team Worlds' top-5 card rows (twBestRowHtml) - both avatars side by side
@@ -13800,6 +13806,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (t < 1) requestAnimationFrame(step);
     })(t0);
   }
+  // A little comment on the team's round accuracy. Same phrase for both players: it is picked from the
+  // round itself (not random per screen), so a teammate's phone shows the same words.
+  const TW_QUIPS = [
+    [15, "bad", ["Way off!", "Yikes!", "Not even close!", "Oof!", "Swing and a miss!"]],
+    [35, "bad", ["Not quite", "Keep trying!", "Off the mark", "Rough one", "Back to the drawing board"]],
+    [55, "", ["Getting warmer", "Not bad", "Room to grow", "Almost something", "Decent try"]],
+    [70, "", ["Pretty close!", "Nice try!", "Solid!", "Respectable!", "Getting there!"]],
+    [85, "good", ["So close!", "Great!", "Nice one!", "Well done!", "Looking sharp!"]],
+    [95, "good", ["Excellent!", "Wow, so good!", "Nailed it!", "Superb!", "Right on target!"]],
+    [101, "good", ["PERFECT!", "Spot on!", "Unreal!", "Bullseye!", "Flawless!"]]
+  ];
+  function twQuipFor(avg, seedText) {
+    const tier = TW_QUIPS.find((t) => avg < t[0]) || TW_QUIPS[TW_QUIPS.length - 1];
+    let h = 0;
+    for (const c of String(seedText)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return { text: tier[2][h % tier[2].length], cls: tier[1] };
+  }
+  function twShowQuip(slotEl, avg, seedText) {
+    if (!slotEl) return;
+    const q = twQuipFor(avg, seedText);
+    const el = document.createElement("div");
+    el.className = "tw-quip" + (q.cls ? " " + q.cls : "");
+    el.textContent = q.text;
+    slotEl.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  }
   // Like twCountUp, but starts from a given value (the game average climbing from where it stood).
   function twCountUpFrom(el, from, to, ms, suffix) {
     if (!el) return;
@@ -13862,6 +13894,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         setTimeout(() => {
           if (twRevealSig !== sig) return;
           num.classList.add("pop"); card.classList.add("glow");
+          twShowQuip(card.parentElement, avg, gameKey);
           playSound(avg >= 75 ? "roundwin" : "select");
           if (avg >= 75) celebrate(avg >= 90 ? "spotOn" : "normal");
         }, 1100);
