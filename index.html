@@ -2356,15 +2356,25 @@ if (location.protocol === "file:") {
   .hl-role { display: block; margin: 6px auto 0; padding: 4px 12px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; border: 2px solid #4a2c12; }
   .hl-role.hl-high { background: linear-gradient(180deg, #ffd9c8, #ffb59a); }
   .hl-role.hl-low { background: linear-gradient(180deg, #d4ebff, #a9d2fb); }
-  .hl-limit { display: block; margin: 4px auto 0; padding: 2px 12px; width: fit-content; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; background: #fff3d6; border: 2px solid #4a2c12; }
+  .hl-sub-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; }
+  #tw-question-progress .sv-hud { margin: 0 0 2px; gap: 0; }
+  #tw-question-progress .sv-heart { width: 34px; }
+  .hl-limit { display: block; margin: 0; padding: 1px 10px; width: fit-content; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; background: #fff3d6; border: 2px solid #4a2c12; }
   .hl-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 10px 1px 7px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: #fff; text-shadow: 0 1px 0 #4a2c12, 1px 0 0 #4a2c12, -1px 0 0 #4a2c12, 0 -1px 0 #4a2c12; border: 2px solid #4a2c12; box-shadow: 0 2px 0 #4a2c12; line-height: 1.25; }
   .hl-chip svg { width: 12px; height: 12px; fill: #fff; stroke: #4a2c12; stroke-width: 2.2; stroke-linejoin: round; paint-order: stroke; flex: none; }
   .hl-chip.hl-high { background: linear-gradient(180deg, #ff9a6b, #e8452c); }
   .hl-chip.hl-low { background: linear-gradient(180deg, #7cc4ff, #2a74d6); }
   .hl-sum-stats { display: flex; justify-content: center; gap: 18px; margin-top: 6px; }
   .hl-sum-stats > div { display: flex; flex-direction: column; align-items: center; }
-  .hl-sum-stats b { font-family: 'Fredoka', sans-serif; font-size: 22px; color: var(--brand); }
-  .hl-sum-stats span { font-size: 11px; font-weight: 700; color: #000; }
+  .hl-sum-stats b { font-family: 'Fredoka', sans-serif; font-size: 28px; color: var(--brand); }
+  .hl-sum-stats { margin-top: 12px; }
+  .hl-sum-avg b { font-size: 44px; line-height: 1.05; }
+  .hl-sum-avg span { font-size: 13px; }
+  .hl-sum-card { padding-block: 16px; }
+  .hl-sum-card .sv-heart { width: 56px; }
+  .hl-sum-card .hl-sub { font-size: 16px; }
+  .hl-sumplayer { grid-template-columns: auto minmax(0,1fr); }
+  .hl-sum-stats span { font-size: 12px; font-weight: 700; color: #000; }
   .hl-br { text-align: center; }
   .hl-br-label { font-size: 14px; font-weight: 700; color: #000; }
   .hl-br-num { font-family: 'Fredoka', sans-serif; font-size: 38px; font-weight: 700; line-height: 1.05; color: #000; }
@@ -13550,7 +13560,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
   function hlHeartsHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
-    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>`;
+    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div></div>`;
   }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
@@ -14324,6 +14334,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const showSum = revealIndex >= totalSteps;
       if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
       showSummaryBtn.style.display = showSum ? "flex" : "none";
+      showSummaryBtn.textContent = isHlSettings(data.settings) ? "Game progress" : "Show summary";
     }
     // Re-rendering replaces the cards, which would restart their step-by-step animation on every
     // unrelated room update - only redraw when the reveal actually advanced.
@@ -14464,6 +14475,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const showSum = revealIndex >= order.length;
       if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
       showSummaryBtn.style.display = showSum ? "flex" : "none";
+      showSummaryBtn.textContent = "Show summary";
     }
   }
 
@@ -14904,16 +14916,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       summaryListEl.innerHTML = "";
       const hLi = document.createElement("li");
       hLi.className = "tw-headrow";
-      hLi.innerHTML = twHeadHtml("Survival");
+      hLi.innerHTML = twHeadHtml("Game Progress");
       summaryListEl.appendChild(hLi);
       const over = hlGameOver();
       const sLi = document.createElement("li");
       sLi.className = "summary-row tw-sum";
-      sLi.innerHTML = twQTopHtml(q, ans)
-        + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
+      const hlMe = currentPlayers[currentPlayerId];
+      const hlAvg = hlMe && hlMe.roundsCounted ? hlMe.accuracySum / hlMe.roundsCounted : null;
+      const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span></div>` : "";
+      sLi.innerHTML = hlPlayer(entries[0])
         + `<div class="dc-card dc-hot tw-avg hl-sum-card"><div class="tw-avg-label">${over ? "Game over" : "Team lives"}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data, true)}</div>`
+        + `<div class="hl-sum-stats"><div class="hl-sum-avg"><b>${hlAvg == null ? "--" : formatAccuracy(hlAvg) + "%"}</b><span>Your average accuracy</span></div></div>`
         + `<div class="hl-sum-stats"><div><b>${data.hlSyncStreak || 0}</b><span>In sync streak</span></div><div><b>${data.hlBestSyncStreak || 0}</b><span>Best streak</span></div></div></div>`
-        + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
+        + hlPlayer(entries[1]);
       summaryListEl.appendChild(sLi);
       return;
     }
