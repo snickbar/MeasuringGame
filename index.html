@@ -8767,37 +8767,77 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest(".sh-card");
     if (!b) return;
     if (b.id === "pm-classic") {
-      afterBtnBounce(b, async () => {
-        const granted = await confirmAndPurchaseHostUnlock("classic");
-        if (!granted) return;
-        pendingFreeGame = granted === "free";
-        partyFromHub = true;
-        closeOverlay();
-        showCreateScreen("classic");
-      });
+      afterBtnBounce(b, () => openClassicInfo());
     } else if (b.id === "pm-teamvteam") {
       afterBtnBounce(b, () => openTeamVTeamInfo());
     } else if (b.id === "pm-teamworlds") {
       afterBtnBounce(b, () => openTeamWorldsScreen());
     } else if (b.id === "pm-hlsurvival") {
-      afterBtnBounce(b, async () => {
-        const granted = await confirmAndPurchaseHostUnlock("hlsurvival");
-        if (!granted) return;
-        pendingFreeGame = granted === "free"; // today's free game is capped at HL_FREE_CAP survived rounds
-        pendingWorldId = null;
-        // Nothing to configure (no World, rounds or timer), so skip the Create Room screen like Team Worlds does.
-        createMode = "hlsurvival";
-        currentSettings = DEFAULT_SETTINGS();
-        hostTransferModeChoice = "reassign";
-        ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
-        overlayReturnScreen = null;
-        overlayFocusReturn = null;
-        syncOverlayReturnFlag();
-        await hostRoomNow((text) => { createStatusEl.textContent = text; });
-      });
+      afterBtnBounce(b, () => openHlInfo());
     }
   });
   document.getElementById("party-close-btn").addEventListener("click", () => closeOverlay());
+
+  // Classic Party and High/Low Survival get an intro page like Team vs Team's (the same overlay
+  // screen, different content): what the mode is, how it scores, then "your best" at the bottom.
+  function classicBestHtml() {
+    const games = (myProfile.matches || []).filter((m) => m.mode === "party" && Number.isFinite(m.score));
+    const st = myProfile.modeStats?.party || {};
+    if (!games.length && !st.games) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
+    const rows = games.slice().sort((a, b) => b.score - a.score || b.t - a.t).slice(0, 3);
+    const head = st.games ? `<div class="dc-note" style="text-align:center;font-weight:700">${st.games} game${st.games === 1 ? "" : "s"} played &middot; ${st.wins || 0} win${(st.wins || 0) === 1 ? "" : "s"}</div>` : "";
+    return `<div class="dc-card">${head}${rows.map((r) => `<div class="tw-best-row"><div class="tw-best-avatars"><span class="avatar">${avatarHtml(r.myAvatar)}</span></div>
+      <div class="tw-best-info"><div class="tw-best-names">${r.score} points</div><div class="tw-best-stats">${r.place ? "Place #" + r.place + " &middot; " : ""}${r.accuracy ? formatAccuracy(r.accuracy) + "% avg &middot; " : ""}${new Date(r.t).toLocaleDateString()}</div></div></div>`).join("")}</div>`;
+  }
+  function hlBestHtml() {
+    const rows = topScores(historyRows(myProfile.hlHistory || {}), 3);
+    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No runs yet &mdash; play with a partner to get started!</div></div>`;
+    return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
+      `${r.s} round${r.s === 1 ? "" : "s"} survived${r.syncStreak ? ` &middot; best streak ${r.syncStreak}` : ""}`, r.t)).join("")}</div>`;
+  }
+  function openClassicInfo() {
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Classic Party</h2><p class="dc-sub">Everyone for themselves &mdash; bots can fill in</p>
+      <div class="dc-card dc-hot"><div class="dc-big">Closest guess wins</div><div class="dc-note">Everyone sees the same two objects and guesses how many of one fit in the other. Whoever lands closest takes the round.</div></div>
+      <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
+      <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
+      <button type="button" class="dc-btn" id="classic-start">Create Room</button>
+      <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}`;
+    openOverlay(teamvteamScreenEl);
+    overlayReturnScreen = partyScreenEl;
+  }
+  function openHlInfo() {
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>
+      <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
+      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. If the real answer sits between your two picks and your team's average accuracy clears ${HL_PASS}%, you survive. Cross your picks, miss the range or fall short and you lose a life.</div></div>
+      <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
+      <button type="button" class="dc-btn" id="hl-start">Create Room</button>
+      <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}`;
+    openOverlay(teamvteamScreenEl);
+    overlayReturnScreen = partyScreenEl;
+  }
+  async function startClassicFromInfo() {
+    const granted = await confirmAndPurchaseHostUnlock("classic");
+    if (!granted) return;
+    pendingFreeGame = granted === "free";
+    partyFromHub = true;
+    closeOverlay();
+    showCreateScreen("classic");
+  }
+  async function startHlFromInfo() {
+    const granted = await confirmAndPurchaseHostUnlock("hlsurvival");
+    if (!granted) return;
+    pendingFreeGame = granted === "free"; // today's free game is capped at HL_FREE_CAP survived rounds
+    pendingWorldId = null;
+    // Nothing to configure (no World, rounds or timer), so skip the Create Room screen like Team Worlds does.
+    createMode = "hlsurvival";
+    currentSettings = DEFAULT_SETTINGS();
+    hostTransferModeChoice = "reassign";
+    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+    overlayReturnScreen = null;
+    overlayFocusReturn = null;
+    syncOverlayReturnFlag();
+    await hostRoomNow((text) => { createStatusEl.textContent = text; });
+  }
 
   // Shared by both "best list" cards (Team vs Team's best teams, Team Worlds' top 5 for a
   // World): both avatars side by side on the left, both names next to them, then the score
@@ -8826,6 +8866,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen = partyScreenEl;
   }
   teamvteamContentEl.addEventListener("click", (e) => {
+    const classicBtn = e.target.closest("#classic-start"), hlBtn = e.target.closest("#hl-start");
+    if (classicBtn) { afterBtnBounce(classicBtn, () => startClassicFromInfo()); return; }
+    if (hlBtn) { afterBtnBounce(hlBtn, () => startHlFromInfo()); return; }
     if (!e.target.closest("#tvt-start")) return;
     afterBtnBounce(e.target.closest("#tvt-start"), async () => {
       const granted = await confirmAndPurchaseHostUnlock("teamvteam");
@@ -9136,6 +9179,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}%`, r.t)).join("")}</div>`;
   }
+  // Best 5 team games across every World, for the bottom of the World picker.
+  function teamWorldsOverallBestHtml() {
+    const all = [];
+    WORLDS.forEach((x) => historyRows(myProfile.teamWorldsHistory?.[x.id] || {}).forEach((r) => all.push({ ...r, worldName: x.name })));
+    const rows = topScores(all, 5);
+    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
+    return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
+      `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}% &middot; ${escapeHtml(r.worldName)}`, r.t)).join("")}</div>`;
+  }
   function renderTeamWorldsScreen() {
     const el = teamworldsContentEl;
     if (!twWorldId) {
@@ -9143,7 +9195,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i);
           return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : "Unlock this World in Solo first", { disabled: !open });
-        }).join("");
+        }).join("") + `<h3 class="cs-h">Your best team games</h3>${teamWorldsOverallBestHtml()}`;
       return;
     }
     const w = WORLDS.find((x) => x.id === twWorldId);
