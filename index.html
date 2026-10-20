@@ -2261,6 +2261,9 @@ if (location.protocol === "file:") {
     margin-top: -4px; animation: popIn 300ms ease;
   }
   .score-card:first-child { margin-top: 0; }
+  /* Away player: card greys out and gets an AWAY pill (see applyAwayMarks) */
+  .is-away > * { filter: grayscale(1); opacity: .5; }
+  .is-away::after { content: "AWAY"; position: absolute; top: 3px; right: 5px; z-index: 3; padding: 1px 7px; border-radius: 999px; background: #fff; color: #000; border: 1.5px solid #000; font-family: 'Fredoka', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; line-height: 1.3; pointer-events: none; }
   .score-card.round-winner { animation: popIn 300ms ease, winnerPulse 1.5s ease-in-out infinite; z-index: 1; }
   .score-card.round-winner::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: winnerInset 1.5s ease-in-out infinite; }
   @keyframes winnerPulse { 0%, 100% { filter: drop-shadow(0 0 2px rgba(255,200,60,.7)); } 50% { filter: drop-shadow(0 0 8px rgba(255,200,60,1)); } }
@@ -12568,7 +12571,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const players = roomState.players || {};
     const guesses = roomState.guesses || {};
     const activeIds = Object.keys(players);
-    const guessedCount = activeIds.filter((id) => guesses[id] !== undefined).length;
+    // Players who are away (closed the app) don't hold the round up: once everyone who is
+    // still here has answered, the round moves on instead of waiting out the whole timer.
+    // They keep their seat and just score nothing for the rounds they miss.
+    const waitIds = activeIds.filter((id) => id === currentPlayerId || !isPlayerAway(players[id]));
+    const guessedCount = waitIds.filter((id) => guesses[id] !== undefined).length;
     const now = nowMs();
 
     if (now >= roomState.questionEndsAt || (roomState.graceEndsAt && now >= roomState.graceEndsAt)) {
@@ -12576,15 +12583,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       lockQuestionAndAdvance(roomCode, activeIds, guesses).finally(() => { transitionInFlight = false; });
       return;
     }
-    if (!roomState.graceEndsAt && activeIds.length > 0 && guessedCount >= activeIds.length) {
+    if (!roomState.graceEndsAt && waitIds.length > 0 && guessedCount >= waitIds.length) {
       // Grace window once everyone's answered, before the round locks and
       // moves to second chance - gives players a beat to send a reaction
       // emoji rather than snapping straight to the next phase.
       const ge = now + 5000;
       set(ref(db, `rooms/${roomCode}/graceEndsAt`), ge);
       scheduleHostDeadline(ge, () => checkQuestionAdvance(roomCode));
+    } else if (!roomState.graceEndsAt) {
+      // Someone who hasn't answered just disconnected: they only count as away after a short
+      // delay, and no database change happens at that moment, so look again right then.
+      let recheckAt = Infinity;
+      for (const id of activeIds) {
+        const p = players[id];
+        if (guesses[id] === undefined && p && !p.isBot && p.connected === false && typeof p.disconnectedAt === "number") {
+          recheckAt = Math.min(recheckAt, p.disconnectedAt + AWAY_AFTER_MS + 200);
+        }
+      }
+      if (recheckAt > now && recheckAt < Infinity) {
+        clearTimeout(awayRecheckTimer);
+        awayRecheckTimer = scheduleHostDeadline(recheckAt, () => checkQuestionAdvance(roomCode));
+      }
     }
   }
+  let awayRecheckTimer = null;
 
   // The hidden "true answer" second-chance card.
   const TRUTH_ID = "__truth__";
@@ -14068,6 +14090,41 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return scoreColEl.querySelector(`[data-id="${id}"]`) || scoreColEl.querySelector(`[data-members~="${id}"]`)
       || document.getElementById("tw-question-stats").querySelector(`[data-id="${id}"]`);
   }
+  // ---- "Away" marker: once a game has started, a player who has closed the app keeps their
+  // seat (see the presence sweep) and their card turns grey with an AWAY tag until they return.
+  // One function covers every place a player card is drawn (score column, Team Worlds stats and
+  // reveal/summary rows) by matching their data-id / data-members, so no renderer needs changes.
+  const AWAY_AFTER_MS = 8000; // ignore the brief blips of switching apps or a flaky connection
+  // True once a real player has been disconnected long enough to count as "away".
+  function isPlayerAway(p) {
+    if (!p || p.isBot || p.connected !== false) return false;
+    return !(typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt < AWAY_AFTER_MS);
+  }
+  function applyAwayMarks() {
+    const players = (roomState && roomState.players) || {};
+    const started = roomState && roomState.phase && roomState.phase !== "waiting";
+    const away = new Set();
+    if (started) {
+      for (const [id, p] of Object.entries(players)) {
+        if (id !== currentPlayerId && isPlayerAway(p)) away.add(id);
+      }
+    }
+    const roots = [scoreColEl, revealListEl, document.getElementById("tw-question-stats")].filter(Boolean);
+    for (const root of roots) {
+      root.querySelectorAll("[data-id], [data-members]").forEach((el) => {
+        const members = el.dataset.members ? el.dataset.members.split(/\s+/).filter(Boolean) : [el.dataset.id];
+        const isAway = members.length > 0 && members.every((m) => away.has(m));
+        if (isAway && !el.classList.contains("is-away") && getComputedStyle(el).position === "static") el.style.position = "relative";
+        el.classList.toggle("is-away", isAway);
+      });
+    }
+  }
+  let awayFrame = 0;
+  function queueAwayMarks() { if (!awayFrame) awayFrame = requestAnimationFrame(() => { awayFrame = 0; applyAwayMarks(); }); }
+  [scoreColEl, revealListEl, document.getElementById("tw-question-stats")].forEach((root) => {
+    if (root) new MutationObserver(queueAwayMarks).observe(root, { childList: true, subtree: true });
+  });
+  setInterval(applyAwayMarks, 3000);
   let lastScoreColumnSignature = null;
   const newLeader = createLeadMotion();
   const submissionMotion = createSubmissionMotion({ bounce(id) {
