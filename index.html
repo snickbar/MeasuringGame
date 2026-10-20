@@ -2359,6 +2359,10 @@ if (location.protocol === "file:") {
   .hl-chip { padding: 1px 10px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: #000; border: 2px solid #4a2c12; }
   .hl-chip.hl-high { background: #ffd1c9; }
   .hl-chip.hl-low { background: #c9e4ff; }
+  .hl-sum-stats { display: flex; justify-content: center; gap: 18px; margin-top: 6px; }
+  .hl-sum-stats > div { display: flex; flex-direction: column; align-items: center; }
+  .hl-sum-stats b { font-family: 'Fredoka', sans-serif; font-size: 22px; color: var(--brand); }
+  .hl-sum-stats span { font-size: 11px; font-weight: 700; color: #000; }
   .hl-verdict { text-align: center; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .hl-verdict-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: #000; }
   .hl-verdict.ok .hl-verdict-title { color: #1f7a1f; }
@@ -14619,7 +14623,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       summaryListEl.appendChild(li);
     });
     if (isHost) {
-      const isLast = (data.round || 1) >= (data.settings || currentSettings).totalRounds;
+      const isLast = isHlSettings(data.settings) ? hlGameOver() : (data.round || 1) >= (data.settings || currentSettings).totalRounds;
       nextRoundBtn.textContent = isLast ? "Finish game" : "Next round";
       if (nextRoundBtn.style.display !== "flex") navGuardAt = nowMs();
       nextRoundBtn.style.display = "flex";
@@ -14721,6 +14725,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const sig = `${currentRoomCode}:${data.gameId || ""}:${data.round || 1}`;
     if (sig === twSummarySig && summaryListEl.firstChild) return;
     twSummarySig = sig;
+    if (isHlSettings(data.settings)) {
+      // High/Low Survival: no star meter - the story is lives, rounds survived and the in-sync streak.
+      summaryListEl.innerHTML = "";
+      const hLi = document.createElement("li");
+      hLi.className = "tw-headrow";
+      hLi.innerHTML = twHeadHtml("Survival");
+      summaryListEl.appendChild(hLi);
+      const over = hlGameOver();
+      const sLi = document.createElement("li");
+      sLi.className = "summary-row tw-sum";
+      sLi.innerHTML = twQTopHtml(q, ans)
+        + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
+        + `<div class="dc-card dc-hot tw-avg hl-sum-card"><div class="tw-avg-label">${over ? "Game over" : "Team lives"}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data)}</div>`
+        + `<div class="hl-sum-stats"><div><b>${data.hlSyncStreak || 0}</b><span>In sync streak</span></div><div><b>${data.hlBestSyncStreak || 0}</b><span>Best streak</span></div></div></div>`
+        + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
+      summaryListEl.appendChild(sLi);
+      return;
+    }
     const me = currentPlayers[currentPlayerId];
     const n = me?.roundsCounted || 0;
     const runningAvg = n ? me.accuracySum / n : null;
