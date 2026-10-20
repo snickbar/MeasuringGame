@@ -8962,12 +8962,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         createMode = "teamworlds";
         currentSettings = DEFAULT_SETTINGS();
         hostTransferModeChoice = "reassign";
-        // Closed up front, same as before (this used to immediately precede showCreateScreen,
-        // which also closed it) - the room-creation transaction below is a single near-instant
-        // Firebase write, and leaving the overlay open through it risks it and the name/avatar
-        // screen both ending up with .active at once once hostRoomNow navigates on success
-        // (showNameAvatarScreen only clears create/join, not every OVERLAY_SCREENS entry).
-        closeOverlay();
+        // NOT closeOverlay() - that restores this overlay's own "return screen"
+        // (overlayReturnScreen, the Party hub) as newly .active, same as it always does when
+        // backing out normally. showNameAvatarScreen (called by hostRoomNow on success) only
+        // ever clears create/join's .active, because it always used to run right after
+        // showCreateScreen's own ALL_SCREEN_ELS.forEach(remove active) - it was never written to
+        // expect anything else still active. Skipping showCreateScreen here (previous commit)
+        // means that clear-everything step has to happen here instead, or the Party hub stays
+        // active underneath and both screens render stacked - clear every screen directly, same
+        // as showCreateScreen/openOverlay already do, instead of routing through closeOverlay.
+        ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+        overlayReturnScreen = null;
+        overlayFocusReturn = null;
+        syncOverlayReturnFlag();
         await hostRoomNow((text) => { createStatusEl.textContent = text; });
       });
     }
