@@ -44,8 +44,9 @@ for(const [id,count,home]of [['under-the-sea',18,'underwater'],['toy-box',17,'to
   }
 }
 const sea=api.WORLDS.findIndex(w=>w.id==='under-the-sea'),toy=api.WORLDS.findIndex(w=>w.id==='toy-box');
-assert(!api.worldUnlocked(sea));ctx.myProfile.worlds.landmarks={l5:2};assert(api.worldUnlocked(sea));assert(!api.worldUnlocked(toy));
-ctx.myProfile.worlds['under-the-sea']={l5:2};assert(api.worldUnlocked(toy));
+// Every regular World is open from the start; only Make Believe (below) is earned.
+assert(api.worldUnlocked(sea),'Worlds are open from the start');assert(api.worldUnlocked(toy),'Worlds are open from the start');
+assert(!api.worldUnlocked(api.WORLDS.findIndex(w=>w.id==='make-believe')),'Make Believe stays locked until creatures are earned');
 ctx.myProfile.worlds={home:{l1:1}};assert(api.worldUnlocked(api.WORLDS.findIndex(w=>w.id==='home')),'earned progress remains open');
 ctx.unlockedFantasyIds=()=>Array(20).fill('unlocked');assert(api.worldUnlocked(api.WORLDS.findIndex(w=>w.id==='make-believe')),'fantasy unlock remains independent');
 
