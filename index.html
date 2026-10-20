@@ -2813,6 +2813,7 @@ if (location.protocol === "file:") {
   .tw-rc.anim .tw-rc-guess { animation: twRise .5s cubic-bezier(.2,1.2,.4,1) .15s both; }
   .tw-rc.anim .tw-rc-pct { animation: twRise .5s cubic-bezier(.2,1.2,.4,1) 1.15s both; }
   .tw-rc.anim .tw-res-check { animation: twVerdict .6s cubic-bezier(.2,1.5,.4,1) 2.05s both; }
+  .tw-ph { visibility: hidden; }
   .tw-avg { margin: 6px 0; padding: 10px 12px 12px; text-align: center; }
   .tw-avg-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #000; }
   .tw-avg-num { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.05; color: #6a328c; display: inline-block; }
@@ -13790,20 +13791,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!Object.keys(twRevealAnimated).some((k) => k.startsWith(prefix))) twRevealAnimated = {};
     const bothUp = order.length > 0 && revealIndex >= order.length;
     const showAverage = bothUp && revealIndex >= totalSteps;
-    let html = twQTopHtml(q, ans);
-    const timers = [];
+    // Every slot (player 1, the team average, player 2) is always laid out - a not-yet-revealed one is
+    // just invisible - so nothing ever moves when the next one appears.
+    const timers = [], cards = [];
     order.forEach((e, i) => {
-      if (revealIndex <= i) return;
-      const key = prefix + i, fresh = !twRevealAnimated[key] && i === revealIndex - 1 && !prefersReducedMotion();
-      twRevealAnimated[key] = true;
-      html += twRevealCardHtml(e, currentPlayers[e.playerId] || {}, fresh);
+      const shown = revealIndex > i;
+      const key = prefix + i, fresh = shown && !twRevealAnimated[key] && i === revealIndex - 1 && !prefersReducedMotion();
+      if (shown) twRevealAnimated[key] = true;
+      cards.push(`<div class="tw-slot${shown ? "" : " tw-ph"}">${twRevealCardHtml(e, currentPlayers[e.playerId] || {}, fresh)}</div>`);
       if (fresh) {
         const hi = e.accuracyPercent >= 90;
         timers.push([150, "tap"], [1150, "tap"], [2050, hi ? "roundwin" : "select"]);
       }
     });
-    if (showAverage) html += `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average</div><div class="tw-avg-num">0%</div></div>`;
-    revealListEl.innerHTML = html;
+    const avgCard = `<div class="tw-slot${showAverage ? "" : " tw-ph"}"><div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average</div><div class="tw-avg-num">${showAverage ? "0%" : "00.0%"}</div></div></div>`;
+    revealListEl.innerHTML = twQTopHtml(q, ans) + (cards[0] || "") + (order.length > 1 ? avgCard : "") + (cards[1] || "");
     timers.forEach(([ms, snd]) => setTimeout(() => { if (twRevealSig === sig) playSound(snd); }, ms));
     if (showAverage) {
       const avg = data.lastRoundAccuracy || 0, card = revealListEl.querySelector(".tw-avg"), num = revealListEl.querySelector(".tw-avg-num");
@@ -14305,8 +14307,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const li = document.createElement("li");
     li.className = "summary-row tw-sum";
     li.innerHTML = twQTopHtml(q, ans)
-      + entries.map((e) => twSumRowHtml(e, currentPlayers[e.playerId] || {})).join("")
-      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average this round</div><div class="tw-avg-num">${formatAccuracy(roundAccuracyPct)}%</div>${worldProgressBarHtml(startAvg)}</div>`;
+      + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
+      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average this round</div><div class="tw-avg-num">${formatAccuracy(roundAccuracyPct)}%</div>${worldProgressBarHtml(startAvg)}</div>`
+      + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
     summaryListEl.appendChild(li);
     if (runningAvg == null || prefersReducedMotion()) return;
     const bar = li.querySelector(".wl-progress"), fill = li.querySelector(".wl-progress-fill"), head = li.querySelector(".wl-progress-heading strong");
