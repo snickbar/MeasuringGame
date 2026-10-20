@@ -23,7 +23,10 @@ const version = JSON.parse(fs.readFileSync(path.join(WWW, "app-version.json"), "
 
 execSync("zip -qr " + JSON.stringify(path.join(OUT, "bundle.zip")) + " .", { cwd: WWW, stdio: "inherit" });
 
-const manifest = { version, url: BASE_URL + "/bundle.zip", builtAt: new Date().toISOString() };
+// The updater plugin refuses to install a bundle without its SHA-256 (lowercase hex) to verify the download.
+const checksum = require("crypto").createHash("sha256").update(fs.readFileSync(path.join(OUT, "bundle.zip"))).digest("hex");
+
+const manifest = { version, url: BASE_URL + "/bundle.zip", checksum, builtAt: new Date().toISOString() };
 fs.writeFileSync(path.join(OUT, "version.json"), JSON.stringify(manifest, null, 2) + "\n");
 
 const mb = (fs.statSync(path.join(OUT, "bundle.zip")).size / 1048576).toFixed(1);
