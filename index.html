@@ -11103,7 +11103,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // created on the create screen — there's no room to write to yet.
   function renderLocalSettingsPanel() {
     const s = currentSettings;
-    document.getElementById("create-settings-summary").textContent = `${s.totalRounds} rounds · ${s.timerSeconds} sec · ${s.itemSelectionMode === "relative" ? "Keep it relative" : "Anything goes"}`;
+    // None of rounds/timer/item-selection apply to Team Worlds (always exactly 5 questions,
+    // hardcoded at room creation) - this summary line would otherwise keep showing them anyway,
+    // same misleading-settings-panel issue the hidden #settings-panel above was just fixed for.
+    document.getElementById("create-settings-summary").textContent = createMode === "teamworlds" ? ""
+      : `${s.totalRounds} rounds · ${s.timerSeconds} sec · ${s.itemSelectionMode === "relative" ? "Keep it relative" : "Anything goes"}`;
     if (document.activeElement !== settingTimerInput) settingTimerInput.value = s.timerSeconds;
     if (document.activeElement !== settingRoundsInput) settingRoundsInput.value = s.totalRounds;
     settingItemAnythingInput.classList.toggle("selected", (s.itemSelectionMode || "anything") === "anything");
@@ -11448,8 +11452,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
     createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
-    // Team Worlds has no configurable rounds/timer/item-selection - always exactly 5 questions
-    // from the chosen World's pool, same as Solo having no settings to show either.
+    // Team Worlds has no configurable rounds/timer/item-selection at all - always exactly 5
+    // questions from the chosen World's pool (settings.totalRounds=5 is hardcoded at room
+    // creation regardless of what this panel shows) - so the whole "Round settings"/"Play your
+    // way" panel and the presets (which only exist to save/recall settings this panel holds) are
+    // actively misleading here, not just unused. #host-settings-card ("Host disconnect
+    // settings") was the only thing actually being hidden before - a different, sibling element,
+    // not a wrapper around the rounds/timer controls, so hiding it left the real settings panel
+    // (and presets) fully visible and editable for a mode where editing them does nothing.
+    // Solo (Quick Game vs bots) DOES use the rounds/timer panel - only its host-disconnect
+    // settings don't apply (no other human host to reassign), so it keeps that same narrower hide.
+    document.getElementById("settings-panel").hidden = createMode === "teamworlds";
+    document.querySelector(".preset-box").hidden = createMode === "teamworlds";
     document.getElementById("host-settings-card").hidden = createMode === "solo" || createMode === "teamworlds";
     document.getElementById("host-settings-card").open = false;
     currentSettings = DEFAULT_SETTINGS();
