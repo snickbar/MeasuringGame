@@ -11135,6 +11135,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const sub = document.createElement("div");
       sub.className = "rr-sub";
       info.appendChild(label);
+      const kindEl = document.createElement("div");
+      kindEl.className = "rr-sub";
+      info.appendChild(kindEl);
       info.appendChild(sub);
       const btn = document.createElement("button");
       btn.textContent = "Rejoin";
@@ -11147,6 +11150,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (d && d.phase && d.phase !== "ended") {
           const n = Object.values(d.players || {}).filter((p) => p && !p.isBot).length;
           const where = d.phase === "waiting" ? "In the lobby" : (d.round ? `Round ${d.round}` : "In progress");
+          const mode = d.settings && d.settings.mode;
+          const kind = mode === "teamworlds"
+            ? "Team Worlds" + ((WORLDS.find((w) => w.id === d.settings.worldId) || {}).name ? ": " + WORLDS.find((w) => w.id === d.settings.worldId).name : "")
+            : mode === "teamvteam" ? "Team vs Team" : "Classic Party";
+          kindEl.textContent = kind;
           sub.textContent = `${where} \u00b7 ${n} player${n === 1 ? "" : "s"}`;
           row.style.display = "";
           recentRoomsSection.style.display = "block";
