@@ -15905,6 +15905,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const MANIFEST_URL = "https://size-em-up.web.app/live/version.json";
     let runningVersion = "";
     let liveError = "";
+    let readyBundleId = ""; // id of a downloaded update that is waiting to be switched to
 
     function toast(msg) {
       let t = $("app-update-toast");
@@ -15929,9 +15930,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!runningVersion || !remote.version || !remote.url || remote.version <= runningVersion) return "current";
         if (!remote.checksum) throw new Error("update manifest has no checksum");
         const { bundles } = await updater.list();
-        if ((bundles || []).some((b) => b.version === remote.version)) return "ready";
+        const waiting = (bundles || []).find((b) => b.version === remote.version);
+        if (waiting) { readyBundleId = waiting.id; return "ready"; }
         const bundle = await updater.download({ url: remote.url, version: remote.version, checksum: remote.checksum });
         await updater.next({ id: bundle.id });
+        readyBundleId = bundle.id;
         // Tidy up: keep only the running bundle and the one waiting for next launch.
         const cur = await updater.current();
         const keep = new Set([bundle.id, cur && cur.bundle && cur.bundle.id]);
@@ -16008,6 +16011,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const [live, play] = await Promise.all([checkLive(true), checkPlay()]);
         btn.disabled = false;
         if (play.state === "available") { status.textContent = "A new version is on Google Play."; offerPlayUpdate(play.info); }
+        else if ((live === "downloaded" || live === "ready") && readyBundleId) {
+          status.textContent = "Update downloaded.";
+          let go = $("settings-restart-btn");
+          if (!go) {
+            go = document.createElement("button");
+            go.id = "settings-restart-btn"; go.type = "button"; go.className = "settings-cream-btn"; go.textContent = "Restart now";
+            row.appendChild(go);
+            go.addEventListener("click", async () => {
+              go.disabled = true; status.textContent = "Restarting…";
+              try { await updater.set({ id: readyBundleId }); } // switches to the new version and reloads the app
+              catch (err) { go.disabled = false; status.textContent = "Couldn't restart (" + String((err && err.message) || err).slice(0, 60) + "). It will start next time you open the app."; }
+            });
+          }
+          go.disabled = false;
+        }
         else if (live === "downloaded" || live === "ready") status.textContent = "Update downloaded - it will start next time you open the app.";
         else if (live === "error") status.textContent = "Couldn't check right now (" + liveError.slice(0, 80) + ").";
         else status.textContent = "You're up to date.";
