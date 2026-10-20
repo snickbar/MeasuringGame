@@ -8951,10 +8951,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const granted = await confirmAndPurchaseHostUnlock("teamworlds");
         if (!granted) return;
         pendingFreeGame = granted === "free";
-        partyFromHub = true;
         pendingWorldId = twWorldId;
+        // Team Worlds has nothing to configure (always exactly 5 questions, no rounds/timer/
+        // item-selection/presets - see showCreateScreen's settings-panel hide) - showing an
+        // empty #create-screen with just a "Create Room" button and a lot of blank space below
+        // it served no purpose, so this skips straight to actually creating the room instead of
+        // going through that screen at all. hostRoomNow() reads createMode/currentSettings the
+        // same way the real Create Room button's click does - set up here instead of via
+        // showCreateScreen, since that screen is never shown for this mode.
+        createMode = "teamworlds";
+        currentSettings = DEFAULT_SETTINGS();
+        hostTransferModeChoice = "reassign";
+        // Closed up front, same as before (this used to immediately precede showCreateScreen,
+        // which also closed it) - the room-creation transaction below is a single near-instant
+        // Firebase write, and leaving the overlay open through it risks it and the name/avatar
+        // screen both ending up with .active at once once hostRoomNow navigates on success
+        // (showNameAvatarScreen only clears create/join, not every OVERLAY_SCREENS entry).
         closeOverlay();
-        showCreateScreen("teamworlds");
+        await hostRoomNow((text) => { createStatusEl.textContent = text; });
       });
     }
   });
@@ -11583,8 +11597,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     playSound("tap");
   });
 
-  createRoomBtn.addEventListener("click", async () => {
-    createStatusEl.textContent = "Creating room...";
+  // Shared by the actual Create Room button (classic/teamvteam/solo, settings read off
+  // currentSettings/createMode as set up by showCreateScreen) and Team Worlds' own "Create Room"
+  // tap on its info screen, which skips showCreateScreen/#create-screen entirely (nothing left
+  // to configure there once settings-panel/presets are hidden for this mode - see onStatus's
+  // caller for why). onStatus(text) reports progress/errors back to whichever button triggered
+  // this, since there's no longer always a visible #create-screen to show createStatusEl on.
+  async function hostRoomNow(onStatus) {
+    onStatus("Creating room...");
     const settings = { ...currentSettings, hostTransferMode: hostTransferModeChoice };
     if (createMode === "solo") settings.solo = true;
     if (createMode === "teamvteam") settings.mode = "teamvteam";
@@ -11611,12 +11631,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
       if (result.committed) { roomCode = candidate; break; }
     }
-    if (!roomCode) { createStatusEl.textContent = "Couldn't create a room, please try again."; return; }
+    if (!roomCode) { onStatus("Couldn't create a room, please try again."); return; }
     pendingRoomCode = roomCode;
     pendingIsHost = true;
     pendingSettings = settings;
     showNameAvatarScreen("create");
-  });
+  }
+  createRoomBtn.addEventListener("click", () => hostRoomNow((text) => { createStatusEl.textContent = text; }));
 
   // A mistyped/nonexistent code used to fall through silently here - nothing
   // actually checks the room exists until the later Join Lobby step, several
