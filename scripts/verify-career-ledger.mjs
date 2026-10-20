@@ -30,17 +30,27 @@ assert.equal(profile.coins,141,'duplicate delivery is a no-op; first delivery pa
 assert.equal(profile.teamWorlds.tiny.bestStars,2);
 assert.deepEqual(profile.teamWorldsHistory.tiny,{tw1:{s:80,t:6,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'}});
 profile=applyCareerRecord(profile,{...teamWorld,key:'tw2',stars:1,accuracy:60,partnerName:'Carol',myAvatar:'fox',partnerAvatar:'cat',t:7});
-assert.equal(profile.coins,141,'a worse attempt (1 star < best of 2) earns no further coins');
+assert.equal(profile.coins,146,'every attempt pays its stars (1 star * 5), even a worse one - replayable and re-collectable');
 assert.equal(profile.teamWorlds.tiny.bestStars,2,'best-stars tracker never decreases');
 assert.deepEqual(profile.teamWorldsHistory.tiny,{tw1:{s:80,t:6,myAvatar:'fox',partnerName:'Bob',partnerAvatar:'owl'},tw2:{s:60,t:7,myAvatar:'fox',partnerName:'Carol',partnerAvatar:'cat'}},'every attempt kept, even a worse one, keyed by its own attempt - not deduped per partner');
 profile=applyCareerRecord(profile,{...teamWorld,key:'tw3',stars:3,accuracy:95,partnerName:'Bob',t:8});
-assert.equal(profile.coins,146,'beating the best (2->3 stars) pays again, even with a repeat partner - a new entry, not an update');
+assert.equal(profile.coins,161,'a 3-star game pays 3 * 5 again, even with a repeat partner - a new entry, not an update');
 assert.equal(Object.keys(profile.teamWorldsHistory.tiny).length,3);
 assert.deepEqual(topScores(historyRows(profile.teamWorldsHistory.tiny),5).map((r)=>r.s),[95,80,60],'top scores across all attempts regardless of partner');
 
+// High/Low Survival: its own mode, paid 2 coins per round survived on every run, one history row per run.
+const hlRun={kind:'attempt',key:'hl1',mode:'hlsurvival',survived:4,rounds:7,bestStreak:3,accuracy:70,partnerName:'Dee',myAvatar:'fox',partnerAvatar:'owl',t:9};
+profile=applyCareerRecord(profile,hlRun);profile=applyCareerRecord(profile,hlRun);
+assert.equal(profile.coins,169,'duplicate delivery is a no-op; first delivery pays 4 rounds * 2 coins');
+assert.equal(profile.hlSurvival.best,4);assert.equal(profile.hlSurvival.bestStreak,3);
+profile=applyCareerRecord(profile,{...hlRun,key:'hl2',survived:2,bestStreak:1,t:10});
+assert.equal(profile.coins,173,'a worse run still pays its rounds');assert.equal(profile.hlSurvival.best,4,'best never decreases');
+assert.deepEqual(topScores(historyRows(profile.hlHistory),5).map((r)=>r.s),[4,2]);
+assert.equal(profile.modeStats.hlsurvival.attempts,2);
+
 profile={...profile,dailyStreak:{last:'2026-10-17',count:2,best:2}};
 const daily={kind:'attempt',key:'daily_2026-10-18',mode:'daily',date:'2026-10-18',yesterday:'2026-10-17',saved:{date:'2026-10-18',guesses:[1,2,3]},accuracy:90,t:5};
-profile=applyCareerRecord(profile,daily);profile=applyCareerRecord(profile,daily);assert.equal(profile.coins,166);assert.equal(profile.dailyStreak.count,3);assert.equal(profile.stats.dailies,1);
+profile=applyCareerRecord(profile,daily);profile=applyCareerRecord(profile,daily);assert.equal(profile.coins,193);assert.equal(profile.dailyStreak.count,3);assert.equal(profile.stats.dailies,1);
 assert.equal(profile.stats.rounds,4,'attempt completion cannot add round counters twice');
 assert.deepEqual(profile.dailyHistory,{'2026-10-18':{s:90,t:5}},'every played date is kept, not just the most recent');
 profile=applyCareerRecord(profile,{...daily,key:'daily_2026-10-19',date:'2026-10-19',yesterday:'2026-10-18',accuracy:70,t:6,saved:{date:'2026-10-19',guesses:[1,2,3]}});

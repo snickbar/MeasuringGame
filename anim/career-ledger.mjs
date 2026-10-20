@@ -1,8 +1,8 @@
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 
-export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds'};
-export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7};
+export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival'};
+export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
 // Every entry ever recorded, newest first by actual timestamp - never evicted. Works for
@@ -76,11 +76,20 @@ export function applyCareerRecord(profile,record){
     // below (which IS shown - "your top 5" - and is never updated in place, per the user's own
     // spec: "if you play again with them it'll be a new entry").
     const levels=profile.teamWorlds?.[record.world]||{},previous=levels.bestStars||0,best=Math.max(previous,record.stars);
-    coins=(best-previous)*5;
+    coins=(record.stars||0)*5; // team games pay for every star, every game - replayable and re-collectable
     result.teamWorlds={...profile.teamWorlds,[record.world]:{...levels,bestStars:best}};
     stats.teamWorldsAttempts=(stats.teamWorldsAttempts||0)+1;
     result.teamWorldsHistory={...profile.teamWorldsHistory,[record.world]:{...profile.teamWorldsHistory?.[record.world],
       [key]:{s:record.accuracy||0,t:record.t,myAvatar:record.myAvatar||null,partnerName:record.partnerName||'Partner',partnerAvatar:record.partnerAvatar||null}}};
+  }else if(record.mode==='hlsurvival'){
+    // High/Low Survival: a duo game scored in rounds survived. Coins are paid for every round survived,
+    // every run; every run is kept as its own history row for the "your best runs" list.
+    const old=profile.hlSurvival||{};coins=(record.survived||0)*2; // paid every run, like Team Worlds
+    result.hlSurvival={...old,best:Math.max(old.best||0,record.survived||0),runs:(old.runs||0)+1,
+      bestStreak:Math.max(old.bestStreak||0,record.bestStreak||0)};
+    stats.hlSurvivalRuns=(stats.hlSurvivalRuns||0)+1;
+    result.hlHistory={...profile.hlHistory,[key]:{s:record.survived||0,t:record.t,rounds:record.rounds||0,syncStreak:record.bestStreak||0,
+      accuracy:record.accuracy||0,myAvatar:record.myAvatar||null,partnerName:record.partnerName||'Partner',partnerAvatar:record.partnerAvatar||null}};
   }else if(record.mode==='survival'){
     const old=profile.survival||{};coins=Math.max(0,record.survived-(old.best||0))*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};

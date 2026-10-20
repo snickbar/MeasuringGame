@@ -2383,6 +2383,14 @@ if (location.protocol === "file:") {
   .tw-sumrow .name .hl-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tw-sumrow .name .hl-chip { flex: none; font-size: 10px; padding: 0 8px 0 5px; }
   .tw-sumrow .name .hl-chip svg { width: 10px; height: 10px; }
+  .hl-fin-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #000; }
+  .hl-cap-note { margin: 8px 4px 0; padding: 8px 10px; border-radius: 12px; background: #fff3c9; border: 2px solid #4a2c12; font-weight: 700; font-size: 13px; color: #000; text-align: center; }
+  .hl-best { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .hl-best-head { text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: #000; }
+  .hl-best-row { display: flex; align-items: center; gap: 8px; padding: 2px 10px; font-weight: 700; color: #000; }
+  .hl-best-row .avatar { width: 28px; height: 28px; flex: none; }
+  .hl-best-row .name { flex: 1; text-align: left; }
+  .hl-best-row b { font-family: 'Fredoka', sans-serif; font-size: 18px; color: var(--brand); }
   .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
@@ -4836,6 +4844,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           teamHistory: data.teamHistory || {},
           teamWorlds: data.teamWorlds || {},
           teamWorldsHistory: data.teamWorldsHistory || {},
+          hlSurvival: data.hlSurvival || {},
+          hlHistory: data.hlHistory || {},
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -9139,7 +9149,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const w = WORLDS.find((x) => x.id === twWorldId);
     el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2><p class="dc-sub">Team Worlds</p>
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
-      <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for each new star your team earns here, same as Solo Worlds.</div></div>
+      <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
       <button type="button" class="dc-btn" id="tw-start">Create Room</button>
       <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}`;
@@ -10458,7 +10468,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(!careerLedger||!data?.currentQuestion||!players?.[playerId])return;
     let matchKey;try{matchKey=gameRewardKey(currentRoomCode,data);}catch{return;}
     const mine=(data.revealOrder||[]).find(e=>e.playerId===playerId),q=data.currentQuestion;
-    const mode=data.settings?.mode==='teamvteam'?'teamvteam':data.settings?.mode==='teamworlds'?'teamworlds':(data.settings?.solo?'quick':'party'),answered=!!mine;
+    const mode=data.settings?.mode==='teamvteam'?'teamvteam':isHlSettings(data.settings)?'hlsurvival':data.settings?.mode==='teamworlds'?'teamworlds':(data.settings?.solo?'quick':'party'),answered=!!mine;
     const isSpot=answered&&roundAccuracy((mine.effectiveGuess??mine.guess)/q.answer)>=99;
     const history={t:Date.now(),u:q.unitId,g:q.targetId,r:answered?(mine.effectiveGuess??mine.guess)/q.answer:null,
       rawR:answered?mine.guess/q.answer:null,answered,p:data.lastRoundPoints?.[playerId]||0,
@@ -14979,13 +14989,72 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // unconditionally via the attempt record below) - rewardCollected is set directly instead, so
   // the existing Leave Party/Play Again buttons still work without a pointless empty "collect
   // 0 coins" screen in between.
+  // High/Low Survival's game-over screen: rounds survived, lives, sync stats, coins and your best runs.
+  const hlFinalGain = {};
+  function renderHlFinal() {
+    const rs = roomState, me = currentPlayers[currentPlayerId];
+    const cap = (rs.settings && rs.settings.cap) || 0;
+    const survived = rs.hlSurvived || 0, bestStreak = rs.hlBestSyncStreak || 0, syncTotal = rs.hlSyncTotal || 0, rounds = rs.round || 0;
+    const hitCap = !!cap && survived >= cap;
+    const avg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : 0;
+    const key = gameRewardKey(currentRoomCode, rs);
+    const ids = Object.keys(currentPlayers);
+    const partnerId = ids.find((id) => id !== currentPlayerId);
+    if (hlFinalGain[key] == null) hlFinalGain[key] = survived * 2; // coins for every round survived, every run
+    const gain = hlFinalGain[key];
+    careerLedger.save({ kind: "attempt", mode: "hlsurvival", key, survived, rounds, bestStreak, accuracy: avg, myAvatar: me?.avatar,
+      partnerName: partnerId ? currentPlayers[partnerId].name : "Partner", partnerAvatar: partnerId ? currentPlayers[partnerId].avatar : null, t: Date.now() });
+    if (!currentPlayers[currentPlayerId]?.rewardCollected) {
+      update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { rewardCollected: true }).catch(() => {});
+      currentPlayers[currentPlayerId] = { ...currentPlayers[currentPlayerId], rewardCollected: true };
+      updateFinalButtons();
+    }
+    finalListEl.innerHTML = "";
+    const previousRecap = document.getElementById("final-session-recap"); if (previousRecap) previousRecap.remove();
+    const avatars = ids.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+    const names = ids.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+    const memberRows = ids.map((id) => {
+      const p = currentPlayers[id], a = p.individualRoundsCounted ? p.individualAccuracySum / p.individualRoundsCounted : null;
+      return `<div class="tw-fin-member"><span class="tw-mvp-slot"></span><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="member-acc">${a == null ? "" : formatAccuracy(a) + "%"}</span></div>`;
+    }).join("");
+    const bestRuns = topScores(historyRows(myProfile.hlHistory || {}), 3).map((r) =>
+      `<div class="hl-best-row"><span class="avatar">${avatarHtml(r.partnerAvatar)}</span><span class="name">with ${escapeHtml(r.partnerName || "Partner")}</span><b>${r.s}</b></div>`).join("");
+    const li = document.createElement("li");
+    li.className = "final-row team-final-row tw-final-row";
+    li.style.setProperty("--tc", "#8e7cf2");
+    li.innerHTML = `
+      <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
+      <div class="dc-card dc-hot tw-fin-card">
+        <div class="hl-fin-title">${hitCap ? "You made it!" : "Game over"}</div>
+        <div class="tw-fin-pct">${prefersReducedMotion() ? survived : 0}</div>
+        <div class="tw-fin-label">${survived === 1 ? "round" : "rounds"} survived</div>
+        <div class="hl-verdict-hearts">${hlHeartsHtml(rs)}</div>
+        <div class="hl-sum-stats"><div><b>${bestStreak}</b><span>Best in-sync streak</span></div><div><b>${syncTotal}</b><span>Rounds in sync</span></div>${avg ? `<div><b>${formatAccuracy(avg)}%</b><span>Team accuracy</span></div>` : ""}</div>
+        ${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}
+      </div>
+      ${hitCap ? `<div class="hl-cap-note">That's the free limit of ${cap} rounds. Unlock Party Mode and the host can play endless survival!</div>` : ""}
+      <div class="tw-fin-members">${memberRows}</div>
+      ${bestRuns ? `<div class="hl-best"><div class="hl-best-head">Your best runs</div>${bestRuns}</div>` : ""}
+    `;
+    finalListEl.appendChild(li);
+    const num = li.querySelector(".tw-fin-pct");
+    if (num && !prefersReducedMotion()) {
+      setTimeout(() => twCountUp(num, survived, 1000, ""), 500);
+      setTimeout(() => num.classList.add("pop"), 1550);
+    }
+    setTimeout(() => {
+      if (survived > 0) { celebrate(hitCap ? "perfect" : "spotOn"); spawnStreamerConfetti(); }
+      playSound(survived > 0 ? "win" : "error");
+    }, 350);
+  }
+
   function renderTeamWorldsFinal() {
+    if (isHlSettings(roomState.settings)) { renderHlFinal(); return; }
     const w = WORLDS.find((x) => x.id === roomState.settings?.worldId);
     const me = currentPlayers[currentPlayerId];
     const avg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : 0;
     const stars = worldStarsFor(avg);
-    const oldBest = myProfile.teamWorlds?.[w?.id]?.bestStars || 0;
-    const gain = Math.max(0, stars - oldBest) * WORLD_STAR_COINS;
+    const gain = stars * WORLD_STAR_COINS; // team games pay for every star, every game
     const partnerId = Object.keys(currentPlayers).find((id) => id !== currentPlayerId);
     const partnerName = partnerId ? currentPlayers[partnerId].name : "Partner";
     const partnerAvatar = partnerId ? currentPlayers[partnerId].avatar : null;
