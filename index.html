@@ -15687,6 +15687,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     const MANIFEST_URL = "https://size-em-up.web.app/live/version.json";
     let runningVersion = "";
+    let liveError = "";
 
     function toast(msg) {
       let t = $("app-update-toast");
@@ -15704,7 +15705,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const conn = navigator.connection;
         // Bundles are ~100 MB: wait for Wi-Fi rather than burn mobile data.
         if (!manual && conn && (conn.type === "cellular" || conn.saveData)) return "cellular";
-        const remote = await (await fetch(MANIFEST_URL + "?t=" + Date.now(), { cache: "no-store" })).json();
+        liveError = "";
+        const res = await fetch(MANIFEST_URL + "?t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) throw new Error("server said " + res.status);
+        const remote = await res.json();
         if (!runningVersion || !remote.version || !remote.url || remote.version <= runningVersion) return "current";
         const { bundles } = await updater.list();
         if ((bundles || []).some((b) => b.version === remote.version)) return "ready";
@@ -15717,7 +15721,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (!keep.has(b.id) && b.id !== "builtin") { try { await updater.delete({ id: b.id }); } catch (err) {} }
         }
         return "downloaded";
-      } catch (err) { return "error"; /* offline or manifest missing - try again next launch */ }
+      } catch (err) { liveError = String((err && err.message) || err); return "error"; /* offline or manifest missing - try again next launch */ }
     }
 
     // ---- Google Play ----
@@ -15787,7 +15791,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         btn.disabled = false;
         if (play.state === "available") { status.textContent = "A new version is on Google Play."; offerPlayUpdate(play.info); }
         else if (live === "downloaded" || live === "ready") status.textContent = "Update downloaded - it will start next time you open the app.";
-        else if (live === "error") status.textContent = "Couldn't check right now. Try again when you're online.";
+        else if (live === "error") status.textContent = "Couldn't check right now (" + liveError.slice(0, 80) + ").";
         else status.textContent = "You're up to date.";
       });
     }
