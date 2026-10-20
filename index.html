@@ -2179,9 +2179,16 @@ if (location.protocol === "file:") {
      reliably beaten by clearing the attribute/inline style alone (see the comment where .tw-plain
      is toggled). Wins regardless of what data-board/data-scene the element still carries. */
   .question-prompt.tw-plain { background: #fffdf6 !important; border: 1px solid rgba(217,194,154,.7) !important; border-radius: 24px !important; min-height: 0 !important; box-shadow: none !important; padding: 8px 12px !important; }
-  .question-prompt.tw-plain #question-prompt-text, .question-prompt.tw-plain .answer-line-label,
+  /* Scene boards (terminal/tv/etc.) insert an actual <img>/<canvas> into #q-stage and position
+     #q-body absolutely over it via the [data-scene] rules above - a background-color override
+     alone doesn't touch either, so both need their own !important reset here too, or the
+     board's picture (and #q-body's absolute box tied to it) still shows/misplaces through. */
+  .question-prompt.tw-plain #q-stage { display: none !important; }
+  .question-prompt.tw-plain #q-body { position: static !important; left: auto !important; top: auto !important; width: auto !important; height: auto !important; display: block !important; }
+  .question-prompt.tw-plain .answer-line-label,
   .question-prompt.tw-plain #q-pencil, .question-prompt.tw-plain #q-eraser, .question-prompt.tw-plain #q-dust,
   .question-prompt.tw-plain #q-curtain, .question-prompt.tw-plain #q-curtain-top { display: none !important; }
+  .question-prompt.tw-plain #question-prompt-text { display: block !important; font-size: 16px !important; margin-bottom: 4px !important; }
   .question-prompt.tw-plain .answer-line-value { color: #000 !important; background: none !important; -webkit-text-fill-color: #000 !important; font-size: 42px !important; }
   .qch { opacity: 0; }
   .qch.on { opacity: 1; }
@@ -13018,9 +13025,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // here instead of relying on .hidden.
     qPreviewEl.style.display = isTw ? "none" : "";
     guessDisplayEl.style.display = isTw ? "none" : "";
-    twQuestionProgressEl.style.display = isTw ? "" : "none";
+    // #tw-question-progress/#tw-question-prompt have the `hidden` ATTRIBUTE in their markup and
+    // no author display rule of their own (unlike #tw-question-pics/#tw-question-stats, which do
+    // and were fine with "") - style.display:"" only clears an inline override, it doesn't remove
+    // the attribute, so [hidden] kept winning and the star meter/question text never showed at
+    // all. Same fourth-variant gotcha as #tw-guess-display: needs an explicit non-empty value.
+    twQuestionProgressEl.style.display = isTw ? "block" : "none";
     twQuestionPicsEl.style.display = isTw ? "" : "none";
-    twQuestionPromptEl.style.display = isTw ? "" : "none";
+    twQuestionPromptEl.style.display = isTw ? "block" : "none";
     twQuestionStatsEl.style.display = isTw ? "" : "none";
     // This one has the `hidden` attribute in its initial markup (unlike its siblings
     // above, which all have an author display:flex rule beating [hidden] already) -
