@@ -15,6 +15,7 @@ let writes;
 const room={round:2,settings:{totalRounds:2},players:{me:{score:0},steady:{score:0}},currentQuestion:{answer:100,prompt:'Test'}};
 const sandbox=vm.createContext({roundAccuracy,roomState:room,currentSettings:room.settings,effectiveGuess:(_,g)=>g,
   db:{},ref:(_,p)=>p,update:async(_,v)=>{writes=v},questionObjects:()=>null,nowMs:()=>1000,scheduleHostDeadline:()=>{},
+  isHlSettings:()=>false,hlGameOver:()=>false,
   TRUTH_ID:'__truth__',console:{log:()=>{},error:console.error},
 });
 vm.runInContext([extract('finishRoundScoring'),extract('advanceAfterSummary'),extract('computeRanks')].join('\n'),sandbox);

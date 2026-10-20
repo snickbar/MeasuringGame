@@ -116,7 +116,7 @@ assert.deepEqual(redistribute({a:{},b:{team:'red'},c:{team:'red'}},{a:5,b:2}),{a
 assert.deepEqual(redistribute({a:{team:'red'},b:{team:'red'}},{a:3},'party'),{a:3},'classic Party rooms never run the redistribution at all');
 
 // Actual rematch preserves the roster and returns to waiting with readiness cleared.
-let update;const replay=vm.createContext({isHost:true,roomState:{players:{me:{isHost:true},friend:{},bot:{isBot:true}}},crypto:{randomUUID:()=> 'next-id'},db:{},ref:(_,p)=>p,update:async(_,v)=>update=v});
+let update;const replay=vm.createContext({isHost:true,isHlSettings:()=>false,roomState:{players:{me:{isHost:true},friend:{},bot:{isBot:true}}},crypto:{randomUUID:()=> 'next-id'},db:{},ref:(_,p)=>p,update:async(_,v)=>update=v});
 const start=source.indexOf('  async function playAgain(');vm.runInContext(source.slice(start,source.indexOf('\n  }',start)+4),replay);await replay.playAgain('TEST');
 assert.equal(update.phase,'waiting');assert.equal(update.gameId,'next-id');assert.equal(update['players/friend/ready'],false);assert(!Object.keys(update).includes('players'));
 console.log('PASS: abandoned-round discovery/stats, once-only finishes, score/accuracy/shared wins, solo star/streak/best payouts, lost-response recovery, leaderboard retries, same-roster rematch, and daily/monthly/team score history with recency tiebreaks.');
