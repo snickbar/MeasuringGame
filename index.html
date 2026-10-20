@@ -4076,7 +4076,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         removedAny = true;
         continue;
       }
-      if (p && p.connected === false && typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt > DISCONNECT_GRACE_MS) {
+      // Once a game has started, an away player KEEPS their seat (like Words with Friends):
+      // they just show as "away" and can come back any time. Only the lobby drops
+      // players who vanish, so a no-show can't block "everyone is ready". Truly
+      // abandoned rooms are cleaned up by the daily 24h stale-room job instead.
+      if (roomState.phase === "waiting" && p && p.connected === false && typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt > DISCONNECT_GRACE_MS) {
         await remove(ref(db, `rooms/${roomCode}/players/${id}`));
         removedAny = true;
       }
