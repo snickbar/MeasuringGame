@@ -2352,6 +2352,13 @@ if (location.protocol === "file:") {
   .tw-qs-half { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; }
   .tw-qs-half .avatar { font-size: 20px; }
   .tw-qs-half .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hl-sub { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #000; text-align: center; }
+  .hl-role { display: block; margin: 6px auto 0; padding: 4px 12px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; border: 2px solid #4a2c12; }
+  .hl-role.hl-high { background: #ffd1c9; }
+  .hl-role.hl-low { background: #c9e4ff; }
+  .hl-chip { padding: 1px 10px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: #000; border: 2px solid #4a2c12; }
+  .hl-chip.hl-high { background: #ffd1c9; }
+  .hl-chip.hl-low { background: #c9e4ff; }
   .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
@@ -9450,19 +9457,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const base = lo + (hi - lo) * (n / (n + 10));
     return Math.max(lo, Math.min(hi, base + (Math.random() - 0.45) * 2.2));
   }
-  function survivalNextQuestion() {
-    const pairs = survivalPairs(), target = survivalTarget(sv.asked);
+  function survivalNextQuestion(state = sv) {
+    const pairs = survivalPairs(), target = survivalTarget(state.asked);
     let lo = 0, hi = pairs.length;
     while (lo < hi) { const mid = (lo + hi) >> 1; if (pairs[mid].r < target) lo = mid + 1; else hi = mid; }
     for (let w = 0.25; w < 8; w *= 1.8) {
       const cand = [];
       for (let k = Math.max(0, lo - 400); k < Math.min(pairs.length, lo + 400); k++) {
         const p = pairs[k];
-        if (Math.abs(p.r - target) <= w && !sv.recent.includes(p.u) && !sv.recent.includes(p.t)) cand.push(p);
+        if (Math.abs(p.r - target) <= w && !state.recent.includes(p.u) && !state.recent.includes(p.t)) cand.push(p);
       }
       if (cand.length) {
         const p = cand[Math.floor(Math.random() * cand.length)];
-        sv.recent.push(p.u, p.t); if (sv.recent.length > 12) sv.recent.splice(0, 2);
+        state.recent.push(p.u, p.t); if (state.recent.length > 12) state.recent.splice(0, 2);
         return dailyQuestionFor({ unitId: p.u, targetId: p.t });
       }
     }
@@ -12059,8 +12066,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
     return ids;
   }
+  // High/Low Survival's running state lives on the room: shared lives, rounds survived, how many questions
+  // have been asked (drives the difficulty climb), recent objects (so they don't repeat) and the sync streak.
+  function hlFreshGameFields() {
+    return { hlLives: roomState.settings?.lives || HL_LIVES, hlSurvived: 0, hlAsked: 0, hlRecent: null, hlRoles: null, hlSyncStreak: 0, hlBestSyncStreak: 0, hlSyncTotal: 0, hlLast: null };
+  }
+  const hlGameOver = () => (roomState.hlLives || 0) <= 0 || (!!(roomState.settings?.cap) && (roomState.hlSurvived || 0) >= roomState.settings.cap);
   async function startGameNow() {
-    if (isHlSettings(roomState.settings)) { lobbyStatusEl.textContent = "High/Low Survival can't be played yet - it's still being built."; return; }
     playSound("start");
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
     // The room's object pool is fixed now, from the host's date and owned packs; a later host change doesn't alter it.
@@ -12071,6 +12083,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
     };
     if (roomState.settings?.mode === "teamworlds") updates.teamWorldsOrder = randomTeamWorldsOrder();
+    if (isHlSettings(roomState.settings)) Object.assign(updates, hlFreshGameFields());
     await update(ref(db, `rooms/${currentRoomCode}`), updates);
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
   }
@@ -12217,9 +12230,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }, delay);
   }
 
-  function scheduleBotGuesses(roomCode, q) {
+  function scheduleBotGuesses(roomCode, q, freshRound = false) {
     const players = roomState.players || {};
-    const existingGuesses = roomState.guesses || {};
+    // A brand-new round: roomState may still hold last round's guesses for a moment.
+    const existingGuesses = freshRound ? {} : (roomState.guesses || {});
     const timerMs = (currentSettings.timerSeconds || 30) * 1000;
     Object.keys(players).forEach((id) => {
       const p = players[id];
@@ -12231,7 +12245,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (currentRoomCode !== roomCode) return;
         if (roomState.phase !== "question") return;
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
-        const val = botGuessValue(q.answer, p.botDifficulty);
+        let val = botGuessValue(q.answer, p.botDifficulty);
+        if (isHlSettings(roomState.settings)) {
+          // A bot partner plays its role: HIGH leans above the answer, LOW below it.
+          const role = (roomState.hlRoles || {})[id];
+          if (role === "high") val = Math.max(val, q.answer) * (1 + Math.random() * 0.4);
+          else if (role === "low") val = Math.min(val, q.answer) * (1 - Math.random() * 0.4);
+        }
         set(ref(db, `rooms/${roomCode}/guesses/${id}`), val);
       }, delay);
     });
@@ -12611,8 +12631,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           playSound("count");
         }
       }
+      const noTimer = isHlSettings(roomState.settings);
+      hudTimerEl.style.visibility = noTimer ? "hidden" : "";
       let deadline = null;
-      if (roomState.phase === "question") deadline = roomState.graceEndsAt || roomState.questionEndsAt;
+      if (roomState.phase === "question") deadline = noTimer && !roomState.graceEndsAt ? null : (roomState.graceEndsAt || roomState.questionEndsAt);
       else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
       if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); return; }
       powerups?.render();
@@ -12643,16 +12665,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Host-authoritative round transitions ====================
 
+  const HL_NO_TIMER_MS = 20 * 24 * 3600 * 1000;
   async function startRound(roomCode, roundNum) {
     // Team Worlds plays through a fixed, pre-generated set of 5 questions sampled from the
     // chosen World at room creation (teamWorldQuestions()) rather than the general pool -
     // every other mode still calls generateQuestion() as before.
-    const q = (roomState.settings || currentSettings).mode === "teamworlds"
+    const hl = isHlSettings(roomState.settings);
+    const hlState = hl ? { asked: roomState.hlAsked || 0, recent: [...(roomState.hlRecent || [])] } : null;
+    const q = hl
+      ? { ...survivalNextQuestion(hlState), powerupKey: crypto.randomUUID() }
+      : (roomState.settings || currentSettings).mode === "teamworlds"
       ? { ...roomState.teamWorldQuestions[roundNum - 1], powerupKey: crypto.randomUUID() }
       : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
-    const endsAt = nowMs() + (currentSettings.timerSeconds || 30) * 1000;
+    // High/Low Survival has no timer: the "deadline" is parked ~20 days out (the longest a browser timer can wait)
+    // so every timer-based code path still has a number to work with but never actually fires.
+    const endsAt = hl ? nowMs() + HL_NO_TIMER_MS : nowMs() + (currentSettings.timerSeconds || 30) * 1000;
+    let hlRoles = null;
+    if (hl) {
+      // Re-rolled every round: one player is HIGH (a number it can't possibly be more than), the other LOW.
+      const ids = Object.keys(roomState.players || {});
+      const highId = ids[Math.floor(Math.random() * ids.length)];
+      hlRoles = {};
+      ids.forEach((id) => { hlRoles[id] = id === highId ? "high" : "low"; });
+    }
     console.log("[measuring-game] starting round", roundNum, q);
     await update(ref(db, `rooms/${roomCode}`), {
+      ...(hl ? { hlRoles, hlAsked: hlState.asked + 1, hlRecent: hlState.recent, hlLast: null } : {}),
       currentQuestion: q,
       guesses: null,
       answers: null,
@@ -12669,8 +12707,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       round: roundNum,
       phase: "question",
     });
-    scheduleHostDeadline(endsAt, () => checkQuestionAdvance(roomCode));
-    scheduleBotGuesses(roomCode, q);
+    if (!hl) scheduleHostDeadline(endsAt, () => checkQuestionAdvance(roomCode));
+    scheduleBotGuesses(roomCode, q, true);
   }
 
   function checkQuestionAdvance(roomCode) {
@@ -12683,7 +12721,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Players who are away (closed the app) don't hold the round up: once everyone who is
     // still here has answered, the round moves on instead of waiting out the whole timer.
     // They keep their seat and just score nothing for the rounds they miss.
-    const waitIds = activeIds.filter((id) => id === currentPlayerId || !isPlayerAway(players[id]));
+    // (High/Low Survival always waits for both picks - one player's pick alone can't be scored.)
+    const waitIds = isHlSettings(roomState.settings) ? activeIds : activeIds.filter((id) => id === currentPlayerId || !isPlayerAway(players[id]));
     const guessedCount = waitIds.filter((id) => guesses[id] !== undefined).length;
     const now = nowMs();
 
@@ -12786,8 +12825,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Same left/right order every round of this game (randomized once at game start, see
     // randomTeamWorldsOrder()) - sorting by error instead would put whoever guessed worse THIS
     // round in the same spot every time, making it predictable and inconsistent round to round.
-    const order = roomState.teamWorldsOrder || activeIds;
+    const hl = isHlSettings(roomState.settings);
+    const hlRoles = roomState.hlRoles || {};
+    // High/Low Survival always reveals HIGH on top and LOW below, instead of the game's fixed left/right order.
+    const order = hl ? Object.keys(hlRoles).sort((a, b) => (hlRoles[a] === "high" ? 0 : 1) - (hlRoles[b] === "high" ? 0 : 1)) : (roomState.teamWorldsOrder || activeIds);
     const entries = answered.map((id) => ({
+      ...(hl && hlRoles[id] ? { role: hlRoles[id] } : {}),
       playerId: id, name: (playersSnap[id] && playersSnap[id].name) || "Player",
       flair: (playersSnap[id] && playersSnap[id].flair) || "classic",
       guess: guesses[id], effectiveGuess: guesses[id], error: Math.abs(guesses[id] - answer),
@@ -12797,6 +12840,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
     let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints: {}, lastRoundAccuracy: accuracy, truthPickedBy: null, phase: "reveal", revealAdvanceAt };
+    if (hl) {
+      // The team passes when the AVERAGE accuracy of the two picks is at least the pass mark, unless the picks
+      // are crossed (LOW higher than HIGH), which always costs a life. "In sync" = the real answer sits between them.
+      const highId = Object.keys(hlRoles).find((id) => hlRoles[id] === "high"), lowId = Object.keys(hlRoles).find((id) => hlRoles[id] === "low");
+      const hv = guesses[highId], lv = guesses[lowId];
+      const bothIn = typeof hv === "number" && typeof lv === "number";
+      const crossed = bothIn && lv > hv;
+      const inSync = bothIn && lv <= answer && answer <= hv;
+      const passed = bothIn && !crossed && accuracy >= (roomState.settings?.passPct || HL_PASS);
+      const lives = (roomState.hlLives ?? roomState.settings?.lives ?? HL_LIVES) - (passed ? 0 : 1);
+      updates.hlLives = Math.max(0, lives);
+      updates.hlSurvived = (roomState.hlSurvived || 0) + (passed ? 1 : 0);
+      updates.hlSyncStreak = inSync ? (roomState.hlSyncStreak || 0) + 1 : 0;
+      updates.hlBestSyncStreak = Math.max(roomState.hlBestSyncStreak || 0, updates.hlSyncStreak);
+      updates.hlSyncTotal = (roomState.hlSyncTotal || 0) + (inSync ? 1 : 0);
+      updates.hlLast = { passed, crossed, inSync, accuracy };
+    }
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
     const animMod = animPair ? await loadAnimModule() : null;
@@ -13096,7 +13156,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function advanceAfterSummary(roomCode) {
     const nextRound = (roomState.round || 0) + 1;
     const totalRounds = (roomState.settings || currentSettings).totalRounds || 5;
-    if (nextRound > totalRounds) {
+    if (isHlSettings(roomState.settings) ? hlGameOver() : nextRound > totalRounds) {
       // Team Worlds has no points to hand an accuracy bonus into - stars/coins are computed
       // from accuracySum/roundsCounted directly on the final screen instead.
       if ((roomState.settings || currentSettings).mode === "teamworlds") {
@@ -13154,6 +13214,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     Object.keys(players).forEach(id=>{updates['players/'+id+'/ready']=false;updates['players/'+id+'/rewardCollected']=false;});
     updates.phase='waiting';updates.countdownEndsAt=null;updates.currentQuestion=null;updates.revealOrder=null;updates.lastRoundPoints=null;updates.round=0;
     // A rematch needs a fresh set of 5 questions too, or it'd silently replay the exact same ones.
+    if (isHlSettings(roomState.settings)) Object.assign(updates, hlFreshGameFields());
     if (roomState.settings?.mode === "teamworlds" && !isHlSettings(roomState.settings)) updates.teamWorldQuestions = teamWorldQuestions(WORLDS.find((w) => w.id === roomState.settings.worldId));
     await update(ref(db,`rooms/${roomCode}`),updates);
   }
@@ -13356,6 +13417,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // star progress meter, the two objects, the question, then (standing in for the power-up row
   // this mode doesn't have) a half/half split of each player's own avatar + their own running
   // (un-averaged) individual accuracy.
+  // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
+  function hlHeartsHtml(room) {
+    const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
+    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div></div>`;
+  }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
     // Several of these elements' own base rules set display directly via an ID selector, which
@@ -13388,18 +13454,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
-    twQuestionProgressEl.innerHTML = worldProgressBarHtml(teamAvg);
+    const hl = isHlSettings(roomState.settings);
+    const hlRoles = roomState.hlRoles || {};
+    twQuestionProgressEl.innerHTML = hl ? hlHeartsHtml(roomState) : worldProgressBarHtml(teamAvg);
     const pair = q ? questionObjects(q) : null;
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
-    twQuestionPromptEl.textContent = q ? q.prompt : "";
-    const ids = Object.keys(currentPlayers);
+    if (hl && q) {
+      const myRole = hlRoles[currentPlayerId];
+      const ask = myRole === "high" ? "You're HIGH: pick a number it can't possibly be MORE than." : myRole === "low" ? "You're LOW: pick a number it can't possibly be LESS than." : "";
+      twQuestionPromptEl.innerHTML = escapeHtml(q.prompt) + (ask ? `<span class="hl-role hl-${myRole}">${ask}</span>` : "");
+    } else twQuestionPromptEl.textContent = q ? q.prompt : "";
+    // In High/Low Survival, order the two avatar boxes HIGH then LOW and tag each with its role.
+    const ids = hl ? Object.keys(currentPlayers).sort((a, b) => (hlRoles[a] === "high" ? 0 : 1) - (hlRoles[b] === "high" ? 0 : 1)) : Object.keys(currentPlayers);
     // Each player's box is wrapped with its own dedicated empty gutter to its left (a reaction's
     // landing spot, per the user's own drawing of two separate boxes each paired with their own
     // slot) instead of one shared gap between two centered boxes.
     twQuestionStatsEl.innerHTML = ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-pair"><div class="tw-qs-gutter"></div><div class="tw-qs-half" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="tw-qs-acc">${acc}</span></div></div>`;
+      return `<div class="tw-qs-pair"><div class="tw-qs-gutter"></div><div class="tw-qs-half" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? `<span class="hl-chip hl-${hlRoles[id]}">${hlRoles[id] === "high" ? "HIGH" : "LOW"}</span>` : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
     }).join("");
   }
 
@@ -14408,7 +14481,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     for (let i = 1; i <= totalRounds; i++) {
       slots += `<span class="round-slot${i === round ? " current" : ""}"></span>`;
     }
-    hudRoundLabelEl.innerHTML = `<span class="round-text">Round ${round} of ${totalRounds}</span><span class="round-tracker">${slots}</span>`;
+    hudRoundLabelEl.innerHTML = isHlSettings(data.settings)
+      ? `<span class="round-text">Round ${round}</span>`
+      : `<span class="round-text">Round ${round} of ${totalRounds}</span><span class="round-tracker">${slots}</span>`;
     const showRoundControls = data.phase !== "final";
     hudHostControlsEl.style.display = (isHost && showRoundControls) ? "flex" : "none";
     hudGuestControlsEl.style.display = (!isHost && showRoundControls) ? "flex" : "none";
