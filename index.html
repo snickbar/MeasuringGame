@@ -8801,7 +8801,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const w = WORLDS[wi];
     if (worldStarsOf(w.id) > 0) return true;
     if (w.unlockCount) return unlockedFantasyIds().length >= w.unlockCount; // Make Believe: unlock enough creatures with Fantasy awards
-    return wi === 0 || worldLevelStars(WORLDS[wi - 1].id, WORLD_LEVELS) >= 2;
+    return true; // every regular World is open from the start (only Make Believe is earned, above)
   };
   const worldLevelUnlocked = (wid, l) => l === 1 || worldLevelStars(wid, l - 1) >= 1;
   const worldStarsHtml = (n) => `<span class="wl-stars" aria-label="${n} of 3 stars">${[1, 2, 3].map((i) => `<span${i > n ? ' class="off"' : ''}><img src="icons/flair/star.png" alt=""></span>`).join("")}</span>`;
@@ -8946,12 +8946,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
     const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
     const nextLevel = wl.level < WORLD_LEVELS && wl.stars >= 1;
-    const worldDone = wl.level === WORLD_LEVELS && wl.stars >= 2 && wl.wi + 1 < WORLDS.length && !WORLDS[wl.wi + 1].unlockCount;
     el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
       <div class="dc-card dc-hot"><div class="wl-big">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div><div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "Perfect run!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${worldRewardCard(w)}
-      ${worldDone ? `<div class="dc-card dc-hot"><div class="dc-big">${escapeHtml(WORLDS[wl.wi + 1].name)} unlocked!</div></div>` : ""}
       ${nextLevel ? '<button type="button" class="dc-btn" id="wl-nextlevel">Next level</button>' : ""}
       <button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>
       <button type="button" class="dc-btn dc-alt" id="wl-tolevels">Back to levels</button>`;
