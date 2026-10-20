@@ -6905,6 +6905,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "under-the-sea", name: "Under the Sea", ids: "starfish seahorse jellyfish pufferfish koi-fish octopus barracuda stingray electric-eel swordfish dolphin hammerhead-shark great-white-shark manta-ray killer-whale giant-squid whale-shark blue-whale sand-dollar".split(" ") },
     { id: "toy-box", name: "Toy Box", ids: "die marble lego-brick domino checkers-piece wooden-block letter-block toy-car rubiks-cube rubber-duck action-figure game-controller retro-cartridge jack-in-the-box chattering-teeth pogo-stick laser-sword rubber-chicken".split(" ") },
     { id: "make-believe", name: "Make Believe", unlockCount: 20, ids: FANTASY_OBJECTS.map((o) => o.id) },
+    // Holiday Mixup: opens after the player has finished the Monthly Challenge in 2 months that have their own holiday
+    // pack, and holds the objects of exactly those months' packs (see holidayMixObjects).
+    { id: "holiday-mix", name: "Holiday Mixup", unlockHolidays: 2, ids: [] },
   ];
   const DAILY_TZ = "America/New_York";
   function dailyDateStr(d) {
@@ -8952,7 +8955,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const WORLD_LEVELS = 5, WORLD_Q = 5, WORLD_STAR_AT = [60, 75, 90], WORLD_STAR_COINS = 5;
   const WORLD_LEVEL_NAMES = ["Warm-up", "Getting there", "Tricky", "Tough", "Expert"];
-  const WORLD_ICON = { tiny: "ant", games: "soccer-ball", home: "toothbrush", food: "donut", town: "traffic-light", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower", "under-the-sea": "seahorse", "toy-box": "action-figure", "make-believe": "unicorn" };
+  const WORLD_ICON = { tiny: "ant", games: "soccer-ball", home: "toothbrush", food: "donut", town: "traffic-light", critters: "domestic-cat", wheels: "fighter-jet", landmarks: "eiffel-tower", "under-the-sea": "seahorse", "toy-box": "action-figure", "make-believe": "unicorn", "holiday-mix": "christmas-tree" };
   // Monthly/holiday objects that can also show up in a World, but ONLY while available to the player (this month's pack,
   // a pack they own, or the sampler). They are extras: they never count toward a World's own object totals.
   const WORLD_EXTRAS = {
@@ -8971,9 +8974,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldStarsOf = (wid) => { let n = 0; for (let l = 1; l <= WORLD_LEVELS; l++) n += worldLevelStars(wid, l); return n; };
   function worldTotalStars() { return WORLDS.reduce((n, w) => n + worldStarsOf(w.id), 0); }
   // A world also stays open if the player already earned stars in it (so adding a world mid-list never re-locks progress).
+  // Months (YYYY-MM) in which this player finished the Monthly Challenge AND the month has its own holiday pack.
+  function holidayMonthsPlayed() {
+    const keys = new Set(Object.keys(myProfile.monthlyHistory || {}));
+    const cur = myProfile.monthly;
+    if (cur && cur.done && cur.key) keys.add(cur.key);
+    return Array.from(keys).filter((k) => {
+      if (!/^\d{4}-\d{2}$/.test(k)) return false;
+      const [y, m] = k.split("-").map(Number);
+      return seasonPackIds(new Date(y, m - 1, 15)).length > 0;
+    });
+  }
+  // Holiday Mixup's objects: everything from the packs of the holiday months this player has played.
+  function holidayMixObjects() {
+    const packs = new Set();
+    holidayMonthsPlayed().forEach((k) => { const [y, m] = k.split("-").map(Number); seasonPackIds(new Date(y, m - 1, 15)).forEach((p) => packs.add(p)); });
+    return HOLIDAY_OBJECTS.filter((o) => packs.has(o.pack));
+  }
   const worldUnlocked = (wi) => {
     const w = WORLDS[wi];
     if (worldStarsOf(w.id) > 0) return true;
+    if (w.unlockHolidays) return holidayMonthsPlayed().length >= w.unlockHolidays; // Holiday Mixup: play enough holiday Monthly Challenges
     if (w.unlockCount) return unlockedFantasyIds().length >= w.unlockCount; // Make Believe: unlock enough creatures with Fantasy awards
     return true; // every regular World is open from the start (only Make Believe is earned, above)
   };
@@ -9000,6 +9021,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Fresh questions every attempt. Pairs are ranked by how many times bigger the target is than the unit
   // (a bigger gap is harder), and each level draws from its own fifth of that ranking, easiest to hardest.
   function worldObjects(w) {
+    if (w.unlockHolidays) return holidayMixObjects();
     const packs = activePackIdsFor(new Date(), myProfile.holidayPacks);
     const extra = (WORLD_EXTRAS[w.id] || []).map((id) => OBJECT_BY_ID.get(id)).filter((o) => o && (packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))));
     return w.ids.map((id) => OBJECT_BY_ID.get(id)).filter(Boolean).concat(extra);
@@ -9079,8 +9101,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p>${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
-          const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
-          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, hot: open && st === 0 && (i === 0 || x.unlockCount || worldStarsOf(WORLDS[i - 1].id) > 0) });
+          const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
+          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
       return;
     }
@@ -9257,7 +9279,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Team Worlds</h2><p class="dc-sub">Pick a World to play together</p>` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i);
-          return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : "Unlock this World in Solo first", { disabled: !open });
+          return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : (x.unlockHolidays ? "Finish 2 holiday Monthly Challenges first" : "Unlock this World in Solo first"), { disabled: !open });
         }).join("") + `<h3 class="cs-h">Your best team games</h3>${teamWorldsOverallBestHtml()}`;
       return;
     }
