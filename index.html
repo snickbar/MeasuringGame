@@ -4039,6 +4039,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (removedAny) await maybeDeleteEmptyRoom(roomCode);
   }, 5000);
 
+  // ---- Room "last active" stamp, used by the daily stale-room cleanup (scripts/cleanup-stale-rooms.mjs,
+  // .github/workflows/cleanup-stale-rooms.yml): a room nobody has open for 24 hours is deleted. While the
+  // app is open in a room it refreshes the stamp on join/reconnect, every 10 minutes, and when the app is
+  // brought back to the foreground. Only written while our own player is still in the room, so it can never
+  // recreate a room that has just been deleted.
+  function touchRoom() {
+    if (!currentRoomCode || !currentPlayerId || !roomState || !roomState.players || !roomState.players[currentPlayerId]) return;
+    set(ref(db, `rooms/${currentRoomCode}/lastActive`), serverTimestamp()).catch(() => {});
+  }
+  setInterval(() => { if (!document.hidden) touchRoom(); }, 600000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) touchRoom(); });
+  onValue(ref(db, ".info/connected"), (snap) => { if (snap.val() === true) setTimeout(touchRoom, 3000); });
+
   // ==================== Local (per-user, per-browser) identity/prefs ====================
 
   // ==================== Gacha: avatar rarity tiers + coin economy ====================
