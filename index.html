@@ -2219,6 +2219,12 @@ if (location.protocol === "file:") {
   .question-prompt.tw-plain #q-pencil, .question-prompt.tw-plain #q-eraser, .question-prompt.tw-plain #q-dust,
   .question-prompt.tw-plain #q-curtain, .question-prompt.tw-plain #q-curtain-top { display: none !important; }
   .question-prompt.tw-plain #question-prompt-text { display: block !important; font-size: 16px !important; }
+  /* Board skins like Letterboard colour, move and fade each letter with INLINE styles, which beat the container's
+     color above - so the question came out rainbow (and letters could sit mid-drop or invisible). Force plain letters. */
+  .question-prompt.tw-plain .qch { color: #000 !important; opacity: 1 !important; transform: none !important; text-shadow: none !important; background: none !important; }
+  /* Accuracy bar shown above the question while the stacking animation plays (same card as on the question screen). */
+  #tw-anim-progress { margin: 4px 0 6px; }
+  #tw-anim-progress[hidden] { display: none; }
   .qch { opacity: 0; }
   .qch.on { opacity: 1; }
   /* Used to be a small inline line, with a separate big standalone "THE
@@ -15464,6 +15470,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // stripped of all the board decoration - specifically during "animation".
     const twShowPrompt = isTeamWorlds && phase === "animation";
     qPromptEl.style.display = (isTeamWorlds && !twShowPrompt) ? "none" : "";
+    // Team Worlds: keep the running accuracy bar at the top during the stacking animation too (it is part of the
+    // question screen, which is hidden while the animation plays).
+    {
+      let bar = document.getElementById("tw-anim-progress");
+      if (!bar) { bar = document.createElement("div"); bar.id = "tw-anim-progress"; bar.hidden = true; (qPromptEl.closest(".hud-timer-row") || qPromptEl).before(bar); } // above the question row, full width
+      if (twShowPrompt) {
+        const meNow = currentPlayers[currentPlayerId];
+        const avgNow = meNow?.roundsCounted ? meNow.accuracySum / meNow.roundsCounted : null;
+        const html = worldProgressBarHtml(avgNow);
+        if (bar.dataset.html !== html) { bar.innerHTML = html; bar.dataset.html = html; }
+      }
+      bar.hidden = !twShowPrompt;
+    }
     // Clearing data-board/data-scene directly (an earlier attempt) didn't stick - this player's
     // profile listener re-fires often (any profile field changing at all) and calls
     // applyBoard(activeBoard()) again each time, which re-sets the attribute AND re-shows
