@@ -415,13 +415,18 @@ export function createStackAnimation(container, options = {}) {
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;display:block;';
   const ctx = canvas.getContext('2d');
+  // The caller can also ask for the number alone, no unit name beside it (Team Worlds already
+  // names the unit once, right above, as one of the two compared objects - repeating it here
+  // read as redundant, per the user's own request).
+  const hideUnit = !!options.hideUnit;
   const tally = document.createElement('div');
   tally.style.cssText = 'position:absolute;display:flex;align-items:baseline;gap:6px;white-space:nowrap;font-variant-numeric:tabular-nums;';
   const nEl = document.createElement('span');
   nEl.style.cssText = 'font-weight:700;font-size:26px;line-height:1;';
   const uEl = document.createElement('span');
   uEl.style.cssText = 'font-weight:700;';
-  tally.append(nEl, uEl);
+  tally.append(nEl);
+  if (!hideUnit) tally.append(uEl);
   container.append(canvas);
   if (!hideTally) container.append(tally);
 

@@ -2178,11 +2178,26 @@ if (location.protocol === "file:") {
      attribute-selector rules above (and the profile listener that keeps re-applying it) can't be
      reliably beaten by clearing the attribute/inline style alone (see the comment where .tw-plain
      is toggled). Wins regardless of what data-board/data-scene the element still carries. */
-  .question-prompt.tw-plain { background: #fffdf6 !important; border: 1px solid rgba(217,194,154,.7) !important; border-radius: 24px !important; min-height: 0 !important; box-shadow: none !important; padding: 8px 12px !important; }
+  .question-prompt.tw-plain {
+    background: #fffdf6 !important; border: 1px solid rgba(217,194,154,.7) !important; border-radius: 24px !important;
+    height: auto !important; min-height: 0 !important; box-shadow: none !important; padding: 8px 12px !important;
+    /* Every per-board skin rule above (.question-prompt[data-board="X"]) sets some combination of
+       these directly on this same element, not just its children - color/text-shadow/stroke for
+       neon and sand, a monospace font for terminal/typewriter, uppercase+letter-spacing for
+       letterboard/splitflap, and so on. A background/border reset alone leaves all of those
+       still active (same specificity tier, so !important is the only thing that reliably wins
+       regardless of which board happens to be equipped), which is why the text kept rendering
+       in each board's own color/style instead of plain. */
+    color: #000 !important; font-family: 'Fredoka', sans-serif !important; font-weight: 600 !important;
+    text-transform: none !important; letter-spacing: normal !important; text-shadow: none !important; -webkit-text-stroke: 0 !important;
+  }
   /* Scene boards (terminal/tv/etc.) insert an actual <img>/<canvas> into #q-stage and position
      #q-body absolutely over it via the [data-scene] rules above - a background-color override
      alone doesn't touch either, so both need their own !important reset here too, or the
-     board's picture (and #q-body's absolute box tied to it) still shows/misplaces through. */
+     board's picture (and #q-body's absolute box tied to it) still shows/misplaces through.
+     Height was still 196px from [data-scene]'s own explicit (non-min) height rule even after
+     min-height:0 above - min-height never shrinks a box that has its own larger explicit height,
+     so that needed its own !important override too. */
   .question-prompt.tw-plain #q-stage { display: none !important; }
   .question-prompt.tw-plain #q-body { position: static !important; left: auto !important; top: auto !important; width: auto !important; height: auto !important; display: block !important; }
   /* The running count no longer mirrors here at all (see getAnimCtl/runAnimation) - the stack
@@ -12109,10 +12124,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // built-in tally (same as Solo Worlds/Quick/Daily/Monthly) instead of hiding it. animCtl is
     // one persistent instance reused every round - rebuilt only if the mode actually changed
     // since it was created (e.g. leaving a Team Worlds room for a Party one in the same session).
-    const hideTally = roomState.settings?.mode !== "teamworlds";
+    const isTw = roomState.settings?.mode === "teamworlds";
+    const hideTally = !isTw;
     if (!animCtl || animCtlHideTally !== hideTally) {
       if (animCtl) try { animCtl.destroy(); } catch (e) { /* rebuilding anyway */ }
-      animCtl = mod.createStackAnimation(animStageEl, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image, hideTally });
+      // hideUnit: Team Worlds already names the unit once, right above (one of the two compared
+      // objects' own labels) - repeating "3 pieces of confetti" beside the count read as
+      // redundant, so just the bare number there, same spot Solo Worlds uses.
+      animCtl = mod.createStackAnimation(animStageEl, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image, hideTally, hideUnit: isTw });
       animCtlHideTally = hideTally;
     }
     return animCtl;
