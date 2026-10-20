@@ -8320,6 +8320,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
     if (action === "navFromLobby") { if (nav) nav(); return; }
+    if (action === "closeCreatedRoom") { closeCreatedRoom(); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
       return;
@@ -11750,17 +11751,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     joinScreen.classList.remove("active");
     nameAvatarScreenEl.classList.add("active");
   }
+  // Backing out of the name/avatar screen as the HOST of a room just created for this game closes
+  // that room (after asking), so no empty room is left behind; a guest just goes back to Join.
   nameAvatarBackBtn.addEventListener("click", () => {
-    nameAvatarScreenEl.classList.remove("active");
-    // Backing out of an in-place edit (reached via the Lobby's own back
-    // button) retraces the original setup chain - Settings/Create, not back
-    // to the Lobby - same as if this had been the normal first-time flow.
-    // The only way back to the Lobby from here on is going forward again
-    // (Join Lobby), same as always.
-    if (editingFromLobby) {
-      editingFromLobby = false;
-      if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
+    if (nameAvatarCameFrom === "create" && pendingRoomCode) {
+      openExitConfirm("closeCreatedRoom", "Close this room?", "The room you created will be closed. You can create a new one.", "Close room", "Stay here");
+      return;
     }
+    leaveNameAvatarScreen();
+  });
+  function leaveNameAvatarScreen() {
+    nameAvatarScreenEl.classList.remove("active");
+    if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
     if (nameAvatarCameFrom === "create" && createMode === "teamworlds") {
       // Team Worlds never shows the classic Create Room screen (nothing to configure) - back goes
       // to its own World picker instead.
@@ -11770,20 +11772,45 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else {
       joinScreen.classList.add("active");
     }
-  });
-  // Goes to the name/avatar screen to edit in place - NOT a real "leave the
-  // room" (that's lobby-back's old behavior before this, still used by the
-  // actual Exit button); the room listener's own editingFromLobby guard (see
-  // applyPhase()) is what keeps it from forcing Lobby straight back into
-  // view on the very next room update. cameFrom is set to whichever screen
-  // actually precedes it in the real setup chain (Create for the host, Join
-  // for a guest) rather than a special "lobby" case, so backing out again
-  // from here goes to Settings, not back to the Lobby.
-  lobbyBackBtn.addEventListener("click", () => {
-    editingFromLobby = true;
-    pendingRoomCode = currentRoomCode;
+  }
+  async function closeCreatedRoom() {
+    const code = pendingRoomCode;
+    pendingRoomCode = null; pendingIsHost = false; pendingSettings = null;
+    leaveNameAvatarScreen();
+    if (!code) return;
+    try {
+      const snap = await get(ref(db, `rooms/${code}`));
+      if (!snap.exists()) return;
+      await set(ref(db, `rooms/${code}/phase`), "ended"); // anyone still inside gets the "closed" screen
+      await maybeDeleteEmptyRoom(code);
+    } catch (e) { console.warn("Couldn't close the room", e); }
+  }
+  // Leaves the room you're in but keeps the details needed to come straight back to it
+  // (room code, whether you were host, its settings). Used by the lobby's Back button: you go to the
+  // name/avatar screen, and picking a name/picture and tapping Join Lobby puts you back in the room.
+  async function stepOutOfRoom() {
+    const code = currentRoomCode, id = currentPlayerId, wasHost = isHost;
+    if (!code || !id) return;
+    const settings = roomState && roomState.settings ? { ...roomState.settings } : null;
+    leavingGame = true; // silence the room listener while we leave
+    if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+    if (reactionsUnsub) { reactionsUnsub(); reactionsUnsub = null; }
+    try {
+      onDisconnect(ref(db, `rooms/${code}/players/${id}`)).cancel();
+      await remove(ref(db, `rooms/${code}/players/${id}`));
+      // A host stepping out keeps the room open for their own return; a guest leaving an empty room closes it.
+      if (!wasHost) await maybeDeleteEmptyRoom(code);
+    } catch (e) { console.warn("Couldn't step out of the room cleanly", e); }
+    currentRoomCode = null; currentPlayerId = null; isHost = false;
+    roomState = {}; currentPlayers = {}; renderedPlayerListIds = new Set();
+    leavingGame = false;
+    pendingRoomCode = code; pendingIsHost = wasHost; pendingSettings = settings;
+  }
+  lobbyBackBtn.addEventListener("click", async () => {
+    lobbyBackBtn.disabled = true;
+    try { await stepOutOfRoom(); } finally { lobbyBackBtn.disabled = false; }
     lobbyScreenEl.classList.remove("active");
-    showNameAvatarScreen(isHost ? "create" : "join");
+    showNameAvatarScreen(pendingIsHost ? "create" : "join");
   });
 
   let hostTransferModeChoice = "reassign";
@@ -11906,9 +11933,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       lobbyScreenEl.classList.add("active");
       return;
     }
+    let hadBots = false;
+    if (pendingIsHost) {
+      // Coming back into a room this host stepped out of: it may have been closed, someone else may have
+      // taken over as host meanwhile (then rejoin as a regular player), and Solo's bots are already there.
+      const rs = (await get(ref(db, `rooms/${pendingRoomCode}`))).val();
+      if (rs === null || rs.phase === "ended") { nameAvatarStatusEl.textContent = "This room was closed. Go back and create a new one."; return; }
+      const others = Object.values(rs.players || {});
+      if (others.some((pl) => pl && pl.isHost && pl.connected !== false)) pendingIsHost = false;
+      hadBots = others.some((pl) => pl && pl.isBot);
+    }
     if (pendingIsHost) {
       await joinRoomAsPlayer(pendingRoomCode, name, true, { settings: pendingSettings });
-      if (pendingSettings && pendingSettings.solo) {
+      if (pendingSettings && pendingSettings.solo && !hadBots) {
         // Solo Game starts with 3 bots (one at a time so frames/avatars/names don't collide).
         for (let i = 0; i < SOLO_MIN_BOTS; i++) await addBot("medium");
       }
@@ -13388,7 +13425,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function watchReactions(roomCode) {
-    onChildAdded(ref(db, `rooms/${roomCode}/reactions`), (snap) => {
+    if (reactionsUnsub) reactionsUnsub();
+    reactionsUnsub = onChildAdded(ref(db, `rooms/${roomCode}/reactions`), (snap) => {
       renderReactionBubble(snap.val());
     });
   }
@@ -15768,8 +15806,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   let lastRandomRollKey = null;
+  let roomUnsub = null, reactionsUnsub = null; // so stepping out of a room can stop listening to it
   function watchRoom(roomCode) {
-    onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
+    if (roomUnsub) roomUnsub();
+    everSeenSelfInPlayers = false;
+    wasRemoved = false;
+    roomUnsub = onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
       if (leavingGame) return; // see the comment on its declaration
       const data = snapshot.val() || {};
       roomState = data;
