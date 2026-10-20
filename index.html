@@ -2359,6 +2359,13 @@ if (location.protocol === "file:") {
   .hl-chip { padding: 1px 10px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: #000; border: 2px solid #4a2c12; }
   .hl-chip.hl-high { background: #ffd1c9; }
   .hl-chip.hl-low { background: #c9e4ff; }
+  .hl-verdict { text-align: center; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .hl-verdict-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: #000; }
+  .hl-verdict.ok .hl-verdict-title { color: #1f7a1f; }
+  .hl-verdict.bad .hl-verdict-title { color: #b3261e; }
+  .hl-verdict-sub { font-weight: 700; font-size: 14px; color: #000; }
+  .hl-verdict-hearts { display: flex; justify-content: center; }
+  .tw-sumrow .name .hl-chip { margin-left: 6px; font-size: 10px; padding: 0 7px; vertical-align: middle; }
   .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
@@ -14069,9 +14076,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // appear one after the other (CSS delays); otherwise it's drawn already complete.
   function twRevealCardHtml(e, p, anim) {
     const acc = e.accuracyPercent;
-    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(acc)}%</b>${markSvg(acc)}</div>`;
+    const roleChip = e.role ? `<span class="hl-chip hl-${e.role}">${e.role === "high" ? "HIGH" : "LOW"}</span>` : "";
+    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}${roleChip}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(acc)}%</b>${markSvg(acc)}</div>`;
   }
   const twHeadHtml = (t) => `<div class="tw-head">${t}</div>`;
+  // High/Low Survival: what the round meant for the team - in sync or not, survived or lost a life, hearts left.
+  function hlVerdictHtml(data, shown) {
+    const l = data.hlLast || {};
+    const pass = Math.round((data.settings && data.settings.passPct) || HL_PASS);
+    let cls, title, sub;
+    if (l.passed) {
+      cls = "ok"; title = "Survived!";
+      sub = `In sync${data.hlSyncStreak > 1 ? ` · ${data.hlSyncStreak} in a row` : ""}`;
+    } else if (l.crossed) {
+      cls = "bad"; title = "Lost a life"; sub = "Your picks crossed - LOW went above HIGH";
+    } else if (!l.inSync) {
+      cls = "bad"; title = "Lost a life"; sub = "The answer fell outside your range";
+    } else {
+      cls = "bad"; title = "Lost a life"; sub = `In sync, but under the ${pass}% pass mark`;
+    }
+    return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data)}</div></div></div>`;
+  }
   // Counts a number up (e.g. the team average) so it lands with a little drama.
   function twCountUp(el, to, ms, suffix) {
     if (!el) return;
@@ -14160,7 +14185,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     });
     const avgCard = `<div class="tw-slot${showAverage ? "" : " tw-ph"}"><div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average</div><div class="tw-avg-num">${showAverage ? "0%" : "00.0%"}</div></div></div>`;
-    revealListEl.innerHTML = twHeadHtml("Round Summary") + '<div class="tw-sum">' + twQTopHtml(q, ans) + (cards[0] || "") + (order.length > 1 ? avgCard : "") + (cards[1] || "") + "</div>";
+    revealListEl.innerHTML = twHeadHtml("Round Summary") + '<div class="tw-sum">' + twQTopHtml(q, ans) + (cards[0] || "") + (order.length > 1 ? avgCard : "") + (cards[1] || "") + (isHlSettings(data.settings) ? hlVerdictHtml(data, showAverage && !!twRevealAnimated[prefix + "avg"]) : "") + "</div>";
     timers.forEach(([ms, snd]) => setTimeout(() => { if (twRevealSig === sig) playSound(snd); }, ms));
     if (showAverage) {
       const avg = data.lastRoundAccuracy || 0, card = revealListEl.querySelector(".tw-avg"), num = revealListEl.querySelector(".tw-avg-num");
@@ -14172,7 +14197,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         setTimeout(() => {
           if (twRevealSig !== sig) return;
           num.classList.add("pop"); card.classList.add("glow");
-          twShowQuip(card.parentElement, avg, gameKey);
+          if (isHlSettings(data.settings)) {
+            const v = revealListEl.querySelector(".hl-verdict");
+            if (v) { v.parentElement.classList.remove("tw-ph"); playSound(data.hlLast && data.hlLast.passed ? "roundwin" : "error"); }
+          } else twShowQuip(card.parentElement, avg, gameKey);
           playSound(avg >= 75 ? "roundwin" : "select");
           if (avg >= 75) celebrate(avg >= 90 ? "spotOn" : "normal");
         }, 1100);
