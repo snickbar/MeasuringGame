@@ -1,0 +1,33 @@
+# Deletes abandoned game rooms (nobody connected, idle for 24+ hours) from the Realtime Database.
+# Runs every day; you can also run it by hand from the Actions tab - tick "dry run" to only list
+# what would be deleted without deleting anything.
+name: Clean up stale rooms
+on:
+  schedule:
+    - cron: "17 8 * * *"   # 08:17 UTC daily (4:17 AM Eastern)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (only list what would be deleted)"
+        type: boolean
+        default: true
+      ttl_hours:
+        description: "Hours of inactivity before a room is deleted"
+        default: "24"
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Not saved into package.json: this is only needed by the cleanup job.
+      - run: npm install --no-save --no-audit --no-fund firebase-admin@13
+      - run: node scripts/cleanup-stale-rooms.mjs
+        env:
+          # FIREBASE_ADMIN_KEY (the Firebase Admin SDK private key) is preferred; the hosting deploy key
+          # is a fallback but may not be allowed to touch the database.
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_ADMIN_KEY || secrets.FIREBASE_SERVICE_ACCOUNT_MEASURING_GAME }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          TTL_HOURS: ${{ github.event_name == 'workflow_dispatch' && inputs.ttl_hours || '24' }}
