@@ -11,9 +11,9 @@ const extract=name=>{let i=source.indexOf('  function '+name+'(');if(i<0)i=sourc
 const math=Object.create(Math);let random=0;math.random=()=>random;
 const bot=vm.createContext({Math:math});
 vm.runInContext(source.match(/  const BOT_DIFFICULTY_RANGES = [^;]+;/)[0]+'\n'+extract('botGuessValue'),bot);
-for(const [r,expected] of [[0,0],[.25,100],[.5,200],[.75,300],[.999999,400]]){random=r;assert.equal(bot.botGuessValue(100,'easy'),expected)}
-random=0;assert.equal(bot.botGuessValue(100,'medium'),30);assert.equal(bot.botGuessValue(100,'hard'),60);
-random=.999999;assert.equal(bot.botGuessValue(100,'medium'),170);assert.equal(bot.botGuessValue(100,'hard'),140);
+for(const [r,expected] of [[0,0],[.25,75],[.5,150],[.75,225],[.999999,300]]){random=r;assert.equal(bot.botGuessValue(100,'easy'),expected)}
+random=0;assert.equal(bot.botGuessValue(100,'medium'),30);assert.equal(bot.botGuessValue(100,'hard'),70);
+random=.999999;assert.equal(bot.botGuessValue(100,'medium'),170);assert.equal(bot.botGuessValue(100,'hard'),130);
 assert.equal(Number(source.match(/const SOLO_MIN_BOTS = (\d+)/)[1]),3);
 const me={isBot:false},easy={isBot:true,botDifficulty:'easy'},medium={isBot:true,botDifficulty:'medium'},hard={isBot:true,botDifficulty:'hard'};
 const fresh=()=>({coins:120,stats:{},history:[],achClaimed:{welcome:true},worlds:{tiny:9}});

@@ -1864,7 +1864,7 @@ if (location.protocol === "file:") {
   }
   /* Add-bot difficulty pills: green, orange, red, as 9-slice pictures. */
   #bot-controls { flex: 0 1 auto; min-width: 0; }
-  #bot-all-row { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  #bot-all-row { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
   #bot-all-row .bot-btn { flex: 1 1 0; min-width: 0; height: 40px; padding: 0 2px; font-size: clamp(10px, 3vw, 13px); border-width: 0 clamp(8px, 3vw, 14px); white-space: nowrap; }
   .bot-btn {
     display: flex; align-items: center; justify-content: center; text-align: center;
@@ -2391,6 +2391,7 @@ if (location.protocol === "file:") {
   .hl-best-row .avatar { width: 28px; height: 28px; flex: none; }
   .hl-best-row .name { flex: 1; text-align: left; }
   .hl-best-row b { font-family: 'Fredoka', sans-serif; font-size: 18px; color: var(--brand); }
+  .bot-acc-label { display: block; flex: 0 0 100%; text-align: center; font-weight: 700; font-size: 12px; color: #000; margin-bottom: 2px; }
   .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
@@ -3529,8 +3530,8 @@ if (location.protocol === "file:") {
   </div>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
-    <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Easy, Medium or Hard in the lobby before you begin. Solo games are always free, even before Party Mode is unlocked.</p>
-    <p>Round XP depends on your opponents: <b>Easy ×0.8</b>, <b>Medium or people ×1.1</b>, and <b>Hard ×1.2</b>. Mixed lobbies average the opponents who submitted a guess. XP already earned stays unchanged. Game-completion XP and Daily, Worlds, Monthly and Survival XP keep their usual rates.</p>
+    <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Low, Medium or High bot accuracy in the lobby before you begin. Solo games are always free, even before Party Mode is unlocked.</p>
+    <p>Round XP depends on your opponents: <b>Low accuracy ×0.8</b>, <b>Medium accuracy or people ×1.1</b>, and <b>High accuracy ×1.2</b>. Mixed lobbies average the opponents who submitted a guess. XP already earned stays unchanged. Game-completion XP and Daily, Worlds, Monthly and Survival XP keep their usual rates.</p>
   </div></details>
 
   <details class="howto-section"><summary>Hosting a party</summary><div class="howto-body">
@@ -3607,7 +3608,7 @@ if (location.protocol === "file:") {
   </div></details>
 
   <details class="howto-section"><summary>Good to know</summary><div class="howto-body">
-    <p><b>Bots</b> can be added from the lobby (Easy/Medium/Hard) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). <b>Flairs</b> are the burst of effects (hearts, fireworks, snow...) that plays around your card for everyone to see when you win a round - equip one from <b>Style</b>. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
+    <p><b>Bots</b> can be added from the lobby (Low, Medium or High accuracy) if you want to practice solo or fill out a small group. <b>Reactions</b> are little animated pictures you can send from the bar along the bottom at any time during a game (except the reveal animation). <b>Flairs</b> are the burst of effects (hearts, fireworks, snow...) that plays around your card for everyone to see when you win a round - equip one from <b>Style</b>. The host can <b>Pause</b> to freeze the timer, and either the host or a player can <b>Exit</b> at any time.</p>
     <p>Play immediately as a guest. <b>Welcome to Size Em Up!</b> automatically gives you <b>100 coins</b> when your profile is established. Connecting Google is optional: the separate <b>Account Connected</b> achievement automatically adds <b>50 coins</b> the first time. Both appear in Awards and pay only once.</p>
     <p>Signing in with <b>Google</b> (Settings &gt; Account) saves your coins, avatars, and unlocks to your account instead of just this device, so you can pick up where you left off on a new phone. A new account inherits your guest progress and reward history. If the account already has progress, its saved progress takes precedence. Reopening the game or signing in again does not repeat either starter reward.</p>
   </div></details>
@@ -3861,9 +3862,10 @@ if (location.protocol === "file:") {
       <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium">+ Add bot</button>
     </div>
     <div id="bot-all-row" style="display:none;">
-      <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Easy</button>
-      <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Medium</button>
-      <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All Hard</button>
+      <span class="bot-acc-label">Bot accuracy</span>
+      <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Low</button>
+      <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Med</button>
+      <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All High</button>
     </div>
   </div>
   <p id="lobby-player-count" class="lobby-player-count"></p>
@@ -5844,7 +5846,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const SOLO_MIN_BOTS = 3;
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
-  const BOT_DIFFICULTY_RANGES = { easy: [0, 4], medium: [0.3, 1.7], hard: [0.6, 1.4] };
+  // Bot accuracy. The saved ids stay easy/medium/hard (old rooms, stats and button art use them); players see Low/Medium/High.
+  // A bot's guess is a random multiple of the true answer in this range: Low ~33% average accuracy, Medium ~65%, High ~85%.
+  const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.3, 1.7], hard: [0.7, 1.3] };
+  const BOT_LEVEL_LABEL = { easy: "Low", medium: "Medium", hard: "High", mixed: "Mixed" };
+  const botLevelLabel = (level) => BOT_LEVEL_LABEL[level] || (level ? level.charAt(0).toUpperCase() + level.slice(1) : "");
+  // High/Low Survival bots: how far off the answer a partner is (as a fraction of it) and how often it lands on the wrong side.
+  const HL_BOT_LEVELS = { easy: { lo: 0.1, hi: 2.0, miss: 0.30 }, medium: { lo: 0.05, hi: 0.7, miss: 0.15 }, hard: { lo: 0.05, hi: 0.3, miss: 0.05 } };
+  function hlBotGuess(answer, difficulty, role) {
+    const c = HL_BOT_LEVELS[difficulty] || HL_BOT_LEVELS.medium;
+    const e = c.lo + Math.random() * (c.hi - c.lo);
+    const wrongSide = Math.random() < c.miss;
+    const above = (role === "high") !== wrongSide; // HIGH aims above the answer, LOW below - unless it misses
+    const ratio = above ? 1 + e : Math.max(0.02, 1 - Math.min(e, 0.98));
+    return Math.max(0, Math.round(answer * ratio * 100) / 100);
+  }
   const BOT_NAMES = [
     "RoboRex", "ByteBuddy", "CircuitSam", "PixelPete", "TurboTina", "ByteBecca", "ChipChester",
     "VoltVera", "GizmoGus", "NanoNina", "CogCarl", "SparkySue", "BitBarry", "ZapZoe", "MegaMo",
@@ -9812,7 +9828,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(scoped.attempts||0,'Attempts finished')+statTile(scoped.rounds||0,'Rounds completed')+statTile(scoped.bestAccuracy?formatAccuracy(scoped.bestAccuracy)+'%':'—','Best accuracy')}${statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
     html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'Quick Game and Party':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
     html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Spot-ons')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
-    if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot difficulty</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(level.charAt(0).toUpperCase()+level.slice(1))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
+    if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot accuracy</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(botLevelLabel(level))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
     if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml();
     if(['all','daily'].includes(statsMode)){
@@ -11379,7 +11395,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const b = document.createElement("button");
           b.type = "button";
           b.className = "bot-btn" + (p.botDifficulty === d ? " selected" : "");
-          b.textContent = d[0].toUpperCase() + d.slice(1);
+          b.textContent = botLevelLabel(d); b.title = botLevelLabel(d) + " accuracy";
           b.dataset.difficulty = d;
           b.addEventListener("click", () => update(ref(db, `rooms/${currentRoomCode}/players/${id}`), { botDifficulty: d }));
           ctl.appendChild(b);
@@ -12332,12 +12348,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (roomState.phase !== "question") return;
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
         let val = botGuessValue(q.answer, p.botDifficulty);
-        if (isHlSettings(roomState.settings)) {
-          // A bot partner plays its role: HIGH leans above the answer, LOW below it.
-          const role = (roomState.hlRoles || {})[id];
-          if (role === "high") val = Math.max(val, q.answer) * (1 + Math.random() * 0.4);
-          else if (role === "low") val = Math.min(val, q.answer) * (1 - Math.random() * 0.4);
-        }
+        // High/Low Survival: a bot partner plays its role, and how tight a bracket it makes depends on its accuracy level.
+        if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id]);
         set(ref(db, `rooms/${roomCode}/guesses/${id}`), val);
       }, delay);
     });
@@ -15849,7 +15861,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   new ResizeObserver(() => fitScoreNames()).observe(scoreColEl); // refit when the column appears (it is hidden during the reveal animation)
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitScoreNames);
   // Solo Game: no room code anywhere, one "+ Add bot" button instead of the
-  // Easy/Medium/Hard add buttons (difficulty is set per bot row).
+  // Low/Medium/High add buttons (accuracy is set per bot row).
   function applyLobbyMode(data) {
     const solo = !!(data.settings && data.settings.solo);
     const teamMode = data.settings?.mode === "teamvteam";
