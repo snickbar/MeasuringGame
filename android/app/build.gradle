@@ -1,5 +1,21 @@
 apply plugin: 'com.android.application'
 
+// The version code rises with every commit, so each new build counts as a NEW version of the app.
+// That matters twice over: Google Play needs an ever-increasing number, and the live-update plugin
+// only discards an old downloaded update (so the freshly installed APK's own code runs) when the
+// version code changes. A fixed number left phones running a stale downloaded update. Falls back
+// to 2 if git isn't available.
+def gitCommitCount = {
+    try {
+        def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootProject.projectDir)
+        def out = proc.text.trim()
+        proc.waitFor()
+        return out ? out.toInteger() : 2
+    } catch (Exception e) {
+        return 2
+    }
+}
+
 android {
     namespace = "com.snickbar.sizeemup"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,7 +23,7 @@ android {
         applicationId "com.snickbar.sizeemup"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
+        versionCode Math.max(2, gitCommitCount())
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
