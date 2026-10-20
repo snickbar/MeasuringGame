@@ -2365,7 +2365,9 @@ if (location.protocol === "file:") {
   .hl-verdict.bad .hl-verdict-title { color: #b3261e; }
   .hl-verdict-sub { font-weight: 700; font-size: 14px; color: #000; }
   .hl-verdict-hearts { display: flex; justify-content: center; }
-  .tw-sumrow .name .hl-chip { margin-left: 6px; font-size: 10px; padding: 0 7px; vertical-align: middle; }
+  .tw-sumrow .name.hl-has-chip { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .tw-sumrow .name .hl-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tw-sumrow .name .hl-chip { flex: none; font-size: 10px; padding: 0 7px; }
   .tw-qs-half .tw-qs-acc { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: var(--brand); }
   #q-preview { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
   #q-preview .qp { position: relative; flex: 1; min-width: 0; height: 72px; padding: 2px 1px 0; box-sizing: border-box; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; text-align: center; overflow: hidden; }
@@ -14077,7 +14079,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function twRevealCardHtml(e, p, anim) {
     const acc = e.accuracyPercent;
     const roleChip = e.role ? `<span class="hl-chip hl-${e.role}">${e.role === "high" ? "HIGH" : "LOW"}</span>` : "";
-    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}${roleChip}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(acc)}%</b>${markSvg(acc)}</div>`;
+    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name${roleChip ? " hl-has-chip" : ""}"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${roleChip}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(acc)}%</b>${markSvg(acc)}</div>`;
   }
   const twHeadHtml = (t) => `<div class="tw-head">${t}</div>`;
   // High/Low Survival: what the round meant for the team - in sync or not, survived or lost a life, hearts left.
