@@ -2261,6 +2261,9 @@ if (location.protocol === "file:") {
     margin-top: -4px; animation: popIn 300ms ease;
   }
   .score-card:first-child { margin-top: 0; }
+  /* Away player: card greys out and gets an AWAY pill (see applyAwayMarks) */
+  .is-away > * { filter: grayscale(1); opacity: .5; }
+  .is-away::after { content: "AWAY"; position: absolute; top: 3px; right: 5px; z-index: 3; padding: 1px 7px; border-radius: 999px; background: #fff; color: #000; border: 1.5px solid #000; font-family: 'Fredoka', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .06em; line-height: 1.3; pointer-events: none; }
   .score-card.round-winner { animation: popIn 300ms ease, winnerPulse 1.5s ease-in-out infinite; z-index: 1; }
   .score-card.round-winner::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: winnerInset 1.5s ease-in-out infinite; }
   @keyframes winnerPulse { 0%, 100% { filter: drop-shadow(0 0 2px rgba(255,200,60,.7)); } 50% { filter: drop-shadow(0 0 8px rgba(255,200,60,1)); } }
@@ -14068,6 +14071,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return scoreColEl.querySelector(`[data-id="${id}"]`) || scoreColEl.querySelector(`[data-members~="${id}"]`)
       || document.getElementById("tw-question-stats").querySelector(`[data-id="${id}"]`);
   }
+  // ---- "Away" marker: once a game has started, a player who has closed the app keeps their
+  // seat (see the presence sweep) and their card turns grey with an AWAY tag until they return.
+  // One function covers every place a player card is drawn (score column, Team Worlds stats and
+  // reveal/summary rows) by matching their data-id / data-members, so no renderer needs changes.
+  const AWAY_AFTER_MS = 8000; // ignore the brief blips of switching apps or a flaky connection
+  function applyAwayMarks() {
+    const players = (roomState && roomState.players) || {};
+    const started = roomState && roomState.phase && roomState.phase !== "waiting";
+    const away = new Set();
+    if (started) {
+      for (const [id, p] of Object.entries(players)) {
+        if (!p || p.isBot || id === currentPlayerId || p.connected !== false) continue;
+        if (typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt < AWAY_AFTER_MS) continue;
+        away.add(id);
+      }
+    }
+    const roots = [scoreColEl, revealListEl, document.getElementById("tw-question-stats")].filter(Boolean);
+    for (const root of roots) {
+      root.querySelectorAll("[data-id], [data-members]").forEach((el) => {
+        const members = el.dataset.members ? el.dataset.members.split(/\s+/).filter(Boolean) : [el.dataset.id];
+        const isAway = members.length > 0 && members.every((m) => away.has(m));
+        if (isAway && !el.classList.contains("is-away") && getComputedStyle(el).position === "static") el.style.position = "relative";
+        el.classList.toggle("is-away", isAway);
+      });
+    }
+  }
+  let awayFrame = 0;
+  function queueAwayMarks() { if (!awayFrame) awayFrame = requestAnimationFrame(() => { awayFrame = 0; applyAwayMarks(); }); }
+  [scoreColEl, revealListEl, document.getElementById("tw-question-stats")].forEach((root) => {
+    if (root) new MutationObserver(queueAwayMarks).observe(root, { childList: true, subtree: true });
+  });
+  setInterval(applyAwayMarks, 3000);
   let lastScoreColumnSignature = null;
   const newLeader = createLeadMotion();
   const submissionMotion = createSubmissionMotion({ bounce(id) {
