@@ -12938,9 +12938,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const lives = (roomState.hlLives ?? roomState.settings?.lives ?? HL_LIVES) - (passed ? 0 : 1);
       updates.hlLives = Math.max(0, lives);
       updates.hlSurvived = (roomState.hlSurvived || 0) + (passed ? 1 : 0);
-      updates.hlSyncStreak = inSync ? (roomState.hlSyncStreak || 0) + 1 : 0;
+      // The streak only counts rounds the team was in sync AND survived - losing a life always resets it.
+      const syncSurvived = passed && inSync;
+      updates.hlSyncStreak = syncSurvived ? (roomState.hlSyncStreak || 0) + 1 : 0;
       updates.hlBestSyncStreak = Math.max(roomState.hlBestSyncStreak || 0, updates.hlSyncStreak);
-      updates.hlSyncTotal = (roomState.hlSyncTotal || 0) + (inSync ? 1 : 0);
+      updates.hlSyncTotal = (roomState.hlSyncTotal || 0) + (syncSurvived ? 1 : 0);
       updates.hlLast = { passed, crossed, inSync, accuracy };
     }
     let animEndsAt = null;
@@ -14178,7 +14180,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let cls, title, sub;
     if (l.passed) {
       cls = "ok"; title = "Survived!";
-      sub = `In sync${data.hlSyncStreak > 1 ? ` · ${data.hlSyncStreak} in a row` : ""}`;
+      sub = l.inSync ? `In sync${data.hlSyncStreak > 1 ? ` · ${data.hlSyncStreak} in a row` : ""}` : "Close enough - just outside your range";
     } else if (l.crossed) {
       cls = "bad"; title = "Lost a life"; sub = "Your picks crossed - LOW went above HIGH";
     } else if (!l.inSync) {
@@ -15987,13 +15989,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     {
       let bar = document.getElementById("tw-anim-progress");
       if (!bar) { bar = document.createElement("div"); bar.id = "tw-anim-progress"; bar.hidden = true; (qPromptEl.closest(".hud-timer-row") || qPromptEl).before(bar); } // above the question row, full width
-      if (twShowPrompt) {
+      // High/Low Survival has no star bar - and showing the running average here would spoil the round's result.
+      const showBar = twShowPrompt && !isHlSettings(roomState.settings);
+      if (showBar) {
         const meNow = currentPlayers[currentPlayerId];
         const avgNow = meNow?.roundsCounted ? meNow.accuracySum / meNow.roundsCounted : null;
         const html = worldProgressBarHtml(avgNow);
         if (bar.dataset.html !== html) { bar.innerHTML = html; bar.dataset.html = html; }
       }
-      bar.hidden = !twShowPrompt;
+      bar.hidden = !showBar;
     }
     // Clearing data-board/data-scene directly (an earlier attempt) didn't stick - this player's
     // profile listener re-fires often (any profile field changing at all) and calls
