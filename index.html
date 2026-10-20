@@ -11531,7 +11531,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     onDisconnect(ref(db, `rooms/${roomCode}/pendingHostReclaim`)).set({ name });
   }
 
+  // Joining takes a few network round trips. Tapping "Join Lobby" again meanwhile (easy on a slow
+  // connection, when nothing seems to happen) used to run the whole join again, minting a second
+  // and third copy of the same player in the room. One join at a time.
+  let joinInFlight = false;
   async function joinRoomAsPlayer(roomCode, name, asHost, roomData) {
+    if (joinInFlight) return;
+    joinInFlight = true;
+    try { return await joinRoomAsPlayerOnce(roomCode, name, asHost, roomData); }
+    finally { joinInFlight = false; }
+  }
+  async function joinRoomAsPlayerOnce(roomCode, name, asHost, roomData) {
     if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
     // Final authoritative frame-availability check right before writing (mirrors the
     // avatar recheck above) — this is also what caps room size at FRAME_COUNT players.
@@ -11751,7 +11761,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       editingFromLobby = false;
       if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
     }
-    if (nameAvatarCameFrom === "create") {
+    if (nameAvatarCameFrom === "create" && createMode === "teamworlds") {
+      // Team Worlds never shows the classic Create Room screen (nothing to configure) - back goes
+      // to its own World picker instead.
+      openTeamWorldsScreen();
+    } else if (nameAvatarCameFrom === "create") {
       createScreenEl.classList.add("active");
     } else {
       joinScreen.classList.add("active");
@@ -11789,7 +11803,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // to configure there once settings-panel/presets are hidden for this mode - see onStatus's
   // caller for why). onStatus(text) reports progress/errors back to whichever button triggered
   // this, since there's no longer always a visible #create-screen to show createStatusEl on.
+  let hostRoomInFlight = false; // a double tap must not create two rooms
   async function hostRoomNow(onStatus) {
+    if (hostRoomInFlight) return;
+    hostRoomInFlight = true;
+    try { await hostRoomNowOnce(onStatus); }
+    finally { hostRoomInFlight = false; }
+  }
+  async function hostRoomNowOnce(onStatus) {
     onStatus("Creating room...");
     const settings = { ...currentSettings, hostTransferMode: hostTransferModeChoice };
     if (createMode === "solo") settings.solo = true;
