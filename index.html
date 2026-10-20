@@ -2827,6 +2827,18 @@ if (location.protocol === "file:") {
   .tw-rc.anim .tw-rc-pct { animation: twRise .5s cubic-bezier(.2,1.2,.4,1) 1.15s both; }
   .tw-rc.anim .tw-res-check { animation: twVerdict .6s cubic-bezier(.2,1.5,.4,1) 2.05s both; }
   .tw-ph { visibility: hidden; }
+  /* Heading pill at the top of the Round Summary / Game Progress screens (same look as the app's other pill headings). */
+  .tw-head { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 300px; max-width: 100%; min-height: 38px; margin: 0 auto 8px; padding: 4px 14px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #000; text-align: center; background: rgba(255,255,255,.62); border-radius: 12px; }
+  #reveal-list > .tw-head { margin-top: -14px; }
+  /* the heading sits in a plain list item - no panel behind it */
+  #summary-list > li.tw-headrow { display: block; margin: 0; padding: 0; border: 0; border-image: none; background: none; box-shadow: none; }
+  #summary-list > li.tw-headrow .tw-head { margin-bottom: 0; }
+  /* Reveal rows reuse the compact summary-row layout; the guess, then the accuracy, then the check land one after the other. */
+  .tw-rr.anim .tw-sumrow-said { animation: twRise .5s cubic-bezier(.2,1.2,.4,1) .15s both; }
+  .tw-rr.anim .tw-sumrow-pct { animation: twRise .5s cubic-bezier(.2,1.2,.4,1) 1.15s both; }
+  .tw-rr.anim .res-mark { animation: twVerdict .6s cubic-bezier(.2,1.5,.4,1) 2.05s both; }
+  /* the star meter's own "Accuracy so far" line repeats the big game average right above it on the Game Progress card */
+  .tw-sum .wl-progress-heading { display: none; }
   .tw-avg { margin: 6px 0; padding: 10px 12px 12px; text-align: center; }
   .tw-avg-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #000; }
   .tw-avg-num { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.05; color: #6a328c; display: inline-block; }
@@ -2853,7 +2865,7 @@ if (location.protocol === "file:") {
   @keyframes twAvgGlow { 0% { box-shadow: 0 0 0 0 rgba(255,200,60,.9); } 100% { box-shadow: 0 0 0 26px rgba(255,200,60,0); } }
   @keyframes twStarPop { 0% { transform: scale(1) rotate(0); filter: grayscale(1); } 45% { transform: scale(1.9) rotate(-14deg); filter: none; } 100% { transform: scale(1) rotate(0); filter: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .tw-rc.anim .tw-rc-guess, .tw-rc.anim .tw-rc-pct, .tw-rc.anim .tw-res-check, .tw-qtop-a b, .tw-avg-num.pop, .tw-avg.glow, .tw-sum .wl-progress-marker.pop .wl-progress-star { animation: none; }
+    .tw-rr.anim .tw-sumrow-said, .tw-rr.anim .tw-sumrow-pct, .tw-rr.anim .res-mark, .tw-qtop-a b, .tw-avg-num.pop, .tw-avg.glow, .tw-sum .wl-progress-marker.pop .wl-progress-star { animation: none; }
     .tw-sum .wl-progress-fill { transition: none; }
   }
   /* "Your best teams"/Team Worlds' top-5 card rows (twBestRowHtml) - both avatars side by side
@@ -13434,7 +13446,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // sidebar at all to clamp against - see scoreCardFor()).
       const container = (card.closest("#score-col") || card.parentElement).getBoundingClientRect();
       left = rect.left - RX_STAGE + 14;
-      const mid = Math.min(Math.max(rect.top + rect.height / 2, container.top + RX_STAGE / 2), container.bottom - RX_STAGE / 2); // stay in view if the card is scrolled away
+      // Team Worlds: the picture pops out at the LEFT edge of the sender's own box, overlapping it a little,
+      // so it is obvious whose it is (the middle 60% of the stage is the picture itself).
+      if (card.closest("#tw-question-stats")) left = rect.left - RX_STAGE / 2 + 4;      const mid = Math.min(Math.max(rect.top + rect.height / 2, container.top + RX_STAGE / 2), container.bottom - RX_STAGE / 2); // stay in view if the card is scrolled away
       top = mid - RX_STAGE / 2;
     }
     if (r.previewAt) { left = r.previewAt.x - RX_STAGE / 2; top = r.previewAt.y - RX_STAGE / 2; }
@@ -13771,8 +13785,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // appear one after the other (CSS delays); otherwise it's drawn already complete.
   function twRevealCardHtml(e, p, anim) {
     const acc = e.accuracyPercent;
-    return `<div class="dc-card dc-hot dc-res tw-res tw-rc${anim ? " anim" : ""}" data-id="${e.playerId}"><div class="tw-res-head"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}</span></div><div class="tw-rc-guess">You said <b>${twFmt(e.guess)}</b></div><div class="tw-res-verdict"><span class="tw-res-pct tw-rc-pct"><b>${Math.round(acc)}%</b> accurate</span><span class="tw-res-check">${markSvg(acc)}<span>${accLabel(acc)}</span></span></div></div>`;
+    return `<div class="dc-card dc-hot tw-sumrow tw-rr${anim ? " anim" : ""}" data-id="${e.playerId}"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(acc)}%</b>${markSvg(acc)}</div>`;
   }
+  const twHeadHtml = (t) => `<div class="tw-head">${t}</div>`;
   // Counts a number up (e.g. the team average) so it lands with a little drama.
   function twCountUp(el, to, ms, suffix) {
     if (!el) return;
@@ -13782,6 +13797,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!el.isConnected) return;
       const t = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - t, 3);
       el.textContent = formatAccuracy(to * e) + suffix;
+      if (t < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  // Like twCountUp, but starts from a given value (the game average climbing from where it stood).
+  function twCountUpFrom(el, from, to, ms, suffix) {
+    if (!el) return;
+    if (prefersReducedMotion()) { el.textContent = formatAccuracy(to) + suffix; return; }
+    const t0 = performance.now();
+    (function step(now) {
+      if (!el.isConnected) return;
+      const t = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - t, 3);
+      el.textContent = formatAccuracy(from + (to - from) * e) + suffix;
       if (t < 1) requestAnimationFrame(step);
     })(t0);
   }
@@ -13823,7 +13850,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     });
     const avgCard = `<div class="tw-slot${showAverage ? "" : " tw-ph"}"><div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average</div><div class="tw-avg-num">${showAverage ? "0%" : "00.0%"}</div></div></div>`;
-    revealListEl.innerHTML = twQTopHtml(q, ans) + (cards[0] || "") + (order.length > 1 ? avgCard : "") + (cards[1] || "");
+    revealListEl.innerHTML = twHeadHtml("Round Summary") + '<div class="tw-sum">' + twQTopHtml(q, ans) + (cards[0] || "") + (order.length > 1 ? avgCard : "") + (cards[1] || "") + "</div>";
     timers.forEach(([ms, snd]) => setTimeout(() => { if (twRevealSig === sig) playSound(snd); }, ms));
     if (showAverage) {
       const avg = data.lastRoundAccuracy || 0, card = revealListEl.querySelector(".tw-avg"), num = revealListEl.querySelector(".tw-avg-num");
@@ -14322,22 +14349,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const prevAvg = n > 1 ? (me.accuracySum - roundAccuracyPct) / (n - 1) : 0;
     const startAvg = runningAvg == null ? null : (prefersReducedMotion() ? runningAvg : prevAvg);
     summaryListEl.innerHTML = "";
+    const headLi = document.createElement("li");
+    headLi.className = "tw-headrow";
+    headLi.innerHTML = twHeadHtml("Game Progress");
+    summaryListEl.appendChild(headLi);
     const li = document.createElement("li");
     li.className = "summary-row tw-sum";
     li.innerHTML = twQTopHtml(q, ans)
       + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
-      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Team average this round</div><div class="tw-avg-num">${formatAccuracy(roundAccuracyPct)}%</div>${worldProgressBarHtml(startAvg)}</div>`
+      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg)}</div>`
       + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
     summaryListEl.appendChild(li);
     if (runningAvg == null || prefersReducedMotion()) return;
     const bar = li.querySelector(".wl-progress"), fill = li.querySelector(".wl-progress-fill"), head = li.querySelector(".wl-progress-heading strong");
     const markers = [...li.querySelectorAll(".wl-progress-marker")], num = li.querySelector(".tw-avg-num"), card = li.querySelector(".tw-avg");
-    twCountUp(num, roundAccuracyPct, 900, "%");
     const DELAY = 700, DUR = 1300;
     setTimeout(() => {
       if (twSummarySig !== sig) return;
       fill.style.setProperty("--accuracy", runningAvg + "%");
       twCountUp(head, runningAvg, DUR, "%");
+      twCountUpFrom(num, prevAvg, runningAvg, DUR, "%");
       playSound("swipe");
       markers.forEach((m, i) => {
         const at = WORLD_STAR_AT[i];
