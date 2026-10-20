@@ -16,7 +16,9 @@ jobs:
           set -u
           printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npx --yes firebase-tools@latest hosting:channel:list --site size-em-up --project measuring-game --json > "$RUNNER_TEMP/channels.json"
+          if ! npx --yes firebase-tools@latest hosting:channel:list --site size-em-up --project measuring-game --json > "$RUNNER_TEMP/channels.json" 2> "$RUNNER_TEMP/err.txt"; then
+            echo "Listing channels failed. Output:"; cat "$RUNNER_TEMP/channels.json"; echo "--- stderr ---"; cat "$RUNNER_TEMP/err.txt"; exit 1
+          fi
           node -e '
             const j = JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP + "/channels.json", "utf8"));
             const list = (j.result && j.result.channels) || [];
