@@ -15870,9 +15870,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!res.ok) throw new Error("server said " + res.status);
         const remote = await res.json();
         if (!runningVersion || !remote.version || !remote.url || remote.version <= runningVersion) return "current";
+        if (!remote.checksum) throw new Error("update manifest has no checksum");
         const { bundles } = await updater.list();
         if ((bundles || []).some((b) => b.version === remote.version)) return "ready";
-        const bundle = await updater.download({ url: remote.url, version: remote.version });
+        const bundle = await updater.download({ url: remote.url, version: remote.version, checksum: remote.checksum });
         await updater.next({ id: bundle.id });
         // Tidy up: keep only the running bundle and the one waiting for next launch.
         const cur = await updater.current();
