@@ -18,13 +18,8 @@ execSync("node " + JSON.stringify(path.join(__dirname, "sync-www.js")), { stdio:
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 
-let sha = process.env.GITHUB_SHA || "";
-if (!sha) {
-  try { sha = execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim(); } catch (e) { sha = "local"; }
-}
-sha = sha.slice(0, 7);
-const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12); // YYYYMMDDHHMM
-const version = "1.0." + stamp + "-" + sha;
+// Same version the bundle itself carries in app-version.json.
+const version = JSON.parse(fs.readFileSync(path.join(WWW, "app-version.json"), "utf8")).version;
 
 execSync("zip -qr " + JSON.stringify(path.join(OUT, "bundle.zip")) + " .", { cwd: WWW, stdio: "inherit" });
 

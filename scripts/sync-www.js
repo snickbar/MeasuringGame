@@ -31,4 +31,16 @@ for (const d of DIRS) {
   copyDir(path.join(ROOT, d), path.join(WWW, d));
 }
 
+// Stamp the build so the native app can tell whether a downloaded live-update
+// bundle is newer than the files it is already running (see the live-update
+// check in index.html). The version sorts as a plain string: the 12-digit
+// UTC timestamp is fixed-width.
+let sha = process.env.GITHUB_SHA || "";
+if (!sha) {
+  try { sha = require("child_process").execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim(); } catch (e) { sha = "local"; }
+}
+const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12);
+const version = "1.0." + stamp + "-" + sha.slice(0, 7);
+fs.writeFileSync(path.join(WWW, "app-version.json"), JSON.stringify({ version }) + "\n");
+
 console.log("www/ synced from repo root (" + FILES.length + " files, " + DIRS.length + " folders).");

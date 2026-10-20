@@ -1305,6 +1305,19 @@ if (location.protocol === "file:") {
   #settings-screen .hdr-sub, #settings-screen .settings-profile-name label, #settings-screen .settings-profile-hint,
   #settings-screen #settings-account-status, #settings-screen #settings-toggles-panel label,
   #settings-screen .google-account-row, #settings-screen input, #settings-screen .settings-footer-link a { color: #000; }
+  /* In-app updates: settings row, "updated" toast and the Play update dialog. */
+  #settings-update-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  #settings-update-row[hidden], #settings-version[hidden] { display: none; }
+  #app-update-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); z-index: 9999; max-width: min(92vw, 420px); padding: 12px 18px; border-radius: 16px; background: #1a1208; color: #fff7e0; font-weight: 700; font-size: 15px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.35); opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; }
+  #app-update-toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #app-update-dialog { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.55); }
+  #app-update-dialog[hidden] { display: none; }
+  #app-update-dialog .aud-card { width: min(100%, 340px); padding: 22px 20px 18px; border-radius: 22px; background: #fff7e0; color: #1a1208; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  #app-update-dialog h3 { margin: 0 0 8px; font-size: 20px; color: #1a1208; }
+  #app-update-dialog p { margin: 0 0 16px; font-size: 15px; color: #1a1208; }
+  #app-update-dialog .aud-btns { display: flex; gap: 10px; justify-content: center; }
+  #app-update-dialog button { flex: 1; padding: 12px 10px; border-radius: 14px; border: 2px solid #1a1208; font: inherit; font-weight: 800; cursor: pointer; background: #fff; color: #1a1208; }
+  #app-update-dialog button.aud-go { background: #ffb300; }
   .settings-footer-link { text-align: center; margin-top: 24px; font-size: 14px; }
   #settings-game-card .settings-preset-hint, #settings-about-card .settings-preset-hint { margin: 0; }
   .settings-footer-link a { color: var(--brand); }
@@ -3391,6 +3404,11 @@ if (location.protocol === "file:") {
     <div class="settings-about-row"><h3>About</h3>
     <button id="settings-privacy-btn" type="button">Privacy Policy</button></div>
     <p class="settings-profile-hint settings-preset-hint">Size Em Up! &middot; Test build 2026.10.18 · Game polish</p>
+    <p id="settings-version" class="settings-profile-hint settings-preset-hint" hidden></p>
+    <div id="settings-update-row" hidden>
+      <button id="settings-update-btn" type="button" class="settings-cream-btn">Check for updates</button>
+      <span id="settings-update-status" class="settings-profile-hint" role="status"></span>
+    </div>
   </div>
 </div>
 
@@ -15647,6 +15665,133 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
     onSaved:async row=>{if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
+
+  // ==================== In-app updates (native app only) ====================
+  // 1) LIVE UPDATES - every deploy publishes live/version.json + live/bundle.zip
+  //    (scripts/build-live-bundle.js). On launch the app compares that version
+  //    with the one it is running (app-version.json, stamped into every build),
+  //    downloads a newer bundle in the background and switches to it the NEXT
+  //    time the app starts - never mid-game. notifyAppReady() tells the plugin
+  //    this bundle booted fine; if it never arrives the plugin rolls back to
+  //    the previous bundle by itself.
+  // 2) GOOGLE PLAY - for native changes (new plugins, permissions) the app asks
+  //    Play whether a newer APK/AAB exists and offers an "Update" dialog.
+  (function inAppUpdates() {
+    if (!isNativeApp || !window.Capacitor.Plugins) return;
+    const updater = window.Capacitor.Plugins.CapacitorUpdater;
+    const appUpdate = window.Capacitor.Plugins.AppUpdate;
+    const $ = (id) => document.getElementById(id);
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    };
+    const MANIFEST_URL = "https://size-em-up.web.app/live/version.json";
+    let runningVersion = "";
+
+    function toast(msg) {
+      let t = $("app-update-toast");
+      if (!t) { t = document.createElement("div"); t.id = "app-update-toast"; t.setAttribute("role", "status"); document.body.append(t); }
+      t.textContent = msg;
+      requestAnimationFrame(() => t.classList.add("show"));
+      setTimeout(() => t.classList.remove("show"), 4500);
+    }
+
+    // ---- live updates ----
+    // Resolves "downloaded" | "ready" (already waiting for next launch) | "current" | "cellular" | "error"
+    async function checkLive(manual) {
+      if (!updater) return "error";
+      try {
+        const conn = navigator.connection;
+        // Bundles are ~100 MB: wait for Wi-Fi rather than burn mobile data.
+        if (!manual && conn && (conn.type === "cellular" || conn.saveData)) return "cellular";
+        const remote = await (await fetch(MANIFEST_URL + "?t=" + Date.now(), { cache: "no-store" })).json();
+        if (!runningVersion || !remote.version || !remote.url || remote.version <= runningVersion) return "current";
+        const { bundles } = await updater.list();
+        if ((bundles || []).some((b) => b.version === remote.version)) return "ready";
+        const bundle = await updater.download({ url: remote.url, version: remote.version });
+        await updater.next({ id: bundle.id });
+        // Tidy up: keep only the running bundle and the one waiting for next launch.
+        const cur = await updater.current();
+        const keep = new Set([bundle.id, cur && cur.bundle && cur.bundle.id]);
+        for (const b of (await updater.list()).bundles || []) {
+          if (!keep.has(b.id) && b.id !== "builtin") { try { await updater.delete({ id: b.id }); } catch (err) {} }
+        }
+        return "downloaded";
+      } catch (err) { return "error"; /* offline or manifest missing - try again next launch */ }
+    }
+
+    // ---- Google Play ----
+    // Resolves { state: "available" | "current" | "unavailable", info }
+    async function checkPlay() {
+      if (!appUpdate) return { state: "unavailable" };
+      try {
+        const info = await appUpdate.getAppUpdateInfo();
+        // 2 = UPDATE_AVAILABLE, 3 = UPDATE_IN_PROGRESS
+        if (info.updateAvailability === 2 || info.updateAvailability === 3) return { state: "available", info };
+        return { state: "current", info };
+      } catch (err) { return { state: "unavailable" }; } // e.g. installed outside Google Play
+    }
+    function offerPlayUpdate(info) {
+      let d = $("app-update-dialog");
+      if (!d) {
+        d = document.createElement("div");
+        d.id = "app-update-dialog";
+        d.setAttribute("role", "dialog");
+        d.setAttribute("aria-modal", "true");
+        d.hidden = true;
+        d.innerHTML = '<div class="aud-card"><h3>Update available</h3><p>A new version of Size Em Up! is ready on Google Play.</p><div class="aud-btns"><button type="button" class="aud-later">Later</button><button type="button" class="aud-go">Update</button></div></div>';
+        document.body.append(d);
+        d.querySelector(".aud-later").addEventListener("click", () => { d.hidden = true; });
+        d.querySelector(".aud-go").addEventListener("click", async () => {
+          d.hidden = true;
+          try {
+            if (d._info && d._info.immediateUpdateAllowed) await appUpdate.performImmediateUpdate();
+            else await appUpdate.openAppStore();
+          } catch (err) { try { await appUpdate.openAppStore(); } catch (e2) {} }
+        });
+      }
+      d._info = info;
+      d.hidden = false;
+    }
+
+    // ---- start-up ----
+    (async function boot() {
+      try { runningVersion = (await (await fetch("app-version.json", { cache: "no-store" })).json()).version || ""; } catch (err) {}
+      const ver = $("settings-version");
+      if (ver && runningVersion) { ver.textContent = "Version " + runningVersion; ver.hidden = false; }
+      // Tell the user once when a live update has just been applied.
+      const last = store.get("seu_lastVersion");
+      if (runningVersion) {
+        if (last && last !== runningVersion) toast("Updated to the latest version!");
+        store.set("seu_lastVersion", runningVersion);
+      }
+      if (updater) { try { updater.notifyAppReady(); } catch (err) {} }
+      // Quiet background checks a few seconds after launch.
+      setTimeout(checkLive, 8000);
+      setTimeout(async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        if (store.get("seu_playCheck") === today) return; // at most one prompt per day
+        const r = await checkPlay();
+        if (r.state === "available") { store.set("seu_playCheck", today); offerPlayUpdate(r.info); }
+      }, 15000);
+    })();
+
+    // ---- Settings > About > Check for updates ----
+    const row = $("settings-update-row"), btn = $("settings-update-btn"), status = $("settings-update-status");
+    if (row && btn) {
+      row.hidden = false;
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        status.textContent = "Checking…";
+        const [live, play] = await Promise.all([checkLive(true), checkPlay()]);
+        btn.disabled = false;
+        if (play.state === "available") { status.textContent = "A new version is on Google Play."; offerPlayUpdate(play.info); }
+        else if (live === "downloaded" || live === "ready") status.textContent = "Update downloaded - it will start next time you open the app.";
+        else if (live === "error") status.textContent = "Couldn't check right now. Try again when you're online.";
+        else status.textContent = "You're up to date.";
+      });
+    }
+  })();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
