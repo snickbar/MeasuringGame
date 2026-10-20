@@ -748,6 +748,11 @@ if (location.protocol === "file:") {
   #worlds-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   .wl-stars { letter-spacing: 2px; color: #e8a30c; -webkit-text-stroke: .6px #4a2c12; }
   .wl-stars .off { color: #e7dcc4; }
+  .wl-meter { display: flex; align-items: center; gap: 4px; margin-top: 1px; }
+  .wl-meter-grp { display: flex; gap: 1px; }
+  .wl-meter-star { flex: 0 1 15px; width: 15px; min-width: 0; aspect-ratio: 1; }
+  .wl-meter-star img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .wl-meter-star.off img { filter: grayscale(1); opacity: .4; }
   .wl-big { font-size: 40px; margin: 6px 0; }
   #monthly-screen.active #monthly-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #monthly-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
@@ -8654,11 +8659,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
-  function nextWorldGoalHtml(){
-    const next=WORLDS.find((w,i)=>worldUnlocked(i)&&worldStarsOf(w.id)>0&&worldStarsOf(w.id)<13);
-    if(!next)return '';const home=HOME_SCREENS.find(h=>h.world===next.id);if(!home)return '';
-    return `<div class="cozy-panel next-goal"><b>Your next home screen</b><p>${escapeHtml(next.name)} · ${worldStarsOf(next.id)}/13 stars toward ${escapeHtml(home.name)}</p><button data-next-world="${next.id}">Continue World</button></div>`;
-  }
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
@@ -8673,14 +8673,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png" })}
       ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots", { banner: "icons/banner-quick.png" })}
-      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}${nextWorldGoalHtml()}`;
+      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}`;
   }
   function openSolo() {
     renderSoloHub();
     if (!soloScreenEl.classList.contains("active")) openOverlay(soloScreenEl);
   }
   soloContentEl.addEventListener("click", (e) => {
-    const goal=e.target.closest('[data-next-world]');if(goal){openWorlds();wl.wi=WORLDS.findIndex(w=>w.id===goal.dataset.nextWorld);wl.phase='world';renderWorlds();return;}
     const b = e.target.closest(".sh-card");
     if (!b || b.disabled) return;
     if (b.id === "sh-daily") openDaily();
@@ -8886,6 +8885,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openOverlay(worldsScreenEl);
     if (fromHub) overlayReturnScreen = soloScreenEl;
   }
+  // 15-star meter for a World's card: one group of 3 per level, filled left to right as stars are earned.
+  function worldMeterHtml(wid) {
+    let total = 0, groups = "";
+    for (let l = 1; l <= WORLD_LEVELS; l++) {
+      const n = worldLevelStars(wid, l); total += n;
+      groups += `<span class="wl-meter-grp">${[1, 2, 3].map((i) => `<span class="wl-meter-star${i > n ? " off" : ""}"><img src="icons/flair/star.png" alt="" draggable="false"></span>`).join("")}</span>`;
+    }
+    return `<span class="wl-meter" role="img" aria-label="${total} of ${WORLD_LEVELS * 3} stars">${groups}</span>`;
+  }
   function worldCard(id, img, name, sub, extra) {
     return `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
@@ -8897,7 +8905,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p>${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
-          const sub = open ? `${st} / ${WORLD_LEVELS * 3} stars` : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
+          const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
           return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, hot: open && st === 0 && (i === 0 || x.unlockCount || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
       return;
