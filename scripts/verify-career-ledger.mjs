@@ -101,7 +101,8 @@ assert(!source.includes('if (ids.length >= 2 && myFinalScore === top)'));
 // untouched for anyone with no team (not every room is Team vs Team).
 const redistComment=source.indexOf("credit the round's points to the whole team");
 const teamStart=source.indexOf('    if ((roomState.settings || currentSettings).mode === "teamvteam") {',redistComment);
-const teamEnd=source.indexOf('\r\n    }\r\n',teamStart)+8;
+const nl=source.includes('\r\n')?'\r\n':'\n'; // index.html uses LF; stay correct if it ever switches back to CRLF
+const teamEnd=source.indexOf(nl+'    }'+nl,teamStart)+nl.length+5;
 assert(teamStart>0&&teamEnd>teamStart,'team redistribution block must still be present verbatim');
 const teamBlock=source.slice(teamStart,teamEnd);
 const redistribute=(playersSnap,lastRoundPoints,mode='teamvteam')=>{
