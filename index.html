@@ -8641,6 +8641,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // really exercised before. Now any of them, while a game is in progress,
   // asks to leave the game first (same leave/end-game path as the in-HUD
   // Exit button) instead of risking it.
+  // Safety net: the High Stakes table can never be drawn at the same time as Settings/Shop/Stats/etc. or the "you left" page.
+  // If a late update ever switches it back on behind one of them, it is switched off again straight away.
+  (function guardHsStacking() {
+    const blockers = () => OVERLAY_SCREENS.concat([leftScreenEl, endedScreenEl]);
+    const enforce = () => { if (hsScreenEl.classList.contains("active") && blockers().some((el) => el.classList.contains("active"))) hsScreenEl.classList.remove("active"); };
+    const mo = new MutationObserver(enforce);
+    [hsScreenEl].concat(blockers()).forEach((el) => { if (el) mo.observe(el, { attributes: true, attributeFilter: ["class"] }); });
+  })();
   function isInActiveGame() {
     // The final-results screen counts too: the game isn't over until you press Finish/Leave there.
     return hudEl.classList.contains("active") || finalScreenEl.classList.contains("active") || hsScreenEl.classList.contains("active");
