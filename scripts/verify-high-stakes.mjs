@@ -6,24 +6,24 @@ function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) 
 
 // ---- options ----
 {
-  const rng = seeded(1); const posCount = Array(6).fill(0);
+  const rng = seeded(1); const posCount = Array(H.HS_OPTION_COUNT).fill(0);
   for (let i = 0; i < 4000; i++) {
     const answer = Math.exp(rng() * 14 - 3); // ~0.05 .. 60000
     const { options, realIdx } = H.hsMakeOptions(answer, rng);
-    assert.equal(options.length, 6);
-    assert.equal(new Set(options).size, 6, "options distinct");
+    assert.equal(options.length, H.HS_OPTION_COUNT);
+    assert.equal(new Set(options).size, H.HS_OPTION_COUNT, "options distinct");
     assert.deepEqual([...options].sort((a, b) => a - b), options, "sorted");
     assert.equal(options[realIdx], H.hsRound3(answer), "real present");
     options.forEach((o, k) => { if (k !== realIdx) assert.ok(Math.abs(Math.log(o / options[realIdx])) > 0.1, "fake not too near real " + o + " vs " + options[realIdx]); });
     posCount[realIdx]++;
   }
-  posCount.forEach((c) => assert.ok(c > 4000 * 0.07, "real answer can sit in every position " + posCount));
-  assert.ok(posCount[0] > 0 && posCount[5] > 0, "real answer appears at both extremes");
+  posCount.forEach((c) => assert.ok(c > 4000 * 0.15, "real answer can sit in every position " + posCount));
+  assert.ok(posCount[0] > 0 && posCount[H.HS_OPTION_COUNT - 1] > 0, "real answer appears at both extremes");
   // custom fakes from eliminated players replace generated ones
   const { options } = H.hsMakeOptions(100, seeded(5), [37, 250, 100, "abc", -4]);
   assert.ok(options.includes(37) && options.includes(250), "custom fakes used");
   assert.equal(options.filter((o) => o === 100).length, 1, "a custom fake equal to the real answer is dropped");
-  assert.equal(options.length, 6);
+  assert.equal(options.length, H.HS_OPTION_COUNT);
 }
 
 // ---- scenario helpers ----
@@ -31,7 +31,7 @@ const NOW = 1_000_000;
 function setup(chips, picks, realIdx = 2, round = 1) {
   const ids = Object.keys(chips);
   let hs = H.hsNewGame(ids, 0); hs.chips = { ...chips }; hs.round = round - 1;
-  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4, 5, 6], realIdx, now: NOW });
+  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4], realIdx, now: NOW });
   hs = H.hsBeginBetting(hs, picks, NOW);
   return hs;
 }
@@ -65,7 +65,7 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
 }
 // everyone else folds: last one wins uncontested even when wrong
 {
-  let hs = setup({ a: 100, b: 100, c: 100 }, { a: 0, b: 1, c: 5 }, 3);
+  let hs = setup({ a: 100, b: 100, c: 100 }, { a: 0, b: 1, c: 2 }, 3);
   hs = H.hsApplyAction(hs, "a", "raise", NOW);
   hs = H.hsApplyAction(hs, "b", "fold", NOW);
   hs = H.hsApplyAction(hs, "c", "fold", NOW);
@@ -74,11 +74,11 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
 }
 // nobody right -> pot rolls over and joins the next round's pot
 {
-  let hs = setup({ a: 100, b: 100 }, { a: 0, b: 1 }, 4);
+  let hs = setup({ a: 100, b: 100 }, { a: 0, b: 1 }, 3);
   while (hs.stage === "bet") hs = H.hsApplyAction(hs, hs.bet.turn, "check", NOW);
   assert.equal(hs.result.winners, null); assert.equal(hs.carry, 10);
   hs = H.hsFinishRound(hs); assert.equal(hs.stage, "ready");
-  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4, 5, 6], realIdx: 0, now: NOW });
+  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4], realIdx: 0, now: NOW });
   assert.equal(hs.pot, 10 + 10); assert.equal(total(hs), 200);
 }
 // split pot with remainder rolling over
@@ -110,7 +110,7 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
 // short stack that can't cover the ante antes what it has, is eliminated when it loses
 {
   let hs = H.hsNewGame(["a", "b", "c"], 100); hs.chips.c = 3;
-  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4, 5, 6], realIdx: 0, now: NOW });
+  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4], realIdx: 0, now: NOW });
   assert.equal(hs.chips.c, 0); assert.equal(hs.pot, 13);
   hs = H.hsBeginBetting(hs, { a: 1, b: 1, c: 1 }, NOW);
   while (hs.stage === "bet") hs = H.hsApplyAction(hs, hs.bet.turn, "check", NOW);

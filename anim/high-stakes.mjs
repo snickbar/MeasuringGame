@@ -1,7 +1,7 @@
 // High Stakes: the rules of the betting mode, as plain functions on a plain state object.
 // No DOM and no Firebase in here, so scripts/verify-high-stakes.mjs can play whole games through it.
 //
-// A round: everybody antes, sees 6 answers (1 real + 5 fakes), secretly picks the one they think is real,
+// A round: everybody antes, sees 4 answers (1 real + 3 fakes), secretly picks the one they think is real,
 // then bets once around the table (fold / check / call / raise, table-stakes cap so there are no side pots).
 // Pot goes to everyone still in who picked the real answer (split). If nobody did, the pot rolls over.
 // If everyone else folds, the last player left takes the pot even if they were wrong (that is the bluff).
@@ -12,7 +12,7 @@
 export const HS_START_COINS = 100;
 export const HS_MAX_ROUNDS = 10;
 export const HS_MAX_RAISES = 2;
-export const HS_OPTION_COUNT = 6;
+export const HS_OPTION_COUNT = 4;
 export const HS_PICK_SECONDS = 20;
 export const HS_TURN_SECONDS = 12;
 
@@ -27,7 +27,7 @@ export function hsRound3(n) {
   if (!isFinite(n) || n === 0) return 0;
   return Number(Number(n).toPrecision(3));
 }
-// 1 real + 5 fakes, sorted ascending. Fakes sit between x0.25 and x4 of the real answer on a log scale,
+// 1 real + 3 fakes, sorted ascending. Fakes sit between x0.25 and x4 of the real answer on a log scale,
 // no two within ~15% of each other, none within ~15% of the real one, so the real answer lands anywhere
 // in the list (sometimes at an extreme). `custom` = optional fakes written by eliminated players; they
 // replace generated ones (still dropped if they'd duplicate something already on the table).
@@ -60,7 +60,7 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
       fakes.push(v); taken.push(Math.log(v)); made++;
     }
   }
-  // Pathological answers (tiny or huge) could exhaust the guard: fill with plain multiples so there are always 6.
+  // Pathological answers (tiny or huge) could exhaust the guard: fill with plain multiples so there are always enough.
   for (let k = 2; fakes.length < HS_OPTION_COUNT - 1; k++) {
     const v = hsRound3(real * k * 1.37);
     if (!fakes.includes(v) && v !== real) fakes.push(v);
@@ -100,6 +100,9 @@ export function hsStartRound(hsIn, { options, realIdx, now, pickSeconds = HS_PIC
   hs.bet = null;
   hs.result = null;
   hs.pickEndsAt = now + pickSeconds * 1000;
+  hs.animAt = null;
+  hs.animEndsAt = null;
+  hs.nextAt = null;
   return hs;
 }
 
