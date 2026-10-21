@@ -769,7 +769,7 @@ if (location.protocol === "file:") {
   .hs-tag { margin-top: 3px; padding: 1px 7px; border-radius: 999px; background: #f1e4c8; font-size: 11px; }
   .hs-tag.ok { background: #cfeec2; } .hs-tag.no { background: #f2c4c0; } .hs-tag.turn { background: #ffd36a; } .hs-tag.win { background: #4faa38; color: #fff; }
   .hs-hint { margin: 8px 0 4px; font-size: 13px; }
-  .hs-opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 6px 0; }
+  .hs-opts { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0; }
   .hs-opts.mini { grid-template-columns: repeat(6, 1fr); gap: 4px; }
   .hs-opt { padding: 14px 6px; border: 3px solid #4a2c12; border-radius: 14px; background: linear-gradient(#fffdf6, #f6ead0); color: #000; text-shadow: none; font: 700 22px 'Fredoka', sans-serif; box-shadow: 0 3px 0 rgba(74,44,18,.45); }
   .hs-opt.sel { background: linear-gradient(#e7d4ff, #bd94f2); transform: translateY(2px); box-shadow: 0 1px 0 rgba(74,44,18,.45); }
@@ -788,6 +788,54 @@ if (location.protocol === "file:") {
   .hs-real-tag { padding: 1px 8px; border-radius: 999px; background: #d6a519; color: #fff; font-size: 11px; letter-spacing: .4px; }
   .hs-who { margin-left: auto; display: flex; gap: 2px; }
   .hs-who .avatar { font-size: 20px; } .hs-who .avatar.dim { opacity: .4; }
+  /* High Stakes board: players down both sides, answers and a big pot in the middle, timer top right */
+  #hs-content .hs-top { justify-content: flex-start; }
+  .hs-clock { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; border: 3px solid #4a2c12; background: radial-gradient(circle at 35% 30%, #fff7d6, #ffd36a); box-shadow: 0 3px 0 rgba(74,44,18,.45); font-size: 22px; }
+  .hs-clock.idle { visibility: hidden; }
+  .hs-clock.low { background: radial-gradient(circle at 35% 30%, #ffd9d3, #ff7a68); animation: hsPulse .6s ease-in-out infinite; }
+  @keyframes hsPulse { 50% { transform: scale(1.12); } }
+  .hs-board { display: grid; grid-template-columns: 84px minmax(0, 1fr) 84px; gap: 6px; align-items: start; margin: 6px 0; }
+  .hs-col { display: flex; flex-direction: column; gap: 6px; }
+  .hs-col .hs-pl { min-width: 0; max-width: none; width: 100%; padding: 6px 2px 7px; }
+  .hs-col .hs-pl-name { max-width: 78px; font-size: 11px; }
+  .hs-col .hs-pl .avatar { font-size: 30px; }
+  .hs-opt.stat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 6px; min-height: 46px; font-size: 22px; box-shadow: none; }
+  .hs-opt.stat.sel { background: linear-gradient(#e7d4ff, #bd94f2); transform: none; }
+  .hs-opt.stat.real { background: linear-gradient(#fff3c4, #ffd23c); border-color: #b8860b; box-shadow: 0 0 14px rgba(247,201,72,.95); animation: hsRealGlow 1.2s ease-in-out infinite; }
+  @keyframes hsRealGlow { 50% { box-shadow: 0 0 24px rgba(255,200,40,1); } }
+  .hs-opt.stat .hs-who { margin: 0; flex-wrap: wrap; justify-content: center; gap: 1px; }
+  .hs-opt.stat .hs-who .avatar { font-size: 17px; }
+  .hs-opt.stat .hs-real-tag { position: absolute; top: -9px; right: 6px; }
+  .hs-opt.stat { position: relative; }
+  #hs-content .hs-q .dc-pic { max-width: 120px; padding: 4px; }
+  #hs-content .hs-q .dc-pic img { height: 60px; }
+  .hs-board .hs-opts .hs-opt:not(.stat) { padding: 10px 6px; }
+  .hs-potbox { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; padding: 10px 8px; border: 3px solid #4a2c12; border-radius: 18px; background: radial-gradient(circle at 30% 20%, #fff3b0, #f7c948 60%, #e0a520); box-shadow: 0 4px 0 rgba(74,44,18,.5), inset 0 0 14px rgba(255,255,255,.55); }
+  .hs-potbox img { width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+  .hs-pot-lab { font-size: 12px; letter-spacing: 2px; color: #6b3a05; line-height: 1; }
+  .hs-pot-num { font-size: 40px; line-height: 1; color: #000; text-shadow: 0 2px 0 rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+  .hs-coin { position: fixed; z-index: 100000; width: 26px; height: 26px; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+  #hs-anim { max-width: 360px; margin: 4px auto 2px; border-radius: 12px; }
+  .hs-win { position: relative; overflow: hidden; margin: 8px 0 2px; padding: 8px 10px 8px; border: 4px solid #b8860b; border-radius: 20px; background: linear-gradient(#fff6c8, #ffd23c 55%, #f2a60f); box-shadow: 0 0 0 3px #fff3b0, 0 0 26px rgba(255,200,40,.95), 0 5px 0 rgba(74,44,18,.5); animation: hsWinPop .55s cubic-bezier(.34,1.56,.64,1) both, hsWinGlow 1.4s ease-in-out .55s infinite; }
+  @keyframes hsWinPop { 0% { transform: scale(.4) rotate(-4deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  @keyframes hsWinGlow { 50% { box-shadow: 0 0 0 3px #fff3b0, 0 0 40px rgba(255,210,60,1), 0 5px 0 rgba(74,44,18,.5); } }
+  .hs-win-shine { position: absolute; top: 0; bottom: 0; width: 38%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.85), transparent); transform: skewX(-18deg); animation: hsShine 2.2s ease-in-out .5s infinite; pointer-events: none; }
+  @keyframes hsShine { 0% { left: -50%; } 55%, 100% { left: 130%; } }
+  .hs-win-trophy { width: 40px; height: 40px; object-fit: contain; animation: hsBob 1s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+  @keyframes hsBob { 50% { transform: translateY(-6px) rotate(6deg); } }
+  .hs-win-names { font-size: 19px; line-height: 1.1; color: #000; }
+  .hs-win-amt { font-size: 36px; line-height: 1.05; color: #fff; -webkit-text-stroke: 2px #6b3a05; paint-order: stroke fill; text-shadow: 0 3px 0 #6b3a05; }
+  .hs-win-amt span { font-size: 18px; -webkit-text-stroke: 0; color: #6b3a05; text-shadow: none; }
+  .hs-win-sub { font-size: 13px; color: #6b3a05; }
+  .hs-win.roll { border-color: #b3261e; background: linear-gradient(#ffe3de, #ffb3a6); box-shadow: 0 5px 0 rgba(74,44,18,.5); animation: hsWinPop .55s cubic-bezier(.34,1.56,.64,1) both; }
+  .hs-win.roll .hs-win-amt { -webkit-text-stroke-color: #7a1710; text-shadow: 0 3px 0 #7a1710; }
+  .hs-pl .avatar.hs-dance { display: inline-block; transform-origin: 50% 100%; animation: hsDance 1.9s ease-in-out .1s both; }
+  @keyframes hsDance {
+    0% { transform: translateY(0) rotate(0) scale(1); } 12% { transform: translateY(-12px) scale(1.1); }
+    24% { transform: translateY(0) rotate(-14deg) scale(1.18); } 36% { transform: translateY(-10px) rotate(-14deg) scale(1.24); }
+    48% { transform: translateY(0) rotate(14deg) scale(1.24); } 60% { transform: translateY(-10px) rotate(14deg) scale(1.26); }
+    72% { transform: translateY(0) rotate(-9deg) scale(1.28); } 84% { transform: translateY(-6px) rotate(7deg) scale(1.3); }
+    100% { transform: translateY(0) rotate(0) scale(1.3); } }
   .hs-fake { display: flex; gap: 8px; align-items: stretch; }
   .hs-fake input { flex: 1; min-width: 0; padding: 12px; border: 3px solid #4a2c12; border-radius: 14px; font: 700 20px 'Fredoka', sans-serif; text-align: center; }
   .hs-fake input.bad { border-color: #b3261e; }
@@ -9112,7 +9160,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rules live in anim/high-stakes.mjs (pure functions). This block is the screen, the host's driver (the host's
   // tab advances the game, like every other mode) and the player taps. Room fields: hs (whole game state),
   // hsQ (the question), hsPicks/<id> (each player's secret pick), hsActs/<id> (a betting tap), hsConf/<botId>.
-  const HS_REVEAL_MS = 9000, HS_READY_MS = 2500, HS_FAKE_MS = 15000;
+  const HS_REVEAL_MS = 7000, HS_READY_MS = 2500, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
@@ -9127,7 +9175,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hsContentEl.querySelectorAll("[data-hs-ends]").forEach((el) => {
       const left = Math.max(0, Math.ceil((Number(el.dataset.hsEnds) - nowMs()) / 1000));
       if (el.textContent !== String(left)) el.textContent = String(left);
+      el.parentElement?.classList.toggle("low", left <= 5);
     });
+    const hs = roomState?.hs;
+    if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && hsAnimating(hs) !== hsRenderedAnimating) renderHighStakes(roomState);
   }
   const hsWrite = (fields) => update(ref(db, `rooms/${currentRoomCode}`), fields);
 
@@ -9204,7 +9255,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (hs.stage === "reveal") {
-      if (!hs.nextAt) { run(hsWrite({ "hs/nextAt": now + HS_REVEAL_MS })); return; }
+      if (!hs.animAt) { run(hsStartReveal(hs, now)); return; }
       if (now >= hs.nextAt) {
         const next = HS.hsFinishRound(hs);
         next.nextAt = next.stage === "ready" ? now + HS_READY_MS : null;
@@ -9240,6 +9291,101 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await hsWrite({ hs, hsQ: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
 
+  // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
+  const HS_ANIM_HOLD_MS = 3000;
+  let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null;
+  const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
+  // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
+  function hsShownChips(hs, animating) {
+    const c = { ...hs.chips };
+    if (animating && hs.result?.winners) hs.result.winners.forEach((id) => { c[id] -= hs.result.share; });
+    return c;
+  }
+  async function hsStartReveal(hs, now) {
+    const animAt = now + 700;
+    let animEndsAt = now; // no pictures to draw: straight to the result
+    try {
+      const pair = questionObjects(roomState.hsQ);
+      const mod = pair ? await loadAnimModule() : null;
+      if (pair && mod) animEndsAt = animAt + mod.animationDuration(pair[0], pair[1]) * 1000 + HS_ANIM_HOLD_MS;
+    } catch (e) { console.warn("[high-stakes] animation skipped", e); }
+    await hsWrite({ "hs/animAt": animAt, "hs/animEndsAt": animEndsAt, "hs/nextAt": animEndsAt + HS_REVEAL_MS });
+  }
+  async function hsMountAnim(hs, data) {
+    const slot = hsContentEl.querySelector("#hs-anim-slot");
+    if (!slot) return;
+    if (!hsAnimEl) { hsAnimEl = document.createElement("div"); hsAnimEl.id = "hs-anim"; }
+    slot.appendChild(hsAnimEl);
+    const key = `${data.gameId}:${hs.round}:${hs.animAt}`;
+    if (!hs.animAt || hsAnimKey === key) return;
+    hsAnimKey = key;
+    try {
+      const pair = questionObjects(data.hsQ);
+      const mod = pair ? await loadAnimModule() : null;
+      if (!pair || !mod) return;
+      if (!hsAnimCtl) hsAnimCtl = mod.createStackAnimation(hsAnimEl, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image, hideTally: false });
+      animAudioInit();
+      const scene = await hsAnimCtl.prepare(pair[0], pair[1], { hMax: 190, minStageH: 230 });
+      if (hsAnimKey !== key) return;
+      hsAnimCtl.start(scene, { startAt: hs.animAt, now: animClock, onCue: playAnimCue });
+    } catch (e) { console.warn("[high-stakes] animation failed", e); }
+  }
+  // A few coins fly from one element to another (a player's card <-> the pot).
+  function hsFly(fromEl, toEl, n) {
+    if (!fromEl || !toEl) return;
+    const a = fromEl.getBoundingClientRect(), t = toEl.getBoundingClientRect();
+    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement("img");
+      c.src = "items/gold-coin.webp"; c.className = "hs-coin"; c.alt = ""; c.draggable = false;
+      c.style.left = (x0 - 13) + "px"; c.style.top = (y0 - 13) + "px";
+      document.body.appendChild(c);
+      const jx = (Math.random() - 0.5) * 26, jy = (Math.random() - 0.5) * 26;
+      const an = c.animate([
+        { transform: "translate(0,0) scale(.6)", opacity: 0 },
+        { transform: "translate(0,0) scale(1.15)", opacity: 1, offset: .12 },
+        { transform: `translate(${x1 - x0 + jx}px,${y1 - y0 + jy}px) scale(.8)`, opacity: 1, offset: .92 },
+        { transform: `translate(${x1 - x0 + jx}px,${y1 - y0 + jy}px) scale(.4)`, opacity: 0 },
+      ], { duration: 650 + Math.random() * 250, delay: i * 90, easing: "cubic-bezier(.35,.05,.3,1)", fill: "both" });
+      an.onfinish = () => c.remove();
+    }
+    try { playSound("select"); } catch (e) { /* sound is optional */ }
+  }
+  function hsRenderInto(html, hs, data, animating) {
+    hsContentEl.innerHTML = html;
+    hsRenderedAnimating = animating;
+    if (animating) hsMountAnim(hs, data);
+    else if (hsAnimCtl && hsAnimKey) { try { hsAnimCtl.stop(); } catch (e) { /* already stopped */ } hsAnimKey = null; }
+    // coins: whoever's shown total dropped paid into the pot; whoever's rose is being paid out of it
+    const shown = hsShownChips(hs, animating), potEl = hsContentEl.querySelector("#hs-pot");
+    if (hsPrevGame === data.gameId && hsPrevShown && potEl) {
+      let paid = false;
+      hs.seatsAll.forEach((id) => {
+        const d = (hsPrevShown[id] ?? shown[id]) - shown[id];
+        if (!d) return;
+        const card = hsContentEl.querySelector(`[data-hs-pl="${id}"]`);
+        const n = Math.min(8, Math.max(2, Math.ceil(Math.abs(d) / Math.max(1, hs.ante || 5))));
+        if (d > 0) { hsFly(card, potEl, n); paid = true; } else hsFly(potEl, card, n);
+      });
+      if (paid) potEl.animate([{ transform: "scale(1)" }, { transform: "scale(1.08)" }, { transform: "scale(1)" }], { duration: 420, delay: 500, easing: "ease-out" });
+    }
+    hsPrevShown = shown; hsPrevGame = data.gameId;
+    // the result lands: confetti for a winner
+    const key = `${data.gameId}:${hs.round}`;
+    if (hs.stage === "reveal" && !animating && hsCelebrated !== key) {
+      hsCelebrated = key;
+      if (hs.result?.winners) {
+        try { playSound("roundwin"); } catch (e) { /* optional */ }
+        if (window.confetti) {
+          window.confetti({ particleCount: 90, spread: 80, origin: { y: 0.55 }, colors: ["#ffd23c", "#ffe08a", "#fff4d6", "#f2820f"] });
+          setTimeout(() => window.confetti && window.confetti({ particleCount: 50, spread: 110, origin: { x: 0.2, y: 0.6 } }), 250);
+          setTimeout(() => window.confetti && window.confetti({ particleCount: 50, spread: 110, origin: { x: 0.8, y: 0.6 } }), 450);
+        }
+      }
+    }
+  }
+
   // ---- screen ----
   function hsPlayerChip(id, hs, extra) {
     const p = (roomState.players || {})[id];
@@ -9249,6 +9395,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderHighStakes(data) {
     const hs = data.hs;
+    hsRenderedAnimating = false;
     if (!hs) { hsContentEl.innerHTML = `<p class="dc-sub">Loading...</p>`; return; }
     const me = currentPlayerId, seated = hs.seats?.includes(me), isOut = !!hs.out?.[me];
     const stage = hs.stage;
@@ -9284,60 +9431,73 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hsContentEl.innerHTML = html;
       return;
     }
-    // pick / bet / reveal
+    // pick / bet / reveal: question on top, players down both sides, the 4 answers and a big pot in the middle.
     const q = data.hsQ, pair = q ? questionObjects(q) : null;
     const picks = data.hsPicks || {};
     const b = hs.bet;
-    html += `<div class="hs-top"><span class="hs-pill">Round ${hs.round}/${HS.HS_MAX_ROUNDS}</span><span class="hs-pill">Ante ${hs.ante}</span><span class="hs-pot">&#128176; Pot <b>${hsFmt(stage === "reveal" ? hs.result.pot : hs.pot)}</b></span></div>`;
-    html += `<div class="hs-q${stage === "reveal" ? " slim" : ""}">${stage === "reveal" ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div></div>`;
-    // players row
-    const chips = hs.seatsAll.map((id) => {
-      if (hs.out?.[id] && !hs.seats.includes(id)) return hsPlayerChip(id, hs, {});
-      if (!hs.seats.includes(id)) return hsPlayerChip(id, hs, {});
+    const revealing = stage === "reveal";
+    const animating = revealing && hsAnimating(hs);       // the stacking animation is still playing: no winner yet
+    const shown = hsShownChips(hs, animating);
+    const potShown = revealing ? (!animating && hs.result.winners ? 0 : hs.result.pot) : hs.pot; // paid out: the pot empties once the winners get it
+    const endsAt = stage === "pick" ? hs.pickEndsAt : (stage === "bet" && b.turnEndsAt) ? b.turnEndsAt : 0;
+    const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
+    html += `<div class="hs-top"><span class="hs-pill">Round ${hs.round}/${HS.HS_MAX_ROUNDS}</span><span class="hs-pill">Ante ${hs.ante}</span>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
+    const qText = `<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div>`;
+    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animating ? `<div id="hs-anim-slot"></div>`
+      : revealing ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
+    // players: 1st top-left, 2nd top-right, 3rd under the 1st, and so on
+    const cardFor = (id, side) => {
+      const p = (data.players || {})[id], out = !!hs.out?.[id], inRound = hs.seats.includes(id);
       let tag = "", tagCls = "", cls = "";
-      if (stage === "pick") { tag = picks[id] !== undefined ? "Picked" : "Thinking..."; tagCls = picks[id] !== undefined ? "ok" : ""; }
-      else if (b) {
-        if (b.folded?.[id]) { tag = "Folded"; tagCls = "no"; cls = " folded"; }
-        else if (b.turn === id) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = " turn"; }
-        else if (b.put?.[id]) tag = "Bet " + b.put[id];
-        else if (b.acted?.[id]) tag = "Check";
+      if (inRound) {
+        if (stage === "pick") { tag = picks[id] !== undefined ? "Picked" : "Thinking..."; tagCls = picks[id] !== undefined ? "ok" : ""; }
+        else if (b) {
+          if (b.folded?.[id]) { tag = "Folded"; tagCls = "no"; cls = " folded"; }
+          else if (b.turn === id && !revealing) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = " turn"; }
+          else if (b.put?.[id]) tag = "Bet " + b.put[id];
+          else if (b.acted?.[id]) tag = "Check";
+        }
+        if (revealing && !animating && hs.result?.winners?.includes(id)) { tag = "+" + hs.result.share; tagCls = "win"; cls = " win"; }
       }
-      if (stage === "reveal" && hs.result?.winners?.includes(id)) { tag = "+" + hs.result.share; tagCls = "win"; cls = " win"; }
-      return hsPlayerChip(id, hs, { tag, tagCls, cls });
-    });
-    html += `<div class="hs-players">${chips.join("")}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + " &#128176;"}</span>${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
+    };
+    const colL = [], colR = [];
+    hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
+    // the 4 answers
+    const mine = picks[me];
+    const optsHtml = hs.options.map((o, i) => {
+      if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}">${hsFmt(o)}</button>`;
+      const real = revealing && !animating && i === hs.realIdx;
+      const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
+      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}"><b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
+    }).join("");
+    html += `<div class="hs-board"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
+      <div class="hs-potbox" id="hs-pot"><img src="items/gold-coin.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
+    // under the board: what you can do right now
     if (stage === "pick") {
-      const mine = picks[me];
-      if (seated) {
-        html += `<p class="hs-hint">Which one is the real answer? Pick secretly &middot; <span class="hs-timer" data-hs-ends="${hs.pickEndsAt}">${Math.max(0, Math.ceil((hs.pickEndsAt - nowMs()) / 1000))}</span>s</p>`;
-        html += `<div class="hs-opts">${hs.options.map((o, i) => `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}">${hsFmt(o)}</button>`).join("")}</div>`;
-      } else html += `<p class="hs-hint">${isOut ? "You're out of coins" : "Watching this round"} &mdash; cheer the others on!</p>`;
+      html += seated ? `<p class="hs-hint">Which one is the real answer? Pick secretly.</p>` : `<p class="hs-hint">${isOut ? "You're out of coins" : "Watching this round"} &mdash; cheer the others on!</p>`;
     } else if (stage === "bet") {
-      const mine = picks[me], folded = !!b.folded?.[me];
-      if (seated) html += `<div class="hs-opts mini">${hs.options.map((o, i) => `<span class="hs-opt${mine === i ? " sel" : ""}${b.folded?.[me] ? " dim" : ""}">${hsFmt(o)}</span>`).join("")}</div>`;
-      const legal = HS.hsLegalActions(hs, me);
+      const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
-        html += `<p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"} &middot; <span class="hs-timer" data-hs-ends="${b.turnEndsAt}">${Math.max(0, Math.ceil((b.turnEndsAt - nowMs()) / 1000))}</span>s</p>
+        html += `<p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
           <div class="hs-acts"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
           ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
           ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div>`;
       } else if (folded) html += `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>`;
-      else if (seated) html += `<p class="hs-hint">${b.turn ? escapeHtml(data.players?.[b.turn]?.name || "Someone") + " is deciding..." : ""} <span class="hs-timer" data-hs-ends="${b.turnEndsAt || 0}">${Math.max(0, Math.ceil(((b.turnEndsAt || 0) - nowMs()) / 1000))}</span>s</p>`;
+      else if (seated) html += `<p class="hs-hint">${b.turn ? escapeHtml(data.players?.[b.turn]?.name || "Someone") + " is deciding..." : ""}</p>`;
       else html += `<p class="hs-hint">Watching &mdash; cheer the others on!</p>`;
-    } else if (stage === "reveal") {
+    } else if (revealing && !animating) {
       const r = hs.result;
       const names = (r.winners || []).map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ");
-      const headline = !r.winners ? `Nobody found it &mdash; ${hsFmt(r.pot)} rolls over`
-        : r.uncontested ? `${names} wins ${hsFmt(r.share)} &mdash; everyone else folded`
-        : `${names} ${r.winners.length > 1 ? "each win" : "wins"} ${hsFmt(r.share)}`;
-      html += `<div class="hs-result${r.winners ? "" : " roll"}">${headline}</div>`;
-      html += `<div class="hs-opts rev">${hs.options.map((o, i) => {
-        const who = hs.seats.filter((id) => hs.picks?.[id] === i);
-        return `<div class="hs-opt-row${i === hs.realIdx ? " real" : ""}"><b>${hsFmt(o)}</b>${i === hs.realIdx ? `<span class="hs-real-tag">REAL ANSWER</span>` : ""}<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span></div>`;
-      }).join("")}</div>`;
-      html += isHost ? `<button type="button" class="dc-btn dc-alt" id="hs-skip">Next round</button>` : "";
+      if (r.winners) {
+        const sub = r.uncontested ? "Everyone else folded!" : r.winners.length > 1 ? "They found the real answer and split the pot" : "Found the real answer!";
+        html += `<div class="hs-win"><span class="hs-win-shine"></span><img class="hs-win-trophy" src="icons/reactions/trophy.png" alt=""><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(r.share)} <span>coins</span></div><div class="hs-win-sub">${sub}</div></div>`;
+      } else {
+        html += `<div class="hs-win roll"><div class="hs-win-names">Nobody found it!</div><div class="hs-win-amt">${hsFmt(r.pot)} <span>rolls over</span></div><div class="hs-win-sub">The pot grows next round</div></div>`;
+      }
     }
-    hsContentEl.innerHTML = html;
+    if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;
+    hsRenderInto(html, hs, data, animating);
   }
   hsContentEl.addEventListener("click", (e) => {
     const pick = e.target.closest("[data-hs-pick]"), act = e.target.closest("[data-hs-act]");
@@ -9345,7 +9505,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (act) hsAct(act.dataset.hsAct);
     else if (e.target.closest("#hs-again")) hsPlayAgain();
     else if (e.target.closest("#hs-fake-send")) hsSendFake();
-    else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") hsWrite({ "hs/nextAt": nowMs() });
+    else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
+      const hs = roomState.hs, n = nowMs();
+      if (hsAnimating(hs)) hsWrite({ "hs/animEndsAt": n, "hs/nextAt": n + HS_REVEAL_MS });
+      else hsWrite({ "hs/nextAt": n });
+    }
   });
 
   // ==================== Worlds: themed levels with stars ====================
@@ -14307,7 +14471,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const byId = r.rid && REACTION_BY_ID[r.rid];
     if (byId) r = { ...r, emoji: byId.emoji };
     const def = REACTIONS[r.emoji];
-    const card = scoreCardFor(r.playerId);
+    // High Stakes: smaller pictures that pop out beside the sender's card, on the side facing the middle.
+    const hsCard = roomState && roomState.phase === "hs" ? hsContentEl.querySelector(`[data-hs-pl="${r.playerId}"]`) : null;
+    const card = hsCard || scoreCardFor(r.playerId);
+    const RXS = hsCard ? 72 : RX_STAGE;
     let left = 0, top = 70;
     if (card) {
       const rect = card.getBoundingClientRect();
@@ -14315,13 +14482,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // other mode (unchanged), or Team Worlds' own avatar+accuracy row (which has no score
       // sidebar at all to clamp against - see scoreCardFor()).
       const container = (card.closest("#score-col") || card.parentElement).getBoundingClientRect();
-      left = rect.left - RX_STAGE + 14;
+      left = rect.left - RXS + 14;
+      if (hsCard) left = hsCard.dataset.hsSide === "l" ? rect.right - 12 : rect.left - RXS + 12;
       // Team Worlds: the picture pops out at the LEFT edge of the sender's own box, overlapping it a little,
       // so it is obvious whose it is (the middle 60% of the stage is the picture itself).
-      if (card.closest("#tw-question-stats")) left = rect.left - RX_STAGE / 2 + 4;      const mid = Math.min(Math.max(rect.top + rect.height / 2, container.top + RX_STAGE / 2), container.bottom - RX_STAGE / 2); // stay in view if the card is scrolled away
-      top = mid - RX_STAGE / 2;
+      if (card.closest("#tw-question-stats")) left = rect.left - RXS / 2 + 4;      const mid = Math.min(Math.max(rect.top + rect.height / 2, container.top + RXS / 2), container.bottom - RXS / 2); // stay in view if the card is scrolled away
+      top = mid - RXS / 2;
     }
-    if (r.previewAt) { left = r.previewAt.x - RX_STAGE / 2; top = r.previewAt.y - RX_STAGE / 2; }
+    if (r.previewAt) { left = r.previewAt.x - RXS / 2; top = r.previewAt.y - RXS / 2; }
     // A reaction still lingering (mid fade-out) from this same player used to
     // get yanked off instantly when a new one came in - now it just keeps
     // playing out on its own (same self-cleanup via life.onfinish below), and
@@ -14330,7 +14498,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const lingering = rxShowing[r.playerId];
     const stage = document.createElement("div");
     stage.className = "rx-stage";
-    stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RX_STAGE}px;height:${RX_STAGE}px`;
+    stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RXS}px;height:${RXS}px`;
     const piv = document.createElement("div");
     piv.className = "rx-piv";
     if (def && def.id === "sideeye") {
@@ -14352,7 +14520,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     rxShowing[r.playerId] = stage;
     if (def && def.id === "sideeye") {
       piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.12)", offset: .2 }, { transform: "none" }], { duration: 500, easing: "ease-out" });
-      const d = RX_STAGE * 0.54 * 0.106;
+      const d = RXS * 0.54 * 0.106;
       piv.querySelectorAll(".rx-pupil").forEach((pu) => pu.animate([
         { transform: `translate(calc(-50% - ${d}px), -50%)` }, { transform: `translate(calc(-50% + ${d}px), -50%)`, offset: .4 },
         { transform: `translate(calc(-50% + ${d}px), -50%)`, offset: .6 }, { transform: `translate(calc(-50% - ${d}px), -50%)`, offset: .95 },
@@ -14374,7 +14542,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const life = stage.animate([
       { opacity: 1, transform: "translateX(0)", offset: 0 },
       { opacity: 1, transform: "translateX(0)", offset: .62 },
-      { opacity: 0, transform: "translateX(-34px)", offset: 1 },
+      { opacity: 0, transform: `translateX(${hsCard && hsCard.dataset.hsSide === "l" ? 28 : -34}px)`, offset: 1 },
     ], { duration: 2000, easing: "ease-in", fill: "forwards" });
     life.onfinish = () => { stage.remove(); if (rxShowing[r.playerId] === stage) delete rxShowing[r.playerId]; };
   }

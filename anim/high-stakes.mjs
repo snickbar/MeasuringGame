@@ -100,6 +100,9 @@ export function hsStartRound(hsIn, { options, realIdx, now, pickSeconds = HS_PIC
   hs.bet = null;
   hs.result = null;
   hs.pickEndsAt = now + pickSeconds * 1000;
+  hs.animAt = null;
+  hs.animEndsAt = null;
+  hs.nextAt = null;
   return hs;
 }
 
