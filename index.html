@@ -3725,7 +3725,7 @@ if (location.protocol === "file:") {
   <div class="settings-card" id="settings-about-card">
     <div class="settings-about-row"><h3>About</h3>
     <button id="settings-privacy-btn" type="button">Privacy Policy</button></div>
-    <p class="settings-profile-hint settings-preset-hint">Size Em Up! &middot; Test build 2026.10.18 · Game polish</p>
+    <p class="settings-profile-hint settings-preset-hint">Size Em Up!</p>
     <p id="settings-version" class="settings-profile-hint settings-preset-hint" hidden></p>
     <div id="settings-update-row" hidden>
       <button id="settings-update-btn" type="button" class="settings-cream-btn">Check for updates</button>
@@ -17446,7 +17446,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     (async function boot() {
       try { runningVersion = (await (await fetch("app-version.json", { cache: "no-store" })).json()).version || ""; } catch (err) {}
       const ver = $("settings-version");
-      if (ver && runningVersion) { ver.textContent = "Version " + runningVersion; ver.hidden = false; }
+      if (ver && runningVersion) {
+        // "1.0.202610201509-c1ef9dd" -> "Build 2026.10.20 15:09 (c1ef9dd)": the date and time this version was built, updated automatically with every release.
+        const m = /^[\d.]*?(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(?:-(\w+))?$/.exec(runningVersion);
+        ver.textContent = m ? `Build ${m[1]}.${m[2]}.${m[3]} ${m[4]}:${m[5]}${m[6] ? " (" + m[6] + ")" : ""}` : "Version " + runningVersion;
+        ver.hidden = false;
+      }
       // Tell the user once when a live update has just been applied.
       const last = store.get("seu_lastVersion");
       if (runningVersion) {
