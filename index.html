@@ -4792,7 +4792,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
   const activeBoard = () => (rndOn("boards") ? rndGet("boards") : equippedBoard());
-  const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
+  let monthlyPlayBg = null; // while a Monthly Challenge is being played, that month's own background is shown
+  const activeBackground = () => (monthlyPlayBg || (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground()));
   function rollRandomEquips() {
     rndPick = {};
     applyBackground();
@@ -10318,7 +10319,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function monthlyStop() { if (moAnim) { try { moAnim.destroy(); } catch (e) {} moAnim = null; } }
   function monthlyAccs() { return mo.questions.map((q, i) => (mo.guesses[i] > 0 ? roundAccuracy(mo.guesses[i] / q.answer) : 0)); }
+  // The month's picture is the backdrop from the intro until the results; it switches back to the player's own background after.
+  function monthlyBgSync() {
+    const playing = monthlyScreenEl.classList.contains("active") && mo && mo.key && mo.phase !== "done";
+    const m = playing ? MONTH_BACKGROUNDS.find((b) => b.month === Number(mo.key.slice(5))) : null;
+    const id = m ? m.id : null;
+    if (id !== monthlyPlayBg) { monthlyPlayBg = id; applyBackground(); }
+  }
+  new MutationObserver(monthlyBgSync).observe(monthlyScreenEl, { attributes: true, attributeFilter: ["class"] });
   function renderMonthly() {
+    monthlyBgSync();
     if (!mo) return;
     const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
     const dots = (i) => `<div class="dc-dots">${Array.from({ length: mo.questions.length }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
