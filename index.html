@@ -814,6 +814,18 @@ if (location.protocol === "file:") {
   .hs-board.dense .hs-tag { margin-top: 1px; padding: 0 6px; font-size: 10px; }
   .hs-opt.stat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 6px; min-height: 46px; font-size: 22px; box-shadow: none; }
   .hs-opt.stat.sel { background: linear-gradient(#e7d4ff, #bd94f2); transform: none; }
+  .hs-opt.stat { position: relative; }
+  .hs-opt.stat.wrong { background: linear-gradient(#ffd9d4, #f2a79e); border-color: #8f2a20; color: #5c120c; }
+  .hs-opt.stat.wrong.sel { background: linear-gradient(#ffc7bf, #e8867b); }
+  .hs-ghost { position: absolute; top: -9px; left: -7px; display: flex; align-items: center; z-index: 2; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); animation: hsGhostFloat 1.8s ease-in-out infinite; }
+  .hs-ghost .avatar { font-size: 20px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.8); border: 2px solid #fff; opacity: .8; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .hs-ghost i { font-style: normal; font-size: 15px; margin-left: -8px; margin-top: -14px; }
+  .hs-fooled-tag { position: absolute; right: -4px; top: -10px; padding: 1px 8px; border-radius: 999px; background: #7b3fd0; color: #fff; font-size: 12px; letter-spacing: .3px; border: 2px solid #fff; box-shadow: 0 2px 0 rgba(0,0,0,.3); animation: hsFooledPop .5s cubic-bezier(.34,1.56,.64,1) both; z-index: 2; }
+  .hs-opt.stat.fooled { animation: hsFooledBob 1s ease-in-out 1; }
+  @keyframes hsGhostFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes hsFooledPop { from { transform: scale(0) rotate(-12deg); } to { transform: scale(1) rotate(0); } }
+  @keyframes hsFooledBob { 0%, 100% { transform: translateX(0) rotate(0); } 15% { transform: translateX(-7px) rotate(-3deg); } 35% { transform: translateX(7px) rotate(3deg); } 55% { transform: translateX(-5px) rotate(-2deg); } 75% { transform: translateX(5px) rotate(2deg); } }
+  @media (prefers-reduced-motion: reduce) { .hs-ghost, .hs-fooled-tag, .hs-opt.stat.fooled { animation: none; } }
   .hs-opt.stat.real { background: linear-gradient(#fff3c4, #ffd23c); border-color: #b8860b; box-shadow: 0 0 14px rgba(247,201,72,.95); animation: hsRealGlow 1.2s ease-in-out infinite; }
   @keyframes hsRealGlow { 50% { box-shadow: 0 0 24px rgba(255,200,40,1); } }
   .hs-opt.stat .hs-who { margin: 0; flex-wrap: wrap; justify-content: center; gap: 1px; }
@@ -850,6 +862,11 @@ if (location.protocol === "file:") {
     72% { transform: translateY(0) rotate(-9deg) scale(1.28); } 84% { transform: translateY(-6px) rotate(7deg) scale(1.3); }
     100% { transform: translateY(0) rotate(0) scale(1.3); } }
   .hs-fake { display: flex; gap: 8px; align-items: stretch; }
+  .hs-fake-display { flex: 1; min-width: 0; padding: 10px 12px; border: 3px solid #4a2c12; border-radius: 14px; background: #fffdf6; font: 700 26px 'Fredoka', sans-serif; text-align: center; min-height: 34px; }
+  .hs-fake-display.bad { border-color: #b3261e; background: #fde4e1; }
+  .hs-pad { display: grid; grid-template-columns: repeat(3, 72px); justify-content: center; gap: 8px 10px; margin: 8px 0; }
+  .hs-key { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 54px; padding: 0 0 5px; margin: 0; border: none; background: url(icons/key-cream.png) center / 100% 100% no-repeat; color: #5b3a26; font: 700 22px/1 'Fredoka', sans-serif; text-shadow: none; }
+  .hs-key-back { background-image: url(icons/key-back.png); font-size: 0; color: transparent; }
   .hs-fake input { flex: 1; min-width: 0; padding: 12px; border: 3px solid #4a2c12; border-radius: 14px; font: 700 20px 'Fredoka', sans-serif; text-align: center; }
   .hs-fake input.bad { border-color: #b3261e; }
   .hs-fake .dc-btn { width: 110px; margin: 0; }
@@ -1210,6 +1227,12 @@ if (location.protocol === "file:") {
   .gacha-reveal-wrap.rare.show .gacha-reveal-rays { opacity: .28; animation: gachaRaySpin 3.4s linear infinite; }
   .gacha-reveal-wrap.ultra.show .gacha-reveal-rays { opacity: .5; animation: gachaRaySpin 2.2s linear infinite; }
   @keyframes gachaRaySpin { to { transform: rotate(360deg); } }
+  #ad-double-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 9000; width: min(92vw, 380px); display: flex; gap: 6px; align-items: stretch; animation: adbIn .4s cubic-bezier(.34,1.56,.64,1) both; }
+  #ad-double-banner .adb-watch { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 12px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#ffe27a, #f2a60f); color: #3a1f00; box-shadow: 0 4px 0 rgba(74,44,18,.55), 0 0 18px rgba(255,200,40,.8); font-family: 'Fredoka', sans-serif; cursor: pointer; }
+  #ad-double-banner .adb-big { font-size: 19px; font-weight: 700; } #ad-double-banner .adb-sub { font-size: 14px; font-weight: 600; }
+  #ad-double-banner .adb-x { width: 40px; border: 3px solid #4a2c12; border-radius: 14px; background: #fff3d1; font-size: 22px; font-weight: 700; color: #4a2c12; cursor: pointer; }
+  #ad-double-banner .adb-done { flex: 1; text-align: center; padding: 12px; border: 3px solid #2f7d1c; border-radius: 16px; background: #dff5d0; font: 700 18px 'Fredoka', sans-serif; color: #1d5210; }
+  @keyframes adbIn { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
   #fake-ad-overlay {
     position: fixed; inset: 0; z-index: 2000; background: #111; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
@@ -5122,6 +5145,49 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
       cancelBtn.addEventListener("click", () => close(false));
       ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
+    });
+  }
+  // ---- "Watch an ad to double your coins": offered after EVERY finished game that paid coins ----
+  // (Party / Quick / Team vs Team have their own receipt screen with the same button; every other mode - Worlds, Survival,
+  // Daily, Monthly, Team Worlds, High/Low Survival, High Stakes - goes through the career ledger, which calls this once the
+  // game's coins are saved. The bonus is a second transaction guarded by profile.adDoubled[key], so it can never pay twice.)
+  const adOfferShown = new Set();
+  async function offerAdDouble(row, id) {
+    try {
+      if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 3 * 60 * 1000) return;
+      const k = String(row.key).replace(/[.#$\[\]/]/g, "_");
+      const prof = (await get(ref(db, `profiles/${id}`))).val() || {};
+      const coins = prof.attemptReceipts?.[k]?.coins || 0;
+      if (coins <= 0 || prof.adDoubled?.[k]) return;
+      adOfferShown.add(row.key);
+      showAdDoubleBanner(k, coins);
+    } catch (e) { /* the offer is a bonus: never block saving */ }
+  }
+  function showAdDoubleBanner(k, coins) {
+    document.getElementById("ad-double-banner")?.remove();
+    const el = document.createElement("div");
+    el.id = "ad-double-banner";
+    el.innerHTML = `<button type="button" class="adb-watch"><span class="adb-big">Watch Ad: Double Coins!</span><span class="adb-sub">+${coins} bonus coins</span></button><button type="button" class="adb-x" aria-label="No thanks">&times;</button>`;
+    document.body.appendChild(el);
+    const done = () => el.remove();
+    const timer = setTimeout(done, 45000);
+    el.querySelector(".adb-x").addEventListener("click", () => { clearTimeout(timer); done(); });
+    el.querySelector(".adb-watch").addEventListener("click", async (e) => {
+      const btn = e.currentTarget; btn.disabled = true;
+      try {
+        const earned = await showFakeAd();
+        if (earned !== true) { btn.disabled = false; return; }
+        let paid = false;
+        await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
+          if (!cur || cur.adDoubled?.[k]) return undefined; // already doubled: abort
+          paid = true;
+          return { ...cur, coins: (cur.coins || 0) + coins, adDoubled: { ...(cur.adDoubled || {}), [k]: Date.now() } };
+        });
+        clearTimeout(timer);
+        el.innerHTML = `<div class="adb-done">${paid ? `Doubled! +${coins} coins added` : "Already doubled"}</div>`;
+        if (paid) { try { playSound("win"); } catch (err) { /* optional */ } }
+        setTimeout(done, 2500);
+      } catch (err) { btn.disabled = false; }
     });
   }
   async function watchAdForCoins() {
@@ -9291,11 +9357,49 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     set(ref(db, `rooms/${currentRoomCode}/hsActs/${currentPlayerId}`), { k: `${hs.round}:${hs.bet.n || 0}`, a: action });
     playSound("tap");
   }
+  // A little synthesized "ha-ha-ha-ha": four short voiced bursts that fall in pitch, through a vowel-ish filter.
+  function hsLaugh() {
+    try {
+      const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100;
+      if (vol <= 0) return;
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      hsLaughCtx = hsLaughCtx || new AC();
+      const c = hsLaughCtx; if (c.state === "suspended") c.resume();
+      const t0 = c.currentTime + 0.02;
+      for (let k = 0; k < 4; k++) {
+        const t = t0 + k * 0.17, f = 330 - k * 28;
+        const o = c.createOscillator(), o2 = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain();
+        o.type = "sawtooth"; o2.type = "square";
+        o.frequency.setValueAtTime(f * 1.25, t); o.frequency.exponentialRampToValueAtTime(f * 0.8, t + 0.14);
+        o2.frequency.setValueAtTime(f * 2.5, t); o2.frequency.exponentialRampToValueAtTime(f * 1.6, t + 0.14);
+        bp.type = "bandpass"; bp.frequency.value = 900 + k * 60; bp.Q.value = 2.2;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5 * vol, t + 0.025); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+        o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(c.destination);
+        o.start(t); o2.start(t); o.stop(t + 0.16); o2.stop(t + 0.16);
+      }
+    } catch (e) { /* sound is optional */ }
+  }
+  let hsLaughCtx = null;
+  let hsFakeStr = "";
+  function hsFakeKey(k) {
+    if (!roomState.hsPre) return;
+    if (k === "back") hsFakeStr = hsFakeStr.slice(0, -1);
+    else {
+      if (k === "." && hsFakeStr.includes(".")) return;
+      const [whole, frac] = hsFakeStr.split(".");
+      if (frac !== undefined ? frac.length >= 2 : (k !== "." && whole.length >= 8)) return; // same limits as the main guess pad
+      hsFakeStr += k;
+    }
+    const d = document.getElementById("hs-fake-display");
+    if (d) { d.textContent = hsFakeStr || "0"; d.classList.remove("bad"); }
+    playSound("tap");
+  }
   function hsSendFake() {
-    const input = document.getElementById("hs-fake-input");
-    const v = parseFloat(String(input?.value || "").replace(/,/g, ""));
-    if (!roomState.hsPre || !(v > 0) || !isFinite(v) || v > 1e12) { if (input) input.classList.add("bad"); return; }
+    const d = document.getElementById("hs-fake-display");
+    const v = parseFloat(hsFakeStr);
+    if (!roomState.hsPre || !(v > 0) || !isFinite(v) || v > 1e12) { if (d) d.classList.add("bad"); return; }
     set(ref(db, `rooms/${currentRoomCode}/hsFakes/${currentPlayerId}`), v);
+    hsFakeStr = "";
     playSound("tap");
   }
   async function hsPlayAgain() {
@@ -9309,7 +9413,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 3000, HS_COIN_HOLD_MS = 1800;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsFooledKey = null;
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
@@ -9435,6 +9539,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
       }
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
+      html += `<button type="button" class="dc-btn dc-alt" id="hs-exit">Exit game</button>`;
       hsContentEl.innerHTML = html;
       return;
     }
@@ -9447,7 +9552,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       html += `<div class="hs-q"><div class="dc-pics">${pair0 ? pair0.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div><div class="hs-qtext">${escapeHtml(q0?.prompt || "")}</div></div>`;
       if (isOut) html += sent[me] !== undefined
         ? `<div class="hs-result">Your fake answer <b>${hsFmt(sent[me])}</b> is in the mix. Good luck fooling them!</div>`
-        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
+        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><div id="hs-fake-display" class="hs-fake-display">${escapeHtml(hsFakeStr || "0")}</div></div><div class="hs-pad">${["1","2","3","4","5","6","7","8","9",".","0","back"].map((k) => k === "back" ? `<button type="button" class="hs-key hs-key-back" data-hs-key="back" aria-label="Backspace">&larr;</button>` : `<button type="button" class="hs-key" data-hs-key="${k}">${k}</button>`).join("")}</div><button type="button" class="dc-btn" id="hs-fake-send">Send</button><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9495,11 +9600,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
     // the 4 answers
     const mine = picks[me];
+    let fooledNow = false;
     const optsHtml = hs.options.map((o, i) => {
       if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}">${hsFmt(o)}</button>`;
       const real = revealing && !animating && i === hs.realIdx;
       const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
-      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}"><b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
+      const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && who.length > 0;
+      if (fooled) fooledNow = true;
+      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-ghost" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span><i>&#128123;</i></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
     html += `<div class="hs-board${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
       <div class="hs-potbox" id="hs-pot"><img src="items/gold-coin.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
@@ -9532,6 +9640,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;
     hsRenderInto(html, hs, data, animating, animStarted);
+    if (fooledNow) {
+      const fk = `${data.gameId}:${hs.round}`;
+      if (hsFooledKey !== fk) { hsFooledKey = fk; setTimeout(hsLaugh, 250); }
+    }
     if (stage === "bet" && b?.turn === me && !revealing) {
       const tk = `${data.gameId}:${hs.round}:${b.n || 0}`;
       if (hsTurnAlerted !== tk) { hsTurnAlerted = tk; try { playSound("powerup"); } catch (e) { /* optional */ } vibrate([120, 80, 120]); }
@@ -9542,6 +9654,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (pick) hsPick(Number(pick.dataset.hsPick));
     else if (act) hsAct(act.dataset.hsAct);
     else if (e.target.closest("#hs-again")) hsPlayAgain();
+    else if (e.target.closest("#hs-exit")) openLeaveGameConfirm();
+    else if (e.target.closest("[data-hs-key]")) hsFakeKey(e.target.closest("[data-hs-key]").dataset.hsKey);
     else if (e.target.closest("#hs-fake-send")) hsSendFake();
     else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
       const hs = roomState.hs, n = nowMs();
@@ -17052,7 +17166,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
     onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
-    onSaved:async row=>{if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
+    onSaved:async (row,id)=>{void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
   // ==================== In-app updates (native app only) ====================

@@ -95,10 +95,10 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
   let hs = setup({ a: 100, b: 100, c: 100 }, { a: 2, b: 2 });
   assert.ok(hs.bet.folded.c);
   assert.equal(H.hsTimeoutAction(hs, NOW + 1).bet.turn, hs.bet.turn, "no change before the deadline");
-  const t = NOW + 13_000;
+  const t = NOW + (H.HS_TURN_SECONDS + 1) * 1000;
   let h = H.hsTimeoutAction(hs, t); assert.notEqual(h.bet.turn, hs.bet.turn, "free turn auto-checks");
   h = H.hsApplyAction(h, h.bet.turn, "raise", t);
-  const facing = h.bet.turn; const h2 = H.hsTimeoutAction(h, t + 13_000);
+  const facing = h.bet.turn; const h2 = H.hsTimeoutAction(h, t + (H.HS_TURN_SECONDS + 1) * 1000);
   assert.ok(h2.stage === "reveal" && h2.bet.folded[facing], "facing a bet, timeout folds");
 }
 // table-stakes cap: a short stack limits the bet size for everyone
