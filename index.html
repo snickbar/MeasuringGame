@@ -9300,6 +9300,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
   let hsBusy = false, hsTickHandle = null;
   const hsBotWritten = new Set();
+  const hsLastTick = new Map();
   function hsHash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); }
   function hsEnsureTicker(on) {
     if (on && !hsTickHandle) hsTickHandle = setInterval(() => { hsRefreshTimers(); if (isHost) hsHostTick(); }, 150);
@@ -9308,11 +9309,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsRefreshTimers() {
     hsContentEl.querySelectorAll("[data-hs-ends]").forEach((el) => {
       const left = Math.max(0, Math.ceil((Number(el.dataset.hsEnds) - nowMs()) / 1000));
-      const changed = el.textContent !== String(left);
-      if (changed) el.textContent = String(left);
+      if (el.textContent !== String(left)) el.textContent = String(left);
       el.parentElement?.classList.toggle("low", left <= 5);
-      // A tick for each of the last 5 seconds, only on the phone the clock is waiting on.
-      if (changed && left >= 1 && left <= 5) {
+      // A tick for each of the last 5 seconds, only on the phone the clock is waiting on. (Remembered per clock and second, because
+      // the screen redraws often and may already show the new number before this runs.)
+      const tickKey = el.dataset.hsEnds + ":" + left;
+      if (left >= 1 && left <= 5 && hsLastTick.get(el.dataset.hsEnds) !== left) {
+        hsLastTick.set(el.dataset.hsEnds, left);
+        if (hsLastTick.size > 40) hsLastTick.delete(hsLastTick.keys().next().value);
         const h = roomState?.hs, me = currentPlayerId;
         const mine = h?.stage === "bet" ? h.bet?.turn === me : h?.stage === "pick" ? (roomState.hsPicks?.[me] === undefined || el.classList.contains("hs-timer")) : true;
         if (mine) { try { playSound("tick"); } catch (e) { /* optional */ } }
@@ -9395,7 +9399,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!players[actor]) next = HS.hsApplyAction(hs, actor, "fold", now);
       else if (tap && tap.k === key) next = HS.hsApplyAction(hs, actor, tap.a, now);
       else if (players[actor].isBot && now >= b.turnAt + 2000 + (hsHash(key + actor) % 2200)) {
-        const act = HS.hsBotDecide(hs, actor, Number(roomState.hsConf?.[actor] ?? 0.3));
+        const act = HS.hsBotDecide(hs, actor, Number(roomState.hsConf?.[actor] ?? 0.3), Math.random, players[actor].botDifficulty || "medium");
         next = HS.hsApplyAction(hs, actor, act, now);
       } else next = HS.hsTimeoutAction(hs, now);
       if (next !== hs) run(hsWrite({ hs: next }));
@@ -9406,7 +9410,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (now >= hs.nextAt) {
         const next = HS.hsFinishRound(hs);
         next.nextAt = next.stage === "ready" ? now + HS_READY_MS : null;
-        run(hsWrite({ hs: next }));
+        // No players writing fakes: deal the next round in the same step, so there is no second summary screen in between.
+        if (next.stage === "ready" && !hsFakers(next).length && !roomState.hsPre) run(hsDealRound(next, now));
+        else run(hsWrite({ hs: next }));
       }
     }
   }
@@ -9428,7 +9434,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const me = currentPlayerId, k = `${hs.round}:${hs.bet.n || 0}`;
     if (hsActSent === k) return; // already sent for this turn: ignore double taps
     hsActSent = k;
-    playSound("tap"); vibrate(action === "raise" ? 25 : 15);
+    if (action === "fold") playSound("swipe"); else if (action === "check") hsKnock(); else playSound("tap");
+    vibrate(action === "raise" ? 25 : 15);
     // instant feedback: lock the buttons and mark the one tapped
     hsContentEl.querySelectorAll(".hs-acts [data-hs-act]").forEach((b) => { b.disabled = true; b.classList.toggle("sent", b.dataset.hsAct === action); });
     // Apply the action to the shared game state ourselves, in one atomic step (only if it is still our turn): the table sees it one
@@ -9546,6 +9553,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { console.warn("[high-stakes] animation failed", e); }
   }
   // A few coins fly from one element to another (a player's card <-> the pot).
+  // Little synthesized sounds for the table: a coin clink for every coin that lands in the pot, a double knock for a check.
+  const hsVol = (v) => v * (Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100);
+  function hsClink() {
+    if (!localSoundEnabled) return;
+    try {
+      animAudioInit(); if (!animAudio) return;
+      const at = animAudio.ctx.currentTime, f = 2300 + Math.random() * 600;
+      animTone(f, at, 0.14, hsVol(0.22), "triangle"); animTone(f * 1.5, at + 0.025, 0.12, hsVol(0.13), "sine"); animTone(f * 2.4, at, 0.06, hsVol(0.06), "sine");
+    } catch (e) { /* sound is optional */ }
+  }
+  function hsKnock() {
+    if (!localSoundEnabled) return;
+    try {
+      animAudioInit(); if (!animAudio) return;
+      const at = animAudio.ctx.currentTime;
+      animTone(190, at, 0.09, hsVol(0.5), "sine"); animTone(150, at + 0.13, 0.1, hsVol(0.5), "sine");
+    } catch (e) { /* sound is optional */ }
+  }
   function hsFly(fromEl, toEl, n) {
     if (!fromEl || !toEl) return;
     const a = fromEl.getBoundingClientRect(), t = toEl.getBoundingClientRect();
@@ -9562,9 +9587,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         { transform: `translate(${x1 - x0 + jx}px,${y1 - y0 + jy}px) scale(.8)`, opacity: 1, offset: .92 },
         { transform: `translate(${x1 - x0 + jx}px,${y1 - y0 + jy}px) scale(.4)`, opacity: 0 },
       ], { duration: 650 + Math.random() * 250, delay: i * 90, easing: "cubic-bezier(.35,.05,.3,1)", fill: "both" });
-      an.onfinish = () => c.remove();
+      an.onfinish = () => { c.remove(); if (toEl.id === "hs-pot") hsClink(); };
     }
-    try { playSound("select"); } catch (e) { /* sound is optional */ }
+    if (toEl.id !== "hs-pot") { try { playSound("select"); } catch (e) { /* sound is optional */ } }
   }
   function hsRenderInto(html, hs, data, animating, started = animating) {
     hsContentEl.innerHTML = html;
@@ -9677,7 +9702,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (stage === "ready") {
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
       html += `<h2 class="dc-title">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " coins"}</p>`;
-      html += hs.round ? hsStandingsHtml(hs, data, me) : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>`;
+      html += hs.round ? `<p class="hs-hint">Dealing...</p>` : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>`;
       if (!hs.round) html += isHost ? `<button type="button" class="dc-btn" id="hs-deal">Deal round 1</button>` : `<p class="hs-hint">Waiting for the host to deal the first round...</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9695,7 +9720,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (revealing && !animating && hsStandingsNow(hs)) {
       hsRenderedStandings = true;
       html += `<h2 class="dc-title">After round ${hs.round}</h2>` + hsStandingsHtml(hs, data, me);
-      html += isHost ? `<button type="button" class="dc-btn" id="hs-skip">Next round</button>` : `<p class="hs-hint">Waiting for the host to start the next round...</p>`;
+      html += isHost ? `<button type="button" class="dc-btn" id="hs-skip">Start next round</button>` : `<p class="hs-hint">Waiting for the host to start the next round...</p>`;
       hsRenderInto(html, hs, data, false, false);
       return;
     }
@@ -9768,7 +9793,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         html += `<p class="hs-hint">Fooled players: ${g} &#128176; bounty${r.ghost[me] ? " &mdash; nice fake!" : ""}</p>`;
       }
     }
-    if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Show standings"}</button>`;
+    if (revealing && isHost && !animating) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">Show standings</button>`;
     hsRenderInto(html, hs, data, animating, animStarted);
     if (fooledNow) {
       const fk = `${data.gameId}:${hs.round}`;
@@ -9780,6 +9805,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   }
   hsContentEl.addEventListener("click", (e) => {
+    animAudioInit(); // a tap is what lets the browser start the animation and coin sounds later in the round
     const pick = e.target.closest("[data-hs-pick]"), act = e.target.closest("[data-hs-act]");
     if (pick) hsPick(Number(pick.dataset.hsPick));
     else if (act) hsAct(act.dataset.hsAct);
