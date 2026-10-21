@@ -31,6 +31,15 @@ export function judgeRoom(room, now, ttlMs = TTL_MS) {
   return { stale: false, reason: `active ${(age / 3600000).toFixed(1)}h ago`, lastActivity: last };
 }
 
+export async function deleteIfStale(roomRef, now = Date.now, ttlMs = TTL_MS) {
+  // The transaction retries if a player reconnects or the code is reused while
+  // cleanup is running. An old listing is never authority to delete a room.
+  return roomRef.transaction(current => {
+    if (!current || !judgeRoom(current, now(), ttlMs).stale) return undefined;
+    return null;
+  });
+}
+
 async function main() {
   const { default: admin } = await import("firebase-admin"); // loaded here so judgeRoom() can be tested without it
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -51,9 +60,14 @@ async function main() {
       scanned++;
       const v = judgeRoom(room, now);
       if (v.stale) {
-        stale++;
-        console.log(`${DRY_RUN ? "would delete" : "delete"} ${code}: ${v.reason}`);
-        if (!DRY_RUN) await db.ref(`rooms/${code}`).remove();
+        const deleted = DRY_RUN || (await deleteIfStale(db.ref(`rooms/${code}`))).committed;
+        if (deleted) {
+          stale++;
+          console.log(`${DRY_RUN ? "would delete" : "delete"} ${code}: ${v.reason}`);
+        } else {
+          kept++;
+          console.log(`keep ${code}: activity changed since listing`);
+        }
       } else kept++;
     }
     if (batch.length < PAGE) break;

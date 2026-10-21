@@ -4229,6 +4229,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores } from "./anim/career-ledger.mjs";
   import { mountRoomQr } from "./anim/room-qr.mjs";
   import * as HS from "./anim/high-stakes.mjs";
+  import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
   var careerLedger;
   var gameRewards;
   var powerups;
@@ -9310,6 +9311,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
   let hsBusy = false, hsTickHandle = null;
   const hsBotWritten = new Set();
+  const hsSavedRounds = new Set();
   const hsLastTick = new Map();
   function hsHash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); }
   function hsEnsureTicker(on) {
@@ -9337,7 +9339,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && !hsAnimating(hs) && hsStandingsNow(hs) !== hsRenderedStandings) renderHighStakes(roomState);
     else if (roomState?.phase === "hs" && hs && hs.stage === "pick") { const at = roomState.hsPickAt?.[currentPlayerId]; if (!!at && nowMs() >= at + HS_CHANGE_MS && !hsRenderedLocked) renderHighStakes(roomState); }
   }
-  const hsWrite = (fields) => update(ref(db, `rooms/${currentRoomCode}`), fields);
+  function hsWrite(fields) {
+    const code = currentRoomCode, gameId = roomState.gameId, expected = roomState.hs, hostId = currentPlayerId;
+    if (!fields.hs || fields.gameId) return update(ref(db, `rooms/${code}`), fields);
+    return runTransaction(ref(db, `rooms/${code}`), cur => {
+      if (cur === null) return null;
+      if (!cur.players?.[hostId]?.isHost || cur.paused) return undefined;
+      return commitHsState(cur, gameId, expected, fields);
+    }, { applyLocally: false });
+  }
 
   function hsShuffle(arr) { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   // Host: put every player at the table with the starting coins and drop into the first (empty) "ready" beat.
@@ -9347,7 +9357,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hs.nextAt = nowMs() + 500; hs.waitHost = true; // the host taps to deal the first round
     const now = new Date();
     await hsWrite({ phase: "hs", gameId: crypto.randomUUID(), activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
-      hs, hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
+      hs, hsRounds: null, hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
   async function hsDealRound(hs, now) {
     const q = roomState.hsPre && roomState.hsQ ? { ...roomState.hsQ } : { ...generateQuestion() };
@@ -9450,13 +9460,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hsContentEl.querySelectorAll(".hs-acts [data-hs-act]").forEach((b) => { b.disabled = true; b.classList.toggle("sent", b.dataset.hsAct === action); });
     // Apply the action to the shared game state ourselves, in one atomic step (only if it is still our turn): the table sees it one
     // network hop after the tap instead of going tap -> host -> everyone. If that can't go through, hand it to the host the old way.
-    const viaHost = () => set(ref(db, `rooms/${currentRoomCode}/hsActs/${me}`), { k, a: action }).catch(() => {});
-    runTransaction(ref(db, `rooms/${currentRoomCode}/hs`), (cur) => {
-      if (cur === null) return cur; // not loaded locally yet: let the server value come back and retry
-      if (cur.stage !== "bet" || cur.bet?.turn !== me || `${cur.round}:${cur.bet.n || 0}` !== k) return undefined; // moved on (e.g. timed out)
-      const next = HS.hsApplyAction(cur, me, action, nowMs());
-      return next === cur ? undefined : next;
-    }).then((res) => { if (!res.committed && roomState.hs?.stage === "bet" && roomState.hs.bet.turn === me && `${roomState.hs.round}:${roomState.hs.bet.n || 0}` === k) viaHost(); })
+    const code = currentRoomCode, gameId = roomState.gameId;
+    const viaHost = () => {
+      if (currentRoomCode !== code || roomState.gameId !== gameId) return;
+      return set(ref(db, `rooms/${code}/hsActs/${me}`), { k, a: action }).catch(() => {});
+    };
+    runTransaction(ref(db, `rooms/${code}`), (cur) => {
+      if (cur === null) return null;
+      const state = cur.hs;
+      if (cur.phase !== "hs" || cur.gameId !== gameId || cur.paused || state?.stage !== "bet" || state.bet?.turn !== me || `${state.round}:${state.bet.n || 0}` !== k) return undefined;
+      const next = HS.hsApplyAction(state, me, action, nowMs());
+      return next === state ? undefined : commitHsState(cur, gameId, state, { hs: next });
+    }, { applyLocally: false }).then((res) => { if (!res.committed && roomState.hs?.stage === "bet" && roomState.hs.bet.turn === me && `${roomState.hs.round}:${roomState.hs.bet.n || 0}` === k) viaHost(); })
       .catch(viaHost);
   }
   // A little synthesized "ha-ha-ha-ha": four short voiced bursts that fall in pitch, through a vowel-ish filter.
@@ -9517,7 +9532,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ids = hsShuffle(Object.keys(roomState.players || {}));
     const hs = HS.hsNewGame(ids, roomState.settings?.startCoins || HS.HS_START_COINS);
     hs.nextAt = nowMs() + 500; hs.waitHost = true;
-    await hsWrite({ hs, gameId: crypto.randomUUID(), hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
+    await hsWrite({ hs, gameId: crypto.randomUUID(), hsRounds: null, hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
 
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
@@ -9693,7 +9708,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             group: hs.seatsAll.filter((id) => !data.players?.[id]?.isBot).length >= 2 && hs.seatsAll.length >= 3, score: hs.chips[me] || 0, accuracy: 0,
             myAvatar: data.players?.[me]?.avatar, opponents: others });
           careerLedger.save({ kind: "attempt", mode: "highstakes", key: key + "_hs", t: Date.now(), coins: rw.total, ghost: rw.ghost, rounds: hs.round,
-            roundsWon: st.won || 0, bluffs: st.bluffs || 0, biggestWin: st.best || 0, peak: Math.max(st.peak || 0, hs.chips[me] || 0), out: !!hs.out?.[me], accuracy: 0 });
+            roundsRecorded: true, roundsWon: st.won || 0, bluffs: st.bluffs || 0, biggestWin: st.best || 0, peak: Math.max(st.peak || 0, hs.chips[me] || 0), out: !!hs.out?.[me], accuracy: 0 });
         }
       }
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
@@ -12697,8 +12712,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function joinRoomAsPlayerOnce(roomCode, name, asHost, roomData) {
     if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
-    // Final authoritative frame-availability check right before writing (mirrors the
-    // avatar recheck above) — this is also what caps room size at FRAME_COUNT players.
+    // Read possible rejoin slots; the room transaction below makes the final
+    // capacity and frame decision against the latest players and game mode.
     const playersSnap = await new Promise((resolve) => {
       onValue(ref(db, `rooms/${roomCode}/players`), resolve, { onlyOnce: true });
     });
@@ -12739,29 +12754,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       && roomData.pendingHostReclaim.name.trim().toLowerCase() === name.trim().toLowerCase();
     const finalIsHost = asHost || !!canReclaim || (staleOwnId ? !!existingPlayers[staleOwnId].isHost : false);
 
-    currentRoomCode = roomCode;
-    isHost = finalIsHost;
-    let playerRef;
-    if (staleOwnId) {
-      // Reuse the SAME id rather than minting a new one and copying its
-      // fields across - this round's guess/pick (rooms/{code}/guesses/{id},
-      // .../picks/{id}) are stored keyed by player id in their own separate
-      // paths, not nested under the player record, so a fresh id here would
-      // silently orphan whatever this player had already submitted before
-      // closing out (exactly what showed up as "my answer wasn't there" on
-      // the second-chance/reveal screens after reclaiming). Score/avatar/
-      // frame are already correct in place on this node; only these fields
-      // actually need updating.
-      currentPlayerId = staleOwnId;
-      playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-      lastSyncedFlair = myEquippedFlair();
-      await update(playerRef, { name, isHost, flair: lastSyncedFlair, connected: true, disconnectedAt: null });
-    } else {
-      currentPlayerId = makePlayerId();
-      playerRef = ref(db, `rooms/${roomCode}/players/${currentPlayerId}`);
-      lastSyncedFlair = myEquippedFlair();
-      await set(playerRef, { name, avatar: currentAvatar, flair: lastSyncedFlair, isHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true });
+    const id = staleOwnId || makePlayerId();
+    lastSyncedFlair = myEquippedFlair();
+    const player = staleOwnId
+      ? { name, isHost: finalIsHost, flair: lastSyncedFlair, connected: true, disconnectedAt: null }
+      : { name, avatar: currentAvatar, flair: lastSyncedFlair, isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
+    const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, !!staleOwnId));
+    if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
+      nameAvatarStatusEl.textContent = `Room is full (${roomCapacity(joined.snapshot.val() || roomData)} players max) or no longer available.`;
+      return;
     }
+    currentRoomCode = roomCode;
+    currentPlayerId = id;
+    isHost = !!joined.snapshot.val().players[id].isHost;
+    const playerRef = ref(db, `rooms/${roomCode}/players/${id}`);
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
     if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
     const effectiveMode = roomData && roomData.settings && roomData.settings.hostTransferMode;
@@ -13200,6 +13206,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const hlGameOver = () => (roomState.hlLives || 0) <= 0 || (!!(roomState.settings?.cap) && (roomState.hlSurvived || 0) >= roomState.settings.cap);
   async function startGameNow() {
+    if (!isHost || (roomState.settings?.mode === "teamworlds" && Object.keys(roomState.players || {}).length !== 2)) return;
     playSound("start");
     if (isHsSettings(roomState.settings)) { await hsBeginGame(); return; }
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
@@ -13224,25 +13231,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openExitConfirm('startGame','Start game?',roomState.settings?.solo||ready===humans.length?"Everyone is ready. Let's play!":`${ready} of ${humans.length} players are ready. Start anyway?`);
   });
 
+  const hostTransfers = new Set();
   function maybeReassignHost(data, roomCode) {
-    if (!data.settings || data.settings.hostTransferMode !== "reassign") return;
-    if (data.phase === "ended") return;
-    const players = data.players || {};
-    const realIds = Object.keys(players).filter((id) => !players[id].isBot);
-    if (realIds.length === 0) return;
-    // Must also be connected - a disconnected player's record keeps
-    // isHost:true frozen at whatever it was before they dropped (onDisconnect
-    // only touches connected/disconnectedAt), so without this check a host
-    // who force-closed rather than cleanly exiting permanently blocked
-    // reassignment: this looked like "already has a host" forever, with
-    // nobody actually around to run the host-authoritative deadline checks -
-    // the room (and everyone's timer) just froze.
-    if (realIds.some((id) => players[id].isHost && players[id].connected !== false)) return;
-    const sorted = realIds.sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0) || a.localeCompare(b));
-    const chosenId = sorted[0];
-    if (chosenId === currentPlayerId) {
-      isHost = true;
-      set(ref(db, `rooms/${roomCode}/players/${currentPlayerId}/isHost`), true);
+    const wasHost = isHost;
+    isHost = !!data.players?.[currentPlayerId]?.isHost && data.players[currentPlayerId].connected !== false;
+    if (isHost && !wasHost) {
       // The old host's locally-scheduled deadline timer died with their tab —
       // re-arm whichever one is currently pending so the round doesn't stall.
       // Bot guesses/picks are also setTimeout's scheduled on whoever was
@@ -13259,7 +13252,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (data.answersEndsAt) scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
         if (data.answers) scheduleBotPicks(roomCode, data.answers);
       }
+      const pending = {
+        countdown: [data.countdownEndsAt, checkCountdownAdvance],
+        animation: [data.animEndsAt, checkAnimationAdvance],
+        reveal: [data.revealAdvanceAt, checkRevealAdvance],
+        summary: [data.summaryAdvanceAt, checkSummaryAdvance],
+      }[data.phase];
+      if (pending?.[0]) scheduleHostDeadline(pending[0], () => pending[1](roomCode));
+      if (data.phase === "hs") hsEnsureTicker(true);
     }
+    if (electedHost(data) !== currentPlayerId || hostTransfers.has(roomCode)) return;
+    const id = currentPlayerId;
+    hostTransfers.add(roomCode);
+    runTransaction(ref(db, `rooms/${roomCode}`), cur => transferHost(cur, id), { applyLocally: false })
+      .catch(e => console.warn("[host transfer]", e)).finally(() => hostTransfers.delete(roomCode));
   }
 
   function kickPlayer(targetId) {
@@ -13316,7 +13322,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const openTeam = TEAM_COLORS.find((c) => (teamCounts[c] || 0) < 2);
       if (openTeam) newPlayer.team = openTeam;
     }
-    await set(ref(db, `rooms/${currentRoomCode}/players/${botId}`), newPlayer);
+    const hostId = currentPlayerId;
+    await runTransaction(ref(db, `rooms/${currentRoomCode}`), cur => {
+      if (cur === null) return null;
+      if (!cur.players?.[hostId]?.isHost || cur.phase !== "waiting") return undefined;
+      return admitPlayer(cur, botId, newPlayer);
+    });
   }
   document.querySelectorAll(".bot-btn:not(.bot-all-btn)").forEach((btn) => {
     btn.addEventListener("click", () => addBot(btn.dataset.difficulty));
@@ -17017,7 +17028,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       needsFriend = Object.keys(data.players || {}).length < 2;
       waitingMsg = "Need at least 2 players to start — add a friend or a bot.";
     } else if (worldsMode) {
-      needsFriend = Object.keys(data.players || {}).length < 2;
+      needsFriend = Object.keys(data.players || {}).length !== 2;
       waitingMsg = "Need exactly one partner to start — add a friend or a bot.";
     } else {
       // Host Party needs at least one other real player before it can start.
@@ -17274,6 +17285,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (leavingGame) return; // see the comment on its declaration
       const data = snapshot.val() || {};
       roomState = data;
+      if (data.phase === "hs" && data.hsRounds && careerLedger) {
+        const match = gameRewardKey(roomCode, data);
+        for (const saved of Object.values(data.hsRounds)) {
+          if (!saved?.hs || !saved.q) continue;
+          const record = hsRoundRecord(match, saved.hs.round, saved, currentPlayerId, data.players || {}, Date.now());
+          const receipt = deviceId + ':' + record?.key;
+          if (record && !hsSavedRounds.has(receipt)) {
+            careerLedger.save(record);
+            hsSavedRounds.add(receipt);
+          }
+        }
+      }
       // A new game (its round-1 countdown) gives everyone with Equip Random on a fresh set of random items.
       if (data.phase === "countdown" && data.countdownRound === 1 && data.countdownEndsAt !== lastRandomRollKey) { lastRandomRollKey = data.countdownEndsAt; rollRandomEquips(); }
       currentPlayers = data.players || {};

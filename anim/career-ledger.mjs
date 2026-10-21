@@ -39,6 +39,14 @@ export function applyCareerRecord(profile,record){
       accuracyTotal:(old.accuracyTotal||0)+(answered?roundAccuracy(h.r):0),
       rawAccuracyTotal:(old.rawAccuracyTotal||0)+(answered?roundAccuracy(Number.isFinite(h.rawR)?h.rawR:h.r):0),
       spotOns:(old.spotOns||0)+(inc.spotOns||0),perfects:(old.perfects||0)+(inc.perfects||0)}};
+    if (mode === 'highstakes' && record.hsProgress) {
+      const oldHs = profile.hsStats || {}, progress = record.hsProgress;
+      result.hsStats = { ...oldHs, roundsPlayed: (oldHs.roundsPlayed || 0) + 1,
+        roundsWon: (oldHs.roundsWon || 0) + (progress.won ? 1 : 0),
+        bluffs: (oldHs.bluffs || 0) + (progress.bluff ? 1 : 0),
+        biggestWin: Math.max(oldHs.biggestWin || 0, progress.payout || 0),
+        peakStack: Math.max(oldHs.peakStack || 0, progress.peak || 0) };
+    }
     return discover(result,h?.u,h?.g);
   }
   if(record.kind==='match'){
@@ -93,8 +101,8 @@ export function applyCareerRecord(profile,record){
   }else if(record.mode==='highstakes'){
     // High Stakes: coins come pre-computed on the record (finishing place + ghost bounty); the rest are running tallies.
     const old=profile.hsStats||{};coins=Math.max(0,Math.floor(record.coins||0));
-    result.hsStats={games:(old.games||0)+1,roundsPlayed:(old.roundsPlayed||0)+(record.rounds||0),roundsWon:(old.roundsWon||0)+(record.roundsWon||0),
-      bluffs:(old.bluffs||0)+(record.bluffs||0),biggestWin:Math.max(old.biggestWin||0,record.biggestWin||0),peakStack:Math.max(old.peakStack||0,record.peak||0),
+    result.hsStats={games:(old.games||0)+1,roundsPlayed:(old.roundsPlayed||0)+(record.roundsRecorded?0:(record.rounds||0)),roundsWon:(old.roundsWon||0)+(record.roundsRecorded?0:(record.roundsWon||0)),
+      bluffs:(old.bluffs||0)+(record.roundsRecorded?0:(record.bluffs||0)),biggestWin:Math.max(old.biggestWin||0,record.biggestWin||0),peakStack:Math.max(old.peakStack||0,record.peak||0),
       ghostCoins:(old.ghostCoins||0)+(record.ghost||0),knockedOut:(old.knockedOut||0)+(record.out?1:0)};
     stats.highStakesGames=(stats.highStakesGames||0)+1;
   }else if(record.mode==='survival'){
