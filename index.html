@@ -9260,7 +9260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rules live in anim/high-stakes.mjs (pure functions). This block is the screen, the host's driver (the host's
   // tab advances the game, like every other mode) and the player taps. Room fields: hs (whole game state),
   // hsQ (the question), hsPicks/<id> (each player's secret pick), hsActs/<id> (a betting tap), hsConf/<botId>.
-  const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 10000, HS_RESULT_MS = 4500, HS_READY_MS = 2500, HS_FAKE_MS = 15000;
+  const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 90000 /* AFK fallback only: the host taps Next round */, HS_RESULT_MS = 6000, HS_READY_MS = 3500, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
@@ -9268,7 +9268,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hsBotWritten = new Set();
   function hsHash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); }
   function hsEnsureTicker(on) {
-    if (on && !hsTickHandle) hsTickHandle = setInterval(() => { hsRefreshTimers(); if (isHost) hsHostTick(); }, 300);
+    if (on && !hsTickHandle) hsTickHandle = setInterval(() => { hsRefreshTimers(); if (isHost) hsHostTick(); }, 150);
     if (!on && hsTickHandle) { clearInterval(hsTickHandle); hsTickHandle = null; }
   }
   function hsRefreshTimers() {
@@ -9353,7 +9353,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       let next = hs;
       if (!players[actor]) next = HS.hsApplyAction(hs, actor, "fold", now);
       else if (tap && tap.k === key) next = HS.hsApplyAction(hs, actor, tap.a, now);
-      else if (players[actor].isBot && now >= b.turnAt + 1200 + (hsHash(key + actor) % 1600)) {
+      else if (players[actor].isBot && now >= b.turnAt + 2000 + (hsHash(key + actor) % 2200)) {
         const act = HS.hsBotDecide(hs, actor, Number(roomState.hsConf?.[actor] ?? 0.3));
         next = HS.hsApplyAction(hs, actor, act, now);
       } else next = HS.hsTimeoutAction(hs, now);
@@ -9384,13 +9384,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsAct(action) {
     const hs = roomState.hs;
     if (!hs || hs.stage !== "bet" || hs.bet.turn !== currentPlayerId) return;
-    const k = `${hs.round}:${hs.bet.n || 0}`;
+    const me = currentPlayerId, k = `${hs.round}:${hs.bet.n || 0}`;
     if (hsActSent === k) return; // already sent for this turn: ignore double taps
     hsActSent = k;
-    set(ref(db, `rooms/${currentRoomCode}/hsActs/${currentPlayerId}`), { k, a: action });
     playSound("tap");
-    // instant feedback: lock the buttons and mark the one tapped while the host applies it
+    // instant feedback: lock the buttons and mark the one tapped
     hsContentEl.querySelectorAll(".hs-acts [data-hs-act]").forEach((b) => { b.disabled = true; b.classList.toggle("sent", b.dataset.hsAct === action); });
+    // Apply the action to the shared game state ourselves, in one atomic step (only if it is still our turn): the table sees it one
+    // network hop after the tap instead of going tap -> host -> everyone. If that can't go through, hand it to the host the old way.
+    const viaHost = () => set(ref(db, `rooms/${currentRoomCode}/hsActs/${me}`), { k, a: action }).catch(() => {});
+    runTransaction(ref(db, `rooms/${currentRoomCode}/hs`), (cur) => {
+      if (cur === null) return cur; // not loaded locally yet: let the server value come back and retry
+      if (cur.stage !== "bet" || cur.bet?.turn !== me || `${cur.round}:${cur.bet.n || 0}` !== k) return undefined; // moved on (e.g. timed out)
+      const next = HS.hsApplyAction(cur, me, action, nowMs());
+      return next === cur ? undefined : next;
+    }).then((res) => { if (!res.committed && roomState.hs?.stage === "bet" && roomState.hs.bet.turn === me && `${roomState.hs.round}:${roomState.hs.bet.n || 0}` === k) viaHost(); })
+      .catch(viaHost);
   }
   // A little synthesized "ha-ha-ha-ha": four short voiced bursts that fall in pitch, through a vowel-ish filter.
   function hsLaugh() {
@@ -9454,7 +9463,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
-  const HS_ANIM_HOLD_MS = 3000, HS_COIN_HOLD_MS = 1800;
+  const HS_ANIM_HOLD_MS = 4000, HS_COIN_HOLD_MS = 2200;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
   let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsFooledKey = null, hsActSent = null;
   let hsRenderedStandings = false, hsRenderedLocked = false;
@@ -9557,6 +9566,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const coins = hs.chips[id] ?? 0;
     return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + " &#128176;"}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
   }
+  function hsStandingsHtml(hs, data, me) {
+    const rows = HS.hsStandings(hs);
+    return `<div class="hs-stand">${rows.map((r, i) => {
+        const p = data.players?.[r.id];
+        const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv"></span>`;
+        const dl = r.delta > 0 ? `<span class="hs-delta up">&#9650; +${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">&#9660; ${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
+        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}" style="animation-delay:${i * 70}ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
+      }).join("")}</div>`;
+  }
   function renderHighStakes(data) {
     const hs = data.hs;
     hsRenderedAnimating = false;
@@ -9612,7 +9630,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (stage === "ready") {
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
       html += `<h2 class="dc-title">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " coins"}</p>`;
-      html += `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>`;
+      html += hs.round ? hsStandingsHtml(hs, data, me) : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>`;
       hsContentEl.innerHTML = html;
       return;
     }
@@ -9628,14 +9646,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hsRenderedStandings = false;
     if (revealing && !animating && hsStandingsNow(hs)) {
       hsRenderedStandings = true;
-      const rows = HS.hsStandings(hs);
-      html += `<h2 class="dc-title">After round ${hs.round}</h2><div class="hs-stand">${rows.map((r, i) => {
-        const p = data.players?.[r.id];
-        const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv"></span>`;
-        const dl = r.delta > 0 ? `<span class="hs-delta up">&#9650; +${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">&#9660; ${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
-        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}" style="animation-delay:${i * 70}ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
-      }).join("")}</div>`;
-      if (isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">Next round</button>`;
+      html += `<h2 class="dc-title">After round ${hs.round}</h2>` + hsStandingsHtml(hs, data, me);
+      html += isHost ? `<button type="button" class="dc-btn" id="hs-skip">Next round</button>` : `<p class="hs-hint">Waiting for the host to start the next round...</p>`;
       hsRenderInto(html, hs, data, false, false);
       return;
     }
@@ -9671,8 +9683,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const optsHtml = hs.options.map((o, i) => {
       if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}"${pickLocked ? " disabled" : ""}>${hsFmt(o)}</button>`;
       const real = revealing && !animating && i === hs.realIdx;
-      const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
-      const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && who.length > 0;
+      const pickers = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
+      const who = pickers.filter((id) => !hs.bet.folded?.[id]); // players who folded aren't shown on their answer at all
+      const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && pickers.length > 0; // a folded player still got fooled (and still pays the bounty)
       if (fooled) fooledNow = true;
       return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-author" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
@@ -9707,7 +9720,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         html += `<p class="hs-hint">Fooled players: ${g} &#128176; bounty${r.ghost[me] ? " &mdash; nice fake!" : ""}</p>`;
       }
     }
-    if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;
+    if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Show standings"}</button>`;
     hsRenderInto(html, hs, data, animating, animStarted);
     if (fooledNow) {
       const fk = `${data.gameId}:${hs.round}`;
@@ -9729,7 +9742,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
       const hs = roomState.hs, n = nowMs();
       if (hsAnimating(hs)) hsWrite({ "hs/animEndsAt": n, "hs/nextAt": n + HS_REVEAL_MS });
-      else hsWrite({ "hs/nextAt": n });
+      else if (!hsStandingsNow(hs)) hsWrite({ "hs/animEndsAt": n - HS_RESULT_MS, "hs/nextAt": n + HS_REVEAL_MS }); // result -> standings
+      else hsWrite({ "hs/nextAt": n }); // standings -> next round
     }
   });
 

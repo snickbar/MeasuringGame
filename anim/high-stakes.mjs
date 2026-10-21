@@ -335,3 +335,30 @@ export function hsRewardFor(hs, id) {
   const ghost = hs.ghost?.[id] || 0;
   return { place, out, coinsLeft: hs.chips[id] || 0, placeCoins, ghost, total: placeCoins + ghost };
 }
+
+// ---------- standings ----------
+// Everyone in the game ranked by coins (ties share a rank), with how far each moved this round and how many ranks they climbed or fell.
+export function hsStandings(hs) {
+  const ids = hs.seatsAll || [];
+  const start = hs.startChips || null;
+  const rankIn = (get) => {
+    const sorted = [...ids].sort((a, b) => get(b) - get(a));
+    const rank = {};
+    sorted.forEach((id, i) => { rank[id] = i > 0 && get(id) === get(sorted[i - 1]) ? rank[sorted[i - 1]] : i + 1; });
+    return { sorted, rank };
+  };
+  const now = rankIn((id) => hs.chips[id] || 0);
+  // Movement uses strict positions (ties broken by seat order) so a start-of-game tie doesn't read as everyone falling.
+  const posBefore = {};
+  if (start) [...ids].sort((a, b) => (start[b] ?? 0) - (start[a] ?? 0)).forEach((id, i) => { posBefore[id] = i; });
+  const posNow = {};
+  now.sorted.forEach((id, i) => { posNow[id] = i; });
+  return now.sorted.map((id) => ({
+    id,
+    coins: hs.chips[id] || 0,
+    delta: start ? (hs.chips[id] || 0) - (start[id] ?? hs.chips[id] ?? 0) : 0,
+    rank: now.rank[id],
+    rankMove: start ? posBefore[id] - posNow[id] : 0,
+    out: (hs.chips[id] || 0) <= 0,
+  }));
+}
