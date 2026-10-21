@@ -3709,12 +3709,15 @@ if (location.protocol === "file:") {
   <div class="settings-card" id="settings-game-card">
     <h3>Game</h3>
     <div id="settings-toggles-panel">
-      <label>Sound effects <span class="settings-sound-control"><span id="settings-sound-label">On</span><button id="settings-sound-toggle" type="button" class="icon-toggle-btn" aria-label="Sound effects"></button></span></label>
-      <label>Vibration <span class="settings-sound-control"><span id="settings-vibe-label">On</span><button id="settings-vibe-toggle" type="button" class="icon-toggle-btn" aria-label="Vibration"></button></span></label>
+      <label><svg class="set-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="set-name">Sound effects</span> <span class="settings-sound-control"><span id="settings-sound-label">On</span><button id="settings-sound-toggle" type="button" class="icon-toggle-btn" aria-label="Sound effects"></button></span></label>
+      <label><svg class="set-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4.5 8v8M2 10v4M19.5 8v8M22 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="set-name">Vibration</span> <span class="settings-sound-control"><span id="settings-vibe-label">On</span><button id="settings-vibe-toggle" type="button" class="icon-toggle-btn" aria-label="Vibration"></button></span></label>
     </div>
     <label class="comfort-control">Effects volume <input id="effects-volume" type="range" min="0" max="100" step="5" aria-label="Sound effects volume"></label>
-    <label class="comfort-control">Animation <select id="motion-choice"><option value="auto">Use device setting</option><option value="reduce">Reduced motion</option><option value="full">Full animation</option></select></label>
-    <label class="comfort-control">Menu text <select id="text-choice"><option value="normal">Standard</option><option value="large">Larger</option></select></label>
+    <div class="comfort-block"><div class="comfort-head">Animation</div>
+      <div class="seg" id="motion-seg" role="radiogroup" aria-label="Animation"><button type="button" role="radio" data-v="auto">Device setting</button><button type="button" role="radio" data-v="reduce">Reduced</button><button type="button" role="radio" data-v="full">Full</button></div>
+      <p class="seg-hint" id="motion-hint"></p></div>
+    <div class="comfort-block"><div class="comfort-head">Menu text</div>
+      <div class="seg" id="text-seg" role="radiogroup" aria-label="Menu text"><button type="button" role="radio" data-v="normal">Standard</button><button type="button" role="radio" data-v="large">Larger</button></div></div>
     <button id="edit-preset-settings-btn" type="button" class="settings-nav-row"><span>Game presets<small>Saved timer, rounds, and object rules</small></span></button>
     <button id="settings-howto-btn" type="button" class="settings-nav-row"><span>How to Play<small>Rules, scoring, and power-ups</small></span></button>
   </div>
@@ -8530,11 +8533,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function applyComfortSettings(){qReduceMotion=prefersReducedMotion();document.documentElement.dataset.motion=prefersReducedMotion()?'reduce':'full';document.documentElement.dataset.largeText=String(localStorage.getItem('mg_text')==='large');}
   applyComfortSettings();
   document.getElementById('effects-volume').value=localStorage.getItem('mg_effects_volume')??100;
-  document.getElementById('motion-choice').value=localStorage.getItem('mg_motion')||'auto';
-  document.getElementById('text-choice').value=localStorage.getItem('mg_text')||'normal';
+  const MOTION_HINTS={auto:"Follows your phone's own animation setting (the one in Accessibility).",reduce:"Skips the bouncing, counting-up and typed-out text so everything just appears. Calmer and a bit faster.",full:"Always plays every animation, even if your phone is set to reduce motion."};
+  function renderComfortSegs(){
+    const m=localStorage.getItem('mg_motion')||'auto', t=localStorage.getItem('mg_text')||'normal';
+    document.querySelectorAll('#motion-seg button').forEach(b=>{const on=b.dataset.v===m;b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on));});
+    document.querySelectorAll('#text-seg button').forEach(b=>{const on=b.dataset.v===t;b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on));});
+    document.getElementById('motion-hint').textContent=MOTION_HINTS[m]||'';
+  }
+  renderComfortSegs();
   document.getElementById('effects-volume').addEventListener('input',e=>localStorage.setItem('mg_effects_volume',e.target.value));
-  document.getElementById('motion-choice').addEventListener('change',e=>{localStorage.setItem('mg_motion',e.target.value);applyComfortSettings();});
-  document.getElementById('text-choice').addEventListener('change',e=>{localStorage.setItem('mg_text',e.target.value);applyComfortSettings();});
+  document.getElementById('motion-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;localStorage.setItem('mg_motion',b.dataset.v);applyComfortSettings();renderComfortSegs();});
+  document.getElementById('text-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;localStorage.setItem('mg_text',b.dataset.v);applyComfortSettings();renderComfortSegs();});
   window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change',applyComfortSettings);
   function renderSoundToggleIcon() {
     settingsSoundToggle.classList.toggle("is-on", localSoundEnabled);
