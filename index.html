@@ -3710,6 +3710,7 @@ if (location.protocol === "file:") {
     <h3>Game</h3>
     <div id="settings-toggles-panel">
       <label>Sound effects <span class="settings-sound-control"><span id="settings-sound-label">On</span><button id="settings-sound-toggle" type="button" class="icon-toggle-btn" aria-label="Sound effects"></button></span></label>
+      <label>Vibration <span class="settings-sound-control"><span id="settings-vibe-label">On</span><button id="settings-vibe-toggle" type="button" class="icon-toggle-btn" aria-label="Vibration"></button></span></label>
     </div>
     <label class="comfort-control">Effects volume <input id="effects-volume" type="range" min="0" max="100" step="5" aria-label="Sound effects volume"></label>
     <label class="comfort-control">Animation <select id="motion-choice"><option value="auto">Use device setting</option><option value="reduce">Reduced motion</option><option value="full">Full animation</option></select></label>
@@ -8541,6 +8542,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     settingsSoundToggle.setAttribute("aria-pressed", String(localSoundEnabled));
   }
   renderSoundToggleIcon();
+  const settingsVibeToggle = document.getElementById("settings-vibe-toggle");
+  function renderVibeToggle() {
+    const on = localStorage.getItem("mg_vibrationEnabled") !== "false";
+    settingsVibeToggle.classList.toggle("is-on", on);
+    document.getElementById("settings-vibe-label").textContent = on ? "On" : "Off";
+    settingsVibeToggle.setAttribute("aria-pressed", String(on));
+  }
+  renderVibeToggle();
+  settingsVibeToggle.addEventListener("click", () => {
+    const on = localStorage.getItem("mg_vibrationEnabled") !== "false";
+    localStorage.setItem("mg_vibrationEnabled", String(!on));
+    renderVibeToggle();
+    vibrate(30); // a little buzz to confirm it's on (silent when switching off)
+  });
   settingsSoundToggle.addEventListener("click", () => {
     localSoundEnabled = !localSoundEnabled;
     localStorage.setItem("mg_soundEnabled", String(localSoundEnabled));
@@ -16159,8 +16174,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Sound / confetti ====================
 
+  // Every buzz in the app goes through here, so the Settings > Vibration switch controls all of it.
   function vibrate(pattern) {
     try {
+      if (localStorage.getItem("mg_vibrationEnabled") === "false") return;
       if (navigator.vibrate) navigator.vibrate(pattern);
     } catch (e) { /* ignore unsupported/blocked vibration */ }
   }
