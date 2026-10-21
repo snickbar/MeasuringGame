@@ -17312,7 +17312,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     // ---- live updates ----
     // Resolves "downloaded" | "ready" (already waiting for next launch) | "current" | "cellular" | "error"
-    async function checkLive(manual) {
+    async function checkLive(manual, onFound) {
       if (!updater) return "error";
       try {
         const conn = navigator.connection;
@@ -17326,6 +17326,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!remote.checksum) throw new Error("update manifest has no checksum");
         const { bundles } = await updater.list();
         const waiting = (bundles || []).find((b) => b.version === remote.version);
+        if (onFound) { try { onFound(!!waiting); } catch (e) { /* UI only */ } }
         if (waiting) { readyBundleId = waiting.id; return "ready"; }
         const bundle = await updater.download({ url: remote.url, version: remote.version, checksum: remote.checksum });
         await updater.next({ id: bundle.id });
@@ -17403,7 +17404,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.addEventListener("click", async () => {
         btn.disabled = true;
         status.textContent = "Checking…";
-        const [live, play] = await Promise.all([checkLive(true), checkPlay()]);
+        // As soon as a newer version turns up, say so instead of staying on "Checking…" while it downloads.
+        const [live, play] = await Promise.all([checkLive(true, () => { status.textContent = "Update found! Applying it now…"; }), checkPlay()]);
         btn.disabled = false;
         if (play.state === "available") { status.textContent = "A new version is on Google Play."; offerPlayUpdate(play.info); }
         else if ((live === "downloaded" || live === "ready") && readyBundleId) {
