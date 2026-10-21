@@ -548,6 +548,8 @@ if (location.protocol === "file:") {
      for the same "sits over scrolling content" reason. */
   .cosm-sticky-header { position: sticky; top: 0; z-index: 5; background: #fbfaf6; padding-top: 2px; }
   .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
+  /* Stats: the level card scrolls away, then the mode tabs pin just under the Stats/Objects/Awards strip */
+  #career-content .cosm-tabs.stats-views { position: sticky; top: 112px; z-index: 6; margin: 0 -6px 4px; padding: 4px 6px 14px; background: linear-gradient(#fbfaf6 calc(100% - 8px), rgba(251,250,246,0)); }
   .cosm-pane[hidden] { display: none; }
   .cosm-note:empty { display: none; }
   .cosm-note { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
@@ -742,6 +744,8 @@ if (location.protocol === "file:") {
   .sh-card.sh-banner .sh-bimg { display: block; width: 100%; height: auto; }  /* all five pictures are exactly 1000 x 222 so the rows match */
   .sh-card.sh-banner .sh-tx { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6% 0 31%; text-align: left; }
   .sh-card.sh-banner .sh-name { font-size: 22px; }
+  .sh-card.sh-banner .sh-bic { position: absolute; left: 6%; top: 50%; width: 19%; height: 82%; transform: translateY(-50%); object-fit: contain; pointer-events: none; }  /* Party hub: the mode's own icon sits on a blank banner */
+  .sh-card.sh-banner .sh-badge-slot { position: absolute; right: 5%; top: -6px; z-index: 2; }
   .sh-card.sh-banner:active { transform: translateY(2px); box-shadow: none; }
   #home-solo-btn.has-todo::after { content: ""; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; z-index: 2; }
   #worlds-screen.active #worlds-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
@@ -1422,6 +1426,12 @@ if (location.protocol === "file:") {
      these two properties specifically, so this only covers the swatch's layout/typography. */
   .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border-radius: 14px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
   .team-swatch:disabled { opacity: .45; }
+  .team-swatch.drop-ok { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(79,170,56,.55); }
+  .team-swatch.drop-no { opacity: .45; box-shadow: 0 0 0 4px rgba(179,38,30,.5); }
+  .team-draggable, .lobby-drag { cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+  .team-drag-ghost { position: fixed; z-index: 99999; pointer-events: none; transform: translate(-50%, -60%); font-size: 28px; filter: drop-shadow(0 4px 4px rgba(0,0,0,.35)); }
+  .team-drag-ghost img, .team-drag-ghost svg, .team-drag-ghost .avatar-img { width: 44px !important; height: 44px !important; }
+  body.team-dragging { cursor: grabbing; }
   .team-swatch-name { font-size: 13px; }
   .team-swatch-members { display: flex; gap: 2px; min-height: 22px; }
   .team-swatch-members .avatar { font-size: 18px; }
@@ -7020,6 +7030,77 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Precomputed light tints rather than CSS color-mix() - some Android WebView versions
   // don't support color-mix(), which silently fell back to an uncolored background.
   const TEAM_COLOR_BG = { red: "#fde2de", blue: "#dceefb", green: "#def8e6", yellow: "#fbf3cf", purple: "#f0e3f7" };
+  // Drag-and-drop teams: you can move yourself; the host can also move bots. Nobody can move another
+  // human. Pointer events (not HTML5 drag) so it works with a finger on Android as well as a mouse.
+  function canMoveToTeam(pid) {
+    if (!pid || roomState?.phase !== "waiting" || roomState?.settings?.mode !== "teamvteam") return false;
+    if (pid === currentPlayerId) return true;
+    return !!(isHost && currentPlayers[pid]?.isBot);
+  }
+  function teamHasRoom(color, pid) {
+    const members = Object.entries(currentPlayers).filter(([, p]) => p.team === color);
+    return members.some(([id]) => id === pid) || members.length < 2;
+  }
+  function moveToTeam(pid, color) {
+    if (!currentRoomCode || !canMoveToTeam(pid) || !TEAM_COLORS.includes(color) || !teamHasRoom(color, pid)) return;
+    if (currentPlayers[pid]?.team === color) return;
+    update(ref(db, `rooms/${currentRoomCode}/players/${pid}`), { team: color });
+  }
+  let teamDrag = null;
+  function teamDragCleanup() {
+    if (!teamDrag) return;
+    teamDrag.ghost?.remove();
+    document.querySelectorAll(".team-swatch.drop-ok, .team-swatch.drop-no").forEach((el) => el.classList.remove("drop-ok", "drop-no"));
+    document.body.classList.remove("team-dragging");
+    teamDrag = null;
+  }
+  function teamSwatchAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest(".team-swatch") : null;
+  }
+  document.addEventListener("pointerdown", (e) => {
+    const src = e.target.closest?.("[data-drag-pid]");
+    if (!src || e.button > 0) return;
+    const pid = src.dataset.dragPid;
+    if (!canMoveToTeam(pid)) return;
+    teamDrag = { pid, src, x0: e.clientX, y0: e.clientY, active: false, ghost: null, pointerId: e.pointerId };
+  });
+  document.addEventListener("pointermove", (e) => {
+    if (!teamDrag || e.pointerId !== teamDrag.pointerId) return;
+    if (!teamDrag.active) {
+      if (Math.hypot(e.clientX - teamDrag.x0, e.clientY - teamDrag.y0) < 8) return;
+      teamDrag.active = true;
+      const g = teamDrag.src.cloneNode(true);
+      g.className = "team-drag-ghost";
+      document.body.appendChild(g);
+      teamDrag.ghost = g;
+      document.body.classList.add("team-dragging");
+    }
+    e.preventDefault();
+    teamDrag.ghost.style.left = e.clientX + "px";
+    teamDrag.ghost.style.top = e.clientY + "px";
+    const hit = teamSwatchAt(e.clientX, e.clientY);
+    document.querySelectorAll(".team-swatch").forEach((el) => {
+      const on = el === hit;
+      el.classList.toggle("drop-ok", on && teamHasRoom(el.dataset.team, teamDrag.pid));
+      el.classList.toggle("drop-no", on && !teamHasRoom(el.dataset.team, teamDrag.pid));
+    });
+  }, { passive: false });
+  const teamDragEnd = (e) => {
+    if (!teamDrag || e.pointerId !== teamDrag.pointerId) return;
+    const d = teamDrag;
+    if (d.active && e.type === "pointerup") {
+      const hit = teamSwatchAt(e.clientX, e.clientY);
+      if (hit) moveToTeam(d.pid, hit.dataset.team);
+      // the drag swallows the click that would otherwise follow on the swatch underneath
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener("click", swallow, true), 0);
+    }
+    teamDragCleanup();
+  };
+  document.addEventListener("pointerup", teamDragEnd);
+  document.addEventListener("pointercancel", teamDragEnd);
   function renderTeamPicker(data) {
     const isTeamMode = data.settings?.mode === "teamvteam";
     teamPickerRowEl.hidden = !isTeamMode;
@@ -7029,7 +7110,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const members = Object.entries(players).filter(([, p]) => p.team === color);
       const mine = members.some(([id]) => id === currentPlayerId);
       const full = members.length >= 2;
-      const avatars = members.map(([, p]) => `<span class="avatar">${avatarHtml(p.avatar)}</span>`).join("");
+      const avatars = members.map(([pid, p]) => `<span class="avatar${canMoveToTeam(pid) ? " team-draggable" : ""}"${canMoveToTeam(pid) ? ` data-drag-pid="${pid}"` : ""} title="${escapeHtml(p.name || "")}">${avatarHtml(p.avatar)}</span>`).join("");
       // border/background set directly inline rather than through --tc/--tc-bg custom
       // properties referenced from the stylesheet - the generic button{border-image-source:...}
       // rule kept winning over the class rule in testing despite border-image:none there, so
@@ -8774,10 +8855,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
     soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
+      ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots", { banner: "icons/banner-quick.png" })}
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png" })}
-      ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots", { banner: "icons/banner-quick.png" })}
       ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}`;
   }
   function openSolo() {
@@ -8814,16 +8895,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hlLimit = (wins) => Math.max(HL_LIMIT_FLOOR, Math.round((HL_LIMIT_START - HL_LIMIT_STEP * Math.max(0, wins || 0)) * 100) / 100);
   const isHlSettings = (st) => !!(st && st.mode === "teamworlds" && st.variant === "hl");
   function renderPartyHub() {
-    const card = (id, img, name, sub, mode) => {
+    const card = (id, img, name, sub, mode, banner) => {
       const badge = myProfile.hostUnlocked ? "" : partyModeFreeToday(mode)
         ? `<span class="home-free-badge">&#11088; 1 free today!</span>`
         : `<span class="home-lock-badge"><img src="icons/reactions/padlock.png" alt=""></span>`;
-      return `<button type="button" class="sh-card" id="${id}"><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
+      return `<button type="button" class="sh-card sh-banner" id="${id}"><img class="sh-bimg" src="${banner}" alt="" draggable="false"><img class="sh-bic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
     };
     partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
-      ${card("pm-classic", "icons/home-host.png", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic")}
-      ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam")}
-      ${card("pm-teamworlds", "items/hot-air-balloon.webp", "Team Worlds", "You and a partner guess together &mdash; we average you", "teamworlds")}${HL_PREVIEW ? card("pm-hlsurvival", "items/t-rex.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival") : ""}`;
+      ${card("pm-classic", "icons/home-host.png", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic", "icons/banner-blank-orange.png")}
+      ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam", "icons/banner-blank-green.png")}
+      ${card("pm-teamworlds", "items/hot-air-balloon.webp", "Team Worlds", "You and a partner guess together &mdash; we average you", "teamworlds", "icons/banner-blank-blue.png")}${HL_PREVIEW ? card("pm-hlsurvival", "items/t-rex.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.png") : ""}`;
   }
   function openPartyHub() {
     renderPartyHub();
@@ -9891,11 +9972,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const lv = careerLevel(careerXp({ ...st, rounds }));
     const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
     let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div><div class="cs-lvl-sub">Every new level: a free avatar pull and ${levelRewardCoins(lv.lvl + 1)} coins</div></div>`;
-    const scoped=myProfile.modeStats?.[statsMode]||{},roomMode=['all','quick','party'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
+    const scoped=myProfile.modeStats?.[statsMode]||{},roomMode=['all','quick','party','teamvteam'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
     const average=hist.length?hist.reduce((n,h)=>n+roundAccuracy(h.r),0)/hist.length:null;
     html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-pressed="${statsMode===id}">${name}</button>`).join('')}</div>`;
     html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(scoped.attempts||0,'Attempts finished')+statTile(scoped.rounds||0,'Rounds completed')+statTile(scoped.bestAccuracy?formatAccuracy(scoped.bestAccuracy)+'%':'—','Best accuracy')}${statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
-    html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'Quick Game and Party':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
+    html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'Quick Game, Party and Team vs Team':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
     html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Spot-ons')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
     if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot accuracy</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(botLevelLabel(level))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
@@ -11453,7 +11534,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       nameSpan.className='lobby-player-identity';
       const party=!roomState.settings?.solo;
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
-      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      const dragOn = canMoveToTeam(id);
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       if(id===currentPlayerId&&party&&roomState.phase==='waiting'){
         const ready=document.createElement('button');ready.type='button';ready.id='lobby-ready-btn';ready.textContent=p.ready?'Ready ✓':"I'm ready";ready.setAttribute('aria-pressed',String(!!p.ready));ready.title=p.ready?'Tap to undo ready':'Mark yourself ready';li.appendChild(ready);
