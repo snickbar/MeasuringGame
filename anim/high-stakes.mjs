@@ -15,6 +15,8 @@ export const HS_MAX_RAISES = 2;
 export const HS_OPTION_COUNT = 4;
 export const HS_PICK_SECONDS = 20;
 export const HS_TURN_SECONDS = 12;
+// Ghost bounty: an eliminated player whose fake gets picked earns this many profile coins per player fooled.
+export const HS_GHOST_COINS_PER_FOOL = 2;
 
 // 5 coins for rounds 1-2, then 10, 20, 40 ... (doubles every 2 rounds)
 export const hsAnteFor = (round) => 5 * 2 ** Math.floor((Math.max(1, round) - 1) / 2);
@@ -31,16 +33,22 @@ export function hsRound3(n) {
 // no two within ~15% of each other, none within ~15% of the real one, so the real answer lands anywhere
 // in the list (sometimes at an extreme). `custom` = optional fakes written by eliminated players; they
 // replace generated ones (still dropped if they'd duplicate something already on the table).
+// `custom` entries are numbers or {id, v}. They are shuffled, then the first ones that fit the spacing rule are
+// kept (max 3), so with many ghosts writing the game chooses a spread that works. `fakeBy` maps each kept
+// fake's value to the ghost who wrote it (used for the bounty).
 export function hsMakeOptions(answer, rng = Math.random, custom = []) {
   const real = hsRound3(answer);
   const MIN_GAP = 0.15;
   const taken = [Math.log(real)];
   const fakes = [];
   const far = (lv) => taken.every((t) => Math.abs(t - lv) >= MIN_GAP);
-  for (const c of custom || []) {
-    const v = hsRound3(Number(c));
+  const fakeAuthor = {};
+  const pool = (custom || []).map((c) => (c && typeof c === "object" ? c : { id: null, v: c }));
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  for (const c of pool) {
+    const v = hsRound3(Number(c.v));
     if (!(v > 0) || fakes.length >= HS_OPTION_COUNT - 1) continue;
-    if (far(Math.log(v)) && hsRound3(v) !== real) { fakes.push(v); taken.push(Math.log(v)); }
+    if (far(Math.log(v)) && hsRound3(v) !== real) { fakes.push(v); taken.push(Math.log(v)); if (c.id) fakeAuthor[v] = c.id; }
   }
   // The real answer's slot is picked first (uniformly), then that many fakes go below it and the rest above, so
   // "the real one is always in the middle" is not a pattern anyone can use.
@@ -48,6 +56,9 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
   let below = slot, above = HS_OPTION_COUNT - 1 - slot;
   for (const f of fakes) { if (f < real) below--; else above--; }
   const want = { below: Math.max(0, below), above: Math.max(0, above) };
+  // Custom fakes sitting on the "wrong" side of the chosen slot can push the sum over: trim so there are exactly 3 fakes in all.
+  let extra = want.below + want.above - (HS_OPTION_COUNT - 1 - fakes.length);
+  while (extra-- > 0) { if (want.below >= want.above) want.below--; else want.above--; }
   const SPAN = Math.log(5);
   let guard = 0;
   for (const side of ["below", "above"]) {
@@ -66,7 +77,9 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
     if (!fakes.includes(v) && v !== real) fakes.push(v);
   }
   const options = [...fakes, real].sort((a, b) => a - b);
-  return { options, realIdx: options.indexOf(real) };
+  const fakeBy = {};
+  options.forEach((o, i) => { if (fakeAuthor[o]) fakeBy[i] = fakeAuthor[o]; });
+  return { options, realIdx: options.indexOf(real), fakeBy: Object.keys(fakeBy).length ? fakeBy : null };
 }
 
 // ---------- state ----------
@@ -80,7 +93,7 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 const aliveIds = (hs) => hs.seatsAll.filter((id) => (hs.chips[id] || 0) > 0);
 
 // Everyone with coins antes (a short stack antes what it has). Moves to the pick stage.
-export function hsStartRound(hsIn, { options, realIdx, now, pickSeconds = HS_PICK_SECONDS }) {
+export function hsStartRound(hsIn, { options, realIdx, fakeBy = null, now, pickSeconds = HS_PICK_SECONDS }) {
   const hs = clone(hsIn);
   const seats = aliveIds(hs);
   hs.round += 1;
@@ -89,6 +102,7 @@ export function hsStartRound(hsIn, { options, realIdx, now, pickSeconds = HS_PIC
   hs.seats = seats;
   hs.options = options;
   hs.realIdx = realIdx;
+  hs.fakeBy = fakeBy;
   hs.pot = hs.carry || 0;
   hs.carry = 0;
   seats.forEach((id) => {
@@ -221,7 +235,19 @@ export function hsResolve(hsIn) {
   }
   hs.carry = carryOut;
   hs.pot = 0;
-  hs.result = { winners: winners.length ? winners : null, share, pot, uncontested, carryOut };
+  // Ghost bounty: every player (folded or not) who picked a ghost's fake pays that ghost.
+  let ghostNow = null;
+  if (hs.fakeBy && hs.picks) {
+    Object.entries(hs.fakeBy).forEach(([idx, author]) => {
+      const n = Object.values(hs.picks).filter((p) => p === Number(idx)).length;
+      if (n > 0) { ghostNow = ghostNow || {}; ghostNow[author] = (ghostNow[author] || 0) + n * HS_GHOST_COINS_PER_FOOL; }
+    });
+    if (ghostNow) {
+      hs.ghost = { ...(hs.ghost || {}) };
+      Object.entries(ghostNow).forEach(([id, c]) => { hs.ghost[id] = (hs.ghost[id] || 0) + c; });
+    }
+  }
+  hs.result = { winners: winners.length ? winners : null, share, pot, uncontested, carryOut, ghost: ghostNow };
   hs.stage = "reveal";
   hs.bet.turn = null;
   hs.bet.turnEndsAt = null;

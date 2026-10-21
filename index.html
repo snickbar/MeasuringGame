@@ -799,6 +799,12 @@ if (location.protocol === "file:") {
   .hs-col .hs-pl { min-width: 0; max-width: none; width: 100%; padding: 6px 2px 7px; }
   .hs-col .hs-pl-name { max-width: 78px; font-size: 11px; }
   .hs-col .hs-pl .avatar { font-size: 30px; }
+  .hs-board.dense .hs-col { gap: 4px; }
+  .hs-board.dense .hs-pl { padding: 3px 2px 4px; }
+  .hs-board.dense .hs-pl .avatar { font-size: 22px; }
+  .hs-board.dense .hs-pl-name { font-size: 10px; }
+  .hs-board.dense .hs-pl-coins { font-size: 11px; }
+  .hs-board.dense .hs-tag { margin-top: 1px; padding: 0 6px; font-size: 10px; }
   .hs-opt.stat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 6px; min-height: 46px; font-size: 22px; box-shadow: none; }
   .hs-opt.stat.sel { background: linear-gradient(#e7d4ff, #bd94f2); transform: none; }
   .hs-opt.stat.real { background: linear-gradient(#fff3c4, #ffd23c); border-color: #b8860b; box-shadow: 0 0 14px rgba(247,201,72,.95); animation: hsRealGlow 1.2s ease-in-out infinite; }
@@ -9066,7 +9072,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen = partyScreenEl;
   }
   function openHsInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High Stakes</h2><p class="dc-sub">2 to 6 players &mdash; bots can fill in</p>
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High Stakes</h2><p class="dc-sub">2 to 10 players &mdash; bots can fill in</p>
       <div class="dc-card dc-hot"><div class="dc-big">Find the real answer</div><div class="dc-note">Everyone antes some coins and sees the question with 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.</div></div>
       <div class="dc-card"><div class="dc-big">Bet like poker</div><div class="dc-note">Then it goes around the table: fold, check, call or raise. Everyone still in who picked the real answer splits the pot. If nobody did, the pot rolls over to the next round. If everyone else folds, you take the pot even if you were wrong &mdash; so bluffing works.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast everyone</div><div class="dc-note">You start with ${HS.HS_START_COINS} coins and the ante doubles every 2 rounds. Run out of coins and you're out. Last player standing, or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds, wins.</div></div>
@@ -9193,9 +9199,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function hsDealRound(hs, now) {
     const q = roomState.hsPre && roomState.hsQ ? { ...roomState.hsQ } : { ...generateQuestion() };
-    const custom = Object.values(roomState.hsFakes || {}).filter((n) => Number.isFinite(n));
-    const { options, realIdx } = HS.hsMakeOptions(q.answer, Math.random, custom);
-    const next = HS.hsStartRound(hs, { options, realIdx, now });
+    const custom = Object.entries(roomState.hsFakes || {}).filter(([, n]) => Number.isFinite(n)).map(([id, v]) => ({ id, v }));
+    const { options, realIdx, fakeBy } = HS.hsMakeOptions(q.answer, Math.random, custom);
+    const next = HS.hsStartRound(hs, { options, realIdx, fakeBy, now });
     next.nextAt = null;
     await hsWrite({ hs: next, hsQ: q, hsPre: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
   }
@@ -9294,7 +9300,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 3000;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsGhostPaid = null;
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
@@ -9405,6 +9411,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const iWon = hs.winners?.includes(me);
       html += `<h2 class="dc-title">${iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}</p>`;
       html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${hs.winners.includes(id) ? " win" : ""}"><span class="hs-final-pos">${i + 1}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${hsFmt(hs.chips[id] || 0)} &#128176;</span></div>`).join("")}</div>`;
+      const gp = hs.ghost?.[me] || 0;
+      if (gp > 0) {
+        html += `<p class="dc-sub">Your fakes fooled people: +${gp} &#128176; ghost bounty!</p>`;
+        if (hsGhostPaid !== data.gameId) { hsGhostPaid = data.gameId; addCoins(gp).catch(() => {}); }
+      }
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9418,7 +9429,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       html += `<div class="hs-q"><div class="dc-pics">${pair0 ? pair0.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div><div class="hs-qtext">${escapeHtml(q0?.prompt || "")}</div></div>`;
       if (isOut) html += sent[me] !== undefined
         ? `<div class="hs-result">Your fake answer <b>${hsFmt(sent[me])}</b> is in the mix. Good luck fooling them!</div>`
-        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
+        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9471,7 +9482,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
       return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}"><b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
-    html += `<div class="hs-board"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
+    html += `<div class="hs-board${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
       <div class="hs-potbox" id="hs-pot"><img src="items/gold-coin.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
     // under the board: what you can do right now
     if (stage === "pick") {
@@ -9494,6 +9505,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         html += `<div class="hs-win"><span class="hs-win-shine"></span><img class="hs-win-trophy" src="icons/reactions/trophy.png" alt=""><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(r.share)} <span>coins</span></div><div class="hs-win-sub">${sub}</div></div>`;
       } else {
         html += `<div class="hs-win roll"><div class="hs-win-names">Nobody found it!</div><div class="hs-win-amt">${hsFmt(r.pot)} <span>rolls over</span></div><div class="hs-win-sub">The pot grows next round</div></div>`;
+      }
+      if (r.ghost) {
+        const g = Object.entries(r.ghost).map(([id, c]) => `${escapeHtml(data.players?.[id]?.name || "Gone")} +${c}`).join(", ");
+        html += `<p class="hs-hint">&#128123; Fooled players: ${g} &#128176; bounty${r.ghost[me] ? " &mdash; nice fake!" : ""}</p>`;
       }
     }
     if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;
@@ -16591,7 +16606,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("bot-all-row").style.display = Object.values(data.players || {}).some((p) => p.isBot) && isHost ? "flex" : "none";
     // Team Worlds is always exactly 2 players (you + one partner, no up-to-5-teams concept
     // like Team vs Team) - cap joining/adding bots there instead of the usual room-wide FRAME_COUNT.
-    addBtn.disabled = Object.keys(data.players || {}).length >= (worldsMode ? 2 : hsMode ? 6 : FRAME_COUNT);
+    addBtn.disabled = Object.keys(data.players || {}).length >= (worldsMode ? 2 : FRAME_COUNT);
     renderTeamPicker(data);
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
     const real=Object.values(data.players||{}).filter(p=>!p.isBot),ready=real.filter(p=>p.ready).length;
