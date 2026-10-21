@@ -9514,7 +9514,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 4000, HS_COIN_HOLD_MS = 2200;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFooledKey = null, hsActSent = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFlairOverKey = null, hsFooledKey = null, hsActSent = null;
   let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.showStand; // the host taps "Show standings" once the winner box has had its moment
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
@@ -9620,6 +9620,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (hs.result?.winners) {
         try { playSound("roundwin"); } catch (e) { /* optional */ }
         if (hs.result.winners.includes(currentPlayerId)) vibrate([35, 60, 45]); // only the pot winner feels it
+        // The winner's flair flourish on their card (a split pot has no single winner, so no flourish).
+        if (hs.result.winners.length === 1) {
+          const wid = hs.result.winners[0];
+          setTimeout(() => { const el = hsContentEl.querySelector(`[data-hs-pl="${wid}"]`) || hsContentEl.querySelector("#hs-pot"); if (el) { try { flairBurst(el, flairIdFor({ flair: data.players?.[wid]?.flair })); } catch (e) { /* optional */ } } }, 250);
+        }
         if (window.confetti) {
           window.confetti({ particleCount: 90, spread: 80, origin: { y: 0.55 }, colors: ["#ffd23c", "#ffe08a", "#fff4d6", "#f2820f"] });
           setTimeout(() => window.confetti && window.confetti({ particleCount: 50, spread: 110, origin: { x: 0.2, y: 0.6 } }), 250);
@@ -9685,6 +9690,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
       html += `<button type="button" class="dc-btn dc-alt" id="hs-exit">Exit game</button>`;
       hsContentEl.innerHTML = html;
+      if (!nobodyLeft && hs.winners.length === 1 && hsFlairOverKey !== data.gameId) {
+        hsFlairOverKey = data.gameId;
+        const wid = hs.winners[0];
+        setTimeout(() => { const el = hsContentEl.querySelector(".hs-final-row.win"); if (el) { try { flairBurst(el, flairIdFor({ flair: data.players?.[wid]?.flair })); } catch (e) { /* optional */ } } }, 500);
+      }
       return;
     }
     if (stage === "ready" && data.hsPre) {
@@ -16001,6 +16011,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     finalListEl.after(recap);
     recap.querySelector('button').onclick=async()=>{const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const share=isNativeApp&&window.Capacitor?.Plugins?.Share;if(share){try{await share.share({title:'Size Em Up!',text});}catch{}}else if(navigator.share){try{await navigator.share({title:'Size Em Up!',text});}catch{}}else if(await copyTextToClipboard(text))showAchToast('Result copied!');};
     let rank1Delay = 0;
+    const rank1Rows = []; // winners' rows (a flourish plays only when exactly one wins; ties skip it)
     if (roomState.settings?.mode === "teamvteam") {
       // One combined box per team: the shared score + average accuracy stay prominent
       // (the actual rank/medal basis), each teammate's own individual contribution and
@@ -16044,6 +16055,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="team-final-members">${memberRows}</div>
         `;
         finalListEl.appendChild(li);
+        if (rank === 1 && score > 0) rank1Rows.push({ li, pid: members[0] });
       });
     } else {
     const scoreFn = (id) => currentPlayers[id].score || 0;
@@ -16081,12 +16093,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
+      if (rank === 1 && score > 0) rank1Rows.push({ li, pid: id });
     });
     }
     setTimeout(() => {
       celebrate("spotOn");
       spawnStreamerConfetti();
       playSound("win");
+      if (rank1Rows.length === 1) { try { flairBurst(rank1Rows[0].li, flairIdFor({ flair: currentPlayers[rank1Rows[0].pid]?.flair })); } catch (e) { /* flourish is optional */ } }
     }, rank1Delay + 350);
   }
 
