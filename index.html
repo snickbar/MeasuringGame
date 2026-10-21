@@ -776,6 +776,13 @@ if (location.protocol === "file:") {
   .hs-opts.mini .hs-opt { padding: 4px 0; font-size: 11px; border-width: 2px; border-radius: 8px; box-shadow: none; }
   .hs-opt.dim { opacity: .4; }
   .hs-acts { display: flex; gap: 8px; }
+  .hs-yourturn { margin: 6px 0 0; padding: 6px 10px; text-align: center; font-size: 22px; letter-spacing: 1px; color: #fff; background: linear-gradient(#ff9a2e, #e8590c); border: 3px solid #7a2e00; border-radius: 14px; text-shadow: 0 2px 0 #7a2e00; box-shadow: 0 3px 0 rgba(74,44,18,.5); animation: hsYourTurn .7s ease-in-out infinite; }
+  .hs-acts-mine { padding: 4px; border-radius: 18px; animation: hsActGlow 1.1s ease-in-out infinite; }
+  .hs-pl.turn.mine { animation: hsMineGlow .9s ease-in-out infinite; border-width: 3px; }
+  @keyframes hsYourTurn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  @keyframes hsActGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,130,15,0); } 50% { box-shadow: 0 0 14px 4px rgba(242,130,15,.85); } }
+  @keyframes hsMineGlow { 0%, 100% { box-shadow: 0 0 0 3px rgba(242,130,15,.35); } 50% { box-shadow: 0 0 16px 6px rgba(242,130,15,.95); } }
+  @media (prefers-reduced-motion: reduce) { .hs-yourturn, .hs-acts-mine, .hs-pl.turn.mine { animation: none; } }
   .hs-acts .dc-btn { margin-top: 6px; padding: 14px 4px; font-size: 17px; }
   .hs-fold { background: linear-gradient(#ffb3a8, #e8604c) !important; }
   .hs-call { background: linear-gradient(#bfe6ff, #5aaaf0) !important; }
@@ -9185,7 +9192,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.parentElement?.classList.toggle("low", left <= 5);
     });
     const hs = roomState?.hs;
-    if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && hsAnimating(hs) !== hsRenderedAnimating) renderHighStakes(roomState);
+    if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && (hsAnimating(hs) && !!hs.animAt && nowMs() >= hs.animAt) !== hsRenderedAnimating) renderHighStakes(roomState);
   }
   const hsWrite = (fields) => update(ref(db, `rooms/${currentRoomCode}`), fields);
 
@@ -9300,9 +9307,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
-  const HS_ANIM_HOLD_MS = 3000;
+  const HS_ANIM_HOLD_MS = 3000, HS_COIN_HOLD_MS = 1800;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null;
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
@@ -9311,7 +9318,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return c;
   }
   async function hsStartReveal(hs, now) {
-    const animAt = now + 700;
+    const animAt = now + HS_COIN_HOLD_MS; // let the last bet's coins land in the pot before the animation takes over the screen
     let animEndsAt = now; // no pictures to draw: straight to the result
     try {
       const pair = questionObjects(roomState.hsQ);
@@ -9360,10 +9367,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     try { playSound("select"); } catch (e) { /* sound is optional */ }
   }
-  function hsRenderInto(html, hs, data, animating) {
+  function hsRenderInto(html, hs, data, animating, started = animating) {
     hsContentEl.innerHTML = html;
-    hsRenderedAnimating = animating;
-    if (animating) hsMountAnim(hs, data);
+    hsRenderedAnimating = started;
+    if (started) hsMountAnim(hs, data);
     else if (hsAnimCtl && hsAnimKey) { try { hsAnimCtl.stop(); } catch (e) { /* already stopped */ } hsAnimKey = null; }
     // coins: whoever's shown total dropped paid into the pot; whoever's rose is being paid out of it
     const shown = hsShownChips(hs, animating), potEl = hsContentEl.querySelector("#hs-pot");
@@ -9459,14 +9466,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = hs.bet;
     const revealing = stage === "reveal";
     const animating = revealing && hsAnimating(hs);       // the stacking animation is still playing: no winner yet
+    const animStarted = animating && !!hs.animAt && nowMs() >= hs.animAt; // before that, the board stays up while the last coins land in the pot
     const shown = hsShownChips(hs, animating);
     const potShown = revealing ? (!animating && hs.result.winners ? 0 : hs.result.pot) : hs.pot; // paid out: the pot empties once the winners get it
     const endsAt = stage === "pick" ? hs.pickEndsAt : (stage === "bet" && b.turnEndsAt) ? b.turnEndsAt : 0;
     const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
     html += `<div class="hs-top"><span class="hs-pill">Round ${hs.round}/${HS.HS_MAX_ROUNDS}</span><span class="hs-pill">Ante ${hs.ante}</span>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
     const qText = `<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div>`;
-    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animating ? `<div id="hs-anim-slot"></div>`
-      : revealing ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
+    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animStarted ? `<div id="hs-anim-slot"></div>`
+      : (revealing && !animating) ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
     // players: 1st top-left, 2nd top-right, 3rd under the 1st, and so on
     const cardFor = (id, side) => {
       const p = (data.players || {})[id], out = !!hs.out?.[id], inRound = hs.seats.includes(id);
@@ -9475,7 +9483,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (stage === "pick") { tag = picks[id] !== undefined ? "Picked" : "Thinking..."; tagCls = picks[id] !== undefined ? "ok" : ""; }
         else if (b) {
           if (b.folded?.[id]) { tag = "Folded"; tagCls = "no"; cls = " folded"; }
-          else if (b.turn === id && !revealing) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = " turn"; }
+          else if (b.turn === id && !revealing) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = id === me ? " turn mine" : " turn"; }
           else if (b.put?.[id]) tag = "Bet " + b.put[id];
           else if (b.acted?.[id]) tag = "Check";
         }
@@ -9501,8 +9509,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (stage === "bet") {
       const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
-        html += `<p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
-          <div class="hs-acts"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
+        html += `<div class="hs-yourturn">YOUR TURN!</div><p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
+          <div class="hs-acts hs-acts-mine"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
           ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
           ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div>`;
       } else if (folded) html += `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>`;
@@ -9523,7 +9531,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
     if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;
-    hsRenderInto(html, hs, data, animating);
+    hsRenderInto(html, hs, data, animating, animStarted);
+    if (stage === "bet" && b?.turn === me && !revealing) {
+      const tk = `${data.gameId}:${hs.round}:${b.n || 0}`;
+      if (hsTurnAlerted !== tk) { hsTurnAlerted = tk; try { playSound("powerup"); } catch (e) { /* optional */ } vibrate([120, 80, 120]); }
+    }
   }
   hsContentEl.addEventListener("click", (e) => {
     const pick = e.target.closest("[data-hs-pick]"), act = e.target.closest("[data-hs-act]");
