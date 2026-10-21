@@ -820,6 +820,15 @@ if (location.protocol === "file:") {
   /* High Stakes board: players down both sides, answers and a big pot in the middle, timer top right */
   #hs-content .hs-top { justify-content: flex-start; }
   .hs-clock { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; border: 3px solid #4a2c12; background: radial-gradient(circle at 35% 30%, #fff7d6, #ffd36a); box-shadow: 0 3px 0 rgba(74,44,18,.45); font-size: 22px; }
+  #hs-content .hs-top { gap: 10px; }
+  .hs-rounds, .hs-ante { display: flex; flex-direction: column; gap: 4px; padding: 5px 10px 6px; border-radius: 14px; background: #fffdf6; border: 2px solid #ecdcc0; box-shadow: 0 2px 0 rgba(74,44,18,.18); }
+  .hs-top-label { font: 700 10px 'Fredoka', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #8a6a3d; line-height: 1; }
+  .hs-dots { display: flex; gap: 4px; }
+  .hs-dots i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #d8c29a; background: #f3e7cd; box-sizing: border-box; }
+  .hs-dots i.done { background: #f59f1b; border-color: #b8650a; }
+  .hs-dots i.now { background: #ffd43b; border-color: #4a2c12; transform: scale(1.3); animation: hsPulse .9s ease-in-out infinite; }
+  .hs-ante-val { display: inline-flex; align-items: center; gap: 4px; font: 700 18px 'Fredoka', sans-serif; line-height: 1; color: #4a2c12; }
+  .hs-ante-val img { width: 20px; height: 20px; }
   .hs-clock.idle { visibility: hidden; }
   .hs-clock.low { background: radial-gradient(circle at 35% 30%, #ffd9d3, #ff7a68); animation: hsPulse .6s ease-in-out infinite; }
   @keyframes hsPulse { 50% { transform: scale(1.12); } }
@@ -9668,7 +9677,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const potShown = revealing ? (!animating && hs.result.winners ? 0 : hs.result.pot) : hs.pot; // paid out: the pot empties once the winners get it
     const endsAt = stage === "pick" ? hs.pickEndsAt : (stage === "bet" && b.turnEndsAt) ? b.turnEndsAt : 0;
     const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
-    html += `<div class="hs-top"><span class="hs-pill">Round ${hs.round}/${HS.HS_MAX_ROUNDS}</span><span class="hs-pill">Ante ${hs.ante}</span>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
+    html += `<div class="hs-top"><div class="hs-rounds"><span class="hs-top-label">Round ${hs.round} of ${HS.HS_MAX_ROUNDS}</span><span class="hs-dots">${Array.from({ length: HS.HS_MAX_ROUNDS }, (_, i) => `<i class="${i + 1 < hs.round ? "done" : i + 1 === hs.round ? "now" : ""}"></i>`).join("")}</span></div><div class="hs-ante"><span class="hs-top-label">Ante</span><span class="hs-ante-val"><img src="icons/toolbar-coin.png" alt="">${hs.ante}</span></div>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
     const qText = `<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div>`;
     html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animStarted ? `<div id="hs-anim-slot"></div>`
       : (revealing && !animating) ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
