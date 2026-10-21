@@ -788,6 +788,10 @@ if (location.protocol === "file:") {
   .hs-real-tag { padding: 1px 8px; border-radius: 999px; background: #d6a519; color: #fff; font-size: 11px; letter-spacing: .4px; }
   .hs-who { margin-left: auto; display: flex; gap: 2px; }
   .hs-who .avatar { font-size: 20px; } .hs-who .avatar.dim { opacity: .4; }
+  .hs-fake { display: flex; gap: 8px; align-items: stretch; }
+  .hs-fake input { flex: 1; min-width: 0; padding: 12px; border: 3px solid #4a2c12; border-radius: 14px; font: 700 20px 'Fredoka', sans-serif; text-align: center; }
+  .hs-fake input.bad { border-color: #b3261e; }
+  .hs-fake .dc-btn { width: 110px; margin: 0; }
   .hs-final-row { display: flex; align-items: center; gap: 10px; padding: 6px 4px; font-size: 16px; }
   .hs-final-row.win { background: #fff3c4; border-radius: 10px; }
   .hs-final-pos { width: 22px; } .hs-final-coins { margin-left: auto; }
@@ -9108,7 +9112,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rules live in anim/high-stakes.mjs (pure functions). This block is the screen, the host's driver (the host's
   // tab advances the game, like every other mode) and the player taps. Room fields: hs (whole game state),
   // hsQ (the question), hsPicks/<id> (each player's secret pick), hsActs/<id> (a betting tap), hsConf/<botId>.
-  const HS_REVEAL_MS = 9000, HS_READY_MS = 2500;
+  const HS_REVEAL_MS = 9000, HS_READY_MS = 2500, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
@@ -9137,12 +9141,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hs, hsQ: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
   async function hsDealRound(hs, now) {
-    const q = { ...generateQuestion() };
+    const q = roomState.hsPre && roomState.hsQ ? { ...roomState.hsQ } : { ...generateQuestion() };
     const custom = Object.values(roomState.hsFakes || {}).filter((n) => Number.isFinite(n));
     const { options, realIdx } = HS.hsMakeOptions(q.answer, Math.random, custom);
     const next = HS.hsStartRound(hs, { options, realIdx, now });
     next.nextAt = null;
-    await hsWrite({ hs: next, hsQ: q, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
+    await hsWrite({ hs: next, hsQ: q, hsPre: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
+  }
+  // Players who are out (and still here) write a fake answer for the next round while everyone else waits a few seconds.
+  function hsFakers(hs) {
+    const players = roomState.players || {};
+    return Object.keys(hs.out || {}).filter((id) => players[id] && !players[id].isBot && !isPlayerAway(players[id]));
   }
   function hsHostTick() {
     if (roomState.phase !== "hs") { if (!currentRoomCode) hsEnsureTicker(false); return; }
@@ -9151,7 +9160,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = nowMs(), players = roomState.players || {};
     const run = (p) => { hsBusy = true; Promise.resolve(p).catch((e) => console.warn("[high-stakes]", e)).finally(() => { hsBusy = false; }); };
     if (hs.stage === "ready") {
-      if (now >= (hs.nextAt || 0)) run(hsDealRound(hs, now));
+      if (now < (hs.nextAt || 0)) return;
+      const fakers = hsFakers(hs);
+      if (fakers.length && !roomState.hsPre) { run(hsWrite({ hsPre: { endsAt: now + HS_FAKE_MS }, hsQ: { ...generateQuestion() } })); return; }
+      if (roomState.hsPre) {
+        const sent = roomState.hsFakes || {};
+        if (fakers.some((id) => sent[id] === undefined) && now < roomState.hsPre.endsAt) return;
+      }
+      run(hsDealRound(hs, now));
       return;
     }
     if (hs.stage === "pick") {
@@ -9209,6 +9225,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     set(ref(db, `rooms/${currentRoomCode}/hsActs/${currentPlayerId}`), { k: `${hs.round}:${hs.bet.n || 0}`, a: action });
     playSound("tap");
   }
+  function hsSendFake() {
+    const input = document.getElementById("hs-fake-input");
+    const v = parseFloat(String(input?.value || "").replace(/,/g, ""));
+    if (!roomState.hsPre || !(v > 0) || !isFinite(v) || v > 1e12) { if (input) input.classList.add("bad"); return; }
+    set(ref(db, `rooms/${currentRoomCode}/hsFakes/${currentPlayerId}`), v);
+    playSound("tap");
+  }
   async function hsPlayAgain() {
     if (!isHost) return;
     const ids = Object.keys(roomState.players || {});
@@ -9239,6 +9262,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hsContentEl.innerHTML = html;
       return;
     }
+    if (stage === "ready" && data.hsPre) {
+      const sent = data.hsFakes || {}, q0 = data.hsQ, pair0 = q0 ? questionObjects(q0) : null;
+      const sig = `${hs.round}|${data.hsPre.endsAt}|${sent[me] ?? "-"}|${hsFakers(hs).length}|${me in (hs.out || {})}`;
+      if (hsContentEl.dataset.sig === sig) return; // keep what the player is typing
+      hsContentEl.dataset.sig = sig;
+      html += `<h2 class="dc-title">Round ${hs.round + 1} coming up</h2>`;
+      html += `<div class="hs-q"><div class="dc-pics">${pair0 ? pair0.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div><div class="hs-qtext">${escapeHtml(q0?.prompt || "")}</div></div>`;
+      if (isOut) html += sent[me] !== undefined
+        ? `<div class="hs-result">Your fake answer <b>${hsFmt(sent[me])}</b> is in the mix. Good luck fooling them!</div>`
+        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
+      else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
+      hsContentEl.innerHTML = html;
+      return;
+    }
+    delete hsContentEl.dataset.sig;
     if (stage === "ready") {
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
       html += `<h2 class="dc-title">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " coins"}</p>`;
@@ -9306,6 +9344,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (pick) hsPick(Number(pick.dataset.hsPick));
     else if (act) hsAct(act.dataset.hsAct);
     else if (e.target.closest("#hs-again")) hsPlayAgain();
+    else if (e.target.closest("#hs-fake-send")) hsSendFake();
     else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") hsWrite({ "hs/nextAt": nowMs() });
   });
 
