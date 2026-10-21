@@ -9734,7 +9734,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (revealing && !animating && hsStandingsNow(hs)) {
       hsRenderedStandings = true;
       html += `<h2 class="dc-title">After round ${hs.round}</h2>` + hsStandingsHtml(hs, data, me);
-      html += isHost ? `<button type="button" class="dc-btn" id="hs-skip">Start next round</button>` : `<p class="hs-hint">Waiting for the host to start the next round...</p>`;
+      html += isHost ? `<button type="button" class="dc-btn" id="hs-skip">${HS.hsFinishRound(hs).stage === "over" ? "Finish game" : "Start next round"}</button>` : `<p class="hs-hint">Waiting for the host to ${HS.hsFinishRound(hs).stage === "over" ? "finish the game" : "start the next round"}...</p>`;
       hsRenderInto(html, hs, data, false, false);
       return;
     }
@@ -14430,6 +14430,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const total = (roomState.settings || currentSettings).totalRounds || 5;
     const round = Math.min(roomState.round || 1, total);
     const tiles = [];
+    if (roomState.settings?.mode === "highstakes" && roomState.hs) {
+      // Points and accuracy mean nothing here: the recap is about coins and where you finished.
+      const hs = roomState.hs, mine = hs.chips?.[currentPlayerId] || 0, ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
+      tiles.push([`${Math.round(mine)}`, "Coins left"]);
+      tiles.push(mine > 0 ? [`${ord(HS.hsPlaceOf(hs, currentPlayerId))} of ${hs.seatsAll.length}`, "Place"] : ["Knocked out", "Result"]);
+      tiles.push([`${Math.min(hs.round || 0, HS.HS_MAX_ROUNDS)} of ${HS.HS_MAX_ROUNDS}`, "Round reached"]);
+      tiles.push([currentRoomCode, "Room code"]);
+      return tiles;
+    }
     if (roomState.settings?.mode === "teamworlds") {
       // No score/rank in this mode - stars (same rating as Solo Worlds) stands in for both.
       if (me.roundsCounted) tiles.push([`${worldStarsFor(me.accuracySum / me.roundsCounted)} / 3`, "Stars"]);
@@ -17023,6 +17032,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
   }
   function applyPhase(data) {
+    if (leftScreenEl.classList.contains("active") || leavingGame) return; // the "you left" page is showing: don't draw a game screen behind it
     if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
