@@ -834,15 +834,13 @@ if (location.protocol === "file:") {
   .hs-opt.stat { position: relative; }
   .hs-opt.stat.wrong { background: linear-gradient(#ffd9d4, #f2a79e); border-color: #8f2a20; color: #5c120c; }
   .hs-opt.stat.wrong.sel { background: linear-gradient(#ffc7bf, #e8867b); }
-  .hs-ghost { position: absolute; top: -9px; left: -7px; display: flex; align-items: center; z-index: 2; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); animation: hsGhostFloat 1.8s ease-in-out infinite; }
-  .hs-ghost .avatar { font-size: 20px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.8); border: 2px solid #fff; opacity: .8; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .hs-ghost i { font-style: normal; font-size: 15px; margin-left: -8px; margin-top: -14px; }
+  .hs-author { position: absolute; top: 3px; left: 6px; line-height: 1; filter: grayscale(1); opacity: .55; pointer-events: none; }
+  .hs-author .avatar { font-size: 22px; }
   .hs-fooled-tag { position: absolute; right: -4px; top: -10px; padding: 1px 8px; border-radius: 999px; background: #7b3fd0; color: #fff; font-size: 12px; letter-spacing: .3px; border: 2px solid #fff; box-shadow: 0 2px 0 rgba(0,0,0,.3); animation: hsFooledPop .5s cubic-bezier(.34,1.56,.64,1) both; z-index: 2; }
   .hs-opt.stat.fooled { animation: hsFooledBob 1s ease-in-out 1; }
-  @keyframes hsGhostFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
   @keyframes hsFooledPop { from { transform: scale(0) rotate(-12deg); } to { transform: scale(1) rotate(0); } }
   @keyframes hsFooledBob { 0%, 100% { transform: translateX(0) rotate(0); } 15% { transform: translateX(-7px) rotate(-3deg); } 35% { transform: translateX(7px) rotate(3deg); } 55% { transform: translateX(-5px) rotate(-2deg); } 75% { transform: translateX(5px) rotate(2deg); } }
-  @media (prefers-reduced-motion: reduce) { .hs-ghost, .hs-fooled-tag, .hs-opt.stat.fooled { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .hs-fooled-tag, .hs-opt.stat.fooled { animation: none; } }
   .hs-opt.stat.real { background: linear-gradient(#fff3c4, #ffd23c); border-color: #b8860b; box-shadow: 0 0 14px rgba(247,201,72,.95); animation: hsRealGlow 1.2s ease-in-out infinite; }
   @keyframes hsRealGlow { 50% { box-shadow: 0 0 24px rgba(255,200,40,1); } }
   .hs-opt.stat .hs-who { margin: 0; flex-wrap: wrap; justify-content: center; gap: 1px; }
@@ -9257,7 +9255,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rules live in anim/high-stakes.mjs (pure functions). This block is the screen, the host's driver (the host's
   // tab advances the game, like every other mode) and the player taps. Room fields: hs (whole game state),
   // hsQ (the question), hsPicks/<id> (each player's secret pick), hsActs/<id> (a betting tap), hsConf/<botId>.
-  const HS_REVEAL_MS = 10000, HS_RESULT_MS = 4500, HS_READY_MS = 2500, HS_FAKE_MS = 15000;
+  const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 10000, HS_RESULT_MS = 4500, HS_READY_MS = 2500, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
@@ -9277,6 +9275,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const hs = roomState?.hs;
     if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && (hsAnimating(hs) && !!hs.animAt && nowMs() >= hs.animAt) !== hsRenderedAnimating) renderHighStakes(roomState);
     else if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && !hsAnimating(hs) && hsStandingsNow(hs) !== hsRenderedStandings) renderHighStakes(roomState);
+    else if (roomState?.phase === "hs" && hs && hs.stage === "pick") { const at = roomState.hsPickAt?.[currentPlayerId]; if (!!at && nowMs() >= at + HS_CHANGE_MS && !hsRenderedLocked) renderHighStakes(roomState); }
   }
   const hsWrite = (fields) => update(ref(db, `rooms/${currentRoomCode}`), fields);
 
@@ -9288,7 +9287,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hs.nextAt = nowMs() + 1500;
     const now = new Date();
     await hsWrite({ phase: "hs", gameId: crypto.randomUUID(), activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
-      hs, hsQ: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
+      hs, hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
   async function hsDealRound(hs, now) {
     const q = roomState.hsPre && roomState.hsQ ? { ...roomState.hsQ } : { ...generateQuestion() };
@@ -9296,7 +9295,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const { options, realIdx, fakeBy } = HS.hsMakeOptions(q.answer, Math.random, custom);
     const next = HS.hsStartRound(hs, { options, realIdx, fakeBy, now });
     next.nextAt = null;
-    await hsWrite({ hs: next, hsQ: q, hsPre: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
+    await hsWrite({ hs: next, hsQ: q, hsPre: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
   }
   // Players who are out (and still here) write a fake answer for the next round while everyone else waits a few seconds.
   function hsFakers(hs) {
@@ -9335,7 +9334,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
       if (Object.keys(botWrites).length) { run(hsWrite(botWrites)); return; }
       const waiting = hs.seats.filter((id) => picks[id] === undefined && !(players[id] && !players[id].isBot && isPlayerAway(players[id])));
-      if (!waiting.length || now >= hs.pickEndsAt) run(hsWrite({ hs: HS.hsBeginBetting(hs, picks, now) }));
+      // everyone has picked AND everyone's change window (10s from their first tap, never reset by changing) has closed
+      const pickAt = roomState.hsPickAt || {};
+      const unlocked = hs.seats.some((id) => picks[id] !== undefined && pickAt[id] && now < pickAt[id] + HS_CHANGE_MS);
+      if ((!waiting.length && !unlocked) || now >= hs.pickEndsAt) run(hsWrite({ hs: HS.hsBeginBetting(hs, picks, now) }));
       return;
     }
     if (hs.stage === "bet") {
@@ -9366,7 +9368,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsPick(idx) {
     const hs = roomState.hs;
     if (!hs || hs.stage !== "pick" || !hs.seats.includes(currentPlayerId)) return;
-    set(ref(db, `rooms/${currentRoomCode}/hsPicks/${currentPlayerId}`), idx);
+    const first = roomState.hsPickAt?.[currentPlayerId];
+    if (first && nowMs() >= first + HS_CHANGE_MS) return; // locked in
+    if (first) set(ref(db, `rooms/${currentRoomCode}/hsPicks/${currentPlayerId}`), idx);
+    else update(ref(db, `rooms/${currentRoomCode}`), { [`hsPicks/${currentPlayerId}`]: idx, [`hsPickAt/${currentPlayerId}`]: nowMs() }); // the change window starts at the FIRST pick
     playSound("tap");
     // show the choice right away instead of waiting for the round trip
     hsContentEl.querySelectorAll("[data-hs-pick]").forEach((b) => b.classList.toggle("sel", Number(b.dataset.hsPick) === idx));
@@ -9440,14 +9445,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ids = hsShuffle(Object.keys(roomState.players || {}));
     const hs = HS.hsNewGame(ids, roomState.settings?.startCoins || HS.HS_START_COINS);
     hs.nextAt = nowMs() + 1500;
-    await hsWrite({ hs, gameId: crypto.randomUUID(), hsQ: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
+    await hsWrite({ hs, gameId: crypto.randomUUID(), hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
 
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 3000, HS_COIN_HOLD_MS = 1800;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
   let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsFooledKey = null, hsActSent = null;
-  let hsRenderedStandings = false;
+  let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.animEndsAt && nowMs() >= hs.animEndsAt + HS_RESULT_MS; // after the winner box has had its moment: the ranked standings
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
@@ -9603,6 +9608,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // pick / bet / reveal: question on top, players down both sides, the 4 answers and a big pot in the middle.
     const q = data.hsQ, pair = q ? questionObjects(q) : null;
     const picks = data.hsPicks || {};
+    const myAt = data.hsPickAt?.[me], pickLocked = !!myAt && nowMs() >= myAt + HS_CHANGE_MS;
+    hsRenderedLocked = pickLocked;
     const b = hs.bet;
     const revealing = stage === "reveal";
     const animating = revealing && hsAnimating(hs);       // the stacking animation is still playing: no winner yet
@@ -9651,18 +9658,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mine = picks[me];
     let fooledNow = false;
     const optsHtml = hs.options.map((o, i) => {
-      if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}">${hsFmt(o)}</button>`;
+      if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}"${pickLocked ? " disabled" : ""}>${hsFmt(o)}</button>`;
       const real = revealing && !animating && i === hs.realIdx;
       const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
       const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && who.length > 0;
       if (fooled) fooledNow = true;
-      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-ghost" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span><i>&#128123;</i></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
+      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-author" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
     html += `<div class="hs-board${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
       <div class="hs-potbox" id="hs-pot"><img src="items/gold-coin.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
     // under the board: what you can do right now
     if (stage === "pick") {
-      html += seated ? `<p class="hs-hint">Which one is the real answer? Pick secretly.</p>` : `<p class="hs-hint">${isOut ? "You're out of coins" : "Watching this round"} &mdash; cheer the others on!</p>`;
+      html += seated ? (picks[me] === undefined ? `<p class="hs-hint">Which one is the real answer? Pick secretly.</p>`
+        : pickLocked ? `<p class="hs-hint"><b>Locked in!</b> Waiting for the others...</p>`
+        : `<p class="hs-hint">Picked! You can still change it &mdash; locks in <b class="hs-timer" data-hs-ends="${myAt + HS_CHANGE_MS}">${Math.max(0, Math.ceil((myAt + HS_CHANGE_MS - nowMs()) / 1000))}</b>s</p>`) : `<p class="hs-hint">${isOut ? "You're out of coins" : "Watching this round"} &mdash; cheer the others on!</p>`;
     } else if (stage === "bet") {
       const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
@@ -9684,7 +9693,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (r.ghost) {
         const g = Object.entries(r.ghost).map(([id, c]) => `${escapeHtml(data.players?.[id]?.name || "Gone")} +${c}`).join(", ");
-        html += `<p class="hs-hint">&#128123; Fooled players: ${g} &#128176; bounty${r.ghost[me] ? " &mdash; nice fake!" : ""}</p>`;
+        html += `<p class="hs-hint">Fooled players: ${g} &#128176; bounty${r.ghost[me] ? " &mdash; nice fake!" : ""}</p>`;
       }
     }
     if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;

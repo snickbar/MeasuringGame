@@ -60,16 +60,22 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
   let extra = want.below + want.above - (HS_OPTION_COUNT - 1 - fakes.length);
   while (extra-- > 0) { if (want.below >= want.above) want.below--; else want.above--; }
   const SPAN = Math.log(5);
-  let guard = 0;
-  for (const side of ["below", "above"]) {
-    const sign = side === "below" ? -1 : 1;
-    let made = 0;
-    while (made < want[side] && guard++ < 2000) {
-      const lv = Math.log(real) + sign * (MIN_GAP + rng() * (SPAN - MIN_GAP));
-      const v = hsRound3(Math.exp(lv));
-      if (!(v > 0) || v === real || fakes.includes(v) || !far(Math.log(v))) continue;
-      fakes.push(v); taken.push(Math.log(v)); made++;
-    }
+  // The real answer is never below 1 (it is always "how many of the small thing fit in the big one"), so a computer fake
+  // below 1.00 would give itself away: fakes are only ever 1.00 or more. Below-fakes that don't fit are made above instead.
+  let guard = 0, belowMade = 0;
+  while (belowMade < want.below && guard++ < 600) {
+    const lv = Math.log(real) - (MIN_GAP + rng() * (SPAN - MIN_GAP));
+    const v = hsRound3(Math.exp(lv));
+    if (!(v >= 1) || v === real || fakes.includes(v) || !far(Math.log(v))) continue;
+    fakes.push(v); taken.push(Math.log(v)); belowMade++;
+  }
+  const aboveWant = HS_OPTION_COUNT - 1 - fakes.length;
+  let aboveMade = 0; guard = 0;
+  while (aboveMade < aboveWant && guard++ < 2000) {
+    const lv = Math.log(real) + (MIN_GAP + rng() * (SPAN - MIN_GAP));
+    const v = hsRound3(Math.exp(lv));
+    if (!(v > 0) || v === real || fakes.includes(v) || !far(Math.log(v))) continue;
+    fakes.push(v); taken.push(Math.log(v)); aboveMade++;
   }
   // Pathological answers (tiny or huge) could exhaust the guard: fill with plain multiples so there are always enough.
   for (let k = 2; fakes.length < HS_OPTION_COUNT - 1; k++) {

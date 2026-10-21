@@ -191,5 +191,13 @@ for (let seed = 1; seed <= 600; seed++) {
   assert.equal(L.applyCareerRecord(p, a).coins, 31, "same record is never paid twice");
   assert.equal(L.MODE_NAMES.highstakes, "High Stakes");
 }
+// computer fakes are never below 1.00 (the real answer never is), even when the real answer is small
+{
+  for (const answer of [1, 1.004, 1.1, 1.3, 2, 3.7, 12, 250]) for (let seed = 1; seed <= 400; seed++) {
+    const { options, realIdx } = H.hsMakeOptions(answer, seeded(seed));
+    assert.equal(options.length, 4, `4 options for ${answer}`); assert.ok(options.every((o) => o >= 1), `no option below 1 for ${answer}: ${options}`);
+    assert.equal(options[realIdx], H.hsRound3(answer)); assert.equal(new Set(options).size, 4);
+  }
+}
 const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 console.log(`PASS: options (4000 answers), 9 betting scenarios, ${games} bot games (avg ${avg.toFixed(1)} rounds, max ${Math.max(...lengths)}), ${rolls} rollovers, ${uncontested} uncontested pots.`);
