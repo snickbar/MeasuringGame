@@ -103,6 +103,7 @@ export function hsStartRound(hsIn, { options, realIdx, fakeBy = null, now, pickS
   hs.options = options;
   hs.realIdx = realIdx;
   hs.fakeBy = fakeBy;
+  hs.startChips = { ...hs.chips }; // for the standings: how far each player moved this round (ante included)
   hs.pot = hs.carry || 0;
   hs.carry = 0;
   seats.forEach((id) => {
@@ -324,4 +325,17 @@ export function hsRewardFor(hs, id) {
   const placeCoins = HS_PLACE_COINS[place - 1] ?? HS_PARTICIPATION_COINS;
   const ghost = hs.ghost?.[id] || 0;
   return { place, placeCoins, ghost, total: placeCoins + ghost };
+}
+
+// Players ranked by coins (ties share a rank), with how far each moved this round and how their rank changed.
+export function hsStandings(hs) {
+  const start = hs.startChips || hs.chips;
+  const rank = (map) => {
+    const r = {};
+    hs.seatsAll.forEach((id) => { r[id] = 1 + hs.seatsAll.filter((o) => (map[o] || 0) > (map[id] || 0)).length; });
+    return r;
+  };
+  const now = rank(hs.chips), before = rank(start);
+  return [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0) || hs.seatsAll.indexOf(a) - hs.seatsAll.indexOf(b))
+    .map((id) => ({ id, coins: hs.chips[id] || 0, delta: (hs.chips[id] || 0) - (start[id] || 0), rank: now[id], rankMove: before[id] - now[id], out: !!hs.out?.[id] || (hs.chips[id] || 0) <= 0 }));
 }
