@@ -9671,8 +9671,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const optsHtml = hs.options.map((o, i) => {
       if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}"${pickLocked ? " disabled" : ""}>${hsFmt(o)}</button>`;
       const real = revealing && !animating && i === hs.realIdx;
-      const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
-      const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && who.length > 0;
+      const pickers = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
+      const who = pickers.filter((id) => !hs.bet.folded?.[id]); // players who folded aren't shown on their answer at all
+      const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && pickers.length > 0; // a folded player still got fooled (and still pays the bounty)
       if (fooled) fooledNow = true;
       return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-author" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
