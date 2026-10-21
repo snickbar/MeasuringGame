@@ -742,8 +742,9 @@ if (location.protocol === "file:") {
      border and gloss baked in), sized by its own natural aspect ratio, with the label overlaid on top. */
   .sh-card.sh-banner, .sh-card.sh-banner.sh-hot { display: block; padding: 0; background: none; border: none; box-shadow: none; }
   .sh-card.sh-banner .sh-bimg { display: block; width: 100%; height: auto; }  /* all five pictures are exactly 1000 x 222 so the rows match */
-  .sh-card.sh-banner .sh-tx { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6% 0 31%; text-align: left; }
-  .sh-card.sh-banner .sh-name { font-size: 22px; }
+  .sh-card.sh-banner .sh-tx { position: absolute; inset: 14% 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6% 0 31%; text-align: left; }
+  .sh-card.sh-banner .sh-name { font-size: calc(22px * var(--fit, 1)); }
+  .sh-card.sh-banner .sh-sub { font-size: calc(13px * var(--fit, 1)); }
   .sh-card.sh-banner .sh-bic { position: absolute; left: 6%; top: 50%; width: 19%; height: 82%; transform: translateY(-50%); object-fit: contain; pointer-events: none; }  /* Party hub: the mode's own icon sits on a blank banner */
   .sh-card.sh-banner .sh-badge-slot { position: absolute; right: 5%; top: -6px; z-index: 2; }
   .sh-card.sh-banner:active { transform: translateY(2px); box-shadow: none; }
@@ -9834,6 +9835,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       else hsWrite({ "hs/nextAt": n }); // standings -> next round
     }
   });
+
+  // ==================== Text auto-fit ====================
+  // Phones with larger system text (or a longer translation) can push words out of a button. Any button label or mode-banner
+  // text that doesn't fit its box is shrunk step by step (never below 60%) until it does.
+  (function setupAutoFit() {
+    const FIT_MIN = 0.6;
+    const overflows = (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+    function fitBanner(tx) {
+      tx.style.removeProperty("--fit");
+      let f = 1;
+      while (overflows(tx) && f > FIT_MIN) { f = Math.round((f - 0.05) * 100) / 100; tx.style.setProperty("--fit", String(f)); }
+    }
+    function fitButton(b) {
+      b.style.removeProperty("font-size");
+      if (!overflows(b)) return;
+      const base = parseFloat(getComputedStyle(b).fontSize) || 14;
+      let f = 1;
+      while (overflows(b) && f > FIT_MIN) { f = Math.round((f - 0.05) * 100) / 100; b.style.fontSize = (base * f).toFixed(2) + "px"; }
+    }
+    function run() {
+      document.querySelectorAll(".sh-banner .sh-tx, button").forEach((el) => {
+        if (!el.clientWidth || !el.clientHeight) return; // hidden right now: fitted when it shows
+        const key = el.clientWidth + "x" + el.clientHeight + ":" + el.textContent.length + ":" + (document.documentElement.dataset.largeText || "");
+        if (el.__fitKey === key) return;
+        if (el.classList.contains("sh-tx")) fitBanner(el);
+        else if (!el.querySelector("img,svg,canvas,input,select,textarea") && el.textContent.trim()) fitButton(el);
+        el.__fitKey = el.clientWidth + "x" + el.clientHeight + ":" + el.textContent.length + ":" + (document.documentElement.dataset.largeText || "");
+      });
+    }
+    let queued = false;
+    const queue = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; try { run(); } catch (e) { /* cosmetic only */ } }); };
+    new MutationObserver(queue).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden"] });
+    window.addEventListener("resize", queue);
+    document.fonts?.ready.then(queue);
+    queue();
+  })();
 
   // ==================== Worlds: themed levels with stars ====================
   // Questions still get harder overall, but not in a strict climb: sort easiest to hardest, then nudge each one's
