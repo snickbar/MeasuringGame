@@ -247,6 +247,17 @@ export function hsResolve(hsIn) {
       Object.entries(ghostNow).forEach(([id, c]) => { hs.ghost[id] = (hs.ghost[id] || 0) + c; });
     }
   }
+  // Per-player tallies for the career stats: rounds won, biggest single payout, bluffs that worked (won by
+  // everyone else folding while holding the wrong answer) and the highest stack reached.
+  hs.stats = { ...(hs.stats || {}) };
+  winners.forEach((id) => {
+    const o = hs.stats[id] || {};
+    hs.stats[id] = { ...o, won: (o.won || 0) + 1, best: Math.max(o.best || 0, share), bluffs: (o.bluffs || 0) + (uncontested && hs.picks?.[id] !== hs.realIdx ? 1 : 0) };
+  });
+  hs.seatsAll.forEach((id) => {
+    const o = hs.stats[id] || {};
+    if ((hs.chips[id] || 0) > (o.peak || 0)) hs.stats[id] = { ...o, peak: hs.chips[id] };
+  });
   hs.result = { winners: winners.length ? winners : null, share, pot, uncontested, carryOut, ghost: ghostNow };
   hs.stage = "reveal";
   hs.bet.turn = null;
@@ -298,4 +309,19 @@ export function hsBotDecide(hs, pid, confidence, rng = Math.random) {
   // Facing a bet: call when the chance of being right (roughly 1/6 baseline, up to ~0.9 with confidence) beats the pot odds.
   const winChance = 1 / HS_OPTION_COUNT + c * 0.75;
   return winChance > potOdds ? "call" : "fold";
+}
+
+// ---------- profile rewards ----------
+// Coins paid to the player's profile when a game ends: by finishing place (ties share the better place), plus any ghost bounty.
+export const HS_PLACE_COINS = [15, 8, 4];
+export const HS_PARTICIPATION_COINS = 2;
+export function hsPlaceOf(hs, id) {
+  const mine = hs.chips[id] || 0;
+  return 1 + hs.seatsAll.filter((o) => (hs.chips[o] || 0) > mine).length;
+}
+export function hsRewardFor(hs, id) {
+  const place = hsPlaceOf(hs, id);
+  const placeCoins = HS_PLACE_COINS[place - 1] ?? HS_PARTICIPATION_COINS;
+  const ghost = hs.ghost?.[id] || 0;
+  return { place, placeCoins, ghost, total: placeCoins + ghost };
 }
