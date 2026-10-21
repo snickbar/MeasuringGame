@@ -776,6 +776,13 @@ if (location.protocol === "file:") {
   .hs-opts.mini .hs-opt { padding: 4px 0; font-size: 11px; border-width: 2px; border-radius: 8px; box-shadow: none; }
   .hs-opt.dim { opacity: .4; }
   .hs-acts { display: flex; gap: 8px; }
+  .hs-yourturn { margin: 6px 0 0; padding: 6px 10px; text-align: center; font-size: 22px; letter-spacing: 1px; color: #fff; background: linear-gradient(#ff9a2e, #e8590c); border: 3px solid #7a2e00; border-radius: 14px; text-shadow: 0 2px 0 #7a2e00; box-shadow: 0 3px 0 rgba(74,44,18,.5); animation: hsYourTurn .7s ease-in-out infinite; }
+  .hs-acts-mine { padding: 4px; border-radius: 18px; animation: hsActGlow 1.1s ease-in-out infinite; }
+  .hs-pl.turn.mine { animation: hsMineGlow .9s ease-in-out infinite; border-width: 3px; }
+  @keyframes hsYourTurn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  @keyframes hsActGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,130,15,0); } 50% { box-shadow: 0 0 14px 4px rgba(242,130,15,.85); } }
+  @keyframes hsMineGlow { 0%, 100% { box-shadow: 0 0 0 3px rgba(242,130,15,.35); } 50% { box-shadow: 0 0 16px 6px rgba(242,130,15,.95); } }
+  @media (prefers-reduced-motion: reduce) { .hs-yourturn, .hs-acts-mine, .hs-pl.turn.mine { animation: none; } }
   .hs-acts .dc-btn { margin-top: 6px; padding: 14px 4px; font-size: 17px; }
   .hs-fold { background: linear-gradient(#ffb3a8, #e8604c) !important; }
   .hs-call { background: linear-gradient(#bfe6ff, #5aaaf0) !important; }
@@ -807,6 +814,18 @@ if (location.protocol === "file:") {
   .hs-board.dense .hs-tag { margin-top: 1px; padding: 0 6px; font-size: 10px; }
   .hs-opt.stat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 6px; min-height: 46px; font-size: 22px; box-shadow: none; }
   .hs-opt.stat.sel { background: linear-gradient(#e7d4ff, #bd94f2); transform: none; }
+  .hs-opt.stat { position: relative; }
+  .hs-opt.stat.wrong { background: linear-gradient(#ffd9d4, #f2a79e); border-color: #8f2a20; color: #5c120c; }
+  .hs-opt.stat.wrong.sel { background: linear-gradient(#ffc7bf, #e8867b); }
+  .hs-ghost { position: absolute; top: -9px; left: -7px; display: flex; align-items: center; z-index: 2; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); animation: hsGhostFloat 1.8s ease-in-out infinite; }
+  .hs-ghost .avatar { font-size: 20px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.8); border: 2px solid #fff; opacity: .8; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .hs-ghost i { font-style: normal; font-size: 15px; margin-left: -8px; margin-top: -14px; }
+  .hs-fooled-tag { position: absolute; right: -4px; top: -10px; padding: 1px 8px; border-radius: 999px; background: #7b3fd0; color: #fff; font-size: 12px; letter-spacing: .3px; border: 2px solid #fff; box-shadow: 0 2px 0 rgba(0,0,0,.3); animation: hsFooledPop .5s cubic-bezier(.34,1.56,.64,1) both; z-index: 2; }
+  .hs-opt.stat.fooled { animation: hsFooledBob 1s ease-in-out 1; }
+  @keyframes hsGhostFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes hsFooledPop { from { transform: scale(0) rotate(-12deg); } to { transform: scale(1) rotate(0); } }
+  @keyframes hsFooledBob { 0%, 100% { transform: translateX(0) rotate(0); } 15% { transform: translateX(-7px) rotate(-3deg); } 35% { transform: translateX(7px) rotate(3deg); } 55% { transform: translateX(-5px) rotate(-2deg); } 75% { transform: translateX(5px) rotate(2deg); } }
+  @media (prefers-reduced-motion: reduce) { .hs-ghost, .hs-fooled-tag, .hs-opt.stat.fooled { animation: none; } }
   .hs-opt.stat.real { background: linear-gradient(#fff3c4, #ffd23c); border-color: #b8860b; box-shadow: 0 0 14px rgba(247,201,72,.95); animation: hsRealGlow 1.2s ease-in-out infinite; }
   @keyframes hsRealGlow { 50% { box-shadow: 0 0 24px rgba(255,200,40,1); } }
   .hs-opt.stat .hs-who { margin: 0; flex-wrap: wrap; justify-content: center; gap: 1px; }
@@ -843,6 +862,11 @@ if (location.protocol === "file:") {
     72% { transform: translateY(0) rotate(-9deg) scale(1.28); } 84% { transform: translateY(-6px) rotate(7deg) scale(1.3); }
     100% { transform: translateY(0) rotate(0) scale(1.3); } }
   .hs-fake { display: flex; gap: 8px; align-items: stretch; }
+  .hs-fake-display { flex: 1; min-width: 0; padding: 10px 12px; border: 3px solid #4a2c12; border-radius: 14px; background: #fffdf6; font: 700 26px 'Fredoka', sans-serif; text-align: center; min-height: 34px; }
+  .hs-fake-display.bad { border-color: #b3261e; background: #fde4e1; }
+  .hs-pad { display: grid; grid-template-columns: repeat(3, 72px); justify-content: center; gap: 8px 10px; margin: 8px 0; }
+  .hs-key { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 54px; padding: 0 0 5px; margin: 0; border: none; background: url(icons/key-cream.png) center / 100% 100% no-repeat; color: #5b3a26; font: 700 22px/1 'Fredoka', sans-serif; text-shadow: none; }
+  .hs-key-back { background-image: url(icons/key-back.png); font-size: 0; color: transparent; }
   .hs-fake input { flex: 1; min-width: 0; padding: 12px; border: 3px solid #4a2c12; border-radius: 14px; font: 700 20px 'Fredoka', sans-serif; text-align: center; }
   .hs-fake input.bad { border-color: #b3261e; }
   .hs-fake .dc-btn { width: 110px; margin: 0; }
@@ -1203,6 +1227,12 @@ if (location.protocol === "file:") {
   .gacha-reveal-wrap.rare.show .gacha-reveal-rays { opacity: .28; animation: gachaRaySpin 3.4s linear infinite; }
   .gacha-reveal-wrap.ultra.show .gacha-reveal-rays { opacity: .5; animation: gachaRaySpin 2.2s linear infinite; }
   @keyframes gachaRaySpin { to { transform: rotate(360deg); } }
+  #ad-double-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 9000; width: min(92vw, 380px); display: flex; gap: 6px; align-items: stretch; animation: adbIn .4s cubic-bezier(.34,1.56,.64,1) both; }
+  #ad-double-banner .adb-watch { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 12px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#ffe27a, #f2a60f); color: #3a1f00; box-shadow: 0 4px 0 rgba(74,44,18,.55), 0 0 18px rgba(255,200,40,.8); font-family: 'Fredoka', sans-serif; cursor: pointer; }
+  #ad-double-banner .adb-big { font-size: 19px; font-weight: 700; } #ad-double-banner .adb-sub { font-size: 14px; font-weight: 600; }
+  #ad-double-banner .adb-x { width: 40px; border: 3px solid #4a2c12; border-radius: 14px; background: #fff3d1; font-size: 22px; font-weight: 700; color: #4a2c12; cursor: pointer; }
+  #ad-double-banner .adb-done { flex: 1; text-align: center; padding: 12px; border: 3px solid #2f7d1c; border-radius: 16px; background: #dff5d0; font: 700 18px 'Fredoka', sans-serif; color: #1d5210; }
+  @keyframes adbIn { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
   #fake-ad-overlay {
     position: fixed; inset: 0; z-index: 2000; background: #111; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
@@ -5000,6 +5030,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           teamWorldsHistory: data.teamWorldsHistory || {},
           hlSurvival: data.hlSurvival || {},
           hlHistory: data.hlHistory || {},
+          hsStats: data.hsStats || {},
         };
       }
       saveCachedProfile(deviceId, myProfile);
@@ -5114,6 +5145,49 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
       cancelBtn.addEventListener("click", () => close(false));
       ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
+    });
+  }
+  // ---- "Watch an ad to double your coins": offered after EVERY finished game that paid coins ----
+  // (Party / Quick / Team vs Team have their own receipt screen with the same button; every other mode - Worlds, Survival,
+  // Daily, Monthly, Team Worlds, High/Low Survival, High Stakes - goes through the career ledger, which calls this once the
+  // game's coins are saved. The bonus is a second transaction guarded by profile.adDoubled[key], so it can never pay twice.)
+  const adOfferShown = new Set();
+  async function offerAdDouble(row, id) {
+    try {
+      if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 3 * 60 * 1000) return;
+      const k = String(row.key).replace(/[.#$\[\]/]/g, "_");
+      const prof = (await get(ref(db, `profiles/${id}`))).val() || {};
+      const coins = prof.attemptReceipts?.[k]?.coins || 0;
+      if (coins <= 0 || prof.adDoubled?.[k]) return;
+      adOfferShown.add(row.key);
+      showAdDoubleBanner(k, coins);
+    } catch (e) { /* the offer is a bonus: never block saving */ }
+  }
+  function showAdDoubleBanner(k, coins) {
+    document.getElementById("ad-double-banner")?.remove();
+    const el = document.createElement("div");
+    el.id = "ad-double-banner";
+    el.innerHTML = `<button type="button" class="adb-watch"><span class="adb-big">Watch Ad: Double Coins!</span><span class="adb-sub">+${coins} bonus coins</span></button><button type="button" class="adb-x" aria-label="No thanks">&times;</button>`;
+    document.body.appendChild(el);
+    const done = () => el.remove();
+    const timer = setTimeout(done, 45000);
+    el.querySelector(".adb-x").addEventListener("click", () => { clearTimeout(timer); done(); });
+    el.querySelector(".adb-watch").addEventListener("click", async (e) => {
+      const btn = e.currentTarget; btn.disabled = true;
+      try {
+        const earned = await showFakeAd();
+        if (earned !== true) { btn.disabled = false; return; }
+        let paid = false;
+        await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
+          if (!cur || cur.adDoubled?.[k]) return undefined; // already doubled: abort
+          paid = true;
+          return { ...cur, coins: (cur.coins || 0) + coins, adDoubled: { ...(cur.adDoubled || {}), [k]: Date.now() } };
+        });
+        clearTimeout(timer);
+        el.innerHTML = `<div class="adb-done">${paid ? `Doubled! +${coins} coins added` : "Already doubled"}</div>`;
+        if (paid) { try { playSound("win"); } catch (err) { /* optional */ } }
+        setTimeout(done, 2500);
+      } catch (err) { btn.disabled = false; }
     });
   }
   async function watchAdForCoins() {
@@ -8514,7 +8588,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Exit button) instead of risking it.
   function isInActiveGame() {
     // The final-results screen counts too: the game isn't over until you press Finish/Leave there.
-    return hudEl.classList.contains("active") || finalScreenEl.classList.contains("active");
+    return hudEl.classList.contains("active") || finalScreenEl.classList.contains("active") || hsScreenEl.classList.contains("active");
   }
   function isInLobby() { return lobbyScreenEl.classList.contains("active"); }
   function openLeaveGameConfirm() {
@@ -9184,13 +9258,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.parentElement?.classList.toggle("low", left <= 5);
     });
     const hs = roomState?.hs;
-    if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && hsAnimating(hs) !== hsRenderedAnimating) renderHighStakes(roomState);
+    if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && (hsAnimating(hs) && !!hs.animAt && nowMs() >= hs.animAt) !== hsRenderedAnimating) renderHighStakes(roomState);
   }
   const hsWrite = (fields) => update(ref(db, `rooms/${currentRoomCode}`), fields);
 
+  function hsShuffle(arr) { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   // Host: put every player at the table with the starting coins and drop into the first (empty) "ready" beat.
   async function hsBeginGame() {
-    const ids = Object.keys(roomState.players || {}).sort((a, b) => ((roomState.players[a].joinedAt || 0) - (roomState.players[b].joinedAt || 0)) || a.localeCompare(b));
+    const ids = hsShuffle(Object.keys(roomState.players || {})); // random seats, fixed for the whole game
     const hs = HS.hsNewGame(ids, roomState.settings?.startCoins || HS.HS_START_COINS);
     hs.nextAt = nowMs() + 1500;
     const now = new Date();
@@ -9282,25 +9357,63 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     set(ref(db, `rooms/${currentRoomCode}/hsActs/${currentPlayerId}`), { k: `${hs.round}:${hs.bet.n || 0}`, a: action });
     playSound("tap");
   }
+  // A little synthesized "ha-ha-ha-ha": four short voiced bursts that fall in pitch, through a vowel-ish filter.
+  function hsLaugh() {
+    try {
+      const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100;
+      if (vol <= 0) return;
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      hsLaughCtx = hsLaughCtx || new AC();
+      const c = hsLaughCtx; if (c.state === "suspended") c.resume();
+      const t0 = c.currentTime + 0.02;
+      for (let k = 0; k < 4; k++) {
+        const t = t0 + k * 0.17, f = 330 - k * 28;
+        const o = c.createOscillator(), o2 = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain();
+        o.type = "sawtooth"; o2.type = "square";
+        o.frequency.setValueAtTime(f * 1.25, t); o.frequency.exponentialRampToValueAtTime(f * 0.8, t + 0.14);
+        o2.frequency.setValueAtTime(f * 2.5, t); o2.frequency.exponentialRampToValueAtTime(f * 1.6, t + 0.14);
+        bp.type = "bandpass"; bp.frequency.value = 900 + k * 60; bp.Q.value = 2.2;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5 * vol, t + 0.025); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+        o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(c.destination);
+        o.start(t); o2.start(t); o.stop(t + 0.16); o2.stop(t + 0.16);
+      }
+    } catch (e) { /* sound is optional */ }
+  }
+  let hsLaughCtx = null;
+  let hsFakeStr = "";
+  function hsFakeKey(k) {
+    if (!roomState.hsPre) return;
+    if (k === "back") hsFakeStr = hsFakeStr.slice(0, -1);
+    else {
+      if (k === "." && hsFakeStr.includes(".")) return;
+      const [whole, frac] = hsFakeStr.split(".");
+      if (frac !== undefined ? frac.length >= 2 : (k !== "." && whole.length >= 8)) return; // same limits as the main guess pad
+      hsFakeStr += k;
+    }
+    const d = document.getElementById("hs-fake-display");
+    if (d) { d.textContent = hsFakeStr || "0"; d.classList.remove("bad"); }
+    playSound("tap");
+  }
   function hsSendFake() {
-    const input = document.getElementById("hs-fake-input");
-    const v = parseFloat(String(input?.value || "").replace(/,/g, ""));
-    if (!roomState.hsPre || !(v > 0) || !isFinite(v) || v > 1e12) { if (input) input.classList.add("bad"); return; }
+    const d = document.getElementById("hs-fake-display");
+    const v = parseFloat(hsFakeStr);
+    if (!roomState.hsPre || !(v > 0) || !isFinite(v) || v > 1e12) { if (d) d.classList.add("bad"); return; }
     set(ref(db, `rooms/${currentRoomCode}/hsFakes/${currentPlayerId}`), v);
+    hsFakeStr = "";
     playSound("tap");
   }
   async function hsPlayAgain() {
     if (!isHost) return;
-    const ids = Object.keys(roomState.players || {});
+    const ids = hsShuffle(Object.keys(roomState.players || {}));
     const hs = HS.hsNewGame(ids, roomState.settings?.startCoins || HS.HS_START_COINS);
     hs.nextAt = nowMs() + 1500;
-    await hsWrite({ hs, hsQ: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
+    await hsWrite({ hs, gameId: crypto.randomUUID(), hsQ: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
 
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
-  const HS_ANIM_HOLD_MS = 3000;
+  const HS_ANIM_HOLD_MS = 3000, HS_COIN_HOLD_MS = 1800;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsGhostPaid = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsFooledKey = null;
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
@@ -9309,7 +9422,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return c;
   }
   async function hsStartReveal(hs, now) {
-    const animAt = now + 700;
+    const animAt = now + HS_COIN_HOLD_MS; // let the last bet's coins land in the pot before the animation takes over the screen
     let animEndsAt = now; // no pictures to draw: straight to the result
     try {
       const pair = questionObjects(roomState.hsQ);
@@ -9358,10 +9471,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     try { playSound("select"); } catch (e) { /* sound is optional */ }
   }
-  function hsRenderInto(html, hs, data, animating) {
+  function hsRenderInto(html, hs, data, animating, started = animating) {
     hsContentEl.innerHTML = html;
-    hsRenderedAnimating = animating;
-    if (animating) hsMountAnim(hs, data);
+    hsRenderedAnimating = started;
+    if (started) hsMountAnim(hs, data);
     else if (hsAnimCtl && hsAnimKey) { try { hsAnimCtl.stop(); } catch (e) { /* already stopped */ } hsAnimKey = null; }
     // coins: whoever's shown total dropped paid into the pot; whoever's rose is being paid out of it
     const shown = hsShownChips(hs, animating), potEl = hsContentEl.querySelector("#hs-pot");
@@ -9411,12 +9524,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const iWon = hs.winners?.includes(me);
       html += `<h2 class="dc-title">${iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}</p>`;
       html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${hs.winners.includes(id) ? " win" : ""}"><span class="hs-final-pos">${i + 1}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${hsFmt(hs.chips[id] || 0)} &#128176;</span></div>`).join("")}</div>`;
-      const gp = hs.ghost?.[me] || 0;
-      if (gp > 0) {
-        html += `<p class="dc-sub">Your fakes fooled people: +${gp} &#128176; ghost bounty!</p>`;
-        if (hsGhostPaid !== data.gameId) { hsGhostPaid = data.gameId; addCoins(gp).catch(() => {}); }
+      if (hs.seatsAll.includes(me)) {
+        const rw = HS.hsRewardFor(hs, me), st = hs.stats?.[me] || {};
+        html += `<p class="dc-sub">+${rw.total} &#128176; to your wallet (${rw.placeCoins} for place ${rw.place}${rw.ghost ? `, ${rw.ghost} ghost bounty` : ""})</p>`;
+        const key = gameRewardKey(currentRoomCode, data);
+        if (hsRecorded !== key) {
+          hsRecorded = key;
+          const others = hs.seatsAll.filter((id) => id !== me).map((id) => (data.players?.[id]?.isBot ? data.players[id].botDifficulty || "medium" : "human"));
+          careerLedger.save({ kind: "match", key, mode: "highstakes", t: Date.now(), won: !!iWon && hs.seatsAll.length >= 2, place: rw.place,
+            group: hs.seatsAll.filter((id) => !data.players?.[id]?.isBot).length >= 2 && hs.seatsAll.length >= 3, score: hs.chips[me] || 0, accuracy: 0,
+            myAvatar: data.players?.[me]?.avatar, opponents: others });
+          careerLedger.save({ kind: "attempt", mode: "highstakes", key: key + "_hs", t: Date.now(), coins: rw.total, ghost: rw.ghost, rounds: hs.round,
+            roundsWon: st.won || 0, bluffs: st.bluffs || 0, biggestWin: st.best || 0, peak: Math.max(st.peak || 0, hs.chips[me] || 0), out: !!hs.out?.[me], accuracy: 0 });
+        }
       }
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
+      html += `<button type="button" class="dc-btn dc-alt" id="hs-exit">Exit game</button>`;
       hsContentEl.innerHTML = html;
       return;
     }
@@ -9429,7 +9552,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       html += `<div class="hs-q"><div class="dc-pics">${pair0 ? pair0.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div><div class="hs-qtext">${escapeHtml(q0?.prompt || "")}</div></div>`;
       if (isOut) html += sent[me] !== undefined
         ? `<div class="hs-result">Your fake answer <b>${hsFmt(sent[me])}</b> is in the mix. Good luck fooling them!</div>`
-        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
+        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><div id="hs-fake-display" class="hs-fake-display">${escapeHtml(hsFakeStr || "0")}</div></div><div class="hs-pad">${["1","2","3","4","5","6","7","8","9",".","0","back"].map((k) => k === "back" ? `<button type="button" class="hs-key hs-key-back" data-hs-key="back" aria-label="Backspace">&larr;</button>` : `<button type="button" class="hs-key" data-hs-key="${k}">${k}</button>`).join("")}</div><button type="button" class="dc-btn" id="hs-fake-send">Send</button><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9448,14 +9571,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = hs.bet;
     const revealing = stage === "reveal";
     const animating = revealing && hsAnimating(hs);       // the stacking animation is still playing: no winner yet
+    const animStarted = animating && !!hs.animAt && nowMs() >= hs.animAt; // before that, the board stays up while the last coins land in the pot
     const shown = hsShownChips(hs, animating);
     const potShown = revealing ? (!animating && hs.result.winners ? 0 : hs.result.pot) : hs.pot; // paid out: the pot empties once the winners get it
     const endsAt = stage === "pick" ? hs.pickEndsAt : (stage === "bet" && b.turnEndsAt) ? b.turnEndsAt : 0;
     const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
     html += `<div class="hs-top"><span class="hs-pill">Round ${hs.round}/${HS.HS_MAX_ROUNDS}</span><span class="hs-pill">Ante ${hs.ante}</span>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
     const qText = `<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div>`;
-    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animating ? `<div id="hs-anim-slot"></div>`
-      : revealing ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
+    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animStarted ? `<div id="hs-anim-slot"></div>`
+      : (revealing && !animating) ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
     // players: 1st top-left, 2nd top-right, 3rd under the 1st, and so on
     const cardFor = (id, side) => {
       const p = (data.players || {})[id], out = !!hs.out?.[id], inRound = hs.seats.includes(id);
@@ -9464,7 +9588,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (stage === "pick") { tag = picks[id] !== undefined ? "Picked" : "Thinking..."; tagCls = picks[id] !== undefined ? "ok" : ""; }
         else if (b) {
           if (b.folded?.[id]) { tag = "Folded"; tagCls = "no"; cls = " folded"; }
-          else if (b.turn === id && !revealing) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = " turn"; }
+          else if (b.turn === id && !revealing) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = id === me ? " turn mine" : " turn"; }
           else if (b.put?.[id]) tag = "Bet " + b.put[id];
           else if (b.acted?.[id]) tag = "Check";
         }
@@ -9476,11 +9600,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
     // the 4 answers
     const mine = picks[me];
+    let fooledNow = false;
     const optsHtml = hs.options.map((o, i) => {
       if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}">${hsFmt(o)}</button>`;
       const real = revealing && !animating && i === hs.realIdx;
       const who = revealing && !animating ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
-      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}"><b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
+      const shown = revealing && !animating, ghostId = shown ? hs.fakeBy?.[i] : null, fooled = !!ghostId && who.length > 0;
+      if (fooled) fooledNow = true;
+      return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-ghost" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span><i>&#128123;</i></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
     html += `<div class="hs-board${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
       <div class="hs-potbox" id="hs-pot"><img src="items/gold-coin.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
@@ -9490,8 +9617,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (stage === "bet") {
       const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
-        html += `<p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
-          <div class="hs-acts"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
+        html += `<div class="hs-yourturn">YOUR TURN!</div><p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
+          <div class="hs-acts hs-acts-mine"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
           ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
           ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div>`;
       } else if (folded) html += `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>`;
@@ -9512,13 +9639,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
     if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;
-    hsRenderInto(html, hs, data, animating);
+    hsRenderInto(html, hs, data, animating, animStarted);
+    if (fooledNow) {
+      const fk = `${data.gameId}:${hs.round}`;
+      if (hsFooledKey !== fk) { hsFooledKey = fk; setTimeout(hsLaugh, 250); }
+    }
+    if (stage === "bet" && b?.turn === me && !revealing) {
+      const tk = `${data.gameId}:${hs.round}:${b.n || 0}`;
+      if (hsTurnAlerted !== tk) { hsTurnAlerted = tk; try { playSound("powerup"); } catch (e) { /* optional */ } vibrate([120, 80, 120]); }
+    }
   }
   hsContentEl.addEventListener("click", (e) => {
     const pick = e.target.closest("[data-hs-pick]"), act = e.target.closest("[data-hs-act]");
     if (pick) hsPick(Number(pick.dataset.hsPick));
     else if (act) hsAct(act.dataset.hsAct);
     else if (e.target.closest("#hs-again")) hsPlayAgain();
+    else if (e.target.closest("#hs-exit")) openLeaveGameConfirm();
+    else if (e.target.closest("[data-hs-key]")) hsFakeKey(e.target.closest("[data-hs-key]").dataset.hsKey);
     else if (e.target.closest("#hs-fake-send")) hsSendFake();
     else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
       const hs = roomState.hs, n = nowMs();
@@ -10471,12 +10608,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const lv = careerLevel(careerXp({ ...st, rounds }));
     const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
     let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div><div class="cs-lvl-sub">Every new level: a free avatar pull and ${levelRewardCoins(lv.lvl + 1)} coins</div></div>`;
-    const scoped=myProfile.modeStats?.[statsMode]||{},roomMode=['all','quick','party','teamvteam'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
+    const scoped=myProfile.modeStats?.[statsMode]||{},hsView=statsMode==='highstakes',roomMode=['all','quick','party','teamvteam','highstakes'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
     const average=hist.length?hist.reduce((n,h)=>n+roundAccuracy(h.r),0)/hist.length:null;
     html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-pressed="${statsMode===id}">${name}</button>`).join('')}</div>`;
-    html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(scoped.attempts||0,'Attempts finished')+statTile(scoped.rounds||0,'Rounds completed')+statTile(scoped.bestAccuracy?formatAccuracy(scoped.bestAccuracy)+'%':'—','Best accuracy')}${statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
-    html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'Quick Game, Party and Team vs Team':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
-    html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Spot-ons')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
+    html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(scoped.attempts||0,'Attempts finished')+statTile(scoped.rounds||0,'Rounds completed')+statTile(scoped.bestAccuracy?formatAccuracy(scoped.bestAccuracy)+'%':'—','Best accuracy')}${hsView?statTile((myProfile.modeStats?.highstakes?.podiums)||0,'Podium finishes'):statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
+    if(hsView){const h=myProfile.hsStats||{};html+=`<p class="cs-note">Finished High Stakes games. The biggest stack of coins wins; ties share the win.</p><h3 class="cs-h">High Stakes</h3><div class="cozy-panel cs-tiles">${statTile(h.roundsWon||0,'Rounds won')}${statTile(h.roundsPlayed?Math.round((h.roundsWon||0)/h.roundsPlayed*100)+'%':'—','Round win rate')}${statTile(h.biggestWin||0,'Biggest single win')}${statTile(h.peakStack||0,'Highest stack')}${statTile(h.bluffs||0,'Bluffs that worked')}${statTile(h.knockedOut||0,'Times knocked out')}${statTile(h.ghostCoins||0,'Ghost bounty coins')}</div>`;}
+    if(!hsView)html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'Quick Game, Party and Team vs Team':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
+    if(!hsView)html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Spot-ons')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
     if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot accuracy</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(botLevelLabel(level))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
     if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml();
@@ -10492,10 +10630,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if(statsMode==='all')html+=`<h3 class="cs-h">Your collection</h3><div class="cozy-panel cs-tiles">${statTile(Object.keys(myProfile.seenObjects||{}).length,'Objects seen')}${statTile(Object.keys(myProfile.seenCombos||{}).length,'Combinations seen')}${statTile(ownedNonDefaultAvatars().length,'Avatars collected')}</div>`;
     const attempts=(myProfile.attemptHistory||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
-    if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cozy-panel">'+attempts.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode]||'Monthly practice')+' · '+formatAccuracy(r.accuracy)+'%'+(r.survived!==null?' · '+r.survived+' survived':'')+'</p>').join('')+'</div>';
+    if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cozy-panel">'+attempts.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode]||'Monthly practice')+' · '+(r.mode==='highstakes'?r.coins+' coins':formatAccuracy(r.accuracy)+'%'+(r.survived!==null?' · '+r.survived+' survived':''))+'</p>').join('')+'</div>';
     const matches=(myProfile.matches||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
-    if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cozy-panel">'+matches.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode])+' · '+(r.won?'Won':'Place '+r.place)+' · '+formatAccuracy(r.accuracy)+'%</p>').join('')+'</div>';
+    if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cozy-panel">'+matches.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode])+' · '+(r.won?'Won':'Place '+r.place)+(r.mode==='highstakes'?' · '+r.score+' coins left':' · '+formatAccuracy(r.accuracy)+'%')+'</p>').join('')+'</div>';
 
+    if (hsView) { el.innerHTML = html; return; } // no per-round accuracy graph for High Stakes
     if (hist.length < 3) {
       html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
       el.innerHTML = html; return;
@@ -16671,7 +16810,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // is open, missing that matters more than staying on the overlay, so
     // force-close it instead - same reasoning as the editingFromLobby
     // cancel just above.
-    if (isHudActive) {
+    if (isHudActive || phase === "hs") {
       const openOverlayEl = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
       if (openOverlayEl) { openOverlayEl.classList.remove("active"); overlayReturnScreen = null; }
     }
@@ -16685,7 +16824,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudRoomCodeGroupEl.classList.toggle("active", isHudActive && !(data.settings && data.settings.solo));
     hudRoundLabelEl.classList.toggle("active", isHudActive);
     bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final" || phase === "hs");
-    hsScreenEl.classList.toggle("active", phase === "hs");
+    hsScreenEl.classList.toggle("active", phase === "hs" && !overlayStillOpen);
     hsEnsureTicker(phase === "hs");
     reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
@@ -17027,7 +17166,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
     onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
-    onSaved:async row=>{if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
+    onSaved:async (row,id)=>{void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
   // ==================== In-app updates (native app only) ====================

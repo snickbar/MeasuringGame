@@ -95,10 +95,10 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
   let hs = setup({ a: 100, b: 100, c: 100 }, { a: 2, b: 2 });
   assert.ok(hs.bet.folded.c);
   assert.equal(H.hsTimeoutAction(hs, NOW + 1).bet.turn, hs.bet.turn, "no change before the deadline");
-  const t = NOW + 13_000;
+  const t = NOW + (H.HS_TURN_SECONDS + 1) * 1000;
   let h = H.hsTimeoutAction(hs, t); assert.notEqual(h.bet.turn, hs.bet.turn, "free turn auto-checks");
   h = H.hsApplyAction(h, h.bet.turn, "raise", t);
-  const facing = h.bet.turn; const h2 = H.hsTimeoutAction(h, t + 13_000);
+  const facing = h.bet.turn; const h2 = H.hsTimeoutAction(h, t + (H.HS_TURN_SECONDS + 1) * 1000);
   assert.ok(h2.stage === "reveal" && h2.bet.folded[facing], "facing a bet, timeout folds");
 }
 // table-stakes cap: a short stack limits the bet size for everyone
@@ -167,6 +167,29 @@ for (let seed = 1; seed <= 600; seed++) {
   while (hs.stage === "bet") hs = H.hsApplyAction(hs, hs.bet.turn, "check", NOW);
   assert.deepEqual(hs.result.ghost, { g1: 4 }, "two players fooled by g1 -> 4 coins, g2 fooled nobody");
   assert.deepEqual(hs.ghost, { g1: 4 });
+}
+// stats + rewards + ledger
+{
+  let hs = setup({ a: 100, b: 100, c: 100 }, { a: 2, b: 0, c: 4 });
+  while (hs.stage === "bet") hs = H.hsApplyAction(hs, hs.bet.turn, "check", NOW);
+  assert.equal(hs.stats.a.won, 1); assert.equal(hs.stats.a.best, 15); assert.equal(hs.stats.a.peak, 110); assert.equal(hs.stats.a.bluffs, 0);
+  let h2 = setup({ a: 100, b: 100, c: 100 }, { a: 0, b: 1, c: 2 }, 3);
+  h2 = H.hsApplyAction(h2, "a", "raise", NOW); h2 = H.hsApplyAction(h2, "b", "fold", NOW); h2 = H.hsApplyAction(h2, "c", "fold", NOW);
+  assert.equal(h2.stats.a.bluffs, 1, "wrong pick winning uncontested is a bluff");
+  hs.ghost = { c: 6 };
+  assert.deepEqual(H.hsRewardFor(hs, "a"), { place: 1, placeCoins: 15, ghost: 0, total: 15 });
+  assert.deepEqual(H.hsRewardFor(hs, "c"), { place: 2, placeCoins: 8, ghost: 6, total: 14 }, "tied for 2nd: place coins + ghost bounty");
+}
+{
+  const L = await import("../anim/career-ledger.mjs");
+  const base = { stats: {}, modeStats: {}, coins: 10 };
+  const m = { kind: "match", key: "k1", mode: "highstakes", t: 1, won: true, place: 1, score: 150, accuracy: 0, opponents: ["human"] };
+  const a = { kind: "attempt", mode: "highstakes", key: "k1_hs", t: 1, coins: 21, ghost: 6, rounds: 8, roundsWon: 3, bluffs: 1, biggestWin: 60, peak: 150, out: false, accuracy: 0 };
+  let p = L.applyCareerRecord(L.applyCareerRecord(base, m), a);
+  assert.equal(p.coins, 31); assert.equal(p.modeStats.highstakes.games, 1); assert.equal(p.modeStats.highstakes.wins, 1);
+  assert.equal(p.stats.gamesPlayed, 1); assert.equal(p.stats.gamesWon, 1); assert.equal(p.hsStats.roundsWon, 3); assert.equal(p.hsStats.ghostCoins, 6);
+  assert.equal(L.applyCareerRecord(p, a).coins, 31, "same record is never paid twice");
+  assert.equal(L.MODE_NAMES.highstakes, "High Stakes");
 }
 const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 console.log(`PASS: options (4000 answers), 9 betting scenarios, ${games} bot games (avg ${avg.toFixed(1)} rounds, max ${Math.max(...lengths)}), ${rolls} rollovers, ${uncontested} uncontested pots.`);

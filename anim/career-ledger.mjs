@@ -1,8 +1,8 @@
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 
-export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival'};
-export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8};
+export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes'};
+export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
 // Every entry ever recorded, newest first by actual timestamp - never evicted. Works for
@@ -90,6 +90,13 @@ export function applyCareerRecord(profile,record){
     stats.hlSurvivalRuns=(stats.hlSurvivalRuns||0)+1;
     result.hlHistory={...profile.hlHistory,[key]:{s:record.survived||0,t:record.t,rounds:record.rounds||0,syncStreak:record.bestStreak||0,
       accuracy:record.accuracy||0,myAvatar:record.myAvatar||null,partnerName:record.partnerName||'Partner',partnerAvatar:record.partnerAvatar||null}};
+  }else if(record.mode==='highstakes'){
+    // High Stakes: coins come pre-computed on the record (finishing place + ghost bounty); the rest are running tallies.
+    const old=profile.hsStats||{};coins=Math.max(0,Math.floor(record.coins||0));
+    result.hsStats={games:(old.games||0)+1,roundsPlayed:(old.roundsPlayed||0)+(record.rounds||0),roundsWon:(old.roundsWon||0)+(record.roundsWon||0),
+      bluffs:(old.bluffs||0)+(record.bluffs||0),biggestWin:Math.max(old.biggestWin||0,record.biggestWin||0),peakStack:Math.max(old.peakStack||0,record.peak||0),
+      ghostCoins:(old.ghostCoins||0)+(record.ghost||0),knockedOut:(old.knockedOut||0)+(record.out?1:0)};
+    stats.highStakesGames=(stats.highStakesGames||0)+1;
   }else if(record.mode==='survival'){
     const old=profile.survival||{};coins=Math.max(0,record.survived-(old.best||0))*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};
