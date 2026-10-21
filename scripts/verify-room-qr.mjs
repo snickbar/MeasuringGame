@@ -8,10 +8,10 @@ for(const value of [null,'','1234','ABIC','AB2CC','https://example.com/?join=AB2
   assert.equal(roomCodeFromQr(value),null,'Reject '+String(value).slice(0,70));
 class Button extends EventTarget {disabled=false;click(){if(!this.disabled)this.dispatchEvent(new Event('click'));}}
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
-function setup(scanner,isActive=()=>true){
+function setup(scanner,isActive=()=>true,extra={}){
   const button=new Button(),joinButton=new Button(),input=new EventTarget(),status={textContent:''};input.value='OLD2';let joins=0,changes=0;
   joinButton.addEventListener('click',()=>joins++);input.addEventListener('input',()=>changes++);
-  mountRoomQr({button,input,status,joinButton,scanner,isActive});return {button,input,status,joinButton,joins:()=>joins,changes:()=>changes};
+  mountRoomQr({button,input,status,joinButton,scanner,isActive,...extra});return {button,input,status,joinButton,joins:()=>joins,changes:()=>changes};
 }
 const success=setup(async()=>({value:'https://size-em-up.web.app/?join=AB2C'}));success.button.click();await turn();assert.equal(success.input.value,'AB2C');assert.equal(success.joins(),1);assert.equal(success.changes(),1);assert(!success.button.disabled&&!success.joinButton.disabled);
 for(const scanner of [async()=>({cancelled:true}),async()=>({value:'not our QR'}),async()=>{throw Error('module unavailable')}]){
@@ -19,5 +19,11 @@ for(const scanner of [async()=>({cancelled:true}),async()=>({value:'not our QR'}
 }
 let scans=0,resolveScan;const busy=setup(()=>{scans++;return new Promise(r=>resolveScan=r)});busy.button.click();busy.button.click();assert.equal(scans,1);assert(busy.joinButton.disabled);resolveScan({cancelled:true});await turn();assert(!busy.joinButton.disabled);
 const navigated=setup(async()=>({value:'AB2C'}),()=>false);navigated.button.click();await turn();assert.equal(navigated.joins(),0);
+{ // the app drifted off the Join screen while the camera was open: restore it and still use the scanned code
+  let active=false,restored=0,started=0,ended=0;
+  const ui=setup(async()=>({value:'https://size-em-up.web.app/?join=AB2C'}),()=>active,{restore:()=>{restored++;active=true;},onScanStart:()=>started++,onScanEnd:()=>ended++});
+  ui.button.click();await turn();assert.equal(restored,1);assert.equal(ui.input.value,'AB2C');assert.equal(ui.joins(),1);assert.equal(started,1);assert.equal(ended,1);
+  let a2=false,r2=0;const c=setup(async()=>({cancelled:true}),()=>a2,{restore:()=>{r2++;}});c.button.click();await turn();assert.equal(r2,0,'a cancelled scan never navigates');
+}
 const browser=setup(null);browser.button.click();assert(browser.status.textContent.includes('Android app'));assert.equal(browser.joins(),0);assert.equal(browser.input.value,'OLD2');
 console.log('PASS: QR invite validation, valid scan to Join Game, cancel/failure recovery, duplicate taps, navigation cancellation, manual-entry preservation and browser fallback.');

@@ -12035,8 +12035,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // final, etc.) are left alone on back - leaving those needs proper
   // cleanup (guestExit/hostExit), not an implicit back-press.
   history.pushState({ appGuard: true }, "", location.href);
+  let qrScanGuardUntil = 0; // while the QR camera is open (and just after), a stray Back must not bounce Join -> Home
   window.addEventListener("popstate", () => {
     history.pushState({ appGuard: true }, "", location.href);
+    if (Date.now() < qrScanGuardUntil) return;
     if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
       if (howtoScreen.classList.contains("active")) howtoCloseBtn.click(); else closeOverlay();
     } else if (createScreenEl.classList.contains("active")) {
@@ -12834,6 +12836,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   mountRoomQr({button:document.getElementById('scan-room-qr-btn'),input:codeInput,status:joinStatusEl,joinButton:joinContinueBtn,
     isActive:()=>joinScreen.classList.contains('active'),
+    restore:()=>{showJoinScreen();},onScanStart:()=>{qrScanGuardUntil=Infinity;},onScanEnd:()=>{qrScanGuardUntil=Date.now()+2500;},
     scanner:isNativeApp?async()=>{
       const cap=window.Capacitor,plugin=cap.registerPlugin?cap.registerPlugin('RoomQrScanner'):cap.Plugins?.RoomQrScanner;
       if(!plugin)throw Error('Scanner unavailable');return plugin.scan();
