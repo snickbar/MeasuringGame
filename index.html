@@ -3710,6 +3710,7 @@ if (location.protocol === "file:") {
     <h3>Game</h3>
     <div id="settings-toggles-panel">
       <label>Sound effects <span class="settings-sound-control"><span id="settings-sound-label">On</span><button id="settings-sound-toggle" type="button" class="icon-toggle-btn" aria-label="Sound effects"></button></span></label>
+      <label>Vibration <span class="settings-sound-control"><span id="settings-vibe-label">On</span><button id="settings-vibe-toggle" type="button" class="icon-toggle-btn" aria-label="Vibration"></button></span></label>
     </div>
     <label class="comfort-control">Effects volume <input id="effects-volume" type="range" min="0" max="100" step="5" aria-label="Sound effects volume"></label>
     <label class="comfort-control">Animation <select id="motion-choice"><option value="auto">Use device setting</option><option value="reduce">Reduced motion</option><option value="full">Full animation</option></select></label>
@@ -5214,7 +5215,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         });
         clearTimeout(timer);
         el.innerHTML = `<div class="adb-done">${paid ? `Doubled! +${coins} coins added` : "Already doubled"}</div>`;
-        if (paid) { try { playSound("win"); } catch (err) { /* optional */ } }
+        if (paid) { try { playSound("win"); } catch (err) { /* optional */ } vibrate([30, 40, 30]); }
         setTimeout(done, 2500);
       } catch (err) { btn.disabled = false; }
     });
@@ -8541,6 +8542,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     settingsSoundToggle.setAttribute("aria-pressed", String(localSoundEnabled));
   }
   renderSoundToggleIcon();
+  const settingsVibeToggle = document.getElementById("settings-vibe-toggle");
+  function renderVibeToggle() {
+    const on = localStorage.getItem("mg_vibrationEnabled") !== "false";
+    settingsVibeToggle.classList.toggle("is-on", on);
+    document.getElementById("settings-vibe-label").textContent = on ? "On" : "Off";
+    settingsVibeToggle.setAttribute("aria-pressed", String(on));
+  }
+  renderVibeToggle();
+  settingsVibeToggle.addEventListener("click", () => {
+    const on = localStorage.getItem("mg_vibrationEnabled") !== "false";
+    localStorage.setItem("mg_vibrationEnabled", String(!on));
+    renderVibeToggle();
+    vibrate(30); // a little buzz to confirm it's on (silent when switching off)
+  });
   settingsSoundToggle.addEventListener("click", () => {
     localSoundEnabled = !localSoundEnabled;
     localStorage.setItem("mg_soundEnabled", String(localSoundEnabled));
@@ -8938,6 +8953,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("dc-result");
       if (!host) return;
+      vibeAccuracy(acc);
       const dots = dailyContentEl.querySelector(".dc-dots");
       if (dots) dots.outerHTML = dailyDots(i, i + 1);
       host.innerHTML = resultCardHtml(acc, g, ans, label);
@@ -9031,7 +9047,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!(g > 0)) return;
       saveSoloRound('daily',daily.questions[daily.guesses.length],g,daily.guesses.length,'daily_'+daily.date);
       daily.guesses.push(g); daily.input = ""; daily.phase = "reveal";
-      playSound("pick");
+      playSound("pick"); vibrate(20);
       try { await update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses, done: false }); } catch (err) {}
       if (daily.guesses.length >= 3) await dailyFinish();
       renderDaily();
@@ -9403,7 +9419,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const me = currentPlayerId, k = `${hs.round}:${hs.bet.n || 0}`;
     if (hsActSent === k) return; // already sent for this turn: ignore double taps
     hsActSent = k;
-    playSound("tap");
+    playSound("tap"); vibrate(action === "raise" ? 25 : 15);
     // instant feedback: lock the buttons and mark the one tapped
     hsContentEl.querySelectorAll(".hs-acts [data-hs-act]").forEach((b) => { b.disabled = true; b.classList.toggle("sent", b.dataset.hsAct === action); });
     // Apply the action to the shared game state ourselves, in one atomic step (only if it is still our turn): the table sees it one
@@ -9566,6 +9582,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hsCelebrated = key;
       if (hs.result?.winners) {
         try { playSound("roundwin"); } catch (e) { /* optional */ }
+        if (hs.result.winners.includes(currentPlayerId)) vibrate([35, 60, 45]); // only the pot winner feels it
         if (window.confetti) {
           window.confetti({ particleCount: 90, spread: 80, origin: { y: 0.55 }, colors: ["#ffd23c", "#ffe08a", "#fff4d6", "#f2820f"] });
           setTimeout(() => window.confetti && window.confetti({ particleCount: 50, spread: 110, origin: { x: 0.2, y: 0.6 } }), 250);
@@ -9980,6 +9997,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("wl-result"); if (!host) return;
+      vibeAccuracy(acc);
       host.innerHTML = resultCardHtml(acc, g, ans, label, q, deviceId);
       const skip = document.getElementById("wl-skip");
       if (skip) { skip.id = "wl-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
@@ -10034,7 +10052,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if(wl.phase!=="question")return;
       const g = parseFloat(wl.input); if (!(g > 0)) return;
       saveSoloRound('worlds',wl.questions[wl.guesses.length],g,wl.guesses.length,wl.runId);
-      wl.guesses.push(g); wl.input = ""; wl.phase = "reveal"; playSound("pick");
+      wl.guesses.push(g); wl.input = ""; wl.phase = "reveal"; playSound("pick"); vibrate(20);
       if (wl.guesses.length >= WORLD_Q) await worldFinish();
       renderWorlds(); return;
     }
@@ -10322,6 +10340,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("mo-result"); if (!host) return;
+      vibeAccuracy(acc);
       host.innerHTML = resultCardHtml(acc, g, ans, label);
       const skip = document.getElementById("mo-skip");
       if (skip) { skip.id = "mo-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
@@ -10401,7 +10420,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (mo.phase !== "question") return;
       const g = parseFloat(mo.input); if (!(g > 0)) return;
       saveSoloRound(mo.practice?'practice':'monthly',mo.questions[mo.guesses.length],g,mo.guesses.length,mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT);
-      mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick");
+      mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick"); vibrate(20);
       if (mo.practice) { if (mo.guesses.length >= mo.questions.length) await monthlyPracticeFinish(); renderMonthly(); return; }
       try { await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.questions.map(q => ({ unitId: q.unitId, targetId: q.targetId })), guesses: mo.guesses, done: false }); } catch (err) {}
       if (mo.guesses.length >= mo.questions.length) await monthlyFinish();
@@ -10503,6 +10522,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const q = sv.q, g = sv.g, acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), ok = acc >= SURVIVAL_PASS, over = sv.lives <= 0;
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     const host = document.getElementById("sv-result"); if (!host) return;
+    if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     const boost = bufferResultNote(q, g, deviceId);
     host.innerHTML = boost
       ? `<div class="dc-card dc-hot pu-boost-card">${boost}<div class="pu-boost-verdict">${ok ? "Safe with buffer!" : "Still short of safety"}</div><div class="dc-note">Answer <b>${ans}</b></div>${svGaugeHtml(acc)}</div>`
@@ -10638,7 +10658,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       saveSoloRound('survival',sv.q,g,sv.asked-1,sv.runId);
       sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((effectiveGuess(sv.q, g, deviceId) / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
       if (ok) sv.survived++; else sv.lives--;
-      sv.phase = "reveal"; playSound("pick");
+      sv.phase = "reveal"; playSound("pick"); vibrate(20);
       if (sv.lives <= 0) await survivalFinish();
       renderSurvival(); return;
     }
@@ -13630,7 +13650,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           countdownNumberEl.classList.remove("tick");
           void countdownNumberEl.offsetWidth;
           countdownNumberEl.classList.add("tick");
-          playSound("count");
+          playSound("count"); vibrate(12);
         }
       }
       const noTimer = isHlSettings(roomState.settings);
@@ -13647,7 +13667,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const secondsLeft = Math.ceil(remaining / 1000);
       if (secondsLeft <= 5 && secondsLeft >= 1 && secondsLeft !== lastTickSecond) {
         lastTickSecond = secondsLeft;
-        playSound("tick");
+        playSound("tick"); vibrate(12);
       } else if (secondsLeft > 5) {
         lastTickSecond = null;
       }
@@ -13658,7 +13678,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function lockOwnGuessIfNeeded() {
     if (guessLocked || powerups?.busy) return;
     guessLocked = true;
-    playSound("timesup");
+    playSound("timesup"); vibrate([80, 50, 80]);
     if (!hasSubmittedThisRound) {
       const val = parseFloat(currentGuessStr);
       if (!isNaN(val)) await set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), val);
@@ -14522,7 +14542,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (isNaN(guessNum)) { setGuessStatus("Enter a number first."); playSound("error"); return; }
     hasSubmittedThisRound = true;
     setGuessStatus("Guess submitted.");
-    playSound("submit");
+    playSound("submit"); vibrate(20);
     updateWaitingUi();
     await set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), guessNum);
   });
@@ -16159,10 +16179,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Sound / confetti ====================
 
+  // Every buzz in the app goes through here, so the Settings > Vibration switch controls all of it.
   function vibrate(pattern) {
     try {
+      if (localStorage.getItem("mg_vibrationEnabled") === "false") return;
       if (navigator.vibrate) navigator.vibrate(pattern);
     } catch (e) { /* ignore unsupported/blocked vibration */ }
+  }
+
+  // Result buzz by how close the guess was (solo, worlds, monthly, daily): a spot-on guess feels bigger than a miss.
+  function vibeAccuracy(acc) {
+    if (acc >= 99) vibrate([40, 50, 40, 50, 70]);
+    else if (acc >= 90) vibrate([35, 60, 45]);
+    else if (acc >= 70) vibrate(25);
+    else vibrate(15);
   }
 
   function celebrate(tier) {
