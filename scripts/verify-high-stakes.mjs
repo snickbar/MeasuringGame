@@ -177,8 +177,11 @@ for (let seed = 1; seed <= 600; seed++) {
   h2 = H.hsApplyAction(h2, "a", "raise", NOW); h2 = H.hsApplyAction(h2, "b", "fold", NOW); h2 = H.hsApplyAction(h2, "c", "fold", NOW);
   assert.equal(h2.stats.a.bluffs, 1, "wrong pick winning uncontested is a bluff");
   hs.ghost = { c: 6 };
-  assert.deepEqual(H.hsRewardFor(hs, "a"), { place: 1, placeCoins: 15, ghost: 0, total: 15 });
-  assert.deepEqual(H.hsRewardFor(hs, "c"), { place: 2, placeCoins: 8, ghost: 6, total: 14 }, "tied for 2nd: place coins + ghost bounty");
+  assert.deepEqual(H.hsRewardFor(hs, "a"), { place: 1, out: false, coinsLeft: 110, placeCoins: 15, ghost: 0, total: 15 });
+  assert.deepEqual(H.hsRewardFor(hs, "c"), { place: 2, out: false, coinsLeft: 95, placeCoins: 8, ghost: 6, total: 14 }, "tied for 2nd (still has coins): place coins + ghost bounty");
+  const busted = { ...hs, chips: { a: 120, b: 0, c: 0 } };
+  assert.deepEqual([H.hsRewardFor(busted, "a").total, H.hsRewardFor(busted, "b").total, H.hsRewardFor(busted, "c").total], [15, 2, 2 + 6], "knocked-out players only get the participation reward, never a place");
+  assert.equal(H.hsRewardFor(busted, "b").out, true);
 }
 {
   const L = await import("../anim/career-ledger.mjs");
@@ -190,6 +193,14 @@ for (let seed = 1; seed <= 600; seed++) {
   assert.equal(p.stats.gamesPlayed, 1); assert.equal(p.stats.gamesWon, 1); assert.equal(p.hsStats.roundsWon, 3); assert.equal(p.hsStats.ghostCoins, 6);
   assert.equal(L.applyCareerRecord(p, a).coins, 31, "same record is never paid twice");
   assert.equal(L.MODE_NAMES.highstakes, "High Stakes");
+}
+// computer fakes are never below 1.00 (the real answer never is), even when the real answer is small
+{
+  for (const answer of [1, 1.004, 1.1, 1.3, 2, 3.7, 12, 250]) for (let seed = 1; seed <= 400; seed++) {
+    const { options, realIdx } = H.hsMakeOptions(answer, seeded(seed));
+    assert.equal(options.length, 4, `4 options for ${answer}`); assert.ok(options.every((o) => o >= 1), `no option below 1 for ${answer}: ${options}`);
+    assert.equal(options[realIdx], H.hsRound3(answer)); assert.equal(new Set(options).size, 4);
+  }
 }
 const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 console.log(`PASS: options (4000 answers), 9 betting scenarios, ${games} bot games (avg ${avg.toFixed(1)} rounds, max ${Math.max(...lengths)}), ${rolls} rollovers, ${uncontested} uncontested pots.`);
