@@ -305,17 +305,22 @@ export function hsBotPick(options, answer, difficulty = "medium", rng = Math.ran
   const margin = (sorted[1] - sorted[0]) / (sorted[1] + sorted[0] + 1e-9); // 0 = coin flip between two options, ->1 = clear
   return { pick, confidence: Math.max(0, Math.min(1, margin * (1 - Math.min(1, sigma / 1.2)))) };
 }
-// What a bot does on its turn, given its confidence from hsBotPick. Easy bots are jumpier, a little random.
-export function hsBotDecide(hs, pid, confidence, rng = Math.random) {
+// What a bot does on its turn, given its confidence from hsBotPick. Confidence is first scaled to what that difficulty can reach
+// (easy bots are never very sure, hard bots often are), so every level bets, bluffs, calls and folds - hard ones are just right more often.
+const BOT_CONF_MAX = { easy: 0.3, medium: 0.6, hard: 0.85 };
+const BOT_RAISE_AT = { easy: 0.8, medium: 0.74, hard: 0.67 };  // scaled confidence needed to open a bet / raise
+const BOT_FOLD_BELOW = { easy: 0.18, medium: 0.2, hard: 0.1 };   // below this (plus pot-odds pressure) a bot folds to a bet
+const BOT_BLUFF = { easy: 0.07, medium: 0.08, hard: 0.06 };     // chance to bet or raise regardless
+export function hsBotDecide(hs, pid, confidence, rng = Math.random, difficulty = "medium") {
   const legal = hsLegalActions(hs, pid);
   if (!legal) return null;
-  const c = confidence + (rng() - 0.5) * 0.25;
+  const d = BOT_CONF_MAX[difficulty] ? difficulty : "medium";
+  const cn = Math.max(0, Math.min(1, confidence / BOT_CONF_MAX[d])) + (rng() - 0.5) * 0.45; // scaled confidence with some mood swings
   const potOdds = legal.toCall / Math.max(1, hs.pot + legal.toCall);
-  if (c > 0.55 && legal.canRaise) return "raise";
-  if (legal.canCheck) return c > 0.7 && legal.canRaise ? "raise" : "check";
-  // Facing a bet: call when the chance of being right (roughly 1/6 baseline, up to ~0.9 with confidence) beats the pot odds.
-  const winChance = 1 / HS_OPTION_COUNT + c * 0.75;
-  return winChance > potOdds ? "call" : "fold";
+  if (legal.canRaise && (cn > BOT_RAISE_AT[d] || rng() < BOT_BLUFF[d])) return "raise";
+  if (legal.canCheck) return "check";
+  // Facing a bet: a bigger bet relative to the pot makes a doubtful bot more likely to give up.
+  return cn < BOT_FOLD_BELOW[d] + potOdds * 0.35 ? "fold" : "call";
 }
 
 // ---------- profile rewards ----------

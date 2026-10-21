@@ -138,7 +138,7 @@ for (let seed = 1; seed <= 600; seed++) {
     let steps = 0;
     while (hs.stage === "bet") {
       assert.ok(steps++ < 60, "betting must terminate");
-      const id = hs.bet.turn; const act = H.hsBotDecide(hs, id, conf[id], rng);
+      const id = hs.bet.turn; const act = H.hsBotDecide(hs, id, conf[id], rng, dif[id]);
       const next = H.hsApplyAction(hs, id, act, NOW);
       assert.notEqual(next, hs, "bot chose a legal action " + act);
       hs = next;
