@@ -1426,6 +1426,12 @@ if (location.protocol === "file:") {
      these two properties specifically, so this only covers the swatch's layout/typography. */
   .team-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; border-radius: 14px; font-family: 'Fredoka', sans-serif; font-weight: 600; color: #2a2a2a; }
   .team-swatch:disabled { opacity: .45; }
+  .team-swatch.drop-ok { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(79,170,56,.55); }
+  .team-swatch.drop-no { opacity: .45; box-shadow: 0 0 0 4px rgba(179,38,30,.5); }
+  .team-draggable, .lobby-drag { cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+  .team-drag-ghost { position: fixed; z-index: 99999; pointer-events: none; transform: translate(-50%, -60%); font-size: 28px; filter: drop-shadow(0 4px 4px rgba(0,0,0,.35)); }
+  .team-drag-ghost img, .team-drag-ghost svg, .team-drag-ghost .avatar-img { width: 44px !important; height: 44px !important; }
+  body.team-dragging { cursor: grabbing; }
   .team-swatch-name { font-size: 13px; }
   .team-swatch-members { display: flex; gap: 2px; min-height: 22px; }
   .team-swatch-members .avatar { font-size: 18px; }
@@ -7024,6 +7030,77 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Precomputed light tints rather than CSS color-mix() - some Android WebView versions
   // don't support color-mix(), which silently fell back to an uncolored background.
   const TEAM_COLOR_BG = { red: "#fde2de", blue: "#dceefb", green: "#def8e6", yellow: "#fbf3cf", purple: "#f0e3f7" };
+  // Drag-and-drop teams: you can move yourself; the host can also move bots. Nobody can move another
+  // human. Pointer events (not HTML5 drag) so it works with a finger on Android as well as a mouse.
+  function canMoveToTeam(pid) {
+    if (!pid || roomState?.phase !== "waiting" || roomState?.settings?.mode !== "teamvteam") return false;
+    if (pid === currentPlayerId) return true;
+    return !!(isHost && currentPlayers[pid]?.isBot);
+  }
+  function teamHasRoom(color, pid) {
+    const members = Object.entries(currentPlayers).filter(([, p]) => p.team === color);
+    return members.some(([id]) => id === pid) || members.length < 2;
+  }
+  function moveToTeam(pid, color) {
+    if (!currentRoomCode || !canMoveToTeam(pid) || !TEAM_COLORS.includes(color) || !teamHasRoom(color, pid)) return;
+    if (currentPlayers[pid]?.team === color) return;
+    update(ref(db, `rooms/${currentRoomCode}/players/${pid}`), { team: color });
+  }
+  let teamDrag = null;
+  function teamDragCleanup() {
+    if (!teamDrag) return;
+    teamDrag.ghost?.remove();
+    document.querySelectorAll(".team-swatch.drop-ok, .team-swatch.drop-no").forEach((el) => el.classList.remove("drop-ok", "drop-no"));
+    document.body.classList.remove("team-dragging");
+    teamDrag = null;
+  }
+  function teamSwatchAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest(".team-swatch") : null;
+  }
+  document.addEventListener("pointerdown", (e) => {
+    const src = e.target.closest?.("[data-drag-pid]");
+    if (!src || e.button > 0) return;
+    const pid = src.dataset.dragPid;
+    if (!canMoveToTeam(pid)) return;
+    teamDrag = { pid, src, x0: e.clientX, y0: e.clientY, active: false, ghost: null, pointerId: e.pointerId };
+  });
+  document.addEventListener("pointermove", (e) => {
+    if (!teamDrag || e.pointerId !== teamDrag.pointerId) return;
+    if (!teamDrag.active) {
+      if (Math.hypot(e.clientX - teamDrag.x0, e.clientY - teamDrag.y0) < 8) return;
+      teamDrag.active = true;
+      const g = teamDrag.src.cloneNode(true);
+      g.className = "team-drag-ghost";
+      document.body.appendChild(g);
+      teamDrag.ghost = g;
+      document.body.classList.add("team-dragging");
+    }
+    e.preventDefault();
+    teamDrag.ghost.style.left = e.clientX + "px";
+    teamDrag.ghost.style.top = e.clientY + "px";
+    const hit = teamSwatchAt(e.clientX, e.clientY);
+    document.querySelectorAll(".team-swatch").forEach((el) => {
+      const on = el === hit;
+      el.classList.toggle("drop-ok", on && teamHasRoom(el.dataset.team, teamDrag.pid));
+      el.classList.toggle("drop-no", on && !teamHasRoom(el.dataset.team, teamDrag.pid));
+    });
+  }, { passive: false });
+  const teamDragEnd = (e) => {
+    if (!teamDrag || e.pointerId !== teamDrag.pointerId) return;
+    const d = teamDrag;
+    if (d.active && e.type === "pointerup") {
+      const hit = teamSwatchAt(e.clientX, e.clientY);
+      if (hit) moveToTeam(d.pid, hit.dataset.team);
+      // the drag swallows the click that would otherwise follow on the swatch underneath
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener("click", swallow, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener("click", swallow, true), 0);
+    }
+    teamDragCleanup();
+  };
+  document.addEventListener("pointerup", teamDragEnd);
+  document.addEventListener("pointercancel", teamDragEnd);
   function renderTeamPicker(data) {
     const isTeamMode = data.settings?.mode === "teamvteam";
     teamPickerRowEl.hidden = !isTeamMode;
@@ -7033,7 +7110,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const members = Object.entries(players).filter(([, p]) => p.team === color);
       const mine = members.some(([id]) => id === currentPlayerId);
       const full = members.length >= 2;
-      const avatars = members.map(([, p]) => `<span class="avatar">${avatarHtml(p.avatar)}</span>`).join("");
+      const avatars = members.map(([pid, p]) => `<span class="avatar${canMoveToTeam(pid) ? " team-draggable" : ""}"${canMoveToTeam(pid) ? ` data-drag-pid="${pid}"` : ""} title="${escapeHtml(p.name || "")}">${avatarHtml(p.avatar)}</span>`).join("");
       // border/background set directly inline rather than through --tc/--tc-bg custom
       // properties referenced from the stylesheet - the generic button{border-image-source:...}
       // rule kept winning over the class rule in testing despite border-image:none there, so
@@ -11457,7 +11534,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       nameSpan.className='lobby-player-identity';
       const party=!roomState.settings?.solo;
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
-      nameSpan.innerHTML = `<span class="player-avatar">${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      const dragOn = canMoveToTeam(id);
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       if(id===currentPlayerId&&party&&roomState.phase==='waiting'){
         const ready=document.createElement('button');ready.type='button';ready.id='lobby-ready-btn';ready.textContent=p.ready?'Ready ✓':"I'm ready";ready.setAttribute('aria-pressed',String(!!p.ready));ready.title=p.ready?'Tap to undo ready':'Mark yourself ready';li.appendChild(ready);
