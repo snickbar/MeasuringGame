@@ -9260,7 +9260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rules live in anim/high-stakes.mjs (pure functions). This block is the screen, the host's driver (the host's
   // tab advances the game, like every other mode) and the player taps. Room fields: hs (whole game state),
   // hsQ (the question), hsPicks/<id> (each player's secret pick), hsActs/<id> (a betting tap), hsConf/<botId>.
-  const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 90000 /* AFK fallback only: the host taps Next round */, HS_RESULT_MS = 6000, HS_READY_MS = 3500, HS_FAKE_MS = 15000;
+  const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 180000 /* AFK fallback only: the host taps through every screen */, HS_READY_MS = 0, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
@@ -9274,8 +9274,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsRefreshTimers() {
     hsContentEl.querySelectorAll("[data-hs-ends]").forEach((el) => {
       const left = Math.max(0, Math.ceil((Number(el.dataset.hsEnds) - nowMs()) / 1000));
-      if (el.textContent !== String(left)) el.textContent = String(left);
+      const changed = el.textContent !== String(left);
+      if (changed) el.textContent = String(left);
       el.parentElement?.classList.toggle("low", left <= 5);
+      // A tick for each of the last 5 seconds, only on the phone the clock is waiting on.
+      if (changed && left >= 1 && left <= 5) {
+        const h = roomState?.hs, me = currentPlayerId;
+        const mine = h?.stage === "bet" ? h.bet?.turn === me : h?.stage === "pick" ? (roomState.hsPicks?.[me] === undefined || el.classList.contains("hs-timer")) : true;
+        if (mine) { try { playSound("tick"); } catch (e) { /* optional */ } }
+      }
     });
     const hs = roomState?.hs;
     if (roomState?.phase === "hs" && hs && hs.stage === "reveal" && (hsAnimating(hs) && !!hs.animAt && nowMs() >= hs.animAt) !== hsRenderedAnimating) renderHighStakes(roomState);
@@ -9289,7 +9296,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function hsBeginGame() {
     const ids = hsShuffle(Object.keys(roomState.players || {})); // random seats, fixed for the whole game
     const hs = HS.hsNewGame(ids, roomState.settings?.startCoins || HS.HS_START_COINS);
-    hs.nextAt = nowMs() + 1500;
+    hs.nextAt = nowMs() + 500; hs.waitHost = true; // the host taps to deal the first round
     const now = new Date();
     await hsWrite({ phase: "hs", gameId: crypto.randomUUID(), activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
       hs, hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
@@ -9299,7 +9306,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const custom = Object.entries(roomState.hsFakes || {}).filter(([, n]) => Number.isFinite(n)).map(([id, v]) => ({ id, v }));
     const { options, realIdx, fakeBy } = HS.hsMakeOptions(q.answer, Math.random, custom);
     const next = HS.hsStartRound(hs, { options, realIdx, fakeBy, now });
-    next.nextAt = null;
+    next.nextAt = null; next.showStand = null; next.waitHost = null;
     await hsWrite({ hs: next, hsQ: q, hsPre: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
   }
   // Players who are out (and still here) write a fake answer for the next round while everyone else waits a few seconds.
@@ -9314,7 +9321,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = nowMs(), players = roomState.players || {};
     const run = (p) => { hsBusy = true; Promise.resolve(p).catch((e) => console.warn("[high-stakes]", e)).finally(() => { hsBusy = false; }); };
     if (hs.stage === "ready") {
-      if (now < (hs.nextAt || 0)) return;
+      if (hs.waitHost || now < (hs.nextAt || 0)) return;
       const fakers = hsFakers(hs);
       if (fakers.length && !roomState.hsPre) { run(hsWrite({ hsPre: { endsAt: now + HS_FAKE_MS }, hsQ: { ...generateQuestion() } })); return; }
       if (roomState.hsPre) {
@@ -9458,7 +9465,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isHost) return;
     const ids = hsShuffle(Object.keys(roomState.players || {}));
     const hs = HS.hsNewGame(ids, roomState.settings?.startCoins || HS.HS_START_COINS);
-    hs.nextAt = nowMs() + 1500;
+    hs.nextAt = nowMs() + 500; hs.waitHost = true;
     await hsWrite({ hs, gameId: crypto.randomUUID(), hsQ: null, hsPicks: null, hsPickAt: null, hsActs: null, hsConf: null, hsFakes: null, round: 0 });
   }
 
@@ -9467,7 +9474,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
   let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFooledKey = null, hsActSent = null;
   let hsRenderedStandings = false, hsRenderedLocked = false;
-  const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.animEndsAt && nowMs() >= hs.animEndsAt + HS_RESULT_MS; // after the winner box has had its moment: the ranked standings
+  const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.showStand; // the host taps "Show standings" once the winner box has had its moment
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
@@ -9636,6 +9643,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
       html += `<h2 class="dc-title">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " coins"}</p>`;
       html += hs.round ? hsStandingsHtml(hs, data, me) : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>`;
+      if (!hs.round) html += isHost ? `<button type="button" class="dc-btn" id="hs-deal">Deal round 1</button>` : `<p class="hs-hint">Waiting for the host to deal the first round...</p>`;
       hsContentEl.innerHTML = html;
       return;
     }
@@ -9741,13 +9749,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (pick) hsPick(Number(pick.dataset.hsPick));
     else if (act) hsAct(act.dataset.hsAct);
     else if (e.target.closest("#hs-again")) hsPlayAgain();
+    else if (e.target.closest("#hs-deal") && isHost) hsWrite({ "hs/waitHost": false, "hs/nextAt": nowMs() });
     else if (e.target.closest("#hs-exit")) openLeaveGameConfirm();
     else if (e.target.closest("[data-hs-key]")) hsFakeKey(e.target.closest("[data-hs-key]").dataset.hsKey);
     else if (e.target.closest("#hs-fake-send")) hsSendFake();
     else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
       const hs = roomState.hs, n = nowMs();
       if (hsAnimating(hs)) hsWrite({ "hs/animEndsAt": n, "hs/nextAt": n + HS_REVEAL_MS });
-      else if (!hsStandingsNow(hs)) hsWrite({ "hs/animEndsAt": n - HS_RESULT_MS, "hs/nextAt": n + HS_REVEAL_MS }); // result -> standings
+      else if (!hsStandingsNow(hs)) hsWrite({ "hs/showStand": true, "hs/nextAt": n + HS_REVEAL_MS }); // result -> standings
       else hsWrite({ "hs/nextAt": n }); // standings -> next round
     }
   });
