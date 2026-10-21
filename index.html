@@ -9426,10 +9426,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let hsLaughCtx = null;
   let hsFakeStr = "";
   // "YOUR TURN!" flashes briefly in the middle of the screen (it floats over the game, so nothing gets pushed around).
-  function hsTurnToast() {
+  function hsTurnToast(text) {
     document.getElementById("hs-turn-toast")?.remove();
     const t = document.createElement("div");
-    t.id = "hs-turn-toast"; t.textContent = "YOUR TURN!";
+    t.id = "hs-turn-toast"; t.textContent = text || "YOUR TURN!";
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 1400);
   }
@@ -9465,7 +9465,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 4000, HS_COIN_HOLD_MS = 2200;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsFooledKey = null, hsActSent = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFooledKey = null, hsActSent = null;
   let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.animEndsAt && nowMs() >= hs.animEndsAt + HS_RESULT_MS; // after the winner box has had its moment: the ranked standings
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
@@ -9582,6 +9582,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const me = currentPlayerId, seated = hs.seats?.includes(me), isOut = !!hs.out?.[me];
     const stage = hs.stage;
     let html = "";
+    // The pause between the last bet and the reveal animation: tell everyone the betting is done (once per round).
+    if (stage === "reveal" && hsBetsToastKey !== `${data.gameId}:${hs.round}` && (!hs.animAt || nowMs() < hs.animAt)) {
+      hsBetsToastKey = `${data.gameId}:${hs.round}`;
+      hsTurnToast("ALL BETS ARE IN!");
+    }
     if (stage === "over") {
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
       const nobodyLeft = (hs.chips[hs.winners[0]] || 0) <= 0; // everyone went broke in the same round: no winner
