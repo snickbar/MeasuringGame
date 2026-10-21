@@ -9199,9 +9199,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function hsDealRound(hs, now) {
     const q = roomState.hsPre && roomState.hsQ ? { ...roomState.hsQ } : { ...generateQuestion() };
-    const custom = Object.values(roomState.hsFakes || {}).filter((n) => Number.isFinite(n));
-    const { options, realIdx } = HS.hsMakeOptions(q.answer, Math.random, custom);
-    const next = HS.hsStartRound(hs, { options, realIdx, now });
+    const custom = Object.entries(roomState.hsFakes || {}).filter(([, n]) => Number.isFinite(n)).map(([id, v]) => ({ id, v }));
+    const { options, realIdx, fakeBy } = HS.hsMakeOptions(q.answer, Math.random, custom);
+    const next = HS.hsStartRound(hs, { options, realIdx, fakeBy, now });
     next.nextAt = null;
     await hsWrite({ hs: next, hsQ: q, hsPre: null, hsPicks: null, hsActs: null, hsConf: null, hsFakes: null, round: next.round });
   }
@@ -9300,7 +9300,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 3000;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null;
+  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsGhostPaid = null;
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
@@ -9411,6 +9411,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const iWon = hs.winners?.includes(me);
       html += `<h2 class="dc-title">${iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}</p>`;
       html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${hs.winners.includes(id) ? " win" : ""}"><span class="hs-final-pos">${i + 1}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${hsFmt(hs.chips[id] || 0)} &#128176;</span></div>`).join("")}</div>`;
+      const gp = hs.ghost?.[me] || 0;
+      if (gp > 0) {
+        html += `<p class="dc-sub">Your fakes fooled people: +${gp} &#128176; ghost bounty!</p>`;
+        if (hsGhostPaid !== data.gameId) { hsGhostPaid = data.gameId; addCoins(gp).catch(() => {}); }
+      }
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9424,7 +9429,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       html += `<div class="hs-q"><div class="dc-pics">${pair0 ? pair0.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div><div class="hs-qtext">${escapeHtml(q0?.prompt || "")}</div></div>`;
       if (isOut) html += sent[me] !== undefined
         ? `<div class="hs-result">Your fake answer <b>${hsFmt(sent[me])}</b> is in the mix. Good luck fooling them!</div>`
-        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
+        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><input id="hs-fake-input" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 12.5"><button type="button" class="dc-btn" id="hs-fake-send">Send</button></div><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -9500,6 +9505,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         html += `<div class="hs-win"><span class="hs-win-shine"></span><img class="hs-win-trophy" src="icons/reactions/trophy.png" alt=""><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(r.share)} <span>coins</span></div><div class="hs-win-sub">${sub}</div></div>`;
       } else {
         html += `<div class="hs-win roll"><div class="hs-win-names">Nobody found it!</div><div class="hs-win-amt">${hsFmt(r.pot)} <span>rolls over</span></div><div class="hs-win-sub">The pot grows next round</div></div>`;
+      }
+      if (r.ghost) {
+        const g = Object.entries(r.ghost).map(([id, c]) => `${escapeHtml(data.players?.[id]?.name || "Gone")} +${c}`).join(", ");
+        html += `<p class="hs-hint">&#128123; Fooled players: ${g} &#128176; bounty${r.ghost[me] ? " &mdash; nice fake!" : ""}</p>`;
       }
     }
     if (revealing && isHost) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">${animating ? "Skip" : "Next round"}</button>`;

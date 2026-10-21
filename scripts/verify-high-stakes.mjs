@@ -153,5 +153,20 @@ for (let seed = 1; seed <= 600; seed++) {
   games++; lengths.push(hs.round);
   assert.ok(hs.winners.length >= 1);
 }
+// ghost fakes: many writers -> still exactly 4 options, at most 3 credited; bounty = 2 coins per player fooled
+{
+  for (let seed = 1; seed <= 300; seed++) {
+    const custom = ["g1", "g2", "g3", "g4", "g5", "g6"].map((id, i) => ({ id, v: 10 + i * 37 }));
+    const { options, fakeBy } = H.hsMakeOptions(100, seeded(seed), custom);
+    assert.equal(options.length, 4, "always 4 options");
+    assert.ok(!fakeBy || Object.keys(fakeBy).length <= 3);
+  }
+  let hs = H.hsNewGame(["a", "b", "c"], 0); hs.chips = { a: 100, b: 100, c: 100 };
+  hs = H.hsStartRound(hs, { options: [1, 2, 3, 4], realIdx: 2, fakeBy: { 0: "g1", 1: "g2" }, now: NOW });
+  hs = H.hsBeginBetting(hs, { a: 0, b: 0, c: 2 }, NOW);
+  while (hs.stage === "bet") hs = H.hsApplyAction(hs, hs.bet.turn, "check", NOW);
+  assert.deepEqual(hs.result.ghost, { g1: 4 }, "two players fooled by g1 -> 4 coins, g2 fooled nobody");
+  assert.deepEqual(hs.ghost, { g1: 4 });
+}
 const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 console.log(`PASS: options (4000 answers), 9 betting scenarios, ${games} bot games (avg ${avg.toFixed(1)} rounds, max ${Math.max(...lengths)}), ${rolls} rollovers, ${uncontested} uncontested pots.`);
