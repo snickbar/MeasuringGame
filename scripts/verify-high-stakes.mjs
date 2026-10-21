@@ -177,8 +177,11 @@ for (let seed = 1; seed <= 600; seed++) {
   h2 = H.hsApplyAction(h2, "a", "raise", NOW); h2 = H.hsApplyAction(h2, "b", "fold", NOW); h2 = H.hsApplyAction(h2, "c", "fold", NOW);
   assert.equal(h2.stats.a.bluffs, 1, "wrong pick winning uncontested is a bluff");
   hs.ghost = { c: 6 };
-  assert.deepEqual(H.hsRewardFor(hs, "a"), { place: 1, placeCoins: 15, ghost: 0, total: 15 });
-  assert.deepEqual(H.hsRewardFor(hs, "c"), { place: 2, placeCoins: 8, ghost: 6, total: 14 }, "tied for 2nd: place coins + ghost bounty");
+  assert.deepEqual(H.hsRewardFor(hs, "a"), { place: 1, out: false, coinsLeft: 110, placeCoins: 15, ghost: 0, total: 15 });
+  assert.deepEqual(H.hsRewardFor(hs, "c"), { place: 2, out: false, coinsLeft: 95, placeCoins: 8, ghost: 6, total: 14 }, "tied for 2nd (still has coins): place coins + ghost bounty");
+  const busted = { ...hs, chips: { a: 120, b: 0, c: 0 } };
+  assert.deepEqual([H.hsRewardFor(busted, "a").total, H.hsRewardFor(busted, "b").total, H.hsRewardFor(busted, "c").total], [15, 2, 2 + 6], "knocked-out players only get the participation reward, never a place");
+  assert.equal(H.hsRewardFor(busted, "b").out, true);
 }
 {
   const L = await import("../anim/career-ledger.mjs");

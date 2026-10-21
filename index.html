@@ -784,6 +784,11 @@ if (location.protocol === "file:") {
   @keyframes hsActGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,130,15,0); } 50% { box-shadow: 0 0 14px 4px rgba(242,130,15,.85); } }
   @keyframes hsMineGlow { 0%, 100% { box-shadow: 0 0 0 3px rgba(242,130,15,.35); } 50% { box-shadow: 0 0 16px 6px rgba(242,130,15,.95); } }
   @media (prefers-reduced-motion: reduce) { .hs-acts-mine, .hs-pl.turn.mine { animation: none; } }
+  .hs-reward { margin: 8px 0; text-align: left; } .hs-reward > b { display: block; margin-bottom: 4px; font-size: 17px; }
+  .hs-rw-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 14px; }
+  .hs-rw-row.total { margin-top: 4px; padding-top: 6px; border-top: 2px dashed #d9c49a; font-size: 16px; }
+  .hs-rw-note { margin: 6px 0 0; font-size: 12px; opacity: .8; }
+  .hs-final-row.busted { opacity: .6; }
   .hs-stand { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
   .hs-srow { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 3px solid #ecdcc0; border-radius: 14px; background: #fffdf6; animation: hsStandIn .45s ease-out both; }
   .hs-srow.up { border-color: #4faa38; background: linear-gradient(#f0fbe8, #d5f3c4); }
@@ -9561,12 +9566,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let html = "";
     if (stage === "over") {
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
-      const iWon = hs.winners?.includes(me);
-      html += `<h2 class="dc-title">${iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}</p>`;
-      html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${hs.winners.includes(id) ? " win" : ""}"><span class="hs-final-pos">${i + 1}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${hsFmt(hs.chips[id] || 0)} &#128176;</span></div>`).join("")}</div>`;
+      const nobodyLeft = (hs.chips[hs.winners[0]] || 0) <= 0; // everyone went broke in the same round: no winner
+      const iWon = !nobodyLeft && hs.winners?.includes(me);
+      html += `<h2 class="dc-title">${nobodyLeft ? "Everybody went broke!" : iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${nobodyLeft ? "Nobody had coins left, so nobody wins this one." : `${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}`}</p>`;
+      html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${!nobodyLeft && hs.winners.includes(id) ? " win" : ""}${(hs.chips[id] || 0) <= 0 ? " busted" : ""}"><span class="hs-final-pos">${(hs.chips[id] || 0) <= 0 ? "&times;" : HS.hsPlaceOf(hs, id)}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${(hs.chips[id] || 0) <= 0 ? "Out" : hsFmt(hs.chips[id]) + " &#128176;"}</span></div>`).join("")}</div>`;
       if (hs.seatsAll.includes(me)) {
         const rw = HS.hsRewardFor(hs, me), st = hs.stats?.[me] || {};
-        html += `<p class="dc-sub">+${rw.total} &#128176; to your wallet (${rw.placeCoins} for place ${rw.place}${rw.ghost ? `, ${rw.ghost} ghost bounty` : ""})</p>`;
+        const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
+        html += `<div class="dc-card hs-reward"><b>Coins you earned</b>
+          <div class="hs-rw-row"><span>${rw.out ? "Knocked out &mdash; thanks for playing" : `Finished ${ord(rw.place)} with ${hsFmt(rw.coinsLeft)} coins left`}</span><b>+${rw.placeCoins}</b></div>
+          ${rw.ghost ? `<div class="hs-rw-row"><span>Ghost bounty &mdash; your fakes fooled players</span><b>+${rw.ghost}</b></div>` : ""}
+          <div class="hs-rw-row total"><span>Total added to your wallet</span><b>+${rw.total} &#128176;</b></div>
+          <p class="hs-rw-note">1st place pays ${HS.HS_PLACE_COINS[0]}, 2nd ${HS.HS_PLACE_COINS[1]}, 3rd ${HS.HS_PLACE_COINS[2]} &mdash; but only for players who still have coins at the end. Everyone else gets ${HS.HS_PARTICIPATION_COINS}. Awards you unlock along the way (like Champion) are separate &mdash; claim them in Awards.</p></div>`;
         const key = gameRewardKey(currentRoomCode, data);
         if (hsRecorded !== key) {
           hsRecorded = key;

@@ -327,21 +327,11 @@ export function hsPlaceOf(hs, id) {
   return 1 + hs.seatsAll.filter((o) => (hs.chips[o] || 0) > mine).length;
 }
 export function hsRewardFor(hs, id) {
+  // Places only go to players who still have coins when the game ends. Anyone knocked out gets the small participation reward,
+  // so being busted never ranks as "2nd".
+  const out = (hs.chips[id] || 0) <= 0;
   const place = hsPlaceOf(hs, id);
-  const placeCoins = HS_PLACE_COINS[place - 1] ?? HS_PARTICIPATION_COINS;
+  const placeCoins = out ? HS_PARTICIPATION_COINS : (HS_PLACE_COINS[place - 1] ?? HS_PARTICIPATION_COINS);
   const ghost = hs.ghost?.[id] || 0;
-  return { place, placeCoins, ghost, total: placeCoins + ghost };
-}
-
-// Players ranked by coins (ties share a rank), with how far each moved this round and how their rank changed.
-export function hsStandings(hs) {
-  const start = hs.startChips || hs.chips;
-  const rank = (map) => {
-    const r = {};
-    hs.seatsAll.forEach((id) => { r[id] = 1 + hs.seatsAll.filter((o) => (map[o] || 0) > (map[id] || 0)).length; });
-    return r;
-  };
-  const now = rank(hs.chips), before = rank(start);
-  return [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0) || hs.seatsAll.indexOf(a) - hs.seatsAll.indexOf(b))
-    .map((id) => ({ id, coins: hs.chips[id] || 0, delta: (hs.chips[id] || 0) - (start[id] || 0), rank: now[id], rankMove: before[id] - now[id], out: !!hs.out?.[id] || (hs.chips[id] || 0) <= 0 }));
+  return { place, out, coinsLeft: hs.chips[id] || 0, placeCoins, ghost, total: placeCoins + ghost };
 }
