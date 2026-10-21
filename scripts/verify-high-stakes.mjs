@@ -50,7 +50,8 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
 {
   let hs = setup({ a: 100, b: 100, c: 100 }, { a: 2, b: 2, c: 1 });
   const first = hs.bet.turn; assert.equal(first, "a"); // round 1 -> seat after... order starts at seat 0
-  hs = H.hsApplyAction(hs, "a", "raise", NOW); assert.equal(hs.bet.cur, 10); assert.equal(hs.pot, 15 + 10);
+  assert.equal(hs.bet.n, 0);
+  hs = H.hsApplyAction(hs, "a", "raise", NOW); assert.equal(hs.bet.n, 1); assert.equal(hs.bet.cur, 10); assert.equal(hs.pot, 15 + 10);
   assert.equal(hs.bet.turn, "b");
   hs = H.hsApplyAction(hs, "b", "raise", NOW); assert.equal(hs.bet.cur, 20); assert.equal(hs.bet.raises, 2);
   assert.equal(H.hsLegalActions(hs, "c").canRaise, false, "max 2 raises");

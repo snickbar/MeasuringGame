@@ -119,7 +119,7 @@ export function hsBeginBetting(hsIn, picks, now, turnSeconds = HS_TURN_SECONDS) 
   const start = (hs.round - 1) % seats.length;
   const order = seats.map((_, k) => seats[(start + k) % seats.length]);
   hs.stage = "bet";
-  hs.bet = { order, folded: Object.keys(folded).length ? folded : null, cur: 0, put: null, raises: 0, cap, acted: null, turn: null, turnEndsAt: null };
+  hs.bet = { order, folded: Object.keys(folded).length ? folded : null, cur: 0, put: null, raises: 0, cap, acted: null, turn: null, turnEndsAt: null, turnAt: null, n: 0 };
   return hsAdvanceTurn(hs, -1, now, turnSeconds);
 }
 
@@ -136,6 +136,7 @@ function hsAdvanceTurn(hs, from, now, turnSeconds) {
     if (b.folded?.[id]) continue;
     if (b.acted?.[id]) continue;
     b.turn = id;
+    b.turnAt = now;
     b.turnEndsAt = now + turnSeconds * 1000;
     return hs;
   }
@@ -188,6 +189,7 @@ export function hsApplyAction(hsIn, pid, action, now, turnSeconds = HS_TURN_SECO
   } else {
     return hsIn;
   }
+  b.n = (b.n || 0) + 1; // every action bumps this, so a player's tap can be tied to the exact turn it was made for
   const from = b.order.indexOf(pid);
   return hsAdvanceTurn(hs, from, now, turnSeconds);
 }
