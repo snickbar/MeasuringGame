@@ -1,3 +1,4 @@
+import {threeStarTeamFinishes} from './mode-awards.mjs';
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 
@@ -87,6 +88,7 @@ export function applyCareerRecord(profile,record){
     coins=(record.stars||0)*5; // team games pay for every star, every game - replayable and re-collectable
     result.teamWorlds={...profile.teamWorlds,[record.world]:{...levels,bestStars:best}};
     stats.teamWorldsAttempts=(stats.teamWorldsAttempts||0)+1;
+    stats.threeStarTeamWorlds=threeStarTeamFinishes(profile)+(record.stars===3?1:0);
     result.teamWorldsHistory={...profile.teamWorldsHistory,[record.world]:{...profile.teamWorldsHistory?.[record.world],
       [key]:{s:record.accuracy||0,t:record.t,myAvatar:record.myAvatar||null,partnerName:record.partnerName||'Partner',partnerAvatar:record.partnerAvatar||null}}};
   }else if(record.mode==='hlsurvival'){

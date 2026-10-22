@@ -1,3 +1,30 @@
+// Use the actual menu artwork, including its embedded illustration, for the destination header.
+export const MENU_BANNERS = {
+  quick: ['icons/banner-quick.png'], daily: ['icons/banner-daily.png'],
+  monthly: ['icons/banner-monthly.png'], worlds: ['icons/banner-worlds.png'],
+  survival: ['icons/banner-survival.png'],
+  classic: ['icons/banner-blank-orange.png', 'icons/home-host.png'],
+  teamvteam: ['icons/banner-blank-green.png', 'items/soccer-ball.webp'],
+  teamworlds: ['icons/banner-blank-blue.png', 'items/hot-air-balloon.webp'],
+  hlsurvival: ['icons/banner-blank-red.png', 'items/t-rex.webp'],
+  highstakes: ['icons/banner-blank-purple.png', 'items/poker-chip.webp'],
+};
+export function applyMenuBanner(element, mode) {
+  const config = MENU_BANNERS[mode];
+  if (!element || !config) return;
+  element.classList.add('matching-mode-banner');
+  element.dataset.menuBanner = mode;
+  element.dataset.fitSingleLine = 'true';
+  const bannerUrl = new URL(config[0], element.ownerDocument.baseURI).href;
+  element.style.setProperty('--menu-banner', `url("${bannerUrl}")`);
+  element.querySelector('.polish-banner-icon')?.remove();
+  if (config[1]) {
+    const img = element.ownerDocument.createElement('img');
+    img.className = 'polish-banner-icon'; img.src = config[1]; img.alt = '';
+    element.prepend(img);
+  }
+}
+
 // Cosmetic only: none of these effects grant rewards or change game state.
 export function createPolish({ document: doc = document, reduced = () => false, sound = () => {} } = {}) {
   const celebrated = new Set(), receiptTargets = new WeakMap();
@@ -52,13 +79,9 @@ export function createPolish({ document: doc = document, reduced = () => false, 
     });
   }
   const headers = {
-    'worlds-content': ['blue', 'items/hot-air-balloon.webp'],
-    'daily-content': ['orange', 'icons/toolbar-daily.png'],
-    'monthly-content': ['purple', 'icons/banner-monthly.png'],
-    'survival-content': ['red', 'items/t-rex.webp'],
-    'teamworlds-content': ['blue', 'items/hot-air-balloon.webp'],
-    'teamvteam-content': ['green', 'items/soccer-ball.webp'],
-    'hs-content': ['purple', 'items/poker-chip.webp'],
+    'worlds-content': 'worlds', 'daily-content': 'daily', 'monthly-content': 'monthly',
+    'survival-content': 'survival', 'teamworlds-content': 'teamworlds',
+    'teamvteam-content': 'teamvteam', 'hs-content': 'highstakes',
   };
   const icons = { '🪙': ['icons/coin-v2.png', 'coins'], '💰': ['icons/coin-v2.png', 'coins'],
     '🏆': ['icons/reactions/trophy.png', 'trophy'], '⭐': ['icons/flair/star.png', 'star'],
@@ -89,10 +112,15 @@ export function createPolish({ document: doc = document, reduced = () => false, 
   }
   function refresh(root) {
     for (const title of root.querySelectorAll('.dc-title:not(.wl-run-title):not(.polish-banner)')) {
-      const host = title.parentElement, config = headers[host.id];
-      if (!config || /^(Question|Round |After round)/.test(title.textContent)) continue;
-      title.classList.add('polish-banner'); title.style.setProperty('--banner', `url(icons/banner-blank-${config[0]}.png)`);
-      const img = doc.createElement('img'); img.src = config[1]; img.alt = ''; title.prepend(img);
+      const host = title.parentElement;
+      let mode = headers[host.id];
+      if (!mode || /^(Question|Round |After round)/.test(title.textContent)) continue;
+      // Several Party intro pages share the same container.
+      if (host.id === 'teamvteam-content') {
+        mode = ({'Classic Party': 'classic', 'High/Low Survival': 'hlsurvival', 'High Stakes': 'highstakes'})[title.textContent.trim()] || 'teamvteam';
+      }
+      title.classList.add('polish-banner');
+      applyMenuBanner(title, mode);
     }
     root.querySelectorAll('[data-result-stars]').forEach(stars);
     root.querySelectorAll('[data-personal-best]').forEach(el => {

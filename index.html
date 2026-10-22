@@ -4222,9 +4222,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
-  import { createPolish } from "./anim/game-polish.mjs";
+  import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
   var gamePolish;
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
+  import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
@@ -11302,7 +11303,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy"];
+  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", ...MODE_AWARD_CATEGORIES];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -11335,6 +11336,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   achTier("Social", "Party time", (n) => `Finish ${n} Party Mode games with friends`, ACH_STAT("groupGames"), [[5, 30], [25, 120]]);
   achTier("Fun", "Gacha fan", (n) => `Pull from the avatar machine ${n} times`, ACH_STAT("pulls"), [[10, 30], [50, 120]]);
   achTier("Fun", "Ad watcher", (n) => `Watch ${n} ads for coins`, ACH_STAT("adsWatched"), [[10, 20]]);
+
+  ACHIEVEMENTS.push(...createModeAwards(() => myProfile));
 
   // One per month: finish that month's Monthly Challenge (first try) to earn its background. No coins, the scene is the reward.
   // (A challenge already finished this month counts too, in case it was played before this existed.)
@@ -11426,7 +11429,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : `<div class="ach-reward">${rewardText(a)}</div>`;
       const cls = isClaimed ? "done" : done ? "ready" : "";
       const just = achJustClaimed === a.id;
-      return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal">${ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.png" alt="" draggable="false">` : ""}${TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
+      return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal">${a.icon ? `<img class="ach-icon" src="${a.icon}" alt="" draggable="false">` : ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.png" alt="" draggable="false">` : ""}${a.icon ? "" : TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
     };
     let body = "";
     ACH_CATS.forEach((cat) => {
@@ -12799,6 +12802,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
     createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
+    applyMenuBanner(createRoomBtn, createMode === "solo" ? "quick" : createMode);
     // Team Worlds has no configurable rounds/timer/item-selection at all - always exactly 5
     // questions from the chosen World's pool (settings.totalRounds=5 is hardcoded at room
     // creation regardless of what this panel shows) - so the whole "Round settings"/"Play your
