@@ -28,8 +28,8 @@ vm.runInContext([
   'globalThis.api = {ALL_OBJECTS,OBJECT_BY_ID,MEASUREMENT_GROUPS,MEASUREMENT_DETAILS,MEASUREMENT_TYPES,measurementQuestionPrompt,dailyQuestionFor};',
 ].join('\n'), sandbox);
 const {ALL_OBJECTS: all, OBJECT_BY_ID: objects, MEASUREMENT_GROUPS: groups, MEASUREMENT_DETAILS: details, MEASUREMENT_TYPES: types, measurementQuestionPrompt: prompt, dailyQuestionFor: question} = sandbox.api;
-assert.equal(all.length, 486);
-assert.equal(objects.size, 486);
+assert.equal(all.length, 498);
+assert.equal(objects.size, 498);
 const ids = new Set();
 for (const [dimension, members] of Object.entries(groups)) {
   assert(types[dimension]);
@@ -73,5 +73,5 @@ for(const [i,m]of [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].fil
   try { fs.writeFileSync(temp,m[2]); require('child_process').execFileSync(process.execPath,['--check',temp]); }
   finally { if(fs.existsSync(temp))fs.unlinkSync(temp); }
 }
-console.log(`PASS: 486 object definitions, ${pairs.toLocaleString()} pair prompts/ratios, requested corrections, preserved values, dimension coverage and inline script syntax.`);
+console.log(`PASS: ${all.length} object definitions, ${pairs.toLocaleString()} pair prompts/ratios, requested corrections, preserved values, dimension coverage and inline script syntax.`);
 console.log('Example: '+example.prompt);

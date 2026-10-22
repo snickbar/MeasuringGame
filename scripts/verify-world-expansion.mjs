@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {measurementQuestionPrompt} from '../anim/object-review-prompts.mjs';
+import {createObjectMemory} from '../anim/object-memory.mjs';
 
 const root=new URL('../',import.meta.url);
 const source=fs.readFileSync(new URL('index.html',root),'utf8');
@@ -11,6 +12,7 @@ const array=name=>source.match(new RegExp('  const '+name+' = (\\[[\\s\\S]*?\\n 
 const line=name=>source.match(new RegExp('  const '+name+' = [^\\n]+'))[0];
 const fn=name=>{let start=source.indexOf('  function '+name+'(');if(start<0)start=source.indexOf('  async function '+name+'(');assert(start>=0,name);let i=source.indexOf('{',start),depth=1;for(i++;depth;i++){if(source[i]==='{')depth++;else if(source[i]==='}')depth--;}return source.slice(start,i);};
 const ctx=vm.createContext({OBJECT_BY_ID:objects,FANTASY_OBJECTS:data.objects.filter(o=>o.group==='Fantasy'),
+  objectMemory:createObjectMemory({owner:()=> 'test',storage:{getItem:()=>null,setItem(){}}}),
   myProfile:{worlds:{}},activePackIdsFor:()=>[],SAMPLER_IDS:new Set(),unlockedFantasyIds:()=>[],
   // Holiday Mixup stubs: October has the halloween pack, November thanksgiving, December christmas, every other month none.
   seasonPackIds:d=>({9:['halloween'],10:['thanksgiving'],11:['christmas']})[d.getMonth()]||[],

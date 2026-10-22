@@ -4239,6 +4239,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
+  import { createObjectMemory } from "./anim/object-memory.mjs";
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
@@ -6322,6 +6323,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Each object has an id, its real length in mm, and a cartoon picture used by the answer animation.
   const OBJECTS = [
+    { id: "tennis-court", name: "tennis court", plural: "tennis courts", mm: 23770, image: "items/tennis-court.webp" },
+    { id: "ice-hockey-rink", name: "ice hockey rink", plural: "ice hockey rinks", mm: 60960, image: "items/ice-hockey-rink.webp" },
+    { id: "coast-redwood", name: "coast redwood", plural: "coast redwoods", mm: 100000, image: "items/coast-redwood.webp" },
+    { id: "submarine", name: "submarine", plural: "submarines", mm: 114800, image: "items/submarine.webp" },
+    { id: "cargo-ship", name: "container cargo ship", plural: "container cargo ships", mm: 400000, image: "items/cargo-ship.webp" },
+    { id: "freight-train", name: "short freight train", plural: "short freight trains", mm: 100000, image: "items/freight-train.webp" },
+    { id: "radio-mast", name: "radio mast", plural: "radio masts", mm: 300000, image: "items/radio-mast.webp" },
+    { id: "sports-stadium", name: "sports stadium", plural: "sports stadiums", mm: 270000, image: "items/sports-stadium.webp" },
+    { id: "radio-telescope", name: "radio telescope dish", plural: "radio telescope dishes", mm: 25000, image: "items/radio-telescope.webp" },
+    { id: "water-slide", name: "water slide tower", plural: "water slide towers", mm: 20000, image: "items/water-slide.webp" },
+    { id: "roller-coaster", name: "roller coaster", plural: "roller coasters", mm: 50000, image: "items/roller-coaster.webp" },
+    { id: "airport-runway", name: "airport runway", plural: "airport runways", mm: 3902000, image: "items/airport-runway.webp" },
     { id: "potato-chip-tube", name: "potato chip tube", plural: "potato chip tubes", mm: 260, image: "items/potato-chip-tube.webp" },
     { id: "single-use-snack-bag", name: "single-use snack bag", plural: "single-use snack bags", mm: 180, image: "items/single-use-snack-bag.webp" },
     { id: "soft-pretzel", name: "soft pretzel", plural: "soft pretzels", mm: 150, image: "items/soft-pretzel.webp" },
@@ -6860,6 +6873,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wingspan: ["bat", "phoenix"],
   };
   const MEASUREMENT_DETAILS = {
+    "tennis-court": { dimension: "length", qualifier: "between the baselines" },
+    "ice-hockey-rink": { dimension: "length", qualifier: "NHL-size rink" },
+    "coast-redwood": { dimension: "height", qualifier: "a very tall mature tree" },
+    "submarine": { dimension: "length", qualifier: "Virginia-class model" },
+    "cargo-ship": { dimension: "length", qualifier: "large ocean-going container ship" },
+    "freight-train": { dimension: "length", qualifier: "example locomotive and four wagons" },
+    "radio-mast": { dimension: "height", qualifier: "example tall broadcast mast" },
+    "sports-stadium": { dimension: "length", qualifier: "example large stadium, outside end to end" },
+    "radio-telescope": { dimension: "diameter", qualifier: "VLA-size dish, not the base" },
+    "water-slide": { dimension: "height", qualifier: "example tower, ground to top" },
+    "roller-coaster": { dimension: "height", qualifier: "example ride, ground to highest track" },
+    "airport-runway": { dimension: "length", qualifier: "Heathrow northern runway" },
     "potato-chip-tube": {"dimension": "height", "qualifier": "full-size tube"},
     "single-use-snack-bag": {"dimension": "height", "qualifier": "sealed single-serving bag"},
     "soft-pretzel": {"dimension": "width", "qualifier": "across the widest part"},
@@ -7041,7 +7066,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         .slice(0, RELATIVE_MIN_PARTNERS)
         .forEach(addPair);
     }
-    // Draw the next OBJECT from a shuffled bag, then pick a random valid partner for it.
+    // Select an object with soft recency weighting, then a valid relative partner.
     const partners = new Map();
     for (const o of objects) partners.set(o.name, []);
     for (const pair of pairs) {
@@ -7051,24 +7076,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return partners;
   }
 
-  function shuffled(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  // Plain independent random draws are "fair" over millions of trials, but
-  // with ~90 objects and only a handful of rounds per game, pure i.i.d.
-  // sampling makes some objects feel like they constantly repeat while
-  // others never show up - just ordinary small-sample variance, but it reads
-  // as broken. Drawing from a shuffled bag (no repeats until every
-  // object/pair has come up once) fixes that perception while staying fully
-  // random over any longer run. The pool (and its bags) depend on which packs
-  // the room is using, so each distinct pack set keeps its own.
+  // Eligibility is cached by the host's packs/unlocks. Selection uses durable
+  // recent-object weights, rather than a shuffled bag reset by every Home tap.
   const poolCache = new Map();
+  const objectMemory = createObjectMemory({owner:()=>deviceId,history:()=>myProfile.history});
   function poolFor(activePacks, seasonPacks, fantasyIds) {
     const packs = (activePacks || []).slice().sort();
     const season = (seasonPacks || []).slice().sort();
@@ -7077,29 +7088,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let pool = poolCache.get(key);
     if (!pool) {
       const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))), FANTASY_OBJECTS.filter((o) => fantasy.includes(o.id)));
-      pool = { objects, seasonal: objects.filter((o) => o.pack && season.includes(o.pack)), bag: [], relBag: [], partners: null };
+      pool = { objects, seasonal: objects.filter((o) => o.pack && season.includes(o.pack)), partners: null };
       poolCache.set(key, pool);
     }
     return pool;
   }
-  function refillBag(pool) {
-    const tickets = pool.objects.slice();
-    pool.seasonal.forEach((o) => { if (Math.random() < SEASON_BOOST_CHANCE) tickets.push(o); });
-    return shuffled(tickets);
-  }
   function pickRandomPair(pool) {
-    const draw = () => { if (pool.bag.length === 0) pool.bag = refillBag(pool); return pool.bag.pop(); };
-    const a = draw();
-    let b = draw();
-    while (b.name === a.name) b = draw();
+    const seasonal = o => pool.seasonal.includes(o) ? 1 + SEASON_BOOST_CHANCE : 1;
+    const a = objectMemory.pickObject(pool.objects, seasonal);
+    const b = objectMemory.pickObject(pool.objects.filter(o=>o.id!==a.id),o=>seasonal(o)*objectMemory.pairWeight(a.id,o.id)/Math.sqrt(objectMemory.objectWeight(o.id)));
     return a.mm <= b.mm ? [a, b] : [b, a];
   }
   function pickRelativePair(pool) {
     if (!pool.partners) pool.partners = buildRelativeIndex(pool.objects);
-    if (pool.relBag.length === 0) pool.relBag = refillBag(pool);
-    const anchor = pool.relBag.pop();
+    const anchor = objectMemory.pickObject(pool.objects,o=>pool.seasonal.includes(o)?1+SEASON_BOOST_CHANCE:1);
     const candidates = pool.partners.get(anchor.name);
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    return objectMemory.pickPair(candidates);
   }
 
   // Unique named landmarks (properNoun: true on their OBJECTS entry) don't take
@@ -7133,6 +7137,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function generateQuestion() {
     const pool = poolFor(roomState.activePacks, roomState.seasonPacks, roomState.fantasyIds);
     const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair(pool) : pickRandomPair(pool);
+    objectMemory.remember(unit.id,target.id);
     return {
       unitId: unit.id,
       targetId: target.id,
@@ -10002,7 +10007,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pairs.sort((a, b) => a.r - b.r);
     const n = pairs.length, lo = Math.floor(n * (level - 1) / WORLD_LEVELS), hi = Math.max(lo + 1, Math.floor(n * level / WORLD_LEVELS));
     const out = [], used = new Set();
-    const shuffled = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const shuffled = arr => objectMemory.orderPairs(arr);
     const take = (arr, strict) => { for (const p of shuffled(arr)) { if (out.length >= WORLD_Q) return; if (strict && (used.has(p.u.id) || used.has(p.t.id))) continue; if (out.includes(p)) continue; out.push(p); used.add(p.u.id); used.add(p.t.id); } };
     const pad = Math.floor(n / WORLD_LEVELS);
     take(pairs.slice(lo, hi), true);
@@ -10011,6 +10016,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     take(pairs.slice(lo, hi), false);
     take(pairs, false);
     out.sort((a, b) => a.r - b.r);
+    out.forEach(p=>objectMemory.remember(p.u.id,p.t.id));
     return staggerOrder(out, Math.random).map((p) => dailyQuestionFor({ unitId: p.u.id, targetId: p.t.id }));
   }
   function persistSoloSession(mode,state){
@@ -10214,14 +10220,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (u.mm === t.mm || t.mm / u.mm < 1.5) continue;
       pairs.push({ u, t });
     }
-    const shuffled = pairs.slice();
-    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+    const shuffled = objectMemory.orderPairs(pairs);
     const out = [], used = new Set();
     for (const p of shuffled) {
       if (out.length >= WORLD_Q) break;
       if (used.has(p.u.id) || used.has(p.t.id)) continue;
       out.push(p); used.add(p.u.id); used.add(p.t.id);
     }
+    out.forEach(p=>objectMemory.remember(p.u.id,p.t.id));
     return out.map((p) => dailyQuestionFor({ unitId: p.u.id, targetId: p.t.id }));
   }
   let twWorldId = null; // which World is picked while its info screen is open
@@ -10611,17 +10617,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     while (lo < hi) { const mid = (lo + hi) >> 1; if (pairs[mid].r < target) lo = mid + 1; else hi = mid; }
     for (let w = 0.25; w < 8; w *= 1.8) {
       const cand = [];
-      for (let k = Math.max(0, lo - 400); k < Math.min(pairs.length, lo + 400); k++) {
+      for (let k = lo; k < pairs.length && pairs[k].r <= target + w; k++) {
         const p = pairs[k];
-        if (Math.abs(p.r - target) <= w && !state.recent.includes(p.u) && !state.recent.includes(p.t)) cand.push(p);
+        cand.push(p);
       }
+      for (let k = lo - 1; k >= 0 && pairs[k].r >= target - w; k--) cand.push(pairs[k]);
       if (cand.length) {
-        const p = cand[Math.floor(Math.random() * cand.length)];
+        const p = objectMemory.pickPair(cand);
+        objectMemory.remember(p.u,p.t);
         state.recent.push(p.u, p.t); if (state.recent.length > 12) state.recent.splice(0, 2);
         return dailyQuestionFor({ unitId: p.u, targetId: p.t });
       }
     }
-    const p = pairs[Math.floor(Math.random() * pairs.length)];
+    const p = objectMemory.pickPair(pairs);
+    objectMemory.remember(p.u,p.t);
     return dailyQuestionFor({ unitId: p.u, targetId: p.t });
   }
   const survivalBest = () => (myProfile.survival && myProfile.survival.best) || 0;
@@ -17496,7 +17505,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
     onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
-    onSaved:async (row,id)=>{void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
+    onSaved:async (row,id)=>{if(id===deviceId&&row.kind==='round')objectMemory.observe(row.history?.u,row.history?.g,row.key);void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
   gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });

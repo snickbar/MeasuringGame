@@ -16,6 +16,12 @@ export const OBJECT_GROUPS = {
   stadium: `baseball baseball-bat baseball-cap baseball-glove basketball basketball-backboard basketball-court blimp foam-finger football football-field football-helmet golf-ball golf-club hockey-puck hockey-stick jumbotron shuttlecock soccer-ball soccer-goal tennis-ball tennis-racket volleyball whistle`,
 };
 export const SCENERY_BY_OBJECT = Object.create(null);
+Object.assign(SCENERY_BY_OBJECT, {
+  'tennis-court':'stadium','ice-hockey-rink':'stadium','coast-redwood':'forest',
+  submarine:'underwater','cargo-ship':'beach','freight-train':'city','radio-mast':'city',
+  'sports-stadium':'stadium','radio-telescope':'desert','water-slide':'beach',
+  'roller-coaster':'city','airport-runway':'city'
+});
 for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of words.split(/\s+/)) {
   if (SCENERY_BY_OBJECT[id]) throw new Error('Duplicate scenery assignment: ' + id);
   SCENERY_BY_OBJECT[id] = scene;
