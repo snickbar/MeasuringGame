@@ -13,7 +13,7 @@ const meta={
  'popup-close':['Close a menu','Closing settings, profile, or a dialog.','menu'],
  swipe:['Capsule drops','The avatar capsule drops from the machine. The object animation has a separate movement sound below.','gacha'],
  shuffle:['Avatar machine shuffles','The avatar machine agitates before dropping a capsule.','gacha'],
- drumroll:['Winner suspense','The original shuffle followed by the current drumroll ending.','winner'],
+ drumroll:['Winner suspense','The approved snare roll followed by the original ending chime.','winner'],
  'drumroll-end':['Winner suspense ending','The second part of the winner suspense sequence.','winner'],
  cardflip:['A guess flips over','Each guess is revealed; this cue is also called “reveal” in the game.','answer'],
  'avatar-unlock':['Common avatar unlocked','The common avatar is revealed by the machine.','gacha'],
@@ -91,6 +91,12 @@ if(fs.existsSync('art-source/sound-review-2026-10-22/applied-sounds.json')){
   const matchesApplied=clip&&row?.file===clip.file&&crypto.createHash('sha256').update(fs.readFileSync(clip.file)).digest('hex')===clip.sha256&&row.events.length===1&&row.events[0].gain===clip.gain;
   if(matchesApplied){item.choice='keep';item.fingerprint=row.fingerprint;}
   else if(chosen?.choice==='current'&&row?.fingerprint===chosen.fingerprint)item.choice='keep';
+ }
+ if(fs.existsSync('art-source/sound-review-2026-10-22/suspense-approved.json')){
+  const approval=JSON.parse(fs.readFileSync('art-source/sound-review-2026-10-22/suspense-approved.json','utf8'));
+  const valid=Object.values({build:approval.build,ending:approval.ending}).every(c=>crypto.createHash('sha256').update(fs.readFileSync(c.file)).digest('hex')===c.sha256);
+  const expected=[{file:approval.build.file,gain:approval.build.gain},{file:approval.ending.file,gain:approval.ending.gain,afterPrevious:true}];
+  if(valid&&JSON.stringify(rows.find(r=>r.id==='drumroll').events)===JSON.stringify(expected))for(const id of ['drumroll','drumroll-end']){const item=options.baseline.find(r=>r.id===id);item.choice='keep';item.fingerprint=rows.find(r=>r.id===id).fingerprint;}
  }
  fs.writeFileSync('anim/sound-options-data.json',JSON.stringify(options,null,2)+'\n');
 }
