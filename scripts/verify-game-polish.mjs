@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createPolish } from '../anim/game-polish.mjs';
+import { createPolish, INFO_MEDALLIONS, addInfoMedallion } from '../anim/game-polish.mjs';
+
+for (const src of Object.values(INFO_MEDALLIONS)) {
+  assert(fs.existsSync(src), `Missing info icon: ${src}`);
+  assert(!src.includes('banner-'), 'do not shrink a whole menu banner into a tiny icon');
+}
+const decorations = [];
+const heading = {textContent: 'Earn coins',
+  ownerDocument: {createElement: () => ({setAttribute() {}, append(child) {this.child = child;}})},
+  querySelector: () => decorations[0], prepend: node => decorations.unshift(node)};
+addInfoMedallion(heading, INFO_MEDALLIONS['Earn coins']);
+addInfoMedallion(heading, INFO_MEDALLIONS['Earn coins']);
+assert.equal(decorations.length, 1, 'repeated refresh must never nest or duplicate medallions');
+assert.equal(heading.textContent, 'Earn coins');
+assert.equal(decorations[0].child.src, 'icons/coin-v2.png');
 
 const timers = [], sounds = [], classes = () => {
   const values = new Set();

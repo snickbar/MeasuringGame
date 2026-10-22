@@ -25,6 +25,28 @@ export function applyMenuBanner(element, mode) {
   }
 }
 
+// Small information markers only; never decorate menu art, award shields or game objects.
+export const INFO_MEDALLIONS = {
+  'Worlds': 'items/hot-air-balloon.webp', 'Survival': 'items/t-rex.webp',
+  'Daily Challenge': 'icons/toolbar-daily.png', 'Monthly Challenge': 'icons/flair/star.png',
+  'High Stakes': 'items/poker-chip.webp', 'Your collection': 'icons/shop-starter-gift.webp',
+  'Your personal best': 'icons/reactions/trophy.png', 'Your best teams': 'icons/reactions/trophy.png',
+  'Your best team games': 'icons/reactions/trophy.png', 'Your best runs': 'icons/reactions/trophy.png',
+  'By bot accuracy': 'icons/flair/bolt.png',
+  'Earn coins': 'icons/coin-v2.png', 'Scoring': 'icons/reactions/trophy.png',
+  'Closest guess wins': 'icons/reactions/trophy.png', 'Play as a team': 'items/soccer-ball.webp',
+  'Survive together': 'items/t-rex.webp', "Don't run out of lives": 'icons/flair/heart.png',
+  'Find the real answer': 'icons/powerups/item-reveal.png', 'Bet like poker': 'items/poker-chip.webp',
+  'Outlast everyone': 'icons/reactions/trophy.png',
+};
+
+export function addInfoMedallion(heading, src) {
+  if (heading.querySelector('.info-medallion')) return;
+  const doc = heading.ownerDocument, frame = doc.createElement('span'), img = doc.createElement('img');
+  frame.className = 'info-medallion'; frame.setAttribute('aria-hidden', 'true');
+  img.src = src; img.alt = ''; frame.append(img); heading.prepend(frame);
+}
+
 // Cosmetic only: none of these effects grant rewards or change game state.
 export function createPolish({ document: doc = document, reduced = () => false, sound = () => {} } = {}) {
   const celebrated = new Set(), receiptTargets = new WeakMap();
@@ -129,6 +151,10 @@ export function createPolish({ document: doc = document, reduced = () => false, 
       celebrated.add(key); el.classList.add('polish-personal-best'); sound('best');
     });
     artwork(root);
+    for (const heading of root.querySelectorAll('#career-content .cs-h, .dc-card > .dc-big, #teamvteam-content > .cs-h, #teamworlds-content > .cs-h')) {
+      const src = INFO_MEDALLIONS[heading.textContent.trim()];
+      if (src) addInfoMedallion(heading, src);
+    }
   }
   let queued = false;
   const roots = new Set();
