@@ -9700,7 +9700,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
       const nobodyLeft = (hs.chips[hs.winners[0]] || 0) <= 0; // everyone went broke in the same round: no winner
       const iWon = !nobodyLeft && hs.winners?.includes(me);
-      html += `<h2 class="dc-title">${nobodyLeft ? "Everybody went broke!" : iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${nobodyLeft ? "Nobody had coins left, so nobody wins this one." : `${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}`}</p>`;
+      html += `<div class="hs-end-hero">` + gameOutcomeArt(iWon ? "icons/reactions/trophy.png" : isOut || nobodyLeft ? "icons/reactions/nervous.png" : "icons/reactions/clap.png", data.players?.[me]?.avatar);
+      html += `<h2 class="game-outcome-title">${nobodyLeft ? "Everybody went broke!" : iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${nobodyLeft ? "Nobody had coins left, so nobody wins this one." : `${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}`}</p></div>`;
       html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${!nobodyLeft && hs.winners.includes(id) ? " win" : ""}${(hs.chips[id] || 0) <= 0 ? " busted" : ""}"><span class="hs-final-pos">${(hs.chips[id] || 0) <= 0 ? "&times;" : HS.hsPlaceOf(hs, id)}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${(hs.chips[id] || 0) <= 0 ? "Out" : hsFmt(hs.chips[id]) + " &#128176;"}</span></div>`).join("")}</div>`;
       if (hs.seatsAll.includes(me)) {
         const rw = HS.hsRewardFor(hs, me), st = hs.stats?.[me] || {};
@@ -14465,6 +14466,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // opts: { title, icon, tiles (recap, captured before leaving), hint }
+  function gameOutcomeArt(icon, avatarId) {
+    const avatar = avatarId || currentPlayers[currentPlayerId]?.avatar || currentAvatar;
+    return `<div class="game-outcome-art" aria-hidden="true"><span class="game-outcome-avatar">${avatarHtml(avatar)}</span><img class="game-outcome-icon" src="${icon}" alt=""></div>`;
+  }
   function showLeftScreen(reason, opts = {}) {
     hsEnsureTicker(false);
     // Sweep the full screen list (same as openOverlay) rather than a
@@ -14480,7 +14485,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudSubToolbarEl.classList.remove("active"); // the Pause/Exit bar must not sit on top of this screen
     leftReasonEl.textContent = reason;
     document.getElementById("left-title").textContent = opts.title || "You left the game";
-    document.getElementById("left-icon").innerHTML = `<img src="${opts.icon || "icons/reactions/wave.png"}" alt="">`;
+    document.getElementById("left-icon").innerHTML = gameOutcomeArt(opts.icon || "icons/reactions/wave.png");
     fillExitStats(document.getElementById("left-stats"), opts.tiles || []);
     const hintEl = document.getElementById("left-hint");
     hintEl.textContent = opts.hint || "";
@@ -14522,7 +14527,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
     showLeftScreen("The room is now closed for everyone.", {
-      title: "You ended the game", icon: "icons/reactions/trophy.png", tiles,
+      title: "You ended the game", icon: "icons/reactions/padlock.png", tiles,
       hint: "Start a new game any time from the home screen.",
     });
   }
@@ -17087,7 +17092,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
     finalScreenEl.classList.toggle("active", phase === "final");
-    if (phase === "ended") fillExitStats(document.getElementById("ended-stats"), gameRecapTiles());
+    if (phase === "ended") {
+      fillExitStats(document.getElementById("ended-stats"), gameRecapTiles());
+      document.querySelector("#ended-screen .exit-icon").innerHTML = gameOutcomeArt("icons/reactions/padlock.png");
+    }
     endedScreenEl.classList.toggle("active", phase === "ended");
 
     questionViewEl.classList.toggle("active", phase === "question");

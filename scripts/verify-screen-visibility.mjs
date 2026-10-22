@@ -32,8 +32,9 @@ const context = vm.createContext({
   window: {scrollTo: (...args) => {scroll = args;}},
   hsTickHandle: 42, clearInterval: handle => {stopped = handle;},
   leavingGame: true,
+  currentPlayers: {me: {avatar: 'av07'}}, currentPlayerId: 'me', currentAvatar: 'av01',
 });
-for (const name of ['hsEnsureTicker', 'showLeftScreen', 'hsHostTick', 'renderHighStakes']) {
+for (const name of ['avatarHtml', 'gameOutcomeArt', 'hsEnsureTicker', 'showLeftScreen', 'hsHostTick', 'renderHighStakes']) {
   const fn = source.match(new RegExp('  function ' + name + '\\([^\\n]+\\{[\\s\\S]*?\\n  \\}'));
   assert(fn, `Missing function ${name}`);
   vm.runInContext(fn[0], context);
@@ -45,6 +46,9 @@ assert.equal(left.classList.contains('active'), true);
 assert.equal(stopped, 42);
 assert.equal(context.hsTickHandle, null);
 assert.equal(docElement('hs-turn-toast').removed, true);
+assert.match(docElement('left-icon').innerHTML, /avatars\/av07\.png/);
+assert.match(docElement('left-icon').innerHTML, /icons\/reactions\/wave\.png/);
+assert.match(context.gameOutcomeArt('icons/reactions/trophy.png', 'av19'), /avatars\/av19\.png/);
 assert.deepEqual(scroll, [0, 0]);
 // Late callbacks after leaving must not access room state or redraw the board.
 context.hsHostTick();
