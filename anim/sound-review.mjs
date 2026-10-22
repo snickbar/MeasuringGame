@@ -4,6 +4,12 @@ const data=await fetch('./sound-review-data.json').then(r=>{if(!r.ok)throw Error
 const rows=data.rows,key='size-em-up-sound-audit-v2';let choices={},filter='all',page=0,focus=false,epoch=0,ctx,active=[],synthContexts=[];
 try{choices=JSON.parse(localStorage.getItem(key)||'{}');}catch{}
 const current=r=>choices[r.id]?.fingerprint===r.fingerprint?choices[r.id].choice:null;
+const params=new URLSearchParams(location.search);
+if(params.get('baseline')==='options'){
+ try{const baseline=await fetch('./sound-options-data.json').then(r=>{if(!r.ok)throw Error();return r.json();});for(const item of baseline.baseline){const row=rows.find(r=>r.id===item.id);if(row&&!current(row)&&item.choice&&row.fingerprint===item.fingerprint)choices[row.id]={choice:item.choice,fingerprint:item.fingerprint};}save();}
+ catch{$('status').textContent='Your previous review could not load. Use Load choices to restore it.';}
+}
+if(params.get('filter')==='pending')filter='pending';
 function save(){try{localStorage.setItem(key,JSON.stringify(choices));}catch{$('status').textContent='Browser storage is unavailable. Use Save choices before leaving.';}}
 function stop(){epoch++;active.forEach(n=>{try{n.stop();}catch{}});active=[];synthContexts.forEach(c=>c.close().catch(()=>{}));synthContexts=[];document.querySelectorAll('.playing').forEach(el=>el.classList.remove('playing'));}
 const cache=new Map();
