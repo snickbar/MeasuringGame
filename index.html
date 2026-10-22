@@ -3367,6 +3367,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/settings-page.css">
 <link rel="stylesheet" href="anim/cozy-system.css">
 <link rel="stylesheet" href="anim/game-polish.css">
+<link rel="stylesheet" href="anim/ui-delight.css">
 <link rel="stylesheet" href="anim/auto-fit.css">
 </head>
 <body>
@@ -3575,7 +3576,8 @@ if (location.protocol === "file:") {
       <div class="gacha-result-card" id="gacha-result-card">
         <img id="gacha-result-img" src="" alt="">
         <div class="gacha-result-rarity" id="gacha-result-rarity"></div>
-        <button id="gacha-result-close-btn" type="button" class="big-cta">Nice!</button>
+        <button id="gacha-result-equip-btn" type="button" class="big-cta">Equip avatar</button>
+        <button id="gacha-result-close-btn" type="button" class="big-cta">Keep current</button>
       </div>
     </div>
 
@@ -4232,7 +4234,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
   import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
-  var gamePolish;
+  import { createUIDelight } from "./anim/ui-delight.mjs";
+  var gamePolish, uiDelight;
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
@@ -5947,15 +5950,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   async function buyFlairWithCoins(item) {
+    const wasOwned=ownsFlair(item),buyer=deviceId;let purchased=false;
     if ((myProfile.coins || 0) < item.cost) { cosmNote("Not enough coins yet."); return; }
-    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+    const result=await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      purchased=false;
       const profile = current || defaultProfile();
       const cosmetics = profile.cosmetics || defaultCosmeticState();
       const owned = (cosmetics.owned && cosmetics.owned.effects) || {};
       if (owned[item.id] || (profile.coins || 0) < item.cost) return profile;
+      purchased=true;
       return { ...profile, coins: (profile.coins || 0) - item.cost,
         cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, effects: { ...owned, [item.id]: true } } } };
     });
+    if(result.committed&&purchased&&!wasOwned&&buyer===deviceId)uiDelight?.unlock({name:item.name||item.label||"New flair",image:`icons/flair/${item.pic}.png`,equip:()=>equipUnlockedCosmetic(buyer,{"cosmetics/equipped/effects":item.id,"randomEquip/flairs":false})});
   }
   async function equipFlair(id) {
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/effects": id });
@@ -10114,7 +10121,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<span class="wl-meter" role="img" aria-label="${total} of ${WORLD_LEVELS * 3} stars">${groups}</span>`;
   }
   function worldCard(id, img, name, sub, extra) {
-    return `<button type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
+    const world=WORLDS.find(w=>w.name===name),home=world&&HOME_SCREENS.find(h=>h.world===world.id);
+    const scenery=home?` data-world-art="${world.id}" style="--world-art:url('${new URL(home.file,document.baseURI).href}')"`:"";
+    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
   function renderWorlds() {
     if(['question','reveal'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
@@ -11563,22 +11572,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     achJustClaimed = null;
   }
 
+  async function equipUnlockedCosmetic(owner, values) {
+    if(owner!==deviceId)throw Error("Account changed");
+    await update(ref(db, `profiles/${owner}`), values);
+  }
   async function claimAchievement(id) {
     const a = ACHIEVEMENTS.find((x) => x.id === id);
     if (!a || !achClaimable(a)) return;
+    const claimOwner=deviceId;
     achJustClaimed = id;
     achHold[id] = Date.now() + ACH_HOLD_MS;
     setTimeout(() => { delete achHold[id]; if (document.getElementById("achievements-content")) renderAchievementsScreen(); }, ACH_HOLD_MS + 50);
     playSound("roundwin");
+    let newlyClaimed=false;
     const res = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      newlyClaimed=false;
       const profile = current || defaultProfile();
       if ((profile.achClaimed || {})[id]) return profile;
+      newlyClaimed=true;
       const grant = { ...profile, coins: (profile.coins || 0) + a.reward, achClaimed: { ...(profile.achClaimed || {}), [id]: true } };
       if (a.bg) { const cosm = profile.cosmetics || defaultCosmeticState(), own = cosm.owned || {}; grant.cosmetics = { ...cosm, owned: { ...own, backgrounds: { ...(own.backgrounds || {}), [a.bg]: true } } }; }
       if (a.home) { const cosm = grant.cosmetics || profile.cosmetics || defaultCosmeticState(), own = cosm.owned || {}; grant.cosmetics = { ...cosm, owned: { ...own, homeScreens: { ...(own.homeScreens || {}), [a.home]: true } } }; }
       return grant;
     }).catch(() => null);
     if (!res) achJustClaimed = null;
+    if(typeof uiDelight!=="undefined"&&uiDelight&&res?.committed&&newlyClaimed&&claimOwner===deviceId&&a.home){const home=homeScreenOf(a.home);if(home)uiDelight?.unlock({name:home.name+" home screen",image:home.file,wide:true,equip:()=>equipUnlockedCosmetic(claimOwner,{"cosmetics/equipped/homeScreen":home.id,"randomEquip/homeScreens":false})});}
+    else if(typeof uiDelight!=="undefined"&&uiDelight&&res?.committed&&newlyClaimed&&claimOwner===deviceId&&a.bg)uiDelight?.unlock({name:a.bgLabel||"New scene",image:backgroundUrl(a.bg),wide:true,equip:()=>equipUnlockedCosmetic(claimOwner,{"cosmetics/equipped/background":a.bg,"randomEquip/backgrounds":false})});
   }
   async function unclaimAchievement(id) {
     const a = ACHIEVEMENTS.find((x) => x.id === id);
@@ -11892,11 +11911,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // they close it, so there's no path back to a stale reveal state.
     gachaResultCardEl.style.setProperty("--tier-color", tierColor);
     gachaResultCardEl.className = `gacha-result-card ${tier}`;
+    gachaResultImgEl.dataset.avatarId = result;
     gachaResultImgEl.src = `avatars/${result}.png`;
     gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"★".repeat(stars)}`;
     gachaResultOverlayEl.classList.add("show");
   });
 
+  document.getElementById("gacha-result-equip-btn").addEventListener("click", () => {
+    const id=gachaResultImgEl.dataset.avatarId;
+    if(!id||!isAvatarUnlocked(id))return;
+    currentAvatar=id;localStorage.setItem("mg_avatar",id);renderAvatarGrid();renderSettingsAvatarGrid();
+    gachaResultCloseBtn.click();
+  });
   gachaResultCloseBtn.addEventListener("click", () => {
     gachaPullInProgress = false;
     resetGachaScene();
@@ -12501,7 +12527,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       newIds.add(id);
       const li = document.createElement("li");
       if (!isFirstRender && !renderedPlayerListIds.has(id)) {
-        li.style.animation = "popIn 320ms cubic-bezier(.34,1.56,.64,1) both";
+        if (!prefersReducedMotion()) li.animate([{opacity:0,translate:"-10px 0",scale:".97"},{opacity:1,translate:"0 0",scale:"1"}],{duration:300,easing:"ease-out"});
         if (roomState.phase === "waiting") playSound("join");
       }
       const nameSpan = document.createElement("span");
@@ -12510,11 +12536,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const party=!roomState.settings?.solo;
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&party&&id!==currentPlayerId?`<span class="ready-badge ${p.ready?'is-ready':''}">${p.connected===false?'Reconnecting':p.ready?'Ready':'Not ready'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&p.connected===false?'<span class="connection-badge">Reconnecting</span>':''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
-      if(id===currentPlayerId&&party&&roomState.phase==='waiting'){
-        const ready=document.createElement('button');ready.type='button';ready.id='lobby-ready-btn';ready.textContent=p.ready?'Ready ✓':"I'm ready";ready.setAttribute('aria-pressed',String(!!p.ready));ready.title=p.ready?'Tap to undo ready':'Mark yourself ready';li.appendChild(ready);
-      }
       if (botRowsOn) {
         li.classList.add("bot-row");
         const ctl = document.createElement("div");
@@ -13280,13 +13303,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     joinRoomAsPlayer(code, currentName, false, data);
   }
 
-  playerList.addEventListener('click',async e=>{
-    if(!e.target.closest('#lobby-ready-btn')||roomState.phase!=='waiting')return;
-    const button=e.target.closest('button');button.disabled=true;
-    try{await update(ref(db,'rooms/'+currentRoomCode+'/players/'+currentPlayerId),{ready:!currentPlayers[currentPlayerId]?.ready});}
-    catch{lobbyStatusEl.textContent='Could not save Ready. Please try again.';}
-    finally{button.disabled=false;}
-  });
   // Random once, which player's column shows on the left vs right for the whole game - picked
   // here (game start) rather than per-round, so it can't be re-derived from who guessed worse
   // that round (which would make it predictable and inconsistent round to round).
@@ -13323,8 +13339,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // tap doesn't skip straight into the countdown.
   hostStartBtn.addEventListener("click", () => {
     if (hostStartBtn.disabled) return;
-    const humans=Object.values(currentPlayers).filter(p=>!p.isBot),ready=humans.filter(p=>p.ready).length;
-    openExitConfirm('startGame','Start game?',roomState.settings?.solo||ready===humans.length?"Everyone is ready. Let's play!":`${ready} of ${humans.length} players are ready. Start anyway?`);
+    openExitConfirm('startGame','Start game?',"Everyone in the room will join the game. Let's play!");
   });
 
   const hostTransfers = new Set();
@@ -16180,7 +16195,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const previousRecap=document.getElementById('final-session-recap');if(previousRecap)previousRecap.remove();
     const recap=document.createElement('div');recap.id='final-session-recap';recap.className='cozy-panel';
     const me=currentPlayers[currentPlayerId],best=me?.bestGuess;
-    recap.innerHTML=`<b>Your game</b><p>${myFinalScore} points · ${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
+    recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(me?.avatar||currentAvatar)}</span>${myPlace?.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.png" alt="">':''}<b>${myPlace?.rank===1?'You won!':'Your game'}</b></div><div class="summary-result-number">${myFinalScore} <small>points</small></div><p>${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
     finalListEl.after(recap);
     recap.querySelector('button').onclick=async()=>{const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const share=isNativeApp&&window.Capacitor?.Plugins?.Share;if(share){try{await share.share({title:'Size Em Up!',text});}catch{}}else if(navigator.share){try{await navigator.share({title:'Size Em Up!',text});}catch{}}else if(await copyTextToClipboard(text))showAchToast('Result copied!');};
     let rank1Delay = 0;
@@ -17123,7 +17138,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     addBtn.disabled = Object.keys(data.players || {}).length >= (worldsMode ? 2 : FRAME_COUNT);
     renderTeamPicker(data);
     const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
-    const real=Object.values(data.players||{}).filter(p=>!p.isBot),ready=real.filter(p=>p.ready).length;
+    // Ready is intentionally absent; the host starts once the mode has enough players.
     let needsFriend, waitingMsg;
     if (teamMode) {
       // Team vs Team needs at least 2 full (2-member) teams before it can start -
@@ -17147,14 +17162,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     const rules=document.getElementById('lobby-rules');
     rules.innerHTML = teamMode
-      ? `<p>${data.settings?.totalRounds||5} rounds · Team vs Team</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
+      ? `<p>${data.settings?.totalRounds||5} rounds · Team vs Team</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
       : hsMode
-      ? `<p>High Stakes · ${data.settings?.startCoins || HS.HS_START_COINS} coins each · up to ${HS.HS_MAX_ROUNDS} rounds</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
+      ? `<p>High Stakes · ${data.settings?.startCoins || HS.HS_START_COINS} coins each · up to ${HS.HS_MAX_ROUNDS} rounds</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
       : hlMode
-      ? `<p>High/Low Survival · ${data.settings?.lives || HL_LIVES} lives${data.settings?.cap ? ` · up to ${data.settings.cap} rounds` : " · endless"}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
+      ? `<p>High/Low Survival · ${data.settings?.lives || HL_LIVES} lives${data.settings?.cap ? ` · up to ${data.settings.cap} rounds` : " · endless"}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
       : worldsMode
-      ? `<p>5 questions · ${escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || "")}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · ${ready}/${real.length} ready</p>`
-      : `<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}${solo?'':` · ${ready}/${real.length} ready`}</p>`;
+      ? `<p>5 questions · ${escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || "")}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
+      : `<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}</p>`;
     hostStartBtn.textContent='Start game';
     hostStartBtn.disabled = needsFriend;
     hostStartBtn.style.opacity = needsFriend ? ".5" : "";
@@ -17561,6 +17576,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
   gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });
+  uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
 
   // ==================== In-app updates (native app only) ====================
   // 1) LIVE UPDATES - every deploy publishes live/version.json + live/bundle.zip
