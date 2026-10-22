@@ -4,17 +4,28 @@ import vm from 'node:vm';
 const source = fs.readFileSync('index.html', 'utf8');
 const actual = name => source.match(new RegExp('  (?:async )?function ' + name + '\\([^\\n]+\\{[\\s\\S]*?\\n  \\}'))[0];
 
+const initialText={textContent:'0'};
+vm.runInNewContext(source.match(/<script id="restore-visible-coins">([\s\S]*?)<\/script>/)[1],{
+  localStorage:{getItem:key=>key==='mg_visibleWallet'?JSON.stringify({owner:'account',balance:4366}):null},
+  document:{getElementById:()=>initialText},
+});
+assert.equal(initialText.textContent,'4366','restore the current number before deferred modules and auth finish loading');
+
 const walletText = {}, cached = new Map();
 const wallet = vm.createContext({walletAuthReady:false,walletProfileOwner:'guest',deviceId:'account',
   myProfile:{coins:5979},toolbarCoinCountEl:walletText,observedCoinOwner:'guest',observedCoinBalance:5979,
   coinCountTweenActive:false,formatCoinDisplay:String,CACHED_COINS_KEY:'legacy',
-  localStorage:{setItem:(key,value)=>cached.set(key,value)},sparkleCoins(){},prefersReducedMotion:()=>true,toolbarCoinBalanceEl:{}});
+  lastVisibleWallet:null,localStorage:{setItem:(key,value)=>cached.set(key,value)},sparkleCoins(){},prefersReducedMotion:()=>true,toolbarCoinBalanceEl:{}});
 vm.runInContext(actual('renderCoinBalance'),wallet);
 wallet.renderCoinBalance();assert.equal(walletText.textContent,'…');assert.equal(cached.size,0);
 wallet.walletAuthReady=true;wallet.renderCoinBalance();assert.equal(walletText.textContent,'…','never show a different owner’s balance');
 wallet.walletProfileOwner='account';wallet.myProfile.coins=4366;wallet.renderCoinBalance();
 assert.equal(walletText.textContent,'4366');assert.equal(wallet.myProfile.coins,4366,'display fix does not alter coins');
 assert.equal(cached.get('legacy'),'4366');
+wallet.walletAuthReady=false;wallet.walletProfileOwner='guest';wallet.myProfile.coins=5979;
+wallet.renderCoinBalance();assert.equal(walletText.textContent,'4366','Home refresh keeps the last visible account balance while auth restores');
+wallet.walletAuthReady=true;wallet.deviceId='other-account';wallet.renderCoinBalance();
+assert.equal(walletText.textContent,'…','an actual account switch cannot reuse the prior owner’s coins');
 
 const accountElements=new Map();
 const account = vm.createContext({isNativeApp:true,accountUser:{displayName:'Test Player',email:'test@example.com'},

@@ -3381,6 +3381,15 @@ if (location.protocol === "file:") {
   <button id="toolbar-home-btn" class="toolbar-badge-btn" type="button" aria-label="Home"><img src="icons/toolbar-home.png" alt=""></button>
   <div id="toolbar-center">
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
+    <script id="restore-visible-coins">
+      // Restore presentation before the module/auth downloads can paint a temporary zero.
+      try {
+        const saved = JSON.parse(localStorage.getItem("mg_visibleWallet") || "null");
+        const previous = saved?.balance ?? localStorage.getItem("mg_lastCoins");
+        const balance = previous == null ? NaN : Number(previous);
+        if (Number.isFinite(balance) && balance >= 0) document.getElementById("toolbar-coin-count").textContent = balance > 9999 ? "9999+" : String(balance);
+      } catch {}
+    </script>
   </div>
   <div id="toolbar-right-group">
     <button id="toolbar-awards-btn" class="toolbar-badge-btn" type="button" aria-label="Stats"><img src="icons/toolbar-stats.png" alt=""></button>
@@ -4896,6 +4905,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let walletAuthReady = !auth;
   let walletProfileOwner = null;
+  let lastVisibleWallet = null;
+  try { const saved = JSON.parse(localStorage.getItem("mg_visibleWallet") || "null"); if (saved && typeof saved.owner === "string" && Number.isFinite(saved.balance) && saved.balance >= 0) lastVisibleWallet = saved; } catch {}
   const cachedLocalProfile = loadCachedProfile(localDeviceId);
   if (cachedLocalProfile) myProfile = { ...defaultProfile(), ...cachedLocalProfile };
   // Prime the toolbar's coin count synchronously, before Firebase even
@@ -4913,12 +4924,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // which silently killed the ENTIRE script before any event listener ever
   // got attached - that's what "coins at 0 and nothing is clickable" was.
   const CACHED_COINS_KEY = "mg_lastCoins";
+  if (!lastVisibleWallet) {
+    const previous = localStorage.getItem(CACHED_COINS_KEY);
+    const balance = previous == null ? NaN : Number(previous);
+    // Upgrade from the last build's visible balance without treating it as
+    // any account's spendable wallet before sign-in has been restored.
+    if (Number.isFinite(balance) && balance >= 0) lastVisibleWallet = { owner: "", balance };
+  }
   if (!cachedLocalProfile) {
     const cachedCoins = parseInt(localStorage.getItem(CACHED_COINS_KEY), 10);
     if (!isNaN(cachedCoins)) myProfile.coins = cachedCoins;
   }
   const coinCountEl = document.getElementById("toolbar-coin-count");
-  if (coinCountEl) coinCountEl.textContent = walletAuthReady ? (myProfile.coins > 9999 ? "9999+" : String(myProfile.coins || 0)) : "…";
+  const initialCoins = walletAuthReady ? myProfile.coins : lastVisibleWallet?.balance;
+  if (coinCountEl) coinCountEl.textContent = initialCoins == null ? "…" : initialCoins > 9999 ? "9999+" : String(initialCoins);
   let observedCoinOwner = deviceId, observedCoinBalance = myProfile.coins || 0;
   // Set once watchMyProfile() has an active subscription - must be called
   // (if set) before ever reassigning `deviceId` and re-subscribing, or
@@ -7448,8 +7467,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signedIn = !!accountUser;
     settingsSignInBtn.style.display = signedIn ? "none" : "flex";
     document.getElementById("settings-account-label").textContent = signedIn ? "Signed in as " + (accountUser.displayName || accountUser.email || "Google player") : "Playing as a guest";
-    document.getElementById("settings-account-hint").textContent = signedIn ? "Your progress is connected to Google." : "Connect with Google to keep your progress across devices.";
-    settingsSignOutBox.style.display = signedIn ? "flex" : "none";
+    document.getElementById("settings-account-hint").textContent = signedIn ? "Connected with Google." : "Connect with Google to keep your progress across devices.";
+    settingsSignOutBox.style.display = signedIn ? "grid" : "none";
     settingsSignedInEmailEl.textContent = signedIn ? (accountUser.email || accountUser.displayName || "Google account") : "";
   }
   renderAccountUi();
@@ -11091,7 +11110,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderCoinBalance() {
     if (!walletAuthReady || walletProfileOwner !== deviceId) {
-      toolbarCoinCountEl.textContent = "…";
+      const keep = lastVisibleWallet && (!walletAuthReady || lastVisibleWallet.owner === deviceId);
+      toolbarCoinCountEl.textContent = keep ? formatCoinDisplay(lastVisibleWallet.balance) : "…";
       return;
     }
     if (observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance) {
@@ -11103,6 +11123,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
     if (!coinCountTweenActive) toolbarCoinCountEl.textContent = formatCoinDisplay(myProfile.coins);
+    lastVisibleWallet = { owner: deviceId, balance: myProfile.coins || 0 };
+    localStorage.setItem("mg_visibleWallet", JSON.stringify(lastVisibleWallet));
     localStorage.setItem(CACHED_COINS_KEY, String(myProfile.coins));
   }
 
