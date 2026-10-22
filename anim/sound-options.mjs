@@ -19,7 +19,7 @@ async function play(id){
  const stage=$('moment').querySelector('.example'),button=$('moment').querySelector(`[data-play="${id}"]`);
  try{
   ctx||=new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();if(ticket!==epoch)return;
-  stage.classList.add('playing');button.classList.add('playing');$('status').textContent='Playing: '+(id==='current'?'current sound':option.title);
+  stage.classList.add('playing');button.classList.add('playing');$('status').textContent='Playing: '+(id==='current'?'original sound':option.title);
   if(audio.synth){const c=await playSynth(audio.synth,master);if(ticket!==epoch){await c.close();return;}synths.push(c);endTimer=setTimeout(()=>{if(ticket===epoch){stop();$('status').textContent='Finished. Play another option or choose your pick.';}},2000);return;}
   let events=audio.events;
   // Candidate builds use the separate ending choice; Current remains the shipped reference.
@@ -35,8 +35,8 @@ async function play(id){
 }
 function save(){try{localStorage.setItem(key,JSON.stringify(choices));return true;}catch{$('status').textContent='Browser storage is unavailable. Use Save choices before leaving.';return false;}}
 function previewCard(row,o){
- const current=o.id==='current',picked=choice(row)===o.id,label=current?'Current sound':`${o.id.toUpperCase()} · ${o.title}`;
- return `<section class="preview-card ${current?'current':''} ${picked?'picked':''}"><h3>${esc(label)}</h3><p>${esc(current?'The sound that is in the game now.':o.description)}</p><div class="row"><button class="play" data-play="${o.id}">${current?'Play current':'Play '+o.id.toUpperCase()}</button><button class="choose" data-choice="${o.id}" aria-pressed="${picked}">${picked?'Chosen':current?'Keep current':'Choose '+o.id.toUpperCase()}</button></div>${current?'':`<p class="source">${esc(o.sourcePack)} · ${o.events[0].duration.toFixed(1)} sec</p>`}</section>`;
+ const current=o.id==='current',picked=choice(row)===o.id,label=current?'Original sound':`${o.id.toUpperCase()} · ${o.title}`;
+ return `<section class="preview-card ${current?'current':''} ${picked?'picked':''}"><h3>${esc(label)}</h3><p>${esc(current?'The sound from before this review.':o.description)}</p><div class="row"><button class="play" data-play="${o.id}">${current?'Play original':'Play '+o.id.toUpperCase()}</button><button class="choose" data-choice="${o.id}" aria-pressed="${picked}">${picked?'Chosen':current?'Keep original':'Choose '+o.id.toUpperCase()}</button></div>${current?'':`<p class="source">${esc(o.sourcePack)} · ${o.events[0].duration.toFixed(1)} sec</p>`}</section>`;
 }
 function render(){
  if(!rows.length){$('moment').textContent='The sound comparison is unavailable. Please refresh.';$('previous').disabled=$('next').disabled=$('export').disabled=true;return;}

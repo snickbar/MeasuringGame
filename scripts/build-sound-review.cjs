@@ -3,7 +3,7 @@ const fs=require('fs'),vm=require('vm'),crypto=require('crypto');
 const source=fs.readFileSync('index.html','utf8').replaceAll('\r\n','\n');
 const readMap=name=>vm.runInNewContext('('+source.match(new RegExp('const '+name+' = (\\{[\\s\\S]*?\\n  \\});'))[1]+')');
 const files=readMap('SFX_FILES'),anim=readMap('ANIM_SFX_FILES');
-const gain={tick:1,count:.9,timesup:.8,join:.8,leave:.7,emoji:.7};
+const gain=readMap('SFX_VOLUME');
 const meta={
  tap:['Button taps','Selecting a key, answer, or ordinary control.','controls'],
  select:['Selection confirmation','Confirming an answer selection, Second Chance choice, or style choice.','answer'],
@@ -17,10 +17,10 @@ const meta={
  'drumroll-end':['Winner suspense ending','The second part of the winner suspense sequence.','winner'],
  cardflip:['A guess flips over','Each guess is revealed; this cue is also called “reveal” in the game.','answer'],
  'avatar-unlock':['Common avatar unlocked','The common avatar is revealed by the machine.','gacha'],
- 'avatar-ultra':['Ultra avatar unlocked','The ultra avatar reveal currently reuses the machine shuffle file.','gacha'],
+ 'avatar-ultra':['Ultra avatar unlocked','The musical discovery cue for an ultra avatar reveal.','gacha'],
  win:['Game win','The final game celebration; also used when ad bonus coins are credited.','winner'],
  roundwin:['Round win / award claim','A round win, rare avatar, flair preview, or claimed award. Individual star fills have a separate review entry.','winner'],
- count:['Countdown beat','A beat in the pre-game countdown. Coin rewards reuse this file in a separate sequence below.','timer'],
+ count:['Countdown beat','A beat in the pre-game countdown. Coin rewards have their own separate cue.','timer'],
  tick:['Timer running low','The last seconds of the answer timer. Object-counting ticks are reviewed separately.','timer'],
  go:['Countdown finishes','The countdown ends and a question begins.','timer'],
  timesup:['Time is up','The answer deadline expires.','timer'],
@@ -34,20 +34,22 @@ const meta={
  start:['Host starts the game','The host confirms starting a game.','lobby'],
  powerup:['Power-up / turn alert','Power-up feedback and High Stakes turn alerts.','powerup'],
 };
-const rows=Object.entries(files).map(([id,file])=>({id,title:meta[id]?.[0]||id,description:meta[id]?.[1]||'Registered game cue.',scene:meta[id]?.[2]||'controls',group:'Game sounds',events:[{file,gain:gain[id]??.6}],file}));
+const contextual=new Set(['submit','star','coins','lead','best']);
+const rows=Object.entries(files).filter(([id])=>!contextual.has(id)).map(([id,file])=>({id,title:meta[id]?.[0]||id,description:meta[id]?.[1]||'Registered game cue.',scene:meta[id]?.[2]||'controls',group:'Game sounds',events:[{file,gain:gain[id]??.6}],file}));
 const byId=id=>rows.find(r=>r.id===id);
 byId('drumroll').events.push({file:files['drumroll-end'],gain:.6,afterPrevious:true});
 for(const [id,title,description,target,scene]of [
  ['submit','Guess submitted','Your guess locks in: selection sound, followed by a count sound.','select','answer'],
- ['star','A star fills in','Each earned Worlds star pops in; currently the same sound as a round win.','roundwin','stars'],
- ['coins','Coin reward sequence','Three count sounds spaced 110 ms apart, alongside the reward total and coin trail.','count','coins'],
+ ['star','A star fills in','Each earned Worlds star pops in, using the original chime kept in the review.','roundwin','stars'],
+ ['coins','Coin reward sequence','A gathered-coin jingle alongside the reward total and coin trail.','count','coins'],
  ['lead','Taking first place','A player takes the lead; currently the same sound as a perfect result.','perfect','winner'],
  ['best','New personal best','A new personal best; currently the same sound as a perfect result.','perfect','winner'],
 ]){
- const events=[{file:files[target],gain:gain[target]??.6}];
+ const cue=files[id]?id:target;
+ const events=[{file:files[cue],gain:gain[cue]??.6}];
  if(id==='submit')events.push({file:files.count,gain:.9,afterPrevious:true});
- if(id==='coins')for(const delay of [110,220])events.push({file:files.count,gain:.9,delay});
- rows.push({id,title,description,scene,group:'Shared sounds in different moments',events,file:files[target]});
+ if(id==='coins'&&!files.coins)for(const delay of [110,220])events.push({file:files.count,gain:gain.count??.9,delay});
+ rows.push({id,title,description,scene,group:'Contextual sounds',events,file:files[cue]});
 }
 for(const [id,title,description,vol,rate,scene]of [
  ['swipe','Object arrival','The large object arrives. The zoom-in version uses the same sound at 1.25× speed.',.5,1,'stack'],
@@ -78,4 +80,18 @@ synthCode+="if(name==='reveal')ANIM_SYNTH.reveal(.5*volume);else if(name==='hs-c
 fs.writeFileSync('anim/sound-review-synth.mjs',synthCode);
 for(const row of rows){const hash=crypto.createHash('sha256').update(JSON.stringify(row.events));for(const e of row.events)hash.update(fs.readFileSync(e.file));if(row.synth)hash.update(row.synth+synthCode);row.fingerprint=hash.digest('hex').slice(0,12);}
 fs.writeFileSync('anim/sound-review-data.json',JSON.stringify({version:1,builtAt:new Date().toISOString(),rows,registeredFiles:files,animationFiles:anim,aliases,calls},null,2)+'\n');
+// The option comparison stays frozen, but its link to undecided live sounds must know
+// which selected clips have been applied. Never auto-approve an unrelated later edit.
+if(fs.existsSync('art-source/sound-review-2026-10-22/applied-sounds.json')){
+ const applied=JSON.parse(fs.readFileSync('art-source/sound-review-2026-10-22/applied-sounds.json','utf8'));
+ const choices=JSON.parse(fs.readFileSync('art-source/sound-review-2026-10-22/round-2.json','utf8'));
+ const options=JSON.parse(fs.readFileSync('anim/sound-options-data.json','utf8'));
+ for(const item of options.baseline){
+  const row=rows.find(r=>r.id===item.id),chosen=choices.decisions.find(r=>r.id===item.id),clip=applied.find(r=>r.id===item.id);
+  const matchesApplied=clip&&row?.file===clip.file&&crypto.createHash('sha256').update(fs.readFileSync(clip.file)).digest('hex')===clip.sha256&&row.events.length===1&&row.events[0].gain===clip.gain;
+  if(matchesApplied){item.choice='keep';item.fingerprint=row.fingerprint;}
+  else if(chosen?.choice==='current'&&row?.fingerprint===chosen.fingerprint)item.choice='keep';
+ }
+ fs.writeFileSync('anim/sound-options-data.json',JSON.stringify(options,null,2)+'\n');
+}
 console.log(`Sound review: ${rows.length} distinct moments; ${Object.keys(files).length} registered game cues; ${Object.keys(anim).length} animation files; generated synths copied from game source.`);

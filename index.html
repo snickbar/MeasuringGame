@@ -16122,7 +16122,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // pop the star when the fill actually reaches it
         setTimeout(() => {
           if (twSummarySig !== sig) return;
-          m.classList.add("earned", "pop"); playSound("roundwin");
+          m.classList.add("earned", "pop"); playSound("star");
           celebrate(i === 2 ? "spotOn" : "normal");
         }, DUR * (at - prevAvg) / Math.max(0.01, runningAvg - prevAvg));
       });
@@ -17000,15 +17000,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     error: "sfx/crisp/error.wav",
     "popup-open": "sfx/crisp/popup-open.wav",
     "popup-close": "sfx/crisp/popup-close.wav",
-    swipe: "sfx/swipe.mp3",
-    shuffle: "sfx/crisp/shuffle.wav",
+    swipe: "sfx/reviewed/swipe.wav",
+    shuffle: "sfx/reviewed/shuffle.wav",
     drumroll: "sfx/shuffle.mp3",
     "drumroll-end": "sfx/crisp/drumroll-end.wav",
     cardflip: "sfx/cardflip.mp3",
     "avatar-unlock": "sfx/crisp/avatar-unlock.wav",
-    "avatar-ultra": "sfx/crisp/shuffle.wav",
+    "avatar-ultra": "sfx/reviewed/avatar-ultra.wav",
     win: "sfx/win.mp3",
-    roundwin: "sfx/crisp/roundwin.wav",
+    roundwin: "sfx/reviewed/roundwin.wav",
+    star: "sfx/crisp/roundwin.wav",
+    coins: "sfx/reviewed/coins.wav",
     count: "sfx/crisp/count.wav",
     tick: "sfx/crisp/tick.wav",
     go: "sfx/go.mp3",
@@ -17016,12 +17018,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     join: "sfx/join.mp3",
     leave: "sfx/crisp/leave.wav",
     perfect: "sfx/crisp/perfect.wav",
-    streak: "sfx/streak.mp3",
+    streak: "sfx/reviewed/streak.wav",
     answers: "sfx/answers.mp3",
-    winner: "sfx/crisp/winner.wav",
+    winner: "sfx/reviewed/winner.wav",
     emoji: "sfx/crisp/emoji.wav",
     start: "sfx/start.mp3",
-    powerup: "sfx/crisp/powerup.wav",
+    powerup: "sfx/reviewed/powerup.wav",
   };
   // Animation choices are independent of UI choices, including original files kept in the review.
   // The answer-reveal bell remains synthesized; zoomback now uses the selected Cozy sample.
@@ -17032,8 +17034,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     cardflip: "sfx/cardflip.mp3",
     zoomback: "sfx/crisp/anim-zoomback.wav",
   };
-  // Some of the new sounds are very short/quiet at the source; per-sound gain.
-  const SFX_VOLUME = { tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7 };
+  // Reviewed clips use the same gain as the comparison page. Kept cues retain their original mix.
+  const SFX_VOLUME = {
+    tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
+    swipe: 0.85, shuffle: 0.85, "avatar-ultra": 0.85, roundwin: 0.85,
+    streak: 0.85, winner: 0.85, powerup: 0.85, coins: 0.85,
+  };
   const sfxPool = {};
   Object.keys(SFX_FILES).forEach((name) => {
     const a = new Audio(SFX_FILES[name]);
@@ -17079,8 +17085,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function playSound(kind) {
     // Winner suspense is the original shuffle once, followed by Crisp UI level-up.
     // stopAllSfx clears active nodes, so leaving the reveal also cancels the follow-up.
-    if (kind === "star") sfx("roundwin");
-    else if (kind === "coins") { sfx("count"); setTimeout(() => sfx("count"), 110); setTimeout(() => sfx("count"), 220); }
+    if (kind === "star") sfx("star");
+    else if (kind === "coins") sfx("coins");
     else if (kind === "lead" || kind === "best") sfx("perfect");
     else if (kind === "submit") sfx("select", () => sfx("count"));
     else if (kind === "drumroll") sfx("drumroll", () => sfx("drumroll-end"));
