@@ -197,8 +197,8 @@ if (location.protocol === "file:") {
   #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn), #party-screen.active > :not(.screen-back-btn), #teamvteam-screen.active > :not(.screen-back-btn), #teamworlds-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen, #teamworlds-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active, #teamworlds-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #hs-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen, #teamworlds-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #hs-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active, #teamworlds-screen.active { display: block; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -9322,6 +9322,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hsLastTick = new Map();
   function hsHash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); }
   function hsEnsureTicker(on) {
+    if (!on) document.getElementById("hs-turn-toast")?.remove();
     if (on && !hsTickHandle) hsTickHandle = setInterval(() => { hsRefreshTimers(); if (isHost) hsHostTick(); }, 150);
     if (!on && hsTickHandle) { clearInterval(hsTickHandle); hsTickHandle = null; }
   }
@@ -9380,6 +9381,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return Object.keys(hs.out || {}).filter((id) => players[id] && !players[id].isBot && !isPlayerAway(players[id]));
   }
   function hsHostTick() {
+    if (leavingGame) { hsEnsureTicker(false); return; }
     if (roomState.phase !== "hs") { if (!currentRoomCode) hsEnsureTicker(false); return; }
     if (!isHost || hsBusy || roomState.paused) return;
     const hs = roomState.hs; if (!hs) return;
@@ -9682,6 +9684,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }).join("")}</div>`;
   }
   function renderHighStakes(data) {
+    if (leavingGame) return;
     const hs = data.hs;
     hsRenderedAnimating = false;
     if (!hs) { hsContentEl.innerHTML = `<p class="dc-sub">Loading...</p>`; return; }
@@ -14463,6 +14466,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // opts: { title, icon, tiles (recap, captured before leaving), hint }
   function showLeftScreen(reason, opts = {}) {
+    hsEnsureTicker(false);
     // Sweep the full screen list (same as openOverlay) rather than a
     // hand-picked subset - this used to miss any open overlay (Shop,
     // Settings, etc.), which stayed active and visually merged with this
@@ -14485,6 +14489,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     rejoinBtn.hidden = !opts.roomCode;
     rejoinBtn.dataset.code = opts.roomCode || "";
     leftScreenEl.classList.add("active");
+    window.scrollTo(0, 0);
   }
   document.getElementById("left-rejoin-btn").addEventListener("click", () => {
     const code = document.getElementById("left-rejoin-btn").dataset.code;

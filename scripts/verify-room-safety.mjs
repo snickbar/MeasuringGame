@@ -84,7 +84,7 @@ function actual(name) {
 let pending, dbRoom = copy(betRoom);
 const context = vm.createContext({ HS, commitHsState, electedHost, transferHost, console,
   db: {}, ref: (_, path) => path, currentRoomCode: 'TEST', currentPlayerId: 'a', roomState: betRoom,
-  isHost: true, hsBusy: false, nowMs: () => hs.bet.turnEndsAt + 1,
+  isHost: true, hsBusy: false, leavingGame: false, nowMs: () => hs.bet.turnEndsAt + 1,
   hsHash: () => 0, hsEnsureTicker: () => {}, hostTransfers: new Set(),
   runTransaction: (_ref, callback) => { pending = callback; return Promise.resolve({ committed: false }); },
   update: () => { throw Error('bet state must use a transaction'); }
