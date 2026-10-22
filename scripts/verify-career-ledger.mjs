@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {applyCareerRecord,createCareerLedger,historyRows,topScores} from '../anim/career-ledger.mjs';
+import {applyCareerRecord,createCareerLedger,historyRows,topScores,objectFrequency} from '../anim/career-ledger.mjs';
 const fresh=()=>({coins:100,stats:{},worlds:{},seenObjects:{},seenCombos:{},history:[]});
 const round=(key,mode='worlds')=>({kind:'round',key,mode,history:{u:'ant',g:'door',r:.75,rawR:.65,answered:true,s:3,t:1},inc:{spotOns:0,perfects:0}});
 let profile=fresh();
@@ -12,6 +12,15 @@ assert.equal(profile.history.length,3);assert.equal(profile.modeStats.worlds.ans
 assert.deepEqual(applyCareerRecord(profile,round('abandoned_1')),profile);
 profile=applyCareerRecord(profile,{...round('miss','quick'),history:{u:'nail',g:'hammer',answered:false,r:null,s:1,t:2}});
 assert.equal(profile.stats.rounds,4);assert.equal(profile.stats.missedRounds,1);assert.equal(profile.modeStats.quick.answered,0);assert(profile.seenObjects.nail);
+assert.deepEqual(objectFrequency(profile),{ant:3,door:3,nail:1,hammer:1});
+assert.deepEqual(objectFrequency(profile,'quick'),{nail:1,hammer:1});
+assert.deepEqual(objectFrequency(applyCareerRecord(profile,round('abandoned_1'))),objectFrequency(profile),'receipt retries do not double count appearances');
+let longHistory={...fresh(),history:[{u:'legacy',g:'door',s:1,r:1}]};
+for(let i=0;i<305;i++)longHistory=applyCareerRecord(longHistory,round('frequency_'+i));
+assert.equal(longHistory.history.length,300);
+assert.equal(objectFrequency(longHistory).ant,305,'frequency survives rolling history eviction');
+assert.equal(objectFrequency(longHistory).legacy,1,'existing history is seeded once');
+assert.equal(objectFrequency(longHistory,'quick').legacy,1);
 profile=applyCareerRecord(profile,{kind:'match',key:'game1',mode:'quick',won:true,place:1,opponents:['easy'],accuracy:90,t:2});
 profile=applyCareerRecord(profile,{kind:'match',key:'game1',mode:'quick',won:true,place:1,opponents:['easy'],accuracy:90,t:2});
 assert.equal(profile.stats.gamesPlayed,1);assert.equal(profile.stats.gamesWon,1);assert.equal(profile.difficultyStats.easy.wins,1);

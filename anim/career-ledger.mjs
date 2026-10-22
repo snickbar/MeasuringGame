@@ -6,6 +6,25 @@ export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds
 export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
+// Seed older profiles from the history still available; then keep totals even
+// after the rolling history evicts a round. A replayed receipt never increments.
+export function objectFrequency(profile, mode='all'){
+  const saved=profile.objectFrequency;
+  if(saved?.version===1)return {...(mode==='all'?saved.all:saved.modes?.[mode])};
+  const counts={};
+  for(const h of list(profile.history)){
+    if(mode!=='all'&&(h.mode||Object.keys(MODE_CODE).find(m=>MODE_CODE[m]===h.s))!==mode)continue;
+    for(const id of new Set([h.u,h.g].filter(Boolean)))counts[id]=(counts[id]||0)+1;
+  }
+  return counts;
+}
+function recordObjectFrequency(profile,h,mode){
+  const all=objectFrequency(profile),modes={};
+  for(const name of Object.keys(MODE_CODE))modes[name]=objectFrequency(profile,name);
+  modes[mode]={...(modes[mode]||{})};
+  for(const id of new Set([h?.u,h?.g].filter(Boolean))){all[id]=(all[id]||0)+1;modes[mode][id]=(modes[mode][id]||0)+1;}
+  return {version:1,all,modes};
+}
 // Every entry ever recorded, newest first by actual timestamp - never evicted. Works for
 // date-keyed maps (daily/monthly, where key order and t order happen to agree) and for
 // per-game-keyed maps (teamHistory, where keys aren't chronological) alike. Keeps every field
@@ -35,6 +54,7 @@ export function applyCareerRecord(profile,record){
     else inc.missedRounds=1;
     const result=roundCareerProfile(profile,key,inc,record.maxima,record.players||{},record.playerId,h);
     if(!result)return profile;
+    result.objectFrequency=recordObjectFrequency(profile,h,record.mode);
     const mode=record.mode,old=profile.modeStats?.[mode]||{};
     result.modeStats={...profile.modeStats,[mode]:{...old,rounds:(old.rounds||0)+1,answered:(old.answered||0)+(answered?1:0),
       accuracyTotal:(old.accuracyTotal||0)+(answered?roundAccuracy(h.r):0),

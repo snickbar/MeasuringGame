@@ -4241,7 +4241,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
-  import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores } from "./anim/career-ledger.mjs";
+  import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
   import { mountRoomQr } from "./anim/room-qr.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
@@ -5070,6 +5070,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
+          objectFrequency: data.objectFrequency || null,
           stats: { ...(data.stats || {}) },
           modeStats:data.modeStats||{},difficultyStats:data.difficultyStats||{},worldRecords:data.worldRecords||{},
           attemptHistory:Array.isArray(data.attemptHistory)?data.attemptHistory:Object.values(data.attemptHistory||{}),
@@ -8742,6 +8743,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     howtoReturnEl = null;
     openOverlay(howtoScreen);
     overlayReturnScreen = settingsScreen;
+    howtoScreen.scrollTop = 0;
+    window.scrollTo(0, 0);
   });
   settingsCloseBtn.addEventListener("click", closeOverlay);
   // The scoring explainer can be opened from a game screen (Survival's "How scoring works" button); Back from
@@ -10892,10 +10895,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const matches=(myProfile.matches||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
     if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cozy-panel">'+matches.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode])+' · '+(r.won?'Won':'Place '+r.place)+(r.mode==='highstakes'?' · '+r.score+' coins left':' · '+formatAccuracy(r.accuracy)+'%')+'</p>').join('')+'</div>';
 
-    if (hsView) { el.innerHTML = html; return; } // no per-round accuracy graph for High Stakes
+    const frequent = Object.entries(objectFrequency(myProfile, statsMode)).filter(([id,n])=>OBJECT_BY_ID.has(id)&&n>0).sort((a,b)=>b[1]-a[1]||OBJECT_BY_ID.get(a[0]).name.localeCompare(OBJECT_BY_ID.get(b[0]).name)).slice(0,6);
+    const frequencyHtml = `<h3 class="cs-h">Object frequency</h3><div class="cs-card"><p class="cs-note">Your most-seen objects in completed rounds, on either side. Includes missed submissions${statsMode==='all'?'':` in ${escapeHtml(MODE_NAMES[statsMode])}`}. Counts include available past history and keep growing as you play.</p>${frequent.length?frequent.map(([id,n])=>{const ob=OBJECT_BY_ID.get(id);return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase()+ob.name.slice(1))}</span><span class="cs-obj-val">${n} ${n===1?'time':'times'}</span></div>`;}).join(''):'<p class="cs-note">Complete a round to start your list.</p>'}</div>`;
+    if (hsView) { el.innerHTML = html + frequencyHtml; return; } // no per-round accuracy graph for High Stakes
     if (hist.length < 3) {
       html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
-      el.innerHTML = html; return;
+      el.innerHTML = html + frequencyHtml; return;
     }
     // Accuracy over time: average per bucket so a long history still reads as a trend.
     const acc = hist.map((h) => roundAccuracy(h.r));
@@ -10920,14 +10925,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (rows.length) {
       html += `<h3 class="cs-h">By size</h3><div class="cs-card">${rows.map((r) => `<div class="cs-row"><span class="cs-row-name">${r.name}</span><span class="cs-row-bar"><span style="width:${Math.round(r.a)}%"></span></span><span class="cs-row-val">${Math.round(r.a)}%</span></div>`).join("")}<div class="cs-note">Average accuracy, from rounds where the bigger object falls in that size range. Each row needs at least 3 recorded guesses.</div></div>`;
     }
-    // Best / toughest objects (3+ appearances).
+    html += frequencyHtml;
+    // Best / toughest objects (3+ submitted guesses in retained history).
     const agg = new Map();
     hist.forEach((h) => { const a = roundAccuracy(h.r); [h.u, h.g].forEach((id) => { const o = agg.get(id) || { n: 0, sum: 0 }; o.n++; o.sum += a; agg.set(id, o); }); });
     const objs = [...agg.entries()].filter(([, o]) => o.n >= 3).map(([id, o]) => ({ id, n: o.n, a: o.sum / o.n })).sort((x, y) => y.a - x.a);
     if (objs.length >= 2) {
-      const mk = (o) => { const ob = OBJECT_BY_ID.get(o.id); return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase() + ob.name.slice(1))}</span><span class="cs-obj-val">${Math.round(o.a)}%</span></div>`; };
+      const mk = (o) => { const ob = OBJECT_BY_ID.get(o.id); return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase() + ob.name.slice(1))}<small style="display:block">${o.n} guesses</small></span><span class="cs-obj-val">${Math.round(o.a)}%</span></div>`; };
       const k = Math.min(3, Math.floor(objs.length / 2));
-      html += `<h3 class="cs-h">Your best objects</h3><div class="cs-card">${objs.slice(0, k).map(mk).join("")}</div><h3 class="cs-h">Toughest objects</h3><div class="cs-card">${objs.slice(-k).reverse().map(mk).join("")}</div>`;
+      html += `<h3 class="cs-h">Your best objects</h3><div class="cs-card"><p class="cs-note">Highest average accuracy in rounds involving these objects, on either side. Based on your last 300 recorded rounds, with at least 3 submitted guesses per object. Includes power-ups.</p>${objs.slice(0, k).map(mk).join("")}</div><h3 class="cs-h">Toughest objects</h3><div class="cs-card"><p class="cs-note">Lowest average accuracy, using the same rounds and minimum of 3 submitted guesses. These are the objects you find hardest to estimate.</p>${objs.slice(-k).reverse().map(mk).join("")}</div>`;
     }
     el.innerHTML = html;
   }
