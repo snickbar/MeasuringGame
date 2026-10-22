@@ -3469,7 +3469,7 @@ if (location.protocol === "file:") {
     <div id="coin-acquire-panel">
       <div id="coin-pack-row">
         <div id="ad-reward-card" class="coin-pack-card ad-reward-card">
-          <span class="shop-hero-badge">&#127916; Free</span>
+          <span class="shop-hero-badge">Free</span>
           <img class="coin-pack-icon" src="icons/shop-coin-reward.png" alt="">
           <div class="coin-pack-amount">+25</div>
           <div class="coin-pack-label">Coins</div>
@@ -3685,10 +3685,10 @@ if (location.protocol === "file:") {
       <div class="settings-keyboard-tools"><span>Type your name</span><button id="settings-name-clear" type="button" class="settings-cream-btn">Clear</button><button id="settings-name-cancel" type="button" class="settings-cream-btn">Cancel</button></div>
       <div id="settings-name-keyboard" class="custom-kbd"></div>
     </div>
-    <div id="settings-avatar-picker" hidden>
-      <h3>Default avatar</h3>
+    <dialog id="settings-avatar-picker" class="cozy-dialog" aria-labelledby="settings-avatar-title">
+      <div class="avatar-picker-heading"><h3 id="settings-avatar-title">Choose your avatar</h3><button id="settings-avatar-close" type="button" class="settings-cream-btn">Done</button></div>
       <div id="settings-avatar-grid"></div>
-    </div>
+    </dialog>
   </div>
 
   <div class="settings-card">
@@ -4894,6 +4894,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function saveCachedProfile(id, profile) {
     try { localStorage.setItem(profileCacheKey(id), JSON.stringify(profile)); } catch (e) {}
   }
+  let walletAuthReady = !auth;
+  let walletProfileOwner = null;
   const cachedLocalProfile = loadCachedProfile(localDeviceId);
   if (cachedLocalProfile) myProfile = { ...defaultProfile(), ...cachedLocalProfile };
   // Prime the toolbar's coin count synchronously, before Firebase even
@@ -4916,7 +4918,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isNaN(cachedCoins)) myProfile.coins = cachedCoins;
   }
   const coinCountEl = document.getElementById("toolbar-coin-count");
-  if (coinCountEl) coinCountEl.textContent = myProfile.coins > 9999 ? "9999+" : String(myProfile.coins || 0);
+  if (coinCountEl) coinCountEl.textContent = walletAuthReady ? (myProfile.coins > 9999 ? "9999+" : String(myProfile.coins || 0)) : "…";
   let observedCoinOwner = deviceId, observedCoinBalance = myProfile.coins || 0;
   // Set once watchMyProfile() has an active subscription - must be called
   // (if set) before ever reassigning `deviceId` and re-subscribing, or
@@ -5075,6 +5077,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           hsStats: data.hsStats || {},
         };
       }
+      walletProfileOwner = profileId;
       saveCachedProfile(deviceId, myProfile);
       renderProfileDependentUi();
       grantLevelRewards();
@@ -7444,10 +7447,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isNativeApp) return;
     const signedIn = !!accountUser;
     settingsSignInBtn.style.display = signedIn ? "none" : "flex";
-    document.getElementById("settings-account-label").textContent = signedIn ? "Account connected" : "Playing as a guest";
+    document.getElementById("settings-account-label").textContent = signedIn ? "Signed in as " + (accountUser.displayName || accountUser.email || "Google player") : "Playing as a guest";
     document.getElementById("settings-account-hint").textContent = signedIn ? "Your progress is connected to Google." : "Connect with Google to keep your progress across devices.";
     settingsSignOutBox.style.display = signedIn ? "flex" : "none";
-    if (signedIn) settingsSignedInEmailEl.textContent = "Signed in with Google";
+    settingsSignedInEmailEl.textContent = signedIn ? (accountUser.email || accountUser.displayName || "Google account") : "";
   }
   renderAccountUi();
 
@@ -7504,13 +7507,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const targetId = user ? user.uid : localDeviceId;
       if (targetId !== deviceId) {
         const cached = loadCachedProfile(targetId);
+        deviceId = targetId;
+        walletProfileOwner = cached ? targetId : null;
         if (cached) {
           myProfile = { ...defaultProfile(), ...cached };
           renderProfileDependentUi();
         }
-        deviceId = targetId;
         watchMyProfile();
       }
+      walletAuthReady = true;
+      renderCoinBalance();
     });
   }
 
@@ -7520,6 +7526,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let answered=false;const finish=ok=>{if(answered)return;answered=true;dialog.remove();resolve(ok);};dialog.onclick=e=>{const b=e.target.closest('[data-choice]');if(b)finish(b.dataset.choice==='yes');};dialog.oncancel=e=>{e.preventDefault();finish(false);};document.body.append(dialog);dialog.showModal();
   });}
   async function signInWithGoogle() {
+    walletAuthReady = false;
+    renderCoinBalance();
     authFlowInProgress = true;
     try {
       const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
@@ -7559,10 +7567,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       throw error;
     } finally {
       authFlowInProgress = false;
+      walletAuthReady = true;
+      renderCoinBalance();
     }
   }
 
   async function signOutOfGoogle() {
+    walletAuthReady = false;
+    renderCoinBalance();
     authFlowInProgress = true;
     try {
       const FirebaseAuthentication = window.Capacitor.Plugins.FirebaseAuthentication;
@@ -7574,6 +7586,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       watchMyProfile();
     } finally {
       authFlowInProgress = false;
+      walletAuthReady = true;
+      renderCoinBalance();
     }
   }
 
@@ -8495,10 +8509,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const settingsAvatarBigEl = document.getElementById("settings-avatar-big");
   const settingsAvatarPickerEl = document.getElementById("settings-avatar-picker");
   settingsAvatarBigEl.addEventListener("click", () => {
-    const open = settingsAvatarPickerEl.hidden;
-    settingsAvatarPickerEl.hidden = !open;
-    settingsAvatarBigEl.setAttribute("aria-expanded", String(open));
+    settingsAvatarPickerEl.showModal();
+    settingsAvatarBigEl.setAttribute("aria-expanded", "true");
   });
+  document.getElementById("settings-avatar-close").addEventListener("click", () => settingsAvatarPickerEl.close());
+  settingsAvatarPickerEl.addEventListener("close", () => { settingsAvatarBigEl.setAttribute("aria-expanded", "false"); settingsAvatarBigEl.focus(); });
   function renderSettingsAvatarGrid() {
     settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
     settingsAvatarGridEl.innerHTML = "";
@@ -8516,7 +8531,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         renderSettingsAvatarGrid();
         renderAvatarGrid();
         playSound("pick");
-        settingsAvatarPickerEl.hidden = true;
+        settingsAvatarPickerEl.close();
         settingsAvatarBigEl.setAttribute("aria-expanded", "false");
       });
       settingsAvatarGridEl.appendChild(btn);
@@ -8605,6 +8620,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     screenEl.classList.add("active");
     const heading=screenEl.querySelector("h1,h2,[role=heading]");if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+    if ([settingsScreen, gachaScreen, careerScreenEl, achievementsScreen, itemsScreen, soloScreenEl, partyScreenEl].includes(screenEl)) overlayReturnScreen = null;
     syncOverlayReturnFlag();
     playSound("popup-open");
   }
@@ -8799,6 +8815,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (currentActive && !OVERLAY_SCREENS.includes(currentActive)) overlayReturnScreen = currentActive;
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     target.classList.add("active");
+    overlayReturnScreen = null;
     syncOverlayReturnFlag();
     careerLastTab = tab;
     document.querySelectorAll(".career-tabs .career-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
@@ -9156,7 +9173,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
       ${card("pm-classic", "icons/home-host.png", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic", "icons/banner-blank-orange.png")}
       ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam", "icons/banner-blank-green.png")}
-      ${card("pm-teamworlds", "items/hot-air-balloon.webp", "Team Worlds", "You and a partner guess together &mdash; we average you", "teamworlds", "icons/banner-blank-blue.png")}${HL_PREVIEW ? card("pm-hlsurvival", "items/t-rex.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.png") : ""}
+      ${card("pm-teamworlds", "items/hot-air-balloon.webp", "Team Worlds", "Your guesses, averaged together", "teamworlds", "icons/banner-blank-blue.png")}${HL_PREVIEW ? card("pm-hlsurvival", "items/t-rex.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.png") : ""}
       ${card("pm-highstakes", "items/poker-chip.webp", "High Stakes", "Bet your coins on the real answer &mdash; bluff, raise, outlast", "highstakes", "icons/banner-blank-purple.png")}`;
   }
   function openPartyHub() {
@@ -11073,6 +11090,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return n > COIN_DISPLAY_CAP ? COIN_DISPLAY_CAP + "+" : String(n);
   }
   function renderCoinBalance() {
+    if (!walletAuthReady || walletProfileOwner !== deviceId) {
+      toolbarCoinCountEl.textContent = "…";
+      return;
+    }
     if (observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance) {
       sparkleCoins(toolbarCoinBalanceEl, prefersReducedMotion());
     }
@@ -11424,6 +11445,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const waiting = real.filter(achClaimable).length;
     const btn = document.getElementById("toolbar-awards-btn");
     if (btn) btn.classList.toggle("has-claim", real.some(achClaimable));
+    updateCareerDot();
     const rewardText = (a) => (a.fantasy ? `Unlocks the ${a.fantasyLabel}` : a.bg ? `Scene: ${a.bgLabel}` : a.home ? `Home screen: ${a.homeLabel}` : `+${a.reward} coins`);
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
@@ -14434,11 +14456,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const total = (roomState.settings || currentSettings).totalRounds || 5;
     const round = Math.min(roomState.round || 1, total);
     const tiles = [];
+    const finished = roomState.phase === "final" || roomState.hs?.stage === "over";
+    if (!finished) tiles.push(["Not finished", "Game status"]);
     if (roomState.settings?.mode === "highstakes" && roomState.hs) {
       // Points and accuracy mean nothing here: the recap is about coins and where you finished.
       const hs = roomState.hs, mine = hs.chips?.[currentPlayerId] || 0, ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
       tiles.push([`${Math.round(mine)}`, "Coins left"]);
-      tiles.push(mine > 0 ? [`${ord(HS.hsPlaceOf(hs, currentPlayerId))} of ${hs.seatsAll.length}`, "Place"] : ["Knocked out", "Result"]);
+      if (finished) tiles.push(mine > 0 ? [`${ord(HS.hsPlaceOf(hs, currentPlayerId))} of ${hs.seatsAll.length}`, "Place"] : ["Knocked out", "Result"]);
       tiles.push([`${Math.min(hs.round || 0, HS.HS_MAX_ROUNDS)} of ${HS.HS_MAX_ROUNDS}`, "Round reached"]);
       tiles.push([currentRoomCode, "Room code"]);
       return tiles;
@@ -14452,7 +14476,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const mine = ranked.find((e) => e.id === currentPlayerId);
       const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
       tiles.push([`${me.score || 0}`, "Your score"]);
-      if (mine && ids.length > 1) tiles.push([`${ord(mine.rank)} of ${ids.length}`, "Rank"]);
+      if (finished && mine && ids.length > 1) tiles.push([`${ord(mine.rank)} of ${ids.length}`, "Rank"]);
     }
     tiles.push([`${round} of ${total}`, "Round reached"]);
     if (me.roundsCounted) tiles.push([`${formatAccuracy(me.accuracySum / me.roundsCounted)}%`, "Avg accuracy"]);

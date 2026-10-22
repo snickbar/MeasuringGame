@@ -105,7 +105,7 @@ for(const failAt of [-1,1,'cancel']){
   ref:(_,path)=>path.split('/')[1],runTransaction:signDb.transaction,get:async id=>({val:()=>clone(signDb.records[id]??null)}),
   saveCachedProfile:(id,p)=>cache.set(id,clone(p)),loadCachedProfile:id=>cache.get(id),
   localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)??null,removeItem:k=>storage.delete(k)},
-  renderAccountUi(){},renderProfileDependentUi(){},watchMyProfile(){},console:{warn(){}},
+  renderAccountUi(){},renderProfileDependentUi(){},watchMyProfile(){},renderCoinBalance(){},walletAuthReady:true,walletProfileOwner:'guest',console:{warn(){}},
   resolveStarterAuth:()=>{},onAuthStateChanged:(_,callback)=>{restoredCallback=callback}});
  vm.runInContext(source.match(/  async function signInWithGoogle\(\) \{[\s\S]*?\n  \}/)[0],sign);
  await sign.signInWithGoogle().catch(()=>{});
@@ -129,7 +129,7 @@ for(const failAt of [-1,1,'cancel']){
 // manual Claim button, and both rewards remain separate, named rows.
 const content={innerHTML:''};
 const ui=vm.createContext({STARTER_AWARDS,myProfile:guest,ACH_CATS:['Getting started'],ACH_ICON_IDS:new Set(),TROPHY_SVG:'',
- achHideDone:false,achJustClaimed:null,achHold:{},escapeHtml:s=>s,
+ achHideDone:false,achJustClaimed:null,achHold:{},escapeHtml:s=>s,updateCareerDot(){},
  document:{getElementById:id=>id==='achievements-content'?content:{classList:{toggle(){}}}}});
 vm.runInContext(source.slice(source.indexOf('  const ACHIEVEMENTS = [];'),source.indexOf('  function achTier(')),ui);
 for(const name of ['achDone','achClaimable'])vm.runInContext(source.match(new RegExp('  function '+name+'\\([^\\n]+'))[0],ui);

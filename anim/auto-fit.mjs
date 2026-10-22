@@ -36,8 +36,11 @@ export function installAutoFit({ document: doc = document, window: win = window 
   }
   function fit(box) {
     if (!visible(box) || box.matches('[data-no-autofit]')) return;
+    // Illustrated menu cards have a fixed art box and a separate caption box.
+    // Fit that caption once; fitting both parent and child resets the same labels twice.
+    if (box.matches('.sh-banner') && box.querySelector('.sh-tx')) return;
     const nodes = labelNodes(box); if (!nodes.length) return;
-    const singleLine = box.dataset.fitSingleLine === 'true' || box.matches('.bot-btn,.dc-btn,.coin-reward-continue,#host-start-btn,#final-home-btn,#play-again-btn');
+    const singleLine = box.dataset.fitSingleLine === 'true' || box.matches('.bot-btn,.dc-btn,.coin-pack-buy-btn,.coin-reward-continue,#host-start-btn,#final-home-btn,#play-again-btn');
     const labels = [...new Set([box, ...nodes.map(n => n.parentElement)])];
     labels.forEach(el => { remember(el); reset(el); });
     // Try keeping complete words first, even if an existing anywhere rule
