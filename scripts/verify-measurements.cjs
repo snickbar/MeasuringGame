@@ -38,6 +38,8 @@ for (const [dimension, members] of Object.entries(groups)) {
 for (const id of Object.keys(details)) assert(objects.has(id), 'Unknown detail ID: '+id);
 for (const [id, mm] of Object.entries({'t-rex':4600,'statue-of-liberty':93000,shuttlecock:85,'baseball-bat':840,necktie:500,mailbox:1400,earbuds:1200,'earbuds-case':60,'grand-canyon':1857000,rainbow:6000000,'soccer-goal':7320,'boeing-737':39500})) assert.equal(objects.get(id).mm, mm, id);
 assert.equal(objects.get('t-rex').measurement.dimension,'height');
+assert.equal(objects.get('shipping-container').mm,12192,'40-foot shipping container');
+assert.equal(question({unitId:'deer',targetId:'shipping-container'}).answer,12192/1800);
 assert(prompt(objects.get('penny'),objects.get('t-rex')).endsWith('height of a T. rex?'));
 assert.equal(objects.get('earbuds').name, 'wired earbuds');
 assert.equal(objects.get('earbuds-case').name, 'wireless earbuds case');

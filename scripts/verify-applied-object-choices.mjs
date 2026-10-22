@@ -9,6 +9,7 @@ for(const row of applied.objects){
   const expected=structuredClone(row.settings);
   // A later explicit choice disabled the witch hat's rotation on both sides.
   if(row.id==='witch-hat'){expected.orientation.leanL='none';expected.orientation.leanR='none';}
+  if(row.id==='shipping-container')expected.mm=12192;
   assert.deepEqual(validateSettings(currentSettings(actual),catalog.types),validateSettings(expected,catalog.types),'game settings: '+row.id);
   const originalRow=original.objects.find(o=>o.id===row.id);
   if(row.id!=='t-rex')assert.deepEqual(row.settings,originalRow.settings,'exact exported choice: '+row.id);

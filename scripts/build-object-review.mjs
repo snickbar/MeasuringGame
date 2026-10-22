@@ -32,7 +32,8 @@ const resolvedDrafts={};
 const originalChoices=new URL('art-source/object-review/original-choices.json',root),appliedChoices=new URL('art-source/object-review/applied-choices.json',root);
 if(fs.existsSync(originalChoices)&&fs.existsSync(appliedChoices)){
   const original=JSON.parse(fs.readFileSync(originalChoices)),applied=JSON.parse(fs.readFileSync(appliedChoices));
-  for(const row of applied.objects){const before=original.objects.find(o=>o.id===row.id);if(before&&JSON.stringify(row.settings)!==JSON.stringify(before.settings))resolvedDrafts[row.id]={before:before.current,requested:before.settings,applied:row.settings};}
+  const corrections=JSON.parse(fs.readFileSync(new URL('art-source/object-review/measurement-resolutions.json',root)));
+  for(const row of applied.objects){const before=original.objects.find(o=>o.id===row.id),correction=corrections[row.id],settings=correction?{...row.settings,mm:correction.mm,measurement:correction.measurement}:row.settings;if(before&&JSON.stringify(settings)!==JSON.stringify(before.settings))resolvedDrafts[row.id]={before:before.current,requested:before.settings,applied:settings};}
 }
 fs.writeFileSync(new URL('anim/object-review-data.json',root),JSON.stringify({version:1,types:sandbox.result.types,resolvedDrafts,objects},null,2)+'\n');
 // Use the game's actual grammar, including articles, qualifiers and proper names.
