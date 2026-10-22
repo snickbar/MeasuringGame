@@ -6,6 +6,12 @@ const catalog=JSON.parse(fs.readFileSync('anim/object-review-data.json','utf8'))
 const ORIENT=JSON.parse(fs.readFileSync('anim/orient-data.js','utf8').match(/export const ORIENT = (\{[^\n]+\});/)[1]);
 const manifest=JSON.parse(fs.readFileSync('art-source/large-objects-2026-10/manifest.json','utf8'));
 const picks=JSON.parse(fs.readFileSync('art-source/object-review-large-objects/applied-choices.json','utf8'));
+// Later approved measurement corrections supersede the archived phone export.
+const resolutions=JSON.parse(fs.readFileSync('art-source/object-review/measurement-resolutions.json','utf8'));
+for(const row of picks.objects)if(resolutions[row.id]){
+  row.settings.mm=resolutions[row.id].mm;
+  row.settings.measurement=resolutions[row.id].measurement;
+}
 assert.deepEqual(validatePicks(picks,catalog),{},'All phone-exported choices are applied');
 assert.equal(manifest.objects.length,12);
 assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,373);

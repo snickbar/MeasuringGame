@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import {currentSettings,validateSettings,validatePicks} from '../anim/object-review-model.mjs';
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url),'utf8'));
 const applied=read('art-source/object-review/applied-choices.json'),original=read('art-source/object-review/original-choices.json'),report=read('art-source/object-review/change-report.json'),catalog=read('anim/object-review-data.json');
+const resolutions=read('art-source/object-review/measurement-resolutions.json');
 assert.equal(report.length,22);assert.equal(applied.objects.length,479);
 for(const row of applied.objects){
   const actual=catalog.objects.find(o=>o.id===row.id);
   const expected=structuredClone(row.settings);
   // A later explicit choice disabled the witch hat's rotation on both sides.
   if(row.id==='witch-hat'){expected.orientation.leanL='none';expected.orientation.leanR='none';}
-  if(row.id==='shipping-container')expected.mm=12192;
+  if(resolutions[row.id]){expected.mm=resolutions[row.id].mm;expected.measurement=resolutions[row.id].measurement;}
   assert.deepEqual(validateSettings(currentSettings(actual),catalog.types),validateSettings(expected,catalog.types),'game settings: '+row.id);
   const originalRow=original.objects.find(o=>o.id===row.id);
   if(row.id!=='t-rex')assert.deepEqual(row.settings,originalRow.settings,'exact exported choice: '+row.id);
