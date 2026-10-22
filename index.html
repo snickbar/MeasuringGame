@@ -4234,8 +4234,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
   import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
+  import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
-  var gamePolish, uiDelight;
+  var gamePolish, uiDelight, discoveryUI;
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
@@ -4419,6 +4420,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     av310: "default",
     av311: "default",
     av312: "default",
+    av314: "default", av315: "default", av316: "default", av317: "default",
+    av318: "default", av319: "default", av320: "default", av321: "default",
+    av322: "default", av323: "default", av324: "default", av325: "default",
     av22: "common",
     av21: "common",
     av126: "common",
@@ -4997,6 +5001,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
   }
   function renderProfileDependentUi() {
+    discoveryUI?.refresh();
     syncFlairToRoom();
     renderCoinBalance();
     renderAvatarGrid();
@@ -5073,6 +5078,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             ? (data.activeReactions[0] === "none" ? ["none"] : data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean))
             : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
           seenObjects: { ...(data.seenObjects || {}) },
+          objectDiscoveries: { ...(data.objectDiscoveries || {}) },
           seenCombos: { ...(data.seenCombos || {}) },
           objectFrequency: data.objectFrequency || null,
           stats: { ...(data.stats || {}) },
@@ -6180,6 +6186,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // room (name collisions are otherwise impossible: every value here is
   // unique, and this map has exactly one entry per id in AVATARS).
   const BOT_NAME_BY_AVATAR = {
+    av314: "CurlyKai", av315: "BookishBea", av316: "SilverSkye", av317: "FreckleFrank",
+    av318: "GrandmaMei", av319: "GrandpaDev", av320: "PaddlePip", av321: "PangoPenny",
+    av322: "TapirToby", av323: "PackPoppy", av324: "StoryStella", av325: "PalettePax",
     av07: "GigglesGwen", av19: "CoolCasey", av06: "ChillCharlie", av20: "BubblyBree",
     av166: "CozyCraig", av165: "SunnySadie", av50: "ReelRandy", av43: "KnitNana",
     av79: "GrandpaGus", av114: "GrannyGrace", av02: "WhiskerWally", av05: "PawPatch",
@@ -6269,7 +6278,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Themed bot names: the avatar's key word (or just its first letter for
   // people) picks an alliterative first name, e.g. owl -> "Ollie Owl". Kept
   // to 12 characters, the player-name limit.
-  const AV_NAMEHINT = {"av307":"=g","av308":"Panda","av309":"Mug","av310":"=b","av311":"Corgi","av312":"Clock","av313":"=g","av01":"Bear","av02":"Cat","av03":"Owl","av04":"Aviator","av05":"Puppy","av06":"=b","av07":"=g","av08":"Panda","av09":"Dragon","av10":"Unicorn","av103":"Baker","av104":"Teacher","av105":"Farmer","av108":"=t","av11":"Astronaut","av111":"Doctor","av112":"Pilot","av114":"=g","av116":"Nutcracker","av120":"Spirit","av121":"Hanukkah","av124":"=p","av125":"=c","av126":"=b","av13":"Knight","av131":"Carpenter","av141":"Snake","av142":"Frog","av143":"Turtle","av145":"Macaw","av146":"Gecko","av149":"Basketball","av15":"Ninja","av150":"Soccer","av151":"Baseball","av152":"Volleyball","av153":"Sun","av154":"Football","av155":"Moon","av156":"Banana","av157":"Spider","av158":"Ladybug","av159":"Ant","av16":"Robot","av160":"Butterfly","av162":"Rose","av164":"Bird","av165":"=w","av166":"=b","av168":"Duckling","av169":"Kangaroo","av170":"Crab","av19":"=s","av20":"=b","av21":"=t","av22":"=a","av24":"Explorer","av25":"Chef","av26":"Fairy","av27":"Ghost","av28":"Slime","av29":"Crocodile","av31":"Cat","av32":"Pug","av33":"Retriever","av34":"Lion","av35":"Elephant","av38":"Giraffe","av39":"Monster","av40":"Creature","av41":"Dragon","av42":"Dragon","av43":"=k","av44":"=s","av45":"=b","av46":"Scientist","av47":"=s","av48":"=p","av49":"=a","av51":"Vampire","av52":"Werewolf","av53":"Mummy","av54":"Zombie","av55":"Robot","av58":"Pterodactyl","av59":"Shark","av60":"Cat","av61":"Cat","av62":"Octopus","av63":"Koala","av64":"Penguin","av65":"Sloth","av67":"Bat","av68":"Bunny","av69":"Helmet","av70":"=g","av72":"=c","av73":"Alien","av74":"Hedgehog","av75":"Chemist","av76":"Police","av77":"Handyman","av78":"=b","av79":"=g","av80":"Gingerbread","av83":"Snowman","av87":"Penguin","av88":"Kwanzaa","av89":"=c","av90":"Bear","av91":"Yeti","av92":"Carolers","av93":"=t","av94":"Krampus","av96":"King","av98":"Queen","av99":"=s","av117":"Reindeer","av118":"Santa","av119":"Elf","av133":"=h","av167":"Pigeon","av17":"Robot","av57":"T-rex","av97":"Skater","av100":"Lumberjack","av12":"Wizard","av148":"Fishbowl","av161":"Sunflower","av163":"Lily","av50":"=o","av81":"=p","av95":"Nicholas","av101":"Holly","av122":"Angel","av128":"Construction","av129":"Chef","av130":"Mailman","av132":"Nurse","av14":"Captain","av144":"Hamster","av18":"=s","av30":"Cat","av36":"Monkey","av171":"=g","av172":"=g","av173":"=o","av174":"=l","av175":"=m","av176":"=b","av177":"=f","av178":"=l","av179":"=h","av180":"=w","av181":"Firefighter","av182":"Puppy","av183":"Dj","av184":"Diver","av185":"Diwali","av186":"Eid","av187":"Sugar","av189":"Valentine","av190":"Pilgrim","av191":"Leprechaun","av192":"Raccoon","av193":"Panda","av194":"Otter","av195":"Capybara","av196":"Llama","av197":"Flamingo","av198":"Toucan","av199":"Peacock","av200":"Hippo","av201":"Zebra","av202":"Cow","av203":"Pig","av204":"Chicken","av205":"Horse","av206":"Deer","av207":"Squirrel","av208":"Mouse","av209":"Bee","av210":"Snail","av211":"Whale","av212":"Dolphin","av213":"Seahorse","av214":"Jelly","av215":"Pufferfish","av216":"Narwhal","av217":"Walrus","av218":"Seal","av219":"Triceratops","av220":"Stegosaurus","av221":"Mammoth","av222":"Sabertooth","av223":"Dodo","av224":"Axolotl","av225":"Frankenstein","av226":"Skeleton","av227":"Witch","av228":"Goblin","av229":"Troll","av230":"Gremlin","av231":"Imp","av232":"Bigfoot","av233":"Gargoyle","av234":"Nessie","av235":"Mimic","av236":"Shroom","av237":"Tree","av238":"Pumpkin","av239":"Mermaid","av240":"Archer","av241":"Dwarf","av242":"Centaur","av243":"Genie","av244":"Jester","av245":"Bard","av246":"Princess","av247":"Prince","av248":"Queen","av249":"Paladin","av250":"Mage","av251":"Kitsune","av252":"Tanuki","av253":"Phoenix","av254":"Griffin","av255":"Pegasus","av256":"Minotaur","av257":"Medusa","av258":"Cupcake","av259":"Pizza","av260":"Taco","av261":"Sushi","av262":"Donut","av263":"Boba","av264":"Ice","av265":"Cactus","av266":"Mushroom","av268":"Lightbulb","av269":"Rainbow","av270":"Bolt","av271":"Snowflake","av272":"Saturn","av273":"Trophy","av274":"Piggy","av275":"Ruler","av276":"Tape","av277":"Pencil","av278":"Dragon","av279":"Gacha","av280":"Whale","av281":"Cat","av282":"Owl","av283":"Fox","av284":"Golem","av285":"Golem","av286":"Phoenix","av287":"Dragon","av288":"Wolf","av289":"Jelly","av290":"Kraken","av291":"Dragon","av292":"Pirate","av293":"Spirit","av294":"Giant","av295":"Fox","av296":"Cat","av297":"Cat","av298":"Kitten","av299":"Glitch","av300":"Coin","av301":"Knight","av302":"Ruler","av303":"Pirate","av304":"Archer","av305":"Shieldmaiden","av306":"Druid"};
+  const AV_NAMEHINT = {"av314":"=k","av315":"=b","av316":"=s","av317":"=f","av318":"=m","av319":"=d","av320":"Platypus","av321":"Pangolin","av322":"Tapir","av323":"Backpack","av324":"Book","av325":"Palette","av307":"=g","av308":"Panda","av309":"Mug","av310":"=b","av311":"Corgi","av312":"Clock","av313":"=g","av01":"Bear","av02":"Cat","av03":"Owl","av04":"Aviator","av05":"Puppy","av06":"=b","av07":"=g","av08":"Panda","av09":"Dragon","av10":"Unicorn","av103":"Baker","av104":"Teacher","av105":"Farmer","av108":"=t","av11":"Astronaut","av111":"Doctor","av112":"Pilot","av114":"=g","av116":"Nutcracker","av120":"Spirit","av121":"Hanukkah","av124":"=p","av125":"=c","av126":"=b","av13":"Knight","av131":"Carpenter","av141":"Snake","av142":"Frog","av143":"Turtle","av145":"Macaw","av146":"Gecko","av149":"Basketball","av15":"Ninja","av150":"Soccer","av151":"Baseball","av152":"Volleyball","av153":"Sun","av154":"Football","av155":"Moon","av156":"Banana","av157":"Spider","av158":"Ladybug","av159":"Ant","av16":"Robot","av160":"Butterfly","av162":"Rose","av164":"Bird","av165":"=w","av166":"=b","av168":"Duckling","av169":"Kangaroo","av170":"Crab","av19":"=s","av20":"=b","av21":"=t","av22":"=a","av24":"Explorer","av25":"Chef","av26":"Fairy","av27":"Ghost","av28":"Slime","av29":"Crocodile","av31":"Cat","av32":"Pug","av33":"Retriever","av34":"Lion","av35":"Elephant","av38":"Giraffe","av39":"Monster","av40":"Creature","av41":"Dragon","av42":"Dragon","av43":"=k","av44":"=s","av45":"=b","av46":"Scientist","av47":"=s","av48":"=p","av49":"=a","av51":"Vampire","av52":"Werewolf","av53":"Mummy","av54":"Zombie","av55":"Robot","av58":"Pterodactyl","av59":"Shark","av60":"Cat","av61":"Cat","av62":"Octopus","av63":"Koala","av64":"Penguin","av65":"Sloth","av67":"Bat","av68":"Bunny","av69":"Helmet","av70":"=g","av72":"=c","av73":"Alien","av74":"Hedgehog","av75":"Chemist","av76":"Police","av77":"Handyman","av78":"=b","av79":"=g","av80":"Gingerbread","av83":"Snowman","av87":"Penguin","av88":"Kwanzaa","av89":"=c","av90":"Bear","av91":"Yeti","av92":"Carolers","av93":"=t","av94":"Krampus","av96":"King","av98":"Queen","av99":"=s","av117":"Reindeer","av118":"Santa","av119":"Elf","av133":"=h","av167":"Pigeon","av17":"Robot","av57":"T-rex","av97":"Skater","av100":"Lumberjack","av12":"Wizard","av148":"Fishbowl","av161":"Sunflower","av163":"Lily","av50":"=o","av81":"=p","av95":"Nicholas","av101":"Holly","av122":"Angel","av128":"Construction","av129":"Chef","av130":"Mailman","av132":"Nurse","av14":"Captain","av144":"Hamster","av18":"=s","av30":"Cat","av36":"Monkey","av171":"=g","av172":"=g","av173":"=o","av174":"=l","av175":"=m","av176":"=b","av177":"=f","av178":"=l","av179":"=h","av180":"=w","av181":"Firefighter","av182":"Puppy","av183":"Dj","av184":"Diver","av185":"Diwali","av186":"Eid","av187":"Sugar","av189":"Valentine","av190":"Pilgrim","av191":"Leprechaun","av192":"Raccoon","av193":"Panda","av194":"Otter","av195":"Capybara","av196":"Llama","av197":"Flamingo","av198":"Toucan","av199":"Peacock","av200":"Hippo","av201":"Zebra","av202":"Cow","av203":"Pig","av204":"Chicken","av205":"Horse","av206":"Deer","av207":"Squirrel","av208":"Mouse","av209":"Bee","av210":"Snail","av211":"Whale","av212":"Dolphin","av213":"Seahorse","av214":"Jelly","av215":"Pufferfish","av216":"Narwhal","av217":"Walrus","av218":"Seal","av219":"Triceratops","av220":"Stegosaurus","av221":"Mammoth","av222":"Sabertooth","av223":"Dodo","av224":"Axolotl","av225":"Frankenstein","av226":"Skeleton","av227":"Witch","av228":"Goblin","av229":"Troll","av230":"Gremlin","av231":"Imp","av232":"Bigfoot","av233":"Gargoyle","av234":"Nessie","av235":"Mimic","av236":"Shroom","av237":"Tree","av238":"Pumpkin","av239":"Mermaid","av240":"Archer","av241":"Dwarf","av242":"Centaur","av243":"Genie","av244":"Jester","av245":"Bard","av246":"Princess","av247":"Prince","av248":"Queen","av249":"Paladin","av250":"Mage","av251":"Kitsune","av252":"Tanuki","av253":"Phoenix","av254":"Griffin","av255":"Pegasus","av256":"Minotaur","av257":"Medusa","av258":"Cupcake","av259":"Pizza","av260":"Taco","av261":"Sushi","av262":"Donut","av263":"Boba","av264":"Ice","av265":"Cactus","av266":"Mushroom","av268":"Lightbulb","av269":"Rainbow","av270":"Bolt","av271":"Snowflake","av272":"Saturn","av273":"Trophy","av274":"Piggy","av275":"Ruler","av276":"Tape","av277":"Pencil","av278":"Dragon","av279":"Gacha","av280":"Whale","av281":"Cat","av282":"Owl","av283":"Fox","av284":"Golem","av285":"Golem","av286":"Phoenix","av287":"Dragon","av288":"Wolf","av289":"Jelly","av290":"Kraken","av291":"Dragon","av292":"Pirate","av293":"Spirit","av294":"Giant","av295":"Fox","av296":"Cat","av297":"Cat","av298":"Kitten","av299":"Glitch","av300":"Coin","av301":"Knight","av302":"Ruler","av303":"Pirate","av304":"Archer","av305":"Shieldmaiden","av306":"Druid"};
   const BOT_FIRST = {"a":["Abe","Ava","Axel","Amy"],"b":["Bo","Bea","Ben","Buzz"],"c":["Cy","Cleo","Cody","Coco"],"d":["Dex","Dot","Dan","Dara"],"e":["Ed","Eve","Elmo","Etta"],"f":["Finn","Fay","Fred","Fifi"],"g":["Gus","Gigi","Gil","Gwen"],"h":["Hal","Hugo","Hope","Hank"],"i":["Ike","Ivy","Ian","Iris"],"j":["Jo","Jax","Jill","Jem"],"k":["Kit","Kai","Kay","Ken"],"l":["Lou","Lulu","Leo","Lana"],"m":["Max","Mo","Mia","Milo"],"n":["Nat","Nell","Ned","Nova"],"o":["Ollie","Oz","Opal","Otto"],"p":["Pip","Pete","Pam","Percy"],"q":["Quin","Quill","Quip"],"r":["Rex","Rue","Ron","Rosa"],"s":["Sam","Sue","Sid","Sky"],"t":["Tom","Tess","Ty","Tilly"],"u":["Uma","Ugo","Ula"],"v":["Vic","Val","Vera","Vin"],"w":["Wes","Wren","Wally","Win"],"x":["Xan","Xena","Xav"],"y":["Yan","Yara","Yogi"],"z":["Zed","Zoe","Zip","Ziggy"]};
   function botNameFor(avatar, usedNames, rand) {
     const hint = AV_NAMEHINT[avatar] || "=r";
@@ -11330,6 +11339,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     itemsContentEl.querySelectorAll('.items-row').forEach(row=>{const found=!query||(!row.classList.contains('locked')&&row.textContent.toLowerCase().includes(query));row.hidden=!found;if(found)matches++;});
     itemsContentEl.querySelectorAll('.items-letter-group').forEach(group=>group.hidden=![...group.querySelectorAll('.items-row')].some(row=>!row.hidden));
     document.getElementById('object-search-count').textContent=query?matches+' matching discovered objects':'';
+    const recent=itemsContentEl.querySelector('.recent-discoveries');if(recent)recent.hidden=!!query;
   }
   function renderItemsScreen() {
     if (!itemsContentEl) return;
@@ -11343,6 +11353,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
     const comboKeys = Object.keys(myProfile.seenCombos || {});
     const NORMAL_LIST = OBJECTS.concat(FANTASY_OBJECTS);
+    const recent = recentDiscoveries(myProfile,{limit:6,allowed:new Set(isHoliday?HOLIDAY_OBJECT_DEFS.map(d=>d[1]):NORMAL_LIST.map(o=>o.id))});
+    const recentHtml = `<section class="recent-discoveries"><h3>Recently discovered</h3>${recent.length?`<div class="discovery-grid">${discoveryTiles(recent,id=>OBJECT_BY_ID.get(id))}</div>`:'<p class="cs-note">New discoveries will appear here as you play.</p>'}</section>`;
     const normalTotal = NORMAL_LIST.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
     let seenCount, totalCount, seenComboCount, comboCount, listHtml;
     if (!isHoliday) {
@@ -11393,7 +11405,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
         <div class="items-stats">
           <div class="items-stat-box">
-            <div class="items-stat-value">${seenCount} / ${totalCount}</div>
+            <div class="items-stat-value" data-discovery-count>${seenCount} / ${totalCount}</div>
             <div class="items-stat-label">${isHoliday ? "Monthly objects seen" : "Objects seen"}</div>
           </div>
           <div class="items-stat-box">
@@ -11402,7 +11414,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           </div>
           ${isHoliday ? `<button type="button" class="items-stat-box items-jump" id="items-jump-btn">Jump to current month</button>` : ""}
         </div>
-      </div>` + listHtml;
+      </div>` + recentHtml + listHtml;
     applyObjectSearch();
   }
   if (itemsContentEl) {
@@ -11721,11 +11733,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ov.id = "item-popup";
     ov.innerHTML = `<div class="item-popup-card"><div class="item-popup-mat"><img alt="" src="${obj.image}"${itemRotStyle(id)}></div><div class="item-popup-name"></div><button type="button" class="item-popup-x" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg></button></div>`;
     ov.querySelector(".item-popup-name").textContent = obj.name;
+    const times=objectFrequency(myProfile)[id]||0,hint=document.createElement('p');hint.className='item-popup-hint';hint.textContent=times?`Seen ${times} ${times===1?'time':'times'}`:'Previously discovered';ov.querySelector('.item-popup-card').append(hint);
     ov.addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
     document.body.appendChild(ov);
   }
   if (itemsContentEl) {
-    itemsContentEl.addEventListener("click", (e) => { const r = e.target.closest(".items-row"); if (r && r.dataset.id) openItemPopup(r.dataset.id); });
+    itemsContentEl.addEventListener("click", (e) => { const r = e.target.closest(".items-row,.discovery-thumb"); if (r && r.dataset.id) openItemPopup(r.dataset.id); });
     itemsContentEl.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { const r = e.target.closest(".items-row"); if (r) { e.preventDefault(); openItemPopup(r.dataset.id); } } });
   }
 
@@ -17583,6 +17596,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });
   uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
+  discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),openObject:openItemPopup,
+    openObjects:()=>showCareerTab('objects'),reduced:prefersReducedMotion,context:()=>{
+      const active=id=>document.getElementById(id)?.classList.contains('active');
+      if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
+      if(active('worlds-screen')&&wl.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};
+      if(active('daily-screen')&&daily.phase==='done')return {session:'daily_'+daily.date,element:document.querySelector('#daily-content .dc-card.dc-hot')};
+      if(active('monthly-screen')&&mo.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
+      if(active('survival-screen')&&sv.phase==='over')return {session:sv.runId,element:document.querySelector('#survival-content .dc-card.dc-hot')};
+      if(active('hs-screen')&&roomState.hs?.stage==='over')return {session:gameRewardKey(currentRoomCode,roomState),element:hsContentEl.querySelector('.hs-end-hero')};
+      return null;
+    }});
 
   // ==================== In-app updates (native app only) ====================
   // 1) LIVE UPDATES - every deploy publishes live/version.json + live/bundle.zip

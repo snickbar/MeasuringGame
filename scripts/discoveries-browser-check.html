@@ -1,0 +1,17 @@
+<pre id="polish-result" hidden></pre><script type="module">
+const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error(m)},until=async(fn,m)=>{for(let i=0;i<300;i++){if(fn())return;await wait(20)}throw Error(m);};
+try{
+ await until(()=>window.__polish&&window.__polish.profile()?.stats?.gamesPlayed===8,'App bootstrap');const api=window.__polish;
+ api.objects();await wait(150);assert(document.querySelector('.recent-discoveries').textContent.includes('as you play'),'Legacy profile does not invent recent discoveries');
+ await api.discoveryDemo();await until(()=>document.querySelector('#final-session-recap .session-discoveries'),'Post-game discoveries attached to existing result');
+ const strip=document.querySelector('#final-session-recap .session-discoveries');assert(strip.textContent.includes('2 new objects discovered'),'Only two new encounters counted');assert(strip.querySelectorAll('.discovery-thumb').length===2,'Two discovery thumbnails');
+ assert(api.profile().objectDiscoveries.acorn,'Profile listener retains discovery metadata');const first=api.profile().objectDiscoveries.acorn.t;await api.repeatDiscovery();await wait(100);assert(api.profile().objectDiscoveries.acorn.t===first,'Retries do not rediscover');assert(document.querySelectorAll('.session-discoveries').length===1,'Only one result strip');
+ strip.querySelector('[data-view-discoveries]').click();await until(()=>document.querySelector('#items-screen.active .recent-discoveries'),'View objects opens collection');
+ const recent=document.querySelector('#items-screen .recent-discoveries');assert(recent.querySelectorAll('.discovery-thumb').length===2,'Recently discovered artwork');
+ recent.querySelector('[data-id=acorn]').click();assert(document.querySelector('#item-popup .item-popup-hint').textContent==='Seen 1 time','Large picture includes appearance count');assert(!document.querySelector('#item-popup').textContent.match(/metre|meter|centimet|length|height/i),'No measurement disclosure');document.getElementById('item-popup').click();
+ const search=document.getElementById('object-search');search.value='zzzz';search.dispatchEvent(new Event('input'));assert(recent.hidden,'Recent strip hides during search');document.getElementById('object-search-clear').click();assert(!recent.hidden,'Recent strip returns after clearing search');
+ for(let i=314;i<=325;i++)assert(api.profile().unlockedAvatars['av'+i],'New default is available to existing profile');
+ assert(document.documentElement.scrollWidth<=innerWidth+1,'Discovery UI fits phone');
+ document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Actual profile transaction/listener, post-game strip placement, repeat protection, recent artwork, popup counts, search, free avatars and phone fit'});
+}catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}
+</script>

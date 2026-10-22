@@ -1,6 +1,7 @@
 import {threeStarTeamFinishes} from './mode-awards.mjs';
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
+import {recordDiscoveries} from './discoveries.mjs';
 
 export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes'};
 export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9};
@@ -68,6 +69,7 @@ export function applyCareerRecord(profile,record){
         biggestWin: Math.max(oldHs.biggestWin || 0, progress.payout || 0),
         peakStack: Math.max(oldHs.peakStack || 0, progress.peak || 0) };
     }
+    result.objectDiscoveries=recordDiscoveries(profile,[h?.u,h?.g],{t:h?.t??record.t??0,round:key,session:h?.match||record.session||String(record.key).replace(/_round_\d+$/,''),mode});
     return discover(result,h?.u,h?.g);
   }
   if(record.kind==='match'){
