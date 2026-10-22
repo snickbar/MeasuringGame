@@ -3366,6 +3366,8 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/game-setup.css">
 <link rel="stylesheet" href="anim/settings-page.css">
 <link rel="stylesheet" href="anim/cozy-system.css">
+<link rel="stylesheet" href="anim/game-polish.css">
+<link rel="stylesheet" href="anim/auto-fit.css">
 </head>
 <body>
 
@@ -4219,6 +4221,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module">
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
+  import { installAutoFit } from "./anim/auto-fit.mjs";
+  import { createPolish } from "./anim/game-polish.mjs";
+  var gamePolish;
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
@@ -5951,7 +5956,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", `<span class="cosm-rnd-sub">${o.lockedHint}</span>`);
     } else {
       btn.className = "cosm-buy";
-      btn.innerHTML = `<img class="cosm-coin" src="icons/coin.png" alt="">${o.cost}`;
+      btn.innerHTML = `<img class="cosm-coin" src="icons/coin-v2.png" alt="">${o.cost}`;
       btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
       btn.addEventListener("click", o.onBuy);
     }
@@ -8294,6 +8299,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     transaction: (id, change) => runTransaction(ref(db, `profiles/${id}`), change),
     ad: showFakeAd,
     finish: finishCompletedGame,
+    onReward: event => gamePolish?.reward(event),
   });
   // The first profile event may have arrived before UI initialization.
   gameRewards.recover();
@@ -9859,41 +9865,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
 
-  // ==================== Text auto-fit ====================
-  // Phones with larger system text (or a longer translation) can push words out of a button. Any button label or mode-banner
-  // text that doesn't fit its box is shrunk step by step (never below 60%) until it does.
-  (function setupAutoFit() {
-    const FIT_MIN = 0.6;
-    const overflows = (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
-    function fitBanner(tx) {
-      tx.style.removeProperty("--fit");
-      let f = 1;
-      while (overflows(tx) && f > FIT_MIN) { f = Math.round((f - 0.05) * 100) / 100; tx.style.setProperty("--fit", String(f)); }
-    }
-    function fitButton(b) {
-      b.style.removeProperty("font-size");
-      if (!overflows(b)) return;
-      const base = parseFloat(getComputedStyle(b).fontSize) || 14;
-      let f = 1;
-      while (overflows(b) && f > FIT_MIN) { f = Math.round((f - 0.05) * 100) / 100; b.style.fontSize = (base * f).toFixed(2) + "px"; }
-    }
-    function run() {
-      document.querySelectorAll(".sh-banner .sh-tx, button").forEach((el) => {
-        if (!el.clientWidth || !el.clientHeight) return; // hidden right now: fitted when it shows
-        const key = el.clientWidth + "x" + el.clientHeight + ":" + el.textContent.length + ":" + (document.documentElement.dataset.largeText || "");
-        if (el.__fitKey === key) return;
-        if (el.classList.contains("sh-tx")) fitBanner(el);
-        else if (!el.querySelector("img,svg,canvas,input,select,textarea") && el.textContent.trim()) fitButton(el);
-        el.__fitKey = el.clientWidth + "x" + el.clientHeight + ":" + el.textContent.length + ":" + (document.documentElement.dataset.largeText || "");
-      });
-    }
-    let queued = false;
-    const queue = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; try { run(); } catch (e) { /* cosmetic only */ } }); };
-    new MutationObserver(queue).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden"] });
-    window.addEventListener("resize", queue);
-    document.fonts?.ready.then(queue);
-    queue();
-  })();
+  // All button labels, including labels sharing a button with artwork.
+  installAutoFit();
 
   // ==================== Worlds: themed levels with stars ====================
   // Questions still get harder overall, but not in a strict climb: sort easiest to hardest, then nudge each one's
@@ -10091,7 +10064,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
     const nextLevel = wl.level < WORLD_LEVELS && wl.stars >= 1;
     el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
-      <div class="dc-card dc-hot"><div class="wl-big">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div><div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "Perfect run!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.png" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${worldRewardCard(w)}
       ${nextLevel ? '<button type="button" class="dc-btn" id="wl-nextlevel">Next level</button>' : ""}
@@ -10129,6 +10102,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function worldFinish() {
     const w=WORLDS[wl.wi],accs=wl.questions.map((q,k)=>roundAccuracy(effectiveGuess(q,wl.guesses[k],deviceId)/q.answer));
     const avg=accs.reduce((a,b)=>a+b,0)/accs.length;wl.stars=worldStarsFor(avg);wl.gain=Math.max(0,wl.stars-worldLevelStars(w.id,wl.level))*WORLD_STAR_COINS;
+    wl.newBest=avg>(myProfile.worldRecords?.[w.id]?.["l"+wl.level]?.bestAccuracy||0);
     completedAttempt({key:wl.runId,mode:'worlds',world:w.id,level:wl.level,stars:wl.stars,accuracy:avg});
     clearSoloSession('worlds');
   }
@@ -10700,7 +10674,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     survivalStop();
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
-      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note">${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
+      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
@@ -10978,7 +10952,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     btn.addEventListener("click", async () => {
       const amount = parseInt(btn.dataset.coins, 10);
       const priceText = (btn.textContent.split("·")[0] || "").trim();
-      const bought = await showFakePurchase({ icon: "icons/coin.png", title: `${amount.toLocaleString()} Coins`, price: priceText || "Buy Now" });
+      const bought = await showFakePurchase({ icon: "icons/coin-v2.png", title: `${amount.toLocaleString()} Coins`, price: priceText || "Buy Now" });
       if (!bought) return;
       btn.disabled = true;
       await addCoins(amount);
@@ -11718,7 +11692,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       piece.style.setProperty("--dx", `${Math.round(Math.random() * 70 - 35)}px`);
       piece.style.animationDelay = `${i * staggerMs}ms`;
       const img = document.createElement("img");
-      img.src = "icons/coin.png";
+      img.src = "icons/coin-v2.png";
       img.alt = "";
       piece.appendChild(img);
       gachaCoinFlyEl.appendChild(piece);
@@ -12431,7 +12405,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const b = document.createElement("button");
           b.type = "button";
           b.className = "bot-btn" + (p.botDifficulty === d ? " selected" : "");
-          b.textContent = botLevelLabel(d); b.title = botLevelLabel(d) + " accuracy";
+          b.textContent = d === "medium" ? "Med" : botLevelLabel(d);
+          b.dataset.fitSingleLine = "true";
+          b.title = botLevelLabel(d) + " accuracy";
+          b.setAttribute("aria-label", botLevelLabel(d) + " bot difficulty");
           b.dataset.difficulty = d;
           b.addEventListener("click", () => update(ref(db, `rooms/${currentRoomCode}/players/${id}`), { botDifficulty: d }));
           ctl.appendChild(b);
@@ -15627,6 +15604,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         fitNameToCard(box.querySelector(".name"));
         if (id === celebratingId && roomState.phase !== "waiting") {
           celebrateLead(box, prefersReducedMotion());
+          playSound("lead");
+          if (!prefersReducedMotion()) flairBurst(box, flairIdFor({ flair: p.flair }));
         }
         const prevScore = previousDisplayedScores[id];
         if (prevScore !== undefined && prevScore !== score) {
@@ -15709,6 +15688,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         fitNameToCard(box.querySelector(".name"));
         if (team === celebratingId && roomState.phase !== "waiting") {
           celebrateLead(box, prefersReducedMotion());
+          playSound("lead");
+          if (!prefersReducedMotion()) members.forEach(id => flairBurst(box, flairIdFor({ flair: currentPlayers[id]?.flair })));
         }
         const prevScore = previousDisplayedScores[team];
         if (prevScore !== undefined && prevScore !== score) {
@@ -16162,8 +16143,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     }
     setTimeout(() => {
-      celebrate("spotOn");
-      spawnStreamerConfetti();
       playSound("win");
       if (rank1Rows.length === 1) { try { flairBurst(rank1Rows[0].li, flairIdFor({ flair: currentPlayers[rank1Rows[0].pid]?.flair })); } catch (e) { /* flourish is optional */ } }
     }, rank1Delay + 350);
@@ -16278,7 +16257,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     li.style.setProperty("--tc", "#8e7cf2");
     li.innerHTML = `
       <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
-      <div class="dc-card dc-hot tw-fin-card"><div class="tw-fin-stars">${worldStarsHtml(stars)}</div><div class="tw-fin-pct">${prefersReducedMotion() ? Math.round(avg) + "%" : "0%"}</div><div class="tw-fin-label">accurate</div><span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}</div>
+      <div class="dc-card dc-hot tw-fin-card"><div class="tw-fin-stars" data-result-stars="${stars}" data-celebration-key="${roomState.gameId}">${worldStarsHtml(stars)}</div><div class="tw-fin-pct">${prefersReducedMotion() ? Math.round(avg) + "%" : "0%"}</div><div class="tw-fin-label">accurate</div><span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}</div>
       <div class="tw-fin-members">${memberRows}</div>
     `;
     finalListEl.appendChild(li);
@@ -16394,7 +16373,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     food:      { pics: ["pizza", "donut", "cookie"], move: "bob", burst: "fall", lap: 3000, size: 36, items: 9, burstN: 36, life: 5200 },
     applause:  { pics: ["clap"], move: "clap", burst: "claps", lap: 3000, size: 34, items: 10, burstN: 16, life: 4200 },
   };
-  const flairPic = (n) => (n === "coin" ? "icons/coin.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
+  const flairPic = (n) => (n === "coin" ? "icons/coin-v2.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && prefersReducedMotion();
   // ?flair=hearts previews a flair in-game; otherwise the winner's own equipped flair (default Classic Stars).
   function flairIdFor(entry) {
@@ -16846,7 +16825,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const coin = document.createElement("div");
       coin.className = "coin-fly";
       const coinImg = document.createElement("img");
-      coinImg.src = "icons/coin.png";
+      coinImg.src = "icons/coin-v2.png";
       coinImg.alt = "";
       coin.appendChild(coinImg);
       coin.style.left = `${startX}px`;
@@ -16958,8 +16937,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function playSound(kind) {
     // Winner suspense is the original shuffle once, followed by Crisp UI level-up.
     // stopAllSfx clears active nodes, so leaving the reveal also cancels the follow-up.
-    if (kind === "drumroll") sfx("drumroll", () => sfx("drumroll-end"));
-    else if (kind === "submit" || kind === "select") sfx("select");
+    if (kind === "star") sfx("roundwin");
+    else if (kind === "coins") { sfx("count"); setTimeout(() => sfx("count"), 110); setTimeout(() => sfx("count"), 220); }
+    else if (kind === "lead" || kind === "best") sfx("perfect");
+    else if (kind === "submit") sfx("select", () => sfx("count"));
+    else if (kind === "drumroll") sfx("drumroll", () => sfx("drumroll-end"));
+    else if (kind === "select") sfx("select");
     else if (kind === "pick" || kind === "tap") sfx("tap");
     else if (kind === "cancel") sfx("cancel");
     else if (kind === "error") sfx("error");
@@ -17411,7 +17394,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
   }
   powerups = createPowerupController({
-    onUsed: () => playSound("powerup"),
+    onUsed: id => { playSound("powerup"); setTimeout(() => playSound(id === "buffer" ? "perfect" : id === "reveal" ? "star" : "shuffle"), 150); },
     context: powerupContext, now: nowMs, coins: () => myProfile.coins || 0, owner: () => deviceId,
     question: (u, t) => ({ ...dailyQuestionFor({ unitId: u.id, targetId: t.id }), unitArt: Math.random() < .5 ? 0 : 1, targetArt: Math.random() < .5 ? 0 : 1 }),
     object: (id, art) => withAltArt(OBJECT_BY_ID.get(id), art),
@@ -17446,6 +17429,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
     onSaved:async (row,id)=>{void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
+
+  gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });
 
   // ==================== In-app updates (native app only) ====================
   // 1) LIVE UPDATES - every deploy publishes live/version.json + live/bundle.zip

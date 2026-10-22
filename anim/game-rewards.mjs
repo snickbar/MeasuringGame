@@ -25,18 +25,18 @@ export function gameRewardKey(room, state) {
   return `${room}_${id}`.replace(/[.#$\[\]/]/g, '_');
 }
 
-export function createGameRewards({ owner, transaction, ad, finish, storage = localStorage, document: doc = document }) {
+export function createGameRewards({ owner, transaction, ad, finish, storage = localStorage, document: doc = document, onReward = () => {} }) {
   const storageKey = id => 'mg_pending_game_reward_' + id;
   let current = null, receipt = null, busy = false, error = '', active = false;
-  let saving = null;
+  let saving = null, presented = '';
   const el = doc.createElement('section');
   el.id = 'coin-reward-screen'; el.hidden = true;
   el.setAttribute('aria-label', 'Game coin reward');
   el.innerHTML = `
     <div class="coin-reward-content">
-      <header><span class="coin-reward-eyebrow">GAME COMPLETE</span><h1>Nice playing!</h1><p>Here’s what you earned.</p></header>
+      <header><span class="coin-reward-eyebrow">GAME COMPLETE</span><h1 class="polish-banner" style="--banner:url(icons/banner-blank-blue.png)"><img src="icons/coin-v2.png" alt="">Your rewards</h1><p>Here’s what you earned.</p></header>
       <div class="coin-reward-ticket">
-        <div class="coin-reward-hero"><img src="icons/shop-coin-reward.png" alt=""><div><strong data-total>5</strong><span>coins earned</span></div></div>
+        <div class="coin-reward-hero"><img src="icons/coin-v2.png" alt=""><div><strong data-total>5</strong><span>coins earned</span></div></div>
         <div class="coin-reward-divider"></div>
         <div class="coin-reward-row"><span>From your score</span><b data-score>0 coins</b></div>
         <div class="coin-reward-row" data-minimum-row><span>Minimum reward bonus</span><b data-minimum>+5 coins</b></div>
@@ -69,6 +69,12 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     get('[data-status]').textContent = error || (busy ? 'Please wait…' : '');
     get('[data-continue]').disabled = busy;
     get('[data-continue]').textContent = !receipt ? 'Retry adding coins' : 'Continue';
+    const presentation = current.owner + ':' + current.key + ':' + !!r.doubled;
+    if (active && receipt && !receipt.completed && presentation !== presented) {
+      presented = presentation;
+      try { onReward({ element: el, total: r.base * (r.doubled ? 2 : 1), added: r.base, key: presentation }); } catch {}
+    }
+
   }
   async function settle(options = {}) {
     const pending = current;

@@ -78,7 +78,10 @@ export function sparkleCoins(balance, reduced = false) {
     const star = document.createElement('span');
     star.className = 'coin-sparkle';
     star.setAttribute('aria-hidden', 'true');
-    star.textContent = '✦';
+    const artwork = document.createElement('img');
+    artwork.src = 'icons/flair/star.png'; artwork.alt = '';
+    artwork.style.cssText = 'width:13px;height:13px;object-fit:contain;display:block';
+    star.appendChild(artwork);
     star.style.left = `${12 + i * 17}%`;
     star.style.top = `${i % 2 ? 58 : 8}%`;
     balance.appendChild(star);
