@@ -21,11 +21,11 @@ export function bluffRankingsHtml(s,players,avatar,me){
 export function bluffFinalHtml(s,players,avatar){
   return bluffStandings(s).map(row=>`<li class="final-row bl-final-card${row.rank===1?' rank-1':''}" data-bluff-final-player="${esc(row.id)}"${row.rank===1?' data-bluff-winner':''}><div class="bl-final-row"><span class="bl-final-rank">${row.rank===1?'<img src="icons/reactions/trophy.png" alt="1st">':row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><div class="bl-final-identity"><b>${esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b><small>${Math.round(row.accuracy)}% vote accuracy</small></div><strong class="bl-final-score">${row.score}<small>points</small></strong></div><p class="bl-final-detail">${s.correct?.[row.id]||0}/${s.judged?.[row.id]||0} correct · ${s.fooled?.[row.id]||0} fooled</p></li>`).join('');
 }
-export function createBluffUI({element,context,now,transact,act,question,object,avatar,sound,visible,revealAnimation,reduced=()=>false,laugh=()=>{}}){
+export function createBluffUI({element,context,now,transact,act,question,object,avatar,sound,visible,revealAnimation,reduced=()=>false,laugh=()=>{},vibrate=()=>{},toast=()=>{}}){
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
   let handle=null,busy=false,selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
-  let rankingCueKey='',displayedAward=-1;
+  let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='';
   let celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
   const image=id=>{const o=object(id);return `<figure><img src="${esc(o?.image)}" alt="${esc(o?.name)}" draggable="false"><figcaption>${esc(o?.name)}</figcaption></figure>`;};
   function render(){
@@ -37,7 +37,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     let content='';
     if(s.stage==='animation')content='<p class="bl-instruction">Revealing the sizes…</p><p class="bl-note">Votes are locked.</p>';
     if(s.stage==='make')content=mine?`<p class="bl-instruction">Your private choices. Pick a claim.</p><div class="bl-claims">${Object.keys(BLUFF_LABELS).map(kind=>{const i=s.options.findIndex(o=>o.kind===kind),o=s.options[i];return `<button type="button" class="bl-choice-${kind}" data-claim="${i}" data-fit-single-line="true" aria-pressed="${selection===i}"><strong>${bluffNumber(o.value)}</strong><span>${BLUFF_LABELS[o.kind]}</span></button>`;}).join('')}</div><button type="button" class="bl-action" data-send-claim ${selection===null||busy?'disabled':''}>Set as answer</button><p class="bl-note">+1 per player fooled.</p>`:`<div class="bl-wait"><span class="avatar">${avatar(maker?.avatar)}</span><h3>${esc(maker?.name||s.names?.[s.maker]||'The maker')} is choosing a claim</h3><p>They know the answer. Will you trust them?</p></div>`;
-    if(s.stage==='vote')content=`<div class="bl-claim"><span>${esc(maker?.name||s.names?.[s.maker]||'The maker')} says</span><strong>${bluffNumber(s.claim.value)}</strong></div>${s.autoClaim?'<p class="bl-note">Automatic claim: no maker points this round.</p>':''}${mine?'<p class="bl-instruction">Claim set. Who believes you?</p>':member?`<p class="bl-instruction">Judge this claim.</p><div class="bl-votes">${Object.entries(BLUFF_LABELS).map(([id,label])=>`<button type="button" class="bl-choice-${id}" data-vote="${id}" aria-pressed="${myVote===id}" ${busy||room.paused||now()>=s.endsAt||(myVote&&now()>=bluffVoteDeadline(s,me))?'disabled':''}>${label}</button>`).join('')}</div><p class="bl-locked" data-vote-status role="status"></p>`:'<p>You’re watching this game. Join the next game to play.</p>'}<p class="bl-note">${Object.keys(s.votes||{}).length} of ${s.order.length-1} votes in · +2 correct</p>`;
+    if(s.stage==='vote')content=`<div class="bl-claim"><span>${esc(maker?.name||s.names?.[s.maker]||'The maker')} says</span><strong>${bluffNumber(s.claim.value)}</strong></div>${s.autoClaim?'<p class="bl-note">Automatic claim: no maker points this round.</p>':''}${mine?'<p class="bl-instruction">Claim set. Who believes you?</p>':member?`<p class="bl-instruction">Judge this claim.</p><div class="bl-votes">${Object.entries(BLUFF_LABELS).map(([id,label])=>`<button type="button" class="bl-choice-${id}" data-vote="${id}" aria-pressed="${myVote===id}" ${busy||room.paused||now()>=s.endsAt||(myVote&&now()>=bluffVoteDeadline(s,me))?'disabled':''}>${label}</button>`).join('')}</div><p class="bl-locked" data-vote-status role="status"></p><div class="lock-bar" data-lock-bar hidden><i></i></div>`:'<p>You’re watching this game. Join the next game to play.</p>'}<p class="bl-note">${Object.keys(s.votes||{}).length} of ${s.order.length-1} votes in · +2 correct</p>`;
     if(s.stage==='reveal')content=bluffSummaryHtml(s,room.players||{},avatar,me);
     const stageChanged=cueKey!==key;
     element.classList.toggle('bl-stage-enter',stageChanged);
@@ -64,7 +64,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       if(animationKey!==animKey){animationStop?.();animationKey=animKey;animationNode=element.ownerDocument.createElement('div');animationNode.id='bluff-animation';animationStop=revealAnimation?.mount(animationNode,s.q,s);}
       element.querySelector('#bluff-animation-slot')?.append(animationNode);
     }else if(animationKey){animationStop?.();animationKey='';animationNode=null;animationStop=null;}
-    if(stageChanged){cueKey=key;if(visible()){element.ownerDocument.defaultView.scrollTo({top:0,behavior:'instant'});sound(s.stage==='make'?'join':s.stage==='reveal'&&!s.showStand?'reveal':s.stage==='vote'?'go':'popup-open');}}
+    if(stageChanged){cueKey=key;if(visible()){if(s.stage==='make'&&mine)vibrate([30,50,30]);element.ownerDocument.defaultView.scrollTo({top:0,behavior:'instant'});sound(s.stage==='make'?'join':s.stage==='reveal'&&!s.showStand?'reveal':s.stage==='vote'?'go':'popup-open');}}
     clock();
   }
   async function work(fn,quiet=false){
@@ -73,18 +73,35 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     catch{error='Couldn’t save. Check your connection and try again.';}
     finally{busy=false;signature='';render();}
   }
-  function send(action,value){return work(async()=>{const {room,me}=context();const result=await act({gameId:room.gameId,round:room.bluff.round,stage:room.bluff.stage,actor:me,action,value});if(result?.committed&&visible())sound('tap');return result;});}
+  function send(action,value){return work(async()=>{const {room,me}=context();const result=await act({gameId:room.gameId,round:room.bluff.round,stage:room.bluff.stage,actor:me,action,value});if(result?.committed&&visible()){sound('tap');vibrate(action==='claim'?[30,40,30]:22);}return result;});}
   function clock(){
     const {room,me}=context(),s=room?.bluff;if(!s)return;
     for(const next of element.querySelectorAll('[data-next]'))next.disabled=busy||room.paused;
     const time=room.paused?(room.pausedAt||now()):now(),voted=s.votes?.[me],left=Math.max(0,Math.ceil((bluffVoteDeadline(s,me)-time)/1000));
     for(const b of element.querySelectorAll('[data-vote]'))b.disabled=busy||room.paused||time>=s.endsAt||!!(voted&&!left);
     const status=element.querySelector('[data-vote-status]');if(status)status.textContent=voted?(left?`Change your vote · ${left}s`:`Vote final: ${BLUFF_LABELS[voted]}`):'Tap to vote. You get 10s to change it.';
+    const bar=element.querySelector('[data-lock-bar]');
+    if(bar){const win=voted&&left>0;bar.hidden=!win;if(win){const f=Math.max(0,Math.min(1,(bluffVoteDeadline(s,me)-time)/10000));bar.firstElementChild.style.transform='scaleX('+f+')';bar.classList.toggle('low',left<=3);}}
+    {const mine=s.maker===me,member=s.order.includes(me),secs=Math.ceil((s.endsAt-time)/1000);
+      const n=s.stage==='make'&&mine?secs:s.stage==='vote'&&member&&!mine?(voted?(left>0?left:0):secs):0;
+      if(!room.paused&&n>=1&&n<=5&&visible()){const k=room.gameId+':'+s.round+':'+s.stage+':'+n;if(k!==lastTick){lastTick=k;sound('tick');}}}
     const timer=element.querySelector('[data-clock]');if(timer){timer.textContent=room.paused?'Paused':s.stage==='reveal'?'Results':Math.max(0,Math.ceil((s.endsAt-time)/1000))+'s';timer.classList.toggle('wide',room.paused||s.stage==='reveal');timer.classList.toggle('low',!room.paused&&!['reveal','animation'].includes(s.stage)&&s.endsAt-time<6000);}
     const spotlight=element.querySelector('[data-maker-spotlight]'),spotOn=s.stage==='make'&&!room.paused&&visible()&&now()-s.startedAt<2300;
     if(spotlight)spotlight.hidden=!spotOn;
     element.querySelector('.bl-player.turn')?.classList.toggle('bl-maker-spotlight',spotOn&&!reduced());
     celebrateRound();
+  }
+  // The viewer's own result: a centered toast and a buzz sized to how it went (fires once per round, on the summary).
+  function personalMoment(s,room){
+    const {me}=context(),key=room.gameId+':'+s.round+':'+me;if(key===momentKey||!s.order.includes(me))return;momentKey=key;
+    const pts=s.result?.points?.[me]||0;
+    if(me===s.maker){
+      const fooled=s.result?.wrong||0;
+      if(s.autoClaim){return;}
+      if(fooled>0){toast('FOOLED '+fooled+'! +'+pts);vibrate([35,60,45,60,70]);}
+      else{toast('NO TAKERS');vibrate(18);}
+    }else if(s.votes?.[me]===s.claim.kind){toast('NAILED IT +2');vibrate([40,50,40,50,70]);}
+    else if(s.votes?.[me]){toast('FOOLED!');vibrate([60,40,60]);}
   }
   function celebrateRound(){
     const {room}=context(),s=room?.bluff;
@@ -96,6 +113,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const key=room.gameId+':'+s.round;
     if(key!==celebrationKey){celebrationKey=key;celebrationAt=now();laughAt=null;laughReadyAt=null;displayedAward=-1;celebrationAbandoned=false;}
     if(celebrationAbandoned)return;
+    personalMoment(s,room);
     const elapsed=now()-celebrationAt,hasWinners=element.querySelector('.win [data-result-player]');
     if(!reduced()&&elapsed<1900){
       for(const av of element.querySelectorAll('.win .avatar'))if(!av.classList.contains('bl-win-dance')){
