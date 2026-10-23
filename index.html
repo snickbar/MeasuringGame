@@ -10779,7 +10779,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     d.innerHTML = `<div class="sv-crack-wrap"><img class="sv-cr whole" src="icons/life-heart-full.webp" alt=""><img class="sv-cr cracked" src="icons/life-heart-cracked.webp" alt=""><img class="sv-cr half l" src="icons/life-heart-left.webp" alt=""><img class="sv-cr half r" src="icons/life-heart-right.webp" alt=""></div>`;
     document.body.appendChild(d);
     try { playSound("error"); } catch (e) {}
-    setTimeout(() => d.remove(), 1950);
+    const owner = document.querySelector('#hud.active,#survival-screen.active');
+    const cleanup = () => { d.remove(); watch.disconnect(); document.removeEventListener('visibilitychange',check); };
+    const check = () => { if (document.hidden || (owner && !owner.classList.contains('active'))) cleanup(); };
+    const watch = new MutationObserver(check);
+    if (owner) watch.observe(owner,{attributes:true,attributeFilter:['class']});
+    document.addEventListener('visibilitychange',check);
+    setTimeout(cleanup, 1950);
   }
   // How safe was that guess? A bar from 0 to 100 % with the line you have to clear and a pin where you landed.
   function svGaugeHtml(acc) {
@@ -15572,11 +15578,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       else {
         setTimeout(() => { if (twRevealSig === sig && fill) fill.style.setProperty("--w", target + "%"); }, 60);
         setTimeout(() => {
-          if (twRevealSig !== sig) return;
+          if (twRevealSig !== sig || roomState.phase !== 'reveal' || !hudEl.classList.contains('active') || document.hidden) return;
           if (num) num.classList.add("pop");
           if (card) card.classList.add("glow");
           const v = revealListEl.querySelector(".hl-verdict");
-          if (v) { v.parentElement.classList.remove("tw-ph"); playSound(data.hlLast && data.hlLast.passed ? "roundwin" : "error"); }
+          if (v) {
+            v.parentElement.classList.remove("tw-ph");
+            if (data.hlLast?.passed === false) svCrackHeart();
+            else playSound(data.hlLast?.passed ? "roundwin" : "error");
+          }
           if (data.hlLast && data.hlLast.passed) celebrate("normal");
         }, 1100);
       }
@@ -17127,6 +17137,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     perfectFlashEl.classList.remove("flash");
     document.querySelectorAll("#reveal-list .drumroll").forEach((n) => n.classList.remove("drumroll"));
     stopAllSfx();
+    document.querySelectorAll('.sv-crack').forEach(el => el.remove());
     try { if (window.confetti && window.confetti.reset) window.confetti.reset(); } catch (e) { /* ignore */ }
   }
 
