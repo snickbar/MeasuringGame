@@ -14,9 +14,29 @@ const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 export function discoveryTiles(rows, object) {
  return rows.map(({id})=>{const o=object(id);return o?`<button type="button" class="discovery-thumb" data-id="${escape(id)}" aria-label="View ${escape(o.name)}"><img src="${escape(o.image)}" alt=""><span>${escape(o.name)}</span></button>`:'';}).join('');
 }
-export function createDiscoveryPresentation({profile,context,object,openObject,openObjects,reduced,document:doc=document}) {
+export function createDiscoveryPresentation({profile,context,object,reduced,document:doc=document}) {
  if(!doc.getElementById('discovery-styles')){const link=doc.createElement('link');link.id='discovery-styles';link.rel='stylesheet';link.href=new URL('./discoveries.css',import.meta.url).href;doc.head.append(link);}
- let queued=false,previousOwner=null,previousCount=null;
+ let queued=false,previousOwner=null,previousCount=null,popup=null;
+ function closePopup(){popup?.dialog.close();}
+ function showPopup(rows,ctx,owner,opener,selected=null){
+  if(popup){popup.dialog.querySelector('[data-discovery-close]').focus();return;}
+  const dialog=doc.createElement('dialog');dialog.id='session-discovery-popup';dialog.setAttribute('aria-labelledby','session-discovery-title');
+  dialog.innerHTML=`<header><h2 id="session-discovery-title">New objects this game</h2><button type="button" class="discovery-popup-x" data-discovery-close aria-label="Close new objects"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button></header><div class="discovery-popup-content"></div><footer><button type="button" data-discovery-close>Close</button></footer>`;
+  const content=dialog.querySelector('.discovery-popup-content');
+  function render(id){
+   const o=id&&rows.some(r=>r.id===id)&&object(id);
+   content.innerHTML=o?`<button type="button" class="discovery-popup-back" data-discovery-back>All new objects</button><div class="discovery-popup-detail"><img src="${escape(o.image)}" alt=""><h3>${escape(o.name)}</h3></div>`:`<p>${rows.length} new ${rows.length===1?'object':'objects'} discovered</p><div class="discovery-grid">${discoveryTiles(rows,object)}</div>`;
+  }
+  render(selected);doc.body.append(dialog);popup={dialog,owner,session:ctx.session,element:ctx.element};
+  dialog.addEventListener('click',e=>{
+   if(e.target.closest('[data-discovery-close]')){dialog.close();return;}
+   if(e.target.closest('[data-discovery-back]')){render();content.querySelector('button')?.focus();return;}
+   const thumb=e.target.closest('.discovery-thumb');if(thumb){render(thumb.dataset.id);content.querySelector('[data-discovery-back]').focus();return;}
+   if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}
+  });
+  dialog.addEventListener('close',()=>{dialog.remove();if(popup?.dialog===dialog)popup=null;const current=context();if(current?.session===ctx.session){let target=opener?.isConnected?opener:current.element?.querySelector('[data-view-discoveries]');if(target?.closest('[inert]'))target=doc.querySelector('#coin-reward-screen:not([hidden]) button:not(:disabled)');target?.focus({preventScroll:true});}},{once:true});
+  dialog.showModal();dialog.querySelector('[data-discovery-close]').focus();
+ }
  function refresh(){
   queued=false;const p=profile(),count=Object.keys(p.data.seenObjects||{}).length;
   const counter=doc.querySelector('#items-screen.active [data-discovery-count]');
@@ -25,6 +45,7 @@ export function createDiscoveryPresentation({profile,context,object,openObject,o
   // a newly increased count. Changing profile resets that comparison.
   if(counter||p.owner!==previousOwner){previousOwner=p.owner;previousCount=count;}
   const ctx=context();
+  if(popup&&(popup.owner!==p.owner||popup.session!==ctx?.session||popup.element!==ctx?.element))closePopup();
   // Remove a strip if a result card is reused for a different session/owner.
   doc.querySelectorAll('.session-discoveries').forEach(el=>{if(!ctx||el.parentElement!==ctx.element||el.dataset.owner!==p.owner)el.remove();});
   if(!ctx?.element||!ctx.session)return;
@@ -39,6 +60,6 @@ export function createDiscoveryPresentation({profile,context,object,openObject,o
  }
  function schedule(){if(!queued){queued=true;queueMicrotask(refresh);}}
  const observer=new MutationObserver(schedule);observer.observe(doc.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
- const click=e=>{const thumb=e.target.closest('.session-discoveries .discovery-thumb');if(thumb)openObject(thumb.dataset.id);if(e.target.closest('[data-view-discoveries]'))openObjects();};doc.addEventListener('click',click);
- refresh();return {refresh:schedule,destroy(){observer.disconnect();doc.removeEventListener('click',click);}};
+ const click=e=>{const trigger=e.target.closest('.session-discoveries .discovery-thumb,.session-discoveries [data-view-discoveries]');if(!trigger)return;const p=profile(),ctx=context();if(!ctx?.element||!ctx.element.contains(trigger))return;const rows=recentDiscoveries(p.data,{session:ctx.session,limit:1000}).filter(r=>object(r.id));if(rows.length)showPopup(rows,ctx,p.owner,trigger,trigger.matches('.discovery-thumb')?trigger.dataset.id:null);};doc.addEventListener('click',click);
+ refresh();return {refresh:schedule,destroy(){observer.disconnect();doc.removeEventListener('click',click);closePopup();}};
 }

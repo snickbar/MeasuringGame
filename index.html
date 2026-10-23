@@ -4237,9 +4237,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
+  import { createAudioLifecycle } from "./anim/audio-lifecycle.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
   var gamePolish, uiDelight, discoveryUI;
+  let nativeAudioActive = true, audioPageActive = true;
+  const audioLifecycle = createAudioLifecycle({
+    visible:()=>!document.hidden && nativeAudioActive && audioPageActive,
+    enabled:()=>{try{return localSoundEnabled;}catch{return true;}},
+    scope:()=>{
+      const screens=[...document.querySelectorAll('.screen.active,#hud.active,dialog[open]')].map(el=>el.id).join('|');
+      const reward=document.getElementById('coin-reward-screen');
+      return screens+(reward&&!reward.hidden?'|reward':'');
+    },
+    stopMedia:()=>{try{stopAllSfx();}catch{}}
+  });
+  // A delayed callback may still update the game after leaving its screen, but
+  // it must not bring that screen's old sounds along with it.
+  const setTimeout=(fn,ms,...args)=>window.setTimeout(audioLifecycle.scoped(fn),ms,...args);
+  new MutationObserver(()=>audioLifecycle.sync()).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','hidden','open']});
+  document.addEventListener('visibilitychange',()=>audioLifecycle.sync());
+  window.addEventListener('pagehide',()=>{audioPageActive=false;audioLifecycle.sync();});
+  window.addEventListener('pageshow',()=>{audioPageActive=true;audioLifecycle.sync();});
+  try{window.Capacitor?.Plugins?.App?.addListener('appStateChange',({isActive})=>{nativeAudioActive=!!isActive;audioLifecycle.sync();});}catch{}
+
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
@@ -8718,6 +8739,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   settingsSoundToggle.addEventListener("click", () => {
     localSoundEnabled = !localSoundEnabled;
+    audioLifecycle.sync();
     localStorage.setItem("mg_soundEnabled", String(localSoundEnabled));
     renderSoundToggleIcon();
   });
@@ -9145,7 +9167,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
       if (dailyAnim !== ctl || daily.phase !== "reveal") return;
       animAudioInit();
-      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (dailyAnim === ctl) showResult(mod); } });
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (dailyAnim === ctl) showResult(mod); } });
     } catch (err) {
       console.warn("[measuring-game] daily animation failed", err);
       showResult(null);
@@ -9630,16 +9652,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // A little synthesized "ha-ha-ha-ha": four short voiced bursts that fall in pitch, through a vowel-ish filter.
   function hsLaugh() {
+    if (!audioLifecycle.canPlay() || !hsScreenEl.classList.contains("active")) return;
     try {
       const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100;
       if (vol <= 0) return;
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-      hsLaughCtx = hsLaughCtx || new AC();
+      hsLaughCtx = hsLaughCtx || audioLifecycle.context(new AC());
       const c = hsLaughCtx; if (c.state === "suspended") c.resume();
       const t0 = c.currentTime + 0.02;
       for (let k = 0; k < 4; k++) {
         const t = t0 + k * 0.17, f = 330 - k * 28;
-        const o = c.createOscillator(), o2 = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain();
+        const o = audioLifecycle.source(c.createOscillator()), o2 = audioLifecycle.source(c.createOscillator()), bp = c.createBiquadFilter(), g = c.createGain();
         o.type = "sawtooth"; o2.type = "square";
         o.frequency.setValueAtTime(f * 1.25, t); o.frequency.exponentialRampToValueAtTime(f * 0.8, t + 0.14);
         o2.frequency.setValueAtTime(f * 2.5, t); o2.frequency.exponentialRampToValueAtTime(f * 1.6, t + 0.14);
@@ -9728,13 +9751,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       animAudioInit();
       const scene = await hsAnimCtl.prepare(pair[0], pair[1], { hMax: 190, minStageH: 230 });
       if (hsAnimKey !== key) return;
-      hsAnimCtl.start(scene, { startAt: hs.animAt, now: animClock, onCue: playAnimCue });
+      hsAnimCtl.start(scene, { startAt: hs.animAt, now: animClock, onCue: audioLifecycle.guard(playAnimCue) });
     } catch (e) { console.warn("[high-stakes] animation failed", e); }
   }
   // A few coins fly from one element to another (a player's card <-> the pot).
   // Little synthesized sounds for the table: a coin clink for every coin that lands in the pot, a double knock for a check.
   const hsVol = (v) => v * (Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100);
   function hsClink() {
+    if (!audioLifecycle.canPlay() || !hsScreenEl.classList.contains("active")) return;
     if (!localSoundEnabled) return;
     try {
       animAudioInit(); if (!animAudio) return;
@@ -9743,6 +9767,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { /* sound is optional */ }
   }
   function hsKnock() {
+    if (!audioLifecycle.canPlay() || !hsScreenEl.classList.contains("active")) return;
     if (!localSoundEnabled) return;
     try {
       animAudioInit(); if (!animAudio) return;
@@ -10248,7 +10273,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
       if (wlAnim !== ctl || wl.phase !== "reveal") return;
       animAudioInit();
-      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (wlAnim === ctl) showResult(mod); } });
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (wlAnim === ctl) showResult(mod); } });
     } catch (err) { console.warn("[measuring-game] world animation failed", err); showResult(null); }
   }
   // After the fifth guess: stars (best run counts), coins for each NEW star, stats and history.
@@ -10601,7 +10626,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
       if (moAnim !== ctl || mo.phase !== "reveal") return;
       animAudioInit();
-      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (moAnim === ctl) showResult(m); } });
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (moAnim === ctl) showResult(m); } });
     } catch (err) { console.warn("[measuring-game] monthly animation failed", err); showResult(null); }
   }
   // Once, after the final guess: save the month, pay coins, post to the leaderboard, count the rounds.
@@ -10851,7 +10876,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
       if (svAnim !== ctl || sv.phase !== "reveal") return;
       animAudioInit();
-      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: playAnimCue, onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
     } catch (err) { console.warn("[measuring-game] survival animation failed", err); showResult(null); }
   }
   // Run over: save the best (coins only for rounds beyond the old best), post it, count the rounds.
@@ -12406,20 +12431,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       resyncUiAfterResume();
-      // animAudio is declared later in the file (the answer-animation sound
-      // system) - safe to reference here regardless, since this callback
-      // only ever runs well after the whole script has finished its first
-      // pass, same as every other deferred handler in this file.
-      if (animAudio && animAudio.ctx.state === "suspended") animAudio.ctx.resume().catch(() => {});
-    } else if (animAudio && animAudio.ctx.state === "running") {
-      // The animation's Web Audio sounds (tick/tap/swipe/reveal) use one
-      // persistent AudioContext, unlike the regular one-shot <audio> sfx
-      // elsewhere - nothing stops that context from rendering audio just
-      // because the app is backgrounded, which is exactly what let the
-      // reveal animation's sounds keep playing after minimizing. Suspending
-      // it here silences anything in flight and blocks any cue that tries
-      // to fire while hidden, with no special-casing needed on the cue side.
-      animAudio.ctx.suspend().catch(() => {});
     }
   });
 
@@ -13641,11 +13652,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ticking stays light). Respects the player's sound setting. ----
   let animAudio = null;   // { ctx, bufs }
   function animAudioInit() {
+    if (!audioLifecycle.canPlay()) return;
     try {
       if (animAudio) { if (animAudio.ctx.state === "suspended") animAudio.ctx.resume().catch(() => {}); return; }
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
-      animAudio = { ctx: new AC(), bufs: {} };
+      animAudio = { ctx: audioLifecycle.context(new AC()), bufs: {} };
       Object.keys(ANIM_SFX_FILES).forEach((name) => {
         fetch(ANIM_SFX_FILES[name])
           .then((r) => r.arrayBuffer())
@@ -13657,7 +13669,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function animTone(freq, at, len, vol, type) {
     const ctx = animAudio.ctx;
-    const o = ctx.createOscillator();
+    const o = audioLifecycle.source(ctx.createOscillator());
     const g = ctx.createGain();
     o.type = type || "sine";
     o.frequency.value = freq;
@@ -13674,7 +13686,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     zoomback(vol) {
       const ctx = animAudio.ctx;
       const at = ctx.currentTime;
-      const o = ctx.createOscillator();
+      const o = audioLifecycle.source(ctx.createOscillator());
       const g = ctx.createGain();
       o.type = "sine";
       o.frequency.setValueAtTime(620, at);
@@ -13698,6 +13710,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     },
   };
   function playAnimCue(cue) {
+    if (!audioLifecycle.canPlay()) return;
     if (!localSoundEnabled) return;
     try {
       animAudioInit();
@@ -13706,7 +13719,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const buf = animAudio.bufs[cue.name];
       if (!buf) return;
       const ctx = animAudio.ctx;
-      const src = ctx.createBufferSource();
+      const src = audioLifecycle.source(ctx.createBufferSource());
       src.buffer = buf;
       src.playbackRate.value = cue.rate || 1;
       const g = ctx.createGain();
@@ -13824,7 +13837,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ctl.start(animScene, {
         startAt: data.animStartAt,
         now: animClock,
-        onCue: playAnimCue,
+        onCue: audioLifecycle.guard(playAnimCue),
         onFrame: isTw ? undefined : (t, shown) => {
           if (token !== animToken) return;
           questionAnswerLineEl.innerHTML = answerLineHtml(mod.formatCount(shown, animScene.R));
@@ -15014,6 +15027,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderReactionBubble(r) {
     if (!r) return;
+    if (!r.previewAt && !gameplayAudioVisible()) return;
     if (roomState && roomState.phase === "animation") return; // nothing plays over the stacking animation
     playSound("emoji");
     const byId = r.rid && REACTION_BY_ID[r.rid];
@@ -17073,6 +17087,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   const activeSfx = new Set();
   function sfx(name, onEnded) {
+    if (!audioLifecycle.canPlay()) return;
+    if (["tick","count","timesup","drumroll","drumroll-end"].includes(name) && !gameplayAudioVisible()) return;
     if (!localSoundEnabled) return;
     const base = sfxPool[name];
     if (!base) return;
@@ -17080,10 +17096,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const node = base.cloneNode(true);
       node.volume = (SFX_VOLUME[name] ?? 0.6) * (Number(localStorage.getItem("mg_effects_volume") ?? 100)/100);
       activeSfx.add(node);
+      const after = onEnded && audioLifecycle.guard(onEnded);
       const done = () => activeSfx.delete(node);
       node.addEventListener("ended", () => {
         const wasActive = activeSfx.delete(node);
-        if (wasActive && onEnded) onEnded();
+        if (wasActive && after) after();
       }, { once: true });
       node.addEventListener("error", done, { once: true });
       node.play().catch(done /* ignore autoplay-policy rejection */);
@@ -17106,7 +17123,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try { if (window.confetti && window.confetti.reset) window.confetti.reset(); } catch (e) { /* ignore */ }
   }
 
+  function gameplayAudioVisible() {
+    return !!document.querySelector("#hud.active,#hs-screen.active,#final-screen.active,#lobby-screen.active,#daily-screen.active,#monthly-screen.active,#worlds-screen.active,#survival-screen.active,#teamworlds-screen.active,#teamvteam-screen.active");
+  }
+
   function playSound(kind) {
+    if (["join","leave","start","powerup","winner","lead","best"].includes(kind) && !gameplayAudioVisible()) return;
     // Winner suspense uses the approved snare roll, followed by the original ending chime.
     // stopAllSfx clears active nodes, so leaving the reveal also cancels the follow-up.
     if (kind === "star") sfx("star");
@@ -17621,8 +17643,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   new MutationObserver(records => { if (records.some(r => ALL_SCREEN_ELS.includes(r.target))) applyBackground(); }).observe(document.body, {attributes:true, attributeFilter:['class'], subtree:true});
   applyBackground();
   uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
-  discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),openObject:openItemPopup,
-    openObjects:()=>showCareerTab('objects'),reduced:prefersReducedMotion,context:()=>{
+  discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),reduced:prefersReducedMotion,context:()=>{
       const active=id=>document.getElementById(id)?.classList.contains('active');
       if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
       if(active('worlds-screen')&&wl?.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};

@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+import {createAudioLifecycle} from '../anim/audio-lifecycle.mjs';
+let visible=true,enabled=true,screen='worlds',stops=0,suspends=0,played=0,work=0;
+const audio=createAudioLifecycle({visible:()=>visible,enabled:()=>enabled,scope:()=>screen,stopMedia:()=>stops++});
+audio.context({suspend(){suspends++;return Promise.resolve();}});
+let sourceStops=0;audio.source({stop(){sourceStops++;}});
+const oldCue=audio.guard(()=>played++),oldTimer=audio.scoped(()=>{work++;if(audio.canPlay())played++;return audio.scoped(()=>{if(audio.canPlay())played++;});});
+oldCue();assert.equal(played,1);screen='settings';audio.sync();assert.equal(sourceStops,1,'Navigation stops active and scheduled Web Audio sources');assert.equal(stops,1,'Navigation stops regular audio too');
+oldCue();const nested=oldTimer();nested();assert.equal(work,1,'Game/UI callbacks still complete after navigation');assert.equal(played,1,'Old delayed and nested callbacks stay silent');
+audio.guard(()=>played++)();assert.equal(played,2,'New screen can play its own sounds');
+const beforeHidden=audio.guard(()=>played++);visible=false;audio.sync();assert.equal(suspends,1,'Background suspends all registered contexts');assert(!audio.canPlay());beforeHidden();assert.equal(played,2);
+const hiddenTimer=audio.scoped(()=>{work++;if(audio.canPlay())played++;});visible=true;audio.sync();beforeHidden();hiddenTimer();assert.equal(played,2,'No stale audio resumes or queues after returning');audio.guard(()=>played++)();assert.equal(played,3,'Fresh foreground sounds work');
+enabled=false;audio.sync();assert(!audio.canPlay());enabled=true;audio.sync();assert(audio.canPlay());
+const routeTicket=audio.guard(()=>played++);screen='shop';audio.sync();screen='settings';audio.sync();routeTicket();assert.equal(played,3,'Returning to the same screen cannot revive old callbacks');
+const source=fs.readFileSync('index.html','utf8');assert(source.includes("addListener('appStateChange'"),'Native lifecycle connected');assert(source.includes("window.addEventListener('pagehide'"));assert(source.includes('audioLifecycle.scoped(fn)'),'Delayed callbacks carry their audio scope');assert.equal((source.match(/onCue: audioLifecycle.guard\(playAnimCue\)/g)||[]).length,6,'All six reveal animation entry points guarded');assert(!source.includes('if (animAudio && animAudio.ctx.state === "suspended") animAudio.ctx.resume()'),'No automatic stale context resume');
+console.log('Audio lifecycle: navigation/background cancellation, all contexts/sources, delayed and nested work, no stale replay, mute and native/browser hooks passed.');
