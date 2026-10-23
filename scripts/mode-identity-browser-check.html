@@ -1,0 +1,17 @@
+<pre id="polish-result" hidden></pre><script type="module">
+const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error(m)},until=async(fn,m)=>{for(let i=0;i<300;i++){if(fn())return;await wait(20)}throw Error(m);};
+try{
+ await until(()=>window.__polish&&window.__polish.profile()?.stats?.gamesPlayed===8,'App bootstrap');const api=window.__polish;
+ for(const [id,mode] of Object.entries({'worlds-screen':'worlds','daily-screen':'daily','monthly-screen':'monthly','survival-screen':'survival','hs-screen':'highstakes'})){
+  api.modePage(id);await wait(70);assert(document.body.dataset.mode===mode,'Mode route '+id);assert(document.body.dataset.bg==='mode-'+mode,'Automatic gradient '+mode);assert(getComputedStyle(document.body,'::before').backgroundImage.includes('linear-gradient'),'Gradient painted');
+ }
+ await api.background('mode-survival');api.modePage('worlds-screen');await wait(80);assert(document.body.dataset.bg==='mode-survival','Selected gradient overrides mode');
+ await api.background('tile-dots');await wait(80);assert(document.body.dataset.bg==='tile-dots','Custom picture overrides mode');assert(document.body.style.getPropertyValue('--game-bg-repeat')==='repeat','Custom tile repeat preserved');assert(getComputedStyle(document.body,'::after').display==='none','Custom picture has no mode motif');
+ await api.background('none');await wait(80);assert(document.body.dataset.bg==='mode-worlds','Automatic mode restored');assert(!document.body.style.getPropertyValue('--game-bg-repeat'),'Tile sizing cleared');
+ await api.background('plain');await wait(70);assert(!document.body.dataset.bg,'Plain option remains available');
+ api.styleBackgrounds();await wait(150);const list=document.getElementById('cosm-backgrounds-list');assert(list.textContent.includes('Match game mode'),'Automatic option listed');assert([...list.querySelectorAll('.cosm-name')].filter(n=>n.textContent.includes('gradient')).length===7,'All free gradients in Style');const row=[...list.querySelectorAll('.cosm-row')].find(n=>n.textContent.includes('Worlds gradient'));row.querySelector('.cosm-equip').click();await wait(120);assert(api.profile().cosmetics.equipped.background==='mode-worlds','Style equip saved');assert(document.body.dataset.bg==='mode-worlds','Style equip applied immediately');
+ assert(document.documentElement.scrollWidth<=innerWidth+1,'Phone fits');
+ const ids=['airliner','minivan','notre-dame','london-eye'];for(const id of ids){const img=new Image();img.src='items/'+id+'.webp';await img.decode();assert(img.naturalWidth>0,'Applied artwork loads '+id);}
+ document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Five live mode routes, painted gradients, explicit and custom precedence, tile cleanup, plain, Style equip/profile persistence, phone fit and applied artwork'});
+}catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}
+</script>

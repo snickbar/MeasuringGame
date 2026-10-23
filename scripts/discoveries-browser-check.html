@@ -10,7 +10,7 @@ try{
  const recent=document.querySelector('#items-screen .recent-discoveries');assert(recent.querySelectorAll('.discovery-thumb').length===2,'Recently discovered artwork');
  recent.querySelector('[data-id=acorn]').click();assert(document.querySelector('#item-popup .item-popup-hint').textContent==='Seen 1 time','Large picture includes appearance count');assert(!document.querySelector('#item-popup').textContent.match(/metre|meter|centimet|length|height/i),'No measurement disclosure');document.getElementById('item-popup').click();
  const search=document.getElementById('object-search');search.value='zzzz';search.dispatchEvent(new Event('input'));assert(recent.hidden,'Recent strip hides during search');document.getElementById('object-search-clear').click();assert(!recent.hidden,'Recent strip returns after clearing search');
- for(let i=314;i<=325;i++)assert(api.profile().unlockedAvatars['av'+i],'New default is available to existing profile');
+ for(const id of api.defaultAvatarIds())assert(api.profile().unlockedAvatars[id],'Current default is available to existing profile');
  assert(document.documentElement.scrollWidth<=innerWidth+1,'Discovery UI fits phone');
  document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Actual profile transaction/listener, post-game strip placement, repeat protection, recent artwork, popup counts, search, free avatars and phone fit'});
 }catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}

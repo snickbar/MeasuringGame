@@ -3369,6 +3369,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/game-polish.css">
 <link rel="stylesheet" href="anim/ui-delight.css">
 <link rel="stylesheet" href="anim/auto-fit.css">
+<link rel="stylesheet" href="anim/mode-identity.css">
 </head>
 <body>
 
@@ -4235,6 +4236,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { installAutoFit } from "./anim/auto-fit.mjs";
   import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
+  import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
   var gamePolish, uiDelight, discoveryUI;
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
@@ -4420,9 +4422,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     av310: "default",
     av311: "default",
     av312: "default",
-    av314: "default", av315: "default", av316: "default", av317: "default",
-    av318: "default", av319: "default", av320: "default", av321: "default",
-    av322: "default", av323: "default", av324: "default", av325: "default",
+    av314: "default",
+    av315: "default",
+    av316: "default",
+    av317: "default",
+    av318: "default",
+    av319: "default",
+    av03: "default",
+    av202: "default",
+    av11: "default",
+    av323: "default",
+    av324: "default",
+    av325: "default",
     av22: "common",
     av21: "common",
     av126: "common",
@@ -4446,7 +4457,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     av128: "common",
     av105: "common",
     av130: "common",
-    av03: "common",
+    av320: "default",
     av04: "common",
     av01: "common",
     av08: "common",
@@ -4481,7 +4492,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     av145: "rare",
     av146: "common",
     av58: "rare",
-    av11: "common",
+    av322: "default",
     av13: "rare",
     av12: "rare",
     av14: "rare",
@@ -4613,7 +4624,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     av183: "rare",
     av184: "rare",
     av201: "common",
-    av202: "common",
+    av321: "common",
     av203: "common",
     av204: "common",
     av205: "common",
@@ -4818,7 +4829,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
   const activeBoard = () => (rndOn("boards") ? rndGet("boards") : equippedBoard());
   let monthlyPlayBg = null; // while a Monthly Challenge is being played, that month's own background is shown
-  const activeBackground = () => (monthlyPlayBg || (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground()));
+  const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
   function rollRandomEquips() {
     rndPick = {};
     applyBackground();
@@ -5584,7 +5595,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "candy-chocolate", label: "Chocolate Bars" },
     ] },
   ];
-  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).concat(MONTH_BACKGROUNDS); }
+  function allBackgrounds() { return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).concat(MONTH_BACKGROUNDS, MODE_BACKGROUNDS); }
   const monthBackgroundOf = (id) => MONTH_BACKGROUNDS.find((m) => m.id === id);
 
   // ---- Home screens: the picture behind the Home menu. The ants are free from the start; every other
@@ -5657,6 +5668,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function backgroundPackOf(id) { return BACKGROUND_PACK_CATALOG.find((p) => p.backgrounds.some((b) => b.id === id)); }
   function ownsBackground(id) {
+    if (MODE_BACKGROUNDS.some(b => b.id === id) || id === "plain") return true;
     const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.backgrounds) || {};
     const pk = backgroundPackOf(id);
     const mb = monthBackgroundOf(id);
@@ -5664,29 +5676,43 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function equippedBackground() {
     const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.background;
-    return id && id !== "none" && ownsBackground(id) && allBackgrounds().some((b) => b.id === id) ? id : "none";
+    return id && id !== "none" && ownsBackground(id) && (id === "plain" || allBackgrounds().some((b) => b.id === id)) ? id : "none";
   }
   const backgroundUrl = (id) => `backgrounds/${id}.webp`;
   // Tiled backgrounds are a small square picture that repeats across the screen. Size = pixels on a 390-wide phone.
   const TILE_PX = { "tile-dots": 80, "tile-stripes": 120, "tile-checker": 155, "tile-argyle": 110, "tile-gingham": 90, "tile-plus": 100 };
   const isTileBg = (id) => Object.prototype.hasOwnProperty.call(TILE_PX, id);
   // A small picture of a background for lists: a cropped picture, or the repeating tile scaled to a w-pixel-wide phone.
-  const bgThumbHtml = (id, cls, w, extra) => isTileBg(id)
+  const bgThumbHtml = (id, cls, w, extra) => modeGradient(id)
+    ? `<div class="${cls}" style="background:${modeGradient(id)};${extra || ""}"></div>`
+    : isTileBg(id)
     ? `<div class="${cls}" style="background:url('${backgroundUrl(id)}') 0 0 / ${(TILE_PX[id] * w * 1.7 / 390).toFixed(1)}px repeat;${extra || ""}"></div>`
     : `<img class="${cls}" ${extra ? `style="${extra}" ` : ""}src="${backgroundUrl(id)}" alt="" loading="lazy">`;
   // Shows the picked background behind every screen except Home (Home keeps its own picture; see the CSS).
   function applyBackground() {
-    const id = activeBackground();
-    if (id === "none") { delete document.body.dataset.bg; ["--game-bg", "--game-bg-pos", "--game-bg-repeat", "--game-bg-size"].forEach((k) => document.body.style.removeProperty(k)); return; }
+    const screen = document.querySelector('.screen.active, #hud.active');
+    let settings = {}, setup = 'classic';
+    try { settings = roomState?.settings || {}; setup = createMode; } catch {}
+    const mode = screenMode(screen?.id, document.getElementById('create-screen')?.dataset.setupMode || setup, settings);
+    const palette = MODE_IDENTITIES[mode];
+    if (palette) {
+      document.body.dataset.mode = mode;
+      document.body.style.setProperty('--mode-accent', palette.accent);
+      document.body.style.setProperty('--mode-ink', palette.ink);
+      document.body.style.setProperty('--mode-art', "url('" + (mode === 'monthly' ? monthlyIcon() : palette.art) + "')");
+    } else delete document.body.dataset.mode;
+    const selected = activeBackground();
+    document.body.toggleAttribute('data-custom-background', selected !== 'none');
+    const presentation = backgroundPresentation(selected, mode, monthlyPlayBg);
+    const id = presentation.id;
+    if (id === 'none' || id === 'plain') { delete document.body.dataset.bg; ['--game-bg', '--game-bg-pos', '--game-bg-repeat', '--game-bg-size'].forEach(k => document.body.style.removeProperty(k)); return; }
     document.body.dataset.bg = id;
-    document.body.style.setProperty("--game-bg", `url('${backgroundUrl(id)}')`);
+    document.body.style.setProperty('--game-bg', presentation.image || "url('" + backgroundUrl(id) + "')");
     if (isTileBg(id)) {
-      document.body.style.setProperty("--game-bg-pos", "0 0");
-      document.body.style.setProperty("--game-bg-repeat", "repeat");
-      document.body.style.setProperty("--game-bg-size", `calc(min(100vw, 430px) * ${(TILE_PX[id] / 390).toFixed(4)})`);
-    } else {
-      ["--game-bg-pos", "--game-bg-repeat", "--game-bg-size"].forEach((k) => document.body.style.removeProperty(k));
-    }
+      document.body.style.setProperty('--game-bg-pos', '0 0');
+      document.body.style.setProperty('--game-bg-repeat', 'repeat');
+      document.body.style.setProperty('--game-bg-size', 'calc(min(100vw, 430px) * ' + (TILE_PX[id] / 390).toFixed(4) + ')');
+    } else ['--game-bg-pos', '--game-bg-repeat', '--game-bg-size'].forEach(k => document.body.style.removeProperty(k));
   }
   async function buyBackgroundWithCoins(bg) {
     if ((myProfile.coins || 0) < BACKGROUND_COIN_COST) { cosmNote("Not enough coins yet."); return; }
@@ -5719,7 +5745,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bg = document.createElement("div");
     bg.className = "cosm-pv-bg";
     bg.style.backgroundColor = getComputedStyle(document.body).backgroundColor;
-    if (id !== "none") bg.style.backgroundImage = `url('${backgroundUrl(id)}')`;
+    if (modeGradient(id)) bg.style.backgroundImage = modeGradient(id);
+    else if (id !== "none" && id !== "plain") bg.style.backgroundImage = `url('${backgroundUrl(id)}')`;
     bg.innerHTML = `<div class="mk-q">How many playing cards long is the length of a canoe?</div>`;
     const ov = cosmPreviewShell(label, bg);
     if (isTileBg(id)) { bg.style.backgroundRepeat = "repeat"; bg.style.backgroundPosition = "0 0"; bg.style.backgroundSize = `${TILE_PX[id] * bg.clientWidth / 390}px`; }
@@ -5787,9 +5814,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("backgrounds"));
     container.appendChild(cosmRow({
-      leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Plain", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onPreview: () => openBackgroundPreview("none", "Plain"), onEquip: () => equipBackground(equipped),
+      leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Match game mode", owned: true, free: true, cost: 0,
+      equipped: equipped === "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(equipped),
     }));
+    container.appendChild(cosmRow({leadHtml:'<span class="cosm-bg-pic cosm-bg-none"></span>', name:'Plain', owned:true, free:true, equipped:equipped === 'plain', onPreview:()=>openBackgroundPreview('plain','Plain'), onEquip:()=>equipBackground('plain')}));
+    MODE_BACKGROUNDS.forEach(b => container.appendChild(cosmRow({
+      leadHtml:bgThumbHtml(b.id,'cosm-bg-pic',34), name:b.label, owned:true, free:true,
+      equipped:equipped === b.id, onPreview:()=>openBackgroundPreview(b.id,b.label), onEquip:()=>equipBackground(b.id)
+    })));
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
@@ -17595,15 +17627,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
   gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });
+  new MutationObserver(records => { if (records.some(r => ALL_SCREEN_ELS.includes(r.target))) applyBackground(); }).observe(document.body, {attributes:true, attributeFilter:['class'], subtree:true});
+  applyBackground();
   uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
   discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),openObject:openItemPopup,
     openObjects:()=>showCareerTab('objects'),reduced:prefersReducedMotion,context:()=>{
       const active=id=>document.getElementById(id)?.classList.contains('active');
       if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
-      if(active('worlds-screen')&&wl.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};
-      if(active('daily-screen')&&daily.phase==='done')return {session:'daily_'+daily.date,element:document.querySelector('#daily-content .dc-card.dc-hot')};
-      if(active('monthly-screen')&&mo.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
-      if(active('survival-screen')&&sv.phase==='over')return {session:sv.runId,element:document.querySelector('#survival-content .dc-card.dc-hot')};
+      if(active('worlds-screen')&&wl?.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};
+      if(active('daily-screen')&&daily?.phase==='done')return {session:'daily_'+daily.date,element:document.querySelector('#daily-content .dc-card.dc-hot')};
+      if(active('monthly-screen')&&mo?.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
+      if(active('survival-screen')&&sv?.phase==='over')return {session:sv.runId,element:document.querySelector('#survival-content .dc-card.dc-hot')};
       if(active('hs-screen')&&roomState.hs?.stage==='over')return {session:gameRewardKey(currentRoomCode,roomState),element:hsContentEl.querySelector('.hs-end-hero')};
       return null;
     }});
