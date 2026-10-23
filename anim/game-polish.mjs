@@ -8,6 +8,7 @@ export const MENU_BANNERS = {
   teamworlds: ['icons/banner-blank-blue.png', 'items/hot-air-balloon.webp'],
   hlsurvival: ['icons/banner-blank-red.png', 'items/t-rex.webp'],
   highstakes: ['icons/banner-blank-purple.png', 'items/poker-chip.webp'],
+  bluff: ['icons/banner-blank-purple.png', 'icons/reactions/giggle.png'],
 };
 export function applyMenuBanner(element, mode) {
   const config = MENU_BANNERS[mode];
@@ -139,7 +140,7 @@ export function createPolish({ document: doc = document, reduced = () => false, 
       if (!mode || /^(Question|Round |After round)/.test(title.textContent)) continue;
       // Several Party intro pages share the same container.
       if (host.id === 'teamvteam-content') {
-        mode = ({'Classic Party': 'classic', 'High/Low Survival': 'hlsurvival', 'High Stakes': 'highstakes'})[title.textContent.trim()] || 'teamvteam';
+        mode = ({'Classic Party': 'classic', 'High/Low Survival': 'hlsurvival', 'High Stakes': 'highstakes', 'Bluff the Room':'bluff'})[title.textContent.trim()] || 'teamvteam';
       }
       title.classList.add('polish-banner');
       applyMenuBanner(title, mode);

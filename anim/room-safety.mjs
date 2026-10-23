@@ -18,6 +18,7 @@ export function admitPlayer(room, id, player, reclaim = false) {
   if (room === null) return null;
   if (!room || room.phase === 'ended') return undefined;
   const players = room.players || {}, old = players[id];
+  if(room.settings?.mode==='bluff'&&room.phase!=='waiting'&&!old)return undefined;
   if (reclaim) {
     if (!old || old.isBot || old.connected !== false || old.name?.trim().toLowerCase() !== player.name?.trim().toLowerCase()) return undefined;
   } else if (old || Object.keys(players).length >= roomCapacity(room)) return undefined;

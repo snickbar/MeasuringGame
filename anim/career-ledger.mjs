@@ -3,8 +3,8 @@ import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 import {recordDiscoveries} from './discoveries.mjs';
 
-export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes'};
-export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9};
+export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes',bluff:'Bluff'};
+export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9,bluff:10};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
 // Seed older profiles from the history still available; then keep totals even
@@ -47,6 +47,17 @@ export function discover(profile,u,g){
 export function applyCareerRecord(profile,record){
   if(!profile||!record?.key)return profile;
   const key=safeKey(record.key);
+  if(record.kind==='bluffRound'){
+    if(profile.careerRounds?.[key])return profile;
+    const result=roundCareerProfile(profile,key,{rounds:1},{},record.players||{},record.playerId,record.history);
+    const old=profile.modeStats?.bluff||{};
+    result.modeStats={...profile.modeStats,bluff:{...old,rounds:(old.rounds||0)+1,makerTurns:(old.makerTurns||0)+(record.maker?1:0),
+      judged:(old.judged||0)+(record.maker?0:1),votes:(old.votes||0)+(record.submitted?1:0),correctVotes:(old.correctVotes||0)+(record.correct?1:0),
+      missedVotes:(old.missedVotes||0)+(!record.maker&&!record.submitted?1:0),fooled:(old.fooled||0)+(record.fooled||0)}};
+    result.objectFrequency=recordObjectFrequency(profile,record.history,'bluff');
+    result.objectDiscoveries=recordDiscoveries(profile,[record.history.u,record.history.g],{t:record.history.t,round:key,session:record.history.match,mode:'bluff'});
+    return discover(result,record.history.u,record.history.g);
+  }
   if(record.kind==='round'){
     if(profile.careerRounds?.[key])return profile;
     const h=record.history,answered=h?.answered!==false&&Number.isFinite(h?.r);

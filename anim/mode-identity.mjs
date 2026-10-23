@@ -5,13 +5,14 @@ export const MODE_IDENTITIES = {
  worlds:{label:'Worlds',accent:'#62b6d5',wash:'#dff1f7',ink:'#277896',art:'items/hot-air-balloon.webp'},
  survival:{label:'Survival',accent:'#bb514b',wash:'#f7dfd4',ink:'#9c3935',art:'items/t-rex.webp'},
  highstakes:{label:'High Stakes',accent:'#8f6eb9',wash:'#eee2f2',ink:'#69478e',art:'items/poker-chip.webp'},
+ bluff:{label:'Bluff the Room',accent:'#aa7fc0',wash:'#eee2f2',ink:'#69478e',art:'icons/reactions/giggle.png'},
  daily:{label:'Daily Challenge',accent:'#eda64e',wash:'#fff0d3',ink:'#9e611c',art:'icons/toolbar-daily.png'},
  monthly:{label:'Monthly Challenge',accent:'#b285c8',wash:'#f0e3f7',ink:'#805298',art:'items/pumpkin.webp'}
 };
 export const MODE_BACKGROUNDS=Object.entries(MODE_IDENTITIES).map(([mode,m])=>({id:'mode-'+mode,label:m.label+' gradient'}));
 export const modeGradient=id=>MODE_IDENTITIES[id.replace(/^mode-/,'')]?`linear-gradient(${MODE_IDENTITIES[id.replace(/^mode-/,'')].wash}, #fff7e5 80%)`:null;
 export function screenMode(id,setup,settings={}){
- const fixed={'worlds-screen':'worlds','teamworlds-screen':'worlds','daily-screen':'daily','monthly-screen':'monthly','survival-screen':'survival','hs-screen':'highstakes','teamvteam-screen':'quick'};
+ const fixed={'bluff-screen':'bluff','worlds-screen':'worlds','teamworlds-screen':'worlds','daily-screen':'daily','monthly-screen':'monthly','survival-screen':'survival','hs-screen':'highstakes','teamvteam-screen':'quick'};
  if(fixed[id])return fixed[id];
  if(!['create-screen','name-avatar-screen','lobby-screen','hud','final-screen','left-screen','ended-screen'].includes(id))return null;
  const mode=['create-screen','name-avatar-screen'].includes(id)?setup:(settings.mode||(settings.solo?'solo':'classic'));
