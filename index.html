@@ -4238,6 +4238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
   import { createAudioLifecycle } from "./anim/audio-lifecycle.mjs";
+  import { reactionEntrance } from "./anim/reaction-entrance.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
   var gamePolish, uiDelight, discoveryUI;
@@ -15106,6 +15107,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { opacity: 1, transform: "translateX(0)", offset: .62 },
       { opacity: 0, transform: `translateX(${hsCard && hsCard.dataset.hsSide === "l" ? 28 : -34}px)`, offset: 1 },
     ], { duration: 2000, easing: "ease-in", fill: "forwards" });
+    if (card && !r.previewAt && !prefersReducedMotion()) {
+      const rect = card.getBoundingClientRect();
+      const outward = hsCard?.dataset.hsSide === 'l' ? 1 : -1;
+      stage.animate(reactionEntrance({left:Math.max(0,left),size:RXS,cardLeft:rect.left,cardRight:rect.right,outward}),
+        {duration:380,easing:'cubic-bezier(.2,.7,.3,1)'});
+    }
     life.onfinish = () => { stage.remove(); if (rxShowing[r.playerId] === stage) delete rxShowing[r.playerId]; };
   }
 

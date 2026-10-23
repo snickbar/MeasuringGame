@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import {reactionEntrance} from '../anim/reaction-entrance.mjs';
+const left=reactionEntrance({left:174,size:140,cardLeft:300,cardRight:420});
+assert(parseFloat(left[0].translate)>0,'Leftward reaction begins toward sender on its right');assert(left[0].clipPath.startsWith('inset(0 '),'Card-facing right edge occluded');assert(left[0].opacity<1,'Fade-in retained');
+const right=reactionEntrance({left:98,size:72,cardLeft:0,cardRight:110,outward:1});assert(parseFloat(right[0].translate)<0,'Left-side High Stakes sender slides toward center');assert(right[0].clipPath.startsWith('inset(0 0 0 '),'Left card-facing edge occluded');
+for(const frames of [left,right,reactionEntrance({left:0,size:140,cardLeft:8,cardRight:130})]){assert.deepEqual(frames[1],{translate:'0px 0',opacity:1,clipPath:'inset(0 0px 0 0px)'});assert(!frames.some(f=>f.transform||f.scale),'Entrance does not replace existing reaction growth or body motion');}
+const source=fs.readFileSync('index.html','utf8');assert(source.includes('if (card && !r.previewAt && !prefersReducedMotion())'),'Preview/reduced motion excluded');assert(source.includes('{ opacity: 1, transform: "translateX(0)", offset: .62 }'));assert(source.includes('{ duration: 2000, easing: "ease-in", fill: "forwards" }'),'Original exit lifetime/easing retained');
+console.log('Reaction entrance: card-directed slide, edge occlusion, retained fade/growth, both sender sides, unchanged hold/exit and reduced motion passed.');
