@@ -9924,8 +9924,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="hs-stand">${rows.map((r, i) => {
         const p = data.players?.[r.id];
         const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv"></span>`;
-        const dl = r.delta > 0 ? `<span class="hs-delta up">&#9650; +${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">&#9660; ${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
-        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.rankMove > 0 ? " hs-climb" : ""}" style="--shift:${r.rankMove || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
+        const dl = r.delta > 0 ? `<span class="hs-delta up">+${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
+        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
   function renderHighStakes(data) {
