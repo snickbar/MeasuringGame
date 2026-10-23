@@ -1,4 +1,11 @@
 const CODE=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+// Explicit package handoff also works when a messaging app has opened its own browser.
+// Keep the HTTPS invite as the fallback, including the room code.
+export function roomAppIntent(code){
+  if(typeof code!=='string'||!CODE.test(code.toUpperCase()))return null;
+  const invite=`https://size-em-up.web.app/?join=${code.toUpperCase()}`;
+  return `intent://size-em-up.web.app/?join=${code.toUpperCase()}#Intent;scheme=https;package=com.snickbar.sizeemup;S.browser_fallback_url=${encodeURIComponent(invite)};end`;
+}
 // Read only our invite's room code. Never navigate to a scanned URL.
 export function roomCodeFromQr(value,origin=globalThis.location?.origin){
   if(typeof value!=='string'||value.length>2048)return null;

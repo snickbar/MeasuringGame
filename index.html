@@ -4285,7 +4285,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
-  import { mountRoomQr, pendingRoomInvite } from "./anim/room-qr.mjs";
+  import { mountRoomQr, pendingRoomInvite, roomAppIntent } from "./anim/room-qr.mjs";
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
@@ -12591,14 +12591,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // the code already filled in instead of making them retype it.
   // A shared link can arrive two ways: as the page address (browser, or the first load of the web app), or - inside the
   // installed Android app - as an app link the system hands to the app (see the App plugin listener below).
-  // Someone opened a shared link in a browser. On Android that means the app is not installed (when it is, the system opens
-  // the link in the app instead), so offer the Play Store. The page behind it is already showing the right screen.
-  function maybeOfferAppInstall() {
+  // Some messaging browsers keep verified links in their own window. Offer an explicit
+  // app handoff rather than assuming a browser visitor does not have the app installed.
+  function maybeOfferAppInstall(search = location.search) {
     const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
     if (isNativeApp || standalone || !/Android/i.test(navigator.userAgent)) return;
+    const code = new URLSearchParams(search).get("join");
+    const appIntent = roomAppIntent(code);
+    if (!appIntent || document.getElementById("room-app-handoff")) return;
     const ov = document.createElement("div");
     ov.id = "qr-overlay";
-    ov.innerHTML = `<div id="qr-card"><div class="qr-title">Get the Size Em Up! app</div><div class="qr-sub">Play with friends and keep your scores in the free app.</div><a class="qr-close" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin:0 auto 8px;width:210px;box-sizing:border-box" href="https://play.google.com/store/apps/details?id=com.snickbar.sizeemup" target="_blank" rel="noopener">Get it on Google Play</a><button type="button" class="qr-close" style="width:210px">Keep playing here</button></div>`;
+    ov.innerHTML = `<div id="qr-card"><div class="qr-title">Join in the app</div><div class="qr-sub">Open Size Em Up! to join room ${escapeHtml(code.toUpperCase())}.</div><a id="room-app-handoff" class="qr-close" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin:0 auto 12px;width:210px;box-sizing:border-box" href="${escapeHtml(appIntent)}">Open in app</a><a style="display:block;margin:0 auto 16px;color:#543820" href="https://play.google.com/store/apps/details?id=com.snickbar.sizeemup" target="_blank" rel="noopener">Get it on Google Play</a><button type="button" class="qr-close" style="width:210px">Keep playing here</button></div>`;
     ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("button.qr-close")) ov.remove(); });
     document.body.appendChild(ov);
   }
@@ -12623,7 +12626,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!/[?&](join|play)=/.test(search)) return;
     history.replaceState({}, "", location.pathname);
     // Wait until the rest of the page has finished setting up (some screens use things defined further down).
-    setTimeout(() => { routeDeepLink(search); maybeOfferAppInstall(); }, 0);
+    setTimeout(() => { routeDeepLink(search); maybeOfferAppInstall(search); }, 0);
   })();
   if (isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
     const appPlug = window.Capacitor.Plugins.App;

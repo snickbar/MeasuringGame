@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
-import {roomCodeFromQr,mountRoomQr,pendingRoomInvite} from '../anim/room-qr.mjs';
+import {roomCodeFromQr,mountRoomQr,pendingRoomInvite,roomAppIntent} from '../anim/room-qr.mjs';
 
 for(const value of ['ab2c',' AB2C ','https://size-em-up.web.app/?join=ab2c','https://size-em-up.firebaseapp.com/index.html?join=AB2C','http://192.168.1.173:4180/?join=AB2C'])
   assert.equal(roomCodeFromQr(value,'http://192.168.1.173:4180'),'AB2C');
 assert.equal(roomCodeFromQr('http://192.168.1.173:4180/?join=AB2C','https://localhost'),'AB2C','Android can scan a local browser host invite without opening its URL');
 for(const value of [null,'','1234','ABIC','AB2CC','https://example.com/?join=AB2C','javascript:alert(1)','https://size-em-up.web.app.evil.test/?join=AB2C','https://user@size-em-up.web.app/?join=AB2C','https://size-em-up.web.app/?join=AB2C&join=DE3F','https://size-em-up.web.app/?join=%3Csvg%3E','x'.repeat(2049)])
   assert.equal(roomCodeFromQr(value),null,'Reject '+String(value).slice(0,70));
+const intent=roomAppIntent('ab2c');
+assert(intent.startsWith('intent://size-em-up.web.app/?join=AB2C#Intent;scheme=https;package=com.snickbar.sizeemup;'));
+assert(intent.endsWith('S.browser_fallback_url='+encodeURIComponent('https://size-em-up.web.app/?join=AB2C')+';end'));
+for(const code of [null,'','AB2C;end','<svg>','1234'])assert.equal(roomAppIntent(code),null);
 class Button extends EventTarget {disabled=false;click(){if(!this.disabled)this.dispatchEvent(new Event('click'));}}
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
 function setup(scanner,isActive=()=>true,extra={}){
