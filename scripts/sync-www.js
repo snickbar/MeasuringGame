@@ -1,34 +1,24 @@
 // Copies the static web app (the actual source of truth lives at the repo
-// root, same as the Firebase Hosting deploy) into www/, which is purely a
+// root) into www/, which is purely a
 // generated Capacitor build input - never hand-edit anything under www/,
-// run this (or `npm run sync`) instead and it'll be rebuilt fresh every time.
+// run this instead and it'll be rebuilt fresh every time. Firebase Hosting is
+// staged separately from these same production files by build-live-bundle.js.
 const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
 
-const FILES = ["index.html", "manifest.json", "sw.js", "privacy.html", "icon-192.png", "icon-512.png", "home-bg.jpg", "home-bg-2.jpg", "home-bg-3.jpg", "home-sunflower.jpg", "home-corgi.jpg", "home-cactus.jpg", "home-penguin.jpg", "home-lighthouse.jpg", "home-watermelon.jpg", "home-games.jpg", "home-house.jpg", "home-wheels.jpg", "home-giraffe.jpg", "home-dragon.jpg", "home-space.jpg", "home-snacks.jpg", "home-town.jpg", "home-underwater.jpg", "home-toy-box.jpg"];
-const DIRS = ["icons", "avatars", "sfx", "items", "anim", "backgrounds"];
-
-function copyDir(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, entry.name);
-    const d = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir(s, d);
-    else fs.copyFileSync(s, d);
-  }
-}
+const {list}=require('./production-files.cjs');
+if(path.dirname(WWW)!==ROOT||path.basename(WWW)!=='www')throw Error('Unexpected build output path');
 
 fs.rmSync(WWW, { recursive: true, force: true });
 fs.mkdirSync(WWW, { recursive: true });
 
-for (const f of FILES) {
-  fs.copyFileSync(path.join(ROOT, f), path.join(WWW, f));
-}
-for (const d of DIRS) {
-  copyDir(path.join(ROOT, d), path.join(WWW, d));
+const files=list();
+for (const f of files) {
+  const dest=path.join(WWW,f);fs.mkdirSync(path.dirname(dest),{recursive:true});
+  fs.copyFileSync(path.join(ROOT,f),dest);
 }
 
 // Stamp the build so the native app can tell whether a downloaded live-update
@@ -43,4 +33,4 @@ const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12);
 const version = "1.0." + stamp + "-" + sha.slice(0, 7);
 fs.writeFileSync(path.join(WWW, "app-version.json"), JSON.stringify({ version }) + "\n");
 
-console.log("www/ synced from repo root (" + FILES.length + " files, " + DIRS.length + " folders).");
+console.log("www/ synced with " + files.length + " production files; review assets excluded.");

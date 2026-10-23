@@ -41,7 +41,7 @@ for(const [id,count,home]of [['under-the-sea',19,'underwater'],['toy-box',18,'to
   assert(objects.has(api.WORLD_ICON[id]));
   for(const objectId of world.ids)assert.equal(objects.get(objectId)?.group,'Standard',objectId+' must not require a pack');
   const reward=api.HOME_SCREENS.find(h=>h.world===id);assert.equal(reward.id,home);assert(fs.existsSync(new URL(reward.file,root)));
-  assert(fs.readFileSync(new URL('scripts/sync-www.js',root),'utf8').includes('"'+reward.file+'"'));
+  assert(fs.readFileSync(new URL('scripts/production-files.cjs',root),'utf8').includes("'"+reward.file+"'"));
   for(let level=1;level<=5;level++)for(let run=0;run<40;run++){
     const questions=api.worldQuestions(world,level);assert.equal(questions.length,5);
     assert.equal(new Set(questions.map(q=>[q.unitId,q.targetId].join('/'))).size,5);
