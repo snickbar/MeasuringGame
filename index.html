@@ -199,6 +199,7 @@ if (location.protocol === "file:") {
 
   #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #hs-screen, #bluff-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen, #teamworlds-screen { display: none; }
   #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #hs-screen.active, #bluff-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active, #teamworlds-screen.active { display: block; }
+  .screen:not(.active), #hud:not(.active) { display: none !important; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
     display: flex; flex-direction: column;
@@ -4077,7 +4078,7 @@ if (location.protocol === "file:") {
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
   <div class="lobby-room-box">
-    <span id="lobby-title-room">Room: <strong id="room-code-display"></strong></span>
+    <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
     <button id="qr-room-btn" type="button" aria-label="Show room QR code">Show QR</button>
   </div>
@@ -4285,6 +4286,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
   import { mountRoomQr, pendingRoomInvite } from "./anim/room-qr.mjs";
+  import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
   var careerLedger;
@@ -8830,13 +8832,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // really exercised before. Now any of them, while a game is in progress,
   // asks to leave the game first (same leave/end-game path as the in-HUD
   // Exit button) instead of risking it.
-  // Safety net: the High Stakes table can never be drawn at the same time as Settings/Shop/Stats/etc. or the "you left" page.
-  // If a late update ever switches it back on behind one of them, it is switched off again straight away.
-  (function guardHsStacking() {
-    const blockers = () => OVERLAY_SCREENS.concat([leftScreenEl, endedScreenEl]);
-    const enforce = () => { if (hsScreenEl.classList.contains("active") && blockers().some((el) => el.classList.contains("active"))) hsScreenEl.classList.remove("active"); };
-    const mo = new MutationObserver(enforce);
-    [hsScreenEl].concat(blockers()).forEach((el) => { if (el) mo.observe(el, { attributes: true, attributeFilter: ["class"] }); });
+  // One shared safety net covers every mode, result page, menu and toolbar.
+  (function guardScreenStacking() {
+    const chrome=[hudSubToolbarEl,hudRoomCodeGroupEl,hudRoundLabelEl,bottomToolbarEl,pausedOverlayEl,kickModalEl];
+    const enforce=()=>enforceSingleScreen({screens:ALL_SCREEN_ELS,menus:OVERLAY_SCREENS,terminals:[leftScreenEl,endedScreenEl,finalScreenEl],chrome});
+    const mo=new MutationObserver(enforce);
+    ALL_SCREEN_ELS.concat(chrome).forEach(el=>mo.observe(el,{attributes:true,attributeFilter:['class']}));
+    enforce();
   })();
   function isInActiveGame() {
     // The final-results screen counts too: the game isn't over until you press Finish/Leave there.
@@ -17385,7 +17387,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // is open, missing that matters more than staying on the overlay, so
     // force-close it instead - same reasoning as the editingFromLobby
     // cancel just above.
-    if (isHudActive || phase === "hs" || phase === "bluff") {
+    if (isHudActive || (phase === "hs" && data.hs?.stage !== "over") || (phase === "bluff" && data.bluff?.stage !== "over")) {
       const openOverlayEl = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
       if (openOverlayEl) { openOverlayEl.classList.remove("active"); overlayReturnScreen = null; }
     }
@@ -17398,19 +17400,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudSubToolbarEl.classList.toggle("active", isHudActive || phase==='bluff');
     hudRoomCodeGroupEl.classList.toggle("active", (isHudActive || phase==='bluff') && !(data.settings && data.settings.solo));
     hudRoundLabelEl.classList.toggle("active", isHudActive);
-    bottomToolbarEl.classList.toggle("active", isHudActive || phase === "final" || phase === "hs" || phase==='bluff');
+    bottomToolbarEl.classList.toggle("active", !overlayStillOpen && (isHudActive || phase === "final" || phase === "hs" || phase==='bluff'));
     hsScreenEl.classList.toggle("active", phase === "hs" && !overlayStillOpen);
-    hsEnsureTicker(phase === "hs");
+    hsEnsureTicker(phase === "hs" && !overlayStillOpen);
     bluffScreenEl.classList.toggle('active',phase==='bluff'&&!overlayStillOpen);
     bluffUI?.refresh();
     reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
-    finalScreenEl.classList.toggle("active", phase === "final");
+    finalScreenEl.classList.toggle("active", phase === "final" && !overlayStillOpen);
     if (phase === "ended") {
       fillExitStats(document.getElementById("ended-stats"), gameRecapTiles());
       document.querySelector("#ended-screen .exit-icon").innerHTML = gameOutcomeArt("icons/reactions/padlock.png");
     }
-    endedScreenEl.classList.toggle("active", phase === "ended");
+    endedScreenEl.classList.toggle("active", phase === "ended" && !overlayStillOpen);
 
     questionViewEl.classList.toggle("active", phase === "question");
     answersViewEl.classList.toggle("active", phase === "answers");

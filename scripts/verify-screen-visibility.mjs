@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {enforceSingleScreen} from '../anim/screen-visibility.mjs';
 
 const source = fs.readFileSync('index.html', 'utf8');
 const hiddenRule = source.match(/#home-screen,[^\r\n]+\{ display: none; \}/)[0];
@@ -12,6 +13,9 @@ for (const tag of source.matchAll(/<div\b[^>]+>/g)) {
   assert(hiddenRule.includes(`#${id},`) || hiddenRule.includes(`#${id} {`), `Inactive screen missing hide rule: ${id}`);
 }
 assert(source.includes('#hs-screen.active'));
+assert(source.includes('.screen:not(.active), #hud:not(.active) { display: none !important; }'),'Inactive screens override inline layout styles');
+assert(source.includes('phase === "final" && !overlayStillOpen'),'Late final updates respect the open menu');
+assert(source.includes('phase === "ended" && !overlayStillOpen'),'Late ended updates respect the open menu');
 
 const active = () => {
   const classes = new Set(['active']);
@@ -23,6 +27,18 @@ const docElement = id => {
   return elements.get(id);
 };
 const board = active(), left = active(), overlay = active();
+// Every kind of menu wins over every kind of room/terminal screen, including
+// delayed renders and inline layout styles left behind by animation code.
+for(const menuId of ['settings','shop','style','stats','objects','awards','howto','worlds','survival']){
+ for(const gameId of ['lobby','hud','final-screen','hs-screen','bluff-screen','left-screen','ended-screen']){
+  const menu={...active(),id:menuId},game={...active(),id:gameId},bar={...active(),id:'bar'};
+  const args={screens:[game,menu],menus:[menu],terminals:[game],chrome:[bar]};
+  assert.equal(enforceSingleScreen(args),menu);assert(!game.classList.contains('active'));assert(!bar.classList.contains('active'));
+  game.classList.add('active');assert.equal(enforceSingleScreen(args),menu,'Late callback cannot show old game behind menu');
+  menu.classList.remove('active');game.classList.add('active');assert.equal(enforceSingleScreen(args),game,'Explicit return restores game normally');
+ }
+}
+{const game={...active(),id:'hud'},end={...active(),id:'ended-screen'};assert.equal(enforceSingleScreen({screens:[game,end],menus:[],terminals:[end]}),end);assert(!game.classList.contains('active'));}
 let stopped = null, scroll = null;
 const context = vm.createContext({
   ALL_SCREEN_ELS: [board, left, overlay], leftScreenEl: left,
