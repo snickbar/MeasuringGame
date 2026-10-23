@@ -43,7 +43,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
   let handle=null,busy=false,selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
-  let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='',introKey='',introAt=0,timers=[],timersKey='';
+  let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='',finalKey='',introKey='',introAt=0,timers=[],timersKey='';
   let celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
   const image=id=>{const o=object(id);return `<figure><img src="${esc(o?.image)}" alt="${esc(o?.name)}" draggable="false"><figcaption>${esc(o?.name)}</figcaption></figure>`;};
   function render(){
@@ -55,10 +55,11 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     if(introKey!==key){introKey=key;introAt=now();}
     const age=Math.max(0,now()-introAt),intro=age<1000&&!reduced(),introStyle=intro?` style="animation-delay:-${age}ms"`:'';
     const voters=s.order.length-1,votesIn=Object.keys(s.votes||{}).length,voteMeter=`<span class="bl-vote-meter" role="status" aria-label="${votesIn} of ${voters} votes in">${Array.from({length:voters},(_,i)=>`<i class="${i<votesIn?'done':''}"></i>`).join('')}<b>${votesIn} of ${voters} voted</b></span>`;
+    const lockedHere=finalKey===key,finalPill=lockedHere?'<span class="bl-final-pill" role="status">This choice is final</span>':'';
     let content='';
     if(s.stage==='animation')content='<p class="bl-instruction">Revealing the sizes…</p><p class="bl-note">Votes are locked.</p>';
-    if(s.stage==='make')content=mine?`<p class="bl-instruction">Your private choices. Pick a claim.</p><div class="bl-claims">${Object.keys(BLUFF_LABELS).map(kind=>{const i=s.options.findIndex(o=>o.kind===kind),o=s.options[i];return `<button type="button" class="bl-choice-${kind}${intro&&s.stage==='make'?' bl-flip':''}"${intro?introStyle:''} data-claim="${i}" data-fit-single-line="true" aria-pressed="${selection===i}"><strong>${bluffNumber(o.value)}</strong><span>${BLUFF_LABELS[o.kind]}</span></button>`;}).join('')}</div><button type="button" class="bl-action" data-send-claim ${selection===null||busy?'disabled':''}>Set as answer</button><p class="bl-note">+1 per player fooled.</p>`:`<div class="bl-wait"><span class="avatar">${avatar(maker?.avatar)}</span><h3>${esc(maker?.name||s.names?.[s.maker]||'The maker')} is choosing a claim</h3><p>They know the answer. Will you trust them?</p></div>`;
-    if(s.stage==='vote')content=`<div class="bl-claim${intro?' bl-slam':''}"${intro?introStyle:''}><span class="avatar bl-claim-avatar">${avatar(maker?.avatar||s.avatars?.[s.maker])}</span><span>${esc(maker?.name||s.names?.[s.maker]||'The maker')} says</span><strong>${bluffNumber(s.claim.value)}</strong></div>${s.autoClaim?'<p class="bl-note">Automatic claim: no maker points this round.</p>':''}${mine?'<p class="bl-instruction">Claim set. Who believes you?</p>':member?`<p class="bl-instruction">Judge this claim.</p><div class="bl-votes">${Object.entries(BLUFF_LABELS).map(([id,label])=>`<button type="button" class="bl-choice-${id}" data-vote="${id}" aria-pressed="${myVote===id}" ${busy||room.paused||now()>=s.endsAt||(myVote&&now()>=bluffVoteDeadline(s,me))?'disabled':''}>${label}</button>`).join('')}</div><p class="bl-locked" data-vote-status role="status"></p><div class="lock-bar" data-lock-bar hidden><i></i></div>`:'<p>You’re watching this game. Join the next game to play.</p>'}`;
+    if(s.stage==='make')content=mine?`<p class="bl-instruction">Your private choices. Pick a claim.</p><div class="bl-claims">${Object.keys(BLUFF_LABELS).map(kind=>{const i=s.options.findIndex(o=>o.kind===kind),o=s.options[i];return `<button type="button" class="bl-choice-${kind}${intro&&s.stage==='make'?' bl-flip':''}"${intro?introStyle:''} data-claim="${i}" data-fit-single-line="true" aria-pressed="${selection===i}"${lockedHere?' disabled':''}><strong>${bluffNumber(o.value)}</strong><span>${BLUFF_LABELS[o.kind]}</span></button>`;}).join('')}</div>${lockedHere?finalPill:`<button type="button" class="bl-action" data-send-claim ${selection===null||busy?'disabled':''}>Set as answer</button>`}<p class="bl-note">+1 per player fooled.</p>`:`<div class="bl-wait"><span class="avatar">${avatar(maker?.avatar)}</span><h3>${esc(maker?.name||s.names?.[s.maker]||'The maker')} is choosing a claim</h3><p>They know the answer. Will you trust them?</p></div>`;
+    if(s.stage==='vote')content=`<div class="bl-claim${intro?' bl-slam':''}"${intro?introStyle:''}><span class="avatar bl-claim-avatar">${avatar(maker?.avatar||s.avatars?.[s.maker])}</span><span>${esc(maker?.name||s.names?.[s.maker]||'The maker')} says</span><strong>${bluffNumber(s.claim.value)}</strong></div>${s.autoClaim?'<p class="bl-note">Automatic claim: no maker points this round.</p>':''}${mine?'<p class="bl-instruction">Claim set. Who believes you?</p>':member?`<p class="bl-instruction">Judge this claim.</p><div class="bl-votes">${Object.entries(BLUFF_LABELS).map(([id,label])=>`<button type="button" class="bl-choice-${id}" data-vote="${id}" aria-pressed="${myVote===id}" ${busy||room.paused||now()>=s.endsAt||(myVote&&now()>=bluffVoteDeadline(s,me))?'disabled':''}>${label}</button>`).join('')}</div><p class="bl-locked" data-vote-status role="status"></p>${finalPill}<div class="lock-bar" data-lock-bar hidden><i></i></div>`:'<p>You’re watching this game. Join the next game to play.</p>'}`;
     if(s.stage==='reveal'){const ck=room.gameId+':'+s.round,sAge=ck===celebrationKey?(celebrationAbandoned?Infinity:now()-celebrationAt):0;content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,!reduced()&&visible());}
     const stageChanged=cueKey!==key;
     element.classList.toggle('bl-stage-enter',stageChanged);
@@ -91,11 +92,12 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   }
   async function work(fn,quiet=false){
     if(busy)return;busy=true;error='';render();
-    try{const result=await fn();if(result?.committed===false&&!quiet){selection=null;error='That step has closed. Waiting for the latest game state.';}}
+    try{const result=await fn();if(result?.committed===false&&!quiet){selection=null;if(!finalKey)error='';}}
     catch{error='Couldn’t save. Check your connection and try again.';}
     finally{busy=false;signature='';render();}
   }
-  function send(action,value){return work(async()=>{const {room,me}=context();const result=await act({gameId:room.gameId,round:room.bluff.round,stage:room.bluff.stage,actor:me,action,value});if(result?.committed&&visible()){sound('tap');vibrate(action==='claim'?[30,40,30]:22);}return result;});}
+  function send(action,value){return work(async()=>{const {room,me}=context();const result=await act({gameId:room.gameId,round:room.bluff.round,stage:room.bluff.stage,actor:me,action,value});
+    if(action==='claim'||(action==='vote'&&result?.committed===false))finalKey=room.gameId+':'+room.bluff.round+':'+room.bluff.stage+':'+(room.bluff.showStand?'rankings':'board')+':'+me;if(result?.committed&&visible()){sound('tap');vibrate(action==='claim'?[30,40,30]:22);}return result;});}
   function clock(){
     const {room,me}=context(),s=room?.bluff;if(!s)return;
     for(const next of element.querySelectorAll('[data-next]'))next.disabled=busy||room.paused;
