@@ -47,10 +47,38 @@ export function revealBluff(s,now){
     scores:Object.fromEntries(s.order.map(id=>[id,(s.scores[id]||0)+points[id]])),
     result:{points,caught,wrong,submitted:Object.keys(s.votes||{}).length}};
 }
+// ---- Bots ----
+// A bot maker knows the answer. Easier bots mostly tell the truth or pick a lie at random; sharper bots lie more often and
+// choose the believable lie (the option closest to the real answer).
+const BOT_TRUTH={easy:.5,medium:.4,hard:.3},BOT_CLOSE_LIE={easy:.5,medium:.65,hard:.85};
+export function botMakerChoice(s,difficulty='medium',rng=Math.random){
+  const level=BOT_TRUTH[difficulty]?difficulty:'medium',options=s.options,truth=options.findIndex(o=>o.kind==='correct');
+  if(rng()<BOT_TRUTH[level])return truth;
+  const lies=options.map((o,i)=>({o,i})).filter(x=>x.o.kind!=='correct').sort((a,b)=>Math.abs(Math.log(a.o.value/s.q.answer))-Math.abs(Math.log(b.o.value/s.q.answer)));
+  return (rng()<BOT_CLOSE_LIE[level]?lies[0]:lies[1]).i;
+}
+// A bot voter makes its own noisy estimate of the real answer (sharper bots are closer) and judges the claim against it.
+const BOT_NOISE={easy:.6,medium:.33,hard:.17};
+function gaussian(rng){let u=0;while(!u)u=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*rng());}
+export function botVoteChoice(s,difficulty='medium',rng=Math.random){
+  const sigma=BOT_NOISE[difficulty]??BOT_NOISE.medium,estimate=s.q.answer*Math.exp(sigma*gaussian(rng)),gap=Math.log(s.claim.value/estimate),tolerance=Math.log(1.12);
+  return Math.abs(gap)<=tolerance?'correct':gap>0?'high':'low';
+}
 export function bluffStandings(s){
   const rows=s.order.map(id=>({id,score:s.scores?.[id]||0,accuracy:s.judged?.[id]?100*(s.correct?.[id]||0)/s.judged[id]:0}));
   rows.sort((a,b)=>b.score-a.score||b.accuracy-a.accuracy);
   let rank=0;return rows.map((row,i)=>{if(!i||row.score!==rows[i-1].score||Math.abs(row.accuracy-rows[i-1].accuracy)>1e-8)rank=i+1;return {...row,rank};});
+}
+// Standings as they were before this round's points, for the climbed/dropped arrows (null when nobody was ahead yet).
+export function bluffStandingsBefore(s){
+  if(!s?.result)return null;
+  const before={...s,scores:{},correct:{...s.correct},judged:{...s.judged}};
+  for(const id of s.order){
+    before.scores[id]=(s.scores?.[id]||0)-(s.result.points[id]||0);
+    if(id!==s.maker){before.judged[id]=Math.max(0,(s.judged?.[id]||0)-1);if(s.votes?.[id]===s.claim.kind)before.correct[id]=Math.max(0,(s.correct?.[id]||0)-1);}
+  }
+  const rows=bluffStandings(before);
+  return rows.every(r=>r.rank===1)?null:rows;
 }
 export function bluffNewLeaders(s){
   if(!s?.result)return [];
