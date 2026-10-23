@@ -2,8 +2,6 @@
 #bluff-screen.active{display:block}
 #bluff-content{position:relative}
 #bluff-content .avatar .avatar-icon{display:block;width:100%;height:100%;object-fit:contain}
-#bluff-content .bl-skip{flex:0 0 68px;width:68px;min-width:0;max-width:68px;margin:0 0 0 auto;padding:8px 9px;min-height:36px;border:2px solid #a58b61;border-radius:12px;background:linear-gradient(#fffdf5,#f3dfb5);color:#3b2718;font:600 14px Fredoka,sans-serif;text-shadow:none;white-space:nowrap}
-#bluff-content .bl-meta:has(.bl-skip) .bl-clock{margin-left:0}
 .bl-reveal-overlay{position:absolute;inset:48px 0 auto;min-height:calc(100dvh - 210px);z-index:12;display:flex;align-items:flex-start;justify-content:center;padding:0;background:#3b27183b;border-radius:18px}
 .bl-reveal-sheet{box-sizing:border-box;width:100%;max-width:390px;padding:10px;background:#fff9e9;border:3px solid #a58b61;border-radius:20px;box-shadow:0 8px 24px #3b27184d}
 .bl-reveal-sheet h2{margin:0 0 8px;text-align:center;font:600 18px Fredoka,sans-serif;color:#3b2718;text-shadow:none}
@@ -53,8 +51,6 @@ html[data-motion=full] .bl-new-leader{animation:bl-lead-glow 1.5s ease-out both}
 .bl-screen-reader{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 #bluff-content .bl-meta{position:sticky;top:110px;z-index:20;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 42px;align-items:center;gap:8px;margin:0 0 5px;background:#fff9ec;border-radius:14px}
 #bluff-content .bl-meta>.hs-rounds{grid-column:1;min-width:0;white-space:nowrap}.bl-meta>.hs-hint{grid-column:2;font-size:10px;margin:0;text-align:center}
-#bluff-content .bl-meta .bl-skip{grid-column:2;justify-self:center;margin:0}
-#bluff-content .bl-meta-action{grid-column:2;width:100%;max-width:136px;justify-self:center;min-width:0;height:36px;margin:0;padding:4px 6px;border:2px solid #9c874f;border-radius:12px;background:linear-gradient(#f1f8d4,#cfe59f);font:600 13px Fredoka,sans-serif;color:#3b2718;text-shadow:none;white-space:nowrap;box-shadow:0 2px 0 #79552f22}
 #bluff-content .bl-meta .bl-clock{grid-column:3;margin-left:0}
 #bluff-content .bl-clock{margin-left:auto;flex:0 0 42px;width:42px;height:42px;font-size:20px}
 #bluff-content .bl-clock.wide{font-size:11px}
@@ -110,3 +106,16 @@ html[data-motion=reduced] .bl-win-dance,html[data-motion=reduced] .bl-maker-laug
 @media(max-width:350px){#bluff-content .bl-table{grid-template-columns:62px minmax(0,1fr) 62px;gap:5px}#bluff-content .bl-player .avatar{width:44px;height:44px}}
 @media(max-height:740px){.bl-objects img{height:42px}#bluff-content .bl-question h2{font-size:15px;margin-top:4px}.bl-claims button,.bl-votes button{min-height:42px;padding:5px 3px}.bl-claims strong{font-size:21px}.bl-action{height:42px}.bl-claim>strong{font-size:27px}.bl-panel p{font-size:13px}}
 html[data-motion=full] .bl-stage-enter :is(.bl-claim,.bl-reveal){animation:bl-pop .24s ease-out}@keyframes bl-pop{from{opacity:.5;scale:.96}to{opacity:1;scale:1}}
+/* Progress dots in the top bar (long games use a slim segmented bar). */
+#bluff-content .bl-meta .hs-dots{flex-wrap:nowrap}
+#bluff-content .bl-meta .hs-dots.many{width:100%;gap:2px}
+#bluff-content .bl-meta .hs-dots.many i{flex:1 1 0;min-width:0;width:auto;height:8px;border-width:1px;border-radius:3px;transform:none;animation:none}
+#bluff-content .bl-meta .hs-dots.many i.now{background:#ffd43b;border-color:#4a2c12}
+/* Host button anchored to the bottom of the visible screen, above the reaction toolbar. */
+#bluff-content.bl-has-dock{padding-bottom:calc(var(--bl-tb,0px) + 84px)}
+#bluff-content .bl-dock{position:fixed;left:0;right:0;bottom:var(--bl-tb,0px);z-index:45;max-width:520px;margin:0 auto;padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px)*0);background:linear-gradient(rgba(251,250,246,0),#fbfaf6 28%);pointer-events:none;animation:bl-dock-in .25s ease-out}
+#bluff-content .bl-dock>*{pointer-events:auto}
+#bluff-content .bl-dock .bl-dock-btn{margin:0;min-height:54px;font-size:18px}
+#bluff-content .bl-dock .hs-hint{margin:0;text-align:center;padding:10px;border-radius:14px;background:#fffdf6;border:2px solid #ecdcc0}
+@keyframes bl-dock-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#bluff-content .bl-dock{animation:none}}

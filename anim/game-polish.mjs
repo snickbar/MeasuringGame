@@ -8,7 +8,7 @@ export const MENU_BANNERS = {
   teamworlds: ['icons/banner-blank-blue.png', 'items/hot-air-balloon.webp'],
   hlsurvival: ['icons/banner-blank-red.png', 'items/t-rex.webp'],
   highstakes: ['icons/banner-blank-purple.png', 'items/poker-chip.webp'],
-  bluff: ['icons/banner-blank-purple.png', 'icons/reactions/giggle.png'],
+  bluff: ['icons/banner-blank-pink.png', 'icons/reactions/giggle.png'],
 };
 export function applyMenuBanner(element, mode) {
   const config = MENU_BANNERS[mode];
