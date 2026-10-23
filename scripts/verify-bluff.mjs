@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,revealBluff,bluffStandings,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
+import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
 import {applyCareerRecord,objectFrequency} from '../anim/career-ledger.mjs';
 import {admitPlayer} from '../anim/room-safety.mjs';
 const q={unitId:'pencil',targetId:'door',answer:11.6,prompt:'How many pencils long is the height of a door?'};
@@ -19,7 +19,7 @@ for(let count=3;count<=10;count++)for(const turns of ['auto',1,2])for(let game=0
   for(const id of ids.filter(id=>id!==s.maker)){
    if(rng()<.1)continue;
    const choice=['low','correct','high'][Math.floor(rng()*3)];if(choice===s.claim.kind)right++;else wrong++;
-   s=voteBluff(s,id,choice,now+200);assert.equal(voteBluff(s,id,choice,now+201),null,'Locked vote cannot change');
+   s=voteBluff(s,id,choice,now+200);assert.equal(voteBluff(s,id,choice,now+201),null,'Duplicate tap cannot reset buffer');
   }
   const expected={...room,bluff:s};const result=revealBluff(s,now+500);assert.equal(result.result.points[s.maker],wrong);
   assert.equal(Object.values(result.result.points).reduce((a,b)=>a+b,0),wrong+right*2);
@@ -31,6 +31,20 @@ for(let count=3;count<=10;count++)for(const turns of ['auto',1,2])for(let game=0
  assert.equal(dealBluff(s,q,now,rng),null,'No extra rounds');
 }
 const ids=['a','b','c'],players={a:{isHost:true},b:{},c:{}};
+const clean=v=>{if(v==null)return null;if(typeof v!=='object')return v;if(Array.isArray(v))return v.map(clean);const entries=Object.keys(v).sort().reverse().map(k=>[k,clean(v[k])]).filter(([,x])=>x!==null);return entries.length?Object.fromEntries(entries):null;};
+{
+ let v=chooseBluff(dealBluff(newBluff(ids,1),q,1000),ids[0],0,1100,true);
+ const id=v.order.find(x=>x!==v.maker);v=voteBluff(v,id,'low',2000);
+ const changed=voteBluff(v,id,'high',11999);assert(changed,'Vote can change for ten seconds');assert.equal(changed.voteAt[id],2000,'Changing does not reset buffer');
+ assert.equal(bluffVoteDeadline(changed,id),12000);assert.equal(voteBluff(changed,id,'correct',12000),null,'Exact window boundary locks');
+ const late=voteBluff({...v,votes:{},voteAt:{}},id,'high',v.endsAt-1);assert.equal(bluffVoteDeadline(late,id),v.endsAt,'Window cannot extend round deadline');
+ const expected={phase:'bluff',gameId:'serialization',players,bluff:{...changed,claim:changed.claim,optional:null,empty:{}}};
+ const animation={...expected.bluff,stage:'animation',startedAt:15000,endsAt:18000};
+ const stored=clean(expected);assert(commitBluff(stored,expected,animation,'a'),'Firebase field ordering and missing empty/null children cannot stall animation');
+ const revealing={...stored,bluff:clean(animation)};const revealed=clean(revealBluff(revealing.bluff,18001));assert(commitBluff(revealing,{...expected,bluff:animation},revealed,'a'),'Animation finishes after Firebase roundtrip');assert.equal(bluffStandings(revealed).length,3,'Missing empty tally maps do not break rankings');
+ assert.equal(commitBluff({...stored,bluff:{...stored.bluff,votes:{...stored.bluff.votes,[id]:'correct'}}},expected,animation,'a'),undefined,'Concurrent changed vote prevents stale reveal');
+ const nobodyRight=clean(revealBluff({...clean(v),votes:{}},18001));assert.equal(nobodyRight.correct,undefined,'RTDB drops the all-zero correct map');assert(bluffStandings(nobodyRight).every(r=>r.accuracy===0),'All-wrong or unanswered round still has rankings');
+}
 let s=dealBluff(newBluff(ids,1,()=>.99),q,1000,()=>.5);
 let room={phase:'bluff',gameId:'one',settings:{mode:'bluff'},players,bluff:s};
 const action={gameId:'one',round:1,stage:'make',actor:s.maker,action:'claim',value:0};

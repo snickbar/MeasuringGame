@@ -1,4 +1,5 @@
-export const BLUFF_LABELS={low:'Too Low',correct:'Correct',high:'Too High'};
+export const BLUFF_LABELS={high:'Too High',correct:'Correct',low:'Too Low'};
+export const bluffVoteDeadline=(s,id)=>Math.min(s.endsAt,(s.voteAt?.[id]??s.startedAt)+10000);
 const validVote=choice=>typeof choice==='string'&&Object.hasOwn(BLUFF_LABELS,choice);
 export const bluffTurns=(value,count)=>value===1||value===2?value:count<=3?2:1;
 const shuffle=(values,rng)=>{const a=[...values];for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -23,11 +24,12 @@ export function dealBluff(previous,q,now,rng=Math.random){
 }
 export function chooseBluff(s,id,index,now,automatic=false){
   if(!s||s.stage!=='make'||(!automatic&&id!==s.maker)||!Number.isInteger(index)||!s.options[index]||(!automatic&&now>=s.endsAt))return null;
-  return {...s,stage:'vote',claim:s.options[index],autoClaim:automatic,votes:{},startedAt:now,endsAt:now+30000};
+  return {...s,stage:'vote',claim:s.options[index],autoClaim:automatic,votes:{},voteAt:{},startedAt:now,endsAt:now+30000};
 }
 export function voteBluff(s,id,choice,now){
-  if(!s||s.stage!=='vote'||!s.order.includes(id)||id===s.maker||!validVote(choice)||s.votes?.[id]!==undefined||now>=s.endsAt)return null;
-  return {...s,votes:{...s.votes,[id]:choice}};
+  if(!s||s.stage!=='vote'||!s.order.includes(id)||id===s.maker||!validVote(choice)||now>=s.endsAt||
+    (s.votes?.[id]!==undefined&&(now>=bluffVoteDeadline(s,id)||s.votes[id]===choice)))return null;
+  return {...s,votes:{...s.votes,[id]:choice},voteAt:{...s.voteAt,[id]:s.voteAt?.[id]??now}};
 }
 export function revealBluff(s,now){
   if(!s||!['vote','animation'].includes(s.stage)||!s.claim)return null;
@@ -41,12 +43,12 @@ export function revealBluff(s,now){
   points[s.maker]=s.autoClaim?0:wrong;
   fooled[s.maker]=(fooled[s.maker]||0)+points[s.maker];
   return {...s,stage:'reveal',startedAt:now,endsAt:now+60000,correct,judged,fooled,
-    makerTurns:{...s.makerTurns,[s.maker]:(s.makerTurns[s.maker]||0)+1},
+    makerTurns:{...s.makerTurns,[s.maker]:(s.makerTurns?.[s.maker]||0)+1},
     scores:Object.fromEntries(s.order.map(id=>[id,(s.scores[id]||0)+points[id]])),
     result:{points,caught,wrong,submitted:Object.keys(s.votes||{}).length}};
 }
 export function bluffStandings(s){
-  const rows=s.order.map(id=>({id,score:s.scores[id]||0,accuracy:s.judged[id]?100*(s.correct[id]||0)/s.judged[id]:0}));
+  const rows=s.order.map(id=>({id,score:s.scores?.[id]||0,accuracy:s.judged?.[id]?100*(s.correct?.[id]||0)/s.judged[id]:0}));
   rows.sort((a,b)=>b.score-a.score||b.accuracy-a.accuracy);
   let rank=0;return rows.map((row,i)=>{if(!i||row.score!==rows[i-1].score||Math.abs(row.accuracy-rows[i-1].accuracy)>1e-8)rank=i+1;return {...row,rank};});
 }
@@ -63,14 +65,23 @@ export function bluffAction(room,{gameId,round,stage,actor,action,value},now){
 }
 export function commitBluff(room,expected,next,host){
   if(room===null)return null;
-  if(!room||room.phase!=='bluff'||room.paused||room.gameId!==expected.gameId||!room.players?.[host]?.isHost||room.players[host].connected===false||JSON.stringify(room.bluff)!==JSON.stringify(expected.bluff))return;
+  if(!room||room.phase!=='bluff'||room.paused||room.gameId!==expected.gameId||!room.players?.[host]?.isHost||room.players[host].connected===false||JSON.stringify(firebaseShape(room.bluff))!==JSON.stringify(firebaseShape(expected.bluff)))return;
   const out={...room,bluff:next,round:next.round};
   if(next.stage==='reveal'){
     out.bluffRounds={...room.bluffRounds,['r'+next.round]:next};
-    out.players=Object.fromEntries(Object.entries(room.players).map(([id,p])=>[id,next.order.includes(id)?{...p,score:next.scores[id]||0,accuracySum:(next.correct[id]||0)*100,roundsCounted:next.judged[id]||0}:p]));
+    out.players=Object.fromEntries(Object.entries(room.players).map(([id,p])=>[id,next.order.includes(id)?{...p,score:next.scores?.[id]||0,accuracySum:(next.correct?.[id]||0)*100,roundsCounted:next.judged?.[id]||0}:p]));
   }
   if(next.stage==='over')out.phase='final';
   return out;
+}
+// RTDB drops null/empty children and does not preserve object-key insertion order.
+// Compare the stored meaning while still rejecting any concurrent vote or stage change.
+function firebaseShape(value){
+  if(value===null||value===undefined)return null;
+  if(typeof value!=='object')return value;
+  if(Array.isArray(value))return value.map(firebaseShape);
+  const entries=Object.keys(value).sort().map(k=>[k,firebaseShape(value[k])]).filter(([,v])=>v!==null);
+  return entries.length?Object.fromEntries(entries):null;
 }
 export function bluffRoundRecord(match,s,id,players,t){
   if(!s?.result||!s.order.includes(id))return null;

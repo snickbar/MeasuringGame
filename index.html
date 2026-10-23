@@ -9435,7 +9435,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Call the bluff</div><div class="dc-note">Everyone else sees just that one claim and votes Too Low, Correct, or Too High. +2 for a correct vote. The maker gets +1 for each submitted vote they fool. Unanswered votes earn nobody points.</div></div>
       <div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Points rank first; vote accuracy breaks ties. A complete tie shares the win.</div>
         <div class="bl-setup-options" role="group" aria-label="Maker turns each">${[['auto','Auto'],[1,'1 each'],[2,'2 each']].map(([id,label])=>`<button type="button" data-bluff-turns="${id}" aria-pressed="${bluffTurnsChoice===id}">${label}</button>`).join('')}</div>
-        <p class="dc-note">25 seconds to choose a claim, then 30 seconds to vote. No Second Chance or power-ups. The host continues after each reveal.</p></div>
+        <p class="dc-note">25 seconds to choose a claim, then 30 seconds to vote. Tap to submit; you have up to 10 seconds to change your vote before time runs out. No Second Chance or power-ups. See the round summary and rankings after every reveal.</p></div>
       <button type="button" class="dc-btn" id="bluff-start">Create Room</button>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(b=>b.onclick=()=>{bluffTurnsChoice=b.dataset.bluffTurns==='auto'?'auto':Number(b.dataset.bluffTurns);teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
@@ -14587,7 +14587,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     const pauseDurationMs = nowMs() - (roomState.pausedAt || nowMs());
     const updates = { paused: false, pausedAt: null };
-    if(roomState.phase==='bluff'&&roomState.bluff){updates['bluff/endsAt']=roomState.bluff.endsAt+pauseDurationMs;updates['bluff/startedAt']=roomState.bluff.startedAt+pauseDurationMs;}
+    if(roomState.phase==='bluff'&&roomState.bluff){updates['bluff/endsAt']=roomState.bluff.endsAt+pauseDurationMs;updates['bluff/startedAt']=roomState.bluff.startedAt+pauseDurationMs;for(const [id,at] of Object.entries(roomState.bluff.voteAt||{}))updates['bluff/voteAt/'+id]=at+pauseDurationMs;}
     if (roomState.phase === "question") {
       if (roomState.graceEndsAt) {
         updates.graceEndsAt = roomState.graceEndsAt + pauseDurationMs;
@@ -16301,7 +16301,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById('final-session-recap')?.remove();
     finalListEl.innerHTML=bluffFinalHtml(s,currentPlayers,avatarHtml);
     const recap=document.createElement('section');recap.id='final-session-recap';recap.className='cozy-panel';
-    recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(currentPlayers[me]?.avatar)}</span>${mine.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.png" alt="">':''}<b>${mine.rank===1?'You won!':'Bluff the Room'}</b></div><div class="summary-result-number">${mine.score} <small>points</small></div><p>${Math.round(mine.accuracy)}% vote accuracy · ${s.fooled[me]||0} players fooled</p><p class="cs-note">Points rank first; vote accuracy breaks ties. Equal points and accuracy share the win.</p>`;
+    recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(currentPlayers[me]?.avatar)}</span>${mine.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.png" alt="">':''}<b>${mine.rank===1?'You won!':'Bluff the Room'}</b></div><div class="summary-result-number">${mine.score} <small>points</small></div><p>${Math.round(mine.accuracy)}% vote accuracy · ${s.fooled?.[me]||0} players fooled</p><p class="cs-note">Points rank first; vote accuracy breaks ties. Equal points and accuracy share the win.</p>`;
     finalListEl.before(recap);if(!document.hidden){playSound('win');if(mine.rank===1&&!prefersReducedMotion())flairBurst(recap,flairIdFor({flair:currentPlayers[me]?.flair}));}
   }
   function renderFinal() {
