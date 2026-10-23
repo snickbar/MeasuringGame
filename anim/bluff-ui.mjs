@@ -1,4 +1,4 @@
-import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders} from './bluff.mjs';
+import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,botMakerChoice,botVoteChoice} from './bluff.mjs';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const bluffNumber=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
 export function bluffPickHtml(s,me){
@@ -173,12 +173,11 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const time=now();let next;
     if(s.stage==='make'){
       if(!room.players?.[s.maker]||time>=s.endsAt)next=chooseBluff(s,s.maker,s.fallback,time,true);
-      else if(room.players?.[s.maker]?.isBot&&time>=s.startedAt+1800+(s.round*739%3000))next=chooseBluff(s,s.maker,s.fallback,time);
+      else if(room.players?.[s.maker]?.isBot&&time>=s.startedAt+1800+(s.round*739%3000))next=chooseBluff(s,s.maker,botMakerChoice(s,room.players[s.maker].botDifficulty||'medium'),time);
     }else if(s.stage==='vote'){
       for(const id of s.order.filter(id=>time<s.endsAt&&id!==s.maker&&room.players?.[id]?.isBot&&s.votes?.[id]===undefined)){
         if(time<s.startedAt+1800+(s.order.indexOf(id)*1297+s.round*619)%5500)continue;
-        const difficulty=room.players[id].botDifficulty||'medium',chance={easy:.42,medium:.62,hard:.82}[difficulty]||.62;
-        const choices=Object.keys(BLUFF_LABELS).filter(x=>x!==s.claim.kind),value=Math.random()<chance?s.claim.kind:choices[Math.floor(Math.random()*2)];
+        const value=botVoteChoice(s,room.players[id].botDifficulty||'medium');
         await work(()=>act({gameId:room.gameId,round:s.round,stage:'vote',actor:id,action:'vote',value}),true);return;
       }
       const waiting=s.order.some(id=>id!==s.maker&&room.players?.[id]&&(s.votes?.[id]===undefined||time<bluffVoteDeadline(s,id)));

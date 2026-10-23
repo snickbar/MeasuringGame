@@ -1,6 +1,6 @@
 import {bluffPickHtml,bluffRankingsHtml,bluffSummaryHtml,bluffRevealTimes} from '../anim/bluff-ui.mjs';
 import assert from 'node:assert/strict';
-import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
+import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffStandingsBefore,botMakerChoice,botVoteChoice,bluffNewLeaders,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
 import {applyCareerRecord,objectFrequency} from '../anim/career-ledger.mjs';
 import {admitPlayer} from '../anim/room-safety.mjs';
 const q={unitId:'pencil',targetId:'door',answer:11.6,prompt:'How many pencils long is the height of a door?'};
@@ -105,4 +105,27 @@ for(const who of ['maker','guesser','missed'])for(const kind of ['low','correct'
   assert(T.judged>T.drop0&&T.n===2&&motionless.judged===0,'Reveal timeline grows with voters and collapses without motion');
   const staged=bluffSummaryHtml(s,players,()=>'',null,0,true),still=bluffSummaryHtml(s,players,()=>'',null,Infinity,true);
   assert(staged.includes('bl-drop')&&!staged.includes('bl-judged')&&!still.includes('bl-drop')&&still.includes('bl-judged'),'Live summary drops voters; finished summary is static and judged');
+}
+
+{ // Bots: difficulty-based claims and estimate-based votes.
+  let seed=12345;const rng=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296||1e-9;};
+  const trials=6000,acc={},truth={},near={};
+  for(const level of ['easy','medium','hard']){
+    let right=0,truths=0,lies=0,dist=0;
+    for(let i=0;i<trials;i++){
+      const answer=Math.exp(rng()*8-2),options=bluffOptions(answer,rng),s={options,q:{answer}};
+      const pick=botMakerChoice(s,level,rng),claim=options[pick];
+      assert(claim&&['low','correct','high'].includes(claim.kind),'Bot maker returns one of the three options');
+      if(claim.kind==='correct')truths++;else{lies++;dist+=Math.abs(Math.log(claim.value/answer));}
+      const vote=botVoteChoice({q:{answer},claim},level,rng);
+      assert(['low','correct','high'].includes(vote),'Bot voter returns a valid vote');
+      if(vote===claim.kind)right++;
+    }
+    acc[level]=right/trials;truth[level]=truths/trials;near[level]=dist/lies;
+  }
+  assert(acc.easy<acc.medium&&acc.medium<acc.hard,'Sharper voter bots judge claims more accurately: '+JSON.stringify(acc));
+  assert(acc.easy>.3&&acc.hard<.97&&acc.hard>.6,'Voter accuracy stays believable: '+JSON.stringify(acc));
+  assert(truth.easy>truth.medium&&truth.medium>truth.hard,'Sharper bot makers lie more often: '+JSON.stringify(truth));
+  assert(near.hard<near.medium&&near.medium<near.easy,'Sharper bot makers choose more believable lies: '+JSON.stringify(near));
+  console.log('Bluff bots: voter accuracy',JSON.stringify(acc),'maker truth rate',JSON.stringify(truth),'lie distance',JSON.stringify(near));
 }
