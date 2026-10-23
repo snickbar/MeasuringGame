@@ -17,6 +17,7 @@ export function discoveryTiles(rows, object) {
 export function createDiscoveryPresentation({profile,context,object,reduced,document:doc=document}) {
  if(!doc.getElementById('discovery-styles')){const link=doc.createElement('link');link.id='discovery-styles';link.rel='stylesheet';link.href=new URL('./discoveries.css',import.meta.url).href;doc.head.append(link);}
  let queued=false,previousOwner=null,previousCount=null,popup=null;
+ const resize=typeof ResizeObserver==='function'?new ResizeObserver(()=>schedule()):null;
  function closePopup(){popup?.dialog.close();}
  function showPopup(rows,ctx,owner,opener,selected=null){
   if(popup){popup.dialog.querySelector('[data-discovery-close]').focus();return;}
@@ -47,19 +48,22 @@ export function createDiscoveryPresentation({profile,context,object,reduced,docu
   const ctx=context();
   if(popup&&(popup.owner!==p.owner||popup.session!==ctx?.session||popup.element!==ctx?.element))closePopup();
   // Remove a strip if a result card is reused for a different session/owner.
-  doc.querySelectorAll('.session-discoveries').forEach(el=>{if(!ctx||el.parentElement!==ctx.element||el.dataset.owner!==p.owner)el.remove();});
+  doc.querySelectorAll('.session-discoveries').forEach(el=>{if(!ctx||el.parentElement!==ctx.element||el.dataset.owner!==p.owner){resize?.unobserve(el);el.remove();}});
   if(!ctx?.element||!ctx.session)return;
   const rows=recentDiscoveries(p.data,{session:ctx.session,limit:1000}).filter(r=>object(r.id));
-  const signature=p.owner+':'+ctx.session+':'+rows.map(r=>r.id).join('|');
   let strip=ctx.element.querySelector('.session-discoveries');
-  if(!rows.length){strip?.remove();return;}
-  if(strip?.dataset.signature===signature)return;
-  if(!strip){strip=doc.createElement('div');strip.className='session-discoveries';ctx.element.append(strip);}
+  if(!rows.length){if(strip){resize?.unobserve(strip);strip.remove();}return;}
+  if(!strip){strip=doc.createElement('div');strip.className='session-discoveries';ctx.element.append(strip);resize?.observe(strip);}
+  const columns=Math.max(1,Math.floor((strip.clientWidth+6)/50));
+  const visible=rows.slice(0,columns*2),remaining=rows.length-visible.length;
+  const signature=p.owner+':'+ctx.session+':'+columns+':'+rows.map(r=>r.id).join('|');
+  if(strip.dataset.signature===signature)return;
   strip.dataset.signature=signature;strip.dataset.owner=p.owner;
-  strip.innerHTML=`<strong>${rows.length} new ${rows.length===1?'object':'objects'} discovered</strong><div class="discovery-grid">${discoveryTiles(rows.slice(0,3),object)}</div><button type="button" data-view-discoveries>View objects</button>${rows.length>3?`<small>And ${rows.length-3} more</small>`:''}`;
+  strip.style.setProperty('--discovery-cols',columns);
+  strip.innerHTML=`<strong>${rows.length} new ${rows.length===1?'object':'objects'} discovered</strong><button type="button" data-view-discoveries>View objects</button><div class="discovery-grid">${discoveryTiles(visible,object)}</div>${remaining?`<small>And ${remaining} more in View objects</small>`:''}`;
  }
  function schedule(){if(!queued){queued=true;queueMicrotask(refresh);}}
  const observer=new MutationObserver(schedule);observer.observe(doc.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
  const click=e=>{const trigger=e.target.closest('.session-discoveries .discovery-thumb,.session-discoveries [data-view-discoveries]');if(!trigger)return;const p=profile(),ctx=context();if(!ctx?.element||!ctx.element.contains(trigger))return;const rows=recentDiscoveries(p.data,{session:ctx.session,limit:1000}).filter(r=>object(r.id));if(rows.length)showPopup(rows,ctx,p.owner,trigger,trigger.matches('.discovery-thumb')?trigger.dataset.id:null);};doc.addEventListener('click',click);
- refresh();return {refresh:schedule,destroy(){observer.disconnect();doc.removeEventListener('click',click);closePopup();}};
+ refresh();return {refresh:schedule,destroy(){observer.disconnect();resize?.disconnect();doc.removeEventListener('click',click);closePopup();}};
 }
