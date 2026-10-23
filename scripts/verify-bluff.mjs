@@ -1,6 +1,6 @@
-import {bluffPickHtml} from '../anim/bluff-ui.mjs';
+import {bluffPickHtml,bluffRankingsHtml,bluffSummaryHtml,bluffRevealTimes} from '../anim/bluff-ui.mjs';
 import assert from 'node:assert/strict';
-import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffNewLeaders,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
+import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
 import {applyCareerRecord,objectFrequency} from '../anim/career-ledger.mjs';
 import {admitPlayer} from '../anim/room-safety.mjs';
 const q={unitId:'pencil',targetId:'door',answer:11.6,prompt:'How many pencils long is the height of a door?'};
@@ -90,4 +90,19 @@ for(const who of ['maker','guesser','missed'])for(const kind of ['low','correct'
  const badge=bluffPickHtml({maker:'maker',claim:{kind:'correct',value:250},votes:{guesser:kind}},who);
  assert(badge.includes('bl-pick-number">250</strong>'),'All roles see the chosen number');
  assert(badge.includes('</b></div><strong'),'Number sits beside the two text rows');
+}
+
+{ // Rankings: climbed/dropped arrows and the staged reveal timeline.
+  const s={order:['a','b','c'],maker:'c',round:2,scores:{a:2,b:3,c:1},correct:{a:1,b:1,c:0},judged:{a:2,b:2,c:0},votes:{a:'low',b:'high'},claim:{kind:'high',value:5},q:{answer:4},result:{points:{a:0,b:2,c:1},wrong:1}};
+  const players={a:{name:'Ann'},b:{name:'Bo'},c:{name:'Cy'}};
+  const before=bluffStandingsBefore(s);
+  assert(before&&before.map(r=>r.id).join()==='a,b,c','Standings before the round are rebuilt without this round\'s points');
+  const html=bluffRankingsHtml(s,players,()=>'',null);
+  assert(html.includes('hs-mv up')&&html.includes('&#9650;1'),'A player who climbed shows an up arrow');
+  assert(html.includes('hs-mv down'),'A player who dropped shows a down arrow');
+  assert(bluffStandingsBefore({...s,round:1,scores:{a:0,b:2,c:1},correct:{a:0,b:1,c:0},judged:{a:1,b:1,c:0},result:{points:{a:0,b:2,c:1},wrong:1}})===null,'Nobody ahead before round one means no arrows');
+  const T=bluffRevealTimes(s),motionless=bluffRevealTimes(s,false);
+  assert(T.judged>T.drop0&&T.n===2&&motionless.judged===0,'Reveal timeline grows with voters and collapses without motion');
+  const staged=bluffSummaryHtml(s,players,()=>'',null,0,true),still=bluffSummaryHtml(s,players,()=>'',null,Infinity,true);
+  assert(staged.includes('bl-drop')&&!staged.includes('bl-judged')&&!still.includes('bl-drop')&&still.includes('bl-judged'),'Live summary drops voters; finished summary is static and judged');
 }

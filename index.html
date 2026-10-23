@@ -792,7 +792,9 @@ if (location.protocol === "file:") {
   .hs-rw-note { margin: 6px 0 0; font-size: 12px; opacity: .8; }
   .hs-final-row.busted { opacity: .6; }
   .hs-stand { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
-  .hs-srow { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 3px solid #ecdcc0; border-radius: 14px; background: #fffdf6; animation: hsStandIn .45s ease-out both; }
+  .hs-srow { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 3px solid #ecdcc0; border-radius: 14px; background: #fffdf6; animation: hsStandIn .45s ease-out both, bl-slide .85s cubic-bezier(.5,0,.2,1) both; }
+  .hs-srow.hs-climb { position: relative; z-index: 2; }
+  @media (prefers-reduced-motion: reduce) { .hs-srow { animation: none; } }
   .hs-srow.up { border-color: #4faa38; background: linear-gradient(#f0fbe8, #d5f3c4); }
   .hs-srow.down { border-color: #c4524a; background: linear-gradient(#fff1ee, #f8d3ce); }
   .hs-srow.me { box-shadow: 0 0 0 3px rgba(242,130,15,.55); }
@@ -9912,13 +9914,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const coins = hs.chips[id] ?? 0;
     return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + " &#128176;"}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
   }
+  // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
+  function hsSlideStand() {
+    const list = hsContentEl.querySelector(".hs-stand"), rows = list ? list.children : [];
+    if (rows.length > 1) list.style.setProperty("--step", (rows[1].offsetTop - rows[0].offsetTop) + "px");
+  }
   function hsStandingsHtml(hs, data, me) {
     const rows = HS.hsStandings(hs);
+    setTimeout(hsSlideStand, 0);
     return `<div class="hs-stand">${rows.map((r, i) => {
         const p = data.players?.[r.id];
         const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv"></span>`;
         const dl = r.delta > 0 ? `<span class="hs-delta up">&#9650; +${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">&#9660; ${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
-        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}" style="animation-delay:${i * 70}ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
+        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.rankMove > 0 ? " hs-climb" : ""}" style="--shift:${r.rankMove || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
   function renderHighStakes(data) {
