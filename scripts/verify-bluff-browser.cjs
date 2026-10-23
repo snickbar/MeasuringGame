@@ -78,6 +78,7 @@ try{
   const kind=['low','correct','high'][round-1],index=s.options.findIndex(o=>o.kind===kind);
   if(s.maker==='a'){content.querySelector('[data-claim="'+index+'"]').click();assert(content.querySelector('[data-send-claim]').getBoundingClientRect().bottom<=$('bottom-toolbar').getBoundingClientRect().top,'Maker confirm clears bottom toolbar');content.querySelector('[data-send-claim]').click();}else await api.bluffDo(s.maker,'claim',index);
   await until(()=>api.bluffState().stage==='vote','Claim appears');await wait(150);assert(!content.querySelector('[data-claim]'),'Only selected claim visible');assert(content.querySelectorAll('.bl-claim strong').length===1,'Exactly one claim number');fit('Vote');for(const card of content.querySelectorAll('[data-bluff-player]')){const r=card.getBoundingClientRect();assert(r.top>0&&r.bottom<$('bottom-toolbar').getBoundingClientRect().top,'All three player cards visible beside voting');}assert(!content.querySelector('.bl-banner'),'No large mode banner in play');
+  assert(!content.textContent.includes('That step has closed')&&![...content.querySelectorAll('.bl-error')].some(e=>e.textContent.trim()),'No red error text after the claim is set');
   await api.bluffPause();await wait(350);assert($('paused-overlay').classList.contains('active'),'Pause overlay');await api.bluffPause();
   const state=api.bluffState(),voters=state.order.filter(id=>id!==state.maker);
   for(const [i,id]of voters.entries()){
