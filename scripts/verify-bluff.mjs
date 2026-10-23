@@ -72,4 +72,9 @@ const match={kind:'match',mode:'bluff',key:'match',won:true,place:1,score:5,accu
 profile=applyCareerRecord(profile,match);assert.equal(profile.stats.gamesWon,1);assert.equal(applyCareerRecord(profile,match),profile);
 const tied={...s,scores:{a:5,b:5,c:5},correct:{a:1,b:2,c:2},judged:{a:2,b:2,c:2}};
 assert.deepEqual(bluffStandings(tied).map(r=>[r.id,r.rank]),[['b',1],['c',1],['a',3]]);
+{
+ const result={...room,bluff:s,bluffRounds:{r1:s}},rankings={...s,showStand:true,endsAt:90000};
+ const shown=commitBluff(result,result,rankings,'a');assert(shown.bluff.showStand);assert.equal(shown.bluffRounds,result.bluffRounds,'Rankings do not rewrite the scored round');assert.equal(shown.players,result.players,'Rankings do not award points again');
+ const next=dealBluff({...rankings,round:1,total:3},q,91000);assert.equal(next.showStand,false,'New round resets rankings view');
+}
 console.log('Bluff: 240 complete games, balanced maker turns, 3 labeled options, voting/timeout scoring, late/duplicate/stale/paused/host guards, tiebreak/shared wins, no midgame joins, isolated accuracy, abandoned-round discoveries and once-only stats passed.');

@@ -19,7 +19,7 @@ export function dealBluff(previous,q,now,rng=Math.random){
   if(!previous||!['ready','reveal'].includes(previous.stage)||previous.round>=previous.total)return null;
   const round=previous.round+1,options=bluffOptions(q.answer,rng);
   return {...previous,round,stage:'make',maker:previous.order[(round-1)%previous.order.length],q,
-    options,claim:null,votes:{},result:null,autoClaim:false,startedAt:now,endsAt:now+25000,
+    options,claim:null,votes:{},result:null,showStand:false,autoClaim:false,startedAt:now,endsAt:now+25000,
     fallback:Math.floor(rng()*3)};
 }
 export function chooseBluff(s,id,index,now,automatic=false){
@@ -42,7 +42,7 @@ export function revealBluff(s,now){
   }
   points[s.maker]=s.autoClaim?0:wrong;
   fooled[s.maker]=(fooled[s.maker]||0)+points[s.maker];
-  return {...s,stage:'reveal',startedAt:now,endsAt:now+60000,correct,judged,fooled,
+  return {...s,stage:'reveal',showStand:false,startedAt:now,endsAt:now+60000,correct,judged,fooled,
     makerTurns:{...s.makerTurns,[s.maker]:(s.makerTurns?.[s.maker]||0)+1},
     scores:Object.fromEntries(s.order.map(id=>[id,(s.scores[id]||0)+points[id]])),
     result:{points,caught,wrong,submitted:Object.keys(s.votes||{}).length}};
@@ -67,7 +67,7 @@ export function commitBluff(room,expected,next,host){
   if(room===null)return null;
   if(!room||room.phase!=='bluff'||room.paused||room.gameId!==expected.gameId||!room.players?.[host]?.isHost||room.players[host].connected===false||JSON.stringify(firebaseShape(room.bluff))!==JSON.stringify(firebaseShape(expected.bluff)))return;
   const out={...room,bluff:next,round:next.round};
-  if(next.stage==='reveal'){
+  if(next.stage==='reveal'&&room.bluff.stage!=='reveal'){
     out.bluffRounds={...room.bluffRounds,['r'+next.round]:next};
     out.players=Object.fromEntries(Object.entries(room.players).map(([id,p])=>[id,next.order.includes(id)?{...p,score:next.scores?.[id]||0,accuracySum:(next.correct?.[id]||0)*100,roundsCounted:next.judged?.[id]||0}:p]));
   }
