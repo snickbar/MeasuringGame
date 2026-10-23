@@ -4122,6 +4122,7 @@ if (location.protocol === "file:") {
   </div>
   <div class="hud-timer-col">
     <div class="hud-timer" id="hud-timer">--</div>
+    <div class="lock-bar" id="hud-timer-bar" hidden style="width:60px;margin:2px auto 0"><i></i></div>
     <button id="anim-skip-btn" type="button">Skip</button>
     <div id="question-note" class="question-note" style="display:none;"></div>
   </div>
@@ -14044,11 +14045,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       let deadline = null;
       if (roomState.phase === "question") deadline = noTimer && !roomState.graceEndsAt ? null : (roomState.graceEndsAt || roomState.questionEndsAt);
       else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
-      if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); return; }
+      const timerBar = document.getElementById("hud-timer-bar");
+      if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); if (timerBar) timerBar.hidden = true; return; }
       powerups?.render();
       const remaining = Math.max(0, deadline - nowMs());
       hudTimerEl.textContent = Math.ceil(remaining / 1000).toString();
       hudTimerEl.classList.toggle("low", remaining <= 5000);
+      // Shrinking bar under the number: the share of this phase's time that is left (same bar as the 10-second change windows).
+      if (timerBar) {
+        if (deadline !== timerBarDeadline) { timerBarDeadline = deadline; timerBarTotal = Math.max(remaining, 1000); }
+        timerBar.hidden = false;
+        timerBar.firstElementChild.style.transform = "scaleX(" + Math.max(0, Math.min(1, remaining / timerBarTotal)) + ")";
+        timerBar.classList.toggle("low", remaining <= 5000);
+      }
       // Tick once per second through the last 5 seconds of a timed phase.
       const secondsLeft = Math.ceil(remaining / 1000);
       if (secondsLeft <= 5 && secondsLeft >= 1 && secondsLeft !== lastTickSecond) {
@@ -15703,7 +15712,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const v = revealListEl.querySelector(".hl-verdict");
           if (v) {
             v.parentElement.classList.remove("tw-ph");
-            if (data.hlLast?.passed === false) svCrackHeart();
+            if (data.hlLast?.passed === false) { svCrackHeart(); vibrate([70, 60, 70]); }
             else playSound(data.hlLast?.passed ? "roundwin" : "error");
           }
           if (data.hlLast && data.hlLast.passed) celebrate("normal");
@@ -15721,7 +15730,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           num.classList.add("pop"); card.classList.add("glow");
           twShowQuip(card.parentElement, avg, gameKey);
           playSound(avg >= 75 ? "roundwin" : "select");
-          if (avg >= 75) celebrate(avg >= 90 ? "spotOn" : "normal");
+          if (avg >= 75) celebrate(avg >= 90 ? "spotOn" : "normal"); else vibeAccuracy(avg);
         }, 1100);
       }
     }
@@ -17637,6 +17646,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   let lastRandomRollKey = null;
+  let timerBarDeadline = null, timerBarTotal = 1000;
   let roomUnsub = null, reactionsUnsub = null; // so stepping out of a room can stop listening to it
   function watchRoom(roomCode) {
     if (roomUnsub) roomUnsub();
