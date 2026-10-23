@@ -30,7 +30,7 @@ export function voteBluff(s,id,choice,now){
   return {...s,votes:{...s.votes,[id]:choice}};
 }
 export function revealBluff(s,now){
-  if(!s||s.stage!=='vote'||!s.claim)return null;
+  if(!s||!['vote','animation'].includes(s.stage)||!s.claim)return null;
   const points=Object.fromEntries(s.order.map(id=>[id,0])),correct={...s.correct},judged={...s.judged},fooled={...s.fooled};
   let caught=0,wrong=0;
   for(const id of s.order.filter(id=>id!==s.maker)){

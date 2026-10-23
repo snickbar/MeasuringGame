@@ -5,7 +5,7 @@ export function createBotReactions({getState,send,reactions,random=Math.random,n
   function reset(){bots.clear();roundKey=null;nextGroupAt=0;suspended=false;}
   function tick(){
     const state=getState(),room=state?.room,t=now();
-    const allowed=room&&(['question','answers','reveal','summary','bluff'].includes(room.phase)||(room.phase==='hs'&&!['over','anim','animation','countdown','dealing'].includes(room.hs?.stage)));
+    const allowed=room&&((['question','answers','reveal','summary'].includes(room.phase)||(room.phase==='bluff'&&room.bluff?.stage!=='animation'))||(room.phase==='hs'&&!['over','anim','animation','countdown','dealing'].includes(room.hs?.stage)));
     if(!state?.host||!state.roomCode||!room?.players?.[state.playerId]?.isHost||!allowed){
       // Keep this round's activity budget while the reveal animation is running.
       if(!state?.host||!room||['waiting','ended','final'].includes(room.phase))reset();

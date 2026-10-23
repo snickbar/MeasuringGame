@@ -56,12 +56,12 @@ window.__polish={
 `;
 let checks=String.raw`
 <pre id="polish-result" hidden></pre><script type="module">
-const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error(m)},until=async(fn,m)=>{for(let n=0;n<500;n++){if(fn())return;await wait(20)}throw Error(m);};
+const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error(m)},until=async(fn,m,limit=500)=>{for(let n=0;n<limit;n++){if(fn())return;await wait(20)}throw Error(m);};
 try{
  await until(()=>window.__polish?.profile()?.stats?.gamesPlayed===8,'App bootstrap');const api=window.__polish,$=id=>document.getElementById(id),content=$('bluff-content');
  api.bluffInfo();await wait(250);assert(document.querySelectorAll('[data-bluff-turns]').length===3,'Auto/one/two settings');
  assert(document.querySelector('[data-bluff-turns="auto"]').getAttribute('aria-pressed')==='true','Auto default');
- const fit=label=>{assert(content.querySelector('h1').getBoundingClientRect().top>=$('hud-sub-toolbar').getBoundingClientRect().bottom-1,'Banner clears fixed controls');assert(document.documentElement.scrollWidth<=innerWidth+1,'Phone fit: '+label);for(const b of content.querySelectorAll('button'))assert(b.scrollWidth<=b.clientWidth+1,'Button fits '+b.textContent);};
+ const fit=label=>{assert(content.querySelector('.bl-meta').getBoundingClientRect().top>=$('hud-sub-toolbar').getBoundingClientRect().bottom-1,'Round row clears fixed controls');assert(document.documentElement.scrollWidth<=innerWidth+1,'Phone fit: '+label);for(const b of content.querySelectorAll('button'))assert(b.scrollWidth<=b.clientWidth+1,'Button fits '+b.textContent);};
  await api.bluffStart();await until(()=>api.bluffState()?.stage==='make','Game starts');assert($('bluff-screen').classList.contains('active')&&!$('hud').classList.contains('active'),'Exclusive Bluff screen');
  assert(api.bluffState().total===3,'One full cycle');
  const owner=api.owner(),oldGames=api.profile().stats.gamesPlayed;
@@ -71,7 +71,7 @@ try{
   if(s.maker!=='a')assert(!content.querySelector('[data-claim]')&&!content.textContent.includes('Only you see'),'Waiting player sees no options');
   const kind=['low','correct','high'][round-1],index=s.options.findIndex(o=>o.kind===kind);
   if(s.maker==='a'){content.querySelector('[data-claim="'+index+'"]').click();assert(content.querySelector('[data-send-claim]').getBoundingClientRect().bottom<=$('bottom-toolbar').getBoundingClientRect().top,'Maker confirm clears bottom toolbar');content.querySelector('[data-send-claim]').click();}else await api.bluffDo(s.maker,'claim',index);
-  await until(()=>api.bluffState().stage==='vote','Claim appears');await wait(150);assert(!content.querySelector('[data-claim]'),'Only selected claim visible');assert(content.querySelectorAll('.bl-claim strong').length===1,'Exactly one claim number');fit('Vote');
+  await until(()=>api.bluffState().stage==='vote','Claim appears');await wait(150);assert(!content.querySelector('[data-claim]'),'Only selected claim visible');assert(content.querySelectorAll('.bl-claim strong').length===1,'Exactly one claim number');fit('Vote');for(const card of content.querySelectorAll('[data-bluff-player]')){const r=card.getBoundingClientRect();assert(r.top>0&&r.bottom<$('bottom-toolbar').getBoundingClientRect().top,'All three player cards visible beside voting');}assert(!content.querySelector('.bl-banner'),'No large mode banner in play');
   await api.bluffPause();await wait(350);assert($('paused-overlay').classList.contains('active'),'Pause overlay');await api.bluffPause();
   const state=api.bluffState(),voters=state.order.filter(id=>id!==state.maker);
   for(const [i,id]of voters.entries()){
@@ -79,11 +79,11 @@ try{
    if(id==='a'){content.querySelector('[data-vote="'+choice+'"]').click();assert(content.querySelector('[data-send-vote]').getBoundingClientRect().bottom<=$('bottom-toolbar').getBoundingClientRect().top,'Vote confirm clears bottom toolbar');content.querySelector('[data-send-vote]').click();await wait(80);assert(content.textContent.includes('Vote locked'),'Human vote locks');}
    else await api.bluffDo(id,'vote',choice);
   }
-  await until(()=>api.bluffState().stage==='reveal','Automatic reveal after all votes');await wait(100);fit('Reveal');
+  await until(()=>api.bluffState().stage==='animation','Animation starts after all votes');assert(content.querySelector('#bluff-animation-slot'),'Size-reveal slot mounted');assert(!content.textContent.includes('The real answer'),'No result spoilers before animation');await until(()=>content.querySelector('#bluff-animation canvas,#bluff-animation svg,#bluff-animation img'),'Real size-reveal artwork mounted');await wait(350);if(innerWidth===320&&round===1){await until(()=>api.bluffState().stage==='reveal','Animation automatically advances to results',2000);}else{content.querySelector('[data-skip-reveal]').click();await until(()=>api.bluffState().stage==='reveal','Host can finish animation');}await wait(100);fit('Reveal');
   assert(content.textContent.includes('The real answer')&&content.querySelectorAll('.bl-vote-results p').length===2,'Answer and every vote revealed');
   assert(api.bluffState().result.points[state.maker]===1,'Maker gets one fooled voter');
   await api.flush();assert(api.profile().stats.gamesPlayed===oldGames,'Round alone is not finished game');
-  await until(()=>content.querySelector('[data-next]')&&!content.querySelector('[data-next]').disabled,'Next maker available');content.querySelector('[data-next]').click();
+  await until(()=>content.querySelector('[data-next]')&&!content.querySelector('[data-next]').disabled,'Next maker available');assert(content.querySelector('[data-next]').getBoundingClientRect().bottom<$('bottom-toolbar').getBoundingClientRect().top,'Next round is visible without scrolling');content.querySelector('[data-next]').click();
  }
  await until(()=>$('final-screen').classList.contains('active'),'Final results');await api.flush();await wait(200);
  assert(!$('bluff-screen').classList.contains('active'),'No game board below final screen');assert(document.querySelectorAll('#final-list .final-row').length===3,'All final standings');

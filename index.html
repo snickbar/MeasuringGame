@@ -1378,7 +1378,8 @@ if (location.protocol === "file:") {
   .fancy-hdr .hdr-text { min-width: 0; display: flex; flex-direction: column; }
   .fancy-hdr h1 { font-size: 24px; line-height: 1.15; }
   .fancy-hdr .hdr-sub { font-size: 13px; color: var(--text-muted); line-height: 1.2; }
-  #share-room-btn[style*="none"] + #qr-room-btn { display: none !important; }
+  #party-room-qr { border:0; padding:0; background:transparent; max-width:calc(100vw - 24px); max-height:calc(100dvh - 24px); }
+  #party-room-qr::backdrop { background:rgba(40,25,15,.72); }
   #qr-overlay { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(40,25,15,.72); }
   #qr-card { width: min(88vw, 340px); box-sizing: border-box; padding: 16px; border-radius: 22px; background: #fffaf0; border: 4px solid #d9a441; box-shadow: 0 10px 30px rgba(0,0,0,.4); text-align: center; color: #000; font-family: 'Fredoka', sans-serif; font-weight: 700; }
   #qr-card .qr-title { font-size: 22px; font-weight: 700; }
@@ -4078,7 +4079,7 @@ if (location.protocol === "file:") {
   <div class="lobby-room-box">
     <span id="lobby-title-room">Room: <strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
-    <button id="qr-room-btn" type="button" class="back-btn">QR</button>
+    <button id="qr-room-btn" type="button" aria-label="Show room QR code">Show QR</button>
   </div>
 
   <div id="host-unlock-banner">
@@ -7841,7 +7842,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (lk) { openSlotUnlock(Number(lk.dataset.slot)); return; }
     const b = ev.target.closest(".react-slot[data-emoji]");
     if (!b || !currentRoomCode) return;
-    if (roomState && roomState.phase === "animation") return; // grayed out, not just visually - belt and suspenders alongside the CSS pointer-events:none
+    if (roomState && (roomState.phase === "animation" || (roomState.phase==='bluff'&&roomState.bluff?.stage==='animation'))) return; // grayed out, not just visually - belt and suspenders alongside the CSS pointer-events:none
     const t = Date.now();
     if (t - lastReactionTapAt < REACTION_COOLDOWN_MS) return;
     lastReactionTapAt = t;
@@ -12114,22 +12115,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // domain there instead; the web build's own location.origin is already
   // correct as-is.
   function joinLinkFor(roomCode) {
-    return isNativeApp
-      ? `https://size-em-up.web.app/?join=${roomCode}`
-      : `${location.origin}${location.pathname}?join=${roomCode}`;
+    return `https://size-em-up.web.app/?join=${roomCode}`;
   }
 
-  // QR code for in-person play: everyone points their camera at the host's screen and lands on the join screen.
-  document.getElementById("qr-room-btn").addEventListener("click", () => {
-    if (!currentRoomCode || !window.qrcode) return;
-    const qr = window.qrcode(0, "M");
-    qr.addData(joinLinkFor(currentRoomCode));
-    qr.make();
-    const ov = document.createElement("div");
-    ov.id = "qr-overlay";
-    ov.innerHTML = `<div id="qr-card"><div class="qr-title">Scan to join!</div><div class="qr-img">${qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true })}</div><div class="qr-code">${escapeHtml(currentRoomCode)}</div><div class="qr-sub">Or enter this code in Join Game</div><button type="button" class="qr-close">Close</button></div>`;
-    ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".qr-close")) ov.remove(); });
-    document.body.appendChild(ov);
+  // One shared invite control for every Party lobby, including free hosted games.
+  let partyQrDialog=null;
+  document.getElementById('qr-room-btn').addEventListener('click',()=>{
+    if(!currentRoomCode||roomState.settings?.solo||!lobbyScreenEl.classList.contains('active')||!window.qrcode)return;
+    partyQrDialog?.close();
+    const code=currentRoomCode,qr=window.qrcode(0,'M');qr.addData(joinLinkFor(code));qr.make();
+    const dialog=document.createElement('dialog');partyQrDialog=dialog;dialog.id='party-room-qr';dialog.setAttribute('aria-labelledby','party-qr-title');
+    dialog.innerHTML=`<div id="qr-card"><div id="party-qr-title" class="qr-title">Scan to join!</div><div class="qr-img">${qr.createSvgTag({cellSize:4,margin:4,scalable:true})}</div><div class="qr-code">${escapeHtml(code)}</div><div class="qr-sub">Or enter this code in Join Game</div><button type="button" class="qr-close">Close</button></div>`;
+    const observer=new MutationObserver(()=>{if(!lobbyScreenEl.classList.contains('active')||currentRoomCode!==code)dialog.close();});
+    observer.observe(lobbyScreenEl,{attributes:true,attributeFilter:['class']});
+    dialog.addEventListener('close',()=>{observer.disconnect();dialog.remove();if(partyQrDialog===dialog)partyQrDialog=null;});
+    dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+    document.body.append(dialog);dialog.showModal();
   });
 
   const shareRoomReset = { timer: null };
@@ -12182,7 +12183,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hudRoomCodeEl.classList.remove("code-locked");
       return;
     }
-    const unlocked = myProfile.hostUnlocked;
+    const unlocked = myProfile.hostUnlocked || !!(currentRoomCode && roomState.settings && !roomState.settings.solo);
     hostUnlockBannerEl.classList.toggle("active", !unlocked);
     roomCodeDisplay.classList.toggle("code-locked", !unlocked);
     shareRoomBtn.style.display = unlocked ? "" : "none";
@@ -15098,7 +15099,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bluffCard=roomState?.phase==='bluff'?document.querySelector(`[data-bluff-player="${r.playerId}"]`):null;
     const hsCard = roomState && roomState.phase === "hs" ? hsContentEl.querySelector(`[data-hs-pl="${r.playerId}"]`) : null;
     const card = bluffCard || hsCard || scoreCardFor(r.playerId);
-    const RXS = hsCard ? 72 : RX_STAGE;
+    const reactionSide=bluffCard?.dataset.bluffSide||hsCard?.dataset.hsSide;
+    const RXS = hsCard || bluffCard ? 72 : RX_STAGE;
     let left = 0, top = 70;
     if (card) {
       const rect = card.getBoundingClientRect();
@@ -15107,7 +15109,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // sidebar at all to clamp against - see scoreCardFor()).
       const container = (card.closest("#score-col") || card.parentElement).getBoundingClientRect();
       left = rect.left - RXS + 14;
-      if (hsCard) left = hsCard.dataset.hsSide === "l" ? rect.right - 12 : rect.left - RXS + 12;
+      if (reactionSide) left = reactionSide === "l" ? rect.right - 12 : rect.left - RXS + 12;
       // Team Worlds: the picture pops out at the LEFT edge of the sender's own box, overlapping it a little,
       // so it is obvious whose it is (the middle 60% of the stage is the picture itself).
       if (card.closest("#tw-question-stats")) left = rect.left - RXS / 2 + 4;      const mid = Math.min(Math.max(rect.top + rect.height / 2, container.top + RXS / 2), container.bottom - RXS / 2); // stay in view if the card is scrolled away
@@ -15166,11 +15168,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const life = stage.animate([
       { opacity: 1, transform: "translateX(0)", offset: 0 },
       { opacity: 1, transform: "translateX(0)", offset: .62 },
-      { opacity: 0, transform: `translateX(${hsCard && hsCard.dataset.hsSide === "l" ? 28 : -34}px)`, offset: 1 },
+      { opacity: 0, transform: `translateX(${reactionSide === "l" ? 28 : -34}px)`, offset: 1 },
     ], { duration: 2000, easing: "ease-in", fill: "forwards" });
     if (card && !r.previewAt && !prefersReducedMotion()) {
       const rect = card.getBoundingClientRect();
-      const outward = hsCard?.dataset.hsSide === 'l' ? 1 : -1;
+      const outward = reactionSide === 'l' ? 1 : -1;
       stage.animate(reactionEntrance({left:Math.max(0,left),size:RXS,cardLeft:rect.left,cardRight:rect.right,outward}),
         {duration:380,easing:'cubic-bezier(.2,.7,.3,1)'});
     }
@@ -17762,6 +17764,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     transact:(expected,next,host)=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>commitBluff(cur,expected,next,host),{applyLocally:false}),
     act:action=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>bluffAction(cur,action,nowMs()),{applyLocally:false}),
     question:generateQuestion,object:id=>OBJECT_BY_ID.get(id),avatar:avatarHtml,sound:playSound,
+    revealAnimation:{
+      duration:async q=>{if(prefersReducedMotion())return 0;const pair=questionObjects(q),mod=pair?await loadAnimModule():null;return pair&&mod?mod.animationDuration(pair[0],pair[1])*1000:0;},
+      mount:(node,q,state)=>{
+        let stopped=false,ctl=null;
+        void(async()=>{try{const pair=questionObjects(q),mod=pair?await loadAnimModule():null;if(stopped||!pair||!mod)return;
+          ctl=mod.createStackAnimation(node,{theme:mod.LIGHT_THEME,imageUrl:o=>o.image,hideTally:false});
+          const scene=await ctl.prepare(pair[0],pair[1],{hMax:190,minStageH:230});if(stopped)return;
+          animAudioInit();ctl.start(scene,{startAt:state.startedAt,now:animClock,onCue:audioLifecycle.guard(playAnimCue)});
+        }catch(error){console.warn('[bluff] reveal animation unavailable',error);}})();
+        return()=>{stopped=true;ctl?.stop();};
+      }
+    },
     visible:()=>bluffScreenEl.classList.contains('active')&&!document.hidden&&nativeAudioActive&&audioPageActive});
   bluffUI.refresh();
   tutorialUI = createTutorial({
