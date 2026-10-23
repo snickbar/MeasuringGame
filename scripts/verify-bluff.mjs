@@ -1,3 +1,4 @@
+import {bluffPickHtml} from '../anim/bluff-ui.mjs';
 import assert from 'node:assert/strict';
 import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffNewLeaders,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
 import {applyCareerRecord,objectFrequency} from '../anim/career-ledger.mjs';
@@ -84,3 +85,9 @@ assert.deepEqual(bluffStandings(tied).map(r=>[r.id,r.rank]),[['b',1],['c',1],['a
  const next=dealBluff({...rankings,round:1,total:3},q,91000);assert.equal(next.showStand,false,'New round resets rankings view');
 }
 console.log('Bluff: 240 complete games, balanced maker turns, 3 labeled options, voting/timeout scoring, late/duplicate/stale/paused/host guards, tiebreak/shared wins, no midgame joins, isolated accuracy, abandoned-round discoveries and once-only stats passed.');
+
+for(const who of ['maker','guesser','missed'])for(const kind of ['low','correct','high']){
+ const badge=bluffPickHtml({maker:'maker',claim:{kind:'correct',value:250},votes:{guesser:kind}},who);
+ assert(badge.includes('bl-pick-number">250</strong>'),'All roles see the chosen number');
+ assert(badge.includes('</b></div><strong'),'Number sits beside the two text rows');
+}

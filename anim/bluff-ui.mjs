@@ -2,9 +2,9 @@ import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffSt
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const bluffNumber=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
 export function bluffPickHtml(s,me){
- const mine=me===s.maker,kind=mine?s.claim.kind:s.votes?.[me],label=BLUFF_LABELS[kind]||'No vote',value=mine?bluffNumber(s.claim.value):'';
+ const mine=me===s.maker,kind=mine?s.claim.kind:s.votes?.[me],label=BLUFF_LABELS[kind]||'No vote',value=bluffNumber(s.claim.value);
  const icon=kind==='correct'?'<img src="icons/check-selected.svg" alt="">':`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="${kind==='low'?'M16 5v22M6 17l10 10 10-10':kind==='high'?'M16 27V5M6 15 16 5l10 10':'M7 16h18'}" fill="none" stroke="#513621" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
- return `<div class="bl-pick-reminder"><div class="bl-pick-circle"><span class="bl-pick-icon">${icon}</span><div class="bl-pick-copy"><span class="bl-pick-label">${mine?'Your answer':'Your pick'}</span><b>${label}</b>${mine?`<small class="bl-pick-number${value.length>8?' long':''}">${value}</small>`:''}</div></div></div>`;
+ return `<div class="bl-pick-reminder"><div class="bl-pick-circle"><span class="bl-pick-icon">${icon}</span><div class="bl-pick-copy"><span class="bl-pick-label">${mine?'Your answer':'Your pick'}</span><b>${label}</b></div><strong class="bl-pick-number${value.length>8?' long':''}">${value}</strong></div></div>`;
 }
 export function bluffSummaryHtml(s,players,avatar,me){
   const voters=s.order.filter(id=>id!==s.maker);
