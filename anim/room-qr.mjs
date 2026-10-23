@@ -14,13 +14,21 @@ export function roomCodeFromQr(value,origin=globalThis.location?.origin){
   }catch{return null;}
 }
 
-export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=>true,restore=null,onScanStart=()=>{},onScanEnd=()=>{},origin=globalThis.location?.origin}){
+export function pendingRoomInvite({storage,now=()=>Date.now()}={}){
+  if(!storage)try{storage=globalThis.localStorage;}catch{}
+  const key='size-em-up:pending-room-invite',clear=()=>{try{storage?.removeItem(key);}catch{}};
+  const save=(stage,code=null)=>{try{storage?.setItem(key,JSON.stringify({stage,code,at:now()}));}catch{}};
+  return {clear,beginScan:()=>save('scanning'),remember:value=>{const code=roomCodeFromQr(value);if(code)save('code',code);},
+    read(){try{const v=JSON.parse(storage?.getItem(key)||'null');if(!v)return null;const age=now()-v.at,code=roomCodeFromQr(v.code);if(age<0||age>600000||!Number.isFinite(v.at)||!['scanning','code'].includes(v.stage)||(v.stage==='code'&&!code)){clear();return null;}return {...v,code};}catch{clear();return null;}}};
+}
+
+export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=>true,restore=null,onScanStart=()=>{},onScanEnd=()=>{},onCode=null,waitForResume=async()=>{},pending=null,origin=globalThis.location?.origin}){
   let busy=false;
   button.addEventListener('click',async()=>{
     if(busy||joinButton.disabled)return;
     if(!scanner){status.textContent='Scan QR is available in the Android app. You can still enter a room code here.';return;}
     busy=true;button.disabled=true;joinButton.disabled=true;status.textContent='Opening scanner…';
-    let code=null;onScanStart();
+    let code=null;pending?.beginScan();onScanStart();
     try{
       const result=await scanner();
       // If the app drifted off the Join screen while the camera was open (e.g. a stray Back on first use),
@@ -28,9 +36,19 @@ export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=
       if(!isActive()&&!(restore&&result&&!result.cancelled))return;
       status.textContent='';
       if(!result?.cancelled){code=roomCodeFromQr(result?.value,origin);if(!code)status.textContent='That is not a Size Em Up room QR code. Try again or enter the code.';}
+      if(code){
+        pending?.remember(code);
+        // The native result can arrive before Android resumes our Activity.
+        // Hand off only when its foreground screen is ready, not via a hidden button.
+        await waitForResume();
+        if(restore)restore();
+        if(isActive()){
+          input.value=code;input.dispatchEvent(new Event('input',{bubbles:true}));
+          if(onCode)await onCode(code);
+          else{joinButton.disabled=false;joinButton.click();}
+        }
+      }
     }catch{if(isActive())status.textContent='Could not open the scanner. On first use it may need a download. Try again, or enter the room code.';}
-    finally{busy=false;button.disabled=false;joinButton.disabled=false;onScanEnd();}
-    if(code&&!isActive()&&restore)restore();
-    if(code&&isActive()){input.value=code;input.dispatchEvent(new Event('input',{bubbles:true}));joinButton.click();}
+    finally{if(!code)pending?.clear();busy=false;button.disabled=false;joinButton.disabled=false;onScanEnd();}
   });
 }

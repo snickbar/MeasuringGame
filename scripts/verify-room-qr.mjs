@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {roomCodeFromQr,mountRoomQr} from '../anim/room-qr.mjs';
+import {roomCodeFromQr,mountRoomQr,pendingRoomInvite} from '../anim/room-qr.mjs';
 
 for(const value of ['ab2c',' AB2C ','https://size-em-up.web.app/?join=ab2c','https://size-em-up.firebaseapp.com/index.html?join=AB2C','http://192.168.1.173:4180/?join=AB2C'])
   assert.equal(roomCodeFromQr(value,'http://192.168.1.173:4180'),'AB2C');
@@ -26,4 +26,14 @@ const navigated=setup(async()=>({value:'AB2C'}),()=>false);navigated.button.clic
   let a2=false,r2=0;const c=setup(async()=>({cancelled:true}),()=>a2,{restore:()=>{r2++;}});c.button.click();await turn();assert.equal(r2,0,'a cancelled scan never navigates');
 }
 const browser=setup(null);browser.button.click();assert(browser.status.textContent.includes('Android app'));assert.equal(browser.joins(),0);assert.equal(browser.input.value,'OLD2');
+{
+ let at=1000;const values=new Map(),storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+ const pending=pendingRoomInvite({storage,now:()=>at});pending.beginScan();assert.equal(pending.read().stage,'scanning','Interrupted scan can reopen Join');
+ pending.remember('AB2C');const restored=pendingRoomInvite({storage,now:()=>at});assert.equal(restored.read().code,'AB2C','Room survives a WebView reload');
+ at+=600001;assert.equal(restored.read(),null,'Stale invite cannot hijack a future launch');pending.remember('javascript:alert(1)');assert.equal(pending.read(),null);
+ pending.remember('AB2C');pending.clear();assert.equal(pending.read(),null,'Explicit cancellation clears saved invite');
+ const inaccessible=pendingRoomInvite({storage:{getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){throw Error('blocked')}}});inaccessible.beginScan();inaccessible.remember('AB2C');assert.equal(inaccessible.read(),null,'Unavailable storage does not break scanning');
+ let resume;const events=[],handoff=new Promise(resolve=>resume=resolve),ui=setup(async()=>({value:'AB2C'}),()=>true,{pending,waitForResume:()=>handoff,onCode:async code=>events.push(code)});
+ ui.button.click();await turn();assert.equal(pending.read().code,'AB2C');assert.deepEqual(events,[],'Waits for foreground');assert(ui.button.disabled);resume();await turn();assert.deepEqual(events,['AB2C']);assert.equal(ui.joins(),0,'Native result uses direct join callback, not hidden button click');
+}
 console.log('PASS: QR invite validation, valid scan to Join Game, cancel/failure recovery, duplicate taps, navigation cancellation, manual-entry preservation and browser fallback.');

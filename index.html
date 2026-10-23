@@ -4272,7 +4272,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.addEventListener('visibilitychange',()=>audioLifecycle.sync());
   window.addEventListener('pagehide',()=>{audioPageActive=false;audioLifecycle.sync();});
   window.addEventListener('pageshow',()=>{audioPageActive=true;audioLifecycle.sync();});
-  try{window.Capacitor?.Plugins?.App?.addListener('appStateChange',({isActive})=>{nativeAudioActive=!!isActive;audioLifecycle.sync();});}catch{}
+  try{window.Capacitor?.Plugins?.App?.addListener('appStateChange',({isActive})=>{nativeAudioActive=!!isActive;audioLifecycle.sync();if(isActive)window.dispatchEvent(new Event('size-em-up:app-active'));});}catch{}
 
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
@@ -4284,7 +4284,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
-  import { mountRoomQr } from "./anim/room-qr.mjs";
+  import { mountRoomQr, pendingRoomInvite } from "./anim/room-qr.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
   var careerLedger;
@@ -8852,6 +8852,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function guardToolbarNav(action) {
     return () => {
+      if (Date.now() < qrScanGuardUntil) return;
       if (gameRewards?.active) return;
       if (finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
       if (isInActiveGame()) { openLeaveGameConfirm(); return; }
@@ -8862,6 +8863,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           "Continue", "Stay here");
         return;
       }
+      if(joinScreen.classList.contains('active')||nameAvatarScreenEl.classList.contains('active'))pendingQrInvite.clear();
       action();
     };
   }
@@ -12512,6 +12514,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // cleanup (guestExit/hostExit), not an implicit back-press.
   history.pushState({ appGuard: true }, "", location.href);
   let qrScanGuardUntil = 0; // while the QR camera is open (and just after), a stray Back must not bounce Join -> Home
+  const pendingQrInvite=pendingRoomInvite();
   window.addEventListener("popstate", () => {
     history.pushState({ appGuard: true }, "", location.href);
     if (Date.now() < qrScanGuardUntil) return;
@@ -13000,6 +13003,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     currentRoomCode = roomCode;
     currentPlayerId = id;
+    pendingQrInvite.clear();
     isHost = !!joined.snapshot.val().players[id].isHost;
     const playerRef = ref(db, `rooms/${roomCode}/players/${id}`);
     onDisconnect(playerRef).update({ connected: false, disconnectedAt: serverTimestamp() });
@@ -13127,11 +13131,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     codeInput.value = "";
     renderRecentRooms();
     joinStatusEl.textContent = "";
-    homeScreen.classList.remove("active");
+    ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
+    overlayReturnScreen=null;syncOverlayReturnFlag();
     joinScreen.classList.add("active");
   }
   homeJoinBtn.addEventListener("click", () => afterBtnBounce(homeJoinBtn, showJoinScreen));
   joinBackBtn.addEventListener("click", () => {
+    pendingQrInvite.clear();
     joinScreen.classList.remove("active");
     homeScreen.classList.add("active");
   });
@@ -13141,13 +13147,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     nameAvatarStatusEl.textContent = "";
     nameInput.value = currentName;
     watchTakenAvatarsForCode(pendingRoomCode);
-    createScreenEl.classList.remove("active");
-    joinScreen.classList.remove("active");
+    ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
   }
   // Backing out of the name/avatar screen as the HOST of a room just created for this game closes
   // that room (after asking), so no empty room is left behind; a guest just goes back to Join.
   nameAvatarBackBtn.addEventListener("click", () => {
+    if(nameAvatarCameFrom==='join')pendingQrInvite.clear();
     if (nameAvatarCameFrom === "create" && pendingRoomCode) {
       openExitConfirm("closeCreatedRoom", "Close this room?", "The room you created will be closed. You can create a new one.", "Close room", "Stay here");
       return;
@@ -13285,17 +13291,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // screens further into the flow. Check it right away instead, so a typo
   // gets caught before the player goes through picking a name and avatar
   // for a room that was never there.
-  joinContinueBtn.addEventListener("click", async () => {
-    const code = codeInput.value.trim().toUpperCase();
+  async function continueRoomJoin(scannedCode=null) {
+    const code = (scannedCode||codeInput.value).trim().toUpperCase();
     if (!code) { joinStatusEl.textContent = "Enter a room code."; return; }
     joinContinueBtn.disabled = true;
     joinStatusEl.textContent = "Checking room code...";
-    const snap = await new Promise((resolve) => {
-      onValue(ref(db, `rooms/${code}`), resolve, { onlyOnce: true });
-    });
-    joinContinueBtn.disabled = false;
+    let snap;
+    try{snap=await get(ref(db, `rooms/${code}`));}
+    catch{joinStatusEl.textContent='Could not check the room. Try again when connected.';return;}
+    finally{joinContinueBtn.disabled=false;}
+    if(!joinScreen.classList.contains('active')||codeInput.value.trim().toUpperCase()!==code)return;
     joinStatusEl.textContent = "";
     if (snap.val() === null) {
+      pendingQrInvite.clear();
       openExitConfirm("dismiss", "Room not found", "Double check the 4-character code and try again.", "OK", null);
       return;
     }
@@ -13303,14 +13311,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingIsHost = false;
     pendingSettings = null;
     showNameAvatarScreen("join");
-  });
+  }
+  joinContinueBtn.addEventListener("click",()=>continueRoomJoin());
+  function waitForQrResume(){
+    if(!document.hidden&&nativeAudioActive)return Promise.resolve();
+    return new Promise(resolve=>{
+      const check=()=>{if(document.hidden||!nativeAudioActive)return;document.removeEventListener('visibilitychange',check);window.removeEventListener('size-em-up:app-active',check);resolve();};
+      document.addEventListener('visibilitychange',check);window.addEventListener('size-em-up:app-active',check);check();
+    });
+  }
   mountRoomQr({button:document.getElementById('scan-room-qr-btn'),input:codeInput,status:joinStatusEl,joinButton:joinContinueBtn,
+    pending:pendingQrInvite,waitForResume:waitForQrResume,onCode:continueRoomJoin,
     isActive:()=>joinScreen.classList.contains('active'),
     restore:()=>{showJoinScreen();},onScanStart:()=>{qrScanGuardUntil=Infinity;},onScanEnd:()=>{qrScanGuardUntil=Date.now()+2500;},
     scanner:isNativeApp?async()=>{
       const cap=window.Capacitor,plugin=cap.registerPlugin?cap.registerPlugin('RoomQrScanner'):cap.Plugins?.RoomQrScanner;
       if(!plugin)throw Error('Scanner unavailable');return plugin.scan();
     }:null});
+  async function recoverQrInvite(){
+    // A killed/reloaded WebView cannot retain a camera Promise. Keep its room
+    // (or reopen Join for a retry) rather than silently returning to Home.
+    if(Date.now()<qrScanGuardUntil||(!homeScreen.classList.contains('active')&&!joinScreen.classList.contains('active')))return;
+    const invite=pendingQrInvite.read();if(!invite)return;
+    await waitForQrResume();
+    if(!homeScreen.classList.contains('active')&&!joinScreen.classList.contains('active'))return;
+    if(invite.stage==='scanning'){pendingQrInvite.clear();showJoinScreen();joinStatusEl.textContent='The scan was interrupted. Scan again or enter the room code.';return;}
+    qrScanGuardUntil=Date.now()+2500;showJoinScreen();codeInput.value=invite.code;await continueRoomJoin(invite.code);
+  }
+  queueMicrotask(()=>void recoverQrInvite());
+  window.addEventListener('size-em-up:app-active',()=>void recoverQrInvite());
   renderCustomKeyboard(codeKeyboardEl, codeInput, {
     maxLength: 4,
     charset: new Set(ROOM_CODE_CHARSET.split("")),
