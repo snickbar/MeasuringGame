@@ -6,13 +6,26 @@ export function bluffPickHtml(s,me){
  const icon=kind==='correct'?'<img src="icons/check-selected.svg" alt="">':`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="${kind==='low'?'M16 5v22M6 17l10 10 10-10':kind==='high'?'M16 27V5M6 15 16 5l10 10':'M7 16h18'}" fill="none" stroke="#513621" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
  return `<div class="bl-pick-reminder"><div class="bl-pick-circle"><span class="bl-pick-icon">${icon}</span><div class="bl-pick-copy"><span class="bl-pick-label">${mine?'Your answer':'Your pick'}</span><b>${label}</b></div><strong class="bl-pick-number${value.length>8?' long':''}">${value}</strong></div></div>`;
 }
-export function bluffSummaryHtml(s,players,avatar,me){
+// Timeline of the staged result (ms after the summary opens): the seesaw tips, the verdict pops, voters drop one by one,
+// then the winning bin glows and the others shake. Reduced motion shows the finished picture straight away.
+export function bluffRevealTimes(s,motion=true){
+  const n=s.order.filter(id=>id!==s.maker&&Object.hasOwn(BLUFF_LABELS,s.votes?.[id])).length;
+  if(!motion)return {tip:0,verdict:0,drop0:0,step:0,judged:0,n};
+  const drop0=1700,step=380;
+  return {tip:250,verdict:1100,drop0,step,judged:drop0+Math.max(0,n-1)*step+700,n};
+}
+export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const voters=s.order.filter(id=>id!==s.maker);
+  const T=bluffRevealTimes(s,motion&&Number.isFinite(age)),live=motion&&Number.isFinite(age),judged=!live||age>=T.judged;
+  const dropIndex=new Map(voters.filter(id=>Object.hasOwn(BLUFF_LABELS,s.votes?.[id])).map((id,i)=>[id,i]));
   const name=id=>players[id]?.name||s.names?.[id]||'Player';
-  const person=id=>`<div class="bl-result-person${id===me?' is-you':''}" data-result-player="${esc(id)}" title="${esc(name(id))}"><span class="avatar">${avatar(players[id]?.avatar||s.avatars?.[id])}</span><span>${id===me?'You':esc(name(id))}</span></div>`;
-  const box=(kind,win)=>{const ids=voters.filter(id=>s.votes?.[id]===kind);return `<section class="bl-result-choice ${win?'win':'wrong'}" data-result-choice="${kind}" aria-label="${BLUFF_LABELS[kind]}: ${win?'winning':'wrong'} choice"><h3>${BLUFF_LABELS[kind]}</h3><p class="bl-choice-points">${win?'Winning choice · +2 each':'No points'}</p><div class="bl-result-people">${ids.length?ids.map(person).join(''):'<span class="bl-empty-votes">No votes</span>'}</div></section>`;};
+  const person=(id,drop=true)=>{const delay=live&&drop?` style="animation-delay:${Math.round(T.drop0+(dropIndex.get(id)||0)*T.step-age)}ms"`:'';return `<div class="bl-result-person${id===me?' is-you':''}${live&&drop?' bl-drop':''}" data-result-player="${esc(id)}" title="${esc(name(id))}"${delay}><span class="avatar">${avatar(players[id]?.avatar||s.avatars?.[id])}</span><span>${id===me?'You':esc(name(id))}</span></div>`;};
+  const box=kind=>{const win=kind===s.claim.kind,ids=voters.filter(id=>s.votes?.[id]===kind);return `<section class="bl-result-choice ${win?'win':'wrong'}" data-result-choice="${kind}" aria-label="${BLUFF_LABELS[kind]}: ${win?'winning':'wrong'} choice"><h3>${BLUFF_LABELS[kind]}</h3><p class="bl-choice-points">${win?'+2 each':'No points'}</p><div class="bl-result-people">${ids.length?ids.map(id=>person(id)).join(''):'<span class="bl-empty-votes">No votes</span>'}</div></section>`;};
   const missed=voters.filter(id=>!Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
-  return `<div class="bl-answer-strip"><div><span>Real answer</span><strong>${bluffNumber(s.q.answer)}</strong></div><b class="bl-comparison" aria-label="${s.claim.kind==='low'?'greater than':s.claim.kind==='high'?'less than':'equal to'}">${s.claim.kind==='low'?'&gt;':s.claim.kind==='high'?'&lt;':'='}</b><div><span>The claim</span><strong>${bluffNumber(s.claim.value)}</strong></div></div>${box(s.claim.kind,true)}<div class="bl-wrong-choices">${['low','correct','high'].filter(kind=>kind!==s.claim.kind).map(kind=>box(kind,false)).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.png" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><span class="bl-maker-identity"><b>${esc(name(s.maker))}</b><small>${s.autoClaim?'Automatic claim · no maker points':`Maker · ${s.result.wrong} fooled`}</small></span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(person).join('')}</div></div>`:''}`;
+  const tilt=s.claim.kind==='high'?-8:s.claim.kind==='low'?8:0;
+  const at=ms=>live?` style="animation-delay:${Math.round(ms-age)}ms"`:'';
+  const seesaw=`<div class="bl-seesaw${live?' live':''}" style="--tilt:${tilt}deg" aria-label="The claim is ${s.claim.kind==='low'?'lower than':s.claim.kind==='high'?'higher than':'equal to'} the real answer"><div class="bl-ss-beam"${at(T.tip)}><div class="bl-ss-end l"><div class="bl-ss-plate claim"${at(T.tip)}><span>The claim</span><strong>${bluffNumber(s.claim.value)}</strong></div></div><div class="bl-ss-end r"><div class="bl-ss-plate real"${at(T.tip)}><span>Real answer</span><strong>${bluffNumber(s.q.answer)}</strong></div></div></div><div class="bl-ss-pivot"></div><b class="bl-ss-verdict bl-v-${s.claim.kind}"${at(T.verdict)}>${BLUFF_LABELS[s.claim.kind]}</b></div>`;
+  return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.png" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><span class="bl-maker-identity"><b>${esc(name(s.maker))}</b><small>${s.autoClaim?'Automatic claim · no maker points':`Maker · ${s.result.wrong} fooled`}</small></span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
 }
 export function bluffRankingsHtml(s,players,avatar,me){
   const newLeaders=bluffNewLeaders(s);
@@ -25,7 +38,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
   let handle=null,busy=false,selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
-  let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='';
+  let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='',introKey='',introAt=0,timers=[],timersKey='';
   let celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
   const image=id=>{const o=object(id);return `<figure><img src="${esc(o?.image)}" alt="${esc(o?.name)}" draggable="false"><figcaption>${esc(o?.name)}</figcaption></figure>`;};
   function render(){
@@ -34,11 +47,13 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     if(selectionKey!==key){selection=null;selectionKey=key;error='';}
     const sig=JSON.stringify([key,s,room.players,room.paused,host,visible(),selection,busy,error]);if(sig===signature)return;signature=sig;
     const mine=s.maker===me,member=s.order.includes(me),maker=room.players?.[s.maker],myVote=s.votes?.[me];
+    if(introKey!==key){introKey=key;introAt=now();}
+    const age=Math.max(0,now()-introAt),intro=age<1000&&!reduced(),introStyle=intro?` style="animation-delay:-${age}ms"`:'';
     let content='';
     if(s.stage==='animation')content='<p class="bl-instruction">Revealing the sizes…</p><p class="bl-note">Votes are locked.</p>';
-    if(s.stage==='make')content=mine?`<p class="bl-instruction">Your private choices. Pick a claim.</p><div class="bl-claims">${Object.keys(BLUFF_LABELS).map(kind=>{const i=s.options.findIndex(o=>o.kind===kind),o=s.options[i];return `<button type="button" class="bl-choice-${kind}" data-claim="${i}" data-fit-single-line="true" aria-pressed="${selection===i}"><strong>${bluffNumber(o.value)}</strong><span>${BLUFF_LABELS[o.kind]}</span></button>`;}).join('')}</div><button type="button" class="bl-action" data-send-claim ${selection===null||busy?'disabled':''}>Set as answer</button><p class="bl-note">+1 per player fooled.</p>`:`<div class="bl-wait"><span class="avatar">${avatar(maker?.avatar)}</span><h3>${esc(maker?.name||s.names?.[s.maker]||'The maker')} is choosing a claim</h3><p>They know the answer. Will you trust them?</p></div>`;
-    if(s.stage==='vote')content=`<div class="bl-claim"><span>${esc(maker?.name||s.names?.[s.maker]||'The maker')} says</span><strong>${bluffNumber(s.claim.value)}</strong></div>${s.autoClaim?'<p class="bl-note">Automatic claim: no maker points this round.</p>':''}${mine?'<p class="bl-instruction">Claim set. Who believes you?</p>':member?`<p class="bl-instruction">Judge this claim.</p><div class="bl-votes">${Object.entries(BLUFF_LABELS).map(([id,label])=>`<button type="button" class="bl-choice-${id}" data-vote="${id}" aria-pressed="${myVote===id}" ${busy||room.paused||now()>=s.endsAt||(myVote&&now()>=bluffVoteDeadline(s,me))?'disabled':''}>${label}</button>`).join('')}</div><p class="bl-locked" data-vote-status role="status"></p><div class="lock-bar" data-lock-bar hidden><i></i></div>`:'<p>You’re watching this game. Join the next game to play.</p>'}<p class="bl-note">${Object.keys(s.votes||{}).length} of ${s.order.length-1} votes in · +2 correct</p>`;
-    if(s.stage==='reveal')content=bluffSummaryHtml(s,room.players||{},avatar,me);
+    if(s.stage==='make')content=mine?`<p class="bl-instruction">Your private choices. Pick a claim.</p><div class="bl-claims">${Object.keys(BLUFF_LABELS).map(kind=>{const i=s.options.findIndex(o=>o.kind===kind),o=s.options[i];return `<button type="button" class="bl-choice-${kind}${intro&&s.stage==='make'?' bl-flip':''}"${intro?introStyle:''} data-claim="${i}" data-fit-single-line="true" aria-pressed="${selection===i}"><strong>${bluffNumber(o.value)}</strong><span>${BLUFF_LABELS[o.kind]}</span></button>`;}).join('')}</div><button type="button" class="bl-action" data-send-claim ${selection===null||busy?'disabled':''}>Set as answer</button><p class="bl-note">+1 per player fooled.</p>`:`<div class="bl-wait"><span class="avatar">${avatar(maker?.avatar)}</span><h3>${esc(maker?.name||s.names?.[s.maker]||'The maker')} is choosing a claim</h3><p>They know the answer. Will you trust them?</p></div>`;
+    if(s.stage==='vote')content=`<div class="bl-claim${intro?' bl-slam':''}"${intro?introStyle:''}><span>${esc(maker?.name||s.names?.[s.maker]||'The maker')} says</span><strong>${bluffNumber(s.claim.value)}</strong></div>${s.autoClaim?'<p class="bl-note">Automatic claim: no maker points this round.</p>':''}${mine?'<p class="bl-instruction">Claim set. Who believes you?</p>':member?`<p class="bl-instruction">Judge this claim.</p><div class="bl-votes">${Object.entries(BLUFF_LABELS).map(([id,label])=>`<button type="button" class="bl-choice-${id}" data-vote="${id}" aria-pressed="${myVote===id}" ${busy||room.paused||now()>=s.endsAt||(myVote&&now()>=bluffVoteDeadline(s,me))?'disabled':''}>${label}</button>`).join('')}</div><p class="bl-locked" data-vote-status role="status"></p><div class="lock-bar" data-lock-bar hidden><i></i></div>`:'<p>You’re watching this game. Join the next game to play.</p>'}<p class="bl-note">${Object.keys(s.votes||{}).length} of ${s.order.length-1} votes in · +2 correct</p>`;
+    if(s.stage==='reveal'){const ck=room.gameId+':'+s.round,sAge=ck===celebrationKey?(celebrationAbandoned?Infinity:now()-celebrationAt):0;content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,!reduced()&&visible());}
     const stageChanged=cueKey!==key;
     element.classList.toggle('bl-stage-enter',stageChanged);
     const cardFor=(id,side)=>{const p=room.players?.[id],maker=id===s.maker,tag=maker?'Maker':s.stage==='vote'?(s.votes?.[id]?'Voted':'Thinking…'):s.stage==='reveal'?(s.result.points[id]?'+'+s.result.points[id]:'0 points'):p?'Ready':'Away';return `<div class="hs-pl bl-player${maker?' turn':''}" data-bluff-player="${esc(id)}" data-bluff-side="${side}"><span class="avatar">${avatar(p?.avatar||s.avatars?.[id])}</span><b class="hs-pl-name" title="${esc(p?.name||s.names?.[id])}">${esc(p?.name||s.names?.[id]||'Player')}</b><span class="hs-pl-coins">${s.scores[id]||0} pts</span><span class="hs-tag${maker?' turn':s.votes?.[id]?' ok':''}">${tag}</span></div>`;};
@@ -46,7 +61,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const nextLabel=!s.showStand?'Show standings':s.round===s.total?'Finish game':'Start next round';
     const dock=s.stage==='reveal'?`<div class="bl-dock">${host?`<button type="button" class="dc-btn bl-dock-btn" data-next ${busy?'disabled':''}>${nextLabel}</button>`:`<p class="hs-hint">Waiting for the host to ${s.showStand?(s.round===s.total?'finish the game':'start the next round'):'show the standings'}…</p>`}</div>`:'';
     const standings=s.stage==='reveal'&&s.showStand?bluffRankingsHtml(s,room.players||{},avatar,me):'';
-    const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="Round summary"><h2>Round summary</h2>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}"><div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel" aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p></section><div class="hs-col r">${right.join('')}</div></div>`;
+    const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="Round summary"><h2>Round summary</h2>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}"><div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel${intro&&s.stage==='vote'?' bl-thud':''}"${intro&&s.stage==='vote'?introStyle:''} aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p></section><div class="hs-col r">${right.join('')}</div></div>`;
     element.innerHTML=`<h1 class="bl-screen-reader">Bluff the Room</h1><div class="hs-top bl-meta"><div class="hs-rounds"><span class="hs-top-label">Round ${s.round} of ${s.total}</span><span class="hs-dots${s.total>10?' many':''}" aria-hidden="true">${Array.from({length:s.total},(_,i)=>`<i class="${i+1<s.round||(i+1===s.round&&s.stage==='reveal'&&s.showStand)?'done':i+1===s.round?'now':''}"></i>`).join('')}</span></div>${s.stage==='make'?`<span class="bl-turn-notice" data-maker-spotlight>${mine?'Your turn!':'Maker’s turn'}</span>`:''}<span class="hs-clock bl-clock" data-clock></span></div>${s.stage==='reveal'&&s.showStand?'':`<div class="hs-q bl-question">${s.stage==='reveal'?'':`<div class="bl-objects">${image(s.q.unitId)}${image(s.q.targetId)}</div>`}<h2 class="hs-qtext">${esc(s.q.prompt)}</h2></div>`}${board}<p class="bl-error" role="status">${esc(error)}</p>${dock}${s.stage==='animation'?`<div class="bl-reveal-overlay" role="region" aria-label="Size reveal"><div class="bl-reveal-sheet"><h2>Let’s see the real size</h2><div id="bluff-animation-slot"></div>${bluffPickHtml(s,me)}</div></div>`:''}`;
     {const tb=element.ownerDocument.getElementById('bottom-toolbar'),h=tb&&tb.classList.contains('active')?tb.getBoundingClientRect().height:0;element.style.setProperty('--bl-tb',Math.round(h)+'px');element.classList.toggle('bl-has-dock',!!dock);}
     const select=value=>{
@@ -64,7 +79,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       if(animationKey!==animKey){animationStop?.();animationKey=animKey;animationNode=element.ownerDocument.createElement('div');animationNode.id='bluff-animation';animationStop=revealAnimation?.mount(animationNode,s.q,s);}
       element.querySelector('#bluff-animation-slot')?.append(animationNode);
     }else if(animationKey){animationStop?.();animationKey='';animationNode=null;animationStop=null;}
-    if(stageChanged){cueKey=key;if(visible()){if(s.stage==='make'&&mine)vibrate([30,50,30]);element.ownerDocument.defaultView.scrollTo({top:0,behavior:'instant'});sound(s.stage==='make'?'join':s.stage==='reveal'&&!s.showStand?'reveal':s.stage==='vote'?'go':'popup-open');}}
+    if(stageChanged){cueKey=key;if(visible()){if(s.stage==='make'&&mine)vibrate([30,50,30]);if(s.stage==='vote'&&member&&!mine)setTimeout(()=>vibrate(40),230);element.ownerDocument.defaultView.scrollTo({top:0,behavior:'instant'});sound(s.stage==='make'?'join':s.stage==='reveal'&&!s.showStand?'reveal':s.stage==='vote'?'go':'popup-open');}}
     clock();
   }
   async function work(fn,quiet=false){
@@ -103,6 +118,15 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     }else if(s.votes?.[me]===s.claim.kind){toast('NAILED IT +2');vibrate([40,50,40,50,70]);}
     else if(s.votes?.[me]){toast('FOOLED!');vibrate([60,40,60]);}
   }
+  // Tick sounds and haptics for each dropped avatar, scheduled once per round from the summary's start.
+  function scheduleReveal(s,key){
+    timers.forEach(clearTimeout);timers=[];timersKey=key;
+    if(reduced()||!visible())return;
+    const T=bluffRevealTimes(s,true),{me}=context(),voters=s.order.filter(id=>id!==s.maker&&Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
+    timers.push(setTimeout(()=>sound('popup-open'),T.verdict));
+    voters.forEach((id,i)=>timers.push(setTimeout(()=>{sound('tick');if(id===me)vibrate(18);},T.drop0+i*T.step+330)));
+    if(voters.some(id=>s.votes[id]!==s.claim.kind))timers.push(setTimeout(()=>sound('tap'),T.judged));
+  }
   function celebrateRound(){
     const {room}=context(),s=room?.bluff;
     if(s?.stage==='reveal'&&s.showStand&&visible()&&!room.paused){const key=room.gameId+':'+s.round;if(key!==rankingCueKey){rankingCueKey=key;if(bluffNewLeaders(s).length)sound('winner');}}
@@ -113,9 +137,13 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const key=room.gameId+':'+s.round;
     if(key!==celebrationKey){celebrationKey=key;celebrationAt=now();laughAt=null;laughReadyAt=null;displayedAward=-1;celebrationAbandoned=false;}
     if(celebrationAbandoned)return;
-    personalMoment(s,room);
-    const elapsed=now()-celebrationAt,hasWinners=element.querySelector('.win [data-result-player]');
-    if(!reduced()&&elapsed<1900){
+    if(!timersKey||timersKey!==key)scheduleReveal(s,key);
+    const T=bluffRevealTimes(s,!reduced()),raw=now()-celebrationAt,elapsed=raw-T.judged,hasWinners=element.querySelector('.win [data-result-player]');
+    if(raw>=T.judged){
+      element.querySelector('.bl-stage')?.classList.add('bl-judged');
+      if(raw>=T.judged+250)personalMoment(s,room);
+    }
+    if(!reduced()&&elapsed>=0&&elapsed<1900){
       for(const av of element.querySelectorAll('.win .avatar'))if(!av.classList.contains('bl-win-dance')){
         av.classList.add('bl-win-dance');av.style.animationDelay=-Math.max(0,elapsed)+'ms';
       }

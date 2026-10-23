@@ -105,7 +105,7 @@ html[data-motion=full] .bl-new-leader{animation:bl-lead-glow 1.5s ease-out both}
 html[data-motion=reduced] .bl-win-dance,html[data-motion=reduced] .bl-maker-laugh.playing{animation:none}
 @media(max-width:350px){#bluff-content .bl-table{grid-template-columns:62px minmax(0,1fr) 62px;gap:5px}#bluff-content .bl-player .avatar{width:44px;height:44px}}
 @media(max-height:740px){.bl-objects img{height:42px}#bluff-content .bl-question h2{font-size:15px;margin-top:4px}.bl-claims button,.bl-votes button{min-height:42px;padding:5px 3px}.bl-claims strong{font-size:21px}.bl-action{height:42px}.bl-claim>strong{font-size:27px}.bl-panel p{font-size:13px}}
-html[data-motion=full] .bl-stage-enter :is(.bl-claim,.bl-reveal){animation:bl-pop .24s ease-out}@keyframes bl-pop{from{opacity:.5;scale:.96}to{opacity:1;scale:1}}
+
 /* Progress dots in the top bar (long games use a slim segmented bar). */
 #bluff-content .bl-meta .hs-dots{flex-wrap:nowrap}
 #bluff-content .bl-meta .hs-dots.many{width:100%;gap:2px}
@@ -119,3 +119,49 @@ html[data-motion=full] .bl-stage-enter :is(.bl-claim,.bl-reveal){animation:bl-po
 #bluff-content .bl-dock .hs-hint{margin:0;text-align:center;padding:10px;border-radius:14px;background:#fffdf6;border:2px solid #ecdcc0}
 @keyframes bl-dock-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){#bluff-content .bl-dock{animation:none}}
+/* The maker's three private cards flip over together. */
+.bl-claims button.bl-flip{position:relative;transform-style:preserve-3d;backface-visibility:hidden;animation:bl-flip .6s cubic-bezier(.2,.8,.3,1.15) both}
+.bl-claims button.bl-flip::after{content:'?';position:absolute;inset:0;display:grid;place-items:center;border-radius:11px;box-shadow:0 0 0 3px #4a2c12;font:700 30px Fredoka,sans-serif;color:#fff8e1;background:repeating-linear-gradient(45deg,#8f6eb9 0 8px,#7d5ca8 8px 16px);backface-visibility:hidden;transform:rotateY(180deg)}
+@keyframes bl-flip{from{transform:perspective(600px) rotateY(180deg)}to{transform:perspective(600px) rotateY(0)}}
+/* The claim lands with weight: big, then a heavy thud (no tilt, no stamp mark). */
+.bl-claim.bl-slam{animation:bl-slam .42s cubic-bezier(.3,0,.2,1) both}
+@keyframes bl-slam{0%{opacity:0;transform:scale(2.6)}55%{opacity:1;transform:scale(.93)}75%{transform:scale(1.045)}100%{opacity:1;transform:scale(1)}}
+.bl-panel.bl-thud{animation:bl-thud .32s ease-out .2s both}
+@keyframes bl-thud{0%{transform:translateY(0)}30%{transform:translateY(5px)}55%{transform:translateY(-3px)}80%{transform:translateY(1px)}100%{transform:none}}
+@media(prefers-reduced-motion:reduce){.bl-claims button.bl-flip,.bl-claim.bl-slam,.bl-panel.bl-thud{animation:none}.bl-claims button.bl-flip::after{display:none}}
+
+/* ---- Staged result: seesaw, dropping voters, judged bins ---- */
+.bl-stage{display:flex;flex-direction:column;gap:12px}
+.bl-seesaw{position:relative;height:172px;margin:2px 0 0}
+.bl-ss-beam{position:absolute;left:4px;right:4px;top:90px;height:10px;border-radius:99px;background:linear-gradient(#b98a52,#8f6637);border:2px solid #4a2c12;transform:rotate(var(--tilt,0deg));transform-origin:50% 50%}
+.bl-seesaw.live .bl-ss-beam{animation:bl-ss-tip .95s cubic-bezier(.3,.7,.3,1) both;transform:none}
+.bl-ss-end{position:absolute;bottom:calc(100% - 1px);width:46%;display:flex;justify-content:center}
+.bl-ss-end.l{left:0}.bl-ss-end.r{right:0}
+.bl-ss-plate{width:100%;padding:5px 4px 6px;border:3px solid #b49e7d;border-radius:14px;background:#fff4cf;text-align:center;box-shadow:0 3px 0 #a37e4930;transform:rotate(calc(var(--tilt,0deg) * -1))}
+.bl-seesaw.live .bl-ss-plate{transform:none;animation:bl-ss-keep .95s cubic-bezier(.3,.7,.3,1) both}
+.bl-ss-plate.claim{border-color:#c28a3d}.bl-ss-plate.real{border-color:#5c8f4d;background:#eef8d9}
+.bl-ss-plate span{display:block;font:400 12px Fredoka,sans-serif;color:#776248}.bl-ss-plate strong{display:block;font:600 clamp(17px,5.4vw,23px) Fredoka,sans-serif;color:#3b2718;overflow-wrap:anywhere}
+.bl-ss-pivot{position:absolute;left:50%;top:94px;width:0;height:0;margin-left:-16px;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:30px solid #4a2c12;transform:translateY(5px)}
+.bl-ss-verdict{position:absolute;left:50%;top:134px;transform:translateX(-50%);padding:2px 18px;border-radius:99px;font:700 22px/1.2 Fredoka,sans-serif;color:#fff;white-space:nowrap;border:3px solid #4a2c12;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.bl-v-high{background:#d9603c}.bl-v-low{background:#4a8fc0}.bl-v-correct{background:#5da13a}
+.bl-seesaw.live .bl-ss-verdict{animation:bl-verdict .5s cubic-bezier(.3,1.4,.4,1) both}
+@keyframes bl-ss-tip{0%{transform:rotate(0)}45%{transform:rotate(calc(var(--tilt) * 1.35))}68%{transform:rotate(calc(var(--tilt) * .82))}85%{transform:rotate(calc(var(--tilt) * 1.08))}100%{transform:rotate(var(--tilt))}}
+@keyframes bl-ss-keep{0%{transform:rotate(0)}45%{transform:rotate(calc(var(--tilt) * -1.35))}68%{transform:rotate(calc(var(--tilt) * -.82))}85%{transform:rotate(calc(var(--tilt) * -1.08))}100%{transform:rotate(calc(var(--tilt) * -1))}}
+@keyframes bl-verdict{0%{opacity:0;transform:translateX(-50%) scale(.3)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+.bl-bins{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;align-items:stretch}
+.bl-bins .bl-result-choice{padding:8px 3px 9px;border-color:#b49e7d;background:linear-gradient(#fffdf6,#f1e4c8);box-shadow:0 3px 0 #a37e4930;transition:background .25s,border-color .25s}
+.bl-bins .bl-result-choice h3,.bl-bins .bl-result-choice.wrong h3{font-size:clamp(14px,4.4vw,18px)}
+.bl-bins .bl-choice-points{visibility:hidden;margin:3px 0 6px;font-size:11px}
+.bl-bins .bl-result-people{gap:4px}
+.bl-bins .bl-result-person{width:44px}.bl-bins .bl-result-person>.avatar,.bl-bins .bl-result-choice.wrong .avatar{width:38px;height:38px}
+.bl-bins .bl-result-person>span:last-child{font-size:10px}
+.bl-bins .bl-empty-votes{font-size:12px}
+.bl-stage:not(.bl-judged) .bl-maker-result small{visibility:hidden}
+.bl-result-person.bl-drop{animation:bl-drop .55s cubic-bezier(.3,.7,.35,1) both}
+@keyframes bl-drop{0%{opacity:0;transform:translateY(-120px) scale(1.25)}55%{opacity:1;transform:translateY(0) scale(1)}72%{transform:translateY(-9px) scale(1.04)}88%{transform:translateY(0) scale(.97)}100%{opacity:1;transform:none}}
+.bl-judged .bl-bins .bl-choice-points{visibility:visible}
+.bl-judged .bl-bins .bl-result-choice.win{border-color:#72994b;background:linear-gradient(#f1f9db,#d4e8af);box-shadow:0 3px 0 #78934430,0 0 18px 4px rgba(255,214,64,.85);animation:bl-bin-glow 1.2s ease-out both}
+.bl-judged .bl-bins .bl-result-choice.wrong{border-color:#bc756a;background:linear-gradient(#fff0e8,#f4cfc7);box-shadow:0 3px 0 #a3564930;animation:bl-bin-shake .55s ease-in-out both}
+@keyframes bl-bin-glow{0%{transform:scale(1)}30%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes bl-bin-shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-7px) rotate(-1.5deg)}35%{transform:translateX(6px) rotate(1.2deg)}55%{transform:translateX(-4px)}75%{transform:translateX(3px)}}
+@media(prefers-reduced-motion:reduce){.bl-seesaw.live .bl-ss-beam,.bl-seesaw.live .bl-ss-plate,.bl-seesaw.live .bl-ss-verdict,.bl-result-person.bl-drop,.bl-judged .bl-bins .bl-result-choice{animation:none}}
