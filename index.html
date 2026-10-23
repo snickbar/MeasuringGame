@@ -55,27 +55,6 @@ if (location.protocol === "file:") {
   } catch (e) { id = "ants"; }
   document.documentElement.style.setProperty("--home-bg", "url('" + F[id] + "')");
   var p = document.querySelector("link[rel=preload][as=image]"); if (p) p.setAttribute("href", F[id]);
-  // TEMPORARY on-screen trace (tap it to hide) while chasing the Home picture flash: what was chosen and every later change.
-  try {
-    var T = [], t0 = performance.now(), fmt = function () { return Math.round(performance.now() - t0) + "ms"; };
-    var cur = function () { return (document.documentElement.style.getPropertyValue("--home-bg") || "").replace(/.*\//, "").replace(/['")]/g, "") || "(none)"; };
-    T.push("pick " + id + " sel=" + localStorage.getItem("mg_homeSel") + " " + fmt());
-    var last = cur();
-    new MutationObserver(function () { var c = cur(); if (c !== last) { T.push(last + ">" + c + " " + fmt()); last = c; draw(); } }).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
-    var sp = document.documentElement.style.setProperty.bind(document.documentElement.style);
-    document.documentElement.style.setProperty = function (k, v) {
-      if (k === "--home-bg") T.push("set " + String(v).replace(/.*\//, "") + " @ " + ((new Error().stack || "").split("\n").slice(2, 5).map(function (l) { return l.replace(/.*[\/(]/, "").replace(/\)$/, ""); }).join(" < ")));
-      return sp(k, v);
-    };
-    var box;
-    var draw = function () {
-      if (!box && document.body) { box = document.createElement("div"); box.style.cssText = "position:fixed;left:4px;bottom:70px;z-index:2147483000;max-width:92vw;padding:4px 6px;border-radius:6px;background:rgba(0,0,0,.72);color:#fff;font:10px/1.3 monospace;white-space:pre-wrap"; box.onclick = function () { box.remove(); box = null; draw = function () {}; }; document.body.appendChild(box); }
-      if (box) box.textContent = "v " + (window.__mgV || "?") + "\n" + T.join("\n");
-    };
-    fetch("app-version.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) { window.__mgV = j.version; draw(); }).catch(function () { window.__mgV = "n/a"; draw(); });
-    document.addEventListener("DOMContentLoaded", function () { T.push("dom " + cur() + " " + fmt()); draw(); });
-    setTimeout(function () { T.push("3s " + cur()); draw(); }, 3000);
-  } catch (e) {}
 })();
 </script>
 <meta name="theme-color" content="#c17a54" />
