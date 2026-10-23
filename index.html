@@ -32,14 +32,24 @@ if (location.protocol === "file:") {
    (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
   var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg", underwater: "home-underwater.jpg", "toy-box": "home-toy-box.jpg" }, id = "ants";
+  // Random picks any owned scene; it avoids repeating the last one only when there are 3 or more to choose from
+  // (with just two, "never the same twice" would make them strictly alternate). window.mgPickHome is also used by the Home button.
+  var G = typeof window !== "undefined" ? window : globalThis;
+  G.mgPickHome = function () {
+    var pool = JSON.parse(localStorage.getItem("mg_homeOwned") || "[]").filter(function (k) { return F[k]; });
+    if (pool.indexOf("ants") < 0) pool.push("ants");
+    var last = localStorage.getItem("mg_homeLast"), other = pool.filter(function (k) { return k !== last; });
+    if (pool.length >= 3 && other.length) pool = other;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+  G.mgHomeFile = function (k) { return F[k]; };
   try {
     var sel = localStorage.getItem("mg_homeSel") || "ants";
     if (sel === "random") {
-      var pool = JSON.parse(localStorage.getItem("mg_homeOwned") || "[]").filter(function (k) { return F[k]; });
-      if (pool.indexOf("ants") < 0) pool.push("ants");
-      var last = localStorage.getItem("mg_homeLast"), other = pool.filter(function (k) { return k !== last; });
-      if (other.length) pool = other;
-      id = pool[Math.floor(Math.random() * pool.length)];
+      // The Home button already chose the next picture (and showed it) just before reloading: keep that one.
+      var forced = localStorage.getItem("mg_homeForce");
+      localStorage.removeItem("mg_homeForce");
+      id = forced && F[forced] ? forced : G.mgPickHome();
     } else if (F[sel]) id = sel;
     localStorage.setItem("mg_homeLast", id);
   } catch (e) { id = "ants"; }
@@ -11228,7 +11238,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = false;
     });
   });
-  toolbarHomeBtn.addEventListener("click", guardToolbarNav(() => location.reload()));
+  toolbarHomeBtn.addEventListener("click", guardToolbarNav(() => {
+    // With Random Home Screens on, pick the next picture now and show it straight away, so the page reload keeps it
+    // instead of flashing one picture and then swapping to another.
+    try {
+      if (localStorage.getItem("mg_homeSel") === "random" && window.mgPickHome) {
+        const next = window.mgPickHome();
+        localStorage.setItem("mg_homeForce", next);
+        document.documentElement.style.setProperty("--home-bg", `url('${window.mgHomeFile(next)}')`);
+      }
+    } catch (e) { /* fall through to the reload */ }
+    location.reload();
+  }));
 
   // Shrinks a ".fit-text" element's font-size (from whatever its CSS rule
   // sets) until its content actually fits the box it's rendered in - a

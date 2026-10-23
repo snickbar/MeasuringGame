@@ -86,7 +86,7 @@ assert(ctx.myProfile.cosmetics.owned.homeScreens.space);assert.equal(ctx.myProfi
 const boot=[...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('var F =')&&m[1].includes('mg_homeSel'))[1];
 for(const selected of ['underwater','toy-box','random']){
   let background,preload;const values={mg_homeSel:selected,mg_homeOwned:JSON.stringify(['underwater','toy-box'])};
-  vm.runInNewContext(boot,{localStorage:{getItem:k=>values[k],setItem:(k,v)=>{values[k]=v;}},document:{documentElement:{style:{setProperty:(_,v)=>{background=v;}}},querySelector:()=>({setAttribute:(_,v)=>{preload=v;}})}});
+  vm.runInNewContext(boot,{localStorage:{getItem:k=>values[k],setItem:(k,v)=>{values[k]=v;},removeItem:k=>{delete values[k];}},document:{documentElement:{style:{setProperty:(_,v)=>{background=v;}}},querySelector:()=>({setAttribute:(_,v)=>{preload=v;}})}});
   assert(/home-(underwater|toy-box|watermelon)\.jpg/.test(background));assert(background.includes(preload));
   if(selected!=='random')assert(background.includes('home-'+selected+'.jpg'));
 }
