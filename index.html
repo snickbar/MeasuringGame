@@ -4285,7 +4285,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
-  import { mountRoomQr, pendingRoomInvite, roomAppIntent } from "./anim/room-qr.mjs";
+  import { mountRoomQr, pendingRoomInvite, roomAppIntent, nativeRoomScanner } from "./anim/room-qr.mjs";
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
@@ -4392,6 +4392,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(async () => {
     if (!currentRoomCode || !roomState.players) return;
     const roomCode = currentRoomCode;
+    maybeReassignHost(roomState, roomCode);
     let removedAny = false;
     for (const [id, p] of Object.entries(roomState.players)) {
       // A player node with no `name` is never legitimate - it can only be a
@@ -13325,24 +13326,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.addEventListener('visibilitychange',check);window.addEventListener('size-em-up:app-active',check);check();
     });
   }
+  const roomQrPlugin=isNativeApp?(window.Capacitor.registerPlugin?window.Capacitor.registerPlugin('RoomQrScanner'):window.Capacitor.Plugins?.RoomQrScanner):null;
+  const nativeQrScanner=roomQrPlugin?nativeRoomScanner({plugin:roomQrPlugin,pending:pendingQrInvite}):null;
   mountRoomQr({button:document.getElementById('scan-room-qr-btn'),input:codeInput,status:joinStatusEl,joinButton:joinContinueBtn,
     pending:pendingQrInvite,waitForResume:waitForQrResume,onCode:continueRoomJoin,
     isActive:()=>joinScreen.classList.contains('active'),
     restore:()=>{showJoinScreen();},onScanStart:()=>{qrScanGuardUntil=Infinity;},onScanEnd:()=>{qrScanGuardUntil=Date.now()+2500;},
-    scanner:isNativeApp?async()=>{
-      const cap=window.Capacitor,plugin=cap.registerPlugin?cap.registerPlugin('RoomQrScanner'):cap.Plugins?.RoomQrScanner;
-      if(!plugin)throw Error('Scanner unavailable');return plugin.scan();
-    }:null});
+    scanner:nativeQrScanner?()=>nativeQrScanner.scan():null});
+  let qrRecoveryBusy=false;
   async function recoverQrInvite(){
     // A killed/reloaded WebView cannot retain a camera Promise. Keep its room
     // (or reopen Join for a retry) rather than silently returning to Home.
     if(Date.now()<qrScanGuardUntil||(!homeScreen.classList.contains('active')&&!joinScreen.classList.contains('active')))return;
-    const invite=pendingQrInvite.read();if(!invite)return;
-    await waitForQrResume();
-    if(!homeScreen.classList.contains('active')&&!joinScreen.classList.contains('active'))return;
-    if(invite.stage==='scanning'){pendingQrInvite.clear();showJoinScreen();joinStatusEl.textContent='The scan was interrupted. Scan again or enter the room code.';return;}
-    qrScanGuardUntil=Date.now()+2500;showJoinScreen();codeInput.value=invite.code;await continueRoomJoin(invite.code);
+    if(qrRecoveryBusy)return;
+    qrRecoveryBusy=true;
+    try{
+      await nativeQrScanner?.recover();
+      const invite=pendingQrInvite.read();if(!invite)return;
+      await waitForQrResume();
+      if(!homeScreen.classList.contains('active')&&!joinScreen.classList.contains('active'))return;
+      if(invite.stage==='scanning'){pendingQrInvite.clear();showJoinScreen();joinStatusEl.textContent='The scan was interrupted. Scan again or enter the room code.';return;}
+      qrScanGuardUntil=Date.now()+2500;showJoinScreen();codeInput.value=invite.code;await continueRoomJoin(invite.code);
+    }finally{qrRecoveryBusy=false;}
   }
+  try{roomQrPlugin?.addListener('scanResult',()=>{setTimeout(()=>void recoverQrInvite(),0);});}catch{}
   queueMicrotask(()=>void recoverQrInvite());
   window.addEventListener('size-em-up:app-active',()=>void recoverQrInvite());
   renderCustomKeyboard(codeKeyboardEl, codeInput, {
@@ -13524,10 +13531,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (pending?.[0]) scheduleHostDeadline(pending[0], () => pending[1](roomCode));
       if (data.phase === "hs") hsEnsureTicker(true);
     }
-    if (electedHost(data) !== currentPlayerId || hostTransfers.has(roomCode)) return;
+    if (electedHost(data, nowMs()) !== currentPlayerId || hostTransfers.has(roomCode)) return;
     const id = currentPlayerId;
     hostTransfers.add(roomCode);
-    runTransaction(ref(db, `rooms/${roomCode}`), cur => transferHost(cur, id), { applyLocally: false })
+    runTransaction(ref(db, `rooms/${roomCode}`), cur => transferHost(cur, id, nowMs()), { applyLocally: false })
       .catch(e => console.warn("[host transfer]", e)).finally(() => hostTransfers.delete(roomCode));
   }
 

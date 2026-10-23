@@ -1,16 +1,21 @@
 // Pure transaction decisions. Re-evaluated against the latest room on every retry.
 import { roundAccuracy } from './accuracy.mjs';
 
-export function electedHost(room) {
+export const HOST_TRANSFER_GRACE_MS = 60000;
+export function electedHost(room, now = Date.now()) {
   if (!room || room.phase === 'ended' || room.settings?.hostTransferMode !== 'reassign') return null;
+  // A temporary disconnect is not a resignation. Explicit departures remove
+  // the host's seat, so those can still elect a replacement immediately.
+  if (Object.values(room.players || {}).some(p => p.isHost && !p.isBot &&
+    (p.connected !== false || !Number.isFinite(p.disconnectedAt) || now - p.disconnectedAt < HOST_TRANSFER_GRACE_MS))) return null;
   const humans = Object.entries(room.players || {}).filter(([, p]) => !p.isBot && p.connected !== false);
   if (humans.some(([, p]) => p.isHost)) return null;
   humans.sort(([a, p], [b, q]) => (p.joinedAt || 0) - (q.joinedAt || 0) || a.localeCompare(b));
   return humans[0]?.[0] || null;
 }
-export function transferHost(room, id) {
+export function transferHost(room, id, now = Date.now()) {
   if (room === null) return null;
-  if (electedHost(room) !== id) return undefined;
+  if (electedHost(room, now) !== id) return undefined;
   return { ...room, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === id }])) };
 }
 export const roomCapacity = room => room?.settings?.mode === 'teamworlds' ? 2 : 10;

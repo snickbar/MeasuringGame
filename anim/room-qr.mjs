@@ -29,6 +29,21 @@ export function pendingRoomInvite({storage,now=()=>Date.now()}={}){
     read(){try{const v=JSON.parse(storage?.getItem(key)||'null');if(!v)return null;const age=now()-v.at,code=roomCodeFromQr(v.code);if(age<0||age>600000||!Number.isFinite(v.at)||!['scanning','code'].includes(v.stage)||(v.stage==='code'&&!code)){clear();return null;}return {...v,code};}catch{clear();return null;}}};
 }
 
+export function nativeRoomScanner({plugin,pending}){
+  async function accept(result){
+    const code=roomCodeFromQr(result?.value);
+    // Save into web storage before acknowledging the native backup. Old APKs
+    // have no backup methods and continue to use their normal scan result.
+    if(code)pending.remember(code);
+    if(result?.id&&(!code||pending.read()?.code===code))try{await plugin.clearPendingResult({id:result.id});}catch{}
+    return code;
+  }
+  return {
+    async scan(){const result=await plugin.scan();await accept(result);return result;},
+    async recover(){try{return await accept(await plugin.getPendingResult());}catch{return null;}}
+  };
+}
+
 export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=>true,restore=null,onScanStart=()=>{},onScanEnd=()=>{},onCode=null,waitForResume=async()=>{},pending=null,origin=globalThis.location?.origin}){
   let busy=false;
   button.addEventListener('click',async()=>{
@@ -45,6 +60,8 @@ export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=
       if(!result?.cancelled){code=roomCodeFromQr(result?.value,origin);if(!code)status.textContent='That is not a Size Em Up room QR code. Try again or enter the code.';}
       if(code){
         pending?.remember(code);
+        input.value=code;
+        status.textContent=`Scanned ${code}. Opening room…`;
         // The native result can arrive before Android resumes our Activity.
         // Hand off only when its foreground screen is ready, not via a hidden button.
         await waitForResume();

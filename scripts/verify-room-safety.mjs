@@ -8,11 +8,20 @@ import { deleteIfStale } from './cleanup-stale-rooms.mjs';
 
 const copy = x => structuredClone(x);
 const party = { phase: 'question', settings: { hostTransferMode: 'reassign' }, players: {
-  old: { isHost: true, connected: false, joinedAt: 1 },
+  old: { isHost: true, connected: false, joinedAt: 1, disconnectedAt: 0 },
   guest: { connected: true, joinedAt: 2 }, later: { connected: true, joinedAt: 3 },
   bot: { isBot: true, joinedAt: 0 }
 } };
 assert.equal(electedHost(party), 'guest');
+for(const elapsed of [0,10000,59999]){
+ assert.equal(electedHost(party,elapsed),null,'Brief absence keeps host: '+elapsed);
+ assert.equal(transferHost(party,'guest',elapsed),undefined,'Transaction enforces the same grace');
+}
+assert.equal(electedHost(party,60000),'guest','Elect after a full minute');
+const back=copy(party);back.players.old.connected=true;back.players.old.disconnectedAt=null;
+assert.equal(transferHost(back,'guest',60001),undefined,'Reconnect defeats a pending transfer');
+const left=copy(party);delete left.players.old;assert.equal(electedHost(left,0),'guest','Explicit departure transfers immediately');
+const unknown=copy(party);delete unknown.players.old.disconnectedAt;assert.equal(electedHost(unknown,60001),null,'Unknown disconnect time is not permission for instant transfer');
 const transferred = transferHost(party, 'guest');
 assert.equal(transferred.players.old.isHost, false);
 assert.equal(transferred.players.guest.isHost, true);
@@ -97,7 +106,7 @@ dbRoom = { ...dbRoom, hs: call };
 assert.equal(pending(dbRoom), undefined, 'actual host driver rejects timeout after a human call');
 let armed = [], botGuesses = 0;
 const hostContext = vm.createContext({ console, electedHost, transferHost, db: {}, ref: (_, path) => path,
-  isHost: false, currentPlayerId: 'guest', hostTransfers: new Set(),
+  nowMs: () => 100000, isHost: false, currentPlayerId: 'guest', hostTransfers: new Set(),
   runTransaction: (_ref, callback, options) => {
     assert.equal(options.applyLocally, false);
     assert.equal(callback(party).players.guest.isHost, true);
@@ -136,3 +145,5 @@ assert.equal(deletion({ ...oldRoom, players: { a: { connected: true } } }), unde
 assert.equal(deletion({ lastActive: now }), undefined, 'recently reused room code survives cleanup retry');
 assert.equal(deletion(null), undefined);
 console.log('Room safety: host transfer, concurrent capacity, bet/timeout races, durable HS progress, and cleanup retries passed.');
+
+assert(source.includes('maybeReassignHost(roomState, roomCode);'),'Periodic sweep retries election after grace without needing another room write');

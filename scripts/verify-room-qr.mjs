@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {roomCodeFromQr,mountRoomQr,pendingRoomInvite,roomAppIntent} from '../anim/room-qr.mjs';
+import {roomCodeFromQr,mountRoomQr,pendingRoomInvite,roomAppIntent,nativeRoomScanner} from '../anim/room-qr.mjs';
 
 for(const value of ['ab2c',' AB2C ','https://size-em-up.web.app/?join=ab2c','https://size-em-up.firebaseapp.com/index.html?join=AB2C','http://192.168.1.173:4180/?join=AB2C'])
   assert.equal(roomCodeFromQr(value,'http://192.168.1.173:4180'),'AB2C');
@@ -41,3 +41,15 @@ const browser=setup(null);browser.button.click();assert(browser.status.textConte
  ui.button.click();await turn();assert.equal(pending.read().code,'AB2C');assert.deepEqual(events,[],'Waits for foreground');assert(ui.button.disabled);resume();await turn();assert.deepEqual(events,['AB2C']);assert.equal(ui.joins(),0,'Native result uses direct join callback, not hidden button click');
 }
 console.log('PASS: QR invite validation, valid scan to Join Game, cancel/failure recovery, duplicate taps, navigation cancellation, manual-entry preservation and browser fallback.');
+
+{ // Native result survives a WebView restart; acknowledge only after durable web handoff.
+ const values=new Map(),storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},pending=pendingRoomInvite({storage});
+ let saved={id:'scan-1',value:'https://size-em-up.web.app/?join=AB2C'},cleared=0;
+ const plugin={scan:async()=>saved,getPendingResult:async()=>saved,clearPendingResult:async({id})=>{assert.equal(pending.read()?.code,'AB2C');assert.equal(id,saved.id);saved={};cleared++;}};
+ const scanner=nativeRoomScanner({plugin,pending});assert.equal(await scanner.recover(),'AB2C');assert.equal(cleared,1);assert.equal(pending.read().code,'AB2C');assert.equal(await scanner.recover(),null);assert.equal(cleared,1);
+ pending.clear();saved={id:'scan-2',value:'AB2C'};assert.equal((await scanner.scan()).value,'AB2C');assert.equal(pending.read().code,'AB2C');assert.equal(cleared,2);
+ const blocked=pendingRoomInvite({storage:{getItem(){throw Error('blocked')},setItem(){throw Error('blocked')},removeItem(){}}});
+ saved={id:'scan-3',value:'AB2C'};const noStorage=nativeRoomScanner({plugin,pending:blocked});assert.equal(await noStorage.recover(),'AB2C');assert.equal(cleared,2,'Native backup retained if web storage failed');
+ const old=nativeRoomScanner({plugin:{scan:async()=>({value:'AB2C'})},pending});assert.equal(await old.recover(),null);assert.equal((await old.scan()).value,'AB2C','Old APK remains compatible');
+ console.log('PASS: Native QR backup, durable handoff acknowledgement, repeated recovery, blocked storage and old APK compatibility.');
+}

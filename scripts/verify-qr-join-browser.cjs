@@ -38,7 +38,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error
 try{
  await until(()=>window.__polish?.profile()?.stats?.gamesPlayed,'Bootstrap');
  const api=window.__polish,$=id=>document.getElementById(id);
- const bootCheck=sessionStorage.getItem('qr-boot-check');if(bootCheck){const stage=bootCheck==='code'?'name-avatar-screen':'join-screen';await until(() => $(stage).classList.contains('active'),'Cold reload recovers '+bootCheck);assert(!$('home-screen').classList.contains('active'),'Cold reload does not stay at Home');if(bootCheck==='code')assert(api.qrPending()==='AB2C','Cold reload retains room');else assert($('join-status').textContent.includes('interrupted'),'Cold reload offers another scan');api.qrClear();sessionStorage.removeItem('qr-boot-check');}else{for(const mode of ['classic','teamvteam','teamworlds','hlsurvival','highstakes','bluff']){await api.qrSeed(mode);api.join();window.__scannerResolve=null;await wait(50);
+ const bootCheck=sessionStorage.getItem('qr-boot-check');if(bootCheck){const stage=bootCheck!=='scanning'?'name-avatar-screen':'join-screen';await until(() => $(stage).classList.contains('active'),'Cold reload recovers '+bootCheck);assert(!$('home-screen').classList.contains('active'),'Cold reload does not stay at Home');if(bootCheck!=='scanning')assert(api.qrPending()==='AB2C','Cold reload retains room');else assert($('join-status').textContent.includes('interrupted'),'Cold reload offers another scan');api.qrClear();sessionStorage.removeItem('qr-boot-check');}else{for(const mode of ['classic','teamvteam','teamworlds','hlsurvival','highstakes','bluff']){await api.qrSeed(mode);api.join();window.__scannerResolve=null;await wait(50);
  $('scan-room-qr-btn').click();await until(()=>window.__scannerResolve,'Native scanner opens');
  window.__nativeAppEvent('appStateChange',{isActive:false});
  window.__scannerResolve({value:'https://size-em-up.web.app/?join=AB2C'});
@@ -50,6 +50,7 @@ try{
  assert(api.qrPending()==='AB2C','Correct scanned room retained');
  assert(api.qrSaved()?.code==='AB2C','Pending code retained through setup');
  }
+ api.qrClear();api.join();window.__scannerResolve=null;$('scan-room-qr-btn').click();await until(()=>window.__scannerResolve,'Instant scanner');window.__scannerResolve({value:'AB2C'});await until(()=>$('name-avatar-screen').classList.contains('active'),'Instant result survives without a background event');assert(api.qrPending()==='AB2C','Instant scan keeps code');
  api.qrClear();api.join();window.__scannerResolve=null;$('code-input').value='OLD2';$('scan-room-qr-btn').click();await until(()=>window.__scannerResolve,'Cancel scanner');window.__scannerResolve({cancelled:true});await wait(80);assert($('join-screen').classList.contains('active')&&$('code-input').value==='OLD2'&&!api.qrSaved(),'Cancelled scan preserves manual entry without redirect');
  window.__scannerResolve=null;$('scan-room-qr-btn').click();await until(()=>window.__scannerResolve,'Invalid scanner');window.__scannerResolve({value:'https://example.com/?join=AB2C'});await wait(80);assert($('join-status').textContent.includes('not a Size Em Up')&&$('join-screen').classList.contains('active'),'Invalid QR stays in Join with a clear message');
  api.qrHomeDrift();localStorage.setItem('size-em-up:pending-room-invite',JSON.stringify({stage:'code',code:'AB2C',at:Date.now()}));await wait(2600);await api.qrRecover();assert($('name-avatar-screen').classList.contains('active')&&api.qrPending()==='AB2C','Reload recovery restores exact scanned room');
@@ -62,7 +63,7 @@ fixture=fixture.replace('\n</script>\n</body>',injected+'\n</script>'+checks+'\n
 fixture=fixture.replace('<head>',`<head><script>
 const listeners={};window.__nativeAppEvent=(event,value)=>{for(const fn of listeners[event]||[])fn(value)};
 const app={addListener(event,fn){(listeners[event]||(listeners[event]=[])).push(fn);return Promise.resolve({remove(){}})},getLaunchUrl:async()=>({})};
-const scanner={scan:()=>new Promise(resolve=>window.__scannerResolve=resolve)};
+const scanner={scan:()=>new Promise(resolve=>window.__scannerResolve=resolve),getPendingResult:async()=>JSON.parse(localStorage.getItem('__native-qr-result')||'{}'),clearPendingResult:async()=>localStorage.removeItem('__native-qr-result'),addListener:app.addListener};
 window.Capacitor={isNativePlatform:()=>true,Plugins:{App:app,RoomQrScanner:scanner},registerPlugin:name=>name==='RoomQrScanner'?scanner:{}};
 </script>`);
 
@@ -74,8 +75,9 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
  const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});fs.mkdirSync(path.join(root,'output','qr-join-tests'),{recursive:true});
  for(const width of [320,390,430]){const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);let result;
  for(let n=0;n<800;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');
- for(const recovery of ['code','scanning']){
- await call('Runtime.evaluate',{expression:"localStorage.setItem('size-em-up:pending-room-invite',JSON.stringify({stage:'"+recovery+"',code:'AB2C',at:Date.now()}));sessionStorage.setItem('qr-boot-check','"+recovery+"');"},sessionId);
+ for(const recovery of ['code','scanning','native']){
+ const setup=recovery==='native'?"localStorage.removeItem('size-em-up:pending-room-invite');localStorage.setItem('__native-qr-result',JSON.stringify({id:'lost-webview',value:'https://size-em-up.web.app/?join=AB2C'}));":"localStorage.setItem('size-em-up:pending-room-invite',JSON.stringify({stage:'"+recovery+"',code:'AB2C',at:Date.now()}));";
+ await call('Runtime.evaluate',{expression:setup+"sessionStorage.setItem('qr-boot-check','"+recovery+"');"},sessionId);
  await call('Page.reload',{},sessionId);let cold;
  for(let n=0;n<500;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){cold=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}
  if(!cold?.pass)throw Error('Cold reload '+recovery+': '+JSON.stringify(cold));console.log({pass:true,width,recovery});
