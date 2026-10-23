@@ -2,6 +2,10 @@
 const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error(m)},until=async(fn,m)=>{for(let i=0;i<300;i++){if(fn())return;await wait(20)}throw Error(m);};
 try{
  await until(()=>window.__polish&&window.__polish.profile()?.stats?.gamesPlayed===8,'App bootstrap');const api=window.__polish;
+ await api.dailyIntro();await until(()=>document.querySelector('#daily-content .polish-banner'),'Daily header');await wait(100);
+ const dailyLabels=document.querySelectorAll('#daily-content .polish-banner,#daily-content button.dc-btn');assert(dailyLabels.length>=2,'Real daily heading and action');
+ for(const label of dailyLabels){const cs=getComputedStyle(label);assert(cs.color==='rgb(59, 39, 24)','Uniform solid brown label');assert(cs.textShadow==='none','No text outline shadow');assert(cs.webkitTextStrokeWidth==='0px','No text stroke');}
+ api.world();await wait(100);const worldHeader=document.querySelector('#worlds-content .polish-banner');assert(getComputedStyle(worldHeader).color==='rgb(59, 39, 24)','Worlds shares solid label color');
  for(const [id,mode] of Object.entries({'worlds-screen':'worlds','daily-screen':'daily','monthly-screen':'monthly','survival-screen':'survival','hs-screen':'highstakes'})){
   api.modePage(id);await wait(70);assert(document.body.dataset.mode===mode,'Mode route '+id);assert(document.body.dataset.bg==='mode-'+mode,'Automatic gradient '+mode);assert(getComputedStyle(document.body,'::before').backgroundImage.includes('linear-gradient'),'Gradient painted');
  }
