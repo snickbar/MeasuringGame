@@ -5712,7 +5712,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // True while myProfile is only the empty stand-in (no profile read yet, or this id has none): it knows nothing about
   // the random setting or owned pictures, so it must not overwrite what the device saved or repaint Home with the default.
   function syncHomeScreenPrefs() {
-    if (homePrefsPlaceholder) return;
+    if (homePrefsPlaceholder || !walletAuthReady || walletProfileOwner !== deviceId) return;
     try {
       localStorage.setItem("mg_homeSel", myProfile.randomEquip && myProfile.randomEquip.homeScreens ? "random" : equippedHomeScreen());
       localStorage.setItem("mg_homeOwned", JSON.stringify(HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen)));
@@ -7726,6 +7726,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         watchMyProfile();
       }
       walletAuthReady = true;
+      try { syncHomeScreenPrefs(); } catch (e) {}
       renderCoinBalance();
     });
   }
@@ -7778,6 +7779,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } finally {
       authFlowInProgress = false;
       walletAuthReady = true;
+      try { syncHomeScreenPrefs(); } catch (e) {}
       renderCoinBalance();
     }
   }
@@ -7797,6 +7799,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } finally {
       authFlowInProgress = false;
       walletAuthReady = true;
+      try { syncHomeScreenPrefs(); } catch (e) {}
       renderCoinBalance();
     }
   }
