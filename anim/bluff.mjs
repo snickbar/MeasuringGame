@@ -69,7 +69,7 @@ export function bluffStandings(s){
   rows.sort((a,b)=>b.score-a.score||b.accuracy-a.accuracy);
   let rank=0;return rows.map((row,i)=>{if(!i||row.score!==rows[i-1].score||Math.abs(row.accuracy-rows[i-1].accuracy)>1e-8)rank=i+1;return {...row,rank};});
 }
-// Standings as they were before this round's points, for the climbed/dropped arrows (null when nobody was ahead yet).
+// Standings as they were before this round's points, for the climbed/dropped arrows (tied players share a rank).
 export function bluffStandingsBefore(s){
   if(!s?.result)return null;
   const before={...s,scores:{},correct:{...s.correct},judged:{...s.judged}};
@@ -77,8 +77,7 @@ export function bluffStandingsBefore(s){
     before.scores[id]=(s.scores?.[id]||0)-(s.result.points[id]||0);
     if(id!==s.maker){before.judged[id]=Math.max(0,(s.judged?.[id]||0)-1);if(s.votes?.[id]===s.claim.kind)before.correct[id]=Math.max(0,(s.correct?.[id]||0)-1);}
   }
-  const rows=bluffStandings(before);
-  return rows.every(r=>r.rank===1)?null:rows;
+  return bluffStandings(before);
 }
 export function bluffNewLeaders(s){
   if(!s?.result)return [];

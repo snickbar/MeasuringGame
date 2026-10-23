@@ -9923,7 +9923,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(hsSlideStand, 0);
     return `<div class="hs-stand">${rows.map((r, i) => {
         const p = data.players?.[r.id];
-        const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv"></span>`;
+        const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv same" aria-label="Same place">&ndash;</span>`;
         const dl = r.delta > 0 ? `<span class="hs-delta up">+${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
         return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
       }).join("")}</div>`;
@@ -17449,7 +17449,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudEl.classList.toggle("active", isHudActive);
     hudSubToolbarEl.classList.toggle("active", isHudActive || phase==='bluff');
     hudRoomCodeGroupEl.classList.toggle("active", (isHudActive || phase==='bluff') && !(data.settings && data.settings.solo));
-    hudRoundLabelEl.classList.toggle("active", isHudActive);
+    hudRoundLabelEl.classList.toggle("active", isHudActive || (phase === "bluff" && !!data.bluff?.total));
+    if (phase === "bluff" && data.bluff?.total) {
+      // Bluff shows its round count in the Pause/Exit bar (same spot as the other modes) instead of a second row.
+      const b = data.bluff;
+      hudRoundLabelEl.innerHTML = `<span class="round-text">Round ${b.round} of ${b.total}</span><span class="round-tracker">${Array.from({ length: b.total }, (_, i) => `<span class="round-slot${i + 1 < b.round || (i + 1 === b.round && b.stage === "reveal" && b.showStand) ? " done" : i + 1 === b.round ? " current" : ""}"></span>`).join("")}</span>`;
+    }
     bottomToolbarEl.classList.toggle("active", !overlayStillOpen && (isHudActive || phase === "final" || phase === "hs" || phase==='bluff'));
     hsScreenEl.classList.toggle("active", phase === "hs" && !overlayStillOpen);
     hsEnsureTicker(phase === "hs" && !overlayStillOpen);

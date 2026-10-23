@@ -100,7 +100,9 @@ for(const who of ['maker','guesser','missed'])for(const kind of ['low','correct'
   const html=bluffRankingsHtml(s,players,()=>'',null);
   assert(html.includes('hs-mv up')&&html.includes('&#9650;1'),'A player who climbed shows an up arrow');
   assert(html.includes('hs-mv down'),'A player who dropped shows a down arrow');
-  assert(bluffStandingsBefore({...s,round:1,scores:{a:0,b:2,c:1},correct:{a:0,b:1,c:0},judged:{a:1,b:1,c:0},result:{points:{a:0,b:2,c:1},wrong:1}})===null,'Nobody ahead before round one means no arrows');
+  {const first={...s,round:1,scores:{a:0,b:2,c:1},correct:{a:0,b:1,c:0},judged:{a:1,b:1,c:0}},h=bluffRankingsHtml(first,players,()=>'',null);
+  assert(bluffStandingsBefore(first).every(r=>r.rank===1),'Everyone is tied for first before round one');
+  assert(h.includes('hs-mv same')&&h.includes('hs-mv down'),'From a tie: the leader holds (dash) and the others show a drop');}
   const T=bluffRevealTimes(s),motionless=bluffRevealTimes(s,false);
   assert(T.judged>T.drop0&&T.n===2&&motionless.judged===0,'Reveal timeline grows with voters and collapses without motion');
   const staged=bluffSummaryHtml(s,players,()=>'',null,0,true),still=bluffSummaryHtml(s,players,()=>'',null,Infinity,true);
