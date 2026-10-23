@@ -211,7 +211,6 @@ if (location.protocol === "file:") {
   #question-view, #answers-view, #animation-view, #reveal-view, #summary-view, #countdown-view { display: none; }
   #question-view.active, #answers-view.active, #animation-view.active, #reveal-view.active, #summary-view.active { display: block; }
   #anim-stage { max-width: 360px; margin: 4px auto 0; border-radius: 12px; }
-  #anim-skip-btn { display: none; width: 72px; margin: 0; padding: 6px 2px; font-size: 13px; border-width: 9px; }
   #countdown-view.active { display: flex; }
   #countdown-view {
     flex-direction: column; align-items: center; justify-content: center; gap: 20px;
@@ -4123,7 +4122,6 @@ if (location.protocol === "file:") {
   <div class="hud-timer-col">
     <div class="hud-timer" id="hud-timer">--</div>
     <div class="lock-bar" id="hud-timer-bar" hidden style="width:60px;margin:2px auto 0"><i></i></div>
-    <button id="anim-skip-btn" type="button">Skip</button>
     <div id="question-note" class="question-note" style="display:none;"></div>
   </div>
   </div>
@@ -13734,7 +13732,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   const animationViewEl = document.getElementById("animation-view");
   const animStageEl = document.getElementById("anim-stage");
-  const animSkipBtn = document.getElementById("anim-skip-btn");
   const ANIM_LEAD_MS = 1500;   // pause before it starts, so every screen is ready
   const ANIM_HOLD_MS = 4500;   // time to look at the finished picture and the answer
   let animModulePromise = null;
@@ -14003,7 +14000,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (nowMs() < (roomState.animEndsAt || Infinity)) return;
     goToReveal(roomCode);
   }
-  animSkipBtn.addEventListener("click", () => goToReveal(currentRoomCode));
 
   // ==================== Timer plumbing ====================
 
@@ -17487,7 +17483,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       questionNoteEl.style.display = "none";
     }
     animationViewEl.classList.toggle("active", phase === "animation");
-    animSkipBtn.style.display = (isHost && phase === "animation") ? "block" : "none";
     scoreColEl.closest(".game-body").classList.toggle("anim-wide", phase === "animation");   // the stage gets the full width
     // Team Worlds has no points/ranks for a combined score box to show at all - mimic Solo
     // Worlds' own full-width layout throughout, not just during the animation.
