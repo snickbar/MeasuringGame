@@ -4875,6 +4875,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderReactionStrip();
     syncFlairToRoom();
   }
+  // Random items are re-rolled for every round (not once per game): each mode calls this when a new question is on screen.
+  function rerollPerRound(state, index) {
+    if (!state || state._rr === index) return;
+    state._rr = index;
+    if (Object.values((myProfile && myProfile.randomEquip) || {}).some(Boolean)) rollRandomEquips();
+  }
   function cosmRandomRow(cat, subText) {
     const on = rndOn(cat);
     const row = document.createElement("div");
@@ -9116,6 +9122,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderDaily() {
     if (!daily) return;
+    if (daily.phase === "question") rerollPerRound(daily, daily.guesses.length);
     const el = dailyContentEl;
     const streak = dailyStreakNow();
     if (daily.phase === "intro") {
@@ -10255,6 +10262,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderWorlds() {
     if(['question','reveal'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
+    if (wl.phase === "question") rerollPerRound(wl, wl.guesses.length);
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
@@ -10613,6 +10621,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderMonthly() {
     monthlyBgSync();
     if (!mo) return;
+    if (mo.phase === "question") rerollPerRound(mo, mo.guesses.length);
     const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
     const dots = (i) => `<div class="dc-dots">${Array.from({ length: mo.questions.length }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
     if (mo.phase === "intro") {
@@ -10887,6 +10896,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function survivalStop() { if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
   function renderSurvival() {
     if (!sv) return;
+    if (sv.phase === "question") rerollPerRound(sv, sv.asked);
     if(['question','reveal'].includes(sv.phase)&&!sv.finished&&sv.lives>0)persistSoloSession('survival',sv);
     const el = survivalContentEl;
     if (sv.phase === "intro") {
@@ -17641,7 +17651,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
       }
       // A new game (its round-1 countdown) gives everyone with Equip Random on a fresh set of random items.
-      if (data.phase === "countdown" && data.countdownRound === 1 && data.countdownEndsAt !== lastRandomRollKey) { lastRandomRollKey = data.countdownEndsAt; rollRandomEquips(); }
+      // Every round (and every new game) of every room mode gets a fresh set of random items.
+      {
+        const roundNo = data.phase === "countdown" ? data.countdownRound : (data.phase === "hs" ? data.hs?.round : data.phase === "bluff" ? data.bluff?.round : (["question", "answers", "reveal", "results", "summary"].includes(data.phase) ? data.round : null));
+        const rollKey = roundNo ? `${data.gameId || ""}:${roundNo}:${data.phase === "countdown" && data.countdownRound === 1 ? data.countdownEndsAt : ""}` : null;
+        if (rollKey && rollKey !== lastRandomRollKey) { lastRandomRollKey = rollKey; rollRandomEquips(); }
+      }
       recordBluffProgress(data);
       currentPlayers = data.players || {};
       currentSettings = data.settings || currentSettings;
