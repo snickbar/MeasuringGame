@@ -9707,7 +9707,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // A little synthesized "ha-ha-ha-ha": four short voiced bursts that fall in pitch, through a vowel-ish filter.
   function hsLaugh() {
-    if (!audioLifecycle.canPlay() || !hsScreenEl.classList.contains("active")) return;
+    if (!audioLifecycle.canPlay() || !(hsScreenEl.classList.contains("active")||bluffScreenEl.classList.contains('active'))) return;
     try {
       const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100;
       if (vol <= 0) return;
@@ -16331,12 +16331,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       opponents:Object.entries(currentPlayers).filter(([id])=>id!==me).map(([,p])=>p.isBot?p.botDifficulty||'medium':'human')});
     document.getElementById('final-session-recap')?.remove();
     finalListEl.innerHTML=bluffFinalHtml(s,currentPlayers,avatarHtml);
-    const recap=document.createElement('section');recap.id='final-session-recap';recap.className='cozy-panel';
-    recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(currentPlayers[me]?.avatar)}</span>${mine.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.png" alt="">':''}<b>${mine.rank===1?'You won!':'Bluff the Room'}</b></div><div class="summary-result-number">${mine.score} <small>points</small></div><p>${Math.round(mine.accuracy)}% vote accuracy · ${s.fooled?.[me]||0} players fooled</p><p class="cs-note">Points rank first; vote accuracy breaks ties. Equal points and accuracy share the win.</p>`;
-    finalListEl.before(recap);if(!document.hidden){playSound('win');if(mine.rank===1&&!prefersReducedMotion())flairBurst(recap,flairIdFor({flair:currentPlayers[me]?.flair}));}
+    const recap=document.createElement('section');recap.id='final-session-recap';recap.className='cozy-panel bl-final-hero';
+    const winners=standings.filter(r=>r.rank===1),names=winners.map(r=>escapeHtml(currentPlayers[r.id]?.name||s.names?.[r.id]||'Player'));
+    recap.innerHTML=`<div class="bl-final-winners">${winners.map(r=>`<span class="avatar" data-bluff-hero-winner="${escapeHtml(r.id)}">${avatarHtml(currentPlayers[r.id]?.avatar)}</span>`).join('')}<img class="bl-hero-trophy" src="icons/reactions/trophy.png" alt=""></div><h2>${winners.length>1?'Shared victory!':mine.rank===1?'You won!':`${names[0]} wins!`}</h2><div class="bl-final-personal"><span><b>${mine.score}</b> your points</span><span><b>${Math.round(mine.accuracy)}%</b> vote accuracy</span><span><b>${s.fooled?.[me]||0}</b> fooled</span></div>`;
+    finalListEl.before(recap);
+    if(!document.hidden){
+      playSound('win');
+      if(!prefersReducedMotion()){
+        recap.querySelectorAll('[data-bluff-hero-winner]').forEach(el=>el.classList.add('bl-win-dance'));
+        finalListEl.querySelectorAll('[data-bluff-winner] .avatar').forEach(el=>el.classList.add('bl-win-dance'));
+        const finalKey=roomState.gameId;
+        setTimeout(()=>{
+          if(document.hidden||!finalScreenEl.classList.contains('active')||roomState.gameId!==finalKey)return;
+          winners.forEach(w=>{const el=recap.querySelector(`[data-bluff-hero-winner="${w.id}"]`);if(el?.isConnected)flairBurst(el,flairIdFor({flair:currentPlayers[w.id]?.flair}));});
+        },650);
+      }
+    }
   }
   function renderFinal() {
     if (finalRendered) return;
+    finalScreenEl.classList.toggle('bluff-final',roomState.settings?.mode==='bluff');
     finalRendered = true;
     updateFinalButtons();
     if(roomState.settings?.mode==='bluff'){renderBluffFinal();return;}
@@ -17794,14 +17808,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   bluffUI=createBluffUI({element:document.getElementById('bluff-content'),context:()=>({room:roomState,me:currentPlayerId,host:isHost,leaving:leavingGame}),now:nowMs,
     transact:(expected,next,host)=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>commitBluff(cur,expected,next,host),{applyLocally:false}),
     act:action=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>bluffAction(cur,action,nowMs()),{applyLocally:false}),
-    question:generateQuestion,object:id=>OBJECT_BY_ID.get(id),avatar:avatarHtml,sound:playSound,
+    question:generateQuestion,object:id=>OBJECT_BY_ID.get(id),avatar:avatarHtml,sound:playSound,reduced:prefersReducedMotion,laugh:hsLaugh,
     revealAnimation:{
       duration:async q=>{if(prefersReducedMotion())return 0;const pair=questionObjects(q),mod=pair?await loadAnimModule():null;return pair&&mod?mod.animationDuration(pair[0],pair[1])*1000:0;},
       mount:(node,q,state)=>{
         let stopped=false,ctl=null;
         void(async()=>{try{const pair=questionObjects(q),mod=pair?await loadAnimModule():null;if(stopped||!pair||!mod)return;
           ctl=mod.createStackAnimation(node,{theme:mod.LIGHT_THEME,imageUrl:o=>o.image,hideTally:false});
-          const scene=await ctl.prepare(pair[0],pair[1],{hMax:190,minStageH:230});if(stopped)return;
+          const bottom=document.getElementById('bottom-toolbar')?.getBoundingClientRect().top||innerHeight;
+          const stageHeight=Math.max(240,Math.min(470,bottom-node.getBoundingClientRect().top-130));
+          const scene=await ctl.prepare(pair[0],pair[1],{hMax:stageHeight-55,minStageH:stageHeight});if(stopped)return;
           animAudioInit();ctl.start(scene,{startAt:state.startedAt,now:animClock,onCue:audioLifecycle.guard(playAnimCue)});
         }catch(error){console.warn('[bluff] reveal animation unavailable',error);}})();
         return()=>{stopped=true;ctl?.stop();};
