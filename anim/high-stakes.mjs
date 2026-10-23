@@ -353,9 +353,12 @@ export function hsStandings(hs) {
     return { sorted, rank };
   };
   const now = rankIn((id) => hs.chips[id] || 0);
-  // Movement uses strict positions (ties broken by seat order) so a start-of-game tie doesn't read as everyone falling.
+  // Place changes compare real (tie-aware) ranks, so losing coins while keeping your place shows no arrow, and a start-of-game tie
+  // (everyone level) shows none either. Slide distances use strict seat order so rows can animate into position.
+  const before = start ? rankIn((id) => start[id] ?? 0) : null;
+  const everyoneLevel = !before || ids.every((id) => before.rank[id] === 1);
   const posBefore = {};
-  if (start) [...ids].sort((a, b) => (start[b] ?? 0) - (start[a] ?? 0)).forEach((id, i) => { posBefore[id] = i; });
+  if (before) before.sorted.forEach((id, i) => { posBefore[id] = i; });
   const posNow = {};
   now.sorted.forEach((id, i) => { posNow[id] = i; });
   return now.sorted.map((id) => ({
@@ -363,7 +366,8 @@ export function hsStandings(hs) {
     coins: hs.chips[id] || 0,
     delta: start ? (hs.chips[id] || 0) - (start[id] ?? hs.chips[id] ?? 0) : 0,
     rank: now.rank[id],
-    rankMove: start ? posBefore[id] - posNow[id] : 0,
+    rankMove: everyoneLevel ? 0 : before.rank[id] - now.rank[id],
+    shift: before ? posBefore[id] - posNow[id] : 0,
     out: (hs.chips[id] || 0) <= 0,
   }));
 }
