@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
+import {bluffOptions,newBluff,dealBluff,chooseBluff,voteBluff,bluffVoteDeadline,revealBluff,bluffStandings,bluffNewLeaders,bluffAction,commitBluff,bluffRoundRecord} from '../anim/bluff.mjs';
 import {applyCareerRecord,objectFrequency} from '../anim/career-ledger.mjs';
 import {admitPlayer} from '../anim/room-safety.mjs';
 const q={unitId:'pencil',targetId:'door',answer:11.6,prompt:'How many pencils long is the height of a door?'};
@@ -72,6 +72,12 @@ const match={kind:'match',mode:'bluff',key:'match',won:true,place:1,score:5,accu
 profile=applyCareerRecord(profile,match);assert.equal(profile.stats.gamesWon,1);assert.equal(applyCareerRecord(profile,match),profile);
 const tied={...s,scores:{a:5,b:5,c:5},correct:{a:1,b:2,c:2},judged:{a:2,b:2,c:2}};
 assert.deepEqual(bluffStandings(tied).map(r=>[r.id,r.rank]),[['b',1],['c',1],['a',3]]);
+{
+ const changed={...s,round:2,maker:'a',claim:{kind:'high'},votes:{b:'high',c:'low'},scores:{a:6,b:6,c:2},correct:{a:1,b:2,c:0},judged:{a:1,b:2,c:2},result:{points:{a:1,b:2,c:0}}};
+ assert.deepEqual(bluffNewLeaders(changed),['b'],'Newly joined leader is highlighted, existing leader is not');
+ const unchanged={...changed,scores:{a:9,b:6,c:2}};assert.deepEqual(bluffNewLeaders(unchanged),[],'Retaining first does not retrigger new-leader highlight');
+ assert.deepEqual(bluffNewLeaders({...changed,round:1,scores:{a:0,b:0,c:0}}),[],'No first-place fanfare before anyone scores');
+}
 {
  const result={...room,bluff:s,bluffRounds:{r1:s}},rankings={...s,showStand:true,endsAt:90000};
  const shown=commitBluff(result,result,rankings,'a');assert(shown.bluff.showStand);assert.equal(shown.bluffRounds,result.bluffRounds,'Rankings do not rewrite the scored round');assert.equal(shown.players,result.players,'Rankings do not award points again');

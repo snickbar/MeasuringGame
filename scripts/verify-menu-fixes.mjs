@@ -44,6 +44,8 @@ let rows=recap.gameRecapTiles();assert(rows.some(r=>r[0]==='Not finished'));asse
 recap.roomState={phase:'hs',settings:{mode:'highstakes'},hs:{stage:'bet',round:1,chips:{me:100},seatsAll:['me','bot']}};
 rows=recap.gameRecapTiles();assert(!rows.some(r=>r[1]==='Place'));
 recap.roomState.hs.stage='over';assert(recap.gameRecapTiles().some(r=>r[1]==='Place'));
+assert(!recap.gameRecapTiles().some(r=>r[1]==='Room code'),'High Stakes completion has no room code tile');
+for(const mode of ['classic','quick','teamvteam','bluff']){recap.roomState={phase:'final',round:5,settings:{mode,totalRounds:5}};assert(!recap.gameRecapTiles().some(r=>r[1]==='Room code'),'No completed room code in '+mode);}
 assert(!actual('hostExit').includes('careerLedger.save'));assert(!actual('guestExit').includes('careerLedger.save'));
 
 const classList=()=>{const values=new Set();return {toggle:(key,on)=>on?values.add(key):values.delete(key),contains:key=>values.has(key)}};

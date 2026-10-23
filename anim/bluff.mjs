@@ -52,6 +52,18 @@ export function bluffStandings(s){
   rows.sort((a,b)=>b.score-a.score||b.accuracy-a.accuracy);
   let rank=0;return rows.map((row,i)=>{if(!i||row.score!==rows[i-1].score||Math.abs(row.accuracy-rows[i-1].accuracy)>1e-8)rank=i+1;return {...row,rank};});
 }
+export function bluffNewLeaders(s){
+  if(!s?.result)return [];
+  const leaders=bluffStandings(s).filter(r=>r.rank===1);
+  if(s.round===1)return leaders.filter(r=>r.score>0).map(r=>r.id);
+  const before={...s,scores:{},correct:{...s.correct},judged:{...s.judged}};
+  for(const id of s.order){
+    before.scores[id]=(s.scores?.[id]||0)-(s.result.points[id]||0);
+    if(id!==s.maker){before.judged[id]=Math.max(0,(s.judged?.[id]||0)-1);if(s.votes?.[id]===s.claim.kind)before.correct[id]=Math.max(0,(s.correct?.[id]||0)-1);}
+  }
+  const previous=bluffStandings(before).filter(r=>r.rank===1).map(r=>r.id);
+  return leaders.filter(r=>!previous.includes(r.id)||leaders.length<previous.length).map(r=>r.id);
+}
 
 // Transaction-level checks reject duplicate taps, stale rounds, late votes and former hosts.
 export function bluffAction(room,{gameId,round,stage,actor,action,value},now){
