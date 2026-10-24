@@ -3,10 +3,10 @@ export const HOME_ART_REF = { width: 704, height: 1520 };
 export const HOME_ART = {
  "ants": {
   "plate": {
-   "file": "plate-ants.png"
+   "file": "plate-ants.webp"
   },
   "hero": {
-   "file": "hero-ants.png",
+   "file": "hero-ants.webp",
    "x": 9.584,
    "y": 29.568,
    "w": 47.131,
@@ -22,7 +22,7 @@ export const HOME_ART = {
    "oy": 97.72
   },
   "hero2": {
-   "file": "hero2-ants.png",
+   "file": "hero2-ants.webp",
    "x": 24.339,
    "y": 32.101,
    "w": 69.936,
@@ -39,7 +39,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-ants-a.png",
+    "file": "critter-ants-a.webp",
     "w": 1402,
     "h": 1122,
     "ab": {
@@ -50,7 +50,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-ants-b.png",
+    "file": "critter-ants-b.webp",
     "w": 1313,
     "h": 1198,
     "ab": {
@@ -64,10 +64,10 @@ export const HOME_ART = {
  },
  "sunflower": {
   "plate": {
-   "file": "plate-sunflower.png"
+   "file": "plate-sunflower.webp"
   },
   "hero": {
-   "file": "hero-sunflower.png",
+   "file": "hero-sunflower.webp",
    "x": 39.897,
    "y": 34.223,
    "w": 50.277,
@@ -83,7 +83,7 @@ export const HOME_ART = {
    "oy": 94.68
   },
   "hero2": {
-   "file": "hero2-sunflower.png",
+   "file": "hero2-sunflower.webp",
    "x": 1.932,
    "y": 27.999,
    "w": 53.563,
@@ -100,7 +100,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-sunflower-a.png",
+    "file": "critter-sunflower-a.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -111,7 +111,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-sunflower-b.png",
+    "file": "critter-sunflower-b.webp",
     "w": 1374,
     "h": 1145,
     "ab": {
@@ -125,10 +125,10 @@ export const HOME_ART = {
  },
  "games": {
   "plate": {
-   "file": "plate-games.png"
+   "file": "plate-games.webp"
   },
   "hero": {
-   "file": "hero-games.png",
+   "file": "hero-games.webp",
    "x": 38.624,
    "y": 33.405,
    "w": 47.876,
@@ -144,7 +144,7 @@ export const HOME_ART = {
    "oy": 97.29
   },
   "hero2": {
-   "file": "hero2-games.png",
+   "file": "hero2-games.webp",
    "x": 10.703,
    "y": 34.213,
    "w": 46.134,
@@ -161,7 +161,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-games-a.png",
+    "file": "critter-games-a.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -172,7 +172,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-games-b.png",
+    "file": "critter-games-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -186,10 +186,10 @@ export const HOME_ART = {
  },
  "house": {
   "plate": {
-   "file": "plate-house.png"
+   "file": "plate-house.webp"
   },
   "hero": {
-   "file": "hero-house.png",
+   "file": "hero-house.webp",
    "x": 36.556,
    "y": 32.6,
    "w": 56.494,
@@ -205,7 +205,7 @@ export const HOME_ART = {
    "oy": 98.21
   },
   "hero2": {
-   "file": "hero2-house.png",
+   "file": "hero2-house.webp",
    "x": -12.306,
    "y": 35.2,
    "w": 80.511,
@@ -222,7 +222,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-house-a.png",
+    "file": "critter-house-a.webp",
     "w": 1183,
     "h": 1330,
     "ab": {
@@ -233,7 +233,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-house-b.png",
+    "file": "critter-house-b.webp",
     "w": 1191,
     "h": 1320,
     "ab": {
@@ -247,10 +247,10 @@ export const HOME_ART = {
  },
  "snacks": {
   "plate": {
-   "file": "plate-snacks.png"
+   "file": "plate-snacks.webp"
   },
   "hero": {
-   "file": "hero-snacks.png",
+   "file": "hero-snacks.webp",
    "x": 41.395,
    "y": 25.026,
    "w": 54.137,
@@ -266,7 +266,7 @@ export const HOME_ART = {
    "oy": 96.91
   },
   "hero2": {
-   "file": "hero2-snacks.png",
+   "file": "hero2-snacks.webp",
    "x": 7.331,
    "y": 23.589,
    "w": 54.665,
@@ -283,7 +283,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-snacks-a.png",
+    "file": "critter-snacks-a.webp",
     "w": 1374,
     "h": 1145,
     "ab": {
@@ -294,7 +294,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-snacks-b.png",
+    "file": "critter-snacks-b.webp",
     "w": 1319,
     "h": 1192,
     "ab": {
@@ -308,10 +308,10 @@ export const HOME_ART = {
  },
  "town": {
   "plate": {
-   "file": "plate-town.png"
+   "file": "plate-town.webp"
   },
   "hero": {
-   "file": "hero-town.png",
+   "file": "hero-town.webp",
    "x": 42.874,
    "y": 21.717,
    "w": 47.467,
@@ -327,7 +327,7 @@ export const HOME_ART = {
    "oy": 98.05
   },
   "hero2": {
-   "file": "hero2-town.png",
+   "file": "hero2-town.webp",
    "x": 6.548,
    "y": 17.932,
    "w": 51.941,
@@ -344,7 +344,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-town-a.png",
+    "file": "critter-town-a.webp",
     "w": 1374,
     "h": 1145,
     "ab": {
@@ -355,7 +355,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-town-b.png",
+    "file": "critter-town-b.webp",
     "w": 1402,
     "h": 1122,
     "ab": {
@@ -369,10 +369,10 @@ export const HOME_ART = {
  },
  "corgi": {
   "plate": {
-   "file": "plate-corgi.png"
+   "file": "plate-corgi.webp"
   },
   "hero": {
-   "file": "hero-corgi.png",
+   "file": "hero-corgi.webp",
    "x": 6.803,
    "y": 45.363,
    "w": 53.006,
@@ -388,7 +388,7 @@ export const HOME_ART = {
    "oy": 98.69
   },
   "hero2": {
-   "file": "hero2-corgi.png",
+   "file": "hero2-corgi.webp",
    "x": 33.816,
    "y": 34.374,
    "w": 57.661,
@@ -405,7 +405,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-corgi-a.png",
+    "file": "critter-corgi-a.webp",
     "w": 1312,
     "h": 1199,
     "ab": {
@@ -416,7 +416,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-corgi-b.png",
+    "file": "critter-corgi-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -430,10 +430,10 @@ export const HOME_ART = {
  },
  "wheels": {
   "plate": {
-   "file": "plate-wheels.png"
+   "file": "plate-wheels.webp"
   },
   "hero": {
-   "file": "hero-wheels.png",
+   "file": "hero-wheels.webp",
    "x": 10.333,
    "y": 27.159,
    "w": 52.283,
@@ -449,7 +449,7 @@ export const HOME_ART = {
    "oy": 98.48
   },
   "hero2": {
-   "file": "hero2-wheels.png",
+   "file": "hero2-wheels.webp",
    "x": 35.591,
    "y": 23.061,
    "w": 59.027,
@@ -466,7 +466,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-wheels-a.png",
+    "file": "critter-wheels-a.webp",
     "w": 1024,
     "h": 1536,
     "ab": {
@@ -477,7 +477,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-wheels-b.png",
+    "file": "critter-wheels-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -491,10 +491,10 @@ export const HOME_ART = {
  },
  "lighthouse": {
   "plate": {
-   "file": "plate-lighthouse.png"
+   "file": "plate-lighthouse.webp"
   },
   "hero": {
-   "file": "hero-lighthouse.png",
+   "file": "hero-lighthouse.webp",
    "x": 4.08,
    "y": 28.369,
    "w": 46.243,
@@ -510,7 +510,7 @@ export const HOME_ART = {
    "oy": 97.67
   },
   "hero2": {
-   "file": "hero2-lighthouse.png",
+   "file": "hero2-lighthouse.webp",
    "x": 38.355,
    "y": 26.415,
    "w": 48.126,
@@ -527,7 +527,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-lighthouse-a.png",
+    "file": "critter-lighthouse-a.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -538,7 +538,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-lighthouse-b.png",
+    "file": "critter-lighthouse-b.webp",
     "w": 1374,
     "h": 1145,
     "ab": {
@@ -552,10 +552,10 @@ export const HOME_ART = {
  },
  "underwater": {
   "plate": {
-   "file": "plate-underwater.png"
+   "file": "plate-underwater.webp"
   },
   "hero": {
-   "file": "hero-underwater.png",
+   "file": "hero-underwater.webp",
    "x": 8.944,
    "y": 32.263,
    "w": 54.369,
@@ -571,7 +571,7 @@ export const HOME_ART = {
    "oy": 81.11
   },
   "hero2": {
-   "file": "hero2-underwater.png",
+   "file": "hero2-underwater.webp",
    "x": 49.81,
    "y": 31.799,
    "w": 47.031,
@@ -588,7 +588,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-underwater-a.png",
+    "file": "critter-underwater-a.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -599,7 +599,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-underwater-b.png",
+    "file": "critter-underwater-b.webp",
     "w": 1024,
     "h": 1536,
     "ab": {
@@ -613,10 +613,10 @@ export const HOME_ART = {
  },
  "toy-box": {
   "plate": {
-   "file": "plate-toy-box.png"
+   "file": "plate-toy-box.webp"
   },
   "hero": {
-   "file": "hero-toy-box.png",
+   "file": "hero-toy-box.webp",
    "x": 20.846,
    "y": 41.913,
    "w": 36.632,
@@ -632,7 +632,7 @@ export const HOME_ART = {
    "oy": 96.53
   },
   "hero2": {
-   "file": "hero2-toy-box.png",
+   "file": "hero2-toy-box.webp",
    "x": 47.797,
    "y": 29.545,
    "w": 49.977,
@@ -649,7 +649,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-toy-box-a.png",
+    "file": "critter-toy-box-a.webp",
     "w": 1236,
     "h": 1273,
     "ab": {
@@ -660,7 +660,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-toy-box-b.png",
+    "file": "critter-toy-box-b.webp",
     "w": 1254,
     "h": 1254,
     "ab": {
@@ -674,10 +674,10 @@ export const HOME_ART = {
  },
  "penguin": {
   "plate": {
-   "file": "plate-penguin.png"
+   "file": "plate-penguin.webp"
   },
   "hero": {
-   "file": "hero-penguin.png",
+   "file": "hero-penguin.webp",
    "x": 7.943,
    "y": 34.035,
    "w": 43.043,
@@ -693,7 +693,7 @@ export const HOME_ART = {
    "oy": 97.4
   },
   "hero2": {
-   "file": "hero2-penguin.png",
+   "file": "hero2-penguin.webp",
    "x": 37.752,
    "y": 25.569,
    "w": 55.268,
@@ -710,7 +710,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-penguin-a.png",
+    "file": "critter-penguin-a.webp",
     "w": 1375,
     "h": 1144,
     "ab": {
@@ -721,7 +721,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-penguin-b.png",
+    "file": "critter-penguin-b.webp",
     "w": 1193,
     "h": 1319,
     "ab": {
@@ -735,10 +735,10 @@ export const HOME_ART = {
  },
  "cactus": {
   "plate": {
-   "file": "plate-cactus.png"
+   "file": "plate-cactus.webp"
   },
   "hero": {
-   "file": "hero-cactus.png",
+   "file": "hero-cactus.webp",
    "x": 36.345,
    "y": 32.171,
    "w": 49.422,
@@ -754,7 +754,7 @@ export const HOME_ART = {
    "oy": 94.85
   },
   "hero2": {
-   "file": "hero2-cactus.png",
+   "file": "hero2-cactus.webp",
    "x": 8.134,
    "y": 33.697,
    "w": 45.452,
@@ -771,7 +771,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-cactus-a.png",
+    "file": "critter-cactus-a.webp",
     "w": 1223,
     "h": 1286,
     "ab": {
@@ -782,7 +782,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-cactus-b.png",
+    "file": "critter-cactus-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -796,10 +796,10 @@ export const HOME_ART = {
  },
  "giraffe": {
   "plate": {
-   "file": "plate-giraffe.png"
+   "file": "plate-giraffe.webp"
   },
   "hero": {
-   "file": "hero-giraffe.png",
+   "file": "hero-giraffe.webp",
    "x": 41.685,
    "y": 28.715,
    "w": 56.418,
@@ -815,7 +815,7 @@ export const HOME_ART = {
    "oy": 97.83
   },
   "hero2": {
-   "file": "hero2-giraffe.png",
+   "file": "hero2-giraffe.webp",
    "x": -6.598,
    "y": 28.883,
    "w": 58.609,
@@ -832,7 +832,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-giraffe-a.png",
+    "file": "critter-giraffe-a.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -843,7 +843,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-giraffe-b.png",
+    "file": "critter-giraffe-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -857,10 +857,10 @@ export const HOME_ART = {
  },
  "dragon": {
   "plate": {
-   "file": "plate-dragon.png"
+   "file": "plate-dragon.webp"
   },
   "hero": {
-   "file": "hero-dragon.png",
+   "file": "hero-dragon.webp",
    "x": 9.257,
    "y": 63.985,
    "w": 46.587,
@@ -876,7 +876,7 @@ export const HOME_ART = {
    "oy": 81.84
   },
   "hero2": {
-   "file": "hero2-dragon.png",
+   "file": "hero2-dragon.webp",
    "x": 42.45,
    "y": 25.711,
    "w": 56.878,
@@ -893,7 +893,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-dragon-a.png",
+    "file": "critter-dragon-a.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -904,7 +904,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-dragon-b.png",
+    "file": "critter-dragon-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
@@ -918,10 +918,10 @@ export const HOME_ART = {
  },
  "space": {
   "plate": {
-   "file": "plate-space.png"
+   "file": "plate-space.webp"
   },
   "hero": {
-   "file": "hero-space.png",
+   "file": "hero-space.webp",
    "x": 39.003,
    "y": 27.226,
    "w": 52.564,
@@ -937,7 +937,7 @@ export const HOME_ART = {
    "oy": 99.08
   },
   "hero2": {
-   "file": "hero2-space.png",
+   "file": "hero2-space.webp",
    "x": 5.594,
    "y": 24.754,
    "w": 57.278,
@@ -954,7 +954,7 @@ export const HOME_ART = {
   },
   "critters": [
    {
-    "file": "critter-space-a.png",
+    "file": "critter-space-a.webp",
     "w": 1377,
     "h": 1142,
     "ab": {
@@ -965,7 +965,7 @@ export const HOME_ART = {
     }
    },
    {
-    "file": "critter-space-b.png",
+    "file": "critter-space-b.webp",
     "w": 1536,
     "h": 1024,
     "ab": {
