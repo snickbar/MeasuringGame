@@ -2,13 +2,15 @@
 // built from a clean background plate, the two foreground subjects (which sway / breathe) and critters that wander across.
 // Everything falls back to the original picture until every image has loaded, and is skipped with Animation: Reduced.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
+import { HOME_RIG } from "./home-art-rig.mjs";
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
 // -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
 const CONFIG = {
+  corgi: { hero: "breathe", hero2: "sway", shadow: [[235, 1122, 270, 34, .3], [455, 1130, 150, 28, .3]], critters: [{ row: 40, size: 12, secs: 30, delay: 5, dir: 1, kind: "glide", faces: 1 }] },
   games: { hero: "sway", hero2: "breathe", shadow: [[238, 1200, 150, 26, .28], [446, 1218, 130, 24, .3]], critters: [{ row: 31, size: 15, secs: 27, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 73, size: 12, secs: 38, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
-  sunflower: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 0], [200, 0], [200, 366], [853, 366]], pivot: [400, 366], anim: "headbob" }],   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
+  sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
   ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
@@ -40,7 +42,19 @@ export async function installHomeScene() {
     imgs = await Promise.all([art.plate, art.hero, art.hero2, ...art.critters].map((l) => load(BASE + l.file)));
   } catch (e) { return; } // any missing picture: keep the original Home picture
   if (!home.isConnected || document.getElementById("home-art") || document.documentElement.dataset.motion === "reduce") return;
-  const [plate, hero, hero2, ...crits] = imgs;
+  let [plate, hero, hero2, ...crits] = imgs;
+  // Extra character art (redrawn base without its moving parts, the moving parts themselves, expression patches). All or nothing.
+  let rig = HOME_RIG[scene], rigImgs = null;
+  if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
+  if (rig) {
+    try {
+      const list = [rig.base, ...rig.parts, ...rig.patches, ...(rig.fx || [])].filter(Boolean);
+      const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
+      rigImgs = new Map(list.map((l, i) => [l, loaded[i]]));
+    } catch (e) { rig = null; rigImgs = null; }
+    if (!home.isConnected || document.getElementById("home-art")) return;
+  }
+  if (rig && rig.base) hero = rigImgs.get(rig.base);
   const root = document.createElement("div"); root.id = "home-art"; root.setAttribute("aria-hidden", "true");
   const stage = document.createElement("div"); stage.className = "hs-stage"; root.appendChild(stage);
   plate.className = "hs-plate"; plate.alt = ""; stage.appendChild(plate);
@@ -61,21 +75,33 @@ export async function installHomeScene() {
   place(hero2, art.hero2, "hs-back", cfg.hero2); // the second object sits behind the main subject (as in the original pictures)
   {
     // The main subject is built from the whole sprite (minus the cut-out parts) plus a copy of each part that moves on its own.
-    const spec = art.hero, W = spec.sw, H = spec.sh, pct = (x, y) => `${x / W * 100}% ${y / H * 100}%`;
+    const spec = art.hero, W = spec.sw, H = spec.sh, bp = (rig && rig.base) || { x: 0, y: 0, w: W, h: H };
+    const pct = (x, y) => `${(x - bp.x) / bp.w * 100}% ${(y - bp.y) / bp.h * 100}%`;
     const box = document.createElement("div");
     box.className = "hs-layer hs-front" + (cfg.hero ? " hs-" + cfg.hero : ""); box.style.cssText = `left:${spec.x}%;top:${spec.y}%;width:${spec.w}%;aspect-ratio:${W}/${H};transform-origin:${spec.ox}% ${spec.oy}%`;
     // The base picture has each moving part cut out as a notch from its right edge (parts must touch the right edge).
-    const P = (x, y) => `${x / W * 100}% ${y / H * 100}%`, notch = ["0 0", `${100}% 0`];
+    const P = (x, y) => `${(x - bp.x) / bp.w * 100}% ${(y - bp.y) / bp.h * 100}%`, notch = ["0 0", `${100}% 0`];
     (cfg.limbs || []).forEach((l) => l.poly.forEach(([x, y]) => notch.push(P(x, y))));
     notch.push("100% 100%", "0 100%");
     const hop = document.createElement("div"); hop.className = "hs-hop"; box.appendChild(hop);
     hero.className = "hs-part"; hero.alt = "";
+    const at = (img, q) => { img.style.left = q.x / W * 100 + "%"; img.style.top = q.y / H * 100 + "%"; img.style.width = q.w / W * 100 + "%"; img.style.height = q.h / H * 100 + "%"; };
+    if (rig && rig.base) at(hero, rig.base);
     hero.style.clipPath = `polygon(${notch.join(", ")})`;
     hop.appendChild(hero);
     (cfg.limbs || []).forEach((l) => {
       const arm = hero.cloneNode(); arm.className = "hs-part hs-" + l.anim; arm.style.clipPath = `polygon(${l.poly.map(([x, y]) => P(x, y)).join(", ")})`;
       arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); hop.appendChild(arm);
     });
+    if (rig) {
+      // Moving parts sit over the base (or behind it); each swings, wiggles or flaps about its own pivot.
+      rig.parts.forEach((q) => {
+        const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-" + q.anim; img.alt = ""; at(img, q);
+        img.style.transformOrigin = q.ox + "% " + q.oy + "%";
+        if (q.z === "back") hop.insertBefore(img, hop.firstChild); else hop.appendChild(img);
+      });
+      rig.patches.forEach((q) => { const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); hop.appendChild(img); });
+    }
     stage.appendChild(box);
     // Tap the character on top: a springy hop (squash, stretch, settle) with a tiny boing and a light buzz.
     const zone = document.createElement("div"); zone.className = "hs-tap";

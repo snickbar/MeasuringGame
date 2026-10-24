@@ -1,0 +1,16 @@
+# Per-scene recipe for the animated characters (see build.py). Regions/pivots are in hero-canvas pixels.
+RIGS={
+ 'ants':dict(base='no-antennae',
+   parts=[dict(name='antennae',base='no-antennae',mode='sil',split=True,pivot='bottom',anim=['wigA','wigB'])],
+   patches=[dict(frame='blink',region=(292,158,422,214),anim='blink')]),
+ 'sunflower':dict(base='no-wings',
+   parts=[dict(name='wings',base='no-wings',mode='sil',pivot=('frac',.5,.72),anim='flapS',z='back')],
+   patches=[]),
+ 'games':dict(base='no-top-slice',
+   parts=[dict(name='top-slice',base='no-top-slice',mode='col',pivot=('frac',.5,.62),anim='twistS')],
+   patches=[]),
+ 'corgi':dict(base='no-ears',base_fix=dict(region=(40,930,205,1225),feather=10),
+   parts=[dict(name='tail',base='no-tail',ref_piece='with-tail',mode='sil',pivot=('frac',.88,.78),anim='wag',z='back'),
+          dict(name='ears',base='no-ears',mode='sil',split=True,pivot=['bottom-right','bottom-left'],anim=['earL','earR'])],
+   patches=[dict(frame='pant',region=(580,545,900,800),anim='pant'),dict(frame='eyes-open',region=(545,400,905,535),anim='peek')]),
+}

@@ -373,8 +373,8 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-corgi.webp",
-   "x": 6.803,
-   "y": 45.363,
+   "x": 6.519,
+   "y": 45.495,
    "w": 53.006,
    "sw": 1148,
    "sh": 1370,
@@ -389,9 +389,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-corgi.webp",
-   "x": 33.816,
-   "y": 34.374,
-   "w": 57.661,
+   "x": 30.867,
+   "y": 30.367,
+   "w": 63.166,
    "sw": 1024,
    "sh": 1536,
    "ab": {
