@@ -309,6 +309,26 @@ if (location.protocol === "file:") {
     border: 3px solid #a9cbe4; border-radius: 48% / 50%;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #1b1b1b;
   }
+  #settings-debug-card > summary { cursor: pointer; list-style: none; }
+  #settings-debug-card > summary::-webkit-details-marker { display: none; }
+  #settings-debug-card > summary h3 { display: inline-block; margin: 0; }
+  #settings-debug-card > summary h3::after { content: " \25BE"; font-size: .8em; }
+  #settings-debug-card[open] > summary h3::after { content: " \25B4"; }
+  #debug-tools-root { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .dbg-status { margin: 0; padding: 6px 10px; border-radius: 8px; background: #fff3cd; color: #7a4a00; font-size: 13px; font-weight: 700; }
+  .dbg-sec { border: 2px dashed #c98a4d; border-radius: 10px; background: rgba(255,255,255,.45); }
+  .dbg-sec > summary { display: flex; justify-content: space-between; gap: 8px; padding: 9px 12px; cursor: pointer; font-weight: 800; }
+  .dbg-sec .dbg-sum { font-weight: 600; font-size: 12px; opacity: .75; }
+  .dbg-body { display: flex; flex-direction: column; gap: 8px; padding: 4px 10px 12px; }
+  .dbg-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .dbg-chips { display: flex; flex-wrap: wrap; gap: 5px; max-height: 240px; overflow-y: auto; padding: 2px; }
+  .dbg-btn { width: auto; margin: 0; padding: 6px 11px; font-size: 12px; font-weight: 700; background: #fff3cd; color: #7a4a00; border: 2px solid #c98a4d; border-radius: 8px; cursor: pointer; }
+  .dbg-btn.dbg-on { background: #cfeec2; border-color: #3b7a3b; color: #1f4a1f; }
+  .dbg-btn.dbg-warn { border-style: dashed; }
+  .dbg-btn[data-tier="rare"] { box-shadow: inset 0 -3px 0 #9a6fc1; } .dbg-btn[data-tier="ultra"] { box-shadow: inset 0 -3px 0 #d9a441; }
+  .dbg-input { width: 9.5em; padding: 6px 8px; font-size: 14px; border: 2px solid #c98a4d; border-radius: 8px; }
+  .dbg-label { font-size: 12px; font-weight: 700; min-width: 9em; }
+  .dbg-note { margin: 0; font-size: 12px; opacity: .8; }
   #coin-acquire-panel { margin: 0 0 12px; }
   /* Absolutely positioned (like .coin-pack-ribbon on the other 3 cards) so it
      hangs off the card's top edge instead of sitting in-flow - the real
@@ -3753,6 +3773,12 @@ if (location.protocol === "file:") {
     <button id="settings-howto-btn" type="button" class="settings-nav-row"><span>How to Play<small>Rules, scoring, and power-ups</small></span></button>
   </div>
 
+  <details class="settings-card" id="settings-debug-card" hidden>
+    <summary><h3>Debug / Admin tools</h3></summary>
+    <p class="settings-profile-hint">For testing: lock or unlock things, set coins, reset progress. Changes your real profile.</p>
+    <div id="debug-tools-root"></div>
+  </details>
+
   <div class="settings-card" id="settings-about-card">
     <div class="settings-about-row"><h3>About</h3>
     <button id="settings-privacy-btn" type="button">Privacy Policy</button></div>
@@ -4302,6 +4328,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
   import { mountRoomQr, pendingRoomInvite, roomAppIntent, nativeRoomScanner } from "./anim/room-qr.mjs";
+  import { installDebugTools } from "./anim/debug-tools.mjs";
+  const DEBUG_TOOLS = true; // Settings > Debug / Admin tools. Set to false to remove the section for a public release.
+  var debugTools;
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
   import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
@@ -5074,6 +5103,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
   }
   function renderProfileDependentUi() {
+    try { debugTools && debugTools.refresh(); } catch (e) {}
     discoveryUI?.refresh();
     tutorialUI?.refresh();
     syncFlairToRoom();
@@ -18073,6 +18103,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
     }
   })();
+
+  if (DEBUG_TOOLS) {
+    document.getElementById("settings-debug-card").hidden = false;
+    debugTools = installDebugTools({
+      profile: () => myProfile,
+      patch: (p) => update(ref(db, `profiles/${deviceId}`), p),
+      defaultUnlockedAvatars, worldLevels: WORLD_LEVELS, worlds: WORLDS,
+      catalog: {
+        avatars: AVATARS.map((id) => ({ id, tier: AVATAR_TIERS[id] })), homeScreens: HOME_SCREENS, achievements: ACHIEVEMENTS, cosmetics: COSMETIC_CATALOG,
+        flairPacks: FLAIR_PACK_CATALOG, backgroundPacks: BACKGROUND_PACK_CATALOG, monthBackgrounds: MONTH_BACKGROUNDS, boardPacks: BOARD_PACK_CATALOG,
+        emojiPacks: EMOJI_PACK_CATALOG, monthPacks: MONTH_PACKS, startEmojis: START_EMOJIS,
+      },
+    });
+  }
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
