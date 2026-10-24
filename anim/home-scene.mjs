@@ -9,8 +9,22 @@ const BASE = "anim/home-art/";
 const CONFIG = {
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
-  ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 21, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
+  ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 21, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
 };
+let actx = null;
+function boing() {
+  try {
+    if (localStorage.getItem("mg_vibrationEnabled") !== "false" && navigator.vibrate) navigator.vibrate(12);
+    if (localStorage.getItem("mg_soundEnabled") === "false") return;
+    const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100; if (!(vol > 0)) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    actx = actx || new AC(); if (actx.state === "suspended") actx.resume();
+    const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(620, t + .09); o.frequency.exponentialRampToValueAtTime(330, t + .22);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16 * vol, t + .015); g.gain.exponentialRampToValueAtTime(0.0001, t + .26);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + .28);
+  } catch (e) {}
+}
 export const homeSceneHasArt = (scene) => !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
   return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = () => yes(img); img.onerror = no; img.src = src; });
@@ -50,14 +64,22 @@ export async function installHomeScene() {
     const P = (x, y) => `${x / W * 100}% ${y / H * 100}%`, notch = ["0 0", `${100}% 0`];
     cfg.limbs.forEach((l) => l.poly.forEach(([x, y]) => notch.push(P(x, y))));
     notch.push("100% 100%", "0 100%");
+    const hop = document.createElement("div"); hop.className = "hs-hop"; box.appendChild(hop);
     hero.className = "hs-part"; hero.alt = "";
     hero.style.clipPath = `polygon(${notch.join(", ")})`;
-    box.appendChild(hero);
+    hop.appendChild(hero);
     cfg.limbs.forEach((l) => {
       const arm = hero.cloneNode(); arm.className = "hs-part hs-" + l.anim; arm.style.clipPath = `polygon(${l.poly.map(([x, y]) => P(x, y)).join(", ")})`;
-      arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); box.appendChild(arm);
+      arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); hop.appendChild(arm);
     });
     stage.appendChild(box);
+    // Tap the character on top: a springy hop (squash, stretch, settle) with a tiny boing and a light buzz.
+    const zone = document.createElement("div"); zone.className = "hs-tap";
+    const hp = spec.w * (HOME_ART_REF.width / HOME_ART_REF.height) * (H / W), t = cfg.tap || [.2, 0, .55, .22];
+    zone.style.cssText = `left:${spec.x + spec.w * t[0]}%;top:${spec.y + hp * t[1]}%;width:${spec.w * t[2]}%;height:${hp * t[3]}%`;
+    stage.appendChild(zone);
+    const go = (e) => { e.preventDefault(); e.stopPropagation(); hop.classList.remove("hs-hopping"); void hop.offsetWidth; hop.classList.add("hs-hopping"); boing(); };
+    zone.addEventListener("pointerdown", go);
   } else place(hero, art.hero, "hs-front", cfg.hero);
   art.critters.forEach((c, i) => {
     const cc = cfg.critters[i]; if (!cc) return;
@@ -68,7 +90,19 @@ export async function installHomeScene() {
     wrap.style.setProperty("--ct", cc.row + "%"); wrap.style.setProperty("--cw", imgW + "%");
     wrap.style.setProperty("--cs", cc.secs + "s"); wrap.style.setProperty("--cd", cc.delay + "s");
     wrap.style.setProperty("--cx", ((c.ab.x + c.ab.width / 2) / c.w * 100) + "%"); wrap.style.setProperty("--cy", ((c.ab.y + c.ab.height / 2) / c.h * 100) + "%");
-    img.className = "hs-crit-img"; img.alt = ""; img.style.setProperty("--flip", cc.dir * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(img); stage.appendChild(wrap);
+    img.alt = ""; let body = img;
+    if (cc.wings) {
+      // Wings flutter: the base picture has the wings cut out (even-odd holes) and each wing is a clipped copy that flaps about its root.
+      const W = c.w, H = c.h, P = (x, y) => `${x / W * 100}% ${y / H * 100}%`;
+      body = document.createElement("div"); body.className = "hs-wingbox"; body.style.aspectRatio = W + "/" + H;
+      const holes = cc.wings.map((w) => { const pts = w.poly.map(([x, y]) => P(x, y)); return pts.join(", ") + ", " + pts[0] + ", 0 0"; });
+      img.className = "hs-part"; img.style.clipPath = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${holes.join(", ")})`; body.appendChild(img);
+      cc.wings.forEach((w, k) => {
+        const wing = img.cloneNode(); wing.className = "hs-part hs-wing"; wing.style.clipPath = `polygon(${w.poly.map(([x, y]) => P(x, y)).join(", ")})`;
+        wing.style.transformOrigin = P(w.pivot[0], w.pivot[1]); wing.style.animationDelay = (k * -0.05) + "s"; wing.style.setProperty("--wd", (w.deg || 14) + "deg"); body.appendChild(wing);
+      });
+    }
+    body.classList.add("hs-crit-img"); body.style.setProperty("--flip", cc.dir * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body); stage.appendChild(wrap);
   });
   const size = () => {
     const w = home.clientWidth || innerWidth, h = home.clientHeight || innerHeight;
