@@ -53,5 +53,15 @@ export function installHomeFx() {
     for (let i = 0; i < count; i++) layer.appendChild(make(kind, opts));
   }
   home.prepend(layer);
+  // Shine sweep over the title letters: a copy of the title's shape (as a mask) with a light band sliding across it.
+  const title = document.getElementById("home-title-img");
+  if (title && !document.getElementById("home-title-shine")) {
+    const shine = document.createElement("div");
+    shine.id = "home-title-shine"; shine.setAttribute("aria-hidden", "true");
+    shine.style.setProperty("--tm", `url("${title.src}")`);
+    const fit = () => { if (title.naturalWidth) shine.style.setProperty("--ta", String(title.naturalWidth / title.naturalHeight)); };
+    fit(); title.addEventListener("load", fit);
+    title.after(shine);
+  }
 }
 installHomeFx();
