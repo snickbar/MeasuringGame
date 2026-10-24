@@ -7,6 +7,7 @@ const BASE = "anim/home-art/";
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
 // -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
 const CONFIG = {
+  sunflower: { hero: "sway", hero2: "breathe", shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
   ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
@@ -50,25 +51,27 @@ export async function installHomeScene() {
     stage.appendChild(img);
   };
   if (cfg.shadow) {
-    const [cx, cy, w, h, a] = cfg.shadow, sh = document.createElement("div");
-    sh.className = "hs-shadow"; sh.style.cssText = `left:${(cx - w / 2) / HOME_ART_REF.width * 100}%;top:${(cy - h / 2) / HOME_ART_REF.height * 100}%;width:${w / HOME_ART_REF.width * 100}%;height:${h / HOME_ART_REF.height * 100}%;--sa:${a}`;
-    stage.appendChild(sh);
+    (Array.isArray(cfg.shadow[0]) ? cfg.shadow : [cfg.shadow]).forEach(([cx, cy, w, h, a]) => {
+      const sh = document.createElement("div");
+      sh.className = "hs-shadow"; sh.style.cssText = `left:${(cx - w / 2) / HOME_ART_REF.width * 100}%;top:${(cy - h / 2) / HOME_ART_REF.height * 100}%;width:${w / HOME_ART_REF.width * 100}%;height:${h / HOME_ART_REF.height * 100}%;--sa:${a}`;
+      stage.appendChild(sh);
+    });
   }
   place(hero2, art.hero2, "hs-back", cfg.hero2); // the second object sits behind the main subject (as in the original pictures)
-  if (cfg.limbs) {
+  {
     // The main subject is built from the whole sprite (minus the cut-out parts) plus a copy of each part that moves on its own.
     const spec = art.hero, W = spec.sw, H = spec.sh, pct = (x, y) => `${x / W * 100}% ${y / H * 100}%`;
     const box = document.createElement("div");
     box.className = "hs-layer hs-front" + (cfg.hero ? " hs-" + cfg.hero : ""); box.style.cssText = `left:${spec.x}%;top:${spec.y}%;width:${spec.w}%;aspect-ratio:${W}/${H};transform-origin:${spec.ox}% ${spec.oy}%`;
     // The base picture has each moving part cut out as a notch from its right edge (parts must touch the right edge).
     const P = (x, y) => `${x / W * 100}% ${y / H * 100}%`, notch = ["0 0", `${100}% 0`];
-    cfg.limbs.forEach((l) => l.poly.forEach(([x, y]) => notch.push(P(x, y))));
+    (cfg.limbs || []).forEach((l) => l.poly.forEach(([x, y]) => notch.push(P(x, y))));
     notch.push("100% 100%", "0 100%");
     const hop = document.createElement("div"); hop.className = "hs-hop"; box.appendChild(hop);
     hero.className = "hs-part"; hero.alt = "";
     hero.style.clipPath = `polygon(${notch.join(", ")})`;
     hop.appendChild(hero);
-    cfg.limbs.forEach((l) => {
+    (cfg.limbs || []).forEach((l) => {
       const arm = hero.cloneNode(); arm.className = "hs-part hs-" + l.anim; arm.style.clipPath = `polygon(${l.poly.map(([x, y]) => P(x, y)).join(", ")})`;
       arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); hop.appendChild(arm);
     });
@@ -80,7 +83,7 @@ export async function installHomeScene() {
     stage.appendChild(zone);
     const go = (e) => { e.preventDefault(); e.stopPropagation(); hop.classList.remove("hs-hopping"); void hop.offsetWidth; hop.classList.add("hs-hopping"); boing(); };
     zone.addEventListener("pointerdown", go);
-  } else place(hero, art.hero, "hs-front", cfg.hero);
+  }
   art.critters.forEach((c, i) => {
     const cc = cfg.critters[i]; if (!cc) return;
     const wrap = document.createElement("div"), img = crits[i];

@@ -23,7 +23,7 @@ const unlockStart=source.indexOf('  const worldUnlocked = ');
 vm.runInContext([
   array('WORLDS'),array('HOME_SCREENS'),line('WORLD_LEVELS'),line('WORLD_ICON'),line('worldStarsFor'),
   source.slice(source.indexOf('  const WORLD_EXTRAS = {'),source.indexOf('\n  };',source.indexOf('  const WORLD_EXTRAS = {'))+5),
-  line('worldLevelStars'),line('worldStarsOf'),fn('worldTotalStars'),
+  line('worldLevelStars'),line('worldSceneEarned'),line('worldStarsOf'),fn('worldTotalStars'),
   source.slice(unlockStart,source.indexOf('\n  };',unlockStart)+5),
   fn('holidayMonthsPlayed'),fn('holidayMixObjects'),
   fn('staggerOrder'),fn('worldObjects'),fn('worldQuestions'),
@@ -68,7 +68,7 @@ ctx.unlockedFantasyIds=()=>Array(20).fill('unlocked');assert(api.worldUnlocked(a
 ctx.ACHIEVEMENTS=[];ctx.achHold={};ctx.ACH_HOLD_MS=0;ctx.setTimeout=()=>{};ctx.playSound=()=>{};ctx.db={};ctx.deviceId='test';
 ctx.ref=(_,path)=>path;ctx.defaultProfile=()=>({coins:0});ctx.defaultCosmeticState=()=>({owned:{},equipped:{}});
 ctx.runTransaction=async(_path,update)=>{ctx.myProfile=update(ctx.myProfile);return {committed:true};};
-const achStart=source.indexOf('  WORLDS.forEach((w) => {',source.indexOf('// Worlds: 13 or more'));
+const achStart=source.indexOf('  WORLDS.forEach((w) => {',source.indexOf('// Worlds: a star on the last level'));
 vm.runInContext('let achJustClaimed=null;\n'+source.slice(achStart,source.indexOf('\n  });',achStart)+6)+'\n'+fn('achDone')+'\n'+fn('achClaimable')+'\n'+fn('claimAchievement')+'\nglobalThis.claim=claimAchievement;',ctx);
 ctx.myProfile={coins:7,worlds:{},achClaimed:{},cosmetics:{owned:{homeScreens:{space:true,ants:true}},equipped:{homeScreen:'space'}}};
 for(const [id,home]of [['under-the-sea','underwater'],['toy-box','toy-box']]){
