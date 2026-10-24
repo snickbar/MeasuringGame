@@ -190,9 +190,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-house.webp",
-   "x": 36.556,
-   "y": 32.6,
-   "w": 56.494,
+   "x": 32.741,
+   "y": 28.98,
+   "w": 60.653,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -206,9 +206,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-house.webp",
-   "x": -12.306,
-   "y": 35.2,
-   "w": 80.511,
+   "x": -14.316,
+   "y": 32.403,
+   "w": 84.534,
    "sw": 1068,
    "sh": 1473,
    "ab": {

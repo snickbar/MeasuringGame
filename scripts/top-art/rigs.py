@@ -19,4 +19,6 @@ RIGS={
  'town':dict(base='no-flag',
    parts=[dict(name='flag',base='no-flag',mode='col',pivot='bottom',anim='wagS')],
    patches=[]),
+ 'house':dict(base=None,parts=[],
+   patches=[dict(frame='blink',region=(300,110,600,480),anim='blink')]),
 }
