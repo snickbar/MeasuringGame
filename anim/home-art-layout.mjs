@@ -68,9 +68,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-sunflower.webp",
-   "x": 39.897,
-   "y": 34.223,
-   "w": 50.277,
+   "x": 37.116,
+   "y": 29.249,
+   "w": 55.535,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -84,9 +84,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-sunflower.webp",
-   "x": 1.932,
-   "y": 27.999,
-   "w": 53.563,
+   "x": 4.164,
+   "y": 29.652,
+   "w": 51.899,
    "sw": 853,
    "sh": 1843,
    "ab": {
