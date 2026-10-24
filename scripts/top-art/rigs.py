@@ -39,4 +39,10 @@ RIGS={
    parts=[dict(name='arm',base='no-arm',ref_piece=None,mode='sil',pivot=('frac',.35,.08),anim='wave')],
    patches=[dict(frame='blink',region=(300,330,760,700),anim='blink')],
    fx=[dict(sheet='antenna-light',x=460,y=123,w=150,at=(.5,.5),anim='glow',dur=1.6,frames=[0],min_area=2000)]),
+ 'penguin':dict(base='no-flipper',
+   parts=[dict(name='flipper',tf=dict(scale=.401,tx=506,ty=844),pivot=('frac',.4,.03),anim='flipWave',z='back')],
+   patches=[dict(frame='chirp',region=(150,170,760,640),anim='peek')],
+   fx=[dict(sheet='ice-sparkle',frames=[0],x=110,y=520,w=110,at=(.5,.5),anim='glint',dur=3.6,delay=0,min_area=200,dil=15),
+       dict(sheet='ice-sparkle',frames=[1],x=740,y=380,w=100,at=(.5,.5),anim='glint',dur=4.2,delay=1.4,min_area=200,dil=15),
+       dict(sheet='ice-sparkle',frames=[4],x=700,y=1150,w=90,at=(.5,.5),anim='glint',dur=3.9,delay=2.6,min_area=200,dil=15)]),
 }
