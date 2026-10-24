@@ -3383,6 +3383,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/ui-delight.css">
 <link rel="stylesheet" href="anim/auto-fit.css">
 <link rel="stylesheet" href="anim/mode-identity.css">
+<link rel="stylesheet" href="anim/illustrated-details.css" />
 </head>
 <body>
 
@@ -9943,7 +9944,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const p = data.players?.[r.id];
         const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv same" aria-label="Same place">&ndash;</span>`;
         const dl = r.delta > 0 ? `<span class="hs-delta up">+${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
-        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
+        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
   function renderHighStakes(data) {
@@ -16065,7 +16066,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const round = data.round || 1;
     let slots = "";
     for (let i = 1; i <= totalRounds; i++) {
-      slots += `<span class="round-slot${i === round ? " current" : ""}"></span>`;
+      slots += `<span class="round-slot${i < round ? " done" : i === round ? " current" : ""}"></span>`;
     }
     hudRoundLabelEl.innerHTML = isHlSettings(data.settings)
       ? `<span class="round-text">Round ${round}</span>`
