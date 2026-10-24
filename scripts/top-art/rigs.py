@@ -30,4 +30,12 @@ RIGS={
  'lighthouse':dict(base=None,parts=[],patches=[],
    fx=[dict(sheet='beam',x=440,y=312,w=700,at=(0,.5),anim='glow',dur=3.2,z='back',frames=[0],min_area=2000),
        dict(sheet='lamp-glow',x=412,y=313,w=320,at=(.5,.5),anim='glow',dur=2.4,frames=[0],min_area=2000)]),
+ 'underwater':dict(base='no-flipper',
+   parts=[dict(name='flipper',base='no-flipper',mode='sil',pivot=('frac',.2,.8),anim='paddle')],
+   patches=[dict(frame='eyes-open',region=(340,500,800,830),anim='peek')],
+   fx=[dict(sheet='bubbles',crop=(0,0,1,.55),dil=400,x=655,y=700,w=120,at=(.5,1),align='bottom',anim='bubbles',dur=5,delay=0),
+       dict(sheet='bubbles',crop=(0,0,1,.55),dil=400,x=655,y=700,w=120,at=(.5,1),align='bottom',anim='bubbles',dur=5,delay=2.5)]),
+ 'toy-box':dict(base='with-antenna',
+   parts=[dict(name='arm',base='no-arm',ref_piece=None,mode='sil',pivot=('frac',.35,.08),anim='wave')],
+   patches=[dict(frame='blink',region=(300,330,760,700),anim='blink')],),
 }

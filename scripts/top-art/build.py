@@ -81,7 +81,10 @@ def build(scene):
         plc=dict(file=save(crop,f"{scene}-{q['frame']}.webp"),x=x0,y=y0,w=x1-x0,h=y1-y0,anim=q['anim']); rig['patches'].append(plc)
     for fi,q in enumerate(cfg.get('fx',[])):
         # effect sheets: cut the frames apart (reading order), pad to one common cell, place the cell at (x,y) with the anchor point q['at'] inside it
-        sh=piece(f"{scene}-{q['sheet']}"); c,_,_=crop_alpha(sh)
+        sh=piece(f"{scene}-{q['sheet']}")
+        if q.get('crop'):
+            hh,ww=sh.shape[:2]; a_,b_,c_,d_=q['crop']; sh=sh[int(b_*hh):int(d_*hh),int(a_*ww):int(c_*ww)]
+        c,_,_=crop_alpha(sh)
         comps=split_parts(c,min_area=q.get('min_area',200),dil=q.get('dil',41))
         if q.get('frames'): comps=[comps[i] for i in q['frames']]
         else:
