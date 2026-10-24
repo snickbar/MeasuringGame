@@ -739,9 +739,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-cactus.webp",
-   "x": 36.345,
-   "y": 32.171,
-   "w": 49.422,
+   "x": 34.922,
+   "y": 28.99,
+   "w": 52.982,
    "sw": 853,
    "sh": 1843,
    "ab": {

@@ -45,4 +45,8 @@ RIGS={
    fx=[dict(sheet='ice-sparkle',frames=[0],x=110,y=520,w=110,at=(.5,.5),anim='glint',dur=3.6,delay=0,min_area=200,dil=15),
        dict(sheet='ice-sparkle',frames=[1],x=740,y=380,w=100,at=(.5,.5),anim='glint',dur=4.2,delay=1.4,min_area=200,dil=15),
        dict(sheet='ice-sparkle',frames=[4],x=700,y=1150,w=90,at=(.5,.5),anim='glint',dur=3.9,delay=2.6,min_area=200,dil=15)]),
+ 'cactus':dict(base='no-top-hat',
+   parts=[dict(name='top-hat',base='no-top-hat',mode='sil',pivot='bottom',anim='hatTip')],
+   patches=[],
+   fx=[dict(sheet='cactus-flower',ref=True,x=235,y=548,w=70,at=(.5,.9),align='bottom',anim='pop',dur=12,delay=3,min_area=400,dil=25)]),
 }
