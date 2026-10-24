@@ -27,4 +27,7 @@ RIGS={
    fx=[dict(sheet='flame',x=426,y=1735,w=110,at=(.5,0),align='top',anim='flame',dur=.5,z='back'),
        dict(sheet='smoke',x=300,y=1790,w=190,at=(.5,.8),anim='rise',dur=4.2,delay=0,min_area=300),
        dict(sheet='smoke',x=560,y=1790,w=150,at=(.5,.8),anim='rise',dur=5,delay=2,min_area=300)]),
+ 'lighthouse':dict(base=None,parts=[],patches=[],
+   fx=[dict(sheet='beam',x=440,y=312,w=700,at=(0,.5),anim='glow',dur=3.2,z='back',frames=[0],min_area=2000),
+       dict(sheet='lamp-glow',x=412,y=313,w=320,at=(.5,.5),anim='glow',dur=2.4,frames=[0],min_area=2000)]),
 }

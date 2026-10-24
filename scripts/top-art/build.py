@@ -95,7 +95,7 @@ def build(scene):
             if f<1: cell=cv2.resize(cell,(max(1,round(cw*f)),max(1,round(ch*f))),interpolation=cv2.INTER_AREA)
             frames.append(dict(file=save(cell,f"{scene}-fx{fi}-{k}.webp")))
         ax,ay=q.get('at',(.5,.5)); bw_=cw*sc_; bh_=ch*sc_
-        rig['fx'].append(dict(frames=frames,x=r1(q['x']-ax*bw_),y=r1(q['y']-ay*bh_),w=r1(bw_),h=r1(bh_),anim=q['anim'],dur=q.get('dur',3),delay=q.get('delay',0),z=q.get('z','front')))
+        rig['fx'].append(dict(frames=frames,x=r1(q['x']-ax*bw_),y=r1(q['y']-ay*bh_),w=r1(bw_),h=r1(bh_),anim=q['anim'],dur=q.get('dur',3),delay=q.get('delay',0),z=q.get('z','front'),**({'ref':True} if q.get('ref') else {})))
     return rig
 if __name__=='__main__':
     rigs={}
