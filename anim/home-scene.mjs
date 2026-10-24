@@ -14,6 +14,7 @@ const CONFIG = {
   snacks: { hero: "sway", hero2: "breathe", shadow: [[245, 1168, 120, 22, .3], [492, 1178, 90, 20, .3]], critters: [{ row: 30, size: 14, secs: 28, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 74, size: 11, secs: 36, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
   town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 52, size: 14, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
   house: { hero: "sway", hero2: "breathe", shadow: [[245, 1100, 200, 26, .3], [500, 1100, 70, 18, .3]], critters: [{ row: 78, size: 12, secs: 34, delay: 6, dir: 1, kind: "scuttle", faces: 1 }] },
+  wheels: { hero: "sway", hero2: "breathe", shadow: [[245, 1100, 120, 22, .3], [500, 1100, 90, 20, .3]], critters: [{ row: 30, size: 16, secs: 40, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 52, size: 14, secs: 30, delay: 10, dir: -1, kind: "glide", faces: 1 }] },
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
   ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
@@ -51,7 +52,7 @@ export async function installHomeScene() {
   if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
   if (rig) {
     try {
-      const list = [rig.base, ...rig.parts, ...rig.patches, ...(rig.fx || [])].filter(Boolean);
+      const list = [rig.base, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames)].filter(Boolean);
       const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
       rigImgs = new Map(list.map((l, i) => [l, loaded[i]]));
     } catch (e) { rig = null; rigImgs = null; }
@@ -102,6 +103,17 @@ export async function installHomeScene() {
         const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-" + q.anim; img.alt = ""; at(img, q);
         img.style.transformOrigin = q.ox + "% " + q.oy + "%";
         if (q.z === "back") hop.insertBefore(img, hop.firstChild); else hop.appendChild(img);
+      });
+      (rig.fx || []).forEach((q) => {
+        // Effect frames (flame, steam, sparkle...): a box holding every frame; the frames take turns, the box itself rises, pulses or glints.
+        const w = document.createElement("div"), n = q.frames.length;
+        w.className = "hs-rig hs-fx hs-fx-" + q.anim; w.style.cssText = `left:${q.x / W * 100}%;top:${q.y / H * 100}%;width:${q.w / W * 100}%;height:${q.h / H * 100}%;--fd:${q.dur}s;animation-delay:${q.delay}s`;
+        q.frames.forEach((fr, i) => {
+          const im = rigImgs.get(fr).cloneNode(); im.alt = ""; im.className = "hs-fxf";
+          if (n > 1) { im.style.animationName = "hsFx" + n; im.style.animationDuration = q.dur + "s"; im.style.animationDelay = (i ? -((n - i) * q.dur / n) : 0) + "s"; }
+          w.appendChild(im);
+        });
+        if (q.z === "back") hop.insertBefore(w, hop.firstChild); else hop.appendChild(w);
       });
       rig.patches.forEach((q) => { const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); hop.appendChild(img); });
     }

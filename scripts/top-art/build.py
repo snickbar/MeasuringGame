@@ -79,6 +79,23 @@ def build(scene):
         out=w.copy(); out[:,:,3]=(w[:,:,3].astype(np.float32)*m2).astype(np.uint8)
         crop=out[y0:y1,x0:x1]
         plc=dict(file=save(crop,f"{scene}-{q['frame']}.webp"),x=x0,y=y0,w=x1-x0,h=y1-y0,anim=q['anim']); rig['patches'].append(plc)
+    for fi,q in enumerate(cfg.get('fx',[])):
+        # effect sheets: cut the frames apart (reading order), pad to one common cell, place the cell at (x,y) with the anchor point q['at'] inside it
+        sh=piece(f"{scene}-{q['sheet']}"); c,_,_=crop_alpha(sh)
+        comps=split_parts(c,min_area=q.get('min_area',200),dil=q.get('dil',41))
+        if q.get('frames'): comps=[comps[i] for i in q['frames']]
+        else:
+            hs=sorted(t[3] for t in comps); mh=hs[len(hs)//2]; comps.sort(key=lambda t:(round((t[1]+t[3]/2)/(mh*.8)),t[0]))
+        cw=max(t[2] for t in comps); ch=max(t[3] for t in comps); al=q.get('align','center')
+        sc_=q['w']/cw; f=min(1.0,SUPER*sc_); frames=[]
+        for k,(x,y,w,h,pc) in enumerate(comps):
+            cell=np.zeros((ch,cw,4),np.uint8); crop=pc[y:y+h,x:x+w]
+            ox_=(cw-w)//2; oy_={'top':0,'bottom':ch-h}.get(al,(ch-h)//2)
+            cell[oy_:oy_+h,ox_:ox_+w]=crop
+            if f<1: cell=cv2.resize(cell,(max(1,round(cw*f)),max(1,round(ch*f))),interpolation=cv2.INTER_AREA)
+            frames.append(dict(file=save(cell,f"{scene}-fx{fi}-{k}.webp")))
+        ax,ay=q.get('at',(.5,.5)); bw_=cw*sc_; bh_=ch*sc_
+        rig['fx'].append(dict(frames=frames,x=r1(q['x']-ax*bw_),y=r1(q['y']-ay*bh_),w=r1(bw_),h=r1(bh_),anim=q['anim'],dur=q.get('dur',3),delay=q.get('delay',0),z=q.get('z','front')))
     return rig
 if __name__=='__main__':
     rigs={}

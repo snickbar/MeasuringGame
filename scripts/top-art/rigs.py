@@ -21,4 +21,10 @@ RIGS={
    patches=[]),
  'house':dict(base=None,parts=[],
    patches=[dict(frame='blink',region=(300,110,600,480),anim='blink')]),
+ 'wheels':dict(base='with-window',
+   parts=[dict(name='window-glint',tf=dict(scale=.1313,tx=339.97,ty=474.5),pivot='center',anim='shine')],
+   patches=[],
+   fx=[dict(sheet='flame',x=426,y=1735,w=110,at=(.5,0),align='top',anim='flame',dur=.5,z='back'),
+       dict(sheet='smoke',x=300,y=1790,w=190,at=(.5,.8),anim='rise',dur=4.2,delay=0,min_area=300),
+       dict(sheet='smoke',x=560,y=1790,w=150,at=(.5,.8),anim='rise',dur=5,delay=2,min_area=300)]),
 }

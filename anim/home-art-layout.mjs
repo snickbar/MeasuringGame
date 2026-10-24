@@ -434,9 +434,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-wheels.webp",
-   "x": 10.333,
-   "y": 27.159,
-   "w": 52.283,
+   "x": 7.751,
+   "y": 21.778,
+   "w": 58.01,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -450,9 +450,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-wheels.webp",
-   "x": 35.591,
-   "y": 23.061,
-   "w": 59.027,
+   "x": 32.564,
+   "y": 19.313,
+   "w": 63.312,
    "sw": 854,
    "sh": 1842,
    "ab": {
