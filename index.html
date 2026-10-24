@@ -5664,7 +5664,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const monthBackgroundOf = (id) => MONTH_BACKGROUNDS.find((m) => m.id === id);
 
   // ---- Home screens: the picture behind the Home menu. The ants are free from the start; every other
-  // scene is an achievement reward (world scenes: earn 13 stars in that world; the others have their own award). ----
+  // scene is an achievement reward (world scenes: earn a star on the last level of that world; the others have their own award). ----
   // KEEP IN SYNC with the file map in the small script at the top of this page (it picks the picture before the app loads).
   const HOME_DEFAULT = "ants";
   const HOME_SCREENS = [
@@ -5679,11 +5679,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "lighthouse", file: "home-lighthouse.jpg", name: "Seaside", world: "landmarks" },
     { id: "underwater", file: "home-underwater.jpg", name: "Underwater", world: "under-the-sea" },
     { id: "toy-box", file: "home-toy-box.jpg", name: "Playroom", world: "toy-box" },
-    { id: "penguin", file: "home-penguin.jpg", name: "Arctic", how: "Win 7 rounds in a row" },
-    { id: "cactus", file: "home-cactus.jpg", name: "Western", how: "Survive 15 rounds in Survival" },
-    { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 25 spot-on guesses" },
-    { id: "dragon", file: "home-dragon.jpg", name: "Kingdom", how: "Reach 30 in Survival" },
-    { id: "space", file: "home-space.jpg", name: "Space", how: "Earn every star in every world" },
+    { id: "penguin", file: "home-penguin.jpg", name: "Arctic", how: "Win 5 rounds in a row" },
+    { id: "cactus", file: "home-cactus.jpg", name: "Western", how: "Survive 10 rounds in Survival" },
+    { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 15 spot-on guesses" },
+    { id: "dragon", file: "home-dragon.jpg", name: "Kingdom", how: "Reach 20 in Survival" },
+    { id: "space", file: "home-space.jpg", name: "Space", how: "Earn a star on the last level of every world" },
   ];
   const homeScreenOf = (id) => HOME_SCREENS.find((h) => h.id === id);
   const ownsHomeScreen = (id) => id === HOME_DEFAULT || !!(myProfile.cosmetics && myProfile.cosmetics.owned && (myProfile.cosmetics.owned.homeScreens || {})[id]);
@@ -5704,7 +5704,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
     if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(equippedHomeScreen()).file}')`);
   }
-  const homeHowText = (h) => (h.world ? `Earn 13 stars in ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
+  const homeHowText = (h) => (h.world ? `Earn a star on Level ${WORLD_LEVELS} of ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
   async function equipHomeScreen(id) {
     if (equippedHomeScreen() === id) return;
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/homeScreen": id });
@@ -10165,6 +10165,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let wl = { phase: "list", wi: 0, level: 1, questions: [], guesses: [], input: "", gain: 0, stars: 0 };
   let wlAnim = null;
   const worldLevelStars = (wid, l) => { const w = (myProfile.worlds || {})[wid]; return (w && Number(w["l" + l])) || 0; };
+  const worldSceneEarned = (wid) => worldLevelStars(wid, WORLD_LEVELS) >= 1; // a star on the last level = played all the way through
   const worldStarsOf = (wid) => { let n = 0; for (let l = 1; l <= WORLD_LEVELS; l++) n += worldLevelStars(wid, l); return n; };
   function worldTotalStars() { return WORLDS.reduce((n, w) => n + worldStarsOf(w.id), 0); }
   // A world also stays open if the player already earned stars in it (so adding a world mid-list never re-locks progress).
@@ -10262,7 +10263,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const home=HOME_SCREENS.find(h=>h.world===world.id);if(!home)return '';
     const stars=worldStarsOf(world.id),owned=ownsHomeScreen(home.id),equipped=equippedHomeScreen()===home.id;
     const bests=Object.values(myProfile.worldRecords?.[world.id]||{}),best=bests.length?Math.max(...bests.map(r=>r.bestAccuracy||0)):null;
-    return `<div class="cozy-panel world-reward"><button class="home-reward-preview" data-world-reward="${home.id}" aria-label="Preview ${home.name} home screen"><img src="${home.file}" alt="${home.name} home screen"></button><div><b>${escapeHtml(home.name)} home screen</b><p>${stars}/13 stars to unlock · ${stars}/15 mastered</p>${best===null?'':`<p>Best level accuracy: ${formatAccuracy(best)}%</p>`}<div class="cozy-actions"><button data-world-reward="${home.id}">Preview</button>${owned?`<button data-equip-world="${home.id}" ${equipped?'disabled':''}>${equipped?'Equipped':'Equip'}</button>`:stars>=13?`<button data-claim-world="${world.id}">Claim home screen</button>`:''}</div></div></div>`;
+    return `<div class="cozy-panel world-reward"><button class="home-reward-preview" data-world-reward="${home.id}" aria-label="Preview ${home.name} home screen"><img src="${home.file}" alt="${home.name} home screen"></button><div><b>${escapeHtml(home.name)} home screen</b><p>${worldSceneEarned(world.id)?'Last level cleared':'Earn a star on Level '+WORLD_LEVELS+' to unlock'} · ${stars}/15 mastered</p>${best===null?'':`<p>Best level accuracy: ${formatAccuracy(best)}%</p>`}<div class="cozy-actions"><button data-world-reward="${home.id}">Preview</button>${owned?`<button data-equip-world="${home.id}" ${equipped?'disabled':''}>${equipped?'Equipped':'Equip'}</button>`:worldSceneEarned(world.id)?`<button data-claim-world="${world.id}">Claim home screen</button>`:''}</div></div></div>`;
   }
   function survivalRecordsHtml(){
     const data=myProfile.survival||{},stats=myProfile.modeStats?.survival||{},history=(myProfile.attemptHistory||[]).filter(r=>r.mode==='survival').slice(-5).reverse();
@@ -11658,11 +11659,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ACHIEVEMENTS.push({ id: `monthly-${mm}`, cat: "Monthly", name: `${name} Challenge`, desc: `Finish the ${name} Monthly Challenge`, target: 1, reward: 0, bg: m.id, bgLabel: m.label,
       progress: () => (((myProfile.stats || {})["mc" + mm] || 0) >= 1 || (myProfile.monthly && myProfile.monthly.done && String(myProfile.monthly.key || "").slice(5) === mm)) ? 1 : 0 });
   });
-  // Worlds: 13 or more of the 15 stars beats a world and earns its home screen picture; all 15 stars pays coins.
+  // Worlds: a star on the last level beats a world and earns its home screen picture; all 15 stars pays coins.
   WORLDS.forEach((w) => {
     const hs = HOME_SCREENS.find((h) => h.world === w.id);
-    ACHIEVEMENTS.push({ id: `world-beat-${w.id}`, cat: "Worlds", name: `Beat ${w.name}`, desc: `Earn 13 stars in ${w.name}`, target: 1, reward: hs ? 0 : 100,
-      home: hs ? hs.id : undefined, homeLabel: hs ? hs.name : undefined, progress: () => (worldStarsOf(w.id) >= 13 ? 1 : 0) });
+    ACHIEVEMENTS.push({ id: `world-beat-${w.id}`, cat: "Worlds", name: `Beat ${w.name}`, desc: `Earn a star on Level ${WORLD_LEVELS} of ${w.name}`, target: 1, reward: hs ? 0 : 100,
+      home: hs ? hs.id : undefined, homeLabel: hs ? hs.name : undefined, progress: () => (worldSceneEarned(w.id) ? 1 : 0) });
     ACHIEVEMENTS.push({ id: `world-perfect-${w.id}`, cat: "Worlds", name: `Perfect ${w.name}`, desc: `Earn all 15 stars in ${w.name}`, target: 1, reward: 100,
       progress: () => (worldStarsOf(w.id) >= 15 ? 1 : 0) });
   });
@@ -11696,11 +11697,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ACHIEVEMENTS.push({ id: o.awardId, cat: "Fantasy", name: f[0], desc: f[1], target: f[2], reward: 0, fantasy: o.id, fantasyLabel: o.name, progress: f[3] });
   });
   // Three more home screens with their own awards.
-  ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 7 rounds in a row", target: 7, reward: 0, home: "penguin", homeLabel: "Arctic", progress: ACH_STAT("bestStreak") });
-  ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 15 rounds in Survival", target: 15, reward: 0, home: "cactus", homeLabel: "Western", progress: () => survivalBest() });
-  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 25 spot-on guesses", target: 25, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
-  ACHIEVEMENTS.push({ id: "home-dragon", cat: "Fun", name: "Dragon slayer", desc: "Reach 30 in Survival", target: 30, reward: 0, home: "dragon", homeLabel: "Kingdom", progress: () => survivalBest() });
-  ACHIEVEMENTS.push({ id: "home-space", cat: "Worlds", name: "Star collector", desc: "Earn every star in every world", target: WORLDS.length * WORLD_LEVELS * 3, reward: 0, home: "space", homeLabel: "Space", progress: () => worldTotalStars() });
+  ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 5 rounds in a row", target: 5, reward: 0, home: "penguin", homeLabel: "Arctic", progress: ACH_STAT("bestStreak") });
+  ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 10 rounds in Survival", target: 10, reward: 0, home: "cactus", homeLabel: "Western", progress: () => survivalBest() });
+  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 15 spot-on guesses", target: 15, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
+  ACHIEVEMENTS.push({ id: "home-dragon", cat: "Fun", name: "Dragon slayer", desc: "Reach 20 in Survival", target: 20, reward: 0, home: "dragon", homeLabel: "Kingdom", progress: () => survivalBest() });
+  ACHIEVEMENTS.push({ id: "home-space", cat: "Worlds", name: "Star collector", desc: "Earn a star on the last level of every world", target: WORLDS.length, reward: 0, home: "space", homeLabel: "Space", progress: () => WORLDS.filter((w) => worldSceneEarned(w.id)).length });
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return !a.auto && achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
