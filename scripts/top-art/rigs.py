@@ -29,8 +29,9 @@ RIGS={
    fx=[dict(sheet='flame',x=426,y=1735,w=110,at=(.5,0),align='top',anim='flame',dur=.5,z='back'),
        dict(sheet='smoke',x=300,y=1790,w=190,at=(.5,.8),anim='rise',dur=4.2,delay=0,min_area=300),
        dict(sheet='smoke',x=560,y=1790,w=150,at=(.5,.8),anim='rise',dur=5,delay=2,min_area=300)]),
- 'lighthouse':dict(base=None,parts=[],patches=[],
-   fx=[dict(sheet='beam',x=440,y=312,w=700,at=(0,.5),anim='glow',dur=3.2,z='back',frames=[0],min_area=2000),
+ 'lighthouse':dict(base=None,parts=[],patches=[],hero2_erase=[(500,110,580,185)],hero2_wipe=[(300,20,400,140)],hero2_soft=[(340,130,400,185)],
+   fx=[dict(sheet='mug-steam',ref=True,frames=[0,1,2,3],x=432,y=470,w=58,at=(.5,1),anim='rise',dur=4.5,delay=0,min_area=300,dil=25),
+       dict(sheet='beam',x=440,y=312,w=700,at=(0,.5),anim='glow',dur=3.2,z='back',frames=[0],min_area=2000),
        dict(sheet='lamp-glow',x=412,y=313,w=320,at=(.5,.5),anim='glow',dur=2.4,frames=[0],min_area=2000)]),
  'underwater':dict(base='no-flipper',
    parts=[dict(name='flipper',base='no-flipper',mode='sil',pivot=('frac',.2,.8),anim='paddle')],
@@ -65,4 +66,13 @@ RIGS={
    patches=[dict(frame='blink',region=(280,40,570,320),anim='blink')],
    fx=[dict(sheet='flame',ref=True,frames=[0,1,2,3],x=244,y=1090,w=85,at=(.5,0),align='top',anim='flame',dur=.5,min_area=300,dil=25),
        dict(sheet='visor-glint',frames=[0,1,2,3],x=420,y=172,w=325,at=(.5,.5),anim='glint',dur=5,delay=2,min_area=2000,dil=15)]),
+}
+
+# Critter frame sheets: swap (or add) a critter's picture for stacked frames. i = critter index (0=a, 1=b, 2=extra).
+CRIT={
+ 'sunflower':[dict(i=0,sheet='bee-wings',dur=.24)],
+ 'games':[dict(i=0,sheet='seagull-flap',dur=.9)],
+ 'town':[dict(i=1,sheet='bird-flap',dur=.6)],
+ 'snacks':[dict(i=1,sheet='ant-walk',dur=.5)],
+ 'cactus':[dict(i=2,sheet='lizard-walk',dur=.6,scale=1.0)],
 }

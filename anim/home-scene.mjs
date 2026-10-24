@@ -8,7 +8,7 @@ const BASE = "anim/home-art/";
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
 // -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
 const CONFIG = {
-  corgi: { hero: "breathe", hero2: "sway", shadow: [[235, 1122, 270, 34, .3], [455, 1130, 150, 28, .3]], critters: [{ row: 40, size: 12, secs: 30, delay: 5, dir: 1, kind: "glide", faces: 1 }] },
+  corgi: { hero: "breathe", hero2: "sway", shadow: [[235, 1122, 270, 34, .3], [455, 1130, 150, 28, .3]], critters: [{ row: 36, size: 13, secs: 30, delay: 5, dir: 1, kind: "flutter", faces: 1 }, { row: 6, size: 7, secs: 22, delay: 9, dir: 1, kind: "fall", faces: 1 }] },
   games: { hero: "sway", hero2: "breathe", shadow: [[238, 1200, 150, 26, .28], [446, 1218, 130, 24, .3]], critters: [{ row: 31, size: 15, secs: 27, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 73, size: 12, secs: 38, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
   sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
   snacks: { hero: "sway", hero2: "breathe", shadow: [[245, 1168, 120, 22, .3], [492, 1178, 90, 20, .3]], critters: [{ row: 30, size: 14, secs: 28, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 74, size: 11, secs: 36, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
@@ -19,7 +19,7 @@ const CONFIG = {
   underwater: { hero: "breathe", hero2: "sway", shadow: [[250, 1160, 330, 26, .25], [520, 1168, 150, 22, .25]], critters: [{ row: 30, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 56, size: 12, secs: 40, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
   "toy-box": { hero: "sway", hero2: "breathe", shadow: [[272, 1176, 200, 26, .3], [525, 1176, 170, 24, .3]], critters: [{ row: 28, size: 13, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 80, size: 10, secs: 34, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
   penguin: { hero: "breathe", hero2: "sway", shadow: [[210, 1158, 230, 26, .3], [462, 1166, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 80, size: 12, secs: 40, delay: 12, dir: -1, kind: "scuttle", faces: 1 }] },
-  cactus: { hero: "sway", hero2: "breathe", shadow: [[230, 1176, 270, 30, .3], [444, 1196, 200, 28, .3]], critters: [{ row: 80, size: 12, secs: 36, delay: 4, dir: 1, kind: "scuttle", faces: 1 }, { row: 32, size: 14, secs: 34, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
+  cactus: { hero: "sway", hero2: "breathe", shadow: [[230, 1176, 270, 30, .3], [444, 1196, 200, 28, .3]], critters: [{ row: 80, size: 12, secs: 36, delay: 4, dir: 1, kind: "scuttle", faces: 1 }, { row: 32, size: 14, secs: 34, delay: 12, dir: -1, kind: "glide", faces: 1 }, { row: 77, size: 11, secs: 30, delay: 9, dir: -1, kind: "scuttle", faces: 1 }] },
   giraffe: { hero: "sway", hero2: "breathe", shadow: [[514, 1276, 250, 30, .3], [150, 1274, 120, 22, .3]], critters: [{ row: 28, size: 13, secs: 34, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 52, size: 12, secs: 36, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
   dragon: { hero: "breathe", hero2: "sway", shadow: [[220, 1238, 330, 28, .3], [510, 1238, 170, 24, .3]], critters: [{ row: 26, size: 13, secs: 34, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 50, size: 12, secs: 36, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
   space: { hero: "sway", hero2: "breathe", shadow: [[0, 0, 1, 1, 0]], critters: [{ row: 24, size: 13, secs: 40, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 50, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
@@ -60,13 +60,14 @@ export async function installHomeScene() {
   if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
   if (rig) {
     try {
-      const list = [rig.base, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames)].filter(Boolean);
+      const list = [rig.base, rig.hero2, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames), ...(rig.critFrames || []).flatMap((f) => f.frames)].filter(Boolean);
       const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
       rigImgs = new Map(list.map((l, i) => [l, loaded[i]]));
     } catch (e) { rig = null; rigImgs = null; }
     if (!home.isConnected || document.getElementById("home-art")) return;
   }
   if (rig && rig.base) hero = rigImgs.get(rig.base);
+  if (rig && rig.hero2) hero2 = rigImgs.get(rig.hero2);
   const root = document.createElement("div"); root.id = "home-art"; root.setAttribute("aria-hidden", "true");
   const stage = document.createElement("div"); stage.className = "hs-stage"; root.appendChild(stage);
   plate.className = "hs-plate"; plate.alt = ""; stage.appendChild(plate);
@@ -137,10 +138,23 @@ export async function installHomeScene() {
     const go = (e) => { e.preventDefault(); e.stopPropagation(); hop.classList.remove("hs-hopping"); void hop.offsetWidth; hop.classList.add("hs-hopping"); boing(); };
     zone.addEventListener("pointerdown", go);
   }
-  art.critters.forEach((c, i) => {
-    const cc = cfg.critters[i]; if (!cc) return;
-    const wrap = document.createElement("div"), img = crits[i];
-    wrap.className = "hs-crit hs-" + cc.kind + (cc.dir < 0 ? " hs-rtl" : "");
+  // Critters: the stored pictures, plus any extra creature that only exists as animation frames (rig.critFrames with c).
+  const defs = art.critters.map((c, i) => ({ c, img: crits[i], i }));
+  (rig && rig.critFrames || []).forEach((f) => { if (f.c) defs[f.i] = { c: { w: f.c.w, h: f.c.h, ab: { x: f.c.ab.x, y: f.c.ab.y, width: f.c.ab.width, height: f.c.ab.height } }, img: null, i: f.i }; });
+  defs.forEach(({ c, img: img0, i }) => {
+    const cc = cfg.critters[i]; if (!cc || !c) return;
+    const wrap = document.createElement("div"), fr = rig && (rig.critFrames || []).find((f) => f.i === i);
+    let img = img0;
+    if (fr) { // animated frames take the picture's place
+      img = document.createElement("div"); img.className = "hs-wingbox"; img.style.aspectRatio = c.w + "/" + c.h;
+      fr.frames.forEach((q, j) => {
+        const im = rigImgs.get(q).cloneNode(); im.alt = ""; im.className = "hs-fxf";
+        im.style.cssText = `left:${fr.cell.x}%;top:${fr.cell.y}%;width:${fr.cell.w}%;height:${fr.cell.h}%;animation-name:hsFx${fr.frames.length};animation-duration:${fr.dur}s;animation-delay:${j ? -((fr.frames.length - j) * fr.dur / fr.frames.length) : 0}s`;
+        img.appendChild(im);
+      });
+    }
+    if (!img) return;
+    wrap.className = "hs-crit hs-" + cc.kind + (cc.dir < 0 ? " hs-rtl" : "") + (fr ? " hs-framed" : "");
     // Size by the creature itself (the picture has transparent margins around it) and centre it on its visible part.
     const visible = c.ab.width / c.w, imgW = cc.size / visible;
     wrap.style.setProperty("--ct", cc.row + "%"); wrap.style.setProperty("--cw", imgW + "%");
