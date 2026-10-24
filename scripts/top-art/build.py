@@ -53,9 +53,36 @@ def build(scene):
         m=np.zeros((H,W),np.float32); m[y0+fe:y1-fe,x0+fe:x1-fe]=1; m=cv2.GaussianBlur(m,(0,0),fe/2.5)[:,:,None]
         full=(full*(1-m)+src*m).astype(np.uint8)
         rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
+    if cfg.get('erase') and not rig['base']:
+        # drop small detached bits (a baked-in splash) from the hero: components whose box lies inside a rectangle
+        full=ref.copy(); a=(full[:,:,3]>8).astype(np.uint8); n,lab,st,_=cv2.connectedComponentsWithStats(a,connectivity=8)
+        for (x0,y0,x1,y1) in cfg.get('wipe',[]): full[y0:y1,x0:x1,3]=0
+        for (x0,y0,x1,y1) in cfg['erase']:
+            for i in range(1,n):
+                x,y,w,h,ar=st[i]
+                if x>=x0 and y>=y0 and x+w<=x1 and y+h<=y1: full[lab==i,3]=0
+        rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
+    if cfg.get('hero2_erase'):
+        # the second object with some baked-in detached bit removed (e.g. a static steam wisp that an animated one replaces)
+        h2=hero(scene,'hero2').copy(); a=(h2[:,:,3]>8).astype(np.uint8); n,lab,st,_=cv2.connectedComponentsWithStats(a,connectivity=8)
+        for (x0,y0,x1,y1) in cfg['hero2_erase']:
+            for i in range(1,n):
+                x,y,w,h,ar=st[i]
+                if x>=x0 and y>=y0 and x+w<=x1 and y+h<=y1: h2[lab==i,3]=0
+        for (x0,y0,x1,y1) in cfg.get('hero2_wipe',[]): h2[y0:y1,x0:x1,3]=0
+        for (x0,y0,x1,y1) in cfg.get('hero2_soft',[]):
+            sub=h2[y0:y1,x0:x1,3]; sub[sub<250]=0
+        rig['hero2']=dict(file=save(h2,f'{scene}-hero2.webp'))
     for pi,p in enumerate(cfg.get('parts',[])):
         pname=p['name']
-        if 'tf' in p: img=piece(f'{scene}-{pname}'); tf=p['tf']
+        if 'place' in p:   # manual: centre (cx,cy) and width w in hero pixels, optional rotation (degrees, counter-clockwise)
+            img=piece(f'{scene}-{pname}')
+            if p.get('rotate'):
+                h_,w_=img.shape[:2]; d=int(np.hypot(h_,w_)); M=cv2.getRotationMatrix2D((w_/2,h_/2),p['rotate'],1.0); M[0,2]+=(d-w_)/2; M[1,2]+=(d-h_)/2
+                img=cv2.warpAffine(img,M,(d,d),flags=cv2.INTER_AREA if False else cv2.INTER_LINEAR,borderValue=(0,0,0,0))
+            c_,x0_,y0_=crop_alpha(img); cx,cy,pw=p['place']; s_=pw/c_.shape[1]
+            tf=dict(scale=s_,tx=cx-s_*(x0_+c_.shape[1]/2),ty=cy-s_*(y0_+c_.shape[0]/2))
+        elif 'tf' in p: img=piece(f'{scene}-{pname}'); tf=p['tf']
         else:
             r=solve_part2(scene,pname,p['base'],'hero',mode=p.get('mode','sil'),rots=p.get('rots',(0,)),scales=p.get('scales'),colthr=p.get('thr',40),ref_piece=p.get('ref_piece')); img=r['part']; tf=r['part_tf']
             print(scene,pname,'fit',r['fit'])
@@ -79,6 +106,9 @@ def build(scene):
         # keep the feather inside the region: shrink first
         m2=np.zeros((H,W),np.float32); m2[y0+fe:y1-fe,x0+fe:x1-fe]=1; m2=cv2.GaussianBlur(m2,(0,0),fe/2.5)
         out=w.copy(); out[:,:,3]=(w[:,:,3].astype(np.float32)*m2).astype(np.uint8)
+        for (ux0,uy0,ux1,uy1) in q.get('unred',[]):   # drop strongly red pixels (a baked-in flag that is animated separately)
+            sub=out[uy0:uy1,ux0:ux1]; rr=sub[:,:,0].astype(int); gg=sub[:,:,1].astype(int); bb=sub[:,:,2].astype(int)
+            msk=(rr>140)&(gg<110)&(bb<110); msk=cv2.dilate(msk.astype(np.uint8),np.ones((9,9),np.uint8))>0; sub[msk,3]=0
         crop=out[y0:y1,x0:x1]
         plc=dict(file=save(crop,f"{scene}-{q['frame']}.webp"),x=x0,y=y0,w=x1-x0,h=y1-y0,anim=q['anim']); rig['patches'].append(plc)
     for fi,q in enumerate(cfg.get('fx',[])):
@@ -102,10 +132,45 @@ def build(scene):
         ax,ay=q.get('at',(.5,.5)); bw_=cw*sc_; bh_=ch*sc_
         rig['fx'].append(dict(frames=frames,x=r1(q['x']-ax*bw_),y=r1(q['y']-ay*bh_),w=r1(bw_),h=r1(bh_),anim=q['anim'],dur=q.get('dur',3),delay=q.get('delay',0),z=q.get('z','front'),**({'ref':True} if q.get('ref') else {})))
     return rig
+def build_crit(scene,entries,rig):
+    """Critter frame sheets: each entry swaps (or adds) one critter's picture for stacked frames; frames are scaled so the creature
+       keeps the size of the original critter picture's visible part. Cell boxes are percentages of the critter picture."""
+    man=json.load(open(ROOT+'anim/home-art/manifest.json'))['assets']; info={a['name']:a for a in man if a.get('scene')==scene and a['name'].startswith('critter-')}
+    out=[]
+    for k,q in enumerate(entries):
+        sh=piece(f"{scene}-{q['sheet']}"); c,_,_=crop_alpha(sh)
+        comps=split_parts(c,min_area=q.get('min_area',500),dil=q.get('dil',31))
+        hs=sorted(t[3] for t in comps); mh=hs[len(hs)//2]; comps.sort(key=lambda t:(round((t[1]+t[3]/2)/(mh*.8)),t[0]))
+        if q.get('frames'): comps=[comps[i] for i in q['frames']]
+        cw=max(t[2] for t in comps); ch=max(t[3] for t in comps)
+        if q['i']<2 and f"critter-{scene}-{'ab'[q['i']]}.png" in info:
+            a=info[f"critter-{scene}-{'ab'[q['i']]}.png"]; W_,H_=a['width'],a['height']; ab=a['alphaBounds']; ex=False
+            sc_=min(ab['width']/cw,ab['height']/ch)
+            bx=ab['x']+ab['width']/2; by=ab['y']+ab['height']/2
+        else: # extra critter: its own canvas
+            sc_=q.get('scale',0.5); W_=round(cw*sc_*1.1); H_=round(ch*sc_*1.1); ab=dict(x=round(W_*.05),y=round(H_*.05),width=round(cw*sc_),height=round(ch*sc_)); bx=W_/2; by=H_/2; ex=True
+        cell_w=cw*sc_; cell_h=ch*sc_; f=min(1.0,SUPER*q.get('px',1.0)*(0.35))   # runtime critters are tiny on screen: keep frames light
+        frames=[]
+        for j,(x,y,w,h,pc) in enumerate(comps):
+            cell=np.zeros((ch,cw,4),np.uint8); crop=pc[y:y+h,x:x+w]; cell[(ch-h)//2:(ch-h)//2+h,(cw-w)//2:(cw-w)//2+w]=crop
+            if q.get('flip'): cell=cell[:,::-1].copy()
+            tw=max(1,round(cell_w*q.get('keep',0.5))); th=max(1,round(cell_h*q.get('keep',0.5)))
+            cell=cv2.resize(cell,(tw,th),interpolation=cv2.INTER_AREA)
+            frames.append(dict(file=save(cell,f"{scene}-crit{k}-{j}.webp")))
+        ent=dict(i=q['i'],frames=frames,dur=q.get('dur',.5),
+                 cell=dict(x=r1((bx-cell_w/2)/W_*100),y=r1((by-cell_h/2)/H_*100),w=r1(cell_w/W_*100),h=r1(cell_h/H_*100)))
+        if ex: ent['c']=dict(w=W_,h=H_,ab=ab)
+        out.append(ent)
+    rig['critFrames']=out
+
 if __name__=='__main__':
     rigs={}
     path=ROOT+'anim/home-art/top/rig.json'
     if os.path.exists(path): rigs=json.load(open(path))
-    for sc in sys.argv[1:]: rigs[sc]=build(sc); print(sc,'ok',len(rigs[sc]['parts']),'parts',len(rigs[sc]['patches']),'patches')
+    from rigs import CRIT
+    for sc in sys.argv[1:]:
+        rigs[sc]=build(sc)
+        if sc in CRIT: build_crit(sc,CRIT[sc],rigs[sc])
+        print(sc,'ok',len(rigs[sc]['parts']),'parts',len(rigs[sc]['patches']),'patches')
     json.dump(rigs,open(path,'w'),indent=1)
     open(ROOT+'anim/home-art-rig.mjs','w').write('// Generated by scripts/top-art/build.py - do not edit by hand.\nexport const HOME_RIG = '+json.dumps(rigs,separators=(",",":"))+';\n')
