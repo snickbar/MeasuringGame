@@ -24,7 +24,7 @@ export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const missed=voters.filter(id=>!Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
   const tilt=s.claim.kind==='correct'?0:8; // the bigger number is always on the right, so the right side sinks
   const at=ms=>live?` style="animation-delay:${Math.round(ms-age)}ms"`:'';
-  const pan=(side,cls,label,value)=>`<div class="bl-ss-end ${side}"><div class="bl-ss-hang ${cls}"${at(T.tip)}><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 4 30M50 0 96 30" stroke="#4a2c12" stroke-width="2.5" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="bl-ss-bowl"><span>${label}</span><strong${value.length>8?' class="long"':''}>${value}</strong></div></div></div>`;
+  const pan=(side,cls,label,value)=>`<div class="bl-ss-end ${side}"><div class="bl-ss-hang ${cls}"${at(T.tip)}><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 4 30M50 0 96 30" stroke="#51351f" stroke-width="5" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/><path d="M50 0 4 30M50 0 96 30" stroke="#efc66c" stroke-width="2" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="bl-ss-bowl"><span>${label}</span><strong${value.length>8?' class="long"':''}>${value}</strong></div></div></div>`;
   const seesaw=`<div class="bl-seesaw${live?' live':''}" style="--tilt:${tilt}deg" aria-label="The claim is ${s.claim.kind==='low'?'lower than':s.claim.kind==='high'?'higher than':'equal to'} the real answer"><div class="bl-ss-beam"${at(T.tip)}>${s.claim.kind==='high'?pan('l','real','Real answer',bluffNumber(s.q.answer))+pan('r','claim','The claim',bluffNumber(s.claim.value)):pan('l','claim','The claim',bluffNumber(s.claim.value))+pan('r','real','Real answer',bluffNumber(s.q.answer))}</div><div class="bl-ss-post"></div><div class="bl-ss-base"></div><div class="bl-ss-scale" aria-hidden="true">${['low','correct','high'].map(k=>`<b class="bl-v-${k}${k===s.claim.kind?' on':''}"${k===s.claim.kind?at(T.verdict):''}>${BLUFF_LABELS[k]}</b>`).join('')}</div></div>`;
   return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.png" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><b class="bl-maker-name">${esc(name(s.maker))}</b><span class="bl-pill faker">Faker</span><span class="bl-pill fooled">${s.autoClaim?'Auto claim':`${s.result.wrong} fooled`}</span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
 }
@@ -128,18 +128,25 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     else if(s.votes?.[me]){toast('FOOLED!');vibrate([60,40,60]);}
   }
   // Tick sounds and haptics for each dropped avatar, scheduled once per round from the summary's start.
+  function cancelRevealTimers(){timers.forEach(clearTimeout);timers=[];}
   function scheduleReveal(s,key){
-    timers.forEach(clearTimeout);timers=[];timersKey=key;
+    cancelRevealTimers();timersKey=key;
     if(reduced()||!visible())return;
+    const later=(fn,ms)=>timers.push(setTimeout(()=>{
+      const {room,leaving}=context(),current=room?.bluff;
+      if(leaving||!visible()||reduced()||room?.paused||room?.phase!=='bluff'||current?.stage!=='reveal'||current.showStand||room.gameId+':'+current.round!==key)return;
+      fn();
+    },ms));
     const T=bluffRevealTimes(s,true),{me}=context(),voters=s.order.filter(id=>id!==s.maker&&Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
-    timers.push(setTimeout(()=>sound('popup-open'),T.verdict));
-    voters.forEach((id,i)=>timers.push(setTimeout(()=>{sound('tick');if(id===me)vibrate(18);},T.drop0+i*T.step+330)));
-    if(voters.some(id=>s.votes[id]!==s.claim.kind))timers.push(setTimeout(()=>sound('tap'),T.judged));
+    later(()=>sound('popup-open'),T.verdict);
+    voters.forEach((id,i)=>later(()=>{sound('tick');if(id===me)vibrate(18);},T.drop0+i*T.step+330));
+    if(voters.some(id=>s.votes[id]!==s.claim.kind))later(()=>sound('tap'),T.judged);
   }
   function celebrateRound(){
     const {room}=context(),s=room?.bluff;
     if(s?.stage==='reveal'&&s.showStand&&visible()&&!room.paused){const key=room.gameId+':'+s.round;if(key!==rankingCueKey){rankingCueKey=key;if(bluffNewLeaders(s).length)sound('winner');}}
     if(!s||s.stage!=='reveal'||s.showStand||room.paused||!visible()){
+      cancelRevealTimers();
       if(celebrationKey)celebrationAbandoned=true;
       return;
     }
@@ -192,7 +199,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     else if(s.stage==='reveal'&&(manual||time>=s.endsAt))next=!s.showStand?{...s,showStand:true,startedAt:time,endsAt:time+60000}:s.round===s.total?{...s,stage:'over'}:dealBluff(s,question(),time);
     if(next)await work(()=>transact(room,next,me),true);
   }
-  function refresh(){const {room,leaving}=context();if(room?.phase==='bluff'&&!leaving){render();if(!handle)handle=setInterval(()=>{const c=context();if(c.leaving||c.room?.phase!=='bluff'){refresh();return;}clock();void advance();},300);void advance();}else{if(handle)clearInterval(handle);handle=null;signature='';animationStop?.();animationKey='';animationStop=null;animationNode=null;}}
+  function refresh(){const {room,leaving}=context();if(room?.phase==='bluff'&&!leaving){render();if(!handle)handle=setInterval(()=>{const c=context();if(c.leaving||c.room?.phase!=='bluff'){refresh();return;}clock();void advance();},300);void advance();}else{cancelRevealTimers();if(handle)clearInterval(handle);handle=null;signature='';animationStop?.();animationKey='';animationStop=null;animationNode=null;}}
   new MutationObserver(()=>refresh()).observe(element.parentElement,{attributes:true,attributeFilter:['class']});
   element.ownerDocument.addEventListener('visibilitychange',refresh);
   return {refresh,advance};
