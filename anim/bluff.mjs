@@ -50,7 +50,7 @@ export function revealBluff(s,now){
 // ---- Bots ----
 // A bot maker knows the answer. Easier bots mostly tell the truth or pick a lie at random; sharper bots lie more often and
 // choose the believable lie (the option closest to the real answer).
-const BOT_TRUTH={easy:.5,medium:.4,hard:.3},BOT_CLOSE_LIE={easy:.5,medium:.65,hard:.85};
+const BOT_TRUTH={easy:.2,medium:.3,hard:.35},BOT_CLOSE_LIE={easy:.3,medium:.55,hard:.8};
 export function botMakerChoice(s,difficulty='medium',rng=Math.random){
   const level=BOT_TRUTH[difficulty]?difficulty:'medium',options=s.options,truth=options.findIndex(o=>o.kind==='correct');
   if(rng()<BOT_TRUTH[level])return truth;
@@ -58,9 +58,10 @@ export function botMakerChoice(s,difficulty='medium',rng=Math.random){
   return (rng()<BOT_CLOSE_LIE[level]?lies[0]:lies[1]).i;
 }
 // A bot voter makes its own noisy estimate of the real answer (sharper bots are closer) and judges the claim against it.
-const BOT_NOISE={easy:.6,medium:.33,hard:.17};
+const BOT_NOISE={easy:.9,medium:.5,hard:.17},BOT_LAPSE={easy:.4,medium:.15,hard:0}; // lapse: how often a bot just guesses
 function gaussian(rng){let u=0;while(!u)u=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*rng());}
 export function botVoteChoice(s,difficulty='medium',rng=Math.random){
+  if(rng()<(BOT_LAPSE[difficulty]??BOT_LAPSE.medium))return ['low','correct','high'][Math.floor(rng()*3)];
   const sigma=BOT_NOISE[difficulty]??BOT_NOISE.medium,estimate=s.q.answer*Math.exp(sigma*gaussian(rng)),gap=Math.log(s.claim.value/estimate),tolerance=Math.log(1.12);
   return Math.abs(gap)<=tolerance?'correct':gap>0?'high':'low';
 }

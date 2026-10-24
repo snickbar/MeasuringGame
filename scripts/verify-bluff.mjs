@@ -127,7 +127,7 @@ for(const who of ['maker','guesser','missed'])for(const kind of ['low','correct'
   }
   assert(acc.easy<acc.medium&&acc.medium<acc.hard,'Sharper voter bots judge claims more accurately: '+JSON.stringify(acc));
   assert(acc.easy>.3&&acc.hard<.97&&acc.hard>.6,'Voter accuracy stays believable: '+JSON.stringify(acc));
-  assert(truth.easy>truth.medium&&truth.medium>truth.hard,'Sharper bot makers lie more often: '+JSON.stringify(truth));
+  assert(truth.easy<truth.medium&&truth.medium<truth.hard,'Sharper bot makers tell the truth more often (it pays against noisy voters): '+JSON.stringify(truth));
   assert(near.hard<near.medium&&near.medium<near.easy,'Sharper bot makers choose more believable lies: '+JSON.stringify(near));
   console.log('Bluff bots: voter accuracy',JSON.stringify(acc),'maker truth rate',JSON.stringify(truth),'lie distance',JSON.stringify(near));
 }
