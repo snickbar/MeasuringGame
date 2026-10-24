@@ -31,7 +31,7 @@ if (location.protocol === "file:") {
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
    (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
-  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg", underwater: "home-underwater.jpg", "toy-box": "home-toy-box.jpg" }, id = "ants";
+  var F = { ants: "anim/home-art/plate-ants.png", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg", underwater: "home-underwater.jpg", "toy-box": "home-toy-box.jpg" }, id = "ants";
   // Random picks any owned scene; it avoids repeating the last one only when there are 3 or more to choose from
   // (with just two, "never the same twice" would make them strictly alternate). window.mgPickHome is also used by the Home button.
   var G = typeof window !== "undefined" ? window : globalThis;
@@ -255,6 +255,18 @@ if (location.protocol === "file:") {
        larger/more zoomed-in bit by bit. */
     position: fixed; inset: 0;
     background-color: #c17a54; background-image: var(--home-bg, none); background-size: cover; background-position: center top; background-repeat: no-repeat;
+  }
+  /* Home hero layers: foreground sprites for scenes whose background is a plate with the subjects removed
+     (see layoutHomeHeroes). Hidden by default via display (not [hidden] - an ID/class display rule anywhere
+     else in this file would silently beat the attribute); JS sets display:block plus left/top/width/height
+     only for the current scene's sprites, then this idle sway/breathe keeps them from looking static. */
+  .home-hero { position: absolute; top: 0; left: 0; display: none; pointer-events: none; will-change: transform; }
+  #home-hero-1 { transform-origin: 50% 100%; animation: homeHeroSway 6s ease-in-out infinite; }
+  #home-hero-2 { transform-origin: 50% 50%; animation: homeHeroBreathe 5s ease-in-out infinite; }
+  @keyframes homeHeroSway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
+  @keyframes homeHeroBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+  @media (prefers-reduced-motion: reduce) {
+    .home-hero { animation: none; }
   }
   /* Picked shop background: a fixed picture behind every screen except Home. */
   body[data-bg]::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
@@ -3462,6 +3474,8 @@ if (location.protocol === "file:") {
 </div>
 
 <div id="home-screen" class="screen active">
+  <img id="home-hero-1" class="home-hero" src="anim/home-art/hero-ants.png" alt="" aria-hidden="true">
+  <img id="home-hero-2" class="home-hero" src="anim/home-art/hero2-ants.png" alt="" aria-hidden="true">
   <h1 id="home-title">Size Em Up!</h1>
   <img id="home-title-img" src="icons/home-title.png" alt="Size Em Up! A Party Game!">
 
@@ -5687,6 +5701,50 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.homeScreen;
     return id && homeScreenOf(id) && ownsHomeScreen(id) ? id : HOME_DEFAULT;
   }
+  // Some scenes' actual LIVE background differs from the flat photo the picker/preview shows (HOME_SCREENS'
+  // own .file): "ants" instead shows the matching background plate with its two subjects removed, since
+  // they're drawn separately by the hero layers below. KEEP IN SYNC with the F map in the top-of-page script.
+  const HOME_LIVE_BG = { ants: "anim/home-art/plate-ants.png" };
+  const homeLiveBgFile = (id) => HOME_LIVE_BG[id] || homeScreenOf(id).file;
+  // Home hero layers: scenes with separated foreground art (so far just "ants") get two extra sprites laid
+  // over the plate background instead of one flat photo, positioned from anim/home-art/manifest.json's
+  // targetBoundsInReference and given a slow idle animation (see the .home-hero CSS). The placement math
+  // mirrors the background's own background-size:cover;background-position:center top (scale by whichever
+  // axis needs more enlargement to cover the viewport, center horizontally, anchor to the top) so the
+  // sprites track the real background through any resize.
+  const HOME_HERO_REF_W = 704, HOME_HERO_REF_H = 1520;
+  const HOME_HEROES = {
+    ants: [
+      { el: "home-hero-1", pngW: 853, pngH: 1843, alpha: { x: 109, y: 40, w: 448, h: 1761 }, target: { x: 113, y: 465, w: 168, h: 685 } },
+      { el: "home-hero-2", pngW: 1024, pngH: 1536, alpha: { x: 18, y: 185, w: 990, h: 1140 }, target: { x: 206, y: 560, w: 452, h: 575 } },
+    ],
+  };
+  const HOME_HERO_ALL_IDS = Object.values(HOME_HEROES).flat().map((h) => h.el);
+  function currentlyShownHomeScreen() {
+    if (myProfile.randomEquip && myProfile.randomEquip.homeScreens) {
+      try { return localStorage.getItem("mg_homeLast") || HOME_DEFAULT; } catch (e) { return HOME_DEFAULT; }
+    }
+    return equippedHomeScreen();
+  }
+  function layoutHomeHeroes() {
+    const heroes = HOME_HEROES[currentlyShownHomeScreen()];
+    HOME_HERO_ALL_IDS.forEach((id) => { const el = document.getElementById(id); if (el) el.style.display = "none"; });
+    if (!heroes) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const scale = Math.max(vw / HOME_HERO_REF_W, vh / HOME_HERO_REF_H);
+    const offsetX = (vw - HOME_HERO_REF_W * scale) / 2;
+    heroes.forEach((h) => {
+      const el = document.getElementById(h.el);
+      if (!el) return;
+      const tx = offsetX + h.target.x * scale, ty = h.target.y * scale, tw = h.target.w * scale, th = h.target.h * scale;
+      const spriteScale = Math.min(tw / h.alpha.w, th / h.alpha.h);
+      el.style.width = `${h.pngW * spriteScale}px`;
+      el.style.height = `${h.pngH * spriteScale}px`;
+      el.style.left = `${tx - h.alpha.x * spriteScale}px`;
+      el.style.top = `${ty - h.alpha.y * spriteScale}px`;
+      el.style.display = "block";
+    });
+  }
   // The page picks its picture before the app (and the profile) has loaded, so what is chosen and what is owned
   // are copied to this device each time the profile arrives; the top-of-page script reads them.
   // True while myProfile is only the empty stand-in (no profile read yet, or this id has none): it knows nothing about
@@ -5698,7 +5756,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       localStorage.setItem("mg_homeOwned", JSON.stringify(HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen)));
     } catch (e) {}
     // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
-    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(equippedHomeScreen()).file}')`);
+    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) document.documentElement.style.setProperty("--home-bg", `url('${homeLiveBgFile(equippedHomeScreen())}')`);
+    layoutHomeHeroes();
   }
   const homeHowText = (h) => (h.world ? `Earn 13 stars in ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
   async function equipHomeScreen(id) {
@@ -11298,6 +11357,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAllButtonText);
   window.addEventListener("resize", fitAllButtonText);
+  window.addEventListener("resize", layoutHomeHeroes);
 
   // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
   const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
