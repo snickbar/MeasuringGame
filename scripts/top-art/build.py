@@ -106,6 +106,9 @@ def build(scene):
         # keep the feather inside the region: shrink first
         m2=np.zeros((H,W),np.float32); m2[y0+fe:y1-fe,x0+fe:x1-fe]=1; m2=cv2.GaussianBlur(m2,(0,0),fe/2.5)
         out=w.copy(); out[:,:,3]=(w[:,:,3].astype(np.float32)*m2).astype(np.uint8)
+        for (ux0,uy0,ux1,uy1) in q.get('unred',[]):   # drop strongly red pixels (a baked-in flag that is animated separately)
+            sub=out[uy0:uy1,ux0:ux1]; rr=sub[:,:,0].astype(int); gg=sub[:,:,1].astype(int); bb=sub[:,:,2].astype(int)
+            msk=(rr>140)&(gg<110)&(bb<110); msk=cv2.dilate(msk.astype(np.uint8),np.ones((9,9),np.uint8))>0; sub[msk,3]=0
         crop=out[y0:y1,x0:x1]
         plc=dict(file=save(crop,f"{scene}-{q['frame']}.webp"),x=x0,y=y0,w=x1-x0,h=y1-y0,anim=q['anim']); rig['patches'].append(plc)
     for fi,q in enumerate(cfg.get('fx',[])):
