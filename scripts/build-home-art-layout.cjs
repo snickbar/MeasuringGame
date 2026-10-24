@@ -4,7 +4,7 @@ const fs=require('fs'),path=require('path');
 const root=path.resolve(__dirname,'..'),man=JSON.parse(fs.readFileSync(path.join(root,'anim/home-art/manifest.json'),'utf8'));
 const REF_W=704,REF_H=1520,r=(n,d=3)=>Number(n.toFixed(d));
 // Hand-tuned placements measured against the original pictures (reference units), where the manifest's guide was off.
-const BOX={sunflower:{hero2:{x:30,y:455,w:355,h:780}},ants:{hero2:{x:180,y:565,w:476,h:560}}}, BY_HEIGHT={ants:['hero'],sunflower:['hero']};
+const BOX={games:{hero2:{x:140,y:513,w:197,h:703}},sunflower:{hero2:{x:30,y:455,w:355,h:780}},ants:{hero2:{x:180,y:565,w:476,h:560}}}, BY_HEIGHT={ants:['hero'],sunflower:['hero'],games:['hero']};
 const out={};
 for(const a of man.assets){
   if(!a.scene||['clouds.png','sparkles.png','coin-spin.png'].includes(a.name))continue; // shared sheets are described in shared-sprites.json

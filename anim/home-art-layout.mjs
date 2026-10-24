@@ -129,9 +129,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-games.webp",
-   "x": 38.624,
-   "y": 33.405,
-   "w": 47.876,
+   "x": 38.601,
+   "y": 33.362,
+   "w": 47.92,
    "sw": 854,
    "sh": 1842,
    "ab": {
