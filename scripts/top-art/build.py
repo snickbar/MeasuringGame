@@ -48,7 +48,9 @@ def build(scene):
         # paint over a region of the base with the original hero's pixels (e.g. erase a baked-in tail), feathered
         bf=cfg['base_fix']; x0,y0,x1,y1=bf['region']; fe=bf.get('feather',10)
         full=np.zeros((H,W,4),np.uint8); b=piece(f"{scene}-{cfg['base']}"); full=warp_to_ref(b,register(b,ref),ref.shape).astype(np.float32)
-        src=ref.astype(np.float32); m=np.zeros((H,W),np.float32); m[y0+fe:y1-fe,x0+fe:x1-fe]=1; m=cv2.GaussianBlur(m,(0,0),fe/2.5)[:,:,None]
+        if bf.get('src'): sp=piece(f"{scene}-{bf['src']}"); src=warp_to_ref(sp,register(sp,ref),ref.shape).astype(np.float32)
+        else: src=ref.astype(np.float32)
+        m=np.zeros((H,W),np.float32); m[y0+fe:y1-fe,x0+fe:x1-fe]=1; m=cv2.GaussianBlur(m,(0,0),fe/2.5)[:,:,None]
         full=(full*(1-m)+src*m).astype(np.uint8)
         rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
     for pi,p in enumerate(cfg.get('parts',[])):

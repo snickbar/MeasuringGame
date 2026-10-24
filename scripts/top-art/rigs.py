@@ -35,7 +35,8 @@ RIGS={
    patches=[dict(frame='eyes-open',region=(340,500,800,830),anim='peek')],
    fx=[dict(sheet='bubbles',crop=(0,0,1,.55),dil=400,x=655,y=700,w=120,at=(.5,1),align='bottom',anim='bubbles',dur=5,delay=0),
        dict(sheet='bubbles',crop=(0,0,1,.55),dil=400,x=655,y=700,w=120,at=(.5,1),align='bottom',anim='bubbles',dur=5,delay=2.5)]),
- 'toy-box':dict(base='with-antenna',
+ 'toy-box':dict(base='with-antenna',base_fix=dict(region=(520,700,850,1340),feather=8,src='no-arm'),
    parts=[dict(name='arm',base='no-arm',ref_piece=None,mode='sil',pivot=('frac',.35,.08),anim='wave')],
-   patches=[dict(frame='blink',region=(300,330,760,700),anim='blink')],),
+   patches=[dict(frame='blink',region=(300,330,760,700),anim='blink')],
+   fx=[dict(sheet='antenna-light',x=460,y=123,w=150,at=(.5,.5),anim='glow',dur=1.6,frames=[0],min_area=2000)]),
 }
