@@ -2,12 +2,27 @@
 // built from a clean background plate, the two foreground subjects (which sway / breathe) and critters that wander across.
 // Everything falls back to the original picture until every image has loaded, and is skipped with Animation: Reduced.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
+import { HOME_RIG } from "./home-art-rig.mjs";
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
 // -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
 const CONFIG = {
-  sunflower: { hero: "sway", hero2: "breathe", shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
+  corgi: { hero: "breathe", hero2: "sway", shadow: [[235, 1122, 270, 34, .3], [455, 1130, 150, 28, .3]], critters: [{ row: 40, size: 12, secs: 30, delay: 5, dir: 1, kind: "glide", faces: 1 }] },
+  games: { hero: "sway", hero2: "breathe", shadow: [[238, 1200, 150, 26, .28], [446, 1218, 130, 24, .3]], critters: [{ row: 31, size: 15, secs: 27, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 73, size: 12, secs: 38, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
+  sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
+  snacks: { hero: "sway", hero2: "breathe", shadow: [[245, 1168, 120, 22, .3], [492, 1178, 90, 20, .3]], critters: [{ row: 30, size: 14, secs: 28, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 74, size: 11, secs: 36, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
+  town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 77, size: 12, secs: 36, delay: 6, dir: 1, kind: "scuttle", faces: 1 }, { row: 40, size: 14, secs: 30, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
+  house: { hero: "sway", hero2: "breathe", shadow: [[190, 1285, 330, 30, .28], [470, 1348, 150, 26, .3]], critters: [{ row: 80, size: 12, secs: 34, delay: 6, dir: 1, kind: "scuttle", faces: 1 }] },
+  wheels: { hero: "sway", hero2: "breathe", shadow: [[258, 1198, 280, 30, .3], [455, 1210, 130, 24, .3]], critters: [{ row: 24, size: 16, secs: 60, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 44, size: 14, secs: 34, delay: 14, dir: -1, kind: "glide", faces: 1 }] },
+  lighthouse: { hero: "sway", hero2: "breathe", shadow: [[190, 1120, 300, 34, .3], [442, 1122, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 52, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
+  underwater: { hero: "breathe", hero2: "sway", shadow: [[250, 1160, 330, 26, .25], [520, 1168, 150, 22, .25]], critters: [{ row: 30, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 56, size: 12, secs: 40, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
+  "toy-box": { hero: "sway", hero2: "breathe", shadow: [[272, 1176, 200, 26, .3], [525, 1176, 170, 24, .3]], critters: [{ row: 28, size: 13, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 80, size: 10, secs: 34, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
+  penguin: { hero: "breathe", hero2: "sway", shadow: [[210, 1158, 230, 26, .3], [462, 1166, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 80, size: 12, secs: 40, delay: 12, dir: -1, kind: "scuttle", faces: 1 }] },
+  cactus: { hero: "sway", hero2: "breathe", shadow: [[230, 1176, 270, 30, .3], [444, 1196, 200, 28, .3]], critters: [{ row: 80, size: 12, secs: 36, delay: 4, dir: 1, kind: "scuttle", faces: 1 }, { row: 32, size: 14, secs: 34, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
+  giraffe: { hero: "sway", hero2: "breathe", shadow: [[514, 1276, 250, 30, .3], [150, 1274, 120, 22, .3]], critters: [{ row: 28, size: 13, secs: 34, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 52, size: 12, secs: 36, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
+  dragon: { hero: "breathe", hero2: "sway", shadow: [[220, 1238, 330, 28, .3], [510, 1238, 170, 24, .3]], critters: [{ row: 26, size: 13, secs: 34, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 50, size: 12, secs: 36, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
+  space: { hero: "sway", hero2: "breathe", shadow: [[0, 0, 1, 1, 0]], critters: [{ row: 24, size: 13, secs: 40, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 50, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
   ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
@@ -39,7 +54,19 @@ export async function installHomeScene() {
     imgs = await Promise.all([art.plate, art.hero, art.hero2, ...art.critters].map((l) => load(BASE + l.file)));
   } catch (e) { return; } // any missing picture: keep the original Home picture
   if (!home.isConnected || document.getElementById("home-art") || document.documentElement.dataset.motion === "reduce") return;
-  const [plate, hero, hero2, ...crits] = imgs;
+  let [plate, hero, hero2, ...crits] = imgs;
+  // Extra character art (redrawn base without its moving parts, the moving parts themselves, expression patches). All or nothing.
+  let rig = HOME_RIG[scene], rigImgs = null;
+  if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
+  if (rig) {
+    try {
+      const list = [rig.base, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames)].filter(Boolean);
+      const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
+      rigImgs = new Map(list.map((l, i) => [l, loaded[i]]));
+    } catch (e) { rig = null; rigImgs = null; }
+    if (!home.isConnected || document.getElementById("home-art")) return;
+  }
+  if (rig && rig.base) hero = rigImgs.get(rig.base);
   const root = document.createElement("div"); root.id = "home-art"; root.setAttribute("aria-hidden", "true");
   const stage = document.createElement("div"); stage.className = "hs-stage"; root.appendChild(stage);
   plate.className = "hs-plate"; plate.alt = ""; stage.appendChild(plate);
@@ -60,21 +87,47 @@ export async function installHomeScene() {
   place(hero2, art.hero2, "hs-back", cfg.hero2); // the second object sits behind the main subject (as in the original pictures)
   {
     // The main subject is built from the whole sprite (minus the cut-out parts) plus a copy of each part that moves on its own.
-    const spec = art.hero, W = spec.sw, H = spec.sh, pct = (x, y) => `${x / W * 100}% ${y / H * 100}%`;
+    const spec = art.hero, W = spec.sw, H = spec.sh, bp = (rig && rig.base) || { x: 0, y: 0, w: W, h: H };
+    const pct = (x, y) => `${(x - bp.x) / bp.w * 100}% ${(y - bp.y) / bp.h * 100}%`;
     const box = document.createElement("div");
     box.className = "hs-layer hs-front" + (cfg.hero ? " hs-" + cfg.hero : ""); box.style.cssText = `left:${spec.x}%;top:${spec.y}%;width:${spec.w}%;aspect-ratio:${W}/${H};transform-origin:${spec.ox}% ${spec.oy}%`;
     // The base picture has each moving part cut out as a notch from its right edge (parts must touch the right edge).
-    const P = (x, y) => `${x / W * 100}% ${y / H * 100}%`, notch = ["0 0", `${100}% 0`];
+    const P = (x, y) => `${(x - bp.x) / bp.w * 100}% ${(y - bp.y) / bp.h * 100}%`, notch = ["0 0", `${100}% 0`];
     (cfg.limbs || []).forEach((l) => l.poly.forEach(([x, y]) => notch.push(P(x, y))));
     notch.push("100% 100%", "0 100%");
     const hop = document.createElement("div"); hop.className = "hs-hop"; box.appendChild(hop);
     hero.className = "hs-part"; hero.alt = "";
+    const at = (img, q) => { img.style.left = q.x / W * 100 + "%"; img.style.top = q.y / H * 100 + "%"; img.style.width = q.w / W * 100 + "%"; img.style.height = q.h / H * 100 + "%"; };
+    if (rig && rig.base) at(hero, rig.base);
     hero.style.clipPath = `polygon(${notch.join(", ")})`;
     hop.appendChild(hero);
     (cfg.limbs || []).forEach((l) => {
       const arm = hero.cloneNode(); arm.className = "hs-part hs-" + l.anim; arm.style.clipPath = `polygon(${l.poly.map(([x, y]) => P(x, y)).join(", ")})`;
       arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); hop.appendChild(arm);
     });
+    if (rig) {
+      // Moving parts sit over the base (or behind it); each swings, wiggles or flaps about its own pivot.
+      rig.parts.forEach((q) => {
+        const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-" + q.anim; img.alt = ""; at(img, q);
+        img.style.transformOrigin = q.ox + "% " + q.oy + "%";
+        if (q.z === "back") hop.insertBefore(img, hop.firstChild); else hop.appendChild(img);
+      });
+      (rig.fx || []).forEach((q) => {
+        // Effect frames (flame, steam, sparkle...): a box holding every frame; the frames take turns, the box itself rises, pulses or glints.
+        const w = document.createElement("div"), n = q.frames.length;
+        w.className = "hs-rig hs-fx hs-fx-" + q.anim; w.style.cssText = `left:${q.x / W * 100}%;top:${q.y / H * 100}%;width:${q.w / W * 100}%;height:${q.h / H * 100}%;--fd:${q.dur}s;animation-delay:${q.delay}s`;
+        q.frames.forEach((fr, i) => {
+          const im = rigImgs.get(fr).cloneNode(); im.alt = ""; im.className = "hs-fxf";
+          if (n > 1) { im.style.animationName = "hsFx" + n; im.style.animationDuration = q.dur + "s"; im.style.animationDelay = (i ? -((n - i) * q.dur / n) : 0) + "s"; }
+          w.appendChild(im);
+        });
+        if (q.ref) { // placed in picture units on the stage (for effects that belong to the second object)
+          w.style.left = q.x / HOME_ART_REF.width * 100 + "%"; w.style.top = q.y / HOME_ART_REF.height * 100 + "%"; w.style.width = q.w / HOME_ART_REF.width * 100 + "%"; w.style.height = q.h / HOME_ART_REF.height * 100 + "%";
+          stage.appendChild(w);
+        } else if (q.z === "back") hop.insertBefore(w, hop.firstChild); else hop.appendChild(w);
+      });
+      rig.patches.forEach((q) => { const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); hop.appendChild(img); });
+    }
     stage.appendChild(box);
     // Tap the character on top: a springy hop (squash, stretch, settle) with a tiny boing and a light buzz.
     const zone = document.createElement("div"); zone.className = "hs-tap";

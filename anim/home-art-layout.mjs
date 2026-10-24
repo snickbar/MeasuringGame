@@ -129,9 +129,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-games.webp",
-   "x": 38.624,
-   "y": 33.405,
-   "w": 47.876,
+   "x": 38.601,
+   "y": 33.362,
+   "w": 47.92,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -190,9 +190,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-house.webp",
-   "x": 36.556,
-   "y": 32.6,
-   "w": 56.494,
+   "x": 32.741,
+   "y": 28.98,
+   "w": 60.653,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -206,9 +206,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-house.webp",
-   "x": -12.306,
-   "y": 35.2,
-   "w": 80.511,
+   "x": -14.316,
+   "y": 32.403,
+   "w": 84.534,
    "sw": 1068,
    "sh": 1473,
    "ab": {
@@ -251,9 +251,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-snacks.webp",
-   "x": 41.395,
-   "y": 25.026,
-   "w": 54.137,
+   "x": 43.499,
+   "y": 28.266,
+   "w": 51.129,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -267,9 +267,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-snacks.webp",
-   "x": 7.331,
-   "y": 23.589,
-   "w": 54.665,
+   "x": 8.451,
+   "y": 25.31,
+   "w": 52.974,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -312,9 +312,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-town.webp",
-   "x": 42.874,
-   "y": 21.717,
-   "w": 47.467,
+   "x": 40.534,
+   "y": 18.595,
+   "w": 51.387,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -328,9 +328,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-town.webp",
-   "x": 6.548,
-   "y": 17.932,
-   "w": 51.941,
+   "x": 4.923,
+   "y": 14.078,
+   "w": 55.625,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -373,8 +373,8 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-corgi.webp",
-   "x": 6.803,
-   "y": 45.363,
+   "x": 6.519,
+   "y": 45.495,
    "w": 53.006,
    "sw": 1148,
    "sh": 1370,
@@ -389,9 +389,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-corgi.webp",
-   "x": 33.816,
-   "y": 34.374,
-   "w": 57.661,
+   "x": 30.867,
+   "y": 30.367,
+   "w": 63.166,
    "sw": 1024,
    "sh": 1536,
    "ab": {
@@ -434,9 +434,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-wheels.webp",
-   "x": 10.333,
-   "y": 27.159,
-   "w": 52.283,
+   "x": 7.751,
+   "y": 21.778,
+   "w": 58.01,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -450,9 +450,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-wheels.webp",
-   "x": 35.591,
-   "y": 23.061,
-   "w": 59.027,
+   "x": 32.564,
+   "y": 19.313,
+   "w": 63.312,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -739,9 +739,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-cactus.webp",
-   "x": 36.345,
-   "y": 32.171,
-   "w": 49.422,
+   "x": 34.922,
+   "y": 28.99,
+   "w": 52.982,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -800,9 +800,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-giraffe.webp",
-   "x": 41.685,
-   "y": 28.715,
-   "w": 56.418,
+   "x": 42.428,
+   "y": 28.905,
+   "w": 56.628,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -816,9 +816,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-giraffe.webp",
-   "x": -6.598,
-   "y": 28.883,
-   "w": 58.609,
+   "x": -8.814,
+   "y": 24.212,
+   "w": 63.751,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -861,9 +861,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-dragon.webp",
-   "x": 9.257,
-   "y": 63.985,
-   "w": 46.587,
+   "x": 9.997,
+   "y": 64.719,
+   "w": 44.843,
    "sw": 1247,
    "sh": 1261,
    "ab": {
@@ -877,9 +877,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-dragon.webp",
-   "x": 42.45,
-   "y": 25.711,
-   "w": 56.878,
+   "x": 42.742,
+   "y": 26.323,
+   "w": 56.455,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -922,9 +922,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-space.webp",
-   "x": 39.003,
-   "y": 27.226,
-   "w": 52.564,
+   "x": 37.035,
+   "y": 24.444,
+   "w": 55.37,
    "sw": 853,
    "sh": 1843,
    "ab": {
