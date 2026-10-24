@@ -13,4 +13,7 @@ RIGS={
    parts=[dict(name='tail',base='no-tail',ref_piece='with-tail',mode='sil',pivot=('frac',.88,.78),anim='wag',z='back'),
           dict(name='ears',base='no-ears',mode='sil',split=True,pivot=['bottom-right','bottom-left'],anim=['earL','earR'])],
    patches=[dict(frame='pant',region=(580,545,900,800),anim='pant'),dict(frame='eyes-open',region=(545,400,905,535),anim='peek')]),
+ 'snacks':dict(base='no-leaves',
+   parts=[dict(name='leaves',base='no-leaves',mode='col',pivot='bottom',anim='sway')],
+   patches=[dict(frame='blink',region=(330,100,540,340),anim='blink')]),
 }

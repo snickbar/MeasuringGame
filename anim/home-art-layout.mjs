@@ -251,9 +251,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-snacks.webp",
-   "x": 41.395,
-   "y": 25.026,
-   "w": 54.137,
+   "x": 43.499,
+   "y": 28.266,
+   "w": 51.129,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -267,9 +267,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-snacks.webp",
-   "x": 7.331,
-   "y": 23.589,
-   "w": 54.665,
+   "x": 8.451,
+   "y": 25.31,
+   "w": 52.974,
    "sw": 853,
    "sh": 1843,
    "ab": {
