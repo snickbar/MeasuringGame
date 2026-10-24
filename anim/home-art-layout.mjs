@@ -800,9 +800,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-giraffe.webp",
-   "x": 41.685,
-   "y": 28.715,
-   "w": 56.418,
+   "x": 42.428,
+   "y": 28.905,
+   "w": 56.628,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -816,9 +816,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-giraffe.webp",
-   "x": -6.598,
-   "y": 28.883,
-   "w": 58.609,
+   "x": -8.814,
+   "y": 24.212,
+   "w": 63.751,
    "sw": 854,
    "sh": 1842,
    "ab": {
