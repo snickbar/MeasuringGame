@@ -4,11 +4,12 @@
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
-// fly: [row (% of picture height), visible width (% of picture width), seconds per crossing, start delay, direction, flutter]
+// critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
+// -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
 const CONFIG = {
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
-  ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 21, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide" }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter" }] },
+  ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 21, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
 };
 export const homeSceneHasArt = (scene) => !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
@@ -67,7 +68,7 @@ export async function installHomeScene() {
     wrap.style.setProperty("--ct", cc.row + "%"); wrap.style.setProperty("--cw", imgW + "%");
     wrap.style.setProperty("--cs", cc.secs + "s"); wrap.style.setProperty("--cd", cc.delay + "s");
     wrap.style.setProperty("--cx", ((c.ab.x + c.ab.width / 2) / c.w * 100) + "%"); wrap.style.setProperty("--cy", ((c.ab.y + c.ab.height / 2) / c.h * 100) + "%");
-    img.className = "hs-crit-img"; img.alt = ""; wrap.appendChild(img); stage.appendChild(wrap);
+    img.className = "hs-crit-img"; img.alt = ""; img.style.setProperty("--flip", cc.dir * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(img); stage.appendChild(wrap);
   });
   const size = () => {
     const w = home.clientWidth || innerWidth, h = home.clientHeight || innerHeight;
