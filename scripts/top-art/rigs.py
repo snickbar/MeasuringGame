@@ -53,4 +53,9 @@ RIGS={
    parts=[dict(name='tail',base='no-tail',mode='sil',pivot='top',anim='tailSwish',z='back'),
           dict(name='ears',base='no-ears',mode='sil',split=True,pivot=['right','left'],anim=['flickL','flickR'])],
    patches=[dict(frame='blink',region=(110,200,350,390),anim='blink')]),
+ 'dragon':dict(base='no-wings',
+   parts=[dict(name='wings',tf=dict(scale=.49,tx=192,ty=184),pivot=('frac',.6,.92),anim='flapS',z='back')],
+   patches=[dict(frame='eyes-open',region=(840,640,1130,870),anim='peek')],
+   fx=[dict(sheet='fire-breath',frames=[0,1,2,3],x=1165,y=880,w=300,at=(0,.5),anim='pop',dur=11,delay=5,min_area=300,dil=25),
+       dict(sheet='coin-glint',ref=True,frames=[3,4,5],x=514,y=502,w=150,at=(.5,.5),anim='glint',dur=4.5,delay=1,min_area=2000,dil=15)]),
 }
