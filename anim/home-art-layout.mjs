@@ -922,9 +922,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-space.webp",
-   "x": 39.003,
-   "y": 27.226,
-   "w": 52.564,
+   "x": 37.035,
+   "y": 24.444,
+   "w": 55.37,
    "sw": 853,
    "sh": 1843,
    "ab": {

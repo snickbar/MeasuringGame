@@ -58,4 +58,9 @@ RIGS={
    patches=[dict(frame='eyes-open',region=(840,640,1130,870),anim='peek')],
    fx=[dict(sheet='fire-breath',frames=[0,1,2,3],x=1165,y=880,w=300,at=(0,.5),anim='pop',dur=11,delay=5,min_area=300,dil=25),
        dict(sheet='coin-glint',ref=True,frames=[3,4,5],x=514,y=502,w=150,at=(.5,.5),anim='glint',dur=4.5,delay=1,min_area=2000,dil=15)]),
+ 'space':dict(base='no-arm',
+   parts=[dict(name='arm',base='no-arm',mode='sil',pivot='bottom-left',anim='wave')],
+   patches=[dict(frame='blink',region=(280,40,570,320),anim='blink')],
+   fx=[dict(sheet='flame',ref=True,frames=[0,1,2,3],x=244,y=1090,w=85,at=(.5,0),align='top',anim='flame',dur=.5,min_area=300,dil=25),
+       dict(sheet='visor-glint',frames=[0,1,2,3],x=420,y=172,w=325,at=(.5,.5),anim='glint',dur=5,delay=2,min_area=2000,dil=15)]),
 }
