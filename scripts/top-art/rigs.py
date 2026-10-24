@@ -16,4 +16,7 @@ RIGS={
  'snacks':dict(base='no-leaves',
    parts=[dict(name='leaves',base='no-leaves',mode='col',pivot='bottom',anim='sway')],
    patches=[dict(frame='blink',region=(330,100,540,340),anim='blink')]),
+ 'town':dict(base='no-flag',
+   parts=[dict(name='flag',base='no-flag',mode='col',pivot='bottom',anim='wagS')],
+   patches=[]),
 }
