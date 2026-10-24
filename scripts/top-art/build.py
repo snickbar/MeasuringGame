@@ -53,9 +53,25 @@ def build(scene):
         m=np.zeros((H,W),np.float32); m[y0+fe:y1-fe,x0+fe:x1-fe]=1; m=cv2.GaussianBlur(m,(0,0),fe/2.5)[:,:,None]
         full=(full*(1-m)+src*m).astype(np.uint8)
         rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
+    if cfg.get('erase') and not rig['base']:
+        # drop small detached bits (a baked-in splash) from the hero: components whose box lies inside a rectangle
+        full=ref.copy(); a=(full[:,:,3]>8).astype(np.uint8); n,lab,st,_=cv2.connectedComponentsWithStats(a,connectivity=8)
+        for (x0,y0,x1,y1) in cfg.get('wipe',[]): full[y0:y1,x0:x1,3]=0
+        for (x0,y0,x1,y1) in cfg['erase']:
+            for i in range(1,n):
+                x,y,w,h,ar=st[i]
+                if x>=x0 and y>=y0 and x+w<=x1 and y+h<=y1: full[lab==i,3]=0
+        rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
     for pi,p in enumerate(cfg.get('parts',[])):
         pname=p['name']
-        if 'tf' in p: img=piece(f'{scene}-{pname}'); tf=p['tf']
+        if 'place' in p:   # manual: centre (cx,cy) and width w in hero pixels, optional rotation (degrees, counter-clockwise)
+            img=piece(f'{scene}-{pname}')
+            if p.get('rotate'):
+                h_,w_=img.shape[:2]; d=int(np.hypot(h_,w_)); M=cv2.getRotationMatrix2D((w_/2,h_/2),p['rotate'],1.0); M[0,2]+=(d-w_)/2; M[1,2]+=(d-h_)/2
+                img=cv2.warpAffine(img,M,(d,d),flags=cv2.INTER_AREA if False else cv2.INTER_LINEAR,borderValue=(0,0,0,0))
+            c_,x0_,y0_=crop_alpha(img); cx,cy,pw=p['place']; s_=pw/c_.shape[1]
+            tf=dict(scale=s_,tx=cx-s_*(x0_+c_.shape[1]/2),ty=cy-s_*(y0_+c_.shape[0]/2))
+        elif 'tf' in p: img=piece(f'{scene}-{pname}'); tf=p['tf']
         else:
             r=solve_part2(scene,pname,p['base'],'hero',mode=p.get('mode','sil'),rots=p.get('rots',(0,)),scales=p.get('scales'),colthr=p.get('thr',40),ref_piece=p.get('ref_piece')); img=r['part']; tf=r['part_tf']
             print(scene,pname,'fit',r['fit'])
