@@ -11355,6 +11355,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const wbHeartsHtml = (lives, score) => `<div class="sv-hud"><div class="sv-hearts" id="wb-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="sv-acc">Score: <b>${score}</b></div></div>`;
   const wbNewRun = () => ({ runId: crypto.randomUUID(), finished: false, phase: "question", lives: WB_LIVES, score: 0, round: 1, used: new Set(), pair: null, picked: null, ok: null });
   function wbDim(o) { return (o.measurement && o.measurement.dimension) || "length"; }
+  // Deliberately vague (a few broad tiers) so the result never gives players numbers to write down and work from.
+  function wbHowMuch(ratio) {
+    if (ratio < 1.6) return "just a little bigger";
+    if (ratio < 3) return "somewhat bigger";
+    if (ratio < 10) return "quite a bit bigger";
+    if (ratio < 50) return "a lot bigger";
+    return "way, way bigger";
+  }
   // Rule: never show an object's measurement here - players would write the numbers down.
   function wbCardHtml(o, cls, disabled, opts) {
     const o2 = opts || {};
@@ -11374,9 +11382,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WB_COINS_PER} coins for every right pick past your own best.</div></div>
-        ${wbRecordsHtml()}<button type="button" class="dc-btn" id="wb-start">Start</button>
-        <h3 class="cs-h">Best players</h3><div class="dc-card" id="wb-board">Loading...</div>`;
-      wbLoadBoard();
+        ${wbRecordsHtml()}<button type="button" class="dc-btn" id="wb-start">Start</button>`;
       return;
     }
     if (wb.phase === "question") {
@@ -11407,14 +11413,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const p = wb.pair, ok = wb.ok;
       const cls = (o) => (o.id === p.bigger.id ? "right" : (o.id === wb.picked ? "wrong" : ""));
       const card = (o) => wbCardHtml(o, cls(o), true, { tag: o.id === wb.picked ? "You picked" : "" });
-      const ratio = p.ratio >= 10 ? Math.round(p.ratio) : Number(p.ratio.toFixed(1));
+      const how = wbHowMuch(p.ratio);
       // A wrong pick: show the heart you had, crack it, then drop it (same moment as Survival, with the error sound).
       const losing = !ok && !wb.lossShown;
       el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score)}
         <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
         <div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div>
         <p class="dc-prompt">${ok ? "Correct!" : "Not quite."}</p>
-        <p class="wb-line"><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b> is about <b>${ratio}&times;</b> bigger</p>
+        <p class="wb-line"><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b> is <b>${how}</b></p>
         <div class="wb-tally">Round ${wb.round} &middot; Score ${wb.score}${wb.lives > 0 ? "" : " &middot; Out of lives"}</div>
         <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
       if (losing) {
@@ -11434,40 +11440,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="wl-big">${wb.score}</div><div class="dc-big">right pick${wb.score === 1 ? "" : "s"}</div><div class="dc-note" ${wb.newBest ? `data-personal-best="${wb.runId}"` : ""}>${wb.newBest ? "New personal best!" : `Your best: ${best}`}</div>${wb.gain ? `<div class="dc-note">+${wb.gain} coins</div>` : ""}<div class="dc-note">${wb.round} round${wb.round === 1 ? "" : "s"} played</div></div>
       <button type="button" class="dc-btn" id="wb-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
-      <h3 class="cs-h">Best players</h3><div class="dc-card" id="wb-board">Loading...</div>`;
-    wbLoadBoard();
+      ${wbRecordsHtml()}`;
   }
+  // Your own high scores only: best, runs played and your top five runs.
   function wbRecordsHtml() {
     const d = myProfile.whichBigger;
     if (!d || !d.runs) return "";
-    return `<div class="dc-card"><div class="dc-big">Your records</div><div class="dc-note">Best: ${d.best || 0} right pick${d.best === 1 ? "" : "s"} &middot; ${d.runs} run${d.runs === 1 ? "" : "s"} played</div></div>`;
+    const top = (Array.isArray(d.top) ? d.top : Object.values(d.top || {})).slice(0, 5);
+    const rows = top.map((r, i) => `<div class="dc-lb-row"><span class="dc-lb-rank">${i + 1}</span><span class="dc-lb-name">${new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
+    return `<h3 class="cs-h">Your high scores</h3><div class="dc-card"><div class="dc-note">Best: ${d.best || 0} right pick${d.best === 1 ? "" : "s"} &middot; ${d.runs} run${d.runs === 1 ? "" : "s"} played</div>${rows}</div>`;
   }
-  // Run over: save the best (coins only for picks beyond the old best), post it, count the run.
+  // Run over: save the best and your top five (coins only for picks beyond the old best).
   function wbFinish() {
     if (wb.finished) return; wb.finished = true;
     const old = wbBest(), score = wb.score;
     wb.newBest = score > old; wb.gain = Math.max(0, score - old) * WB_COINS_PER;
-    const name = (!currentName || checkName(currentName)) ? soloDisplayName() : currentName.trim().slice(0, 12);
-    completedAttempt({ key: wb.runId, mode: "whichbigger", score, rounds: wb.round, accuracy: wb.round ? Math.round(100 * score / wb.round) : 0,
-      ...(score > 0 ? { board: { path: "whichbigger/" + deviceId, value: { n: name, s: score, t: Date.now() }, best: true } } : {}) });
-  }
-  async function wbLoadBoard() {
-    let rows = null;
-    try {
-      const snap = await get(query(ref(db, "whichbigger"), orderByChild("s"), limitToLast(50)));
-      rows = [];
-      snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") rows.push({ id: c.key, n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s }); });
-      rows.sort((x, y) => y.s - x.s);
-    } catch (e) { rows = null; }
-    const host = document.getElementById("wb-board");
-    if (!host || !wb) return;
-    if (!rows) { host.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { host.textContent = "No scores yet. Be the first!"; return; }
-    const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
-    const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
-    host.innerHTML = html;
-    const mineHtml = await boardMyRankHtml("whichbigger", rows, (v) => v);
-    if (mineHtml && document.getElementById("wb-board") === host && wb) host.innerHTML = html + mineHtml;
+    completedAttempt({ key: wb.runId, mode: "whichbigger", score, rounds: wb.round, accuracy: wb.round ? Math.round(100 * score / wb.round) : 0 });
   }
   function wbStop() { if (wbAnim) { try { wbAnim.destroy(); } catch (e) {} wbAnim = null; } }
   function wbShowResult() {
