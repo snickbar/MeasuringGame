@@ -986,6 +986,31 @@ if (location.protocol === "file:") {
   .dc-sub { margin: 0 0 12px; font-size: 14px; color: #6b3a05; }
   .dc-card { margin: 10px 0; padding: 14px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 16px; }
   .dc-card.dc-hot { background: linear-gradient(#fff3d1, #ffe2a0); border-color: #e8b95a; }
+  /* Monthly Challenge level list: a numbered trail, one card per level, pictures are silhouettes until seen. */
+  .mc-path { position: relative; padding-left: 6px; margin-top: 8px; }
+  .mc-path::before { content: ""; position: absolute; left: 25px; top: 14px; bottom: 30px; width: 5px; border-radius: 3px; background: repeating-linear-gradient(#ecdcc0 0 8px, transparent 8px 14px); }
+  .mc-node { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
+  .mc-dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #fff; background: #9a8d7a; border: 3px solid #f6ead2; z-index: 1; }
+  .mc-node.done .mc-dot { background: #2f9a5d; }
+  .mc-node.play .mc-dot { background: #d9811c; animation: mcPulse 1.6s ease-in-out infinite; }
+  @keyframes mcPulse { 50% { box-shadow: 0 0 0 7px rgba(217,129,28,.28); } }
+  :root[data-motion="reduce"] .mc-node.play .mc-dot { animation: none; }
+  .mc-card { background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 16px; padding: 10px; color: #1a1208; text-align: left; }
+  .mc-card[data-mo-level] { cursor: pointer; }
+  .mc-node.play .mc-card { border-color: #d9811c; }
+  .mc-node.lock .mc-card { opacity: .65; }
+  .mc-node.mega .mc-card { background: linear-gradient(#fff3d1, #ffe2a0); border-color: #e8b95a; }
+  .mc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; font-family: 'Fredoka', sans-serif; }
+  .mc-top b { font-size: 17px; }
+  .mc-card small { display: block; color: #6b5a47; font-weight: 600; font-size: 12px; }
+  .mc-node.mega .mc-s2 { white-space: nowrap; font-size: 11px; }
+  .mc-end { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; white-space: nowrap; }
+  .mc-pill { display: inline-block; padding: 3px 12px; border-radius: 99px; font-weight: 700; font-size: 13px; color: #fff; }
+  .mc-pill.ok { background: #2f9a5d; } .mc-pill.go { background: #d9811c; } .mc-pill.lk { background: #9a8d7a; }
+  .mc-ths { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 8px; max-width: 220px; }
+  .mc-th { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 9px; background: rgba(217,129,28,.12); }
+  .mc-th.sil { filter: brightness(0); opacity: .38; }
+  .mc-back { display: inline-block; margin: 0 0 4px; padding: 4px 10px; border: 0; background: none; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; color: #6b5a47; cursor: pointer; }
   .dc-big { font-size: 22px; color: #000; }
   .dc-note { margin-top: 6px; font-size: 13px; color: #000; }
   .dc-btn { display: block; width: 100%; margin: 12px 0 0; padding: 14px 10px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#ffd36a, #f2820f); color: #000; text-shadow: none; font: 700 18px 'Fredoka', sans-serif; text-align: center; box-shadow: 0 3px 0 rgba(74,44,18,.45); }
@@ -4357,7 +4382,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
   import { createObjectMemory } from "./anim/object-memory.mjs";
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
-  import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress } from "./anim/monthly-challenge.mjs";
+  import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress, monthlyLevelSplit, monthlyLevelStates, monthlyLockText, monthlyLevelCoins, monthlyReplayCoins, monthlySeenIndexes } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
   import { mountRoomQr, pendingRoomInvite, roomAppIntent, nativeRoomScanner } from "./anim/room-qr.mjs";
   import { installDebugTools } from "./anim/debug-tools.mjs";
@@ -10685,7 +10710,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Monthly Challenge: every monthly object once, one scored try a month ====================
   // Every question pairs one of THIS month's pack items with an ordinary object. Questions get harder
   // (a bigger size gap) as you go. Finishing pays coins; a global leaderboard ranks the month.
-  const MONTHLY_BASE_COINS = 20, MONTHLY_ACC_COINS = 30; // coins: base for finishing + up to 30 for accuracy
+  // Coins per level come from monthlyLevelCoins (anim/monthly-challenge.mjs); a replay pays half.
   const MONTHLY_BANDS = [[1.5, 4], [4, 12], [12, 40], [40, 150], [150, 1000]];
   const monthlyContentEl = document.getElementById("monthly-content");
   let mo = null, moAnim = null, moMain = null; // moMain: the real challenge, kept aside while a practice round is on screen
@@ -10699,8 +10724,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function monthlyPlayed() { const d = myProfile.monthly; return !!(d && d.key === monthlyKey() && d.format === MONTHLY_FORMAT && d.done); }
   function monthlyIcon() { const o = monthlyObjects(monthlyKey())[0]; return o ? o.image : "items/ant.webp"; }
   function monthlySub() {
-    const k = monthlyKey(), name = MONTH_NAMES[Number(k.slice(5)) - 1];
-    return monthlyPlayed() ? `${name}: done` : `${name} items, ${monthlyObjects(k).length} questions`;
+    const k = monthlyKey(), name = MONTH_NAMES[Number(k.slice(5)) - 1], d = myProfile.monthly;
+    const ok = d && d.key === k && d.format === MONTHLY_FORMAT;
+    if (ok && d.done) return `${name}: done`;
+    const st = monthlyLevelStates(ok ? d : null), next = [1, 2, 3].find((l) => st[l] === "play") || 1;
+    return `${name}: Level ${next} of 3`;
   }
   function monthlyLegacyCombosLocal(key, rngOverride) {
     const rng = rngOverride || dailyRng("size-em-up-monthly-" + key);
@@ -10769,13 +10797,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     const combos = await monthlyLoadCombos(key, saved);
     if (!monthlyScreenEl.classList.contains("active")) return;
-    const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, combos.length) : [];
-    mo = { key, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro", coins: (saved && saved.coins) || 0, practice: false };
+    const split = monthlyLevelSplit(combos, { monthly: monthlyObjects(key), objects: OBJECT_BY_ID });
+    const prog = JSON.parse(JSON.stringify((saved && saved.levels) || {}));
+    mo = { key, combos, all: combos.map(dailyQuestionFor), split, prog, fresh: !saved, phase: "hub", level: 0, questions: [], guesses: [], input: "", coins: 0, practice: false };
     moMain = null;
-    mo.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
-    if (guesses.length >= mo.questions.length && !(saved && saved.done)) { await monthlyFinish(); mo.phase = "done"; }
+    // A level whose last answer was saved but never finished (the app closed first): finish it now.
+    for (const l of [1, 2, 3, 4]) {
+      const lv = prog[l];
+      const gs = lv ? (Array.isArray(lv.guesses) ? lv.guesses : Object.values(lv.guesses || {})) : [];
+      if (lv && !lv.done && gs.length >= split[l].length) { monthlyOpenLevel(l); await monthlyFinish(); mo.phase = "hub"; }
+    }
+    mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = [];
     renderMonthly();
   }
+  const monthlyLevelGuesses = (l) => { const lv = mo.prog[l]; return lv ? (Array.isArray(lv.guesses) ? lv.guesses : Object.values(lv.guesses || {})).slice(0, mo.split[l].length) : []; };
+  // The pack's own object in a question (the other one is an ordinary partner object).
+  const monthlyPackObject = (q) => { const ids = new Set(monthlyObjects(mo.key).map((o) => o.id)); return OBJECT_BY_ID.get(ids.has(q.unitId) ? q.unitId : q.targetId); };
+  function monthlyOpenLevel(l) {
+    const lv = mo.prog[l] || {};
+    mo.level = l; mo.questions = mo.split[l].map((i) => mo.all[i]); mo.guesses = monthlyLevelGuesses(l);
+    mo.input = ""; mo.practice = false; mo.coins = lv.coins || 0;
+    mo.phase = lv.done ? "done" : (mo.guesses.length ? "question" : "intro");
+  }
+  function monthlyLevelObjects(l) { return mo.split[l].map((i) => monthlyPackObject(mo.combos[i])); }
   function monthlyStop() { if (moAnim) { try { moAnim.destroy(); } catch (e) {} moAnim = null; } }
   function monthlyAccs() { return mo.questions.map((q, i) => (mo.guesses[i] > 0 ? roundAccuracy(mo.guesses[i] / q.answer) : 0)); }
   // The month's picture is the backdrop from the intro until the results; it switches back to the player's own background after.
@@ -10792,12 +10836,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mo.phase === "question") rerollPerRound(mo, mo.guesses.length);
     const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
     const dots = (i) => `<div class="dc-dots">${Array.from({ length: mo.questions.length }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
+    // Pictures of a level's pack objects: black silhouettes until you've seen them in a game.
+    const thumbs = (idxs, seen) => `<div class="mc-ths">${idxs.map((i) => { const o = monthlyPackObject(mo.combos[i]); return `<img class="mc-th${seen.has(i) ? "" : " sil"}" src="${o.image}" alt="" draggable="false">`; }).join("")}</div>`;
+    if (mo.phase === "hub") {
+      monthlyStop();
+      const states = monthlyLevelStates({ levels: mo.prog });
+      const days = monthDaysLeft();
+      const node = (l) => {
+        const st = states[l], idxs = mo.split[l], seen = monthlySeenIndexes({ levels: mo.prog }, mo.split, l);
+        const lv = mo.prog[l] || {};
+        const best = st === "done" ? `<small>Best ${Math.round((lv.total || 0) / idxs.length * 10) / 10}</small>` : "";
+        const pill = st === "done" ? `<span class="mc-pill ok">\u2713 Done</span>` : st === "play" ? `<span class="mc-pill go">${monthlyLevelGuesses(l).length ? "Continue" : "Play"}</span>` : `<span class="mc-pill lk">\uD83D\uDD12</span>`;
+        const why = st === "lock" ? `<small>${monthlyLockText(l)}</small>` : "";
+        const title = l === 4 ? "MEGA" : `Level ${l}`;
+        const sub = l === 4 ? `All ${idxs.length} objects \u00b7 ${idxs.length} questions` : `${idxs.length} objects \u00b7 ${idxs.length} questions`;
+        return `<div class="mc-node ${st}${l === 4 ? " mega" : ""}"><div class="mc-dot">${l === 4 ? "\u2605" : l}</div>
+          <div class="mc-card"${st === "lock" ? "" : ` data-mo-level="${l}" role="button" tabindex="0"`}><div class="mc-top"><div><b>${title}</b><small class="mc-s2">${sub}</small></div><div class="mc-end">${pill}${best}${why}</div></div>${thumbs(idxs, seen)}</div></div>`;
+      };
+      el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${days} day${days === 1 ? "" : "s"} left this month</p><div class="mc-path">${[1, 2, 3, 4].map(node).join("")}</div>`;
+      return;
+    }
     if (mo.phase === "intro") {
       monthlyStop();
-      el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-        <div class="dc-card dc-hot"><div class="dc-big">${mo.questions.length} questions</div><div class="dc-note">See every object in this month's pack once, as the big or small object. Each is paired with an object outside the pack. Everyone gets the same questions on their first try. After that, practice with new comparisons all month.</div></div>
-        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${MONTHLY_BASE_COINS} for finishing, plus up to ${MONTHLY_ACC_COINS} more for accuracy.</div></div>
-        <button type="button" class="dc-btn" id="mo-start">Start</button>`;
+      const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
+      el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>
+        <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
+        <button type="button" class="dc-btn" id="mo-start">Start</button>
+        <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+      monthlyLoadBoard();
       return;
     }
     if (mo.phase === "question") {
@@ -10820,24 +10886,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     monthlyStop();
     const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10;
     const rows = mo.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
-    const best = (myProfile.monthly && myProfile.monthly.key === mo.key && typeof myProfile.monthly.best === "number") ? myProfile.monthly.best : null;
+    const lvTitle = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
     if (mo.practice) {
-      el.innerHTML = `<h2 class="dc-title">${name} Practice</h2><p class="dc-sub">New questions every round. No coins, and the leaderboard keeps your first try.</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${best !== null ? `<div class="dc-note">Your practice best: ${Math.round(best / ((myProfile.monthly && myProfile.monthly.bestRounds) || 5) * 10) / 10}%</div>` : ""}</div>
+      el.innerHTML = `<h2 class="dc-title">${name} ${lvTitle} replay</h2><p class="dc-sub">New questions. Half coins, and the leaderboard keeps your first try.</p>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
-      <button type="button" class="dc-btn" id="mo-practice">Practice again</button>
-      <button type="button" class="dc-btn" id="mo-main">Back to my challenge result</button>`;
+      <button type="button" class="dc-btn" id="mo-replay">Replay again</button>
+      <button type="button" class="dc-btn" id="mo-main">Back to my result</button>`;
       return;
     }
     const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
-    const bgNote = mbg ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Cosmetics, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
-    el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${monthDaysLeft()} day${monthDaysLeft() === 1 ? "" : "s"} left this month</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}${best !== null ? `<div class="dc-note">Your practice best: ${Math.round(best / ((myProfile.monthly && myProfile.monthly.bestRounds) || 5) * 10) / 10}%</div>` : ""}</div>
+    const monthDone = [1, 2, 3].every((l) => mo.prog[l] && mo.prog[l].done);
+    const bgNote = mbg && monthDone && mo.level !== 4 ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Style, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
+    el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${lvTitle}</h2>
+      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
-      <button type="button" class="dc-btn" id="mo-practice">Practice with new questions</button>
+      <button type="button" class="dc-btn" id="mo-replay">Replay for coins</button>
       <button type="button" class="dc-btn" id="mo-share">Share my result</button>
-      <h3 class="cs-h">${name} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+      <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
     monthlyLoadBoard();
   }
   async function monthlyRunReveal() {
@@ -10869,51 +10936,65 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Once, after the final guess: save the month, pay coins, post to the leaderboard, count the rounds.
   async function monthlyFinish() {
-    const accs=monthlyAccs(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10;
-    const coins=MONTHLY_BASE_COINS+Math.round(total/(mo.questions.length*100)*MONTHLY_ACC_COINS);mo.coins=coins;
-    const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
-    completedAttempt({key:'monthly_'+mo.key+'_'+MONTHLY_FORMAT,mode:'monthly',month:mo.key,accuracy:total/mo.questions.length,coins,
-      saved:{key:mo.key,format:MONTHLY_FORMAT,combos:mo.questions.map(q=>({unitId:q.unitId,targetId:q.targetId})),guesses:mo.guesses,done:true,total,coins},
-      board:{path:'monthly/'+monthlyBoardKey(mo.key)+'/'+deviceId,value:{n:name,s:monthlyBoardScore(total,mo.questions.length),a:accs.map(Math.round),t:Date.now()}}});
+    const accs = monthlyAccs(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10, avg = total / mo.questions.length;
+    const coins = monthlyLevelCoins(mo.level, avg); mo.coins = coins;
+    const name = (!currentName || checkName(currentName)) ? soloDisplayName() : currentName.trim().slice(0, 12);
+    completedAttempt({ key: 'monthly_' + mo.key + '_L' + mo.level + '_v' + MONTHLY_FORMAT, mode: 'monthly', month: mo.key, format: MONTHLY_FORMAT, level: mo.level, accuracy: avg, coins,
+      combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), saved: { guesses: mo.guesses.slice(), total, coins },
+      board: { path: 'monthly/' + monthlyBoardKey(mo.key, mo.level) + '/' + deviceId, value: { n: name, s: monthlyBoardScore(total, mo.questions.length), a: accs.map(Math.round), t: Date.now() } } });
+    mo.prog[mo.level] = { ...(mo.prog[mo.level] || {}), guesses: mo.guesses.slice(), done: true, coins, total };
     updateDailyBadge();
   }
-  // Practice round (any time after the real attempt): fresh random questions, same one-holiday-item rule,
-  // no coins and no leaderboard entry. Only a personal best is kept.
-  function monthlyStartPractice() {
+  // Replay (only after the real try of that level): fresh random questions about the same level's objects,
+  // no leaderboard entry, half the coins of a real try. Only a personal best is kept.
+  function monthlyStartReplay() {
     if (!mo) return;
     const main = mo.practice ? moMain : mo;
     moMain = main;
-    const rng = dailyRng("size-em-up-practice-" + main.key + "-" + Math.random());
-    mo = { key: main.key, questions: monthlyCombosLocal(main.key, rng).map(dailyQuestionFor), guesses: [], input: "", phase: "question", coins: 0, practice: true, runId:crypto.randomUUID() };
+    const rng = dailyRng("size-em-up-replay-" + main.key + "-" + Math.random());
+    const objs = monthlyLevelObjects(main.level);
+    const pairs = staggerOrder(createMonthlyPairs({ monthly: objs, ordinary: OBJECTS, rng, bands: MONTHLY_BANDS }), rng);
+    mo = { ...main, questions: pairs.map(dailyQuestionFor), guesses: [], input: "", phase: "question", coins: 0, practice: true, runId: crypto.randomUUID() };
     renderMonthly();
   }
   async function monthlyPracticeFinish() {
-    const accs=monthlyAccs(),total=accs.reduce((a,b)=>a+b,0);
-    completedAttempt({key:mo.runId,mode:'practice',month:mo.key,accuracy:total/mo.questions.length,total,rounds:mo.questions.length});
+    const accs = monthlyAccs(), total = accs.reduce((a, b) => a + b, 0);
+    mo.coins = monthlyReplayCoins(monthlyLevelCoins(mo.level, total / mo.questions.length));
+    completedAttempt({ key: mo.runId, mode: 'practice', month: mo.key, accuracy: total / mo.questions.length, total, rounds: mo.questions.length, coins: mo.coins });
   }
   async function monthlyLoadBoard() {
-    const key = mo && mo.key; let rows = null;
+    const key = mo && mo.key, level = mo && mo.level; let rows = null;
     try {
-      const snap = await get(query(ref(db, `monthly/${monthlyBoardKey(key)}`), orderByChild("s"), limitToLast(50)));
+      const snap = await get(query(ref(db, `monthly/${monthlyBoardKey(key, level)}`), orderByChild("s"), limitToLast(50)));
       rows = [];
       snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") rows.push({ id: c.key, n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s, a: Array.isArray(v.a) ? v.a : [] }); });
       rows.sort((x, y) => y.s - x.s);
     } catch (e) { rows = null; }
     const now = document.getElementById("mo-board");
-    if (!now || !mo || mo.key !== key) return;
+    if (!now || !mo || mo.key !== key || mo.level !== level) return;
     if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
     if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s / 5 * 10) / 10}%</span></div>`).join("");
     now.innerHTML = html;
-    const mineHtml = await boardMyRankHtml(`monthly/${monthlyBoardKey(key)}`, rows, (v) => `${Math.round(v / 5 * 10) / 10}%`);
-    if (mineHtml && document.getElementById("mo-board") === now && mo && mo.key === key) now.innerHTML = html + mineHtml;
+    const mineHtml = await boardMyRankHtml(`monthly/${monthlyBoardKey(key, level)}`, rows, (v) => `${Math.round(v / 5 * 10) / 10}%`);
+    if (mineHtml && document.getElementById("mo-board") === now && mo && mo.key === key && mo.level === level) now.innerHTML = html + mineHtml;
   }
+  const monthlyLevelTap = (e) => {
+    const n = mo && mo.phase === "hub" && e.target.closest("[data-mo-level]");
+    if (!n) return false;
+    const l = Number(n.dataset.moLevel);
+    if (monthlyLevelStates({ levels: mo.prog })[l] === "lock") return true;
+    monthlyOpenLevel(l); renderMonthly(); return true;
+  };
+  monthlyContentEl.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && monthlyLevelTap(e)) e.preventDefault(); });
   monthlyContentEl.addEventListener("click", async (e) => {
+    if (monthlyLevelTap(e)) return;
     const b = e.target.closest("button");
     if (!b || !mo) return;
+    if (b.id === "mo-levels") { monthlyStop(); mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = []; renderMonthly(); return; }
     if (b.id === "mo-start") { mo.phase = "question"; renderMonthly(); return; }
-    if (b.id === "mo-practice") { monthlyStartPractice(); return; }
+    if (b.id === "mo-replay") { monthlyStartReplay(); return; }
     if (b.id === "mo-main") { if (moMain) { mo = moMain; moMain = null; renderMonthly(); } return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
@@ -10926,10 +11007,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "mo-submit") {
       if (mo.phase !== "question") return;
       const g = parseFloat(mo.input); if (!(g > 0)) return;
-      saveSoloRound(mo.practice?'practice':'monthly',mo.questions[mo.guesses.length],g,mo.guesses.length,mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT);
+      saveSoloRound(mo.practice?'practice':'monthly',mo.questions[mo.guesses.length],g,mo.guesses.length,mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT);
       mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick"); vibrate(20);
       if (mo.practice) { if (mo.guesses.length >= mo.questions.length) await monthlyPracticeFinish(); renderMonthly(); return; }
-      try { await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.questions.map(q => ({ unitId: q.unitId, targetId: q.targetId })), guesses: mo.guesses, done: false }); } catch (err) {}
+      try {
+        // Progress is saved per level, so leaving mid-level resumes at the next question.
+        mo.prog[mo.level] = { ...(mo.prog[mo.level] || {}), guesses: mo.guesses.slice(), done: false };
+        if (mo.fresh) { mo.fresh = false; await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), levels: { [mo.level]: { guesses: mo.guesses, done: false } }, done: false }); }
+        else await update(ref(db, `profiles/${deviceId}/monthly/levels/${mo.level}`), { guesses: mo.guesses, done: false });
+      } catch (err) {}
       if (mo.guesses.length >= mo.questions.length) await monthlyFinish();
       renderMonthly(); return;
     }
@@ -10943,7 +11029,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "mo-next") { mo.phase = mo.guesses.length >= mo.questions.length ? "done" : "question"; renderMonthly(); return; }
     if (b.id === "mo-share") {
       const accs = monthlyAccs(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
-      const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} Challenge ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${mo.questions.length * 100}`;
+      const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} ${mo.level === 4 ? "Mega" : "Level " + mo.level} ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${mo.questions.length * 100}`;
       const url = "https://size-em-up.web.app/?play=monthly";
       const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
       if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
@@ -18081,7 +18167,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
       if(active('worlds-screen')&&wl?.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};
       if(active('daily-screen')&&daily?.phase==='done')return {session:'daily_'+daily.date,element:document.querySelector('#daily-content .dc-card.dc-hot')};
-      if(active('monthly-screen')&&mo?.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
+      if(active('monthly-screen')&&mo?.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
       if(active('survival-screen')&&sv?.phase==='over')return {session:sv.runId,element:document.querySelector('#survival-content .dc-card.dc-hot')};
       if(active('hs-screen')&&roomState.hs?.stage==='over')return {session:gameRewardKey(currentRoomCode,roomState),element:hsContentEl.querySelector('.hs-end-hero')};
       return null;

@@ -65,14 +65,23 @@ assert.deepEqual(profile.dailyHistory,{'2026-10-18':{s:90,t:5}},'every played da
 profile=applyCareerRecord(profile,{...daily,key:'daily_2026-10-19',date:'2026-10-19',yesterday:'2026-10-18',accuracy:70,t:6,saved:{date:'2026-10-19',guesses:[1,2,3]}});
 assert.deepEqual(profile.dailyHistory,{'2026-10-18':{s:90,t:5},'2026-10-19':{s:70,t:6}},'a missed day never gets backfilled, a played day never evicted');
 
-// Monthly completion keeps the same kind of per-month history; practice rounds (mode 'practice') must not.
-const monthly={kind:'attempt',key:'monthly_2026-10_v1',mode:'monthly',month:'2026-10',accuracy:88,coins:40,saved:{key:'2026-10',done:true},t:7};
-profile=applyCareerRecord(profile,monthly);profile=applyCareerRecord(profile,monthly);
-assert.equal(profile.stats.monthlies,1);assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:88,t:7}});
-profile=applyCareerRecord(profile,{...monthly,key:'monthly_2026-11_v1',month:'2026-11',accuracy:95,t:8});
-assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:88,t:7},'2026-11':{s:95,t:8}});
-profile=applyCareerRecord(profile,{kind:'attempt',key:'practice1',mode:'practice',month:'2026-11',accuracy:99,total:99,rounds:10,t:9});
-assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:88,t:7},'2026-11':{s:95,t:8}},'a practice round is not a monthly completion');
+// Monthly: each LEVEL finished for real is one record. The month counts (history, stats) once levels 1-3 are all
+// done; Mega (level 4) is a bonus. Replays (mode 'practice') pay coins but never touch progress or history.
+const lvl=(n,month,acc,t,extra={})=>({kind:'attempt',key:`monthly_${month}_L${n}_v4`,mode:'monthly',month,format:4,level:n,accuracy:acc,coins:10,saved:{guesses:[1,2,3],total:acc*3},t,...extra});
+const coinsBefore=profile.coins;
+profile=applyCareerRecord(profile,lvl(1,'2026-10',80,7));profile=applyCareerRecord(profile,lvl(1,'2026-10',80,7));
+assert.equal(profile.coins,coinsBefore+10,'a level record pays once');assert(!profile.monthly.done);assert.equal(profile.stats.monthlies||0,0);assert.deepEqual(profile.monthlyHistory||{},{});
+profile=applyCareerRecord(profile,lvl(2,'2026-10',90,8));assert(!profile.monthly.done);
+profile=applyCareerRecord(profile,lvl(3,'2026-10',100,9));
+assert(profile.monthly.done);assert.equal(profile.stats.monthlies,1);assert.equal(profile.stats.mc10,1);assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:90,t:9}});
+profile=applyCareerRecord(profile,lvl(4,'2026-10',50,10));
+assert.equal(profile.stats.monthlies,1,'Mega is a bonus and never recounts the month');assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:90,t:9}});assert(profile.monthly.levels[4].done);
+profile=applyCareerRecord(profile,lvl(1,'2026-11',95,11));
+assert(!profile.monthly.done,'a new month starts clean');assert.equal(profile.monthly.key,'2026-11');assert.equal(profile.monthly.levels[2],undefined);
+const replayCoinsBefore=profile.coins;
+profile=applyCareerRecord(profile,{kind:'attempt',key:'practice1',mode:'practice',month:'2026-11',accuracy:99,total:99,rounds:10,coins:5,t:12});
+assert.equal(profile.coins,replayCoinsBefore+5,'a replay pays its (half) coins');assert.equal(profile.monthly.levels[1].done,true);
+assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:90,t:9}},'a replay is not a monthly completion');
 
 // Team vs Team match records keep a per-GAME history (not per-date, like daily/monthly) -
 // every team game played, not one slot per day, for the info screen's "your best teams" card.

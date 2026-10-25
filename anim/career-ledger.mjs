@@ -151,10 +151,24 @@ export function applyCareerRecord(profile,record){
     result.daily={...record.saved,done:true};stats.dailies=(stats.dailies||0)+1;
     result.dailyHistory={...profile.dailyHistory,[record.date]:{s:record.accuracy||0,t:record.t}};
   }else if(record.mode==='monthly'){
-    result.monthly={...profile.monthly,...record.saved,done:true};coins=record.coins;
-    stats.monthlies=(stats.monthlies||0)+1;stats['mc'+record.month.slice(5)]=1;
-    result.monthlyHistory={...profile.monthlyHistory,[record.month]:{s:record.accuracy||0,t:record.t}};
+    // One record per monthly LEVEL finished for real (1-3: a third of the pack each; 4: the Mega run).
+    // The month counts as played once levels 1-3 are all done; Mega is a bonus and doesn't change that.
+    coins=Math.max(0,Math.floor(record.coins||0));
+    const same=profile.monthly&&profile.monthly.key===record.month&&profile.monthly.format===record.format;
+    const old=same?profile.monthly:{key:record.month,format:record.format,levels:{}};
+    const level=record.level||1,prior=old.levels?.[level]||{};
+    const levels={...old.levels,[level]:{...prior,...record.saved,acc:record.accuracy||0,done:true}};
+    const nowDone=[1,2,3].every(l=>levels[l]?.done),wasDone=!!old.done&&same;
+    result.monthly={...old,key:record.month,format:record.format,combos:record.combos||old.combos,levels,done:nowDone};
+    stats.monthlyLevels=(stats.monthlyLevels||0)+1;
+    if(nowDone&&!wasDone){
+      stats.monthlies=(stats.monthlies||0)+1;stats['mc'+record.month.slice(5)]=1;
+      const avg=([1,2,3].reduce((a,l)=>a+(levels[l].acc||0),0))/3;
+      result.monthlyHistory={...profile.monthlyHistory,[record.month]:{s:Math.round(avg*10)/10,t:record.t}};
+    }
   }else if(record.mode==='practice'){
+    // A replay of a monthly level: no leaderboard, no progress; it pays half the coins a real try would.
+    coins=Math.max(0,Math.floor(record.coins||0));
     const old=profile.monthly||{},prev=(old.best||0)/(old.bestRounds||5);
     if(record.total/record.rounds>prev)result.monthly={...old,best:record.total,bestRounds:record.rounds};
   }
