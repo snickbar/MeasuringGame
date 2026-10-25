@@ -312,9 +312,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-town.webp",
-   "x": 40.534,
-   "y": 18.595,
-   "w": 51.387,
+   "x": 45.486,
+   "y": 28.546,
+   "w": 41.245,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -328,9 +328,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-town.webp",
-   "x": 4.923,
-   "y": 14.078,
-   "w": 55.625,
+   "x": 11.739,
+   "y": 27.394,
+   "w": 41.961,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -434,9 +434,9 @@ export const HOME_ART = {
   },
   "hero": {
    "file": "hero-wheels.webp",
-   "x": 7.751,
-   "y": 21.778,
-   "w": 58.01,
+   "x": 10.699,
+   "y": 27.582,
+   "w": 52.121,
    "sw": 853,
    "sh": 1843,
    "ab": {
@@ -450,9 +450,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-wheels.webp",
-   "x": 32.564,
-   "y": 19.313,
-   "w": 63.312,
+   "x": 36.631,
+   "y": 26.934,
+   "w": 55.301,
    "sw": 854,
    "sh": 1842,
    "ab": {
@@ -816,9 +816,9 @@ export const HOME_ART = {
   },
   "hero2": {
    "file": "hero2-giraffe.webp",
-   "x": -8.814,
-   "y": 24.212,
-   "w": 63.751,
+   "x": -5.921,
+   "y": 29.931,
+   "w": 57.628,
    "sw": 854,
    "sh": 1842,
    "ab": {

@@ -16,6 +16,31 @@ def place_crop(img,tf,name,down=True):
     h0,w0=img.shape[:2]
     cw_src=crop_alpha(img)[0].shape[1]; ch_src=crop_alpha(img)[0].shape[0]
     return dict(file=save(c,name),x=r1(tf['tx']+x0*s),y=r1(tf['ty']+y0*s),w=r1(cw_src*s),h=r1(ch_src*s))
+
+def refine_piece(full,tf,ref):
+    """Nudge (dx,dy,scale,rot) of one split piece so its colours match the original hero where it covers it."""
+    H,W=ref.shape[:2]; a=(full[:,:,3]>8)
+    ys,xs=np.nonzero(a); cx0,cy0=xs.mean(),ys.mean()
+    rgb=ref[:,:,:3].astype(np.float32); ra=ref[:,:,3]>200
+    def cost(q):
+        dx,dy,ds,rot=q; sc=tf['scale']*ds
+        M=cv2.getRotationMatrix2D((cx0,cy0),rot,1.0); M=np.vstack([M,[0,0,1]])
+        T=np.array([[sc,0,tf['tx']+dx+(1-ds)*0],[0,sc,tf['ty']+dy],[0,0,1]],np.float64)
+        A=(T@M)[:2]; w=cv2.warpAffine(full,A,(W,H),flags=cv2.INTER_LINEAR,borderValue=(0,0,0,0))
+        m=(w[:,:,3]>250); m=cv2.erode(m.astype(np.uint8),np.ones((5,5),np.uint8))>0
+        if m.sum()<200: return 1e9
+        d=np.abs(w[:,:,:3].astype(np.float32)-rgb).mean(2); outside=(~ra)&m
+        return d[m&ra].mean()+ 80.0*outside.sum()/m.sum()
+    q=[0.0,0.0,1.0,0.0]; best=cost(q); steps=[8,8,.04,3]
+    for _ in range(5):
+        for i in range(4):
+            for sg in (1,-1):
+                while True:
+                    t=list(q); t[i]+=sg*steps[i]; c=cost(t)
+                    if c<best-1e-3: best,q=c,t
+                    else: break
+        steps=[x/2 for x in steps]
+    print('  refine',[round(v,2) for v in q],round(best,2)); return q
 def split_parts(c,min_area=60,dil=9):
     a=(c[:,:,3]>8).astype(np.uint8); m=cv2.dilate(a,np.ones((dil,dil),np.uint8)); n,lab,st,_=cv2.connectedComponentsWithStats(m)
     comps=[]
@@ -93,7 +118,13 @@ def build(scene):
             c,x0,y0=crop_alpha(img)
             for k,(x,y,w,h,pc) in enumerate(split_parts(c)):
                 full=np.zeros_like(img); full[y0:y0+c.shape[0],x0:x0+c.shape[1]]=pc
-                plc=place_crop(full,tf,f'{scene}-{pname}{k}.webp'); pv=pivot_of(plc,p['pivot'][k] if isinstance(p['pivot'],list) and isinstance(p['pivot'][0],(list,tuple,str)) else p['pivot'])
+                tfk=tf
+                if p.get('refine'):
+                    q=refine_piece(full,tf,ref); import math
+                    M=cv2.getRotationMatrix2D((float(np.nonzero(full[:,:,3]>8)[1].mean()),float(np.nonzero(full[:,:,3]>8)[0].mean())),q[3],1.0)
+                    full=cv2.warpAffine(full,M,(full.shape[1],full.shape[0]),flags=cv2.INTER_LINEAR,borderValue=(0,0,0,0))
+                    tfk=dict(tf,scale=tf['scale']*q[2],tx=tf['tx']+q[0],ty=tf['ty']+q[1])
+                plc=place_crop(full,tfk,f'{scene}-{pname}{k}.webp'); pv=pivot_of(plc,p['pivot'][k] if isinstance(p['pivot'],list) and isinstance(p['pivot'][0],(list,tuple,str)) else p['pivot'])
                 an=p['anim'][k%len(p['anim'])] if isinstance(p['anim'],list) else p['anim']
                 plc.update(ox=r1((pv[0]-plc['x'])/plc['w']*100),oy=r1((pv[1]-plc['y'])/plc['h']*100),anim=an,z=p.get('z','front')); rig['parts'].append(plc)
         else:
