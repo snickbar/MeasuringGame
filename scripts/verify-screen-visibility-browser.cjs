@@ -120,7 +120,8 @@ try{
    assert(y>r.y+r.height*.6&&hit===zone,'Visible lower blocks receive real screen taps: '+JSON.stringify({tag:hit?.tagName,cls:hit?.className,r:r.toJSON(),buttons:buttons.toJSON(),y}));
    const ball=art.querySelector('.hs-bouncing-ball');assert(behind(ball,art.querySelector('.hs-back')),'Ball bounces behind toys');
    rollsWithTravel(ball,ball.firstChild,4000,'toy ball outward');rollsWithTravel(ball,ball.firstChild,22000,'toy ball return');
-   const joint=art.querySelector('.hs-elbow-cap');assert(joint&&getComputedStyle(joint).borderRadius==='50%','Round elbow bridges the articulated sprite joint');
+   assert(!art.querySelector('.hs-elbow-cap'),'No cosmetic joint cover over a sliced arm');
+   for(const part of ['.hs-arm-upper','.hs-arm-closed','.hs-arm-open'])assert(art.querySelector(part)?.classList.contains('hs-art-cell')&&getComputedStyle(art.querySelector(part)).clipPath==='none','Arm uses complete independent sprite: '+part);
    at(3800);const apex=ball.getBoundingClientRect().top;at(5240);assert(ball.getBoundingClientRect().top>apex+20,'Ball lands after first bounce');
   }
   if(scene==='space')assert([...art.querySelectorAll('.hs-route')].every(r=>behind(r,art.querySelector('.hs-back'))),'Satellite and spacecraft behind objects');

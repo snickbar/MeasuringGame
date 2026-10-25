@@ -1,4 +1,4 @@
-import { HOME_LAYER_PLACEMENTS, assembleHomeProp } from './home-layer-art.mjs';
+import { HOME_LAYER_PLACEMENTS, assembleHomeProp, artCell } from './home-layer-art.mjs';
 import { HOME_LAYER_SHEETS } from './home-layer-sheets.mjs';
 // Hand-authored motion sits beside the generated artwork recipes: rebuilding the
 // WebP rigs must not overwrite timing, attachment points or tap behaviour.
@@ -22,7 +22,7 @@ export const HOME_MOTION = {
 };
 export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map(([scene]) => {
   const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
-  if(scene==='toy-box')files.push('refined/robot-palm.webp','../../items/beach-ball.webp');
+  if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp');
   return [scene,files];
@@ -97,12 +97,17 @@ export function decorateHomePart(scene, img, q, extras) {
 
   if (scene === "toy-box" && q.anim === "armIdle") {
     const arm = document.createElement("div"); arm.className = img.className; arm.style.cssText = img.style.cssText;
-    const upper=img.cloneNode();upper.className='hs-arm-upper';upper.removeAttribute('style');
+    // Complete generated parts, aligned by the centres of their round sockets.
+    // Never slice through the assembled arm: those cuts expose triangular gaps.
+    const sheet=extras.get('refined/robot-arm-parts.webp'),spec={sw:q.w,sh:q.h};
+    const shoulder=[q.w*.35,q.h*.08],elbow=[q.w*.7,q.h*.47];
+    const dx=elbow[0]-shoulder[0],dy=elbow[1]-shoulder[1],scale=Math.hypot(dx,dy)/(607-118);
+    const upper=artCell(sheet,[272,64,415,646],[shoulder[0]-215*scale,shoulder[1]-54*scale,415*scale,646*scale],spec,'hs-arm-upper');
+    upper.style.transformOrigin=`${215/415*100}% ${54/646*100}%`;upper.style.transform=`rotate(${Math.atan2(dy,dx)*180/Math.PI-90}deg)`;
     const forearm=document.createElement('div');forearm.className='hs-forearm';
-    img.className = "hs-arm-closed"; img.removeAttribute("style");
-    const open = extras.get("refined/robot-palm.webp").cloneNode(); open.className = "hs-arm-open";
-    const joint=document.createElement('i');joint.className='hs-elbow-cap';
-    forearm.append(img,open);arm.append(upper,forearm,joint);return arm;
+    const closed=artCell(sheet,[875,64,309,650],[elbow[0]-143*.55,elbow[1]-96*.55,309*.55,650*.55],spec,'hs-arm-closed');
+    const open=artCell(sheet,[1392,64,405,674],[elbow[0]-147*.55,elbow[1]-96*.55,405*.55,674*.55],spec,'hs-arm-open');
+    forearm.append(closed,open);arm.append(upper,forearm);return arm;
   }
   if (scene === "games" && q.anim === "twistS") {
     // A real five-sided cuboid: side faces rotate into view rather than
