@@ -2,7 +2,7 @@
 export const MENU_BANNERS = {
   quick: ['icons/banner-quick.png'], daily: ['icons/banner-daily.png'],
   monthly: ['icons/banner-monthly.png'], worlds: ['icons/banner-worlds.png'],
-  survival: ['icons/banner-survival.png'],
+  survival: ['icons/banner-survival.png'], whichbigger: ['icons/banner-which-bigger.png'],
   classic: ['icons/banner-blank-orange.png', 'icons/home-host.png'],
   teamvteam: ['icons/banner-blank-green.png', 'items/soccer-ball.webp'],
   teamworlds: ['icons/banner-blank-blue.png', 'items/hot-air-balloon.webp'],
@@ -103,7 +103,7 @@ export function createPolish({ document: doc = document, reduced = () => false, 
   }
   const headers = {
     'worlds-content': 'worlds', 'daily-content': 'daily', 'monthly-content': 'monthly',
-    'survival-content': 'survival', 'teamworlds-content': 'teamworlds',
+    'survival-content': 'survival', 'wb-content': 'whichbigger', 'teamworlds-content': 'teamworlds',
     'teamvteam-content': 'teamvteam', 'hs-content': 'highstakes',
   };
   const icons = { '🪙': ['icons/coin-v2.png', 'coins'], '💰': ['icons/coin-v2.png', 'coins'],

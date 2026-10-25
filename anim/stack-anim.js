@@ -1050,12 +1050,16 @@ export function createStackAnimation(container, options = {}) {
 
     // Final picture: small on the left, big on the right, side by side, centred. The big one is a
     // little shorter than the close-up so the zoom out is visible.
+    // The smaller one is never drawn thinner than the stack animation's thin-stack strip (9-18 px wide), so a
+    // grain of rice beside a tower stays a visible speck instead of vanishing. It stays clearly under the big one.
+    const minWide = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);
+    const smallH = (Hb) => Math.min(Hb * 0.9, Math.max(CMP_MIN_VIS, minWide / aSm, Hb * r));
     let H = hMax * 0.8;
     for (let k = 0; k < 3; k++) {
-      const hS = Math.max(CMP_MIN_VIS, H * r);
+      const hS = smallH(H);
       H = Math.min(hMax * 0.8, (W - 2 * G - GAP) / (aBig + aSm * (hS / H)));
     }
-    const hS = Math.max(CMP_MIN_VIS, H * r);
+    const hS = smallH(H);
     const wB = H * aBig, wS = hS * aSm;
     const pairW = wS + GAP + wB;
     const xS0 = (W - pairW) / 2, xB0 = xS0 + wS + GAP;

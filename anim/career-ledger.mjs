@@ -4,8 +4,8 @@ import {roundAccuracy} from './accuracy.mjs';
 import {recordDiscoveries} from './discoveries.mjs';
 import {isRetiredMonthlyRecord} from './monthly-challenge.mjs';
 
-export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes',bluff:'Bluff'};
-export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9,bluff:10};
+export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes',bluff:'Bluff',whichbigger:'Which Is Bigger'};
+export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9,bluff:10,whichbigger:11};
 export const safeKey = value => String(value).replace(/[.#$\[\]/]/g,'_');
 const list = value => Array.isArray(value)?value:Object.values(value||{});
 // Seed older profiles from the history still available; then keep totals even
@@ -145,6 +145,11 @@ export function applyCareerRecord(profile,record){
     const old=profile.survival||{};coins=Math.max(0,record.survived-(old.best||0))*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};
     stats.survivalRuns=(stats.survivalRuns||0)+1;
+  }else if(record.mode==='whichbigger'){
+    // Which Is Bigger: scored in correct picks in a row of one run (3 lives). Coins only for picks beyond the old best, like Survival.
+    const old=profile.whichBigger||{};coins=Math.max(0,(record.score||0)-(old.best||0))*2;
+    result.whichBigger={...old,best:Math.max(old.best||0,record.score||0),runs:(old.runs||0)+1,rounds:(old.rounds||0)+(record.rounds||0)};
+    stats.whichBiggerRuns=(stats.whichBiggerRuns||0)+1;
   }else if(record.mode==='daily'){
     const old=profile.dailyStreak||{},count=old.last===record.date?(old.count||1):old.last===record.yesterday?(old.count||0)+1:1;
     coins=({3:20,7:50,30:200})[count]||0;
