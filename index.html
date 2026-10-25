@@ -1489,6 +1489,9 @@ if (location.protocol === "file:") {
   .recent-room-row .rr-people { display: flex; align-items: center; margin-top: 1px; }
   .recent-room-row .rr-people .avatar-icon { width: 22px; height: 22px; margin-right: -5px; filter: none; }
   .recent-room-row .rr-people .rr-more { margin-left: 8px; font-size: 11px; font-weight: 700; color: #6b5a47; }
+  .recent-room-row .rr-btns { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .recent-room-row .rr-close { --pic-h: auto; min-width: 0; height: auto; padding: 2px 10px; border: 0; border-image: none; background: none; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; color: #b3261e; text-shadow: none; text-decoration: underline; }
+  .recent-room-row .rr-close.sure { background: #b3261e; color: #fff; border-radius: 99px; text-decoration: none; }
   .recent-room-row button {
     --pic-h: 40px; width: auto; min-width: 96px; height: var(--pic-h); margin: 0; padding: 0 2px; font-size: 15px; font-family: 'Fredoka', sans-serif; color: #fff;
     border-width: 0 calc(var(--pic-h) / 2); border-image-slice: 0 155 fill; border-image-source: url(icons/btn-red.png);
@@ -2571,6 +2574,12 @@ if (location.protocol === "file:") {
   .tw-qs-half { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 6px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 12px; }
   .tw-qs-half .avatar { font-size: 20px; }
   .tw-qs-half .name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* High/Low Survival: your own box is tinted and pulses in your role's colour (LOW = blue, HIGH = orange) so it's obvious which you are. */
+  .tw-qs-half.hl-mine-low { background: linear-gradient(180deg, #d4ebff, #a9d2fb); border-color: #4a90d9; animation: hlPulseLow 1.8s ease-in-out infinite; }
+  .tw-qs-half.hl-mine-high { background: linear-gradient(180deg, #ffe3cf, #ffb98a); border-color: #f08a24; animation: hlPulseHigh 1.8s ease-in-out infinite; }
+  @keyframes hlPulseLow { 0%, 100% { box-shadow: 0 0 0 0 rgba(74,144,217,.0); transform: scale(1); } 50% { box-shadow: 0 0 10px 3px rgba(74,144,217,.55); transform: scale(1.03); } }
+  @keyframes hlPulseHigh { 0%, 100% { box-shadow: 0 0 6px 1px rgba(240,138,36,.45); transform: scale(1); } 50% { box-shadow: 0 0 16px 6px rgba(255,150,40,.85); transform: scale(1.03); } }
+  :root[data-motion="reduce"] .tw-qs-half.hl-mine { animation: none; }
   .hl-sub { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #000; text-align: center; }
   .hl-role { display: block; margin: 6px auto 0; padding: 4px 12px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; border: 2px solid #4a2c12; }
   .hl-role.hl-high { background: linear-gradient(180deg, #ffd9c8, #ffb59a); }
@@ -6475,12 +6484,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
 
   function loadRecentRooms() {
-    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 5); } catch (e) { return []; }
+    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 10); } catch (e) { return []; }
   }
-  function addRecentRoom(code) {
+  function addRecentRoom(code, playerId) {
     const list = loadRecentRooms().filter((r) => r.code !== code);
-    list.unshift({ code, joinedAt: Date.now() });
-    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 5)));
+    list.unshift({ code, joinedAt: Date.now(), playerId: playerId || null });
+    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 10)));
   }
   function removeRecentRoom(code) {
     try { localStorage.setItem("mg_recentRooms", JSON.stringify(loadRecentRooms().filter((r) => r.code !== code))); } catch (e) {}
@@ -12682,9 +12691,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const btn = document.createElement("button");
       btn.textContent = "Rejoin";
       btn.addEventListener("click", () => rejoinRoom(r.code));
+      const btns = document.createElement("div");
+      btns.className = "rr-btns";
+      btns.appendChild(btn);
       row.appendChild(badge);
       row.appendChild(mid);
-      row.appendChild(btn);
+      row.appendChild(btns);
       recentRoomsListEl.appendChild(row);
       onValue(ref(db, `rooms/${r.code}`), (snap) => {
         const d = snap.val();
@@ -12700,6 +12712,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             : mode === "teamvteam" ? ["tvt", "\u2694\uFE0F", "Team vs Team"]
             : ["classic", "\uD83D\uDCCF", "Classic Party"];
           row.dataset.kind = kk;
+          // The host can close the game for everyone (tap twice to confirm).
+          const mine = (r.playerId && d.players && d.players[r.playerId]) || Object.values(d.players || {}).find((p) => p && p.isHost && p.name === currentName);
+          btns.querySelector(".rr-close")?.remove();
+          if (mine && mine.isHost) {
+            const close = document.createElement("button");
+            close.type = "button"; close.className = "rr-close"; close.textContent = "Close game";
+            let armed = null;
+            close.addEventListener("click", async () => {
+              if (!armed) { close.textContent = "Tap again to close"; close.classList.add("sure"); armed = setTimeout(() => { armed = null; close.textContent = "Close game"; close.classList.remove("sure"); }, 3500); return; }
+              clearTimeout(armed);
+              close.disabled = true; close.textContent = "Closing...";
+              try { await set(ref(db, `rooms/${r.code}/phase`), "ended"); removeRecentRoom(r.code); row.remove(); if (!recentRoomsListEl.children.length) recentRoomsSection.style.display = "none"; }
+              catch (e) { close.disabled = false; close.textContent = "Couldn't close - try again"; }
+            });
+            btns.appendChild(close);
+          }
           badge.textContent = icon;
           kindEl.textContent = kind;
           sub.innerHTML = "";
@@ -13160,7 +13188,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
 
-    addRecentRoom(roomCode);
+    addRecentRoom(roomCode, id);
     homeScreen.classList.remove("active");
     createScreenEl.classList.remove("active");
     joinScreen.classList.remove("active");
@@ -15034,7 +15062,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionStatsEl.innerHTML = ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-pair"><div class="tw-qs-gutter"></div><div class="tw-qs-half" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
+      return `<div class="tw-qs-pair"><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
     }).join("");
   }
 
