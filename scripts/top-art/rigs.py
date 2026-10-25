@@ -51,7 +51,7 @@ RIGS={
  'cactus':dict(base='no-top-hat',
    parts=[dict(name='top-hat',base='no-top-hat',mode='sil',pivot='bottom',anim='hatTip')],
    patches=[],
-   fx=[dict(sheet='cactus-flower',ref=True,x=235,y=548,w=70,at=(.5,.9),align='bottom',anim='pop',dur=12,delay=3,min_area=400,dil=25)]),
+   fx=[dict(sheet='cactus-flower',ref=True,on='hero',x=235,y=548,w=70,at=(.5,.9),align='bottom',anim='pop',dur=12,delay=3,min_area=400,dil=25)]),
  'giraffe':dict(base='no-ears',base_fix=dict(region=(690,1100,853,1520),feather=8,src='no-tail'),
    parts=[dict(name='tail',base='no-tail',mode='sil',pivot='top',anim='tailSwish',z='back'),
           dict(name='ears',base='no-ears',mode='sil',split=True,refine=True,pivot=['right','left'],anim=['flickL','flickR'],z='back')],

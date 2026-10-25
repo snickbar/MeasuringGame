@@ -714,10 +714,10 @@ export const HOME_ART = {
     "w": 1375,
     "h": 1144,
     "ab": {
-     "x": 234,
-     "y": 148,
-     "width": 963,
-     "height": 861
+     "x": 47,
+     "y": 438,
+     "width": 1162,
+     "height": 453
     }
    },
    {
@@ -862,7 +862,7 @@ export const HOME_ART = {
   "hero": {
    "file": "hero-dragon.webp",
    "x": 9.997,
-   "y": 64.719,
+   "y": 56.167,
    "w": 44.843,
    "sw": 1247,
    "sh": 1261,
