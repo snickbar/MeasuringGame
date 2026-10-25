@@ -29,7 +29,11 @@ let sha = process.env.GITHUB_SHA || "";
 if (!sha) {
   try { sha = require("child_process").execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim(); } catch (e) { sha = "local"; }
 }
-const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12);
+// A commit has one stable version in APKs and both hosts. Seconds prevent two
+// rapid releases sorting by their random commit hashes instead of chronology.
+let buildDate = new Date();
+try { buildDate = new Date(require('child_process').execFileSync('git',['show','-s','--format=%cI','HEAD'],{cwd:ROOT}).toString().trim()); } catch {}
+const stamp = buildDate.toISOString().replace(/[-:T]/g, "").slice(0, 14);
 const version = "1.0." + stamp + "-" + sha.slice(0, 7);
 fs.writeFileSync(path.join(WWW, "app-version.json"), JSON.stringify({ version }) + "\n");
 

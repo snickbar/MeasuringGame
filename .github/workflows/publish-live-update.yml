@@ -1,0 +1,28 @@
+name: Publish app live update
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: app-live-update
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build GitHub-hosted update
+        env:
+          LIVE_BUNDLE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/web-${{ github.sha }}
+        run: node scripts/build-live-bundle.js
+      - run: node scripts/verify-live-updates.mjs
+      - run: node scripts/verify-production-package.mjs
+      - name: Publish ZIP and update pointer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-live-update.cjs

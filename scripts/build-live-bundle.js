@@ -11,7 +11,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
 const OUT = path.join(ROOT, "live");
-const BASE_URL = "https://size-em-up.web.app/live";
+const BASE_URL = process.env.LIVE_BUNDLE_BASE_URL || "https://size-em-up.web.app/live";
 const HOSTING = path.join(ROOT, "hosting");
 
 execFileSync(process.execPath, [path.join(__dirname, "sync-www.js")], { stdio: "inherit" });

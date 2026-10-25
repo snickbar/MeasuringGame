@@ -4294,6 +4294,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
+  import { createLiveUpdater } from "./anim/live-updates.mjs";
   import {newBluff,dealBluff,bluffAction,commitBluff,bluffRoundRecord,bluffStandings} from './anim/bluff.mjs';
   import {createBluffUI,bluffFinalHtml} from './anim/bluff-ui.mjs';
   import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
@@ -17968,8 +17969,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById('play-tutorial-btn').addEventListener('click',()=>tutorialUI.open());
 
   // ==================== In-app updates (native app only) ====================
-  // 1) LIVE UPDATES - every deploy publishes live/version.json + live/bundle.zip
-  //    (scripts/build-live-bundle.js). On launch the app compares that version
+  // 1) LIVE UPDATES - main publishes a GitHub release ZIP and public manifest;
+  //    Firebase Hosting is a separate fallback. On launch the app compares that version
   //    with the one it is running (app-version.json, stamped into every build),
   //    downloads a newer bundle in the background and switches to it the NEXT
   //    time the app starts - never mid-game. notifyAppReady() tells the plugin
@@ -17986,7 +17987,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
       set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
     };
-    const MANIFEST_URL = "https://size-em-up.web.app/live/version.json";
+    const liveUpdater = updater ? createLiveUpdater({ updater }) : null;
     let runningVersion = "";
     let liveError = "";
     let readyBundleId = ""; // id of a downloaded update that is waiting to be switched to
@@ -18008,25 +18009,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // Bundles are ~100 MB: wait for Wi-Fi rather than burn mobile data.
         if (!manual && conn && (conn.type === "cellular" || conn.saveData)) return "cellular";
         liveError = "";
-        const res = await fetch(MANIFEST_URL + "?t=" + Date.now(), { cache: "no-store" });
-        if (!res.ok) throw new Error("server said " + res.status);
-        const remote = await res.json();
-        if (!runningVersion || !remote.version || !remote.url || remote.version <= runningVersion) return "current";
-        if (!remote.checksum) throw new Error("update manifest has no checksum");
-        const { bundles } = await updater.list();
-        const waiting = (bundles || []).find((b) => b.version === remote.version);
-        if (onFound) { try { onFound(!!waiting); } catch (e) { /* UI only */ } }
-        if (waiting) { readyBundleId = waiting.id; return "ready"; }
-        const bundle = await updater.download({ url: remote.url, version: remote.version, checksum: remote.checksum });
-        await updater.next({ id: bundle.id });
-        readyBundleId = bundle.id;
-        // Tidy up: keep only the running bundle and the one waiting for next launch.
-        const cur = await updater.current();
-        const keep = new Set([bundle.id, cur && cur.bundle && cur.bundle.id]);
-        for (const b of (await updater.list()).bundles || []) {
-          if (!keep.has(b.id) && b.id !== "builtin") { try { await updater.delete({ id: b.id }); } catch (err) {} }
-        }
-        return "downloaded";
+        const result = await liveUpdater.check(runningVersion,onFound);
+        liveError = result.error || '';
+        if (result.id) readyBundleId = result.id;
+        return result.state;
       } catch (err) { liveError = String((err && err.message) || err); return "error"; /* offline or manifest missing - try again next launch */ }
     }
 
@@ -18070,7 +18056,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ver = $("settings-version");
       if (ver && runningVersion) {
         // "1.0.202610201509-c1ef9dd" -> "Build 2026.10.20 15:09 (c1ef9dd)": the date and time this version was built, updated automatically with every release.
-        const m = /^[\d.]*?(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(?:-(\w+))?$/.exec(runningVersion);
+        const m = /^[\d.]*?(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(?:\d{2})?(?:-(\w+))?$/.exec(runningVersion);
         ver.textContent = m ? `Build ${m[1]}.${m[2]}.${m[3]} ${m[4]}:${m[5]}${m[6] ? " (" + m[6] + ")" : ""}` : "Version " + runningVersion;
         ver.hidden = false;
       }
@@ -18099,7 +18085,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         btn.disabled = true;
         status.textContent = "Checking…";
         // As soon as a newer version turns up, say so instead of staying on "Checking…" while it downloads.
-        const [live, play] = await Promise.all([checkLive(true, () => { status.textContent = "Update found! Applying it now…"; }), checkPlay()]);
+        const [live, play] = await Promise.all([checkLive(true, () => { status.textContent = "Update found! Downloading…"; }), checkPlay()]);
         btn.disabled = false;
         if (play.state === "available") { status.textContent = "A new version is on Google Play."; offerPlayUpdate(play.info); }
         else if ((live === "downloaded" || live === "ready") && readyBundleId) {
