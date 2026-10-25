@@ -11673,10 +11673,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Style (cosmetics) reopens on whichever tab you were last on.
   let lastCosmTab = (() => { try { const t = localStorage.getItem("mg_lastStyleTab"); return COSM_TABS.includes(t) ? t : "avatars"; } catch (e) { return "avatars"; } })();
   let lastShopTab = (() => { try { const t = localStorage.getItem("mg_lastShopTab"); return SHOP_TABS.includes(t) ? t : "coins"; } catch (e) { return "coins"; } })();
+  let shopGroupWasCosm = null;
   function setShopTab(tab) {
     if (tab === "cosmetics") tab = "emojis";
     if (!SHOP_TABS.includes(tab) && !COSM_TABS.includes(tab)) tab = "coins";
     const isCosm = COSM_TABS.includes(tab);
+    // Shop and Style are one screen, so switching between them is the "new menu" moment for Equip Random scenes.
+    if (shopGroupWasCosm !== null && shopGroupWasCosm !== isCosm && rndOn("backgrounds")) { rndPick.backgrounds = undefined; applyBackground(); }
+    shopGroupWasCosm = isCosm;
     if (isCosm) { lastCosmTab = tab; try { localStorage.setItem("mg_lastStyleTab", tab); } catch (e) {} }
     else { lastShopTab = tab; try { localStorage.setItem("mg_lastShopTab", tab); } catch (e) {} }
     document.getElementById("shop-strip-shop").hidden = isCosm;
