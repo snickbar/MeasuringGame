@@ -10,7 +10,7 @@ from PIL import Image
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=ROOT/'art-source/new-home-scenes'
 OUT=ROOT/'anim/home-art'
-COUNTS={'hero-make-believe':3,'books-make-believe':3,'gifts-holiday-mix':2,'unicorn-viewer-v2':2,'snowman-parts-v2':3,'fairy-parts-v2':3,'spellbook-textures-v2':2}
+COUNTS={'hero-make-believe':3,'books-make-believe':3,'gifts-holiday-mix':2,'unicorn-viewer-v2':2,'snowman-parts-v2':3,'fairy-parts-v2':3,'spellbook-textures-v2':2,'unicorn-tail-v3':3}
 def measure(im,count):
     alpha=im.getchannel('A')
     occupied=[alpha.crop((x,0,x+1,im.height)).getextrema()[1]>128 for x in range(im.width)]

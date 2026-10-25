@@ -318,6 +318,31 @@ export const NEW_HOME_SPRITES = {
    ]
   ]
  },
+ "unicorn-tail-v3": {
+  "file": "unicorn-tail-v3.webp",
+  "w": 2172,
+  "h": 724,
+  "cells": [
+   [
+    118,
+    0,
+    527,
+    721
+   ],
+   [
+    879,
+    0,
+    527,
+    721
+   ],
+   [
+    1758,
+    259,
+    358,
+    401
+   ]
+  ]
+ },
  "unicorn-viewer-v2": {
   "file": "unicorn-viewer-v2.webp",
   "w": 1942,

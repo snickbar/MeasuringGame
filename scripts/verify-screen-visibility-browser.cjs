@@ -59,7 +59,7 @@ try{
  // Home must preserve the document/wallet and swap only complete, correctly sized scenes.
  const {installHomeScene}=await import('/anim/home-scene.mjs');
  const {HOME_MOTION}=await import('/anim/home-motion.mjs');
- const html=document.documentElement;
+ await document.fonts.ready;const html=document.documentElement;
  const tapAudio=[];const Audio=window.AudioContext||window.webkitAudioContext,createOsc=Audio.prototype.createOscillator;Audio.prototype.createOscillator=function(){const node=createOsc.call(this),start=node.start;node.start=function(...args){tapAudio.push(node);return start.apply(this,args);};return node;};
  await until(()=>$('home-art')&&!html.hasAttribute('data-home-loading'),'Initial Home decoded');
  window.__homeNavigationMarker=crypto.randomUUID();const marker=window.__homeNavigationMarker;
@@ -69,7 +69,7 @@ try{
  for(const scene of ['ants','sunflower','games','house','snacks','town','corgi','wheels','lighthouse','underwater','toy-box','penguin','cactus','giraffe','dragon','space','make-believe','holiday-mix']){
   html.style.setProperty('--home-bg','url("'+window.mgHomeFile(scene)+'")');html.dataset.homeScene=scene;
   await installHomeScene();await until(()=>$('home-art')?.dataset.scene===scene,'Scene '+scene);
-  const art=$('home-art'),stage=art.querySelector('.hs-stage');
+  await new Promise(requestAnimationFrame);const art=$('home-art'),stage=art.querySelector('.hs-stage');
   assert(document.querySelectorAll('#home-art').length===1,'One scene at a time');
   assert([...art.querySelectorAll('img')].every(i=>i.complete&&i.naturalWidth),'All '+scene+' layers decoded');
   assert(getComputedStyle($('home-screen')).backgroundImage==='none','No flat picture flashes behind '+scene);
@@ -102,6 +102,8 @@ try{
     if(scene==='make-believe'){
      at(0);const top=art.querySelector('.nh-book-solid').getBoundingClientRect();
      assert(top.bottom>r.top&&top.bottom<r.top+30,'Closed spellbook rests on the stack');
+     assert(art.querySelectorAll('.nh-page-edge').length===4&&art.querySelector('.nh-book-bottom')&&art.querySelector('.nh-spine-binding'),'Book has closed sides, bottom and a joined spine');
+     const tail=art.querySelector('.nh-unicorn-tail'),body=art.querySelector('.nh-unicorn-body');at(0);const bodyAtRest=JSON.stringify(body.getBoundingClientRect().toJSON()),tailAtRest=getComputedStyle(tail).transform;at(2700);assert(getComputedStyle(tail).transform!==tailAtRest&&JSON.stringify(body.getBoundingClientRect().toJSON())===bodyAtRest,'Independent tail sways without moving the body');
      assert(!art.querySelector('.nh-book-open')&&!art.querySelector('.nh-book-closed'),'No two-pose book swaps');
      const hinge=art.querySelector('.nh-cover-hinge');at(6800);const closed=getComputedStyle(hinge).transform;at(7600);const midway=getComputedStyle(hinge).transform;at(10000);const open=getComputedStyle(hinge).transform;
      assert(closed!==midway&&midway!==open,'Cover has continuous intermediate hinge angles');
@@ -211,10 +213,11 @@ try{
     // Reset before checking the gesture restart timing below.
     art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    }
+   if(scene==='make-believe'&&role===1){at(1000);assert([...art.querySelectorAll('.nh-magic i')].some(s=>Number(getComputedStyle(s).opacity)>.7),'Sparkles emerge while book opens');zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));}
    if(scene==='make-believe'&&role===0){at(400);assert(opacity('.nh-unicorn-wink')===1&&opacity('.nh-unicorn-body')===0,'Unicorn winks at the viewer on tap');zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));}
    if(scene==='holiday-mix'){
     if(role===0){const arms=[...art.querySelectorAll('.nh-snow-arm')];at(0);const initial=arms.map(a=>getComputedStyle(a).rotate);at(450);assert(arms.every((a,i)=>getComputedStyle(a).rotate!==initial[i]),'Both complete snowman arms wave');}
-    else {const bird=art.querySelector('.nh-turkey');at(0);const hidden=bird.getBoundingClientRect().top;at(1300);assert(bird.getBoundingClientRect().top<hidden-30&&opacity('.nh-turkey')===1,'Turkey emerges without fading');assert(behind(bird,art.querySelector('.nh-gift-stack')),'Gift wall occludes turkey');}
+    else {const bird=art.querySelector('.nh-turkey');at(0);const hidden=bird.getBoundingClientRect().top;at(1300);assert(bird.getBoundingClientRect().top<hidden-30&&opacity('.nh-turkey')===1,'Turkey emerges without fading');assert(behind(art.querySelector('.nh-gift-stack'),bird)&&behind(bird,art.querySelector('.nh-gift-front')),'Turkey is between back and front gift walls');const lid=art.querySelector('.nh-gift-lid');assert(Math.abs(new DOMMatrix(getComputedStyle(lid).transform).m41)<.1,'Lid moves vertically only');assert(Math.abs(new DOMMatrix(getComputedStyle(lid).transform).m42-new DOMMatrix(getComputedStyle(bird).transform).m42)<2,'Lid lifts together with turkey');}
     zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    }
    const finite=art.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations===1);

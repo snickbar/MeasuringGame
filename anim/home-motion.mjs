@@ -28,7 +28,7 @@ export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map
   if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp');
-  if(scene==='make-believe')files.push('unicorn-viewer-v2.webp','books-make-believe.webp','spellbook-textures-v2.webp','fairy-parts-v2.webp');
+  if(scene==='make-believe')files.push('unicorn-tail-v3.webp','books-make-believe.webp','spellbook-textures-v2.webp','fairy-parts-v2.webp');
   if(scene==='holiday-mix')files.push('snowman-parts-v2.webp','gifts-holiday-mix.webp','gift-lid-v2.webp','gift-turkey-v2.webp','holiday-rainbow-v2.webp');
   return [scene,files];
 }));
@@ -178,7 +178,7 @@ export function installHomeInteractions(root, home, scene, sound, stopSound = ()
     void root.offsetWidth;
     for (const [el, inline] of gestures) el.style.cssText = inline;
     sound(scene, role);
-    feedback = setTimeout(reset, ['make-believe','holiday-mix'].includes(scene)?3400:scene === "dragon" ? 3300 : 2300);
+    feedback = setTimeout(reset, ['make-believe','holiday-mix'].includes(scene)?4000:scene === "dragon" ? 3300 : 2300);
   }
   const sync = () => { const active = !document.hidden && home.classList.contains("active"); root.classList.toggle("hs-paused", !active); if (!active) { reset(); stopSound(); } };
   const observer = new MutationObserver(sync); observer.observe(home, { attributes: true, attributeFilter: ["class"] });
