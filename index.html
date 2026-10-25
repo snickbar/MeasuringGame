@@ -967,8 +967,18 @@ if (location.protocol === "file:") {
   .wb-card.right { border-color: #4bb04f; background: #eaf8e8; }
   .wb-card.wrong { border-color: #d9493f; background: #fdeceb; }
   .wb-card:disabled { cursor: default; }
-  .wb-mark { font-size: 84px; line-height: 1; margin: 4px 0; }
-  .wb-mark.ok { color: #3a9d3f; } .wb-mark.bad { color: #d9493f; }
+  .wb-mark { width: 104px; height: 104px; margin: 6px auto 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 74px; line-height: 1; color: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.18), inset 0 -5px 0 rgba(0,0,0,.14); animation: wbMarkPop .55s cubic-bezier(.34,1.56,.64,1) both; }
+  .wb-mark.ok { background: #3a9d3f; } .wb-mark.bad { background: #d9493f; animation-name: wbMarkPop, wbMarkShake; animation-duration: .55s, .45s; animation-delay: 0s, .5s; }
+  @keyframes wbMarkPop { 0% { transform: scale(.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes wbMarkShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
+  .wb-card { position: relative; }
+  .wb-card .wb-tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); padding: 2px 10px; border-radius: 999px; background: #f0902a; color: #fff; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+  .wb-card .wb-sz { font-size: 15px; color: #000; }
+  .wb-card.right .wb-sz { color: #2f8a34; }
+  .wb-line { margin: 2px 0 10px; font-size: 15px; }
+  .wb-line b { font-weight: 800; }
+  .wb-tally { margin: 8px 0 2px; font-size: 14px; color: #7a6446; }
+  html[data-motion=reduce] .wb-mark { animation: none !important; }
   .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
   .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
@@ -11345,8 +11355,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const wbHeartsHtml = (lives, score) => `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="sv-acc">Score: <b>${score}</b></div></div>`;
   const wbNewRun = () => ({ runId: crypto.randomUUID(), phase: "question", lives: WB_LIVES, score: 0, round: 1, used: new Set(), pair: null, picked: null, ok: null });
   function wbDim(o) { return (o.measurement && o.measurement.dimension) || "length"; }
-  function wbCardHtml(o, cls, disabled) {
-    return `<button type="button" class="wb-card ${cls || ""}" data-id="${o.id}"${disabled ? " disabled" : ""}><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span><span class="wb-d">measured by ${escapeHtml(wbDim(o))}</span></button>`;
+  // Real size for the summary: the object's measured dimension in a friendly unit.
+  function wbSize(mm) {
+    const t = (v) => { const r = v >= 100 ? Math.round(v) : Number(v.toPrecision(3)); return r.toLocaleString("en-US"); };
+    if (mm < 10) return t(mm) + " mm";
+    if (mm < 1000) return t(mm / 10) + " cm";
+    if (mm < 1e6) return t(mm / 1000) + " m";
+    return t(mm / 1e6) + " km";
+  }
+  function wbCardHtml(o, cls, disabled, opts) {
+    const o2 = opts || {};
+    return `<button type="button" class="wb-card ${cls || ""}" data-id="${o.id}"${disabled ? " disabled" : ""}>${o2.tag ? `<span class="wb-tag">${escapeHtml(o2.tag)}</span>` : ""}<img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span><span class="wb-d">measured by ${escapeHtml(wbDim(o))}</span>${o2.size ? `<span class="wb-sz">${escapeHtml(wbSize(o.mm))}</span>` : ""}</button>`;
   }
   function openWhichBigger() {
     const fromHub = soloScreenEl.classList.contains("active");
@@ -11391,10 +11410,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (wb.phase === "result") {
       const p = wb.pair, ok = wb.ok;
       const cls = (o) => (o.id === p.bigger.id ? "right" : (o.id === wb.picked ? "wrong" : ""));
+      const card = (o) => wbCardHtml(o, cls(o), true, { size: true, tag: o.id === wb.picked ? "You picked" : "" });
+      const ratio = p.ratio >= 10 ? Math.round(p.ratio) : Number(p.ratio.toFixed(1));
       el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives, wb.score)}
         <div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div>
-        <p class="dc-prompt">${ok ? "Correct!" : "Not quite."} <b>${escapeHtml(p.bigger.name)}</b> is bigger.</p>
-        <div class="wb-cards">${wbCardHtml(p.left, cls(p.left), true)}${wbCardHtml(p.right, cls(p.right), true)}</div>
+        <p class="dc-prompt">${ok ? "Correct!" : "Not quite."}</p>
+        <p class="wb-line"><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b> is about <b>${ratio}&times;</b> bigger</p>
+        <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
+        <div class="wb-tally">Round ${wb.round} &middot; Score ${wb.score}${wb.lives > 0 ? "" : " &middot; Out of lives"}</div>
         <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
       return;
     }
