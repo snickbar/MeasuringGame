@@ -1,5 +1,6 @@
 import { HOME_LAYER_PLACEMENTS, assembleHomeProp, artCell } from './home-layer-art.mjs';
 import { HOME_LAYER_SHEETS } from './home-layer-sheets.mjs';
+import { decorateNewHomeProp, decorateNewHomeHero } from './home-new-scenes.mjs';
 // Hand-authored motion sits beside the generated artwork recipes: rebuilding the
 // WebP rigs must not overwrite timing, attachment points or tap behaviour.
 export const HOME_MOTION = {
@@ -19,12 +20,16 @@ export const HOME_MOTION = {
   giraffe:    { hero: "breathSoft",prop: null,      taps: ["giraffe-ears", "duck-flutter"] },
   dragon:     { hero: "dragonBreath",prop: null,    taps: ["dragon-wake", "coin-shimmer"] },
   space:      { hero: "orbit",   prop: "rocketFloat",taps: ["space-wave", "rocket-pulse"] },
+  'make-believe': { hero:null,prop:null,taps:['unicorn-greet','spellbook-open'] },
+  'holiday-mix': { hero:null,prop:null,taps:['snowman-greet','gift-surprise'] },
 };
 export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map(([scene]) => {
   const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
   if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp');
+  if(scene==='make-believe')files.push('hero-make-believe.webp','books-make-believe.webp');
+  if(scene==='holiday-mix')files.push('hero-holiday-mix.webp','gifts-holiday-mix.webp');
   return [scene,files];
 }));
 
@@ -69,6 +74,7 @@ function sheen(parent, img, cls = "") {
 }
 
 export function decorateHomeProps(scene, { hop, img, spec, extras }) {
+  const added=decorateNewHomeProp(scene,{hop,img,extras});if(added)return added;
   const layers=assembleHomeProp(scene,{hop,img,spec,extras},HOME_LAYER_SHEETS);
   if(layers){
     if(scene==='snacks'){const drip=document.createElement('i');drip.className='hs-ice-drip';hop.appendChild(drip);}
@@ -130,7 +136,8 @@ export function decorateHomePart(scene, img, q, extras) {
   return img;
 }
 
-export function decorateHomeHero(scene, { hop, img, base, W, H }) {
+export function decorateHomeHero(scene, { hop, img, base, W, H, extras }) {
+  const added=decorateNewHomeHero(scene,{hop,img,extras});if(added)return added;
   if (scene === "house") for (let i = 0; i < 5; i++) { const bubble = document.createElement("i"); bubble.className = "hs-soda-bubble"; bubble.style.setProperty("--bi", i); hop.appendChild(bubble); }
   if (scene === "town") {
     const seam = (242 - base.y) / base.h * 100;
@@ -171,7 +178,7 @@ export function installHomeInteractions(root, home, scene, sound, stopSound = ()
     void root.offsetWidth;
     for (const [el, inline] of gestures) el.style.cssText = inline;
     sound(scene, role);
-    feedback = setTimeout(reset, scene === "dragon" ? 3300 : 2300);
+    feedback = setTimeout(reset, ['make-believe','holiday-mix'].includes(scene)?3400:scene === "dragon" ? 3300 : 2300);
   }
   const sync = () => { const active = !document.hidden && home.classList.contains("active"); root.classList.toggle("hs-paused", !active); if (!active) { reset(); stopSound(); } };
   const observer = new MutationObserver(sync); observer.observe(home, { attributes: true, attributeFilter: ["class"] });

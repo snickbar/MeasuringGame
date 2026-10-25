@@ -71,7 +71,7 @@ ctx.runTransaction=async(_path,update)=>{ctx.myProfile=update(ctx.myProfile);ret
 const achStart=source.indexOf('  WORLDS.forEach((w) => {',source.indexOf('// Worlds: a star on the last level'));
 vm.runInContext('let achJustClaimed=null;\n'+source.slice(achStart,source.indexOf('\n  });',achStart)+6)+'\n'+fn('achDone')+'\n'+fn('achClaimable')+'\n'+fn('claimAchievement')+'\nglobalThis.claim=claimAchievement;',ctx);
 ctx.myProfile={coins:7,worlds:{},achClaimed:{},cosmetics:{owned:{homeScreens:{space:true,ants:true}},equipped:{homeScreen:'space'}}};
-for(const [id,home]of [['under-the-sea','underwater'],['toy-box','toy-box']]){
+for(const [id,home]of [['under-the-sea','underwater'],['toy-box','toy-box'],['make-believe','make-believe'],['holiday-mix','holiday-mix']]){
   const beat=ctx.ACHIEVEMENTS.find(a=>a.id==='world-beat-'+id),perfect=ctx.ACHIEVEMENTS.find(a=>a.id==='world-perfect-'+id);
   assert.equal(beat.home,home);assert.equal(beat.reward,0);assert.equal(perfect.reward,100);
   ctx.myProfile.worlds[id]={l1:3,l2:3,l3:3,l4:3,l5:0};assert.equal(beat.progress(),0);
@@ -84,10 +84,10 @@ for(const [id,home]of [['under-the-sea','underwater'],['toy-box','toy-box']]){
 assert(ctx.myProfile.cosmetics.owned.homeScreens.space);assert.equal(ctx.myProfile.cosmetics.equipped.homeScreen,'space');
 // Cold-start home selection and Random both recognize the new rewards.
 const boot=[...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('var F =')&&m[1].includes('mg_homeSel'))[1];
-for(const selected of ['underwater','toy-box','random']){
-  let background,preload;const values={mg_homeSel:selected,mg_homeOwned:JSON.stringify(['underwater','toy-box'])};
+for(const selected of ['underwater','toy-box','make-believe','holiday-mix','random']){
+  let background,preload;const values={mg_homeSel:selected,mg_homeOwned:JSON.stringify(['underwater','toy-box','make-believe','holiday-mix'])};
   vm.runInNewContext(boot,{localStorage:{getItem:k=>values[k],setItem:(k,v)=>{values[k]=v;},removeItem:k=>{delete values[k];}},document:{documentElement:{setAttribute:()=>{},style:{setProperty:(_,v)=>{background=v;}}},querySelector:()=>({setAttribute:(_,v)=>{preload=v;}})}});
-  assert(/home-(underwater|toy-box|watermelon)\.jpg/.test(background));assert(/^anim\/home-art\/plate-(underwater|toy-box|ants)\.webp$/.test(preload));
-  if(selected!=='random')assert(background.includes('home-'+selected+'.jpg'));
+  assert(/home-((underwater|toy-box|watermelon)\.jpg|(make-believe|holiday-mix)\.webp)/.test(background));assert(/^anim\/home-art\/plate-(underwater|toy-box|ants|make-believe|holiday-mix)\.webp$/.test(preload));
+  if(selected!=='random')assert(background.includes('home-'+selected+(['make-believe','holiday-mix'].includes(selected)?'.webp':'.jpg')));
 }
 console.log('PASS: two Worlds, 400 five-question runs, ungated pools, existing unlocks, 13-star home rewards, one-time perfect coins, owned/equipped homes and cold-start/Random selection.');

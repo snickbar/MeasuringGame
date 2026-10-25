@@ -65,7 +65,7 @@ try{
  localStorage.setItem('mg_homeSel','ants');api.visibilityOpen('settings-screen');
  const homeButton=document.querySelector('#toolbar-home-btn');assert(homeButton,'Home toolbar button');homeButton.click();await wait(80);only('home-screen');
  assert(window.__homeNavigationMarker===marker,'Home never reloads the document');
- for(const scene of ['ants','sunflower','games','house','snacks','town','corgi','wheels','lighthouse','underwater','toy-box','penguin','cactus','giraffe','dragon','space']){
+ for(const scene of ['ants','sunflower','games','house','snacks','town','corgi','wheels','lighthouse','underwater','toy-box','penguin','cactus','giraffe','dragon','space','make-believe','holiday-mix']){
   html.style.setProperty('--home-bg','url("'+window.mgHomeFile(scene)+'")');html.dataset.homeScene=scene;
   await installHomeScene();await until(()=>$('home-art')?.dataset.scene===scene,'Scene '+scene);
   const art=$('home-art'),stage=art.querySelector('.hs-stage');
@@ -74,12 +74,14 @@ try{
   assert(getComputedStyle($('home-screen')).backgroundImage==='none','No flat picture flashes behind '+scene);
   assert(stage.getBoundingClientRect().width>=innerWidth,'Stage covers phone width: '+scene);
   const at=(ms)=>{for(const a of art.getAnimations({subtree:true})){a.pause();a.currentTime=ms;}},opacity=sel=>Number(getComputedStyle(art.querySelector(sel)).opacity);
-  const route=art.querySelector('.hs-bidirectional');
+  if(scene!=='holiday-mix'){
+   const route=art.querySelector('.hs-bidirectional');
   assert(route,'Scene has alternating crossings: '+scene);
   const cycle=parseFloat(route.style.getPropertyValue('--cs'))*1000,delay=parseFloat(route.style.getPropertyValue('--cd'))*1000;
   at(delay+1000);assert(new DOMMatrix(getComputedStyle(route).transform).a>.9,'First crossing direction: '+scene);
   at(delay+cycle+1000);assert(new DOMMatrix(getComputedStyle(route).transform).a<-.9,'Return crossing mirrors route and artwork: '+scene);
-  if(['lighthouse','wheels','toy-box','snacks','giraffe','penguin','corgi','dragon'].includes(scene)){
+  }
+   if(['lighthouse','wheels','toy-box','snacks','giraffe','penguin','corgi','dragon'].includes(scene)){
    assert(art.querySelector('.hs-complete-stack')&&art.querySelector('.hs-back > .hs-hop > img').hidden,'Complete stack replaces cut sprite: '+scene);
    const stack=art.querySelector('.hs-complete-stack');at(0);const r=stack.getBoundingClientRect().toJSON();at(8000);
    assert(JSON.stringify(stack.getBoundingClientRect().toJSON())===JSON.stringify(r),'Lower stack stays fixed: '+scene);
@@ -90,7 +92,26 @@ try{
    at(1000);const dark=getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage;at(6000);assert(getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage!==dark,'Lamp visibly switches on');
   }
   const behind=(a,b)=>Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
-  const screenAngle=el=>{
+  if(scene==='make-believe'||scene==='holiday-mix'){
+    const stack=art.querySelector(scene==='make-believe'?'.nh-book-stack':'.nh-gift-stack');
+    at(0);const r=stack.getBoundingClientRect().toJSON();at(9000);
+    assert(JSON.stringify(stack.getBoundingClientRect().toJSON())===JSON.stringify(r),'New lower stack remains rigid: '+scene);
+    const critter=art.querySelector('.hs-crit');
+    assert(critter&&behind(critter,art.querySelector('.hs-back'))&&behind(critter,art.querySelector('.hs-front')),'New creature stays behind both subjects: '+scene);
+    if(scene==='make-believe'){
+     at(0);const top=art.querySelector('.nh-book-closed').getBoundingClientRect();
+     assert(top.bottom>r.top&&top.bottom<r.top+30,'Closed spellbook rests on the stack');
+     at(10000);assert(opacity('.nh-book-open')===1&&opacity('.nh-book-closed')===0,'One complete open book pose');
+    }else{
+     at(0);const lid=art.querySelector('.nh-gift-lid').getBoundingClientRect();
+     assert(lid.bottom>r.top&&lid.bottom<r.top+40,'Gift lid covers the rim');
+     const ghost=art.querySelector('.hs-giftGhost'),delay=parseFloat(ghost.style.getPropertyValue('--cd'))*1000;
+     at(delay+5000);const right=ghost.getBoundingClientRect().left;
+     at(delay+17000);assert(ghost.getBoundingClientRect().left<right-40,'Ghost peeks out on both sides');
+     assert(opacity('.hs-giftGhost')===1,'Ghost never fades midway through a visible peek');
+    }
+   }
+   const screenAngle=el=>{
    let matrix=new DOMMatrix();for(let node=el;node&&node!==art;node=node.parentElement){const s=getComputedStyle(node);matrix=new DOMMatrix().rotate(parseFloat(s.rotate)||0).multiply(new DOMMatrix(s.transform==='none'?undefined:s.transform)).multiply(matrix);}
    return Math.atan2(matrix.b,matrix.a);
   };
@@ -220,7 +241,7 @@ try{
  }
  for(const bar of ['hud-sub-toolbar','bottom-toolbar','paused-overlay','kick-modal']){$(bar).classList.add('active');await wait(10);assert(!$(bar).getClientRects().length,'Game controls stay hidden behind menus: '+bar);}
  assert(document.documentElement.scrollWidth<=innerWidth+1,'Phone width preserved');
- $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'All 16 decoded Home scenes, no-reload Home/random navigation, overlapping scene requests, reduced motion, lobby exit, plus all party finals x eight menus and late screen updates'});
+ $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'All 18 decoded Home scenes, no-reload Home/random navigation, overlapping scene requests, reduced motion, lobby exit, plus all party finals x eight menus and late screen updates'});
 }catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}
 </script>`;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');

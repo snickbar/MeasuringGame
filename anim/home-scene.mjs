@@ -9,6 +9,8 @@ const BASE = "anim/home-art/";
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
 // -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
 const CONFIG = {
+  'make-believe': {shadow:[[245,1156,280,22,.22],[515,1159,235,20,.22]],critters:[{row:43,size:11,secs:31,delay:5,dir:-1,kind:'flutter',faces:1,behind:true}]},
+  'holiday-mix': {shadow:[[235,1157,320,24,.18],[505,1159,185,20,.18]],critters:[{row:0,size:12,secs:24,delay:7,dir:1,kind:'giftGhost',faces:-1,behind:true}]},
   corgi: { hero: "breathe", hero2: "sway", shadow: [[235, 1122, 270, 34, .3], [455, 1130, 150, 28, .3]], critters: [{ row: 36, size: 13, secs: 30, delay: 5, dir: 1, kind: "flutter", faces: 1 }, { row: 6, size: 7, secs: 22, delay: 9, dir: 1, kind: "fall", faces: 1 }] },
   games: { hero: "sway", hero2: "breathe", shadow: [[238, 1200, 150, 26, .28], [446, 1218, 130, 24, .3]], critters: [{ row: 31, size: 15, secs: 27, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 69, size: 12, secs: 38, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
   sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
@@ -144,7 +146,7 @@ async function buildHomeScene(home, scene, current) {
     if (rig && rig.base) at(hero, rig.base);
     hero.style.clipPath = `polygon(${notch.join(", ")})`;
     hop.appendChild(hero);
-    const heroDetails = decorateHomeHero(scene, { hop, img: hero, base: bp, W, H });
+    const heroDetails = decorateHomeHero(scene, { hop, img: hero, base: bp, W, H, extras });
     (cfg.limbs || []).forEach((l) => {
       const arm = hero.cloneNode(); arm.className = "hs-part hs-" + l.anim; arm.style.clipPath = `polygon(${l.poly.map(([x, y]) => P(x, y)).join(", ")})`;
       arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); hop.appendChild(arm);
@@ -243,11 +245,12 @@ async function buildHomeScene(home, scene, current) {
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
     const slide = scene === "penguin" && i === 0;
     const duneRoll=scene==='cactus'&&i===0;
+    const giftGhost=scene==='holiday-mix';
     if (slide) { wrap.style.setProperty("--ct", "0%");wrap.dataset.directionPolicy='downhill-left'; }
-    if(duneRoll)wrap.style.setProperty('--ct','0%');
-    const route=document.createElement('div');route.className='hs-route'+(slide||duneRoll?'':' hs-bidirectional');
+    if(duneRoll||giftGhost)wrap.style.setProperty('--ct','0%');
+    const route=document.createElement('div');route.className='hs-route'+(slide||duneRoll||giftGhost?'':' hs-bidirectional');
     route.dataset.critterIndex=String(i);
-    route.dataset.directionPolicy=slide?'downhill-left':duneRoll?'terrain-return':'alternating';route.style.cssText=`--cs:${cc.secs}s;--cd:${cc.delay}s`;
+    route.dataset.directionPolicy=slide?'downhill-left':duneRoll?'terrain-return':giftGhost?'peek-both-sides':'alternating';route.style.cssText=`--cs:${cc.secs}s;--cd:${cc.delay}s`;
     route.appendChild(wrap);
     if(scene==='snacks'&&i===1){
       const following=wrap.cloneNode(true);following.classList.add('hs-following-ant');route.appendChild(following);route.dataset.copies='2';

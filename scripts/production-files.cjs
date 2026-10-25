@@ -3,7 +3,7 @@
 const fs=require('fs'),path=require('path');
 const ROOT=path.resolve(__dirname,'..');
 const DIRS=['icons','avatars','sfx','items','anim','backgrounds'];
-const FILES=['index.html','manifest.json','sw.js','privacy.html','icon-192.png','icon-512.png','og-image.jpg','robots.txt','sitemap.xml','app-ads.txt',
+const FILES=['index.html','manifest.json','sw.js','privacy.html','icon-192.png','icon-512.png','og-image.jpg','robots.txt','sitemap.xml','app-ads.txt','home-make-believe.webp','home-holiday-mix.webp',
  'home-bg.jpg','home-bg-2.jpg','home-bg-3.jpg','home-sunflower.jpg','home-corgi.jpg','home-cactus.jpg','home-penguin.jpg','home-lighthouse.jpg','home-watermelon.jpg','home-games.jpg','home-house.jpg','home-wheels.jpg','home-giraffe.jpg','home-dragon.jpg','home-space.jpg','home-snacks.jpg','home-town.jpg','home-underwater.jpg','home-toy-box.jpg'];
 const DEV_DIRS=['anim/sound-options/','anim/sound-suspense/','anim/artwork-candidates-2026-10-22-v3/'];
 const UNUSED_SCENERY=new Set(['anim/scenery/indoor-wall.png','anim/scenery/kitchen.png','anim/scenery/wall-picture.png']);

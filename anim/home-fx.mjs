@@ -5,6 +5,8 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const WARM = ["#ffb3c7", "#ffd27a", "#fff1b8"], LEAF = ["#9bd36a", "#c8e07a", "#e8b04a"], PARTY = ["#ff6b6b", "#ffd24a", "#5ec8ff", "#8be26a", "#c58bff"];
 // kind: particle type, n: how many, extra: per-particle style tweaks
 const SCENES = {
+  'make-believe': [['sparkle',10],['mote',6]],
+  'holiday-mix': [['snow',15],['sparkle',5]],
   ants: [["mote", 14], ["petal", 4, { colors: LEAF }]],
   sunflower: [["mote", 16], ["petal", 4, { colors: WARM }]],
   games: [["sparkle", 14], ["bubble", 4]],
