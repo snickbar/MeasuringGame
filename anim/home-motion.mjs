@@ -101,7 +101,8 @@ export function decorateHomePart(scene, img, q, extras) {
     const forearm=document.createElement('div');forearm.className='hs-forearm';
     img.className = "hs-arm-closed"; img.removeAttribute("style");
     const open = extras.get("refined/robot-palm.webp").cloneNode(); open.className = "hs-arm-open";
-    forearm.append(img,open);arm.append(upper,forearm);return arm;
+    const joint=document.createElement('i');joint.className='hs-elbow-cap';
+    forearm.append(img,open);arm.append(upper,forearm,joint);return arm;
   }
   if (scene === "games" && q.anim === "twistS") {
     // A real five-sided cuboid: side faces rotate into view rather than

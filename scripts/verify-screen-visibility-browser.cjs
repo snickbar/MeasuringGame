@@ -90,6 +90,20 @@ try{
    at(1000);const dark=getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage;at(6000);assert(getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage!==dark,'Lamp visibly switches on');
   }
   const behind=(a,b)=>Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
+  const screenAngle=el=>{
+   let matrix=new DOMMatrix();for(let node=el;node&&node!==art;node=node.parentElement){const s=getComputedStyle(node);matrix=new DOMMatrix().rotate(parseFloat(s.rotate)||0).multiply(new DOMMatrix(s.transform==='none'?undefined:s.transform)).multiply(matrix);}
+   return Math.atan2(matrix.b,matrix.a);
+  };
+  const rollsWithTravel=(traveller,sprite,ms,label)=>{
+   at(ms);const x=traveller.getBoundingClientRect().x,angle=screenAngle(sprite);at(ms+40);
+   const dx=traveller.getBoundingClientRect().x-x,delta=screenAngle(sprite)-angle,turn=Math.atan2(Math.sin(delta),Math.cos(delta));
+   assert(Math.abs(dx)>.1&&turn*dx>0,'Visible rotation follows travel direction: '+label);
+  };
+  if(scene!=='cactus')for(const roller of art.querySelectorAll('.hs-roll')){
+   const duration=parseFloat(roller.style.getPropertyValue('--cs'))*1000,delay=parseFloat(roller.style.getPropertyValue('--cd'))*1000;
+   rollsWithTravel(roller,roller.querySelector('.hs-crit-img'),delay+duration*.2,scene+' rolling object outward');
+   rollsWithTravel(roller,roller.querySelector('.hs-crit-img'),delay+duration*1.2,scene+' rolling object return');
+  }
   if(scene==='games')assert(art.querySelectorAll('.hs-cube-face').length===5&&art.querySelectorAll('.hs-scuttle .hs-leg').length===4,'Turning cube has side faces; crab has four walking legs');
   if(scene==='underwater')assert(behind(art.querySelector('.hs-rise'),art.querySelector('.hs-back')),'Jellyfish behind objects');
   if(scene==='house'){
@@ -105,6 +119,8 @@ try{
    const y=Math.min(r.y+r.height*.85,buttons.top-12),hit=document.elementFromPoint(r.x+r.width*.5,y);
    assert(y>r.y+r.height*.6&&hit===zone,'Visible lower blocks receive real screen taps: '+JSON.stringify({tag:hit?.tagName,cls:hit?.className,r:r.toJSON(),buttons:buttons.toJSON(),y}));
    const ball=art.querySelector('.hs-bouncing-ball');assert(behind(ball,art.querySelector('.hs-back')),'Ball bounces behind toys');
+   rollsWithTravel(ball,ball.firstChild,4000,'toy ball outward');rollsWithTravel(ball,ball.firstChild,22000,'toy ball return');
+   const joint=art.querySelector('.hs-elbow-cap');assert(joint&&getComputedStyle(joint).borderRadius==='50%','Round elbow bridges the articulated sprite joint');
    at(3800);const apex=ball.getBoundingClientRect().top;at(5240);assert(ball.getBoundingClientRect().top>apex+20,'Ball lands after first bounce');
   }
   if(scene==='space')assert([...art.querySelectorAll('.hs-route')].every(r=>behind(r,art.querySelector('.hs-back'))),'Satellite and spacecraft behind objects');
@@ -128,6 +144,7 @@ try{
   }
   if(scene==='cactus'){
    const dust=art.querySelector('.hs-roll');assert(behind(dust,art.querySelector('.hs-back')),'Dustball stays behind cactus and hats');
+   rollsWithTravel(dust,dust.querySelector('.hs-crit-img'),9000,'dustball outward');rollsWithTravel(dust,dust.querySelector('.hs-crit-img'),45000,'dustball return');
    assert(dust.closest('.hs-route').dataset.directionPolicy==='terrain-return','Dust follows fixed terrain in both directions');
    at(17600);const crest=dust.getBoundingClientRect();at(10120);const dip=dust.getBoundingClientRect();assert(dip.y>crest.y+25&&dip.x>crest.x,'Dust follows left crest into shallow right dip');
    at(41400);const returnCrest=dust.getBoundingClientRect();assert(Math.abs(returnCrest.x-crest.x)<2&&Math.abs(returnCrest.y-crest.y)<2,'Return crossing follows same dune crest');
