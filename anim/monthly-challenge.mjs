@@ -1,12 +1,13 @@
-export const MONTHLY_FORMAT = 3;
-export const monthlyBoardKey = key => `${key}-full-pack-v${MONTHLY_FORMAT}`;
+export const MONTHLY_FORMAT = 4;
+// One leaderboard per level (1-3 are a third of the pack each, 4 is the Mega run through the whole pack).
+export const monthlyBoardKey = (key, level) => level ? `${key}-L${level}-v${MONTHLY_FORMAT}` : `${key}-full-pack-v${MONTHLY_FORMAT}`;
 
 // One-time reset of the old attempt only. Keep its backup and all other profile
 // fields; subsequent opens of this version resume normally.
 export function resetMonthlyProgress(profile, key) {
   if (!profile?.monthly || profile.monthly.key !== key || profile.monthly.format === MONTHLY_FORMAT) return profile;
   return { ...profile, monthlyResetBackup: profile.monthly,
-    monthly: { key, format: MONTHLY_FORMAT, guesses: [], done: false } };
+    monthly: { key, format: MONTHLY_FORMAT, levels: {}, done: false } };
 }
 
 export function createMonthlyPairs({ monthly, ordinary, rng, bands }) {
@@ -69,4 +70,47 @@ export function restoreMonthlyPairs({ saved, shared, generated, legacy, ...rules
 // rank by the same average accuracy, without requiring a database-rules change.
 export function monthlyBoardScore(total, rounds) {
   return rounds > 0 ? Math.round(total / rounds * 5 * 10) / 10 : 0;
+}
+
+// ---- Levels. The month's pack is split evenly into three levels (a mix of sizes in each, the same split for
+// everyone); level 4 (Mega) is every question. Returns, per level, the indexes into `pairs` (in their original order).
+export const MONTHLY_LEVELS = [1, 2, 3, 4];
+export function monthlyLevelSplit(pairs, { monthly, objects }) {
+  const pack = new Set(monthly.map(o => o.id));
+  const packId = q => (pack.has(q.unitId) ? q.unitId : q.targetId);
+  const order = pairs.map((q, i) => ({ i, o: objects.get(packId(q)) }))
+    .sort((a, b) => ((a.o?.mm || 0) - (b.o?.mm || 0)) || (a.o?.id < b.o?.id ? -1 : 1));
+  const out = { 1: [], 2: [], 3: [], 4: pairs.map((_, i) => i) };
+  order.forEach((e, n) => out[(n % 3) + 1].push(e.i));
+  [1, 2, 3].forEach(l => out[l].sort((a, b) => a - b));
+  return out;
+}
+// 'done', 'play' (next up, or replayable-in-progress) or 'lock'. Each level opens once the one before it is finished;
+// Mega opens after level 3.
+export function monthlyLevelStates(monthly) {
+  const done = l => !!monthly?.levels?.[l]?.done;
+  return {
+    1: done(1) ? 'done' : 'play',
+    2: done(2) ? 'done' : done(1) ? 'play' : 'lock',
+    3: done(3) ? 'done' : done(2) ? 'play' : 'lock',
+    4: done(4) ? 'done' : (done(1) && done(2) && done(3)) ? 'play' : 'lock',
+  };
+}
+export const monthlyLockText = level => (level >= 2 ? `Finish ${level === 4 ? 'Level 3' : 'Level ' + (level - 1)}` : '');
+// Coins for finishing a level for real, and half of that for a replay.
+export function monthlyLevelCoins(level, avgAccuracy) {
+  const [base, extra] = level === 4 ? [20, 30] : [8, 12];
+  return base + Math.round(Math.max(0, Math.min(100, avgAccuracy || 0)) / 100 * extra);
+}
+export const monthlyReplayCoins = coins => Math.floor((coins || 0) / 2);
+// Which of a level's month-objects have been seen (answered) so far, for the silhouettes; Mega shows what any level revealed.
+export function monthlySeenIndexes(monthly, split, level) {
+  const seen = new Set();
+  const take = l => {
+    const g = monthly?.levels?.[l]; if (!g) return;
+    const n = g.done ? split[l].length : (Array.isArray(g.guesses) ? g.guesses : Object.values(g.guesses || {})).length;
+    split[l].slice(0, n).forEach(i => seen.add(i));
+  };
+  if (level === 4) [1, 2, 3, 4].forEach(take); else take(level);
+  return seen;
 }
