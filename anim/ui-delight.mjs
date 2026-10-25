@@ -54,8 +54,14 @@ export function createUIDelight({screens, reduced, document:doc=document}) {
     keep.onclick=()=>dialog.close();
     use.onclick=async()=>{use.disabled=true;keep.disabled=true;try{await equip();dialog.close();}catch{status.textContent='Could not equip. Please try again.';use.disabled=false;keep.disabled=false;}};
     dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
-    dialog.showModal();use.focus();
-    if(!reduced())mat.animate([{scale:'.8',opacity:0},{scale:'1.05',opacity:1,offset:.7},{scale:'1',opacity:1}],{duration:450,easing:'ease-out'});
+    dialog.showModal();use.focus({preventScroll:true});
+    if(!reduced()){
+      // The pop-in scales the picture past its box; while that runs the card must not grow scrollbars or scroll (it looked like the whole card sliding to the bottom right).
+      dialog.style.overflow='hidden';
+      const pop=mat.animate([{transform:'scale(.8)',opacity:0},{transform:'scale(1.05)',opacity:1,offset:.7},{transform:'scale(1)',opacity:1}],{duration:450,easing:'ease-out'});
+      const done=()=>{dialog.style.overflow='';dialog.scrollTop=0;dialog.scrollLeft=0;};
+      pop.addEventListener('finish',done,{once:true});pop.addEventListener('cancel',done,{once:true});
+    }
   }
   return {unlock,destroy:()=>observer.disconnect()};
 }
