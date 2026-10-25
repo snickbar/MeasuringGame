@@ -28,8 +28,8 @@ vm.runInContext([
   'globalThis.api = {ALL_OBJECTS,OBJECT_BY_ID,MEASUREMENT_GROUPS,MEASUREMENT_DETAILS,MEASUREMENT_TYPES,measurementQuestionPrompt,dailyQuestionFor};',
 ].join('\n'), sandbox);
 const {ALL_OBJECTS: all, OBJECT_BY_ID: objects, MEASUREMENT_GROUPS: groups, MEASUREMENT_DETAILS: details, MEASUREMENT_TYPES: types, measurementQuestionPrompt: prompt, dailyQuestionFor: question} = sandbox.api;
-assert.equal(all.length, 498);
-assert.equal(objects.size, 498);
+assert.equal(all.length, 553);
+assert.equal(objects.size, 553);
 const ids = new Set();
 for (const [dimension, members] of Object.entries(groups)) {
   assert(types[dimension]);
