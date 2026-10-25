@@ -1054,10 +1054,13 @@ export function createStackAnimation(container, options = {}) {
     // grain of rice beside a tower stays a visible speck instead of vanishing. It stays clearly under the big one.
     const minWide = clamp(STRIP_LEN * aSm, STRIP_W_MIN, STRIP_W);
     const smallH = (Hb) => Math.min(Hb * 0.9, Math.max(CMP_MIN_VIS, minWide / aSm, Hb * r));
-    let H = hMax * 0.8;
+    // Picked the bigger one: no zoom, the camera just slides left to make room, so it can stand a bit taller.
+    // Picked the smaller one: the camera zooms out to take in the bigger one arriving from the right.
+    const hCap = firstIsBig ? hMax * 0.92 : hMax * 0.8;
+    let H = hCap;
     for (let k = 0; k < 3; k++) {
       const hS = smallH(H);
-      H = Math.min(hMax * 0.8, (W - 2 * G - GAP) / (aBig + aSm * (hS / H)));
+      H = Math.min(hCap, (W - 2 * G - GAP) / (aBig + aSm * (hS / H)));
     }
     const hS = smallH(H);
     const wB = H * aBig, wS = hS * aSm;
@@ -1077,7 +1080,7 @@ export function createStackAnimation(container, options = {}) {
     // Close-up: the picked object fills the stage; s0 is how much bigger than its final size it is drawn.
     const closeH = firstIsBig ? hMax : Math.min(hMax * 0.62, (W - 2 * G) / (F.w / F.h));
     const closeW = closeH * (F.w / F.h);
-    const s0 = Math.max(1, Math.min(closeH / F.h, (W - 2 * G) / F.w));
+    const s0 = firstIsBig ? 1 : Math.max(1, Math.min(closeH / F.h, (W - 2 * G) / F.w));
     void closeW;
 
     const padTop = PAD_TOP + Math.max(0, (minStageH || 0) - (PAD_TOP + hMax + PAD_BOTTOM));
