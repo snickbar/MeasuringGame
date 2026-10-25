@@ -4906,13 +4906,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- Equip Random: with a category's toggle on, each game gives you random items you own from it.
   // What is really equipped is left alone, so switching the toggle off goes straight back to it. ----
   const rndOn = (cat) => !!(myProfile.randomEquip && myProfile.randomEquip[cat]);
-  let rndPick = {};
+  let rndPick = {}, rndBgOwnedCount = -1;
   const rndOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
   function rndGet(cat) {
     if (rndPick[cat] !== undefined) return rndPick[cat];
     let v = null;
     if (cat === "boards") v = rndOf(["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard)));
-    else if (cat === "backgrounds") v = rndOf(["none"].concat(allBackgrounds().map((b) => b.id).filter(ownsBackground)));
+    else if (cat === "backgrounds") { const ids = allBackgrounds().map((b) => b.id).filter(ownsBackground); v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
     else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(ids) : "classic"; }
     else if (cat === "reactions") {
       const own = Object.keys(REACTIONS).filter((e) => ownsEmoji(e));
@@ -5129,6 +5129,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderThemedPackShop();
     renderCosmeticsShop();
     try { updateDailyBadge(); } catch (e) { /* daily module not ready yet */ }
+    // The random background is picked from what you own: if that changed (e.g. the profile just finished loading), pick again.
+    { const k = allBackgrounds().filter(ownsBackground).length; if (k !== rndBgOwnedCount) { rndBgOwnedCount = k; rndPick.backgrounds = undefined; } }
     applyBackground();
     try { applyBoard(activeBoard()); } catch (e) { /* board module not initialised yet */ }
     renderReactionStrip();
