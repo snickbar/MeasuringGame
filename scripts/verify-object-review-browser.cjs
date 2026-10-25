@@ -9,7 +9,7 @@ async function ready(){for(let i=0;i<600;i++){const w=frame.contentWindow,d=fram
 try{
  await ready();let w=frame.contentWindow,d=frame.contentDocument,api=w.__objectReview,$=id=>d.getElementById(id);
  const event=(id,value,type='change')=>{const el=$(id);if(typeof value==='boolean')el.checked=value;else el.value=value;el.dispatchEvent(new w.Event(type,{bubbles:true}));};
- assert(api.data.objects.length===498,'full catalog');assert(d.querySelectorAll('.object').length===30,'paginated');
+ assert(api.data.objects.length===553,'full catalog');assert(d.querySelectorAll('.object').length===30,'paginated');
  assert(d.documentElement.scrollWidth<=innerWidth,'page fits phone/desktop width');
  for(const role of ['small','big']){$(role+'-end').click();const v=api.getViews()[role];assert(v.scene.unit.id==='ant'||v.scene.target.id==='ant','selected object in both roles');assert(v.scene.R>1,'correct size order');}
  const current=JSON.stringify((await import('/anim/orient-data.js')).ORIENT.ant),oldCanvas=api.getViews().big.anim.canvas.toDataURL();
@@ -25,7 +25,7 @@ try{
  event('rot','90');event('mirror-big',!$('mirror-big').checked);event('lean-small','cw');event('motion-big','fly');await wait(600);await ready();
  $('big-end').click();assert(api.getViews().big.anim.canvas.toDataURL()!==oldCanvas,'orientation controls change real renderer');
  assert(JSON.stringify((await import('/anim/orient-data.js')).ORIENT.ant)===current,'saved game orientation untouched');
- const saved=JSON.parse(w.localStorage.getItem('size-em-up-object-draft-v1'));assert(saved.objects.length===498&&saved.objects.find(o=>o.id==='ant').settings.orientation.rot===90,'full draft persisted');
+ const saved=JSON.parse(w.localStorage.getItem('size-em-up-object-draft-v1'));assert(saved.objects.length===553&&saved.objects.find(o=>o.id==='ant').settings.orientation.rot===90,'full draft persisted');
  const oldMm=api.getDraft().ant.mm;event('units','1000');assert(api.getDraft().ant.mm===oldMm,'unit switch preserves actual size');
  event('dimension','width');event('qualifier','including antennae','input');event('size','0.02','input');await wait(600);await ready();
  assert(api.getDraft().ant.mm===20,'value converted from chosen units');assert($('wording-small').textContent.includes('including antennae')&&$('wording-big').textContent.includes('width'),'question wording updates both roles');
@@ -105,14 +105,20 @@ try{
  $('unreviewed').checked=true;$('unreviewed').dispatchEvent(new w.Event('change'));$('search').value='ant';$('search').dispatchEvent(new w.Event('input'));assert(!d.querySelector('.object[data-id="ant"]'),'reviewed objects can be skipped');
  $('unreviewed').checked=false;$('unreviewed').dispatchEvent(new w.Event('change'));$('search').value='';$('search').dispatchEvent(new w.Event('input'));api.select('ant');await ready();$('small-end').click();$('big-end').click();
  await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=new';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
- assert($('new-objects').checked&&d.querySelectorAll('.object').length===12,'new-only link lists the twelve larger additions');
+ assert($('new-objects').checked&&$('count').textContent.includes('67'),'new-only link includes the larger additions and monthly batch');
  assert(api.data.objects.find(o=>o.name===$('name').textContent)?.collection==='new-2026-10','new link ignores an older selected object');
- for(const object of api.data.objects.filter(o=>o.collection==='new-2026-10')){
+ for(const object of api.data.objects.filter(o=>o.collection==='new-2026-10'&&!o.monthlyExpansion)){
   api.select(object.id);await ready();
   for(const role of ['small','big']){const v=api.getViews()[role];assert(v.scene.unit.id===object.id||v.scene.target.id===object.id,'new object has both roles');$(role+'-end').click();}
   assert(d.documentElement.scrollWidth<=innerWidth,'new object fits '+object.id);
  }
- document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'498 objects; real big/small reveals, draft/current transforms, mirroring/turns, unit conversion, question wording, persistence, export, invalid values, extremes, alternate art, scrub/replay and responsive fit'});
+ await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=monthly';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
+ assert($('monthly-objects').checked&&!$('new-objects').checked,'monthly link selects the new batch');
+ assert(api.data.objects.filter(o=>o.monthlyExpansion).length===55&&$('count').textContent.includes('55'),'all 55 monthly objects available');
+ assert(api.data.objects.find(o=>o.name===$('name').textContent)?.monthlyExpansion,'monthly link ignores older selected object');
+ for(const id of ['school-desk','football-tv','bald-eagle']){api.select(id);await ready();for(const role of ['small','big']){const v=api.getViews()[role];assert(v.scene.unit.id===id||v.scene.target.id===id,'new artwork previews in both roles: '+id);$(role+'-end').click();}assert(d.documentElement.scrollWidth<=innerWidth,'new artwork fits: '+id);}
+ $('new-objects').checked=true;$('new-objects').dispatchEvent(new w.Event('change'));assert(!$('monthly-objects').checked,'collection filters do not combine to an empty list');
+ document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'553 objects; 55 new monthly icons; real big/small reveals, draft/current transforms, mirroring/turns, unit conversion, question wording, persistence, export, invalid values, extremes, alternate art, scrub/replay and responsive fit'});
 }catch(e){document.getElementById('result').textContent=JSON.stringify({pass:false,error:e.stack})}
 </script></html>`;
 const server=http.createServer((req,res)=>{

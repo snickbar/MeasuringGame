@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import {currentSettings,validateSettings,validatePicks} from '../anim/object-review-model.mjs';
 import {measurementQuestionPrompt} from '../anim/object-review-prompts.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('../anim/object-review-data.json',import.meta.url)));
-const objects=new Map(data.objects.map(o=>[o.id,o]));assert.equal(objects.size,498);
+const objects=new Map(data.objects.map(o=>[o.id,o]));assert.equal(objects.size,553);
+const monthlyArt=JSON.parse(fs.readFileSync(new URL('../art-source/monthly-expansion-55/requested-prompts.json',import.meta.url)));
+assert.equal(data.objects.filter(o=>o.monthlyExpansion).length,55);
+for(const row of monthlyArt)assert.equal(objects.get(row.file.slice(6,-5)).monthlyExpansion,true);
 for(const o of data.objects){
   validateSettings(currentSettings(o),data.types);
   assert(fs.existsSync(new URL('../'+o.image,import.meta.url)),o.id);
@@ -21,4 +24,4 @@ assert.equal(Object.keys(validatePicks({...payload,reviewedIds:['ant']},data)).l
 for(const corrupt of [p=>p.objects.push(p.objects[0]),p=>p.objects[0].id='missing',p=>p.objects[0].settings.mm=0,p=>p.objects[0].settings.measurement.dimension='area',p=>p.objects[0].settings.orientation.rot=13,p=>p.objects[0].settings.orientation.flip='false',p=>p.objects[0].settings.motionBig='teleport',p=>p.objects[0].settings.measurement.qualifier='x'.repeat(201)]){
   const copy=structuredClone(payload);corrupt(copy);assert.throws(()=>validatePicks(copy,data));
 }
-console.log('PASS: all 498 current settings and exact game prompts; full export round-trip; invalid/duplicate IDs, values, dimensions, rotations and motions rejected.');
+console.log('PASS: all 553 current settings and exact game prompts; full export round-trip; invalid/duplicate IDs, values, dimensions, rotations and motions rejected.');
