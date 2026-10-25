@@ -1,9 +1,12 @@
 """Registration helpers for the top-character art: find where a generated piece sits on the original hero canvas."""
-import cv2, numpy as np
+import os, cv2, numpy as np
 from PIL import Image
 ROOT='/home/claude/snickbar/measuringgame/'
 def load_rgba(p): return np.array(Image.open(p).convert('RGBA'))
-def hero(scene,kind='hero'): return load_rgba(f'{ROOT}anim/home-art/{kind}-{scene}.webp')
+def hero(scene,kind='hero'):
+    p=f'{ROOT}anim/home-art/{kind}-{scene}.webp'
+    if not os.path.exists(p): p=f'{ROOT}art-source/home-hero-originals/{kind}-{scene}.webp'   # originals replaced by rig bases at runtime
+    return load_rgba(p)
 def piece(name): return load_rgba(f'{ROOT}art-source/top-character-art/top-{name}.png')
 def gray(a):
     g=cv2.cvtColor(a[:,:,:3],cv2.COLOR_RGB2GRAY); return g
