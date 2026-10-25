@@ -87,7 +87,7 @@ const boot=[...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].find(m=>m[1].in
 for(const selected of ['underwater','toy-box','random']){
   let background,preload;const values={mg_homeSel:selected,mg_homeOwned:JSON.stringify(['underwater','toy-box'])};
   vm.runInNewContext(boot,{localStorage:{getItem:k=>values[k],setItem:(k,v)=>{values[k]=v;},removeItem:k=>{delete values[k];}},document:{documentElement:{setAttribute:()=>{},style:{setProperty:(_,v)=>{background=v;}}},querySelector:()=>({setAttribute:(_,v)=>{preload=v;}})}});
-  assert(/home-(underwater|toy-box|watermelon)\.jpg/.test(background));assert(background.includes(preload));
+  assert(/home-(underwater|toy-box|watermelon)\.jpg/.test(background));assert(/^anim\/home-art\/plate-(underwater|toy-box|ants)\.webp$/.test(preload));
   if(selected!=='random')assert(background.includes('home-'+selected+'.jpg'));
 }
 console.log('PASS: two Worlds, 400 five-question runs, ungated pools, existing unlocks, 13-star home rewards, one-time perfect coins, owned/equipped homes and cold-start/Random selection.');

@@ -42,10 +42,14 @@ function make(kind, opts = {}) {
 }
 export function installHomeFx() {
   const home = document.getElementById("home-screen");
-  if (!home || document.getElementById("home-fx")) return;
+  if (!home) return;
   const scene = document.documentElement.dataset.homeScene || "ants";
+  const previous = document.getElementById("home-fx");
+  if (previous?.dataset.scene === scene) return;
+  previous?.remove();
   const layer = document.createElement("div");
   layer.id = "home-fx";
+  layer.dataset.scene = scene;
   layer.setAttribute("aria-hidden", "true");
   const small = Math.min(window.innerWidth, window.innerHeight) < 420;
   for (const [kind, n, opts] of SCENES[scene] || SCENES.ants) {
@@ -65,3 +69,4 @@ export function installHomeFx() {
   }
 }
 installHomeFx();
+document.getElementById("home-screen")?.addEventListener("home-scene-ready", installHomeFx);

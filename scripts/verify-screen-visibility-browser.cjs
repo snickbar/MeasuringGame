@@ -25,6 +25,7 @@ window.__fakeDB={read,put};
 const authStub='export const initializeAuth=()=>({currentUser:null}),indexedDBLocalPersistence={},browserLocalPersistence={},inMemoryPersistence={},GoogleAuthProvider={credential:()=>({})},signInWithCredential=async()=>({user:{uid:"test"}}),onAuthStateChanged=(_,fn)=>{queueMicrotask(()=>fn(null));return ()=>{}},signOut=async()=>{};';
 const injected=String.raw`
 window.__polish={
+ homeState:()=>({rewardActive:gameRewards?.active,qrGuard:qrScanGuardUntil,room:currentRoomCode,player:currentPlayerId,screens:ALL_SCREEN_ELS.filter(e=>e.classList.contains('active')).map(e=>e.id)}),
  visibilityOpen:id=>openOverlay(document.getElementById(id)),visibilityClose:()=>closeOverlay(),
  visibilityPhase:(mode,phase='final')=>{roomState.settings.mode=mode;roomState.phase=phase;roomState.hs={stage:'over'};roomState.bluff={stage:'over'};applyPhase(roomState);},
  visibilityReset:()=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));roomState.phase='final';applyPhase(roomState);},
@@ -55,6 +56,36 @@ try{
  await until(()=>window.__polish?.profile()?.stats?.gamesPlayed===8,'Bootstrap');const api=window.__polish,$=id=>document.getElementById(id);
  const shown=()=>[...document.querySelectorAll('.screen,#hud')].filter(el=>el.getClientRects().length&&getComputedStyle(el).display!=='none').map(el=>el.id);
  const only=id=>assert(shown().length===1&&shown()[0]===id,'Only '+id+' should show, got '+shown().join(','));
+ // Home must preserve the document/wallet and swap only complete, correctly sized scenes.
+ const {installHomeScene}=await import('/anim/home-scene.mjs');
+ const html=document.documentElement;
+ await until(()=>$('home-art')&&!html.hasAttribute('data-home-loading'),'Initial Home decoded');
+ window.__homeNavigationMarker=crypto.randomUUID();const marker=window.__homeNavigationMarker;
+ localStorage.setItem('mg_homeSel','ants');api.visibilityOpen('settings-screen');
+ const homeButton=document.querySelector('#toolbar-home-btn');assert(homeButton,'Home toolbar button');homeButton.click();await wait(80);only('home-screen');
+ assert(window.__homeNavigationMarker===marker,'Home never reloads the document');
+ for(const scene of ['ants','sunflower','games','house','snacks','town','corgi','wheels','lighthouse','underwater','toy-box','penguin','cactus','giraffe','dragon','space']){
+  html.style.setProperty('--home-bg','url("'+window.mgHomeFile(scene)+'")');html.dataset.homeScene=scene;
+  await installHomeScene();await until(()=>$('home-art')?.dataset.scene===scene,'Scene '+scene);
+  const art=$('home-art'),stage=art.querySelector('.hs-stage');
+  assert(document.querySelectorAll('#home-art').length===1,'One scene at a time');
+  assert([...art.querySelectorAll('img')].every(i=>i.complete&&i.naturalWidth),'All '+scene+' layers decoded');
+  assert(getComputedStyle($('home-screen')).backgroundImage==='none','No flat picture flashes behind '+scene);
+  assert(stage.getBoundingClientRect().width>=innerWidth,'Stage covers phone width: '+scene);
+ }
+ const swaps=['town','corgi','ants'].map(scene=>{html.dataset.homeScene=scene;return installHomeScene()});await Promise.all(swaps);
+ await until(()=>$('home-art')?.dataset.scene==='ants','Latest scene wins an overlapping load');
+ html.dataset.motion='reduce';await wait(30);
+ assert(!$('home-art').getAnimations({subtree:true}).some(a=>a.playState==='running'),'Reduced motion stops every rig part');
+ html.dataset.motion='full';
+ await api.flush();api.profile().randomEquip={homeScreens:true};window.__fakeDB.put('profiles/'+api.owner()+'/randomEquip',{homeScreens:true});
+ localStorage.setItem('mg_homeSel','random');localStorage.setItem('mg_homeOwned',JSON.stringify(['ants','space','corgi']));localStorage.setItem('mg_homeLast','ants');
+ homeButton.click();await wait(40);await installHomeScene();
+ await until(()=>$('home-art')?.dataset.scene===html.dataset.homeScene,'Random scene finished');
+ assert(['space','corgi'].includes($('home-art').dataset.scene),'Random Home changes the actual layered scene: '+JSON.stringify({scene:html.dataset.homeScene,art:$('home-art').dataset.scene,selected:localStorage.getItem('mg_homeSel'),owned:localStorage.getItem('mg_homeOwned'),last:localStorage.getItem('mg_homeLast'),state:api.homeState()}));
+ assert(window.__homeNavigationMarker===marker,'Random Home preserves document');
+ await api.lobby();homeButton.click();$('exit-confirm-yes-btn').click();
+ await until(()=>api.homeState().room===null,'Leaving lobby detaches room');only('home-screen');
  await api.lobby(true);await api.flush();
  for(const mode of ['classic','quick','teamvteam','teamworlds','hlsurvival','highstakes','bluff']){
   for(const menu of ['settings-screen','gacha-screen','career-screen','items-screen','achievements-screen','howto-screen','collection-screen','preset-settings-screen']){
@@ -75,16 +106,18 @@ try{
  }
  for(const bar of ['hud-sub-toolbar','bottom-toolbar','paused-overlay','kick-modal']){$(bar).classList.add('active');await wait(10);assert(!$(bar).getClientRects().length,'Game controls stay hidden behind menus: '+bar);}
  assert(document.documentElement.scrollWidth<=innerWidth+1,'Phone width preserved');
- $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'All party mode finals x eight menus, repeated room updates, resume, lobby/ended/High Stakes over, solo result pages, late renders/inline styles and hidden gameplay controls'});
+ $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'All 16 decoded Home scenes, no-reload Home/random navigation, overlapping scene requests, reduced motion, lobby exit, plus all party finals x eight menus and late screen updates'});
 }catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}
 </script>`;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');
+// Each viewport is a fresh device; do not recover the previous viewport's simulated reward receipt.
+fixture=fixture.replace('<head>','<head><script>localStorage.clear();</script>');
 fixture=fixture.replace('\n</script>\n</body>',injected+'\n</script>'+checks+'\n</body>');
 const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/test'){res.setHeader('Content-Type','text/html');res.end(fixture);return;}if(url.pathname.startsWith('/__fake/')){res.setHeader('Content-Type','text/javascript');res.end(url.pathname.endsWith('app.mjs')?'export const initializeApp=()=>({});':url.pathname.endsWith('db.mjs')?dbStub:authStub);return;}const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
 server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--autoplay-policy=no-user-gesture-required','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'polish-tests-'+process.pid),'about:blank'],{windowsHide:true});let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},90000);
  child.stderr.on('data',async chunk=>{stderr+=chunk;const match=stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(started||!match)return;started=true;
  try{socket=new WebSocket(match[1]);await new Promise((yes,no)=>{socket.onopen=yes;socket.onerror=no;});let serial=0;const pending=new Map(),errors=[];
- socket.onmessage=e=>{const r=JSON.parse(e.data);if(r.id){const p=pending.get(r.id);if(p){pending.delete(r.id);r.error?p.no(Error(r.error.message)):p.yes(r.result);}}else if(r.method==='Runtime.exceptionThrown')errors.push(r.params.exceptionDetails.exception?.description||r.params.exceptionDetails.text);};
+ socket.onmessage=e=>{const r=JSON.parse(e.data);if(r.id){const p=pending.get(r.id);if(p){pending.delete(r.id);r.error?p.no(Error(r.error.message)):p.yes(r.result);}}else if(r.method==='Runtime.consoleAPICalled'&&r.params.type==='warning')console.log('Browser warning:',r.params.args.map(a=>a.description||a.value));else if(r.method==='Runtime.exceptionThrown')errors.push(r.params.exceptionDetails.exception?.description||r.params.exceptionDetails.text);};
  const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});fs.mkdirSync(path.join(root,'output','screen-visibility-tests'),{recursive:true});
  for(const width of [320,390,430]){const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);let result;
  for(let n=0;n<800;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');

@@ -55,7 +55,10 @@ if (location.protocol === "file:") {
   } catch (e) { id = "ants"; }
   document.documentElement.style.setProperty("--home-bg", "url('" + F[id] + "')");
   document.documentElement.setAttribute("data-home-scene", id);
-  var p = document.querySelector("link[rel=preload][as=image]"); if (p) p.setAttribute("href", F[id]);
+  document.documentElement.setAttribute("data-home-loading", "true");
+  var motion = localStorage.getItem("mg_motion") || "auto";
+  document.documentElement.setAttribute("data-motion", motion === "reduce" || (motion === "auto" && G.matchMedia && G.matchMedia("(prefers-reduced-motion: reduce)").matches) ? "reduce" : "full");
+  var p = document.querySelector("link[rel=preload][as=image]"); if (p) p.setAttribute("href", "anim/home-art/plate-" + id + ".webp");
 })();
 </script>
 <meta name="theme-color" content="#c17a54" />
@@ -4283,6 +4286,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module" src="anim/home-fx.mjs"></script>
 <script type="module" src="anim/home-scene.mjs"></script>
 <script type="module">
+  import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
@@ -5732,7 +5736,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       localStorage.setItem("mg_homeOwned", JSON.stringify(HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen)));
     } catch (e) {}
     // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
-    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(equippedHomeScreen()).file}')`);
+    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) {
+      const scene = equippedHomeScreen();
+      document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(scene).file}')`);
+      document.documentElement.dataset.homeScene = scene;
+    }
   }
   const homeHowText = (h) => (h.world ? `Earn a star on Level ${WORLD_LEVELS} of ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
   async function equipHomeScreen(id) {
@@ -11282,17 +11290,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = false;
     });
   });
-  toolbarHomeBtn.addEventListener("click", guardToolbarNav(() => {
-    // With Random Home Screens on, pick the next picture now and show it straight away, so the page reload keeps it
-    // instead of flashing one picture and then swapping to another.
+  toolbarHomeBtn.addEventListener("click", guardToolbarNav(async () => {
+    // Returning Home is navigation, not a page reload. Keep the wallet and the decoded scene alive.
+    worldStop(); survivalStop(); dailyStop(); monthlyStop();
+    if (currentRoomCode && currentPlayerId) await stepOutOfRoom();
+    if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
+    pendingQrInvite.clear();
+    pendingRoomCode = null; pendingIsHost = false; pendingSettings = null;
+    overlayReturnScreen = null; overlayFocusReturn = null; syncOverlayReturnFlag();
+    ALL_SCREEN_ELS.forEach(el => el.classList.remove("active"));
+    [hudRoomCodeGroupEl, hudRoundLabelEl, hudSubToolbarEl, bottomToolbarEl, pausedOverlayEl, kickModalEl].forEach(el => el.classList.remove("active"));
+    hsEnsureTicker(false); stopAllSfx();
+    homeScreen.classList.add("active");
+    window.scrollTo(0, 0);
     try {
       if (localStorage.getItem("mg_homeSel") === "random" && window.mgPickHome) {
         const next = window.mgPickHome();
-        localStorage.setItem("mg_homeForce", next);
+        localStorage.setItem("mg_homeLast", next);
         document.documentElement.style.setProperty("--home-bg", `url('${window.mgHomeFile(next)}')`);
+        document.documentElement.dataset.homeScene = next;
       }
-    } catch (e) { /* fall through to the reload */ }
-    location.reload();
+    } catch (e) { /* Keep the current scene if the device's preferences are unavailable. */ }
+    installHomeScene();
   }));
 
   // Shrinks a ".fit-text" element's font-size (from whatever its CSS rule

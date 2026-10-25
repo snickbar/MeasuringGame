@@ -1,6 +1,6 @@
 // Living Home scenes: when a scene has its separate artwork (anim/home-art/) the flat Home picture is swapped for a stage
 // built from a clean background plate, the two foreground subjects (which sway / breathe) and critters that wander across.
-// Everything falls back to the original picture until every image has loaded, and is skipped with Animation: Reduced.
+// Decode the complete scene offscreen and swap it in once. Never paint the differently composed flat picture first.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 import { HOME_RIG } from "./home-art-rig.mjs";
 const BASE = "anim/home-art/";
@@ -46,34 +46,52 @@ function boing() {
 }
 export const homeSceneHasArt = (scene) => !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
-  return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = () => yes(img); img.onerror = no; img.src = src; });
+  return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = async () => { try { await img.decode(); yes(img); } catch (e) { no(e); } }; img.onerror = no; img.src = src; });
 }
+let request = 0, resizeStage = () => {};
+addEventListener("resize", () => resizeStage());
 export async function installHomeScene() {
   const home = document.getElementById("home-screen"), scene = document.documentElement.dataset.homeScene || "ants";
-  if (!home || document.getElementById("home-art") || !homeSceneHasArt(scene) || document.documentElement.dataset.motion === "reduce") return;
+  if (!home || document.getElementById("home-art")?.dataset.scene === scene) return;
+  const ticket = ++request, current = () => ticket === request && document.documentElement.dataset.homeScene === scene;
+  try { await buildHomeScene(home, scene, current); }
+  catch (e) {
+    console.warn("Could not build Home scene", scene, e);
+    if (!current()) return;
+    // A failed asset still gets a decoded fallback, rather than a permanently blank Home.
+    const file = window.mgHomeFile?.(scene);
+    if (file) { try { await load(file); } catch {} }
+    if (!current()) return;
+    document.getElementById("home-art")?.remove(); home.classList.remove("has-art");
+    resizeStage = () => {};
+  } finally {
+    if (current()) delete document.documentElement.dataset.homeLoading;
+  }
+}
+async function buildHomeScene(home, scene, current) {
+  if (!homeSceneHasArt(scene)) throw Error("No layered Home scene");
   const art = HOME_ART[scene], cfg = CONFIG[scene];
-  let imgs;
-  try {
-    // A scene whose main character is rebuilt from the rig (its base picture) never needs the original single picture.
-    const rig0 = HOME_RIG[scene], rigOk = rig0 && cfg.rig !== false && rig0.W === art.hero.sw && rig0.H === art.hero.sh;
-    imgs = await Promise.all([art.plate, rigOk && rig0.base ? null : art.hero, art.hero2, ...art.critters].map((l) => (l ? load(BASE + l.file) : Promise.resolve(null))));
-  } catch (e) { return; } // any missing picture: keep the original Home picture
-  if (!home.isConnected || document.getElementById("home-art") || document.documentElement.dataset.motion === "reduce") return;
-  let [plate, hero, hero2, ...crits] = imgs;
   // Extra character art (redrawn base without its moving parts, the moving parts themselves, expression patches). All or nothing.
   let rig = HOME_RIG[scene], rigImgs = null;
   if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
+  // Optimized builds omit the old whole hero when a rig supplies its base.
+  const images = Promise.all([art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters].map(l => l ? load(BASE + l.file) : null));
+  images.catch(() => {}); // The rig may still be loading when a required image fails.
   if (rig) {
     try {
       const list = [rig.base, rig.hero2, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames), ...(rig.critFrames || []).flatMap((f) => f.frames)].filter(Boolean);
       const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
       rigImgs = new Map(list.map((l, i) => [l, loaded[i]]));
     } catch (e) { rig = null; rigImgs = null; }
-    if (!home.isConnected || document.getElementById("home-art")) return;
   }
+  const [plate, originalHero, originalHero2, ...crits] = await images;
+  if (!home.isConnected || !current()) return;
+  let hero = originalHero, hero2 = originalHero2;
   if (rig && rig.base) hero = rigImgs.get(rig.base);
+  if (!hero) hero = await load(BASE + art.hero.file); // If absent too, use the decoded flat fallback.
+  if (!current()) return;
   if (rig && rig.hero2) hero2 = rigImgs.get(rig.hero2);
-  const root = document.createElement("div"); root.id = "home-art"; root.setAttribute("aria-hidden", "true");
+  const root = document.createElement("div"); root.id = "home-art"; root.dataset.scene = scene; root.setAttribute("aria-hidden", "true");
   const stage = document.createElement("div"); stage.className = "hs-stage"; root.appendChild(stage);
   plate.className = "hs-plate"; plate.alt = ""; stage.appendChild(plate);
   const place = (img, spec, cls, anim) => {
@@ -202,7 +220,13 @@ export async function installHomeScene() {
     stage.style.width = HOME_ART_REF.width * s + "px"; stage.style.height = HOME_ART_REF.height * s + "px";
     stage.style.setProperty("--sw", HOME_ART_REF.width * s + "px");
   };
-  size(); addEventListener("resize", size);
-  home.prepend(root); home.classList.add("has-art");
+  size(); resizeStage = size;
+  const previous = document.getElementById("home-art");
+  if (previous) previous.replaceWith(root); else home.prepend(root);
+  home.classList.add("has-art");
+  home.dispatchEvent(new CustomEvent("home-scene-ready", { detail: { scene } }));
 }
+new MutationObserver(() => installHomeScene()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-home-scene"] });
+const home = document.getElementById("home-screen");
+if (home) new ResizeObserver(() => resizeStage()).observe(home);
 installHomeScene();
