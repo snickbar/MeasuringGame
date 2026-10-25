@@ -11428,7 +11428,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       toolbarCoinCountEl.textContent = keep ? formatCoinDisplay(lastVisibleWallet.balance) : "…";
       return;
     }
-    if (observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance) {
+    const countFrom = observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance ? observedCoinBalance : null;
+    if (countFrom !== null) {
       sparkleCoins(toolbarCoinBalanceEl, prefersReducedMotion());
     }
     observedCoinOwner = deviceId;
@@ -11436,7 +11437,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Skipped mid-tween so the final-screen coin-fly's own count-up animation
     // (see animateCoinCount) isn't stomped by the profile update landing
     // partway through it.
-    if (!coinCountTweenActive) toolbarCoinCountEl.textContent = formatCoinDisplay(myProfile.coins);
+    if (!coinCountTweenActive) {
+      // Earned coins tick up to the new balance instead of jumping.
+      if (countFrom !== null && !prefersReducedMotion() && myProfile.coins - countFrom <= 100000) animateCoinCount(countFrom, myProfile.coins, Math.min(900, 350 + (myProfile.coins - countFrom) * 4));
+      else toolbarCoinCountEl.textContent = formatCoinDisplay(myProfile.coins);
+    }
     lastVisibleWallet = { owner: deviceId, balance: myProfile.coins || 0 };
     localStorage.setItem("mg_visibleWallet", JSON.stringify(lastVisibleWallet));
     localStorage.setItem(CACHED_COINS_KEY, String(myProfile.coins));
@@ -12759,7 +12764,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       newIds.add(id);
       const li = document.createElement("li");
       if (!isFirstRender && !renderedPlayerListIds.has(id)) {
-        if (!prefersReducedMotion()) li.animate([{opacity:0,translate:"-10px 0",scale:".97"},{opacity:1,translate:"0 0",scale:"1"}],{duration:300,easing:"ease-out"});
+        if (!prefersReducedMotion()) li.animate([{opacity:0,translate:"-14px 0",scale:".7"},{opacity:1,translate:"0 0",scale:"1.07",offset:.6},{opacity:1,translate:"0 0",scale:"1"}],{duration:420,easing:"cubic-bezier(.25,.8,.35,1)"});
         if (roomState.phase === "waiting") playSound("join");
       }
       const nameSpan = document.createElement("span");
