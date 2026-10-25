@@ -58,6 +58,7 @@ try{
  const only=id=>assert(shown().length===1&&shown()[0]===id,'Only '+id+' should show, got '+shown().join(','));
  // Home must preserve the document/wallet and swap only complete, correctly sized scenes.
  const {installHomeScene}=await import('/anim/home-scene.mjs');
+ const {HOME_MOTION}=await import('/anim/home-motion.mjs');
  const html=document.documentElement;
  await until(()=>$('home-art')&&!html.hasAttribute('data-home-loading'),'Initial Home decoded');
  window.__homeNavigationMarker=crypto.randomUUID();const marker=window.__homeNavigationMarker;
@@ -72,6 +73,38 @@ try{
   assert([...art.querySelectorAll('img')].every(i=>i.complete&&i.naturalWidth),'All '+scene+' layers decoded');
   assert(getComputedStyle($('home-screen')).backgroundImage==='none','No flat picture flashes behind '+scene);
   assert(stage.getBoundingClientRect().width>=innerWidth,'Stage covers phone width: '+scene);
+  const at=(ms)=>{for(const a of art.getAnimations({subtree:true})){a.pause();a.currentTime=ms;}},opacity=sel=>Number(getComputedStyle(art.querySelector(sel)).opacity);
+  if(!HOME_MOTION[scene].prop)for(const ms of [0,4500,8500]){at(ms);assert(getComputedStyle(art.querySelector('.hs-back')).transform==='none','Rigid prop never breathes: '+scene);}
+  if(scene==='town'){
+   for(const [ms,opened]of [[1000,0],[4100,1],[9000,0]]){at(ms);assert(opacity('.hs-open')===opened&&opacity('.hs-mail-closed')===1-opened,'Exactly one mailbox door at '+ms);}
+  }
+  if(scene==='lighthouse'){
+   const beam=art.querySelector('.hs-fx-beamSweep');assert(beam.closest('.hs-effect-owner'),'Beam behind both subjects');
+   at(0);assert(new DOMMatrix(getComputedStyle(beam).transform).a>.9,'Beam to right');at(6000);assert(new DOMMatrix(getComputedStyle(beam).transform).a<-.9,'Beam to left');
+   assert(art.querySelector('.hs-fx-steam').closest('.hs-cup-top'),'Steam follows the moving cup');
+  }
+  if(scene==='cactus'){
+   const flower=art.querySelector('.hs-fx-bloom');assert(flower.closest('.hs-back'),'Flower attached to cactus');
+   for(const ms of [1000,10200,11700,13500,15500]){at(ms);assert([...flower.children].filter(f=>Number(getComputedStyle(f).opacity)>.5).length===1,'One attached flower stage at '+ms);}
+  }
+  if(scene==='penguin')assert([...art.querySelectorAll('.hs-fx-glint')].every(f=>f.closest('.hs-back')),'Ice sparkles stay off penguin');
+  if(scene==='house')assert(!art.querySelector('.hs-fx-rise'),'No steam from soda');
+  if(scene==='dragon'){
+   at(2000);assert(opacity('.hs-peek')===0&&opacity('.hs-fx-dragonFire')===0,'Dragon sleeps between gestures');
+   at(9900);assert(opacity('.hs-peek')===1&&opacity('.hs-fx-dragonFire')>.8,'Dragon wakes before breathing fire');
+  }
+  // Tap late in an idle loop: a short gesture must restart, not instantly finish
+  // because its old CSS currentTime is longer than the new duration.
+  for(const [role,subject]of ['hero','prop'].entries()){
+   at(13000);art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   assert(art.dataset.reaction===HOME_MOTION[scene].taps[role],'Specific '+scene+' '+subject+' reaction');
+   const finite=art.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations===1);
+   if(HOME_MOTION[scene].taps[role]!=='lamp-glow')assert(finite.length&&finite.every(a=>a.currentTime<200),'Tap gesture restarts: '+scene+' '+subject);
+   $('home-screen').classList.remove('active');await wait(20);
+   assert(art.classList.contains('hs-paused')&&!art.dataset.reaction,'Leaving Home cancels tap feedback');
+   assert(!art.getAnimations({subtree:true}).some(a=>a.playState==='running'),'Home animations pause offscreen');
+   $('home-screen').classList.add('active');await wait(10);
+  }
  }
  const swaps=['town','corgi','ants'].map(scene=>{html.dataset.homeScene=scene;return installHomeScene()});await Promise.all(swaps);
  await until(()=>$('home-art')?.dataset.scene==='ants','Latest scene wins an overlapping load');

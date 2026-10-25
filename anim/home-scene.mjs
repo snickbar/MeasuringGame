@@ -3,6 +3,7 @@
 // Decode the complete scene offscreen and swap it in once. Never paint the differently composed flat picture first.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 import { HOME_RIG } from "./home-art-rig.mjs";
+import { HOME_MOTION, homeRigMotion, decorateHomeProps, decorateHomeHero, installHomeInteractions } from "./home-motion.mjs";
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
@@ -31,7 +32,8 @@ const CONFIG = {
   ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
 };
 let actx = null;
-function boing() {
+const tapSounds = new Set();
+function boing(scene, role) {
   try {
     if (localStorage.getItem("mg_vibrationEnabled") !== "false" && navigator.vibrate) navigator.vibrate(12);
     if (localStorage.getItem("mg_soundEnabled") === "false") return;
@@ -39,16 +41,19 @@ function boing() {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     actx = actx || new AC(); if (actx.state === "suspended") actx.resume();
     const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
-    o.type = "sine"; o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(620, t + .09); o.frequency.exponentialRampToValueAtTime(330, t + .22);
+    const pitch = ({ games: 430, town: 340, house: 540, underwater: 600, lighthouse: 720, "toy-box": 480, wheels: 130, dragon: 150, space: 240 })[scene] || 350;
+    o.type = scene === "toy-box" ? "triangle" : "sine"; o.frequency.setValueAtTime(pitch, t); o.frequency.exponentialRampToValueAtTime(pitch * (role ? 1.3 : 1.7), t + .09); o.frequency.exponentialRampToValueAtTime(pitch * .9, t + .22);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16 * vol, t + .015); g.gain.exponentialRampToValueAtTime(0.0001, t + .26);
-    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + .28);
+    o.connect(g); g.connect(actx.destination); tapSounds.add(o); o.onended = () => tapSounds.delete(o); o.start(t); o.stop(t + .28);
   } catch (e) {}
 }
 export const homeSceneHasArt = (scene) => !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
   return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = async () => { try { await img.decode(); yes(img); } catch (e) { no(e); } }; img.onerror = no; img.src = src; });
 }
-let request = 0, resizeStage = () => {};
+let request = 0, resizeStage = () => {}, disposeScene = () => {};
+function stopHomeSound() { for (const node of tapSounds) { try { node.stop(); } catch {} } tapSounds.clear(); }
+document.addEventListener("visibilitychange", () => { if (document.hidden) stopHomeSound(); });
 addEventListener("resize", () => resizeStage());
 export async function installHomeScene() {
   const home = document.getElementById("home-screen"), scene = document.documentElement.dataset.homeScene || "ants";
@@ -62,7 +67,7 @@ export async function installHomeScene() {
     const file = window.mgHomeFile?.(scene);
     if (file) { try { await load(file); } catch {} }
     if (!current()) return;
-    document.getElementById("home-art")?.remove(); home.classList.remove("has-art");
+    disposeScene(); document.getElementById("home-art")?.remove(); home.classList.remove("has-art");
     resizeStage = () => {};
   } finally {
     if (current()) delete document.documentElement.dataset.homeLoading;
@@ -70,10 +75,11 @@ export async function installHomeScene() {
 }
 async function buildHomeScene(home, scene, current) {
   if (!homeSceneHasArt(scene)) throw Error("No layered Home scene");
-  const art = HOME_ART[scene], cfg = CONFIG[scene];
+  const art = HOME_ART[scene], motion = HOME_MOTION[scene], cfg = { ...CONFIG[scene], hero: motion.hero, hero2: motion.prop, dropFx: [] };
   // Extra character art (redrawn base without its moving parts, the moving parts themselves, expression patches). All or nothing.
   let rig = HOME_RIG[scene], rigImgs = null;
   if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
+  rig = homeRigMotion(scene, rig, art);
   // Optimized builds omit the old whole hero when a rig supplies its base.
   const images = Promise.all([art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters].map(l => l ? load(BASE + l.file) : null));
   images.catch(() => {}); // The rig may still be loading when a required image fails.
@@ -81,26 +87,20 @@ async function buildHomeScene(home, scene, current) {
     try {
       const list = [rig.base, rig.hero2, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames), ...(rig.critFrames || []).flatMap((f) => f.frames)].filter(Boolean);
       const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
-      rigImgs = new Map(list.map((l, i) => [l, loaded[i]]));
+      rigImgs = new Map(list.map((l, i) => [l.file, loaded[i]]));
     } catch (e) { rig = null; rigImgs = null; }
   }
   const [plate, originalHero, originalHero2, ...crits] = await images;
   if (!home.isConnected || !current()) return;
   let hero = originalHero, hero2 = originalHero2;
-  if (rig && rig.base) hero = rigImgs.get(rig.base);
+  if (rig && rig.base) hero = rigImgs.get(rig.base.file);
   if (!hero) hero = await load(BASE + art.hero.file); // If absent too, use the decoded flat fallback.
   if (!current()) return;
-  if (rig && rig.hero2) hero2 = rigImgs.get(rig.hero2);
+  if (rig && rig.hero2) hero2 = rigImgs.get(rig.hero2.file);
   const root = document.createElement("div"); root.id = "home-art"; root.dataset.scene = scene; root.setAttribute("aria-hidden", "true");
   const stage = document.createElement("div"); stage.className = "hs-stage"; root.appendChild(stage);
+  let interactions;
   plate.className = "hs-plate"; plate.alt = ""; stage.appendChild(plate);
-  const place = (img, spec, cls, anim) => {
-    img.className = "hs-layer " + cls + (anim ? " hs-" + anim : "");
-    img.alt = "";
-    img.style.left = spec.x + "%"; img.style.top = spec.y + "%"; img.style.width = spec.w + "%";
-    img.style.transformOrigin = spec.ox + "% " + spec.oy + "%";
-    stage.appendChild(img);
-  };
   if (cfg.shadow) {
     (Array.isArray(cfg.shadow[0]) ? cfg.shadow : [cfg.shadow]).forEach(([cx, cy, w, h, a]) => {
       const sh = document.createElement("div");
@@ -114,15 +114,17 @@ async function buildHomeScene(home, scene, current) {
   box2.className = "hs-layer hs-back" + (cfg.hero2 ? " hs-" + cfg.hero2 : "");
   box2.style.cssText = `left:${s2.x}%;top:${s2.y}%;width:${s2.w}%;aspect-ratio:${s2.sw}/${s2.sh};transform-origin:${s2.ox}% ${s2.oy}%`;
   hop2.className = "hs-hop"; hero2.className = "hs-part"; hero2.alt = ""; hop2.appendChild(hero2); box2.appendChild(hop2); stage.appendChild(box2);
-  const tapZone = (spec, hopEl, tap) => {
+  const propDetails = decorateHomeProps(scene, { hop: hop2, img: hero2, spec: s2 });
+  const tapZone = (spec, role, tap) => {
     // The tap zone covers the upper part of the character's visible shape (the picture has transparent margins around it).
     const W = spec.sw, H = spec.sh, hp = spec.w * (HOME_ART_REF.width / HOME_ART_REF.height) * (H / W), t = tap || [.1, 0, .8, .7], A = spec.ab || { x: 0, y: 0, width: W, height: H };
     const zone = document.createElement("div"); zone.className = "hs-tap";
     zone.style.cssText = `left:${spec.x + spec.w * (A.x + A.width * t[0]) / W}%;top:${spec.y + hp * (A.y + A.height * t[1]) / H}%;width:${spec.w * A.width * t[2] / W}%;height:${hp * A.height * t[3] / H}%`;
     stage.appendChild(zone);
-    zone.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); hopEl.classList.remove("hs-hopping"); void hopEl.offsetWidth; hopEl.classList.add("hs-hopping"); boing(); });
+    zone.dataset.subject = role ? "prop" : "hero";
+    zone.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); interactions?.react(role); });
   };
-  tapZone(s2, hop2, cfg.tap2);
+  tapZone(s2, 1, cfg.tap2);
   {
     // The main subject is built from the whole sprite (minus the cut-out parts) plus a copy of each part that moves on its own.
     const spec = art.hero, W = spec.sw, H = spec.sh, bp = (rig && rig.base) || { x: 0, y: 0, w: W, h: H };
@@ -139,6 +141,7 @@ async function buildHomeScene(home, scene, current) {
     if (rig && rig.base) at(hero, rig.base);
     hero.style.clipPath = `polygon(${notch.join(", ")})`;
     hop.appendChild(hero);
+    const heroDetails = decorateHomeHero(scene, { hop, img: hero, base: bp, W, H });
     (cfg.limbs || []).forEach((l) => {
       const arm = hero.cloneNode(); arm.className = "hs-part hs-" + l.anim; arm.style.clipPath = `polygon(${l.poly.map(([x, y]) => P(x, y)).join(", ")})`;
       arm.style.transformOrigin = pct(l.pivot[0], l.pivot[1]); hop.appendChild(arm);
@@ -146,7 +149,7 @@ async function buildHomeScene(home, scene, current) {
     if (rig) {
       // Moving parts sit over the base (or behind it); each swings, wiggles or flaps about its own pivot.
       rig.parts.forEach((q) => {
-        const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-" + q.anim; img.alt = ""; at(img, q);
+        const img = rigImgs.get(q.file).cloneNode(); img.className = "hs-rig hs-" + q.anim; img.alt = ""; at(img, q);
         img.style.transformOrigin = q.ox + "% " + q.oy + "%";
         if (q.z === "back") hop.insertBefore(img, hop.firstChild); else hop.appendChild(img);
       });
@@ -155,8 +158,9 @@ async function buildHomeScene(home, scene, current) {
         const w = document.createElement("div"), n = q.frames.length;
         w.className = "hs-rig hs-fx hs-fx-" + q.anim; w.style.cssText = `left:${q.x / W * 100}%;top:${q.y / H * 100}%;width:${q.w / W * 100}%;height:${q.h / H * 100}%;--fd:${q.dur}s;animation-delay:${q.delay}s`;
         q.frames.forEach((fr, i) => {
-          const im = rigImgs.get(fr).cloneNode(); im.alt = ""; im.className = "hs-fxf";
-          if (n > 1) { im.style.animationName = "hsFx" + n; im.style.animationDuration = q.dur + "s"; im.style.animationDelay = (i ? -((n - i) * q.dur / n) : 0) + "s"; }
+          const im = rigImgs.get(fr.file).cloneNode(); im.alt = ""; im.className = "hs-fxf";
+          if (q.anim === "bloom") { im.style.animationName = "hsBloom" + i; im.style.animationDuration = q.dur + "s"; }
+          else if (n > 1) { const speed = q.frameDur || q.dur; im.style.animationName = "hsFx" + n; im.style.animationDuration = speed + "s"; im.style.animationDelay = (i ? -((n - i) * speed / n) : 0) + "s"; }
           w.appendChild(im);
         });
         if (q.ref) { // placed in picture units on the stage (for effects that belong to the second object)
@@ -166,14 +170,19 @@ async function buildHomeScene(home, scene, current) {
           const sp = onHero ? spec : s2; // which object the effect belongs to (default: the second one)
           const bx = sp.x / 100 * HOME_ART_REF.width, by = sp.y / 100 * HOME_ART_REF.height, bw = sp.w / 100 * HOME_ART_REF.width, bh = bw * sp.sh / sp.sw;
           w.style.left = (q.x - bx) / bw * 100 + "%"; w.style.top = (q.y - by) / bh * 100 + "%"; w.style.width = q.w / bw * 100 + "%"; w.style.height = q.h / bh * 100 + "%";
-          (onHero ? hop : hop2).appendChild(w);
-        } else if (q.z === "back") hop.insertBefore(w, hop.firstChild); else hop.appendChild(w);
+          (onHero ? hop : q.followTop && propDetails.top ? propDetails.top : hop2).appendChild(w);
+        } else if (q.stageBack) {
+          const owner = document.createElement("div"); owner.className = "hs-effect-owner";
+          owner.style.cssText = `left:${spec.x}%;top:${spec.y}%;width:${spec.w}%;aspect-ratio:${W}/${H}`;
+          owner.appendChild(w); stage.insertBefore(owner, stage.querySelector(".hs-layer"));
+        } else if (scene === "toy-box" && heroDetails.head) heroDetails.head.appendChild(w);
+        else if (q.z === "back") hop.insertBefore(w, hop.firstChild); else hop.appendChild(w);
       });
-      rig.patches.forEach((q) => { const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); hop.appendChild(img); });
+      rig.patches.forEach((q) => { const img = rigImgs.get(q.file).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); (heroDetails.head || hop).appendChild(img); });
     }
     stage.appendChild(box);
     // Tap the character on top: a springy hop (squash, stretch, settle) with a tiny boing and a light buzz.
-    tapZone(spec, hop, cfg.tap);
+    tapZone(spec, 0, cfg.tap);
   }
   // Critters: the stored pictures, plus any extra creature that only exists as animation frames (rig.critFrames with c).
   const defs = art.critters.map((c, i) => ({ c, img: crits[i], i }));
@@ -185,7 +194,7 @@ async function buildHomeScene(home, scene, current) {
     if (fr) { // animated frames take the picture's place
       img = document.createElement("div"); img.className = "hs-wingbox"; img.style.aspectRatio = c.w + "/" + c.h;
       fr.frames.forEach((q, j) => {
-        const im = rigImgs.get(q).cloneNode(); im.alt = ""; im.className = "hs-fxf";
+        const im = rigImgs.get(q.file).cloneNode(); im.alt = ""; im.className = "hs-fxf";
         im.style.cssText = `left:${fr.cell.x}%;top:${fr.cell.y}%;width:${fr.cell.w}%;height:${fr.cell.h}%;animation-name:hsFx${fr.frames.length};animation-duration:${fr.dur}s;animation-delay:${j ? -((fr.frames.length - j) * fr.dur / fr.frames.length) : 0}s`;
         img.appendChild(im);
       });
@@ -211,7 +220,8 @@ async function buildHomeScene(home, scene, current) {
     }
     body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" || cc.kind === "swoop" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
-    const back = cc.behind != null ? cc.behind : cc.kind === "scuttle" || cc.kind === "roll" || cc.kind === "teeter", first = back && stage.querySelector(".hs-layer");
+    if (scene === "penguin" && i === 0) { wrap.style.setProperty("--ct", "74%"); }
+    const back = scene === "penguin" && i === 0 ? true : cc.behind != null ? cc.behind : cc.kind === "scuttle" || cc.kind === "roll" || cc.kind === "teeter", first = back && stage.querySelector(".hs-layer");
     if (first) stage.insertBefore(wrap, first); else stage.appendChild(wrap);
   });
   const size = () => {
@@ -221,6 +231,9 @@ async function buildHomeScene(home, scene, current) {
     stage.style.setProperty("--sw", HOME_ART_REF.width * s + "px");
   };
   size(); resizeStage = size;
+  disposeScene(); stopHomeSound();
+  interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound);
+  disposeScene = interactions.cleanup;
   const previous = document.getElementById("home-art");
   if (previous) previous.replaceWith(root); else home.prepend(root);
   home.classList.add("has-art");
