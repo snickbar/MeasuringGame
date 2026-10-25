@@ -206,13 +206,13 @@ if (location.protocol === "file:") {
   /* These screens pin their Back button with position:fixed. A transform on an ancestor makes fixed children position against that
      ancestor instead of the window, so a slide-in on the screen itself left the Back button in the wrong spot until it ended.
      Here the slide-in runs on everything except the Back button, so the button is in place from the first frame. */
-  #collection-screen, #items-screen, #career-screen, #achievements-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen { animation: none; }
+  #collection-screen, #items-screen, #career-screen, #achievements-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #wb-screen { animation: none; }
   #collection-screen.active > :not(.screen-back-btn), #items-screen.active > :not(.screen-back-btn), #career-screen.active > :not(.screen-back-btn), #achievements-screen.active > :not(.screen-back-btn),
-  #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn), #party-screen.active > :not(.screen-back-btn), #teamvteam-screen.active > :not(.screen-back-btn), #teamworlds-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
+  #daily-screen.active > :not(.screen-back-btn), #solo-screen.active > :not(.screen-back-btn), #worlds-screen.active > :not(.screen-back-btn), #monthly-screen.active > :not(.screen-back-btn), #survival-screen.active > :not(.screen-back-btn), #wb-screen.active > :not(.screen-back-btn), #party-screen.active > :not(.screen-back-btn), #teamvteam-screen.active > :not(.screen-back-btn), #teamworlds-screen.active > :not(.screen-back-btn) { animation: screenEnter 320ms cubic-bezier(.34,1.56,.64,1); }
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 
-  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #hs-screen, #bluff-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #party-screen, #teamvteam-screen, #teamworlds-screen { display: none; }
-  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #hs-screen.active, #bluff-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #party-screen.active, #teamvteam-screen.active, #teamworlds-screen.active { display: block; }
+  #home-screen, #create-screen, #settings-screen, #howto-screen, #join-screen, #name-avatar-screen, #lobby-screen, #hud, #final-screen, #hs-screen, #bluff-screen, #left-screen, #ended-screen, #gacha-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #wb-screen, #party-screen, #teamvteam-screen, #teamworlds-screen { display: none; }
+  #home-screen.active, #create-screen.active, #settings-screen.active, #howto-screen.active, #join-screen.active, #name-avatar-screen.active, #lobby-screen.active, #final-screen.active, #hs-screen.active, #bluff-screen.active, #left-screen.active, #ended-screen.active, #gacha-screen.active, #collection-screen.active, #preset-settings-screen.active, #items-screen.active, #achievements-screen.active, #career-screen.active, #daily-screen.active, #solo-screen.active, #worlds-screen.active, #monthly-screen.active, #survival-screen.active, #wb-screen.active, #party-screen.active, #teamvteam-screen.active, #teamworlds-screen.active { display: block; }
   .screen:not(.active), #hud:not(.active) { display: none !important; }
   #final-screen.active { padding-bottom: calc(var(--bottom-bar-h, 58px) + 8px); }
   #hud.active {
@@ -953,6 +953,22 @@ if (location.protocol === "file:") {
   #monthly-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
   #survival-screen.active #survival-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #survival-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  #wb-screen.active #wb-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
+  #wb-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  #wb-content .sv-heart { width: 30px; }
+  #wb-content .sv-hud { gap: 1px; margin: 2px 0 4px; }
+  /* Which Is Bigger: two tappable object cards, the one you tap is lifted and outlined. */
+  .wb-cards { display: flex; justify-content: center; align-items: stretch; gap: 12px; margin: 8px 0; }
+  .wb-card { flex: 1 1 0; min-width: 0; max-width: 170px; box-sizing: border-box; padding: 10px 8px; background: #fffdf6; border: 3px solid #ecdcc0; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #000; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .wb-card img { display: block; width: 100%; height: 110px; object-fit: contain; }
+  .wb-card .wb-n { font-size: 13px; line-height: 1.15; text-transform: uppercase; letter-spacing: .3px; }
+  .wb-card .wb-d { font-size: 11px; color: #7a6446; }
+  .wb-card.sel { border-color: #f0902a; background: #fff3dc; box-shadow: 0 0 0 3px rgba(240,144,42,.35); transform: translateY(-3px); }
+  .wb-card.right { border-color: #4bb04f; background: #eaf8e8; }
+  .wb-card.wrong { border-color: #d9493f; background: #fdeceb; }
+  .wb-card:disabled { cursor: default; }
+  .wb-mark { font-size: 84px; line-height: 1; margin: 4px 0; }
+  .wb-mark.ok { color: #3a9d3f; } .wb-mark.bad { color: #d9493f; }
   .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
   .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
@@ -1472,7 +1488,7 @@ if (location.protocol === "file:") {
   body.overlay-has-return #shop-tabs { margin-right: 56px; }
   body.overlay-has-return .career-tabs { padding-right: 60px; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
-  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #teamvteam-screen, #teamworlds-screen { position: relative; }
+  #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #wb-screen, #teamvteam-screen, #teamworlds-screen { position: relative; }
   /* Everything above the scrolling content stays put: the header and Back button (Settings), or the header through the player count (Lobby). */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -3746,6 +3762,11 @@ if (location.protocol === "file:") {
   <div id="survival-content"></div>
 </div>
 
+<div id="wb-screen" class="screen">
+  <button id="wb-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="wb-content"></div>
+</div>
+
 <div id="party-screen" class="screen">
   <button id="party-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="party-content"></div>
@@ -4347,6 +4368,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
+  import { pickBiggerPair, isCorrectPick } from "./anim/which-bigger.mjs";
   import {newBluff,dealBluff,bluffAction,commitBluff,bluffRoundRecord,bluffStandings} from './anim/bluff.mjs';
   import {createBluffUI,bluffFinalHtml} from './anim/bluff-ui.mjs';
   import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
@@ -7764,6 +7786,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldsScreenEl = document.getElementById("worlds-screen");
   const monthlyScreenEl = document.getElementById("monthly-screen");
   const survivalScreenEl = document.getElementById("survival-screen");
+  const wbScreenEl = document.getElementById("wb-screen");
   const partyScreenEl = document.getElementById("party-screen");
   const bluffScreenEl = document.getElementById('bluff-screen');
   const partyContentEl = document.getElementById("party-content");
@@ -8971,8 +8994,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, hsScreenEl, bluffScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, hsScreenEl, bluffScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, wbScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, wbScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
   let overlayReturnScreen = null;
   let overlayFocusReturn=null;
   // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
@@ -9508,7 +9531,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png" })}
-      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}`;
+      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}
+      ${card("sh-wb", "items/elephant.webp", "Which Is Bigger", wbSub(), {})}`;
   }
   function openSolo() {
     renderSoloHub();
@@ -9521,6 +9545,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (b.id === "sh-worlds") openWorlds();
     else if (b.id === "sh-monthly") openMonthly();
     else if (b.id === "sh-survival") openSurvival();
+    else if (b.id === "sh-wb") openWhichBigger();
     else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(); showCreateScreen("solo"); }
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
@@ -11308,6 +11333,88 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(sv&&!sv.finished&&['question','reveal'].includes(sv.phase))persistSoloSession('survival',sv);
     survivalStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
   });
+
+  // ==================== Which Is Bigger: tap the bigger object, 3 lives, pairs get closer as you go ====================
+  // "Bigger" means the dimension each object is measured by. Step 2 of the build: question screen and a plain result
+  // (the drop-in animation, summary screen, coins and leaderboard come next).
+  const WB_LIVES = 3;
+  const wbContentEl = document.getElementById("wb-content");
+  let wb = null;
+  const wbBest = () => (myProfile.whichBigger && myProfile.whichBigger.best) || 0;
+  function wbSub() { const b = wbBest(); return b ? `Your best: ${b} in a row` : "Tap the bigger one"; }
+  const wbHeartsHtml = (lives, score) => `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="sv-acc">Score: <b>${score}</b></div></div>`;
+  const wbNewRun = () => ({ runId: crypto.randomUUID(), phase: "question", lives: WB_LIVES, score: 0, round: 1, used: new Set(), pair: null, picked: null, ok: null });
+  function wbDim(o) { return (o.measurement && o.measurement.dimension) || "length"; }
+  function wbCardHtml(o, cls, disabled) {
+    return `<button type="button" class="wb-card ${cls || ""}" data-id="${o.id}"${disabled ? " disabled" : ""}><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span><span class="wb-d">measured by ${escapeHtml(wbDim(o))}</span></button>`;
+  }
+  function openWhichBigger() {
+    const fromHub = soloScreenEl.classList.contains("active");
+    wb = { phase: "intro" };
+    renderWhichBigger();
+    openOverlay(wbScreenEl);
+    if (fromHub) overlayReturnScreen = soloScreenEl;
+  }
+  function renderWhichBigger() {
+    if (!wb) return;
+    const el = wbContentEl;
+    if (wb.phase === "intro") {
+      el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
+        <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
+        <button type="button" class="dc-btn" id="wb-start">Start</button>`;
+      return;
+    }
+    if (wb.phase === "question") {
+      rerollPerRound(wb, wb.round);
+      if (!wb.pair) {
+        wb.pair = pickBiggerPair({ objects: OBJECTS, round: wb.round, used: wb.used });
+        if (wb.pair.recycled) wb.used.clear();
+        wb.used.add(wb.pair.left.id); wb.used.add(wb.pair.right.id);
+      }
+      const p = wb.pair;
+      el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives, wb.score)}
+        <p class="dc-prompt">Which is bigger?</p>
+        <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}${wbCardHtml(p.right)}</div>
+        <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
+      return;
+    }
+    if (wb.phase === "result") {
+      const p = wb.pair, ok = wb.ok;
+      const cls = (o) => (o.id === p.bigger.id ? "right" : (o.id === wb.picked ? "wrong" : ""));
+      el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives, wb.score)}
+        <div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div>
+        <p class="dc-prompt">${ok ? "Correct!" : "Not quite."} <b>${escapeHtml(p.bigger.name)}</b> is bigger.</p>
+        <div class="wb-cards">${wbCardHtml(p.left, cls(p.left), true)}${wbCardHtml(p.right, cls(p.right), true)}</div>
+        <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
+      return;
+    }
+    el.innerHTML = `<h2 class="dc-title">Game over</h2>
+      <div class="dc-card dc-hot"><div class="wl-big">${wb.score}</div><div class="dc-big">correct</div></div>
+      <button type="button" class="dc-btn" id="wb-again">Play again</button>`;
+  }
+  wbContentEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || !wb) return;
+    if (b.id === "wb-start" || b.id === "wb-again") { wb = wbNewRun(); renderWhichBigger(); return; }
+    if (b.classList.contains("wb-card") && wb.phase === "question") {
+      wb.picked = b.dataset.id;
+      wbContentEl.querySelectorAll(".wb-card").forEach((c) => c.classList.toggle("sel", c === b));
+      document.getElementById("wb-lock").disabled = false;
+      try { playSound("pick"); } catch (err) {}
+      return;
+    }
+    if (b.id === "wb-lock" && wb.phase === "question" && wb.picked) {
+      wb.ok = isCorrectPick(wb.pair, wb.picked);
+      if (wb.ok) wb.score++; else wb.lives--;
+      wb.phase = "result"; vibrate(wb.ok ? 25 : [70, 60, 70]);
+      renderWhichBigger(); return;
+    }
+    if (b.id === "wb-next") {
+      if (wb.lives <= 0) { wb.phase = "over"; renderWhichBigger(); return; }
+      wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.phase = "question"; renderWhichBigger();
+    }
+  });
+  document.getElementById("wb-close-btn").addEventListener("click", () => { closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
 
   // ---- Career > Stats ----
   // Career history stores the original guess/answer ratio; use the same
@@ -17648,7 +17755,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function gameplayAudioVisible() {
-    return !!document.querySelector("#hud.active,#hs-screen.active,#bluff-screen.active,#final-screen.active,#lobby-screen.active,#daily-screen.active,#monthly-screen.active,#worlds-screen.active,#survival-screen.active,#teamworlds-screen.active,#teamvteam-screen.active");
+    return !!document.querySelector("#hud.active,#hs-screen.active,#bluff-screen.active,#final-screen.active,#lobby-screen.active,#daily-screen.active,#monthly-screen.active,#worlds-screen.active,#survival-screen.active,#wb-screen.active,#teamworlds-screen.active,#teamvteam-screen.active");
   }
 
   function playSound(kind) {
