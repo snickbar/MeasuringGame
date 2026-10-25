@@ -12,9 +12,9 @@ const CONFIG = {
   games: { hero: "sway", hero2: "breathe", shadow: [[238, 1200, 150, 26, .28], [446, 1218, 130, 24, .3]], critters: [{ row: 31, size: 15, secs: 27, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 69, size: 12, secs: 38, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
   sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
   snacks: { hero: "sway", hero2: "breathe", shadow: [[245, 1168, 120, 22, .3], [492, 1178, 90, 20, .3]], critters: [{ row: 30, size: 14, secs: 28, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 71, size: 11, secs: 36, delay: 10, dir: -1, kind: "scuttle", faces: -1 }] },
-  town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 69, size: 12, secs: 36, delay: 6, dir: 1, kind: "scuttle", faces: 1 }, { row: 40, size: 14, secs: 30, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
+  town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 69, size: 12, secs: 36, delay: 6, dir: 1, kind: "scuttle", faces: 1, wings: [{ cls: "hs-leg", wt: .3, deg: 16, delay: 0, pivot: [673, 886], poly: [[488, 883], [733, 883], [733, 1081], [488, 1081]] }, { cls: "hs-leg", wt: .3, deg: 16, delay: -.3, pivot: [898, 931], poly: [[823, 928], [1098, 928], [1098, 1081], [823, 1081]] }] }, { row: 40, size: 14, secs: 30, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
   house: { hero: "sway", hero2: "breathe", shadow: [[190, 1285, 330, 30, .28], [470, 1348, 150, 26, .3]], critters: [{ row: 80, size: 12, secs: 34, delay: 6, dir: 1, kind: "scuttle", faces: 1 }] },
-  wheels: { hero: "sway", hero2: "breathe", shadow: [[258, 1198, 280, 30, .3], [455, 1210, 130, 24, .3]], critters: [{ row: 34, size: 16, secs: 60, delay: 4, dir: 1, kind: "glide", faces: 1, behind: true }, { row: 44, size: 14, secs: 34, delay: 14, dir: -1, kind: "glide", faces: 1 }] },
+  wheels: { hero: "sway", hero2: "breathe", shadow: [[258, 1198, 280, 30, .3], [455, 1210, 130, 24, .3]], critters: [{ row: 34, size: 16, secs: 60, delay: 4, dir: 1, kind: "glide", faces: 1, behind: true }, { row: 36, size: 14, secs: 34, delay: 14, dir: 1, kind: "swoop", faces: 1 }] },
   lighthouse: { hero: "sway", hero2: "breathe", shadow: [[190, 1120, 300, 34, .3], [442, 1122, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 65, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1, behind: true }] },
   underwater: { hero: "breathe", hero2: "sway", shadow: [[250, 1160, 330, 26, .25], [520, 1168, 150, 22, .25]], critters: [{ row: 30, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 64, size: 12, secs: 44, delay: 6, dir: -1, kind: "rise", faces: 1 }] },
   "toy-box": { hero: "sway", hero2: "breathe", shadow: [[272, 1176, 200, 26, .3], [525, 1176, 170, 24, .3]], critters: [{ row: 66, size: 12, secs: 44, delay: 4, dir: -1, kind: "teeter", faces: 1 }, { row: 74, size: 10, secs: 34, delay: 18, dir: -1, kind: "roll", faces: 1 }] },
@@ -139,9 +139,10 @@ export async function installHomeScene() {
           w.appendChild(im);
         });
         if (q.ref) { // placed in picture units on the stage (for effects that belong to the second object)
-          const bx = s2.x / 100 * HOME_ART_REF.width, by = s2.y / 100 * HOME_ART_REF.height, bw = s2.w / 100 * HOME_ART_REF.width, bh = bw * s2.sh / s2.sw;
+          const sp = q.on === "hero" ? spec : s2; // which object the effect belongs to (default: the second one)
+          const bx = sp.x / 100 * HOME_ART_REF.width, by = sp.y / 100 * HOME_ART_REF.height, bw = sp.w / 100 * HOME_ART_REF.width, bh = bw * sp.sh / sp.sw;
           w.style.left = (q.x - bx) / bw * 100 + "%"; w.style.top = (q.y - by) / bh * 100 + "%"; w.style.width = q.w / bw * 100 + "%"; w.style.height = q.h / bh * 100 + "%";
-          hop2.appendChild(w);
+          (q.on === "hero" ? hop : hop2).appendChild(w);
         } else if (q.z === "back") hop.insertBefore(w, hop.firstChild); else hop.appendChild(w);
       });
       rig.patches.forEach((q) => { const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); hop.appendChild(img); });
@@ -180,11 +181,11 @@ export async function installHomeScene() {
       const holes = cc.wings.map((w) => { const pts = w.poly.map(([x, y]) => P(x, y)); return pts.join(", ") + ", " + pts[0] + ", 0 0"; });
       img.className = "hs-part"; img.style.clipPath = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${holes.join(", ")})`; body.appendChild(img);
       cc.wings.forEach((w, k) => {
-        const wing = img.cloneNode(); wing.className = "hs-part hs-wing"; wing.style.clipPath = `polygon(${w.poly.map(([x, y]) => P(x, y)).join(", ")})`;
-        wing.style.transformOrigin = P(w.pivot[0], w.pivot[1]); wing.style.animationDelay = (k * -0.05) + "s"; wing.style.setProperty("--wd", (w.deg || 14) + "deg"); body.appendChild(wing);
+        const wing = img.cloneNode(); wing.className = "hs-part " + (w.cls || "hs-wing"); if (w.wt) wing.style.setProperty("--wt", w.wt + "s"); wing.style.clipPath = `polygon(${w.poly.map(([x, y]) => P(x, y)).join(", ")})`;
+        wing.style.transformOrigin = P(w.pivot[0], w.pivot[1]); wing.style.animationDelay = (w.delay != null ? w.delay : k * -0.05) + "s"; wing.style.setProperty("--wd", (w.deg || 14) + "deg"); body.appendChild(wing);
       });
     }
-    body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
+    body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" || cc.kind === "swoop" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
     const back = cc.behind != null ? cc.behind : cc.kind === "scuttle" || cc.kind === "roll" || cc.kind === "teeter", first = back && stage.querySelector(".hs-layer");
     if (first) stage.insertBefore(wrap, first); else stage.appendChild(wrap);

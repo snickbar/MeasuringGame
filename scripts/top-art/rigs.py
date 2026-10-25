@@ -11,7 +11,7 @@ RIGS={
    patches=[]),
  'corgi':dict(base='no-ears',base_fix=dict(region=(40,930,205,1225),feather=10),
    parts=[dict(name='tail',base='no-tail',ref_piece='with-tail',mode='sil',pivot=('frac',.88,.78),anim='wag',z='back'),
-          dict(name='ears',base='no-ears',mode='sil',split=True,refine=True,pivot=['bottom-right','bottom-left'],anim=['earL','earR'])],
+          dict(name='ears',base='no-ears',mode='sil',split=True,refine=True,pivot=['bottom-right','bottom-left'],anim=['earL','earR'],z='back')],
    patches=[dict(frame='pant',region=(580,545,900,800),anim='pant'),dict(frame='eyes-open',region=(545,400,905,535),anim='peek')]),
  'snacks':dict(base='no-leaves',
    parts=[dict(name='leaves',base='no-leaves',mode='col',pivot='bottom',anim='sway')],
@@ -30,7 +30,7 @@ RIGS={
        dict(sheet='smoke',x=300,y=1790,w=190,at=(.5,.8),anim='rise',dur=4.2,delay=0,min_area=300),
        dict(sheet='smoke',x=560,y=1790,w=150,at=(.5,.8),anim='rise',dur=5,delay=2,min_area=300)]),
  'lighthouse':dict(base=None,parts=[],patches=[],hero2_erase=[(500,110,580,185)],hero2_wipe=[(300,20,400,140)],hero2_soft=[(340,130,400,185)],
-   fx=[dict(sheet='mug-steam',ref=True,frames=[0,1,2,3],x=432,y=470,w=58,at=(.5,1),anim='rise',dur=4.5,delay=0,min_area=300,dil=25),
+   fx=[dict(sheet='mug-steam',ref=True,frames=[0],x=432,y=470,w=58,at=(.5,1),anim='rise',dur=4.5,delay=0,min_area=300,dil=25),
        dict(sheet='beam',x=440,y=312,w=700,at=(0,.5),anim='glow',dur=3.2,z='back',frames=[0],min_area=2000),
        dict(sheet='lamp-glow',x=412,y=313,w=320,at=(.5,.5),anim='glow',dur=2.4,frames=[0],min_area=2000)]),
  'underwater':dict(base='no-flipper',
@@ -55,8 +55,8 @@ RIGS={
  'giraffe':dict(base='no-ears',base_fix=dict(region=(690,1100,853,1520),feather=8,src='no-tail'),
    parts=[dict(name='tail',base='no-tail',mode='sil',pivot='top',anim='tailSwish',z='back'),
           dict(name='ears',base='no-ears',mode='sil',split=True,refine=True,pivot=['right','left'],anim=['flickL','flickR'],z='back')],
-   patches=[dict(frame='blink',region=(110,200,350,390),anim='blink')],
-   fx=[dict(sheet='duck-wing',ref=True,frames=[0],x=132,y=550,w=52,at=(.5,.5),anim='wingFlap',dur=3.8,min_area=2000,dil=15)]),
+   patches=[dict(frame='blink',region=(110,200,350,390),anim='blink')],hero2_inpaint=[(310,188,424,262)],
+   fx=[dict(sheet='duck-wing',ref=True,frames=[0],x=132,y=561,w=52,at=(.5,.5),anim='wingFlap',dur=3.8,min_area=2000,dil=15)]),
  'dragon':dict(base='no-wings',
    parts=[dict(name='wings',tf=dict(scale=.49,tx=192,ty=184),pivot=('frac',.6,.92),anim='flapS',z='back')],
    patches=[dict(frame='eyes-open',region=(840,640,1130,870),anim='peek')],
@@ -65,8 +65,7 @@ RIGS={
  'space':dict(base='no-arm',
    parts=[dict(name='arm',base='no-arm',mode='sil',pivot='bottom-left',anim='waveRest')],
    patches=[dict(frame='blink',region=(280,40,570,320),anim='blink')],
-   fx=[dict(sheet='flame',ref=True,frames=[0,1,2,3],x=244,y=1090,w=85,at=(.5,0),align='top',anim='flame',dur=.5,min_area=300,dil=25),
-       dict(sheet='visor-glint',frames=[0,1,2,3],x=420,y=172,w=325,at=(.5,.5),anim='glint',dur=5,delay=2,min_area=2000,dil=15)]),
+   fx=[dict(sheet='flame',ref=True,on='hero',frames=[0],x=244,y=1090,w=85,at=(.5,0),align='top',anim='flame',dur=.5,min_area=300,dil=25)]),
 }
 
 # Critter frame sheets: swap (or add) a critter's picture for stacked frames. i = critter index (0=a, 1=b, 2=extra).

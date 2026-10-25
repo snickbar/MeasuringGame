@@ -664,10 +664,10 @@ export const HOME_ART = {
     "w": 1254,
     "h": 1254,
     "ab": {
-     "x": 232,
-     "y": 232,
-     "width": 790,
-     "height": 790
+     "x": 230,
+     "y": 230,
+     "width": 794,
+     "height": 794
     }
    }
   ]
