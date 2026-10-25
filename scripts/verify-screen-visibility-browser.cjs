@@ -92,7 +92,13 @@ try{
   const behind=(a,b)=>Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
   if(scene==='games')assert(art.querySelectorAll('.hs-cube-face').length===5&&art.querySelectorAll('.hs-scuttle .hs-leg').length===4,'Turning cube has side faces; crab has four walking legs');
   if(scene==='underwater')assert(behind(art.querySelector('.hs-rise'),art.querySelector('.hs-back')),'Jellyfish behind objects');
-  if(scene==='house')assert(behind(art.querySelector('.hs-counter'),art.querySelector('.hs-back')),'Mouse behind foreground objects on counter');
+  if(scene==='house'){
+   assert(behind(art.querySelector('.hs-counter'),art.querySelector('.hs-back')),'Mouse behind foreground objects on counter');
+   assert(art.querySelectorAll('.hs-mouse-frame').length===4,'Mouse has four cheese-carrying walking poses');
+   const poses=new Set();for(const ms of [2200,2360,2520,2680]){at(ms);const visible=[...art.querySelectorAll('.hs-mouse-frame')].filter(f=>Number(getComputedStyle(f).opacity)>.5);assert(visible.length===1,'One walking pose visible');poses.add(visible[0]);}
+   assert(poses.size===4,'Feet advance through all four walking poses');
+   at(14000);assert(opacity('.hs-counter')===1,'Mouse remains opaque across the counter');
+  }
   if(scene==='toy-box'){
    at(7000);assert(opacity('.hs-arm-open')===1&&opacity('.hs-arm-closed')===0,'Robot opens its hand at the top of the wave');
    const zone=art.querySelector('[data-subject=prop]'),r=zone.getBoundingClientRect(),buttons=document.querySelector('.home-tile').getBoundingClientRect();
@@ -104,12 +110,14 @@ try{
   if(scene==='space')assert([...art.querySelectorAll('.hs-route')].every(r=>behind(r,art.querySelector('.hs-back'))),'Satellite and spacecraft behind objects');
   if(scene==='town')assert(behind(art.querySelector('.hs-route[data-critter-index="1"]'),art.querySelector('.hs-back')),'Blue bird behind objects');
   if(scene==='snacks'){
-   const ants=art.querySelector('[data-copies="2"]');assert(ants?.querySelectorAll('.hs-scuttle').length===2&&behind(art.querySelector('.hs-front'),ants),'Two following ants in front');
+   const ants=art.querySelector('[data-copies="2"]');assert(ants?.querySelectorAll('.hs-scuttle').length===2&&behind(ants,art.querySelector('.hs-back')),'Two following ants behind both objects');
    for(const ms of [14000,48000,57000]){at(ms);for(const walker of ants.querySelectorAll('.hs-wingbox'))assert([...walker.children].filter(f=>Number(getComputedStyle(f).opacity)>.5).length===1,'Exactly one animation frame per ant at '+ms);}
   }
   if(scene==='penguin'){
    const slider=art.querySelector('.hs-slide');assert(slider.closest('.hs-route').dataset.directionPolicy==='downhill-left','Penguin excluded from return crossings');
    at(4400);const high=slider.getBoundingClientRect();at(6780);const low=slider.getBoundingClientRect();assert(low.y>high.y+20&&low.x<high.x,'Penguin descends hill toward left');
+   at(10000);assert(opacity('.hs-slide')===1,'Penguin stays opaque until past the left edge');
+   assert(art.querySelector('.hs-ice-top .hs-melt-drop'),'Small drip belongs to moving top cube');
   }
   if(scene==='corgi')assert(art.querySelectorAll('.hs-kibble-piece').length===23&&art.querySelector('.hs-bowl-front'),'Individual food behind bowl rim');
   if(scene==='dragon')assert(art.querySelectorAll('.hs-coin-face').length===2&&art.querySelectorAll('.hs-coin-edge').length===64,'Coin has front, back and solid edge');
@@ -119,6 +127,10 @@ try{
    assert(art.querySelector('.hs-fx-steam').closest('.hs-cup-top'),'Steam follows the moving cup');
   }
   if(scene==='cactus'){
+   const dust=art.querySelector('.hs-roll');assert(behind(dust,art.querySelector('.hs-back')),'Dustball stays behind cactus and hats');
+   assert(dust.closest('.hs-route').dataset.directionPolicy==='terrain-return','Dust follows fixed terrain in both directions');
+   at(17600);const crest=dust.getBoundingClientRect();at(10120);const dip=dust.getBoundingClientRect();assert(dip.y>crest.y+25&&dip.x>crest.x,'Dust follows left crest into shallow right dip');
+   at(41400);const returnCrest=dust.getBoundingClientRect();assert(Math.abs(returnCrest.x-crest.x)<2&&Math.abs(returnCrest.y-crest.y)<2,'Return crossing follows same dune crest');
    const flower=art.querySelector('.hs-fx-bloom');assert(flower.closest('.hs-back'),'Flower attached to cactus');
    for(const ms of [1000,10200,11700,13500,15500]){at(ms);assert([...flower.children].filter(f=>Number(getComputedStyle(f).opacity)>.5).length===1,'One attached flower stage at '+ms);}
   }
@@ -135,6 +147,14 @@ try{
    at(13000);art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    assert(art.dataset.reaction===HOME_MOTION[scene].taps[role],'Specific '+scene+' '+subject+' reaction');
    if(scene==='town'&&role===1){assert(art.dataset.lamp==='on','Tap switches lamp on');}
+   if(scene==='toy-box'&&role===0){
+    const arm=art.querySelector('.hs-armIdle'),forearm=art.querySelector('.hs-forearm');
+    at(1200);const upperAngle=Math.atan2(new DOMMatrix(getComputedStyle(arm).transform).b,new DOMMatrix(getComputedStyle(arm).transform).a)*180/Math.PI;
+    assert(upperAngle>-55&&upperAngle<-40,'Robot shoulder stays low');
+    assert(new DOMMatrix(getComputedStyle(forearm).transform).b<-.8,'Elbow bends independently upward');
+    for(const ms of [1805,2000,2250]){at(ms);assert(opacity('.hs-arm-open')===0&&opacity('.hs-arm-closed')===1,'Open hand never flashes after tap at '+ms);}
+    art.querySelector('[data-subject=hero]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   }
    if((role===1&&['penguin','dragon','toy-box','space','cactus','corgi'].includes(scene))||(role===0&&scene==='games')){
     const target=art.querySelector(({penguin:'.hs-ice-top',dragon:'.hs-coin-cylinder','toy-box':'.hs-block-roof',space:'.hs-fx-flame',cactus:'.hs-fx-bloom',corgi:'.hs-kibble-piece',games:'.hs-cube-rotor'})[scene]);
     const before=getComputedStyle(target).transform;at(350);assert(getComputedStyle(target).transform!==before,'Tap produces visible '+scene+' movement');

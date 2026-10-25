@@ -24,6 +24,7 @@ export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map
   const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
   if(scene==='toy-box')files.push('refined/robot-palm.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
+  if(scene==='house')files.push('refined/mouse-cheese-walk.webp');
   return [scene,files];
 }));
 
@@ -96,9 +97,11 @@ export function decorateHomePart(scene, img, q, extras) {
 
   if (scene === "toy-box" && q.anim === "armIdle") {
     const arm = document.createElement("div"); arm.className = img.className; arm.style.cssText = img.style.cssText;
+    const upper=img.cloneNode();upper.className='hs-arm-upper';upper.removeAttribute('style');
+    const forearm=document.createElement('div');forearm.className='hs-forearm';
     img.className = "hs-arm-closed"; img.removeAttribute("style");
     const open = extras.get("refined/robot-palm.webp").cloneNode(); open.className = "hs-arm-open";
-    arm.append(img, open); return arm;
+    forearm.append(img,open);arm.append(upper,forearm);return arm;
   }
   if (scene === "games" && q.anim === "twistS") {
     // A real five-sided cuboid: side faces rotate into view rather than

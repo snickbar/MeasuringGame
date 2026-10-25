@@ -43,6 +43,10 @@ export function assembleHomeProp(scene,{hop,img,spec,extras},sheets) {
   if(scene==='giraffe'){
     const eye=document.createElement('i');eye.className='hs-duck-eye';top.firstChild.appendChild(eye);
   }
+  if(scene==='penguin'){
+    const source=document.createElement('div');source.className='hs-melt-source';source.style.cssText=top.firstChild.style.cssText;
+    const drip=document.createElement('i');drip.className='hs-melt-drop';source.appendChild(drip);top.appendChild(source);
+  }
   if(scene==='dragon'){
     const texture=top.firstChild;texture.className+=' hs-coin-face hs-coin-front';
     // A cylinder has real thickness: two circular textured faces and an edge

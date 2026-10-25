@@ -195,7 +195,7 @@ async function buildHomeScene(home, scene, current) {
     const cc = { ...cfg.critters[i] }; if (!cfg.critters[i] || !c) return;
     if (scene === "underwater" && i === 1) cc.behind = true;
     if (scene === "space" || (scene === "town" && i === 1)) cc.behind = true;
-    if (scene === "snacks" && i === 1) cc.behind = false;
+    if (scene === "snacks" && i === 1) cc.behind = true;
     if (scene === "games" && i === 1) cc.wings = [
       { poly: [[315,700],[410,638],[485,650],[465,722],[382,815],[342,825]], pivot:[450,665], delay:0 },
       { poly: [[470,705],[570,650],[650,700],[583,825],[550,872],[500,850]], pivot:[600,690], delay:-.18 },
@@ -204,6 +204,14 @@ async function buildHomeScene(home, scene, current) {
     ].map(w => ({ ...w, cls:"hs-leg", wt:.18, deg:9 }));
     const wrap = document.createElement("div"), fr = rig && (rig.critFrames || []).find((f) => f.i === i);
     let img = img0;
+    if(scene==='house'&&i===0){
+      c={w:543,h:724,ab:{x:17,y:29,width:518,height:671}};
+      img=document.createElement('div');img.className='hs-wingbox hs-mouse-walk';img.style.aspectRatio='543/724';
+      for(let frame=0;frame<4;frame++){
+        const cell=document.createElement('div');cell.className='hs-mouse-frame';cell.style.setProperty('--frame',frame);
+        const sprite=extras.get('refined/mouse-cheese-walk.webp').cloneNode();sprite.alt='';sprite.style.left=frame*-100+'%';cell.appendChild(sprite);img.appendChild(cell);
+      }
+    }
     if (fr) { // animated frames take the picture's place
       img = document.createElement("div"); img.className = "hs-wingbox"; img.style.aspectRatio = c.w + "/" + c.h;
       fr.frames.forEach((q, j) => {
@@ -234,10 +242,12 @@ async function buildHomeScene(home, scene, current) {
     body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" || cc.kind === "swoop" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
     const slide = scene === "penguin" && i === 0;
+    const duneRoll=scene==='cactus'&&i===0;
     if (slide) { wrap.style.setProperty("--ct", "0%");wrap.dataset.directionPolicy='downhill-left'; }
-    const route=document.createElement('div');route.className='hs-route'+(slide?'':' hs-bidirectional');
+    if(duneRoll)wrap.style.setProperty('--ct','0%');
+    const route=document.createElement('div');route.className='hs-route'+(slide||duneRoll?'':' hs-bidirectional');
     route.dataset.critterIndex=String(i);
-    route.dataset.directionPolicy=slide?'downhill-left':'alternating';route.style.cssText=`--cs:${cc.secs}s;--cd:${cc.delay}s`;
+    route.dataset.directionPolicy=slide?'downhill-left':duneRoll?'terrain-return':'alternating';route.style.cssText=`--cs:${cc.secs}s;--cd:${cc.delay}s`;
     route.appendChild(wrap);
     if(scene==='snacks'&&i===1){
       const following=wrap.cloneNode(true);following.classList.add('hs-following-ant');route.appendChild(following);route.dataset.copies='2';
