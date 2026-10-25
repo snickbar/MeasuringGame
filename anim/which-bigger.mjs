@@ -10,10 +10,11 @@
 //  - Which card holds the bigger object is random.
 
 export const MIN_RATIO = 1.25;       // closest allowed gap (bigger / smaller)
-export const START_RATIO = 500;      // typical gap in round 1
-export const RAMP_ROUNDS = 20;       // round at which the typical gap reaches MIN_RATIO
+export const START_RATIO = 40;       // typical gap in round 1
+export const RAMP_ROUNDS = 12;       // round at which the typical gap reaches MIN_RATIO
 export const RANDOM_CHANCE = 0.2;    // share of rounds with a completely random pair
 export const BREATHER_CHANCE = 0.15; // share of rounds that step back up to an easier gap
+export const SPIKE_CHANCE = 0.15;    // share of rounds that jump ahead to a harder gap than the ramp expects
 
 // The typical log-gap for a round: a straight line (in log space) from START_RATIO to MIN_RATIO.
 export function targetLogRatio(round) {
@@ -21,10 +22,11 @@ export function targetLogRatio(round) {
   return Math.log(START_RATIO) + (Math.log(MIN_RATIO) - Math.log(START_RATIO)) * t;
 }
 
-// Which kind of round this is, from one random roll: 'random', 'breather' or 'ramp'.
+// Which kind of round this is, from one random roll: 'random', 'breather', 'spike' or 'ramp'.
 export function roundKind(roll) {
   if (roll < RANDOM_CHANCE) return 'random';
   if (roll < RANDOM_CHANCE + BREATHER_CHANCE) return 'breather';
+  if (roll < RANDOM_CHANCE + BREATHER_CHANCE + SPIKE_CHANCE) return 'spike';
   return 'ramp';
 }
 
@@ -34,7 +36,8 @@ export function gapWindow(round, kind) {
   if (kind === 'random') return [floor, Infinity];
   const c = targetLogRatio(round);
   // A breather aims well above the ramp, but never past the very first round's gap.
-  const centre = kind === 'breather' ? Math.min(ceiling, c * 1.8 + 0.4) : c;
+  // A spike aims well below the ramp (a harder, closer pair) even early in the run.
+  const centre = kind === 'breather' ? Math.min(ceiling, c * 1.8 + 0.4) : kind === 'spike' ? c * 0.45 : c;
   return [Math.max(floor, centre * 0.6), Math.max(floor + 0.15, centre * 1.4)];
 }
 

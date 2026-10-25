@@ -1017,6 +1017,223 @@ export function createStackAnimation(container, options = {}) {
     };
   }
 
+  // ---- Compare mode (Which Is Bigger): no stacking ----
+  // The object the player picked drops in from the top and stands on the ground, close up. Then the
+  // camera zooms out while the other object hops in from the left (if it is the smaller one) or from
+  // the right (if it is the bigger one), so the final picture is always small on the left, big on the right.
+  // The same scene protocol as prepare(): the result plays with start().
+  const CMP_DROP = 0.7;      // seconds for the picked object to fall in
+  const CMP_HOLD = 0.45;     // pause on it before the camera moves
+  const CMP_ZOOM = 2.2;      // seconds for the zoom out
+  const CMP_END = 0.5;       // pause on the finished picture
+  const CMP_MIN_VIS = 10;    // the smaller object is never drawn thinner than this in the final view
+  async function prepareCompare(firstIn, secondIn, sizing = {}) {
+    const big = firstIn.mm >= secondIn.mm ? firstIn : secondIn;
+    const [kit] = await Promise.all([loadScenery(big, sceneryBase + 'scenery/'), loadPicture(firstIn), loadPicture(secondIn), originalSceneryReady]);
+    return buildCompareScene(firstIn, secondIn, sizing.hMax || H_MAX, sizing.minStageH || 0, kit);
+  }
+
+  function buildCompareScene(first, second, hMax, minStageH, kit) {
+    const firstIsBig = first.mm >= second.mm;
+    const big = firstIsBig ? first : second, small = firstIsBig ? second : first;
+    const r = Math.min(1, small.mm / big.mm);
+    const aBig = aspectFor(big, !flipFacing), aSm = aspectFor(small, flipFacing);
+    const bigSprite = spriteFor(big, !flipFacing), smallSprite = spriteFor(small, flipFacing);
+    const bigLanding = landingStyleFor(big), smallLanding = landingStyleFor(small);
+    const bigKind = motionFor(big, !flipFacing), smKind = motionFor(small, flipFacing);
+    const dark = !!theme.dark, scenery = kit.id;
+    const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
+    const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const groundCol = kit.config.night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
+    const { cloudAlpha } = theme;
+    const W = container.clientWidth || 360;
+
+    // Final picture: small on the left, big on the right, side by side, centred. The big one is a
+    // little shorter than the close-up so the zoom out is visible.
+    let H = hMax * 0.8;
+    for (let k = 0; k < 3; k++) {
+      const hS = Math.max(CMP_MIN_VIS, H * r);
+      H = Math.min(hMax * 0.8, (W - 2 * G - GAP) / (aBig + aSm * (hS / H)));
+    }
+    const hS = Math.max(CMP_MIN_VIS, H * r);
+    const wB = H * aBig, wS = hS * aSm;
+    const pairW = wS + GAP + wB;
+    const xS0 = (W - pairW) / 2, xB0 = xS0 + wS + GAP;
+    const fin = {
+      big: { w: wB, h: H, cx: xB0 + wB / 2 },
+      small: { w: wS, h: hS, cx: xS0 + wS / 2 },
+    };
+    const F = firstIsBig ? fin.big : fin.small, S = firstIsBig ? fin.small : fin.big;
+    const fSprite = firstIsBig ? bigSprite : smallSprite, sSprite = firstIsBig ? smallSprite : bigSprite;
+    const fLanding = firstIsBig ? bigLanding : smallLanding, sLanding = firstIsBig ? smallLanding : bigLanding;
+    const sKind = firstIsBig ? smKind : bigKind;
+    const fObj = first, sObj = second;
+    const secondOnRight = !firstIsBig;   // the bigger one always arrives from the right
+
+    // Close-up: the picked object fills the stage; s0 is how much bigger than its final size it is drawn.
+    const closeH = firstIsBig ? hMax : Math.min(hMax * 0.62, (W - 2 * G) / (F.w / F.h));
+    const closeW = closeH * (F.w / F.h);
+    const s0 = Math.max(1, Math.min(closeH / F.h, (W - 2 * G) / F.w));
+    void closeW;
+
+    const padTop = PAD_TOP + Math.max(0, (minStageH || 0) - (PAD_TOP + hMax + PAD_BOTTOM));
+    const stageH = padTop + hMax + PAD_BOTTOM;
+    const floorY = padTop + hMax;
+
+    const tDrop = CMP_DROP, tZ0 = CMP_DROP + CMP_HOLD, tZ1 = tZ0 + CMP_ZOOM;
+    const tE0 = tZ0 + 0.1, tE1 = tZ1 - 0.1;    // the second object's hop lasts through the zoom
+    const tEnd = tZ1 + CMP_END;
+
+    const cues = [
+      { t: 0.05, name: 'swipe', vol: 0.5, rate: 1 },
+      { t: tDrop, name: 'tap', vol: 0.6, rate: 0.8 },
+      { t: tZ0, name: 'swipe', vol: 0.35, rate: 1.25 },
+      { t: tE1, name: 'tap', vol: 0.5, rate: 1 },
+      { t: tEnd, name: 'reveal', vol: 0.5, rate: 1 },
+    ];
+
+    // Camera: s is how much bigger than the final view things are drawn; cx is the point (in final-view
+    // pixels) at the middle of the screen.
+    const cameraAt = (t) => {
+      const u = smooth(clamp((t - tZ0) / CMP_ZOOM, 0, 1));
+      return { s: Math.exp(Math.log(s0) * (1 - u)), cx: F.cx + (W / 2 - F.cx) * u, u };
+    };
+    const screenX = (worldCx, cam) => W / 2 + (worldCx - cam.cx) * cam.s;
+
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    container.style.height = stageH + 'px';
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(stageH * dpr);
+    nEl.textContent = ''; uEl.textContent = '';
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', 'Animated size comparison of ' + first.name + ' and ' + second.name);
+
+    function shadow(x, y, width, height, alpha = .28) {
+      ctx.save(); ctx.translate(x, y); ctx.scale(Math.max(2, width / 2), Math.max(1, height));
+      const shade = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      shade.addColorStop(0, `rgba(52,42,32,${alpha})`); shade.addColorStop(.55, `rgba(52,42,32,${alpha * .75})`); shade.addColorStop(1, 'rgba(52,42,32,0)');
+      ctx.fillStyle = shade; ctx.beginPath(); ctx.ellipse(0, 0, 1, 1, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    function drawLanded(sprite, x, bottom, width, height, style, age) {
+      const pose = landingPose(style, age, reduceMotion);
+      ctx.save(); ctx.translate(x + width / 2, bottom - height * pose.lift); ctx.rotate(pose.rock);
+      ctx.drawImage(sprite, -width * (1 + pose.squash / 2) / 2, -height * (1 - pose.squash), width * (1 + pose.squash / 2), height * (1 - pose.squash));
+      ctx.restore();
+    }
+    function dust(x, y, age, width, objectMm) {
+      const heft = clamp(.8 + Math.log10(Math.max(1, objectMm)) / 3, .85, 2.4);
+      const lifetime = .32 + .08 * heft;
+      if (reduceMotion || age < 0 || age > lifetime) return;
+      const p = age / lifetime;
+      ctx.save(); ctx.fillStyle = theme.dust || '#e9dcc0'; ctx.globalAlpha = .65 * (1 - p);
+      for (const dir of [-1, 1]) for (let j = 0; j < 3; j++) {
+        ctx.beginPath(); ctx.ellipse(x + dir * (width * .25 + p * (10 + j * 6) * heft), y - p * (4 + j * 4) * heft, (2 + p * 3) * heft, (1.5 + p * 2) * heft, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function render(t) {
+      t = clamp(t / PLAYBACK_TIME_SCALE, 0, tEnd);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, stageH);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      const cam = cameraAt(t);
+      const groundScale = groundScaleFor(cam.s, 1);
+
+      // Background: sky, clouds, scenery and the ground, drawn like the stacking view.
+      const sky = ctx.createLinearGradient(0, 0, 0, stageH);
+      skyColors.forEach((color, i) => sky.addColorStop(i / (skyColors.length - 1), color));
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, stageH);
+      const pan = (cam.cx - W / 2) * cam.s;
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: 0, shiftX: -pan * 0.3,
+        dark, time: t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'background' });
+      if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
+        ctx.globalAlpha = kit.config.night ? cloudAlpha * .28 : cloudAlpha;
+        const span = stageH + 160;
+        for (const cl of CLOUDS) {
+          const cy = ((cl.y * stageH % span) + span) % span - 80;
+          const cw = 78 * cl.s * clamp(Math.pow(cam.s, 0.12), 0.7, 1);
+          const ch = cw * cloudImg.naturalHeight / cloudImg.naturalWidth;
+          ctx.drawImage(cloudImg, cl.x * W - pan * 0.05 - cw / 2, cy - ch / 2, cw, ch);
+        }
+        ctx.globalAlpha = 1;
+      }
+      drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: 0, shiftX: -pan * 0.3,
+        dark, time: t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'foreground' });
+      ctx.fillStyle = groundCol;
+      ctx.fillRect(0, floorY, W, stageH - floorY);
+      if (!kit.config.floor && grassImg.complete && grassImg.naturalWidth) {
+        const grassW = GRASS_W * groundScale;
+        const gh = grassW * grassImg.naturalHeight / grassImg.naturalWidth;
+        const gTop = floorY - gh * GRASS_DIRT - 6 * groundScale;
+        const phase = -pan;
+        const x0 = ((phase % grassW) + grassW) % grassW - grassW;
+        for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
+      }
+      if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
+        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2,
+      });
+
+      // The second object (behind the first in draw order only when it is the bigger one, so it never hides the pick).
+      const drawSecond = () => {
+        if (t < tE0) return;
+        const f = clamp((t - tE0) / (tE1 - tE0), 0, 1);
+        const w = S.w * cam.s, h = S.h * cam.s;
+        const finalSx = screenX(S.cx, cam);
+        const sx0 = screenX(S.cx, cameraAt(tE0));
+        const dist = Math.max(40, secondOnRight ? (W - sx0) + w / 2 + 24 : sx0 + w / 2 + 24);
+        const hop = hopAt(f);
+        let lift = -hop.y;
+        if (sKind !== 'slide') lift = travelLift(sKind, f, w, dist);
+        const offset = (secondOnRight ? 1 : -1) * dist * hop.x;
+        const cxNow = finalSx + offset;
+        if (f < 1) {
+          shadow(cxNow, floorY + 1, w * .85, clamp(w * .07, 2, 8), .26 / (1 + Math.abs(lift) / 10));
+          ctx.save();
+          ctx.translate(cxNow, floorY - lift);
+          ctx.scale(hop.sx, hop.sy);
+          ctx.drawImage(sSprite, -w / 2, -h, w, h);
+          ctx.restore();
+        } else {
+          shadow(finalSx, floorY + 1, w * .95, clamp(w * .07, 3, 10), .3);
+          drawLanded(sSprite, finalSx - w / 2, floorY, w, h, sLanding, t - tE1);
+          dust(finalSx, floorY, t - tE1, w, sObj.mm);
+        }
+      };
+      // The picked object: falls from above, then stands.
+      const drawFirst = () => {
+        const w = F.w * cam.s, h = F.h * cam.s;
+        const sx = screenX(F.cx, cam);
+        if (t < tDrop) {
+          const p = t / tDrop;
+          const fall = (1 - p * p) * (floorY + h + 20);
+          shadow(sx, floorY + 1, w * (.4 + .55 * p), clamp(w * .07, 3, 10), .12 + .24 * p);
+          ctx.drawImage(fSprite, sx - w / 2, floorY - h - fall, w, h);
+        } else {
+          shadow(sx, floorY + 1, w * .95, clamp(w * .07, 3, 10), .36);
+          drawLanded(fSprite, sx - w / 2, floorY, w, h, fLanding, t - tDrop);
+          dust(sx, floorY, t - tDrop, w, fObj.mm);
+        }
+      };
+      drawFirst();
+      drawSecond();
+
+      const description = t >= tEnd ? `${big.name} is bigger than ${small.name}.` : 'Animated size comparison';
+      if (canvas.getAttribute('aria-label') !== description) canvas.setAttribute('aria-label', description);
+    }
+
+    return {
+      first, second, big, small, ratio: 1 / r, stageH, width: W, scenery,
+      duration: tEnd * PLAYBACK_TIME_SCALE,
+      cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
+      render,
+      renderEnd() { render(tEnd * PLAYBACK_TIME_SCALE); },
+      getShown: () => 0,
+    };
+  }
+
   // Plays a prepared scene against a clock. startAt is when it began, on the clock that `now`
   // reads (performance.now() by default), so a player who arrives late starts partway through.
   function start(scene, opts = {}) {
@@ -1068,5 +1285,5 @@ export function createStackAnimation(container, options = {}) {
   // Loads the pictures ahead of time (no stage needed), so the animation can start the moment it is wanted.
   function preload(a, b) { return Promise.all([loadPicture(a), loadPicture(b)]); }
 
-  return { prepare, preload, start, stop, destroy, canvas };
+  return { prepare, prepareCompare, preload, start, stop, destroy, canvas };
 }

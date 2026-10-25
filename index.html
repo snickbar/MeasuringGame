@@ -11339,7 +11339,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (the drop-in animation, summary screen, coins and leaderboard come next).
   const WB_LIVES = 3;
   const wbContentEl = document.getElementById("wb-content");
-  let wb = null;
+  let wb = null, wbAnim = null;
   const wbBest = () => (myProfile.whichBigger && myProfile.whichBigger.best) || 0;
   function wbSub() { const b = wbBest(); return b ? `Your best: ${b} in a row` : "Tap the bigger one"; }
   const wbHeartsHtml = (lives, score) => `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="sv-acc">Score: <b>${score}</b></div></div>`;
@@ -11378,6 +11378,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
       return;
     }
+    if (wb.phase === "reveal") {
+      // Hearts and score still show the numbers from before this pick; the result screen updates them.
+      el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives + (wb.ok ? 0 : 1), wb.score - (wb.ok ? 1 : 0))}
+        <p class="dc-prompt">Which is bigger?</p>
+        <div id="wb-stage"></div>
+        <button type="button" class="dc-btn dc-alt" id="wb-skip">Skip</button>`;
+      wbRunReveal();
+      return;
+    }
+    wbStop();
     if (wb.phase === "result") {
       const p = wb.pair, ok = wb.ok;
       const cls = (o) => (o.id === p.bigger.id ? "right" : (o.id === wb.picked ? "wrong" : ""));
@@ -11391,6 +11401,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
       <div class="dc-card dc-hot"><div class="wl-big">${wb.score}</div><div class="dc-big">correct</div></div>
       <button type="button" class="dc-btn" id="wb-again">Play again</button>`;
+  }
+  function wbStop() { if (wbAnim) { try { wbAnim.destroy(); } catch (e) {} wbAnim = null; } }
+  function wbShowResult() {
+    if (!wb || wb.phase !== "reveal") return;
+    wb.phase = "result"; wbStop();
+    renderWhichBigger();
+  }
+  // The picked object drops in first; then the camera zooms out as the other one hops in (left if smaller, right if bigger).
+  async function wbRunReveal() {
+    const p = wb.pair, picked = p.left.id === wb.picked ? p.left : p.right, other = picked === p.left ? p.right : p.left;
+    try {
+      const m = await loadAnimModule();
+      if (!m || wb.phase !== "reveal") { wbShowResult(); return; }
+      wbStop();
+      const stage = document.getElementById("wb-stage"); if (!stage) return;
+      wbAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image, hideTally: true });
+      const ctl = wbAnim;
+      const scene = await ctl.prepareCompare(picked, other, { hMax: 250, minStageH: 300 });
+      if (wbAnim !== ctl || wb.phase !== "reveal") return;
+      animAudioInit();
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (wbAnim === ctl) wbShowResult(); } });
+    } catch (err) { console.warn("[measuring-game] which-is-bigger animation failed", err); wbShowResult(); }
   }
   wbContentEl.addEventListener("click", (e) => {
     const b = e.target.closest("button");
@@ -11406,15 +11438,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "wb-lock" && wb.phase === "question" && wb.picked) {
       wb.ok = isCorrectPick(wb.pair, wb.picked);
       if (wb.ok) wb.score++; else wb.lives--;
-      wb.phase = "result"; vibrate(wb.ok ? 25 : [70, 60, 70]);
+      wb.phase = "reveal"; vibrate(wb.ok ? 25 : [70, 60, 70]);
       renderWhichBigger(); return;
+    }
+    if (b.id === "wb-skip") {
+      if (wbAnim) { try { wbAnim.stop(); } catch (err) {} }
+      wbShowResult(); return;
     }
     if (b.id === "wb-next") {
       if (wb.lives <= 0) { wb.phase = "over"; renderWhichBigger(); return; }
       wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.phase = "question"; renderWhichBigger();
     }
   });
-  document.getElementById("wb-close-btn").addEventListener("click", () => { closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+  document.getElementById("wb-close-btn").addEventListener("click", () => { wbStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
 
   // ---- Career > Stats ----
   // Career history stores the original guess/answer ratio; use the same
@@ -11673,10 +11709,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Style (cosmetics) reopens on whichever tab you were last on.
   let lastCosmTab = (() => { try { const t = localStorage.getItem("mg_lastStyleTab"); return COSM_TABS.includes(t) ? t : "avatars"; } catch (e) { return "avatars"; } })();
   let lastShopTab = (() => { try { const t = localStorage.getItem("mg_lastShopTab"); return SHOP_TABS.includes(t) ? t : "coins"; } catch (e) { return "coins"; } })();
+  let shopGroupWasCosm = null;
   function setShopTab(tab) {
     if (tab === "cosmetics") tab = "emojis";
     if (!SHOP_TABS.includes(tab) && !COSM_TABS.includes(tab)) tab = "coins";
     const isCosm = COSM_TABS.includes(tab);
+    // Shop and Style are one screen, so switching between them is the "new menu" moment for Equip Random scenes.
+    if (shopGroupWasCosm !== null && shopGroupWasCosm !== isCosm && rndOn("backgrounds")) { rndPick.backgrounds = undefined; applyBackground(); }
+    shopGroupWasCosm = isCosm;
     if (isCosm) { lastCosmTab = tab; try { localStorage.setItem("mg_lastStyleTab", tab); } catch (e) {} }
     else { lastShopTab = tab; try { localStorage.setItem("mg_lastShopTab", tab); } catch (e) {} }
     document.getElementById("shop-strip-shop").hidden = isCosm;
