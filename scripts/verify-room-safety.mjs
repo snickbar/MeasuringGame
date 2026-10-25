@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { electedHost, transferHost, admitPlayer, commitHsState, hsRoundRecord } from '../anim/room-safety.mjs';
+import { electedHost, transferHost, returnHost, admitPlayer, commitHsState, hsRoundRecord } from '../anim/room-safety.mjs';
 import * as HS from '../anim/high-stakes.mjs';
 import { applyCareerRecord } from '../anim/career-ledger.mjs';
 import { deleteIfStale } from './cleanup-stale-rooms.mjs';
@@ -25,6 +25,12 @@ const unknown=copy(party);delete unknown.players.old.disconnectedAt;assert.equal
 const transferred = transferHost(party, 'guest');
 assert.equal(transferred.players.old.isHost, false);
 assert.equal(transferred.players.guest.isHost, true);
+assert.equal(transferred.hostOriginal, 'old', 'remember the real host');
+assert.equal(returnHost(transferred, 'old'), undefined, 'cannot take it back while still disconnected');
+const comeback = copy(transferred); comeback.players.old.connected = true; comeback.players.old.disconnectedAt = null;
+const restored = returnHost(comeback, 'old');
+assert.equal(restored.players.old.isHost, true); assert.equal(restored.players.guest.isHost, false); assert.equal(restored.hostOriginal, null);
+assert.equal(returnHost(comeback, 'guest'), undefined, 'only the original host takes it back');
 assert.equal(transferHost(transferred, 'later'), undefined, 'second election retries against the promoted host');
 assert.equal(electedHost({ ...party, settings: { hostTransferMode: 'reclaim' } }), null);
 assert.equal(transferHost({ ...party, phase: 'ended' }, 'guest'), undefined);
