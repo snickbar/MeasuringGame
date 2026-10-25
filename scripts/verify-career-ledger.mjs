@@ -2,7 +2,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {applyCareerRecord,createCareerLedger,historyRows,topScores,objectFrequency} from '../anim/career-ledger.mjs';
+import {MONTHLY_FORMAT} from '../anim/monthly-challenge.mjs';
 const fresh=()=>({coins:100,stats:{},worlds:{},seenObjects:{},seenCombos:{},history:[]});
+// A global Monthly reset retires old offline records before both the profile
+// transaction and its leaderboard/ad callbacks, while other modes still save.
+{
+ const original=fresh();
+ for(const mode of ['monthly','practice'])assert.equal(applyCareerRecord(original,{kind:'attempt',key:'old-'+mode,mode,format:4,coins:50}),original);
+ assert.equal(applyCareerRecord(original,{kind:'round',key:'old-monthly-round',mode:'monthly',format:4}),original);
+ const pending=[{kind:'attempt',key:'old-monthly',mode:'monthly',format:4,board:{path:'monthly/old'}},{kind:'attempt',key:'old-replay',mode:'practice'},{kind:'attempt',key:'other-mode',mode:'daily'}];
+ const memory=new Map([['mg_career_pending_reset-test',JSON.stringify(pending)]]),saved=[],transactions=[];
+ const ledger=createCareerLedger({owner:()=> 'reset-test',storage:{getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v)},transaction:async(id,fn)=>{transactions.push(id);fn(original);},onSaved:async r=>saved.push(r.key)});
+ await ledger.flush();
+ assert.deepEqual(saved,['other-mode']);assert.equal(transactions.length,1);assert.equal(ledger.pending(),0);
+}
 const round=(key,mode='worlds')=>({kind:'round',key,mode,history:{u:'ant',g:'door',r:.75,rawR:.65,answered:true,s:3,t:1},inc:{spotOns:0,perfects:0}});
 let profile=fresh();
 for(let i=0;i<3;i++)profile=applyCareerRecord(profile,round('abandoned_'+i));
@@ -67,7 +80,7 @@ assert.deepEqual(profile.dailyHistory,{'2026-10-18':{s:90,t:5},'2026-10-19':{s:7
 
 // Monthly: each LEVEL finished for real is one record. The month counts (history, stats) once levels 1-3 are all
 // done; Mega (level 4) is a bonus. Replays (mode 'practice') pay coins but never touch progress or history.
-const lvl=(n,month,acc,t,extra={})=>({kind:'attempt',key:`monthly_${month}_L${n}_v4`,mode:'monthly',month,format:4,level:n,accuracy:acc,coins:10,saved:{guesses:[1,2,3],total:acc*3},t,...extra});
+const lvl=(n,month,acc,t,extra={})=>({kind:'attempt',key:`monthly_${month}_L${n}_v${MONTHLY_FORMAT}`,mode:'monthly',month,format:MONTHLY_FORMAT,level:n,accuracy:acc,coins:10,saved:{guesses:[1,2,3],total:acc*3},t,...extra});
 const coinsBefore=profile.coins;
 profile=applyCareerRecord(profile,lvl(1,'2026-10',80,7));profile=applyCareerRecord(profile,lvl(1,'2026-10',80,7));
 assert.equal(profile.coins,coinsBefore+10,'a level record pays once');assert(!profile.monthly.done);assert.equal(profile.stats.monthlies||0,0);assert.deepEqual(profile.monthlyHistory||{},{});
@@ -79,7 +92,7 @@ assert.equal(profile.stats.monthlies,1,'Mega is a bonus and never recounts the m
 profile=applyCareerRecord(profile,lvl(1,'2026-11',95,11));
 assert(!profile.monthly.done,'a new month starts clean');assert.equal(profile.monthly.key,'2026-11');assert.equal(profile.monthly.levels[2],undefined);
 const replayCoinsBefore=profile.coins;
-profile=applyCareerRecord(profile,{kind:'attempt',key:'practice1',mode:'practice',month:'2026-11',accuracy:99,total:99,rounds:10,coins:5,t:12});
+profile=applyCareerRecord(profile,{kind:'attempt',key:'practice1',mode:'practice',format:MONTHLY_FORMAT,month:'2026-11',accuracy:99,total:99,rounds:10,coins:5,t:12});
 assert.equal(profile.coins,replayCoinsBefore+5,'a replay pays its (half) coins');assert.equal(profile.monthly.levels[1].done,true);
 assert.deepEqual(profile.monthlyHistory,{'2026-10':{s:90,t:9}},'a replay is not a monthly completion');
 

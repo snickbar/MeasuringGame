@@ -2,6 +2,7 @@ import {threeStarTeamFinishes} from './mode-awards.mjs';
 import {roundCareerProfile} from './opponent-xp.mjs';
 import {roundAccuracy} from './accuracy.mjs';
 import {recordDiscoveries} from './discoveries.mjs';
+import {isRetiredMonthlyRecord} from './monthly-challenge.mjs';
 
 export const MODE_NAMES = {party:'Party',quick:'Quick Game',daily:'Daily',worlds:'Worlds',monthly:'Monthly',survival:'Survival',teamvteam:'Team vs Team',teamworlds:'Team Worlds',hlsurvival:'High/Low Survival',highstakes:'High Stakes',bluff:'Bluff'};
 export const MODE_CODE = {party:0,quick:1,daily:2,worlds:3,monthly:4,survival:5,teamvteam:6,teamworlds:7,hlsurvival:8,highstakes:9,bluff:10};
@@ -45,7 +46,7 @@ export function discover(profile,u,g){
     seenCombos:{...profile.seenCombos,[[u,g].sort().join('|')]:true}};
 }
 export function applyCareerRecord(profile,record){
-  if(!profile||!record?.key)return profile;
+  if(!profile||!record?.key||isRetiredMonthlyRecord(record))return profile;
   const key=safeKey(record.key);
   if(record.kind==='bluffRound'){
     if(profile.careerRounds?.[key])return profile;
@@ -194,7 +195,9 @@ export function createCareerLedger({owner,transaction,storage=localStorage,onPen
     flushing=Promise.resolve().then(async()=>{try{
       let rows=read(id);onPending(rows.length);
       while(rows.length){
-        const row=rows[0];await transaction(id,p=>applyCareerRecord(p,row));
+        const row=rows[0];
+        if(isRetiredMonthlyRecord(row)){rows=read(id).filter(r=>r.key!==row.key);write(id,rows);continue;}
+        await transaction(id,p=>applyCareerRecord(p,row));
         await onSaved(row,id);
         rows=read(id).filter(r=>r.key!==row.key);write(id,rows);
       }

@@ -10975,7 +10975,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function monthlyPracticeFinish() {
     const accs = monthlyAccs(), total = accs.reduce((a, b) => a + b, 0);
     mo.coins = monthlyReplayCoins(monthlyLevelCoins(mo.level, total / mo.questions.length));
-    completedAttempt({ key: mo.runId, mode: 'practice', month: mo.key, accuracy: total / mo.questions.length, total, rounds: mo.questions.length, coins: mo.coins });
+    completedAttempt({ key: mo.runId, mode: 'practice', format: MONTHLY_FORMAT, month: mo.key, accuracy: total / mo.questions.length, total, rounds: mo.questions.length, coins: mo.coins });
   }
   async function monthlyLoadBoard() {
     const key = mo && mo.key, level = mo && mo.level; let rows = null;
@@ -12150,7 +12150,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function saveSoloRound(mode,q,guess,index,runId) {
     const actualMode=mode==='practice'?'monthly':mode,effective=effectiveGuess(q,guess,deviceId),accuracy=roundAccuracy(effective/q.answer);
-    careerLedger.save({kind:'round',key:runId+'_round_'+index,mode:actualMode,history:{t:Date.now(),u:q.unitId,g:q.targetId,r:effective/q.answer,
+    careerLedger.save({kind:'round',key:runId+'_round_'+index,mode:actualMode,format:actualMode==='monthly'?MONTHLY_FORMAT:undefined,history:{t:Date.now(),u:q.unitId,g:q.targetId,r:effective/q.answer,
       rawR:guess/q.answer,answered:true,p:0,f:accuracy>=99?1:0,s:MODE_CODE[actualMode],mode:actualMode,buffer:effective!==guess},
       inc:{spotOns:accuracy>=99?1:0,perfects:Math.abs(effective-q.answer)<.005?1:0}});
   }

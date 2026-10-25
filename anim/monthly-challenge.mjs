@@ -1,4 +1,7 @@
-export const MONTHLY_FORMAT = 4;
+export const MONTHLY_FORMAT = 5;
+// The owner requested a fresh start after the 15-object packs were installed.
+// Retire queued results from before that reset, including their leaderboard writes.
+export const isRetiredMonthlyRecord = record => ['monthly', 'practice'].includes(record?.mode) && record.format !== MONTHLY_FORMAT;
 // One leaderboard per level (1-3 are a third of the pack each, 4 is the Mega run through the whole pack).
 export const monthlyBoardKey = (key, level) => level ? `${key}-L${level}-v${MONTHLY_FORMAT}` : `${key}-full-pack-v${MONTHLY_FORMAT}`;
 

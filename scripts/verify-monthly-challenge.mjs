@@ -52,7 +52,7 @@ for(const year of [2026,2027])for(let month=1;month<=12;month++){
 }
 assert(small>0&&big>0,'monthly objects can appear on either side');
 assert.equal(monthlyBoardScore(400,5),400);assert.equal(monthlyBoardScore(800,10),400);assert.equal(monthlyBoardScore(1000,10),500);
-assert.equal(monthlyBoardKey('2026-10',2),'2026-10-L2-v4');assert.notEqual(monthlyBoardKey('2026-10',1),monthlyBoardKey('2026-10',4),'every level has its own leaderboard');
+assert.equal(monthlyBoardKey('2026-10',2),'2026-10-L2-v'+MONTHLY_FORMAT);assert.notEqual(monthlyBoardKey('2026-10',1),monthlyBoardKey('2026-10',4),'every level has its own leaderboard');
 
 // Levels: an even, mixed-size, deterministic split of the pack; Mega is everything; unlock chain; silhouettes; coins.
 for(const n of [10,12,15]){
@@ -119,10 +119,10 @@ vm.runInContext(';let mo=null;'+['monthlyAccs','monthlyFinish','monthlyPracticeF
 const mk=(level,n,g)=>({key:'2026-10',level,combos:Array.from({length:10},(_,i)=>({unitId:'m'+i,targetId:'base'+i})),prog:{},questions:Array.from({length:n},(_,i)=>({unitId:'m'+i,targetId:'base'+i,answer:1})),guesses:Array(n).fill(g)});
 runtime.runtime.setRun(mk(1,4,1));await runtime.runtime.finish();await runtime.runtime.finish();
 assert.equal(wallet.coins,20,'a level pays once, even if the finish is retried');assert.equal(wallet.stats.monthlies||0,0);assert(!wallet.monthly.done);assert.equal(wallet.monthly.format,MONTHLY_FORMAT);assert.equal(wallet.monthly.combos.length,10);
-assert.equal(attempts[0].board.path,'monthly/2026-10-L1-v4/test','level 1 writes to its own leaderboard');assert.equal(attempts[0].board.value.s,500,'leaderboard stays within existing database bounds');
+assert.equal(attempts[0].board.path,'monthly/2026-10-L1-v'+MONTHLY_FORMAT+'/test','level 1 writes to its own leaderboard');assert.equal(attempts[0].board.value.s,500,'leaderboard stays within existing database bounds');
 runtime.runtime.setRun(mk(2,3,1));await runtime.runtime.finish();runtime.runtime.setRun(mk(3,3,1));await runtime.runtime.finish();
 assert(wallet.monthly.done,'levels 1-3 finish the month');assert.equal(wallet.stats.monthlies,1);assert.deepEqual(wallet.monthlyHistory,{'2026-10':{s:100,t:1}});
-runtime.runtime.setRun(mk(4,10,1));await runtime.runtime.finish();assert.equal(wallet.stats.monthlies,1,'Mega is a bonus');assert.equal(wallet.coins,20+20+20+50);assert.equal(attempts.at(-1).board.path,'monthly/2026-10-L4-v4/test');
+runtime.runtime.setRun(mk(4,10,1));await runtime.runtime.finish();assert.equal(wallet.stats.monthlies,1,'Mega is a bonus');assert.equal(wallet.coins,20+20+20+50);assert.equal(attempts.at(-1).board.path,'monthly/2026-10-L4-v'+MONTHLY_FORMAT+'/test');
 const coinsBefore=wallet.coins;
 runtime.runtime.setRun({...mk(1,4,.9),runId:'replay1'});await runtime.runtime.practice();
 assert.equal(wallet.coins,coinsBefore+9,'a replay pays half the real coins (19 -> 9)');assert.equal(attempts.at(-1).board,undefined,'a replay never touches a leaderboard');
