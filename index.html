@@ -648,7 +648,6 @@ if (location.protocol === "file:") {
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   .cosm-rnd-sub { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
   #cosm-random-slot .cosm-rnd-row { margin: 8px 0 2px; }
-  .cosm-random-on .cosm-row:not(.cosm-rnd-row) button.cosm-equip { opacity: .4; filter: grayscale(1); pointer-events: none; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
@@ -5775,7 +5774,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const homeHowText = (h) => (h.world ? `Earn a star on Level ${WORLD_LEVELS} of ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
   async function equipHomeScreen(id) {
-    if (equippedHomeScreen() === id) return;
+    if (equippedHomeScreen() === id && !cosmForceEquip) return;
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/homeScreen": id });
   }
   function openHomePreview(h) {
@@ -5794,7 +5793,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = equippedHomeScreen();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", !!(myProfile.randomEquip && myProfile.randomEquip.homeScreens));
+    container.classList.toggle("cosm-random-on", !!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)); container.dataset.rndCat = "homeScreens";
     // Owned scenes first, then the locked ones with how to earn them.
     const owned = HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)), locked = HOME_SCREENS.filter((h) => !ownsHomeScreen(h.id));
     owned.concat(locked).forEach((h) => container.appendChild(cosmRow({
@@ -5826,6 +5825,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ? `<div class="${cls}" style="background:url('${backgroundUrl(id)}') 0 0 / ${(TILE_PX[id] * w * 1.7 / 390).toFixed(1)}px repeat;${extra || ""}"></div>`
     : `<img class="${cls}" ${extra ? `style="${extra}" ` : ""}src="${backgroundUrl(id)}" alt="" loading="lazy">`;
   // Shows the picked background behind every screen except Home (Home keeps its own picture; see the CSS).
+  let lastBgScreenId = null;
   function applyBackground() {
     const screen = document.querySelector('.screen.active, #hud.active');
     let settings = {}, setup = 'classic';
@@ -5838,6 +5838,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.body.style.setProperty('--mode-ink', palette.ink);
       document.body.style.setProperty('--mode-art', "url('" + (mode === 'monthly' ? monthlyIcon() : palette.art) + "')");
     } else delete document.body.dataset.mode;
+    // Equip Random scenes: moving to another menu screen picks a new random scene (game screens keep theirs; they re-roll every round).
+    if (screen && screen.id !== lastBgScreenId) {
+      lastBgScreenId = screen.id;
+      if (rndOn("backgrounds") && !['hud', 'hs-content', 'bluff-content'].includes(screen.id) && screen !== hudEl && screen !== hsScreenEl && screen !== bluffScreenEl) rndPick.backgrounds = undefined;
+    }
     const selected = activeBackground();
     document.body.toggleAttribute('data-custom-background', selected !== 'none');
     const presentation = backgroundPresentation(selected, mode, monthlyPlayBg);
@@ -5865,7 +5870,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Tapping the equipped one again goes back to the default look.
   async function equipBackground(id) {
     const now = equippedBackground();
-    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/background": now === id ? "none" : id });
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/background": now === id && !cosmForceEquip ? "none" : id });
   }
   // ---- Cosmetics previews: a small pop-up window (not full screen) showing a background, or a question board in action ----
   function cosmPreviewShell(title, bodyNode) {
@@ -5949,10 +5954,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = equippedBackground();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", rndOn("backgrounds"));
+    container.classList.toggle("cosm-random-on", rndOn("backgrounds")); container.dataset.rndCat = "backgrounds";
     container.appendChild(cosmRow({
       leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Match game mode", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(equipped),
+      equipped: equipped === "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(cosmForceEquip ? "none" : equipped),
     }));
     container.appendChild(cosmRow({leadHtml:'<span class="cosm-bg-pic cosm-bg-none"></span>', name:'Plain', owned:true, free:true, equipped:equipped === 'plain', onPreview:()=>openBackgroundPreview('plain','Plain'), onEquip:()=>equipBackground('plain')}));
     MODE_BACKGROUNDS.forEach(b => container.appendChild(cosmRow({
@@ -6034,7 +6039,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function equipBoard(id) {
     const now = equippedBoard();
-    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/board": now === id ? "none" : id });
+    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/board": now === id && !cosmForceEquip ? "none" : id });
   }
   async function purchaseBoardPack(packId) {
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -6046,10 +6051,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = equippedBoard();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", rndOn("boards"));
+    container.classList.toggle("cosm-random-on", rndOn("boards")); container.dataset.rndCat = "boards";
     container.appendChild(cosmRow({
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(equipped),
+      equipped: equipped === "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
     }));
     BOARD_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
@@ -6142,6 +6147,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function equipFlair(id) {
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/effects": id });
   }
+  let cosmForceEquip = false;
   function cosmRow(o) {
     const row = document.createElement("div");
     row.className = "cosm-row" + (o.equipped ? " equipped" : "");
@@ -6155,7 +6161,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (o.owned) {
       btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
       btn.textContent = o.equipped ? "Equipped" : "Equip";
-      btn.addEventListener("click", o.onEquip);
+      // With Equip Random on, tapping Equip on a specific item turns random off for that tab and equips it, in one tap.
+      btn.addEventListener("click", async (ev) => {
+        const cat = btn.closest("[data-rnd-cat]")?.dataset.rndCat;
+        if (cat && rndOn(cat)) {
+          rndPick[cat] = undefined;
+          cosmForceEquip = true;
+          try { await update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: false }); await o.onEquip(ev); } finally { cosmForceEquip = false; }
+          return;
+        }
+        return o.onEquip(ev);
+      });
     } else if (o.lockedHint) {
       btn.className = "cosm-unlock";
       btn.disabled = true;
@@ -6202,7 +6218,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const active = equippedReactions();
     const slots = ownedReactionSlots();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", rndOn("reactions"));
+    container.classList.toggle("cosm-random-on", rndOn("reactions")); container.dataset.rndCat = "reactions";
     const row = (e, cost) => cosmRow({
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e),
@@ -6247,7 +6263,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
     });
-    container.classList.toggle("cosm-random-on", rndOn("flairs"));
+    container.classList.toggle("cosm-random-on", rndOn("flairs")); container.dataset.rndCat = "flairs";
     const items = COSMETIC_CATALOG.effects;
     items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
     FLAIR_PACK_CATALOG.forEach((pack) => {
@@ -9130,7 +9146,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("achievements-close-btn").addEventListener("click", closeOverlay);
   // Career: Stats / Awards / Objects share one toolbar button and one tab strip.
   const CAREER_TABS = { stats: careerScreenEl, awards: achievementsScreen, objects: itemsScreen };
-  let careerLastTab = "stats";
+  let careerLastTab = (() => { try { const t = localStorage.getItem("mg_lastStatsTab"); return CAREER_TABS[t] ? t : "stats"; } catch (e) { return "stats"; } })();
   function showCareerTab(tab) {
     const target = CAREER_TABS[tab];
     if (!target) return;
@@ -9143,7 +9159,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     target.classList.add("active");
     overlayReturnScreen = null;
     syncOverlayReturnFlag();
-    careerLastTab = tab;
+    careerLastTab = tab; try { localStorage.setItem("mg_lastStatsTab", tab); } catch (e) {}
     document.querySelectorAll(".career-tabs .career-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     if (!wasCareer) playSound("popup-open");
     updateCareerDot();
@@ -9164,7 +9180,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("career-close-btn").addEventListener("click", closeOverlay);
   document.getElementById("toolbar-awards-btn").addEventListener("click", guardToolbarNav(() => {
     if (Object.values(CAREER_TABS).some((el) => el.classList.contains("active"))) closeOverlay();
-    else showCareerTab("stats");
+    else showCareerTab(careerLastTab);
   }));
   // ==================== Daily Challenge: play, results, streak, leaderboard ====================
   const dailyContentEl = document.getElementById("daily-content");
@@ -11441,10 +11457,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
   const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
+  // Style (cosmetics) reopens on whichever tab you were last on.
+  let lastCosmTab = (() => { try { const t = localStorage.getItem("mg_lastStyleTab"); return COSM_TABS.includes(t) ? t : "avatars"; } catch (e) { return "avatars"; } })();
+  let lastShopTab = (() => { try { const t = localStorage.getItem("mg_lastShopTab"); return SHOP_TABS.includes(t) ? t : "coins"; } catch (e) { return "coins"; } })();
   function setShopTab(tab) {
     if (tab === "cosmetics") tab = "emojis";
     if (!SHOP_TABS.includes(tab) && !COSM_TABS.includes(tab)) tab = "coins";
     const isCosm = COSM_TABS.includes(tab);
+    if (isCosm) { lastCosmTab = tab; try { localStorage.setItem("mg_lastStyleTab", tab); } catch (e) {} }
+    else { lastShopTab = tab; try { localStorage.setItem("mg_lastShopTab", tab); } catch (e) {} }
     document.getElementById("shop-strip-shop").hidden = isCosm;
     document.getElementById("shop-strip-cosm").hidden = !isCosm;
     document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tab));
@@ -11492,9 +11513,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openOverlay(gachaScreen);
     setShopTab(tab || "coins");
   }
-  toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
+  toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(lastShopTab)));
   toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
-  toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen("avatars")));
+  toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(lastCosmTab)));
   document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
   });
