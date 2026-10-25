@@ -5398,8 +5398,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const coins = prof.attemptReceipts?.[k]?.coins || 0;
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
+      // Daily and Monthly save the moment the last answer is in, before the reveal and "See my results": hold the offer until the results are on screen.
+      if (!adResultsVisible(row.mode)) { adOfferPending.set(row.mode, { k, coins, t: Date.now() }); return; }
       showAdDoubleBanner(k, coins);
     } catch (e) { /* the offer is a bonus: never block saving */ }
+  }
+  const adOfferPending = new Map();
+  const adResultsVisible = (mode) => mode === "monthly" ? !!(mo && mo.phase === "done" && monthlyScreenEl.classList.contains("active"))
+    : mode === "daily" ? !!(daily && daily.phase === "done" && dailyScreenEl.classList.contains("active")) : true;
+  // Called when a Daily/Monthly results screen is shown.
+  function flushAdOffer(mode) {
+    const o = adOfferPending.get(mode);
+    if (!o) return;
+    adOfferPending.delete(mode);
+    if (Date.now() - o.t < 10 * 60 * 1000) showAdDoubleBanner(o.k, o.coins);
   }
   function showAdDoubleBanner(k, coins) {
     document.getElementById("ad-double-banner")?.remove();
@@ -9352,7 +9364,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
       <button type="button" class="dc-btn" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
-    dailyLoadBoard();
+    dailyLoadBoard(); flushAdOffer("daily");
   }
 
   async function dailyRunReveal() {
@@ -10908,7 +10920,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn" id="mo-replay">Replay for coins</button>
       <button type="button" class="dc-btn" id="mo-share">Share my result</button>
       <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
-    monthlyLoadBoard();
+    monthlyLoadBoard(); flushAdOffer("monthly");
   }
   async function monthlyRunReveal() {
     const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], last = mo.guesses.length >= mo.questions.length;
