@@ -148,7 +148,9 @@ export function applyCareerRecord(profile,record){
   }else if(record.mode==='whichbigger'){
     // Which Is Bigger: scored in correct picks in a row of one run (3 lives). Coins only for picks beyond the old best, like Survival.
     const old=profile.whichBigger||{};coins=Math.max(0,(record.score||0)-(old.best||0))*2;
-    result.whichBigger={...old,best:Math.max(old.best||0,record.score||0),runs:(old.runs||0)+1,rounds:(old.rounds||0)+(record.rounds||0)};
+    // Your own top five runs (best first); nothing is posted anywhere.
+    const top=[...list(old.top),...((record.score||0)>0?[{s:record.score,t:record.t||Date.now()}]:[])].sort((a,b)=>b.s-a.s||a.t-b.t).slice(0,5);
+    result.whichBigger={...old,best:Math.max(old.best||0,record.score||0),runs:(old.runs||0)+1,rounds:(old.rounds||0)+(record.rounds||0),top};
     stats.whichBiggerRuns=(stats.whichBiggerRuns||0)+1;
   }else if(record.mode==='daily'){
     const old=profile.dailyStreak||{},count=old.last===record.date?(old.count||1):old.last===record.yesterday?(old.count||0)+1:1;
