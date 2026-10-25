@@ -16,7 +16,16 @@ export function electedHost(room, now = Date.now()) {
 export function transferHost(room, id, now = Date.now()) {
   if (room === null) return null;
   if (electedHost(room, now) !== id) return undefined;
-  return { ...room, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === id }])) };
+  // Remember who the host really was: the seat is handed back when they return (see returnHost).
+  const oldHost = Object.entries(room.players || {}).find(([pid, p]) => p.isHost && pid !== id)?.[0];
+  return { ...room, hostOriginal: room.hostOriginal || oldHost || null, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === id }])) };
+}
+// The original host is back online: they take the host seat back from whoever was covering for them.
+export function returnHost(room, id) {
+  if (room === null) return null;
+  const me = room?.players?.[id];
+  if (!room || room.phase === 'ended' || room.hostOriginal !== id || !me || me.isBot || me.connected === false || me.isHost) return undefined;
+  return { ...room, hostOriginal: null, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === id }])) };
 }
 export const roomCapacity = room => room?.settings?.mode === 'teamworlds' ? 2 : 10;
 export function admitPlayer(room, id, player, reclaim = false) {

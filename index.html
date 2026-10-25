@@ -4339,7 +4339,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var debugTools;
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
-  import { electedHost, transferHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
+  import { electedHost, transferHost, returnHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
   var careerLedger;
   var gameRewards;
   var powerups;
@@ -4459,13 +4459,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         continue;
       }
       // Once a game has started, an away player KEEPS their seat (like Words with Friends):
-      // they just show as "away" and can come back any time. Only the lobby drops
-      // players who vanish, so a no-show can't block "everyone is ready". Truly
+      // they just show as "away" and can come back any time. The lobby keeps them too
+      // (the host can still remove a no-show). Truly
       // abandoned rooms are cleaned up by the daily 24h stale-room job instead.
-      if (roomState.phase === "waiting" && p && p.connected === false && typeof p.disconnectedAt === "number" && nowMs() - p.disconnectedAt > DISCONNECT_GRACE_MS) {
-        await remove(ref(db, `rooms/${roomCode}/players/${id}`));
-        removedAny = true;
-      }
+      // (The lobby keeps seats too now: a friend who steps away just shows as Away, and the host can remove them.)
     }
     if (removedAny) await maybeDeleteEmptyRoom(roomCode);
   }, 5000);
@@ -12773,7 +12770,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const party=!roomState.settings?.solo;
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&p.connected===false?'<span class="connection-badge">Reconnecting</span>':''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       if (botRowsOn) {
         li.classList.add("bot-row");
@@ -13643,6 +13640,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }[data.phase];
       if (pending?.[0]) scheduleHostDeadline(pending[0], () => pending[1](roomCode));
       if (data.phase === "hs") hsEnsureTicker(true);
+    }
+    if (data.hostOriginal === currentPlayerId && !hostTransfers.has(roomCode)) {
+      // The real host is back: take the host seat back from whoever covered for them.
+      const me = data.players?.[currentPlayerId];
+      if (me && !me.isHost && me.connected !== false) {
+        hostTransfers.add(roomCode);
+        runTransaction(ref(db, `rooms/${roomCode}`), cur => returnHost(cur, currentPlayerId), { applyLocally: false })
+          .catch(e => console.warn("[host return]", e)).finally(() => hostTransfers.delete(roomCode));
+        return;
+      }
     }
     if (electedHost(data, nowMs()) !== currentPlayerId || hostTransfers.has(roomCode)) return;
     const id = currentPlayerId;
@@ -15936,10 +15943,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (id !== currentPlayerId && isPlayerAway(p)) away.add(id);
       }
     }
-    const roots = [scoreColEl, revealListEl, document.getElementById("tw-question-stats")].filter(Boolean);
+    const roots = [scoreColEl, revealListEl, document.getElementById("tw-question-stats"), document.getElementById("hs-content"), document.getElementById("bluff-content")].filter(Boolean);
     for (const root of roots) {
-      root.querySelectorAll("[data-id], [data-members]").forEach((el) => {
-        const members = el.dataset.members ? el.dataset.members.split(/\s+/).filter(Boolean) : [el.dataset.id];
+      root.querySelectorAll("[data-id], [data-members], [data-hs-pl], [data-bluff-player]").forEach((el) => {
+        const members = el.dataset.members ? el.dataset.members.split(/\s+/).filter(Boolean) : [el.dataset.id || el.dataset.hsPl || el.dataset.bluffPlayer];
         const isAway = members.length > 0 && members.every((m) => away.has(m));
         if (isAway && !el.classList.contains("is-away") && getComputedStyle(el).position === "static") el.style.position = "relative";
         el.classList.toggle("is-away", isAway);
@@ -15948,7 +15955,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let awayFrame = 0;
   function queueAwayMarks() { if (!awayFrame) awayFrame = requestAnimationFrame(() => { awayFrame = 0; applyAwayMarks(); }); }
-  [scoreColEl, revealListEl, document.getElementById("tw-question-stats")].forEach((root) => {
+  [scoreColEl, revealListEl, document.getElementById("tw-question-stats"), document.getElementById("hs-content"), document.getElementById("bluff-content")].forEach((root) => {
     if (root) new MutationObserver(queueAwayMarks).observe(root, { childList: true, subtree: true });
   });
   setInterval(applyAwayMarks, 3000);
