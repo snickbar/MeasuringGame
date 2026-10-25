@@ -36,6 +36,14 @@ for(const bad of [{...manifest,checksum:''},{...manifest,version:undefined},{...
  assert.equal((await offline.check(old)).state,'error');
 }
 {
+ let fetches=0;const {client}=setup(async()=>response(++fetches===1?manifest:{...manifest,version:old}),{download:async()=>{throw Error('Download unavailable');}});
+ assert.equal((await client.check(old)).state,'error','Old fallback cannot hide a failed newer download');
+}
+{
+ const {client}=setup(async()=>response(manifest),{current:async()=>{throw Error('Cleanup unavailable');}});
+ assert.equal((await client.check(old)).state,'downloaded','Cleanup failure cannot discard a successfully queued update');
+}
+{
  const {client,calls}=setup(async()=>response(manifest));const a=client.check(old),b=client.check(old);assert.equal(a,b);await Promise.all([a,b]);assert.equal(calls.filter(c=>c[0]==='download').length,1);
 }
 console.log('PASS: GitHub primary, host/download fallback, manifest validation, checksum forwarding, pending/rejected bundles, timeout, and concurrent checks.');

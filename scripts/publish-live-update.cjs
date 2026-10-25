@@ -23,7 +23,7 @@ function publish(){
   const asset=release.assets.find(a=>a.name==='bundle.zip'),saved=path.join(root,'live/published-version.json');
   gh(['release','download',tag,'--repo',repo,'--pattern','version.json','--output',saved,'--clobber']);
   const published=JSON.parse(fs.readFileSync(saved));
-  if(!asset||published.version!==manifest.version||published.url!==base+'/bundle.zip'||!/^\w{64}$/.test(published.checksum)||asset.digest&&asset.digest!=='sha256:'+published.checksum)throw Error('Published ZIP metadata differs; publish a new commit instead of replacing it');
+  if(!asset||published.version!==manifest.version||published.url!==base+'/bundle.zip'||!(/^[a-f0-9]{64}$/i).test(published.checksum)||asset.digest&&asset.digest!=='sha256:'+published.checksum)throw Error('Published ZIP metadata differs; publish a new commit instead of replacing it');
   manifest=published;
  }
  try{gh(['api',`repos/${repo}/git/ref/heads/app-updates`]);}
