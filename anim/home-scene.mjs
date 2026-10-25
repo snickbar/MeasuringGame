@@ -51,7 +51,9 @@ export async function installHomeScene() {
   const art = HOME_ART[scene], cfg = CONFIG[scene];
   let imgs;
   try {
-    imgs = await Promise.all([art.plate, art.hero, art.hero2, ...art.critters].map((l) => load(BASE + l.file)));
+    // A scene whose main character is rebuilt from the rig (its base picture) never needs the original single picture.
+    const rig0 = HOME_RIG[scene], rigOk = rig0 && cfg.rig !== false && rig0.W === art.hero.sw && rig0.H === art.hero.sh;
+    imgs = await Promise.all([art.plate, rigOk && rig0.base ? null : art.hero, art.hero2, ...art.critters].map((l) => (l ? load(BASE + l.file) : Promise.resolve(null))));
   } catch (e) { return; } // any missing picture: keep the original Home picture
   if (!home.isConnected || document.getElementById("home-art") || document.documentElement.dataset.motion === "reduce") return;
   let [plate, hero, hero2, ...crits] = imgs;
