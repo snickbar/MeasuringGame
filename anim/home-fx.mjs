@@ -39,7 +39,8 @@ function make(kind, opts = {}) {
   if (kind === "shoot") el.style.setProperty("--dl", (-rnd(0, 6)).toFixed(1) + "s");
   const drift = (opts.dr || 26) * (Math.random() < .5 ? -1 : 1) * rnd(.4, 1);
   el.style.setProperty("--dr", drift.toFixed(0) + "px");
-  if (rising) el.style.setProperty("--o", rnd(.45, .9).toFixed(2));
+  // Every particle gets its own see-through level, so the layer reads soft rather than busy.
+  el.style.setProperty("--o", (kind === "shoot" ? 1 : rnd(.35, .85)).toFixed(2));
   if (opts.colors) el.style.setProperty("--c", pick(opts.colors));
   return el;
 }
@@ -56,7 +57,7 @@ export function installHomeFx() {
   layer.setAttribute("aria-hidden", "true");
   const small = Math.min(window.innerWidth, window.innerHeight) < 420;
   for (const [kind, n, opts] of SCENES[scene] || SCENES.ants) {
-    const count = Math.max(0, Math.round(n * (small ? .8 : 1.3)));
+    const count = Math.max(0, Math.round(n * (small ? .6 : .95)));
     for (let i = 0; i < count; i++) layer.appendChild(make(kind, opts));
   }
   home.prepend(layer);
