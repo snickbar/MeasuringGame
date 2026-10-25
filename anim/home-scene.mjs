@@ -12,17 +12,17 @@ const CONFIG = {
   games: { hero: "sway", hero2: "breathe", shadow: [[238, 1200, 150, 26, .28], [446, 1218, 130, 24, .3]], critters: [{ row: 31, size: 15, secs: 27, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 69, size: 12, secs: 38, delay: 10, dir: -1, kind: "scuttle", faces: 1 }] },
   sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
   snacks: { hero: "sway", hero2: "breathe", shadow: [[245, 1168, 120, 22, .3], [492, 1178, 90, 20, .3]], critters: [{ row: 30, size: 14, secs: 28, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 71, size: 11, secs: 36, delay: 10, dir: -1, kind: "scuttle", faces: -1 }] },
-  town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 77, size: 12, secs: 36, delay: 6, dir: 1, kind: "scuttle", faces: 1 }, { row: 40, size: 14, secs: 30, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
+  town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 69, size: 12, secs: 36, delay: 6, dir: 1, kind: "scuttle", faces: 1 }, { row: 40, size: 14, secs: 30, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
   house: { hero: "sway", hero2: "breathe", shadow: [[190, 1285, 330, 30, .28], [470, 1348, 150, 26, .3]], critters: [{ row: 80, size: 12, secs: 34, delay: 6, dir: 1, kind: "scuttle", faces: 1 }] },
-  wheels: { hero: "sway", hero2: "breathe", shadow: [[258, 1198, 280, 30, .3], [455, 1210, 130, 24, .3]], critters: [{ row: 34, size: 16, secs: 60, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 44, size: 14, secs: 34, delay: 14, dir: -1, kind: "glide", faces: 1 }] },
-  lighthouse: { hero: "sway", hero2: "breathe", shadow: [[190, 1120, 300, 34, .3], [442, 1122, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 60, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1, behind: true }] },
-  underwater: { hero: "breathe", hero2: "sway", shadow: [[250, 1160, 330, 26, .25], [520, 1168, 150, 22, .25]], critters: [{ row: 30, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 56, size: 12, secs: 40, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
-  "toy-box": { hero: "sway", hero2: "breathe", shadow: [[272, 1176, 200, 26, .3], [525, 1176, 170, 24, .3]], critters: [{ row: 66, size: 12, secs: 40, delay: 4, dir: -1, kind: "scuttle", faces: 1 }, { row: 74, size: 10, secs: 34, delay: 18, dir: -1, kind: "scuttle", faces: 1 }] },
+  wheels: { hero: "sway", hero2: "breathe", shadow: [[258, 1198, 280, 30, .3], [455, 1210, 130, 24, .3]], critters: [{ row: 34, size: 16, secs: 60, delay: 4, dir: 1, kind: "glide", faces: 1, behind: true }, { row: 44, size: 14, secs: 34, delay: 14, dir: -1, kind: "glide", faces: 1 }] },
+  lighthouse: { hero: "sway", hero2: "breathe", shadow: [[190, 1120, 300, 34, .3], [442, 1122, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 65, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1, behind: true }] },
+  underwater: { hero: "breathe", hero2: "sway", shadow: [[250, 1160, 330, 26, .25], [520, 1168, 150, 22, .25]], critters: [{ row: 30, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 64, size: 12, secs: 44, delay: 6, dir: -1, kind: "rise", faces: 1 }] },
+  "toy-box": { hero: "sway", hero2: "breathe", shadow: [[272, 1176, 200, 26, .3], [525, 1176, 170, 24, .3]], critters: [{ row: 66, size: 12, secs: 44, delay: 4, dir: -1, kind: "teeter", faces: 1 }, { row: 74, size: 10, secs: 34, delay: 18, dir: -1, kind: "roll", faces: 1 }] },
   penguin: { hero: "breathe", hero2: "sway", shadow: [[210, 1158, 230, 26, .3], [462, 1166, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 80, size: 12, secs: 40, delay: 12, dir: -1, kind: "scuttle", faces: 1 }] },
   cactus: { hero: "sway", hero2: "breathe", shadow: [[230, 1176, 270, 30, .3], [444, 1196, 200, 28, .3]], critters: [{ row: 80, size: 12, secs: 36, delay: 4, dir: 1, kind: "scuttle", faces: 1 }, { row: 32, size: 14, secs: 34, delay: 12, dir: -1, kind: "glide", faces: 1 }, { row: 74, size: 14, secs: 30, delay: 9, dir: -1, kind: "scuttle", faces: 1 }] },
   giraffe: { hero: "sway", hero2: "breathe", shadow: [[514, 1276, 250, 30, .3], [150, 1274, 120, 22, .3]], critters: [{ row: 28, size: 13, secs: 34, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 52, size: 12, secs: 36, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
   dragon: { hero: "breathe", hero2: "sway", shadow: [[220, 1238, 330, 28, .3], [510, 1238, 170, 24, .3]], critters: [{ row: 26, size: 13, secs: 34, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 50, size: 12, secs: 36, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
-  space: { hero: "sway", hero2: "breathe", shadow: [[0, 0, 1, 1, 0]], critters: [{ row: 34, size: 13, secs: 40, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 50, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
+  space: { hero: "sway", hero2: "breathe", shadow: [[0, 0, 1, 1, 0]], critters: [{ row: 34, size: 13, secs: 40, delay: 4, dir: 1, kind: "glide", faces: -1, behind: true }, { row: 50, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1 }] },
   // limbs: parts of the main sprite cut out (a polygon in sprite pixels, listed from its upper to its lower point on the right edge) and swung around a pivot, e.g. the waving arm.
   // shadow: soft ground shadow under the second object in picture units (the clean plate has none): centre x, centre y, width, height, strength.
   ants: { hero: "sway", hero2: "breathe", limbs: [{ poly: [[853, 158], [425, 158], [425, 256], [398, 256], [398, 300], [853, 300]], pivot: [398, 274], anim: "wave" }], shadow: [432, 1112, 470, 74, 0.34], critters: [{ row: 30, size: 13, secs: 26, delay: 4, dir: 1, kind: "glide", faces: 1, wings: [{ poly: [[360, 190], [500, 185], [620, 260], [720, 430], [760, 560], [630, 548], [450, 450], [370, 300]], pivot: [740, 555], deg: 13 }, { poly: [[318, 485], [350, 440], [415, 438], [460, 460], [530, 515], [630, 548], [580, 555], [500, 585], [450, 592], [390, 572], [330, 520]], pivot: [570, 565], deg: 16 }] }, { row: 54, size: 15, secs: 34, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
@@ -87,7 +87,21 @@ export async function installHomeScene() {
       stage.appendChild(sh);
     });
   }
-  place(hero2, art.hero2, "hs-back", cfg.hero2); // the second object sits behind the main subject (as in the original pictures)
+  // The second object sits behind the main subject (as in the original pictures). Its picture lives in a box that sways or breathes,
+  // with an inner hop layer so a tap makes it bounce too, and any effects that belong to it ride along inside.
+  const s2 = art.hero2, box2 = document.createElement("div"), hop2 = document.createElement("div");
+  box2.className = "hs-layer hs-back" + (cfg.hero2 ? " hs-" + cfg.hero2 : "");
+  box2.style.cssText = `left:${s2.x}%;top:${s2.y}%;width:${s2.w}%;aspect-ratio:${s2.sw}/${s2.sh};transform-origin:${s2.ox}% ${s2.oy}%`;
+  hop2.className = "hs-hop"; hero2.className = "hs-part"; hero2.alt = ""; hop2.appendChild(hero2); box2.appendChild(hop2); stage.appendChild(box2);
+  const tapZone = (spec, hopEl, tap) => {
+    // The tap zone covers the upper part of the character's visible shape (the picture has transparent margins around it).
+    const W = spec.sw, H = spec.sh, hp = spec.w * (HOME_ART_REF.width / HOME_ART_REF.height) * (H / W), t = tap || [.1, 0, .8, .7], A = spec.ab || { x: 0, y: 0, width: W, height: H };
+    const zone = document.createElement("div"); zone.className = "hs-tap";
+    zone.style.cssText = `left:${spec.x + spec.w * (A.x + A.width * t[0]) / W}%;top:${spec.y + hp * (A.y + A.height * t[1]) / H}%;width:${spec.w * A.width * t[2] / W}%;height:${hp * A.height * t[3] / H}%`;
+    stage.appendChild(zone);
+    zone.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); hopEl.classList.remove("hs-hopping"); void hopEl.offsetWidth; hopEl.classList.add("hs-hopping"); boing(); });
+  };
+  tapZone(s2, hop2, cfg.tap2);
   {
     // The main subject is built from the whole sprite (minus the cut-out parts) plus a copy of each part that moves on its own.
     const spec = art.hero, W = spec.sw, H = spec.sh, bp = (rig && rig.base) || { x: 0, y: 0, w: W, h: H };
@@ -125,21 +139,16 @@ export async function installHomeScene() {
           w.appendChild(im);
         });
         if (q.ref) { // placed in picture units on the stage (for effects that belong to the second object)
-          w.style.left = q.x / HOME_ART_REF.width * 100 + "%"; w.style.top = q.y / HOME_ART_REF.height * 100 + "%"; w.style.width = q.w / HOME_ART_REF.width * 100 + "%"; w.style.height = q.h / HOME_ART_REF.height * 100 + "%";
-          stage.appendChild(w);
+          const bx = s2.x / 100 * HOME_ART_REF.width, by = s2.y / 100 * HOME_ART_REF.height, bw = s2.w / 100 * HOME_ART_REF.width, bh = bw * s2.sh / s2.sw;
+          w.style.left = (q.x - bx) / bw * 100 + "%"; w.style.top = (q.y - by) / bh * 100 + "%"; w.style.width = q.w / bw * 100 + "%"; w.style.height = q.h / bh * 100 + "%";
+          hop2.appendChild(w);
         } else if (q.z === "back") hop.insertBefore(w, hop.firstChild); else hop.appendChild(w);
       });
       rig.patches.forEach((q) => { const img = rigImgs.get(q).cloneNode(); img.className = "hs-rig hs-patch hs-" + q.anim; img.alt = ""; at(img, q); hop.appendChild(img); });
     }
     stage.appendChild(box);
     // Tap the character on top: a springy hop (squash, stretch, settle) with a tiny boing and a light buzz.
-    const zone = document.createElement("div"); zone.className = "hs-tap";
-    // The tap zone covers the upper part of the character's visible shape (the picture has transparent margins around it).
-    const hp = spec.w * (HOME_ART_REF.width / HOME_ART_REF.height) * (H / W), t = cfg.tap || [.1, 0, .8, .7], A = spec.ab || { x: 0, y: 0, width: W, height: H };
-    zone.style.cssText = `left:${spec.x + spec.w * (A.x + A.width * t[0]) / W}%;top:${spec.y + hp * (A.y + A.height * t[1]) / H}%;width:${spec.w * A.width * t[2] / W}%;height:${hp * A.height * t[3] / H}%`;
-    stage.appendChild(zone);
-    const go = (e) => { e.preventDefault(); e.stopPropagation(); hop.classList.remove("hs-hopping"); void hop.offsetWidth; hop.classList.add("hs-hopping"); boing(); };
-    zone.addEventListener("pointerdown", go);
+    tapZone(spec, hop, cfg.tap);
   }
   // Critters: the stored pictures, plus any extra creature that only exists as animation frames (rig.critFrames with c).
   const defs = art.critters.map((c, i) => ({ c, img: crits[i], i }));
@@ -162,7 +171,7 @@ export async function installHomeScene() {
     const visible = c.ab.width / c.w, imgW = cc.size / visible;
     wrap.style.setProperty("--ct", cc.row + "%"); wrap.style.setProperty("--cw", imgW + "%");
     wrap.style.setProperty("--cs", cc.secs + "s"); wrap.style.setProperty("--cd", cc.delay + "s");
-    wrap.style.setProperty("--cx", ((c.ab.x + c.ab.width / 2) / c.w * 100) + "%"); wrap.style.setProperty("--cy", ((c.ab.y + c.ab.height / 2) / c.h * 100) + "%");
+    wrap.style.setProperty("--cb", ((c.ab.y + c.ab.height) / c.h * 100) + "%"); wrap.style.setProperty("--cx", ((c.ab.x + c.ab.width / 2) / c.w * 100) + "%"); wrap.style.setProperty("--cy", ((c.ab.y + c.ab.height / 2) / c.h * 100) + "%");
     img.alt = ""; let body = img;
     if (cc.wings) {
       // Wings flutter: the base picture has the wings cut out (even-odd holes) and each wing is a clipped copy that flaps about its root.
@@ -175,9 +184,9 @@ export async function installHomeScene() {
         wing.style.transformOrigin = P(w.pivot[0], w.pivot[1]); wing.style.animationDelay = (k * -0.05) + "s"; wing.style.setProperty("--wd", (w.deg || 14) + "deg"); body.appendChild(wing);
       });
     }
-    body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
+    body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
-    const back = cc.behind != null ? cc.behind : cc.kind === "scuttle", first = back && stage.querySelector(".hs-layer");
+    const back = cc.behind != null ? cc.behind : cc.kind === "scuttle" || cc.kind === "roll" || cc.kind === "teeter", first = back && stage.querySelector(".hs-layer");
     if (first) stage.insertBefore(wrap, first); else stage.appendChild(wrap);
   });
   const size = () => {
