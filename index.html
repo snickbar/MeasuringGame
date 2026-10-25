@@ -11160,7 +11160,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     d.innerHTML = `<div class="sv-crack-wrap"><img class="sv-cr whole" src="icons/life-heart-full.webp" alt=""><img class="sv-cr cracked" src="icons/life-heart-cracked.webp" alt=""><img class="sv-cr half l" src="icons/life-heart-left.webp" alt=""><img class="sv-cr half r" src="icons/life-heart-right.webp" alt=""></div>`;
     document.body.appendChild(d);
     try { playSound("error"); } catch (e) {}
-    const owner = document.querySelector('#hud.active,#survival-screen.active');
+    const owner = document.querySelector('#hud.active,#survival-screen.active,#wb-screen.active');
     const cleanup = () => { d.remove(); watch.disconnect(); document.removeEventListener('visibilitychange',check); };
     const check = () => { if (document.hidden || (owner && !owner.classList.contains('active'))) cleanup(); };
     const watch = new MutationObserver(check);
@@ -11352,7 +11352,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let wb = null, wbAnim = null;
   const wbBest = () => (myProfile.whichBigger && myProfile.whichBigger.best) || 0;
   function wbSub() { const b = wbBest(); return b ? `Your best: ${b} right pick${b === 1 ? "" : "s"}` : "Tap the bigger one"; }
-  const wbHeartsHtml = (lives, score) => `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="sv-acc">Score: <b>${score}</b></div></div>`;
+  const wbHeartsHtml = (lives, score) => `<div class="sv-hud"><div class="sv-hearts" id="wb-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="sv-acc">Score: <b>${score}</b></div></div>`;
   const wbNewRun = () => ({ runId: crypto.randomUUID(), finished: false, phase: "question", lives: WB_LIVES, score: 0, round: 1, used: new Set(), pair: null, picked: null, ok: null });
   function wbDim(o) { return (o.measurement && o.measurement.dimension) || "length"; }
   // Rule: never show an object's measurement here - players would write the numbers down.
@@ -11408,13 +11408,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const cls = (o) => (o.id === p.bigger.id ? "right" : (o.id === wb.picked ? "wrong" : ""));
       const card = (o) => wbCardHtml(o, cls(o), true, { tag: o.id === wb.picked ? "You picked" : "" });
       const ratio = p.ratio >= 10 ? Math.round(p.ratio) : Number(p.ratio.toFixed(1));
-      el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives, wb.score)}
+      // A wrong pick: show the heart you had, crack it, then drop it (same moment as Survival, with the error sound).
+      const losing = !ok && !wb.lossShown;
+      el.innerHTML = `<h2 class="dc-title">Round ${wb.round}</h2>${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score)}
         <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
         <div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div>
         <p class="dc-prompt">${ok ? "Correct!" : "Not quite."}</p>
         <p class="wb-line"><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b> is about <b>${ratio}&times;</b> bigger</p>
         <div class="wb-tally">Round ${wb.round} &middot; Score ${wb.score}${wb.lives > 0 ? "" : " &middot; Out of lives"}</div>
         <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
+      if (losing) {
+        wb.lossShown = true; svCrackHeart();
+        const round = wb.round;
+        setTimeout(() => {
+          const h = document.getElementById("wb-hearts");
+          if (!h || !wb || wb.round !== round || wb.phase !== "result") return;
+          h.innerHTML = Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < wb.lives)).join("");
+          const hs = h.querySelectorAll(".sv-heart"); if (hs[wb.lives]) hs[wb.lives].classList.add("drop");
+        }, 1100);
+      }
       return;
     }
     const best = wbBest();
@@ -11512,7 +11524,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "wb-next") {
       if (wb.lives <= 0) { wbFinish(); wb.phase = "over"; renderWhichBigger(); return; }
-      wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.phase = "question"; renderWhichBigger();
+      wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.lossShown = false; wb.phase = "question"; renderWhichBigger();
     }
   });
   document.getElementById("wb-close-btn").addEventListener("click", () => { wbStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
