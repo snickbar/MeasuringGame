@@ -8,10 +8,12 @@ function publish(){
  const base=`https://github.com/${repo}/releases/download/${tag}`;
  let manifest=JSON.parse(fs.readFileSync(path.join(root,'live/version.json')));
  if(manifest.url!==base+'/bundle.zip')throw Error('Build with LIVE_BUNDLE_BASE_URL='+base+' before publishing');
- let release;try{release=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));}catch{}
+ let release;try{release=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));}catch{
+  // Draft releases have no published tag yet; the tag endpoint returns 404.
+  release=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`])).find(r=>r.tag_name===tag);
+ }
  if(!release){
-  gh(['release','create',tag,'--repo',repo,'--target',sha,'--title','Web update '+manifest.version,'--notes','Verified web update for Size Em Up. Downloaded automatically by supported app builds.','--draft','--prerelease']);
-  release=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));
+  release=JSON.parse(gh(['api',`repos/${repo}/releases`,'--method','POST','--input','-'],{tag_name:tag,target_commitish:sha,name:'Web update '+manifest.version,body:'Verified web update for Size Em Up. Downloaded automatically by supported app builds.',draft:true,prerelease:true}));
  }
  if(release.draft){
   gh(['release','upload',tag,path.join(root,'live/bundle.zip'),path.join(root,'live/version.json'),'--repo',repo,'--clobber']);
