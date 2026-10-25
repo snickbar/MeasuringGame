@@ -1472,15 +1472,25 @@ if (location.protocol === "file:") {
   .avatar-choice .avatar-icon, .collection-tile .avatar-icon { filter: none; }
   #recent-rooms-section { margin: 12px 0 0; padding: 10px 14px 12px; background: #fffdfa; border-radius: 14px; box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08); text-align: center; }
   #recent-rooms-section h3 { margin: 0 0 6px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
-  /* My games rows: room code at the far left (spanning both lines), game type over game status in the middle, Rejoin at the far right */
-  .recent-room-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: center; column-gap: 10px; padding: 6px 0; text-align: center; }
-  .recent-room-row .rr-code { justify-self: start; }
-  .recent-room-row .rr-mid { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
-  .recent-room-row button { justify-self: end; }
-  .recent-room-row .rr-sub { font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; color: #1a1208; }
-  .recent-room-row .rr-code { font-family: 'Fredoka', sans-serif; font-size: 24px; font-weight: 600; letter-spacing: .12em; color: #1a1208; }
+  /* My games: one card per game - a coloured game-type badge, the type + status chip, who is in it, and Rejoin */
+  #recent-rooms-list { display: flex; flex-direction: column; gap: 8px; }
+  .recent-room-row { --rc: #c9822b; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; column-gap: 10px; padding: 8px 10px 8px 8px; text-align: left; background: #fff; border-radius: 14px; border: 2px solid color-mix(in srgb, var(--rc) 35%, #fff); box-shadow: 0 2px 0 color-mix(in srgb, var(--rc) 45%, #fff); }
+  .recent-room-row[data-kind="classic"] { --rc: #d9792b; }
+  .recent-room-row[data-kind="bluff"] { --rc: #8b4fc9; }
+  .recent-room-row[data-kind="hl"] { --rc: #d8453a; }
+  .recent-room-row[data-kind="worlds"] { --rc: #2f9a5d; }
+  .recent-room-row[data-kind="tvt"] { --rc: #2f7fd0; }
+  .recent-room-row .rr-badge { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 25px; background: linear-gradient(color-mix(in srgb, var(--rc) 22%, #fff), color-mix(in srgb, var(--rc) 40%, #fff)); }
+  .recent-room-row .rr-mid { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+  .recent-room-row .rr-kind { font-family: 'Fredoka', sans-serif; font-size: 15px; font-weight: 700; color: var(--rc); line-height: 1.1; max-width: 100%; }
+  .recent-room-row .rr-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 600; color: #6b5a47; }
+  .recent-room-row .rr-chip { padding: 1px 8px; border-radius: 99px; background: color-mix(in srgb, var(--rc) 16%, #fff); color: var(--rc); font-weight: 700; }
+  .recent-room-row .rr-code { font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #1a1208; }
+  .recent-room-row .rr-people { display: flex; align-items: center; margin-top: 1px; }
+  .recent-room-row .rr-people .avatar-icon { width: 22px; height: 22px; margin-right: -5px; filter: none; }
+  .recent-room-row .rr-people .rr-more { margin-left: 8px; font-size: 11px; font-weight: 700; color: #6b5a47; }
   .recent-room-row button {
-    --pic-h: 40px; width: auto; min-width: 110px; height: var(--pic-h); margin: 0; padding: 0 2px; font-size: 15px; font-family: 'Fredoka', sans-serif; color: #fff;
+    --pic-h: 40px; width: auto; min-width: 96px; height: var(--pic-h); margin: 0; padding: 0 2px; font-size: 15px; font-family: 'Fredoka', sans-serif; color: #fff;
     border-width: 0 calc(var(--pic-h) / 2); border-image-slice: 0 155 fill; border-image-source: url(icons/btn-red.png);
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
@@ -12654,35 +12664,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const row = document.createElement("div");
       row.className = "recent-room-row";
       row.style.display = "none";
-      const label = document.createElement("span");
-      label.className = "rr-code";
-      label.textContent = r.code;
+      const badge = document.createElement("div");
+      badge.className = "rr-badge";
       const mid = document.createElement("div");
       mid.className = "rr-mid";
       const kindEl = document.createElement("div");
-      kindEl.className = "rr-sub";
+      kindEl.className = "rr-kind";
       const sub = document.createElement("div");
       sub.className = "rr-sub";
+      const people = document.createElement("div");
+      people.className = "rr-people";
       mid.appendChild(kindEl);
       mid.appendChild(sub);
+      mid.appendChild(people);
       const btn = document.createElement("button");
       btn.textContent = "Rejoin";
       btn.addEventListener("click", () => rejoinRoom(r.code));
-      row.appendChild(label);
+      row.appendChild(badge);
       row.appendChild(mid);
       row.appendChild(btn);
       recentRoomsListEl.appendChild(row);
       onValue(ref(db, `rooms/${r.code}`), (snap) => {
         const d = snap.val();
         if (d && d.phase && d.phase !== "ended") {
-          const n = Object.values(d.players || {}).filter((p) => p && !p.isBot).length;
+          const humans = Object.values(d.players || {}).filter((p) => p && !p.isBot);
+          const n = humans.length;
           const where = d.phase === "waiting" ? "In the lobby" : (d.round ? `Round ${d.round}` : "In progress");
           const mode = d.settings && d.settings.mode;
-          const kind = isHlSettings(d.settings) ? "High/Low Survival" : mode === "teamworlds"
-            ? "Team Worlds" + ((WORLDS.find((w) => w.id === d.settings.worldId) || {}).name ? ": " + WORLDS.find((w) => w.id === d.settings.worldId).name : "")
-            : mode === "teamvteam" ? "Team vs Team" : "Classic Party";
+          const world = mode === "teamworlds" ? (WORLDS.find((w) => w.id === d.settings.worldId) || {}).name : "";
+          const [kk, icon, kind] = isHlSettings(d.settings) ? ["hl", "\u2B06\uFE0F", "High/Low Survival"]
+            : mode === "bluff" ? ["bluff", "\uD83C\uDFAD", "Bluff"]
+            : mode === "teamworlds" ? ["worlds", "\uD83C\uDF0D", "Team Worlds" + (world ? ": " + world : "")]
+            : mode === "teamvteam" ? ["tvt", "\u2694\uFE0F", "Team vs Team"]
+            : ["classic", "\uD83D\uDCCF", "Classic Party"];
+          row.dataset.kind = kk;
+          badge.textContent = icon;
           kindEl.textContent = kind;
-          sub.textContent = `${where} \u00b7 ${n} player${n === 1 ? "" : "s"}`;
+          sub.innerHTML = "";
+          const chip = document.createElement("span"); chip.className = "rr-chip"; chip.textContent = where;
+          const code = document.createElement("span"); code.className = "rr-code"; code.textContent = r.code;
+          sub.append(chip, code);
+          people.innerHTML = humans.slice(0, 5).map((p) => avatarHtml(p.avatar)).join("") + `<span class="rr-more">${n} player${n === 1 ? "" : "s"}</span>`;
           row.style.display = "";
           recentRoomsSection.style.display = "block";
         } else {
