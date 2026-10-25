@@ -50,6 +50,22 @@ export function validMonthlyPairs(pairs, { monthly, ordinary, objects, complete 
 
 export function restoreMonthlyPairs({ saved, shared, generated, legacy, ...rules }) {
   if (saved?.format >= 2 && validMonthlyPairs(saved.combos, rules)) return saved.combos;
+  // Expanding an existing pack must not replace questions already answered.
+  // Finished attempts retain their original score/reward; unfinished attempts
+  // keep every saved comparison in order and append only newly available items.
+  if (saved?.format >= 2 && validMonthlyPairs(saved.combos, { ...rules, complete: false })) {
+    if (saved.done) return saved.combos;
+    // The level split depends on the size order of the whole pack. Keep a
+    // started level-based attempt frozen for this month rather than moving
+    // previously answered objects between levels when new art is enabled.
+    const startedLevels = saved.format >= 4 && Object.values(saved.levels || {}).some(l => l?.done || Object.values(l?.guesses || {}).length > 0);
+    if (startedLevels) return saved.combos;
+    const pack = new Set(rules.monthly.map(o => o.id));
+    const used = new Set(saved.combos.flatMap(q => [q.unitId, q.targetId]).filter(id => pack.has(id)));
+    const merged = [...saved.combos, ...generated.filter(q => !used.has(q.unitId) && !used.has(q.targetId))];
+    if (!validMonthlyPairs(merged, rules)) throw Error('Incomplete expanded monthly pack');
+    return merged;
+  }
   // Already scored five-round attempts keep their original result and reward.
   // In-progress old attempts keep their original questions, then see the rest.
   const guesses = saved ? Object.values(saved.guesses || {}) : [];

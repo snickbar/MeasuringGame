@@ -15,9 +15,10 @@ vm.runInContext([
  source.slice(holidayStart,holidayEnd),line('SAMPLER_IDS'),line('MONTHLY_BANDS'),
  'const OBJECT_BY_ID = new Map([...OBJECTS,...HOLIDAY_OBJECTS].map(o=>[o.id,o]));',
  ...['easterMonth','seasonPackIds','dailyRng','staggerOrder','monthlyObjects','monthlyLegacyCombosLocal','monthlyCombosLocal'].map(fn),
- 'globalThis.api={OBJECTS,OBJECT_BY_ID,monthlyObjects,monthlyCombosLocal,monthlyLegacyCombosLocal,dailyRng};'
+ 'globalThis.api={OBJECTS,OBJECT_BY_ID,HOLIDAY_OBJECTS,MONTH_PACKS,monthlyObjects,monthlyCombosLocal,monthlyLegacyCombosLocal,dailyRng};'
 ].join('\n'),ctx);
 const api=ctx.api,counts=[];let small=0,big=0,runs=0;
+for(const pack of api.MONTH_PACKS)assert.equal(api.HOLIDAY_OBJECTS.filter(o=>o.pack===pack.id).length,15,'each themed pack has 15 illustrated objects: '+pack.id);
 for(const year of [2026,2027])for(let month=1;month<=12;month++){
  const key=year+'-'+String(month).padStart(2,'0'),monthly=api.monthlyObjects(key);
  const rules={monthly,ordinary:api.OBJECTS,objects:api.OBJECT_BY_ID};
@@ -40,6 +41,11 @@ for(const year of [2026,2027])for(let month=1;month<=12;month++){
  assert.equal(completed.length,5);assert.deepEqual(completed,old,'old completed result retained even if cache now has a longer list');
  const snapshot={format:2,combos:migrated,guesses:[1,2,3]};
  assert.deepEqual(restoreMonthlyPairs({saved:snapshot,shared:first,generated:first,legacy:old,...rules}),migrated,'new attempt resumes its saved exact comparisons');
+ const shorter=first.slice(0,10),started={format:MONTHLY_FORMAT,combos:shorter,levels:{1:{guesses:[1],done:false}}};
+ assert.deepEqual(restoreMonthlyPairs({saved:started,shared:first,generated:first,legacy:old,...rules}),shorter,'started levels keep the original pack and split after an art expansion');
+ assert.deepEqual(restoreMonthlyPairs({saved:{...started,levels:{1:{done:true}}},shared:first,generated:first,legacy:old,...rules}),shorter,'a completed level also freezes the original pack');
+ const expanded=restoreMonthlyPairs({saved:{format:3,combos:shorter,guesses:[1],done:false},shared:first,generated:first,legacy:old,...rules});
+ assert(validMonthlyPairs(expanded,rules));assert.deepEqual(expanded.slice(0,shorter.length),shorter,'legacy single-run expansion preserves answered comparisons');
  const duplicated=[...first];duplicated[1]=duplicated[0];assert(!validMonthlyPairs(duplicated,rules));
  const mixed=[...first];mixed[0]={unitId:monthly[0].id,targetId:monthly[1].id};assert(!validMonthlyPairs(mixed,rules));
  assert(!validMonthlyPairs(first.slice(0,-1),rules));
@@ -79,10 +85,10 @@ Object.assign(ctx,{db:{},deviceId:"test",get:async()=>({exists:()=>shared!==null
  dailyQuestionFor:q=>({...q,answer:1}),renderMonthly:()=>{},monthlyFinish:async()=>{finishes++}});
 vm.runInContext('let mo=null,moMain=null,myProfile={};const monthlyKey=()=>dailyDateStr().slice(0,7);'+line('monthlyLevelGuesses')+'\n'+line('monthlyPackObject')+'\n'+fn('monthlyLoadCombos')+fn('openMonthly')+fn('monthlyOpenLevel')+
  ';globalThis.screenApi={openLevel:monthlyOpenLevel,open:openMonthly,load:monthlyLoadCombos,setSaved:s=>myProfile.monthly=s,setProfile:p=>myProfile=p,getProfile:()=>myProfile,getRun:()=>mo};',ctx);
-const fresh=await ctx.screenApi.load(key,null);assert.equal(fresh.length,10);assert.equal(cacheWrites,0,'immutable old cache never overwritten');
-shared=null;await ctx.screenApi.load(key,null);assert.equal(cacheWrites,1);assert.equal(shared.length,10,'new cache stores full pack');
+const fresh=await ctx.screenApi.load(key,null);assert.equal(fresh.length,generated.length);assert.equal(cacheWrites,0,'immutable old cache never overwritten');
+shared=null;await ctx.screenApi.load(key,null);assert.equal(cacheWrites,1);assert.equal(shared.length,generated.length,'new cache stores full pack');
 ctx.screenApi.setProfile({coins:123,level:4,monthly:{key,done:true,guesses:[1,2,3,4,5],coins:35}});active=false;await ctx.screenApi.open();
-{const run=ctx.screenApi.getRun();assert.equal(run.phase,'hub');assert.equal(run.all.length,10);assert.equal(run.split[4].length,10);assert.equal(run.split[1].length+run.split[2].length+run.split[3].length,10);
+{const run=ctx.screenApi.getRun();assert.equal(run.phase,'hub');assert.equal(run.all.length,generated.length);assert.equal(run.split[4].length,generated.length);assert.equal(run.split[1].length+run.split[2].length+run.split[3].length,generated.length);
  assert.equal(finishes,0);assert.equal(resetWrites,1);assert.equal(ctx.screenApi.getProfile().coins,123);assert.equal(ctx.screenApi.getProfile().level,4);assert.equal(ctx.screenApi.getProfile().monthlyResetBackup.coins,35);}
 active=false;await ctx.screenApi.open();assert.equal(resetWrites,1,'reset runs only once');
 ctx.screenApi.setSaved({key,done:false,guesses:[1,2]});active=false;await ctx.screenApi.open();assert.equal(ctx.screenApi.getRun().phase,'hub');assert.equal(Object.keys(ctx.screenApi.getRun().prog).length,0,'an old-format attempt starts the levels clean');assert.equal(finishes,0);
@@ -91,6 +97,18 @@ ctx.screenApi.setSaved({key,done:false,guesses:[1,2]});active=false;await ctx.sc
  ctx.screenApi.setSaved({key,format:MONTHLY_FORMAT,combos:generated,done:false,levels:{1:{guesses:[1],done:false}}});active=false;await ctx.screenApi.open();
  const run=ctx.screenApi.getRun();assert.equal(finishes,1);assert.equal(run.phase,'hub');ctx.screenApi.openLevel(1);assert.equal(ctx.screenApi.getRun().phase,'question','a half-played level resumes');assert.equal(ctx.screenApi.getRun().guesses.length,1);
  ctx.screenApi.setSaved({key,format:MONTHLY_FORMAT,combos:generated,done:true,levels:{1:{guesses:Array(l1).fill(1),done:true,coins:20}}});active=false;await ctx.screenApi.open();ctx.screenApi.openLevel(1);assert.equal(ctx.screenApi.getRun().phase,'done','a finished level opens its result');}
+
+// Art expansion must not reshuffle saved level answers or grant rewards again.
+{const original=generated.slice(0,10),oldSplit=monthlyLevelSplit(original,{monthly:api.monthlyObjects(key),objects:api.OBJECT_BY_ID});
+ const progress={1:{guesses:[.8],done:false},2:{guesses:[1],done:true,coins:20}};
+ const before=finishes;
+ ctx.screenApi.setProfile({coins:321,monthlyHistory:{'2026-09':{s:75,t:1}},monthly:{key,format:MONTHLY_FORMAT,combos:original,done:false,levels:progress}});
+ active=false;await ctx.screenApi.open();
+ const run=ctx.screenApi.getRun();
+ assert.equal(JSON.stringify(run.combos),JSON.stringify(original));assert.equal(JSON.stringify(run.split),JSON.stringify(oldSplit));
+ ctx.screenApi.openLevel(1);assert.equal(JSON.stringify(ctx.screenApi.getRun().guesses),JSON.stringify([.8]));
+ assert.equal(ctx.screenApi.getProfile().coins,321);assert.equal(ctx.screenApi.getProfile().monthlyHistory['2026-09'].s,75);
+ assert.equal(finishes,before,'expansion does not finish or repay a started level');}
 
 // Exercise actual completion through the atomic attempt ledger, level by level.
 let wallet={coins:0,stats:{},monthly:{key:'2026-10',best:400,bestRounds:5}};const attempts=[];

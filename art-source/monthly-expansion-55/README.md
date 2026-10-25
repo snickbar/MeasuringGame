@@ -1,0 +1,13 @@
+# Monthly object expansion — 55 icons
+
+The original request is preserved in `original-prompts.txt` and parsed in `requested-prompts.json`. The user chose transparent backgrounds instead of white so the icons match the game. Artwork is made with the built-in image generator (no CLI/API fallback). Per-object files under `records/` record prompts and generated source paths; `generation.json` contains early draft records only.
+
+The user requested a simpler style after the first drafts. Subsequent icons and selected replacements use existing `items/apple.webp` and `items/baseball-cap.webp` as style references: broad rounded shapes, thick warm brown outlines, restrained shading, and very little fine texture. The TV has no feet or stand. The school desk follows the user's supplied tablet-arm chair reference, with an armrest and basket under the seat. The eagle's existing 900 mm body-length measurement is preserved, with folded wings.
+
+Each requested object is generated separately. No sprite sheets, image grids, programmatic repainting or background removal are used for the artwork. The menorah wording is normalized to four side branches on each side plus one raised center branch, nine candles total. The ring uses a polished diamond without extra sparkle symbols, consistent with the prompt's style restrictions.
+
+Source PNGs remain here. `scripts/register-monthly-expansion.py` converts full-resolution images to lossless WebP with exact alpha preservation; it verifies a pixel-identical roundtrip. It also creates read-only QA contact sheets under `output/monthly-expansion-55/` and records the runtime filenames, dimensions, alpha bounds and sizes in `runtime-assets.json`. `--available` processes the completed subset while generation continues; the default requires all 55.
+
+All 55 runtime images are installed in `items/` and enabled through `HOLIDAY_IMAGE_IDS`, bringing each of the 12 themed packs to 15 objects. The four-level Monthly Challenge changes from GitHub are retained. A level-based attempt already started before the expansion keeps its original comparisons and level split for that month, preserving answers, scores and rewards; new attempts use the expanded pack. Existing artwork and measurements are preserved. Source PNGs, prompts and review artifacts do not ship in the app.
+
+Open `gallery.html` to review all icons by month. Generation, lossless conversion, transparency checks and visual review are complete. The TV was remade without a stand; the desk was remade to match the supplied tablet-arm chair photo; the menorah has nine candles with no background glow. The busier early drafts were replaced with simpler versions, including skates, harp, bagpipes, lamb, sunflowers, serape, shirt, pie, basket, lemonade and eagle.
