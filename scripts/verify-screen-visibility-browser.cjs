@@ -77,6 +77,17 @@ try{
   if(!HOME_MOTION[scene].prop)for(const ms of [0,4500,8500]){at(ms);assert(getComputedStyle(art.querySelector('.hs-back')).transform==='none','Rigid prop never breathes: '+scene);}
   if(scene==='town'){
    for(const [ms,opened]of [[1000,0],[4100,1],[9000,0]]){at(ms);assert(opacity('.hs-open')===opened&&opacity('.hs-mail-closed')===1-opened,'Exactly one mailbox door at '+ms);}
+   at(1000);const dark=getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage;at(6000);assert(getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage!==dark,'Lamp visibly switches on');
+  }
+  const behind=(a,b)=>Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
+  if(scene==='games')assert(art.querySelectorAll('.hs-cube-face').length===5&&art.querySelectorAll('.hs-scuttle .hs-leg').length===4,'Turning cube has side faces; crab has four walking legs');
+  if(scene==='underwater')assert(behind(art.querySelector('.hs-rise'),art.querySelector('.hs-back')),'Jellyfish behind objects');
+  if(scene==='house')assert(behind(art.querySelector('.hs-counter'),art.querySelector('.hs-back')),'Mouse behind foreground objects on counter');
+  if(scene==='toy-box'){
+   at(7000);assert(opacity('.hs-arm-open')===1&&opacity('.hs-arm-closed')===0,'Robot opens its hand at the top of the wave');
+   const zone=art.querySelector('[data-subject=prop]'),r=zone.getBoundingClientRect(),buttons=document.querySelector('.home-tile').getBoundingClientRect();
+   const y=Math.min(r.y+r.height*.85,buttons.top-12),hit=document.elementFromPoint(r.x+r.width*.5,y);
+   assert(y>r.y+r.height*.6&&hit===zone,'Visible lower blocks receive real screen taps: '+JSON.stringify({tag:hit?.tagName,cls:hit?.className,r:r.toJSON(),buttons:buttons.toJSON(),y}));
   }
   if(scene==='lighthouse'){
    const beam=art.querySelector('.hs-fx-beamSweep');assert(beam.closest('.hs-effect-owner'),'Beam behind both subjects');
@@ -90,6 +101,7 @@ try{
   if(scene==='penguin')assert([...art.querySelectorAll('.hs-fx-glint')].every(f=>f.closest('.hs-back')),'Ice sparkles stay off penguin');
   if(scene==='house')assert(!art.querySelector('.hs-fx-rise'),'No steam from soda');
   if(scene==='dragon'){
+   assert([...art.querySelectorAll('.hs-crit')].every(c=>behind(c,art.querySelector('.hs-castle-occluder'))),'Flying dragons pass behind castle mask');
    at(2000);assert(opacity('.hs-peek')===0&&opacity('.hs-fx-dragonFire')===0,'Dragon sleeps between gestures');
    at(9900);assert(opacity('.hs-peek')===1&&opacity('.hs-fx-dragonFire')>.8,'Dragon wakes before breathing fire');
   }
@@ -98,6 +110,13 @@ try{
   for(const [role,subject]of ['hero','prop'].entries()){
    at(13000);art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    assert(art.dataset.reaction===HOME_MOTION[scene].taps[role],'Specific '+scene+' '+subject+' reaction');
+   if(scene==='town'&&role===1){assert(art.dataset.lamp==='on','Tap switches lamp on');}
+   if((role===1&&['penguin','dragon','toy-box','space','cactus','corgi'].includes(scene))||(role===0&&scene==='games')){
+    const target=art.querySelector(({penguin:'.hs-ice-top',dragon:'.hs-coin-top','toy-box':'.hs-block-roof',space:'.hs-fx-flame',cactus:'.hs-fx-bloom',corgi:'.hs-bowl-food',games:'.hs-cube-rotor'})[scene]);
+    const before=getComputedStyle(target).transform;at(350);assert(getComputedStyle(target).transform!==before,'Tap produces visible '+scene+' movement');
+    // Reset before checking the gesture restart timing below.
+    art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   }
    const finite=art.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations===1);
    if(HOME_MOTION[scene].taps[role]!=='lamp-glow')assert(finite.length&&finite.every(a=>a.currentTime<200),'Tap gesture restarts: '+scene+' '+subject);
    $('home-screen').classList.remove('active');await wait(20);

@@ -18,6 +18,10 @@ export const HOME_MOTION = {
   dragon:     { hero: "dragonBreath",prop: null,    taps: ["dragon-wake", "coin-shimmer"] },
   space:      { hero: "orbit",   prop: "rocketFloat",taps: ["space-wave", "rocket-pulse"] },
 };
+export const HOME_EXTRA_ART = {
+  "toy-box": ["refined/robot-arm-open.webp"],
+  corgi: ["refined/corgi-bowl.webp"],
+};
 
 // Convert a point on a prop's original canvas to reference-picture coordinates.
 // Keeping effects in their owner's coordinate system prevents floating flowers,
@@ -43,8 +47,8 @@ export function homeRigMotion(scene, rig, art) {
   if (scene === "underwater") result.fx = result.fx.map((f, i) => ({ ...f, x: 700, y: 590, anim: "mouthBubbles", dur: 8.4, delay: i * 3.2 }));
   if (scene === "penguin") result.fx = result.fx.map((f, i) => propEffect({ ...f, dur: 8.2 + i * 1.7 }, art.hero2,
     [{ x: 333, y: 225, w: 64, h: 65 }, { x: 477, y: 720, w: 57, h: 63 }, { x: 348, y: 1260, w: 58, h: 60 }][i]));
-  if (scene === "cactus") result.fx = result.fx.map(f => propEffect({ ...f, anim: "bloom", dur: 16, delay: 0 }, art.hero2,
-    { x: 404, y: -7, w: 132, h: 111 }));
+  if (scene === "cactus") result.fx = result.fx.map(f => propEffect({ ...f, anim: "bloom", dur: 11, delay: 0 }, art.hero2,
+    { x: 349, y: 17, w: 170, h: 143 }));
   // The old "coin glint" frames contain another miniature coin. Use the
   // alpha-masked sheen on the actual coin instead of drawing a coin on it.
   if (scene === "dragon") result.fx = result.fx.slice(0, 1).map(f => ({ ...f, anim: "dragonFire", dur: 16, frameDur: .64, delay: 0 }));
@@ -72,36 +76,47 @@ function sheen(parent, img, cls = "") {
   shine.style.setProperty("--sprite", `url("${img.src}")`); parent.appendChild(shine);
 }
 
-export function decorateHomeProps(scene, { hop, img, spec }) {
+export function decorateHomeProps(scene, { hop, img, spec, extras }) {
   let top = null;
-  if (scene === "town") { const halo = document.createElement("i"); halo.className = "hs-lamp-halo"; hop.insertBefore(halo, img); }
+  if (scene === "town") {
+    const halo = document.createElement("i"); halo.className = "hs-lamp-halo"; hop.insertBefore(halo, img);
+    const pane = document.createElement("i"); pane.className = "hs-lamp-pane";
+    pane.style.clipPath = `polygon(${polygon([[35.8,16.2],[53.4,15.2],[51.5,26.8],[41.1,26.8]])})`;
+    hop.appendChild(pane);
+    const side = pane.cloneNode(); side.style.clipPath = `polygon(${polygon([[57.4,16],[63.9,16.8],[58.8,27],[55.3,26.7]])})`; hop.appendChild(side);
+  }
   if (["ants", "games", "house", "penguin", "dragon", "space"].includes(scene)) sheen(hop, img);
   if (scene === "snacks") {
     top = cutPiece(img, [[38, 8], [46, 8], [46, 5], [52, 2], [58, 2], [54, 8], [53, 9], [59, 10], [59, 14], [55, 16], [44, 16], [38, 14]], "hs-cherry", "49% 15.5%");
     const drip = document.createElement("i"); drip.className = "hs-ice-drip"; hop.appendChild(drip);
   }
   if (scene === "corgi") {
-    [[40.5, 1.3, 6.4, 4.1], [38.5, 6.3, 5.8, 3.6], [46.9, 6.3, 6, 4.2]].forEach((r, i) => {
-      const piece = cutPiece(img, rect(...r), "hs-kibble", `${r[0] + r[2]/2}% ${r[1] + r[3]/2}%`);
-      piece.style.setProperty("--ki", i); piece.style.setProperty("--kd", `${i * .22}s`);
-    });
+    // Replace the airborne food and motion streaks with one settled bowl.
+    img.style.clipPath = "inset(25.4% 0 0 0)";
+    const bowl = extras.get("refined/corgi-bowl.webp").cloneNode(); bowl.className = "hs-settled-bowl";
+    hop.appendChild(bowl);
+    const food = bowl.cloneNode(); food.className = "hs-bowl-food";
+    const well = document.createElement("div"); well.className = "hs-food-well";
+    well.appendChild(food); hop.appendChild(well);
   }
   if (scene === "wheels") top = cutPiece(img, rect(30, 1, 40, 18.3), "hs-cone-top", "50% 18.8%");
   if (scene === "lighthouse") top = cutPiece(img, rect(28, 0, 44, 21), "hs-cup-top", "51% 20.7%");
   if (scene === "toy-box") top = cutPiece(img, rect(26, 7, 48, 18.8), "hs-block-roof", "51% 25.6%");
+  const sourcePolygon = points => points.map(([x,y]) => [x/spec.sw*100,y/spec.sh*100]);
+  if (scene === "penguin") top = cutPiece(img, sourcePolygon([[386,102],[408,110],[475,149],[524,177],[543,208],[567,246],[566,279],[539,298],[505,347],[478,378],[452,384],[424,377],[406,362],[362,343],[326,323],[307,294],[291,250],[290,225],[302,201],[330,167],[364,119]]), "hs-ice-top", "53% 20.4%");
+  if (scene === "dragon") {
+    // Another complete coin from lower in the same stack restores the surface
+    // behind the tilted top coin when it turns edge-on.
+    const surface = img.cloneNode(); surface.className = "hs-part";
+    surface.style.clipPath = `polygon(${polygon(rect(32,25.8,39,8.5))})`; surface.style.transform = "translateY(-7.8%)";
+    hop.insertBefore(surface,img);
+    top = cutPiece(img, sourcePolygon([[480,86],[536,97],[584,136],[610,185],[608,236],[578,283],[534,330],[489,358],[433,382],[384,391],[337,376],[307,353],[297,327],[289,297],[293,256],[312,207],[343,167],[386,129],[429,102]]), "hs-coin-top", "52% 20.8%");
+  }
   if (scene === "giraffe") {
     top = cutPiece(img, rect(30, 1, 35, 16.8), "hs-duck-top", "47% 17.5%");
-    // Reuse another duck's calm head from the very same illustration, preserving
-    // its beak and shading rather than the oversized toothy reaction face.
-    const duck = top.firstChild, pct = points => points.map(([x,y]) => [x/spec.sw*100,y/spec.sh*100]);
-    duck._homeOuter = rect(30, 1, 35, 16.8);
-    const ellipse = (cx,cy,rx,ry,from,to,n) => Array.from({length:n+1},(_,i) => { const a=(from+(to-from)*i/n)*Math.PI/180;return [cx+Math.cos(a)*rx,cy+Math.sin(a)*ry]; });
-    const oldHead = cutPiece(duck, pct(ellipse(445,110,86,76,-90,270,40)), "", "0 0", top);
-    oldHead.remove();
-    const head = img.cloneNode(); head.className = "hs-part";
-    const outline = [...ellipse(443,305,68,58,-90,-9,12),[521,305],[540,302],[545,307],[545,326],[532,341],[512,349],[491,351],...ellipse(443,305,68,58,46,270,30)];
-    head.style.clipPath = `polygon(${polygon(pct(outline))})`;
-    head.style.transformOrigin = "0 0"; head.style.transform = "translate(-17.92%,-16.38%) scale(1.35)"; top.appendChild(head);
+    // Keep the original winking expression, swapping just the closed eye for
+    // an open eye between winks. Both states stay attached to the same head.
+    const eye = document.createElement("i"); eye.className = "hs-duck-eye"; top.appendChild(eye);
   }
   if (scene === "space") {
     // The live flame replaces the old painted flame. Fins and nozzle stay intact.
@@ -109,6 +124,34 @@ export function decorateHomeProps(scene, { hop, img, spec }) {
     hop.querySelector(".hs-sheen").style.clipPath = img.style.clipPath;
   }
   return { top };
+}
+
+export function decorateHomePart(scene, img, q, extras) {
+  if (scene === "toy-box" && q.anim === "armIdle") {
+    const arm = document.createElement("div"); arm.className = img.className; arm.style.cssText = img.style.cssText;
+    img.className = "hs-arm-closed"; img.removeAttribute("style");
+    const open = extras.get("refined/robot-arm-open.webp").cloneNode(); open.className = "hs-arm-open";
+    arm.append(img, open); return arm;
+  }
+  if (scene === "games" && q.anim === "twistS") {
+    // A real five-sided cuboid: side faces rotate into view rather than
+    // squashing a flat illustration. Stickers retain the game's bright palette.
+    const frame = document.createElement("div"); frame.className = "hs-rig hs-cube-slice"; frame.style.cssText = img.style.cssText;
+    const camera = document.createElement("div"); camera.className = "hs-cube-camera";
+    const rotor = document.createElement("div"); rotor.className = "hs-cube-rotor";
+    const colors = ["#ffe12d","#1687ff","#ffe12d","#2cdb48","#2586ff","#ffe12d","#ff4436","#f7f9ff","#ff503c"];
+    for (const [i, side] of ["top","front","right","back","left"].entries()) {
+      const face = document.createElement("div"); face.className = "hs-cube-face hs-cube-" + side;
+      for (let n=0;n<(i?3:9);n++) {
+        const tile=document.createElement("i");tile.style.setProperty("--tile",colors[(n+i*2)%colors.length]);
+        if (side === "front" && n === 1) { tile.className="hs-cube-smile";tile.style.setProperty("--tile","#ffe12d"); }
+        face.appendChild(tile);
+      }
+      rotor.appendChild(face);
+    }
+    camera.appendChild(rotor); frame.appendChild(camera); return frame;
+  }
+  return img;
 }
 
 export function decorateHomeHero(scene, { hop, img, base, W, H }) {
@@ -139,6 +182,7 @@ export function installHomeInteractions(root, home, scene, sound, stopSound = ()
     if (document.hidden || !root.isConnected || !home.classList.contains("active")) return;
     reset(); void root.offsetWidth;
     root.dataset.reaction = HOME_MOTION[scene].taps[role];
+    if (scene === "town" && role === 1) root.dataset.lamp = root.dataset.lamp === "on" ? "off" : "on";
     // A tap shortens an idle gesture to one cycle. Explicitly seek that cycle
     // to its start; changing CSS duration alone would keep the old idle time.
     const gestures = [...root.querySelectorAll("*")].filter(el => {

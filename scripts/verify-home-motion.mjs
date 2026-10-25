@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { HOME_MOTION, homeRigMotion } from '../anim/home-motion.mjs';
+import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion } from '../anim/home-motion.mjs';
 import { HOME_ART } from '../anim/home-art-layout.mjs';
 import { HOME_RIG } from '../anim/home-art-rig.mjs';
 const css=fs.readFileSync(new URL('../anim/home-motion.css',import.meta.url),'utf8');
@@ -18,7 +18,8 @@ for(const [scene,motion]of Object.entries(HOME_MOTION)){
 const cactus=homeRigMotion('cactus',HOME_RIG.cactus,HOME_ART.cactus).fx[0],prop=HOME_ART.cactus.hero2;
 const scale=prop.w/100*704/prop.sw;
 assert.equal(cactus.on,'hero2');
-assert(Math.abs(cactus.y+cactus.h-(prop.y/100*1520+104*scale))<.01,'Flower base overlaps cactus tip');
+assert(Math.abs(cactus.y+cactus.h-(prop.y/100*1520+160*scale))<.01,'Flower base overlaps the rounded cactus crown');
+for(const files of Object.values(HOME_EXTRA_ART))for(const file of files)assert(fs.existsSync(new URL('../anim/home-art/'+file,import.meta.url)));
 const penguin=homeRigMotion('penguin',HOME_RIG.penguin,HOME_ART.penguin);
 assert(penguin.fx.every(f=>f.ref&&f.on==='hero2'));
 const rocket=homeRigMotion('wheels',HOME_RIG.wheels,HOME_ART.wheels);

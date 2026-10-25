@@ -3,7 +3,7 @@
 // Decode the complete scene offscreen and swap it in once. Never paint the differently composed flat picture first.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 import { HOME_RIG } from "./home-art-rig.mjs";
-import { HOME_MOTION, homeRigMotion, decorateHomeProps, decorateHomeHero, installHomeInteractions } from "./home-motion.mjs";
+import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorateHomeHero, decorateHomePart, installHomeInteractions } from "./home-motion.mjs";
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
@@ -14,7 +14,7 @@ const CONFIG = {
   sunflower: { hero: "sway", hero2: "breathe",   shadow: [[200, 1222, 150, 30, .3], [458, 1236, 120, 24, .3]], critters: [{ row: 31, size: 12, secs: 28, delay: 5, dir: 1, kind: "glide", faces: -1 }, { row: 52, size: 14, secs: 36, delay: 14, dir: -1, kind: "flutter", faces: 1 }] },
   snacks: { hero: "sway", hero2: "breathe", shadow: [[245, 1168, 120, 22, .3], [492, 1178, 90, 20, .3]], critters: [{ row: 30, size: 14, secs: 28, delay: 4, dir: 1, kind: "flutter", faces: 1 }, { row: 71, size: 11, secs: 36, delay: 10, dir: -1, kind: "scuttle", faces: -1 }] },
   town: { hero: "sway", hero2: "breathe", shadow: [[232, 1040, 150, 24, .3], [470, 1040, 90, 18, .3]], critters: [{ row: 69, size: 12, secs: 36, delay: 6, dir: 1, kind: "scuttle", faces: 1, behind: false, wings: [{ cls: "hs-leg", wt: .3, deg: 16, delay: 0, pivot: [673, 886], poly: [[488, 883], [733, 883], [733, 1081], [488, 1081]] }, { cls: "hs-leg", wt: .3, deg: 16, delay: -.3, pivot: [898, 931], poly: [[823, 928], [1098, 928], [1098, 1081], [823, 1081]] }] }, { row: 40, size: 14, secs: 30, delay: 12, dir: -1, kind: "flutter", faces: 1 }] },
-  house: { hero: "sway", hero2: "breathe", shadow: [[190, 1285, 330, 30, .28], [470, 1348, 150, 26, .3]], critters: [{ row: 80, size: 12, secs: 34, delay: 6, dir: 1, kind: "scuttle", faces: 1 }] },
+  house: { hero: "sway", hero2: "breathe", shadow: [[190, 1285, 330, 30, .28], [470, 1348, 150, 26, .3]], critters: [{ row: 58.5, size: 12, secs: 20, delay: 1, dir: -1, kind: "counter", faces: 1, behind: true }] },
   wheels: { hero: "sway", hero2: "breathe", shadow: [[258, 1198, 280, 30, .3], [455, 1210, 130, 24, .3]], critters: [{ row: 34, size: 16, secs: 60, delay: 4, dir: 1, kind: "glide", faces: 1, behind: true }, { row: 36, size: 14, secs: 34, delay: 14, dir: 1, kind: "swoop", faces: 1, behind: true }] },
   lighthouse: { hero: "sway", hero2: "breathe", shadow: [[190, 1120, 300, 34, .3], [442, 1122, 120, 22, .3]], critters: [{ row: 28, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 65, size: 12, secs: 50, delay: 12, dir: -1, kind: "glide", faces: 1, behind: true }] },
   underwater: { hero: "breathe", hero2: "sway", shadow: [[250, 1160, 330, 26, .25], [520, 1168, 150, 22, .25]], critters: [{ row: 30, size: 14, secs: 34, delay: 4, dir: 1, kind: "glide", faces: 1 }, { row: 64, size: 12, secs: 44, delay: 6, dir: -1, kind: "rise", faces: 1 }] },
@@ -80,6 +80,9 @@ async function buildHomeScene(home, scene, current) {
   let rig = HOME_RIG[scene], rigImgs = null;
   if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
   rig = homeRigMotion(scene, rig, art);
+  const extraFiles = HOME_EXTRA_ART[scene] || [];
+  const extraImages = await Promise.all(extraFiles.map(file => load(BASE + file)));
+  const extras = new Map(extraFiles.map((file, i) => [file, extraImages[i]]));
   // Optimized builds omit the old whole hero when a rig supplies its base.
   const images = Promise.all([art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters].map(l => l ? load(BASE + l.file) : null));
   images.catch(() => {}); // The rig may still be loading when a required image fails.
@@ -114,10 +117,10 @@ async function buildHomeScene(home, scene, current) {
   box2.className = "hs-layer hs-back" + (cfg.hero2 ? " hs-" + cfg.hero2 : "");
   box2.style.cssText = `left:${s2.x}%;top:${s2.y}%;width:${s2.w}%;aspect-ratio:${s2.sw}/${s2.sh};transform-origin:${s2.ox}% ${s2.oy}%`;
   hop2.className = "hs-hop"; hero2.className = "hs-part"; hero2.alt = ""; hop2.appendChild(hero2); box2.appendChild(hop2); stage.appendChild(box2);
-  const propDetails = decorateHomeProps(scene, { hop: hop2, img: hero2, spec: s2 });
+  const propDetails = decorateHomeProps(scene, { hop: hop2, img: hero2, spec: s2, extras });
   const tapZone = (spec, role, tap) => {
-    // The tap zone covers the upper part of the character's visible shape (the picture has transparent margins around it).
-    const W = spec.sw, H = spec.sh, hp = spec.w * (HOME_ART_REF.width / HOME_ART_REF.height) * (H / W), t = tap || [.1, 0, .8, .7], A = spec.ab || { x: 0, y: 0, width: W, height: H };
+    // Include the lower blocks/bowls and the flower just above the cactus tip.
+    const W = spec.sw, H = spec.sh, hp = spec.w * (HOME_ART_REF.width / HOME_ART_REF.height) * (H / W), t = tap || [0, -.025, 1, 1.025], A = spec.ab || { x: 0, y: 0, width: W, height: H };
     const zone = document.createElement("div"); zone.className = "hs-tap";
     zone.style.cssText = `left:${spec.x + spec.w * (A.x + A.width * t[0]) / W}%;top:${spec.y + hp * (A.y + A.height * t[1]) / H}%;width:${spec.w * A.width * t[2] / W}%;height:${hp * A.height * t[3] / H}%`;
     stage.appendChild(zone);
@@ -151,7 +154,8 @@ async function buildHomeScene(home, scene, current) {
       rig.parts.forEach((q) => {
         const img = rigImgs.get(q.file).cloneNode(); img.className = "hs-rig hs-" + q.anim; img.alt = ""; at(img, q);
         img.style.transformOrigin = q.ox + "% " + q.oy + "%";
-        if (q.z === "back") hop.insertBefore(img, hop.firstChild); else hop.appendChild(img);
+        const part = decorateHomePart(scene, img, q, extras);
+        if (q.z === "back") hop.insertBefore(part, hop.firstChild); else hop.appendChild(part);
       });
       (rig.fx || []).filter((q) => !(cfg.dropFx && cfg.dropFx.includes(q.anim))).forEach((q) => {
         // Effect frames (flame, steam, sparkle...): a box holding every frame; the frames take turns, the box itself rises, pulses or glints.
@@ -188,7 +192,14 @@ async function buildHomeScene(home, scene, current) {
   const defs = art.critters.map((c, i) => ({ c, img: crits[i], i }));
   (rig && rig.critFrames || []).forEach((f) => { if (f.c) defs[f.i] = { c: { w: f.c.w, h: f.c.h, ab: { x: f.c.ab.x, y: f.c.ab.y, width: f.c.ab.width, height: f.c.ab.height } }, img: null, i: f.i }; });
   defs.forEach(({ c, img: img0, i }) => {
-    const cc = cfg.critters[i]; if (!cc || !c) return;
+    const cc = { ...cfg.critters[i] }; if (!cfg.critters[i] || !c) return;
+    if (scene === "underwater" && i === 1) cc.behind = true;
+    if (scene === "games" && i === 1) cc.wings = [
+      { poly: [[315,700],[410,638],[485,650],[465,722],[382,815],[342,825]], pivot:[450,665], delay:0 },
+      { poly: [[470,705],[570,650],[650,700],[583,825],[550,872],[500,850]], pivot:[600,690], delay:-.18 },
+      { poly: [[870,740],[950,717],[975,760],[920,830],[850,855]], pivot:[945,735], delay:-.18 },
+      { poly: [[1000,710],[1070,695],[1155,760],[1155,845],[1100,825]], pivot:[1035,720], delay:0 }
+    ].map(w => ({ ...w, cls:"hs-leg", wt:.18, deg:9 }));
     const wrap = document.createElement("div"), fr = rig && (rig.critFrames || []).find((f) => f.i === i);
     let img = img0;
     if (fr) { // animated frames take the picture's place
@@ -224,6 +235,14 @@ async function buildHomeScene(home, scene, current) {
     const back = scene === "penguin" && i === 0 ? true : cc.behind != null ? cc.behind : cc.kind === "scuttle" || cc.kind === "roll" || cc.kind === "teeter", first = back && stage.querySelector(".hs-layer");
     if (first) stage.insertBefore(wrap, first); else stage.appendChild(wrap);
   });
+  if (scene === "dragon") {
+    // The castle is painted into the plate. A stationary, silhouette-clipped copy
+    // restores its foreground depth without moving any background pixels.
+    const castle = plate.cloneNode(); castle.className = "hs-plate hs-castle-occluder";
+    const outline = [[0,1843],[0,950],[18,950],[70,795],[140,948],[155,948],[155,710],[250,496],[345,710],[320,710],[320,1020],[347,1020],[347,946],[408,802],[473,946],[473,1000],[510,1000],[510,1070],[565,1070],[565,1050],[615,1050],[615,1100],[680,1100],[742,1120],[742,1350],[853,1350],[853,1843]];
+    castle.style.clipPath = `polygon(${outline.map(([x,y]) => `${x/853*100}% ${y/1843*100}%`).join(",")})`;
+    stage.insertBefore(castle, stage.querySelector(".hs-layer"));
+  }
   const size = () => {
     const w = home.clientWidth || innerWidth, h = home.clientHeight || innerHeight;
     const s = Math.max(w / HOME_ART_REF.width, h / HOME_ART_REF.height); // the same "cover, top, centred" fit as the original picture
