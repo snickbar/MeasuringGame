@@ -11038,7 +11038,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
     }
   });
-  document.getElementById("monthly-close-btn").addEventListener("click", () => { monthlyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+  document.getElementById("monthly-close-btn").addEventListener("click", () => {
+    // Inside a level (its start screen, a question or a result), Back goes to the level list first; from the list it leaves.
+    if (mo && mo.phase !== "hub") {
+      monthlyStop();
+      if (mo.practice && moMain) { mo = moMain; moMain = null; }
+      mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = []; mo.input = "";
+      renderMonthly(); return;
+    }
+    monthlyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
 
   // ==================== Survival: endless, 3 lives, climb until you run out ====================
   // A guess under SURVIVAL_PASS % accurate costs a life. Questions get bigger-gap (harder) the further you get,
