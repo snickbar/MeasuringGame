@@ -711,13 +711,13 @@ export const HOME_ART = {
   "critters": [
    {
     "file": "critter-penguin-a.webp",
-    "w": 1375,
-    "h": 1144,
+    "w": 1774,
+    "h": 887,
     "ab": {
-     "x": 47,
-     "y": 438,
-     "width": 1162,
-     "height": 453
+     "x": 32,
+     "y": 148,
+     "width": 1710,
+     "height": 641
     }
    },
    {

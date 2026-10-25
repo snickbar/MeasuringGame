@@ -1,7 +1,7 @@
 # Home scene refinements, October 25, 2026
 
-The two PNGs here are image-generation originals. Runtime versions are WebP in
-`anim/home-art/refined/`; source artwork and this documentation do not ship.
+The PNGs here are image-generation originals. Source artwork and this
+documentation do not ship; the game uses lossless WebP versions.
 
 - `robot-arm-open.png`: generated against `anim/home-art/top/toy-box-arm.webp`.
   Requested the same illustrated arm, shoulder/elbow geometry and colors, with
@@ -11,6 +11,14 @@ The two PNGs here are image-generation originals. Runtime versions are WebP in
   Requested one matching red bowl with all loose kibble contained inside the rim,
   without airborne food or motion streaks. Its runtime placement follows the
   existing stack; the food alone rattles inside a fixed clipping region on tap.
+- `sliding-penguin.png`: generated against `anim/home-art/top/penguin-base.webp`.
+  Requested one friendly belly-sliding penguin facing left, matching the main
+  character's charcoal outlines, soft shading, cream belly and pale yellow cheek.
+  No ground, shadow, glow or scenery, with actual alpha transparency. Runtime:
+  `anim/home-art/critter-penguin-a.webp`. The complete normalized prompt and
+  updated alpha bounds are in `anim/home-art/manifest.json`; the layout is rebuilt
+  with `node scripts/build-home-art-layout.cjs`. Sliding timing and depth remain
+  unchanged.
 
 `scripts/refine-home-cutouts.py` preserves original dimensions and RGB while
 removing the low-alpha matte fringe on solid moving cutouts. Smoke, flame and
