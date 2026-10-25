@@ -90,10 +90,12 @@ def build(scene):
                 x,y,w,h,ar=st[i]
                 if x>=x0 and y>=y0 and x+w<=x1 and y+h<=y1: full[lab==i,3]=0
         rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
-    if cfg.get('hero2_erase'):
+    if cfg.get('hero2_erase') or cfg.get('hero2_inpaint'):
         # the second object with some baked-in detached bit removed (e.g. a static steam wisp that an animated one replaces)
         h2=hero(scene,'hero2').copy(); a=(h2[:,:,3]>8).astype(np.uint8); n,lab,st,_=cv2.connectedComponentsWithStats(a,connectivity=8)
-        for (x0,y0,x1,y1) in cfg['hero2_erase']:
+        for (x0,y0,x1,y1) in cfg.get('hero2_inpaint',[]):   # paint a baked-in detail (a wing) out of the picture so an animated copy can replace it
+            mk=np.zeros(h2.shape[:2],np.uint8); mk[y0:y1,x0:x1]=255; h2[:,:,:3]=cv2.inpaint(np.ascontiguousarray(h2[:,:,:3]),mk,6,cv2.INPAINT_TELEA)
+        for (x0,y0,x1,y1) in cfg.get('hero2_erase',[]):
             for i in range(1,n):
                 x,y,w,h,ar=st[i]
                 if x>=x0 and y>=y0 and x+w<=x1 and y+h<=y1: h2[lab==i,3]=0
@@ -164,7 +166,7 @@ def build(scene):
             if f<1: cell=cv2.resize(cell,(max(1,round(cw*f)),max(1,round(ch*f))),interpolation=cv2.INTER_AREA)
             frames.append(dict(file=save(cell,f"{scene}-fx{fi}-{k}.webp")))
         ax,ay=q.get('at',(.5,.5)); bw_=cw*sc_; bh_=ch*sc_
-        rig['fx'].append(dict(frames=frames,x=r1(q['x']-ax*bw_),y=r1(q['y']-ay*bh_),w=r1(bw_),h=r1(bh_),anim=q['anim'],dur=q.get('dur',3),delay=q.get('delay',0),z=q.get('z','front'),**({'ref':True} if q.get('ref') else {})))
+        rig['fx'].append(dict(frames=frames,x=r1(q['x']-ax*bw_),y=r1(q['y']-ay*bh_),w=r1(bw_),h=r1(bh_),anim=q['anim'],dur=q.get('dur',3),delay=q.get('delay',0),z=q.get('z','front'),**({'ref':True} if q.get('ref') else {}),**({'on':q['on']} if q.get('on') else {})))
     return rig
 def build_crit(scene,entries,rig):
     """Critter frame sheets: each entry swaps (or adds) one critter's picture for stacked frames; frames are scaled so the creature
