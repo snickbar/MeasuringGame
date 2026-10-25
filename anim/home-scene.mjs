@@ -194,6 +194,8 @@ async function buildHomeScene(home, scene, current) {
   defs.forEach(({ c, img: img0, i }) => {
     const cc = { ...cfg.critters[i] }; if (!cfg.critters[i] || !c) return;
     if (scene === "underwater" && i === 1) cc.behind = true;
+    if (scene === "space" || (scene === "town" && i === 1)) cc.behind = true;
+    if (scene === "snacks" && i === 1) cc.behind = false;
     if (scene === "games" && i === 1) cc.wings = [
       { poly: [[315,700],[410,638],[485,650],[465,722],[382,815],[342,825]], pivot:[450,665], delay:0 },
       { poly: [[470,705],[570,650],[650,700],[583,825],[550,872],[500,850]], pivot:[600,690], delay:-.18 },
@@ -231,10 +233,24 @@ async function buildHomeScene(home, scene, current) {
     }
     body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" || cc.kind === "swoop" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
-    if (scene === "penguin" && i === 0) { wrap.style.setProperty("--ct", "74%"); }
+    const slide = scene === "penguin" && i === 0;
+    if (slide) { wrap.style.setProperty("--ct", "0%");wrap.dataset.directionPolicy='downhill-left'; }
+    const route=document.createElement('div');route.className='hs-route'+(slide?'':' hs-bidirectional');
+    route.dataset.critterIndex=String(i);
+    route.dataset.directionPolicy=slide?'downhill-left':'alternating';route.style.cssText=`--cs:${cc.secs}s;--cd:${cc.delay}s`;
+    route.appendChild(wrap);
+    if(scene==='snacks'&&i===1){
+      const following=wrap.cloneNode(true);following.classList.add('hs-following-ant');route.appendChild(following);route.dataset.copies='2';
+    }
     const back = scene === "penguin" && i === 0 ? true : cc.behind != null ? cc.behind : cc.kind === "scuttle" || cc.kind === "roll" || cc.kind === "teeter", first = back && stage.querySelector(".hs-layer");
-    if (first) stage.insertBefore(wrap, first); else stage.appendChild(wrap);
+    if (first) stage.insertBefore(route, first); else stage.appendChild(route);
   });
+  if(scene==='toy-box'){
+    const route=document.createElement('div');route.className='hs-route hs-bidirectional';route.dataset.directionPolicy='alternating';route.style.cssText='--cs:18s;--cd:2s';
+    const ball=document.createElement('div');ball.className='hs-bouncing-ball';
+    const sprite=extras.get('../../items/beach-ball.webp').cloneNode();sprite.alt='';ball.appendChild(sprite);route.appendChild(ball);
+    stage.insertBefore(route,stage.querySelector('.hs-layer'));
+  }
   if (scene === "dragon") {
     // The castle is painted into the plate. A stationary, silhouette-clipped copy
     // restores its foreground depth without moving any background pixels.
@@ -248,6 +264,7 @@ async function buildHomeScene(home, scene, current) {
     const s = Math.max(w / HOME_ART_REF.width, h / HOME_ART_REF.height); // the same "cover, top, centred" fit as the original picture
     stage.style.width = HOME_ART_REF.width * s + "px"; stage.style.height = HOME_ART_REF.height * s + "px";
     stage.style.setProperty("--sw", HOME_ART_REF.width * s + "px");
+    stage.style.setProperty("--sh", HOME_ART_REF.height * s + "px");
   };
   size(); resizeStage = size;
   disposeScene(); stopHomeSound();

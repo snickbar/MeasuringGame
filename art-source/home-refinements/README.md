@@ -34,3 +34,30 @@ Validation: all sixteen scenes rendered at phone size; idle and both tap gesture
 sampled visually. Browser checks cover 320/390/430 px widths, lower-block hit
 coverage, open/closed robot hand, lamp states, layer ordering, fresh tap timing,
 reduced motion and navigation cleanup.
+
+## Complete stack layers and return routes
+
+`layers-*.png` are new built-in image-generation originals. Each of the eight
+two-cell sheets contains a complete lower stack and a completely separate top
+object. The top object contains no part of the next object down. The dog bowl
+cell is empty; `layers-kibble.png` supplies individual animated food pieces.
+`layers-robot-palm.png` corrects the hand's palm/thumb orientation.
+
+Normalized generation prompts and selected original paths are recorded in
+`layers-generation.json`. `scripts/register-home-layers.py` converts these PNGs
+to lossless WebP without changing their alpha, and measures the independent cell
+bounds in `anim/home-layer-sheets.mjs`. `anim/home-layer-art.mjs` assembles them
+using CSS cell selection and anchors, avoiding cuts through assembled artwork.
+The coin uses its circular face cell on the front/back of a cylinder with a gold
+edge. The two ladybug wings hinge independently using existing artwork.
+
+Wandering sprites alternate between an original and mirrored route, preserving
+their facing direction automatically. The two picnic ants share one route and
+follow one another in front of the objects. The toy ball uses existing beach-ball
+art and bounces behind the toys. The sliding penguin is deliberately excluded from
+return routes: it descends from the right-hand hill and then travels left.
+
+Validation covers complete stationary stacks, independent source cells, 23
+separate food pieces behind the front bowl rim, exactly one visible frame per ant,
+mirrored crossings, satellite/bird depth, bouncing ball height, downhill travel,
+two-sided coin geometry, and phone widths of 320/390/430 pixels.

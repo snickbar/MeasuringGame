@@ -1,3 +1,5 @@
+import { HOME_LAYER_PLACEMENTS, assembleHomeProp } from './home-layer-art.mjs';
+import { HOME_LAYER_SHEETS } from './home-layer-sheets.mjs';
 // Hand-authored motion sits beside the generated artwork recipes: rebuilding the
 // WebP rigs must not overwrite timing, attachment points or tap behaviour.
 export const HOME_MOTION = {
@@ -18,10 +20,12 @@ export const HOME_MOTION = {
   dragon:     { hero: "dragonBreath",prop: null,    taps: ["dragon-wake", "coin-shimmer"] },
   space:      { hero: "orbit",   prop: "rocketFloat",taps: ["space-wave", "rocket-pulse"] },
 };
-export const HOME_EXTRA_ART = {
-  "toy-box": ["refined/robot-arm-open.webp"],
-  corgi: ["refined/corgi-bowl.webp"],
-};
+export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map(([scene]) => {
+  const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
+  if(scene==='toy-box')files.push('refined/robot-palm.webp','../../items/beach-ball.webp');
+  if(scene==='corgi')files.push('refined/kibble.webp');
+  return [scene,files];
+}));
 
 // Convert a point on a prop's original canvas to reference-picture coordinates.
 // Keeping effects in their owner's coordinate system prevents floating flowers,
@@ -49,88 +53,51 @@ export function homeRigMotion(scene, rig, art) {
     [{ x: 333, y: 225, w: 64, h: 65 }, { x: 477, y: 720, w: 57, h: 63 }, { x: 348, y: 1260, w: 58, h: 60 }][i]));
   if (scene === "cactus") result.fx = result.fx.map(f => propEffect({ ...f, anim: "bloom", dur: 11, delay: 0 }, art.hero2,
     { x: 349, y: 17, w: 170, h: 143 }));
-  // The old "coin glint" frames contain another miniature coin. Use the
-  // alpha-masked sheen on the actual coin instead of drawing a coin on it.
+  // The old glint frames contain another miniature coin. The solid cylinder
+  // now supplies its own faces and edge instead of drawing a coin on a coin.
   if (scene === "dragon") result.fx = result.fx.slice(0, 1).map(f => ({ ...f, anim: "dragonFire", dur: 16, frameDur: .64, delay: 0 }));
-  if (scene === "giraffe") result.fx = result.fx.map(f => ({ ...f, followTop: true }));
+  if (scene === "giraffe") result.fx = []; // The isolated duck contains its own wing.
   if (scene === "space") result.fx = result.fx.map(f => ({ ...f, on: "hero2" }));
   return result;
 }
 
 const polygon = points => points.map(([x, y]) => `${x}% ${y}%`).join(", ");
-// Clip copies of our own illustration into animation pieces, without resampling
-// or shipping duplicate bitmaps. The remaining sprite gets matching holes.
-function cutPiece(img, points, cls, pivot, parent = img.parentElement) {
-  const layer = document.createElement("div"); layer.className = "hs-detail " + cls;
-  layer.style.transformOrigin = pivot;
-  const copy = img.cloneNode(); copy.className = "hs-part"; copy.style.clipPath = `polygon(${polygon(points)})`;
-  layer.appendChild(copy); parent.appendChild(layer);
-  const holes = img._homeHoles || (img._homeHoles = []); holes.push(points);
-  const outer = img._homeOuter || rect(0, 0, 100, 100), start = outer[0];
-  img.style.clipPath = `polygon(evenodd, ${polygon([...outer, start])}, ${holes.map(p => polygon([...p, p[0]]) + `, ${start[0]}% ${start[1]}%`).join(", ")})`;
-  return layer;
-}
-const rect = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
 function sheen(parent, img, cls = "") {
   const shine = document.createElement("div"); shine.className = "hs-sheen " + cls;
   shine.style.setProperty("--sprite", `url("${img.src}")`); parent.appendChild(shine);
 }
 
 export function decorateHomeProps(scene, { hop, img, spec, extras }) {
-  let top = null;
+  const layers=assembleHomeProp(scene,{hop,img,spec,extras},HOME_LAYER_SHEETS);
+  if(layers){
+    if(scene==='snacks'){const drip=document.createElement('i');drip.className='hs-ice-drip';hop.appendChild(drip);}
+    return layers;
+  }
   if (scene === "town") {
     const halo = document.createElement("i"); halo.className = "hs-lamp-halo"; hop.insertBefore(halo, img);
-    const pane = document.createElement("i"); pane.className = "hs-lamp-pane";
-    pane.style.clipPath = `polygon(${polygon([[35.8,16.2],[53.4,15.2],[51.5,26.8],[41.1,26.8]])})`;
-    hop.appendChild(pane);
-    const side = pane.cloneNode(); side.style.clipPath = `polygon(${polygon([[57.4,16],[63.9,16.8],[58.8,27],[55.3,26.7]])})`; hop.appendChild(side);
+    for(const points of [ [[35.3,15.3],[54.3,14.8],[52.2,27.3],[40.7,27.2]], [[56.5,15.3],[64.7,16.1],[59.7,27.5],[54.9,27.1]] ]){
+      const pane=document.createElement('i');pane.className='hs-lamp-pane';pane.style.clipPath=`polygon(${polygon(points)})`;hop.appendChild(pane);
+    }
   }
-  if (["ants", "games", "house", "penguin", "dragon", "space"].includes(scene)) sheen(hop, img);
-  if (scene === "snacks") {
-    top = cutPiece(img, [[38, 8], [46, 8], [46, 5], [52, 2], [58, 2], [54, 8], [53, 9], [59, 10], [59, 14], [55, 16], [44, 16], [38, 14]], "hs-cherry", "49% 15.5%");
-    const drip = document.createElement("i"); drip.className = "hs-ice-drip"; hop.appendChild(drip);
-  }
-  if (scene === "corgi") {
-    // Replace the airborne food and motion streaks with one settled bowl.
-    img.style.clipPath = "inset(25.4% 0 0 0)";
-    const bowl = extras.get("refined/corgi-bowl.webp").cloneNode(); bowl.className = "hs-settled-bowl";
-    hop.appendChild(bowl);
-    const food = bowl.cloneNode(); food.className = "hs-bowl-food";
-    const well = document.createElement("div"); well.className = "hs-food-well";
-    well.appendChild(food); hop.appendChild(well);
-  }
-  if (scene === "wheels") top = cutPiece(img, rect(30, 1, 40, 18.3), "hs-cone-top", "50% 18.8%");
-  if (scene === "lighthouse") top = cutPiece(img, rect(28, 0, 44, 21), "hs-cup-top", "51% 20.7%");
-  if (scene === "toy-box") top = cutPiece(img, rect(26, 7, 48, 18.8), "hs-block-roof", "51% 25.6%");
-  const sourcePolygon = points => points.map(([x,y]) => [x/spec.sw*100,y/spec.sh*100]);
-  if (scene === "penguin") top = cutPiece(img, sourcePolygon([[386,102],[408,110],[475,149],[524,177],[543,208],[567,246],[566,279],[539,298],[505,347],[478,378],[452,384],[424,377],[406,362],[362,343],[326,323],[307,294],[291,250],[290,225],[302,201],[330,167],[364,119]]), "hs-ice-top", "53% 20.4%");
-  if (scene === "dragon") {
-    // Another complete coin from lower in the same stack restores the surface
-    // behind the tilted top coin when it turns edge-on.
-    const surface = img.cloneNode(); surface.className = "hs-part";
-    surface.style.clipPath = `polygon(${polygon(rect(32,25.8,39,8.5))})`; surface.style.transform = "translateY(-7.8%)";
-    hop.insertBefore(surface,img);
-    top = cutPiece(img, sourcePolygon([[480,86],[536,97],[584,136],[610,185],[608,236],[578,283],[534,330],[489,358],[433,382],[384,391],[337,376],[307,353],[297,327],[289,297],[293,256],[312,207],[343,167],[386,129],[429,102]]), "hs-coin-top", "52% 20.8%");
-  }
-  if (scene === "giraffe") {
-    top = cutPiece(img, rect(30, 1, 35, 16.8), "hs-duck-top", "47% 17.5%");
-    // Keep the original winking expression, swapping just the closed eye for
-    // an open eye between winks. Both states stay attached to the same head.
-    const eye = document.createElement("i"); eye.className = "hs-duck-eye"; top.appendChild(eye);
-  }
+  if (["ants", "games", "house", "space"].includes(scene)) sheen(hop, img);
   if (scene === "space") {
-    // The live flame replaces the old painted flame. Fins and nozzle stay intact.
     img.style.clipPath = "polygon(evenodd, 0 0,100% 0,100% 100%,0 100%,0 0,39% 84%,62% 84%,62% 100%,39% 100%,39% 84%,0 0)";
     hop.querySelector(".hs-sheen").style.clipPath = img.style.clipPath;
   }
-  return { top };
+  return {};
 }
 
 export function decorateHomePart(scene, img, q, extras) {
+  if(scene==='sunflower'&&q.anim==='flapS'){
+    const wings=document.createElement('div');wings.className='hs-rig hs-lady-wings';wings.style.cssText=img.style.cssText;
+    for(const side of ['left','right']){const wing=img.cloneNode();wing.className='hs-lady-wing hs-lady-'+side;wing.removeAttribute('style');wings.appendChild(wing);}
+    return wings;
+  }
+
   if (scene === "toy-box" && q.anim === "armIdle") {
     const arm = document.createElement("div"); arm.className = img.className; arm.style.cssText = img.style.cssText;
     img.className = "hs-arm-closed"; img.removeAttribute("style");
-    const open = extras.get("refined/robot-arm-open.webp").cloneNode(); open.className = "hs-arm-open";
+    const open = extras.get("refined/robot-palm.webp").cloneNode(); open.className = "hs-arm-open";
     arm.append(img, open); return arm;
   }
   if (scene === "games" && q.anim === "twistS") {

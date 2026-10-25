@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion } from '../anim/home-motion.mjs';
 import { HOME_ART } from '../anim/home-art-layout.mjs';
 import { HOME_RIG } from '../anim/home-art-rig.mjs';
+import { HOME_LAYER_SHEETS } from '../anim/home-layer-sheets.mjs';
+import { HOME_LAYER_PLACEMENTS } from '../anim/home-layer-art.mjs';
 const css=fs.readFileSync(new URL('../anim/home-motion.css',import.meta.url),'utf8');
 assert.equal(Object.keys(HOME_MOTION).length,16);
 for(const [scene,motion]of Object.entries(HOME_MOTION)){
@@ -20,6 +22,11 @@ const scale=prop.w/100*704/prop.sw;
 assert.equal(cactus.on,'hero2');
 assert(Math.abs(cactus.y+cactus.h-(prop.y/100*1520+160*scale))<.01,'Flower base overlaps the rounded cactus crown');
 for(const files of Object.values(HOME_EXTRA_ART))for(const file of files)assert(fs.existsSync(new URL('../anim/home-art/'+file,import.meta.url)));
+for(const [scene,placement]of Object.entries(HOME_LAYER_PLACEMENTS)){
+ const sheet=HOME_LAYER_SHEETS[placement.id];assert(sheet&&fs.existsSync(new URL('../anim/home-art/'+sheet.file,import.meta.url)));
+ assert(sheet.base[0]+sheet.base[2]<sheet.top[0],'Independent source cells have an empty gutter: '+scene);
+ assert(placement.top[1]+placement.top[3]>placement.base[1],'Moving object contacts the intact stack: '+scene);
+}
 const penguin=homeRigMotion('penguin',HOME_RIG.penguin,HOME_ART.penguin);
 assert(penguin.fx.every(f=>f.ref&&f.on==='hero2'));
 const rocket=homeRigMotion('wheels',HOME_RIG.wheels,HOME_ART.wheels);

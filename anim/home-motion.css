@@ -236,3 +236,75 @@
 #home-art.hs-paused * { animation-play-state:paused !important; }
 html[data-motion=reduce] #home-art * { animation:none !important; }
 html[data-motion=reduce] #home-art .hs-sheen,html[data-motion=reduce] #home-art .hs-ice-drip,html[data-motion=reduce] #home-art .hs-visor-glint,html[data-motion=reduce] #home-art .hs-soda-bubble { display:none; }
+/* Complete, independently drawn layers: nothing below the moving object is cut. */
+#home-art .hs-art-cell { position:absolute;overflow:hidden;pointer-events:none; }
+#home-art .hs-cell-image { position:absolute;display:block;max-width:none;object-fit:fill; }
+#home-art .hs-kibble-well { position:absolute;inset:0;overflow:hidden;clip-path:ellipse(39% 17% at 50% 30%); }
+#home-art .hs-kibble-piece { position:absolute;height:auto;transform-origin:50% 50%; }
+#home-art .hs-bowl-front { clip-path:inset(43% 0 0 0); }
+#home-art[data-reaction=kibble-tumble] .hs-kibble-piece { animation:hsLooseKibble 1.7s ease-out var(--kd) 1; }
+@keyframes hsLooseKibble {
+  0%,100% { transform:translate(0,0) rotate(0); }
+  13%,37% { transform:translate(calc(var(--dx) * 38%),-42%) rotate(var(--turn)); }
+  25%,51% { transform:translate(calc(var(--dx) * -27%),18%) rotate(calc(var(--turn) * -1)); }
+  67% { transform:translate(calc(var(--dx) * 15%),-14%) rotate(calc(var(--turn) * .4)); }
+  84% { transform:translate(calc(var(--dx) * -6%),3%) rotate(0); }
+}
+#home-art .hs-isolated-top .hs-duck-eye { left:56%;top:27%;width:10%;height:11%;border-width:.5px;box-shadow:0 0 0 1.5px #ffd836; }
+/* Warm light spills around the lantern; off panes cover the entire glass. */
+#home-art .hs-lamp-halo { left:15%;top:4%;width:67%;height:35%;background:radial-gradient(ellipse,rgba(255,235,146,.7),rgba(255,214,93,.28) 35%,rgba(255,207,90,.08) 55%,transparent 72%); }
+@keyframes hsLampSwitch { 0%,45%,100% { background:#111a21;opacity:1; } 46%,99% { background:radial-gradient(ellipse at 42% 55%,#fffde4,#ffe897 55%,#eebb56);opacity:1; } }
+#home-art[data-lamp=off] .hs-lamp-pane { background:#111a21;opacity:1; }
+#home-art[data-lamp=on] .hs-lamp-pane { opacity:1;filter:drop-shadow(0 0 3px #ffe69c); }
+@keyframes hsRobotWave { 0%,40%,88%,100% { transform:rotate(0); } 52% { transform:rotate(-155deg); } 59%,73% { transform:rotate(-145deg); } 66%,80% { transform:rotate(-165deg); } }
+/* Independent elytra hinge at the ladybug's shoulders instead of one flat flap. */
+#home-art .hs-lady-wings { perspective:180px; }
+#home-art .hs-lady-wing { position:absolute;inset:0;width:100%;height:100%;max-width:none; }
+#home-art .hs-lady-left { clip-path:inset(0 50% 0 0);transform-origin:47% 75%;animation:hsLadyLeft 12.4s ease-in-out infinite; }
+#home-art .hs-lady-right { clip-path:inset(0 0 0 50%);transform-origin:53% 75%;animation:hsLadyRight 12.4s ease-in-out infinite; }
+@keyframes hsLadyLeft { 0%,54%,85%,100% { transform:rotate(0) rotateY(0); } 61%,73% { transform:rotate(-9deg) rotateY(28deg); } 67%,79% { transform:rotate(-2deg) rotateY(8deg); } }
+@keyframes hsLadyRight { 0%,54%,85%,100% { transform:rotate(0) rotateY(0); } 61%,73% { transform:rotate(9deg) rotateY(-28deg); } 67%,79% { transform:rotate(2deg) rotateY(-8deg); } }
+#home-art[data-reaction=ladybug-flutter] .hs-lady-left { animation:hsLadyLeft 1.8s ease-in-out 1; }
+#home-art[data-reaction=ladybug-flutter] .hs-lady-right { animation:hsLadyRight 1.8s ease-in-out 1; }
+/* Whole routes mirror between crossings while sprites face the new direction. */
+#home-art .hs-route { position:absolute;inset:0;pointer-events:none;transform-origin:50% 50%; }
+#home-art .hs-bidirectional { animation:hsRouteDirection calc(var(--cs) * 2) steps(1,end) var(--cd) infinite; }
+@keyframes hsRouteDirection { 0% { transform:scaleX(1); } 50% { transform:scaleX(-1); } }
+#home-art .hs-following-ant { translate:calc(var(--sw) * .13) 0; }
+#home-art .hs-bouncing-ball { position:absolute;left:0;top:71%;width:9%;aspect-ratio:1;opacity:0;animation:hsBallBounces var(--cs) linear var(--cd) infinite; }
+#home-art .hs-bouncing-ball img { width:100%;height:100%;object-fit:contain;animation:hsBallTurns 3s linear infinite; }
+@keyframes hsBallBounces {
+  0% { opacity:0;transform:translate(calc(var(--sw) * -.13),0);animation-timing-function:ease-out; }
+  3% { opacity:1; }
+  10% { transform:translate(calc(var(--sw) * .13),calc(var(--sw) * -.2));animation-timing-function:ease-in; }
+  18% { transform:translate(calc(var(--sw) * .35),0);animation-timing-function:ease-out; }
+  25% { transform:translate(calc(var(--sw) * .55),calc(var(--sw) * -.12));animation-timing-function:ease-in; }
+  32% { transform:translate(calc(var(--sw) * .75),0);animation-timing-function:ease-out; }
+  38% { transform:translate(calc(var(--sw) * .92),calc(var(--sw) * -.06));animation-timing-function:ease-in; }
+  44% { opacity:1;transform:translate(calc(var(--sw) * 1.1),0); }
+  47%,100% { opacity:0;transform:translate(calc(var(--sw) * 1.2),0); }
+}
+@keyframes hsBallTurns { to { rotate:360deg; } }
+/* One-way route follows the drawn hill, then levels out across the snow. */
+#home-art .hs-slide { transform-origin:0 0; }
+@keyframes hsSlide {
+  0% { opacity:0;transform:translate(calc(var(--sw) * 1.15),calc(var(--sh) * .625)) rotate(-19deg); }
+  5% { opacity:1; }
+  18% { transform:translate(calc(var(--sw) * .82),calc(var(--sh) * .707)) rotate(-15deg); }
+  27% { transform:translate(calc(var(--sw) * .62),calc(var(--sh) * .749)) rotate(-3deg); }
+  40% { opacity:1;transform:translate(calc(var(--sw) * .24),calc(var(--sh) * .747)) rotate(0); }
+  51%,100% { opacity:0;transform:translate(calc(var(--sw) * -.2),calc(var(--sh) * .75)) rotate(0); }
+}
+/* Textured circular faces and 64 side quads give the coin a continuous gold edge. */
+#home-art .hs-coin-top { container-type:inline-size;transform:rotateZ(-10deg); }
+#home-art[data-reaction=coin-shimmer] .hs-coin-top { animation:none; }
+#home-art .hs-coin-cylinder { position:absolute;inset:0;transform-style:preserve-3d;transform:rotateY(-25deg);--diameter:100cqw;--thickness:9cqw; }
+#home-art .hs-coin-face { position:absolute;inset:0;width:100%;height:100%;border-radius:50%;backface-visibility:hidden;background:#ffc62c;overflow:hidden; }
+#home-art .hs-coin-front { transform:translateZ(calc(var(--thickness) / 2)); }
+#home-art .hs-coin-back { transform:rotateY(180deg) translateZ(calc(var(--thickness) / 2)); }
+#home-art .hs-coin-edge { position:absolute;left:50%;top:50%;width:5.05cqw;height:var(--thickness);background:linear-gradient(#ffed88,#d89513 40%,#ffd14c 65%,#9c5d0c);transform:translate(-50%,-50%) rotateZ(var(--edge-angle)) translateY(calc(var(--diameter) / -2)) rotateX(90deg);backface-visibility:visible; }
+#home-art[data-reaction=coin-shimmer] .hs-coin-cylinder { animation:hsSolidCoinSpin 2.5s ease-in-out 1; }
+@keyframes hsSolidCoinSpin { from { transform:rotateY(-25deg); } to { transform:rotateY(335deg); } }
+html[data-motion=reduce] #home-art .hs-bouncing-ball { display:none; }
+#home-art.hs-paused * { animation-play-state:paused !important; }
+html[data-motion=reduce] #home-art * { animation:none !important; }

@@ -74,6 +74,16 @@ try{
   assert(getComputedStyle($('home-screen')).backgroundImage==='none','No flat picture flashes behind '+scene);
   assert(stage.getBoundingClientRect().width>=innerWidth,'Stage covers phone width: '+scene);
   const at=(ms)=>{for(const a of art.getAnimations({subtree:true})){a.pause();a.currentTime=ms;}},opacity=sel=>Number(getComputedStyle(art.querySelector(sel)).opacity);
+  const route=art.querySelector('.hs-bidirectional');
+  assert(route,'Scene has alternating crossings: '+scene);
+  const cycle=parseFloat(route.style.getPropertyValue('--cs'))*1000,delay=parseFloat(route.style.getPropertyValue('--cd'))*1000;
+  at(delay+1000);assert(new DOMMatrix(getComputedStyle(route).transform).a>.9,'First crossing direction: '+scene);
+  at(delay+cycle+1000);assert(new DOMMatrix(getComputedStyle(route).transform).a<-.9,'Return crossing mirrors route and artwork: '+scene);
+  if(['lighthouse','wheels','toy-box','snacks','giraffe','penguin','corgi','dragon'].includes(scene)){
+   assert(art.querySelector('.hs-complete-stack')&&art.querySelector('.hs-back > .hs-hop > img').hidden,'Complete stack replaces cut sprite: '+scene);
+   const stack=art.querySelector('.hs-complete-stack');at(0);const r=stack.getBoundingClientRect().toJSON();at(8000);
+   assert(JSON.stringify(stack.getBoundingClientRect().toJSON())===JSON.stringify(r),'Lower stack stays fixed: '+scene);
+  }
   if(!HOME_MOTION[scene].prop)for(const ms of [0,4500,8500]){at(ms);assert(getComputedStyle(art.querySelector('.hs-back')).transform==='none','Rigid prop never breathes: '+scene);}
   if(scene==='town'){
    for(const [ms,opened]of [[1000,0],[4100,1],[9000,0]]){at(ms);assert(opacity('.hs-open')===opened&&opacity('.hs-mail-closed')===1-opened,'Exactly one mailbox door at '+ms);}
@@ -88,7 +98,21 @@ try{
    const zone=art.querySelector('[data-subject=prop]'),r=zone.getBoundingClientRect(),buttons=document.querySelector('.home-tile').getBoundingClientRect();
    const y=Math.min(r.y+r.height*.85,buttons.top-12),hit=document.elementFromPoint(r.x+r.width*.5,y);
    assert(y>r.y+r.height*.6&&hit===zone,'Visible lower blocks receive real screen taps: '+JSON.stringify({tag:hit?.tagName,cls:hit?.className,r:r.toJSON(),buttons:buttons.toJSON(),y}));
+   const ball=art.querySelector('.hs-bouncing-ball');assert(behind(ball,art.querySelector('.hs-back')),'Ball bounces behind toys');
+   at(3800);const apex=ball.getBoundingClientRect().top;at(5240);assert(ball.getBoundingClientRect().top>apex+20,'Ball lands after first bounce');
   }
+  if(scene==='space')assert([...art.querySelectorAll('.hs-route')].every(r=>behind(r,art.querySelector('.hs-back'))),'Satellite and spacecraft behind objects');
+  if(scene==='town')assert(behind(art.querySelector('.hs-route[data-critter-index="1"]'),art.querySelector('.hs-back')),'Blue bird behind objects');
+  if(scene==='snacks'){
+   const ants=art.querySelector('[data-copies="2"]');assert(ants?.querySelectorAll('.hs-scuttle').length===2&&behind(art.querySelector('.hs-front'),ants),'Two following ants in front');
+   for(const ms of [14000,48000,57000]){at(ms);for(const walker of ants.querySelectorAll('.hs-wingbox'))assert([...walker.children].filter(f=>Number(getComputedStyle(f).opacity)>.5).length===1,'Exactly one animation frame per ant at '+ms);}
+  }
+  if(scene==='penguin'){
+   const slider=art.querySelector('.hs-slide');assert(slider.closest('.hs-route').dataset.directionPolicy==='downhill-left','Penguin excluded from return crossings');
+   at(4400);const high=slider.getBoundingClientRect();at(6780);const low=slider.getBoundingClientRect();assert(low.y>high.y+20&&low.x<high.x,'Penguin descends hill toward left');
+  }
+  if(scene==='corgi')assert(art.querySelectorAll('.hs-kibble-piece').length===23&&art.querySelector('.hs-bowl-front'),'Individual food behind bowl rim');
+  if(scene==='dragon')assert(art.querySelectorAll('.hs-coin-face').length===2&&art.querySelectorAll('.hs-coin-edge').length===64,'Coin has front, back and solid edge');
   if(scene==='lighthouse'){
    const beam=art.querySelector('.hs-fx-beamSweep');assert(beam.closest('.hs-effect-owner'),'Beam behind both subjects');
    at(0);assert(new DOMMatrix(getComputedStyle(beam).transform).a>.9,'Beam to right');at(6000);assert(new DOMMatrix(getComputedStyle(beam).transform).a<-.9,'Beam to left');
@@ -112,7 +136,7 @@ try{
    assert(art.dataset.reaction===HOME_MOTION[scene].taps[role],'Specific '+scene+' '+subject+' reaction');
    if(scene==='town'&&role===1){assert(art.dataset.lamp==='on','Tap switches lamp on');}
    if((role===1&&['penguin','dragon','toy-box','space','cactus','corgi'].includes(scene))||(role===0&&scene==='games')){
-    const target=art.querySelector(({penguin:'.hs-ice-top',dragon:'.hs-coin-top','toy-box':'.hs-block-roof',space:'.hs-fx-flame',cactus:'.hs-fx-bloom',corgi:'.hs-bowl-food',games:'.hs-cube-rotor'})[scene]);
+    const target=art.querySelector(({penguin:'.hs-ice-top',dragon:'.hs-coin-cylinder','toy-box':'.hs-block-roof',space:'.hs-fx-flame',cactus:'.hs-fx-bloom',corgi:'.hs-kibble-piece',games:'.hs-cube-rotor'})[scene]);
     const before=getComputedStyle(target).transform;at(350);assert(getComputedStyle(target).transform!==before,'Tap produces visible '+scene+' movement');
     // Reset before checking the gesture restart timing below.
     art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
