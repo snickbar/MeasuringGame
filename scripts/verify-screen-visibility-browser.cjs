@@ -60,6 +60,7 @@ try{
  const {installHomeScene}=await import('/anim/home-scene.mjs');
  const {HOME_MOTION}=await import('/anim/home-motion.mjs');
  const html=document.documentElement;
+ const tapAudio=[];const Audio=window.AudioContext||window.webkitAudioContext,createOsc=Audio.prototype.createOscillator;Audio.prototype.createOscillator=function(){const node=createOsc.call(this),start=node.start;node.start=function(...args){tapAudio.push(node);return start.apply(this,args);};return node;};
  await until(()=>$('home-art')&&!html.hasAttribute('data-home-loading'),'Initial Home decoded');
  window.__homeNavigationMarker=crypto.randomUUID();const marker=window.__homeNavigationMarker;
  localStorage.setItem('mg_homeSel','ants');api.visibilityOpen('settings-screen');
@@ -99,12 +100,16 @@ try{
     const critter=art.querySelector('.hs-crit');
     assert(critter&&behind(critter,art.querySelector('.hs-back'))&&behind(critter,art.querySelector('.hs-front')),'New creature stays behind both subjects: '+scene);
     if(scene==='make-believe'){
-     at(0);const top=art.querySelector('.nh-book-closed').getBoundingClientRect();
+     at(0);const top=art.querySelector('.nh-book-solid').getBoundingClientRect();
      assert(top.bottom>r.top&&top.bottom<r.top+30,'Closed spellbook rests on the stack');
-     at(10000);assert(opacity('.nh-book-open')===1&&opacity('.nh-book-closed')===0,'One complete open book pose');
+     assert(!art.querySelector('.nh-book-open')&&!art.querySelector('.nh-book-closed'),'No two-pose book swaps');
+     const hinge=art.querySelector('.nh-cover-hinge');at(6800);const closed=getComputedStyle(hinge).transform;at(7600);const midway=getComputedStyle(hinge).transform;at(10000);const open=getComputedStyle(hinge).transform;
+     assert(closed!==midway&&midway!==open,'Cover has continuous intermediate hinge angles');
+     const wing=art.querySelector('.nh-fairy-wing');at(20);const folded=getComputedStyle(wing).transform;at(300);assert(getComputedStyle(wing).transform!==folded,'Fairy wings flap independently');
     }else{
      at(0);const lid=art.querySelector('.nh-gift-lid').getBoundingClientRect();
      assert(lid.bottom>r.top&&lid.bottom<r.top+40,'Gift lid covers the rim');
+     const rainbow=art.querySelector('.nh-rainbow');assert(behind(rainbow,art.querySelector('.hs-back')),'Rainbow behind subjects');at(0);assert(opacity('.nh-rainbow')===0,'Rainbow starts faded');at(9000);assert(opacity('.nh-rainbow')>.5,'Rainbow fades into sky');
      const ghost=art.querySelector('.hs-giftGhost'),delay=parseFloat(ghost.style.getPropertyValue('--cd'))*1000;
      at(delay+5000);const right=ghost.getBoundingClientRect().left;
      at(delay+17000);assert(ghost.getBoundingClientRect().left<right-40,'Ghost peeks out on both sides');
@@ -176,6 +181,9 @@ try{
   if(scene==='penguin')assert([...art.querySelectorAll('.hs-fx-glint')].every(f=>f.closest('.hs-back')),'Ice sparkles stay off penguin');
   if(scene==='house')assert(!art.querySelector('.hs-fx-rise'),'No steam from soda');
   if(scene==='dragon'){
+   const castleTap=art.querySelector('.hs-castle-tap');assert(castleTap&&getComputedStyle(castleTap).clipPath!=='none','Castle background has a silhouette-shaped tap target');
+   const beforeSound=tapAudio.length;castleTap.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));assert(art.dataset.reaction==='dragon-wake'&&tapAudio.length===beforeSound+1,'Castle tap wakes dragon and schedules its sound');
+   $('home-screen').classList.remove('active');await wait(20);$('home-screen').classList.add('active');await wait(10);
    assert([...art.querySelectorAll('.hs-crit')].every(c=>behind(c,art.querySelector('.hs-castle-occluder'))),'Flying dragons pass behind castle mask');
    at(2000);assert(opacity('.hs-peek')===0&&opacity('.hs-fx-dragonFire')===0,'Dragon sleeps between gestures');
    at(9900);assert(opacity('.hs-peek')===1&&opacity('.hs-fx-dragonFire')>.8,'Dragon wakes before breathing fire');
@@ -183,7 +191,10 @@ try{
   // Tap late in an idle loop: a short gesture must restart, not instantly finish
   // because its old CSS currentTime is longer than the new duration.
   for(const [role,subject]of ['hero','prop'].entries()){
-   at(13000);art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   at(13000);const zone=art.querySelector('[data-subject='+subject+']'),bounds=zone.getBoundingClientRect();
+   const hit=document.elementFromPoint(bounds.x+bounds.width/2,bounds.y+bounds.height/2);assert(hit===zone,'Tap area receives input: '+scene+' '+subject+' '+JSON.stringify({hit:hit?.className,bounds:bounds.toJSON(),scrollY}));
+   const audioBefore=tapAudio.length;zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   assert(tapAudio.length===audioBefore+1,'Audible cue is scheduled for '+scene+' '+subject);
    assert(art.dataset.reaction===HOME_MOTION[scene].taps[role],'Specific '+scene+' '+subject+' reaction');
    if(scene==='town'&&role===1){assert(art.dataset.lamp==='on','Tap switches lamp on');}
    if(scene==='toy-box'&&role===0){
@@ -199,6 +210,12 @@ try{
     const before=getComputedStyle(target).transform;at(350);assert(getComputedStyle(target).transform!==before,'Tap produces visible '+scene+' movement');
     // Reset before checking the gesture restart timing below.
     art.querySelector('[data-subject='+subject+']').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   }
+   if(scene==='make-believe'&&role===0){at(400);assert(opacity('.nh-unicorn-wink')===1&&opacity('.nh-unicorn-body')===0,'Unicorn winks at the viewer on tap');zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));}
+   if(scene==='holiday-mix'){
+    if(role===0){const arms=[...art.querySelectorAll('.nh-snow-arm')];at(0);const initial=arms.map(a=>getComputedStyle(a).rotate);at(450);assert(arms.every((a,i)=>getComputedStyle(a).rotate!==initial[i]),'Both complete snowman arms wave');}
+    else {const bird=art.querySelector('.nh-turkey');at(0);const hidden=bird.getBoundingClientRect().top;at(1300);assert(bird.getBoundingClientRect().top<hidden-30&&opacity('.nh-turkey')===1,'Turkey emerges without fading');assert(behind(bird,art.querySelector('.nh-gift-stack')),'Gift wall occludes turkey');}
+    zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    }
    const finite=art.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations===1);
    if(HOME_MOTION[scene].taps[role]!=='lamp-glow')assert(finite.length&&finite.every(a=>a.currentTime<200),'Tap gesture restarts: '+scene+' '+subject);

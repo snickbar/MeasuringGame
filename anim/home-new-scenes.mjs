@@ -2,6 +2,22 @@ import { NEW_HOME_SPRITES } from './home-new-art.mjs';
 import { artCell } from './home-layer-art.mjs';
 const canvas={sw:704,sh:1520};
 function cell(extras,name,index,box,cls){const art=NEW_HOME_SPRITES[name];return artCell(extras.get(art.file),art.cells[index],box,canvas,cls);}
+function box(cls,rect){const el=document.createElement('div');el.className=cls;if(rect)el.style.cssText=`left:${rect[0]/704*100}%;top:${rect[1]/1520*100}%;width:${rect[2]/704*100}%;height:${rect[3]/1520*100}%`;return el;}
+function bookTexture(extras,index,cls){const art=NEW_HOME_SPRITES['spellbook-textures-v2'];return artCell(extras.get(art.file),art.cells[index],[0,0,250,160],{sw:250,sh:160},cls);}
+function hingedBook(extras){
+ const camera=box('nh-book-camera',[390,630,250,160]),solid=box('nh-book-solid');camera.appendChild(solid);
+ solid.appendChild(bookTexture(extras,1,'nh-book-paper'));
+ for(const side of ['front','right'])solid.appendChild(box('nh-page-edge nh-page-edge-'+side));
+ for(let i=0;i<3;i++){const leaf=box('nh-book-leaf');leaf.style.setProperty('--leaf',i);leaf.appendChild(box('nh-leaf-paper'));solid.appendChild(leaf);}
+ const hinge=box('nh-cover-hinge');hinge.append(bookTexture(extras,0,'nh-cover-front'),bookTexture(extras,1,'nh-cover-inside'));solid.appendChild(hinge);
+ return camera;
+}
+export function decorateNewHomeBackground(scene,stage,extras){if(scene==='holiday-mix')stage.appendChild(cell(extras,'holiday-rainbow-v2',0,[25,440,655,245],'nh-rainbow'));}
+export function makeHomeFairy(extras){
+ const body=document.createElement('div');body.className='nh-fairy';body.style.aspectRatio='800/800';
+ const art=NEW_HOME_SPRITES['fairy-parts-v2'],im=extras.get(art.file),spec={sw:800,sh:800};
+ body.append(artCell(im,art.cells[2],[110,135,390,480],spec,'nh-fairy-wing nh-fairy-wing-far'),artCell(im,art.cells[1],[70,70,440,600],spec,'nh-fairy-wing nh-fairy-wing-near'),artCell(im,art.cells[0],[210,110,590,630],spec,'nh-fairy-body'));return body;
+}
 function sparks(parent,box){
  const source=document.createElement('div');source.className='nh-magic';source.style.cssText=`left:${box[0]/704*100}%;top:${box[1]/1520*100}%;width:${box[2]/704*100}%;height:${box[3]/1520*100}%`;
  for(let i=0;i<6;i++){const spark=document.createElement('i');spark.style.cssText=`--i:${i};--drift:${(i-2.5)*18}px`;source.appendChild(spark);}parent.appendChild(source);
@@ -11,22 +27,25 @@ export function decorateNewHomeProp(scene,{hop,img,extras}){
  img.hidden=true;img.style.display='none';
  if(scene==='make-believe'){
   hop.appendChild(cell(extras,'books-make-believe',0,[380,720,270,435],'nh-book-stack'));
-  const book=document.createElement('div');book.className='hs-detail nh-book';
-  book.append(cell(extras,'books-make-believe',1,[390,615,250,168],'nh-book-closed'),cell(extras,'books-make-believe',2,[385,595,265,188],'nh-book-open'));
+  const book=hingedBook(extras);
   hop.appendChild(book);sparks(hop,[445,595,145,95]);return {top:book};
  }
+ // Turkey is a complete sprite behind the intact stack: the front wall hides
+ // it naturally until it rises through the opening, without fading or scaling.
+ hop.appendChild(cell(extras,'gift-turkey-v2',0,[443,570,125,135],'nh-turkey'));
  hop.appendChild(cell(extras,'gifts-holiday-mix',0,[410,550,190,605],'nh-gift-stack'));
- const lid=cell(extras,'gifts-holiday-mix',1,[410,449,190,143],'nh-gift-lid');hop.appendChild(lid);
+ const lid=cell(extras,'gift-lid-v2',0,[410,437,190,155],'nh-gift-lid');hop.appendChild(lid);
  sparks(hop,[435,480,145,80]);return {top:lid};
 }
 export function decorateNewHomeHero(scene,{hop,img,extras}){
  if(!['make-believe','holiday-mix'].includes(scene))return null;
  img.hidden=true;img.style.display='none';
  if(scene==='make-believe'){
-  const tail=cell(extras,'hero-make-believe',1,[15,880,165,255],'nh-unicorn-tail');
-  const body=cell(extras,'hero-make-believe',0,[105,690,285,460],'nh-unicorn-body');
-  const ear=cell(extras,'hero-make-believe',2,[194,744,58,88],'nh-unicorn-ear');
-  hop.append(tail,body,ear);return {};
+  const body=cell(extras,'unicorn-viewer-v2',0,[10,690,390,465],'nh-unicorn-body');
+  const wink=cell(extras,'unicorn-viewer-v2',1,[10,690,390,465],'nh-unicorn-wink');
+  hop.append(body,wink);return {};
  }
- const body=cell(extras,'hero-holiday-mix',0,[40,565,365,590],'nh-snowman');hop.appendChild(body);return {};
+ const left=cell(extras,'snowman-parts-v2',1,[0,790,130,135],'nh-snow-arm nh-snow-arm-left');
+ const right=cell(extras,'snowman-parts-v2',2,[305,790,140,135],'nh-snow-arm nh-snow-arm-right');
+ const body=cell(extras,'snowman-parts-v2',0,[50,565,350,590],'nh-snowman');hop.append(left,right,body);return {};
 }

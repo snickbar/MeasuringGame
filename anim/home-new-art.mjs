@@ -153,6 +153,57 @@ export const NEW_HOME_SPRITES = {
    ]
   ]
  },
+ "fairy-parts-v2": {
+  "file": "fairy-parts-v2.webp",
+  "w": 2172,
+  "h": 724,
+  "cells": [
+   [
+    53,
+    15,
+    734,
+    685
+   ],
+   [
+    851,
+    32,
+    568,
+    673
+   ],
+   [
+    1624,
+    144,
+    487,
+    537
+   ]
+  ]
+ },
+ "gift-lid-v2": {
+  "file": "gift-lid-v2.webp",
+  "w": 1374,
+  "h": 1145,
+  "cells": [
+   [
+    92,
+    189,
+    1194,
+    790
+   ]
+  ]
+ },
+ "gift-turkey-v2": {
+  "file": "gift-turkey-v2.webp",
+  "w": 1212,
+  "h": 1298,
+  "cells": [
+   [
+    35,
+    77,
+    1142,
+    1156
+   ]
+  ]
+ },
  "gifts-holiday-mix": {
   "file": "gifts-holiday-mix.webp",
   "w": 1024,
@@ -207,6 +258,82 @@ export const NEW_HOME_SPRITES = {
     373,
     134,
     184
+   ]
+  ]
+ },
+ "holiday-rainbow-v2": {
+  "file": "holiday-rainbow-v2.webp",
+  "w": 2172,
+  "h": 724,
+  "cells": [
+   [
+    53,
+    41,
+    2068,
+    595
+   ]
+  ]
+ },
+ "snowman-parts-v2": {
+  "file": "snowman-parts-v2.webp",
+  "w": 1774,
+  "h": 887,
+  "cells": [
+   [
+    170,
+    9,
+    524,
+    872
+   ],
+   [
+    812,
+    429,
+    339,
+    305
+   ],
+   [
+    1383,
+    457,
+    324,
+    315
+   ]
+  ]
+ },
+ "spellbook-textures-v2": {
+  "file": "spellbook-textures-v2.webp",
+  "w": 2172,
+  "h": 724,
+  "cells": [
+   [
+    57,
+    49,
+    951,
+    612
+   ],
+   [
+    1164,
+    49,
+    952,
+    612
+   ]
+  ]
+ },
+ "unicorn-viewer-v2": {
+  "file": "unicorn-viewer-v2.webp",
+  "w": 1942,
+  "h": 809,
+  "cells": [
+   [
+    111,
+    1,
+    716,
+    804
+   ],
+   [
+    1043,
+    1,
+    715,
+    804
    ]
   ]
  }

@@ -3,6 +3,7 @@
 // Decode the complete scene offscreen and swap it in once. Never paint the differently composed flat picture first.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 import { HOME_RIG } from "./home-art-rig.mjs";
+import { decorateNewHomeBackground, makeHomeFairy } from './home-new-scenes.mjs';
 import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorateHomeHero, decorateHomePart, installHomeInteractions } from "./home-motion.mjs";
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
@@ -41,10 +42,13 @@ function boing(scene, role) {
     if (localStorage.getItem("mg_soundEnabled") === "false") return;
     const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100; if (!(vol > 0)) return;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    actx = actx || new AC(); if (actx.state === "suspended") actx.resume();
+    if(!actx||actx.state==='closed')actx=new AC();
+    if (actx.state === "suspended"||actx.state==='interrupted') actx.resume().catch(()=>{});
     const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
-    const pitch = ({ games: 430, town: 340, house: 540, underwater: 600, lighthouse: 720, "toy-box": 480, wheels: 130, dragon: 150, space: 240 })[scene] || 350;
-    o.type = scene === "toy-box" ? "triangle" : "sine"; o.frequency.setValueAtTime(pitch, t); o.frequency.exponentialRampToValueAtTime(pitch * (role ? 1.3 : 1.7), t + .09); o.frequency.exponentialRampToValueAtTime(pitch * .9, t + .22);
+    // Tiny phone speakers lose the old 130/150 Hz sine tones on Launchpad and
+    // Castle. Keep every cue in an audible range, with gentle harmonics there.
+    const pitch = ({ games: 430, town: 340, house: 540, underwater: 600, lighthouse: 720, "toy-box": 480, wheels: 430, dragon: 380, space: 360, 'make-believe':620,'holiday-mix':520 })[scene] || 350;
+    o.type = ['toy-box','wheels','dragon'].includes(scene) ? "triangle" : "sine"; o.frequency.setValueAtTime(pitch, t); o.frequency.exponentialRampToValueAtTime(pitch * (role ? 1.3 : 1.7), t + .09); o.frequency.exponentialRampToValueAtTime(pitch * .9, t + .22);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16 * vol, t + .015); g.gain.exponentialRampToValueAtTime(0.0001, t + .26);
     o.connect(g); g.connect(actx.destination); tapSounds.add(o); o.onended = () => tapSounds.delete(o); o.start(t); o.stop(t + .28);
   } catch (e) {}
@@ -106,6 +110,7 @@ async function buildHomeScene(home, scene, current) {
   const stage = document.createElement("div"); stage.className = "hs-stage"; root.appendChild(stage);
   let interactions;
   plate.className = "hs-plate"; plate.alt = ""; stage.appendChild(plate);
+  decorateNewHomeBackground(scene,stage,extras);
   if (cfg.shadow) {
     (Array.isArray(cfg.shadow[0]) ? cfg.shadow : [cfg.shadow]).forEach(([cx, cy, w, h, a]) => {
       const sh = document.createElement("div");
@@ -206,6 +211,10 @@ async function buildHomeScene(home, scene, current) {
     ].map(w => ({ ...w, cls:"hs-leg", wt:.18, deg:9 }));
     const wrap = document.createElement("div"), fr = rig && (rig.critFrames || []).find((f) => f.i === i);
     let img = img0;
+    if(scene==='make-believe'){
+      c={w:800,h:800,ab:{x:0,y:0,width:800,height:800}};
+      img=makeHomeFairy(extras);
+    }
     if(scene==='house'&&i===0){
       c={w:543,h:724,ab:{x:17,y:29,width:518,height:671}};
       img=document.createElement('div');img.className='hs-wingbox hs-mouse-walk';img.style.aspectRatio='543/724';
@@ -271,6 +280,11 @@ async function buildHomeScene(home, scene, current) {
     const outline = [[0,1843],[0,950],[18,950],[70,795],[140,948],[155,948],[155,710],[250,496],[345,710],[320,710],[320,1020],[347,1020],[347,946],[408,802],[473,946],[473,1000],[510,1000],[510,1070],[565,1070],[565,1050],[615,1050],[615,1100],[680,1100],[742,1120],[742,1350],[853,1350],[853,1843]];
     castle.style.clipPath = `polygon(${outline.map(([x,y]) => `${x/853*100}% ${y/1843*100}%`).join(",")})`;
     stage.insertBefore(castle, stage.querySelector(".hs-layer"));
+    // The large visible castle is part of the plate, but users still tap it.
+    // Share the dragon's reaction; keep coin/dragon hit areas above this one.
+    const castleTap=document.createElement('div');castleTap.className='hs-tap hs-castle-tap';castleTap.dataset.subject='castle';
+    castleTap.style.cssText='inset:0;z-index:4;clip-path:'+castle.style.clipPath;
+    castleTap.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();interactions?.react(0);});stage.appendChild(castleTap);
   }
   const size = () => {
     const w = home.clientWidth || innerWidth, h = home.clientHeight || innerHeight;

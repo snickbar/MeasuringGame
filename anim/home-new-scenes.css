@@ -1,19 +1,38 @@
 /* Complete independently drawn parts. Rigid stacks never scale or breathe. */
 #home-art[data-scene=make-believe] .hs-flutter .hs-crit-img { animation:hsBobG 2.4s ease-in-out infinite; }
-#home-art .nh-unicorn-tail { transform-origin:89% 13%;animation:nhTail 12.8s ease-in-out infinite; }
-#home-art .nh-unicorn-ear { transform-origin:52% 94%;animation:nhEar 14.3s ease-in-out infinite; }
-@keyframes nhTail { 0%,56%,89%,100% { rotate:0deg; } 64% { rotate:5deg; } 73% { rotate:-4deg; } 82% { rotate:2deg; } }
-@keyframes nhEar { 0%,65%,88%,100% { rotate:0deg; } 71% { rotate:-9deg; } 77% { rotate:5deg; } 82% { rotate:0deg; } }
-#home-art[data-reaction=unicorn-greet] .nh-unicorn-tail { animation:nhTail 2.2s ease-in-out both; }
-#home-art[data-reaction=unicorn-greet] .nh-unicorn-ear { animation:nhEar 2.2s ease-in-out both; }
-#home-art .nh-book-closed { opacity:1;transform-origin:50% 90%;animation:nhClosedBook 17s ease-in-out infinite; }
-#home-art .nh-book-open { opacity:0;transform-origin:50% 100%;animation:nhOpenBook 17s steps(1,end) infinite; }
-@keyframes nhClosedBook { 0%,40%,100% { opacity:1;transform:perspective(250px) rotateX(0); } 47% { opacity:1;transform:perspective(250px) rotateX(-62deg); } 48%,76% { opacity:0;transform:perspective(250px) rotateX(-62deg); } 77% { opacity:1;transform:perspective(250px) rotateX(-62deg); } 85% { opacity:1;transform:perspective(250px) rotateX(0); } }
-@keyframes nhOpenBook { 0%,47%,77%,100% { opacity:0; } 48%,76% { opacity:1; } }
-#home-art[data-reaction=spellbook-open] .nh-book-closed { animation:nhBookTap 2.6s ease-in-out both; }
-#home-art[data-reaction=spellbook-open] .nh-book-open { animation:nhPagesTap 2.6s steps(1,end) both; }
-@keyframes nhBookTap { 0%,100% { opacity:1;transform:perspective(250px) rotateX(0); } 12% { opacity:1;transform:perspective(250px) rotateX(-62deg); } 13%,75% { opacity:0;transform:perspective(250px) rotateX(-62deg); } 76% { opacity:1;transform:perspective(250px) rotateX(-62deg); } 90% { opacity:1;transform:perspective(250px) rotateX(0); } }
-@keyframes nhPagesTap { 0%,12%,76%,100% { opacity:0; } 13%,75% { opacity:1; } }
+/* Body poses share an anchor; only the facial expression changes during a wink. */
+#home-art .nh-unicorn-wink { opacity:0; }
+#home-art[data-reaction=unicorn-greet] .nh-unicorn-body { animation:nhUnicornNeutral 2.2s steps(1,end) both; }
+#home-art[data-reaction=unicorn-greet] .nh-unicorn-wink { animation:nhUnicornWink 2.2s steps(1,end) both; }
+@keyframes nhUnicornNeutral { 0%,30%,100% { opacity:1; } 12%,29% { opacity:0; } }
+@keyframes nhUnicornWink { 0%,30%,100% { opacity:0; } 12%,29% { opacity:1; } }
+/* One physical book: the cover and thin leaves rotate continuously about the
+   same spine. No closed/open artwork swaps or whole-book bouncing. */
+#home-art .nh-book-camera { position:absolute;perspective:700px; }
+#home-art .nh-book-solid { position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(48deg) rotateZ(-16deg);--book-thickness:clamp(10px,2.8vw,18px); }
+#home-art .nh-book-paper { transform:translateZ(-1px); }
+#home-art .nh-page-edge { position:absolute;box-sizing:border-box;border:1px solid #a2682e;background:repeating-linear-gradient(0deg,#fff0c9 0 2px,#d5b175 2px 3px); }
+#home-art .nh-page-edge-front { left:0;top:100%;width:100%;height:var(--book-thickness);transform-origin:50% 0;transform:rotateX(-90deg); }
+#home-art .nh-page-edge-right { left:100%;top:0;width:var(--book-thickness);height:100%;transform-origin:0 50%;transform:rotateY(90deg); }
+#home-art .nh-cover-hinge,#home-art .nh-book-leaf { position:absolute;inset:0;transform-origin:50% 0%;transform-style:preserve-3d; }
+#home-art .nh-cover-hinge { animation:nhBookCover 17s ease-in-out infinite; }
+#home-art .nh-cover-front,#home-art .nh-cover-inside { backface-visibility:hidden; }
+#home-art .nh-cover-front { transform:translateZ(2px); }
+#home-art .nh-cover-inside { transform:rotateY(180deg) translateZ(-1px); }
+#home-art .nh-book-leaf { animation:nhBookLeaf 17s ease-in-out infinite; }
+#home-art .nh-leaf-paper { position:absolute;inset:3%;border:1px solid #d7b47d;border-radius:3%;background:linear-gradient(110deg,#fff4d8,#f3dfb5); }
+@keyframes nhBookCover { 0%,38%,88%,100% { transform:translateZ(3px) rotateX(0deg); } 51%,73% { transform:translateZ(3px) rotateX(112deg); } }
+@keyframes nhBookLeaf { 0%,43%,84%,100% { transform:translateZ(calc(1px + var(--leaf) * .4px)) rotateX(0deg); } 56%,69% { transform:translateZ(calc(1px + var(--leaf) * .4px)) rotateX(calc(36deg + var(--leaf) * 14deg)); } }
+#home-art[data-reaction=spellbook-open] .nh-cover-hinge { animation:nhCoverTap 3.1s ease-in-out both; }
+#home-art[data-reaction=spellbook-open] .nh-book-leaf { animation:nhLeafTap 3.1s ease-in-out both; }
+@keyframes nhCoverTap { 0%,100% { transform:translateZ(3px) rotateX(0deg); } 28%,67% { transform:translateZ(3px) rotateX(112deg); } }
+@keyframes nhLeafTap { 0%,8%,100% { transform:translateZ(calc(1px + var(--leaf) * .4px)) rotateX(0deg); } 38%,60% { transform:translateZ(calc(1px + var(--leaf) * .4px)) rotateX(calc(36deg + var(--leaf) * 14deg)); } }
+/* The fairy's wings hinge at complete overlapping roots, independently of her
+   body and the mirrored route. */
+#home-art .nh-fairy { position:relative; }
+#home-art .nh-fairy-wing { transform-origin:94% 78%;animation:nhFairyFlap .34s ease-in-out infinite alternate; }
+#home-art .nh-fairy-wing-far { animation-delay:-.17s; }
+@keyframes nhFairyFlap { from { transform:perspective(200px) rotateY(-12deg) rotate(-5deg); } to { transform:perspective(200px) rotateY(63deg) rotate(7deg); } }
 #home-art .nh-magic { position:absolute;pointer-events:none; }
 #home-art .nh-magic i { position:absolute;left:50%;top:80%;width:7px;height:7px;background:#fff3a5;clip-path:polygon(50% 0,62% 37%,100% 50%,62% 62%,50% 100%,37% 62%,0 50%,37% 37%);opacity:0;animation:nhMagic 17s ease-out calc(var(--i) * .1s) infinite; }
 @keyframes nhMagic { 0%,47%,80%,100% { opacity:0;transform:translate(0,0) scale(.3); } 52% { opacity:1; } 72% { opacity:0;transform:translate(var(--drift),-85px) scale(.8); } }
@@ -21,11 +40,17 @@
 @keyframes nhMagicTap { 0%,10%,100% { opacity:0;transform:translate(0,0) scale(.3); } 25% { opacity:1; } 80% { opacity:0;transform:translate(var(--drift),-75px) scale(.8); } }
 #home-art[data-scene=holiday-mix] .nh-magic i { animation:none; }
 #home-art .nh-gift-lid { transform-origin:50% 94%; }
-#home-art[data-reaction=gift-surprise] .nh-gift-lid { animation:nhGiftLid 2.1s ease-in-out both; }
-@keyframes nhGiftLid { 0%,100% { transform:translateY(0) rotate(0); } 15% { transform:translateY(-18%) rotate(-3deg); } 30%,60% { transform:translateY(-48%) rotate(3deg); } 78% { transform:translateY(-20%) rotate(-2deg); } }
-#home-art .nh-snowman { transform-origin:50% 98%; }
-#home-art[data-reaction=snowman-greet] .nh-snowman { animation:nhSnowman 1.9s ease-in-out both; }
-@keyframes nhSnowman { 0%,100% { rotate:0deg; } 20%,55% { rotate:-2deg; } 38%,72% { rotate:2deg; } 86% { rotate:-.6deg; } }
+#home-art[data-reaction=gift-surprise] .nh-gift-lid { animation:nhGiftLid 3.1s ease-in-out both; }
+@keyframes nhGiftLid { 0%,100% { transform:translate(0,0) rotate(0); } 15% { transform:translate(80%,-8%) rotate(12deg); } 30%,60% { transform:translate(165%,-5%) rotate(18deg); } 78% { transform:translate(80%,-8%) rotate(12deg); } }
+#home-art .nh-turkey { transform:translateY(0); }
+#home-art[data-reaction=gift-surprise] .nh-turkey { animation:nhTurkeyPeek 3.1s ease-in-out both; }
+@keyframes nhTurkeyPeek { 0%,15%,100% { transform:translateY(0); } 32%,62% { transform:translateY(-112%); } 75% { transform:translateY(-75%); } 88% { transform:translateY(0); } }
+#home-art .nh-rainbow { animation:nhRainbow 19s ease-in-out infinite; }
+@keyframes nhRainbow { 0%,100% { opacity:0; } 28%,58% { opacity:.65; } 83% { opacity:0; } }
+#home-art .nh-snow-arm-left { transform-origin:90% 86%;--wave-sign:1; }
+#home-art .nh-snow-arm-right { transform-origin:12% 88%;--wave-sign:-1; }
+#home-art[data-reaction=snowman-greet] .nh-snow-arm { animation:nhSnowArms 2.4s ease-in-out both; }
+@keyframes nhSnowArms { 0%,100% { rotate:0deg; } 18%,52%,82% { rotate:calc(var(--wave-sign) * 28deg); } 35%,68% { rotate:calc(var(--wave-sign) * -16deg); } }
 /* A ghost peeks from both sides of the SAME stationary stack. It turns only
    while hidden inside a gift, never fading out halfway across visible snow. */
 #home-art .hs-giftGhost { animation:nhGhost 24s ease-in-out var(--cd) infinite; }
