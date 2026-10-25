@@ -75,6 +75,9 @@ def build(scene):
         full=np.zeros((H,W,4),np.uint8); b=piece(f"{scene}-{cfg['base']}"); full=warp_to_ref(b,register(b,ref),ref.shape).astype(np.float32)
         if bf.get('src'): sp=piece(f"{scene}-{bf['src']}"); src=warp_to_ref(sp,register(sp,ref),ref.shape).astype(np.float32)
         else: src=ref.astype(np.float32)
+        for (ux0,uy0,ux1,uy1) in bf.get('unred',[]):   # drop strongly red pixels (a flag that is animated separately) from the source
+            sub=src[uy0:uy1,ux0:ux1]; rr=sub[:,:,0]; gg=sub[:,:,1]; bb=sub[:,:,2]
+            msk=(rr>140)&(gg<110)&(bb<110); msk=cv2.dilate(msk.astype(np.uint8),np.ones((9,9),np.uint8))>0; sub[msk,3]=0
         m=np.zeros((H,W),np.float32); m[y0+fe:y1-fe,x0+fe:x1-fe]=1; m=cv2.GaussianBlur(m,(0,0),fe/2.5)[:,:,None]
         full=(full*(1-m)+src*m).astype(np.uint8)
         rig['base']=place_crop(full,dict(scale=1.0,tx=0.0,ty=0.0),f'{scene}-base.webp',down=False)
