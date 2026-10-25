@@ -1489,6 +1489,9 @@ if (location.protocol === "file:") {
   .recent-room-row .rr-people { display: flex; align-items: center; margin-top: 1px; }
   .recent-room-row .rr-people .avatar-icon { width: 22px; height: 22px; margin-right: -5px; filter: none; }
   .recent-room-row .rr-people .rr-more { margin-left: 8px; font-size: 11px; font-weight: 700; color: #6b5a47; }
+  .recent-room-row .rr-btns { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .recent-room-row .rr-close { --pic-h: auto; min-width: 0; height: auto; padding: 2px 10px; border: 0; border-image: none; background: none; font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 700; color: #b3261e; text-shadow: none; text-decoration: underline; }
+  .recent-room-row .rr-close.sure { background: #b3261e; color: #fff; border-radius: 99px; text-decoration: none; }
   .recent-room-row button {
     --pic-h: 40px; width: auto; min-width: 96px; height: var(--pic-h); margin: 0; padding: 0 2px; font-size: 15px; font-family: 'Fredoka', sans-serif; color: #fff;
     border-width: 0 calc(var(--pic-h) / 2); border-image-slice: 0 155 fill; border-image-source: url(icons/btn-red.png);
@@ -6481,12 +6484,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
 
   function loadRecentRooms() {
-    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 5); } catch (e) { return []; }
+    try { return JSON.parse(localStorage.getItem("mg_recentRooms") || "[]").slice(0, 10); } catch (e) { return []; }
   }
-  function addRecentRoom(code) {
+  function addRecentRoom(code, playerId) {
     const list = loadRecentRooms().filter((r) => r.code !== code);
-    list.unshift({ code, joinedAt: Date.now() });
-    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 5)));
+    list.unshift({ code, joinedAt: Date.now(), playerId: playerId || null });
+    localStorage.setItem("mg_recentRooms", JSON.stringify(list.slice(0, 10)));
   }
   function removeRecentRoom(code) {
     try { localStorage.setItem("mg_recentRooms", JSON.stringify(loadRecentRooms().filter((r) => r.code !== code))); } catch (e) {}
@@ -12688,9 +12691,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const btn = document.createElement("button");
       btn.textContent = "Rejoin";
       btn.addEventListener("click", () => rejoinRoom(r.code));
+      const btns = document.createElement("div");
+      btns.className = "rr-btns";
+      btns.appendChild(btn);
       row.appendChild(badge);
       row.appendChild(mid);
-      row.appendChild(btn);
+      row.appendChild(btns);
       recentRoomsListEl.appendChild(row);
       onValue(ref(db, `rooms/${r.code}`), (snap) => {
         const d = snap.val();
@@ -12706,6 +12712,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             : mode === "teamvteam" ? ["tvt", "\u2694\uFE0F", "Team vs Team"]
             : ["classic", "\uD83D\uDCCF", "Classic Party"];
           row.dataset.kind = kk;
+          // The host can close the game for everyone (tap twice to confirm).
+          const mine = (r.playerId && d.players && d.players[r.playerId]) || Object.values(d.players || {}).find((p) => p && p.isHost && p.name === currentName);
+          btns.querySelector(".rr-close")?.remove();
+          if (mine && mine.isHost) {
+            const close = document.createElement("button");
+            close.type = "button"; close.className = "rr-close"; close.textContent = "Close game";
+            let armed = null;
+            close.addEventListener("click", async () => {
+              if (!armed) { close.textContent = "Tap again to close"; close.classList.add("sure"); armed = setTimeout(() => { armed = null; close.textContent = "Close game"; close.classList.remove("sure"); }, 3500); return; }
+              clearTimeout(armed);
+              close.disabled = true; close.textContent = "Closing...";
+              try { await set(ref(db, `rooms/${r.code}/phase`), "ended"); removeRecentRoom(r.code); row.remove(); if (!recentRoomsListEl.children.length) recentRoomsSection.style.display = "none"; }
+              catch (e) { close.disabled = false; close.textContent = "Couldn't close - try again"; }
+            });
+            btns.appendChild(close);
+          }
           badge.textContent = icon;
           kindEl.textContent = kind;
           sub.innerHTML = "";
@@ -13166,7 +13188,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
 
-    addRecentRoom(roomCode);
+    addRecentRoom(roomCode, id);
     homeScreen.classList.remove("active");
     createScreenEl.classList.remove("active");
     joinScreen.classList.remove("active");
