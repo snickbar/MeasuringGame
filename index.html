@@ -2378,8 +2378,8 @@ if (location.protocol === "file:") {
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
   button#submit-guess-btn {
-    width: 100%; height: 50px; margin-top: 10px; padding: 0; font-size: 16px; white-space: nowrap;
-    border-width: 0 25px 0 44px; border-image-source: url(icons/btn-submit.png);
+    width: 100%; height: 54px; margin-top: 10px; padding: 0; font-size: 18px; white-space: nowrap; color: #3b2718; text-shadow: none;
+    border-width: 0 25px; border-image-slice: 0 85 fill; border-image-source: url(icons/btn-lock.png);
   }
   button#watch-ad-btn.ad-reward-btn {
     height: 38px; padding: 0; font-size: 14px; border-width: 0 19px 0 33px; border-image-source: url(icons/btn-watch-ad.png);
@@ -3595,11 +3595,9 @@ if (location.protocol === "file:") {
   #survival-content .sv-heart { width:30px; }
   #survival-content .sv-hud { gap:1px; margin:2px 0 4px; }
   /* Team Worlds reuses Party's real #numpad (stylized cream keys, same as every other mode); only the submit button is restyled to the solo "Lock it in" look. */
-  #question-view.tw-mode #submit-guess-btn {
-    border-image: none; background: linear-gradient(#ffd36a, #f2820f) !important; border: 3px solid #4a2c12; border-radius: 16px;
-    box-shadow: 0 3px 0 rgba(74,44,18,.45); color: #000; text-shadow: none; font-size: 18px; height: auto; padding: 10px; margin-top: 7px;
-  }
-  #question-view.tw-mode #submit-guess-btn:disabled { opacity: .45; }
+  button#submit-guess-btn:disabled { opacity: .45; }
+  /* Every "Lock it in" button: glossy orange, no check mark. (!important to beat the shared dc-btn art.) */
+  button.dc-btn#dc-submit, button.dc-btn#wl-submit, button.dc-btn#mo-submit, button.dc-btn#sv-submit, button.dc-btn#wb-lock { background-image: url(icons/btn-lock.png) !important; padding: 14px 10px; }
   #tw-guess-display { text-align: center; min-height: 36px; padding: 4px 8px; }
   @media (max-height:740px) {
     #worlds-content { padding-top:2px; }
@@ -4419,7 +4417,7 @@ if (location.protocol === "file:") {
           <button class="num-btn" data-val="0">0</button>
           <button id="backspace-btn" aria-label="Backspace">&larr;</button>
         </div>
-        <button id="submit-guess-btn">Submit guess</button>
+        <button id="submit-guess-btn">Lock it in</button>
         <p id="guess-status"></p>
       </div>
 
@@ -15774,7 +15772,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // sense duplicating that), but styled and labeled to match Solo Worlds' own calculator and
     // "Lock it in" button exactly, via the tw-mode class (see the #question-view.tw-mode CSS).
     questionViewEl.classList.toggle("tw-mode", isTw);
-    submitGuessBtn.textContent = isTw ? "Lock it in" : "Submit guess";
+    submitGuessBtn.textContent = "Lock it in";
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
