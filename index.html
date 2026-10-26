@@ -11636,7 +11636,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Which Is Bigger: tap the bigger object, 3 lives, pairs get closer as you go ====================
   // "Bigger" means the dimension each object is measured by. Step 2 of the build: question screen and a plain result
   // (the drop-in animation, summary screen, coins and leaderboard come next).
-  const WB_LIVES = 3, WB_COINS_PER = 2;
+  const WB_LIVES = 3;
   const wbContentEl = document.getElementById("wb-content");
   let wb = null, wbAnim = null;
   const wbBest = () => (myProfile.whichBigger && myProfile.whichBigger.best) || 0;
@@ -11761,7 +11761,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (wb.phase === "intro") {
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
-        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WB_COINS_PER} coins for every right pick past your own best.</div></div>
+        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">1 coin for every 2 right picks, rounded up.</div></div>
         ${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">Start</button></div>`;
       return;
     }
@@ -11883,7 +11883,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!n || !wb || !wb.gain || wb.coinsCounted) return;
     wb.coinsCounted = true;
     if (prefersReducedMotion()) return;
-    const total = wb.gain, per = Math.max(1, Math.round(total / Math.min(14, Math.max(1, Math.round(total / WB_COINS_PER)))));
+    const total = wb.gain, per = Math.max(1, Math.round(total / Math.min(14, Math.max(1, total))));
     let shown = 0, i = 0;
     n.textContent = "+0";
     setTimeout(() => {
@@ -11908,12 +11908,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join("");
     return `<h3 class="cs-h">Your high scores</h3><div class="wb-hs"><div class="wb-hs-row">${tiles}</div><div class="wb-hs-sum">${d.runs} run${d.runs === 1 ? "" : "s"} played</div></div>`;
   }
-  // Run over: save the best and your top five (coins only for picks beyond the old best).
+  // Run over: save the best and your top five (1 coin per 2 right picks, rounded up).
   function wbFinish() {
     if (wb.finished) return; wb.finished = true; wb.endedAt = Date.now();
     wb.preRuns = (myProfile.whichBigger && myProfile.whichBigger.runs) || 0;
     const old = wbBest(), score = wb.score;
-    wb.newBest = score > old; wb.gain = Math.max(0, score - old) * WB_COINS_PER;
+    wb.newBest = score > old; wb.gain = Math.ceil(Math.max(0, score) / 2);
     completedAttempt({ key: wb.runId, mode: "whichbigger", score, rounds: wb.round, accuracy: wb.round ? Math.round(100 * score / wb.round) : 0 });
   }
   function wbClearFlair() { reactionsPanelEl.querySelectorAll('[data-wb-flair]').forEach(e => e.remove()); }
