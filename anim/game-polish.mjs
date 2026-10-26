@@ -5,8 +5,8 @@ export const MENU_BANNERS = {
   survival: ['icons/banner-survival.png'], whichbigger: ['icons/banner-which-bigger.png'],
   classic: ['icons/banner-blank-orange.png', 'icons/home-host.png'],
   teamvteam: ['icons/banner-blank-green.png', 'items/soccer-ball.webp'],
-  teamworlds: ['icons/banner-blank-blue.png', 'items/hot-air-balloon.webp'],
-  hlsurvival: ['icons/banner-blank-red.png', 'items/t-rex.webp'],
+  teamworlds: ['icons/banner-blank-blue.png', 'icons/mode-team-worlds.webp'],
+  hlsurvival: ['icons/banner-blank-red.png', 'icons/mode-high-low.webp'],
   highstakes: ['icons/banner-blank-purple.png', 'items/poker-chip.webp'],
   bluff: ['icons/banner-blank-pink.png', 'icons/reactions/giggle.png'],
 };
@@ -36,7 +36,7 @@ export const INFO_MEDALLIONS = {
   'By bot accuracy': 'icons/flair/bolt.png',
   'Earn coins': 'icons/coin-v2.png', 'Scoring': 'icons/reactions/trophy.png',
   'Closest guess wins': 'icons/reactions/trophy.png', 'Play as a team': 'items/soccer-ball.webp',
-  'Survive together': 'items/t-rex.webp', "Don't run out of lives": 'icons/flair/heart.png',
+  'Survive together': 'icons/mode-high-low.webp', "Don't run out of lives": 'icons/flair/heart.png',
   'Find the real answer': 'icons/powerups/item-reveal.png', 'Bet like poker': 'items/poker-chip.webp',
   'Outlast everyone': 'icons/reactions/trophy.png',
 };

@@ -779,6 +779,7 @@ if (location.protocol === "file:") {
   .sh-card.sh-banner .sh-name { font-size: calc(22px * var(--fit, 1)); }
   .sh-card.sh-banner .sh-sub { font-size: calc(13px * var(--fit, 1)); }
   .sh-card.sh-banner .sh-bic { position: absolute; left: 6%; top: 50%; width: 19%; height: 82%; transform: translateY(-50%); object-fit: contain; pointer-events: none; }  /* Party hub: the mode's own icon sits on a blank banner */
+  #pm-teamworlds .sh-bic, #pm-hlsurvival .sh-bic { left:4.5%; width:22%; }
   .sh-card.sh-banner .sh-badge-slot { position: absolute; right: 5%; top: -6px; z-index: 2; }
   .sh-card.sh-banner:active { transform: translateY(2px); box-shadow: none; }
   /* ---- High Stakes ---- */
@@ -1028,28 +1029,8 @@ if (location.protocol === "file:") {
   html[data-motion=reduce] #wb-screen.wb-danger .sv-hearts, html[data-motion=reduce] #wb-screen.wb-danger .sv-heart { animation: none !important; }
   .wb-redflash { position: fixed; inset: 0; z-index: 2500; pointer-events: none; box-shadow: inset 0 0 90px 28px rgba(217,45,45,.75); animation: wbFlashFade .65s ease-out both; }
   @keyframes wbFlashFade { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
-  /* mascots on the summary */
-  .wb-stagerow { display: flex; align-items: center; justify-content: center; }
-  .wb-side { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-end; justify-content: center; height: 112px; }
-  .wb-ele, .wb-mouse, .wb-react { position: relative; flex: none; }
-  .wb-ele { width: 92px; animation: wbEleBody 3s ease-in-out infinite; transform-origin: 40% 100%; }
-  .wb-ele img { display: block; width: 100%; filter: drop-shadow(0 3px 2px rgba(74,44,18,.3)); }
-  @keyframes wbEleBody { 0%, 30%, 100% { transform: translateY(0) rotate(0); } 12% { transform: translateY(-5px) rotate(0); } 42%, 66% { transform: translateY(-2px) rotate(-9deg); } 78% { transform: translateY(0) rotate(0); } }
-  .wb-wink { position: absolute; left: 62.5%; top: 29.5%; width: 12%; height: 17%; border-radius: 50%; background: #aca7b0; opacity: 0; animation: wbWink 3s ease-in-out infinite; }
-  .wb-wink::after { content: ""; position: absolute; left: 12%; right: 12%; top: 38%; height: 38%; border-bottom: 2.5px solid #2b2430; border-radius: 0 0 60% 60%; }
-  @keyframes wbWink { 0%, 12% { opacity: 0; } 16%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
-  .wb-spray { position: absolute; left: 86%; top: 76%; width: 0; height: 0; }
-  .wb-drop { position: absolute; left: -3px; top: -3px; width: 7px; height: 9px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: linear-gradient(#bfeaff, #43aef2); box-shadow: 0 0 0 1px rgba(255,255,255,.7); opacity: 0; animation: wbDrop 3s var(--w) linear infinite; }
-  @keyframes wbDrop { 0%, 38% { opacity: 0; transform: translate(0, 0) scale(.6); } 41% { opacity: 1; } 54% { transform: translate(calc(var(--dx) * .55), calc(var(--dy) * -1)) scale(1); } 70% { opacity: 1; transform: translate(var(--dx), calc(var(--dy) * .3)) scale(.85); } 76%, 100% { opacity: 0; transform: translate(calc(var(--dx) * 1.1), calc(var(--dy) * .6)) scale(.5); } }
-  .wb-mouse { width: 76px; animation: wbMouseBody 2.8s ease-in-out infinite; transform-origin: 50% 100%; }
-  .wb-mouse img { display: block; width: 100%; filter: drop-shadow(0 3px 2px rgba(74,44,18,.3)); }
-  @keyframes wbMouseBody { 0%, 8%, 100% { transform: none; } 18%, 34% { transform: translateY(-5px) scale(1.03, .96); } 44% { transform: translateY(0); } 50% { transform: translateX(-2px) rotate(-3deg); } 54% { transform: translateX(2px) rotate(3deg); } 58% { transform: translateX(-2px) rotate(-3deg); } 62% { transform: translateX(2px) rotate(3deg); } 70% { transform: none; } }
-  .wb-steam { position: absolute; left: 24%; top: 4%; width: 0; height: 0; }
-  .wb-steam i { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(#fff, rgba(235,235,240,.85) 60%, transparent 72%); box-shadow: 0 0 4px rgba(120,120,130,.4); opacity: 0; animation: wbSteam 1.3s ease-out infinite; }
-  .wb-steam i:nth-child(2) { margin-left: 12px; animation-delay: .4s; } .wb-steam i:nth-child(3) { margin-left: -10px; animation-delay: .8s; }
-  @keyframes wbSteam { 0% { opacity: 0; transform: translateY(0) scale(.5); } 25% { opacity: .95; } 100% { opacity: 0; transform: translateY(-34px) scale(1.8); } }
-  .wb-anger { position: absolute; left: 42%; top: -14%; width: 26px; height: 26px; animation: wbAnger .7s ease-in-out infinite alternate; }
-  @keyframes wbAnger { from { transform: scale(.75) rotate(-8deg); } to { transform: scale(1.15) rotate(8deg); } }
+  /* Compact reaction alongside the summary quip. Mascot layers live in which-bigger-summary.css. */
+  .wb-react { position: relative; flex: none; }
   .wb-react img { display: block; width: 58px; height: 58px; object-fit: contain; }
   .wb-react.bob img { animation: wbParty .7s ease-in-out infinite alternate; }
   .wb-react.clap img { animation: wbClap .35s ease-in-out infinite alternate; }
@@ -1071,8 +1052,8 @@ if (location.protocol === "file:") {
   @keyframes wbShine { from { background-position: 130% 0; } to { background-position: -30% 0; } }
   .wb-spark { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); pointer-events: none; background: #ffd23c; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: wbSpark 1.1s var(--w) ease-in-out 2; }
   @keyframes wbSpark { 0%, 100% { opacity: 0; transform: scale(0) rotate(0); } 45% { opacity: 1; transform: scale(1.2) rotate(90deg); } 75% { opacity: .8; transform: scale(.7) rotate(150deg); } }
-  html[data-motion=reduce] .wb-ele, html[data-motion=reduce] .wb-mouse, html[data-motion=reduce] .wb-react img, html[data-motion=reduce] .wb-wink, html[data-motion=reduce] .wb-drop, html[data-motion=reduce] .wb-steam i, html[data-motion=reduce] .wb-anger, html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-card.win, html[data-motion=reduce] .wb-card.win::after, html[data-motion=reduce] .wb-spark { animation: none !important; }
-  html[data-motion=reduce] .wb-drop, html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-spark, html[data-motion=reduce] .wb-wink { display: none; }
+  html[data-motion=reduce] .wb-react img, html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-card.win, html[data-motion=reduce] .wb-card.win::after, html[data-motion=reduce] .wb-spark { animation: none !important; }
+  html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-spark { display: none; }
   .wb-quip { font-size: 15px; font-weight: 800; color: #6b4a2a; margin: 0 0 6px; }
   /* streak chip: flames that grow with the streak */
   .wb-streak { display: flex; justify-content: center; margin: -4px 0 10px; }
@@ -3632,6 +3613,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/auto-fit.css">
 <link rel="stylesheet" href="anim/mode-identity.css">
 <link rel="stylesheet" href="anim/illustrated-details.css" />
+<link rel="stylesheet" href="anim/which-bigger-summary.css" />
 </head>
 <body>
 
@@ -4523,6 +4505,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
   import { pickBiggerPair, isCorrectPick } from "./anim/which-bigger.mjs";
+  import { wbMascotsHtml, preloadWbReactionArt } from "./anim/which-bigger-summary.mjs";
   import {newBluff,dealBluff,bluffAction,commitBluff,bluffRoundRecord,bluffStandings} from './anim/bluff.mjs';
   import {createBluffUI,bluffFinalHtml} from './anim/bluff-ui.mjs';
   import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
@@ -9732,7 +9715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner party-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
       ${card("pm-classic", "icons/shop-host-crown.webp", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic", "icons/banner-blank-orange.png")}
       ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam", "icons/banner-blank-green.png")}
-      ${card("pm-teamworlds", "items/hot-air-balloon.webp", "Team Worlds", "Your guesses, averaged together", "teamworlds", "icons/banner-blank-blue.png")}${HL_PREVIEW ? card("pm-hlsurvival", "items/t-rex.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.png") : ""}
+      ${card("pm-teamworlds", "icons/mode-team-worlds.webp", "Team Worlds", "Your guesses, averaged together", "teamworlds", "icons/banner-blank-blue.png")}${HL_PREVIEW ? card("pm-hlsurvival", "icons/mode-high-low.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.png") : ""}
       ${card("pm-highstakes", "items/poker-chip.webp", "High Stakes", "Bet your coins on the real answer &mdash; bluff, raise, outlast", "highstakes", "icons/banner-blank-purple.png")}`;
     partyContentEl.insertAdjacentHTML('beforeend',card('pm-bluff','icons/reactions/giggle.png','Bluff the Room','One claim. Tell the truth or fool your friends.','bluff',"icons/banner-blank-pink.png"));
   }
@@ -11549,13 +11532,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return choose([{ img: "icons/life-heart-cracked.webp", kind: "crack" }, { img: R + "crying.png", kind: "sad" }, { img: R + "facepalm.png", kind: "sad" }, { img: R + "nervous.png", kind: "sad" }, { img: R + "sideeye.png", kind: "sad" }]);
   }
   const wbBits = (n, cls) => Array.from({ length: n }, (_, i) => { const a = -Math.PI * (0.1 + 0.8 * Math.random()); const d = 30 + Math.random() * 34; return `<i class="${cls}" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(-Math.sin(a) * d)}px;--c:${["#ffd23c", "#ff7a3c", "#5ec8ff", "#8be26a", "#c58bff", "#ff6b9d"][i % 6]};--w:${(i * 0.04).toFixed(2)}s"></i>`; }).join("");
-  const wbDrops = () => Array.from({ length: 12 }, (_, i) => `<i class="wb-drop" style="--dx:${28 + Math.round(Math.random() * 34)}px;--dy:${34 + Math.round(Math.random() * 30)}px;--w:${(i * 0.045).toFixed(2)}s"></i>`).join("");
   const wbSparks = () => Array.from({ length: 7 }, (_, i) => { const a = (i / 7) * Math.PI * 2 + Math.random() * 0.5; return `<i class="wb-spark" style="--x:${Math.round(50 + Math.cos(a) * 58)}%;--y:${Math.round(50 + Math.sin(a) * 58)}%;--w:${(0.1 + i * 0.12).toFixed(2)}s;--s:${10 + Math.round(Math.random() * 10)}px"></i>`; }).join("");
   const wbSideHtml = (side) => side.kind === "pop"
     ? `<div class="wb-react pop"><img src="${side.img}" alt="" draggable="false"><span class="wb-bitbox">${wbBits(12, "wb-bit")}</span></div>`
     : `<div class="wb-react ${side.kind}"><img src="${side.img}" alt="" draggable="false"></div>`;
-  const wbEleHtml = () => `<div class="wb-ele"><img src="icons/mascot-elephant.webp" alt="" draggable="false"><i class="wb-wink"></i><span class="wb-spray">${wbDrops()}</span></div>`;
-  const wbMouseHtml = () => `<div class="wb-mouse"><img src="icons/mascot-mouse.webp" alt="" draggable="false"><span class="wb-steam"><i></i><i></i><i></i></span><svg class="wb-anger" viewBox="0 0 24 24"><g fill="none" stroke="#e03a2f" stroke-width="3.4" stroke-linecap="round"><path d="M3 9Q9 9 9 3"/><path d="M15 3Q15 9 21 9"/><path d="M3 15Q9 15 9 21"/><path d="M15 21Q15 15 21 15"/></g></svg></div>`;
 
   // A little personality: the quip depends on right/wrong and how big the gap was (picked once per round).
   function wbQuip(ok, ratio) {
@@ -11588,11 +11568,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<button type="button" class="wb-card ${cls || ""}" data-id="${o.id}"${disabled ? " disabled" : ""}>${o2.tag ? `<span class="wb-tag">${escapeHtml(o2.tag)}</span>` : ""}<img src="${o.image}" alt="" draggable="false">${cls && cls.includes("win") ? wbSparks() : ""}<span class="wb-n">${escapeHtml(o.name)}</span><span class="wb-d">measured by ${escapeHtml(wbDim(o))}</span></button>`;
   }
   function openWhichBigger() {
+    void preloadWbReactionArt();
     const fromHub = soloScreenEl.classList.contains("active");
     wb = { phase: "intro" };
     renderWhichBigger();
     openOverlay(wbScreenEl);
     if (fromHub) overlayReturnScreen = soloScreenEl;
+  }
+  // Keep status and action outside the scrolling round content.
+  const wbToolbar = document.getElementById("app-toolbar");
+  const wbMeasureToolbar = () => wbScreenEl.style.setProperty("--wb-toolbar-bottom", `${wbToolbar.getBoundingClientRect().bottom}px`);
+  new ResizeObserver(wbMeasureToolbar).observe(wbToolbar);
+  wbMeasureToolbar();
+  function wbMountPlayLayout() {
+    const hud = wbContentEl.querySelector(".wb-hud");
+    const action = wbContentEl.querySelector("#wb-next,#wb-lock,#wb-skip");
+    if (!hud || !action) return;
+    const header = document.createElement("div"), scroll = document.createElement("div"), footer = document.createElement("div");
+    header.className = "wb-play-header"; scroll.className = "wb-play-scroll"; footer.className = "wb-play-footer";
+    header.append(hud); footer.append(action);
+    scroll.append(...wbContentEl.childNodes);
+    wbContentEl.replaceChildren(header, scroll, footer);
   }
   function renderWhichBigger() {
     if (!wb) return;
@@ -11601,6 +11597,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wbSetTier();
     if (wbScreenEl) wbScreenEl.classList.toggle("wb-danger", wb.lives === 1 && ["question", "reveal", "result"].includes(wb.phase));
     const el = wbContentEl;
+    wbScreenEl.classList.toggle("wb-playing", ["question", "reveal", "result"].includes(wb.phase));
     if (wb.phase === "intro") {
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
@@ -11617,18 +11614,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const p = wb.pair;
       wbSetTier();
-      el.innerHTML = `<div class="pin-top">${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}</div>
+      el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
-        <div class="pin-bottom"><button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button></div>`;
+        <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
+      wbMountPlayLayout();
       return;
     }
     if (wb.phase === "reveal") {
       // Hearts and score still show the numbers from before this pick; the result screen updates them.
-      el.innerHTML = `<div class="pin-top">${wbHeartsHtml(wb.lives + (wb.ok ? 0 : 1), wb.score - (wb.ok ? 1 : 0), false, false, wb.prevStreak)}</div>
+      el.innerHTML = `${wbHeartsHtml(wb.lives + (wb.ok ? 0 : 1), wb.score - (wb.ok ? 1 : 0), false, false, wb.prevStreak)}
         <p class="dc-prompt">Which is bigger?</p>
         <div id="wb-stage"></div>
-        <div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wb-skip">Skip</button></div>`;
+        <button type="button" class="dc-btn dc-alt" id="wb-skip">Skip</button>`;
+      wbMountPlayLayout();
       wbRunReveal();
       return;
     }
@@ -11645,8 +11644,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // The buzz comes with the answer (after the animation), never before it.
       if (!wb.buzzed) {
         wb.buzzed = true; vibrate(ok ? 25 : [70, 60, 70]);
-        if (ok) wbConfetti(!!milestone || wb.bestFlash);
-        else { wbShake(wbContentEl, "wb-shake", 520); wbRedFlash(); }
+        if (!ok) { wbShake(wbContentEl, "wb-shake", 520); wbRedFlash(); }
         if (ok) {
           // The chime climbs in pitch with the streak; milestones and passing your best add their own sound.
           try { playSoundAt("roundwin", Math.min(1.6, 1 + 0.06 * Math.max(0, wb.streak - 1))); } catch (e) {}
@@ -11654,21 +11652,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           else if (wb.bestFlash) setTimeout(() => { try { playSound("perfect"); } catch (e) {} }, 350);
         }
       }
-      el.innerHTML = `<div class="pin-top">${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score, ok, true, wb.streak)}</div>
+      el.innerHTML = `${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score, ok, true, wb.streak)}
         <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
         <div class="wb-verdict ${ok ? "ok" : "bad"}">
-          <div class="wb-stagerow">
-            <div class="wb-side">${ok ? wbEleHtml() : wbSideHtml(wb.side)}</div>
-            <div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div></div>
-            <div class="wb-side">${ok ? wbSideHtml(wb.side) : wbMouseHtml()}</div>
+          <div class="wb-result-stage">
+            ${wbMascotsHtml(ok)}
+            <div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? 'Correct' : 'Incorrect'}">${ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? '+1 point' : '1 life lost'}</small></div>
           </div>
           <div class="wb-verdict-t${milestone ? " mile" : ""}">${milestone || (ok ? "Correct!" : "Not quite!")}</div>
-          ${wb.quip ? `<div class="wb-quip">${escapeHtml(wb.quip)}</div>` : ""}
+          <div class="wb-result-quip">${wbSideHtml(wb.side)}${wb.quip ? `<div class="wb-quip">${escapeHtml(wb.quip)}</div>` : ""}</div>
           ${wb.bestFlash && ok ? '<div class="wb-newbest">&#9733; New best! &#9733;</div>' : ""}
           ${!ok && wb.prevStreak >= 3 ? `<div class="wb-lost">Streak ended at ${wb.prevStreak}</div>` : ""}
-          <p class="wb-line"><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b> is <b>${how}</b></p>
+          <p class="wb-line"><span class="wb-line-label">The bigger one</span><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b><span>${how}</span></p>
         </div>
-        <div class="pin-bottom"><button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button></div>`;
+        <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
+      wbMountPlayLayout();
+      // Use the player's actual equipped flair, once per correct round.
+      if (ok && wb.flairRound !== wb.round && wbScreenEl.classList.contains("active")) {
+        wb.flairRound = wb.round;
+        const before = new Set(reactionsPanelEl.children);
+        flairBurst(el.querySelector(".wb-mark"), myEquippedFlair());
+        [...reactionsPanelEl.children].filter(e => !before.has(e)).forEach(e => e.dataset.wbFlair = "true");
+      }
       if (losing) {
         wb.lossShown = true; svCrackHeart();
         const round = wb.round;
@@ -11751,7 +11756,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wb.newBest = score > old; wb.gain = Math.max(0, score - old) * WB_COINS_PER;
     completedAttempt({ key: wb.runId, mode: "whichbigger", score, rounds: wb.round, accuracy: wb.round ? Math.round(100 * score / wb.round) : 0 });
   }
-  function wbStop() { clearTimeout(wbPauseTimer); if (wbAnim) { try { wbAnim.destroy(); } catch (e) {} wbAnim = null; } }
+  function wbClearFlair() { reactionsPanelEl.querySelectorAll('[data-wb-flair]').forEach(e => e.remove()); }
+  new MutationObserver(() => { if (!wbScreenEl.classList.contains("active")) wbClearFlair(); }).observe(wbScreenEl, { attributes: true, attributeFilter: ["class"] });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) wbClearFlair(); });
+  function wbStop() { wbClearFlair(); clearTimeout(wbPauseTimer); if (wbAnim) { try { wbAnim.destroy(); } catch (e) {} wbAnim = null; } }
   // A short beat after the last landing so the "bling" finishes before the summary (and its error sound) starts.
   let wbPauseTimer = 0;
   function wbPauseThenResult() {
@@ -11819,6 +11827,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wbShowResult(); return;
     }
     if (b.id === "wb-next") {
+      wbClearFlair();
       if (wb.lives <= 0) { wbFinish(); wb.phase = "over"; renderWhichBigger(); return; }
       wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.lossShown = false; wb.phase = "question"; renderWhichBigger();
     }
