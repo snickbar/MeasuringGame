@@ -38,11 +38,11 @@ server.listen(0,'127.0.0.1',()=>{
    let serial=0;const pending=new Map();socket.onmessage=e=>{const r=JSON.parse(e.data),p=pending.get(r.id);if(!p)return;pending.delete(r.id);r.error?p.no(Error(r.error.message)):p.yes(r.result)};
    const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});
    const output=path.join(root,'output/which-bigger-summary');fs.mkdirSync(output,{recursive:true});
-   for(const width of [320,390,520]){
+   for(const [width,height] of [[320,850],[390,850],[520,850],[390,650],[320,568]]){
     const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});
     const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true},sessionId);if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result?.value;};
     await call('Page.enable',{},sessionId);await call('Page.addScriptToEvaluateOnNewDocument',{source:'localStorage.clear()'},sessionId);
-    await call('Emulation.setDeviceMetricsOverride',{width,height:850,deviceScaleFactor:1,mobile:true},sessionId);
+    await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);
     await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);
     let ready=false;for(let i=0;i<200;i++){if(await evaluate('window.__wbSummary?.ready()')){ready=true;break;}await new Promise(r=>setTimeout(r,30));}if(!ready)throw Error('App failed to load');
     for(const correct of [true,false]){
@@ -58,8 +58,10 @@ server.listen(0,'127.0.0.1',()=>{
       const spin=await evaluate(`(()=>{const svg=document.querySelector('.wb-angry-sign svg'),a=svg.getAnimations()[0];a.pause();a.currentTime=0;const first=getComputedStyle(svg).transform;a.currentTime=700;return first!==getComputedStyle(svg).transform;})()`);
       if(!spin)throw Error('Anger symbol is not spinning');
      }
-     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,(correct?'correct':'wrong')+'-'+width+'.png'),Buffer.from(shot.data,'base64'));
-     if(width===390)for(const time of [0,850,1700,2550,3400]){
+     const pinned=await evaluate(`(()=>{const pane=document.querySelector('.wb-play-scroll'),hud=document.querySelector('.wb-play-header'),next=document.getElementById('wb-next'),r=e=>e.getBoundingClientRect(),first=[r(hud).top,r(next).bottom];pane.scrollTop=pane.scrollHeight;const after=[r(hud).top,r(next).bottom],out={fixed:first.every((v,i)=>Math.abs(v-after[i])<1),footer:after[1]<=innerHeight&&after[1]>=innerHeight-10,header:after[0]>=document.getElementById('app-toolbar').getBoundingClientRect().bottom,paneScrolled:pane.scrollHeight<=pane.clientHeight||pane.scrollTop>0};pane.scrollTop=0;return out;})()`);
+     if(Object.values(pinned).some(v=>!v))throw Error('Pinned controls '+JSON.stringify({width,height,...pinned}));
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,(correct?'correct':'wrong')+'-'+width+(height===850?'':'-'+height)+'.png'),Buffer.from(shot.data,'base64'));
+     if(width===390&&height===850)for(const time of [0,850,1700,2550,3400]){
       await evaluate(`document.querySelector('.wb-result-mascot').getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=${time};})`);
       const pose=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,(correct?'elephant':'mouse')+'-pose-'+time+'.png'),Buffer.from(pose.data,'base64'));
      }
@@ -80,7 +82,7 @@ server.listen(0,'127.0.0.1',()=>{
     await evaluate('window.__wbSummary.show(true);window.__wbSummary.close()');
     if(await evaluate('!!document.querySelector("[data-wb-flair]")'))throw Error('Flair remained after closing');
     if(!await evaluate(`[...document.querySelectorAll('.wb-water-drop')].every(e=>getComputedStyle(e).animationPlayState==='paused')`))throw Error('Hidden motion still running');
-    console.log(JSON.stringify({width,pass:true,checks:'Both results, real artwork, one animal beside centered badge, eye/spray timing, tail sway with attached root, spinning anger symbols, equipped flair once, next round, no measurements, reduced/hidden motion'}));
+    console.log(JSON.stringify({width,height,pass:true,checks:'Pinned header/footer through scrolling, both results, real artwork, one animal beside centered badge, eye/spray timing, tail sway with attached root, spinning anger symbols, equipped flair once, next round, no measurements, reduced/hidden motion'}));
     await call('Target.closeTarget',{targetId});
    }
   }catch(e){console.error(e);process.exitCode=1}finally{clearTimeout(timer);socket?.close();child.kill();server.close();}

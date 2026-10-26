@@ -11551,9 +11551,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openOverlay(wbScreenEl);
     if (fromHub) overlayReturnScreen = soloScreenEl;
   }
+  // Keep status and action outside the scrolling round content.
+  const wbToolbar = document.getElementById("app-toolbar");
+  const wbMeasureToolbar = () => wbScreenEl.style.setProperty("--wb-toolbar-bottom", `${wbToolbar.getBoundingClientRect().bottom}px`);
+  new ResizeObserver(wbMeasureToolbar).observe(wbToolbar);
+  wbMeasureToolbar();
+  function wbMountPlayLayout() {
+    const hud = wbContentEl.querySelector(".wb-hud");
+    const action = wbContentEl.querySelector("#wb-next,#wb-lock,#wb-skip");
+    if (!hud || !action) return;
+    const header = document.createElement("div"), scroll = document.createElement("div"), footer = document.createElement("div");
+    header.className = "wb-play-header"; scroll.className = "wb-play-scroll"; footer.className = "wb-play-footer";
+    header.append(hud); footer.append(action);
+    scroll.append(...wbContentEl.childNodes);
+    wbContentEl.replaceChildren(header, scroll, footer);
+  }
   function renderWhichBigger() {
     if (!wb) return;
     const el = wbContentEl;
+    wbScreenEl.classList.toggle("wb-playing", ["question", "reveal", "result"].includes(wb.phase));
     if (wb.phase === "intro") {
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
@@ -11573,6 +11589,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <p class="dc-prompt">Which is bigger?</p>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}${wbCardHtml(p.right)}</div>
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
+      wbMountPlayLayout();
       return;
     }
     if (wb.phase === "reveal") {
@@ -11581,6 +11598,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <p class="dc-prompt">Which is bigger?</p>
         <div id="wb-stage"></div>
         <button type="button" class="dc-btn dc-alt" id="wb-skip">Skip</button>`;
+      wbMountPlayLayout();
       wbRunReveal();
       return;
     }
@@ -11619,6 +11637,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <p class="wb-line"><span class="wb-line-label">The bigger one</span><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b><span>${how}</span></p>
         </div>
         <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
+      wbMountPlayLayout();
       // Use the player's actual equipped flair, once per correct round.
       if (ok && wb.flairRound !== wb.round && wbScreenEl.classList.contains("active")) {
         wb.flairRound = wb.round;
