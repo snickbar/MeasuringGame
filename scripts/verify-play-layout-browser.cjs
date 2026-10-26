@@ -54,6 +54,27 @@ window.__layoutAccuracy=async (count,sum,last)=>{
  roomState.phase='summary';applyPhase(roomState);twSummarySig=null;renderTeamWorldsSummary(roomState);
  return {before,refreshed,after:summaryListEl.querySelector('.tw-avg .wl-progress-heading strong')?.textContent};
 };
+window.__layoutSoloTiming=async count=>{
+ await window.__layoutAudit('worlds');const q=wl.questions[0];wl.questions=[q,q,q,q,q];wl.guesses=count===1?[3]:[1.5,3];wl.phase='reveal';renderWorlds();
+ const before=worldsContentEl.querySelector('.wl-progress-heading strong').textContent;
+ renderWorlds();const refreshed=worldsContentEl.querySelector('.wl-progress-heading strong').textContent;
+ document.getElementById('wl-skip').click();
+ return {before,refreshed,resultStart:worldsContentEl.querySelector('.wl-rs-meter .wl-progress-heading strong').textContent};
+};
+window.__layoutSoloAfter=()=>worldsContentEl.querySelector('.wl-rs-meter .wl-progress-heading strong').textContent;
+window.__layoutPartyTiming=async mode=>{
+ await window.__layoutAudit(mode);
+ roomState.phase='reveal';roomState.lastRoundPoints={};roomState.revealOrder=Object.keys(currentPlayers).map((id,i)=>{const accuracyPercent=i<2?100:0;Object.assign(currentPlayers[id],{score:0,roundsCounted:2,accuracySum:50+accuracyPercent});return {playerId:id,accuracyPercent};});
+ const held=computeDisplayedScores(roomState.revealOrder,{},0);lastScoreColumnSignature='';renderScoreColumn(held);
+ const read=()=>[...scoreColEl.querySelectorAll('.score-card')].map(e=>({id:e.dataset.id,acc:e.querySelector('.acc')?.textContent,score:e.querySelector('.pts').textContent}));
+ const before=read();roomState.phase='summary';renderScoreColumn();return {before,after:read()};
+};
+window.__layoutOtherTiming=async ()=>{
+ await window.__layoutAudit('highlow');roomState.phase='animation';roomState.hlSyncStreak=3;roomState.hlLast={previousSyncStreak:2};renderHudTop(roomState);const flameBefore=!!hudRoundLabelEl.querySelector('.hl-flame');roomState.phase='summary';renderHudTop(roomState);const flameAfter=!!hudRoundLabelEl.querySelector('.hl-flame');
+ await window.__layoutAudit('whichbigger');wb={...wb,phase:'reveal',lives:1,ok:false,picked:wb.pair.left.id,prevStreak:0};renderWhichBigger();const dangerBefore=wbScreenEl.classList.contains('wb-danger');wbStop();wb.phase='result';renderWhichBigger();const dangerAfter=wbScreenEl.classList.contains('wb-danger');
+ await window.__layoutAudit('survival');sv={...sv,phase:'reveal',asked:2,lives:2,lossPending:true,lastOk:false,g:1.5,resultShown:false,accs:[{r:1},{r:.5}]};renderSurvival();const survivalBefore={acc:document.getElementById('sv-acc').textContent,full:survivalContentEl.querySelectorAll('#sv-hearts img[src*="full"]').length};document.getElementById('sv-skip').click();await new Promise(r=>setTimeout(r,50));const survivalAfter=document.getElementById('sv-acc').textContent;
+ return {flameBefore,flameAfter,dangerBefore,dangerAfter,survivalBefore,survivalAfter};
+};
 window.__layoutReady=()=>myProfile?.stats?.gamesPlayed===8;
 window.__layoutRefresh=()=>applyPhase(roomState);
 
@@ -70,7 +91,7 @@ const server=http.createServer((req,res)=>{
 });
 server.listen(0,'127.0.0.1',()=>{
  const child=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'wb-summary-'+process.pid),'about:blank'],{windowsHide:true});
- let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},120000);
+ let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},180000);
  child.stderr.on('data',async chunk=>{
   stderr+=chunk;const match=stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(started||!match)return;started=true;
   try{
@@ -136,6 +157,19 @@ server.listen(0,'127.0.0.1',()=>{
      if(after!==(sample.sum/sample.count)+'%')throw Error('Game Progress did not update accuracy '+after);
      console.log(JSON.stringify({accuracyTiming:true,width,height,...progress,after,pass:true}));
     }
+    for(const count of [1,2]){
+     const solo=await evaluate('window.__layoutSoloTiming('+count+')');const previous=count===1?'No answers yet':'50%';
+     if(solo.before!==previous||solo.refreshed!==previous||solo.resultStart!==(count===1?'0%':'50%'))throw Error('Solo Worlds spoils pending accuracy '+JSON.stringify(solo));
+     await new Promise(r=>setTimeout(r,3800));const after=await evaluate('window.__layoutSoloAfter()');if(after!==(count===1?'100%':'75%'))throw Error('Solo Worlds result meter failed '+after);
+     console.log(JSON.stringify({soloTiming:count,width,height,...solo,after,pass:true}));
+    }
+    for(const mode of ['quick','party','teamvteam']){
+     const scores=await evaluate('window.__layoutPartyTiming('+JSON.stringify(mode)+')');
+     if(scores.before.some(p=>p.acc!=='50%'||p.score!=='0')||scores.after.some(p=>!['75%','25%'].includes(p.acc)))throw Error(mode+' score/accuracy timing failed '+JSON.stringify(scores));
+     console.log(JSON.stringify({mode:mode+':accuracy',width,height,...scores,pass:true}));
+    }
+    const cues=await evaluate('window.__layoutOtherTiming()');if(cues.flameBefore||!cues.flameAfter||cues.dangerBefore||!cues.dangerAfter||cues.survivalBefore.acc!=='Accuracy so far: 100%'||cues.survivalBefore.full!==3||cues.survivalAfter!=='Accuracy so far: 75%')throw Error('Early result cues '+JSON.stringify(cues));
+    console.log(JSON.stringify({otherTiming:true,width,height,...cues,pass:true}));
     await call('Target.closeTarget',{targetId});
    }
    fs.writeFileSync(path.join(root,'output/pinned-layout-audit/verified-all-mode-measurements.json'),JSON.stringify(results,null,2));

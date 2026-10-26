@@ -10629,8 +10629,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
   }
-  function worldProgressHtml() {
-    const accs = wl.guesses.map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
+  function worldProgressHtml(completed = wl.guesses.length) {
+    const accs = wl.guesses.slice(0, completed).map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
     const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
     return worldProgressBarHtml(avg);
   }
@@ -10767,7 +10767,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
-      el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml()}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml(k)}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
       worldRunReveal();
       return;
@@ -11755,7 +11755,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const wbScreenEl = document.getElementById("wb-screen");
     const wbSetTier = () => { if (wbScreenEl) { const r = wb.pair && wb.pair.ratio, on = r && ["question", "reveal", "result"].includes(wb.phase); wbScreenEl.dataset.tier = on ? (r >= 12 ? "easy" : r >= 2.5 ? "mid" : "tight") : ""; } };
     wbSetTier();
-    if (wbScreenEl) wbScreenEl.classList.toggle("wb-danger", wb.lives === 1 && ["question", "reveal", "result"].includes(wb.phase));
+    const shownLives = wb.lives + (wb.phase === "reveal" && wb.ok === false ? 1 : 0);
+    if (wbScreenEl) wbScreenEl.classList.toggle("wb-danger", shownLives === 1 && ["question", "reveal", "result"].includes(wb.phase));
     const el = wbContentEl;
     wbScreenEl.classList.toggle("wb-playing", ["question", "reveal", "result"].includes(wb.phase));
     if (wb.phase === "intro") {
@@ -15332,7 +15333,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         updates.hlOffSum = (roomState.hlOffSum || 0) + (off(hv) + off(lv)) / 2;
         updates.hlOffRounds = (roomState.hlOffRounds || 0) + 1;
       }
-      updates.hlLast = { passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
+      updates.hlLast = { previousSyncStreak: roomState.hlSyncStreak || 0, passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
     }
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
@@ -16928,6 +16929,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     roundWinnerId = id || null;
     document.querySelectorAll("#score-col .score-card, .score-col .score-card").forEach((c) => c.classList.toggle("round-winner", !!id && (c.dataset.id === id || !!c.dataset.members?.split(" ").includes(id))));
   }
+  // Keep accuracy and rank tie-breaks in step with the held score totals.
+  function scoreColumnAverage(id, holdRound) {
+    const p = currentPlayers[id] || {};
+    const entry = holdRound && (roomState.revealOrder || []).find(e => e.playerId === id);
+    const n = (p.roundsCounted || 0) - (entry ? 1 : 0);
+    return n > 0 ? ((p.accuracySum || 0) - (entry ? entry.accuracyPercent : 0)) / n : null;
+  }
   function renderScoreColumn(overrideScores) {
     // No score column at all in this mode (see the .tw-no-score layout toggle) - nothing to render.
     if (roomState.settings?.mode === "teamworlds") { return; }
@@ -16936,16 +16944,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
       const p = currentPlayers[id];
       const score = overrideScores ? (overrideScores[id] || 0) : (p.score || 0);
-      return `${id}:${score}:${p.avatar || ""}:${p.name}`;
+      return `${id}:${score}:${scoreColumnAverage(id, !!overrideScores)}:${p.avatar || ""}:${p.name}`;
     }).sort().join("|");
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
     flipReorder(scoreColEl, () => {
       const scoreFn = (id) => overrideScores ? (overrideScores[id] || 0) : (currentPlayers[id].score || 0);
-      const avgFn = (id) => {
-        const p = currentPlayers[id];
-        return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
-      };
+      const avgFn = (id) => scoreColumnAverage(id, !!overrideScores);
       const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, false);
       const celebratingId = newLeader(gameMotionKey, ranked);
       scoreColEl.innerHTML = "";
@@ -16963,7 +16968,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
         const frameIndex = p.frameIndex || 1;
-        const avgAcc = p.roundsCounted ? formatAccuracy(p.accuracySum / p.roundsCounted) : null;
+        const shownAvg = avgFn(id);
+        const avgAcc = shownAvg == null ? null : formatAccuracy(shownAvg);
         const accHtml = avgAcc == null ? "" : `<span class="acc">${avgAcc}%</span>`;
         const box = document.createElement("div");
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
@@ -17011,7 +17017,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signature = gameMotionKey + teams.map((team) => {
       const members = teamOf[team];
       const score = overrideScores ? (overrideScores[members[0]] || 0) : (currentPlayers[members[0]].score || 0);
-      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name).join(",")}`;
+      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + scoreColumnAverage(id, !!overrideScores)).join(",")}`;
     }).sort().join("|");
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
@@ -17022,8 +17028,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       };
       const avgFn = (team) => {
         const avgs = teamOf[team].map((id) => {
-          const p = currentPlayers[id];
-          return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
+          return scoreColumnAverage(id, !!overrideScores);
         }).filter((v) => v != null);
         return avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
       };
@@ -17091,8 +17096,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     for (let i = 1; i <= totalRounds; i++) {
       slots += `<span class="round-slot${i < round ? " done" : i === round ? " current" : ""}"></span>`;
     }
+    const holdingHlResult = data.phase === "animation" || (data.phase === "reveal" && (data.revealIndex || 0) < revealStepCount(data.revealOrder || []));
+    const shownSyncStreak = holdingHlResult ? (data.hlLast?.previousSyncStreak ?? 0) : (data.hlSyncStreak || 0);
     hudRoundLabelEl.innerHTML = isHlSettings(data.settings)
-      ? `<span class="round-text hl-round">Round <b>${round}</b>${(data.hlSyncStreak || 0) >= 3 ? `<span class="hl-flame" title="${data.hlSyncStreak} in a row">${FIRE_IC}</span>` : ""}</span>`
+      ? `<span class="round-text hl-round">Round <b>${round}</b>${shownSyncStreak >= 3 ? `<span class="hl-flame" title="${shownSyncStreak} in a row">${FIRE_IC}</span>` : ""}</span>`
       : `<span class="round-text">Round ${round} of ${totalRounds}</span><span class="round-tracker">${slots}</span>`;
     const showRoundControls = data.phase !== "final";
     hudHostControlsEl.style.display = (isHost && showRoundControls) ? "flex" : "none";
