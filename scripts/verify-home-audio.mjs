@@ -23,6 +23,6 @@ for(const scene of Object.keys(HOME_MOTION))for(const role of [0,1]){
 }
 for(const state of ['suspended','interrupted']){contexts.at(-1).state=state;events.length=0;ctx.play('wheels',1);assert(events.some(e=>e[0]==='resume'));ctx.stop();}
 contexts.at(-1).state='closed';const before=contexts.length;ctx.play('dragon',0);assert.equal(contexts.length,before+1,'Closed audio context is replaced');ctx.stop();
-for(const [key,value]of [['mg_soundEnabled','false'],['mg_effects_volume','0']]){settings.set(key,value);events.length=0;ctx.play('dragon',1);assert(!events.some(e=>e[0]==='start'),'Mute/zero volume remains silent');settings.delete(key);}
+for(const [key,value]of [['mg_soundEnabled','false']]){settings.set(key,value);events.length=0;ctx.play('dragon',1);assert(!events.some(e=>e[0]==='start'),'Mute remains silent');settings.delete(key);}
 events.length=0;ctx.play('wheels',0);ctx.play('dragon',1);const scheduled=events.filter(e=>e[0]==='stop').length;ctx.stop();assert.equal(events.filter(e=>e[0]==='stop').length,scheduled+2,'Navigation cancels all active taps');
 console.log('PASS: 36 Home tap cues, phone-range pitches, mute/volume, suspended/interrupted/closed context recovery and active-source cancellation.');

@@ -3981,7 +3981,6 @@ if (location.protocol === "file:") {
       <label><svg class="set-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="set-name">Sound effects</span> <span class="settings-sound-control"><span id="settings-sound-label">On</span><button id="settings-sound-toggle" type="button" class="icon-toggle-btn" aria-label="Sound effects"></button></span></label>
       <label><svg class="set-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4.5 8v8M2 10v4M19.5 8v8M22 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="set-name">Vibration</span> <span class="settings-sound-control"><span id="settings-vibe-label">On</span><button id="settings-vibe-toggle" type="button" class="icon-toggle-btn" aria-label="Vibration"></button></span></label>
     </div>
-    <label class="comfort-control">Effects volume <input id="effects-volume" type="range" min="0" max="100" step="5" aria-label="Sound effects volume"></label>
     <div class="comfort-block"><div class="comfort-head">Animation</div>
       <div class="seg" id="motion-seg" role="radiogroup" aria-label="Animation"><button type="button" role="radio" data-v="auto" title="Follow device setting" aria-label="Follow device setting">Device</button><button type="button" role="radio" data-v="reduce">Reduced</button><button type="button" role="radio" data-v="full">Full</button></div>
       <p class="seg-hint" id="motion-hint"></p></div>
@@ -9098,7 +9097,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function prefersReducedMotion(){const value=localStorage.getItem('mg_motion')||'auto';return value==='reduce'||(value==='auto'&&!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);}
   function applyComfortSettings(){qReduceMotion=prefersReducedMotion();document.documentElement.dataset.motion=prefersReducedMotion()?'reduce':'full';document.documentElement.dataset.largeText=String(localStorage.getItem('mg_text')==='large');}
   applyComfortSettings();
-  document.getElementById('effects-volume').value=localStorage.getItem('mg_effects_volume')??100;
   const MOTION_HINTS={auto:"Follows your phone's own animation setting (the one in Accessibility).",reduce:"Skips the bouncing, counting-up and typed-out text so everything just appears. Calmer and a bit faster.",full:"Always plays every animation, even if your phone is set to reduce motion."};
   function renderComfortSegs(){
     const m=localStorage.getItem('mg_motion')||'auto', t=localStorage.getItem('mg_text')||'normal';
@@ -9107,7 +9105,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById('motion-hint').textContent=MOTION_HINTS[m]||'';
   }
   renderComfortSegs();
-  document.getElementById('effects-volume').addEventListener('input',e=>localStorage.setItem('mg_effects_volume',e.target.value));
   document.getElementById('motion-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;localStorage.setItem('mg_motion',b.dataset.v);applyComfortSettings();renderComfortSegs();});
   document.getElementById('text-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;localStorage.setItem('mg_text',b.dataset.v);applyComfortSettings();renderComfortSegs();});
   window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change',applyComfortSettings);
@@ -10092,7 +10089,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsLaugh() {
     if (!audioLifecycle.canPlay() || !(hsScreenEl.classList.contains("active")||bluffScreenEl.classList.contains('active'))) return;
     try {
-      const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100;
+      const vol = 1;
       if (vol <= 0) return;
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       hsLaughCtx = hsLaughCtx || audioLifecycle.context(new AC());
@@ -10194,7 +10191,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // A few coins fly from one element to another (a player's card <-> the pot).
   // Little synthesized sounds for the table: a coin clink for every coin that lands in the pot, a double knock for a check.
-  const hsVol = (v) => v * (Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100);
+  const hsVol = (v) => v * (1);
   function hsClink() {
     if (!audioLifecycle.canPlay() || !hsScreenEl.classList.contains("active")) return;
     if (!localSoundEnabled) return;
@@ -14752,7 +14749,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       src.buffer = buf;
       src.playbackRate.value = cue.rate || 1;
       const g = ctx.createGain();
-      g.gain.value = cue.vol * (Number(localStorage.getItem("mg_effects_volume") ?? 100)/100);
+      g.gain.value = cue.vol * (1);
       src.connect(g);
       g.connect(ctx.destination);
       src.start();
@@ -18180,7 +18177,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!base) return;
     try {
       const node = base.cloneNode(true);
-      node.volume = (SFX_VOLUME[name] ?? 0.6) * (Number(localStorage.getItem("mg_effects_volume") ?? 100)/100);
+      node.volume = (SFX_VOLUME[name] ?? 0.6) * (1);
       if (rate && rate !== 1) { try { node.preservesPitch = false; node.webkitPreservesPitch = false; node.mozPreservesPitch = false; node.playbackRate = rate; } catch (e) { /* ignore */ } }
       activeSfx.add(node);
       const after = onEnded && audioLifecycle.guard(onEnded);

@@ -30,15 +30,15 @@ const context=vm.createContext({Audio:AudioNode,audioLifecycle:{canPlay:()=>true
 const start=source.indexOf('  const SFX_FILES = {'),end=source.indexOf('  // Springy release bounce',start);
 vm.runInContext(source.slice(start,end),context);
 function play(kind){played.length=0;vm.runInContext(`playSound(${JSON.stringify(kind)})`,context);return played;}
-for(const row of applied){const nodes=play(row.id);assert.equal(nodes.length,1,'One selected cue: '+row.id);assert.equal(nodes[0].file,row.file);assert(Math.abs(nodes[0].volume-row.gain*.35)<1e-9,'Effects-volume setting: '+row.id);}
+for(const row of applied){const nodes=play(row.id);assert.equal(nodes.length,1,'One selected cue: '+row.id);assert.equal(nodes[0].file,row.file);assert(Math.abs(nodes[0].volume-row.gain)<1e-9,'Reviewed cue plays at its own gain: '+row.id);}
 assert.equal(timers.length,0,'Coin reward plays the selected jingle once, without leftover countdown beats');
 assert.equal(play('star')[0].file,'sfx/crisp/roundwin.wav','Star keeps old sound despite changed roundwin');
-assert.equal(played[0].volume,.6*.35,'Star keeps old mix');
+assert.equal(played[0].volume,.6,'Star keeps old mix');
 assert(source.includes('m.classList.add("earned", "pop"); playSound("star");'),'Team Worlds stars use the kept star role too');
 assert.equal(play('count')[0].file,'sfx/crisp/count.wav','Countdown beat unchanged');
 assert.equal(play('lead')[0].file,'sfx/crisp/perfect.wav');assert.equal(play('best')[0].file,'sfx/crisp/perfect.wav');
 play('submit');assert.equal(played[0].file,'sfx/select.mp3');played[0].end();assert.equal(played[1].file,'sfx/crisp/count.wav');
-play('drumroll');assert.equal(played[0].file,suspense.build.file);assert.equal(played[0].volume,suspense.build.gain*.35);played[0].end();assert.equal(played[1].file,'sfx/crisp/drumroll-end.wav','Approved existing ending remains original');assert.equal(played[1].volume,.6*.35,'Ending mix unchanged');
+play('drumroll');assert.equal(played[0].file,suspense.build.file);assert.equal(played[0].volume,suspense.build.gain);played[0].end();assert.equal(played[1].file,'sfx/crisp/drumroll-end.wav','Approved existing ending remains original');assert.equal(played[1].volume,.6,'Ending mix unchanged');
 play('drumroll');vm.runInContext('stopAllSfx()',context);played[0].end();assert.equal(played.length,1,'Stopping the reveal cancels the follow-up');
 vm.runInContext('localSoundEnabled=false',context);assert.equal(play('coins').length,0,'Mute still applies');
 console.log('Reviewed sounds: nine selected clips/gains, 33 unchanged roles, original ending, shared-role isolation, routing, volume, mute and suspense cancellation passed.');

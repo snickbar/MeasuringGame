@@ -40,7 +40,7 @@ function boing(scene, role) {
   try {
     if (localStorage.getItem("mg_vibrationEnabled") !== "false" && navigator.vibrate) navigator.vibrate(12);
     if (localStorage.getItem("mg_soundEnabled") === "false") return;
-    const vol = Number(localStorage.getItem("mg_effects_volume") ?? 100) / 100; if (!(vol > 0)) return;
+    const vol = 1;
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     if(!actx||actx.state==='closed')actx=new AC();
     if (actx.state === "suspended"||actx.state==='interrupted') actx.resume().catch(()=>{});
