@@ -2378,6 +2378,15 @@ if (location.protocol === "file:") {
     border-width: 0 24px 0 42px; border-image-source: url(icons/btn-watch-ad.png);
   }
 
+  /* Classic/Party final: same look as the solo split bar (green Finish, gold ad button, neutral Play again). */
+  #bottom-actions button#final-home-btn, #bottom-actions button#final-double-coins-btn, #bottom-actions button#play-again-btn {
+    border: 0 !important; border-image: none !important; border-radius: 0 !important; box-shadow: none !important;
+    background-color: transparent !important; background-repeat: no-repeat !important; background-size: 100% 100% !important; background-position: center !important;
+    color: #3b2718 !important; text-shadow: none !important; min-height: 58px; padding: 6px 12px !important; font-size: 13px; line-height: 1.1; white-space: normal !important;
+  }
+  #bottom-actions button#final-home-btn { background-image: url(icons/btn-finish.png) !important; }
+  #bottom-actions button#final-double-coins-btn { background-image: url(icons/btn-lock.png) !important; }
+  #bottom-actions button#play-again-btn { background-image: url(icons/btn-cream.png) !important; }
   /* Number keys: picture keys; the backspace picture carries its own arrow. */
   #numpad { grid-template-columns: repeat(3, 72px); justify-content: center; gap: 8px 10px; }
   #numpad .num-btn, #numpad #backspace-btn {
@@ -3399,8 +3408,12 @@ if (location.protocol === "file:") {
   .tw-avg { margin: 6px 0; padding: 10px 12px 12px; text-align: center; }
   .tw-avg-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #000; }
   .tw-avg-num { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.05; color: #6a328c; display: inline-block; }
+  #wl-done-bar, #ad-done-bar { margin-left: 0 !important; margin-right: 0 !important; width: auto !important; background: transparent !important; }
+  .wl-done-split { background: transparent; }
   .wl-done-split { display: flex; gap: 8px; width: 100%; }
-  .wl-done-split .dc-btn { flex: 1 1 0; min-width: 0; margin: 0; height: 58px; padding: 6px 8px; font-size: 15px; line-height: 1.15; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .wl-done-split .dc-btn { flex: 1 1 0; min-width: 0; margin: 0; height: 58px; padding: 6px 8px !important; font-size: 15px; line-height: 1.15; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  #wl-finish, #ad-done-bar .dc-btn:not(.wl-ad-btn) { background-image: url(icons/btn-finish.png) !important; }
+  .wl-done-split .dc-btn:not(.wl-ad-btn) { font-size: 14px; }
   .wl-done-split .wl-ad-btn { background-image: url(icons/btn-lock.png) !important; }
   .wl-done-split .wl-ad-btn small { font-size: 12px; font-weight: 600; }
   .world-reward-owned { color: #2d7a14; font-weight: 700; }
@@ -3706,7 +3719,7 @@ if (location.protocol === "file:") {
   <button id="next-round-btn" style="display:none;">Next round</button>
   <button id="play-again-btn" style="display:none;">Play Again</button>
   <button id="final-home-btn" style="display:none;">Finish game</button>
-  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch Ad: Double Coins &amp; Finish</button>
+  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch ad: double coins &amp; finish</button>
   </div>
   <div id="reaction-strip" aria-label="Reactions"></div>
 </div>
@@ -5580,6 +5593,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const coins = prof.attemptReceipts?.[k]?.coins || 0;
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
+      if (AD_BAR_MODES[row.mode]) { adOffers[row.mode] = { k, coins, key: row.key, t: Date.now() }; adBarRefresh(row.mode); return; } // solo results screens show the offer inside their split bar
       if (row.mode === "worlds") { wlAdOffer = { k, coins, runId: row.key }; if (wl.phase === "done") wlRenderDoneBar(); return; } // Worlds shows the offer inside its results screen, not as an overlay
       // Daily and Monthly save the moment the last answer is in, before the reveal and "See my results": hold the offer until the results are on screen.
       if (!adResultsVisible(row.mode)) { adOfferPending.set(row.mode, { k, coins, t: Date.now() }); return; }
@@ -5629,6 +5643,44 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (paid) { try { playSound("win"); } catch (err) { /* optional */ } vibrate([30, 40, 30]); }
     return paid ? "paid" : "already";
   }
+  // Split results bar for solo modes: green "Finish" beside a gold "watch an ad to double the coins, then finish".
+  // The finish button keeps the mode's own finish id/handler; the ad button claims the bonus, then clicks it.
+  const adOffers = {};
+  const adSan = (key) => String(key || "").replace(/[.#$\[\]/]/g, "_");
+  const AD_BAR_MODES = {
+    daily: { key: () => daily && "daily_" + daily.date, done: () => daily.phase === "done" },
+    monthly: { key: () => mo && !mo.practice && "monthly_" + mo.key + "_L" + mo.level + "_v" + MONTHLY_FORMAT, done: () => mo.phase === "done" && !mo.practice },
+    practice: { key: () => mo && mo.practice && mo.runId, done: () => mo.phase === "done" && mo.practice },
+    survival: { key: () => sv && sv.runId, done: () => sv.phase === "over" },
+    highstakes: { key: () => roomState && currentRoomCode && gameRewardKey(currentRoomCode, roomState) + "_hs" },
+    whichbigger: { key: () => wb && wb.runId, done: () => wb.phase === "over" || wb.phase === "done" }
+  };
+  function adBarHtml(mode, finishId) {
+    const cfg = AD_BAR_MODES[mode], o = adOffers[mode];
+    const live = o && cfg && adSan(cfg.key()) === adSan(o.key) && Date.now() - o.t < 30 * 60 * 1000;
+    if (!live) return `<button type="button" class="dc-btn" id="${finishId}">Finish</button>`;
+    return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>Watch ad: double coins &amp; finish</span><small>+${o.coins} bonus coins</small></button></div>`;
+  }
+  const adBarSlot = (mode, finishId) => `<div class="pin-bottom" id="ad-done-bar" data-mode="${mode}" data-finish="${finishId}">${adBarHtml(mode, finishId)}</div>`;
+  function adBarRefresh(mode) {
+    const bar = document.querySelector(`#ad-done-bar[data-mode="${mode}"]`);
+    if (bar) bar.innerHTML = adBarHtml(mode, bar.dataset.finish);
+  }
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-ad-finish]");
+    if (!b) return;
+    const mode = b.dataset.adFinish, o = adOffers[mode], bar = b.closest("#ad-done-bar");
+    if (!o || !bar) return;
+    b.disabled = true;
+    try {
+      const res = await claimAdDouble(o.k, o.coins);
+      if (res === "cancel") { b.disabled = false; return; }
+      b.querySelector("span").textContent = res === "paid" ? "Doubled!" : "Already doubled";
+      await new Promise((r) => setTimeout(r, 900));
+    } catch (err) { b.disabled = false; return; }
+    delete adOffers[mode];
+    document.getElementById(bar.dataset.finish)?.click();
+  });
   async function watchAdForCoins() {
     const today = todayDateStr();
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -9550,7 +9602,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>
       <div class="dc-card">${rows}</div>
       <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
-      <button type="button" class="dc-btn" id="dc-share">Share my result</button>
+      ${adBarSlot("daily", "dc-finish")}
+      <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
     dailyLoadBoard(); flushAdOffer("daily");
   }
@@ -9667,6 +9720,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } const q = daily.questions[daily.guesses.length - 1]; const mod = await loadAnimModule(); const g = daily.guesses[daily.guesses.length - 1]; const acc = roundAccuracy(g / q.answer); const host = document.getElementById("dc-result"); if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer); const dots = dailyContentEl.querySelector(".dc-dots"); if (dots) dots.outerHTML = dailyDots(daily.guesses.length - 1, daily.guesses.length); b.id = "dc-next"; b.className = "dc-btn"; b.textContent = daily.guesses.length >= 3 ? "See my results" : "Next question"; return; }
     if (b.id === "dc-next") { daily.phase = daily.guesses.length >= 3 ? "done" : "question"; renderDaily(); return; }
+    if (b.id === "dc-finish") { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); return; }
     if (b.id === "dc-share") {
       const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
       const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${formatAccuracy(total / 3)}% accurate`;
@@ -10357,8 +10411,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             roundsRecorded: true, roundsWon: st.won || 0, bluffs: st.bluffs || 0, biggestWin: st.best || 0, peak: Math.max(st.peak || 0, hs.chips[me] || 0), out: !!hs.out?.[me], accuracy: 0 });
         }
       }
+      html += adBarSlot("highstakes", "hs-exit");
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
-      html += `<button type="button" class="dc-btn dc-alt" id="hs-exit">Exit game</button>`;
       hsContentEl.innerHTML = html;
       if (!nobodyLeft && hs.winners.length === 1 && hsFlairOverKey !== data.gameId) {
         hsFlairOverKey = data.gameId;
@@ -10665,7 +10719,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function wlDoneBarHtml() {
     const o = wlAdOffer && wlAdOffer.runId === wl.runId ? wlAdOffer : null;
     if (!o) return `<button type="button" class="dc-btn" id="wl-finish">Finish</button>`;
-    return `<div class="wl-done-split"><button type="button" class="dc-btn dc-alt" id="wl-finish">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" id="wl-finish-ad"><span>Watch ad: double coins &amp; finish</span><small>+${o.coins} bonus coins</small></button></div>`;
+    return `<div class="wl-done-split"><button type="button" class="dc-btn" id="wl-finish">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" id="wl-finish-ad"><span>Watch ad: double coins &amp; finish</span><small>+${o.coins} bonus coins</small></button></div>`;
   }
   function wlRenderDoneBar() {
     const bar = document.getElementById("wl-done-bar");
@@ -11173,8 +11227,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">${name} ${lvTitle} replay</h2><p class="dc-sub">New questions. Half coins, and the leaderboard keeps your first try.</p>
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-replay">Replay again</button></div>
-      <button type="button" class="dc-btn" id="mo-main">Back to my result</button>`;
+      ${adBarSlot("practice", "mo-main")}
+      <button type="button" class="dc-btn dc-alt" id="mo-replay">Replay again</button>`;
       return;
     }
     const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
@@ -11184,8 +11238,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-replay">Replay for coins</button></div>
-      <button type="button" class="dc-btn" id="mo-share">Share my result</button>
+      ${adBarSlot("monthly", "mo-finish")}
+      <button type="button" class="dc-btn dc-alt" id="mo-replay">Replay for coins</button>
+      <button type="button" class="dc-btn dc-alt" id="mo-share">Share my result</button>
       <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
   }
@@ -11274,7 +11329,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (monthlyLevelTap(e)) return;
     const b = e.target.closest("button");
     if (!b || !mo) return;
-    if (b.id === "mo-levels") { monthlyStop(); mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = []; renderMonthly(); return; }
+    if (b.id === "mo-levels" || b.id === "mo-finish") { monthlyStop(); mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = []; renderMonthly(); return; }
     if (b.id === "mo-start") { mo.phase = "question"; renderMonthly(); return; }
     if (b.id === "mo-replay") { monthlyStartReplay(); return; }
     if (b.id === "mo-main") { if (moMain) { mo = moMain; moMain = null; renderMonthly(); } return; }
@@ -11477,9 +11532,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
       <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-again">Play again</button></div>
+      ${adBarSlot("survival", "sv-finish")}
+      <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
-      <button type="button" class="dc-btn dc-alt" id="sv-finish">Finish game</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
     survivalLoadBoard();
   }
@@ -11802,9 +11857,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
         ${wb.gain ? `<div class="wb-coins"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="wb-coin-n">+${wb.gain}</b><span>coins<br>earned</span></div>` : ""}
       </div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="wb-again">Play again</button></div>
+      ${adBarSlot("whichbigger", "wb-finish")}
+      <button type="button" class="dc-btn" id="wb-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
-      <button type="button" class="dc-btn dc-alt" id="wb-finish">Finish game</button>
       ${wbRecordsHtml(true)}`;
       wbCountCoins();
   }
@@ -17635,7 +17690,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     finalDoubleCoinsBtn.style.display='none';
     const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo;
     playAgainBtn.style.display=party&&isHost&&collected?'flex':'none';playAgainBtn.textContent='Play again with this party';
-    finalHomeBtn.textContent=collected&&party?'Leave party':'Collect coins';
+    finalHomeBtn.textContent=collected&&party?'Leave party':'Finish & collect coins';
     let note=document.getElementById('final-party-note');if(!note){note=document.createElement('p');note.id='final-party-note';note.className='cs-note';finalListEl.after(note);}
     note.textContent=party?(collected?(isHost?'Start a rematch to keep this party together.':'Coins collected. Waiting for the host to start a rematch.'):'Collect your coins, then stay for the next game.'):'Your completed game and coins are saved once.';
   }
