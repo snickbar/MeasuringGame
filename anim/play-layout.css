@@ -1,0 +1,193 @@
+/* Shared viewport slots; mode-specific rules preserve each board format. */
+body:has(#worlds-screen.active[data-play-layout=worlds]){overflow:hidden}
+#worlds-screen.active[data-play-layout=worlds],#hud.active:is([data-play-layout=highlow],[data-play-layout=teamworlds]){position:fixed;inset:var(--play-top,62px) 0 var(--play-bottom,0px);max-width:520px;margin:0 auto;padding:0 12px;box-sizing:border-box}
+#worlds-screen.active[data-play-layout=worlds] #worlds-content,#hud.active:is([data-play-layout=highlow],[data-play-layout=teamworlds]){display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0;animation:none}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) #worlds-content{height:100%;padding:0}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) #worlds-close-btn{top:var(--play-top,62px);width:44px;height:36px;margin:0}
+[data-play-layout] .play-status{position:relative;top:auto;margin:0;padding:4px 0;background:rgba(255,249,238,.96);z-index:2;box-sizing:border-box}
+[data-play-layout] .play-actions{position:relative;bottom:auto;margin:0;padding:5px 0 max(5px,env(safe-area-inset-bottom,0px));background:transparent;z-index:2;box-sizing:border-box}
+[data-play-layout] .play-actions>button{position:static!important;margin:0!important;width:100%;height:52px;box-sizing:border-box;padding:0}
+[data-play-layout] .play-middle{min-height:0;overflow:auto;overscroll-behavior:contain;padding:4px 0}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-run-title{margin:0 44px 2px 0;font-size:18px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-dots{margin:3px 0;gap:10px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-dots i{width:18px;height:18px;border-width:2px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-progress{margin:3px 0 0;padding:4px 8px 2px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-progress-heading,:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-progress-heading strong{font-size:12px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-progress-scale{height:10px;margin:7px 0 18px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-progress-threshold{font-size:9px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-pics{margin:4px 0}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-pic img{height:64px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-prompt{margin:4px 0;padding:6px 10px;font-size:14px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .pu-row{margin:3px 0}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-display{margin:4px 0;min-height:36px;font-size:26px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-keys{grid-template-columns:repeat(3,72px);gap:4px 8px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-key{height:48px;min-height:48px;font-size:21px}
+/* Reuse the real High/Low input nodes; no cloned buttons or event handlers. */
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds])>.hud-timer-row{display:none}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .game-body{display:block;min-height:0;overflow:hidden}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .main-col{height:100%;min-height:0;overflow:auto;padding:0;overscroll-behavior:contain}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #question-view{padding:3px 0;box-sizing:border-box}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .play-status .sv-hud{flex-direction:row;justify-content:center;gap:12px;margin:0}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .play-status .sv-heart{width:27px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .play-status .hl-sub-row{gap:5px;flex-wrap:wrap;justify-content:center}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .play-status .hl-sub{font-size:11px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .play-status .hl-limit{font-size:11px;padding:2px 7px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-pics{margin:3px 0;gap:8px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic{max-width:125px;padding:4px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic img{height:63px;margin-bottom:2px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic span{font-size:10px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-prompt{font-size:14px;line-height:1.2;padding:6px 9px;margin:4px 0}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-role{font-size:11px;line-height:1.2;margin:4px auto 0;padding:3px 7px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-stats{margin:4px 0;gap:8px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-pair{flex:0 1 150px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-gutter{width:12px;flex-basis:12px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half{display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto;gap:1px 4px;padding:3px 5px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half .avatar{grid-row:1 / 3;width:32px;height:32px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half .name{font-size:11px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-chip{font-size:10px;padding:1px 6px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-guess-display{min-height:36px;font-size:26px;padding:2px 8px;margin:4px 0}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad{grid-template-columns:repeat(3,72px);justify-content:center;gap:4px 8px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad :is(.num-btn,#backspace-btn){height:48px;padding:0 0 4px;font-size:21px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad #backspace-btn{font-size:0}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #guess-status:empty{display:none}
+@media(max-height:720px){
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .play-status{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(36px,auto) auto;align-items:center;gap:2px 5px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-run-title{font-size:16px;margin:0;gap:3px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-level-badge{font-size:10px;padding:2px 4px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-dots{margin:2px 42px 2px 0;gap:5px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-dots i{width:14px;height:14px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .wl-progress{grid-column:1 / -1}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-pic img{height:48px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .pu-button{min-height:40px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .pu-button img{width:20px;height:20px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-display{height:36px;line-height:1;padding:2px 8px}
+ :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-key,#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad :is(.num-btn,#backspace-btn){height:44px;min-height:44px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic img{height:38px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-prompt{font-size:13px;padding:4px 7px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-role{font-size:10px;margin-top:3px;padding:2px 5px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-stats{margin:2px 0}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half .avatar{width:28px;height:28px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-guess-display{height:34px;min-height:34px;line-height:1;padding:2px 8px;margin:3px 0}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .play-actions>button{height:48px!important;min-height:48px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #question-view{padding:0}
+}
+/* A second spacing pass for longer questions; key touch targets remain 44px+. */
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo])[data-play-density=tight] .dc-pic img{height:32px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]):is([data-play-density=compact],[data-play-density=tight]) .dc-prompt{font-size:13px;padding:4px 8px;margin:3px 0}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]):is([data-play-density=compact],[data-play-density=tight]) .pu-row{margin:2px 0}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]):is([data-play-density=compact],[data-play-density=tight]) .dc-keys{row-gap:2px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds])[data-play-density=tight] .dc-pic img{height:26px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-play-density=compact],[data-play-density=tight]) #tw-question-pics{margin:2px 0}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-play-density=compact],[data-play-density=tight]) #tw-question-prompt{margin:2px 0;padding:3px 7px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-play-density=compact],[data-play-density=tight]) #numpad{row-gap:2px}
+
+/* Other solo questions, intros and results use the same measured shell. */
+body:has(.screen.active[data-play-layout=solo]),body:has(#hs-screen.active[data-play-layout]),body:has(#bluff-screen.active[data-play-layout]){overflow:hidden}
+:is(#daily-screen,#monthly-screen,#survival-screen,#wb-screen,#hs-screen,#bluff-screen).active[data-play-layout]{position:fixed;inset:var(--play-top,62px) 0 var(--play-bottom,0px);max-width:520px;margin:0 auto;padding:0 12px;box-sizing:border-box}
+[data-play-layout]>.play-shell-content{height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:0!important;position:relative;animation:none!important}
+[data-play-layout]>.play-shell-content>.play-status{grid-row:1}
+[data-play-layout]>.play-shell-content>.play-middle{grid-row:2}
+[data-play-layout]>.play-shell-content>.play-actions{grid-row:3}
+[data-play-layout] .play-status[hidden],[data-play-layout] .play-actions[hidden]{display:none!important}
+[data-play-layout=solo]>.screen-back-btn{top:var(--play-top,62px)!important;margin:0;width:44px;height:36px}
+[data-play-layout=solo] .play-status.dc-title{margin:0;padding:8px 44px 8px 0;font-size:21px}
+[data-play-layout=solo] .play-status>.dc-title{margin:0 44px 4px 0;font-size:21px}
+[data-play-layout=solo] .play-status .dc-dots{margin:4px 0;gap:9px}
+[data-play-layout=solo] .play-status .dc-dots i{width:18px;height:18px}
+[data-play-layout=solo] .play-status .sv-hud{margin:2px 0}
+[data-play-layout=solo] .play-status .sv-heart{width:27px}
+/* Preserve the decorated board + right player column in Quick/Classic/Teams. */
+#hud.active[data-play-layout=party]{top:var(--play-top,102px);bottom:var(--play-bottom,58px);padding:5px 12px 0;box-sizing:border-box}
+#hud[data-play-layout=party] .game-body{gap:12px}
+#hud[data-play-layout=party] .score-sidebar{flex-basis:clamp(112px,32vw,150px)}
+#hud[data-play-layout=party] .main-col{overflow:hidden;padding:0;display:flex;flex-direction:column}
+#hud[data-play-layout=party] #question-view.active{display:grid;grid-template-rows:minmax(0,1fr) auto;flex:1;min-height:0}
+#hud[data-play-layout=party] .play-input-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 1px}
+#hud[data-play-layout=party] .play-actions{padding:4px 0}
+#hud[data-play-layout=party] .play-actions>button{height:50px;min-height:50px}
+#hud[data-play-layout=party] #numpad{grid-template-columns:repeat(3,minmax(44px,72px));justify-content:center;gap:3px}
+#hud[data-play-layout=party] #numpad :is(.num-btn,#backspace-btn){height:44px;min-height:44px}
+#hud[data-play-layout=party] #q-preview{margin:3px 0;gap:5px}
+#hud[data-play-layout=party] #q-preview .qp{height:65px}
+#hud[data-play-layout=party] #q-preview .qp img{height:54px;max-width:100%}
+#hud[data-play-layout=party] #guess-display.answer-slot{height:48px;aspect-ratio:auto;margin:3px 0}
+#hud[data-play-layout=party] #guess-status:empty{display:none}
+#hud[data-play-layout=party] #guess-status{margin:3px 0}
+#hud[data-play-layout=party] .score-col{padding-bottom:4px}
+#hud[data-play-layout=party] .question-prompt{min-height:0;height:clamp(132px,25dvh,196px);padding:16px 18px 28px;font-size:15px}
+#hud[data-play-layout=party] #q-pencil img{width:48px!important}
+#hud[data-play-layout=party] #q-eraser img{width:36px!important}
+#hud[data-play-layout=party] .question-prompt[data-scene]{height:clamp(132px,25dvh,196px);min-height:0}
+#hud[data-play-layout=party] .hud-timer-row{flex:none}
+#hud[data-play-layout=party][data-play-density] #q-preview .qp{height:54px}
+#hud[data-play-layout=party][data-play-density] #q-preview .qp img{height:44px}
+#hud[data-play-layout=party][data-play-density] #numpad :is(.num-btn,#backspace-btn){height:44px;min-height:44px}
+#hud[data-play-layout=party][data-play-density=tight] #guess-display.answer-slot{height:36px}
+#hud[data-play-layout=party][data-play-density=tight] #q-preview .qp{height:48px}
+#hud[data-play-layout=party][data-play-density=tight] #q-preview .qp img{height:38px}
+/* High Stakes and Bluff: fixed meta, scrolling board/results, reserved actions. */
+#hs-screen[data-play-layout] #hs-content>.hs-top,#bluff-screen[data-play-layout] #bluff-content>.bl-meta{position:relative;top:auto;margin:0;padding:4px 0;z-index:2;border-radius:0}
+#bluff-screen[data-play-layout] #bluff-content>.play-actions{position:relative;inset:auto;max-width:none;margin:0;animation:none;padding:5px 0;background:transparent;pointer-events:auto}
+#bluff-screen[data-play-layout] #bluff-content.bl-has-dock{padding:0}
+#bluff-screen[data-play-layout] .bl-reveal-overlay{top:42px;bottom:0;min-height:0;overflow:auto}
+#bluff-screen[data-play-layout] .bl-question{margin:4px 0;padding:5px 8px}
+#bluff-screen[data-play-layout] .bl-objects img{height:52px}
+#bluff-screen[data-play-layout] .bl-action{height:48px}
+#hs-screen[data-play-layout] .play-actions .hs-hint{margin:0 0 3px}
+#hs-screen[data-play-layout] .play-actions .hs-acts{margin:0}
+#hs-screen[data-play-layout] .play-actions .dc-btn{margin:0;height:48px}
+#hs-screen[data-play-layout] .hs-pad{grid-template-columns:repeat(3,72px);gap:4px 8px}
+#hs-screen[data-play-layout] .hs-pad button{height:44px;min-height:44px}
+#hs-screen[data-play-layout] .hs-hint{margin:4px 0;font-size:12px}
+#hs-screen[data-play-layout] .play-actions .hs-hint{margin-bottom:1px}
+#hs-screen[data-play-layout] .hs-board{margin:2px 0}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-q .dc-pic img{height:32px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-opts{gap:5px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-opt{min-height:44px;padding:4px;font-size:20px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-potbox{margin-top:4px;padding:2px 2px 4px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-potbox img{width:32px;height:32px}
+:is(#hs-screen,#bluff-screen)[data-play-layout] .hs-col{max-height:300px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+@media(max-height:720px){:is(#hs-screen,#bluff-screen)[data-play-layout] .hs-col{max-height:260px}}
+#bluff-screen[data-play-layout] .bl-error:empty,#bluff-screen[data-play-layout] .bl-locked:empty{display:none}
+#bluff-screen[data-play-layout][data-play-density=tight] .bl-claim{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:1px 5px;padding:5px}
+#bluff-screen[data-play-layout][data-play-density=tight] .bl-claim>.bl-claim-avatar{grid-column:1;grid-row:1 / 3;width:32px;height:32px;margin:0}
+#bluff-screen[data-play-layout][data-play-density=tight] .bl-claim>span:not(.avatar){grid-column:2;grid-row:1;font-size:11px}
+#bluff-screen[data-play-layout][data-play-density=tight] .bl-claim>strong{grid-column:2;grid-row:2;margin:1px 0;font-size:24px}
+#bluff-screen[data-play-layout][data-play-density=tight] .bl-votes{margin:4px 0;gap:5px}
+@media(max-width:340px) and (max-height:720px){
+ body:has(#hud[data-play-layout]) #hud-room-code{width:64px;min-width:0;padding:3px;font-size:12px}
+ body:has(#hud[data-play-layout]) #hud-round-label .round-text{white-space:nowrap;font-size:10px}
+ body:has(#hud[data-play-layout]) #hud-round-label .round-tracker{flex-wrap:nowrap;gap:2px;padding:3px}
+ body:has(#hud[data-play-layout]) #hud-round-label .round-slot{width:8px;height:8px}
+ #hud.active[data-play-layout=party] .question-prompt{height:112px;padding:12px 14px 22px;font-size:13px}
+ #hud.active[data-play-layout=party] .question-prompt[data-scene]{height:112px;padding:0}
+ #hud.active[data-play-layout=party] .hud-timer-col .question-note{font-size:9px;line-height:1.1;padding:2px;margin:0}
+ #hs-screen[data-play-layout] .hs-board,#bluff-screen[data-play-layout] .hs-board{grid-template-columns:72px minmax(0,1fr) 72px;gap:5px}
+ #hs-screen[data-play-layout] #hs-content>.hs-top{flex-wrap:nowrap;gap:5px}
+ #hs-screen[data-play-layout] .hs-rounds,#hs-screen[data-play-layout] .hs-ante{padding:4px}
+ #hs-screen[data-play-layout] .hs-dots{gap:2px;padding:3px}
+ #hs-screen[data-play-layout] .hs-dots i{width:9px;height:9px}
+ #bluff-screen[data-play-layout] .bl-objects img{height:30px}
+ #bluff-screen[data-play-layout] .bl-question{margin:2px 0;padding:3px 5px}
+ #bluff-screen[data-play-layout] .bl-claims{gap:4px}
+ :is(#hs-screen,#bluff-screen)[data-play-layout] .play-middle{padding:1px 0}
+}
+#hud[data-play-layout=teamworlds] .play-status .wl-progress{margin:0;padding:4px 8px 2px}
+#hud[data-play-layout=teamworlds] .play-status .wl-progress-scale{margin:7px 0 18px}
+#hud[data-play-layout=teamworlds] .play-status .wl-progress-heading strong{font-size:13px}
+#hud[data-play-layout=teamworlds] .tw-qs-half .tw-qs-acc{font-size:11px}
+@media(max-height:720px){
+ #hud[data-play-layout=party] .question-prompt,#hud[data-play-layout=party] .question-prompt[data-scene]{height:132px}
+ #hud[data-play-layout=party] #numpad :is(.num-btn,#backspace-btn){height:44px;min-height:44px}
+ #hud[data-play-layout=party] #q-preview .qp{height:54px}
+ #hud[data-play-layout=party] #q-preview .qp img{height:44px}
+ #hud[data-play-layout=party] .hud-timer-col .question-note{font-size:10px;padding:3px}
+ #hs-screen[data-play-layout] .hs-q .dc-pic img{height:48px}
+ #hs-screen[data-play-layout] .hs-q{padding:5px 7px;margin:4px 0}
+ #hs-screen[data-play-layout] .hs-qtext{font-size:13px}
+ #hs-screen[data-play-layout] .hs-opt{min-height:44px;padding:5px}
+ #bluff-screen[data-play-layout] .bl-objects img{height:40px}
+ #bluff-screen[data-play-layout] .hs-qtext{font-size:13px}
+ #bluff-screen[data-play-layout] .bl-claims strong{font-size:20px}
+ #bluff-screen[data-play-layout] .bl-claims button,#bluff-screen[data-play-layout] .bl-votes button{min-height:44px;padding:5px}
+}
