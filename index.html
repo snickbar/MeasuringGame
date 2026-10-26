@@ -3399,6 +3399,7 @@ if (location.protocol === "file:") {
   .tw-avg { margin: 6px 0; padding: 10px 12px 12px; text-align: center; }
   .tw-avg-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #000; }
   .tw-avg-num { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.05; color: #6a328c; display: inline-block; }
+  .world-reward-owned { color: #2d7a14; font-weight: 700; }
   .wl-rs { display: flex; flex-direction: column; justify-content: space-evenly; gap: 12px; min-height: 100%; box-sizing: border-box; padding: 10px 0; }
   .wl-rs .tw-avg { position: relative; margin: 0; }
   .wl-rs-acc .tw-avg-num { font-size: 56px; }
@@ -10618,7 +10619,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const home=HOME_SCREENS.find(h=>h.world===world.id);if(!home)return '';
     const stars=worldStarsOf(world.id),owned=ownsHomeScreen(home.id),equipped=equippedHomeScreen()===home.id;
     const bests=Object.values(myProfile.worldRecords?.[world.id]||{}),best=bests.length?Math.max(...bests.map(r=>r.bestAccuracy||0)):null;
-    return `<div class="cozy-panel world-reward"><button class="home-reward-preview" data-world-reward="${home.id}" aria-label="Preview ${home.name} home screen"><img src="${home.file}" alt="${home.name} home screen"></button><div><b>${escapeHtml(home.name)} home screen</b><p>${worldSceneEarned(world.id)?'Last level cleared':'Earn a star on Level '+WORLD_LEVELS+' to unlock'} · ${stars}/15 mastered</p>${best===null?'':`<p>Best level accuracy: ${formatAccuracy(best)}%</p>`}<div class="cozy-actions"><button data-world-reward="${home.id}">Preview</button>${owned?`<button data-equip-world="${home.id}" ${equipped?'disabled':''}>${equipped?'Equipped':'Equip'}</button>`:worldSceneEarned(world.id)?`<button data-claim-world="${world.id}">Claim home screen</button>`:''}</div></div></div>`;
+    return `<div class="cozy-panel world-reward"><button class="home-reward-preview" data-world-reward="${home.id}" aria-label="Preview ${home.name} home screen"><img src="${home.file}" alt="${home.name} home screen"></button><div><b>${escapeHtml(home.name)} home screen</b><p>${owned?'<span class="world-reward-owned">&#10003; Unlocked</span>':worldSceneEarned(world.id)?'Last level cleared':'Earn a star on Level '+WORLD_LEVELS+' to unlock'} · ${stars}/15 mastered</p>${best===null?'':`<p>Best level accuracy: ${formatAccuracy(best)}%</p>`}<div class="cozy-actions"><button data-world-reward="${home.id}">Preview</button>${owned?`<button data-equip-world="${home.id}" ${equipped?'disabled':''}>${equipped?'Equipped':'Equip'}</button>`:worldSceneEarned(world.id)?`<button data-claim-world="${world.id}">Claim home screen</button>`:''}</div></div></div>`;
   }
   function survivalRecordsHtml(){
     const data=myProfile.survival||{},stats=myProfile.modeStats?.survival||{},history=(myProfile.attemptHistory||[]).filter(r=>r.mode==='survival').slice(-5).reverse();
@@ -10762,7 +10763,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
       <div class="dc-card dc-hot"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.png" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
-      ${worldRewardCard(w)}
       ${nextLevel ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="wl-nextlevel">Next level</button></div>' : ""}
       ${nextLevel ? "" : '<div class="pin-bottom">'}<button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>${nextLevel ? "" : "</div>"}
       <button type="button" class="dc-btn dc-alt" id="wl-tolevels">Back to levels</button>`;
