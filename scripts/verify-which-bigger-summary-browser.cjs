@@ -51,8 +51,15 @@ server.listen(0,'127.0.0.1',()=>{
      await evaluate(`(()=>{const stage=document.querySelector('.wb-result-stage');for(const a of stage.getAnimations({subtree:true})){a.pause();a.currentTime=1600;}})()`);
      const result=await evaluate(`(()=>{const $=s=>document.querySelector(s),r=e=>e.getBoundingClientRect(),badge=r($('.wb-mark')),animal=r($('.wb-summary-elephant,.wb-summary-mouse'));return {animalsLeft:animal.right<=badge.left+2,single:document.querySelectorAll(".wb-summary-elephant,.wb-summary-mouse").length===1,aligned:Math.abs((animal.top+animal.height/2)-(badge.top+badge.height/2))<20,overflow:document.documentElement.scrollWidth>innerWidth,art:[...document.querySelectorAll('#wb-content img')].every(i=>i.complete&&i.naturalWidth>0),trunk:!!$('.wb-trunk-rig'),foot:!!$('.wb-foot-rig'),eyes:$('.wb-result-mascot').className,next:!!$('#wb-next'),measurements:/\\b(?:cm|mm|metres|meters)\\b/.test($('#wb-content').textContent)}})()`);
      if(!result.single||!result.aligned||!result.animalsLeft||result.overflow||!result.art||!result.next||result.measurements||result.trunk!==correct||result.foot===correct)throw Error(JSON.stringify({width,correct,...result}));
+     if(correct){
+      const joint=await evaluate(`(()=>{const tail=document.querySelector('.wb-tail-rig'),frame=tail.parentElement.getBoundingClientRect(),origin=getComputedStyle(tail).transformOrigin.split(' ').map(parseFloat),img=document.querySelector('.wb-elephant-body img'),r=img.getBoundingClientRect(),canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);const x=(frame.left+tail.offsetLeft+origin[0]-r.left)/r.width*canvas.width,y=(frame.top+tail.offsetTop+origin[1]-r.top)/r.height*canvas.height;return ctx.getImageData(Math.round(x),Math.round(y),1,1).data[3];})()`);
+      if(joint<240)throw Error('Tail root does not overlap solid body artwork: '+joint);
+     }else{
+      const spin=await evaluate(`(()=>{const svg=document.querySelector('.wb-angry-sign svg'),a=svg.getAnimations()[0];a.pause();a.currentTime=0;const first=getComputedStyle(svg).transform;a.currentTime=700;return first!==getComputedStyle(svg).transform;})()`);
+      if(!spin)throw Error('Anger symbol is not spinning');
+     }
      const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,(correct?'correct':'wrong')+'-'+width+'.png'),Buffer.from(shot.data,'base64'));
-     if(width===390)for(const time of [0,1000,3400]){
+     if(width===390)for(const time of [0,850,1700,2550,3400]){
       await evaluate(`document.querySelector('.wb-result-mascot').getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=${time};})`);
       const pose=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,(correct?'elephant':'mouse')+'-pose-'+time+'.png'),Buffer.from(pose.data,'base64'));
      }
@@ -64,7 +71,7 @@ server.listen(0,'127.0.0.1',()=>{
     if(await evaluate('window.__wbSummary.calls().at(-1)')!=='hearts')throw Error('Equipped flair not used');
     await evaluate('window.__wbSummary.rerender()');if(await evaluate('window.__wbSummary.calls().length')!==before)throw Error('Duplicate flair');
     await evaluate('window.__wbSummary.show(false,true)');
-    const reduced=await evaluate(`[...document.querySelectorAll('.wb-trunk-rig,.wb-foot-rig,.wb-angry-sign,.wb-mouse-body')].every(e=>getComputedStyle(e).animationName==='none')`);if(!reduced)throw Error('Reduced motion');
+    const reduced=await evaluate(`[...document.querySelectorAll('.wb-trunk-rig,.wb-foot-rig,.wb-angry-sign,.wb-angry-sign svg,.wb-mouse-body')].every(e=>getComputedStyle(e).animationName==='none')`);if(!reduced)throw Error('Reduced motion');
     await evaluate('document.getElementById("wb-next").click()');if(await evaluate('!!document.querySelector(".wb-result-mascot")'))throw Error('Summary retained after advancing');
     await evaluate('window.__wbSummary.show(true);document.getElementById("wb-next").click()');
     if(await evaluate('!!document.querySelector("[data-wb-flair]")'))throw Error('Flair remained after advancing');
@@ -73,7 +80,7 @@ server.listen(0,'127.0.0.1',()=>{
     await evaluate('window.__wbSummary.show(true);window.__wbSummary.close()');
     if(await evaluate('!!document.querySelector("[data-wb-flair]")'))throw Error('Flair remained after closing');
     if(!await evaluate(`[...document.querySelectorAll('.wb-water-drop')].every(e=>getComputedStyle(e).animationPlayState==='paused')`))throw Error('Hidden motion still running');
-    console.log(JSON.stringify({width,pass:true,checks:'Both results, real artwork, one animal beside centered badge, eye/spray timing, tail sway, equipped flair once, next round, no measurements, reduced/hidden motion'}));
+    console.log(JSON.stringify({width,pass:true,checks:'Both results, real artwork, one animal beside centered badge, eye/spray timing, tail sway with attached root, spinning anger symbols, equipped flair once, next round, no measurements, reduced/hidden motion'}));
     await call('Target.closeTarget',{targetId});
    }
   }catch(e){console.error(e);process.exitCode=1}finally{clearTimeout(timer);socket?.close();child.kill();server.close();}
