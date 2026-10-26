@@ -30,7 +30,7 @@ const context=vm.createContext({Audio:AudioNode,audioLifecycle:{canPlay:()=>true
 const start=source.indexOf('  const SFX_FILES = {'),end=source.indexOf('  // Springy release bounce',start);
 vm.runInContext(source.slice(start,end),context);
 function play(kind){played.length=0;vm.runInContext(`playSound(${JSON.stringify(kind)})`,context);return played;}
-for(const row of applied){const nodes=play(row.id);assert.equal(nodes.length,1,'One selected cue: '+row.id);assert.equal(nodes[0].file,row.file);assert(Math.abs(nodes[0].volume-row.gain*.35)<1e-9,'Effects-volume setting: '+row.id);}
+for(const row of applied){const nodes=play(row.id);assert.equal(nodes.length,1,'One selected cue: '+row.id);assert.equal(nodes[0].file,row.file);assert(Math.abs(nodes[0].volume-row.gain)<1e-9,'Reviewed cue plays at its own gain: '+row.id);}
 assert.equal(timers.length,0,'Coin reward plays the selected jingle once, without leftover countdown beats');
 assert.equal(play('star')[0].file,'sfx/crisp/roundwin.wav','Star keeps old sound despite changed roundwin');
 assert.equal(played[0].volume,.6*.35,'Star keeps old mix');
