@@ -9505,7 +9505,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. They start easy and get harder. You can only play once, so make your guesses count.</div></div>
         <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
-        <button type="button" class="dc-btn" id="dc-start">Start</button>
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
       dailyLoadBoard();
       return;
@@ -10698,8 +10698,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.png" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${worldRewardCard(w)}
-      ${nextLevel ? '<button type="button" class="dc-btn" id="wl-nextlevel">Next level</button>' : ""}
-      <button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>
+      ${nextLevel ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="wl-nextlevel">Next level</button></div>' : ""}
+      ${nextLevel ? "" : '<div class="pin-bottom">'}<button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>${nextLevel ? "" : "</div>"}
       <button type="button" class="dc-btn dc-alt" id="wl-tolevels">Back to levels</button>`;
   }
   async function worldRunReveal() {
@@ -11052,7 +11052,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
       el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
-        <button type="button" class="dc-btn" id="mo-start">Start</button>
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
         <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
       monthlyLoadBoard();
       return;
@@ -11082,7 +11082,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">${name} ${lvTitle} replay</h2><p class="dc-sub">New questions. Half coins, and the leaderboard keeps your first try.</p>
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
-      <button type="button" class="dc-btn" id="mo-replay">Replay again</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-replay">Replay again</button></div>
       <button type="button" class="dc-btn" id="mo-main">Back to my result</button>`;
       return;
     }
@@ -11093,7 +11093,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
-      <button type="button" class="dc-btn" id="mo-replay">Replay for coins</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-replay">Replay for coins</button></div>
       <button type="button" class="dc-btn" id="mo-share">Share my result</button>
       <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
@@ -11357,7 +11357,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you go past your own best.</div></div>
-        ${survivalRecordsHtml()}${soloResumeHtml("survival")}<button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button>
+        ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
@@ -11386,7 +11386,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
       <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
-      <button type="button" class="dc-btn" id="sv-again">Play again</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-again">Play again</button></div>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <button type="button" class="dc-btn dc-alt" id="sv-finish">Finish game</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
@@ -11602,7 +11602,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WB_COINS_PER} coins for every right pick past your own best.</div></div>
-        ${wbRecordsHtml()}<button type="button" class="dc-btn" id="wb-start">Start</button>`;
+        ${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">Start</button></div>`;
       return;
     }
     if (wb.phase === "question") {
@@ -11689,7 +11689,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
         ${wb.gain ? `<div class="wb-coins"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="wb-coin-n">+${wb.gain}</b><span>coins<br>earned</span></div>` : ""}
       </div>
-      <button type="button" class="dc-btn" id="wb-again">Play again</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="wb-again">Play again</button></div>
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
       <button type="button" class="dc-btn dc-alt" id="wb-finish">Finish game</button>
       ${wbRecordsHtml(true)}`;
