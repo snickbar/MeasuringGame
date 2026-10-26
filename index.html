@@ -996,14 +996,48 @@ if (location.protocol === "file:") {
   /* mascots on the summary */
   .wb-stagerow { display: flex; align-items: center; justify-content: center; }
   .wb-side { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-end; justify-content: center; height: 112px; }
-  .wb-mascot { width: 88px; max-height: 96px; object-fit: contain; transform-origin: 50% 100%; filter: drop-shadow(0 3px 2px rgba(74,44,18,.3)); }
-  .wb-mascot.cheer { animation: wbCheer .6s ease-in-out infinite alternate; }
-  .wb-mascot.shrug { width: 66px; animation: wbShrug 2.4s ease-in-out infinite; }
-  @keyframes wbCheer { from { transform: translateY(0) rotate(-7deg) scale(1.03, .95); } to { transform: translateY(-16px) rotate(7deg) scale(.98, 1.05); } }
-  @keyframes wbShrug { 0%, 100% { transform: rotate(0) translateY(0); } 20% { transform: rotate(-9deg) translateY(-5px) scaleY(1.04); } 40% { transform: rotate(0) translateY(0); } 60% { transform: rotate(9deg) translateY(-5px) scaleY(1.04); } 80% { transform: rotate(0); } }
-  .wb-party { width: 58px; height: 58px; object-fit: contain; margin-bottom: 18px; animation: wbParty .5s ease-in-out infinite alternate; }
-  @keyframes wbParty { from { transform: rotate(-14deg) scale(.95); } to { transform: rotate(14deg) scale(1.12); } }
-  .wb-q { width: 50px; height: 50px; margin-bottom: 30px; border-radius: 50% 50% 50% 8px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; background: #fff; color: #d9493f; border: 3px solid #d9493f; animation: wbBump .6s .25s cubic-bezier(.34,1.56,.64,1) both; }
+  .wb-ele, .wb-mouse, .wb-react { position: relative; flex: none; }
+  .wb-ele { width: 92px; animation: wbEleBody 3s ease-in-out infinite; transform-origin: 40% 100%; }
+  .wb-ele img { display: block; width: 100%; filter: drop-shadow(0 3px 2px rgba(74,44,18,.3)); }
+  @keyframes wbEleBody { 0%, 30%, 100% { transform: translateY(0) rotate(0); } 12% { transform: translateY(-5px) rotate(0); } 42%, 66% { transform: translateY(-2px) rotate(-9deg); } 78% { transform: translateY(0) rotate(0); } }
+  .wb-wink { position: absolute; left: 62.5%; top: 29.5%; width: 12%; height: 17%; border-radius: 50%; background: #aca7b0; opacity: 0; animation: wbWink 3s ease-in-out infinite; }
+  .wb-wink::after { content: ""; position: absolute; left: 12%; right: 12%; top: 38%; height: 38%; border-bottom: 2.5px solid #2b2430; border-radius: 0 0 60% 60%; }
+  @keyframes wbWink { 0%, 12% { opacity: 0; } 16%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
+  .wb-spray { position: absolute; left: 86%; top: 76%; width: 0; height: 0; }
+  .wb-drop { position: absolute; left: -3px; top: -3px; width: 7px; height: 9px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: linear-gradient(#bfeaff, #43aef2); box-shadow: 0 0 0 1px rgba(255,255,255,.7); opacity: 0; animation: wbDrop 3s var(--w) linear infinite; }
+  @keyframes wbDrop { 0%, 38% { opacity: 0; transform: translate(0, 0) scale(.6); } 41% { opacity: 1; } 54% { transform: translate(calc(var(--dx) * .55), calc(var(--dy) * -1)) scale(1); } 70% { opacity: 1; transform: translate(var(--dx), calc(var(--dy) * .3)) scale(.85); } 76%, 100% { opacity: 0; transform: translate(calc(var(--dx) * 1.1), calc(var(--dy) * .6)) scale(.5); } }
+  .wb-mouse { width: 76px; animation: wbMouseBody 2.8s ease-in-out infinite; transform-origin: 50% 100%; }
+  .wb-mouse img { display: block; width: 100%; filter: drop-shadow(0 3px 2px rgba(74,44,18,.3)); }
+  @keyframes wbMouseBody { 0%, 8%, 100% { transform: none; } 18%, 34% { transform: translateY(-5px) scale(1.03, .96); } 44% { transform: translateY(0); } 50% { transform: translateX(-2px) rotate(-3deg); } 54% { transform: translateX(2px) rotate(3deg); } 58% { transform: translateX(-2px) rotate(-3deg); } 62% { transform: translateX(2px) rotate(3deg); } 70% { transform: none; } }
+  .wb-steam { position: absolute; left: 24%; top: 4%; width: 0; height: 0; }
+  .wb-steam i { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(#fff, rgba(235,235,240,.85) 60%, transparent 72%); box-shadow: 0 0 4px rgba(120,120,130,.4); opacity: 0; animation: wbSteam 1.3s ease-out infinite; }
+  .wb-steam i:nth-child(2) { margin-left: 12px; animation-delay: .4s; } .wb-steam i:nth-child(3) { margin-left: -10px; animation-delay: .8s; }
+  @keyframes wbSteam { 0% { opacity: 0; transform: translateY(0) scale(.5); } 25% { opacity: .95; } 100% { opacity: 0; transform: translateY(-34px) scale(1.8); } }
+  .wb-anger { position: absolute; left: 42%; top: -14%; width: 26px; height: 26px; animation: wbAnger .7s ease-in-out infinite alternate; }
+  @keyframes wbAnger { from { transform: scale(.75) rotate(-8deg); } to { transform: scale(1.15) rotate(8deg); } }
+  .wb-react img { display: block; width: 58px; height: 58px; object-fit: contain; }
+  .wb-react.bob img { animation: wbParty .7s ease-in-out infinite alternate; }
+  .wb-react.clap img { animation: wbClap .35s ease-in-out infinite alternate; }
+  .wb-react.sad img { animation: wbSad 2.2s ease-in-out infinite; }
+  .wb-react.crack img { width: 64px; height: auto; animation: wbCrackHeart 1.8s ease-in-out infinite; }
+  .wb-react.pop img { animation: wbPopper 1.7s ease-in-out infinite; transform-origin: 20% 90%; }
+  @keyframes wbParty { from { transform: translateY(2px) rotate(-12deg) scale(.95); } to { transform: translateY(-5px) rotate(12deg) scale(1.1); } }
+  @keyframes wbClap { from { transform: scale(.92) rotate(-6deg); } to { transform: scale(1.12) rotate(6deg); } }
+  @keyframes wbSad { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(4px) rotate(-5deg); } 60% { transform: translateY(4px) rotate(5deg); } }
+  @keyframes wbCrackHeart { 0%, 55%, 100% { transform: scale(1) rotate(0); } 62% { transform: scale(1.14) rotate(-6deg); } 70% { transform: scale(.94) rotate(5deg); } 80% { transform: scale(1.06) rotate(-3deg); } }
+  @keyframes wbPopper { 0%, 40% { transform: rotate(0) scale(1); } 52% { transform: rotate(-22deg) scale(.9, 1.1); } 60% { transform: rotate(12deg) scale(1.15, .9); } 75%, 100% { transform: rotate(0) scale(1); } }
+  .wb-bitbox { position: absolute; left: 62%; top: 22%; width: 0; height: 0; }
+  .wb-bit { position: absolute; left: -3px; top: -3px; width: 6px; height: 9px; background: var(--c); border-radius: 1px; opacity: 0; animation: wbBit 1.7s var(--w) ease-out infinite; }
+  @keyframes wbBit { 0%, 56% { opacity: 0; transform: translate(0, 0) rotate(0); } 58% { opacity: 1; } 78% { opacity: 1; transform: translate(var(--dx), var(--dy)) rotate(220deg); } 100% { opacity: 0; transform: translate(calc(var(--dx) * 1.1), calc(var(--dy) + 26px)) rotate(420deg); } }
+  /* flair on the card you got right: glow ring, shine sweep, twinkling sparkles */
+  .wb-card.win { animation: wbWinRing 1.1s ease-out 1; }
+  @keyframes wbWinRing { 0% { box-shadow: 0 0 0 0 rgba(75,176,79,.7); transform: scale(1); } 30% { transform: scale(1.05); } 100% { box-shadow: 0 0 0 18px rgba(75,176,79,0); transform: scale(1); } }
+  .wb-card.win::after { content: ""; position: absolute; inset: 0; border-radius: 13px; pointer-events: none; background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.9) 50%, transparent 62%); background-size: 260% 100%; background-position: 130% 0; animation: wbShine 1s .2s ease-out 1 both; }
+  @keyframes wbShine { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+  .wb-spark { position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); pointer-events: none; background: #ffd23c; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: wbSpark 1.1s var(--w) ease-in-out 2; }
+  @keyframes wbSpark { 0%, 100% { opacity: 0; transform: scale(0) rotate(0); } 45% { opacity: 1; transform: scale(1.2) rotate(90deg); } 75% { opacity: .8; transform: scale(.7) rotate(150deg); } }
+  html[data-motion=reduce] .wb-ele, html[data-motion=reduce] .wb-mouse, html[data-motion=reduce] .wb-react img, html[data-motion=reduce] .wb-wink, html[data-motion=reduce] .wb-drop, html[data-motion=reduce] .wb-steam i, html[data-motion=reduce] .wb-anger, html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-card.win, html[data-motion=reduce] .wb-card.win::after, html[data-motion=reduce] .wb-spark { animation: none !important; }
+  html[data-motion=reduce] .wb-drop, html[data-motion=reduce] .wb-bit, html[data-motion=reduce] .wb-spark, html[data-motion=reduce] .wb-wink { display: none; }
   .wb-quip { font-size: 15px; font-weight: 800; color: #6b4a2a; margin: 0 0 6px; }
   /* streak chip: flames that grow with the streak */
   .wb-streak { display: flex; justify-content: center; margin: -4px 0 10px; }
@@ -1062,7 +1096,7 @@ if (location.protocol === "file:") {
   .wb-rk { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #ecdcc0; color: #7a4a1e; font-weight: 800; font-size: 15px; }
   .wb-hs-now { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; background: #f0902a; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
   .wb-hs-sum { margin-top: 8px; font-size: 14px; color: #7a6446; text-align: center; }
-  html[data-motion=reduce] .wb-mascot, html[data-motion=reduce] .wb-party, html[data-motion=reduce] .wb-q, html[data-motion=reduce] .wb-shake, html[data-motion=reduce] .wb-slam, html[data-motion=reduce] .wb-redflash, html[data-motion=reduce] .wb-streak-chip, html[data-motion=reduce] .wb-streak-chip img, html[data-motion=reduce] .wb-verdict-t.mile, html[data-motion=reduce] .wb-score.spot, html[data-motion=reduce] .wb-best.beat, html[data-motion=reduce] .wb-over-num, html[data-motion=reduce] .wb-over-badge, html[data-motion=reduce] .wb-coins, html[data-motion=reduce] .wb-over-hero::before, html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
+  html[data-motion=reduce] .wb-shake, html[data-motion=reduce] .wb-slam, html[data-motion=reduce] .wb-redflash, html[data-motion=reduce] .wb-streak-chip, html[data-motion=reduce] .wb-streak-chip img, html[data-motion=reduce] .wb-verdict-t.mile, html[data-motion=reduce] .wb-score.spot, html[data-motion=reduce] .wb-best.beat, html[data-motion=reduce] .wb-over-num, html[data-motion=reduce] .wb-over-badge, html[data-motion=reduce] .wb-coins, html[data-motion=reduce] .wb-over-hero::before, html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
   .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
   .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
@@ -11476,6 +11510,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     } catch (e) { /* ignore */ }
   }
+  // Which little reaction sits beside the check / X. The popper is saved for tight calls, new bests and streak callouts,
+  // so it stays special; everything else rotates and never repeats twice in a row.
+  let wbLastSide = "";
+  function wbSidePick(ok, ratio, milestone, bestFlash) {
+    const choose = (list) => { const f = list.filter((x) => x.img !== wbLastSide); const c = (f.length ? f : list)[Math.floor(Math.random() * f.length || 0)]; wbLastSide = c.img; return c; };
+    const R = "icons/reactions/";
+    if (ok) {
+      if (bestFlash) return choose([{ img: R + "trophy.png", kind: "bob" }]);
+      if (milestone) return choose([{ img: R + "fire.png", kind: "bob" }, { img: R + "crown.png", kind: "bob" }]);
+      if (ratio < 2.5) return choose([{ img: R + "popper.png", kind: "pop" }, { img: R + "mindblown.png", kind: "bob" }]);
+      return choose([{ img: R + "thumbsup.png", kind: "bob" }, { img: R + "clap.png", kind: "clap" }, { img: R + "flex.png", kind: "bob" }, { img: R + "cool.png", kind: "bob" }, { img: R + "triumph.png", kind: "bob" }]);
+    }
+    return choose([{ img: "icons/life-heart-cracked.webp", kind: "crack" }, { img: R + "crying.png", kind: "sad" }, { img: R + "facepalm.png", kind: "sad" }, { img: R + "nervous.png", kind: "sad" }, { img: R + "sideeye.png", kind: "sad" }]);
+  }
+  const wbBits = (n, cls) => Array.from({ length: n }, (_, i) => { const a = -Math.PI * (0.1 + 0.8 * Math.random()); const d = 30 + Math.random() * 34; return `<i class="${cls}" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(-Math.sin(a) * d)}px;--c:${["#ffd23c", "#ff7a3c", "#5ec8ff", "#8be26a", "#c58bff", "#ff6b9d"][i % 6]};--w:${(i * 0.04).toFixed(2)}s"></i>`; }).join("");
+  const wbDrops = () => Array.from({ length: 12 }, (_, i) => `<i class="wb-drop" style="--dx:${28 + Math.round(Math.random() * 34)}px;--dy:${34 + Math.round(Math.random() * 30)}px;--w:${(i * 0.045).toFixed(2)}s"></i>`).join("");
+  const wbSparks = () => Array.from({ length: 7 }, (_, i) => { const a = (i / 7) * Math.PI * 2 + Math.random() * 0.5; return `<i class="wb-spark" style="--x:${Math.round(50 + Math.cos(a) * 58)}%;--y:${Math.round(50 + Math.sin(a) * 58)}%;--w:${(0.1 + i * 0.12).toFixed(2)}s;--s:${10 + Math.round(Math.random() * 10)}px"></i>`; }).join("");
+  const wbSideHtml = (side) => side.kind === "pop"
+    ? `<div class="wb-react pop"><img src="${side.img}" alt="" draggable="false"><span class="wb-bitbox">${wbBits(12, "wb-bit")}</span></div>`
+    : `<div class="wb-react ${side.kind}"><img src="${side.img}" alt="" draggable="false"></div>`;
+  const wbEleHtml = () => `<div class="wb-ele"><img src="icons/mascot-elephant.webp" alt="" draggable="false"><i class="wb-wink"></i><span class="wb-spray">${wbDrops()}</span></div>`;
+  const wbMouseHtml = () => `<div class="wb-mouse"><img src="icons/mascot-mouse.webp" alt="" draggable="false"><span class="wb-steam"><i></i><i></i><i></i></span><svg class="wb-anger" viewBox="0 0 24 24"><g fill="none" stroke="#e03a2f" stroke-width="3.4" stroke-linecap="round"><path d="M3 9Q9 9 9 3"/><path d="M15 3Q15 9 21 9"/><path d="M3 15Q9 15 9 21"/><path d="M15 21Q15 15 21 15"/></g></svg></div>`;
+
   // A little personality: the quip depends on right/wrong and how big the gap was (picked once per round).
   function wbQuip(ok, ratio) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
@@ -11504,7 +11561,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Rule: never show an object's measurement here - players would write the numbers down.
   function wbCardHtml(o, cls, disabled, opts) {
     const o2 = opts || {};
-    return `<button type="button" class="wb-card ${cls || ""}" data-id="${o.id}"${disabled ? " disabled" : ""}>${o2.tag ? `<span class="wb-tag">${escapeHtml(o2.tag)}</span>` : ""}<img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span><span class="wb-d">measured by ${escapeHtml(wbDim(o))}</span></button>`;
+    return `<button type="button" class="wb-card ${cls || ""}" data-id="${o.id}"${disabled ? " disabled" : ""}>${o2.tag ? `<span class="wb-tag">${escapeHtml(o2.tag)}</span>` : ""}<img src="${o.image}" alt="" draggable="false">${cls && cls.includes("win") ? wbSparks() : ""}<span class="wb-n">${escapeHtml(o.name)}</span><span class="wb-d">measured by ${escapeHtml(wbDim(o))}</span></button>`;
   }
   function openWhichBigger() {
     const fromHub = soloScreenEl.classList.contains("active");
@@ -11549,10 +11606,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wbStop();
     if (wb.phase === "result") {
       const p = wb.pair, ok = wb.ok;
-      const cls = (o) => (o.id === p.bigger.id ? "right" : (o.id === wb.picked ? "wrong" : ""));
+      const cls = (o) => (o.id === p.bigger.id ? (ok ? "right win" : "right") : (o.id === wb.picked ? "wrong" : ""));
       const card = (o) => wbCardHtml(o, cls(o), true, { tag: o.id === wb.picked ? "You picked" : "" });
       const how = wbHowMuch(p.ratio);
       const milestone = ok ? wbMilestone(wb.streak) : "";
+      if (!wb.side) wb.side = wbSidePick(ok, p.ratio, milestone, wb.bestFlash);
       // A wrong pick: show the heart you had, crack it, then drop it (same moment as Survival, with the error sound).
       const losing = !ok && !wb.lossShown;
       // The buzz comes with the answer (after the animation), never before it.
@@ -11571,9 +11629,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
         <div class="wb-verdict ${ok ? "ok" : "bad"}">
           <div class="wb-stagerow">
-            <div class="wb-side">${ok ? '<img class="wb-mascot cheer" src="icons/mascot-elephant.webp" alt="" draggable="false">' : '<img class="wb-mascot shrug" src="icons/mascot-mouse.webp" alt="" draggable="false">'}</div>
+            <div class="wb-side">${ok ? wbEleHtml() : wbSideHtml(wb.side)}</div>
             <div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div></div>
-            <div class="wb-side">${ok ? '<img class="wb-party" src="icons/reactions/popper.png" alt="" draggable="false">' : '<div class="wb-q">?</div>'}</div>
+            <div class="wb-side">${ok ? wbSideHtml(wb.side) : wbMouseHtml()}</div>
           </div>
           <div class="wb-verdict-t${milestone ? " mile" : ""}">${milestone || (ok ? "Correct!" : "Not quite!")}</div>
           ${wb.quip ? `<div class="wb-quip">${escapeHtml(wb.quip)}</div>` : ""}
@@ -11698,7 +11756,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "wb-lock" && wb.phase === "question" && wb.picked) {
       wb.ok = isCorrectPick(wb.pair, wb.picked);
       wb.prevStreak = wb.streak || 0;
-      wb.quip = wbQuip(wb.ok, wb.pair.ratio);
+      wb.quip = wbQuip(wb.ok, wb.pair.ratio); wb.side = null;
       if (wb.ok) { wb.score++; wb.streak = (wb.streak || 0) + 1; wb.bestStreak = Math.max(wb.bestStreak || 0, wb.streak); wb.bestFlash = wb.startBest > 0 && wb.score === wb.startBest + 1; }
       else { wb.lives--; wb.streak = 0; wb.bestFlash = false; }
       wb.phase = "reveal"; wb.buzzed = false;
