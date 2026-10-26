@@ -1261,6 +1261,7 @@ export function createStackAnimation(container, options = {}) {
       first, second, big, small, ratio: 1 / r, stageH, width: W, scenery,
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
+      impactAt: tDrop * PLAYBACK_TIME_SCALE,   // the moment the picked object slams down
       render,
       renderEnd() { render(tEnd * PLAYBACK_TIME_SCALE); },
       getShown: () => 0,
