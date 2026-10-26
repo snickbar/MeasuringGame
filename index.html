@@ -991,6 +991,27 @@ if (location.protocol === "file:") {
   @keyframes wbShakeAll { 10%, 90% { transform: translateX(-3px); } 20%, 80% { transform: translateX(6px); } 30%, 50%, 70% { transform: translateX(-9px); } 40%, 60% { transform: translateX(9px); } }
   .wb-slam { animation: wbSlam .4s cubic-bezier(.2,.8,.3,1) both; }
   @keyframes wbSlam { 0% { transform: translateY(0); } 15% { transform: translateY(9px) scale(1.012); } 35% { transform: translateY(-5px); } 60% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+  /* game-show question screen: VS badge, cards bounce in, backdrop heats up as the gap closes */
+  #wb-content { position: relative; z-index: 1; }
+  #wb-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .6s, background .6s; background: radial-gradient(ellipse 90% 55% at 50% 30%, var(--wbg, transparent), transparent 75%); }
+  #wb-screen[data-tier] #wb-glow { opacity: 1; }
+  #wb-screen[data-tier="easy"] { --wbg: rgba(94,200,255,.34); }
+  #wb-screen[data-tier="mid"] { --wbg: rgba(170,120,255,.36); }
+  #wb-screen[data-tier="tight"] { --wbg: rgba(255,120,40,.45); }
+  #wb-screen[data-tier="tight"] #wb-glow { animation: wbGlowPulse 2.2s ease-in-out infinite; }
+  @keyframes wbGlowPulse { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+  #wb-cards { position: relative; }
+  .wb-vs { position: absolute; left: 50%; top: 42%; z-index: 3; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 17px; letter-spacing: .5px; color: #fff; background: radial-gradient(circle at 35% 30%, #ff8a4a, #d9392f); border: 3px solid #fff; box-shadow: 0 3px 0 rgba(120,30,20,.45), 0 0 14px rgba(255,140,60,.7); text-shadow: 0 2px 0 rgba(120,30,20,.5); animation: wbVsIn .55s .35s cubic-bezier(.2,1.7,.4,1) both; }
+  @keyframes wbVsIn { from { transform: scale(0) rotate(-200deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+  #wb-cards .wb-card:first-child { animation: wbInL .5s cubic-bezier(.2,1.4,.4,1) both; }
+  #wb-cards .wb-card:last-child { animation: wbInR .5s .08s cubic-bezier(.2,1.4,.4,1) both; }
+  @keyframes wbInL { from { transform: translateX(-120%) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes wbInR { from { transform: translateX(120%) rotate(8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  #wb-lock.ready { animation: wbReady .45s ease-out 1; }
+  @keyframes wbReady { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
+  #wb-content .dc-prompt { font-weight: 800; animation: wbPrompt .4s ease-out both; }
+  @keyframes wbPrompt { from { transform: translateY(-8px) scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-motion=reduce] .wb-vs, html[data-motion=reduce] #wb-cards .wb-card, html[data-motion=reduce] #wb-lock.ready, html[data-motion=reduce] #wb-content .dc-prompt, html[data-motion=reduce] #wb-screen #wb-glow { animation: none !important; }
   /* last life: red edges pulse and the final heart beats */
   #wb-danger { display: none; position: fixed; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 70px 14px rgba(217,45,45,.55); }
   #wb-screen.wb-danger #wb-danger { display: block; animation: wbDanger 1.3s ease-in-out infinite; }
@@ -3899,6 +3920,7 @@ if (location.protocol === "file:") {
 
 <div id="wb-screen" class="screen">
   <button id="wb-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="wb-glow"></div>
   <div id="wb-danger"></div>
   <div id="wb-content"></div>
 </div>
@@ -11581,6 +11603,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderWhichBigger() {
     if (!wb) return;
     const wbScreenEl = document.getElementById("wb-screen");
+    const wbSetTier = () => { if (wbScreenEl) { const r = wb.pair && wb.pair.ratio, on = r && ["question", "reveal", "result"].includes(wb.phase); wbScreenEl.dataset.tier = on ? (r >= 12 ? "easy" : r >= 2.5 ? "mid" : "tight") : ""; } };
+    wbSetTier();
     if (wbScreenEl) wbScreenEl.classList.toggle("wb-danger", wb.lives === 1 && ["question", "reveal", "result"].includes(wb.phase));
     const el = wbContentEl;
     if (wb.phase === "intro") {
@@ -11598,9 +11622,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         wb.used.add(wb.pair.left.id); wb.used.add(wb.pair.right.id);
       }
       const p = wb.pair;
+      wbSetTier();
       el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
-        <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}${wbCardHtml(p.right)}</div>
+        <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
       return;
     }
@@ -11759,7 +11784,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.classList.contains("wb-card") && wb.phase === "question") {
       wb.picked = b.dataset.id;
       wbContentEl.querySelectorAll(".wb-card").forEach((c) => c.classList.toggle("sel", c === b));
-      document.getElementById("wb-lock").disabled = false;
+      { const lk = document.getElementById("wb-lock"); lk.disabled = false; lk.classList.add("ready"); }
       try { playSound("pick"); } catch (err) {}
       return;
     }
