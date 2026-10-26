@@ -2378,6 +2378,15 @@ if (location.protocol === "file:") {
     border-width: 0 24px 0 42px; border-image-source: url(icons/btn-watch-ad.png);
   }
 
+  /* Classic/Party final: same look as the solo split bar (green Finish, gold ad button, neutral Play again). */
+  #bottom-actions button#final-home-btn, #bottom-actions button#final-double-coins-btn, #bottom-actions button#play-again-btn {
+    border: 0 !important; border-image: none !important; border-radius: 0 !important; box-shadow: none !important;
+    background-color: transparent !important; background-repeat: no-repeat !important; background-size: 100% 100% !important; background-position: center !important;
+    color: #3b2718 !important; text-shadow: none !important; min-height: 58px; padding: 6px 12px !important; font-size: 13px; line-height: 1.1; white-space: normal !important;
+  }
+  #bottom-actions button#final-home-btn { background-image: url(icons/btn-finish.png) !important; }
+  #bottom-actions button#final-double-coins-btn { background-image: url(icons/btn-lock.png) !important; }
+  #bottom-actions button#play-again-btn { background-image: url(icons/btn-cream.png) !important; }
   /* Number keys: picture keys; the backspace picture carries its own arrow. */
   #numpad { grid-template-columns: repeat(3, 72px); justify-content: center; gap: 8px 10px; }
   #numpad .num-btn, #numpad #backspace-btn {
@@ -3710,7 +3719,7 @@ if (location.protocol === "file:") {
   <button id="next-round-btn" style="display:none;">Next round</button>
   <button id="play-again-btn" style="display:none;">Play Again</button>
   <button id="final-home-btn" style="display:none;">Finish game</button>
-  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch Ad: Double Coins &amp; Finish</button>
+  <button id="final-double-coins-btn" type="button" class="ad-reward-btn" style="display:none;">Watch ad: double coins &amp; finish</button>
   </div>
   <div id="reaction-strip" aria-label="Reactions"></div>
 </div>
@@ -5643,6 +5652,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     monthly: { key: () => mo && !mo.practice && "monthly_" + mo.key + "_L" + mo.level + "_v" + MONTHLY_FORMAT, done: () => mo.phase === "done" && !mo.practice },
     practice: { key: () => mo && mo.practice && mo.runId, done: () => mo.phase === "done" && mo.practice },
     survival: { key: () => sv && sv.runId, done: () => sv.phase === "over" },
+    highstakes: { key: () => roomState && currentRoomCode && gameRewardKey(currentRoomCode, roomState) + "_hs" },
     whichbigger: { key: () => wb && wb.runId, done: () => wb.phase === "over" || wb.phase === "done" }
   };
   function adBarHtml(mode, finishId) {
@@ -10401,8 +10411,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             roundsRecorded: true, roundsWon: st.won || 0, bluffs: st.bluffs || 0, biggestWin: st.best || 0, peak: Math.max(st.peak || 0, hs.chips[me] || 0), out: !!hs.out?.[me], accuracy: 0 });
         }
       }
+      html += adBarSlot("highstakes", "hs-exit");
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
-      html += `<button type="button" class="dc-btn dc-alt" id="hs-exit">Exit game</button>`;
       hsContentEl.innerHTML = html;
       if (!nobodyLeft && hs.winners.length === 1 && hsFlairOverKey !== data.gameId) {
         hsFlairOverKey = data.gameId;
@@ -17680,7 +17690,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     finalDoubleCoinsBtn.style.display='none';
     const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo;
     playAgainBtn.style.display=party&&isHost&&collected?'flex':'none';playAgainBtn.textContent='Play again with this party';
-    finalHomeBtn.textContent=collected&&party?'Leave party':'Collect coins';
+    finalHomeBtn.textContent=collected&&party?'Leave party':'Finish & collect coins';
     let note=document.getElementById('final-party-note');if(!note){note=document.createElement('p');note.id='final-party-note';note.className='cs-note';finalListEl.after(note);}
     note.textContent=party?(collected?(isHost?'Start a rematch to keep this party together.':'Coins collected. Waiting for the host to start a rematch.'):'Collect your coins, then stay for the next game.'):'Your completed game and coins are saved once.';
   }
