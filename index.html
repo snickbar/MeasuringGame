@@ -991,6 +991,13 @@ if (location.protocol === "file:") {
   @keyframes wbShakeAll { 10%, 90% { transform: translateX(-3px); } 20%, 80% { transform: translateX(6px); } 30%, 50%, 70% { transform: translateX(-9px); } 40%, 60% { transform: translateX(9px); } }
   .wb-slam { animation: wbSlam .4s cubic-bezier(.2,.8,.3,1) both; }
   @keyframes wbSlam { 0% { transform: translateY(0); } 15% { transform: translateY(9px) scale(1.012); } 35% { transform: translateY(-5px); } 60% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+  /* last life: red edges pulse and the final heart beats */
+  #wb-danger { display: none; position: fixed; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 70px 14px rgba(217,45,45,.55); }
+  #wb-screen.wb-danger #wb-danger { display: block; animation: wbDanger 1.3s ease-in-out infinite; }
+  @keyframes wbDanger { 0%, 100% { opacity: .35; } 18% { opacity: 1; } 32% { opacity: .55; } 48% { opacity: .95; } 70% { opacity: .35; } }
+  #wb-screen.wb-danger .sv-heart[src$="full.webp"] { animation: wbBeat 1.3s ease-in-out infinite; }
+  @keyframes wbBeat { 0%, 100% { transform: scale(1); } 18% { transform: scale(1.28); } 32% { transform: scale(1.02); } 48% { transform: scale(1.2); } 70% { transform: scale(1); } }
+  html[data-motion=reduce] #wb-screen.wb-danger #wb-danger, html[data-motion=reduce] #wb-screen.wb-danger .sv-heart { animation: none !important; }
   .wb-redflash { position: fixed; inset: 0; z-index: 2500; pointer-events: none; box-shadow: inset 0 0 90px 28px rgba(217,45,45,.75); animation: wbFlashFade .65s ease-out both; }
   @keyframes wbFlashFade { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
   /* mascots on the summary */
@@ -3892,6 +3899,7 @@ if (location.protocol === "file:") {
 
 <div id="wb-screen" class="screen">
   <button id="wb-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div id="wb-danger"></div>
   <div id="wb-content"></div>
 </div>
 
@@ -11572,6 +11580,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderWhichBigger() {
     if (!wb) return;
+    const wbScreenEl = document.getElementById("wb-screen");
+    if (wbScreenEl) wbScreenEl.classList.toggle("wb-danger", wb.lives === 1 && ["question", "reveal", "result"].includes(wb.phase));
     const el = wbContentEl;
     if (wb.phase === "intro") {
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
