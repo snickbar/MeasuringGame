@@ -11728,7 +11728,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (wbAnim !== ctl || wb.phase !== "reveal") return;
       animAudioInit();
       let slammed = false;
-      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: (t) => { if (!slammed && scene.impactAt != null && t >= scene.impactAt) { slammed = true; wbShake(stage, "wb-slam", 420); } }, onDone: () => { if (wbAnim === ctl) wbPauseThenResult(); } });
+      ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: (t) => { if (!slammed && scene.impactAt != null && t >= scene.impactAt) { slammed = true; wbShake(stage, "wb-slam", 420); try { playAnimCue({ name: "thud", vol: 1 }); } catch (e) {} } }, onDone: () => { if (wbAnim === ctl) wbPauseThenResult(); } });
     } catch (err) { console.warn("[measuring-game] which-is-bigger animation failed", err); wbShowResult(); }
   }
   wbContentEl.addEventListener("click", async (e) => {
@@ -14617,6 +14617,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     o.stop(at + len + 0.05);
   }
   const ANIM_SYNTH = {
+    // Heavy landing: a low body drop plus a short filtered noise knock.
+    thud(vol) {
+      const ctx = animAudio.ctx;
+      const at = ctx.currentTime;
+      const v = (vol == null ? 1 : vol);
+      const o = audioLifecycle.source(ctx.createOscillator());
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(150, at);
+      o.frequency.exponentialRampToValueAtTime(42, at + 0.22);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(v * 0.95, at + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.34);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(at); o.stop(at + 0.4);
+      const len = Math.floor(ctx.sampleRate * 0.12);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      const n = audioLifecycle.source(ctx.createBufferSource());
+      n.buffer = buf;
+      const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 420;
+      const ng = ctx.createGain(); ng.gain.value = v * 0.7;
+      n.connect(f); f.connect(ng); ng.connect(ctx.destination);
+      n.start(at);
+    },
     // Zoom back out: a soft descending "bloop".
     zoomback(vol) {
       const ctx = animAudio.ctx;
