@@ -968,13 +968,21 @@ if (location.protocol === "file:") {
   .wb-card.wrong { border-color: #d9493f; background: #fdeceb; }
   .wb-card:disabled { cursor: default; }
   /* HUD: hearts on the left, a big score plate on the right */
-  .wb-hud { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 4px 0 10px; padding-right: 36px; }
-  .wb-hud .sv-hearts { gap: 4px; } .wb-hud .sv-heart { width: 38px; }
-  .wb-score { position: relative; min-width: 92px; padding: 5px 16px 7px; border-radius: 18px; text-align: center; line-height: 1; color: #fff;
-    background: linear-gradient(#ffd25e, #f0902a); border: 3px solid #7a4a1e; box-shadow: 0 3px 0 rgba(74,44,18,.4), inset 0 2px 0 rgba(255,255,255,.55); }
-  .wb-score-l { display: block; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: #fff4d6; text-shadow: 0 1px 0 rgba(0,0,0,.35); }
-  .wb-score b { display: block; margin-top: 2px; font-size: 44px; font-weight: 800; text-shadow: 0 3px 0 rgba(130,64,10,.65); }
+  .wb-hud { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 10px; }
+  .wb-hud .sv-hearts { gap: 3px; } .wb-hud .sv-heart { width: 32px; }
+  .wb-score, .wb-best { position: relative; text-align: center; line-height: 1; border-radius: 18px; border: 3px solid #7a4a1e; }
+  .wb-score { min-width: 92px; padding: 5px 14px 7px; background: linear-gradient(#ffd25e, #f0902a); box-shadow: 0 3px 0 rgba(74,44,18,.4), inset 0 2px 0 rgba(255,255,255,.55); }
+  .wb-best { min-width: 66px; padding: 5px 10px 7px; background: linear-gradient(#fffdf6, #f1e3c4); box-shadow: 0 3px 0 rgba(74,44,18,.3), inset 0 2px 0 rgba(255,255,255,.8); }
+  .wb-best.beat { background: linear-gradient(#fff3a8, #ffd23f); animation: wbBestGlow 1.6s ease-in-out infinite; }
+  .wb-score-l { display: block; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #7a4a1e; }
+  .wb-score b, .wb-best b { display: block; margin-top: 2px; font-weight: 800; color: #4a2410; }
+  .wb-score b { font-size: 44px; text-shadow: 0 2px 0 rgba(255,236,170,.75); }
+  .wb-best b { font-size: 30px; padding-top: 6px; }
   .wb-score.bump b { animation: wbBump .7s cubic-bezier(.34,1.56,.64,1) both; }
+  /* between rounds the score plate keeps pulsing so the eye lands on it */
+  .wb-score.spot { animation: wbSpot 1.3s ease-in-out infinite; }
+  @keyframes wbSpot { 0%, 100% { transform: scale(1.06); box-shadow: 0 3px 0 rgba(74,44,18,.4), 0 0 0 0 rgba(255,170,40,.75), inset 0 2px 0 rgba(255,255,255,.55); } 50% { transform: scale(1.16); box-shadow: 0 3px 0 rgba(74,44,18,.4), 0 0 0 12px rgba(255,170,40,0), 0 0 22px 6px rgba(255,190,60,.8), inset 0 2px 0 rgba(255,255,255,.55); } }
+  @keyframes wbBestGlow { 0%, 100% { box-shadow: 0 3px 0 rgba(74,44,18,.3), 0 0 6px 0 rgba(255,210,60,.6); } 50% { box-shadow: 0 3px 0 rgba(74,44,18,.3), 0 0 16px 4px rgba(255,210,60,.95); } }
   .wb-plus { position: absolute; right: -6px; top: -14px; font-style: normal; font-size: 22px; font-weight: 800; color: #3a9d3f; text-shadow: 0 2px 0 #fff, 0 0 6px #fff; animation: wbPlus 1.1s ease-out both; }
   @keyframes wbBump { 0% { transform: scale(.5); } 100% { transform: scale(1); } }
   @keyframes wbPlus { 0% { opacity: 0; transform: translateY(8px) scale(.6); } 25% { opacity: 1; transform: translateY(-4px) scale(1.15); } 100% { opacity: 0; transform: translateY(-26px) scale(1); } }
@@ -1021,7 +1029,7 @@ if (location.protocol === "file:") {
   .wb-rk { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #ecdcc0; color: #7a4a1e; font-weight: 800; font-size: 15px; }
   .wb-hs-now { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; background: #f0902a; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
   .wb-hs-sum { margin-top: 8px; font-size: 14px; color: #7a6446; text-align: center; }
-  html[data-motion=reduce] .wb-over-num, html[data-motion=reduce] .wb-over-badge, html[data-motion=reduce] .wb-coins, html[data-motion=reduce] .wb-over-hero::before, html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
+  html[data-motion=reduce] .wb-score.spot, html[data-motion=reduce] .wb-best.beat, html[data-motion=reduce] .wb-over-num, html[data-motion=reduce] .wb-over-badge, html[data-motion=reduce] .wb-coins, html[data-motion=reduce] .wb-over-hero::before, html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
   .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
   .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
@@ -11400,7 +11408,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const wbBest = () => (myProfile.whichBigger && myProfile.whichBigger.best) || 0;
   function wbSub() { const b = wbBest(); return b ? `Your best: ${b} right pick${b === 1 ? "" : "s"}` : "Tap the bigger one"; }
   // Hearts on the left, a big score plate on the right. `bump` plays the score's "+1" pop (right pick on the summary).
-  const wbHeartsHtml = (lives, score, bump) => `<div class="wb-hud"><div class="sv-hearts" id="wb-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="wb-score${bump ? " bump" : ""}"><span class="wb-score-l">Score</span><b>${score}</b>${bump ? '<i class="wb-plus">+1</i>' : ""}</div></div>`;
+  const wbHeartsHtml = (lives, score, bump, spot) => {
+    // Best follows you up while you play: once you pass your old best, the box takes your score and glows gold.
+    const old = wbBest(), best = Math.max(old, score), beat = score > 0 && score >= old;
+    return `<div class="wb-hud"><div class="sv-hearts" id="wb-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="wb-score${bump ? " bump" : ""}${spot ? " spot" : ""}"><span class="wb-score-l">Score</span><b>${score}</b>${bump ? '<i class="wb-plus">+1</i>' : ""}</div><div class="wb-best${beat ? " beat" : ""}"><span class="wb-score-l">Best</span><b>${best}</b></div></div>`;
+  };
   const wbNewRun = () => ({ runId: crypto.randomUUID(), finished: false, phase: "question", lives: WB_LIVES, score: 0, round: 1, used: new Set(), pair: null, picked: null, ok: null });
   function wbDim(o) { return (o.measurement && o.measurement.dimension) || "length"; }
   // Deliberately vague (a few broad tiers) so the result never gives players numbers to write down and work from.
@@ -11466,7 +11478,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const losing = !ok && !wb.lossShown;
       // The buzz comes with the answer (after the animation), never before it.
       if (!wb.buzzed) { wb.buzzed = true; vibrate(ok ? 25 : [70, 60, 70]); }
-      el.innerHTML = `${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score, ok)}
+      el.innerHTML = `${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score, ok, true)}
         <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
         <div class="wb-verdict ${ok ? "ok" : "bad"}">
           <div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}">${ok ? "&#10004;" : "&#10006;"}</div></div>
