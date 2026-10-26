@@ -18574,7 +18574,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const showBar = twShowPrompt && !isHlSettings(roomState.settings);
       if (showBar) {
         const meNow = currentPlayers[currentPlayerId];
-        const avgNow = meNow?.roundsCounted ? meNow.accuracySum / meNow.roundsCounted : null;
+        // Scoring is saved before the stack animation starts. Keep this meter on
+        // completed rounds; Game Progress introduces this round's accuracy later.
+        const completed = Math.max(0, (meNow?.roundsCounted || 0) - 1);
+        const avgNow = completed ? (meNow.accuracySum - (roomState.lastRoundAccuracy || 0)) / completed : null;
         const html = worldProgressBarHtml(avgNow);
         if (bar.dataset.html !== html) { bar.innerHTML = html; bar.dataset.html = html; }
       }

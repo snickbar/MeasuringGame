@@ -42,7 +42,18 @@ window.__layoutReveal=async mode=>{
  else if(mode==='monthly'){mo.phase='reveal';mo.guesses=[3];renderMonthly();}
  else{stopAnimation();animScene=null;animSceneRound=null;roomState.phase='animation';roomState.animStartAt=Date.now()+10000;applyPhase(roomState);await runAnimation(roomState);}
 };
+window.__layoutAccuracyAfter=()=>summaryListEl.querySelector('.tw-avg .wl-progress-heading strong').textContent;
 const originalLayoutSubmit=submitGuessBtn,originalLayoutPad=numpadEl;
+window.__layoutAccuracy=async (count,sum,last)=>{
+ await window.__layoutAudit('teamworlds');
+ Object.values(currentPlayers).forEach(p=>{p.roundsCounted=count;p.accuracySum=sum;});
+ roomState.lastRoundAccuracy=last;roomState.phase='animation';applyPhase(roomState);
+ const bar=document.getElementById('tw-anim-progress');
+ const before=bar.querySelector('strong').textContent;applyPhase(roomState);
+ const refreshed=bar.querySelector('strong').textContent;
+ roomState.phase='summary';applyPhase(roomState);twSummarySig=null;renderTeamWorldsSummary(roomState);
+ return {before,refreshed,after:summaryListEl.querySelector('.tw-avg .wl-progress-heading strong')?.textContent};
+};
 window.__layoutReady=()=>myProfile?.stats?.gamesPlayed===8;
 window.__layoutRefresh=()=>applyPhase(roomState);
 
@@ -59,7 +70,7 @@ const server=http.createServer((req,res)=>{
 });
 server.listen(0,'127.0.0.1',()=>{
  const child=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'wb-summary-'+process.pid),'about:blank'],{windowsHide:true});
- let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},90000);
+ let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},120000);
  child.stderr.on('data',async chunk=>{
   stderr+=chunk;const match=stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(started||!match)return;started=true;
   try{
@@ -116,6 +127,14 @@ server.listen(0,'127.0.0.1',()=>{
       if(!await evaluate("!!document.getElementById('sv-next')&&!!document.getElementById('sv-result')?.textContent.trim()"))throw Error('Survival Skip lost result/next handler');
      }
      console.log(JSON.stringify({mode:mode+':reveal',width,height,...state,pass:true}));
+    }
+    for(const sample of [{count:1,sum:70.6,last:70.6,expected:'No answers yet'},{count:2,sum:160,last:70,expected:'90%'},{count:2,sum:110,last:90,expected:'20%'}]){
+     const progress=await evaluate('window.__layoutAccuracy('+[sample.count,sample.sum,sample.last].join(',')+')');
+     if(progress.before!==sample.expected||progress.refreshed!==sample.expected)throw Error('Accuracy spoiled unfinished round '+JSON.stringify(progress));
+     await new Promise(r=>setTimeout(r,2200));
+     const after=await evaluate("window.__layoutAccuracyAfter()");
+     if(after!==(sample.sum/sample.count)+'%')throw Error('Game Progress did not update accuracy '+after);
+     console.log(JSON.stringify({accuracyTiming:true,width,height,...progress,after,pass:true}));
     }
     await call('Target.closeTarget',{targetId});
    }
