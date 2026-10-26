@@ -1078,7 +1078,7 @@ export function createStackAnimation(container, options = {}) {
     const secondOnRight = !firstIsBig;   // the bigger one always arrives from the right
 
     // Close-up: the picked object fills the stage; s0 is how much bigger than its final size it is drawn.
-    const closeH = firstIsBig ? hMax : Math.min(hMax * 0.62, (W - 2 * G) / (F.w / F.h));
+    const closeH = Math.min(hMax, (W - 2 * G) / (F.w / F.h));   // the picked object fills the stage, even when it is the small one
     const closeW = closeH * (F.w / F.h);
     const s0 = firstIsBig ? 1 : Math.max(1, Math.min(closeH / F.h, (W - 2 * G) / F.w));
     void closeW;

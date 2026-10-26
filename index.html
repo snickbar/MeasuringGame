@@ -996,7 +996,32 @@ if (location.protocol === "file:") {
   .wb-card .wb-tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); padding: 2px 10px; border-radius: 999px; background: #f0902a; color: #fff; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.2); }
   .wb-line { margin: 2px 0 0; font-size: 16px; }
   .wb-line b { font-weight: 800; }
-  html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
+  /* game over: score hero, a loud coins pill and medal tiles for your best runs */
+  .wb-over { margin: 6px 0 12px; }
+  .wb-over-hero { position: relative; overflow: hidden; padding: 12px 12px 16px; border-radius: 24px; text-align: center; background: linear-gradient(#fff6d8, #ffe3a0); border: 3px solid #e8b95a; box-shadow: 0 4px 0 rgba(122,74,30,.25); }
+  .wb-over-hero.best::before { content: ""; position: absolute; left: 50%; top: 40%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; pointer-events: none;
+    background: repeating-conic-gradient(rgba(255,255,255,.7) 0 8deg, rgba(255,255,255,0) 8deg 16deg); -webkit-mask: radial-gradient(circle, #000 12%, transparent 62%); mask: radial-gradient(circle, #000 12%, transparent 62%); animation: wbSpin 14s linear infinite; }
+  .wb-over-hero > * { position: relative; }
+  .wb-over-hearts { display: flex; justify-content: center; gap: 4px; opacity: .8; } .wb-over-hearts .sv-heart { width: 26px; }
+  .wb-over-num { font-size: 92px; font-weight: 800; line-height: 1; margin: 2px 0 0; color: #fff; -webkit-text-stroke: 3px #7a4a1e; paint-order: stroke fill; text-shadow: 0 5px 0 rgba(122,74,30,.55); animation: wbBump .7s cubic-bezier(.34,1.56,.64,1) both; }
+  .wb-over-cap { font-size: 22px; font-weight: 800; color: #7a4a1e; margin-top: 2px; }
+  .wb-over-badge { display: inline-block; margin-top: 10px; padding: 6px 16px; border-radius: 999px; font-weight: 800; font-size: 16px; color: #fff; background: linear-gradient(#ff9a3c, #e8631a); border: 2px solid #8a3d0e; box-shadow: 0 3px 0 rgba(74,44,18,.4); text-shadow: 0 1px 0 rgba(0,0,0,.3); animation: wbBump .8s .15s cubic-bezier(.34,1.56,.64,1) both; }
+  .wb-over-prev { margin-top: 8px; font-size: 16px; color: #7a6446; }
+  .wb-coins { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 12px auto 0; width: max-content; max-width: 100%; padding: 6px 22px 6px 12px; border-radius: 999px; background: linear-gradient(#ffe27a, #f5b21f); border: 3px solid #8a5a12; box-shadow: 0 4px 0 rgba(74,44,18,.4), inset 0 2px 0 rgba(255,255,255,.6); animation: wbBump .8s .3s cubic-bezier(.34,1.56,.64,1) both; }
+  .wb-coins img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(74,44,18,.4)); }
+  .wb-coins b { font-size: 40px; line-height: 1; color: #fff; -webkit-text-stroke: 2px #8a5a12; paint-order: stroke fill; text-shadow: 0 3px 0 rgba(138,90,18,.6); }
+  .wb-coins span { font-size: 14px; font-weight: 800; line-height: 1.1; text-align: left; color: #6b4310; text-transform: uppercase; letter-spacing: .5px; }
+  .wb-hs { margin-bottom: 8px; }
+  .wb-hs-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .wb-hs-tile { position: relative; flex: 0 1 64px; min-width: 58px; padding: 10px 4px 8px; border-radius: 16px; background: #fffdf6; border: 2px solid #ecdcc0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .wb-hs-tile.first { background: linear-gradient(#fff6d8, #ffe9ae); border-color: #e8b95a; }
+  .wb-hs-tile.now { border-color: #f0902a; box-shadow: 0 0 0 3px rgba(240,144,42,.35); }
+  .wb-hs-tile b { font-size: 28px; line-height: 1.05; }
+  .wb-hs-tile span:not(.medal):not(.wb-rk) { font-size: 11px; color: #7a6446; }
+  .wb-rk { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #ecdcc0; color: #7a4a1e; font-weight: 800; font-size: 15px; }
+  .wb-hs-now { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; background: #f0902a; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
+  .wb-hs-sum { margin-top: 8px; font-size: 14px; color: #7a6446; text-align: center; }
+  html[data-motion=reduce] .wb-over-num, html[data-motion=reduce] .wb-over-badge, html[data-motion=reduce] .wb-coins, html[data-motion=reduce] .wb-over-hero::before, html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
   .sv-hud { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 6px; }
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
   .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
@@ -11267,6 +11292,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
+      <button type="button" class="dc-btn dc-alt" id="sv-finish">Finish game</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
     survivalLoadBoard();
   }
@@ -11348,6 +11374,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const m = await loadAnimModule();
       svShowResult(m); return;
     }
+    if (b.id === "sv-finish") { sv = { phase: "intro", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); window.scrollTo(0, 0); return; }
     if (b.id === "sv-next") { sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return; }
     if (b.id === "sv-share") {
       const text = `Size Em Up! Survival: ${sv.survived} round${sv.survived === 1 ? "" : "s"} survived`;
@@ -11458,23 +11485,48 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     const best = wbBest();
-    el.innerHTML = `<h2 class="dc-title">Game over</h2>
-      <div class="dc-card dc-hot"><div class="wl-big">${wb.score}</div><div class="dc-big">right pick${wb.score === 1 ? "" : "s"}</div><div class="dc-note" ${wb.newBest ? `data-personal-best="${wb.runId}"` : ""}>${wb.newBest ? "New personal best!" : `Your best: ${best}`}</div>${wb.gain ? `<div class="dc-note">+${wb.gain} coins</div>` : ""}</div>
+    const deadHearts = Array.from({ length: WB_LIVES }, () => svHeartSvg(false)).join("");
+    el.innerHTML = `<h2 class="dc-title">Game over</h2><div class="wb-over">
+        <div class="wb-over-hero${wb.newBest ? " best" : ""}">
+          <div class="wb-over-hearts">${deadHearts}</div>
+          <div class="wb-over-num" ${wb.newBest ? `data-personal-best="${wb.runId}"` : ""}>${wb.score}</div>
+          <div class="wb-over-cap">right pick${wb.score === 1 ? "" : "s"}</div>
+          ${wb.newBest ? '<div class="wb-over-badge">&#9733; New personal best! &#9733;</div>' : `<div class="wb-over-prev">Your best: ${best}</div>`}
+        </div>
+        ${wb.gain ? `<div class="wb-coins"><img src="icons/coin-v2.png" alt="" draggable="false"><b>+${wb.gain}</b><span>coins<br>earned</span></div>` : ""}
+      </div>
       <button type="button" class="dc-btn" id="wb-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
-      ${wbRecordsHtml()}`;
+      <button type="button" class="dc-btn dc-alt" id="wb-finish">Finish game</button>
+      ${wbRecordsHtml(true)}`;
   }
-  // Your own high scores only: best, runs played and your top five runs.
-  function wbRecordsHtml() {
-    const d = myProfile.whichBigger;
-    if (!d || !d.runs) return "";
-    const top = (Array.isArray(d.top) ? d.top : Object.values(d.top || {})).slice(0, 5);
-    const rows = top.map((r, i) => `<div class="dc-lb-row"><span class="dc-lb-rank">${i + 1}</span><span class="dc-lb-name">${new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
-    return `<h3 class="cs-h">Your high scores</h3><div class="dc-card"><div class="dc-note">Best: ${d.best || 0} right pick${d.best === 1 ? "" : "s"} &middot; ${d.runs} run${d.runs === 1 ? "" : "s"} played</div>${rows}</div>`;
+  // Your own high scores only: a row of medal tiles (best first). While a just-finished run is still being saved
+  // to the profile, it is merged in here so the numbers never lag behind the score on screen.
+  function wbScoresData() {
+    const d = myProfile.whichBigger || {};
+    let top = (Array.isArray(d.top) ? d.top : Object.values(d.top || {})).map((r) => ({ s: r.s, t: r.t }));
+    let best = d.best || 0, runs = d.runs || 0;
+    if (wb && wb.finished && runs <= (wb.preRuns || 0)) {
+      runs += 1; best = Math.max(best, wb.score);
+      if (wb.score > 0) top = [...top, { s: wb.score, t: wb.endedAt || Date.now() }].sort((x, y) => y.s - x.s || x.t - y.t).slice(0, 5);
+    }
+    return { top: top.slice(0, 5), best, runs };
+  }
+  function wbRecordsHtml(thisRun) {
+    const d = wbScoresData();
+    if (!d.runs) return "";
+    let marked = false;
+    const tiles = d.top.map((r, i) => {
+      const now = thisRun && !marked && wb && wb.finished && r.s === wb.score && r.t === (wb.endedAt || r.t) ? (marked = true) : false;
+      const medal = i < 3 ? `<span class="medal ${["gold", "silver", "bronze"][i]}" style="display:inline-block;width:34px;height:34px"></span>` : `<span class="wb-rk">${i + 1}</span>`;
+      return `<div class="wb-hs-tile${i === 0 ? " first" : ""}${now ? " now" : ""}">${medal}<b>${r.s}</b><span>${new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>${now ? '<i class="wb-hs-now">This run</i>' : ""}</div>`;
+    }).join("");
+    return `<h3 class="cs-h">Your high scores</h3><div class="wb-hs"><div class="wb-hs-row">${tiles}</div><div class="wb-hs-sum">${d.runs} run${d.runs === 1 ? "" : "s"} played</div></div>`;
   }
   // Run over: save the best and your top five (coins only for picks beyond the old best).
   function wbFinish() {
-    if (wb.finished) return; wb.finished = true;
+    if (wb.finished) return; wb.finished = true; wb.endedAt = Date.now();
+    wb.preRuns = (myProfile.whichBigger && myProfile.whichBigger.runs) || 0;
     const old = wbBest(), score = wb.score;
     wb.newBest = score > old; wb.gain = Math.max(0, score - old) * WB_COINS_PER;
     completedAttempt({ key: wb.runId, mode: "whichbigger", score, rounds: wb.round, accuracy: wb.round ? Math.round(100 * score / wb.round) : 0 });
@@ -11514,6 +11566,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest("button");
     if (!b || !wb) return;
     if (b.id === "wb-start" || b.id === "wb-again") { wb = wbNewRun(); renderWhichBigger(); return; }
+    if (b.id === "wb-finish") { wb = { phase: "intro" }; renderWhichBigger(); window.scrollTo(0, 0); return; }
     if (b.id === "wb-share") {
       const text = `Size Em Up! Which Is Bigger: ${wb.score} right pick${wb.score === 1 ? "" : "s"}`;
       const url = "https://size-em-up.web.app/?play=whichbigger";
