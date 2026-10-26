@@ -142,7 +142,7 @@ export function applyCareerRecord(profile,record){
       ghostCoins:(old.ghostCoins||0)+(record.ghost||0),knockedOut:(old.knockedOut||0)+(record.out?1:0)};
     stats.highStakesGames=(stats.highStakesGames||0)+1;
   }else if(record.mode==='survival'){
-    const old=profile.survival||{};coins=Math.max(0,record.survived-(old.best||0))*2;
+    const old=profile.survival||{};coins=Math.max(0,record.survived)*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};
     stats.survivalRuns=(stats.survivalRuns||0)+1;
   }else if(record.mode==='whichbigger'){
