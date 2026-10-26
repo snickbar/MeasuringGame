@@ -3399,6 +3399,10 @@ if (location.protocol === "file:") {
   .tw-avg { margin: 6px 0; padding: 10px 12px 12px; text-align: center; }
   .tw-avg-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #000; }
   .tw-avg-num { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.05; color: #6a328c; display: inline-block; }
+  .wl-done-split { display: flex; gap: 8px; width: 100%; }
+  .wl-done-split .dc-btn { flex: 1 1 0; min-width: 0; margin: 0; height: 58px; padding: 6px 8px; font-size: 15px; line-height: 1.15; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .wl-done-split .wl-ad-btn { background-image: url(icons/btn-lock.png) !important; }
+  .wl-done-split .wl-ad-btn small { font-size: 12px; font-weight: 600; }
   .world-reward-owned { color: #2d7a14; font-weight: 700; }
   .wl-rs { display: flex; flex-direction: column; justify-content: space-evenly; gap: 12px; min-height: 100%; box-sizing: border-box; padding: 10px 0; }
   .wl-rs .tw-avg { position: relative; margin: 0; }
@@ -5576,6 +5580,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const coins = prof.attemptReceipts?.[k]?.coins || 0;
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
+      if (row.mode === "worlds") { wlAdOffer = { k, coins, runId: row.key }; if (wl.phase === "done") wlRenderDoneBar(); return; } // Worlds shows the offer inside its results screen, not as an overlay
       // Daily and Monthly save the moment the last answer is in, before the reveal and "See my results": hold the offer until the results are on screen.
       if (!adResultsVisible(row.mode)) { adOfferPending.set(row.mode, { k, coins, t: Date.now() }); return; }
       showAdDoubleBanner(k, coins);
@@ -5603,20 +5608,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.querySelector(".adb-watch").addEventListener("click", async (e) => {
       const btn = e.currentTarget; btn.disabled = true;
       try {
-        const earned = await showFakeAd();
-        if (earned !== true) { btn.disabled = false; return; }
-        let paid = false;
-        await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
-          if (!cur || cur.adDoubled?.[k]) return undefined; // already doubled: abort
-          paid = true;
-          return { ...cur, coins: (cur.coins || 0) + coins, adDoubled: { ...(cur.adDoubled || {}), [k]: Date.now() } };
-        });
+        const res = await claimAdDouble(k, coins);
+        if (res === "cancel") { btn.disabled = false; return; }
         clearTimeout(timer);
-        el.innerHTML = `<div class="adb-done">${paid ? `Doubled! +${coins} coins added` : "Already doubled"}</div>`;
-        if (paid) { try { playSound("win"); } catch (err) { /* optional */ } vibrate([30, 40, 30]); }
+        el.innerHTML = `<div class="adb-done">${res === "paid" ? `Doubled! +${coins} coins added` : "Already doubled"}</div>`;
         setTimeout(done, 2500);
       } catch (err) { btn.disabled = false; }
     });
+  }
+  // Plays the ad and, if watched, credits the bonus once. Returns "paid", "already" or "cancel".
+  async function claimAdDouble(k, coins) {
+    const earned = await showFakeAd();
+    if (earned !== true) return "cancel";
+    let paid = false;
+    await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
+      if (!cur || cur.adDoubled?.[k]) return undefined; // already doubled: abort
+      paid = true;
+      return { ...cur, coins: (cur.coins || 0) + coins, adDoubled: { ...(cur.adDoubled || {}), [k]: Date.now() } };
+    });
+    if (paid) { try { playSound("win"); } catch (err) { /* optional */ } vibrate([30, 40, 30]); }
+    return paid ? "paid" : "already";
   }
   async function watchAdForCoins() {
     const today = todayDateStr();
@@ -10649,6 +10660,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let focusedPlayLayout;
   const getPlayLayout = () => focusedPlayLayout ||= createPlayLayout(document);
+  // Results-screen bar: "Finish" alone, or split with the watch-an-ad-to-double option once the coin receipt is in.
+  let wlAdOffer = null;
+  function wlDoneBarHtml() {
+    const o = wlAdOffer && wlAdOffer.runId === wl.runId ? wlAdOffer : null;
+    if (!o) return `<button type="button" class="dc-btn" id="wl-finish">Finish</button>`;
+    return `<div class="wl-done-split"><button type="button" class="dc-btn dc-alt" id="wl-finish">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" id="wl-finish-ad"><span>Watch ad: double coins &amp; finish</span><small>+${o.coins} bonus coins</small></button></div>`;
+  }
+  function wlRenderDoneBar() {
+    const bar = document.getElementById("wl-done-bar");
+    if (bar && wl.phase === "done") bar.innerHTML = wlDoneBarHtml();
+  }
   function renderWorlds() {
     getPlayLayout().clear(worldsScreenEl);
     if(['question','reveal','result'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
@@ -10759,13 +10781,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const accs = wl.questions.map((q, k) => roundAccuracy(effectiveGuess(q, wl.guesses[k], deviceId) / q.answer));
     const avg = accs.reduce((a, b) => a + b, 0) / accs.length;
     const rows = wl.questions.map((q, k) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[k])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[k])}%</span></div>`; }).join("");
-    const nextLevel = wl.level < WORLD_LEVELS && wl.stars >= 1;
     el.innerHTML = `<h2 class="dc-title">${w.name} &middot; Level ${wl.level}</h2>${worldProgressHtml()}
       <div class="dc-card dc-hot"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.png" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
-      ${nextLevel ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="wl-nextlevel">Next level</button></div>' : ""}
-      ${nextLevel ? "" : '<div class="pin-bottom">'}<button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>${nextLevel ? "" : "</div>"}
-      <button type="button" class="dc-btn dc-alt" id="wl-tolevels">Back to levels</button>`;
+      <button type="button" class="dc-btn dc-alt" id="wl-again">Try again (new questions)</button>
+      <div class="pin-bottom" id="wl-done-bar">${wlDoneBarHtml()}</div>`;
   }
   let wlResultSig = null;
   async function worldRunReveal() {
@@ -10838,9 +10858,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (b.id === "wl-next") { wlResultSig = null; wl.phase = wl.guesses.length >= WORLD_Q ? "done" : "question"; renderWorlds(); return; }
-    if (b.id === "wl-nextlevel") { worldStartLevel(wl.level + 1); return; }
     if (b.id === "wl-again") { worldStartLevel(wl.level); return; }
-    if (b.id === "wl-tolevels") { wl.phase = "world"; renderWorlds(); }
+    if (b.id === "wl-finish") { wl.phase = "world"; renderWorlds(); return; }
+    if (b.id === "wl-finish-ad") {
+      const o = wlAdOffer; if (!o) return;
+      b.disabled = true;
+      try {
+        const res = await claimAdDouble(o.k, o.coins);
+        if (res === "cancel") { b.disabled = false; return; }
+        b.querySelector("span").textContent = res === "paid" ? "Doubled!" : "Already doubled";
+        await new Promise((r) => setTimeout(r, 900));
+      } catch (err) { b.disabled = false; return; }
+      wl.phase = "world"; renderWorlds(); return;
+    }
   });
   document.getElementById("worlds-close-btn").addEventListener("click", () => {
     worldStop();
