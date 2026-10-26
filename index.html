@@ -3614,6 +3614,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/mode-identity.css">
 <link rel="stylesheet" href="anim/illustrated-details.css" />
 <link rel="stylesheet" href="anim/which-bigger-summary.css" />
+<link rel="stylesheet" href="anim/play-layout.css">
 </head>
 <body>
 
@@ -4496,6 +4497,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module" src="anim/home-fx.mjs"></script>
 <script type="module" src="anim/home-scene.mjs"></script>
 <script type="module">
+  import { createPlayLayout } from "./anim/play-layout.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
@@ -8396,7 +8398,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function sbLayout() {
     if (!qSB) return;
-    const W = qPromptEl.clientWidth, H = SB_CARD_H, ar = qSB.def.ar;
+    const W = qPromptEl.clientWidth, H = hudEl.dataset.playLayout === 'party' ? qPromptEl.clientHeight : SB_CARD_H, ar = qSB.def.ar;
     if (!W) return;
     const sw = Math.min(W, H * ar), sh = sw / ar, sx = (W - sw) / 2, sy = (H - sh) / 2;
     Object.assign(qSB.stage.style, { left: sx + "px", top: sy + "px", width: sw + "px", height: sh + "px" });
@@ -8411,7 +8413,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function sbFit() {
     if (!qSB || !questionPromptTextEl.dataset.txt) return;
     const bh = qBodyEl.clientHeight;
-    const rsv = qSB.def.rsv || [2.7, 24];
+    const rsv = hudEl.dataset.playLayout === 'party' && questionViewEl.classList.contains('active') ? [0, 4] : qSB.def.rsv || [2.7, 24];
     let fs = qSB.def.fmax || 19;
     for (; fs > 8; fs -= 0.5) {
       qBodyEl.style.setProperty("--qfs", fs + "px");
@@ -10630,7 +10632,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const scenery=home?` data-world-art="${world.id}" style="--world-art:url('${new URL(home.file,document.baseURI).href}')"`:"";
     return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
+  let focusedPlayLayout;
+  const getPlayLayout = () => focusedPlayLayout ||= createPlayLayout(document);
   function renderWorlds() {
+    getPlayLayout().clear(worldsScreenEl);
     if(['question','reveal'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
     if (wl.phase === "question") rerollPerRound(wl, wl.guesses.length);
     const el = worldsContentEl, w = WORLDS[wl.wi];
@@ -10666,11 +10671,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
+      getPlayLayout().worlds(worldsScreenEl, el);
       return;
     }
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml()}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
+      getPlayLayout().worlds(worldsScreenEl, el);
       worldRunReveal();
       return;
     }
@@ -18314,6 +18321,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
   }
   function applyPhase(data) {
+    focusedPlayLayout?.restoreHighLow();
     if (leftScreenEl.classList.contains("active") || leavingGame) return; // the "you left" page is showing: don't draw a game screen behind it
     if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
@@ -18499,6 +18507,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       setPromptText(q ? q.prompt : "", true);
       renderQuestionPreview(q);
       renderTeamWorldsQuestionStats(q);
+      if (data.settings?.mode === "teamworlds") getPlayLayout().highLow(hudEl, twQuestionProgressEl, submitGuessBtn, isHlSettings(data.settings) ? "highlow" : "teamworlds");
+      else getPlayLayout().party(hudEl, questionViewEl, submitGuessBtn);
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
       preloadAnimation(q);
@@ -18775,6 +18785,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     },
     visible:()=>bluffScreenEl.classList.contains('active')&&!document.hidden&&nativeAudioActive&&audioPageActive});
   bluffUI.refresh();
+  getPlayLayout();
   tutorialUI = createTutorial({
     profile:()=>({owner:deviceId,data:myProfile}),
     save:(owner,value)=>update(ref(db,'profiles/'+owner),{tutorial:value}),
