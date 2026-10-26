@@ -996,6 +996,9 @@ if (location.protocol === "file:") {
   .pin-bottom { position: sticky; bottom: 0; z-index: 6; margin: 6px -12px 0; padding: 16px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(255,249,238,0), rgba(255,249,238,.97) 40%); }
   .pin-bottom > .dc-btn { margin-top: 0; }
   .pin-top > .dc-title { margin-top: 0; }
+  .pin-bottom > .hs-hint { margin: 0 0 6px; }
+  /* Party: Lock it in stays at the bottom of the scrolling column. */
+  #question-view #submit-guess-btn { position: sticky; bottom: 0; z-index: 4; }
   /* game-show question screen: VS badge, cards bounce in, backdrop heats up as the gap closes */
   #wb-content { position: relative; z-index: 1; }
   #wb-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .6s, background .6s; background: radial-gradient(ellipse 90% 55% at 50% 30%, var(--wbg, transparent), transparent 75%); }
@@ -10441,10 +10444,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (stage === "bet") {
       const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
-        html += `<p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
+        html += `<div class="pin-bottom"><p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
           <div class="hs-acts hs-acts-mine"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
           ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
-          ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div>`;
+          ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div></div>`;
       } else if (folded) html += `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>`;
       else if (seated) html += `<p class="hs-hint">${b.turn ? escapeHtml(data.players?.[b.turn]?.name || "Someone") + " is deciding..." : ""}</p>`;
       else html += `<p class="hs-hint">Watching &mdash; cheer the others on!</p>`;
