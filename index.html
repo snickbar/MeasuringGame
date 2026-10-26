@@ -1122,6 +1122,9 @@ if (location.protocol === "file:") {
   .wb-hs-tile b { font-size: 28px; line-height: 1.05; }
   .wb-hs-tile span:not(.medal):not(.wb-rk) { font-size: 11px; color: #7a6446; }
   .wb-rk { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #ecdcc0; color: #7a4a1e; font-weight: 800; font-size: 15px; }
+  .wb-hs-tile.drop { animation: wbTileDrop .6s calc(1.2s + var(--i) * .13s) cubic-bezier(.3,1.5,.5,1) both; }
+  @keyframes wbTileDrop { 0% { transform: translateY(-140px) rotate(-12deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+  html[data-motion=reduce] .wb-hs-tile.drop { animation: none !important; }
   .wb-hs-now { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; background: #f0902a; color: #fff; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
   .wb-hs-sum { margin-top: 8px; font-size: 14px; color: #7a6446; text-align: center; }
   html[data-motion=reduce] .wb-shake, html[data-motion=reduce] .wb-slam, html[data-motion=reduce] .wb-redflash, html[data-motion=reduce] .wb-streak-chip, html[data-motion=reduce] .wb-streak-chip img, html[data-motion=reduce] .wb-verdict-t.mile, html[data-motion=reduce] .wb-score.spot, html[data-motion=reduce] .wb-best.beat, html[data-motion=reduce] .wb-over-num, html[data-motion=reduce] .wb-over-badge, html[data-motion=reduce] .wb-coins, html[data-motion=reduce] .wb-over-hero::before, html[data-motion=reduce] .wb-mark, html[data-motion=reduce] .wb-score b, html[data-motion=reduce] .wb-plus, html[data-motion=reduce] .wb-burst::before { animation: none !important; }
@@ -11696,12 +11699,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="wb-over-cap">right pick${wb.score === 1 ? "" : "s"}</div>
           ${wb.newBest ? '<div class="wb-over-badge">&#9733; New personal best! &#9733;</div>' : `<div class="wb-over-prev">Your best: ${best}</div>`}
         </div>
-        ${wb.gain ? `<div class="wb-coins"><img src="icons/coin-v2.png" alt="" draggable="false"><b>+${wb.gain}</b><span>coins<br>earned</span></div>` : ""}
+        ${wb.gain ? `<div class="wb-coins"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="wb-coin-n">+${wb.gain}</b><span>coins<br>earned</span></div>` : ""}
       </div>
       <button type="button" class="dc-btn" id="wb-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
       <button type="button" class="dc-btn dc-alt" id="wb-finish">Finish game</button>
       ${wbRecordsHtml(true)}`;
+      wbCountCoins();
   }
   // Your own high scores only: a row of medal tiles (best first). While a just-finished run is still being saved
   // to the profile, it is merged in here so the numbers never lag behind the score on screen.
@@ -11715,6 +11719,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     return { top: top.slice(0, 5), best, runs };
   }
+  // The coins tick up one at a time with a rising ding, then a payout chime. Runs once per game over.
+  let wbCoinTimer = 0;
+  function wbCountCoins() {
+    clearInterval(wbCoinTimer);
+    const n = document.getElementById("wb-coin-n");
+    if (!n || !wb || !wb.gain || wb.coinsCounted) return;
+    wb.coinsCounted = true;
+    if (prefersReducedMotion()) return;
+    const total = wb.gain, per = Math.max(1, Math.round(total / Math.min(14, Math.max(1, Math.round(total / WB_COINS_PER)))));
+    let shown = 0, i = 0;
+    n.textContent = "+0";
+    setTimeout(() => {
+      wbCoinTimer = setInterval(() => {
+        const el = document.getElementById("wb-coin-n");
+        if (!el || !wb || wb.phase !== "over") { clearInterval(wbCoinTimer); return; }
+        shown = Math.min(total, shown + per); i++;
+        el.textContent = "+" + shown;
+        try { playSoundAt("tap", Math.min(2, 1 + i * 0.06)); } catch (e) {}
+        if (shown >= total) { clearInterval(wbCoinTimer); try { playSound("coins"); } catch (e) {} }
+      }, 95);
+    }, 650);
+  }
   function wbRecordsHtml(thisRun) {
     const d = wbScoresData();
     if (!d.runs) return "";
@@ -11722,7 +11748,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const tiles = d.top.map((r, i) => {
       const now = thisRun && !marked && wb && wb.finished && r.s === wb.score && r.t === (wb.endedAt || r.t) ? (marked = true) : false;
       const medal = i < 3 ? `<span class="medal ${["gold", "silver", "bronze"][i]}" style="display:inline-block;width:34px;height:34px"></span>` : `<span class="wb-rk">${i + 1}</span>`;
-      return `<div class="wb-hs-tile${i === 0 ? " first" : ""}${now ? " now" : ""}">${medal}<b>${r.s}</b><span>${new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>${now ? '<i class="wb-hs-now">This run</i>' : ""}</div>`;
+      return `<div class="wb-hs-tile${i === 0 ? " first" : ""}${now ? " now" : ""}${thisRun ? " drop" : ""}" style="--i:${i}">${medal}<b>${r.s}</b><span>${new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>${now ? '<i class="wb-hs-now">This run</i>' : ""}</div>`;
     }).join("");
     return `<h3 class="cs-h">Your high scores</h3><div class="wb-hs"><div class="wb-hs-row">${tiles}</div><div class="wb-hs-sum">${d.runs} run${d.runs === 1 ? "" : "s"} played</div></div>`;
   }
