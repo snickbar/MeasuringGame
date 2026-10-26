@@ -1074,6 +1074,9 @@ export function createStackAnimation(container, options = {}) {
     const fSprite = firstIsBig ? bigSprite : smallSprite, sSprite = firstIsBig ? smallSprite : bigSprite;
     const fLanding = firstIsBig ? bigLanding : smallLanding, sLanding = firstIsBig ? smallLanding : bigLanding;
     const sKind = firstIsBig ? smKind : bigKind;
+    // An arriving object saved as lying down comes in on its side (walking, flying or rolling as saved), then swings up to stand.
+    const sLean = firstIsBig ? leanFor(small, flipFacing) : leanFor(big, !flipFacing);
+    const sLying = sLean ? lyingSprite(firstIsBig ? small : big, firstIsBig ? flipFacing : !flipFacing, sLean) : null;
     const fObj = first, sObj = second;
     const secondOnRight = !firstIsBig;   // the bigger one always arrives from the right
 
@@ -1191,6 +1194,29 @@ export function createStackAnimation(container, options = {}) {
         const finalSx = screenX(S.cx, cam);
         const sx0 = screenX(S.cx, cameraAt(tE0));
         const dist = Math.max(40, secondOnRight ? (W - sx0) + w / 2 + 24 : sx0 + w / 2 + 24);
+        if (sLean && f < 1) {
+          // Lying down: travel in, then rotate a quarter turn about the foot on the floor (same moves as the stack).
+          const L = h, T = w, cw = sLean === 'cw', dir = secondOnRight ? 1 : -1;
+          const pvx0 = cw ? finalSx - w / 2 : finalSx + w / 2;
+          const wu = clamp(f / 0.68, 0, 1), u = clamp((f - 0.68) / 0.32, 0, 1), ang = (Math.PI / 2) * smooth(u);
+          const reach = L * Math.cos(ang);
+          // Keep it from sprawling over the picked object (or off the stage) while it rises.
+          const pickedL = screenX(F.cx, cam) - F.w * cam.s / 2, pickedR = screenX(F.cx, cam) + F.w * cam.s / 2;
+          let off = 0;
+          if (secondOnRight) off = cw ? Math.max(0, pickedR + 4 - (pvx0 - reach)) : Math.min(0, W - 4 - (pvx0 + reach));
+          else off = cw ? Math.max(0, 4 - (pvx0 - reach)) : Math.min(0, pickedL - 4 - (pvx0 + reach));
+          const d = dir * (dist + L) * (1 - wu) * (1 - wu);
+          const lift = travelLift(sKind, wu, T, dist);
+          const pvx = pvx0 + off + d;
+          const sCx = pvx + (cw ? -1 : 1) * (L / 2) * Math.cos(ang) + (cw ? 1 : -1) * (T / 2) * Math.sin(ang);
+          shadow(sCx, floorY + 1, L * Math.cos(ang) * .85 + T * Math.sin(ang), clamp(T * .07, 2, 8), .26 / (1 + lift / 10));
+          ctx.save();
+          ctx.translate(pvx, floorY - lift);
+          ctx.rotate((cw ? 1 : -1) * ang);
+          ctx.drawImage(sLying, cw ? -L : 0, -T, L, T);
+          ctx.restore();
+          return;
+        }
         const hop = hopAt(f);
         let lift = -hop.y;
         if (sKind !== 'slide') lift = travelLift(sKind, f, w, dist);

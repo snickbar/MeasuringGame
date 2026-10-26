@@ -11464,6 +11464,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const how = wbHowMuch(p.ratio);
       // A wrong pick: show the heart you had, crack it, then drop it (same moment as Survival, with the error sound).
       const losing = !ok && !wb.lossShown;
+      // The buzz comes with the answer (after the animation), never before it.
+      if (!wb.buzzed) { wb.buzzed = true; vibrate(ok ? 25 : [70, 60, 70]); }
       el.innerHTML = `${wbHeartsHtml(wb.lives + (losing ? 1 : 0), wb.score, ok)}
         <div class="wb-cards">${card(p.left)}${card(p.right)}</div>
         <div class="wb-verdict ${ok ? "ok" : "bad"}">
@@ -11587,7 +11589,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "wb-lock" && wb.phase === "question" && wb.picked) {
       wb.ok = isCorrectPick(wb.pair, wb.picked);
       if (wb.ok) wb.score++; else wb.lives--;
-      wb.phase = "reveal"; vibrate(wb.ok ? 25 : [70, 60, 70]);
+      wb.phase = "reveal"; wb.buzzed = false;
       renderWhichBigger(); return;
     }
     if (b.id === "wb-skip") {
