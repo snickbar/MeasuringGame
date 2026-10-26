@@ -11502,7 +11502,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("wb-stage"); if (!stage) return;
       wbAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image, hideTally: true });
       const ctl = wbAnim;
-      const scene = await ctl.prepareCompare(picked, other, { hMax: 250, minStageH: 300 });
+      // Use the screen: whatever height is left under the stage (minus the Skip button) goes to the animation.
+      const room = Math.max(300, Math.floor(window.innerHeight - stage.getBoundingClientRect().top - 96));
+      const scene = await ctl.prepareCompare(picked, other, { hMax: Math.min(520, room - 72), minStageH: Math.min(580, room) });
       if (wbAnim !== ctl || wb.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (wbAnim === ctl) wbPauseThenResult(); } });
