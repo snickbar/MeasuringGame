@@ -3558,6 +3558,10 @@ if (location.protocol === "file:") {
   :is(#worlds-content,#survival-content,#question-view) .dc-prompt { margin:6px 0; padding:8px 12px; border:1px solid rgba(217,194,154,.7); border-radius:24px; background:rgba(255,253,246,.82); font-size:15px; line-height:1.25; }
   :is(#worlds-content,#survival-content) .dc-keys { gap:4px; }
   :is(#worlds-content,#survival-content) .dc-key { box-sizing:border-box; height:44px; min-height:44px; padding:3px 6px; margin:0; font-size:20px; line-height:1; border-radius:12px; }
+  /* Every number pad uses the stylized cream keys (same art as Party's pad). */
+  .dc-keys, :is(#worlds-content,#survival-content) .dc-keys { grid-template-columns: repeat(3, 72px); justify-content: center; gap: 6px 10px; }
+  .dc-key, :is(#worlds-content,#survival-content) .dc-key { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 52px; min-height: 52px; padding: 0 0 5px; margin: 0; border: none; border-radius: 0; box-shadow: none; background: url(icons/key-cream.png) center / 100% 100% no-repeat; color: #5b3a26; text-shadow: none; font: 700 22px/1 'Fredoka', sans-serif; }
+  .dc-key[data-k="back"], :is(#worlds-content,#survival-content) .dc-key[data-k="back"] { background-image: url(icons/key-back.png); font-size: 0; color: transparent; }
   :is(#worlds-content,#survival-content,#question-view) .dc-display { box-sizing:border-box; min-height:44px; padding:3px 8px; margin:5px 0; font-size:28px; line-height:1.2; border-width:2px; }
   :is(#worlds-content,#survival-content,#question-view) .dc-pics { gap:10px; margin:4px 0; }
   :is(#worlds-content,#survival-content,#question-view) .dc-pic { max-width:130px; padding:5px; }
@@ -3571,20 +3575,7 @@ if (location.protocol === "file:") {
   :is(#worlds-content,#survival-content) .dc-dots { gap:14px; margin:4px 0 7px; }
   #survival-content .sv-heart { width:30px; }
   #survival-content .sv-hud { gap:1px; margin:2px 0 4px; }
-  /* Team Worlds reuses Party's actual #numpad/#submit-guess-btn elements (the real input wiring
-     stays shared across every Party mode) but restyled here, under .tw-mode, to be visually
-     identical to Solo Worlds' own .dc-keys/.dc-key/.dc-btn calculator instead of Party's carved-
-     wood number keys and green "Submit guess" pill - this is the actual fix for "mimic Solo
-     Worlds", which until now only copied the surrounding cards/prompt/display, never the
-     calculator or submit button themselves. border-image:none needs an explicit background
-     alongside it or the element goes fully transparent (border-image's "fill" slice was quietly
-     doing double duty as the background) - see feedback_new_screen_checklist's border-image gotcha. */
-  #question-view.tw-mode #numpad { grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  #question-view.tw-mode .num-btn, #question-view.tw-mode #backspace-btn {
-    border-image: none; background: #f1e4c8; border: 3px solid #4a2c12; border-radius: 12px;
-    box-shadow: 0 2px 0 rgba(74,44,18,.4); color: #000; text-shadow: none; font-size: 20px; height: 44px; padding: 0;
-  }
-  #question-view.tw-mode #backspace-btn { background-image: none; font-size: 20px; color: #000; }
+  /* Team Worlds reuses Party's real #numpad (stylized cream keys, same as every other mode); only the submit button is restyled to the solo "Lock it in" look. */
   #question-view.tw-mode #submit-guess-btn {
     border-image: none; background: linear-gradient(#ffd36a, #f2820f) !important; border: 3px solid #4a2c12; border-radius: 16px;
     box-shadow: 0 3px 0 rgba(74,44,18,.45); color: #000; text-shadow: none; font-size: 18px; height: auto; padding: 10px; margin-top: 7px;
@@ -3603,7 +3594,6 @@ if (location.protocol === "file:") {
     :is(#worlds-content,#survival-content) .dc-sub { margin-bottom:6px; }
     #question-view.tw-mode #tw-question-stats { margin: 4px 0; }
     #question-view.tw-mode .tw-qs-half { padding: 3px 5px; }
-    #question-view.tw-mode .num-btn, #question-view.tw-mode #backspace-btn { height: 38px; font-size: 18px; }
   }
 </style>
 <link rel="stylesheet" href="anim/game-setup.css">
