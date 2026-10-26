@@ -34,6 +34,14 @@ window.__layoutAudit=async requested=>{
  document.querySelectorAll('#ach-toast').forEach(e=>e.remove());window.scrollTo(0,0);
 };
 
+window.__layoutReveal=async mode=>{
+ await window.__layoutAudit(mode);
+ if(mode==='survival'){sv={...sv,phase:'reveal',asked:1,g:3,lastOk:true,resultShown:false,accs:[{r:1}]};renderSurvival();}
+ else if(mode==='worlds'){wl.phase='reveal';wl.guesses=[3];renderWorlds();}
+ else if(mode==='daily'){daily.phase='reveal';daily.guesses=[3];renderDaily();}
+ else if(mode==='monthly'){mo.phase='reveal';mo.guesses=[3];renderMonthly();}
+ else{stopAnimation();animScene=null;animSceneRound=null;roomState.phase='animation';roomState.animStartAt=Date.now()+10000;applyPhase(roomState);await runAnimation(roomState);}
+};
 const originalLayoutSubmit=submitGuessBtn,originalLayoutPad=numpadEl;
 window.__layoutReady=()=>myProfile?.stats?.gamesPlayed===8;
 window.__layoutRefresh=()=>applyPhase(roomState);
@@ -89,6 +97,24 @@ server.listen(0,'127.0.0.1',()=>{
        if(await evaluate(`window.__fakeDB.read('rooms/AUDIT/guesses/me')`)!==2)throw Error(mode+' lost submit handler');
       }
       console.log(JSON.stringify({mode,width,height,overflow:state.overflow,pass:true}));results.push({mode,width,height,...state});
+    }
+    for(const mode of ['survival','worlds','daily','monthly','quick','teamworlds']){
+     await evaluate('window.__layoutReveal('+JSON.stringify(mode)+')');
+     const stageId={survival:'sv-stage',worlds:'wl-stage',daily:'daily-stage',monthly:'mo-stage'}[mode]||'anim-stage';
+     let state;
+     for(let i=0;i<100;i++){
+      state=await evaluate(`(()=>{const stage=document.getElementById('${stageId}'),canvas=stage?.querySelector('canvas');if(!canvas||!stage.style.height||canvas.height<100)return null;const owner=stage.closest('.screen,#hud'),footer=owner.querySelector('.play-actions'),bottom=document.getElementById('bottom-toolbar');const limit=footer?.getBoundingClientRect().top||(bottom.getClientRects().length?bottom.getBoundingClientRect().top:innerHeight);return {bottom:stage.getBoundingClientRect().bottom,limit,background:footer?getComputedStyle(footer).backgroundColor:null,help:!!owner.querySelector('#sv-help'),overflow:owner.querySelector('.play-middle')?.scrollHeight-owner.querySelector('.play-middle')?.clientHeight};})()`);
+      if(state)break;await new Promise(r=>setTimeout(r,30));
+     }
+     if(!state||Math.abs(state.limit-state.bottom)>6)throw Error(mode+' reveal does not fill available height '+JSON.stringify(state));
+     if(mode==='survival'&&state.help)throw Error('Survival reveal still has scoring help');
+     if(state.background&&state.background!=='rgba(0, 0, 0, 0)')throw Error(mode+' Skip has opaque panel '+JSON.stringify(state));
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,mode+'-reveal-'+width+'-'+height+'.png'),Buffer.from(shot.data,'base64'));
+     if(mode==='survival'){
+      await evaluate("document.getElementById('sv-skip').click()");
+      if(!await evaluate("!!document.getElementById('sv-next')&&!!document.getElementById('sv-result')?.textContent.trim()"))throw Error('Survival Skip lost result/next handler');
+     }
+     console.log(JSON.stringify({mode:mode+':reveal',width,height,...state,pass:true}));
     }
     await call('Target.closeTarget',{targetId});
    }

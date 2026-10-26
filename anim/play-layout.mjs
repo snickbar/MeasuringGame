@@ -1,5 +1,19 @@
 // Three-part play layout. Shared Party nodes return to their original DOM
 // positions before another mode/phase renders; listeners stay on the real nodes.
+export function fitRevealStage(stage) {
+  const doc = stage.ownerDocument, win = doc.defaultView;
+  const owner = stage.closest('.screen,#hud');
+  const footer = owner?.querySelector('.play-actions');
+  const reactions = doc.getElementById('bottom-toolbar');
+  const visible = el => el && el.getClientRects().length && win.getComputedStyle(el).display !== 'none';
+  let bottom = win.visualViewport ? win.visualViewport.height + win.visualViewport.offsetTop : win.innerHeight;
+  if (visible(footer)) bottom = Math.min(bottom, footer.getBoundingClientRect().top);
+  if (visible(reactions)) bottom = Math.min(bottom, reactions.getBoundingClientRect().top);
+  const height = Math.max(120, Math.floor(bottom - stage.getBoundingClientRect().top - 4));
+  // The drawing keeps its proportions; extra height extends the scenery.
+  return { hMax: Math.max(50, Math.min(400, height - 70)), minStageH: height };
+}
+
 export function createPlayLayout(doc = document) {
   const win = doc.defaultView, owners = new Set();
   let borrowed = [];

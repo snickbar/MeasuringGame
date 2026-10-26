@@ -4497,7 +4497,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module" src="anim/home-fx.mjs"></script>
 <script type="module" src="anim/home-scene.mjs"></script>
 <script type="module">
-  import { createPlayLayout } from "./anim/play-layout.mjs";
+  import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
@@ -9556,7 +9556,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!stage) return;
       dailyAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = dailyAnim;
-      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (dailyAnim !== ctl || daily.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (dailyAnim === ctl) showResult(mod); } });
@@ -10716,7 +10716,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("wl-stage"); if (!stage) return;
       wlAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = wlAnim;
-      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (wlAnim !== ctl || wl.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (wlAnim === ctl) showResult(mod); } });
@@ -11112,7 +11112,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("mo-stage"); if (!stage) return;
       moAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = moAnim;
-      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (moAnim !== ctl || mo.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (moAnim === ctl) showResult(m); } });
@@ -11371,7 +11371,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div><button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>`;
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
       survivalRunReveal();
       return;
     }
@@ -11397,7 +11397,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("sv-stage"); if (!stage) return;
       svAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = svAnim;
-      const scene = await ctl.prepare(pair[0], pair[1], { hMax: 260, minStageH: 300 });
+      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (svAnim !== ctl || sv.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
@@ -14841,16 +14841,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // as Solo Worlds - see getAnimCtl/below), so there's nothing to reserve room for.
         const lineWasHidden = !isTw && questionAnswerLineEl.style.display === "none";
         if (lineWasHidden) { questionAnswerLineEl.innerHTML = answerLineHtml("0.00"); questionAnswerLineEl.style.display = "block"; }
-        const top = animStageEl.getBoundingClientRect().top;
+        const sizing = fitRevealStage(animStageEl);
         if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; }
-        const avail = window.innerHeight - 58 - top - 8;
-        // minStageH used to just be `avail` uncapped - fine for the decorated board (plenty
-        // above the stage eats into `avail`), but Team Worlds' compact layout leaves so much
-        // room above the stage that this stretched the stage to fill most of the screen, with
-        // the actual drawing pinned to the bottom and a wall of blank sky above it. Capped to
-        // match the flat 300 solo Worlds/Quick/Daily/Monthly already use (still shrinks further
-        // on short screens via the existing Math.max floor).
-        animScene = await ctl.prepare(pair[0], pair[1], { hMax: Math.max(200, Math.min(400, avail - 18 - 52)), minStageH: Math.max(260, Math.min(300, avail)) });
+        // Reserve the measured pinned controls, then fill the remaining reveal area.
+        animScene = await ctl.prepare(pair[0], pair[1], sizing);
         animSceneRound = data.round;
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
