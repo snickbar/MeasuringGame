@@ -3399,6 +3399,20 @@ if (location.protocol === "file:") {
   .tw-avg { margin: 6px 0; padding: 10px 12px 12px; text-align: center; }
   .tw-avg-label { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #000; }
   .tw-avg-num { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.05; color: #6a328c; display: inline-block; }
+  .wl-rs { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+  .wl-rs .tw-avg { position: relative; margin: 0; }
+  .wl-rs-acc .tw-avg-num { font-size: 56px; }
+  .wl-rs-verdict { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000; }
+  .wl-rs-verdict svg, .wl-rs-verdict img { width: 28px; height: 28px; }
+  .wl-rs-boost { margin-top: 4px; font-size: 14px; }
+  .wl-rs-lines { display: flex; justify-content: center; gap: 18px; margin-top: 6px; font-family: 'Fredoka', sans-serif; font-size: 16px; color: #000; flex-wrap: wrap; }
+  .wl-rs .wl-progress-fill { transition: clip-path 1.3s cubic-bezier(.25,.8,.25,1); }
+  .wl-rs .wl-progress-marker.pop .wl-progress-star { animation: twStarPop .9s cubic-bezier(.2,1.6,.4,1) both; }
+  .wl-rs .wl-progress-heading { display: none; }
+  .wl-rs .wl-progress { margin: 6px 0 4px; background: rgba(255,250,237,.9); }
+  .wl-rs .tw-avg-num.pop { animation: twAvgPop .7s cubic-bezier(.2,1.5,.4,1) both; }
+  .wl-rs .tw-avg.glow { animation: twAvgGlow 1.4s ease-out both; }
+  @media (prefers-reduced-motion: reduce) { .wl-rs .wl-progress-fill { transition: none; } }
   .tw-avg-num.pop { animation: twAvgPop .7s cubic-bezier(.2,1.5,.4,1) both; }
   .tw-avg.glow { animation: twAvgGlow 1.4s ease-out both; }
   .tw-sumrow { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto auto; align-items: center; gap: 8px; margin: 5px 0; padding: 7px 12px; }
@@ -10631,7 +10645,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
   function renderWorlds() {
-    if(['question','reveal'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
+    if(['question','reveal','result'].includes(wl.phase)&&wl.guesses.length<WORLD_Q)persistSoloSession('worlds',wl);
     if (wl.phase === "question") rerollPerRound(wl, wl.guesses.length);
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
@@ -10670,8 +10684,65 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
-      el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml()}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml()}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
       worldRunReveal();
+      return;
+    }
+    if (wl.phase === "result") {
+      worldStop();
+      const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], last = wl.guesses.length >= WORLD_Q;
+      const accAt = (i) => roundAccuracy(effectiveGuess(wl.questions[i], wl.guesses[i], deviceId) / wl.questions[i].answer);
+      const accs = wl.guesses.map((_, i) => accAt(i)), acc = accs[k];
+      const runningAvg = accs.reduce((a, b) => a + b, 0) / accs.length;
+      const prevAvg = k > 0 ? accs.slice(0, k).reduce((a, b) => a + b, 0) / k : 0;
+      const reduced = prefersReducedMotion();
+      const ans = String(Math.round(q.answer * 100) / 100).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
+      const boost = bufferResultNote(q, g, deviceId);
+      el.innerHTML = `<div class="pin-top">${header}${dots(k)}</div>
+        <div class="wl-rs">
+          <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div>
+            <div class="wl-rs-verdict">${markSvg(acc)}<span>${label}</span></div>
+            ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
+            <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
+          <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0))}</div>
+        </div>
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-next">${last ? "See my results" : "Next question"}</button></div>`;
+      vibeAccuracy(acc);
+      if (reduced) return;
+      const sig = wl.runId + ":" + k;
+      wlResultSig = sig;
+      const alive = () => wlResultSig === sig && wl.phase === "result" && el.isConnected;
+      const accCard = el.querySelector(".wl-rs-acc"), accNum = accCard.querySelector(".tw-avg-num");
+      const meter = el.querySelector(".wl-rs-meter"), fill = meter.querySelector(".wl-progress-fill"), bar = meter.querySelector(".wl-progress");
+      const head = meter.querySelector(".wl-progress-heading strong"), mNum = meter.querySelector(".tw-avg-num"), markers = [...meter.querySelectorAll(".wl-progress-marker")];
+      twCountUp(accNum, acc, 1100, "%");
+      setTimeout(() => {
+        if (!alive()) return;
+        accNum.classList.add("pop"); accCard.classList.add("glow");
+        twShowQuip(accCard, acc, wl.runId + k);
+        playSound(acc >= 75 ? "roundwin" : "select");
+        if (acc >= 90) celebrate("spotOn");
+      }, 1150);
+      const DELAY = 2300, DUR = 1300;
+      setTimeout(() => {
+        if (!alive()) return;
+        fill.style.setProperty("--accuracy", runningAvg + "%");
+        twCountUp(head, runningAvg, DUR, "%");
+        twCountUpFrom(mNum, prevAvg, runningAvg, DUR, "%");
+        playSound("swipe");
+        markers.forEach((m, i) => {
+          const at = WORLD_STAR_AT[i];
+          if (!(prevAvg <= at && runningAvg > at)) return;
+          setTimeout(() => { if (!alive()) return; m.classList.add("earned", "pop"); playSound("star"); celebrate(i === 2 ? "spotOn" : "normal"); }, DUR * (at - prevAvg) / Math.max(0.01, runningAvg - prevAvg));
+        });
+        setTimeout(() => {
+          if (!alive()) return;
+          meter.classList.add("glow");
+          if (worldStarsFor(runningAvg) === 3) bar.classList.add("three-stars");
+          markers.forEach((m, i) => m.classList.toggle("earned", runningAvg > WORLD_STAR_AT[i]));
+        }, DUR + 50);
+      }, DELAY);
       return;
     }
     // done
@@ -10688,17 +10759,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${nextLevel ? "" : '<div class="pin-bottom">'}<button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>${nextLevel ? "" : "</div>"}
       <button type="button" class="dc-btn dc-alt" id="wl-tolevels">Back to levels</button>`;
   }
+  let wlResultSig = null;
   async function worldRunReveal() {
     const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], last = wl.guesses.length >= WORLD_Q;
     const showResult = (mod) => {
       const acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer);
       const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
       const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
-      const host = document.getElementById("wl-result"); if (!host) return;
-      vibeAccuracy(acc);
-      host.innerHTML = resultCardHtml(acc, g, ans, label, q, deviceId);
-      const skip = document.getElementById("wl-skip");
-      if (skip) { skip.id = "wl-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
+      if (wl.phase !== "reveal") return;
+      wl.phase = "result"; renderWorlds();
     };
     const pair = questionObjects(q);
     if (!pair) { showResult(null); return; }
@@ -10757,12 +10826,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "wl-skip") {
       if (wlAnim) { try { wlAnim.stop(); } catch (err) {} }
-      const k = wl.guesses.length - 1, q = wl.questions[k], g = wl.guesses[k], acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), mod = await loadAnimModule();
-      const host = document.getElementById("wl-result");
-      if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer, null, q, deviceId);
-      b.id = "wl-next"; b.className = "dc-btn"; b.textContent = wl.guesses.length >= WORLD_Q ? "See my results" : "Next question"; return;
+      if (wl.phase === "reveal") { wl.phase = "result"; renderWorlds(); }
+      return;
     }
-    if (b.id === "wl-next") { wl.phase = wl.guesses.length >= WORLD_Q ? "done" : "question"; renderWorlds(); return; }
+    if (b.id === "wl-next") { wlResultSig = null; wl.phase = wl.guesses.length >= WORLD_Q ? "done" : "question"; renderWorlds(); return; }
     if (b.id === "wl-nextlevel") { worldStartLevel(wl.level + 1); return; }
     if (b.id === "wl-again") { worldStartLevel(wl.level); return; }
     if (b.id === "wl-tolevels") { wl.phase = "world"; renderWorlds(); }
