@@ -1,13 +1,33 @@
 // Generated source dimensions; pixels retain original full resolution and alpha.
 export const REACTION_ART = {
-  "elephant-body": {
+  "elephant-open": {
     "width": 1254,
     "height": 1254,
     "bounds": [
-      29,
-      201,
-      1058,
-      947
+      200,
+      200,
+      889,
+      949
+    ]
+  },
+  "elephant-closed": {
+    "width": 1254,
+    "height": 1254,
+    "bounds": [
+      200,
+      200,
+      889,
+      950
+    ]
+  },
+  "elephant-tail": {
+    "width": 1254,
+    "height": 1254,
+    "bounds": [
+      295,
+      283,
+      681,
+      760
     ]
   },
   "elephant-trunk": {

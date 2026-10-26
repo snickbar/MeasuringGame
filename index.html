@@ -11596,8 +11596,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // The buzz comes with the answer (after the animation), never before it.
       if (!wb.buzzed) {
         wb.buzzed = true; vibrate(ok ? 25 : [70, 60, 70]);
-        if (ok) wbConfetti(!!milestone || wb.bestFlash);
-        else { wbShake(wbContentEl, "wb-shake", 520); wbRedFlash(); }
+        if (!ok) { wbShake(wbContentEl, "wb-shake", 520); wbRedFlash(); }
         if (ok) {
           // The chime climbs in pitch with the streak; milestones and passing your best add their own sound.
           try { playSoundAt("roundwin", Math.min(1.6, 1 + 0.06 * Math.max(0, wb.streak - 1))); } catch (e) {}
@@ -11619,6 +11618,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <p class="wb-line"><span class="wb-line-label">The bigger one</span><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b><span>${how}</span></p>
         </div>
         <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
+      // Use the player's actual equipped flair, once per correct round.
+      if (ok && wb.flairRound !== wb.round && wbScreenEl.classList.contains("active")) {
+        wb.flairRound = wb.round;
+        const before = new Set(reactionsPanelEl.children);
+        flairBurst(el.querySelector(".wb-mark"), myEquippedFlair());
+        [...reactionsPanelEl.children].filter(e => !before.has(e)).forEach(e => e.dataset.wbFlair = "true");
+      }
       if (losing) {
         wb.lossShown = true; svCrackHeart();
         const round = wb.round;
@@ -11678,7 +11684,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wb.newBest = score > old; wb.gain = Math.max(0, score - old) * WB_COINS_PER;
     completedAttempt({ key: wb.runId, mode: "whichbigger", score, rounds: wb.round, accuracy: wb.round ? Math.round(100 * score / wb.round) : 0 });
   }
-  function wbStop() { clearTimeout(wbPauseTimer); if (wbAnim) { try { wbAnim.destroy(); } catch (e) {} wbAnim = null; } }
+  function wbClearFlair() { reactionsPanelEl.querySelectorAll('[data-wb-flair]').forEach(e => e.remove()); }
+  new MutationObserver(() => { if (!wbScreenEl.classList.contains("active")) wbClearFlair(); }).observe(wbScreenEl, { attributes: true, attributeFilter: ["class"] });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) wbClearFlair(); });
+  function wbStop() { wbClearFlair(); clearTimeout(wbPauseTimer); if (wbAnim) { try { wbAnim.destroy(); } catch (e) {} wbAnim = null; } }
   // A short beat after the last landing so the "bling" finishes before the summary (and its error sound) starts.
   let wbPauseTimer = 0;
   function wbPauseThenResult() {
@@ -11746,6 +11755,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wbShowResult(); return;
     }
     if (b.id === "wb-next") {
+      wbClearFlair();
       if (wb.lives <= 0) { wbFinish(); wb.phase = "over"; renderWhichBigger(); return; }
       wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.lossShown = false; wb.phase = "question"; renderWhichBigger();
     }

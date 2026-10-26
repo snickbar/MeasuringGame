@@ -5,7 +5,7 @@ from PIL import Image
 root=Path(__file__).resolve().parents[1]
 out=root/'anim/which-bigger-art';out.mkdir(exist_ok=True)
 report={}
-for name in ['elephant-body','elephant-trunk','mouse-body','mouse-foot']:
+for name in ['elephant-open','elephant-closed','elephant-tail','elephant-trunk','mouse-body','mouse-foot']:
     source=root/'art-source/which-bigger-reactions'/(name+'.png')
     with Image.open(source) as original:
         im=original.convert('RGBA');alpha=im.getchannel('A')
