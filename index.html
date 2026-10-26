@@ -992,6 +992,14 @@ if (location.protocol === "file:") {
   @keyframes wbShakeAll { 10%, 90% { transform: translateX(-3px); } 20%, 80% { transform: translateX(6px); } 30%, 50%, 70% { transform: translateX(-9px); } 40%, 60% { transform: translateX(9px); } }
   .wb-slam { animation: wbSlam .4s cubic-bezier(.2,.8,.3,1) both; }
   @keyframes wbSlam { 0% { transform: translateY(0); } 15% { transform: translateY(9px) scale(1.012); } 35% { transform: translateY(-5px); } 60% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+  /* Pinned layout: score / lives / progress stay under the toolbar, the main button stays at the bottom, the middle scrolls. */
+  .pin-top { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 4px; padding: 2px 12px 8px; background: linear-gradient(rgba(255,249,238,.98) 92%, rgba(255,249,238,0)); }
+  .pin-bottom { position: sticky; bottom: 0; z-index: 6; margin: 6px -12px 0; padding: 16px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(255,249,238,0), rgba(255,249,238,.97) 40%); }
+  .pin-bottom > .dc-btn { margin-top: 0; }
+  .pin-top > .dc-title { margin-top: 0; }
+  .pin-bottom > .hs-hint { margin: 0 0 6px; }
+  /* Party: Lock it in stays at the bottom of the scrolling column. */
+  #question-view #submit-guess-btn { position: sticky; bottom: 0; z-index: 4; }
   /* game-show question screen: VS badge, cards bounce in, backdrop heats up as the gap closes */
   #wb-content { position: relative; z-index: 1; }
   #wb-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .6s, background .6s; background: radial-gradient(ellipse 90% 55% at 50% 30%, var(--wbg, transparent), transparent 75%); }
@@ -9483,7 +9491,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. They start easy and get harder. You can only play once, so make your guesses count.</div></div>
         <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
-        <button type="button" class="dc-btn" id="dc-start">Start</button>
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
       dailyLoadBoard();
       return;
@@ -9492,17 +9500,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyStop();
       const i = daily.guesses.length, q = daily.questions[i];
       const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
-        <button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button>`;
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
       return;
     }
     if (daily.phase === "reveal") {
       const i = daily.guesses.length - 1;
-      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}<p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button>`;
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div><p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button></div>`;
       dailyRunReveal();
       return;
     }
@@ -10419,10 +10427,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (stage === "bet") {
       const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
-        html += `<p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
+        html += `<div class="pin-bottom"><p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
           <div class="hs-acts hs-acts-mine"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
           ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
-          ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div>`;
+          ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div></div>`;
       } else if (folded) html += `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>`;
       else if (seated) html += `<p class="hs-hint">${b.turn ? escapeHtml(data.players?.[b.turn]?.name || "Someone") + " is deciding..." : ""}</p>`;
       else html += `<p class="hs-hint">Watching &mdash; cheer the others on!</p>`;
@@ -10651,18 +10659,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       worldStop();
       const i = wl.guesses.length;
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `${header}${dots(i)}${worldProgressHtml()}
+      el.innerHTML = `<div class="pin-top">${header}${dots(i)}${worldProgressHtml()}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         ${powerups?.html(powerupContext()) || ""}
         <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
-        <button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button>`;
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       return;
     }
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
-      el.innerHTML = `${header}${dots(k)}${worldProgressHtml()}<p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button>`;
+      el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml()}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div id="wl-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
       worldRunReveal();
       return;
     }
@@ -10676,8 +10684,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="wl-big" data-result-stars="${wl.stars}" data-celebration-key="${wl.runId}">${worldStarsHtml(wl.stars)}</div><div class="dc-big">${Math.round(avg)}% accurate</div>${wl.newBest ? `<div class="dc-note" data-personal-best="${wl.runId}"><img class="polish-inline-art" src="icons/reactions/trophy.png" alt=""> New personal best!</div>` : ""}<div class="dc-note">${wl.stars === 0 ? "Get above 60% for your first star." : wl.stars < 3 ? `Above ${WORLD_STAR_AT[wl.stars]}% for the next star.` : "All three stars!"}</div>${wl.gain ? `<div class="dc-note">+${wl.gain} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${worldRewardCard(w)}
-      ${nextLevel ? '<button type="button" class="dc-btn" id="wl-nextlevel">Next level</button>' : ""}
-      <button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>
+      ${nextLevel ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="wl-nextlevel">Next level</button></div>' : ""}
+      ${nextLevel ? "" : '<div class="pin-bottom">'}<button type="button" class="dc-btn${nextLevel ? " dc-alt" : ""}" id="wl-again">Try again (new questions)</button>${nextLevel ? "" : "</div>"}
       <button type="button" class="dc-btn dc-alt" id="wl-tolevels">Back to levels</button>`;
   }
   async function worldRunReveal() {
@@ -11030,7 +11038,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
       el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
-        <button type="button" class="dc-btn" id="mo-start">Start</button>
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
         <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
       monthlyLoadBoard();
       return;
@@ -11038,17 +11046,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mo.phase === "question") {
       monthlyStop();
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
-        <button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button>`;
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
       return;
     }
     if (mo.phase === "reveal") {
       const i = mo.guesses.length - 1;
-      el.innerHTML = `<h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}<p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button>`;
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div><p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button></div>`;
       monthlyRunReveal();
       return;
     }
@@ -11060,7 +11068,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">${name} ${lvTitle} replay</h2><p class="dc-sub">New questions. Half coins, and the leaderboard keeps your first try.</p>
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
-      <button type="button" class="dc-btn" id="mo-replay">Replay again</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-replay">Replay again</button></div>
       <button type="button" class="dc-btn" id="mo-main">Back to my result</button>`;
       return;
     }
@@ -11071,7 +11079,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
-      <button type="button" class="dc-btn" id="mo-replay">Replay for coins</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-replay">Replay for coins</button></div>
       <button type="button" class="dc-btn" id="mo-share">Share my result</button>
       <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
@@ -11335,7 +11343,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you go past your own best.</div></div>
-        ${survivalRecordsHtml()}${soloResumeHtml("survival")}<button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button>
+        ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
@@ -11346,17 +11354,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!sv.q) sv.q = survivalNextQuestion();
       persistSoloSession("survival",sv);
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives, svRunAcc(sv.accs.length))}
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives, svRunAcc(sv.accs.length))}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         ${powerups?.html(powerupContext()) || ""}
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
-        <button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button>`;
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}<p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button><button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>`;
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div><button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>`;
       survivalRunReveal();
       return;
     }
@@ -11364,7 +11372,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
       <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
-      <button type="button" class="dc-btn" id="sv-again">Play again</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-again">Play again</button></div>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <button type="button" class="dc-btn dc-alt" id="sv-finish">Finish game</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
@@ -11594,7 +11602,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WB_COINS_PER} coins for every right pick past your own best.</div></div>
-        ${wbRecordsHtml()}<button type="button" class="dc-btn" id="wb-start">Start</button>`;
+        ${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">Start</button></div>`;
       return;
     }
     if (wb.phase === "question") {
@@ -11689,7 +11697,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
         ${wb.gain ? `<div class="wb-coins"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="wb-coin-n">+${wb.gain}</b><span>coins<br>earned</span></div>` : ""}
       </div>
-      <button type="button" class="dc-btn" id="wb-again">Play again</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="wb-again">Play again</button></div>
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
       <button type="button" class="dc-btn dc-alt" id="wb-finish">Finish game</button>
       ${wbRecordsHtml(true)}`;
