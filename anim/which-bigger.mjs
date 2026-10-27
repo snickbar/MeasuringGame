@@ -92,3 +92,16 @@ function partners(sorted, small, lo, hi) {
 }
 
 export const isCorrectPick = (pair, pickedId) => pickedId === pair.bigger.id;
+
+// Difficulty label shown under the pair, from how many times bigger the larger object is.
+// Close pairs are harder. Tier 1 = very easy ... tier 5 = very hard.
+export const DIFFICULTY_TIERS = [
+  { tier: 1, label: 'Very easy', minRatio: 20 },
+  { tier: 2, label: 'Easy', minRatio: 6 },
+  { tier: 3, label: 'Medium', minRatio: 2.5 },
+  { tier: 4, label: 'Hard', minRatio: 1.6 },
+  { tier: 5, label: 'Very hard', minRatio: 0 },
+];
+export function difficultyOf(ratio) {
+  return DIFFICULTY_TIERS.find(t => ratio >= t.minRatio) || DIFFICULTY_TIERS[DIFFICULTY_TIERS.length - 1];
+}
