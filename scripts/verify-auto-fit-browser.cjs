@@ -39,6 +39,7 @@ window.__polish={
   if(final){finalScreenEl.classList.add('active');renderFinal();}else{lobbyScreenEl.classList.add('active');hostStartBtn.style.display='flex';window.scrollTo(0,0);document.getElementById('install-banner').classList.remove('active');roomCodeDisplay.textContent='TEST';renderHostUnlockUi();applyLobbyMode(roomState);renderPlayerList();}
  },
  quickLobby:()=>window.__polish.lobby(false,true),
+ teamLobby:async()=>{await window.__polish.lobby(false,true);roomState.settings={...roomState.settings,solo:false,mode:'teamvteam'};Object.entries(currentPlayers).forEach(([id,p],i)=>p.team=i<2?'red':'blue');applyLobbyMode(roomState);renderPlayerList();},
  refreshLobby:async()=>{roomState=(await get(ref(db,'rooms/TEST'))).val();currentPlayers=roomState.players;applyLobbyMode(roomState);renderPlayerList();},
  hsPick:()=>window.__polish.hsView(10,false),hsBet:()=>window.__polish.hsView(10,true),
  hsView:(n,bet)=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));currentRoomCode='VIEW';currentPlayerId='me';isHost=true;const ids=Array.from({length:n},(_,i)=>i?'p'+i:'me');currentPlayers=Object.fromEntries(ids.map((id,i)=>[id,{name:i?'Player '+i:'My player',avatar:['av07','av19','av06','av20'][i%4],isHost:i===0,isBot:i>0,connected:true}]));let hs=HS.hsNewGame(ids);const q=dailyQuestionFor({unitId:'ant',targetId:'door'}),made=HS.hsMakeOptions(q.answer);hs=HS.hsStartRound(hs,{...made,now:nowMs()});if(bet)hs=HS.hsBeginBetting(hs,Object.fromEntries(ids.map(id=>[id,0])),nowMs());roomState={phase:'hs',gameId:'view',settings:{mode:'highstakes'},players:currentPlayers,hs,hsQ:q,hsPicks:bet?Object.fromEntries(ids.map(id=>[id,0])):{}};hsScreenEl.classList.add('active');document.getElementById('install-banner').classList.remove('active');renderHighStakes(roomState);window.scrollTo(0,0);},
@@ -76,6 +77,13 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
  }
  }
  document.querySelectorAll('button[data-autofit-stress]').forEach(b=>b.remove());
+ if(document.getElementById('lobby-screen').classList.contains('active')){
+  const start=document.getElementById('host-start-btn'),back=document.getElementById('lobby-back-btn'),extra=document.createElement('li');extra.style.height='1000px';document.getElementById('player-list').append(extra);
+  window.scrollTo(0,150);await wait(40);const first=start.getBoundingClientRect().top;
+  window.scrollTo(0,document.documentElement.scrollHeight);await wait(40);const last=start.getBoundingClientRect(),toolbar=document.getElementById('app-toolbar').getBoundingClientRect();
+  if(Math.abs(first-last.top)>1||last.top<toolbar.bottom-1||last.top>toolbar.bottom+12||back.getBoundingClientRect().top<toolbar.bottom-1)failures.push({kind:'Start game not pinned below toolbar',first,last:last.top,toolbar:toolbar.bottom});
+  extra.remove();window.scrollTo(0,0);
+ }
  return JSON.stringify(failures);
 })()`,awaitPromise:true,returnByValue:true},sessionId);
 const failures=JSON.parse(checks.result.value);if(failures.length)throw Error(JSON.stringify({width,page,failures},null,2));
