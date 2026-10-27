@@ -11458,8 +11458,56 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const base = lo + (hi - lo) * (n / (n + 10));
     return Math.max(lo, Math.min(hi, base + (Math.random() - 0.45) * 2.2));
   }
+  // Themed round: the 5th round, 10th round... (after every 4 rounds survived) draws only from one Worlds category.
+  // The category is picked at random and kept until you beat the round, so a lost life doesn't reroll it.
+  const SURVIVAL_THEME_EVERY = 5;
+  const survivalThemeDue = (state = sv) => state.survived > 0 && state.survived % SURVIVAL_THEME_EVERY === SURVIVAL_THEME_EVERY - 1;
+  function survivalPickTheme(state = sv) {
+    if (state.themeId && WORLDS.some((w) => w.id === state.themeId)) return state.themeId;
+    const open = WORLDS.filter((w) => w.id !== "holiday-mix" && w.id !== "make-believe" && w.ids.length >= 12);
+    return open[Math.floor(Math.random() * open.length)].id;
+  }
+  function survivalThemePairs(themeId) {
+    const w = WORLDS.find((x) => x.id === themeId), ids = new Set(w ? w.ids : []);
+    return survivalPairs().filter((p) => ids.has(p.u) && ids.has(p.t));
+  }
+  // Look of each themed round: ribbon colors, a one-line tease, and one of that category's own items as the small emblem.
+  const SURVIVAL_THEMES = {
+    tiny: { main: "#9A6FC8", dark: "#5E3B8A", tint: "#EADDF6", item: "ladybug", line: "Everything in this round is tiny" },
+    games: { main: "#E0702A", dark: "#9A4512", tint: "#FBE3D2", item: "soccer-ball", line: "Game on" },
+    home: { main: "#C79A3C", dark: "#7C5C14", tint: "#F6EAC9", item: "couch", line: "Everything in this round is in your house" },
+    food: { main: "#E0527A", dark: "#9A2A4C", tint: "#FADDE6", item: "donut", line: "Everything in this round is edible" },
+    town: { main: "#6B7A8F", dark: "#3E4A5A", tint: "#E0E5EC", item: "fire-hydrant", line: "Everything in this round is in town" },
+    critters: { main: "#3E9430", dark: "#2D6B22", tint: "#E3F3D9", item: "capybara", line: "Everything in this round is alive" },
+    wheels: { main: "#2F8FD8", dark: "#1B5E96", tint: "#D8ECFA", item: "helicopter", line: "Everything in this round moves" },
+    landmarks: { main: "#5C7FA8", dark: "#34506F", tint: "#DCE6F2", item: "eiffel-tower", line: "Everything in this round is a landmark" },
+    "under-the-sea": { main: "#1FA6A0", dark: "#126B67", tint: "#D2F1EE", item: "starfish", line: "Everything in this round is wet" },
+    "toy-box": { main: "#E2B01C", dark: "#8F6E08", tint: "#FBEFC4", item: "rubber-duck", line: "Everything in this round is a toy" },
+  };
+  const svThemeInfo = (id) => {
+    const w = WORLDS.find((x) => x.id === id), t = SURVIVAL_THEMES[id] || SURVIVAL_THEMES.critters, home = HOME_SCREENS.find((h) => h.world === id), item = OBJECT_BY_ID.get(t.item);
+    return { ...t, name: w ? w.name : id, scene: home ? home.file : "", emblem: item ? item.image : "" };
+  };
+  const svThemeVars = (id) => { const t = svThemeInfo(id); return `--thm:${t.main};--thm-d:${t.dark};--thm-t:${t.tint}`; };
+  // The theme colors live on the Survival screen itself so the strip, card borders and background tint can all use them.
+  function svApplyThemeVars(id) {
+    const st = survivalContentEl.style;
+    if (!id) { ["--thm", "--thm-d", "--thm-t"].forEach((k) => st.removeProperty(k)); survivalContentEl.classList.remove("sv-themed"); return; }
+    const t = svThemeInfo(id); st.setProperty("--thm", t.main); st.setProperty("--thm-d", t.dark); st.setProperty("--thm-t", t.tint); survivalContentEl.classList.add("sv-themed");
+  }
+  const svThemeStripHtml = (id) => { const t = svThemeInfo(id); return `<div class="sv-theme-strip"><span class="sv-theme-emb"><img src="${t.emblem}" alt="" draggable="false"></span><b>${escapeHtml(t.name).toUpperCase()}</b><span class="sv-x2">2&times; COINS</span></div>`; };
+  // The banner that slides over the question for a moment when a themed round starts. Tap or wait to dismiss.
+  function svShowThemeBanner(id) {
+    const t = svThemeInfo(id), el = survivalContentEl; if (!el) return;
+    const b = document.createElement("div"); b.className = "sv-theme-banner"; b.setAttribute("style", svThemeVars(id));
+    b.innerHTML = `<div class="sv-tb-label">BONUS ROUND</div><div class="sv-tb-ribbon"><img src="${t.scene}" alt="" draggable="false"><div class="sv-tb-name"><b>${escapeHtml(t.name).toUpperCase()}</b><span>${escapeHtml(t.line)}</span></div></div><div class="sv-tb-x2">2&times; COINS if you win it</div>`;
+    el.appendChild(b);
+    try { playSound("streak"); } catch (e) {}
+    const close = () => { if (!b.isConnected) return; b.classList.add("out"); setTimeout(() => b.remove(), 300); };
+    b.addEventListener("click", close); setTimeout(close, 1900);
+  }
   function survivalNextQuestion(state = sv) {
-    const pairs = survivalPairs(), target = survivalTarget(state.asked);
+    const pairs = state.themeId ? survivalThemePairs(state.themeId) : survivalPairs(), target = survivalTarget(state.asked);
     let lo = 0, hi = pairs.length;
     while (lo < hi) { const mid = (lo + hi) >> 1; if (pairs[mid].r < target) lo = mid + 1; else hi = mid; }
     for (let w = 0.25; w < 8; w *= 1.8) {
@@ -11534,7 +11582,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     void preloadWbReactionArt();
-    sv.res = { acc, ok, checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok || sv.shieldEvent === "saved", acc >= 90 ? 2 : 20, "", false), quip: sv.shieldEvent === "saved" ? "You keep your heart, but this round doesn't count." : svQuip(ok, acc) };
+    sv.res = { acc, ok, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok || sv.shieldEvent === "saved", acc >= 90 ? 2 : 20, "", false), quip: sv.shieldEvent === "saved" ? "You keep your heart, but this round doesn't count." : svQuip(ok, acc) };
     sv.phase = "result";
     renderSurvival();
   }
@@ -11594,7 +11642,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return pick(["Ouch, that one stung.", "Not quite - shake it off!", "It happens.", "Tricky one!"]);
   }
   // Fits the cards, verdict and stamp to the screen height (same method as Which Is Bigger).
-  function svFit() { fitPlayScroll(survivalContentEl.querySelector(".play-middle")); }
+  function svFit() { fitPlayScroll(survivalContentEl.querySelector(".play-middle"), sv && sv.res && sv.res.themed ? 0.4 : 0.55); }
   window.addEventListener("resize", () => { if (sv && (sv.phase === "question" || sv.phase === "result")) svFit(); });
   // Checkpoint (every 5th round survived): gold coins pop out of the check mark.
   const svCoinBurstHtml = () => prefersReducedMotion() ? "" : Array.from({ length: 12 }, (_, i) => { const a = (i / 12) * Math.PI * 2 + Math.random() * 0.4, d = 70 + Math.random() * 40; return `<img class="sv-coin" src="icons/coin-v2.png" alt="" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d - 20)}px;--w:${(i * 0.03).toFixed(2)}s">`; }).join("");
@@ -11612,12 +11660,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
     const said = Number(sv.g).toLocaleString("en-US", { maximumFractionDigits: 2 });
     const title = r.saved ? "Shield saved you!" : r.boost ? (ok ? "Safe with buffer!" : "Still short of safety") : (ok ? "Safe!" : "Lost a life");
-    return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}</div>
+    return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}${r.themed ? svThemeStripHtml(r.themed) : ""}</div>
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
         <div class="wb-result-stage sv-scene-wrap">${svSceneHtml(r, ok)}</div>
         <div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>
-        ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${r.checkpoint * SURVIVAL_COINS_PER} coins banked</div>` : ""}
+        ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${(sv.survived + (sv.bonusWins || 0)) * SURVIVAL_COINS_PER} coins banked</div>` : ""}
+        ${r.themed && ok ? `<div class="sv-callout bonus"><b>2&times;</b> Bonus round won &middot; +${SURVIVAL_COINS_PER * 2} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
         <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
         ${r.boost || ""}
         ${r.earned ? `<div class="sv-callout earn">Shield earned! It will save you from one lost life.</div>` : ""}
@@ -11640,11 +11689,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "question") rerollPerRound(sv, sv.asked);
     if(['question','reveal'].includes(sv.phase)&&!sv.finished&&sv.lives>0)persistSoloSession('survival',sv);
     const el = survivalContentEl;
+    if (sv.phase === "intro" || sv.phase === "over") svApplyThemeVars("");
     if (sv.phase === "intro") {
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds in a row at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
-        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive.</div></div>
+        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise bonus round that pays double.</div></div>
         ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
@@ -11653,10 +11703,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (sv.phase === "question") {
       survivalStop();
-      if (!sv.q) sv.q = survivalNextQuestion();
+      if (!sv.q) {
+        if (survivalThemeDue()) sv.themeId = survivalPickTheme(); else sv.themeId = "";
+        sv.q = survivalNextQuestion();
+        sv.q.theme = sv.themeId || "";
+      }
       persistSoloSession("survival",sv);
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}</div>
+      el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}${sv.q.theme ? svThemeStripHtml(sv.q.theme) : ""}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
         <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
@@ -11664,6 +11718,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
+      svApplyThemeVars(sv.q.theme);
+      if (sv.q.theme && sv.bannerFor !== sv.asked) { sv.bannerFor = sv.asked; svShowThemeBanner(sv.q.theme); }
       requestAnimationFrame(() => requestAnimationFrame(svFit));
       return;
     }
@@ -11729,7 +11785,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Run over: save the best, post it, count the rounds. Coins are paid for every round survived.
   async function survivalFinish() {
     if(sv.finished)return;sv.finished=true;
-    const old=survivalBest(),score=sv.survived;sv.prevBest=old;sv.newBest=score>old;sv.gain=Math.max(0,score)*SURVIVAL_COINS_PER;
+    const old=survivalBest(),score=sv.survived;sv.prevBest=old;sv.newBest=score>old;sv.gain=(Math.max(0,score)+(sv.bonusWins||0))*SURVIVAL_COINS_PER;
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:sv.runId,mode:'survival',survived:score,accuracy:svRunAcc(sv.accs.length)||0,
       ...(score>0?{board:{path:'survival/'+deviceId,value:{n:name,s:score,t:Date.now()},best:true}}:{})});
@@ -11781,6 +11837,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((effectiveGuess(sv.q, g, deviceId) / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5, ...(saved ? { sh: 1 } : {}) });
       if (ok) {
         sv.survived++;
+        if (sv.themeId) { sv.bonusWins = (sv.bonusWins || 0) + 1; sv.themeId = ""; }
         if (!sv.shield) {
           sv.chain = acc >= SURVIVAL_SHIELD_ACC ? (sv.chain || 0) + 1 : 0;
           if (sv.chain >= SURVIVAL_SHIELD_CHAIN) { sv.shield = true; sv.chain = 0; sv.shieldEvent = "earned"; }
@@ -11922,13 +11979,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   wbMeasureToolbar();
   // Shrinks the cards and verdict step by step until everything fits without scrolling.
   function wbFit() { fitPlayScroll(wbContentEl.querySelector(".wb-play-scroll")); }
-  function fitPlayScroll(scroll) {
+  function fitPlayScroll(scroll, floor = 0.55) {
     if (!scroll) return;
     let f = 1;
     scroll.style.setProperty("--wbf", f);
     // Measured from layout positions (not scrollHeight) so the stamp's slam-in scaling doesn't count.
     const used = () => { const last = scroll.lastElementChild; return last ? last.offsetTop + last.offsetHeight + 10 : 0; };
-    while (f > 0.55 && used() > scroll.clientHeight) { f = Math.round((f - 0.04) * 100) / 100; scroll.style.setProperty("--wbf", f); }
+    while (f > floor && used() > scroll.clientHeight) { f = Math.round((f - 0.04) * 100) / 100; scroll.style.setProperty("--wbf", f); }
   }
   window.addEventListener("resize", () => { if (wb && (wb.phase === "question" || wb.phase === "result")) wbFit(); });
   function wbMountPlayLayout() {
