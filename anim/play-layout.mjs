@@ -53,7 +53,7 @@ export function createPlayLayout(doc = document) {
     if (owner.classList.contains('wb-playing')) { clear(owner); content.classList.remove('play-shell-content'); return; }
     if (content.querySelector(':scope > .play-middle')) return;
     clear(owner); content.classList.remove('play-shell-content');
-    let header = content.querySelector(':scope > .pin-top,:scope > .hs-top,:scope > .dc-title');
+    let header = content.querySelector(':scope > .pin-top,:scope > .hs-top,:scope > .dc-title,:scope > .mode-menu-header,:scope > .wl-menu-header');
     let footer = content.querySelector('.pin-bottom,:scope > .bl-dock,[data-send-claim],#hs-skip,#hs-deal,#hs-again,#hs-fake-send,#dc-share');
     if (!footer && !force) return;
     if (!header) { header = doc.createElement('div'); header.hidden = true; }

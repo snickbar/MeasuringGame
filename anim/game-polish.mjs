@@ -135,7 +135,7 @@ export function createPolish({ document: doc = document, reduced = () => false, 
   }
   function refresh(root) {
     for (const title of root.querySelectorAll('.dc-title:not(.wl-run-title):not(.polish-banner)')) {
-      const host = title.parentElement.matches?.('.wl-menu-header') ? title.parentElement.parentElement : title.parentElement;
+      const host = title.parentElement.matches?.('.wl-menu-header,.mode-menu-header') ? title.parentElement.parentElement : title.parentElement;
       let mode = headers[host.id];
       if (!mode || /^(Question|Round |After round)/.test(title.textContent)) continue;
       // Several Party intro pages share the same container.
@@ -144,6 +144,15 @@ export function createPolish({ document: doc = document, reduced = () => false, 
       }
       title.classList.add('polish-banner');
       applyMenuBanner(title, mode);
+      // Menu banners stay under the toolbar; gameplay status rows have their own layout.
+      if (title.parentElement === host && host.insertBefore && !title.classList.contains('play-status') && !/^(Game over|.* replay$)/i.test(title.textContent.trim())) {
+        const header = doc.createElement('div');
+        header.className = 'mode-menu-header';
+        const subtitle = title.nextElementSibling?.matches('.dc-sub') ? title.nextElementSibling : null;
+        host.insertBefore(header, title);
+        header.append(title);
+        if (subtitle) header.append(subtitle);
+      }
     }
     root.querySelectorAll('[data-result-stars]').forEach(stars);
     root.querySelectorAll('[data-personal-best]').forEach(el => {
