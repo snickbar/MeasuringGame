@@ -128,7 +128,7 @@ export function applyCareerRecord(profile,record){
   }else if(record.mode==='hlsurvival'){
     // High/Low Survival: a duo game scored in rounds survived. Coins are paid for every round survived,
     // every run; every run is kept as its own history row for the "your best runs" list.
-    const old=profile.hlSurvival||{};coins=(record.survived||0)*2; // paid every run, like Team Worlds
+    const old=profile.hlSurvival||{};coins=((record.survived||0)+Math.max(0,Math.min(record.survived||0,record.themedWins||0)))*2; // themed wins pay double; receipt remains idempotent
     result.hlSurvival={...old,best:Math.max(old.best||0,record.survived||0),runs:(old.runs||0)+1,
       bestStreak:Math.max(old.bestStreak||0,record.bestStreak||0)};
     stats.hlSurvivalRuns=(stats.hlSurvivalRuns||0)+1;

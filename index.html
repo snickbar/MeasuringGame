@@ -2846,6 +2846,14 @@ if (location.protocol === "file:") {
   .hl-wm-tick b { margin-top: 2px; font-family: 'Fredoka', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; color: #1f7a1f; }
   .hl-wm-ends { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #000; opacity: .7; }
   @media (prefers-reduced-motion: reduce) { .hl-wm-fill { transition: none; } }
+  .hl-shield { display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700; }
+  .hl-shield img { width:23px;height:23px;object-fit:contain; }
+  .hl-shield-meter { display:block;width:54px;height:8px;border-radius:8px;background:#2071ad22;overflow:hidden; }
+  .hl-shield-meter i { display:block;height:100%;background:#278ad5;transition:width .35s ease; }
+  .hl-theme { flex-basis:100%;max-width:100%; }
+  .hl-theme .sv-theme-strip { margin:2px 0 0;font-size:11px;padding:2px 8px 2px 2px;gap:5px; }
+  .hl-theme .sv-theme-emb { width:24px;height:24px; }
+  .hl-milestone { color:#216d99;font-weight:800;font-size:16px; }
   .hl-verdict { text-align: center; padding: 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .hl-verdict-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: #000; }
   .hl-verdict.ok .hl-verdict-title { color: #1f7a1f; }
@@ -4538,6 +4546,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module" src="anim/home-fx.mjs"></script>
 <script type="module" src="anim/home-scene.mjs"></script>
 <script type="module">
+  import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
@@ -10012,7 +10021,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function openHlInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
-      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life.</div></div>
+      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life. Survive 3 rounds in a row to earn a shared shield that blocks one lost life. The shield holds one charge. Every fifth survival is a themed round worth double coins; a failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <button type="button" class="dc-btn" id="hl-start">Create Room</button>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}`;
@@ -14863,7 +14872,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // High/Low Survival's running state lives on the room: shared lives, rounds survived, how many questions
   // have been asked (drives the difficulty climb), recent objects (so they don't repeat) and the sync streak.
   function hlFreshGameFields() {
-    return { hlLives: roomState.settings?.lives || HL_LIVES, hlSurvived: 0, hlAsked: 0, hlRecent: null, hlRoles: null, hlSyncStreak: 0, hlBestSyncStreak: 0, hlSyncTotal: 0, hlOffSum: 0, hlOffRounds: 0, hlLast: null };
+    return { hlLives: roomState.settings?.lives || HL_LIVES, hlShield: false, hlShieldCharge: 0, hlThemeId: "", hlThemeWins: 0, hlSurvived: 0, hlAsked: 0, hlRecent: null, hlRoles: null, hlSyncStreak: 0, hlBestSyncStreak: 0, hlSyncTotal: 0, hlOffSum: 0, hlOffRounds: 0, hlLast: null };
   }
   const hlGameOver = () => (roomState.hlLives || 0) <= 0 || (!!(roomState.settings?.cap) && (roomState.hlSurvived || 0) >= roomState.settings.cap);
   async function startGameNow() {
@@ -15483,9 +15492,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // chosen World at room creation (teamWorldQuestions()) rather than the general pool -
     // every other mode still calls generateQuestion() as before.
     const hl = isHlSettings(roomState.settings);
-    const hlState = hl ? { asked: roomState.hlAsked || 0, recent: [...(roomState.hlRecent || [])] } : null;
+    const hlState = hl ? { asked: roomState.hlAsked || 0, recent: [...(roomState.hlRecent || [])], themeId: hlThemeDue(roomState.hlSurvived || 0) ? survivalPickTheme({themeId: roomState.hlThemeId}) : "" } : null;
     const q = hl
-      ? { ...survivalNextQuestion(hlState), powerupKey: crypto.randomUUID() }
+      ? { ...survivalNextQuestion(hlState), theme: hlState.themeId, powerupKey: crypto.randomUUID() }
       : (roomState.settings || currentSettings).mode === "teamworlds"
       ? { ...roomState.teamWorldQuestions[roundNum - 1], powerupKey: crypto.randomUUID() }
       : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
@@ -15502,7 +15511,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     console.log("[measuring-game] starting round", roundNum, q);
     await update(ref(db, `rooms/${roomCode}`), {
-      ...(hl ? { hlRoles, hlAsked: hlState.asked + 1, hlRecent: hlState.recent, hlLast: null } : {}),
+      ...(hl ? { hlRoles, hlAsked: hlState.asked + 1, hlRecent: hlState.recent, hlThemeId: hlState.themeId, hlLast: null } : {}),
       currentQuestion: q,
       guesses: null,
       answers: null,
@@ -15664,9 +15673,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ratio = bothIn && lv > 0 ? hv / lv : Infinity;
       const tooWide = bothIn && !crossed && ratio > limit;
       const passed = bothIn && !crossed && inSync && !tooWide;
-      const lives = (roomState.hlLives ?? roomState.settings?.lives ?? HL_LIVES) - (passed ? 0 : 1);
-      updates.hlLives = Math.max(0, lives);
-      updates.hlSurvived = (roomState.hlSurvived || 0) + (passed ? 1 : 0);
+      const outcome = hlSurvivalOutcome(roomState, passed, !!q.theme);
+      const { saved, earned, milestone, ...stateFields } = outcome;
+      Object.assign(updates, stateFields);
       // The streak only counts rounds the team was in sync AND survived - losing a life always resets it.
       const syncSurvived = passed && inSync;
       updates.hlSyncStreak = syncSurvived ? (roomState.hlSyncStreak || 0) + 1 : 0;
@@ -15678,7 +15687,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         updates.hlOffSum = (roomState.hlOffSum || 0) + (off(hv) + off(lv)) / 2;
         updates.hlOffRounds = (roomState.hlOffRounds || 0) + 1;
       }
-      updates.hlLast = { previousSyncStreak: roomState.hlSyncStreak || 0, passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
+      updates.hlLast = { saved, earned, milestone, previousShield: !!roomState.hlShield, previousCharge: roomState.hlShieldCharge || 0, previousSyncStreak: roomState.hlSyncStreak || 0, passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
     }
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
@@ -16282,9 +16291,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // this mode doesn't have) a half/half split of each player's own avatar + their own running
   // (un-averaged) individual accuracy.
   // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
+  function hlShieldHtml(room) {
+    const held = !!room.hlShield, charge = room.hlShieldCharge || 0;
+    return `<div class="hl-shield" aria-label="${held ? 'Team shield ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward a shield'}"><img src="icons/survival-shield-${held ? 'full' : 'empty'}.webp" alt=""><span>${held ? 'Shield ready' : 'Team shield'}</span>${held ? '' : `<span class="hl-shield-meter" role="progressbar" aria-label="Team shield charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}"><i style="width:${charge / HL_SHIELD_CHAIN * 100}%"></i></span>`}</div>`;
+  }
   function hlHeartsHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
-    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div></div>`;
+    return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hlShieldHtml(room)}${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>${room.currentQuestion?.theme ? `<div class="hl-theme" style="${svThemeVars(room.currentQuestion.theme)}">${svThemeStripHtml(room.currentQuestion.theme)}</div>` : ""}</div>`;
   }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
@@ -17023,7 +17036,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else {
       cls = "bad"; title = "Lost a life"; sub = `Answer was inside, but the bracket is ${l.ratio == null ? "too" : Number(l.ratio).toFixed(1) + "&times;"} wide. Limit is ${limit}&times;.`;
     }
-    return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data, true)}</div></div></div>`;
+    if (l.saved) { title = "Shield saved you!"; cls = "ok"; sub += " Your team keeps its life; this round doesn't count as survived."; }
+    const moment = [l.earned ? "Team shield earned!" : "", l.milestone ? l.milestone + " rounds survived together!" : ""].filter(Boolean).join(" · ");
+    return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div>${moment ? `<div class="hl-milestone">${moment}</div>` : ""}<div class="hl-verdict-hearts">${hlHeartsHtml(data, true)}</div></div></div>`;
   }
   // Counts a number up (e.g. the team average) so it lands with a little drama.
   function twCountUp(el, to, ms, suffix) {
@@ -17133,10 +17148,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const v = revealListEl.querySelector(".hl-verdict");
           if (v) {
             v.parentElement.classList.remove("tw-ph");
-            if (data.hlLast?.passed === false) { svCrackHeart(); vibrate([70, 60, 70]); }
+            if (!prefersReducedMotion()) {
+              const meter = v.querySelector(".hl-shield-meter i"), shield = v.querySelector(".hl-shield img");
+              if (meter) meter.animate([{width:((data.hlLast?.previousCharge || 0) / HL_SHIELD_CHAIN * 100) + "%"},{width:((data.hlShieldCharge || 0) / HL_SHIELD_CHAIN * 100) + "%"}], {duration:450,easing:"ease-out"});
+              if (data.hlLast?.earned && shield) shield.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
+            }
+            if (data.hlLast?.saved) { svCrackHeart("shield"); vibrate([35, 40, 35]); }
+            else if (data.hlLast?.passed === false) { svCrackHeart(); vibrate([70, 60, 70]); }
             else playSound(data.hlLast?.passed ? "roundwin" : "error");
           }
-          if (data.hlLast && data.hlLast.passed) celebrate("normal");
+          if (data.hlLast && data.hlLast.passed) { celebrate("normal"); if (data.hlLast.earned || data.hlLast.milestone) { playSound("streak"); vibrate([25, 40, 25]); } }
         }, 1100);
       }
     } else if (showAverage) {
@@ -18023,9 +18044,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const key = gameRewardKey(currentRoomCode, rs);
     const ids = Object.keys(currentPlayers);
     const partnerId = ids.find((id) => id !== currentPlayerId);
-    if (hlFinalGain[key] == null) hlFinalGain[key] = survived * 2; // coins for every round survived, every run
+    if (hlFinalGain[key] == null) hlFinalGain[key] = (survived + (rs.hlThemeWins || 0)) * 2; // coins for every round survived, every run
     const gain = hlFinalGain[key];
-    careerLedger.save({ kind: "attempt", mode: "hlsurvival", key, survived, rounds, bestStreak, accuracy: avg, myAvatar: me?.avatar,
+    careerLedger.save({ kind: "attempt", mode: "hlsurvival", key, survived, themedWins: rs.hlThemeWins || 0, rounds, bestStreak, accuracy: avg, myAvatar: me?.avatar,
       partnerName: partnerId ? currentPlayers[partnerId].name : "Partner", partnerAvatar: partnerId ? currentPlayers[partnerId].avatar : null, t: Date.now() });
     if (!currentPlayers[currentPlayerId]?.rewardCollected) {
       update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { rewardCollected: true }).catch(() => {});
