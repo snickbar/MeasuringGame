@@ -3654,6 +3654,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/mode-identity.css">
 <link rel="stylesheet" href="anim/illustrated-details.css" />
 <link rel="stylesheet" href="anim/which-bigger-summary.css" />
+<link rel="stylesheet" href="anim/daily-extras.css" />
 <link rel="stylesheet" href="anim/play-layout.css">
 </head>
 <body>
@@ -9611,6 +9612,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const accs = dailyAccuracies();
     return `<div class="dc-dots">${[0, 1, 2].map((i) => i < doneN ? `<i class="done">${markSvg(accs[i], "dot-mark")}</i>` : `<i class="${i === cur ? "on" : ""}"></i>`).join("")}</div>`;
   }
+  // The streak card: a flame that grows with the streak (tiers at 1, 3, 7 and 30 days) and a bar toward the next coin bonus.
+  function dailyFlameHtml(streak, pop, note) {
+    const tier = streak >= 30 ? 4 : streak >= 7 ? 3 : streak >= 3 ? 2 : streak >= 1 ? 1 : 0;
+    const marks = [3, 7, 30], next = marks.find((n) => n > streak), prev = marks.filter((n) => n <= streak).pop() || 0;
+    const pct = next ? Math.round(((streak - prev) / (next - prev)) * 100) : 100;
+    const left = next ? next - streak : 0;
+    const line = streak === 0 ? "Play today to light your flame." : next ? `${left} more day${left === 1 ? "" : "s"} for +${DAILY_STREAK_BONUS[next]} coins` : "Legend! You've reached every bonus.";
+    return `<div class="dc-card dc-streak t${tier}${pop ? " pop" : ""}"><div class="dc-streak-top"><span class="dc-flame"><img src="icons/reactions/fire.png" alt="" draggable="false"></span><span class="dc-streak-txt"><b>${streak > 0 ? streak : "Start a streak"}</b>${streak > 0 ? `<span>day streak</span>` : ""}</span></div><div class="dc-streak-bar" aria-hidden="true"><i style="width:${streak > 0 ? Math.max(pct, 6) : 0}%"></i></div><div class="dc-note">${line}</div>${note || ""}</div>`;
+  }
   function renderDaily() {
     if (!daily) return;
     if (daily.phase === "question") rerollPerRound(daily, daily.guesses.length);
@@ -9619,8 +9629,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (daily.phase === "intro") {
       dailyStop();
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
-        <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. They start easy and get harder. You can only play once, so make your guesses count.</div></div>
-        <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Start a streak"}</div><div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div></div>
+        <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>
+        ${dailyFlameHtml(streak, false, `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
       dailyLoadBoard();
@@ -9651,7 +9661,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
       <div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>
       <div class="dc-card">${rows}</div>
-      <div class="dc-card"><div class="dc-big">${streak > 0 ? `${FIRE_IC} ${streak}-day streak` : "Come back tomorrow"}</div><div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note">+${daily.bonus} coins streak bonus!</div>` : ""}<div class="dc-note">Bonus coins at 3, 7 and 30 days in a row.</div></div>
+      ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
@@ -9704,7 +9714,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Called once, as the third guess is locked in: saves the day, updates the streak and posts to the leaderboard.
   async function dailyFinish() {
     const accs=dailyAccuracies(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10,streak=dailyUpdateStreak(daily.date);
-    daily.bonus=DAILY_STREAK_BONUS[streak.count]||0;
+    daily.bonus=DAILY_STREAK_BONUS[streak.count]||0;daily.justFinished=true;
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,
       saved:{date:daily.date,guesses:daily.guesses,done:true,total},board:{path:'daily/'+daily.date+'/'+deviceId,value:{n:name,s:total,a:accs.map(Math.round),t:Date.now()}}});
