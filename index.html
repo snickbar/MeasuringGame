@@ -9684,6 +9684,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyRunReveal();
       return;
     }
+    if (daily.phase === "result") {
+      dailyStop();
+      const r = daily.res, q = daily.questions[r.i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId), last = daily.guesses.length >= 3;
+      const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
+      const said = Number(daily.guesses[r.i]).toLocaleString("en-US", { maximumFractionDigits: 2 });
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${r.i + 1} of 3</h2>${dailyDots(r.i, r.i + 1)}</div>
+        <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
+        <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
+          <div class="wb-result-stage dc-stage"><div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
+          <div class="wb-verdict-t">${r.label}</div>
+          <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
+          <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${Math.round(r.acc)}% accurate</span></p>
+          ${dcGaugeHtml(r.acc)}
+        </div>
+        <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-next">${last ? "See my results" : "Next question"}</button></div>`;
+      requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(dailyContentEl.querySelector(".play-middle"), 0.5)));
+      return;
+    }
     // done
     dailyStop();
     const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10, perfect = accs.every((x) => x >= 90);
@@ -9692,8 +9710,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${perfect ? `<div class="dc-card dc-hot dc-perfect"><div class="dc-pf-burst" aria-hidden="true">${daily.justFinished ? svCoinBurstHtml() : ""}</div><div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>` : `<div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>`}
       <div class="dc-card dc-rank" id="dc-rank" hidden></div>
       <div class="dc-card">${rows}</div>
-      ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7))}
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
+      ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7))}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
@@ -9701,23 +9719,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
   }
 
+  // The page after each guess: the verdict with a little reaction, the answer, and an accuracy meter. (Reaction pictures, never plain emoji.)
+  const dcLabel = (acc) => (acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off");
+  function dcGaugeHtml(acc) {
+    const a = Math.max(0, Math.min(100, acc));
+    return `<div class="dc-gauge"><div class="dc-gauge-bar"><span class="dc-gauge-pin" style="left:${a}%"></span></div><div class="dc-gauge-labels"><span>Way off</span><span>Close</span><span>Spot on</span></div></div>`;
+  }
+  function dailyShowSummary(mod) {
+    if (!daily || daily.phase !== "reveal") return;
+    const i = daily.guesses.length - 1, q = daily.questions[i], g = daily.guesses[i], acc = roundAccuracy(g / q.answer), ok = acc >= 70;
+    const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
+    vibeAccuracy(acc);
+    daily.res = { i, acc, ok, ans, label: dcLabel(acc), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false, true), quip: svQuip(ok, acc) };
+    daily.phase = "result"; renderDaily();
+  }
   async function dailyRunReveal() {
     const i = daily.guesses.length - 1, q = daily.questions[i];
     const lastQuestion = daily.guesses.length >= 3;
     const g = daily.guesses[i];
-    const showResult = (mod) => {
-      const acc = roundAccuracy(g / q.answer);
-      const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
-      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
-      const host = document.getElementById("dc-result");
-      if (!host) return;
-      vibeAccuracy(acc);
-      const dots = dailyContentEl.querySelector(".dc-dots");
-      if (dots) dots.outerHTML = dailyDots(i, i + 1);
-      host.innerHTML = resultCardHtml(acc, g, ans, label);
-      const skip = document.getElementById("dc-skip");
-      if (skip) { skip.id = "dc-next"; skip.className = "dc-btn"; skip.textContent = lastQuestion ? "See my results" : "Next question"; }
-    };
+    const showResult = (mod) => dailyShowSummary(mod);
     const pair = questionObjects(q);
     if (!pair) { showResult(null); return; }
     try {
@@ -9747,7 +9767,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Called once, as the third guess is locked in: saves the day, updates the streak and posts to the leaderboard.
   async function dailyFinish() {
     const accs=dailyAccuracies(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10,streak=dailyUpdateStreak(daily.date);
-    daily.bonus=DAILY_STREAK_BONUS[streak.count]||0;daily.justFinished=true;
+    // Replay (debug "play again"): today is already on the board and in history, so don't post, pay or extend anything a second time.
+    const replay=!!(myProfile.dailyHistory&&myProfile.dailyHistory[daily.date]);
+    daily.bonus=replay?0:(DAILY_STREAK_BONUS[streak.count]||0);daily.justFinished=true;
+    if(replay){daily.replay=true;updateDailyBadge();return;}
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,perfect:accs.every((x)=>x>=90),
       saved:{date:daily.date,guesses:daily.guesses,done:true,total},board:{path:'daily/'+daily.date+'/'+deviceId,value:{n:name,s:total,a:accs.map(Math.round),t:Date.now()}}});
@@ -9833,7 +9856,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderDaily();
       return;
     }
-    if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } const q = daily.questions[daily.guesses.length - 1]; const mod = await loadAnimModule(); const g = daily.guesses[daily.guesses.length - 1]; const acc = roundAccuracy(g / q.answer); const host = document.getElementById("dc-result"); if (host) host.innerHTML = resultCardHtml(acc, g, mod ? mod.formatCount(q.answer, q.answer) : q.answer); const dots = dailyContentEl.querySelector(".dc-dots"); if (dots) dots.outerHTML = dailyDots(daily.guesses.length - 1, daily.guesses.length); b.id = "dc-next"; b.className = "dc-btn"; b.textContent = daily.guesses.length >= 3 ? "See my results" : "Next question"; return; }
+    if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } dailyShowSummary(await loadAnimModule()); return; }
     if (b.id === "dc-next") { daily.phase = daily.guesses.length >= 3 ? "done" : "question"; renderDaily(); return; }
     if (b.id === "dc-finish") { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); return; }
     if (b.id === "dc-share") {
@@ -11982,7 +12005,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Which little reaction sits beside the check / X. The popper is saved for tight calls, new bests and streak callouts,
   // so it stays special; everything else rotates and never repeats twice in a row.
   let wbLastSide = "";
-  function wbSidePick(ok, ratio, milestone, bestFlash) {
+  function wbSidePick(ok, ratio, milestone, bestFlash, noHeart) {
     const choose = (list) => { const f = list.filter((x) => x.img !== wbLastSide); const c = (f.length ? f : list)[Math.floor(Math.random() * f.length || 0)]; wbLastSide = c.img; return c; };
     const R = "icons/reactions/";
     if (ok) {
@@ -11991,7 +12014,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (ratio < 2.5) return choose([{ img: R + "popper.png", kind: "pop" }, { img: R + "mindblown.png", kind: "bob" }]);
       return choose([{ img: R + "thumbsup.png", kind: "bob" }, { img: R + "clap.png", kind: "clap" }, { img: R + "flex.png", kind: "bob" }, { img: R + "cool.png", kind: "bob" }, { img: R + "triumph.png", kind: "bob" }]);
     }
-    return choose([{ img: "icons/life-heart-cracked.webp", kind: "crack" }, { img: R + "crying.png", kind: "sad" }, { img: R + "facepalm.png", kind: "sad" }, { img: R + "nervous.png", kind: "sad" }, { img: R + "sideeye.png", kind: "sad" }]);
+    return choose([...(noHeart ? [] : [{ img: "icons/life-heart-cracked.webp", kind: "crack" }]), { img: R + "crying.png", kind: "sad" }, { img: R + "facepalm.png", kind: "sad" }, { img: R + "nervous.png", kind: "sad" }, { img: R + "sideeye.png", kind: "sad" }]);
   }
   const wbBits = (n, cls) => Array.from({ length: n }, (_, i) => { const a = -Math.PI * (0.1 + 0.8 * Math.random()); const d = 30 + Math.random() * 34; return `<i class="${cls}" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(-Math.sin(a) * d)}px;--c:${["#ffd23c", "#ff7a3c", "#5ec8ff", "#8be26a", "#c58bff", "#ff6b9d"][i % 6]};--w:${(i * 0.04).toFixed(2)}s"></i>`; }).join("");
   const wbSparks = () => Array.from({ length: 7 }, (_, i) => { const a = (i / 7) * Math.PI * 2 + Math.random() * 0.5; return `<i class="wb-spark" style="--x:${Math.round(50 + Math.cos(a) * 58)}%;--y:${Math.round(50 + Math.sin(a) * 58)}%;--w:${(0.1 + i * 0.12).toFixed(2)}s;--s:${10 + Math.round(Math.random() * 10)}px"></i>`; }).join("");
