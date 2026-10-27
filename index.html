@@ -17836,7 +17836,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const slots = seats.map((e, seat) => {
       if (!e) return '';
       const p = contestants[e.id];
-      return '<div class="pd-slot pd-seat-'+seat+' r'+Math.min(e.rank,3)+'" data-id="'+escapeHtml(e.id)+'" data-rank="'+e.rank+'"><div class="pd-who">'+(e.rank===1&&e.score>0?'<img class="pd-crown" src="icons/reactions/crown.png" alt="">':'')+'<div class="pd-portraits">'+portrait(p)+'</div><div class="pd-n">'+escapeHtml(p.name)+'</div><div class="pd-sc">'+e.score+'<small> points</small></div></div></div>';
+      return '<div class="pd-slot pd-seat-'+seat+' r'+Math.min(e.rank,3)+'" data-id="'+escapeHtml(e.id)+'" data-rank="'+e.rank+'"><div class="pd-who">'+(e.rank===1&&e.score>0?'<img class="pd-crown" src="icons/reactions/crown.png" alt="">':'')+'<div class="pd-portraits">'+portrait(p)+'</div></div><div class="pd-caption"><div class="pd-n">'+escapeHtml(p.name)+'</div><div class="pd-sc">'+e.score+'<small> points</small></div></div></div>';
     }).join('');
     // Artwork has fixed numbered seats. Correct its badge when places are shared.
     const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
@@ -17870,7 +17870,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           {opacity:1,transform:'translate('+side*12+'%,0)',offset:.83},
           {opacity:1,transform:'none',offset:1}];
         const animation=who.animate(frames,{duration:winner?1150:1500,delay,fill:'backwards',easing:'linear'});
-        animation.onfinish=()=>{who.style.opacity='1';who.style.transform='none';};animations.push(animation);
+        animation.onfinish=()=>{who.style.opacity='1';who.style.transform='none';who.parentElement.classList.add('pd-settled');};animations.push(animation);
       });
       setTimeout(()=>{if(alive()&&!li.classList.contains('skip')){li.classList.add('pd-landed');playSound('podium-thud');}},impactAt);
       setTimeout(()=>{if(alive())finish();},doneMs);
