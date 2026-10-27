@@ -175,10 +175,8 @@ if (location.protocol === "file:") {
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     transition: transform 100ms ease;
   }
-  button { transition: scale 160ms cubic-bezier(.2,1.6,.4,1); }
-  button:active:not(:disabled) { scale: .94; transition: scale 60ms ease-out; }
-  button.btn-bounce { animation: btnBounce 220ms ease-out; }
-  @keyframes btnBounce { 0% { scale: .94; } 55% { scale: 1.075; } 80% { scale: .985; } 100% { scale: 1; } }
+  /* Press feedback must not move a target away from the finger before click. */
+  button:active:not(:disabled) { scale: 1 !important; transform: none !important; filter: brightness(.94); }
 
   /* Custom in-app keyboard (room code + name entry) - the inputs it drives
      are `readonly` with inputmode="none" so the OS keyboard never appears. */
@@ -2069,7 +2067,7 @@ if (location.protocol === "file:") {
   #bottom-actions button#play-again-btn { background: linear-gradient(180deg, #9be25f, #5bb02f) !important; border-color: #3b7d1d !important; }
   #bottom-actions button#final-home-btn { background: linear-gradient(180deg, #ef6f5f, #c0332a) !important; border-color: #8a1f19 !important; }
   #bottom-actions button#final-double-coins-btn { background: linear-gradient(180deg, #9a70ea, #5b34b0) !important; border-color: #3f2380 !important; }
-  #bottom-actions button#play-again-btn:active, #bottom-actions button#final-home-btn:active, #bottom-actions button#final-double-coins-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.28) !important; }
+  #bottom-actions button#play-again-btn:active, #bottom-actions button#final-home-btn:active, #bottom-actions button#final-double-coins-btn:active { transform: none !important; box-shadow: 0 1px 0 rgba(0,0,0,.28) !important; }
   .fbtn-sub { display: block; font-size: 11px; font-weight: 600; opacity: .92; }
   #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
   /* Reaction strip is the LAST child of #bottom-toolbar (a bottom-anchored
@@ -9867,13 +9865,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (b.id === "dc-submit") {
+      if(daily.phase!=="question")return;
       const g = parseFloat(daily.input);
       if (!(g > 0)) return;
       saveSoloRound('daily',daily.questions[daily.guesses.length],g,daily.guesses.length,'daily_'+daily.date);
       daily.guesses.push(g); daily.input = ""; daily.phase = "reveal";
       playSound("pick"); vibrate(20);
-      try { await update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses, done: false }); } catch (err) {}
-      if (daily.guesses.length >= 3) await dailyFinish();
+      if (daily.guesses.length >= 3) void dailyFinish();
+      else void update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses.slice(), done: false }).catch(()=>{});
       renderDaily();
       return;
     }
@@ -9968,17 +9967,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest(".sh-card");
     if (!b) return;
     if (b.id === "pm-classic") {
-      afterBtnBounce(b, () => openClassicInfo());
+      activateButton(b, () => openClassicInfo());
     } else if (b.id === "pm-teamvteam") {
-      afterBtnBounce(b, () => openTeamVTeamInfo());
+      activateButton(b, () => openTeamVTeamInfo());
     } else if (b.id === "pm-teamworlds") {
-      afterBtnBounce(b, () => openTeamWorldsScreen());
+      activateButton(b, () => openTeamWorldsScreen());
     } else if (b.id === "pm-hlsurvival") {
-      afterBtnBounce(b, () => openHlInfo());
+      activateButton(b, () => openHlInfo());
     } else if (b.id === "pm-highstakes") {
-      afterBtnBounce(b, () => openHsInfo());
+      activateButton(b, () => openHsInfo());
     } else if (b.id === 'pm-bluff') {
-      afterBtnBounce(b, () => openBluffInfo());
+      activateButton(b, () => openBluffInfo());
     }
   });
   document.getElementById("party-close-btn").addEventListener("click", () => closeOverlay());
@@ -10127,11 +10126,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   teamvteamContentEl.addEventListener("click", (e) => {
     const classicBtn = e.target.closest("#classic-start"), hlBtn = e.target.closest("#hl-start"), hsBtn = e.target.closest("#hs-start");
-    if (hsBtn) { afterBtnBounce(hsBtn, () => startHsFromInfo()); return; }
-    if (classicBtn) { afterBtnBounce(classicBtn, () => startClassicFromInfo()); return; }
-    if (hlBtn) { afterBtnBounce(hlBtn, () => startHlFromInfo()); return; }
+    if (hsBtn) { activateButton(hsBtn, () => startHsFromInfo()); return; }
+    if (classicBtn) { activateButton(classicBtn, () => startClassicFromInfo()); return; }
+    if (hlBtn) { activateButton(hlBtn, () => startHlFromInfo()); return; }
     if (!e.target.closest("#tvt-start")) return;
-    afterBtnBounce(e.target.closest("#tvt-start"), async () => {
+    activateButton(e.target.closest("#tvt-start"), async () => {
       const granted = await confirmAndPurchaseHostUnlock("teamvteam");
       if (!granted) return;
       pendingFreeGame = granted === "free";
@@ -11165,7 +11164,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "tw-back-to-list") { twWorldId = null; renderTeamWorldsScreen(); return; }
     if (b.id === "tw-start") {
-      afterBtnBounce(b, async () => {
+      activateButton(b, async () => {
         const granted = await confirmAndPurchaseHostUnlock("teamworlds");
         if (!granted) return;
         pendingFreeGame = granted === "free";
@@ -11505,14 +11504,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const g = parseFloat(mo.input); if (!(g > 0)) return;
       saveSoloRound(mo.practice?'practice':'monthly',mo.questions[mo.guesses.length],g,mo.guesses.length,mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT);
       mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick"); vibrate(20);
-      if (mo.practice) { if (mo.guesses.length >= mo.questions.length) await monthlyPracticeFinish(); renderMonthly(); return; }
+      if (mo.practice) { if (mo.guesses.length >= mo.questions.length) void monthlyPracticeFinish(); renderMonthly(); return; }
+      if (mo.guesses.length >= mo.questions.length) { void monthlyFinish(); renderMonthly(); return; }
       try {
         // Progress is saved per level, so leaving mid-level resumes at the next question.
         mo.prog[mo.level] = { ...(mo.prog[mo.level] || {}), guesses: mo.guesses.slice(), done: false };
-        if (mo.fresh) { mo.fresh = false; await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), levels: { [mo.level]: { guesses: mo.guesses, done: false } }, done: false }); }
-        else await update(ref(db, `profiles/${deviceId}/monthly/levels/${mo.level}`), { guesses: mo.guesses, done: false });
+        if (mo.fresh) { mo.fresh = false; void update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), levels: { [mo.level]: { guesses: mo.guesses.slice(), done: false } }, done: false }).catch(()=>{}); }
+        else void update(ref(db, `profiles/${deviceId}/monthly/levels/${mo.level}`), { guesses: mo.guesses.slice(), done: false }).catch(()=>{});
       } catch (err) {}
-      if (mo.guesses.length >= mo.questions.length) await monthlyFinish();
       renderMonthly(); return;
     }
     if (b.id === "mo-skip") {
@@ -14509,30 +14508,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     createScreenEl.classList.add("active");
   }
-  // A fixed setTimeout here raced the .btn-bounce CSS animation (see
-  // triggerBtnBounce) - close enough to its 220ms that the screen could
-  // still hide the button a hair before the animation's own cleanup ran,
-  // leaving .btn-bounce stuck on and replaying next time the button was
-  // shown again. Waiting for the animation's own "animationend" is exact;
-  // the timeout is just a safety net for when no bounce plays at all
-  // (e.g. a non-pointer activation that never added the class).
-  const BTN_BOUNCE_MS = 220;
-  function afterBtnBounce(btn, fn) {
-    let done = false;
-    function run() {
-      if (done) return;
-      done = true;
-      btn.removeEventListener("animationend", onEnd);
-      fn();
-    }
-    function onEnd(e) {
-      if (e.animationName === "btnBounce") run();
-    }
-    btn.addEventListener("animationend", onEnd);
-    setTimeout(run, BTN_BOUNCE_MS + 80);
-  }
-  homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => openSolo()));
-  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, () => openPartyHub()));
+  // Navigation responds to the click; visual feedback never delays the action.
+  function activateButton(btn, fn) { if (btn && !btn.disabled) return fn(); }
+  homeSoloBtn.addEventListener("click", () => activateButton(homeSoloBtn, () => openSolo()));
+  homeCreateBtn.addEventListener("click", () => activateButton(homeCreateBtn, () => openPartyHub()));
   let soloFromHub = false; // the Solo hub's Quick Game card opened the create screen
   let partyFromHub = false; // a Party Mode hub card (Classic Party/Team vs Team) opened the create screen
   createBackBtn.addEventListener("click", () => {
@@ -14553,7 +14532,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen=null;syncOverlayReturnFlag();
     joinScreen.classList.add("active");
   }
-  homeJoinBtn.addEventListener("click", () => afterBtnBounce(homeJoinBtn, showJoinScreen));
+  homeJoinBtn.addEventListener("click", () => activateButton(homeJoinBtn, showJoinScreen));
   joinBackBtn.addEventListener("click", () => {
     pendingQrInvite.clear();
     joinScreen.classList.remove("active");
@@ -16264,15 +16243,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function renderGuessDisplay() {
     const shown = currentGuessStr === "" ? "0" : currentGuessStr;
+    if(roomState.settings?.mode==="teamworlds"){twGuessDisplayEl.textContent=shown;return;}
     const frameIndex = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].frameIndex) || 1;
     guessDisplayEl.className = "answer-slot frame-" + frameIndex + " pp-" + PAPER_STYLES[frameIndex % PAPER_STYLES.length];
     guessDisplayEl.dataset.value = shown;
     guessDisplayEl.setAttribute("aria-label", "Your guess " + shown);
-    // numbers shrink to fit the paper on their own (the svg scales); only the newest digit is drawn in
-    guessDisplayEl.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(shown, "guess", currentGuessStr === "" ? false : "last");
-    // Team Worlds' own plain text display (Solo Worlds style) - updated alongside the fancy
-    // paper one above regardless of which is actually visible, same as the rest of this mode's
-    // rendering never special-cases "don't bother, it's hidden".
+    // Scale the handwriting to fit, but show entered digits fully on this frame.
+    guessDisplayEl.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(shown, "guess", false);
+    // Keep the shared plain display current; Team Worlds returns above without
+    // rebuilding the hidden handwritten SVG.
     twGuessDisplayEl.textContent = shown;
   }
   const qPreviewEl = document.getElementById("q-preview");
@@ -16351,9 +16330,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   numpadEl.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("num-btn")) return;
+    const key = e.target.closest?.(".num-btn");
+    if (!key || !numpadEl.contains(key) || key.disabled) return;
     if (guessLocked || roomState.paused) return;
-    const val = e.target.dataset.val;
+    const val = key.dataset.val;
     if (val === "." && currentGuessStr.includes(".")) return;
     // The biggest possible answer is grain of sand vs Mount Everest: 17,698,000 (8 digits). Answers show 2 decimals, so cap at 8 whole digits + 2 decimals.
     const [whole, frac] = currentGuessStr.split(".");
@@ -18843,18 +18823,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (SFX_FILES[kind]) sfx(kind);
   }
 
-  // Springy release bounce on every button, everywhere — one delegated listener.
-  function triggerBtnBounce(e) {
-    const btn = e.target.closest && e.target.closest("button");
-    if (!btn || btn.disabled || prefersReducedMotion()) return;
-    btn.classList.remove("btn-bounce");
-    void btn.offsetWidth;
-    btn.classList.add("btn-bounce");
-  }
-  document.addEventListener("pointerup", triggerBtnBounce);
-  document.addEventListener("pointercancel", triggerBtnBounce);
-  document.addEventListener("animationend", (e) => {
-    if (e.animationName === "btnBounce") e.target.classList.remove("btn-bounce");
+  // Brightness feedback leaves the hit target in place and avoids forced layout.
+  const buttonFeedback = new WeakMap();
+  document.addEventListener('pointerup', e => {
+    const btn=e.target.closest?.('button');
+    if(!btn||btn.disabled||e.button>0||prefersReducedMotion()||!btn.animate)return;
+    buttonFeedback.get(btn)?.cancel();
+    buttonFeedback.set(btn,btn.animate([{filter:'brightness(.94)'},{filter:'brightness(1.06)',offset:.45},{filter:'brightness(1)'}],{duration:140,easing:'ease-out'}));
   });
 
   // ==================== Master phase switch ====================

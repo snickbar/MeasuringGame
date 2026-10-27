@@ -1,7 +1,7 @@
 // Fit actual painted labels, including nested spans and artwork, rather than
 // relying on scrollWidth (which can hide overflow behind a clipped child).
 export function installAutoFit({ document: doc = document, window: win = window } = {}) {
-  const saved = new WeakMap(); let queued = false, running = false;
+  const saved = new WeakMap(), pending = new Set(); let queued = false, running = false, fullFit = false;
   const properties = ['font-size', 'line-height', 'white-space', 'overflow-wrap', 'word-break', 'hyphens'];
   const selector = 'button,.polish-banner,.sh-banner .sh-tx';
   const visible = el => el.clientWidth > 0 && el.clientHeight > 0 && el.getClientRects().length;
@@ -36,6 +36,8 @@ export function installAutoFit({ document: doc = document, window: win = window 
   }
   function fit(box) {
     if (!visible(box) || box.matches('[data-no-autofit]')) return;
+    // Fixed-size numeric keys never need a page-wide text fitting pass.
+    if (box.matches('.num-btn,.dc-key,.hs-key,#backspace-btn')) return;
     // Illustrated menu cards have a fixed art box and a separate caption box.
     // Fit that caption once; fitting both parent and child resets the same labels twice.
     if (box.matches('.sh-banner') && box.querySelector('.sh-tx')) return;
@@ -71,10 +73,26 @@ export function installAutoFit({ document: doc = document, window: win = window 
   }
   function run() {
     queued = false; running = true;
-    try { doc.querySelectorAll(selector).forEach(fit); } finally { running = false; }
+    const boxes = fullFit ? doc.querySelectorAll(selector) : [...pending];
+    pending.clear(); fullFit = false;
+    try { boxes.forEach(fit); } finally { running = false; }
   }
-  function queue() { if (!queued && !running) { queued = true; win.requestAnimationFrame(run); } }
-  const observer = new MutationObserver(queue);
+  function queue(box) {
+    if (box?.nodeType === 1) pending.add(box); else fullFit = true;
+    if (!queued && !running) { queued = true; win.requestAnimationFrame(run); }
+  }
+  const fitWithin = el => { if (el?.matches?.(selector)) queue(el); el?.querySelectorAll?.(selector).forEach(queue); };
+  const observer = new MutationObserver(records => {
+    for (const r of records) {
+      const el = r.target.nodeType === 1 ? r.target : r.target.parentElement;
+      const button = el?.closest(selector);
+      if (button) { queue(button); continue; }
+      if (r.type === 'attributes') { fitWithin(el); continue; }
+      const changedButtons = [...(r.addedNodes || []), ...(r.removedNodes || [])].some(n =>
+        n.nodeType === 1 && (n.matches(selector) || n.querySelector(selector)));
+      if (changedButtons) fitWithin(el);
+    }
+  });
   observer.observe(doc.documentElement, { childList: true, subtree: true, characterData: true, attributes: true,
     attributeFilter: ['class', 'hidden', 'data-large-text'] });
   const resize = new ResizeObserver(queue); resize.observe(doc.documentElement);

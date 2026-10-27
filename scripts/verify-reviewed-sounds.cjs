@@ -27,7 +27,8 @@ class AudioNode{
  end(){this.listeners.ended?.();}
 }
 const context=vm.createContext({Audio:AudioNode,audioLifecycle:{canPlay:()=>true,guard:fn=>fn},document:{querySelector:()=>true},localSoundEnabled:true,localStorage:{getItem:()=>35},setTimeout:(fn,ms)=>timers.push({fn,ms})});
-const start=source.indexOf('  const SFX_FILES = {'),end=source.indexOf('  // Springy release bounce',start);
+const start=source.indexOf('  const SFX_FILES = {'),end=source.indexOf('  // Brightness feedback',start);
+assert(start>=0&&end>start,'Sound module boundaries must exist');
 vm.runInContext(source.slice(start,end),context);
 function play(kind){played.length=0;vm.runInContext(`playSound(${JSON.stringify(kind)})`,context);return played;}
 for(const row of applied){const nodes=play(row.id);assert.equal(nodes.length,1,'One selected cue: '+row.id);assert.equal(nodes[0].file,row.file);assert(Math.abs(nodes[0].volume-row.gain)<1e-9,'Reviewed cue plays at its own gain: '+row.id);}
