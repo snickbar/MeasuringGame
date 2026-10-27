@@ -51,9 +51,16 @@ export function createPlayLayout(doc = document) {
   function clear(owner) { owners.delete(owner); delete owner.dataset.playLayout; delete owner.dataset.playDensity; }
   function shell(owner, content, {mode = 'solo', force = false} = {}) {
     if (owner.classList.contains('wb-playing')) { clear(owner); content.classList.remove('play-shell-content'); return; }
+    // Intro menus use page scrolling beneath transparent sticky banners. Reserving
+    // a gameplay status row here clips cards at the banner's rectangular bounds.
+    const menuTitle = content.querySelector(':scope > .dc-title');
+    const menuHeader = content.querySelector(':scope > .mode-menu-header,:scope > .wl-menu-header');
+    if (!force && (menuHeader || (menuTitle && /^(Survival|Which Is Bigger|Daily Challenge|.+ Challenge)$/.test(menuTitle.textContent.trim())))) {
+      clear(owner); content.classList.remove('play-shell-content'); return;
+    }
     if (content.querySelector(':scope > .play-middle')) return;
     clear(owner); content.classList.remove('play-shell-content');
-    let header = content.querySelector(':scope > .pin-top,:scope > .hs-top,:scope > .dc-title');
+    let header = content.querySelector(':scope > .pin-top,:scope > .hs-top,:scope > .dc-title,:scope > .mode-menu-header,:scope > .wl-menu-header');
     let footer = content.querySelector('.pin-bottom,:scope > .bl-dock,[data-send-claim],#hs-skip,#hs-deal,#hs-again,#hs-fake-send,#dc-share');
     if (!footer && !force) return;
     if (!header) { header = doc.createElement('div'); header.hidden = true; }

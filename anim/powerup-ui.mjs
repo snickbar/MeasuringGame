@@ -258,7 +258,8 @@ export function createPowerupController(ports) {
     }
   }
   document.addEventListener('click', e => {
-    if (busy) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    // A pending purchase locks conflicting actions, not typing or navigation.
+    if (busy && e.target.closest('[data-powerup],#submit-guess-btn,#wl-submit,#sv-submit,#dc-submit,#mo-submit')) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     const b = e.target.closest('[data-powerup]');
     if (b && !b.disabled) {
       const rect = b.getBoundingClientRect(), origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -266,7 +267,7 @@ export function createPowerupController(ports) {
     }
   }, true);
   document.addEventListener('keydown', e => {
-    if (busy) { e.preventDefault(); e.stopImmediatePropagation(); }
+    if (busy && e.target.closest('[data-powerup],#submit-guess-btn,#wl-submit,#sv-submit,#dc-submit,#mo-submit')) { e.preventDefault(); e.stopImmediatePropagation(); }
   }, true);
   if (typeof ResizeObserver !== 'undefined') {
     const observer = new ResizeObserver(() => render());

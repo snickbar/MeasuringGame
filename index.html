@@ -175,10 +175,8 @@ if (location.protocol === "file:") {
     border-width: 16px; border-style: solid; border-image-source: var(--btn-accent); border-image-slice: 55 fill;
     transition: transform 100ms ease;
   }
-  button { transition: scale 160ms cubic-bezier(.2,1.6,.4,1); }
-  button:active:not(:disabled) { scale: .94; transition: scale 60ms ease-out; }
-  button.btn-bounce { animation: btnBounce 220ms ease-out; }
-  @keyframes btnBounce { 0% { scale: .94; } 55% { scale: 1.075; } 80% { scale: .985; } 100% { scale: 1; } }
+  /* Press feedback must not move a target away from the finger before click. */
+  button:active:not(:disabled) { scale: 1 !important; transform: none !important; filter: brightness(.94); }
 
   /* Custom in-app keyboard (room code + name entry) - the inputs it drives
      are `readonly` with inputmode="none" so the OS keyboard never appears. */
@@ -942,6 +940,7 @@ if (location.protocol === "file:") {
   #home-solo-btn.has-todo::after { content: ""; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; z-index: 2; }
   #worlds-screen.active #worlds-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #worlds-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  #worlds-content > .wl-menu-header { position: sticky; top: 62px; z-index: 8; padding: 1px 0; margin: -1px 0 8px; background: transparent; }
   .wl-stars { letter-spacing: 2px; color: #e8a30c; -webkit-text-stroke: .6px #4a2c12; }
   .wl-stars .off { color: #e7dcc4; }
   .wl-meter { display: flex; align-items: center; gap: 4px; margin-top: 1px; }
@@ -993,7 +992,7 @@ if (location.protocol === "file:") {
   .wb-slam { animation: wbSlam .4s cubic-bezier(.2,.8,.3,1) both; }
   @keyframes wbSlam { 0% { transform: translateY(0); } 15% { transform: translateY(9px) scale(1.012); } 35% { transform: translateY(-5px); } 60% { transform: translateY(3px); } 100% { transform: translateY(0); } }
   /* Pinned layout: score / lives / progress stay under the toolbar, the main button stays at the bottom, the middle scrolls. */
-  .pin-top { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 4px; padding: 2px 12px 8px; background: linear-gradient(rgba(255,249,238,.98) 92%, rgba(255,249,238,0)); }
+  .pin-top { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 4px; padding: 2px 12px 8px; background: transparent; }
   .pin-bottom { position: sticky; bottom: 0; z-index: 6; margin: 6px -12px 0; padding: 16px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: transparent; }
   .pin-bottom > .dc-btn { margin-top: 0; }
   .pin-top > .dc-title { margin-top: 0; }
@@ -1645,7 +1644,7 @@ if (location.protocol === "file:") {
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #wb-screen, #teamvteam-screen, #teamworlds-screen { position: relative; }
   /* Keep navigation above scrolling content; Lobby pins only Start game and Back. */
-  .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: #fbfaf6; }
+  .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: transparent; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
@@ -2068,7 +2067,7 @@ if (location.protocol === "file:") {
   #bottom-actions button#play-again-btn { background: linear-gradient(180deg, #9be25f, #5bb02f) !important; border-color: #3b7d1d !important; }
   #bottom-actions button#final-home-btn { background: linear-gradient(180deg, #ef6f5f, #c0332a) !important; border-color: #8a1f19 !important; }
   #bottom-actions button#final-double-coins-btn { background: linear-gradient(180deg, #9a70ea, #5b34b0) !important; border-color: #3f2380 !important; }
-  #bottom-actions button#play-again-btn:active, #bottom-actions button#final-home-btn:active, #bottom-actions button#final-double-coins-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.28) !important; }
+  #bottom-actions button#play-again-btn:active, #bottom-actions button#final-home-btn:active, #bottom-actions button#final-double-coins-btn:active { transform: none !important; box-shadow: 0 1px 0 rgba(0,0,0,.28) !important; }
   .fbtn-sub { display: block; font-size: 11px; font-weight: 600; opacity: .92; }
   #bottom-actions button:disabled { opacity: .4; filter: grayscale(.4); }
   /* Reaction strip is the LAST child of #bottom-toolbar (a bottom-anchored
@@ -9866,13 +9865,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (b.id === "dc-submit") {
+      if(daily.phase!=="question")return;
       const g = parseFloat(daily.input);
       if (!(g > 0)) return;
       saveSoloRound('daily',daily.questions[daily.guesses.length],g,daily.guesses.length,'daily_'+daily.date);
       daily.guesses.push(g); daily.input = ""; daily.phase = "reveal";
       playSound("pick"); vibrate(20);
-      try { await update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses, done: false }); } catch (err) {}
-      if (daily.guesses.length >= 3) await dailyFinish();
+      if (daily.guesses.length >= 3) void dailyFinish();
+      else void update(ref(db, `profiles/${deviceId}/daily`), { date: daily.date, guesses: daily.guesses.slice(), done: false }).catch(()=>{});
       renderDaily();
       return;
     }
@@ -9967,17 +9967,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest(".sh-card");
     if (!b) return;
     if (b.id === "pm-classic") {
-      afterBtnBounce(b, () => openClassicInfo());
+      activateButton(b, () => openClassicInfo());
     } else if (b.id === "pm-teamvteam") {
-      afterBtnBounce(b, () => openTeamVTeamInfo());
+      activateButton(b, () => openTeamVTeamInfo());
     } else if (b.id === "pm-teamworlds") {
-      afterBtnBounce(b, () => openTeamWorldsScreen());
+      activateButton(b, () => openTeamWorldsScreen());
     } else if (b.id === "pm-hlsurvival") {
-      afterBtnBounce(b, () => openHlInfo());
+      activateButton(b, () => openHlInfo());
     } else if (b.id === "pm-highstakes") {
-      afterBtnBounce(b, () => openHsInfo());
+      activateButton(b, () => openHsInfo());
     } else if (b.id === 'pm-bluff') {
-      afterBtnBounce(b, () => openBluffInfo());
+      activateButton(b, () => openBluffInfo());
     }
   });
   document.getElementById("party-close-btn").addEventListener("click", () => closeOverlay());
@@ -10126,11 +10126,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   teamvteamContentEl.addEventListener("click", (e) => {
     const classicBtn = e.target.closest("#classic-start"), hlBtn = e.target.closest("#hl-start"), hsBtn = e.target.closest("#hs-start");
-    if (hsBtn) { afterBtnBounce(hsBtn, () => startHsFromInfo()); return; }
-    if (classicBtn) { afterBtnBounce(classicBtn, () => startClassicFromInfo()); return; }
-    if (hlBtn) { afterBtnBounce(hlBtn, () => startHlFromInfo()); return; }
+    if (hsBtn) { activateButton(hsBtn, () => startHsFromInfo()); return; }
+    if (classicBtn) { activateButton(classicBtn, () => startClassicFromInfo()); return; }
+    if (hlBtn) { activateButton(hlBtn, () => startHlFromInfo()); return; }
     if (!e.target.closest("#tvt-start")) return;
-    afterBtnBounce(e.target.closest("#tvt-start"), async () => {
+    activateButton(e.target.closest("#tvt-start"), async () => {
       const granted = await confirmAndPurchaseHostUnlock("teamvteam");
       if (!granted) return;
       pendingFreeGame = granted === "free";
@@ -10890,7 +10890,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
-      el.innerHTML = `<h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p>${soloResumeHtml("worlds")}` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
@@ -10900,7 +10900,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "world") {
       worldStop();
-      el.innerHTML = `<h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p></div>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
         [1, 2, 3, 4, 5].map((l) => {
           const open = worldLevelUnlocked(w.id, l), st = worldLevelStars(w.id, l);
           return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
@@ -11164,7 +11164,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "tw-back-to-list") { twWorldId = null; renderTeamWorldsScreen(); return; }
     if (b.id === "tw-start") {
-      afterBtnBounce(b, async () => {
+      activateButton(b, async () => {
         const granted = await confirmAndPurchaseHostUnlock("teamworlds");
         if (!granted) return;
         pendingFreeGame = granted === "free";
@@ -11504,14 +11504,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const g = parseFloat(mo.input); if (!(g > 0)) return;
       saveSoloRound(mo.practice?'practice':'monthly',mo.questions[mo.guesses.length],g,mo.guesses.length,mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT);
       mo.guesses.push(g); mo.input = ""; mo.phase = "reveal"; playSound("pick"); vibrate(20);
-      if (mo.practice) { if (mo.guesses.length >= mo.questions.length) await monthlyPracticeFinish(); renderMonthly(); return; }
+      if (mo.practice) { if (mo.guesses.length >= mo.questions.length) void monthlyPracticeFinish(); renderMonthly(); return; }
+      if (mo.guesses.length >= mo.questions.length) { void monthlyFinish(); renderMonthly(); return; }
       try {
         // Progress is saved per level, so leaving mid-level resumes at the next question.
         mo.prog[mo.level] = { ...(mo.prog[mo.level] || {}), guesses: mo.guesses.slice(), done: false };
-        if (mo.fresh) { mo.fresh = false; await update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), levels: { [mo.level]: { guesses: mo.guesses, done: false } }, done: false }); }
-        else await update(ref(db, `profiles/${deviceId}/monthly/levels/${mo.level}`), { guesses: mo.guesses, done: false });
+        if (mo.fresh) { mo.fresh = false; void update(ref(db, `profiles/${deviceId}/monthly`), { key: mo.key, format: MONTHLY_FORMAT, combos: mo.combos.map(q => ({ unitId: q.unitId, targetId: q.targetId })), levels: { [mo.level]: { guesses: mo.guesses.slice(), done: false } }, done: false }).catch(()=>{}); }
+        else void update(ref(db, `profiles/${deviceId}/monthly/levels/${mo.level}`), { guesses: mo.guesses.slice(), done: false }).catch(()=>{});
       } catch (err) {}
-      if (mo.guesses.length >= mo.questions.length) await monthlyFinish();
       renderMonthly(); return;
     }
     if (b.id === "mo-skip") {
@@ -14508,30 +14508,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     createScreenEl.classList.add("active");
   }
-  // A fixed setTimeout here raced the .btn-bounce CSS animation (see
-  // triggerBtnBounce) - close enough to its 220ms that the screen could
-  // still hide the button a hair before the animation's own cleanup ran,
-  // leaving .btn-bounce stuck on and replaying next time the button was
-  // shown again. Waiting for the animation's own "animationend" is exact;
-  // the timeout is just a safety net for when no bounce plays at all
-  // (e.g. a non-pointer activation that never added the class).
-  const BTN_BOUNCE_MS = 220;
-  function afterBtnBounce(btn, fn) {
-    let done = false;
-    function run() {
-      if (done) return;
-      done = true;
-      btn.removeEventListener("animationend", onEnd);
-      fn();
-    }
-    function onEnd(e) {
-      if (e.animationName === "btnBounce") run();
-    }
-    btn.addEventListener("animationend", onEnd);
-    setTimeout(run, BTN_BOUNCE_MS + 80);
-  }
-  homeSoloBtn.addEventListener("click", () => afterBtnBounce(homeSoloBtn, () => openSolo()));
-  homeCreateBtn.addEventListener("click", () => afterBtnBounce(homeCreateBtn, () => openPartyHub()));
+  // Navigation responds to the click; visual feedback never delays the action.
+  function activateButton(btn, fn) { if (btn && !btn.disabled) return fn(); }
+  homeSoloBtn.addEventListener("click", () => activateButton(homeSoloBtn, () => openSolo()));
+  homeCreateBtn.addEventListener("click", () => activateButton(homeCreateBtn, () => openPartyHub()));
   let soloFromHub = false; // the Solo hub's Quick Game card opened the create screen
   let partyFromHub = false; // a Party Mode hub card (Classic Party/Team vs Team) opened the create screen
   createBackBtn.addEventListener("click", () => {
@@ -14552,7 +14532,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen=null;syncOverlayReturnFlag();
     joinScreen.classList.add("active");
   }
-  homeJoinBtn.addEventListener("click", () => afterBtnBounce(homeJoinBtn, showJoinScreen));
+  homeJoinBtn.addEventListener("click", () => activateButton(homeJoinBtn, showJoinScreen));
   joinBackBtn.addEventListener("click", () => {
     pendingQrInvite.clear();
     joinScreen.classList.remove("active");
@@ -16274,15 +16254,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function renderGuessDisplay() {
     const shown = currentGuessStr === "" ? "0" : currentGuessStr;
+    if(roomState.settings?.mode==="teamworlds"){twGuessDisplayEl.textContent=shown;return;}
     const frameIndex = (currentPlayers[currentPlayerId] && currentPlayers[currentPlayerId].frameIndex) || 1;
     guessDisplayEl.className = "answer-slot frame-" + frameIndex + " pp-" + PAPER_STYLES[frameIndex % PAPER_STYLES.length];
     guessDisplayEl.dataset.value = shown;
     guessDisplayEl.setAttribute("aria-label", "Your guess " + shown);
-    // numbers shrink to fit the paper on their own (the svg scales); only the newest digit is drawn in
-    guessDisplayEl.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(shown, "guess", currentGuessStr === "" ? false : "last");
-    // Team Worlds' own plain text display (Solo Worlds style) - updated alongside the fancy
-    // paper one above regardless of which is actually visible, same as the rest of this mode's
-    // rendering never special-cases "don't bother, it's hidden".
+    // Scale the handwriting to fit, but show entered digits fully on this frame.
+    guessDisplayEl.innerHTML = `<span class="paper-bg"></span>` + handNumberHtml(shown, "guess", false);
+    // Keep the shared plain display current; Team Worlds returns above without
+    // rebuilding the hidden handwritten SVG.
     twGuessDisplayEl.textContent = shown;
   }
   const qPreviewEl = document.getElementById("q-preview");
@@ -16361,9 +16341,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   numpadEl.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("num-btn")) return;
+    const key = e.target.closest?.(".num-btn");
+    if (!key || !numpadEl.contains(key) || key.disabled) return;
     if (guessLocked || roomState.paused) return;
-    const val = e.target.dataset.val;
+    const val = key.dataset.val;
     if (val === "." && currentGuessStr.includes(".")) return;
     // The biggest possible answer is grain of sand vs Mount Everest: 17,698,000 (8 digits). Answers show 2 decimals, so cap at 8 whole digits + 2 decimals.
     const [whole, frac] = currentGuessStr.split(".");
@@ -17836,40 +17817,62 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Party finale: places 4+ slide in as a quick list, then the top three rise on a podium (winner last, on the right).
   let partyFinaleToken = 0;
-  function partyPodiumStage(ranked) {
-    const reduce = prefersReducedMotion();
-    const top = ranked.slice(0, 3), rest = ranked.slice(3);
-    const rowsMs = 200 + rest.length * 350;
-    const t3 = (rowsMs + 300) / 1000, t2 = t3 + 1.5, t1 = t2 + 2.6, drum = t2 + 1.3;
-    const dlFor = (e) => (e.rank === 1 ? t1 : e.rank === 2 ? t2 : t3);
-    const winners = top.filter((e) => e.rank === 1 && e.score > 0);
-    const rows = rest.map((e, k) => `<div class="pd-row" style="--i:${rest.length - 1 - k}"><span class="pd-rk">${e.rank}</span>${avatarHtml(currentPlayers[e.id].avatar)}<b>${escapeHtml(currentPlayers[e.id].name)}</b><i>${e.score}</i></div>`).join("");
-    const slot = (e) => {
-      const p = currentPlayers[e.id], r = Math.min(e.rank, 3), medal = e.medal || (r === 1 ? "gold" : r === 2 ? "silver" : "bronze");
-      const crown = e.rank === 1 && e.score > 0 ? `<img class="pd-crown" src="icons/reactions/crown.png" alt="">` : "";
-      return `<div class="pd-slot r${r}" data-id="${e.id}" style="--dl:${dlFor(e)}s"><div class="pd-who">${crown}${avatarHtml(p.avatar)}<div class="pd-n">${escapeHtml(p.name)}</div><div class="pd-sc">${e.score}</div></div><div class="pd-blk"><span class="medal ${medal}"></span></div></div>`;
-    };
-    const li = document.createElement("li");
-    li.className = "pd-stage go" + (reduce ? " skip" : "");
-    li.style.cssText = `--n:${rest.length};--spot:${t1}s;--drum:${drum}s`;
-    li.innerHTML = `<div class="pd-spot"></div><div class="pd-list">${rows}</div><div class="pd-pod">${winners.length ? `<div class="pd-drum">And the winner is...</div>` : ""}${top.slice().reverse().map(slot).join("")}</div>`;
-    const tok = ++partyFinaleToken;
-    const alive = () => tok === partyFinaleToken && finalScreenEl.classList.contains("active");
-    const winMs = reduce ? 0 : Math.round((t1 + 0.6) * 1000), doneMs = reduce ? 0 : Math.round((t1 + 1.8) * 1000);
-    const reveal = () => { finalListEl.classList.remove("pd-waiting"); const rc = document.getElementById("final-session-recap"); if (rc) rc.classList.remove("pd-hold"); };
-    if (!reduce) {
-      [t3, t2].forEach((t) => setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("reveal"); }, t * 1000));
-      // With many players the list pushes the podium down; bring it into view as it starts to rise.
-      setTimeout(() => { if (alive() && !li.classList.contains("skip")) { try { { const r = li.querySelector(".pd-pod").getBoundingClientRect(), limit = window.innerHeight - 200; if (r.bottom > limit) window.scrollBy({ top: r.bottom - limit, behavior: "smooth" }); }; } catch (e) { /* scrolling is optional */ } } }, (t3 - 0.1) * 1000);
-      if (winners.length) setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("drumroll"); }, drum * 1000);
-      setTimeout(() => { if (alive()) reveal(); }, doneMs);
-      li.addEventListener("click", () => { li.classList.add("skip"); reveal(); });
-    }
-    return { el: li, winMs, reveal, winnerEl: winners.length === 1 ? li.querySelector(`.pd-slot[data-id="${winners[0].id}"] .pd-who`) : null };
+  function partyPodiumStage(ranked, contestants = currentPlayers) {
+    const reduce = prefersReducedMotion(), top = ranked.slice(0, 3), rest = ranked.slice(3);
+    const base = 200 + rest.length * 250, thirdAt = base + 200, secondAt = thirdAt + 1600, firstAt = secondAt + 1800;
+    const impactAt = firstAt + 940, doneMs = reduce ? 0 : firstAt + 1500;
+    const portrait = p => (p.avatars || [p.avatar]).map(a => avatarHtml(a)).join('');
+    const rows = rest.map(e => '<div class="pd-row"><span class="pd-rk">'+e.rank+'</span>'+portrait(contestants[e.id])+'<b>'+escapeHtml(contestants[e.id].name)+'</b><i>'+e.score+'</i></div>').join('');
+    const seats = [top[2], top[0], top[1]];
+    const slots = seats.map((e, seat) => {
+      if (!e) return '';
+      const p = contestants[e.id];
+      return '<div class="pd-slot pd-seat-'+seat+' r'+Math.min(e.rank,3)+'" data-id="'+escapeHtml(e.id)+'" data-rank="'+e.rank+'"><div class="pd-who">'+(e.rank===1&&e.score>0?'<img class="pd-crown" src="icons/reactions/crown.png" alt="">':'')+'<div class="pd-portraits">'+portrait(p)+'</div></div><div class="pd-caption"><div class="pd-n">'+escapeHtml(p.name)+'</div><div class="pd-sc">'+e.score+'<small> points</small></div></div></div>';
+    }).join('');
+    // Artwork has fixed numbered seats. Correct its badge when places are shared.
+    const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
+    const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip':'');
+    li.innerHTML='<div class="pd-list">'+rows+'</div><div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+'</div><button type="button" class="pd-skip">Skip celebration</button>';
+    const tok=++partyFinaleToken, animations=[];
+    const alive=()=>tok===partyFinaleToken&&finalScreenEl.classList.contains('active');
+    const reveal=()=>{finalListEl.classList.remove('pd-waiting');document.getElementById('final-session-recap')?.classList.remove('pd-hold');};
+    const finish=()=>{li.classList.add('skip');animations.forEach(a=>a.cancel());li.querySelectorAll('.pd-who').forEach(e=>{e.style.opacity='1';e.style.transform='none';});reveal();};
+    li.querySelector('.pd-skip').onclick=finish;
+    // Start on attached nodes. Resting state is VISIBLE, so interruption or a missing
+    // animation never leaves the winner stranded at opacity zero.
+    if(!reduce) requestAnimationFrame(()=>{
+      if(!alive()||!li.isConnected||li.classList.contains('skip'))return;
+      li.querySelectorAll('.pd-who').forEach(who=>{
+        const seat=Number(who.parentElement.className.match(/pd-seat-(\d)/)[1]);
+        const winner=who.parentElement.dataset.rank==='1';
+        const delay=winner?firstAt:seat===0?thirdAt:secondAt;
+        const side=seat===0?-1:1;
+        const frames=winner?[
+          {opacity:0,transform:'translateY(-230px)',offset:0},
+          {opacity:1,transform:'translateY(-230px)',offset:.12},
+          {opacity:1,transform:'translateY(-210px)',offset:.25},
+          {opacity:1,transform:'translateY(0)',offset:.82},
+          {opacity:1,transform:'translateY(5px) scale(1.08,.86)',offset:.9},
+          {opacity:1,transform:'none',offset:1}
+        ]:[{opacity:0,transform:'translateX('+side*210+'%)',offset:0},
+          {opacity:1,transform:'translate('+side*160+'%,-30px) rotate('+side*6+'deg)',offset:.25},
+          {opacity:1,transform:'translate('+side*95+'%,0) scale(1.06,.94)',offset:.45},
+          {opacity:1,transform:'translate('+side*48+'%,-20px)',offset:.65},
+          {opacity:1,transform:'translate('+side*12+'%,0)',offset:.83},
+          {opacity:1,transform:'none',offset:1}];
+        const animation=who.animate(frames,{duration:winner?1150:1500,delay,fill:'backwards',easing:'linear'});
+        animation.onfinish=()=>{who.style.opacity='1';who.style.transform='none';who.parentElement.classList.add('pd-settled');};animations.push(animation);
+      });
+      setTimeout(()=>{if(alive()&&!li.classList.contains('skip')){li.classList.add('pd-landed');playSound('podium-thud');}},impactAt);
+      setTimeout(()=>{if(alive())finish();},doneMs);
+    });
+    const winners=top.filter(e=>e.rank===1&&e.score>0);
+    return {el:li,winMs:reduce?0:impactAt+120,reveal,winnerEl:winners.length===1?[...li.querySelectorAll('.pd-slot')].find(e=>e.dataset.id===winners[0].id)?.querySelector('.pd-who'):null};
   }
   function renderFinal() {
     if (finalRendered) return;
     finalScreenEl.classList.toggle('bluff-final',roomState.settings?.mode==='bluff');
+    finalScreenEl.classList.toggle('party-ranked', !['bluff','teamworlds','highstakes','hlsurvival'].includes(roomState.settings?.mode));
     finalRendered = true;
     updateFinalButtons();
     if(roomState.settings?.mode==='bluff'){renderBluffFinal();return;}
@@ -17916,6 +17919,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
       };
       const teamRanked = computeRanks(Object.keys(teamOf), teamScoreFn, teamAvgFn, false);
+      if (teamRanked.length >= 2) {
+        const teams = Object.fromEntries(Object.entries(teamOf).map(([team, members]) => [team, {name: `${TEAM_COLOR_NAMES[team]} team`, avatars: members.map(id => currentPlayers[id].avatar)}]));
+        podium = partyPodiumStage(teamRanked, teams); finalListEl.appendChild(podium.el);
+        if (!podium.el.classList.contains('skip')) { finalListEl.classList.add('pd-waiting'); recap.classList.add('pd-hold'); }
+      }
       teamRanked.forEach((entry, idx) => {
         const { id: team, score, rank, medal: medalType } = entry;
         const members = teamOf[team];
@@ -17931,6 +17939,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }).join("");
         const li = document.createElement("li");
         li.className = "final-row team-final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
+        li.dataset.place = rank === 1 ? 'Winning team' : `Place ${rank}`;
         li.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
         const delayMs = idx * 150;
         li.style.animationDelay = `${delayMs}ms`;
@@ -17940,7 +17949,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           : "";
         li.innerHTML = `
           ${winnerStars}
-          <div class="final-row-top">${medal}<div class="team-final-avatars">${avatars}</div><span class="name">${names}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+          <div class="final-row-top">${medal}<div class="team-final-avatars">${avatars}</div><span class="name">${names}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
           <div class="team-final-members">${memberRows}</div>
         `;
         finalListEl.appendChild(li);
@@ -17971,6 +17980,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `;
       const li = document.createElement("li");
       li.className = "final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
+      li.dataset.place = rank === 1 ? 'Winner' : `Place ${rank}`;
       const delayMs = idx * 150;
       li.style.animationDelay = `${delayMs}ms`;
       if (rank === 1) rank1Delay = delayMs;
@@ -17979,7 +17989,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : "";
       li.innerHTML = `
         ${winnerStars}
-        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
@@ -18703,6 +18713,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   const SFX_FILES = {
     tap: "sfx/crisp/tap.wav",
+    "podium-thud": "sfx/podium-thud.wav",
     select: "sfx/select.mp3",
     cancel: "sfx/crisp/cancel.wav",
     error: "sfx/crisp/error.wav",
@@ -18744,7 +18755,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   };
   // Reviewed clips use the same gain as the comparison page. Kept cues retain their original mix.
   const SFX_VOLUME = {
-    tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
+    "podium-thud": 0.8, tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
     swipe: 0.85, shuffle: 0.85, "avatar-ultra": 0.85, roundwin: 0.85,
     streak: 0.85, winner: 0.85, powerup: 0.85, coins: 0.85, drumroll: 0.85,
   };
@@ -18823,18 +18834,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (SFX_FILES[kind]) sfx(kind);
   }
 
-  // Springy release bounce on every button, everywhere — one delegated listener.
-  function triggerBtnBounce(e) {
-    const btn = e.target.closest && e.target.closest("button");
-    if (!btn || btn.disabled || prefersReducedMotion()) return;
-    btn.classList.remove("btn-bounce");
-    void btn.offsetWidth;
-    btn.classList.add("btn-bounce");
-  }
-  document.addEventListener("pointerup", triggerBtnBounce);
-  document.addEventListener("pointercancel", triggerBtnBounce);
-  document.addEventListener("animationend", (e) => {
-    if (e.animationName === "btnBounce") e.target.classList.remove("btn-bounce");
+  // Brightness feedback leaves the hit target in place and avoids forced layout.
+  const buttonFeedback = new WeakMap();
+  document.addEventListener('pointerup', e => {
+    const btn=e.target.closest?.('button');
+    if(!btn||btn.disabled||e.button>0||prefersReducedMotion()||!btn.animate)return;
+    buttonFeedback.get(btn)?.cancel();
+    buttonFeedback.set(btn,btn.animate([{filter:'brightness(.94)'},{filter:'brightness(1.06)',offset:.45},{filter:'brightness(1)'}],{duration:140,easing:'ease-out'}));
   });
 
   // ==================== Master phase switch ====================

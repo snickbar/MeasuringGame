@@ -1,4 +1,21 @@
 :root{--cozy-ink:#4b301c;--cozy-note:#765735}
+/* User preference: pinned header/action wrappers stay transparent. The illustrated
+   banner supplies its own decoration; do not add white or tan backing panels. */
+.screen>.screen-back-btn{margin:0}
+.mode-menu-header,
+:is(#solo-content,#party-content)>.solo-mode-header,
+:is(#create-screen,#join-screen,#name-avatar-screen)>.setup-header{
+  position:sticky;top:62px;z-index:8;background:transparent;
+  padding-top:1px;padding-bottom:1px;
+}
+.screen:has(.mode-menu-header)>.screen-back-btn,
+:is(#teamvteam-screen,#teamworlds-screen)>.screen-back-btn,
+:is(#create-screen,#join-screen,#name-avatar-screen)>.screen-back-btn{
+  position:fixed;top:64px;right:max(8px,calc((100vw - 520px)/2 + 8px));z-index:9;
+}
+/* Fixed navigation must never inherit a transformed entrance-animation ancestor. */
+:is(#create-screen,#join-screen,#name-avatar-screen,#party-screen,#teamvteam-screen,#teamworlds-screen),
+:is(#create-screen,#join-screen,#name-avatar-screen,#party-screen,#teamvteam-screen,#teamworlds-screen).active>:not(.screen-back-btn){animation:none!important}
 .dc-card{border-color:#e3d2b2;border-radius:20px;color:var(--cozy-ink)}
 .dc-big,.dc-res-head,.dc-res-lines,.cs-h{color:var(--cozy-ink)}
 .dc-note{font-size:14px;line-height:1.4;color:var(--cozy-note)}
@@ -8,7 +25,7 @@
 .polish-banner>img{width:42px;height:42px;flex:0 0 42px;object-fit:contain}
 .dc-title.polish-banner{width:calc(100% - 52px);font-size:clamp(18px,5vw,24px);padding:12px 16px;min-height:72px}
 .dc-title.polish-banner>img{width:32px;height:32px;flex-basis:32px}
-#worlds-content>.polish-banner,#teamworlds-content>.polish-banner,#coin-reward-screen h1.polish-banner{background-image:url('../icons/banner-blank-blue.png')}
+#worlds-content>.polish-banner,#worlds-content>.wl-menu-header>.polish-banner,#teamworlds-content>.polish-banner,#coin-reward-screen h1.polish-banner{background-image:url('../icons/banner-blank-blue.png')}
 #daily-content>.polish-banner{background-image:url('../icons/banner-blank-orange.png')}
 #monthly-content>.polish-banner,#hs-content>.polish-banner{background-image:url('../icons/banner-blank-purple.png')}
 #bluff-content>.polish-banner{background-image:url('../icons/banner-blank-pink.png')}
