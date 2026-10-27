@@ -157,7 +157,7 @@ export function applyCareerRecord(profile,record){
     coins=({3:20,7:50,30:200})[count]||0;
     result.dailyStreak={count,best:Math.max(old.best||0,count),last:record.date};
     result.daily={...record.saved,done:true};stats.dailies=(stats.dailies||0)+1;
-    result.dailyHistory={...profile.dailyHistory,[record.date]:{s:record.accuracy||0,t:record.t}};
+    result.dailyHistory={...profile.dailyHistory,[record.date]:{s:record.accuracy||0,t:record.t,...(record.perfect?{p:1}:{})}};
   }else if(record.mode==='monthly'){
     // One record per monthly LEVEL finished for real (1-3: a third of the pack each; 4: the Mega run).
     // The month counts as played once levels 1-3 are all done; Mega is a bonus and doesn't change that.
