@@ -2848,8 +2848,10 @@ if (location.protocol === "file:") {
   @media (prefers-reduced-motion: reduce) { .hl-wm-fill { transition: none; } }
   .hl-shield { display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700; }
   .hl-shield img { width:23px;height:23px;object-fit:contain; }
-  .hl-shield-meter { display:block;width:54px;height:8px;border-radius:8px;background:#2071ad22;overflow:hidden; }
-  .hl-shield-meter i { display:block;height:100%;background:#278ad5;transition:width .35s ease; }
+  /* The team shield needs three survived rounds in a row, shown as three dots. */
+  .hl-pips { display:flex;gap:4px;align-items:center; }
+  .hl-pips i { display:block;width:11px;height:11px;border-radius:50%;border:2px solid #9a8466;box-sizing:border-box; }
+  .hl-pips i.on { background:#3b82e0;border-color:#1f5fb8; }
   .hl-theme { flex-basis:100%;max-width:100%; }
   .hl-theme .sv-theme-strip { margin:2px 0 0;font-size:11px;padding:2px 8px 2px 2px;gap:5px; }
   .hl-theme .sv-theme-emb { width:24px;height:24px; }
@@ -16293,7 +16295,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
   function hlShieldHtml(room) {
     const held = !!room.hlShield, charge = room.hlShieldCharge || 0;
-    return `<div class="hl-shield" aria-label="${held ? 'Team shield ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward a shield'}"><img src="icons/survival-shield-${held ? 'full' : 'empty'}.webp" alt=""><span>${held ? 'Shield ready' : 'Team shield'}</span>${held ? '' : `<span class="hl-shield-meter" role="progressbar" aria-label="Team shield charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}"><i style="width:${charge / HL_SHIELD_CHAIN * 100}%"></i></span>`}</div>`;
+    return `<div class="hl-shield" aria-label="${held ? 'Team shield ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward a shield'}"><img src="icons/survival-shield-${held ? 'full' : 'empty'}.webp" alt=""><span>${held ? 'Shield ready' : 'Team shield'}</span>${held ? '' : `<span class="hl-pips" role="progressbar" aria-label="Team shield charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : ''}"></i>`).join('')}</span>`}</div>`;
   }
   function hlHeartsHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
@@ -17149,8 +17151,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (v) {
             v.parentElement.classList.remove("tw-ph");
             if (!prefersReducedMotion()) {
-              const meter = v.querySelector(".hl-shield-meter i"), shield = v.querySelector(".hl-shield img");
-              if (meter) meter.animate([{width:((data.hlLast?.previousCharge || 0) / HL_SHIELD_CHAIN * 100) + "%"},{width:((data.hlShieldCharge || 0) / HL_SHIELD_CHAIN * 100) + "%"}], {duration:450,easing:"ease-out"});
+              const pips = v.querySelectorAll(".hl-pips i"), shield = v.querySelector(".hl-shield img");
+              // The dot(s) this round just lit pop in.
+              for (let i = data.hlLast?.previousCharge || 0; i < (data.hlShieldCharge || 0); i++) if (pips[i]) pips[i].animate([{transform:"scale(.3)"},{transform:"scale(1.4)",offset:.6},{transform:"scale(1)"}], {duration:450,easing:"ease-out"});
               if (data.hlLast?.earned && shield) shield.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
             }
             if (data.hlLast?.saved) { svCrackHeart("shield"); vibrate([35, 40, 35]); }
