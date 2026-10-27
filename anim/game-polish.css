@@ -1,6 +1,7 @@
 :root{--cozy-ink:#4b301c;--cozy-note:#765735}
 /* User preference: pinned header/action wrappers stay transparent. The illustrated
    banner supplies its own decoration; do not add white or tan backing panels. */
+.screen>.screen-back-btn{margin:0}
 .mode-menu-header,
 :is(#solo-content,#party-content)>.solo-mode-header,
 :is(#create-screen,#join-screen,#name-avatar-screen)>.setup-header{
@@ -8,9 +9,13 @@
   padding-top:1px;padding-bottom:1px;
 }
 .screen:has(.mode-menu-header)>.screen-back-btn,
+:is(#teamvteam-screen,#teamworlds-screen)>.screen-back-btn,
 :is(#create-screen,#join-screen,#name-avatar-screen)>.screen-back-btn{
   position:fixed;top:64px;right:max(8px,calc((100vw - 520px)/2 + 8px));z-index:9;
 }
+/* Fixed navigation must never inherit a transformed entrance-animation ancestor. */
+:is(#create-screen,#join-screen,#name-avatar-screen,#party-screen,#teamvteam-screen,#teamworlds-screen),
+:is(#create-screen,#join-screen,#name-avatar-screen,#party-screen,#teamvteam-screen,#teamworlds-screen).active>:not(.screen-back-btn){animation:none!important}
 .dc-card{border-color:#e3d2b2;border-radius:20px;color:var(--cozy-ink)}
 .dc-big,.dc-res-head,.dc-res-lines,.cs-h{color:var(--cozy-ink)}
 .dc-note{font-size:14px;line-height:1.4;color:var(--cozy-note)}
