@@ -1,0 +1,46 @@
+/* Party finale: places 4+ slide in as a quick list, then the top three rise on a podium, winner last on the right. */
+#final-list .pd-stage{background:none!important;border:0!important;box-shadow:none!important;position:relative;list-style:none;display:flex;flex-direction:column;gap:6px;padding:4px 2px 0;overflow:hidden;border-radius:18px;--n:0}
+#final-list .pd-list{display:flex;flex-direction:column;gap:4px;min-height:calc(var(--n) * 30px)}
+#final-list .pd-row{display:flex;align-items:center;gap:6px;height:26px;background:#fffaf0;border:2px solid #e8d5b8;border-radius:10px;padding:0 8px;font-size:13px;color:#4a2c17;opacity:0;transform:translateX(40px)}
+.pd-row .pd-rk{font:800 14px 'Baloo 2',system-ui;width:20px;color:#8a6a4a}
+.pd-row .avatar-icon{width:22px;height:22px;border-radius:50%}
+.pd-row b{font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-row i{margin-left:auto;font:800 15px 'Baloo 2',system-ui;font-style:normal;color:#c07040}
+.pd-stage.go .pd-row{animation:pdRow .35s calc(var(--i) * .35s + .2s) cubic-bezier(.2,1.2,.4,1) forwards}
+@keyframes pdRow{to{opacity:1;transform:none}}
+.pd-pod{display:flex;align-items:flex-end;justify-content:center;gap:6px;height:236px;position:relative}
+.pd-slot{width:31%;max-width:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.pd-who{display:flex;flex-direction:column;align-items:center;position:relative;opacity:0;transform:translateY(20px) scale(.7);max-width:100%}
+.pd-who .avatar-icon{width:52px;height:52px;border-radius:50%;background:#fff;border:3px solid #e8d5b8;object-fit:cover}
+.pd-slot.r1 .pd-who{margin-top:22px}
+.pd-slot.r1 .pd-who .avatar-icon{width:64px;height:64px;border-color:#f0b429}
+.pd-who .pd-n{font-weight:800;font-size:13px;color:#4a2c17;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd-who .pd-sc{font:800 15px 'Baloo 2',system-ui;line-height:1;margin-bottom:2px;color:#4a2c17}
+.pd-blk{width:100%;border-radius:10px 10px 0 0;height:0;display:flex;justify-content:center;padding-top:6px;box-sizing:border-box}
+.pd-blk .medal{opacity:0;width:28px;height:34px;background-size:contain;background-repeat:no-repeat;background-position:center}
+.pd-slot.r1 .pd-blk{background:linear-gradient(#ffd86b,#e0a21a);--h:130px}
+.pd-slot.r2 .pd-blk{background:linear-gradient(#e3e6ea,#a9b0b9);--h:90px}
+.pd-slot.r3 .pd-blk{background:linear-gradient(#e8b27a,#b6763a);--h:56px}
+.pd-stage.go .pd-blk{animation:pdRise .8s var(--dl) cubic-bezier(.2,.9,.3,1.1) forwards}
+.pd-stage.go .pd-who{animation:pdPop .5s calc(var(--dl) + .5s) cubic-bezier(.2,1.5,.4,1) forwards}
+.pd-stage.go .pd-blk .medal{animation:pdFade .3s calc(var(--dl) + .6s) forwards}
+@keyframes pdRise{to{height:var(--h)}}@keyframes pdPop{to{opacity:1;transform:none}}@keyframes pdFade{to{opacity:1}}
+.pd-crown{position:absolute;top:-24px;width:38px;opacity:0;transform:translateY(-30px) rotate(-12deg)}
+.pd-stage.go .pd-crown{animation:pdCrown .6s calc(var(--dl) + 1s) cubic-bezier(.2,1.5,.4,1) forwards}
+@keyframes pdCrown{to{opacity:1;transform:rotate(-8deg)}}
+.pd-spot{position:absolute;inset:0;pointer-events:none}
+.pd-stage.go .pd-spot{animation:pdSpot 1s var(--spot) forwards}
+@keyframes pdSpot{to{background:radial-gradient(ellipse at 78% 75%,rgba(255,226,120,.7),transparent 55%)}}
+.pd-drum{position:absolute;left:0;right:0;bottom:150px;text-align:center;font:800 22px 'Baloo 2',system-ui;color:#4a2c17;opacity:0;z-index:3;pointer-events:none}
+.pd-stage.go .pd-drum{animation:pdDrum 1.6s var(--drum) forwards}
+@keyframes pdDrum{0%{opacity:0}15%,85%{opacity:1}100%{opacity:0}}
+/* Tap to skip, reduced motion, or a returning screen: everything is simply already there. */
+.pd-stage.skip .pd-row,.pd-stage.skip .pd-who,.pd-stage.skip .pd-blk .medal,.pd-stage.skip .pd-crown{animation:none!important;opacity:1;transform:none}
+.pd-stage.skip .pd-crown{transform:rotate(-8deg)}
+.pd-stage.skip .pd-blk{animation:none!important;height:var(--h)}
+.pd-stage.skip .pd-drum{display:none}
+html[data-motion=reduce] .pd-stage .pd-row,html[data-motion=reduce] .pd-stage .pd-who,html[data-motion=reduce] .pd-stage .pd-blk .medal,html[data-motion=reduce] .pd-stage .pd-crown{animation:none!important;opacity:1;transform:none}
+html[data-motion=reduce] .pd-stage .pd-blk{animation:none!important;height:var(--h)}
+html[data-motion=reduce] .pd-stage .pd-drum{display:none}
+/* The detailed rows (best guess, bonuses) wait until the finale has played, then follow it. */
+#final-list.pd-waiting>.final-row{display:none}
