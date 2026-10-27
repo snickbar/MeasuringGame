@@ -11534,7 +11534,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     void preloadWbReactionArt();
-    sv.res = { acc, ok, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok || sv.shieldEvent === "saved", acc >= 90 ? 2 : 20, "", false), quip: sv.shieldEvent === "saved" ? "You keep your heart, but this round doesn't count." : svQuip(ok, acc) };
+    sv.res = { acc, ok, checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok || sv.shieldEvent === "saved", acc >= 90 ? 2 : 20, "", false), quip: sv.shieldEvent === "saved" ? "You keep your heart, but this round doesn't count." : svQuip(ok, acc) };
     sv.phase = "result";
     renderSurvival();
   }
@@ -11596,6 +11596,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Fits the cards, verdict and stamp to the screen height (same method as Which Is Bigger).
   function svFit() { fitPlayScroll(survivalContentEl.querySelector(".play-middle")); }
   window.addEventListener("resize", () => { if (sv && (sv.phase === "question" || sv.phase === "result")) svFit(); });
+  // Checkpoint (every 5th round survived): gold coins pop out of the check mark.
+  const svCoinBurstHtml = () => prefersReducedMotion() ? "" : Array.from({ length: 12 }, (_, i) => { const a = (i / 12) * Math.PI * 2 + Math.random() * 0.4, d = 70 + Math.random() * 40; return `<img class="sv-coin" src="icons/coin-v2.png" alt="" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d - 20)}px;--w:${(i * 0.03).toFixed(2)}s">`; }).join("");
   function svResultHtml() {
     const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok && !r.saved;
     const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
@@ -11605,8 +11607,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}</div>
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
-        <div class="wb-result-stage sv-nomascot"><div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.saved ? "shield" : ok ? "ok" : "bad"}" aria-label="${r.saved ? "Shield saved you" : ok ? "Safe" : "Lost a life"}">${r.saved ? '<img src="icons/survival-shield-cracked.webp" alt="" draggable="false">' : ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? "Safe" : "1 life lost"}</small></div></div>
-        <div class="wb-verdict-t">${title}</div>
+        <div class="wb-result-stage sv-nomascot"><div class="wb-result-stamp"><div class="wb-burst">${r.checkpoint ? svCoinBurstHtml() : ""}<div class="wb-mark ${r.saved ? "shield" : ok ? "ok" : "bad"}" aria-label="${r.saved ? "Shield saved you" : ok ? "Safe" : "Lost a life"}">${r.saved ? '<img src="icons/survival-shield-cracked.webp" alt="" draggable="false">' : ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? "Safe" : "1 life lost"}</small></div></div>
+        <div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>
+        ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${r.checkpoint * SURVIVAL_COINS_PER} coins banked</div>` : ""}
         <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
         ${r.boost || ""}
         ${r.earned ? `<div class="sv-callout earn">Shield earned! It will save you from one lost life.</div>` : ""}
@@ -11666,6 +11669,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = svResultHtml();
       requestAnimationFrame(() => requestAnimationFrame(svFit));
       // Shield moments: it breaks like a heart when it saves you; earning one pops it into the header; chain pips tick up.
+      if (sv.res.checkpoint) { try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
       if (sv.res.saved && !sv.shieldShown) { sv.shieldShown = true; svCrackHeart("shield"); }
       else if (sv.res.earned) { try { playSound("streak"); } catch (e) {} }
       setTimeout(() => {
