@@ -8919,7 +8919,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // answer it's counting up to). This wrapper is for the places the value is
   // actually set once: the real fit needs to happen there.
   function setAnswerLineValue(val) {
-    questionAnswerLineEl.innerHTML = answerLineHtml(val);
+    const html = answerLineHtml(val);
+    if (questionAnswerLineEl.style.display === "block" && questionAnswerLineEl.dataset.shown === html) return; // already showing it: don't redraw (that replayed its pop-in)
+    questionAnswerLineEl.dataset.shown = html;
+    questionAnswerLineEl.innerHTML = html;
     questionAnswerLineEl.style.display = "block";
     fitTextToBox(questionAnswerLineEl.querySelector(".answer-line-value"), 22);
   }
@@ -17823,11 +17826,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const li = document.createElement("li");
     li.className = "pd-stage go" + (reduce ? " skip" : "");
     li.style.cssText = `--n:${rest.length};--spot:${t1}s;--drum:${drum}s`;
-    li.innerHTML = `<div class="pd-spot"></div>${winners.length ? `<div class="pd-drum">And the winner is...</div>` : ""}<div class="pd-list">${rows}</div><div class="pd-pod">${top.slice().reverse().map(slot).join("")}</div>`;
+    li.innerHTML = `<div class="pd-spot"></div><div class="pd-list">${rows}</div><div class="pd-pod">${winners.length ? `<div class="pd-drum">And the winner is...</div>` : ""}${top.slice().reverse().map(slot).join("")}</div>`;
     const tok = ++partyFinaleToken;
     const alive = () => tok === partyFinaleToken && finalScreenEl.classList.contains("active");
     const winMs = reduce ? 0 : Math.round((t1 + 0.6) * 1000), doneMs = reduce ? 0 : Math.round((t1 + 1.8) * 1000);
-    const reveal = () => finalListEl.classList.remove("pd-waiting");
+    const reveal = () => { finalListEl.classList.remove("pd-waiting"); const rc = document.getElementById("final-session-recap"); if (rc) rc.classList.remove("pd-hold"); };
     if (!reduce) {
       [t3, t2].forEach((t) => setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("reveal"); }, t * 1000));
       // With many players the list pushes the podium down; bring it into view as it starts to rise.
@@ -17924,7 +17927,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
     };
     const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
-    if (ranked.length >= 3) { podium = partyPodiumStage(ranked); finalListEl.appendChild(podium.el); if (!podium.el.classList.contains("skip")) finalListEl.classList.add("pd-waiting"); }
+    if (ranked.length >= 3) { podium = partyPodiumStage(ranked); finalListEl.appendChild(podium.el); if (!podium.el.classList.contains("skip")) { finalListEl.classList.add("pd-waiting"); const rc = document.getElementById("final-session-recap"); if (rc) rc.classList.add("pd-hold"); } }
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
@@ -19104,7 +19107,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = data.currentQuestion;
       if (q) {
         setPromptText(q.prompt, false);
-        setAnswerLineValue(q.answer.toFixed(2));
+        // ...but not before the winner's card flips (that moment shows it via showAnswerReveal). Showing it here
+        // as well put the number up too early and then redrew it when the card flipped.
+        if (revealListEl.classList.contains("answer-revealed")) setAnswerLineValue(q.answer.toFixed(2));
+        else { questionAnswerLineEl.style.display = "none"; delete questionAnswerLineEl.dataset.shown; }
       }
     } else if (phase === "summary") {
       // A client that lands straight in summary (freshly joined, or reloaded
@@ -19122,14 +19128,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let lastRandomRollKey = null;
   let timerBarDeadline = null, timerBarTotal = 1000;
   let roomUnsub = null, reactionsUnsub = null; // so stepping out of a room can stop listening to it
+  let lastRoomSig = null; // the room (minus reactions) as of the last full render
   function watchRoom(roomCode) {
     if (roomUnsub) roomUnsub();
+    lastRoomSig = null;
     everSeenSelfInPlayers = false;
     wasRemoved = false;
     roomUnsub = onValue(ref(db, `rooms/${roomCode}`), (snapshot) => {
       if (leavingGame) return; // see the comment on its declaration
       const data = snapshot.val() || {};
+      // Reactions live inside the room, so every reaction (and its fade-away removal) re-fires this listener with
+      // nothing else changed. Re-rendering the whole screen for that made summaries, second-chance circles and
+      // answers flash and reload, so when ONLY reactions changed we skip the redraw (the host timers still run).
+      const { reactions: _reactionsOnly, ...roomWithoutReactions } = data;
+      const roomSig = JSON.stringify(roomWithoutReactions);
+      const onlyReactionsChanged = roomSig === lastRoomSig && data.phase !== "final";
+      lastRoomSig = roomSig;
       roomState = data;
+      if (onlyReactionsChanged) {
+        if (isHost) {
+          checkQuestionAdvance(roomCode);
+          checkAnswersAdvance(roomCode);
+          checkAnimationAdvance(roomCode);
+          checkRevealAdvance(roomCode);
+          checkSummaryAdvance(roomCode);
+          checkCountdownAdvance(roomCode);
+        }
+        return;
+      }
       if (data.phase === "hs" && data.hsRounds && careerLedger) {
         const match = gameRewardKey(roomCode, data);
         for (const saved of Object.values(data.hsRounds)) {
