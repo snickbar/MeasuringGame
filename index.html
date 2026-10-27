@@ -4695,6 +4695,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       update(playerRef, { connected: true, disconnectedAt: null });
     }
   });
+  // If the app was frozen (a phone call, switching apps) the connection can go quiet without this tab ever noticing,
+  // so the server marks us disconnected and nothing flips it back - which also took away the host's Pause/Resume
+  // buttons. Whenever we can see we're marked disconnected while the app is open, say we're back right away.
+  let presenceHealAt = 0;
+  function healPresence() {
+    try {
+      if (document.hidden || !currentRoomCode || !currentPlayerId) return;
+      const me = (roomState && roomState.players || {})[currentPlayerId];
+      if (!me || !me.name || me.connected !== false) return;
+      if (Date.now() - presenceHealAt < 2000) return;
+      presenceHealAt = Date.now();
+      update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { connected: true, disconnectedAt: null }).catch(() => {});
+    } catch (e) { /* best effort */ }
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(healPresence, 150); });
+  window.addEventListener("size-em-up:app-active", () => setTimeout(healPresence, 150));
   setInterval(async () => {
     if (!currentRoomCode || !roomState.players) return;
     const roomCode = currentRoomCode;
@@ -17472,7 +17488,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function renderPausedOverlay(paused) {
     pausedOverlayEl.classList.toggle("active", !!paused);
-    pausedResumeBtn.style.display = isHost ? "block" : "none";
+    pausedResumeBtn.style.display = isHost || (roomState.settings && roomState.settings.solo && currentPlayers[currentPlayerId] && !currentPlayers[currentPlayerId].isBot) ? "block" : "none"; // a solo player can always resume their own game
   }
 
   // ==================== Summary / final ====================
@@ -19197,6 +19213,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return;
       }
 
+      healPresence();
       maybeReassignHost(data, roomCode);
 
       // Room cleanup for genuine abandonment is handled entirely by the
