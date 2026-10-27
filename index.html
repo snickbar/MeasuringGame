@@ -15987,14 +15987,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return;
       }
       const players = roomState.players || {};
-      const ranked = Object.keys(players)
+      let ranked = Object.keys(players)
         .filter((id) => players[id].roundsCounted)
         .map((id) => ({ id, avg: players[id].accuracySum / players[id].roundsCounted }))
         .sort((a, b) => b.avg - a.avg);
+      // Team vs Team: teammates must always finish on the exact same score (the results screen, ranks and coin rewards all
+      // rely on it), so the accuracy bonus goes to whole teams, ranked by their members' average accuracy, instead of to
+      // individual players (which left one teammate with a different score, and fewer coins, than the team total).
+      if ((roomState.settings || currentSettings).mode === "teamvteam") {
+        const byTeam = {};
+        ranked.forEach((r) => { const t = players[r.id].team; if (t) (byTeam[t] = byTeam[t] || []).push(r); });
+        const teamRank = Object.entries(byTeam).map(([t, rs]) => ({ t, avg: rs.reduce((a, r) => a + r.avg, 0) / rs.length })).sort((a, b) => b.avg - a.avg);
+        const teamBonus = {};
+        teamRank.forEach((tr, idx) => { teamBonus[tr.t] = [10, 6, 3][idx] || 0; });
+        ranked = ranked.filter((r) => players[r.id].team).map((r, i) => ({ ...r, teamBonus: teamBonus[players[r.id].team] || 0, idx: i }));
+      }
       const accuracyBonuses = [10, 6, 3];
       const updates = { phase: "final" };
       ranked.forEach((r, idx) => {
-        const bonus = accuracyBonuses[idx] || 0;
+        const bonus = r.teamBonus !== undefined ? r.teamBonus : (accuracyBonuses[idx] || 0);
         if (bonus > 0) {
           updates[`players/${r.id}/score`] = (players[r.id].score || 0) + bonus;
           updates[`players/${r.id}/accuracyBonus`] = bonus;
