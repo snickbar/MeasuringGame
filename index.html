@@ -11462,8 +11462,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const a = sv.accs.slice(0, n);
     return a.length ? a.reduce((t, r) => t + roundAccuracy(r.r), 0) / a.length : null;
   }
-  const svAccHtml = (a) => `Accuracy so far: <b>${a == null ? "-" : Math.round(a) + "%"}</b>`;
-  const survivalHeartsHtml = (n, acc) => `<div class="sv-hud"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < n)).join("")}</div><div class="sv-acc" id="sv-acc">${svAccHtml(acc)}</div></div>`;
+  // Header: hearts, the round number and your run accuracy, clear of the Back button.
+  const svHudHtml = (lives, round, acc) => `<div class="wb-hud sv-top"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div></div>`;
+  // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
+  function svDifficulty(answer) {
+    const tiers = [[5, 1, "Very easy"], [20, 2, "Easy"], [100, 3, "Medium"], [1000, 4, "Hard"]];
+    const t = tiers.find((x) => answer < x[0]);
+    return t ? { tier: t[1], label: t[2] } : { tier: 5, label: "Very hard" };
+  }
+  const svStampHtml = (answer, cls) => { const d = svDifficulty(answer); return `<span class="wb-diff-stamp sv-stamp ${cls || ""} t${d.tier}">${d.label.toUpperCase()}</span>`; };
   // The heart that pops up in the middle of the screen when a life is lost, then cracks in half.
   function svCrackHeart() {
     const d = document.createElement("div"); d.className = "sv-crack";
@@ -11482,31 +11489,50 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function svGaugeHtml(acc) {
     const a = Math.max(0, Math.min(100, acc)), m = Math.round(a - SURVIVAL_PASS);
     const msg = m >= 0 ? `Safe by ${m} point${m === 1 ? "" : "s"}` : `${-m} point${m === -1 ? "" : "s"} short`;
-    return `<div class="sv-gauge"><div class="sv-gauge-bar"><span class="sv-gauge-line" style="left:${SURVIVAL_PASS}%"></span><span class="sv-gauge-pin" style="left:${a}%"></span></div>
+    // Close calls get a plain callout (no screen effects): barely safe, so close, or a great guess.
+    const call = m >= 0 && m < 5 ? "Phew, barely safe!" : m < 0 && m >= -5 ? "So close!" : a >= 90 ? "Great guess!" : "";
+    const near = Math.abs(m) < 5;
+    return `<div class="sv-gauge"><div class="sv-gauge-bar"><span class="sv-gauge-line" style="left:${SURVIVAL_PASS}%"></span><span class="sv-gauge-pin${near ? " near" : ""}" style="left:${a}%"></span></div>
       <div class="sv-gauge-labels"><span style="left:${SURVIVAL_PASS / 2}%">Lose a life</span><span style="left:${(SURVIVAL_PASS + 80) / 2}%">Safe</span><span style="left:90%">Great</span></div>
-      <div class="dc-note"><b>${msg}</b></div></div>`;
+      ${call ? `<div class="sv-callout ${m >= 0 ? "ok" : "bad"}">${call}</div>` : ""}<div class="dc-note"><b>${msg}</b></div></div>`;
   }
   // Show the result of the round: the card with the gauge, then (if it cost a life) the cracking heart and the hearts update.
   function svShowResult(m) {
     if (!sv || sv.resultShown) return; sv.resultShown = true;
-    const q = sv.q, g = sv.g, acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), ok = acc >= SURVIVAL_PASS, over = sv.lives <= 0;
+    const q = sv.q, g = sv.g, acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), ok = acc >= SURVIVAL_PASS;
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
-    const host = document.getElementById("sv-result"); if (!host) return;
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
-    const boost = bufferResultNote(q, g, deviceId);
-    host.innerHTML = boost
-      ? `<div class="dc-card dc-hot pu-boost-card">${boost}<div class="pu-boost-verdict">${ok ? "Safe with buffer!" : "Still short of safety"}</div><div class="dc-note">Answer <b>${ans}</b></div>${svGaugeHtml(acc)}</div>`
-      : `<div class="dc-card dc-hot"><div class="dc-big">${ok ? "Safe!" : "Ouch, lost a life"}</div><div class="dc-note">You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b> &middot; Answer <b>${ans}</b> &middot; ${Math.round(acc)}% accurate</div>${svGaugeHtml(acc)}</div>`;
-    const skip = document.getElementById("sv-skip");
-    if (skip) { skip.id = "sv-next"; skip.className = "dc-btn"; skip.textContent = over ? "See my score" : "Next round"; }
-    const accEl = document.getElementById("sv-acc"); if (accEl) accEl.innerHTML = svAccHtml(svRunAcc(sv.accs.length));
-    if (sv.lossPending) {
-      sv.lossPending = false; svCrackHeart();
-      setTimeout(() => {
-        const h = document.getElementById("sv-hearts");
-        if (h && sv) { h.innerHTML = Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < sv.lives)).join(""); const hs = h.querySelectorAll(".sv-heart"); if (hs[sv.lives]) hs[sv.lives].classList.add("drop"); }
-      }, 1100);
-    }
+    void preloadWbReactionArt();
+    sv.res = { acc, ok, ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false), quip: svQuip(ok, acc) };
+    sv.phase = "result";
+    renderSurvival();
+  }
+  function svQuip(ok, acc) {
+    const pick = (list) => list[Math.floor(Math.random() * list.length)];
+    if (ok) return acc >= 90 ? pick(["Spot on!", "Eagle eyes!", "Nailed it!", "Wow, that was close to perfect."]) : pick(["Nice one.", "Safe and sound.", "You've got a feel for this.", "Smooth."]);
+    return pick(["Ouch, that one stung.", "Not quite - shake it off!", "It happens.", "Tricky one!"]);
+  }
+  // Fits the cards, verdict and stamp to the screen height (same method as Which Is Bigger).
+  function svFit() { fitPlayScroll(survivalContentEl.querySelector(".play-middle")); }
+  window.addEventListener("resize", () => { if (sv && (sv.phase === "question" || sv.phase === "result")) svFit(); });
+  function svResultHtml() {
+    const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok;
+    const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
+    const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
+    const said = Number(sv.g).toLocaleString("en-US", { maximumFractionDigits: 2 });
+    const title = r.boost ? (ok ? "Safe with buffer!" : "Still short of safety") : (ok ? "Safe!" : "Lost a life");
+    return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length))}</div>
+      <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
+      <div class="wb-verdict ${ok ? "ok" : "bad"}">
+        <div class="wb-result-stage">${wbMascotsHtml(ok)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? "Safe" : "Lost a life"}">${ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? "Safe" : "1 life lost"}</small></div></div>
+        <div class="wb-verdict-t">${title}</div>
+        <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
+        ${r.boost || ""}
+        <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${Math.round(r.acc)}% accurate</span></p>
+        ${svGaugeHtml(r.acc)}
+      </div>
+      <div class="wb-diff wb-diff-res">${svStampHtml(q.answer)}</div>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-next">${over ? "See my score" : "Next round"}</button></div>`;
   }
   function openSurvival() {
     const fromHub = soloScreenEl.classList.contains("active");
@@ -11537,18 +11563,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!sv.q) sv.q = survivalNextQuestion();
       persistSoloSession("survival",sv);
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Round ${sv.asked + 1}</h2>${survivalHeartsHtml(sv.lives, svRunAcc(sv.accs.length))}</div>
+      el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
         ${powerups?.html(powerupContext()) || ""}
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
+      requestAnimationFrame(() => requestAnimationFrame(svFit));
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Round ${sv.asked}</h2>${survivalHeartsHtml(sv.lives + (sv.lossPending ? 1 : 0), svRunAcc(sv.accs.length - 1))}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length - 1))}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
       survivalRunReveal();
+      return;
+    }
+    if (sv.phase === "result") {
+      survivalStop();
+      el.innerHTML = svResultHtml();
+      requestAnimationFrame(() => requestAnimationFrame(svFit));
+      if (sv.lossPending) {
+        sv.lossPending = false; svCrackHeart();
+        setTimeout(() => {
+          const h = document.getElementById("sv-hearts");
+          if (h && sv && sv.phase === "result") { h.innerHTML = Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < sv.lives)).join(""); const hs = h.querySelectorAll(".sv-heart"); if (hs[sv.lives]) hs[sv.lives].classList.add("drop"); }
+        }, 1100);
+      }
       return;
     }
     survivalStop();
@@ -11764,8 +11805,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   new ResizeObserver(wbMeasureToolbar).observe(wbToolbar);
   wbMeasureToolbar();
   // Shrinks the cards and verdict step by step until everything fits without scrolling.
-  function wbFit() {
-    const scroll = wbContentEl.querySelector(".wb-play-scroll");
+  function wbFit() { fitPlayScroll(wbContentEl.querySelector(".wb-play-scroll")); }
+  function fitPlayScroll(scroll) {
     if (!scroll) return;
     let f = 1;
     scroll.style.setProperty("--wbf", f);
