@@ -3655,6 +3655,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/illustrated-details.css" />
 <link rel="stylesheet" href="anim/which-bigger-summary.css" />
 <link rel="stylesheet" href="anim/daily-extras.css" />
+<link rel="stylesheet" href="anim/party-finale.css" />
 <link rel="stylesheet" href="anim/play-layout.css">
 </head>
 <body>
@@ -17803,6 +17804,39 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
   }
+  // Party finale: places 4+ slide in as a quick list, then the top three rise on a podium (winner last, on the right).
+  let partyFinaleToken = 0;
+  function partyPodiumStage(ranked) {
+    const reduce = prefersReducedMotion();
+    const top = ranked.slice(0, 3), rest = ranked.slice(3);
+    const rowsMs = 200 + rest.length * 350;
+    const t3 = (rowsMs + 300) / 1000, t2 = t3 + 1.5, t1 = t2 + 2.6, drum = t2 + 1.3;
+    const dlFor = (e) => (e.rank === 1 ? t1 : e.rank === 2 ? t2 : t3);
+    const winners = top.filter((e) => e.rank === 1 && e.score > 0);
+    const rows = rest.map((e, k) => `<div class="pd-row" style="--i:${rest.length - 1 - k}"><span class="pd-rk">${e.rank}</span>${avatarHtml(currentPlayers[e.id].avatar)}<b>${escapeHtml(currentPlayers[e.id].name)}</b><i>${e.score}</i></div>`).join("");
+    const slot = (e) => {
+      const p = currentPlayers[e.id], r = Math.min(e.rank, 3), medal = e.medal || (r === 1 ? "gold" : r === 2 ? "silver" : "bronze");
+      const crown = e.rank === 1 && e.score > 0 ? `<img class="pd-crown" src="icons/reactions/crown.png" alt="">` : "";
+      return `<div class="pd-slot r${r}" data-id="${e.id}" style="--dl:${dlFor(e)}s"><div class="pd-who">${crown}${avatarHtml(p.avatar)}<div class="pd-n">${escapeHtml(p.name)}</div><div class="pd-sc">${e.score}</div></div><div class="pd-blk"><span class="medal ${medal}"></span></div></div>`;
+    };
+    const li = document.createElement("li");
+    li.className = "pd-stage go" + (reduce ? " skip" : "");
+    li.style.cssText = `--n:${rest.length};--spot:${t1}s;--drum:${drum}s`;
+    li.innerHTML = `<div class="pd-spot"></div>${winners.length ? `<div class="pd-drum">And the winner is...</div>` : ""}<div class="pd-list">${rows}</div><div class="pd-pod">${top.slice().reverse().map(slot).join("")}</div>`;
+    const tok = ++partyFinaleToken;
+    const alive = () => tok === partyFinaleToken && finalScreenEl.classList.contains("active");
+    const winMs = reduce ? 0 : Math.round((t1 + 0.6) * 1000), doneMs = reduce ? 0 : Math.round((t1 + 1.8) * 1000);
+    const reveal = () => finalListEl.classList.remove("pd-waiting");
+    if (!reduce) {
+      [t3, t2].forEach((t) => setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("reveal"); }, t * 1000));
+      // With many players the list pushes the podium down; bring it into view as it starts to rise.
+      setTimeout(() => { if (alive() && !li.classList.contains("skip")) { try { li.querySelector(".pd-pod").scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { /* scrolling is optional */ } } }, (t3 - 0.1) * 1000);
+      if (winners.length) setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("drumroll"); }, drum * 1000);
+      setTimeout(() => { if (alive()) reveal(); }, doneMs);
+      li.addEventListener("click", () => { li.classList.add("skip"); reveal(); });
+    }
+    return { el: li, winMs, reveal, winnerEl: winners.length === 1 ? li.querySelector(`.pd-slot[data-id="${winners[0].id}"] .pd-who`) : null };
+  }
   function renderFinal() {
     if (finalRendered) return;
     finalScreenEl.classList.toggle('bluff-final',roomState.settings?.mode==='bluff');
@@ -17835,7 +17869,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(me?.avatar||currentAvatar)}</span>${myPlace?.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.png" alt="">':''}<b>${myPlace?.rank===1?'You won!':'Your game'}</b></div><div class="summary-result-number">${myFinalScore} <small>points</small></div><p>${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
     finalListEl.after(recap);
     recap.querySelector('button').onclick=async()=>{const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const share=isNativeApp&&window.Capacitor?.Plugins?.Share;if(share){try{await share.share({title:'Size Em Up!',text});}catch{}}else if(navigator.share){try{await navigator.share({title:'Size Em Up!',text});}catch{}}else if(await copyTextToClipboard(text))showAchToast('Result copied!');};
-    let rank1Delay = 0;
+    let rank1Delay = 0, podium = null;
     const rank1Rows = []; // winners' rows (a flourish plays only when exactly one wins; ties skip it)
     if (roomState.settings?.mode === "teamvteam") {
       // One combined box per team: the shared score + average accuracy stay prominent
@@ -17889,6 +17923,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
     };
     const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
+    if (ranked.length >= 3) { podium = partyPodiumStage(ranked); finalListEl.appendChild(podium.el); if (!podium.el.classList.contains("skip")) finalListEl.classList.add("pd-waiting"); }
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
@@ -17921,10 +17956,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (rank === 1 && score > 0) rank1Rows.push({ li, pid: id });
     });
     }
+    const finaleTok = partyFinaleToken;
     setTimeout(() => {
+      if (podium && (finaleTok !== partyFinaleToken || !finalScreenEl.classList.contains("active"))) return;
       playSound("win");
-      if (rank1Rows.length === 1) { try { flairBurst(rank1Rows[0].li, flairIdFor({ flair: currentPlayers[rank1Rows[0].pid]?.flair })); } catch (e) { /* flourish is optional */ } }
-    }, rank1Delay + 350);
+      if (podium) { try { if (rank1Rows.length) celebrate("normal"); if (rank1Rows.length === 1 && podium.winnerEl) flairBurst(podium.winnerEl, flairIdFor({ flair: currentPlayers[rank1Rows[0].pid]?.flair })); } catch (e) { /* flourish is optional */ } }
+      else if (rank1Rows.length === 1) { try { flairBurst(rank1Rows[0].li, flairIdFor({ flair: currentPlayers[rank1Rows[0].pid]?.flair })); } catch (e) { /* flourish is optional */ } }
+    }, podium ? podium.winMs : rank1Delay + 350);
   }
 
   // Team Worlds' final screen: a Solo-Worlds-style stars/accuracy/coins result (one shared
