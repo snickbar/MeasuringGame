@@ -9690,13 +9690,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
       ${perfect ? `<div class="dc-card dc-hot dc-perfect"><div class="dc-pf-burst" aria-hidden="true">${daily.justFinished ? svCoinBurstHtml() : ""}</div><div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>` : `<div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>`}
+      <div class="dc-card dc-rank" id="dc-rank" hidden></div>
       <div class="dc-card">${rows}</div>
       ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7))}
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
-    dailyLoadBoard(); flushAdOffer("daily");
+    dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
     if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
   }
 
@@ -9763,6 +9764,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const n = above.size, rank = n >= CAP ? `${CAP}+` : String(n + 1);
       return `<div class="dc-lb-row me" style="margin-top:8px"><span class="dc-lb-rank">${rank}</span><span class="dc-lb-name">Your rank</span><span class="dc-lb-score">${fmt(mine.s)}</span></div>`;
     } catch (e) { return ""; }
+  }
+  // "You're #12 of 87 today": ranks your total against everyone who has posted today (up to 1000 scores).
+  async function dailyShowRank(total) {
+    const date = daily && daily.date, CAP = 1000;
+    if (!date) return;
+    let rows = [], mineThere = false;
+    try {
+      const snap = await get(query(ref(db, `daily/${date}`), orderByChild("s"), limitToLast(CAP)));
+      snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") { rows.push(v.s); if (c.key === deviceId) mineThere = true; } });
+    } catch (e) { return; }
+    const host = document.getElementById("dc-rank");
+    if (!host || !daily || daily.date !== date) return;
+    const players = rows.length + (mineThere ? 0 : 1), capped = rows.length >= CAP;
+    const rank = rows.filter((x) => x > total).length + 1;
+    host.hidden = false;
+    host.innerHTML = `<span class="dc-rank-l">You're</span><span class="dc-rank-n"><span class="dc-rank-hash">#</span><span id="dc-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 30, rank * 4)}</span></span><span class="dc-rank-l">${players > 1 && !capped ? `of ${players} today` : "today"}</span>`;
+    if (!prefersReducedMotion()) {
+      const num = document.getElementById("dc-rank-num"), from = Number(num.textContent), t0 = performance.now(), dur = 900;
+      const tick = (t) => { if (!num.isConnected) return; const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); num.textContent = Math.round(from + (rank - from) * e); if (k < 1) requestAnimationFrame(tick); else host.classList.add("landed"); };
+      requestAnimationFrame(tick);
+    } else host.classList.add("landed");
   }
   async function dailyLoadBoard() {
     const host = document.getElementById("dc-board");
