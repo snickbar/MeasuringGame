@@ -11598,6 +11598,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", () => { if (sv && (sv.phase === "question" || sv.phase === "result")) svFit(); });
   // Checkpoint (every 5th round survived): gold coins pop out of the check mark.
   const svCoinBurstHtml = () => prefersReducedMotion() ? "" : Array.from({ length: 12 }, (_, i) => { const a = (i / 12) * Math.PI * 2 + Math.random() * 0.4, d = 70 + Math.random() * 40; return `<img class="sv-coin" src="icons/coin-v2.png" alt="" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d - 20)}px;--w:${(i * 0.03).toFixed(2)}s">`; }).join("");
+  // Survival's mascots (only one scene at a time): knight cheers when safe, dragon breathes fire on a lost life,
+  // and when the shield saves you the dragon's fire hits the knight's raised shield.
+  function svSceneHtml(r, ok) {
+    if (r.saved) return `<div class="sv-scene saved"><img class="sv-dragon" src="icons/survival-dragon-breathe.webp" alt="" draggable="false"><img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false"><img class="sv-knight" src="icons/survival-knight-block.webp" alt="" draggable="false"><span class="sv-spark" aria-hidden="true"></span></div>`;
+    const mark = `<div class="sv-markpos"><div class="wb-burst">${r.checkpoint ? svCoinBurstHtml() : ""}<div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? "Safe" : "Lost a life"}">${ok ? "&#10004;" : "&#10006;"}</div></div></div>`;
+    if (ok) return `<div class="sv-scene safe"><img class="sv-knight cheer" src="icons/survival-knight-cheer.webp" alt="" draggable="false">${mark}</div>`;
+    return `<div class="sv-scene lost"><img class="sv-dragon" src="icons/survival-dragon-breathe.webp" alt="" draggable="false"><img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false">${mark}</div>`;
+  }
   function svResultHtml() {
     const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok && !r.saved;
     const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
@@ -11607,7 +11615,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}</div>
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
-        <div class="wb-result-stage sv-nomascot"><div class="wb-result-stamp"><div class="wb-burst">${r.checkpoint ? svCoinBurstHtml() : ""}<div class="wb-mark ${r.saved ? "shield" : ok ? "ok" : "bad"}" aria-label="${r.saved ? "Shield saved you" : ok ? "Safe" : "Lost a life"}">${r.saved ? '<img src="icons/survival-shield-cracked.webp" alt="" draggable="false">' : ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? "Safe" : "1 life lost"}</small></div></div>
+        <div class="wb-result-stage sv-scene-wrap">${svSceneHtml(r, ok)}</div>
         <div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>
         ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${r.checkpoint * SURVIVAL_COINS_PER} coins banked</div>` : ""}
         <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
