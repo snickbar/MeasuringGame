@@ -11534,6 +11534,58 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     sv.phase = "result";
     renderSurvival();
   }
+  // Game over: how this run compares with your best, in one friendly line.
+  function svBestLine() {
+    const score = sv.survived, old = sv.prevBest == null ? survivalBest() : sv.prevBest;
+    const d = old - score;
+    let line;
+    if (sv.newBest && old > 0) line = `New personal best! +${score - old} round${score - old === 1 ? "" : "s"} past your old best`;
+    else if (sv.newBest) line = "New personal best!";
+    else if (d === 0) line = "You matched your best!";
+    else if (d > 0 && d <= 3) line = `So close - just ${d} round${d === 1 ? "" : "s"} from your best of ${old}`;
+    else line = `Your best: ${old}`;
+    return `<div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${line}</div>`;
+  }
+  // Run recap: one bar per round, tall = accurate. Dashed line = the safe line; best and worst rounds are marked.
+  function svRecapHtml() {
+    const accs = sv.accs.map((a) => roundAccuracy(a.r));
+    if (!accs.length) return "";
+    const hi = Math.max(...accs), lo = Math.min(...accs), avg = accs.reduce((t, x) => t + x, 0) / accs.length;
+    const hiI = accs.indexOf(hi), loI = accs.indexOf(lo);
+    const bars = accs.map((a, i) => `<span class="sv-bar ${a >= 90 ? "great" : a >= SURVIVAL_PASS ? "safe" : "lost"}${i === hiI ? " best" : ""}${i === loI && accs.length > 1 ? " worst" : ""}" style="height:${Math.max(4, Math.round(a))}%" title="Round ${i + 1}: ${Math.round(a)}%"></span>`).join("");
+    return `<div class="dc-card sv-recap"><div class="sv-recap-h">Your run</div><div class="sv-bars"><i class="sv-bars-line" style="bottom:${SURVIVAL_PASS}%"></i>${bars}</div>
+      <div class="sv-recap-stats"><div><b>${Math.round(hi)}%</b><span>Best round (${hiI + 1})</span></div><div><b>${Math.round(avg)}%</b><span>Average</span></div><div><b>${Math.round(lo)}%</b><span>Worst round (${loI + 1})</span></div></div></div>`;
+  }
+  // Ranking moment: where this score lands on the global board, counting down into place.
+  async function svShowRank() {
+    survivalLoadBoard();
+    const score = sv.survived, runId = sv.runId;
+    if (!(score > 0)) return;
+    const CAP = 1000;
+    let n = 0, rival = null;
+    try {
+      const above = await get(query(ref(db, "survival"), orderByChild("s"), startAfter(score), limitToFirst(CAP)));
+      n = above.size;
+      above.forEach((c) => { if (!rival) { const v = c.val(); if (v && typeof v.s === "number") rival = { n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s }; } return true; });
+    } catch (e) { return; }
+    const host = document.getElementById("sv-rank");
+    if (!host || !sv || sv.runId !== runId || sv.phase !== "over") return;
+    const rank = n >= CAP ? CAP : n + 1, plus = n >= CAP ? "+" : "";
+    const lead = sv.newBest ? "You're ranked" : "This run would rank";
+    const next = rival && n < CAP ? `<div class="dc-note">${rival.s - score} more round${rival.s - score === 1 ? "" : "s"} to pass ${escapeHtml(rival.n)}</div>` : "";
+    host.hidden = false;
+    host.innerHTML = `<div class="sv-rank-l">${lead}</div><div class="sv-rank-n"><span class="sv-rank-hash">#</span><span id="sv-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 40, rank * 4)}</span>${plus}</div><div class="sv-rank-l">worldwide</div>${next}`;
+    if (!prefersReducedMotion()) {
+      const num = document.getElementById("sv-rank-num"), from = Number(num.textContent), t0 = performance.now(), dur = 1100;
+      const tick = (t) => {
+        if (!num.isConnected) return;
+        const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        num.textContent = Math.round(from + (rank - from) * e);
+        if (k < 1) requestAnimationFrame(tick); else host.classList.add("landed");
+      };
+      requestAnimationFrame(tick);
+    } else host.classList.add("landed");
+  }
   function svQuip(ok, acc) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
     if (ok) return acc >= 90 ? pick(["Spot on!", "Eagle eyes!", "Nailed it!", "Wow, that was close to perfect."]) : pick(["Nice one.", "Safe and sound.", "You've got a feel for this.", "Smooth."]);
@@ -11622,11 +11674,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     survivalStop();
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
-      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div><div class="dc-note" ${sv.newBest ? `data-personal-best="${sv.runId}"` : ""}>${sv.newBest ? "New personal best!" : `Your best: ${best}`}</div>${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}<div class="dc-note">${svAccHtml(svRunAcc(sv.accs.length))}</div></div>
+      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div>${svBestLine()}${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
+      ${svRecapHtml()}
+      <div class="dc-card sv-rank" id="sv-rank" hidden></div>
       ${adBarSlot("survival", "sv-finish")}
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+    svShowRank();
     survivalLoadBoard();
   }
   async function survivalRunReveal() {
@@ -11650,7 +11705,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Run over: save the best, post it, count the rounds. Coins are paid for every round survived.
   async function survivalFinish() {
     if(sv.finished)return;sv.finished=true;
-    const old=survivalBest(),score=sv.survived;sv.newBest=score>old;sv.gain=Math.max(0,score)*SURVIVAL_COINS_PER;
+    const old=survivalBest(),score=sv.survived;sv.prevBest=old;sv.newBest=score>old;sv.gain=Math.max(0,score)*SURVIVAL_COINS_PER;
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:sv.runId,mode:'survival',survived:score,accuracy:svRunAcc(sv.accs.length)||0,
       ...(score>0?{board:{path:'survival/'+deviceId,value:{n:name,s:score,t:Date.now()},best:true}}:{})});
