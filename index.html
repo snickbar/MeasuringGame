@@ -5585,6 +5585,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Daily, Monthly, Team Worlds, High/Low Survival, High Stakes - goes through the career ledger, which calls this once the
   // game's coins are saved. The bonus is a second transaction guarded by profile.adDoubled[key], so it can never pay twice.)
   const adOfferShown = new Set();
+  let finalAdOffer = null;
   async function offerAdDouble(row, id) {
     try {
       if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 3 * 60 * 1000) return;
@@ -5594,6 +5595,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
       if (AD_BAR_MODES[row.mode]) { adOffers[row.mode] = { k, coins, key: row.key, t: Date.now() }; adBarRefresh(row.mode); return; } // solo results screens show the offer inside their split bar
+      if (row.mode === "hlsurvival" || row.mode === "teamworlds") { finalAdOffer = { k, coins, key: row.key, t: Date.now() }; updateFinalButtons(); return; } // party finals show the offer as a button beside Leave party
       if (row.mode === "worlds") { wlAdOffer = { k, coins, runId: row.key }; if (wl.phase === "done") wlRenderDoneBar(); return; } // Worlds shows the offer inside its results screen, not as an overlay
       // Daily and Monthly save the moment the last answer is in, before the reveal and "See my results": hold the offer until the results are on screen.
       if (!adResultsVisible(row.mode)) { adOfferPending.set(row.mode, { k, coins, t: Date.now() }); return; }
@@ -9303,7 +9305,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return hudEl.classList.contains("active") || finalScreenEl.classList.contains("active") || hsScreenEl.classList.contains("active") || bluffScreenEl.classList.contains("active");
   }
   function isInLobby() { return lobbyScreenEl.classList.contains("active"); }
+  // The game is over once results are showing; leaving then needs no "are you sure".
+  function isGameOver() { return roomState?.phase === "final" || roomState?.hs?.stage === "over"; }
   function openLeaveGameConfirm() {
+    if (isGameOver()) { if (isHost) hostExit(); else guestExit(); return; }
     if (isHost) {
       openExitConfirm("leaveGame", "End the game?", "You're the host - leaving now ends the game and removes everyone from the room. Are you sure?");
     } else {
@@ -15755,7 +15760,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   endedReloadBtn.addEventListener("click", () => location.reload());
   // Results lead to each player's receipt. After collecting, the host closes
   // this completed game; guests remove their own slot and return home too.
-  finalHomeBtn.addEventListener('click',()=>{if(currentPlayers[currentPlayerId]?.rewardCollected&&!roomState.settings?.solo){if(isHost)openExitConfirm('hostGame','Leave party?','You are the host. This ends the party for everyone.');else guestExit();}else gameRewards.open();});
+  finalDoubleCoinsBtn.addEventListener('click', async () => {
+    const o = finalAdOffer; if (!o || finalDoubleCoinsBtn.dataset.busy) return;
+    finalDoubleCoinsBtn.dataset.busy = "1"; finalDoubleCoinsBtn.disabled = true;
+    try {
+      const res = await claimAdDouble(o.k, o.coins);
+      if (res !== "cancel") {
+        finalDoubleCoinsBtn.innerHTML = `<span>${res === "paid" ? "Doubled!" : "Already doubled"}</span>`;
+        await new Promise((r) => setTimeout(r, 1000));
+        finalAdOffer = null;
+      }
+    } catch (e) { /* offer stays so they can retry */ }
+    delete finalDoubleCoinsBtn.dataset.busy; finalDoubleCoinsBtn.disabled = false;
+    updateFinalButtons();
+  });
+  finalHomeBtn.addEventListener('click',()=>{if(currentPlayers[currentPlayerId]?.rewardCollected&&!roomState.settings?.solo){if(isHost)hostExit();else guestExit();}else gameRewards.open();});
   async function finishCompletedGame(reward) {
     const roomCode=reward.roomCode;
     const live=(await get(ref(db,'rooms/'+roomCode))).val();
@@ -17704,7 +17723,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function updateFinalButtons() {
-    finalDoubleCoinsBtn.style.display='none';
+    let adLive = false;
+    try { adLive = !!finalAdOffer && roomState.phase === "final" && Date.now() - finalAdOffer.t < 30 * 60 * 1000 && String(finalAdOffer.key).replace(/[.#$\[\]/]/g, "_") === gameRewardKey(currentRoomCode, roomState); } catch (e) {}
+    if (adLive && !finalDoubleCoinsBtn.dataset.busy) finalDoubleCoinsBtn.innerHTML = `<span>Watch ad: double coins</span><span class="fbtn-sub">+${finalAdOffer.coins} bonus coins</span>`;
+    finalDoubleCoinsBtn.style.display = adLive ? 'flex' : 'none';
     const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo;
     playAgainBtn.style.display=party&&isHost&&collected?'flex':'none';playAgainBtn.textContent='Play again with this party';
     finalHomeBtn.textContent=collected&&party?'Leave party':'Finish & collect coins';

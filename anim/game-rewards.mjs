@@ -44,10 +44,12 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
         <div class="coin-reward-row coin-reward-ad-row" data-ad-row hidden><span>Ad bonus</span><b data-bonus>+5 coins</b></div>
         <span class="coin-reward-stamp" data-stamp>ADDING YOUR COINS…</span>
       </div>
-      <button type="button" class="coin-reward-watch" data-double><span>Watch Ad for<br>Double Coins</span></button>
       <p class="coin-reward-doubled" data-doubled hidden>Reward doubled! Your coins have been added.</p>
       <p class="coin-reward-status" data-status role="status" aria-live="polite"></p>
-      <button type="button" class="coin-reward-continue" data-continue>Continue</button>
+      <div class="coin-reward-split">
+        <button type="button" class="coin-reward-continue" data-continue>Continue</button>
+        <button type="button" class="coin-reward-watch" data-double><span>Double coins</span><small data-ad-bonus>Watch an ad · +5 bonus</small></button>
+      </div>
     </div>`;
   doc.body.appendChild(el);
   const get = selector => el.querySelector(selector);
@@ -62,6 +64,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     get('[data-minimum-note]').hidden = !r.minimum;
     get('[data-ad-row]').hidden = !r.doubled;
     get('[data-bonus]').textContent = '+' + r.base + ' coins';
+    get('[data-ad-bonus]').textContent = 'Watch an ad · +' + r.base + ' bonus';
     get('[data-double]').hidden = !!(r.doubled || r.completed);
     get('[data-double]').disabled = busy || !receipt;
     get('[data-doubled]').hidden = !r.doubled;
