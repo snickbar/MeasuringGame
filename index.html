@@ -1016,6 +1016,12 @@ if (location.protocol === "file:") {
   #wb-cards .wb-card:last-child { animation: wbInR .5s .08s cubic-bezier(.2,1.4,.4,1) both; }
   @keyframes wbInL { from { transform: translateX(-120%) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes wbInR { from { transform: translateX(120%) rotate(8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .wb-diff { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 30px 0 6px; }
+  .wb-diff-l { font-size: 12px; font-weight: 800; letter-spacing: 2.4px; color: #8b6941; }
+  .wb-diff-stamp { --c: #f08a1c; display: inline-block; padding: 4px 18px 3px; border: 4px solid var(--c); border-radius: 10px; outline: 2px solid var(--c); outline-offset: 3px; color: var(--c); font: 900 28px/1.1 'Fredoka', sans-serif; letter-spacing: 2px; transform: rotate(-4deg); opacity: .94; animation: wbStamp .45s .75s cubic-bezier(.2,1.2,.4,1) both; }
+  .wb-diff-stamp.t1 { --c: #12803f; } .wb-diff-stamp.t2 { --c: #3aa645; } .wb-diff-stamp.t3 { --c: #f08a1c; } .wb-diff-stamp.t4 { --c: #e5412d; } .wb-diff-stamp.t5 { --c: #a8102a; }
+  @keyframes wbStamp { 0% { transform: scale(3.2) rotate(-14deg); opacity: 0; } 55% { transform: scale(.9) rotate(-4deg); opacity: 1; } 75% { transform: scale(1.08) rotate(-4deg); } 100% { transform: scale(1) rotate(-4deg); opacity: .94; } }
+  html[data-motion=reduce] .wb-diff-stamp { animation: none !important; }
   #wb-lock.ready { animation: wbReady .45s ease-out 1; }
   @keyframes wbReady { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
   #wb-content .dc-prompt { font-weight: 800; animation: wbPrompt .4s ease-out both; }
@@ -4538,7 +4544,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
-  import { pickBiggerPair, isCorrectPick } from "./anim/which-bigger.mjs";
+  import { pickBiggerPair, isCorrectPick, difficultyOf } from "./anim/which-bigger.mjs";
   import { wbMascotsHtml, preloadWbReactionArt } from "./anim/which-bigger-summary.mjs";
   import {newBluff,dealBluff,bluffAction,commitBluff,bluffRoundRecord,bluffStandings} from './anim/bluff.mjs';
   import {createBluffUI,bluffFinalHtml} from './anim/bluff-ui.mjs';
@@ -11788,11 +11794,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (wb.pair.recycled) wb.used.clear();
         wb.used.add(wb.pair.left.id); wb.used.add(wb.pair.right.id);
       }
-      const p = wb.pair;
+      const p = wb.pair, wbDiff = difficultyOf(p.ratio);
       wbSetTier();
       el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
+        <div class="wb-diff"><span class="wb-diff-l">DIFFICULTY</span><span class="wb-diff-stamp t${wbDiff.tier}">${wbDiff.label.toUpperCase()}</span></div>
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
       wbMountPlayLayout();
       return;
