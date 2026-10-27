@@ -9315,6 +9315,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function isInLobby() { return lobbyScreenEl.classList.contains("active"); }
   // The game is over once results are showing; leaving then needs no "are you sure".
   function isGameOver() { return roomState?.phase === "final" || roomState?.hs?.stage === "over"; }
+  function activeSoloRun() {
+    const runs = [
+      [worldsScreenEl, wl, worldStop], [dailyScreenEl, daily, dailyStop],
+      [monthlyScreenEl, mo, monthlyStop], [survivalScreenEl, sv, survivalStop],
+      [wbScreenEl, wb, wbStop],
+    ];
+    return runs.find(([screen, state]) => screen.classList.contains("active") && ["question", "reveal", "result"].includes(state?.phase));
+  }
+  function confirmSoloNavigation(action) {
+    const run = activeSoloRun();
+    if (!run) return false;
+    pendingNavAction = () => { run[2](); action(); };
+    openExitConfirm("navFromSolo", "Leave this run?", "You're still in the middle of a run. Are you sure you want to leave?", "Leave run", "Keep playing");
+    return true;
+  }
+  function guardGameBack(action) {
+    return (...args) => {
+      if (confirmSoloNavigation(() => action(...args))) return;
+      if (isInLobby()) {
+        pendingNavAction = () => action(...args);
+        openExitConfirm("navFromLobby", "Leave the lobby?", "Are you sure you want to leave this room?", "Leave lobby", "Stay here");
+        return;
+      }
+      return action(...args);
+    };
+  }
   function openLeaveGameConfirm() {
     if (isGameOver()) { if (isHost) hostExit(); else guestExit(); return; }
     if (isHost) {
@@ -9328,6 +9354,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (Date.now() < qrScanGuardUntil) return;
       if (gameRewards?.active) return;
       if (finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
+      if (confirmSoloNavigation(action)) return;
       if (isInActiveGame()) { openLeaveGameConfirm(); return; }
       if (isInLobby()) {
         pendingNavAction = action;
@@ -9410,7 +9437,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (action === "joinContinueConfirmed") { joinContinueBtn.click(); return; }
     if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
-    if (action === "navFromLobby") { if (nav) nav(); return; }
+    if (action === "navFromLobby" || action === "navFromSolo") { if (nav) nav(); return; }
     if (action === "closeCreatedRoom") { closeCreatedRoom(); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
@@ -9755,7 +9782,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
     }
   });
-  document.getElementById("daily-close-btn").addEventListener("click", () => { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+  document.getElementById("daily-close-btn").addEventListener("click", guardGameBack(() => { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); }));
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
@@ -10949,12 +10976,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wl.phase = "world"; renderWorlds(); return;
     }
   });
-  document.getElementById("worlds-close-btn").addEventListener("click", () => {
+  document.getElementById("worlds-close-btn").addEventListener("click", guardGameBack(() => {
     worldStop();
     if (wl.phase === "world") { wl.phase = "list"; renderWorlds(); return; }
     if (wl.phase !== "list") { wl.phase = "world"; renderWorlds(); return; }
     closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
-  });
+  }));
 
   // ==================== Team Worlds: two players average their guesses, same Worlds pool/stars as Solo ====================
   // Samples a fixed 5 unique-object pairs across a World's WHOLE pool (no difficulty-band
@@ -11398,7 +11425,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
     }
   });
-  document.getElementById("monthly-close-btn").addEventListener("click", () => {
+  document.getElementById("monthly-close-btn").addEventListener("click", guardGameBack(() => {
     // Inside a level (its start screen, a question or a result), Back goes to the level list first; from the list it leaves.
     if (mo && mo.phase !== "hub") {
       monthlyStop();
@@ -11406,7 +11433,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = []; mo.input = "";
       renderMonthly(); return;
     }
-    monthlyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+    monthlyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); }));
 
   // ==================== Survival: endless, 3 lives, climb until you run out ====================
   // A guess under SURVIVAL_PASS % accurate costs a life. Questions get bigger-gap (harder) the further you get,
@@ -11651,10 +11678,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my score"; }, 1800); }
     }
   });
-  document.getElementById("survival-close-btn").addEventListener("click", async () => {
+  document.getElementById("survival-close-btn").addEventListener("click", guardGameBack(async () => {
     if(sv&&!sv.finished&&['question','reveal'].includes(sv.phase))persistSoloSession('survival',sv);
     survivalStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub();
-  });
+  }));
 
   // ==================== Which Is Bigger: tap the bigger object, 3 lives, pairs get closer as you go ====================
   // "Bigger" means the dimension each object is measured by. Step 2 of the build: question screen and a plain result
@@ -12030,7 +12057,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.lossShown = false; wb.phase = "question"; renderWhichBigger();
     }
   });
-  document.getElementById("wb-close-btn").addEventListener("click", () => { wbStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); });
+  document.getElementById("wb-close-btn").addEventListener("click", guardGameBack(() => { wbStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); }));
 
   // ---- Career > Stats ----
   // Career history stores the original guess/answer ratio; use the same
@@ -13564,14 +13591,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // around at all times so back always has somewhere to go, and use it for
   // simple, unambiguous in-app navigation (closing Settings, backing out of
   // Create/Join setup). Screens with live room/Firebase state (lobby, hud,
-  // final, etc.) are left alone on back - leaving those needs proper
-  // cleanup (guestExit/hostExit), not an implicit back-press.
+  // final, etc.) use the same confirmation and cleanup as their Exit
+  // buttons. Solo runs also confirm before Back can leave them.
   history.pushState({ appGuard: true }, "", location.href);
   let qrScanGuardUntil = 0; // while the QR camera is open (and just after), a stray Back must not bounce Join -> Home
   const pendingQrInvite=pendingRoomInvite();
   window.addEventListener("popstate", () => {
     history.pushState({ appGuard: true }, "", location.href);
     if (Date.now() < qrScanGuardUntil) return;
+    if (gameRewards?.active) return;
+    if (exitConfirmOverlayEl.classList.contains("show")) { exitConfirmNoBtn.click(); return; }
+    const solo = activeSoloRun();
+    if (solo) { solo[0].querySelector('.screen-back-btn').click(); return; }
+    if (isInActiveGame()) { openLeaveGameConfirm(); return; }
+    if (isInLobby()) { lobbyBackBtn.click(); return; }
     if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
       if (howtoScreen.classList.contains("active")) howtoCloseBtn.click(); else closeOverlay();
     } else if (createScreenEl.classList.contains("active")) {
@@ -14297,12 +14330,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     leavingGame = false;
     pendingRoomCode = code; pendingIsHost = wasHost; pendingSettings = settings;
   }
-  lobbyBackBtn.addEventListener("click", async () => {
+  lobbyBackBtn.addEventListener("click", guardGameBack(async () => {
     lobbyBackBtn.disabled = true;
     try { await stepOutOfRoom(); } finally { lobbyBackBtn.disabled = false; }
     lobbyScreenEl.classList.remove("active");
     showNameAvatarScreen(pendingIsHost ? "create" : "join");
-  });
+  }));
 
   let hostTransferModeChoice = "reassign";
   hostModeControlsEl.addEventListener("click", (e) => {
@@ -15775,7 +15808,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await update(ref(db, `rooms/${currentRoomCode}`), updates);
   }
 
-  exitBtnGuest.addEventListener("click", () => guestExit());
+  exitBtnGuest.addEventListener("click", openLeaveGameConfirm);
   exitBtn.addEventListener("click", () => {
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });

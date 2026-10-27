@@ -75,6 +75,21 @@ window.__layoutOtherTiming=async ()=>{
  await window.__layoutAudit('survival');sv={...sv,phase:'reveal',asked:2,lives:2,lossPending:true,lastOk:false,g:1.5,resultShown:false,accs:[{r:1},{r:.5}]};renderSurvival();const survivalBefore={acc:document.getElementById('sv-acc').textContent,full:survivalContentEl.querySelectorAll('#sv-hearts img[src*="full"]').length};document.getElementById('sv-skip').click();await new Promise(r=>setTimeout(r,50));const survivalAfter=document.getElementById('sv-acc').textContent;
  return {flameBefore,flameAfter,dangerBefore,dangerAfter,survivalBefore,survivalAfter};
 };
+window.__exitSetup=async (mode,phase='question')=>{
+ exitConfirmNoBtn.click();pendingNavAction=null;overlayReturnScreen=soloScreenEl;
+ await window.__layoutAudit(mode);
+ if(phase!=='question'){
+  if(mode==='worlds'){wl.phase=phase;wl.guesses=[3];renderWorlds();}
+  if(mode==='daily'){daily.phase=phase;daily.guesses=[3];renderDaily();}
+  if(mode==='monthly'){mo.phase=phase;mo.guesses=[3];renderMonthly();}
+  if(mode==='survival'){Object.assign(sv,{phase,asked:1,g:3,accs:[{r:1}],lastOk:true,resultShown:false});renderSurvival();}
+  if(mode==='whichbigger'){Object.assign(wb,{phase,ok:true,picked:wb.pair.bigger.id,score:1,prevStreak:0});renderWhichBigger();}
+ }
+};
+window.__exitRead=()=>({dialog:exitConfirmOverlayEl.classList.contains('show'),run:activeSoloRun()?.[1]?.phase,action:pendingExitAction});
+window.__exitRoom=async (mode,host)=>{exitConfirmNoBtn.click();await window.__layoutAudit(mode);isHost=host;await set(ref(db,'rooms/AUDIT'),roomState);renderHudTop(roomState);applyPhase(roomState);};
+window.__exitLobby=async host=>{await window.__exitRoom('party',host);roomState.phase='waiting';await set(ref(db,'rooms/AUDIT'),roomState);applyPhase(roomState);renderPlayerList();};
+
 window.__layoutReady=()=>myProfile?.stats?.gamesPlayed===8;
 window.__layoutRefresh=()=>applyPhase(roomState);
 
@@ -106,6 +121,7 @@ server.listen(0,'127.0.0.1',()=>{
     await call('Page.enable',{},sessionId);await call('Page.addScriptToEvaluateOnNewDocument',{source:'localStorage.clear()'},sessionId);
     await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);
     for(let i=0;i<250;i++){if(await evaluate('window.__layoutReady?.()'))break;await new Promise(r=>setTimeout(r,30));}
+    if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
     for(const mode of ['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:letterboard','quick:terminal','quick:tv','quick:phone','quick','party','teamvteam']){
       await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,180));
@@ -170,6 +186,34 @@ server.listen(0,'127.0.0.1',()=>{
     }
     const cues=await evaluate('window.__layoutOtherTiming()');if(cues.flameBefore||!cues.flameAfter||cues.dangerBefore||!cues.dangerAfter||cues.survivalBefore.acc!=='Accuracy so far: 100%'||cues.survivalBefore.full!==3||cues.survivalAfter!=='Accuracy so far: 75%')throw Error('Early result cues '+JSON.stringify(cues));
     console.log(JSON.stringify({otherTiming:true,width,height,...cues,pass:true}));
+    }
+    if(process.env.PLAY_LAYOUT_NAV_ONLY){
+     const backIds={worlds:'worlds-close-btn',daily:'daily-close-btn',monthly:'monthly-close-btn',survival:'survival-close-btn',whichbigger:'wb-close-btn'};
+     const routes={back:null,home:'toolbar-home-btn',shop:'toolbar-shop-btn',style:'toolbar-cosmetics-btn',stats:'toolbar-awards-btn',coins:'toolbar-coin-balance',settings:'menu-settings-btn',phoneBack:null};
+     for(const mode of Object.keys(backIds))for(const phase of ['question','reveal',...(['worlds','whichbigger'].includes(mode)?['result']:[])]){
+      for(const route of (phase==='question'?Object.keys(routes):['back','phoneBack'])){
+       await evaluate('window.__exitSetup('+JSON.stringify(mode)+','+JSON.stringify(phase)+')');
+       const tap=route==='phoneBack'?"window.dispatchEvent(new PopStateEvent('popstate'))":"document.getElementById("+JSON.stringify(route==='back'?backIds[mode]:routes[route])+").click()";
+       await evaluate(tap);let state=await evaluate('window.__exitRead()');if(!state.dialog||!state.run)throw Error('Missing leave confirmation '+JSON.stringify({mode,phase,route,state}));
+       await evaluate("document.getElementById('exit-confirm-no-btn').click()");state=await evaluate('window.__exitRead()');if(state.dialog||!state.run)throw Error('Cancel left the run '+JSON.stringify({mode,phase,route,state}));
+       await evaluate(tap);await evaluate("document.getElementById('exit-confirm-yes-btn').click();new Promise(r=>setTimeout(r,60))");state=await evaluate('window.__exitRead()');if(state.dialog||state.run)throw Error('Confirm did not leave '+JSON.stringify({mode,phase,route,state}));
+      }
+      console.log(JSON.stringify({mode,phase,width,height,backConfirmation:true,pass:true}));
+     }
+     for(const mode of ['party','teamvteam','teamworlds','highlow','highstakes','bluff'])for(const host of [true,false]){
+      await evaluate('window.__exitRoom('+JSON.stringify(mode)+','+host+')');
+      const tap=host?"window.dispatchEvent(new PopStateEvent('popstate'))":(mode==='highstakes'||mode==='bluff'?"document.getElementById('toolbar-home-btn').click()":"document.getElementById('exit-btn-guest').click()");
+      await evaluate(tap);const state=await evaluate('window.__exitRead()');if(!state.dialog)throw Error('Missing room confirmation '+JSON.stringify({mode,host,state}));
+      await evaluate("document.getElementById('exit-confirm-no-btn').click()");
+     }
+     for(const host of [true,false]){
+      await evaluate('window.__exitLobby('+host+')');await evaluate("document.getElementById('lobby-back-btn').click()");
+      if(!(await evaluate('window.__exitRead()')).dialog)throw Error('Lobby Back bypassed confirmation');
+      await evaluate("document.getElementById('exit-confirm-no-btn').click()");if(!await evaluate("document.getElementById('lobby-screen').classList.contains('active')&&window.__fakeDB.read('rooms/AUDIT/players/me')!==null"))throw Error('Cancel left lobby');
+      await evaluate("document.getElementById('lobby-back-btn').click();document.getElementById('exit-confirm-yes-btn').click();new Promise(r=>setTimeout(r,100))");if(await evaluate("document.getElementById('lobby-screen').classList.contains('active')"))throw Error('Confirmed lobby Back stayed in lobby');
+     }
+     console.log(JSON.stringify({width,height,roomExitConfirmation:true,pass:true}));
+    }
     await call('Target.closeTarget',{targetId});
    }
    fs.writeFileSync(path.join(root,'output/pinned-layout-audit/verified-all-mode-measurements.json'),JSON.stringify(results,null,2));
