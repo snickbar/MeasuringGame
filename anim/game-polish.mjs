@@ -135,7 +135,7 @@ export function createPolish({ document: doc = document, reduced = () => false, 
   }
   function refresh(root) {
     for (const title of root.querySelectorAll('.dc-title:not(.wl-run-title):not(.polish-banner)')) {
-      const host = title.parentElement;
+      const host = title.parentElement.matches?.('.wl-menu-header') ? title.parentElement.parentElement : title.parentElement;
       let mode = headers[host.id];
       if (!mode || /^(Question|Round |After round)/.test(title.textContent)) continue;
       // Several Party intro pages share the same container.

@@ -942,6 +942,7 @@ if (location.protocol === "file:") {
   #home-solo-btn.has-todo::after { content: ""; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: var(--red); border: 2px solid #fff; z-index: 2; }
   #worlds-screen.active #worlds-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   #worlds-content { padding: 8px 0 28px; font-weight: 700; color: #000; text-align: center; }
+  #worlds-content > .wl-menu-header { position: sticky; top: 62px; z-index: 8; padding: 1px 0; margin: -1px 0 8px; background: #fbfaf6; }
   .wl-stars { letter-spacing: 2px; color: #e8a30c; -webkit-text-stroke: .6px #4a2c12; }
   .wl-stars .off { color: #e7dcc4; }
   .wl-meter { display: flex; align-items: center; gap: 4px; margin-top: 1px; }
@@ -10870,7 +10871,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
-      el.innerHTML = `<h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p>${soloResumeHtml("worlds")}` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
@@ -10880,7 +10881,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (wl.phase === "world") {
       worldStop();
-      el.innerHTML = `<h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p></div>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
         [1, 2, 3, 4, 5].map((l) => {
           const open = worldLevelUnlocked(w.id, l), st = worldLevelStars(w.id, l);
           return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
