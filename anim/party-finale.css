@@ -1,51 +1,63 @@
-/* Party finale: places 4+ slide in as a quick list, then the top three rise on a podium, winner last on the right. */
-#final-list .pd-stage{background:none!important;border:0!important;box-shadow:none!important;position:relative;list-style:none;display:flex;flex-direction:column;gap:6px;padding:4px 2px 0;overflow:hidden;border-radius:18px;--n:0}
-#final-list .pd-list{display:flex;flex-direction:column;gap:4px;min-height:calc(var(--n) * 30px)}
-#final-list .pd-row{display:flex;align-items:center;gap:6px;height:26px;background:#fffaf0;border:2px solid #e8d5b8;border-radius:10px;padding:0 8px;font-size:13px;color:#4a2c17;opacity:0;transform:translateX(40px)}
-.pd-row .pd-rk{font:800 14px 'Baloo 2',system-ui;width:20px;color:#8a6a4a}
-.pd-row .avatar-icon{width:22px;height:22px;border-radius:50%}
-.pd-row b{font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pd-row i{margin-left:auto;font:800 15px 'Baloo 2',system-ui;font-style:normal;color:#c07040}
-.pd-stage.go .pd-row{animation:pdRow .35s calc(var(--i) * .35s + .2s) cubic-bezier(.2,1.2,.4,1) forwards}
-@keyframes pdRow{to{opacity:1;transform:none}}
-.pd-pod{display:flex;align-items:flex-end;justify-content:center;gap:6px;height:236px;position:relative}
-.pd-slot{width:31%;max-width:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
-.pd-who{display:flex;flex-direction:column;align-items:center;position:relative;opacity:0;transform:translateY(20px) scale(.7);max-width:100%}
-.pd-who .avatar-icon{width:52px;height:52px;border-radius:50%;background:#fff;border:3px solid #e8d5b8;object-fit:cover}
-.pd-slot.r1 .pd-who{margin-top:22px}
-.pd-slot.r1 .pd-who .avatar-icon{width:64px;height:64px;border-color:#f0b429}
-.pd-who .pd-n{font-weight:800;font-size:13px;color:#4a2c17;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pd-who .pd-sc{font:800 15px 'Baloo 2',system-ui;line-height:1;margin-bottom:2px;color:#4a2c17}
-.pd-blk{width:100%;border-radius:10px 10px 0 0;height:0;display:flex;justify-content:center;padding-top:6px;box-sizing:border-box}
-.pd-blk .medal{opacity:0;width:28px;height:34px;background-size:contain;background-repeat:no-repeat;background-position:center}
-.pd-slot.r1 .pd-blk{background:linear-gradient(#ffd86b,#e0a21a);--h:130px}
-.pd-slot.r2 .pd-blk{background:linear-gradient(#e3e6ea,#a9b0b9);--h:90px}
-.pd-slot.r3 .pd-blk{background:linear-gradient(#e8b27a,#b6763a);--h:56px}
-.pd-stage.go .pd-blk{animation:pdRise .8s var(--dl) cubic-bezier(.2,.9,.3,1.1) forwards}
-.pd-stage.go .pd-who{animation:pdPop .5s calc(var(--dl) + .5s) cubic-bezier(.2,1.5,.4,1) forwards}
-.pd-stage.go .pd-blk .medal{animation:pdFade .3s calc(var(--dl) + .6s) forwards}
-@keyframes pdRise{to{height:var(--h)}}@keyframes pdPop{to{opacity:1;transform:none}}@keyframes pdFade{to{opacity:1}}
-.pd-crown{position:absolute;top:-24px;width:38px;opacity:0;transform:translateY(-30px) rotate(-12deg)}
-.pd-stage.go .pd-crown{animation:pdCrown .6s calc(var(--dl) + 1s) cubic-bezier(.2,1.5,.4,1) forwards}
-@keyframes pdCrown{to{opacity:1;transform:rotate(-8deg)}}
-.pd-spot{position:absolute;inset:0;pointer-events:none}
-.pd-stage.go .pd-spot{animation:pdSpot 1s var(--spot) forwards}
-@keyframes pdSpot{to{background:radial-gradient(ellipse at 78% 75%,rgba(255,226,120,.7),transparent 55%)}}
-.pd-drum{position:absolute;left:50%;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;font:800 20px 'Baloo 2',system-ui;color:#4a2c17;background:#fffaf0;border:2px solid #e0a21a;border-radius:999px;padding:3px 16px;opacity:0;z-index:5;pointer-events:none;box-shadow:0 3px 0 #e0a21a66}
-.pd-stage.go .pd-drum{animation:pdDrum 1.6s var(--drum) forwards}
-@keyframes pdDrum{0%{opacity:0}15%,85%{opacity:1}100%{opacity:0}}
-/* Tap to skip, reduced motion, or a returning screen: everything is simply already there. */
-.pd-stage.skip .pd-row,.pd-stage.skip .pd-who,.pd-stage.skip .pd-blk .medal,.pd-stage.skip .pd-crown{animation:none!important;opacity:1;transform:none}
-.pd-stage.skip .pd-crown{transform:rotate(-8deg)}
-.pd-stage.skip .pd-blk{animation:none!important;height:var(--h)}
-.pd-stage.skip .pd-drum{display:none}
-html[data-motion=reduce] .pd-stage .pd-row,html[data-motion=reduce] .pd-stage .pd-who,html[data-motion=reduce] .pd-stage .pd-blk .medal,html[data-motion=reduce] .pd-stage .pd-crown{animation:none!important;opacity:1;transform:none}
-html[data-motion=reduce] .pd-stage .pd-blk{animation:none!important;height:var(--h)}
-html[data-motion=reduce] .pd-stage .pd-drum{display:none}
-/* The detailed rows (best guess, bonuses) wait until the finale has played, then follow it. */
-#final-list.pd-waiting>.final-row{display:none}
+/* Illustrated party podium. Avatars have no frames or feet; their default state
+   remains visible even if entrance animations are cancelled or unavailable. */
+#final-list .pd-stage{display:flex;flex-direction:column;align-items:stretch;gap:0;width:100%;list-style:none;background:none!important;border:0!important;box-shadow:none!important;padding:4px 0 8px;position:relative;overflow:visible}
+.pd-list{display:grid;gap:4px;margin:0 0 3px}
+.pd-list:empty{display:none}
+.pd-row{display:flex;gap:7px;align-items:center;border:1px solid #c6d8df;border-radius:12px;background:#f7fbfd;padding:4px 9px;font-size:12px;color:#415b68}
+.pd-rk{width:18px;font-weight:700}.pd-row b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pd-row i{font-style:normal;font-weight:700}.pd-row .avatar-icon{width:24px;height:24px;object-fit:contain}
+.pd-pod{position:relative;width:100%;flex:none;aspect-ratio:1.15;margin-bottom:-25px;isolation:isolate}
+.pd-art{position:absolute;width:100%;height:auto;left:0;bottom:0;z-index:1;pointer-events:none}
+.pd-slot{position:absolute;width:26%;z-index:2;text-align:center}
+.pd-seat-0{left:6%;bottom:36.5%}.pd-seat-1{left:37%;bottom:51%}.pd-seat-2{left:69%;bottom:44.5%}
+.pd-who{position:relative;display:flex;justify-content:center;align-items:flex-end;width:100%;opacity:1;transform:none}
+.pd-portraits{display:flex;align-items:flex-end;justify-content:center;width:100%}
+#final-screen .pd-who .avatar-icon{width:clamp(46px,15vw,64px);height:clamp(46px,15vw,64px);object-fit:contain;background:none;border:0;border-radius:0;box-shadow:none}
+#final-screen .pd-who .pd-portraits:has(>:nth-child(2)) .avatar-icon{width:45%;height:auto;max-height:61px}
+.pd-n,.pd-sc{position:absolute;width:128%;left:-14%;text-align:center;font-family:Fredoka,sans-serif;color:#3d5663}
+.pd-n{bottom:calc(100% + 42px);font-size:12px;font-weight:700;line-height:1.15;overflow-wrap:anywhere}
+.pd-sc{bottom:calc(100% + 26px);font-size:15px;font-weight:700;line-height:1}
+.pd-sc small{font-size:10px;font-weight:500}
+.pd-crown{position:absolute;width:29px;height:25px;object-fit:contain;top:-26px;left:calc(50% - 14px)}
+.pd-rank-correction{position:absolute;width:21%;aspect-ratio:1;z-index:3;border-radius:50%;background:#c8e8ef;display:grid;place-items:center;border:2px solid #3a6877}
+.pd-rank-correction .medal{width:90%;height:90%;background-size:contain;background-position:center;background-repeat:no-repeat}
+.pd-badge-0{left:9%;bottom:19%}.pd-badge-1{left:39%;bottom:25%}.pd-badge-2{left:73%;bottom:22%}
+button.pd-skip{display:block;width:auto!important;min-height:32px;margin:-12px auto 0;padding:4px 12px!important;background:transparent!important;border:0!important;border-image:none!important;box-shadow:none!important;color:#567d8c;font:500 12px Fredoka,sans-serif;text-shadow:none}
+.pd-impact{position:absolute;left:39%;bottom:49%;width:23%;height:12px;border:3px solid #76acbb;border-radius:50%;opacity:0;pointer-events:none;z-index:3}
+.pd-landed .pd-art{animation:podiumImpact .4s ease-out}
+.pd-landed .pd-impact{animation:podiumRing .6s ease-out}
+@keyframes podiumImpact{0%,100%{transform:none}25%{transform:translateY(4px)}50%{transform:translateY(-2px)}75%{transform:translateY(1px)}}
+@keyframes podiumRing{0%{opacity:0;transform:scale(.3)}15%{opacity:.8}100%{opacity:0;transform:scale(2.5)}}
+.pd-stage.skip .pd-skip{display:none}.pd-stage.skip .pd-who{opacity:1!important;transform:none!important}
+#final-list.pd-waiting>.final-row,#final-session-recap.pd-hold{display:none}
+@media(prefers-reduced-motion:reduce){.pd-landed .pd-art,.pd-landed .pd-impact{animation:none}}
+html[data-motion=reduce] .pd-landed .pd-art,html[data-motion=reduce] .pd-landed .pd-impact{animation:none}
+@media(max-width:350px){.pd-n{font-size:11px}.pd-sc{font-size:14px}#final-screen .pd-who .avatar-icon{width:48px;height:48px}.pd-n{bottom:calc(100% + 36px)}.pd-sc{bottom:calc(100% + 22px)}.pd-crown{width:25px;height:21px;top:-22px}}
 
-#final-session-recap.pd-hold{display:none}
-
-.pd-pod{scroll-margin-bottom:210px}
-#final-list.pd-waiting{padding-bottom:220px}
+/* Medal colors identify placement; the actual values always retain text labels. */
+#final-screen.party-ranked #final-list>.final-row{--result-accent:#b7a58b;display:flex;padding:12px;gap:9px;border:2px solid var(--result-accent);border-image:none;background:linear-gradient(125deg,#ffffff,#f1f6f8);border-radius:19px;box-shadow:0 4px 0 #89694744,inset 0 2px 0 #fff;color:#493224;overflow:visible}
+#final-screen.party-ranked #final-list>.final-row.rank-1{--result-accent:#5894a6;background:linear-gradient(125deg,#ffffff,#eaf5f8)}
+#final-screen.party-ranked #final-list>.final-row.rank-2{--result-accent:#a2b1c1}
+#final-screen.party-ranked #final-list>.final-row.rank-3{--result-accent:#c29369}
+.party-ranked .final-row::before{content:attr(data-place);align-self:flex-start;font:700 10px/1 Fredoka,sans-serif;letter-spacing:.7px;text-transform:uppercase;color:#567681;padding:0 0 1px}
+#final-screen.party-ranked .final-row-top{display:grid;grid-template-columns:30px 62px minmax(0,1fr);align-items:center;gap:7px}
+#final-screen.party-ranked .final-row-top>.medal{width:28px;height:34px;align-self:center;grid-column:1;grid-row:1 / 3}
+#final-screen.party-ranked .final-row-top>.avatar,#final-screen.party-ranked .final-row-top>.team-final-avatars{grid-column:2;grid-row:1 / 3;width:62px;height:62px;display:flex;align-items:center;justify-content:center;background:transparent;border-radius:0;box-shadow:none}
+#final-screen.party-ranked .final-row-top>.avatar .avatar-icon{width:60px;height:60px;object-fit:contain}
+#final-screen.party-ranked .final-row-top>.name{grid-column:3;font-size:19px;line-height:1.1;color:#493224;align-self:end}
+.party-ranked .final-metrics{grid-column:3;display:flex;flex-wrap:wrap;gap:5px;align-self:start}
+#final-screen.party-ranked .final-metrics>span{font:700 18px/1 Fredoka,sans-serif;margin:0;padding:5px 7px;background:#f0f5f8;border:1px solid #cfdee5;border-radius:9px;white-space:nowrap;color:#5e4527}
+#final-screen.party-ranked .final-metrics>.pts{background:#deeff2;border-color:#bedce3;color:#286b7d}
+.party-ranked .final-metrics>.pts::after{content:' points';font-size:10px;font-weight:500}
+.party-ranked .final-metrics>.final-avg-pct::after{content:' accuracy';font-size:10px;font-weight:500}
+#final-screen.party-ranked .final-row-stats{font:500 12px/1.4 Fredoka,sans-serif;color:#765e3b;border-top:1px solid #b3955d33;padding-top:8px}
+.party-ranked .final-row-stats:empty{display:none}
+.party-ranked .final-bonus-note{font-size:12px;background:#e9f4d7;border-radius:8px;padding:5px 8px;align-self:flex-start;color:#3e6f2b}
+#final-screen.party-ranked .team-final-avatars .avatar{width:36px;height:44px;display:flex;align-items:center}
+#final-screen.party-ranked .team-final-avatars .avatar-icon{width:38px;height:44px;object-fit:contain}
+#final-screen.party-ranked .team-final-avatars .avatar+.avatar{margin-left:-13px}
+.party-ranked .team-final-members{border-top:1px solid #b3955d33;padding-top:7px;margin:0}
+#final-screen.party-ranked .team-final-member{font-size:12px;gap:6px}
+#final-screen.party-ranked .team-final-member .member-acc{font-size:13px}
+#final-screen.party-ranked #final-list.pd-waiting>.final-row{display:none}
+@media(max-width:350px){.party-ranked .pd-pod{height:266px;gap:5px;padding-left:2px;padding-right:2px}.party-ranked .pd-who .avatar-icon{width:46px;height:46px}.party-ranked .pd-slot.r1 .pd-who .avatar-icon{width:57px;height:57px}#final-screen.party-ranked .final-row-top{grid-template-columns:25px 52px minmax(0,1fr);gap:6px}#final-screen.party-ranked .final-row-top>.avatar,#final-screen.party-ranked .final-row-top>.team-final-avatars{width:50px;height:50px}#final-screen.party-ranked .final-row-top>.avatar .avatar-icon{width:49px;height:49px}#final-screen.party-ranked .final-row-top>.name{font-size:16px}#final-screen.party-ranked .final-metrics>span{font-size:16px;padding:4px 5px}}
+#final-screen.party-ranked .team-final-members .name{font-size:13px;line-height:1.2;min-width:0;flex:1}

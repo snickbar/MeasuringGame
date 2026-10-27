@@ -17826,40 +17826,62 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Party finale: places 4+ slide in as a quick list, then the top three rise on a podium (winner last, on the right).
   let partyFinaleToken = 0;
-  function partyPodiumStage(ranked) {
-    const reduce = prefersReducedMotion();
-    const top = ranked.slice(0, 3), rest = ranked.slice(3);
-    const rowsMs = 200 + rest.length * 350;
-    const t3 = (rowsMs + 300) / 1000, t2 = t3 + 1.5, t1 = t2 + 2.6, drum = t2 + 1.3;
-    const dlFor = (e) => (e.rank === 1 ? t1 : e.rank === 2 ? t2 : t3);
-    const winners = top.filter((e) => e.rank === 1 && e.score > 0);
-    const rows = rest.map((e, k) => `<div class="pd-row" style="--i:${rest.length - 1 - k}"><span class="pd-rk">${e.rank}</span>${avatarHtml(currentPlayers[e.id].avatar)}<b>${escapeHtml(currentPlayers[e.id].name)}</b><i>${e.score}</i></div>`).join("");
-    const slot = (e) => {
-      const p = currentPlayers[e.id], r = Math.min(e.rank, 3), medal = e.medal || (r === 1 ? "gold" : r === 2 ? "silver" : "bronze");
-      const crown = e.rank === 1 && e.score > 0 ? `<img class="pd-crown" src="icons/reactions/crown.png" alt="">` : "";
-      return `<div class="pd-slot r${r}" data-id="${e.id}" style="--dl:${dlFor(e)}s"><div class="pd-who">${crown}${avatarHtml(p.avatar)}<div class="pd-n">${escapeHtml(p.name)}</div><div class="pd-sc">${e.score}</div></div><div class="pd-blk"><span class="medal ${medal}"></span></div></div>`;
-    };
-    const li = document.createElement("li");
-    li.className = "pd-stage go" + (reduce ? " skip" : "");
-    li.style.cssText = `--n:${rest.length};--spot:${t1}s;--drum:${drum}s`;
-    li.innerHTML = `<div class="pd-spot"></div><div class="pd-list">${rows}</div><div class="pd-pod">${winners.length ? `<div class="pd-drum">And the winner is...</div>` : ""}${top.slice().reverse().map(slot).join("")}</div>`;
-    const tok = ++partyFinaleToken;
-    const alive = () => tok === partyFinaleToken && finalScreenEl.classList.contains("active");
-    const winMs = reduce ? 0 : Math.round((t1 + 0.6) * 1000), doneMs = reduce ? 0 : Math.round((t1 + 1.8) * 1000);
-    const reveal = () => { finalListEl.classList.remove("pd-waiting"); const rc = document.getElementById("final-session-recap"); if (rc) rc.classList.remove("pd-hold"); };
-    if (!reduce) {
-      [t3, t2].forEach((t) => setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("reveal"); }, t * 1000));
-      // With many players the list pushes the podium down; bring it into view as it starts to rise.
-      setTimeout(() => { if (alive() && !li.classList.contains("skip")) { try { { const r = li.querySelector(".pd-pod").getBoundingClientRect(), limit = window.innerHeight - 200; if (r.bottom > limit) window.scrollBy({ top: r.bottom - limit, behavior: "smooth" }); }; } catch (e) { /* scrolling is optional */ } } }, (t3 - 0.1) * 1000);
-      if (winners.length) setTimeout(() => { if (alive() && !li.classList.contains("skip")) playSound("drumroll"); }, drum * 1000);
-      setTimeout(() => { if (alive()) reveal(); }, doneMs);
-      li.addEventListener("click", () => { li.classList.add("skip"); reveal(); });
-    }
-    return { el: li, winMs, reveal, winnerEl: winners.length === 1 ? li.querySelector(`.pd-slot[data-id="${winners[0].id}"] .pd-who`) : null };
+  function partyPodiumStage(ranked, contestants = currentPlayers) {
+    const reduce = prefersReducedMotion(), top = ranked.slice(0, 3), rest = ranked.slice(3);
+    const base = 200 + rest.length * 250, thirdAt = base + 200, secondAt = thirdAt + 1600, firstAt = secondAt + 1800;
+    const impactAt = firstAt + 940, doneMs = reduce ? 0 : firstAt + 1500;
+    const portrait = p => (p.avatars || [p.avatar]).map(a => avatarHtml(a)).join('');
+    const rows = rest.map(e => '<div class="pd-row"><span class="pd-rk">'+e.rank+'</span>'+portrait(contestants[e.id])+'<b>'+escapeHtml(contestants[e.id].name)+'</b><i>'+e.score+'</i></div>').join('');
+    const seats = [top[2], top[0], top[1]];
+    const slots = seats.map((e, seat) => {
+      if (!e) return '';
+      const p = contestants[e.id];
+      return '<div class="pd-slot pd-seat-'+seat+' r'+Math.min(e.rank,3)+'" data-id="'+escapeHtml(e.id)+'" data-rank="'+e.rank+'"><div class="pd-who">'+(e.rank===1&&e.score>0?'<img class="pd-crown" src="icons/reactions/crown.png" alt="">':'')+'<div class="pd-portraits">'+portrait(p)+'</div><div class="pd-n">'+escapeHtml(p.name)+'</div><div class="pd-sc">'+e.score+'<small> points</small></div></div></div>';
+    }).join('');
+    // Artwork has fixed numbered seats. Correct its badge when places are shared.
+    const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
+    const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip':'');
+    li.innerHTML='<div class="pd-list">'+rows+'</div><div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+'</div><button type="button" class="pd-skip">Skip celebration</button>';
+    const tok=++partyFinaleToken, animations=[];
+    const alive=()=>tok===partyFinaleToken&&finalScreenEl.classList.contains('active');
+    const reveal=()=>{finalListEl.classList.remove('pd-waiting');document.getElementById('final-session-recap')?.classList.remove('pd-hold');};
+    const finish=()=>{li.classList.add('skip');animations.forEach(a=>a.cancel());li.querySelectorAll('.pd-who').forEach(e=>{e.style.opacity='1';e.style.transform='none';});reveal();};
+    li.querySelector('.pd-skip').onclick=finish;
+    // Start on attached nodes. Resting state is VISIBLE, so interruption or a missing
+    // animation never leaves the winner stranded at opacity zero.
+    if(!reduce) requestAnimationFrame(()=>{
+      if(!alive()||!li.isConnected||li.classList.contains('skip'))return;
+      li.querySelectorAll('.pd-who').forEach(who=>{
+        const seat=Number(who.parentElement.className.match(/pd-seat-(\d)/)[1]);
+        const winner=who.parentElement.dataset.rank==='1';
+        const delay=winner?firstAt:seat===0?thirdAt:secondAt;
+        const side=seat===0?-1:1;
+        const frames=winner?[
+          {opacity:0,transform:'translateY(-230px)',offset:0},
+          {opacity:1,transform:'translateY(-230px)',offset:.12},
+          {opacity:1,transform:'translateY(-210px)',offset:.25},
+          {opacity:1,transform:'translateY(0)',offset:.82},
+          {opacity:1,transform:'translateY(5px) scale(1.08,.86)',offset:.9},
+          {opacity:1,transform:'none',offset:1}
+        ]:[{opacity:0,transform:'translateX('+side*210+'%)',offset:0},
+          {opacity:1,transform:'translate('+side*160+'%,-30px) rotate('+side*6+'deg)',offset:.25},
+          {opacity:1,transform:'translate('+side*95+'%,0) scale(1.06,.94)',offset:.45},
+          {opacity:1,transform:'translate('+side*48+'%,-20px)',offset:.65},
+          {opacity:1,transform:'translate('+side*12+'%,0)',offset:.83},
+          {opacity:1,transform:'none',offset:1}];
+        const animation=who.animate(frames,{duration:winner?1150:1500,delay,fill:'backwards',easing:'linear'});
+        animation.onfinish=()=>{who.style.opacity='1';who.style.transform='none';};animations.push(animation);
+      });
+      setTimeout(()=>{if(alive()&&!li.classList.contains('skip')){li.classList.add('pd-landed');playSound('podium-thud');}},impactAt);
+      setTimeout(()=>{if(alive())finish();},doneMs);
+    });
+    const winners=top.filter(e=>e.rank===1&&e.score>0);
+    return {el:li,winMs:reduce?0:impactAt+120,reveal,winnerEl:winners.length===1?[...li.querySelectorAll('.pd-slot')].find(e=>e.dataset.id===winners[0].id)?.querySelector('.pd-who'):null};
   }
   function renderFinal() {
     if (finalRendered) return;
     finalScreenEl.classList.toggle('bluff-final',roomState.settings?.mode==='bluff');
+    finalScreenEl.classList.toggle('party-ranked', !['bluff','teamworlds','highstakes','hlsurvival'].includes(roomState.settings?.mode));
     finalRendered = true;
     updateFinalButtons();
     if(roomState.settings?.mode==='bluff'){renderBluffFinal();return;}
@@ -17906,6 +17928,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return avgs.length ? avgs.reduce((a, b) => a + b, 0) / avgs.length : null;
       };
       const teamRanked = computeRanks(Object.keys(teamOf), teamScoreFn, teamAvgFn, false);
+      if (teamRanked.length >= 2) {
+        const teams = Object.fromEntries(Object.entries(teamOf).map(([team, members]) => [team, {name: `${TEAM_COLOR_NAMES[team]} team`, avatars: members.map(id => currentPlayers[id].avatar)}]));
+        podium = partyPodiumStage(teamRanked, teams); finalListEl.appendChild(podium.el);
+        if (!podium.el.classList.contains('skip')) { finalListEl.classList.add('pd-waiting'); recap.classList.add('pd-hold'); }
+      }
       teamRanked.forEach((entry, idx) => {
         const { id: team, score, rank, medal: medalType } = entry;
         const members = teamOf[team];
@@ -17921,6 +17948,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }).join("");
         const li = document.createElement("li");
         li.className = "final-row team-final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
+        li.dataset.place = rank === 1 ? 'Winning team' : `Place ${rank}`;
         li.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
         const delayMs = idx * 150;
         li.style.animationDelay = `${delayMs}ms`;
@@ -17930,7 +17958,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           : "";
         li.innerHTML = `
           ${winnerStars}
-          <div class="final-row-top">${medal}<div class="team-final-avatars">${avatars}</div><span class="name">${names}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+          <div class="final-row-top">${medal}<div class="team-final-avatars">${avatars}</div><span class="name">${names}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
           <div class="team-final-members">${memberRows}</div>
         `;
         finalListEl.appendChild(li);
@@ -17961,6 +17989,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `;
       const li = document.createElement("li");
       li.className = "final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
+      li.dataset.place = rank === 1 ? 'Winner' : `Place ${rank}`;
       const delayMs = idx * 150;
       li.style.animationDelay = `${delayMs}ms`;
       if (rank === 1) rank1Delay = delayMs;
@@ -17969,7 +17998,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : "";
       li.innerHTML = `
         ${winnerStars}
-        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${avgPctHtml}<span class="pts">${score}</span></div>
+        <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
@@ -18693,6 +18722,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   const SFX_FILES = {
     tap: "sfx/crisp/tap.wav",
+    "podium-thud": "sfx/podium-thud.wav",
     select: "sfx/select.mp3",
     cancel: "sfx/crisp/cancel.wav",
     error: "sfx/crisp/error.wav",
@@ -18734,7 +18764,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   };
   // Reviewed clips use the same gain as the comparison page. Kept cues retain their original mix.
   const SFX_VOLUME = {
-    tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
+    "podium-thud": 0.8, tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
     swipe: 0.85, shuffle: 0.85, "avatar-ultra": 0.85, roundwin: 0.85,
     streak: 0.85, winner: 0.85, powerup: 0.85, coins: 0.85, drumroll: 0.85,
   };
