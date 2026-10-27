@@ -9621,6 +9621,36 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const line = streak === 0 ? "Play today to light your flame." : next ? `${left} more day${left === 1 ? "" : "s"} for +${DAILY_STREAK_BONUS[next]} coins` : "Legend! You've reached every bonus.";
     return `<div class="dc-card dc-streak t${tier}${pop ? " pop" : ""}"><div class="dc-streak-top"><span class="dc-flame"><img src="icons/reactions/fire.png" alt="" draggable="false"></span><span class="dc-streak-txt"><b>${streak > 0 ? streak : "Start a streak"}</b>${streak > 0 ? `<span>day streak</span>` : ""}</span></div><div class="dc-streak-bar" aria-hidden="true"><i style="width:${streak > 0 ? Math.max(pct, 6) : 0}%"></i></div><div class="dc-note">${line}</div>${note || ""}</div>`;
   }
+  // Streak calendar: a paper month where each day you played gets a green marker check and each missed day a red X
+  // (days before your first Daily stay blank). A gold medal marks a perfect day, a flame + number marks a day that hit a streak bonus.
+  function dailyCalendarHtml(ym) {
+    const hist = { ...(myProfile.dailyHistory || {}) };
+    if (daily && daily.phase === "done" && !hist[daily.date]) { const a = dailyAccuracies(); hist[daily.date] = { s: a.reduce((x, y) => x + y, 0) / 3, p: a.every((x) => x >= 90) ? 1 : 0 }; }
+    const today = dailyDateStr(), keys = Object.keys(hist).sort(), firstKey = keys[0] || today;
+    const [Y, M] = ym.split("-").map(Number), pad = (n) => String(n).padStart(2, "0");
+    const lead = new Date(Date.UTC(Y, M - 1, 1)).getUTCDay(), days = new Date(Date.UTC(Y, M, 0)).getUTCDate();
+    const chain = {}; keys.forEach((k) => { chain[k] = hist[dailyShiftDate(k, -1)] ? (chain[dailyShiftDate(k, -1)] || 0) + 1 : 1; });
+    // Same wobble every time for the same day, so the marks look hand-drawn but don't jump around.
+    const jit = (d, n, a = 2.2) => { const x = Math.sin((Y * 372 + M * 31 + d) * 12.9898 + n * 78.233) * 43758.5453; return Math.round((x - Math.floor(x) - 0.5) * 2 * a * 10) / 10; };
+    const check = (d) => `<svg class="dc-mk" viewBox="0 0 50 50" aria-hidden="true"><path d="M${7 + jit(d, 1)} ${26 + jit(d, 2)} Q${14 + jit(d, 3)} ${33 + jit(d, 4)} ${18 + jit(d, 5)} ${38 + jit(d, 6)} Q${30 + jit(d, 7)} ${22 + jit(d, 8)} ${43 + jit(d, 9)} ${6 + jit(d, 10)}" stroke="#2f9e2f"/></svg>`;
+    const cross = (d) => `<svg class="dc-mk" viewBox="0 0 50 50" aria-hidden="true"><path d="M${9 + jit(d, 1)} ${9 + jit(d, 2)} Q${25 + jit(d, 3)} ${25 + jit(d, 4)} ${41 + jit(d, 5)} ${42 + jit(d, 6)}" stroke="#d62828"/><path d="M${42 + jit(d, 7)} ${8 + jit(d, 8)} Q${25 + jit(d, 9)} ${26 + jit(d, 10)} ${8 + jit(d, 11)} ${43 + jit(d, 12)}" stroke="#d62828"/></svg>`;
+    const ring = `<svg class="dc-mk dc-ring" viewBox="0 0 50 50" aria-hidden="true"><path d="M26 4 C42 3 49 16 47 28 C45 42 30 48 18 45 C6 42 1 30 4 18 C7 8 18 3 31 6 C36 8 39 10 41 13" stroke="#1f5fbf"/></svg>`;
+    let cells = "", played = 0;
+    for (let i = 0; i < lead; i++) cells += `<i class="dc-cal-e"></i>`;
+    for (let d = 1; d <= days; d++) {
+      const key = `${Y}-${pad(M)}-${pad(d)}`, h = hist[key];
+      let inner = "", cls = "dc-cal-d";
+      if (h) { played++; inner = check(d) + (h.p ? `<span class="medal gold dc-cal-medal" aria-label="Perfect day"></span>` : "") + ([3, 7, 30].includes(chain[key]) ? `<b class="dc-cal-fl"><img src="icons/reactions/fire.png" alt="">${chain[key]}</b>` : ""); }
+      else if (key > today) cls += " future";
+      else if (key >= firstKey && key < today) inner = cross(d);
+      if (key === today) { cls += " today"; inner += ring; }
+      cells += `<div class="${cls}"><span class="dc-cal-n">${d}</span>${inner}</div>`;
+    }
+    const ymNow = today.slice(0, 7), ymFirst = firstKey.slice(0, 7), name = new Date(Y, M - 1, 1).toLocaleDateString(undefined, { month: "long", year: ym === ymNow ? undefined : "numeric" });
+    const shift = (n) => { const dt = new Date(Date.UTC(Y, M - 1 + n, 1)); return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}`; };
+    const best = (myProfile.dailyStreak && myProfile.dailyStreak.best) || 0;
+    return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
+  }
   function renderDaily() {
     if (!daily) return;
     if (daily.phase === "question") rerollPerRound(daily, daily.guesses.length);
@@ -9661,6 +9691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
       ${perfect ? `<div class="dc-card dc-hot dc-perfect"><div class="dc-pf-burst" aria-hidden="true">${daily.justFinished ? svCoinBurstHtml() : ""}</div><div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>` : `<div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>`}
       <div class="dc-card">${rows}</div>
+      ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7))}
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
@@ -9717,7 +9748,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const accs=dailyAccuracies(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10,streak=dailyUpdateStreak(daily.date);
     daily.bonus=DAILY_STREAK_BONUS[streak.count]||0;daily.justFinished=true;
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
-    completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,
+    completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,perfect:accs.every((x)=>x>=90),
       saved:{date:daily.date,guesses:daily.guesses,done:true,total},board:{path:'daily/'+daily.date+'/'+deviceId,value:{n:name,s:total,a:accs.map(Math.round),t:Date.now()}}});
     updateDailyBadge();
   }
@@ -9760,6 +9791,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest("button");
     if (!b || !daily) return;
     if (b.id === "dc-start") { daily.phase = "question"; renderDaily(); return; }
+    if (b.classList.contains("dc-cal-nav") && b.dataset.cal) { daily.calYm = b.dataset.cal; const cal = document.getElementById("dc-cal"); if (cal) cal.outerHTML = dailyCalendarHtml(daily.calYm); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
       if (k === "back") daily.input = daily.input.slice(0, -1);
