@@ -157,6 +157,7 @@ export function installDebugTools(ctx) {
       btn("Daily ads", () => run({ adsWatchedCount: 0, adsWatchedDate: null }, "Daily ad count reset.")),
       btn("Tutorial", () => run({ tutorial: null }, "Tutorial reset."), W),
       btn("Daily challenge", () => run({ daily: null, dailyStreak: null }, "Daily challenge reset."), W),
+      btn("Daily: play again (keep score)", () => run({ daily: null }, "Daily challenge can be played again. Your streak, history and leaderboard score stay; the replay isn't posted or paid.")),
       btn("Monthly challenge", () => run({ monthly: null }, "Monthly challenge reset."), W),
       btn("Survival best", () => run({ survival: null }, "Survival progress reset."), W),
       btn("Host free dates", () => run({ hostFreeDates: null }, "Host free dates reset."), W)));
