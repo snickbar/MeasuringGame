@@ -8498,7 +8498,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] <= bh) break;
     }
   }
-  if (window.ResizeObserver) new ResizeObserver(() => sbLayout()).observe(qPromptEl);
+  if (window.ResizeObserver) new ResizeObserver(() => { sbLayout(); qbFitParty(); }).observe(qPromptEl);
   function sbSetText(text, animate) {
     qSB.chars = []; qSB.exiting = false; qSB.done = null;
     qBodyEl.style.opacity = ""; qBodyEl.style.transform = qBodyEl.style.clipPath = "";
@@ -8811,9 +8811,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Sets the question text. animate=true writes it with the tool (or raises the curtain) when the
   // text is new; every other call with the same text is a no-op, so repeated room updates never
   // restart or wipe the writing.
+  // Party/team question phase: the board is squeezed to make room for the keypad, but the question is still written at the
+  // board's normal size (same as the next screen) and only shrinks when a long question would not fit.
+  function qbFitParty() {
+    if (qSB) return; // scene boards fit themselves (sbFit)
+    qPromptEl.style.fontSize = "";
+    if (hudEl.dataset.playLayout !== "party" || !questionViewEl.classList.contains("active") || !qPromptEl.clientHeight) return;
+    let fs = parseFloat(getComputedStyle(qPromptEl).fontSize), guard = 30;
+    while (fs > 12 && guard-- > 0 && qPromptEl.scrollHeight > qPromptEl.clientHeight + 1) { fs -= 0.5; qPromptEl.style.fontSize = fs + "px"; }
+  }
   function setPromptText(text, animate) {
     if (questionPromptTextEl.dataset.txt === text) return;
     questionPromptTextEl.dataset.txt = text;
+    requestAnimationFrame(qbFitParty);
     qWrite = null;
     qClearing = false; qErase = null;
     qPromptEl.querySelectorAll("#question-prompt-text, #question-note, #question-answer-line").forEach((n) => { n.style.opacity = ""; });
@@ -18656,12 +18666,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderTeamWorldsQuestionStats(q);
       if (data.settings?.mode === "teamworlds") getPlayLayout().highLow(hudEl, twQuestionProgressEl, submitGuessBtn, isHlSettings(data.settings) ? "highlow" : "teamworlds");
       else getPlayLayout().party(hudEl, questionViewEl, submitGuessBtn);
+      qbFitParty();
       questionAnswerLineEl.style.display = "none"; // never spoil the answer while guessing is open
       updateWaitingUi();
       preloadAnimation(q);
     } else if (phase === "answers") {
       const q = data.currentQuestion;
       if (q) setPromptText(q.prompt, false);
+      qbFitParty();
       questionAnswerLineEl.style.display = "none"; // second-chance phase - answer isn't revealed yet either
       preloadAnimation(q);
     } else if (phase === "animation") {
