@@ -1018,9 +1018,11 @@ if (location.protocol === "file:") {
   @keyframes wbInR { from { transform: translateX(120%) rotate(8deg); opacity: 0; } to { transform: none; opacity: 1; } }
   .wb-diff { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 30px 0 6px; }
   .wb-diff-l { font-size: 12px; font-weight: 800; letter-spacing: 2.4px; color: #8b6941; }
-  .wb-diff-stamp { --c: #f08a1c; display: inline-block; padding: 4px 18px 3px; border: 4px solid var(--c); border-radius: 10px; outline: 2px solid var(--c); outline-offset: 3px; color: var(--c); font: 900 28px/1.1 'Fredoka', sans-serif; letter-spacing: 2px; transform: rotate(-4deg); opacity: .94; animation: wbStamp .45s .75s cubic-bezier(.2,1.2,.4,1) both; }
+  .wb-diff-stamp { --c: #f08a1c; display: inline-block; padding: 4px 18px 3px; border: 4px solid var(--c); border-radius: 10px; outline: 2px solid var(--c); outline-offset: 3px; color: var(--c); font: 900 clamp(18px, min(7.4vw, 3.6vh), 30px)/1.1 'Fredoka', sans-serif; letter-spacing: 2px; max-width: 92%; text-align: center; transform: rotate(-4deg); opacity: .94; animation: wbStamp .45s .75s cubic-bezier(.2,1.2,.4,1) both; }
   .wb-diff-stamp.t1 { --c: #12803f; } .wb-diff-stamp.t2 { --c: #3aa645; } .wb-diff-stamp.t3 { --c: #f08a1c; } .wb-diff-stamp.t4 { --c: #e5412d; } .wb-diff-stamp.t5 { --c: #a8102a; }
   @keyframes wbStamp { 0% { transform: scale(3.2) rotate(-14deg); opacity: 0; } 55% { transform: scale(.9) rotate(-4deg); opacity: 1; } 75% { transform: scale(1.08) rotate(-4deg); } 100% { transform: scale(1) rotate(-4deg); opacity: .94; } }
+  .wb-diff-res { margin: clamp(10px, 2.4vh, 22px) 0 4px; }
+  .wb-diff-res .wb-diff-stamp { animation-delay: .9s; }
   html[data-motion=reduce] .wb-diff-stamp { animation: none !important; }
   #wb-lock.ready { animation: wbReady .45s ease-out 1; }
   @keyframes wbReady { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
@@ -11761,6 +11763,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const wbMeasureToolbar = () => wbScreenEl.style.setProperty("--wb-toolbar-bottom", `${wbToolbar.getBoundingClientRect().bottom}px`);
   new ResizeObserver(wbMeasureToolbar).observe(wbToolbar);
   wbMeasureToolbar();
+  // Shrinks the cards and verdict step by step until everything fits without scrolling.
+  function wbFit() {
+    const scroll = wbContentEl.querySelector(".wb-play-scroll");
+    if (!scroll) return;
+    let f = 1;
+    scroll.style.setProperty("--wbf", f);
+    // Measured from layout positions (not scrollHeight) so the stamp's slam-in scaling doesn't count.
+    const used = () => { const last = scroll.lastElementChild; return last ? last.offsetTop + last.offsetHeight + 10 : 0; };
+    while (f > 0.55 && used() > scroll.clientHeight) { f = Math.round((f - 0.04) * 100) / 100; scroll.style.setProperty("--wbf", f); }
+  }
+  window.addEventListener("resize", () => { if (wb && (wb.phase === "question" || wb.phase === "result")) wbFit(); });
   function wbMountPlayLayout() {
     const hud = wbContentEl.querySelector(".wb-hud");
     const action = wbContentEl.querySelector("#wb-next,#wb-lock,#wb-skip");
@@ -11770,6 +11783,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     header.append(hud); footer.append(action);
     scroll.append(...wbContentEl.childNodes);
     wbContentEl.replaceChildren(header, scroll, footer);
+    wbFit(); requestAnimationFrame(wbFit);
   }
   function renderWhichBigger() {
     if (!wb) return;
@@ -11848,6 +11862,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ${!ok && wb.prevStreak >= 3 ? `<div class="wb-lost">Streak ended at ${wb.prevStreak}</div>` : ""}
           <p class="wb-line"><span class="wb-line-label">The bigger one</span><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b><span>${how}</span></p>
         </div>
+        <div class="wb-diff wb-diff-res"><span class="wb-diff-stamp t${difficultyOf(p.ratio).tier}">${difficultyOf(p.ratio).label.toUpperCase()}</span></div>
         <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
       wbMountPlayLayout();
       // Use the player's actual equipped flair, once per correct round.
