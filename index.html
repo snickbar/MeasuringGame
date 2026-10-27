@@ -4119,7 +4119,7 @@ if (location.protocol === "file:") {
     <p>For an answer of 100, guessing <b>75 is 75% accurate</b> and guessing <b>150 is 50% accurate</b>. Across those two rounds, your average accuracy is <b>62.5%</b>. A very large miss earns 0%, never a negative percentage.</p>
     <p><b>Examples</b> for an answer of 10: guess 11 is 90%, guess 12 is 80%, guess 8 is 80%, guess 7 is 70%, guess 5 is 50%, and guess 0 or 20 is 0%.</p>
     <p><b>The marks</b> you see on results: a green check is 90% or better, a yellow check is 70% to 89%, an orange X is 40% to 69%, and a red X is under 40%.</p>
-    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from 6 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The % beside your hearts is your running average accuracy for the run.</p>
+    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from 6 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The Accuracy box is your running average for the run. Get <b>3 rounds in a row at 75% or better</b> to earn a <b>shield</b>. You can hold one at a time. If you miss while holding it, the shield breaks instead of a heart, but that round doesn't count as survived, and your 3-in-a-row starts over.</p>
   </div></details>
 
   <details class="howto-section"><summary>Tiebreakers</summary><div class="howto-body">
@@ -11490,7 +11490,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return a.length ? a.reduce((t, r) => t + roundAccuracy(r.r), 0) / a.length : null;
   }
   // Header: hearts, the round number and your run accuracy, clear of the Back button.
-  const svHudHtml = (lives, round, acc) => `<div class="wb-hud sv-top"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div></div>`;
+  const SURVIVAL_SHIELD_ACC = 75, SURVIVAL_SHIELD_CHAIN = 3;
+  // Shield state under the hearts: a full shield when you hold one, otherwise an empty one and three pips for your chain.
+  const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds in a row at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
+  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div></div>`;
   // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
   function svDifficulty(answer) {
     const tiers = [[5, 1, "Very easy"], [20, 2, "Easy"], [100, 3, "Medium"], [1000, 4, "Hard"]];
@@ -11499,9 +11502,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const svStampHtml = (answer, cls) => { const d = svDifficulty(answer); return `<span class="wb-diff-stamp sv-stamp ${cls || ""} t${d.tier}">${d.label.toUpperCase()}</span>`; };
   // The heart that pops up in the middle of the screen when a life is lost, then cracks in half.
-  function svCrackHeart() {
-    const d = document.createElement("div"); d.className = "sv-crack";
-    d.innerHTML = `<div class="sv-crack-wrap"><img class="sv-cr whole" src="icons/life-heart-full.webp" alt=""><img class="sv-cr cracked" src="icons/life-heart-cracked.webp" alt=""><img class="sv-cr half l" src="icons/life-heart-left.webp" alt=""><img class="sv-cr half r" src="icons/life-heart-right.webp" alt=""></div>`;
+  function svCrackHeart(kind = "heart") {
+    const d = document.createElement("div"); d.className = "sv-crack" + (kind === "shield" ? " shield" : "");
+    const src = (part) => kind === "shield" ? `icons/survival-shield-${part}.webp` : `icons/life-heart-${part}.webp`;
+    d.innerHTML = `<div class="sv-crack-wrap"><img class="sv-cr whole" src="${src("full")}" alt=""><img class="sv-cr cracked" src="${src("cracked")}" alt=""><img class="sv-cr half l" src="${src("left")}" alt=""><img class="sv-cr half r" src="${src("right")}" alt=""></div>`;
     document.body.appendChild(d);
     try { playSound("error"); } catch (e) {}
     const owner = document.querySelector('#hud.active,#survival-screen.active,#wb-screen.active');
@@ -11530,7 +11534,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     void preloadWbReactionArt();
-    sv.res = { acc, ok, ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false), quip: svQuip(ok, acc) };
+    sv.res = { acc, ok, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok || sv.shieldEvent === "saved", acc >= 90 ? 2 : 20, "", false), quip: sv.shieldEvent === "saved" ? "You keep your heart, but this round doesn't count." : svQuip(ok, acc) };
     sv.phase = "result";
     renderSurvival();
   }
@@ -11552,7 +11556,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!accs.length) return "";
     const hi = Math.max(...accs), lo = Math.min(...accs), avg = accs.reduce((t, x) => t + x, 0) / accs.length;
     const hiI = accs.indexOf(hi), loI = accs.indexOf(lo);
-    const bars = accs.map((a, i) => `<span class="sv-bar ${a >= 90 ? "great" : a >= SURVIVAL_PASS ? "safe" : "lost"}${i === hiI ? " best" : ""}${i === loI && accs.length > 1 ? " worst" : ""}" style="height:${Math.max(4, Math.round(a))}%" title="Round ${i + 1}: ${Math.round(a)}%"></span>`).join("");
+    const bars = accs.map((a, i) => `<span class="sv-bar ${sv.accs[i].sh ? "saved" : a >= 90 ? "great" : a >= SURVIVAL_PASS ? "safe" : "lost"}${i === hiI ? " best" : ""}${i === loI && accs.length > 1 ? " worst" : ""}" style="height:${Math.max(4, Math.round(a))}%" title="Round ${i + 1}: ${Math.round(a)}%"></span>`).join("");
     return `<div class="dc-card sv-recap"><div class="sv-recap-h">Your run</div><div class="sv-bars"><i class="sv-bars-line" style="bottom:${SURVIVAL_PASS}%"></i>${bars}</div>
       <div class="sv-recap-stats"><div><b>${Math.round(hi)}%</b><span>Best round (${hiI + 1})</span></div><div><b>${Math.round(avg)}%</b><span>Average</span></div><div><b>${Math.round(lo)}%</b><span>Worst round (${loI + 1})</span></div></div></div>`;
   }
@@ -11562,19 +11566,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const score = sv.survived, runId = sv.runId;
     if (!(score > 0)) return;
     const CAP = 1000;
-    let n = 0, rival = null;
+    let n = 0;
     try {
       const above = await get(query(ref(db, "survival"), orderByChild("s"), startAfter(score), limitToFirst(CAP)));
       n = above.size;
-      above.forEach((c) => { if (!rival) { const v = c.val(); if (v && typeof v.s === "number") rival = { n: safeDisplayName(String(v.n || "Player").slice(0, 12)), s: v.s }; } return true; });
     } catch (e) { return; }
     const host = document.getElementById("sv-rank");
     if (!host || !sv || sv.runId !== runId || sv.phase !== "over") return;
     const rank = n >= CAP ? CAP : n + 1, plus = n >= CAP ? "+" : "";
     const lead = sv.newBest ? "You're ranked" : "This run would rank";
-    const next = rival && n < CAP ? `<div class="dc-note">${rival.s - score} more round${rival.s - score === 1 ? "" : "s"} to pass ${escapeHtml(rival.n)}</div>` : "";
     host.hidden = false;
-    host.innerHTML = `<div class="sv-rank-l">${lead}</div><div class="sv-rank-n"><span class="sv-rank-hash">#</span><span id="sv-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 40, rank * 4)}</span>${plus}</div><div class="sv-rank-l">worldwide</div>${next}`;
+    host.innerHTML = `<div class="sv-rank-l">${lead}</div><div class="sv-rank-n"><span class="sv-rank-hash">#</span><span id="sv-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 40, rank * 4)}</span>${plus}</div><div class="sv-rank-l">worldwide</div>`;
     if (!prefersReducedMotion()) {
       const num = document.getElementById("sv-rank-num"), from = Number(num.textContent), t0 = performance.now(), dur = 1100;
       const tick = (t) => {
@@ -11595,18 +11597,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function svFit() { fitPlayScroll(survivalContentEl.querySelector(".play-middle")); }
   window.addEventListener("resize", () => { if (sv && (sv.phase === "question" || sv.phase === "result")) svFit(); });
   function svResultHtml() {
-    const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok;
+    const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok && !r.saved;
     const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
     const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
     const said = Number(sv.g).toLocaleString("en-US", { maximumFractionDigits: 2 });
-    const title = r.boost ? (ok ? "Safe with buffer!" : "Still short of safety") : (ok ? "Safe!" : "Lost a life");
-    return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length))}</div>
+    const title = r.saved ? "Shield saved you!" : r.boost ? (ok ? "Safe with buffer!" : "Still short of safety") : (ok ? "Safe!" : "Lost a life");
+    return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}</div>
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
-      <div class="wb-verdict ${ok ? "ok" : "bad"}">
-        <div class="wb-result-stage sv-nomascot"><div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? "Safe" : "Lost a life"}">${ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? "Safe" : "1 life lost"}</small></div></div>
+      <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
+        <div class="wb-result-stage sv-nomascot"><div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.saved ? "shield" : ok ? "ok" : "bad"}" aria-label="${r.saved ? "Shield saved you" : ok ? "Safe" : "Lost a life"}">${r.saved ? '<img src="icons/survival-shield-cracked.webp" alt="" draggable="false">' : ok ? "&#10004;" : "&#10006;"}</div></div><small>${ok ? "Safe" : "1 life lost"}</small></div></div>
         <div class="wb-verdict-t">${title}</div>
         <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
         ${r.boost || ""}
+        ${r.earned ? `<div class="sv-callout earn">Shield earned! It will save you from one lost life.</div>` : ""}
         <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${Math.round(r.acc)}% accurate</span></p>
         ${svGaugeHtml(r.acc)}
       </div>
@@ -11615,7 +11618,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function openSurvival() {
     const fromHub = soloScreenEl.classList.contains("active");
-    sv = { phase: "intro", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 };
+    sv = { phase: "intro", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 };
     renderSurvival();
     openOverlay(survivalScreenEl);
     if (fromHub) overlayReturnScreen = soloScreenEl;
@@ -11629,7 +11632,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "intro") {
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
-        <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Your score is how many rounds you survive.</div></div>
+        <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds in a row at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive.</div></div>
         ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
@@ -11654,7 +11657,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (sv.phase === "reveal") {
-      el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length - 1))}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length - 1), !!sv.prevShield, sv.prevChain || 0)}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
       survivalRunReveal();
       return;
     }
@@ -11662,6 +11665,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       survivalStop();
       el.innerHTML = svResultHtml();
       requestAnimationFrame(() => requestAnimationFrame(svFit));
+      // Shield moments: it breaks like a heart when it saves you; earning one pops it into the header; chain pips tick up.
+      if (sv.res.saved && !sv.shieldShown) { sv.shieldShown = true; svCrackHeart("shield"); }
+      else if (sv.res.earned) { try { playSound("streak"); } catch (e) {} }
+      setTimeout(() => {
+        const el2 = document.getElementById("sv-shield"); if (!el2 || !sv || sv.phase !== "result") return;
+        const changed = (!!sv.prevShield !== !!sv.shield) || (sv.prevChain || 0) !== (sv.chain || 0);
+        el2.outerHTML = svShieldHtml(!!sv.shield, sv.chain || 0);
+        const n2 = document.getElementById("sv-shield"); if (n2 && changed) n2.classList.add(sv.shield ? "pop" : "tick");
+      }, sv.res.saved ? 1100 : 650);
       if (sv.lossPending) {
         sv.lossPending = false; svCrackHeart();
         setTimeout(() => {
@@ -11735,7 +11747,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(b.id==='sv-resume'){const saved=readSoloSession('survival');if(saved){sv=saved;renderSurvival();}return;}
     if(b.id==='sv-discard'){clearSoloSession('survival');renderSurvival();return;}
     if (b.id === "sv-help") { openScoringHelp(survivalScreenEl); return; }
-    if (b.id === "sv-start" || b.id === "sv-again") { sv = { runId:crypto.randomUUID(),phase: "question", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
+    if (b.id === "sv-start" || b.id === "sv-again") { sv = { runId:crypto.randomUUID(),phase: "question", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
       if (k === "back") sv.input = sv.input.slice(0, -1);
@@ -11749,10 +11761,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if(sv.phase!=="question")return;
       const g = parseFloat(sv.input); if (!(g > 0)) return;
       const acc = roundAccuracy(effectiveGuess(sv.q, g, deviceId) / sv.q.answer), ok = acc >= SURVIVAL_PASS;
-      sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok; sv.resultShown = false; sv.lossPending = !ok;
+      // Shield: 3 rounds in a row at 75%+ earns one (you can only hold one). It absorbs a failed guess: no life lost, but the round doesn't count as survived.
+      sv.prevShield = !!sv.shield; sv.prevChain = sv.chain || 0; sv.shieldEvent = ""; sv.shieldShown = false;
+      const saved = !ok && sv.shield;
+      sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok; sv.resultShown = false; sv.lossPending = !ok && !saved;
       saveSoloRound('survival',sv.q,g,sv.asked-1,sv.runId);
-      sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((effectiveGuess(sv.q, g, deviceId) / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5 });
-      if (ok) sv.survived++; else sv.lives--;
+      sv.accs.push({ t: Date.now(), u: sv.q.unitId, g: sv.q.targetId, r: Math.round((effectiveGuess(sv.q, g, deviceId) / sv.q.answer) * 10000) / 10000, p: 0, f: acc >= 99 ? 1 : 0, s: 5, ...(saved ? { sh: 1 } : {}) });
+      if (ok) {
+        sv.survived++;
+        if (!sv.shield) {
+          sv.chain = acc >= SURVIVAL_SHIELD_ACC ? (sv.chain || 0) + 1 : 0;
+          if (sv.chain >= SURVIVAL_SHIELD_CHAIN) { sv.shield = true; sv.chain = 0; sv.shieldEvent = "earned"; }
+        }
+      } else if (saved) { sv.shield = false; sv.chain = 0; sv.shieldEvent = "saved"; }
+      else { sv.lives--; sv.chain = 0; }
       sv.phase = "reveal"; playSound("pick"); vibrate(20);
       if (sv.lives <= 0) await survivalFinish();
       renderSurvival(); return;
@@ -11762,7 +11784,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const m = await loadAnimModule();
       svShowResult(m); return;
     }
-    if (b.id === "sv-finish") { sv = { phase: "intro", lives: SURVIVAL_LIVES, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); window.scrollTo(0, 0); return; }
+    if (b.id === "sv-finish") { sv = { phase: "intro", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); window.scrollTo(0, 0); return; }
     if (b.id === "sv-next") { sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return; }
     if (b.id === "sv-share") {
       const text = `Size Em Up! Survival: ${sv.survived} round${sv.survived === 1 ? "" : "s"} survived`;
