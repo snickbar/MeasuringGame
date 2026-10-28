@@ -18,6 +18,11 @@ const record={kind:'attempt',mode:'hlsurvival',key:'hl-theme-test',survived:5,th
 let profile=applyCareerRecord({coins:0,stats:{}},record);assert.equal(profile.coins,12);assert.deepEqual(applyCareerRecord(profile,record),profile,'Bonus not paid twice');
 assert.equal(applyCareerRecord({coins:0,stats:{}},{...record,themedWins:999}).coins,20,'Bonus bounded by wins');
 const source=fs.readFileSync('index.html','utf8');
+const offSource=source.slice(source.indexOf('  function hlOffInfo('),source.indexOf('  // High/Low Survival role badge:'));
+const offContext=vm.createContext({});vm.runInContext(offSource,offContext);
+assert.equal(vm.runInContext('hlOffInfo("high",1.779,1.78).ok',offContext),false,'Rounding to 0% must not make a wrong-side HIGH pick correct');
+assert.equal(vm.runInContext('hlOffInfo("low",1.781,1.78).ok',offContext),false,'Wrong-side LOW stays wrong even below 1% off');
+assert.equal(vm.runInContext('hlOffInfo("low",1.78,1.78).text',offContext),'Spot on');
 assert(source.includes('hlThemeId: hlState.themeId'));assert(source.includes('theme: hlState.themeId'));assert(source.includes('svCrackHeart("shield")'));
 // Run the actual host round generator with isolated room/network adapters.
 const start=source.slice(source.indexOf('  async function startRound(roomCode, roundNum) {'),source.indexOf('  function checkQuestionAdvance('));

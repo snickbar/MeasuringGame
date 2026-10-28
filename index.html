@@ -26,6 +26,7 @@ if (location.protocol === "file:") {
 </script>
 <link rel="manifest" href="manifest.json" />
 <link rel="stylesheet" href="anim/game-rewards.css" />
+<link rel="stylesheet" href="anim/high-low-reveal.css" />
 <link rel="preload" as="image" href="data:," />
 <script>
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
@@ -4551,6 +4552,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module" src="anim/home-scene.mjs"></script>
 <script type="module">
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
+  import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
@@ -15397,7 +15399,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (roomState.phase !== "animation") return;
     transitionInFlight = true;
     try {
-      const delayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
+      const baseDelay = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
+      const delayMs = isHlSettings(roomState.settings) ? Math.max(baseDelay, HL_REVEAL_STEP_MS + 850) : baseDelay;
       const revealAdvanceAt = nowMs() + delayMs;
       await update(ref(db, `rooms/${roomCode}`), { phase: "reveal", revealIndex: 0, revealAdvanceAt });
       scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
@@ -15662,7 +15665,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       isClosest: false, isSpotOn: false, isPerfect: false, accuracyPercent: roundAccuracy(guesses[id] / answer),
       basePoints: 0, doubleDownPoints: 0, crowdFavoritePoints: 0, pickedBy: [], consecutiveWins: 0,
     })).sort((a, b) => order.indexOf(a.playerId) - order.indexOf(b.playerId));
-    const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
+    const revealDelayMs = Math.max(((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000, hl ? HL_REVEAL_STEP_MS + 850 : 0);
     let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints: {}, lastRoundAccuracy: accuracy, truthPickedBy: null, phase: "reveal", revealAdvanceAt };
     if (hl) {
@@ -15892,6 +15895,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // beat that has to be its own deliberate pause (host-clicked, or auto-advanced like any other
   // step) instead of the average appearing in the same instant as the second card.
   function revealStepCount(order) {
+    if (isHlSettings(roomState.settings)) return 2; // bottle, HIGH, then LOW/result
     return order.length + (roomState.settings?.mode === "teamworlds" && order.length > 0 ? 1 : 0);
   }
   function advanceReveal(roomCode) {
@@ -15902,7 +15906,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // delay (per playCardReveal), so give it extra breathing room before the
     // auto-advance to summary fires — otherwise it reads as "instant."
     const isRevealingWinner = next === orderLength;
-    const delayMs = isRevealingWinner ? baseDelayMs + WINNER_REVEAL_EXTRA_MS : baseDelayMs;
+    const delayMs = isHlSettings(roomState.settings) ? Math.max(baseDelayMs, HL_REVEAL_STEP_MS + 850) : isRevealingWinner ? baseDelayMs + WINNER_REVEAL_EXTRA_MS : baseDelayMs;
     const revealAdvanceAt = nowMs() + delayMs;
     update(ref(db, `rooms/${roomCode}`), { revealIndex: next, revealAdvanceAt });
     scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
@@ -15914,6 +15918,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (roomState.paused) return;
     if (!(roomState.settings || currentSettings).autoAdvanceEnabled) return;
     if (nowMs() < (roomState.revealAdvanceAt || Infinity)) return;
+    if (isHlSettings(roomState.settings) && hlOceanReveal?.busy) return;
     const order = roomState.revealOrder || [];
     const idx = roomState.revealIndex || 0;
     if (idx < revealStepCount(order)) {
@@ -15931,7 +15936,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const NAV_GUARD_MS = 1100;
   const navBlocked = () => nowMs() - navGuardAt < NAV_GUARD_MS;
   revealNextBtn.addEventListener("click", () => {
-    if (revealAnimating) return;
+    if (revealAnimating || isHlSettings(roomState.settings) && hlOceanReveal?.busy) return;
     navGuardAt = nowMs();
     advanceReveal(currentRoomCode);
   });
@@ -15950,8 +15955,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudAutoToggleEl.style.display = "block";
     hudAutoToggleEl.classList.toggle("is-on", autoOn);
     hudAutoToggleEl.textContent = autoOn ? "Auto: On" : "Auto: Off";
-    revealNextBtn.disabled = autoOn;
-    showSummaryBtn.disabled = autoOn;
+    const hlBusy = isHlSettings(data.settings) && !!hlOceanReveal?.busy;
+    revealNextBtn.disabled = autoOn || hlBusy;
+    showSummaryBtn.disabled = autoOn || hlBusy;
     nextRoundBtn.disabled = autoOn;
   }
 
@@ -16202,6 +16208,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="game-outcome-art" aria-hidden="true"><span class="game-outcome-avatar">${avatarHtml(avatar)}</span><img class="game-outcome-icon" src="${icon}" alt=""></div>`;
   }
   function showLeftScreen(reason, opts = {}) {
+    cancelRevealEffects();
     hsEnsureTicker(false);
     // Sweep the full screen list (same as openOverlay) rather than a
     // hand-picked subset - this used to miss any open overlay (Shop,
@@ -16239,6 +16246,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function guestExit() {
     const tiles = gameRecapTiles();
     leavingGame = true;
+    cancelRevealEffects();
     const roomCode = currentRoomCode;
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
@@ -16252,6 +16260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function hostExit() {
     const tiles = gameRecapTiles();
     leavingGame = true;
+    cancelRevealEffects();
     const roomCode = currentRoomCode;
     await set(ref(db, `rooms/${roomCode}/phase`), "ended");
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
@@ -16983,9 +16992,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hlOffInfo(role, guess, answer) {
     const diff = answer ? (guess / answer - 1) * 100 : 0;
     const n = Math.round(Math.abs(diff));
-    const pct = n > 999 ? "999%+" : n + "%";
+    const pct = n > 999 ? "999%+" : n === 0 ? "<1%" : n + "%";
     const high = role === "high";
-    if (n === 0) return { ok: true, text: "Spot on" };
+    if (diff === 0) return { ok: true, text: "Spot on" };
     if (high) return diff > 0 ? { ok: true, text: `${pct} higher` } : { ok: false, text: `${pct} too low` };
     return diff < 0 ? { ok: true, text: `${pct} lower` } : { ok: false, text: `${pct} too high` };
   }
@@ -17102,7 +17111,54 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     })(t0);
   }
   let twRevealSig = null, twRevealAnimated = {};
+  let hlOceanReveal = null, hlOceanKey = null;
+  const hlOceanResults = new Set();
+  function renderHighLowReveal(data) {
+    const key = `${currentRoomCode}:${data.gameId || ""}:${data.round || 1}`;
+    const controls = () => {
+      const index = Math.min(2, roomState.revealIndex || 0);
+      const busy = !!hlOceanReveal?.busy;
+      const autoOn = !!(roomState.settings || currentSettings).autoAdvanceEnabled;
+      revealNextBtn.style.display = isHost && index < 2 ? "flex" : "none";
+      revealNextBtn.textContent = busy ? "Revealing…" : index === 0 ? "Reveal HIGH" : "Reveal LOW";
+      showSummaryBtn.style.display = isHost && index >= 2 ? "flex" : "none";
+      showSummaryBtn.textContent = "Game progress";
+      revealNextBtn.disabled = autoOn || busy;
+      showSummaryBtn.disabled = autoOn || busy;
+    };
+    if (!hlOceanReveal || hlOceanKey !== key || !hlOceanReveal.root.isConnected) {
+      hlOceanReveal?.destroy();hlOceanKey = key;
+      hlOceanReveal = mountHighLowReveal(revealListEl, data, {
+        reducedMotion: prefersReducedMotion,
+        avatarHtml: id => avatarHtml((currentPlayers[id] || {}).avatar),
+        offInfo: hlOffInfo,
+        verdictHtml: current => hlVerdictHtml(current, true),
+        onBusyChange: () => { if (hlOceanKey === key) { controls();renderHudTop(roomState); } },
+        onSettled: () => {
+          if (hlOceanKey !== key || roomState.phase !== "reveal" || leavingGame || !hudEl.classList.contains("active")) return;
+          controls();renderHudTop(roomState);navGuardAt = nowMs();
+          if (isHost) checkRevealAdvance(currentRoomCode);
+        },
+        onResult: ({fresh}) => {
+          if (!fresh || hlOceanResults.has(key) || roomState.phase !== "reveal" || leavingGame || !hudEl.classList.contains("active") || document.hidden) return;
+          hlOceanResults.add(key);
+          if (hlOceanResults.size > 100) hlOceanResults.delete(hlOceanResults.values().next().value);
+          const last = roomState.hlLast || {};
+          if (!prefersReducedMotion()) {
+            const pips = hlOceanReveal.root.querySelectorAll(".hl-pips i"), shield = hlOceanReveal.root.querySelector(".hl-shield img");
+            for (let i = last.previousCharge || 0; i < (roomState.hlShieldCharge || 0); i++) if (pips[i]) pips[i].animate([{transform:"scale(.3)"},{transform:"scale(1.4)",offset:.6},{transform:"scale(1)"}], {duration:450,easing:"ease-out"});
+            if (last.earned && shield) shield.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
+          }
+          if (last.saved) { if (!prefersReducedMotion()) svCrackHeart("shield");else playSound("error");vibrate([35,40,35]); }
+          else if (!last.passed) { if (!prefersReducedMotion()) svCrackHeart();else playSound("error");vibrate([70,60,70]); }
+          else { playSound("roundwin");celebrate("normal");if (last.earned || last.milestone) {playSound("streak");vibrate([25,40,25]);} }
+        },
+      });
+    } else hlOceanReveal.update(data);
+    controls();
+  }
   function renderTeamWorldsReveal(data) {
+    if (isHlSettings(data.settings)) { renderHighLowReveal(data); return; }
     const order = data.revealOrder || [];
     const revealIndex = data.revealIndex || 0;
     const q = data.currentQuestion;
@@ -17500,7 +17556,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     for (let i = 1; i <= totalRounds; i++) {
       slots += `<span class="round-slot${i < round ? " done" : i === round ? " current" : ""}"></span>`;
     }
-    const holdingHlResult = data.phase === "animation" || (data.phase === "reveal" && (data.revealIndex || 0) < revealStepCount(data.revealOrder || []));
+    const holdingHlResult = data.phase === "animation" || (data.phase === "reveal" && ((data.revealIndex || 0) < revealStepCount(data.revealOrder || []) || isHlSettings(data.settings) && !!hlOceanReveal?.busy));
     const shownSyncStreak = holdingHlResult ? (data.hlLast?.previousSyncStreak ?? 0) : (data.hlSyncStreak || 0);
     hudRoundLabelEl.innerHTML = isHlSettings(data.settings)
       ? `<span class="round-text hl-round">Round <b>${round}</b>${shownSyncStreak >= 3 ? `<span class="hl-flame" title="${shownSyncStreak} in a row">${FIRE_IC}</span>` : ""}</span>`
@@ -18829,6 +18885,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // When the screen moves on from the reveal (the host jumped to the summary mid-flair), the winner's
   // flair, trophy, coins, confetti and their sounds stop right away instead of carrying onto the next screen.
   function cancelRevealEffects() {
+    hlOceanReveal?.destroy();hlOceanReveal = null;hlOceanKey = null;
     revealEpoch++;
     revealAnimating = false;
     reactionsPanelEl.querySelectorAll(".flair-layer, .trophy-burst, .coin-fly, .coin-award-popup, .streamer-piece").forEach((n) => n.remove());

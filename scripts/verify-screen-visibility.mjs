@@ -39,7 +39,7 @@ for(const menuId of ['settings','shop','style','stats','objects','awards','howto
  }
 }
 {const game={...active(),id:'hud'},end={...active(),id:'ended-screen'};assert.equal(enforceSingleScreen({screens:[game,end],menus:[],terminals:[end]}),end);assert(!game.classList.contains('active'));}
-let stopped = null, scroll = null;
+let stopped = null, scroll = null, revealCancelled = 0;
 const context = vm.createContext({
   ALL_SCREEN_ELS: [board, left, overlay], leftScreenEl: left,
   hudRoomCodeGroupEl: active(), hudRoundLabelEl: active(), bottomToolbarEl: active(),
@@ -48,6 +48,7 @@ const context = vm.createContext({
   window: {scrollTo: (...args) => {scroll = args;}},
   hsTickHandle: 42, clearInterval: handle => {stopped = handle;},
   leavingGame: true,
+  cancelRevealEffects: () => {revealCancelled++;},
   currentPlayers: {me: {avatar: 'av07'}}, currentPlayerId: 'me', currentAvatar: 'av01',
 });
 for (const name of ['avatarHtml', 'gameOutcomeArt', 'hsEnsureTicker', 'showLeftScreen', 'hsHostTick', 'renderHighStakes']) {
@@ -56,6 +57,7 @@ for (const name of ['avatarHtml', 'gameOutcomeArt', 'hsEnsureTicker', 'showLeftS
   vm.runInContext(fn[0], context);
 }
 context.showLeftScreen('Closed', {title: 'You ended the game'});
+assert.equal(revealCancelled, 1, 'Leaving cancels active reveal animations and callbacks');
 assert.equal(board.classList.contains('active'), false);
 assert.equal(overlay.classList.contains('active'), false);
 assert.equal(left.classList.contains('active'), true);
