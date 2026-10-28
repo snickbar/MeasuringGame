@@ -5222,7 +5222,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return v;
   }
   const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
-  const activeBoard = () => (rndOn("boards") ? rndGet("boards") : equippedBoard());
+  // Team Worlds / High-Low use a plain question box: no equipped skin is built at all in those rooms.
+  function plainBoardMode() { try { return !!(roomState && roomState.settings && roomState.settings.mode === "teamworlds"); } catch (e) { return false; } }
+  const activeBoard = () => (plainBoardMode() ? "plain" : rndOn("boards") ? rndGet("boards") : equippedBoard());
   let monthlyPlayBg = null; // while a Monthly Challenge is being played, that month's own background is shown
   const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
   function rollRandomEquips() {
@@ -8466,6 +8468,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     chalkboard: { tool: "chalk", er: "erChalk", ledge: 0.905, toolDy: -6, toolDx: -52, erDx: 74, dust: "#f4f4ec" },
     whiteboard: { tool: "marker", er: "erMarker", ledge: 0.937, toolDy: -8, toolDx: -62, erDx: 86, dust: "#a9b8d6" },
     curtains: { tool: null },
+    plain: { tool: null },
   };
   const qPromptEl = document.getElementById("question-prompt");
   const qToolEl = document.createElement("div");
@@ -19149,6 +19152,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // it keeps winning regardless of what applyBoard resets the attribute/inline styles to,
     // as long as the class itself stays on, which only this code ever touches.
     qPromptEl.classList.toggle("tw-plain", isTeamWorlds);
+    applyBoard(activeBoard()); // plain box for Team Worlds / High-Low, the equipped board everywhere else (no-op when unchanged)
     hudEl.dataset.twPhase = isTeamWorlds ? phase : "";
     hudTimerColEl.style.display = isTeamWorlds ? "none" : "";
     if (phase !== "animation") stopAnimation();
