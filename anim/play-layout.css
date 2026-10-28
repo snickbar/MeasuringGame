@@ -238,3 +238,11 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
 
 /* Party question boards: start big and let qbFitParty shrink only as far as the text needs (same size in question and reveal). */
 #hud[data-play-layout=party] .question-prompt:not([data-scene]){font-size:25px}
+
+/* Every mode: the bottom bar (Auto / Next round / Finish...) never paints a white box. Only the reaction row keeps a backing. */
+#bottom-toolbar{background:transparent!important;box-shadow:none!important}
+#bottom-toolbar #reaction-strip{position:relative;isolation:isolate}
+#bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
+/* Results / summary in every game mode: the list runs down behind the buttons and scrolls under them. */
+#hud.active:is([data-phase=reveal],[data-phase=summary]){bottom:0}
+#hud:is([data-phase=reveal],[data-phase=summary]) .main-col{padding-bottom:140px}
