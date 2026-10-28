@@ -37,7 +37,18 @@ body:has(#worlds-screen.active[data-play-layout=worlds]){overflow:hidden}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic img{height:63px;margin-bottom:2px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic span{font-size:10px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-prompt{font-size:14px;line-height:1.2;padding:6px 9px;margin:4px 0}
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-role{font-size:11px;line-height:1.2;margin:4px auto 0;padding:3px 7px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-role{font-size:22px;line-height:1.25;margin:6px 0 0;padding:14px 16px;width:100%;box-sizing:border-box}
+/* The hearts/lives row (.play-status) and the Lock-it-in button (.play-actions) are borrowed out of
+   #question-view and live at the #hud root for this layout (see play-layout.mjs's highLow()), so they
+   stay in the DOM - and keep their own reserved padding - through reveal/animation/summary too, even
+   though nothing in them is relevant once the round is done guessing. That read as empty boxes sitting
+   between the pinned room-code bar and the first reveal card, and another above the bottom toolbar.
+   Hide both outside the question phase so only the real, still-live controls remain on screen. */
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):has(#animation-view.active,#reveal-view.active,#summary-view.active) .play-status,
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):has(#animation-view.active,#reveal-view.active,#summary-view.active) .play-actions{display:none}
+/* The bottom action bar (Auto/Reveal next/Show summary/...) keeps its buttons pinned in place but no
+   longer paints its own solid backing - the room/background shows through around them instead. */
+body:has(#hud[data-play-layout=highlow],#hud[data-play-layout=teamworlds]) #bottom-toolbar{background:transparent;box-shadow:none}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-stats{margin:4px 0;gap:8px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-pair{flex:0 1 140px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-gutter{width:22px;flex-basis:22px}
@@ -64,7 +75,7 @@ body:has(#worlds-screen.active[data-play-layout=worlds]){overflow:hidden}
  :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-key,#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad :is(.num-btn,#backspace-btn){height:44px;min-height:44px}
  #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .dc-pic img{height:38px}
  #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-prompt{font-size:13px;padding:4px 7px}
- #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-role{font-size:10px;margin-top:3px;padding:2px 5px}
+ #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-role{font-size:19px;margin-top:4px;padding:11px 14px}
  #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-question-stats{margin:2px 0}
  #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half .avatar{width:30px;height:30px}
  #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half{padding:4px 5px}
