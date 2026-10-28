@@ -212,13 +212,12 @@ body:has(.screen.active[data-play-layout=solo]),body:has(#hs-screen.active[data-
 :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-dots{gap:30px}
 @media(max-height:720px){:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-dots{gap:24px;margin-right:46px}.dc-dots .dot-mark{width:28px;height:28px}:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .play-status>.dc-title,:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .play-status.dc-title{font-size:15px}}
 
-/* Team Worlds / High-Low round results: no empty status strip above the cards, and the cards scroll
-   under a transparent action bar (Auto / Next) instead of stopping at a solid white box. */
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary]){bottom:0}
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary])>.play-status{display:none}
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary])>.game-body{grid-row:2}
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary])>.play-actions{grid-row:3;padding:0}
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary]) .main-col{padding-bottom:var(--play-bottom,0px)}
-body:has(#hud.active:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar{background:transparent;box-shadow:none}
-body:has(#hud.active:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar #reaction-strip{position:relative;isolation:isolate}
-body:has(#hud.active:is([data-play-layout=highlow],[data-play-layout=teamworlds]):is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
+/* Team Worlds / High-Low round results. applyPhase() drops data-play-layout outside the question phase,
+   so these key off data-tw-phase only: no empty row above the cards, and the cards scroll under a
+   transparent action bar (Auto / Next) instead of stopping at a solid white box. */
+#hud:is([data-tw-phase=reveal],[data-tw-phase=summary])>.hud-timer-row{display:none}
+#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary]){bottom:0;padding-top:8px}
+#hud:is([data-tw-phase=reveal],[data-tw-phase=summary]) .main-col{padding-bottom:140px}
+body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar{background:transparent;box-shadow:none}
+body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar #reaction-strip{position:relative;isolation:isolate}
+body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
