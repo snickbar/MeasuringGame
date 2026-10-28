@@ -1273,6 +1273,14 @@ if (location.protocol === "file:") {
   .ach-switch::after { content: ""; position: absolute; top: 1px; left: 1px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform 160ms; }
   .ach-switch.on { background: #6aa84f; }
   .ach-switch.on::after { transform: translateX(20px); }
+  /* Compact "Hide completed" toggle living as a third box in the Awards stats row,
+     beside the claimed/ready counts, instead of its own full-width bar underneath. */
+  button.items-stat-box.ach-hide-box { flex: 0 0 78px; width: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font: inherit; cursor: pointer; }
+  .ach-hide-box .items-stat-label { margin: 0; }
+  .ach-switch-mini { position: relative; width: 36px; height: 20px; flex-shrink: 0; border: 2px solid #8a6a3a; border-radius: 12px; background: #d9cdb8; transition: background 160ms; }
+  .ach-switch-mini::after { content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform 160ms; }
+  .ach-hide-box.on .ach-switch-mini { background: #6aa84f; }
+  .ach-hide-box.on .ach-switch-mini::after { transform: translateX(16px); }
   .ach-cat-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; color: var(--brand); margin: 18px 0 8px; }
   .ach-cat-title::after { content: ""; flex: 1; height: 2px; border-radius: 1px; background: linear-gradient(90deg, rgba(193,122,84,.5), transparent); }
   .ach-row { position: relative; display: flex; align-items: center; gap: 10px; background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 14px; padding: 9px 10px; margin-bottom: 8px; box-shadow: 0 2px 0 rgba(160,120,60,.18); }
@@ -13087,8 +13095,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="items-stats">
           <div class="items-stat-box"><div class="items-stat-value">${doneCount} / ${real.length}</div><div class="items-stat-label">Awards claimed</div></div>
           <div class="items-stat-box"><div class="items-stat-value">${waiting}</div><div class="items-stat-label">Rewards ready to claim</div></div>
+          <button type="button" id="ach-hide-switch" class="items-stat-box ach-hide-box${achHideDone ? " on" : ""}" role="switch" aria-checked="${achHideDone}" aria-label="Hide completed"><span class="items-stat-label">Hide<br>completed</span><span class="ach-switch-mini"></span></button>
         </div>
-        <div class="ach-filter"><span>Hide completed</span><button type="button" id="ach-hide-switch" class="ach-switch${achHideDone ? " on" : ""}" role="switch" aria-checked="${achHideDone}" aria-label="Hide completed"></button></div>
       </div>` + body;
     achJustClaimed = null;
   }
