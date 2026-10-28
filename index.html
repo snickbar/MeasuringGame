@@ -2792,7 +2792,8 @@ if (location.protocol === "file:") {
   @keyframes hlPulseHigh { 0%, 100% { box-shadow: 0 0 6px 1px rgba(240,138,36,.45); transform: scale(1); } 50% { box-shadow: 0 0 16px 6px rgba(255,150,40,.85); transform: scale(1.03); } }
   :root[data-motion="reduce"] .tw-qs-half.hl-mine { animation: none; }
   .hl-sub { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #000; text-align: center; }
-  .hl-role { display: block; margin: 6px auto 0; padding: 4px 12px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; border: 2px solid #4a2c12; }
+  .hl-role[hidden] { display: none; }
+  .hl-role { display: block; margin: 6px auto 6px; padding: 4px 12px; width: fit-content; max-width: 100%; border-radius: 999px; font-size: 13px; font-weight: 700; color: #000; text-align: center; border: 2px solid #4a2c12; }
   .hl-role.hl-high { background: linear-gradient(180deg, #ffd9c8, #ffb59a); }
   .hl-role.hl-low { background: linear-gradient(180deg, #d4ebff, #a9d2fb); }
   .hl-sub-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; }
@@ -2848,8 +2849,10 @@ if (location.protocol === "file:") {
   @media (prefers-reduced-motion: reduce) { .hl-wm-fill { transition: none; } }
   .hl-shield { display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700; }
   .hl-shield img { width:23px;height:23px;object-fit:contain; }
-  .hl-shield-meter { display:block;width:54px;height:8px;border-radius:8px;background:#2071ad22;overflow:hidden; }
-  .hl-shield-meter i { display:block;height:100%;background:#278ad5;transition:width .35s ease; }
+  /* The team shield needs three survived rounds in a row, shown as three dots. */
+  .hl-pips { display:flex;gap:4px;align-items:center; }
+  .hl-pips i { display:block;width:11px;height:11px;border-radius:50%;border:2px solid #9a8466;box-sizing:border-box; }
+  .hl-pips i.on { background:#3b82e0;border-color:#1f5fb8; }
   .hl-theme { flex-basis:100%;max-width:100%; }
   .hl-theme .sv-theme-strip { margin:2px 0 0;font-size:11px;padding:2px 8px 2px 2px;gap:5px; }
   .hl-theme .sv-theme-emb { width:24px;height:24px; }
@@ -4457,6 +4460,7 @@ if (location.protocol === "file:") {
           <button class="num-btn" data-val="0">0</button>
           <button id="backspace-btn" aria-label="Backspace">&larr;</button>
         </div>
+        <div id="hl-role-hint" class="hl-role" hidden></div>
         <button id="submit-guess-btn">Lock it in</button>
         <p id="guess-status"></p>
       </div>
@@ -16293,7 +16297,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Lives bar for High/Low Survival: the same hearts as Solo Survival, with how far the team has got underneath.
   function hlShieldHtml(room) {
     const held = !!room.hlShield, charge = room.hlShieldCharge || 0;
-    return `<div class="hl-shield" aria-label="${held ? 'Team shield ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward a shield'}"><img src="icons/survival-shield-${held ? 'full' : 'empty'}.webp" alt=""><span>${held ? 'Shield ready' : 'Team shield'}</span>${held ? '' : `<span class="hl-shield-meter" role="progressbar" aria-label="Team shield charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}"><i style="width:${charge / HL_SHIELD_CHAIN * 100}%"></i></span>`}</div>`;
+    return `<div class="hl-shield" aria-label="${held ? 'Team shield ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward a shield'}"><img src="icons/survival-shield-${held ? 'full' : 'empty'}.webp" alt=""><span>${held ? 'Shield ready' : 'Team shield'}</span>${held ? '' : `<span class="hl-pips" role="progressbar" aria-label="Team shield charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : ''}"></i>`).join('')}</span>`}</div>`;
   }
   function hlHeartsHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
@@ -16328,6 +16332,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // "Lock it in" button exactly, via the tw-mode class (see the #question-view.tw-mode CSS).
     questionViewEl.classList.toggle("tw-mode", isTw);
     submitGuessBtn.textContent = "Lock it in";
+    const hlHintEl = document.getElementById("hl-role-hint");
+    if (hlHintEl) hlHintEl.hidden = true;
     if (!isTw) return;
     const me = currentPlayers[currentPlayerId];
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
@@ -16338,8 +16344,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
     if (hl && q) {
       const myRole = hlRoles[currentPlayerId];
-      const ask = myRole === "high" ? "You're HIGH: pick a number it can't possibly be MORE than." : myRole === "low" ? "You're LOW: pick a number it can't possibly be LESS than." : "";
-      twQuestionPromptEl.innerHTML = escapeHtml(q.prompt) + (ask ? `<span class="hl-role hl-${myRole}">${ask}</span>` : "");
+      const ask = myRole === "high" ? "You're HIGH: get as close as possible without going under." : myRole === "low" ? "You're LOW: get as close as possible without going over." : "";
+      twQuestionPromptEl.textContent = q.prompt;
+      if (hlHintEl) {
+        hlHintEl.hidden = !ask;
+        hlHintEl.textContent = ask;
+        hlHintEl.className = "hl-role" + (ask ? " hl-" + myRole : "");
+      }
     } else twQuestionPromptEl.textContent = q ? q.prompt : "";
     // In High/Low Survival, order the two avatar boxes HIGH then LOW and tag each with its role.
     const ids = hl ? Object.keys(currentPlayers).sort((a, b) => (hlRoles[a] === "high" ? 0 : 1) - (hlRoles[b] === "high" ? 0 : 1)) : Object.keys(currentPlayers);
@@ -17149,8 +17160,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (v) {
             v.parentElement.classList.remove("tw-ph");
             if (!prefersReducedMotion()) {
-              const meter = v.querySelector(".hl-shield-meter i"), shield = v.querySelector(".hl-shield img");
-              if (meter) meter.animate([{width:((data.hlLast?.previousCharge || 0) / HL_SHIELD_CHAIN * 100) + "%"},{width:((data.hlShieldCharge || 0) / HL_SHIELD_CHAIN * 100) + "%"}], {duration:450,easing:"ease-out"});
+              const pips = v.querySelectorAll(".hl-pips i"), shield = v.querySelector(".hl-shield img");
+              // The dot(s) this round just lit pop in.
+              for (let i = data.hlLast?.previousCharge || 0; i < (data.hlShieldCharge || 0); i++) if (pips[i]) pips[i].animate([{transform:"scale(.3)"},{transform:"scale(1.4)",offset:.6},{transform:"scale(1)"}], {duration:450,easing:"ease-out"});
               if (data.hlLast?.earned && shield) shield.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
             }
             if (data.hlLast?.saved) { svCrackHeart("shield"); vibrate([35, 40, 35]); }
