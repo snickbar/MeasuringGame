@@ -2673,6 +2673,14 @@ if (location.protocol === "file:") {
   .question-prompt.tw-plain #q-pencil, .question-prompt.tw-plain #q-eraser, .question-prompt.tw-plain #q-dust,
   .question-prompt.tw-plain #q-curtain, .question-prompt.tw-plain #q-curtain-top { display: none !important; }
   .question-prompt.tw-plain #question-prompt-text { display: block !important; font-size: 16px !important; }
+  /* Scene boards animate #q-body / the text with inline clip-path, transform, opacity and mask (reveal wipes, exits). In plain
+     mode that left only the bottom of the question visible during the stack animation. Plain means plain. */
+  .question-prompt.tw-plain, .question-prompt.tw-plain #q-body, .question-prompt.tw-plain #question-prompt-text {
+    clip-path: none !important; -webkit-clip-path: none !important; transform: none !important; opacity: 1 !important;
+    filter: none !important; -webkit-mask: none !important; mask: none !important; overflow: visible !important; text-align: center;
+  }
+  .question-prompt.tw-plain #question-prompt-text { font-size: 16px !important; line-height: 1.25 !important; text-shadow: none !important; color: #000 !important; white-space: normal !important; }
+  .question-prompt.tw-plain #question-prompt-text::before, .question-prompt.tw-plain #question-prompt-text::after, .question-prompt.tw-plain #q-body::before, .question-prompt.tw-plain #q-body::after { content: none !important; display: none !important; }
   /* Board skins like Letterboard colour, move and fade each letter with INLINE styles, which beat the container's
      color above - so the question came out rainbow (and letters could sit mid-drop or invisible). Force plain letters.
      Splitflap also pads/margins each letter (its own per-character "tile" spacing) - without a reset here the
@@ -19137,6 +19145,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // it keeps winning regardless of what applyBoard resets the attribute/inline styles to,
     // as long as the class itself stays on, which only this code ever touches.
     qPromptEl.classList.toggle("tw-plain", isTeamWorlds);
+    hudEl.dataset.twPhase = isTeamWorlds ? phase : "";
     hudTimerColEl.style.display = isTeamWorlds ? "none" : "";
     if (phase !== "animation") stopAnimation();
     revealViewEl.classList.toggle("active", phase === "reveal");
