@@ -8885,7 +8885,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function qbFitParty() {
     if (qSB) return; // scene boards fit themselves (sbFit)
     qPromptEl.style.fontSize = "";
-    if (hudEl.dataset.playLayout !== "party" || !questionViewEl.classList.contains("active") || !qPromptEl.clientHeight) return;
+    if (hudEl.dataset.playLayout !== "party" || !qPromptEl.clientHeight) return; // every phase, so the question is the same size before and after the answer shows
     let fs = parseFloat(getComputedStyle(qPromptEl).fontSize), guard = 30;
     while (fs > 12 && guard-- > 0 && qPromptEl.scrollHeight > qPromptEl.clientHeight + 1) { fs -= 0.5; qPromptEl.style.fontSize = fs + "px"; }
   }
@@ -8981,6 +8981,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     questionAnswerLineEl.innerHTML = html;
     questionAnswerLineEl.style.display = "block";
     fitTextToBox(questionAnswerLineEl.querySelector(".answer-line-value"), 22);
+    requestAnimationFrame(qbFitParty);
   }
   // Shared by every reveal code path that flips the winning card (the normal
   // one-at-a-time animation, a late joiner catching up, and the "snap to
