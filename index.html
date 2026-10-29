@@ -2203,7 +2203,7 @@ if (location.protocol === "file:") {
   .bd-medal { position: relative; width: 58px; height: 58px; margin: 0 auto 4px; border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), transparent 45%), var(--rim); border: 3px solid var(--edge); box-shadow: 0 3px 0 var(--edge), 0 6px 8px rgba(0,0,0,.2); }
   .bd-medal::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #fffaf0; border: 2px solid var(--edge); }
-  .bd-medal img { position: relative; width: 30px; height: 30px; object-fit: contain; }
+  .bd-medal img { position: relative; width: 34px; height: 34px; object-fit: contain; }
   .bd-medal.bronze { --rim: #d99a5b; --edge: #8a5628; } .bd-medal.silver { --rim: #cfd6df; --edge: #7a8798; } .bd-medal.gold { --rim: #f6cf54; --edge: #a8741a; } .bd-medal.rank { --rim: #7fc3e8; --edge: #2f6f96; }
   .bd-item.locked .bd-medal { filter: grayscale(1); opacity: .6; }
   .bd-item.locked .bd-medal img { opacity: .4; }
@@ -12787,8 +12787,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     "Second chance": "icons/flair/heart.png", Social: "icons/reactions/clap.png", Fun: "icons/reactions/popper.png", Worlds: "icons/flair/balloon-red.png", Monthly: "icons/flair/leaf-maple.png", Fantasy: "icons/flair/butterfly-gold.png" };
   const BADGE_RANK_ICONS = ["icons/reactions/crown.png", "icons/reactions/cool.png", "icons/reactions/think.png", "icons/reactions/point.png", "icons/reactions/trophy.png"];
   const ROMAN = ["I", "II", "III"];
-  function badgeIcon(a) { return a.icon || (ACH_ICON_IDS.has(a.id) ? `icons/ach/${a.id}.png` : BADGE_CAT_ICONS[a.cat] || "icons/flair/star.png"); }
-  function badgeTierClass(a) { return a.tier === 0 ? "bronze" : a.tier === 2 ? "gold" : "silver"; }
+  const BADGE_WORLD_ART = { tiny: "tiny", games: "games", home: "home", food: "food", town: "town", critters: "critters", wheels: "wheels", landmarks: "landmarks", "under-the-sea": "sea", "toy-box": "toybox", "make-believe": "makebelieve", "holiday-mix": "holiday" };
+  const BADGE_SINGLE_ART = { "welcome-size-em-up": "welcome", "account-connected": "account", "collector-object_spotter-351": "spotter-3", "home-space": "star-collector",
+    "home-penguin": "ice-cold", "home-cactus": "desert-survivor", "home-dragon": "dragon-slayer", "home-giraffe": "head-above" };
+  function badgeArtKey(a) {
+    if (BADGE_SINGLE_ART[a.id]) return BADGE_SINGLE_ART[a.id];
+    let m = /^mode-(team-spirit|winning-combination|travel-buddies|perfect-partnership|holding-the-line|in-sync|at-the-table|high-roller|called-your-bluff|daily-regular)-\d+$/.exec(a.id);
+    if (m) return m[1];
+    m = /^monthly-(\d\d)$/.exec(a.id);
+    if (m) return "month-" + m[1];
+    m = /^world-(?:beat|perfect)-(.+)$/.exec(a.id);
+    if (m && BADGE_WORLD_ART[m[1]]) return "world-" + BADGE_WORLD_ART[m[1]];
+    return null;
+  }
+  function badgeIcon(a) {
+    const key = badgeArtKey(a);
+    if (key) return `icons/badges/${key}.webp`;
+    if (a.fantasy) { const o = OBJECT_BY_ID.get(a.fantasy); if (o && o.image) return o.image; }
+    return a.icon || (ACH_ICON_IDS.has(a.id) ? `icons/ach/${a.id}.png` : BADGE_CAT_ICONS[a.cat] || "icons/flair/star.png");
+  }
+  function badgeTierClass(a) { return a.tier === 0 || a.id.startsWith("world-beat-") ? "bronze" : a.tier === 2 || a.id.startsWith("world-perfect-") || a.id === "home-space" ? "gold" : "silver"; }
   function badgeSeen() { try { return new Set(JSON.parse(localStorage.getItem("mg_badges_seen") || "[]")); } catch (e) { return new Set(); } }
   function badgeState(a) {
     const claimed = !!(myProfile.achClaimed || {})[a.id];
@@ -12797,8 +12815,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function badgeMedal(a, st, seen) {
     const tier = a.tier != null && a.tier >= 0 && ACHIEVEMENTS.filter((x) => x.cat === a.cat && x.name.replace(/ I{1,3}$/, "") === a.name.replace(/ I{1,3}$/, "")).length > 1 ? `<span class="bd-tier">${ROMAN[a.tier]}</span>` : "";
+    const star = a.id.startsWith("world-perfect-") ? `<span class="bd-tier"><img src="icons/flair/star.png" alt="" style="width:11px;height:11px"></span>` : "";
     const fresh = st.earned && !seen.has(a.id) ? `<span class="bd-new">NEW</span>` : "";
-    return `<span class="bd-medal ${badgeTierClass(a)}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}</span>`;
+    return `<span class="bd-medal ${badgeTierClass(a)}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}${star}</span>`;
   }
   function badgesTabHtml(lv) {
     const seen = badgeSeen();
