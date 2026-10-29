@@ -9347,7 +9347,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     syncOverlayReturnFlag();
     playSound("popup-open");
   }
-  function closeOverlay() {
+  // silent: moving FORWARD into a game (e.g. Quick Game) shouldn't play the "popup closed" sound.
+  function closeOverlay(silent) {
     const current = OVERLAY_SCREENS.find((el) => el.classList.contains("active"));
     if (!current) return;
     current.classList.remove("active");
@@ -9360,7 +9361,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayFocusReturn=null;
     overlayReturnScreen = null;
     syncOverlayReturnFlag();
-    playSound("popup-close");
+    if (!silent) playSound("popup-close");
   }
   // Shared by three different "Yes" actions - quitting the app entirely
   // (toolbar Exit outside a game), as host ending the current game for
@@ -10003,7 +10004,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (b.id === "sh-monthly") openMonthly();
     else if (b.id === "sh-survival") openSurvival();
     else if (b.id === "sh-wb") openWhichBigger();
-    else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(); showCreateScreen("solo"); }
+    else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(true); showCreateScreen("solo"); }
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
   try { updateDailyBadge(); } catch (e) {}
@@ -10162,7 +10163,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!granted) return;
     pendingFreeGame = granted === "free";
     partyFromHub = true;
-    closeOverlay();
+    closeOverlay(true);
     showCreateScreen("classic");
   }
   async function startHlFromInfo() {
@@ -10218,7 +10219,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!granted) return;
       pendingFreeGame = granted === "free";
       partyFromHub = true;
-      closeOverlay();
+      closeOverlay(true);
       showCreateScreen("teamvteam");
     });
   });
@@ -19058,7 +19059,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   const activeSfx = new Set();
+  let lastSfxAt = 0;
   function sfx(name, onEnded, rate) {
+    lastSfxAt = Date.now();
     if (!audioLifecycle.canPlay()) return;
     if (["tick","count","timesup","drumroll","drumroll-end"].includes(name) && !gameplayAudioVisible()) return;
     if (!localSoundEnabled) return;
@@ -19133,6 +19136,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(!btn||btn.disabled||e.button>0||prefersReducedMotion()||!btn.animate)return;
     buttonFeedback.get(btn)?.cancel();
     buttonFeedback.set(btn,btn.animate([{filter:'brightness(.94)'},{filter:'brightness(1.06)',offset:.45},{filter:'brightness(1)'}],{duration:140,easing:'ease-out'}));
+  });
+
+  // Every button gets a soft tap unless its own handler already played a sound (steppers, toggles, keyboard keys,
+  // Join, toolbar buttons were silent). Add data-no-click-sound to a button that should stay quiet.
+  document.addEventListener('click', e => {
+    const btn = e.target.closest?.('button');
+    if (!btn || btn.disabled || btn.hasAttribute('data-no-click-sound') || Date.now() - lastSfxAt < 80) return;
+    sfx('tap');
   });
 
   // ==================== Master phase switch ====================
