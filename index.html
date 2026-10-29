@@ -4687,8 +4687,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, serverTimestamp, onDisconnect, runTransaction, query, orderByChild, limitToLast, limitToFirst, startAfter
+    getDatabase, ref as fbRef, get as fbGet, set as fbSet, update as fbUpdate, remove as fbRemove, push as fbPush, onValue as fbOnValue, onChildAdded as fbOnChildAdded, serverTimestamp, onDisconnect as fbOnDisconnect, runTransaction as fbRunTransaction, query, orderByChild, limitToLast, limitToFirst, startAfter
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+  import { createLocalRooms } from "./anim/local-rooms.mjs";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
   // own npm package wants) - these CDN modules only guarantee mutual
@@ -4712,6 +4713,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  // Solo games run in a small in-memory room on the phone (saved to local storage) instead of on the server,
+  // so they work offline. Every room read/write below goes through these wrappers: paths of a local room are
+  // answered locally, everything else (profiles, leaderboards, party rooms) goes to Firebase unchanged.
+  const localRooms = createLocalRooms();
+  const ref = (database, path) => (typeof path === "string" && localRooms.owns(path) ? localRooms.ref(path) : fbRef(database, path));
+  const isLocalRef = (r) => localRooms.isLocalRef(r);
+  const get = (r) => (isLocalRef(r) ? localRooms.get(r) : fbGet(r));
+  const set = (r, v) => (isLocalRef(r) ? localRooms.set(r, v) : fbSet(r, v));
+  const update = (r, v) => (isLocalRef(r) ? localRooms.update(r, v) : fbUpdate(r, v));
+  const remove = (r) => (isLocalRef(r) ? localRooms.remove(r) : fbRemove(r));
+  const push = (r, v) => (isLocalRef(r) ? localRooms.push(r, v) : fbPush(r, v));
+  const onValue = (r, cb, opts) => (isLocalRef(r) ? localRooms.onValue(r, cb, opts) : fbOnValue(r, cb, opts));
+  const onChildAdded = (r, cb, opts) => (isLocalRef(r) ? localRooms.onChildAdded(r, cb) : fbOnChildAdded(r, cb, opts));
+  const onDisconnect = (r) => (isLocalRef(r) ? localRooms.onDisconnect(r) : fbOnDisconnect(r));
+  const runTransaction = (r, fn, opts) => (isLocalRef(r) ? localRooms.runTransaction(r, fn) : fbRunTransaction(r, fn, opts));
 
   // ---- Google Sign-In (Android app only - see isNativeApp below) ----
   // Account identity is intentionally independent of the game's existing
@@ -14831,7 +14848,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // empty) and retry on the rare collision, rather than blindly set()-ing a
     // random code and risking a silent overwrite of someone else's room.
     let roomCode = null;
-    for (let attempt = 0; attempt < 5; attempt++) {
+    if (settings.solo) {
+      // Solo games are a private room on this phone (works offline). Its code starts with "0", which no real
+      // room code ever does, so it can never be mistaken for - or collide with - a party room on the server.
+      do { roomCode = "0" + generateRoomCode().slice(1); } while (localRooms.owns("rooms/" + roomCode));
+      localRooms.create(roomCode, { phase: "waiting", round: 0, settings });
+    }
+    else for (let attempt = 0; attempt < 5; attempt++) {
       const candidate = generateRoomCode();
       const result = await runTransaction(ref(db, `rooms/${candidate}`), (existing) => {
         if (existing !== null) return; // abort — code taken, try another
