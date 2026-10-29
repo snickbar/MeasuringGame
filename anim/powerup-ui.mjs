@@ -8,7 +8,7 @@ export function createPowerupController(ports) {
   const hud = document.getElementById('hud');
   if (hud && tray.parentElement !== hud) hud.append(tray);
   const help = document.getElementById('howto-powerup-list');
-  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p class="pu-help-item"><img src="icons/powerups/${p.icon}.png" alt=""><span><b>${p.name} · ${p.cost} coins:</b> ${p.description}</span></p>`).join('');
+  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p class="pu-help-item"><img src="icons/powerups/${p.icon}.png" alt=""><span><b>${p.name} · ${p.cost} <img class="pu-coin" src="icons/coin-v2.png" alt="coins">:</b> ${p.description}</span></p>`).join('');
   const message = document.createElement('div');
   message.className = 'pu-feedback'; message.setAttribute('role', 'status'); document.body.append(message);
   const say = (text, origin, id) => {
@@ -54,7 +54,7 @@ export function createPowerupController(ports) {
   function button(id, compact, c) {
     const p = POWERUPS[id];
     const used = !!c.q.powerups?.used?.[id], rerollLocked = REROLLS.includes(id) && c.q.powerups?.used?.reroll;
-    const status = used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} coins`;
+    const status = used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.png" alt="coins">`;
     const disabled = busy || !ids(c).includes(id) || ports.coins() < p.cost;
     return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}" data-powerup="${id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : p.cost + ' coins'}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.png" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
   }
