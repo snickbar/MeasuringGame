@@ -10191,11 +10191,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
       const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${formatAccuracy(total / 3)}% accurate`;
       const url = "https://size-em-up.web.app/?play=daily";
-      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
-      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
-      const copied = await copyTextToClipboard(text + "\n" + url);
-      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
+      await shareResultCard({ text, url, dialogTitle: "Share your result", btn: b, label: "Share my result", card: { modeLabel: "Daily Challenge", headline: formatAccuracy(total / 3) + "%", headlineLabel: "ACCURATE", dots: accs.map(ACC_DOT) } });
     }
   });
   document.getElementById("daily-close-btn").addEventListener("click", guardGameBack(() => { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); }));
@@ -11850,11 +11846,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const accs = monthlyAccs(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
       const text = `Size Em Up! ${MONTH_NAMES[Number(mo.key.slice(5)) - 1]} ${mo.level === 4 ? "Mega" : "Level " + mo.level} ${mo.key}\n${accs.map(dailyEmoji).join("")}  ${total}/${mo.questions.length * 100}`;
       const url = "https://size-em-up.web.app/?play=monthly";
-      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your result" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
-      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
-      const copied = await copyTextToClipboard(text + "\n" + url);
-      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my result"; }, 1800); }
+      await shareResultCard({ text, url, dialogTitle: "Share your result", btn: b, label: "Share my result", card: { modeLabel: "Monthly " + (mo.level === 4 ? "Mega" : "Level " + mo.level), headline: String(total), headlineLabel: "OUT OF " + mo.questions.length * 100, dots: accs.slice(0, 8).map(ACC_DOT) } });
     }
   });
   document.getElementById("monthly-close-btn").addEventListener("click", guardGameBack(() => {
@@ -12305,11 +12297,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "sv-share") {
       const text = `Size Em Up! Survival: ${sv.survived} round${sv.survived === 1 ? "" : "s"} survived`;
       const url = "https://size-em-up.web.app/?play=survival";
-      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your score" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
-      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
-      const copied = await copyTextToClipboard(text + "\n" + url);
-      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my score"; }, 1800); }
+      await shareResultCard({ text, url, dialogTitle: "Share your score", btn: b, label: "Share my score", card: { modeLabel: "Survival", headline: String(sv.survived), headlineLabel: sv.survived === 1 ? "ROUND SURVIVED" : "ROUNDS SURVIVED" } });
     }
   });
   document.getElementById("survival-close-btn").addEventListener("click", guardGameBack(async () => {
@@ -12658,11 +12646,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "wb-share") {
       const text = `Size Em Up! Which Is Bigger: ${wb.score} right pick${wb.score === 1 ? "" : "s"}`;
       const url = "https://size-em-up.web.app/?play=whichbigger";
-      const nativeShare = isNativeApp && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-      if (nativeShare) { try { await nativeShare.share({ title: "Size Em Up!", text, url, dialogTitle: "Share your score" }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
-      else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
-      const copied = await copyTextToClipboard(text + "\n" + url);
-      if (copied) { b.textContent = "Copied!"; setTimeout(() => { b.textContent = "Share my score"; }, 1800); }
+      await shareResultCard({ text, url, dialogTitle: "Share your score", btn: b, label: "Share my score", card: { modeLabel: "Which Is Bigger", headline: String(wb.score), headlineLabel: wb.score === 1 ? "RIGHT PICK" : "RIGHT PICKS" } });
       return;
     }
     if (b.classList.contains("wb-card") && wb.phase === "question") {
@@ -13878,6 +13862,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderGachaScreen();
   });
 
+  // ---- Picture share card: draws the result as an image, shares it, and falls back to the text share. ----
+  const ACC_DOT = (a) => (a >= 90 ? "#4caf50" : a >= 70 ? "#f2c230" : a >= 40 ? "#e07a2a" : "#d9453b");
+  function shareCardPlayer() {
+    const st = myProfile.stats || {};
+    const lv = careerLevel(careerXp({ ...st, rounds: Math.max(st.rounds || 0, careerHistory().length) }));
+    return { name: currentName || "Player", avatar: "avatars/" + currentAvatar + ".png", subtitle: lv.rank + " \u00b7 Lv " + lv.lvl };
+  }
+  async function shareResultCard({ text, url, dialogTitle, card, btn, label }) {
+    let blob = null;
+    try {
+      const mod = await import("./anim/share-card.mjs");
+      blob = await mod.renderShareCard({ logo: "icons/home-title.png", player: shareCardPlayer(), ...card });
+    } catch (err) { blob = null; }
+    const plugins = (isNativeApp && window.Capacitor && window.Capacitor.Plugins) || {};
+    if (blob && plugins.Share && plugins.Filesystem) {
+      try {
+        const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
+        const f = await plugins.Filesystem.writeFile({ path: "size-em-up-result.png", data: b64, directory: "CACHE" });
+        await plugins.Share.share({ title: "Size Em Up!", text: text + "\n" + url, files: [f.uri], dialogTitle });
+        return;
+      } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; }
+    } else if (blob && !isNativeApp && navigator.canShare && navigator.share) {
+      try {
+        const file = new File([blob], "size-em-up-result.png", { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ title: "Size Em Up!", text: text + "\n" + url, files: [file] }); return; }
+      } catch (err) { if (err && err.name === "AbortError") return; }
+    }
+    if (plugins.Share) { try { await plugins.Share.share({ title: "Size Em Up!", text, url, dialogTitle }); return; } catch (err) { if (err && /cancel/i.test(String(err.message || err))) return; } }
+    else if (navigator.share) { try { await navigator.share({ title: "Size Em Up!", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
+    const copied = await copyTextToClipboard(text + "\n" + url);
+    if (copied && btn) { btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = label; }, 1800); }
+  }
   async function copyTextToClipboard(text) {
     try {
       if (!navigator.clipboard) throw new Error("no clipboard api");
@@ -18559,7 +18575,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const me=currentPlayers[currentPlayerId],best=me?.bestGuess;
     recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(me?.avatar||currentAvatar)}</span>${myPlace?.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.png" alt="">':''}<b>${myPlace?.rank===1?'You won!':'Your game'}</b></div><div class="summary-result-number">${myFinalScore} <small>points</small></div><p>${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
     finalListEl.after(recap);
-    recap.querySelector('button').onclick=async()=>{const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const share=isNativeApp&&window.Capacitor?.Plugins?.Share;if(share){try{await share.share({title:'Size Em Up!',text});}catch{}}else if(navigator.share){try{await navigator.share({title:'Size Em Up!',text});}catch{}}else if(await copyTextToClipboard(text))showAchToast('Result copied!');};
+    recap.querySelector('button').onclick=async(e)=>{const btn=e.currentTarget;const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const modeKey=roomState.settings?.mode;const modeLabel=(MODE_IDENTITIES[modeKey]?.label)||'Party Game';await shareResultCard({text,url:'https://size-em-up.web.app/',dialogTitle:'Share your result',btn,label:'Share my result',card:{modeLabel,headline:(myPlace?.avg==null?'\u2014':formatAccuracy(myPlace.avg)+'%'),headlineLabel:'ACCURATE \u00b7 '+(myPlace?.rank===1?'Winner!':'Place '+myPlace?.rank)}});};
     let rank1Delay = 0, podium = null;
     const rank1Rows = []; // winners' rows (a flourish plays only when exactly one wins; ties skip it)
     if (roomState.settings?.mode === "teamvteam") {
