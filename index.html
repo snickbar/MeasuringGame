@@ -12078,7 +12078,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${svGaugeHtml(r.acc)}
       </div>
       <div class="wb-diff wb-diff-res">${svStampHtml(q.answer)}</div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-next">${over ? "See my score" : "Next round"}</button></div>`;
+      <div class="pin-bottom">${over && !sv.revived ? `<div class="wl-done-split"><button type="button" class="dc-btn" id="sv-next">See my score</button><button type="button" class="dc-btn wl-ad-btn" id="sv-revive"><span>Watch ad: revive</span><small>+1 life, once per run</small></button></div>` : `<button type="button" class="dc-btn" id="sv-next">${over ? "See my score" : "Next round"}</button>`}</div>`;
   }
   function openSurvival() {
     const fromHub = soloScreenEl.classList.contains("active");
@@ -12251,7 +12251,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } else if (saved) { sv.shield = false; sv.chain = 0; sv.shieldEvent = "saved"; }
       else { sv.lives--; sv.chain = 0; }
       sv.phase = "reveal"; playSound("pick"); vibrate(20);
-      if (sv.lives <= 0) await survivalFinish();
+      if (sv.lives <= 0 && sv.revived) await survivalFinish();   // the first death waits: the player may revive with an ad
       renderSurvival(); return;
     }
     if (b.id === "sv-skip") {
@@ -12260,7 +12260,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       svShowResult(m); return;
     }
     if (b.id === "sv-finish") { sv = { phase: "intro", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); window.scrollTo(0, 0); return; }
-    if (b.id === "sv-next") { sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return; }
+    if (b.id === "sv-revive") {
+      if (sv.lives > 0 || sv.revived || sv.finished) return;
+      document.querySelectorAll("#sv-revive, #sv-next").forEach((x) => { x.disabled = true; });
+      const earned = await showFakeAd();
+      if (!sv || sv.finished) return;
+      if (!earned) { document.querySelectorAll("#sv-revive, #sv-next").forEach((x) => { x.disabled = false; }); return; }
+      sv.revived = true; sv.lives = 1; sv.lossPending = false; sv.q = null; sv.phase = "question";
+      renderSurvival(); return;
+    }
+    if (b.id === "sv-next") {
+      if (sv.lives <= 0 && !sv.finished) await survivalFinish();
+      sv.q = null; sv.phase = sv.lives <= 0 ? "over" : "question"; renderSurvival(); return;
+    }
     if (b.id === "sv-share") {
       const text = `Size Em Up! Survival: ${sv.survived} round${sv.survived === 1 ? "" : "s"} survived`;
       const url = "https://size-em-up.web.app/?play=survival";
@@ -12483,7 +12495,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <p class="wb-line"><span class="wb-line-label">The bigger one</span><b>${escapeHtml(p.bigger.name.charAt(0).toUpperCase() + p.bigger.name.slice(1))}</b><span>${how}</span></p>
         </div>
         <div class="wb-diff wb-diff-res"><span class="wb-diff-stamp t${difficultyOf(p.ratio).tier}">${difficultyOf(p.ratio).label.toUpperCase()}</span></div>
-        <button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`;
+        ${wb.lives <= 0 && !wb.revived ? `<div class="wl-done-split"><button type="button" class="dc-btn" id="wb-next">See my score</button><button type="button" class="dc-btn wl-ad-btn" id="wb-revive"><span>Watch ad: revive</span><small>+1 life, once per run</small></button></div>` : `<button type="button" class="dc-btn" id="wb-next">${wb.lives <= 0 ? "See my score" : "Next round"}</button>`}`;
       wbMountPlayLayout();
       // Use the player's actual equipped flair, once per correct round.
       if (ok && wb.flairRound !== wb.round && wbScreenEl.classList.contains("active")) {
@@ -12643,6 +12655,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "wb-skip") {
       if (wbAnim) { try { wbAnim.stop(); } catch (err) {} }
       wbShowResult(); return;
+    }
+    if (b.id === "wb-revive") {
+      if (wb.lives > 0 || wb.revived || wb.finished) return;
+      document.querySelectorAll("#wb-revive, #wb-next").forEach((x) => { x.disabled = true; });
+      const earned = await showFakeAd();
+      if (!wb || wb.finished) return;
+      if (!earned) { document.querySelectorAll("#wb-revive, #wb-next").forEach((x) => { x.disabled = false; }); return; }
+      wbClearFlair();
+      wb.revived = true; wb.lives = 1;
+      wb.round++; wb.pair = null; wb.picked = null; wb.ok = null; wb.lossShown = false; wb.phase = "question"; renderWhichBigger();
+      return;
     }
     if (b.id === "wb-next") {
       wbClearFlair();
