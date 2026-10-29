@@ -4143,11 +4143,11 @@ if (location.protocol === "file:") {
   </div></details>
 
   <details class="howto-section"><summary>Scoring</summary><div class="howto-body">
-    <p>Only the single <b>closest guess</b> each round scores: +3 points normally, or +5 if it's within 0.9 of the exact answer. Everyone else gets 0 for that round, no matter how close they were.</p>
+    <p>The <b>closest guesses</b> each round score +3 points, or +5 within 1% of the exact answer. Tied players share the win; in Team vs Team, each tied team earns the win once.</p>
     <p><b>Second-chance bonus:</b> +1 if you didn't win the round and you picked the hidden card, the real answer. Picking the winner's answer earns nothing, and the round's winner doesn't collect it. It only shows up when two or more players guessed (and not if someone guessed the exact answer). Players who picked an answer show up beside it, and the answer picked the most can earn a crowd favorite point.</p>
     <p><b>Double down:</b> if your own guess is the round's closest, doubling down adds a flat +2 on top - as long as someone else guessed that round too, so it can't be earned for free in a solo practice game with no bots.</p>
     <p><b>Crowd favorite:</b> +1 to whoever got 2 or more second-chance picks that round (whichever count is highest), whether or not their answer was actually closest. Ties (even 3-way or more) all get it.</p>
-    <p>"Spot On!" (within 1% of the answer) and "Perfect!" (within 0.005) are just on-screen recognition, not extra points.</p>
+    <p>"The 1%" means within 1% of the answer. The closest guess earns +5 in this band, otherwise +3. "Perfect!" and "Spot on!" both mean an exact answer.</p>
     <p>At the very end of the game, the top 3 players by <b>average accuracy</b> get a one-time bonus: +10 / +6 / +3. Calculate accuracy separately for each round, then average those percentages. Overestimates and underestimates never cancel each other out.</p>
   </div></details>
 
@@ -4409,6 +4409,7 @@ if (location.protocol === "file:") {
   </div>
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
+  <button type="button" id="lobby-reveal-toggle" class="back-btn" aria-pressed="true">Answer animation: On</button>
   <div class="lobby-room-box">
     <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
@@ -4427,7 +4428,7 @@ if (location.protocol === "file:") {
 
   <div class="lobby-bots-row">
     <div id="bot-controls">
-      <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="medium">+ Add bot</button>
+      <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="easy">+ Add bot</button>
     </div>
     <div id="bot-all-row" style="display:none;">
       <span class="bot-acc-label">Bot accuracy</span>
@@ -4618,6 +4619,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
+  import { installMeasurementGuides } from "./anim/measurement-guides.mjs";
+  import { reserveHostStart, finishHostStart, hasHostAdGame, grantHostAdGame } from "./anim/host-allowance.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
@@ -6097,7 +6100,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "holiday-mix", file: "home-holiday-mix.webp", name: "Holiday Mixup", world: "holiday-mix" },
     { id: "penguin", file: "home-penguin.jpg", name: "Arctic", how: "Win 5 rounds in a row" },
     { id: "cactus", file: "home-cactus.jpg", name: "Western", how: "Survive 10 rounds in Survival" },
-    { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 15 spot-on guesses" },
+    { id: "giraffe", file: "home-giraffe.jpg", name: "Safari", how: "Land 15 guesses within 1%" },
     { id: "dragon", file: "home-dragon.jpg", name: "Kingdom", how: "Reach 20 in Survival" },
     { id: "space", file: "home-space.jpg", name: "Space", how: "Earn a star on the last level of every world" },
   ];
@@ -6695,17 +6698,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const botLevelLabel = (level) => BOT_LEVEL_LABEL[level] || (level ? level.charAt(0).toUpperCase() + level.slice(1) : "");
   // High/Low Survival bots. A bot's pick sits on its own side of the answer, using a share of the round's
   // slack (limit - 1): High-accuracy bots stay close (tight bracket), Low-accuracy bots use most of the slack
-  // (so the human must be sharp to keep the bracket within the limit), and each level sometimes lands on the
-  // wrong side of the answer. Capped below 100% of the slack so a perfect human partner can always survive.
+  // (so the human must be sharp to keep the bracket within the limit), and always stays on the correct side of
+  // the answer, including rounding. Capped below 100% of the slack so a perfect human partner can always survive.
   const HL_BOT_LEVELS = { easy: { lo: 0.2, hi: 0.6, miss: 0.08 }, medium: { lo: 0.1, hi: 0.4, miss: 0.04 }, hard: { lo: 0.05, hi: 0.2, miss: 0.02 } };
   function hlBotGuess(answer, difficulty, role, limit) {
     const c = HL_BOT_LEVELS[difficulty] || HL_BOT_LEVELS.medium;
     const slack = Math.max(0.1, (limit || HL_LIMIT_START) - 1);
     const e = (c.lo + Math.random() * (c.hi - c.lo)) * slack;
-    const wrongSide = Math.random() < c.miss;
-    const above = (role === "high") !== wrongSide; // HIGH aims above the answer, LOW below - unless it misses
+    const above = role === "high"; // A partner never deliberately crosses the answer and spends a shared life.
     const ratio = above ? 1 + e : 1 / (1 + e); // multiplicative, so HIGH/LOW of the two picks stays comparable to the limit
-    return Math.max(0, Math.round(answer * ratio * 100) / 100);
+    const rounded = Math.round(answer * ratio * 100) / 100;
+    return above ? Math.max(Math.ceil(answer * 100 - 1e-9) / 100, rounded) : Math.max(0, Math.min(Math.floor(answer * 100 + 1e-9) / 100, rounded));
   }
   const BOT_NAMES = [
     "RoboRex", "ByteBuddy", "CircuitSam", "PixelPete", "TurboTina", "ByteBecca", "ChipChester",
@@ -7675,6 +7678,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     o.measurement = { dimension: dimensionById.get(o.id) || "length", ...detail };
   });
   const OBJECT_BY_ID = new Map(ALL_OBJECTS.map((o) => [o.id, o]));
+  installMeasurementGuides({objects:ALL_OBJECTS});
   // The fantasy objects this player has unlocked (the host's list is what a room uses).
   const unlockedFantasyIds = () => FANTASY_OBJECTS.filter((o) => (myProfile.achClaimed || {})[o.awardId]).map((o) => o.id);
 
@@ -8441,7 +8445,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A different tip on each question, in order, starting at a random one so the first tip isn't always the same.
   const QUESTION_TIPS = [
     "Tip: Decimals count!",
-    "Tip: Closest scores +3, or +5 if within 0.9",
+    "Tip: Closest scores +3, or +5 within 1%",
     "Tip: Pick the real answer for +1",
     "Tip: Double down: +2 if you're closest",
     "Tip: Double down needs another guesser",
@@ -9145,7 +9149,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5 };
+    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true };
   }
 
   // ==================== Home screen ====================
@@ -9593,12 +9597,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<svg class="res-mark ${cls || ""}" viewBox="0 0 48 48" aria-hidden="true"><path d="${d}" fill="none" stroke="#4a2c12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="${hl}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.8" stroke-linecap="round"/></svg>`;
   }
   const FIRE_IC = `<img class="fire-ic" src="icons/reactions/fire.png" alt="">`;
-  const accLabel = (a) => (a >= 99 ? "Spot on!" : a >= 90 ? "So close!" : a >= 70 ? "Nice guess" : a >= 40 ? "In the neighborhood" : "Way off");
+  const accLabel = (a) => (a >= 100 ? "Perfect!" : a >= 99 ? "The 1%!" : a >= 90 ? "So close!" : a >= 70 ? "Nice guess" : a >= 40 ? "In the neighborhood" : "Way off");
   // The card shown after a guess: big check or X, the verdict, then the numbers in large text.
-  function resultCardHtml(acc, g, ans, label, q = null, playerId = null) {
+  function soloResultAvatarHtml(acc, delay = 0) {
+    return `<span class="solo-result-avatar ${acc >= 70 ? "cheer" : "encourage"}" style="--solo-react-delay:${delay}ms" aria-hidden="true">${avatarHtml(currentAvatar)}</span>`;
+  }
+  function showMonthlyResultCard(host, acc, g, ans, label) {
+    const stage = document.getElementById("mo-stage");
+    if (stage) stage.hidden = true;
+    host.innerHTML = resultCardHtml(acc, g, ans, label, null, null, true);
+    requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(monthlyContentEl.querySelector(".play-middle"), 0.5)));
+  }
+  function resultCardHtml(acc, g, ans, label, q = null, playerId = null, withAvatar = false) {
     const boost = q ? bufferResultNote(q, g, playerId) : "";
     if (boost) return `<div class="dc-card dc-hot dc-res pu-boost-card">${boost}<div class="dc-res-lines"><div>Answer <b>${ans}</b></div></div><div class="pu-boost-verdict">${markSvg(acc)}<span>${label || accLabel(acc)} with buffer</span></div></div>`;
-    return `<div class="dc-card dc-hot dc-res"><div class="dc-res-head">${markSvg(acc)}<span>${label || accLabel(acc)}</span></div><div class="dc-res-lines"><div>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div><b>${Math.round(acc)}%</b> accurate</div></div></div>`;
+    return `<div class="dc-card dc-hot dc-res${withAvatar ? " solo-avatar-card" : ""}">${withAvatar ? soloResultAvatarHtml(acc) + '<div class="solo-result-copy">' : ""}<div class="dc-res-head">${markSvg(acc)}<span>${label || accLabel(acc)}</span></div><div class="dc-res-lines"><div>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div><b>${Math.round(acc)}%</b> accurate</div></div>${withAvatar ? "</div>" : ""}</div>`;
   }
   // Team Worlds' own variant of the card above: the avatar/name move inside the card's own
   // header (instead of a separate label floating over it), the "you said/answer/%" lines are
@@ -9760,7 +9773,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${r.i + 1} of 3</h2>${dailyDots(r.i, r.i + 1)}</div>
         <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
-          <div class="wb-result-stage dc-stage"><div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
+          <div class="wb-result-stage dc-stage">${soloResultAvatarHtml(r.acc)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
           <div class="wb-verdict-t">${r.label}</div>
           <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
           <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${Math.round(r.acc)}% accurate</span></p>
@@ -9779,7 +9792,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${perfect ? `<div class="dc-card dc-hot dc-perfect"><div class="dc-pf-burst" aria-hidden="true">${daily.justFinished ? svCoinBurstHtml() : ""}</div><div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>` : `<div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>`}
       <div class="dc-card dc-rank" id="dc-rank" hidden></div>
       <div class="dc-card">${rows}</div>
-      ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
+      ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.justFinished && !daily.replay ? `<div class="dc-note"><b>+10 coins for today</b></div>` : ""}${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
@@ -9788,7 +9801,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // The page after each guess: the verdict with a little reaction, the answer, and an accuracy meter. (Reaction pictures, never plain emoji.)
-  const dcLabel = (acc) => (acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off");
+  const dcLabel = (acc) => (acc >= 100 ? "Perfect!" : acc >= 99 ? "The 1%!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off");
   function dcGaugeHtml(acc) {
     const a = Math.max(0, Math.min(100, acc));
     return `<div class="dc-gauge"><div class="dc-gauge-bar"><span class="dc-gauge-pin" style="left:${a}%"></span></div><div class="dc-gauge-labels"><span>Way off</span><span>Close</span><span>Spot on</span></div></div>`;
@@ -9816,6 +9829,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!stage) return;
       dailyAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = dailyAnim;
+      dockRevealSkip(stage,"dc-skip");
       const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (dailyAnim !== ctl || daily.phase !== "reveal") return;
       animAudioInit();
@@ -9996,7 +10010,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const isHlSettings = (st) => !!(st && st.mode === "teamworlds" && st.variant === "hl");
   function renderPartyHub() {
     const card = (id, img, name, sub, mode, banner) => {
-      const badge = myProfile.hostUnlocked ? "" : partyModeFreeToday(mode)
+      const badge = myProfile.hostUnlocked ? "" : hasHostAdGame(myProfile,mode)
+        ? `<span class="home-free-badge">Extra game ready!</span>` : partyModeFreeToday(mode)
         ? `<span class="home-free-badge">&#11088; 1 free today!</span>`
         : `<span class="home-lock-badge"><img src="icons/reactions/padlock.png" alt=""></span>`;
       return `<button type="button" class="sh-card sh-banner" id="${id}"><img class="sh-bimg" src="${banner}" alt="" draggable="false"><img class="sh-bic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
@@ -10005,7 +10020,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${card("pm-classic", "icons/shop-host-crown.webp", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic", "icons/banner-blank-orange.png")}
       ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam", "icons/banner-blank-green.png")}
       ${card("pm-teamworlds", "icons/mode-team-worlds.webp", "Team Worlds", "Your guesses, averaged together", "teamworlds", "icons/banner-blank-blue.png")}${HL_PREVIEW ? card("pm-hlsurvival", "icons/mode-high-low.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.png") : ""}
-      ${card("pm-highstakes", "items/poker-chip.webp", "High Stakes", "Bet your coins on the real answer &mdash; bluff, raise, outlast", "highstakes", "icons/banner-blank-purple.png")}`;
+      ${card("pm-highstakes", "items/poker-chip.webp", "High Stakes", "Bet your chips on the real answer &mdash; bluff, raise, outlast", "highstakes", "icons/banner-blank-purple.png")}`;
     partyContentEl.insertAdjacentHTML('beforeend',card('pm-bluff','icons/reactions/giggle.png','Bluff the Room','One claim. Tell the truth or fool your friends.','bluff',"icons/banner-blank-pink.png"));
   }
   function openPartyHub() {
@@ -10072,7 +10087,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">High Stakes</h2><p class="dc-sub">2 to 10 players &mdash; bots can fill in</p>
       <div class="dc-card dc-hot"><div class="dc-big">Find the real answer</div><div class="dc-note">Everyone antes some coins and sees the question with 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.</div></div>
       <div class="dc-card"><div class="dc-big">Bet like poker</div><div class="dc-note">Then it goes around the table: fold, check, call or raise. Everyone still in who picked the real answer splits the pot. If nobody did, the pot rolls over to the next round. If everyone else folds, you take the pot even if you were wrong &mdash; so bluffing works.</div></div>
-      <div class="dc-card"><div class="dc-big">Outlast everyone</div><div class="dc-note">You start with ${HS.HS_START_COINS} coins and the ante doubles every 2 rounds. Run out of coins and you're out. Last player standing, or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds, wins.</div></div>
+      <div class="dc-card"><div class="dc-big">Outlast everyone</div><div class="dc-note">You start with ${HS.HS_START_COINS} table chips and the ante doubles every 2 rounds. Run out of coins and you're out. Last player standing, or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds, wins.</div></div>
       <button type="button" class="dc-btn" id="hs-start">Create Room</button>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
@@ -10116,12 +10131,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const state=newBluff(roster,roomState.settings.bluffTurns);
     state.names=Object.fromEntries(roster.map(id=>[id,roomState.players[id].name]));state.avatars=Object.fromEntries(roster.map(id=>[id,roomState.players[id].avatar]));
     const next=dealBluff(state,generateQuestion(),now),gameId=crypto.randomUUID(),date=new Date();
-    await runTransaction(ref(db,'rooms/'+code),cur=>{
+    const started = await runTransaction(ref(db,'rooms/'+code),cur=>{
       if(!cur||cur.phase!=='waiting'||!cur.players?.[host]?.isHost||JSON.stringify(Object.keys(cur.players).sort())!==JSON.stringify(roster.slice().sort()))return;
       return {...cur,phase:'bluff',gameId,bluff:next,bluffRounds:null,round:1,paused:false,pausedAt:null,
         activePacks:activePackIdsFor(date,myProfile.holidayPacks),seasonPacks:seasonPackIds(date),fantasyIds:unlockedFantasyIds(),
         settings:{...cur.settings,totalRounds:next.total},players:Object.fromEntries(Object.entries(cur.players).map(([id,p])=>[id,{...p,score:0,accuracySum:0,roundsCounted:0,rewardCollected:false}]))};
     },{applyLocally:false});
+    return started.committed;
   }
   async function startClassicFromInfo() {
     const granted = await confirmAndPurchaseHostUnlock("classic");
@@ -10451,7 +10467,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try {
       const pair = questionObjects(roomState.hsQ);
       const mod = pair ? await loadAnimModule() : null;
-      if (pair && mod) animEndsAt = animAt + mod.animationDuration(pair[0], pair[1]) * 1000 + HS_ANIM_HOLD_MS;
+      if (pair && mod && roomState.settings?.animationReveal !== false) animEndsAt = animAt + mod.animationDuration(pair[0], pair[1]) * 1000 + HS_ANIM_HOLD_MS;
     } catch (e) { console.warn("[high-stakes] animation skipped", e); }
     await hsWrite({ "hs/animAt": animAt, "hs/animEndsAt": animEndsAt, "hs/nextAt": animEndsAt + HS_REVEAL_MS });
   }
@@ -10471,6 +10487,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       animAudioInit();
       const scene = await hsAnimCtl.prepare(pair[0], pair[1], { hMax: 190, minStageH: 230 });
       if (hsAnimKey !== key) return;
+      if(isHost&&!hsAnimEl.querySelector('.stack-skip')){const skip=document.createElement('button');skip.type='button';skip.className='stack-skip';skip.textContent='Skip';skip.onclick=()=>{if(isHost&&!roomState.paused&&roomState.hs?.stage==='reveal'&&hsAnimating(roomState.hs))document.getElementById('hs-skip')?.click();};hsAnimEl.append(skip);}
       hsAnimCtl.start(scene, { startAt: hs.animAt, now: animClock, onCue: audioLifecycle.guard(playAnimCue) });
     } catch (e) { console.warn("[high-stakes] animation failed", e); }
   }
@@ -10503,7 +10520,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
     for (let i = 0; i < n; i++) {
       const c = document.createElement("img");
-      c.src = "items/gold-coin.webp"; c.className = "hs-coin"; c.alt = ""; c.draggable = false;
+      c.src = "icons/poker-chip-blue.webp"; c.className = "hs-coin"; c.alt = ""; c.draggable = false;
       c.style.left = (x0 - 13) + "px"; c.style.top = (y0 - 13) + "px";
       document.body.appendChild(c);
       const jx = (Math.random() - 0.5) * 26, jy = (Math.random() - 0.5) * 26;
@@ -10562,7 +10579,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = (roomState.players || {})[id];
     const out = !!hs.out?.[id];
     const coins = hs.chips[id] ?? 0;
-    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + " &#128176;"}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
+    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
   }
   // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
   function hsSlideStand() {
@@ -10576,7 +10593,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const p = data.players?.[r.id];
         const mv = r.rankMove > 0 ? `<span class="hs-mv up">&#9650;${r.rankMove}</span>` : r.rankMove < 0 ? `<span class="hs-mv down">&#9660;${-r.rankMove}</span>` : `<span class="hs-mv same" aria-label="Same place">&ndash;</span>`;
         const dl = r.delta > 0 ? `<span class="hs-delta up">+${hsFmt(r.delta)}</span>` : r.delta < 0 ? `<span class="hs-delta down">${hsFmt(r.delta)}</span>` : `<span class="hs-delta">&mdash;</span>`;
-        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + " &#128176;"}</span>${dl}</div>`;
+        return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
   function renderHighStakes(data) {
@@ -10597,8 +10614,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const nobodyLeft = (hs.chips[hs.winners[0]] || 0) <= 0; // everyone went broke in the same round: no winner
       const iWon = !nobodyLeft && hs.winners?.includes(me);
       html += `<div class="hs-end-hero">` + gameOutcomeArt(iWon ? "icons/reactions/trophy.png" : isOut || nobodyLeft ? "icons/reactions/nervous.png" : "icons/reactions/clap.png", data.players?.[me]?.avatar);
-      html += `<h2 class="game-outcome-title">${nobodyLeft ? "Everybody went broke!" : iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${nobodyLeft ? "Nobody had coins left, so nobody wins this one." : `${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of coins" : "takes it all"}`}</p></div>`;
-      html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${!nobodyLeft && hs.winners.includes(id) ? " win" : ""}${(hs.chips[id] || 0) <= 0 ? " busted" : ""}"><span class="hs-final-pos">${(hs.chips[id] || 0) <= 0 ? "&times;" : HS.hsPlaceOf(hs, id)}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${(hs.chips[id] || 0) <= 0 ? "Out" : hsFmt(hs.chips[id]) + " &#128176;"}</span></div>`).join("")}</div>`;
+      html += `<h2 class="game-outcome-title">${nobodyLeft ? "Everybody went broke!" : iWon ? "You win!" : "Game over"}</h2><p class="dc-sub">${nobodyLeft ? "Nobody had chips left, so nobody wins this one." : `${hs.winners.map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ")} ${hs.winners.length > 1 ? "share the pot of chips" : "takes it all"}`}</p></div>`;
+      html += `<div class="dc-card">${order.map((id, i) => `<div class="hs-final-row${!nobodyLeft && hs.winners.includes(id) ? " win" : ""}${(hs.chips[id] || 0) <= 0 ? " busted" : ""}"><span class="hs-final-pos">${(hs.chips[id] || 0) <= 0 ? "&times;" : HS.hsPlaceOf(hs, id)}</span><span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span><b>${escapeHtml(data.players?.[id]?.name || "Gone")}</b><span class="hs-final-coins">${(hs.chips[id] || 0) <= 0 ? "Out" : hsFmt(hs.chips[id]) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span></div>`).join("")}</div>`;
       if (hs.seatsAll.includes(me)) {
         const rw = HS.hsRewardFor(hs, me), st = hs.stats?.[me] || {};
         const ord = (n) => n + (["th", "st", "nd", "rd"][(n % 100 >= 11 && n % 100 <= 13) ? 0 : Math.min(n % 10, 4) % 4] || "th");
@@ -10672,7 +10689,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const potShown = revealing ? (!animating && hs.result.winners ? 0 : hs.result.pot) : hs.pot; // paid out: the pot empties once the winners get it
     const endsAt = stage === "pick" ? hs.pickEndsAt : (stage === "bet" && b.turnEndsAt) ? b.turnEndsAt : 0;
     const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
-    html += `<div class="hs-top"><div class="hs-rounds"><span class="hs-top-label">Round ${hs.round} of ${HS.HS_MAX_ROUNDS}</span><span class="hs-dots">${Array.from({ length: HS.HS_MAX_ROUNDS }, (_, i) => `<i class="${i + 1 < hs.round ? "done" : i + 1 === hs.round ? "now" : ""}"></i>`).join("")}</span></div><div class="hs-ante"><span class="hs-top-label">Ante</span><span class="hs-ante-val"><img src="icons/toolbar-coin.png" alt="">${hs.ante}</span></div>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
+    html += `<div class="hs-top"><div class="hs-rounds"><span class="hs-top-label">Round ${hs.round} of ${HS.HS_MAX_ROUNDS}</span><span class="hs-dots">${Array.from({ length: HS.HS_MAX_ROUNDS }, (_, i) => `<i class="${i + 1 < hs.round ? "done" : i + 1 === hs.round ? "now" : ""}"></i>`).join("")}</span></div><div class="hs-ante"><span class="hs-top-label">Ante</span><span class="hs-ante-val"><img src="icons/poker-chip-blue.webp" alt="">${hs.ante}</span></div>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
     const qText = `<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div>`;
     html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animStarted ? `<div id="hs-anim-slot"></div>`
       : (revealing && !animating) ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
@@ -10707,7 +10724,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${real ? " real" : ""}${shown && !real ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-author" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span></span>` : ""}<b>${hsFmt(o)}</b>${real ? `<span class="hs-real-tag">REAL</span>` : ""}${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar${hs.bet.folded?.[id] ? " dim" : ""}" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
     html += `<div class="hs-board${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts">${optsHtml}</div>
-      <div class="hs-potbox" id="hs-pot"><img src="items/gold-coin.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
+      <div class="hs-potbox" id="hs-pot"><img src="icons/poker-chip-stack.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div></div><div class="hs-col r">${colR.join("")}</div></div>`;
     // under the board: what you can do right now
     if (stage === "pick") {
       html += seated ? (picks[me] === undefined ? `<p class="hs-hint">Which one is the real answer? Pick secretly.</p>`
@@ -10988,11 +11005,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const prevAvg = k > 0 ? accs.slice(0, k).reduce((a, b) => a + b, 0) / k : 0;
       const reduced = prefersReducedMotion();
       const ans = String(Math.round(q.answer * 100) / 100).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
+      const label = acc >= 100 ? (String(q?.answer || "").length % 2 ? "Perfect!" : "Spot on!") : acc >= 99 ? "The 1%!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const boost = bufferResultNote(q, g, deviceId);
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}</div>
         <div class="wl-rs">
-          <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div>
+          <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="solo-result-line">${soloResultAvatarHtml(acc, 1150)}<div><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div></div></div>
             <div class="wl-rs-verdict">${markSvg(acc)}<span>${label}</span></div>
             ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
             <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
@@ -11054,7 +11071,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const showResult = (mod) => {
       const acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer);
       const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
-      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
+      const label = acc >= 100 ? (String(q?.answer || "").length % 2 ? "Perfect!" : "Spot on!") : acc >= 99 ? "The 1%!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       if (wl.phase !== "reveal") return;
       wl.phase = "result"; renderWorlds();
     };
@@ -11067,16 +11084,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("wl-stage"); if (!stage) return;
       wlAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = wlAnim;
+      dockRevealSkip(stage,"wl-skip");
       const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (wlAnim !== ctl || wl.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (wlAnim === ctl) showResult(mod); } });
     } catch (err) { console.warn("[measuring-game] world animation failed", err); showResult(null); }
   }
-  // After the fifth guess: stars (best run counts), coins for each NEW star, stats and history.
+  // After the fifth guess: stars (best run counts), coins for this attempt's stars, stats and history.
   async function worldFinish() {
     const w=WORLDS[wl.wi],accs=wl.questions.map((q,k)=>roundAccuracy(effectiveGuess(q,wl.guesses[k],deviceId)/q.answer));
-    const avg=accs.reduce((a,b)=>a+b,0)/accs.length;wl.stars=worldStarsFor(avg);wl.gain=Math.max(0,wl.stars-worldLevelStars(w.id,wl.level))*WORLD_STAR_COINS;
+    const avg=accs.reduce((a,b)=>a+b,0)/accs.length;wl.stars=worldStarsFor(avg);wl.gain=wl.stars*WORLD_STAR_COINS;
     wl.newBest=avg>(myProfile.worldRecords?.[w.id]?.["l"+wl.level]?.bestAccuracy||0);
     completedAttempt({key:wl.runId,mode:'worlds',world:w.id,level:wl.level,stars:wl.stars,accuracy:avg});
     clearSoloSession('worlds');
@@ -11456,10 +11474,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const showResult = (m) => {
       const acc = roundAccuracy(g / q.answer);
       const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
-      const label = acc >= 99 ? "Spot on!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
+      const label = acc >= 100 ? (String(q?.answer || "").length % 2 ? "Perfect!" : "Spot on!") : acc >= 99 ? "The 1%!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const host = document.getElementById("mo-result"); if (!host) return;
       vibeAccuracy(acc);
-      host.innerHTML = resultCardHtml(acc, g, ans, label);
+      showMonthlyResultCard(host, acc, g, ans, label);
+      restoreRevealSkip("mo-skip");
       const skip = document.getElementById("mo-skip");
       if (skip) { skip.id = "mo-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
     };
@@ -11472,6 +11491,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("mo-stage"); if (!stage) return;
       moAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = moAnim;
+      dockRevealSkip(stage,"mo-skip");
       const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (moAnim !== ctl || mo.phase !== "reveal") return;
       animAudioInit();
@@ -11564,10 +11584,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderMonthly(); return;
     }
     if (b.id === "mo-skip") {
-      if (moAnim) { try { moAnim.stop(); } catch (err) {} }
+      monthlyStop();
+      restoreRevealSkip("mo-skip");
       const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], acc = roundAccuracy(g / q.answer), m = await loadAnimModule();
       const host = document.getElementById("mo-result");
-      if (host) host.innerHTML = resultCardHtml(acc, g, m ? m.formatCount(q.answer, q.answer) : q.answer);
+      if (!host || mo.phase !== "reveal" || mo.questions[i] !== q) return;
+      if (host) showMonthlyResultCard(host, acc, g, m ? m.formatCount(q.answer, q.answer) : q.answer);
       b.id = "mo-next"; b.className = "dc-btn"; b.textContent = mo.guesses.length >= mo.questions.length ? "See my results" : "Next question"; return;
     }
     if (b.id === "mo-next") { mo.phase = mo.guesses.length >= mo.questions.length ? "done" : "question"; renderMonthly(); return; }
@@ -11595,7 +11617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Survival: endless, 3 lives, climb until you run out ====================
   // A guess under SURVIVAL_PASS % accurate costs a life. Questions get bigger-gap (harder) the further you get,
   // with random wobble so the climb isn't obvious. Score = rounds survived; the global board keeps each player's best.
-  const SURVIVAL_LIVES = 3, SURVIVAL_PASS = 60, SURVIVAL_COINS_PER = 2;
+  const SURVIVAL_LIVES = 3, SURVIVAL_PASS = 60, SURVIVAL_COINS_PER = 3, SURVIVAL_THEME_COINS = 5;
   const survivalContentEl = document.getElementById("survival-content");
   let sv = null, svAnim = null, svPairs = null;
   function survivalPairs() {
@@ -11712,7 +11734,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const src = (part) => kind === "shield" ? `icons/survival-shield-${part}.webp` : `icons/life-heart-${part}.webp`;
     d.innerHTML = `<div class="sv-crack-wrap"><img class="sv-cr whole" src="${src("full")}" alt=""><img class="sv-cr cracked" src="${src("cracked")}" alt=""><img class="sv-cr half l" src="${src("left")}" alt=""><img class="sv-cr half r" src="${src("right")}" alt=""></div>`;
     document.body.appendChild(d);
-    try { playSound("error"); } catch (e) {}
+    try { playSound(kind === "shield" ? "shield-block" : "error"); } catch (e) {}
     const owner = document.querySelector('#hud.active,#survival-screen.active,#wb-screen.active');
     const cleanup = () => { d.remove(); watch.disconnect(); document.removeEventListener('visibilitychange',check); };
     const check = () => { if (document.hidden || (owner && !owner.classList.contains('active'))) cleanup(); };
@@ -11795,7 +11817,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function svQuip(ok, acc) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
-    if (ok) return acc >= 90 ? pick(["Spot on!", "Eagle eyes!", "Nailed it!", "Wow, that was close to perfect."]) : pick(["Nice one.", "Safe and sound.", "You've got a feel for this.", "Smooth."]);
+    if (ok) return acc >= 90 ? pick(["Great eye!", "Eagle eyes!", "Nailed it!", "Wow, that was close to perfect."]) : pick(["Nice one.", "Safe and sound.", "You've got a feel for this.", "Smooth."]);
     return pick(["Ouch, that one stung.", "Not quite - shake it off!", "It happens.", "Tricky one!"]);
   }
   // Fits the cards, verdict and stamp to the screen height (same method as Which Is Bigger).
@@ -11822,8 +11844,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
         <div class="wb-result-stage sv-scene-wrap">${svSceneHtml(r, ok)}</div>
         <div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>
-        ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${(sv.survived + (sv.bonusWins || 0)) * SURVIVAL_COINS_PER} coins banked</div>` : ""}
-        ${r.themed && ok ? `<div class="sv-callout bonus"><b>2&times;</b> Bonus round won &middot; +${SURVIVAL_COINS_PER * 2} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
+        ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER)} coins banked</div>` : ""}
+        ${r.themed && ok ? `<div class="sv-callout bonus"><b>Bonus!</b> Themed round won &middot; +${SURVIVAL_THEME_COINS} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
         <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
         ${r.boost || ""}
         ${r.earned ? `<div class="sv-callout earn">Shield earned! It will save you from one lost life.</div>` : ""}
@@ -11851,7 +11873,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds in a row at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
-        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise bonus round that pays double.</div></div>
+        <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
@@ -11933,6 +11955,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("sv-stage"); if (!stage) return;
       svAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = svAnim;
+      dockRevealSkip(stage,"sv-skip");
       const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
       if (svAnim !== ctl || sv.phase !== "reveal") return;
       animAudioInit();
@@ -11942,9 +11965,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Run over: save the best, post it, count the rounds. Coins are paid for every round survived.
   async function survivalFinish() {
     if(sv.finished)return;sv.finished=true;
-    const old=survivalBest(),score=sv.survived;sv.prevBest=old;sv.newBest=score>old;sv.gain=(Math.max(0,score)+(sv.bonusWins||0))*SURVIVAL_COINS_PER;
+    const old=survivalBest(),score=sv.survived;sv.prevBest=old;sv.newBest=score>old;sv.gain=Math.max(0,score)*SURVIVAL_COINS_PER+(sv.bonusWins||0)*(SURVIVAL_THEME_COINS-SURVIVAL_COINS_PER);
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
-    completedAttempt({key:sv.runId,mode:'survival',survived:score,accuracy:svRunAcc(sv.accs.length)||0,
+    completedAttempt({key:sv.runId,mode:'survival',survived:score,themedWins:sv.bonusWins||0,accuracy:svRunAcc(sv.accs.length)||0,
       ...(score>0?{board:{path:'survival/'+deviceId,value:{n:name,s:score,t:Date.now()},best:true}}:{})});
     clearSoloSession('survival');
   }
@@ -12351,9 +12374,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const stage = document.getElementById("wb-stage"); if (!stage) return;
       wbAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image, hideTally: true });
       const ctl = wbAnim;
+      dockRevealSkip(stage,"wb-skip");
       // Use the screen: whatever height is left under the stage (minus the Skip button) goes to the animation.
-      const room = Math.max(300, Math.floor(window.innerHeight - stage.getBoundingClientRect().top - 96));
-      const scene = await ctl.prepareCompare(picked, other, { hMax: Math.min(520, room - 72), minStageH: Math.min(580, room) });
+      const scene = await ctl.prepareCompare(picked, other, fitRevealStage(stage));
       if (wbAnim !== ctl || wb.phase !== "reveal") return;
       animAudioInit();
       let slammed = false;
@@ -12461,7 +12484,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(hsView){const h=myProfile.hsStats||{};html+=`<p class="cs-note">Finished High Stakes games. The biggest stack of coins wins; ties share the win.</p><h3 class="cs-h">High Stakes</h3><div class="cozy-panel cs-tiles">${statTile(h.roundsWon||0,'Rounds won')}${statTile(h.roundsPlayed?Math.round((h.roundsWon||0)/h.roundsPlayed*100)+'%':'—','Round win rate')}${statTile(h.biggestWin||0,'Biggest single win')}${statTile(h.peakStack||0,'Highest stack')}${statTile(h.bluffs||0,'Bluffs that worked')}${statTile(h.knockedOut||0,'Times knocked out')}${statTile(h.ghostCoins||0,'Ghost bounty coins')}</div>`;}
     if(bluffView)html+=`<p class="cs-note">Points rank first, then vote accuracy. Missed votes count as incorrect for the tiebreaker. Maker turns are excluded from vote accuracy.</p><div class="cozy-panel cs-tiles">${statTile(scoped.makerTurns||0,'Maker turns')}${statTile(scoped.fooled||0,'Players fooled')}${statTile(scoped.correctVotes||0,'Correct votes')}${statTile(scoped.votes||0,'Votes submitted')}${statTile(scoped.missedVotes||0,'Missed votes')}${statTile(scoped.rounds||0,'Rounds completed')}</div>`;
     if(!hsView&&!bluffView)html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'competitive':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
-    if(!hsView&&!bluffView)html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Spot-ons')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
+    if(!hsView&&!bluffView)html+=`<div class="cs-tiles">${tile(statsMode==='all'?rounds:scoped.rounds||0,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,'Within 1%')}${tile(statsMode==='all'?st.perfects||0:scoped.perfects||0,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
     if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot accuracy</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(botLevelLabel(level))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
     if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml();
@@ -12993,7 +13016,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function achTier(cat, base, desc, prog, steps) {
     const romans = ["", " II", " III"];
     steps.forEach(([target, reward], i) => {
-      ACHIEVEMENTS.push({ id: `${cat}-${base}-${target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: base + romans[i], desc: desc(target), target, reward, progress: prog });
+      ACHIEVEMENTS.push({ id: `${cat}-${base}-${target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: (cat === "Accuracy" && base === "Spot on" ? "The 1%" : base) + romans[i], desc: desc(target), target, reward, progress: prog });
     });
   }
   achTier("Collector", "Avatar fan", (n) => `Own ${n} avatars from the machine`, () => ownedNonDefaultAvatars().length, [[5, 20], [25, 60], [75, 150]]);
@@ -13003,7 +13026,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // tier should stay well under the number of possible pairs (about 4,500 for normal objects alone, about 20,000 with every seasonal pack).
   achTier("Collector", "Object spotter", (n) => `See ${n} different objects in rounds`, () => OBJECTS.filter((o) => ((myProfile.seenObjects) || {})[o.id]).length, [[25, 20], [75, 60], [OBJECTS.length, 200]]);
   achTier("Collector", "Combo hunter", (n) => `See ${n} different item combinations`, () => Object.keys((myProfile.seenCombos) || {}).length, [[50, 20], [250, 60], [1000, 200]]);
-  achTier("Accuracy", "Spot on", (n) => `Land ${n} spot-on guess${n > 1 ? "es" : ""}`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]]);
+  achTier("Accuracy", "Spot on", (n) => `Land ${n} guess${n > 1 ? "es" : ""} within 1%`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]]);
   achTier("Accuracy", "Perfect", (n) => `Guess exactly right ${n} time${n > 1 ? "s" : ""}`, ACH_STAT("perfects"), [[1, 75], [5, 250]]);
   achTier("Winning", "Round winner", (n) => `Win ${n} round${n > 1 ? "s" : ""}`, ACH_STAT("roundWins"), [[1, 10], [10, 40], [50, 150]]);
   achTier("Winning", "On a roll", (n) => `Win ${n} rounds in a row`, ACH_STAT("bestStreak"), [[3, 40], [5, 120]]);
@@ -13036,7 +13059,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const FANTASY_AWARDS = {
     goblin: ["Goblin hunter", "Finish 10 games", 10, ACH_STAT("gamesPlayed")],
     yeti: ["Yeti tracker", "Win 10 games", 10, ACH_STAT("gamesWon")],
-    bigfoot: ["Bigfoot spotter", "Land 5 spot-on guesses", 5, ACH_STAT("spotOns")],
+    bigfoot: ["Bigfoot spotter", "Land 5 guesses within 1%", 5, ACH_STAT("spotOns")],
     "western-dragon": ["Dragon rider", "Survive 20 rounds in Survival", 20, () => survivalBest()],
     kraken: ["Kraken slayer", "Guess exactly right 3 times", 3, ACH_STAT("perfects")],
     fairy: ["Fairy friend", "See 40 different objects in rounds", 40, () => Object.keys(myProfile.seenObjects || {}).length],
@@ -13047,7 +13070,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     "flying-saucer": ["Space cadet", "Complete 10 World levels", 10, ACH_STAT("worldLevels")],
     mummy: ["Mummy's curse", "Win 10 rounds", 10, ACH_STAT("roundWins")],
     werewolf: ["Moon howler", "Win 3 rounds in a row", 3, ACH_STAT("bestStreak")],
-    unicorn: ["Rainbow chaser", "Land 15 spot-on guesses", 15, ACH_STAT("spotOns")],
+    unicorn: ["Rainbow chaser", "Land 15 guesses within 1%", 15, ACH_STAT("spotOns")],
     centaur: ["Half and half", "Earn points from a second chance in 15 rounds", 15, ACH_STAT("secondChances")],
     "loch-ness-monster": ["Nessie watcher", "Finish 2 Monthly Challenges", 2, ACH_STAT("monthlies")],
     troll: ["Bridge troll", "Win double-down points in 10 rounds", 10, ACH_STAT("doubleDowns")],
@@ -13064,7 +13087,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Three more home screens with their own awards.
   ACHIEVEMENTS.push({ id: "home-penguin", cat: "Winning", name: "Ice cold", desc: "Win 5 rounds in a row", target: 5, reward: 0, home: "penguin", homeLabel: "Arctic", progress: ACH_STAT("bestStreak") });
   ACHIEVEMENTS.push({ id: "home-cactus", cat: "Fun", name: "Desert survivor", desc: "Survive 10 rounds in Survival", target: 10, reward: 0, home: "cactus", homeLabel: "Western", progress: () => survivalBest() });
-  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 15 spot-on guesses", target: 15, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
+  ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 15 guesses within 1%", target: 15, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
   ACHIEVEMENTS.push({ id: "home-dragon", cat: "Fun", name: "Dragon slayer", desc: "Reach 20 in Survival", target: 20, reward: 0, home: "dragon", homeLabel: "Kingdom", progress: () => survivalBest() });
   ACHIEVEMENTS.push({ id: "home-space", cat: "Worlds", name: "Star collector", desc: "Earn a star on the last level of every world", target: WORLDS.length, reward: 0, home: "space", homeLabel: "Space", progress: () => WORLDS.filter((w) => worldSceneEarned(w.id)).length });
   function achDone(a) { return a.progress() >= a.target; }
@@ -13641,18 +13664,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Shared by every host-unlock entry point (shop box, shop tab, each Party
   // Mode card) so they all show the same purchase popup and copy.
   // Returns true once hostUnlocked is actually set (already owned counts).
-  // One free hosted game per device per day per MODE (local calendar day,
+  // One free started game per device per day per MODE (local calendar day,
   // same as the ad-coin cap) before the purchase prompt ever shows -
   // advertised on that mode's own card in the Party Mode hub.
   async function claimFreeHostToday(mode) {
-    const today = todayDateStr();
-    if ((myProfile.hostFreeDates || {})[mode] === today) return false;
-    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
-      const profile = current || defaultProfile();
-      if (profile.hostUnlocked || (profile.hostFreeDates || {})[mode] === today) return profile;
-      return { ...profile, hostFreeDates: { ...profile.hostFreeDates, [mode]: today } };
-    });
-    return true;
+    // Eligibility only. The allowance is consumed after Start game succeeds.
+    return (myProfile.hostFreeDates || {})[mode] !== todayDateStr();
   }
   // allowFree is false for the Shop tab's own unlock button: just browsing the
   // shop (with no lobby/room actually about to open) should never silently
@@ -13660,12 +13677,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // to host (a Party Mode card, the in-lobby banner) may claim it.
   // Returns false (declined) or one of three truthy strings telling the caller HOW
   // access was granted - "unlocked" (already owned), "free" (today's per-mode free
-  // game, just claimed) or "purchased" (bought just now) - since the Party Mode hub
+  // game, eligible until it starts) or "purchased" (bought just now) - since the Party Mode hub
   // needs to know specifically whether this was the free path, to force that
   // created room down to 5 rounds.
   async function confirmAndPurchaseHostUnlock(mode, allowFree = true) {
     if (myProfile.hostUnlocked) return "unlocked";
     if (allowFree && (await claimFreeHostToday(mode))) return "free";
+    if (allowFree && mode) {
+      if (hasHostAdGame(myProfile,mode)) return "free";
+      if (hostAdInFlight) return false;
+      hostAdInFlight = true;
+      const owner = deviceId;
+      try {
+        const choice = await chooseExtraHostGame();
+        if (choice === 'cancel') return false;
+        if (choice === 'ad') {
+          const earned = await showFakeAd();
+          if (!earned || deviceId !== owner) return false;
+          const reward = {mode,rewardId:crypto.randomUUID(),now:Date.now()};
+          const grant = await runTransaction(ref(db,'profiles/'+owner),p=>grantHostAdGame(p,reward));
+          if (deviceId !== owner) return false;
+          if (!grant.snapshot.val()?.hostUnlocked && !hasHostAdGame(grant.snapshot.val(),mode)) return false;
+          showAchToast('Extra game ready! It is used when your game starts.');
+          return 'free';
+        }
+      } catch {
+        showAchToast('Could not save your extra game. Please try again.');
+        return false;
+      } finally { hostAdInFlight = false; }
+    }
     const bought = await showFakePurchase({
       icon: "icons/shop-host-crown.webp", title: "Party Mode", price: "$4.99 · One time",
       desc: "Host unlimited games with friends, plus 500 bonus coins.",
@@ -13673,6 +13713,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!bought) return false;
     await purchaseHostUnlock();
     return "purchased";
+  }
+  let hostAdInFlight = false;
+  function chooseExtraHostGame() {
+    return new Promise(resolve=>{
+      const ov=document.createElement('div');ov.id='fake-purchase-overlay';
+      ov.innerHTML=`<div class="fake-purchase-card" role="dialog" aria-modal="true" aria-labelledby="extra-host-title"><div class="fake-purchase-icon"><img src="icons/shop-host-crown.webp" alt=""></div><h3 class="fake-purchase-title" id="extra-host-title">Play another game</h3><p class="fake-purchase-desc">Watch an ad for one more free game in this mode, or unlock unlimited hosting.</p><button type="button" class="fake-purchase-buy-btn" data-choice="ad">Watch ad · Free game</button><button type="button" class="fake-purchase-cancel-btn" data-choice="buy">Unlimited · $4.99</button><button type="button" class="fake-purchase-cancel-btn" data-choice="cancel">Not now</button></div>`;
+      const previous=document.activeElement;
+      const close=value=>{document.removeEventListener('keydown',keys);ov.remove();previous?.focus();resolve(value);};
+      const keys=e=>{if(e.key==='Escape')close('cancel');if(e.key==='Tab'){const buttons=[...ov.querySelectorAll('button')];const i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus();}};
+      ov.addEventListener('click',e=>{const b=e.target.closest('[data-choice]');if(b)close(b.dataset.choice);else if(e.target===ov)close('cancel');});
+      document.body.appendChild(ov);document.addEventListener('keydown',keys);ov.querySelector('button').focus();
+    });
   }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
   // Soft colour for each reaction / flair / background pack card, cycling through the set (the board packs have their own bolder colours).
@@ -13686,6 +13738,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     sampler: ["items/present.webp", "#ab7df0", "#5a35b8"],
     boards: ["icons/board-chalk.webp", "#4a9a6a", "#1d4d33"], boards2: ["icons/bd-tv.webp", "#6b7fd6", "#2b3a8a"], boards3: ["icons/bd-scroll.webp", "#d9a15a", "#7a4a1c"],
   };
+  function objectPackArtHtml(id, look) {
+    const objects = HOLIDAY_OBJECTS.filter(o => id === "sampler" ? SAMPLER_IDS.has(o.id) : o.pack === id);
+    const lead = objects.find(o => o.image === look[0]) || objects[0];
+    const sample = [lead, ...objects.filter(o => o !== lead)].filter(Boolean).slice(0, 3);
+    const backgrounds = {newyear:"newyear",valentine:"valentine",stpatrick:"stpatrick",easter:"easter",may:"may",june:"june",july:"july",august:"august",september:"september",halloween:"halloween",thanksgiving:"thanksgiving",christmas:"christmas"};
+    const backdrop = backgrounds[id];
+    const image = o => `<img src="${o.image}" alt="${escapeHtml(o.name)}" loading="lazy" decoding="async" draggable="false">`;
+    return `<div class="tp-object-display"${backdrop ? ` style="background-image:url('backgrounds/${backdrop}-bg.webp')"` : ""}><div class="tp-object-shelf">${sample.map(image).join("")}</div></div><span class="tp-preview-note">${objects.length} objects · sample shown</span><div class="tp-object-thumbnails">${objects.slice(0,4).map(o=>`<figure>${image(o)}<figcaption>${escapeHtml(o.name)}</figcaption></figure>`).join("")}</div>`;
+  }
   function renderThemedPackShop() {
     const el = document.getElementById("themed-pack-shop");
     if (!el) return;
@@ -13704,10 +13765,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const boardEl = document.getElementById("board-pack-shop");
     const cardHtml = (list) => list.map((c) => {
       const look = PACK_LOOK[c.id] || PACK_LOOK.sampler;
-      return `<div class="tp-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
+      return `<div class="tp-card tp-object-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
         <span class="tp-tag">${c.tag}</span>
-        <div class="tp-badge"><img src="${look[0]}" alt="" draggable="false"></div>
         <div class="tp-title">${c.title}</div>
+        ${objectPackArtHtml(c.id, look)}
         <p class="tp-desc">${c.desc}</p>
         <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$0.99" : "$0.99")) + " · Unlock"}</button>
       </div>`;
@@ -14688,6 +14749,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function hostRoomNowOnce(onStatus) {
     onStatus("Creating room...");
     const settings = { ...currentSettings, hostTransferMode: hostTransferModeChoice };
+    if (createMode !== "solo" && !myProfile.hostUnlocked) settings.freeHostMode = ["hlsurvival","highstakes","bluff","teamworlds","teamvteam"].includes(createMode) ? createMode : "classic";
     if (createMode === "solo") settings.solo = true;
     if (createMode === "teamvteam") settings.mode = "teamvteam";
     let teamWorldQuestionsOut = null;
@@ -14836,7 +14898,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       await joinRoomAsPlayer(pendingRoomCode, name, true, { settings: pendingSettings });
       if (pendingSettings && pendingSettings.solo && !hadBots) {
         // Solo Game starts with 3 bots (one at a time so frames/avatars/names don't collide).
-        for (let i = 0; i < SOLO_MIN_BOTS; i++) await addBot("medium");
+        for (let i = 0; i < SOLO_MIN_BOTS; i++) await addBot("easy");
       }
       return;
     }
@@ -14915,11 +14977,40 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return { hlLives: roomState.settings?.lives || HL_LIVES, hlShield: false, hlShieldCharge: 0, hlThemeId: "", hlThemeWins: 0, hlSurvived: 0, hlAsked: 0, hlRecent: null, hlRoles: null, hlSyncStreak: 0, hlBestSyncStreak: 0, hlSyncTotal: 0, hlOffSum: 0, hlOffRounds: 0, hlLast: null };
   }
   const hlGameOver = () => (roomState.hlLives || 0) <= 0 || (!!(roomState.settings?.cap) && (roomState.hlSurvived || 0) >= roomState.settings.cap);
+  let startingGame = false;
   async function startGameNow() {
+    if (startingGame || !isHost || roomState.phase !== 'waiting') return;
+    if (roomState.settings?.mode === 'teamworlds' && Object.keys(roomState.players || {}).length !== 2) return;
+    if (roomState.settings?.mode === 'bluff' && Object.keys(roomState.players || {}).length < 3) return;
+    startingGame = true;
+    const room = currentRoomCode, owner = deviceId, mode = roomState.settings?.solo ? null : roomState.settings?.freeHostMode || (isHlSettings(roomState.settings) ? 'hlsurvival' : roomState.settings?.mode || 'classic');
+    const ticket = {mode,room,day:todayDateStr(),now:Date.now()};
+    let reserved = false, begun = false;
+    try {
+      if (mode) {
+        const attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
+        const profile = attempt.snapshot.val();
+        if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) {
+          showAchToast('Your free game for this mode has already been used today.'); return;
+        }
+        reserved = !profile.hostUnlocked;
+      }
+      if (deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
+      begun = !!(await beginGameNow());
+      if (reserved && begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true));
+    } catch (error) {
+      showAchToast(begun ? 'The game started. Reconnecting to save your free-game use.' : 'Could not start the game. Please try again.');
+      if (reserved && begun) void runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true)).catch(()=>{});
+    } finally {
+      if (reserved && !begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,false)).catch(()=>{});
+      startingGame = false;
+    }
+  }
+  async function beginGameNow() {
     if (!isHost || (roomState.settings?.mode === "teamworlds" && Object.keys(roomState.players || {}).length !== 2)) return;
     playSound("start");
-    if(roomState.settings?.mode==='bluff'){await startBluffGame();return;}
-    if (isHsSettings(roomState.settings)) { await hsBeginGame(); return; }
+    if(roomState.settings?.mode==='bluff')return startBluffGame();
+    if (isHsSettings(roomState.settings)) { await hsBeginGame(); return true; }
     const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
     // The room's object pool is fixed now, from the host's date and owned packs; a later host change doesn't alter it.
     const now = new Date();
@@ -14932,6 +15023,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (isHlSettings(roomState.settings)) Object.assign(updates, hlFreshGameFields());
     await update(ref(db, `rooms/${currentRoomCode}`), updates);
     scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
+    return true;
   }
   // Confirmed via the shared exit-confirm dialog (same pattern already reused
   // for leaving/ending a game and unlocking a reaction slot) so an accidental
@@ -15153,6 +15245,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await maybeDeleteEmptyRoom(roomCode);
   }
 
+  const dockedSkips = new Map();
+  function restoreRevealSkip(id) {
+    const saved=dockedSkips.get(id);if(!saved)return;
+    if(saved.anchor.isConnected){saved.anchor.replaceWith(saved.button);saved.footer.hidden=false;saved.button.className=saved.className;}
+    dockedSkips.delete(id);
+  }
+  function dockRevealSkip(stage,id) {
+    const button=document.getElementById(id);if(!button||!stage)return;
+    restoreRevealSkip(id);
+    const footer=button.closest('.pin-bottom,.play-actions,.wb-play-footer');if(!footer)return;
+    const anchor=document.createComment('animation skip home');button.before(anchor);
+    dockedSkips.set(id,{button,footer,anchor,className:button.className});footer.hidden=true;
+    button.className='stack-skip';stage.append(button);
+  }
   // ==================== Answer animation ====================
   // After everyone has used their second chance, the big object and the stack of small ones play
   // out on every screen, started from one shared time (animStartAt on the shared clock). The host
@@ -15387,10 +15493,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // down, so measure with it showing to leave room for it now. Team Worlds never shows this
         // line at all (its count lives in the animation engine's own built-in tally instead, same
         // as Solo Worlds - see getAnimCtl/below), so there's nothing to reserve room for.
-        const lineWasHidden = !isTw && questionAnswerLineEl.style.display === "none";
-        if (lineWasHidden) { questionAnswerLineEl.innerHTML = answerLineHtml("0.00"); questionAnswerLineEl.style.display = "block"; }
+        if (!isTw) setAnswerLineValue(mod.formatCount(0, data.currentQuestion.answer));
+        qbFitParty();
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (token !== animToken) return;
         const sizing = fitRevealStage(animStageEl);
-        if (lineWasHidden) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; }
+        let skip = document.getElementById('party-animation-skip');
+        if (!skip) {skip=document.createElement('button');skip.id='party-animation-skip';skip.type='button';skip.className='stack-skip';skip.textContent='Skip';skip.onclick=()=>{if(isHost&&!roomState.paused&&roomState.phase==='animation')goToReveal(currentRoomCode);};animStageEl.append(skip);}
+        skip.hidden=!isHost;
         // Reserve the measured pinned controls, then fill the remaining reveal area.
         animScene = await ctl.prepare(pair[0], pair[1], sizing);
         animSceneRound = data.round;
@@ -15732,8 +15842,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
-    const animMod = animPair ? await loadAnimModule() : null;
-    if (animPair && animMod) {
+    const animMod = animPair && (roomState.settings || currentSettings).animationReveal !== false ? await loadAnimModule() : null;
+    if (animPair && animMod && (roomState.settings || currentSettings).animationReveal !== false) {
       try {
         const animStartAt = nowMs() + ANIM_LEAD_MS;
         const endsAt = animStartAt + animMod.animationDuration(animPair[0], animPair[1]) * 1000 + ANIM_HOLD_MS;
@@ -15794,13 +15904,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       .sort((a, b) => b.error - a.error); // furthest first, closest last
 
     const closest = entries[entries.length - 1];
+    const closestIds = new Set(entries.filter(e => closest && Math.abs(e.error - closest.error) <= Math.max(1e-9, Math.abs(answer) * 1e-12)).map(e => e.playerId));
     entries.forEach((e) => {
-      e.isClosest = !!closest && e.playerId === closest.playerId;
-      e.isSpotOn = e.error <= answer * 0.01;
+      e.isClosest = closestIds.has(e.playerId);
+      e.isSpotOn = e.error <= answer * 0.01 + Math.max(1e-9, Math.abs(answer) * 1e-12);
       e.isPerfect = e.error < 0.005;
       e.accuracyPercent = roundAccuracy(e.effectiveGuess / answer);
-      const within09 = e.error <= 0.9;
-      e.basePoints = e.isClosest ? (within09 ? 5 : 3) : 0;
+      e.basePoints = e.isClosest ? (e.isSpotOn ? 5 : 3) : 0;
       e.doubledOwn = !!(picks[e.playerId] && picks[e.playerId].type === "doubledown");
       // Flat bonus rather than doubling the round's own points - doubling
       // made one binary decision worth as much as an entire extra round
@@ -15825,7 +15935,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // second-chance point. Picking the round winner's answer earns nothing (the winner already scored),
     // and the closest player never collects it too.
     const truthPickedBy = Object.entries(picks)
-      .filter(([pickerId, pick]) => pick.type === "pick" && pick.targetPlayerId === TRUTH_ID && !(closest && pickerId === closest.playerId))
+      .filter(([pickerId, pick]) => pick.type === "pick" && pick.targetPlayerId === TRUTH_ID && !closestIds.has(pickerId))
       .map(([pickerId]) => ({ playerId: pickerId, name: (playersSnap[pickerId] || {}).name || "Player", avatar: (playersSnap[pickerId] || {}).avatar || null, points: 1 }));
     // Crowd favorite: whoever got the most second-chance picks this round,
     // regardless of whether their answer was actually closest - rewards
@@ -15838,9 +15948,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       e.crowdFavoritePoints = (maxPicks >= 2 && e.pickedBy.length === maxPicks) ? 1 : 0;
     });
 
+    // A tied team wins once. Split that award between its tied contributors so
+    // individual contributions, the breakdown and the shared score all agree.
+    if ((roomState.settings || currentSettings).mode === "teamvteam") {
+      const tiedTeams = new Map();
+      entries.filter(e => e.isClosest).forEach(e => {
+        const team = playersSnap[e.playerId]?.team;
+        if (team) { if (!tiedTeams.has(team)) tiedTeams.set(team, []); tiedTeams.get(team).push(e); }
+      });
+      for (const winners of tiedTeams.values()) {
+        const base = Math.max(...winners.map(e => e.basePoints));
+        const backed = winners.filter(e => e.doubleDownPoints > 0);
+        winners.forEach(e => {
+          e.creditedBasePoints = base / winners.length;
+          e.creditedDoubleDownPoints = backed.includes(e) ? 2 / backed.length : 0;
+        });
+      }
+    }
+
     const lastRoundPoints = {};
     entries.forEach((e) => {
-      lastRoundPoints[e.playerId] = (lastRoundPoints[e.playerId] || 0) + e.basePoints + e.doubleDownPoints + e.crowdFavoritePoints;
+      lastRoundPoints[e.playerId] = (lastRoundPoints[e.playerId] || 0) + (e.creditedBasePoints ?? e.basePoints) + (e.creditedDoubleDownPoints ?? e.doubleDownPoints) + e.crowdFavoritePoints;
     });
     entries.forEach((e) => {
       e.pickedBy.forEach((p) => {
@@ -15857,8 +15985,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // game goes straight to the reveal like before.
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
-    const animMod = animPair ? await loadAnimModule() : null;
-    if (animPair && animMod) {
+    const animMod = animPair && (roomState.settings || currentSettings).animationReveal !== false ? await loadAnimModule() : null;
+    if (animPair && animMod && (roomState.settings || currentSettings).animationReveal !== false) {
       try {
         const animStartAt = nowMs() + ANIM_LEAD_MS;
         const endsAt = animStartAt + animMod.animationDuration(animPair[0], animPair[1]) * 1000 + ANIM_HOLD_MS;
@@ -16387,7 +16515,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
     if (hl && q) {
       const myRole = hlRoles[currentPlayerId];
-      const ask = myRole === "high" ? "You're HIGH: get as close as possible without going under." : myRole === "low" ? "You're LOW: get as close as possible without going over." : "";
+      const ask = myRole === "high" ? "HIGH: get close without going under." : myRole === "low" ? "LOW: get close without going over." : "";
       twQuestionPromptEl.textContent = q.prompt;
       if (hlHintEl) {
         hlHintEl.hidden = !ask;
@@ -17164,6 +17292,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hlOceanReveal?.destroy();hlOceanKey = key;
       hlOceanReveal = mountHighLowReveal(revealListEl, data, {
         reducedMotion: prefersReducedMotion,
+        onCue: name => {if(!document.hidden && !leavingGame && roomState.phase === "reveal")playSound(name);},
         avatarHtml: id => avatarHtml((currentPlayers[id] || {}).avatar),
         offInfo: hlOffInfo,
         verdictHtml: current => hlVerdictHtml(current, true),
@@ -17183,7 +17312,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             for (let i = last.previousCharge || 0; i < (roomState.hlShieldCharge || 0); i++) if (pips[i]) pips[i].animate([{transform:"scale(.3)"},{transform:"scale(1.4)",offset:.6},{transform:"scale(1)"}], {duration:450,easing:"ease-out"});
             if (last.earned && shield) shield.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
           }
-          if (last.saved) { if (!prefersReducedMotion()) svCrackHeart("shield");else playSound("error");vibrate([35,40,35]); }
+          if (last.saved) { if (!prefersReducedMotion()) svCrackHeart("shield");else playSound("shield-block");vibrate([35,40,35]); }
           else if (!last.passed) { if (!prefersReducedMotion()) svCrackHeart();else playSound("error");vibrate([70,60,70]); }
           else { playSound("roundwin");celebrate("normal");if (last.earned || last.milestone) {playSound("streak");vibrate([25,40,25]);} }
         },
@@ -17636,12 +17765,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       sources[id][key] += amount;
     };
     entries.forEach((e) => {
-      if (e.basePoints === 3) bump(e.playerId, "closestGuess", 3);
+      if (e.basePoints === 3) bump(e.playerId, "closestGuess", e.creditedBasePoints ?? 3);
       if (e.basePoints === 5) {
-        bump(e.playerId, "spotOn", 5);
+        bump(e.playerId, "spotOn", e.creditedBasePoints ?? 5);
         if (e.isPerfect) sources[e.playerId].perfect = true;
       }
-      if (e.doubleDownPoints > 0) bump(e.playerId, "doubleDown", e.doubleDownPoints);
+      if (e.doubleDownPoints > 0) bump(e.playerId, "doubleDown", e.creditedDoubleDownPoints ?? e.doubleDownPoints);
       if (e.crowdFavoritePoints > 0) bump(e.playerId, "crowdFavorite", e.crowdFavoritePoints);
       (e.pickedBy || []).forEach((p) => bump(p.playerId, "secondChance", p.points));
     });
@@ -17654,7 +17783,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (s.secondChance) chips.push({ label: "second chance", amount: s.secondChance });
       if (s.doubleDown) chips.push({ label: "double down", amount: s.doubleDown });
       if (s.crowdFavorite) chips.push({ label: "crowd favorite", amount: s.crowdFavorite });
-      if (s.spotOn) chips.push({ label: s.perfect ? "perfect!" : "spot on", amount: s.spotOn });
+      if (s.spotOn) chips.push({ label: s.perfect ? "perfect!" : "within 1%", amount: s.spotOn });
       breakdown[id] = chips;
     });
     return breakdown;
@@ -17683,8 +17812,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       li.className = "summary-row";
       li.dataset.id = id;
       li.style.animationDelay = `${idx * 90}ms`;
-      if (roundPts > 0 && idx === 0 && (data.revealOrder || []).some((e) => e.playerId === id && e.isClosest)) li.classList.add("round-winner");
-      const SHORT = { "closest guess": "Closest", "second chance": "Second chance", "double down": "Double down", "crowd favorite": "Crowd fave", "spot on": "Spot on", "perfect!": "Perfect!" };
+      if (roundPts > 0 && (data.revealOrder || []).some((e) => e.playerId === id && e.isClosest)) li.classList.add("round-winner");
+      const SHORT = { "closest guess": "Closest", "second chance": "Second chance", "double down": "Double down", "crowd favorite": "Crowd fave", "within 1%": "The 1%", "perfect!": "Perfect!" };
       const chipHtml = chips.map((c, ci) =>
         `<span class="breakdown-chip" style="animation-delay:${idx * 90 + 260 + ci * 90}ms">+${c.amount} ${SHORT[c.label] || c.label}</span>`
       ).join("");
@@ -17731,7 +17860,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (rb !== ra) return rb - ra;
       return (currentPlayers[teamOf[b][0]].score || 0) - (currentPlayers[teamOf[a][0]].score || 0);
     });
-    const SHORT = { "closest guess": "Closest", "second chance": "Second chance", "double down": "Double down", "crowd favorite": "Crowd fave", "spot on": "Spot on", "perfect!": "Perfect!" };
+    const SHORT = { "closest guess": "Closest", "second chance": "Second chance", "double down": "Double down", "crowd favorite": "Crowd fave", "within 1%": "The 1%", "perfect!": "Perfect!" };
     teams.forEach((team, idx) => {
       const members = teamOf[team];
       const roundPts = lastRoundPoints[members[0]] || 0;
@@ -18835,6 +18964,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   const SFX_FILES = {
+    "shield-block": "sfx/shield-block.wav",
+    "ocean-splash": "sfx/ocean-splash.wav",
+    "ocean-flutter": "sfx/ocean-flutter.wav",
     tap: "sfx/crisp/tap.wav",
     "podium-thud": "sfx/podium-thud.wav",
     select: "sfx/select.mp3",
@@ -18878,7 +19010,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   };
   // Reviewed clips use the same gain as the comparison page. Kept cues retain their original mix.
   const SFX_VOLUME = {
-    "podium-thud": 0.8, tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
+    "shield-block": .65, "ocean-splash": .4, "ocean-flutter": .4, "podium-thud": 0.8, tick: 1, count: 0.9, timesup: 0.8, join: 0.8, leave: 0.7, emoji: 0.7,
     swipe: 0.85, shuffle: 0.85, "avatar-ultra": 0.85, roundwin: 0.85,
     streak: 0.85, winner: 0.85, powerup: 0.85, coins: 0.85, drumroll: 0.85,
   };
@@ -18974,7 +19106,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitScoreNames);
   // Solo Game: no room code anywhere, one "+ Add bot" button instead of the
   // Low/Medium/High add buttons (accuracy is set per bot row).
+  document.getElementById('lobby-reveal-toggle').addEventListener('click', async () => {
+    if (!isHost || roomState.phase !== 'waiting') return;
+    await update(ref(db,'rooms/'+currentRoomCode+'/settings'),{animationReveal:roomState.settings?.animationReveal === false});
+  });
   function applyLobbyMode(data) {
+    const animationToggle=document.getElementById('lobby-reveal-toggle');
+    animationToggle.hidden=!isHost;animationToggle.disabled=data.phase!=='waiting';
+    animationToggle.textContent='Answer animation: '+(data.settings?.animationReveal===false?'Off':'On');
+    animationToggle.setAttribute('aria-pressed',String(data.settings?.animationReveal!==false));
     const solo = !!(data.settings && data.settings.solo);
     const teamMode = data.settings?.mode === "teamvteam";
     const worldsMode = data.settings?.mode === "teamworlds";
@@ -19516,7 +19656,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     act:action=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>bluffAction(cur,action,nowMs()),{applyLocally:false}),
     question:generateQuestion,object:id=>OBJECT_BY_ID.get(id),avatar:avatarHtml,sound:playSound,reduced:prefersReducedMotion,laugh:hsLaugh,vibrate,toast:hsTurnToast,
     revealAnimation:{
-      duration:async q=>{if(prefersReducedMotion())return 0;const pair=questionObjects(q),mod=pair?await loadAnimModule():null;return pair&&mod?mod.animationDuration(pair[0],pair[1])*1000:0;},
+      duration:async q=>{if(prefersReducedMotion()||roomState.settings?.animationReveal===false)return 0;const pair=questionObjects(q),mod=pair?await loadAnimModule():null;return pair&&mod?mod.animationDuration(pair[0],pair[1])*1000:0;},
       mount:(node,q,state)=>{
         let stopped=false,ctl=null;
         void(async()=>{try{const pair=questionObjects(q),mod=pair?await loadAnimModule():null;if(stopped||!pair||!mod)return;
@@ -19524,6 +19664,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const bottom=document.getElementById('bottom-toolbar')?.getBoundingClientRect().top||innerHeight;
           const stageHeight=Math.max(240,Math.min(470,bottom-node.getBoundingClientRect().top-130));
           const scene=await ctl.prepare(pair[0],pair[1],{hMax:stageHeight-55,minStageH:stageHeight});if(stopped)return;
+          if(isHost){const skip=document.createElement('button');skip.type='button';skip.className='stack-skip';skip.textContent='Skip';skip.onclick=()=>{if(isHost&&!roomState.paused&&roomState.bluff?.stage==='animation')bluffUI.advance(true);};node.append(skip);}
           animAudioInit();ctl.start(scene,{startAt:state.startedAt,now:animClock,onCue:audioLifecycle.guard(playAnimCue)});
         }catch(error){console.warn('[bluff] reveal animation unavailable',error);}})();
         return()=>{stopped=true;ctl?.stop();};

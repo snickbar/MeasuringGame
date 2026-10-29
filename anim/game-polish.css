@@ -2,6 +2,11 @@
 /* User preference: pinned header/action wrappers stay transparent. The illustrated
    banner supplies its own decoration; do not add white or tan backing panels. */
 .screen>.screen-back-btn{margin:0}
+/* Approved soft shadow follows the artwork's alpha, leaving header gaps clear.
+   Apply it to the art-bearing element, never the wrapper containing fixed Back. */
+:is(.dc-title.polish-banner,.matching-mode-banner,.mode-heading-banner),
+.screen>.screen-back-btn,
+#coin-reward-screen h1.polish-banner{filter:drop-shadow(0 3px 2px #38291880)}
 .mode-menu-header,
 :is(#solo-content,#party-content)>.solo-mode-header,
 :is(#create-screen,#join-screen,#name-avatar-screen)>.setup-header{
@@ -212,3 +217,40 @@ body.overlay-has-return .career-tabs{padding-right:0}
 #hud-round-label.bl-label .round-tracker{flex-wrap:nowrap;gap:2px;padding:2px 3px;max-width:none}
 #hud-round-label.bl-label .round-slot{flex:0 0 auto;width:10px;height:10px}
 #hud-round-label.bl-label.many .round-slot{width:6px;height:8px;border-width:1px}
+
+/* Reuse the player's chosen artwork, with one short reaction per result. */
+.solo-result-avatar{display:inline-grid;place-items:center;flex:none;width:76px;height:76px;pointer-events:none}
+.solo-result-avatar>.avatar-icon{width:100%;height:100%;max-width:none;object-fit:contain;filter:none}
+.solo-result-avatar.cheer{animation:soloAvatarCheer .75s var(--solo-react-delay,0ms) ease-out both}
+.solo-result-avatar.encourage{animation:soloAvatarEncourage .65s var(--solo-react-delay,0ms) ease-out both}
+.solo-result-line{display:flex;align-items:center;justify-content:center;gap:18px;min-width:0}
+.solo-result-line>div{min-width:0}
+.solo-avatar-card{display:flex;align-items:center;justify-content:center;gap:16px}
+.solo-result-copy{min-width:0}
+#mo-stage[hidden]{display:none}
+#daily-content .wb-verdict .wb-result-stage.dc-stage:has(>.solo-result-avatar){flex-direction:row;gap:12px}
+#daily-content .wb-verdict .dc-stage .wb-result-stamp .wb-burst{width:112px}
+#daily-content .dc-stage>.solo-result-avatar{width:120px;height:120px;justify-self:center}
+@keyframes soloAvatarCheer{0%{transform:translateY(0)}35%{transform:translateY(-9px) rotate(-4deg)}65%{transform:translateY(0) rotate(3deg)}100%{transform:none}}
+@keyframes soloAvatarEncourage{0%,100%{transform:none}30%{transform:rotate(-5deg)}65%{transform:rotate(4deg)}}
+@media(max-height:650px){.solo-result-avatar{width:64px;height:64px}.solo-result-line{gap:12px}}
+html[data-motion=reduce] .solo-result-avatar{animation:none}
+@media(prefers-reduced-motion:reduce){.solo-result-avatar{animation:none}}
+
+/* Object-pack previews show only objects actually included in that pack. */
+#themed-pack-shop{grid-template-columns:minmax(0,1fr)}
+.tp-card.tp-object-card{padding:12px;gap:8px;border:2px solid #c6b899;background:#fffaf0;color:#442d1b;border-radius:18px;text-shadow:none}
+.tp-object-card::before{display:none}
+.tp-object-card .tp-title{font-size:19px;line-height:1.2;text-shadow:none;margin:24px 0 0}
+.tp-object-card .tp-desc{font-size:13px;line-height:1.35;flex:initial;margin:0;max-width:360px}
+.tp-object-display{width:100%;height:170px;border-radius:12px;overflow:hidden;background:linear-gradient(145deg,var(--tp-a),var(--tp-b));background-position:center;background-size:cover}
+.tp-object-shelf{display:flex;align-items:flex-end;justify-content:center;gap:8px;height:100%;padding:18px 12px;background:linear-gradient(transparent,rgba(255,250,240,.22))}
+.tp-object-shelf img{width:28%;height:105px;object-fit:contain;filter:drop-shadow(0 2px 2px #39281744)}
+.tp-object-shelf img:first-child{height:130px;width:34%}
+.tp-preview-note{font-size:12px;color:#685438}
+.tp-object-thumbnails{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px;width:100%;box-sizing:border-box;background:#fffdf7;border-radius:10px}
+.tp-object-thumbnails figure{margin:0;min-width:0;text-align:center}
+.tp-object-thumbnails img{display:block;width:100%;height:62px;object-fit:contain}
+.tp-object-thumbnails figcaption{font-size:11px;line-height:1.2;overflow-wrap:break-word;margin-top:4px}
+.tp-object-card .coin-pack-buy-btn{width:100%;min-height:44px;font-size:14px;margin-top:2px}
+@media(max-width:350px){.solo-avatar-card{gap:10px}.solo-avatar-card>.solo-result-avatar{width:58px;height:58px}.tp-object-thumbnails{gap:4px;padding:6px}.tp-object-thumbnails img{height:52px}}

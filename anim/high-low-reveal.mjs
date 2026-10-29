@@ -131,7 +131,7 @@ function formatBottleNumbers(){
   cancel();step=n;busy=animate&&!reduced();layout();resetGap();ui();const c=model,el=n===1?boat:n===2?bird:shark,current=token;
   reaction(bird,step>2&&c.hi!=null&&c.hi<answer);reaction(shark,false);
   function done(){if(current!==token||destroyed)return;cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];busy=false;
-   if(animate&&!reduced())settleWater();reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
+   if(animate&&!reduced()){settleWater();if(!document.hidden&&(n===3||(n===2&&c.hi<answer)))options.onCue?.('ocean-splash');}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
    if(step===3)revealGap();syncMeterMarks();
    if(step===3&&!settledResult){settledResult=true;options.onResult?.({fresh:animate&&!document.hidden,passed:model.passed,saved:model.saved});}
    options.onSettled?.(n-1);
@@ -141,6 +141,7 @@ function formatBottleNumbers(){
   const laneY=n===2?28:p.h-shark.offsetHeight-24,top=n===2?p.by:p.sy;
   const frames=n===1?[{transform:'translate('+dx+'px,0)'},{transform:'translate(0,0)'}]:[{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'translate(0,'+(laneY-top)+'px)',offset:.6},{transform:'translate(0,0)'}];
   const a=el.animate(frames,{duration,delay,fill:'backwards',easing:'cubic-bezier(.22,.6,.24,1)'});animations.push(a);syncMeterMarks();
+  if(n===2)wait(()=>{if(!document.hidden)options.onCue?.('ocean-flutter');},delay);
   function watch(){if(current!==token||!busy)return;if(!paused&&!document.hidden){syncMeterMarks();const sea=stage.getBoundingClientRect().top+p.sea;
    if(n===2&&c.hi!=null&&c.hi<answer&&bird.getBoundingClientRect().top+bird.offsetHeight/2>sea+2)reaction(bird,true);
    if(n===3&&c.lo!=null&&c.lo>answer&&shark.getBoundingClientRect().top+shark.offsetHeight/2<sea-2)reaction(shark,true);

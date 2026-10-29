@@ -115,7 +115,7 @@ server.listen(0,'127.0.0.1',()=>{
    const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});
    const output=path.join(root,'output/pinned-layout-audit');fs.mkdirSync(output,{recursive:true});
    const results=[];
-   for(const [width,height] of [[390,780],[390,650],[320,650]]){
+   for(const [width,height] of (process.env.PLAY_LAYOUT_SIZES ? JSON.parse(process.env.PLAY_LAYOUT_SIZES) : [[390,780],[390,650],[320,650]])){
     const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});
     const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true},sessionId);if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result?.value;};
     await call('Page.enable',{},sessionId);await call('Page.addScriptToEvaluateOnNewDocument',{source:'localStorage.clear()'},sessionId);
@@ -125,7 +125,7 @@ server.listen(0,'127.0.0.1',()=>{
     const baselines={};
     for(const mode of ['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:letterboard','quick:terminal','quick:tv','quick:phone','quick','party','teamvteam']){
       await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,180));
-      const state=await evaluate(`(()=>{const vis=e=>e.getClientRects().length&&getComputedStyle(e).display!=='none';const owner=[...document.querySelectorAll('[data-play-layout].active,#wb-screen.active')].find(vis);if(!owner)throw Error('No active layout');const pane=owner.querySelector('.play-input-body')||owner.querySelector('.play-middle')||owner.querySelector('.main-col')||owner.querySelector('.wb-play-scroll');const action=[...owner.querySelectorAll('.play-actions button,.wb-play-footer button')].find(vis),pad=[...owner.querySelectorAll('#numpad,.dc-keys')].find(vis),r=e=>{const b=e.getBoundingClientRect();return {top:Math.round(b.top),bottom:Math.round(b.bottom),width:Math.round(b.width),height:Math.round(b.height)}};return {mode:owner.dataset.playLayout,footerBackground:getComputedStyle(owner.querySelector('.play-actions,.wb-play-footer')).backgroundColor,overflow:pane?pane.scrollHeight-pane.clientHeight:0,action:action?r(action):null,pad:pad?r(pad):null,key:pad?r(pad.querySelector('button')):null,cards:document.querySelectorAll('#score-col .score-card').length,duplicateSubmit:document.querySelectorAll('#submit-guess-btn').length,health:window.__layoutHealth()};})()`);
+      const state=await evaluate(`(()=>{const vis=e=>e.getClientRects().length&&getComputedStyle(e).display!=='none';const owner=[...document.querySelectorAll('[data-play-layout].active,#wb-screen.active')].find(vis);if(!owner)throw Error('No active layout');const pane=owner.querySelector('.play-input-body')||owner.querySelector('.play-middle')||owner.querySelector('.main-col')||owner.querySelector('.wb-play-scroll');const action=[...owner.querySelectorAll('.play-actions button,.wb-play-footer button')].find(vis),pad=[...owner.querySelectorAll('#numpad,.dc-keys')].find(vis),r=e=>{const b=e.getBoundingClientRect();return {top:Math.round(b.top),bottom:Math.round(b.bottom),width:Math.round(b.width),height:Math.round(b.height)}};return {mode:owner.dataset.playLayout,footerBackground:getComputedStyle(owner.querySelector('.play-actions,.wb-play-footer')).backgroundColor,overflow:pane?(owner.id==='wb-screen'?Math.max(0,(pane.lastElementChild?.offsetTop||0)+(pane.lastElementChild?.offsetHeight||0)-pane.clientHeight):pane.scrollHeight-pane.clientHeight):0,action:action?r(action):null,pad:pad?r(pad):null,key:pad?r(pad.querySelector('button')):null,cards:document.querySelectorAll('#score-col .score-card').length,duplicateSubmit:document.querySelectorAll('#submit-guess-btn').length,health:window.__layoutHealth()};})()`);
       if(state.footerBackground!=='rgba(0, 0, 0, 0)')throw Error(mode+' action panel is opaque '+state.footerBackground);
       const isQuestion=!mode.includes(':')||mode==='bluff:vote'||mode.startsWith('quick:');
       if(isQuestion&&state.overflow>1)throw Error(mode+' '+width+'x'+height+' question overflow '+JSON.stringify(state));
@@ -160,8 +160,8 @@ server.listen(0,'127.0.0.1',()=>{
      if(state.background&&state.background!=='rgba(0, 0, 0, 0)')throw Error(mode+' Skip has opaque panel '+JSON.stringify(state));
      const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(output,mode+'-reveal-'+width+'-'+height+'.png'),Buffer.from(shot.data,'base64'));
      if(mode==='survival'){
-      await evaluate("document.getElementById('sv-skip').click()");
-      if(!await evaluate("!!document.getElementById('sv-next')&&!!document.getElementById('sv-result')?.textContent.trim()"))throw Error('Survival Skip lost result/next handler');
+      await evaluate("document.getElementById('sv-skip').click();new Promise(r=>setTimeout(r,60))");
+      if(!await evaluate("!!document.getElementById('sv-next')&&!!document.querySelector('#survival-content .wb-verdict')?.textContent.trim()"))throw Error('Survival Skip lost result/next handler');
      }
      console.log(JSON.stringify({mode:mode+':reveal',width,height,...state,pass:true}));
     }
@@ -184,7 +184,7 @@ server.listen(0,'127.0.0.1',()=>{
      if(scores.before.some(p=>p.acc!=='50%'||p.score!=='0')||scores.after.some(p=>!['75%','25%'].includes(p.acc)))throw Error(mode+' score/accuracy timing failed '+JSON.stringify(scores));
      console.log(JSON.stringify({mode:mode+':accuracy',width,height,...scores,pass:true}));
     }
-    const cues=await evaluate('window.__layoutOtherTiming()');if(cues.flameBefore||!cues.flameAfter||cues.dangerBefore||!cues.dangerAfter||cues.survivalBefore.acc!=='Accuracy so far: 100%'||cues.survivalBefore.full!==3||cues.survivalAfter!=='Accuracy so far: 75%')throw Error('Early result cues '+JSON.stringify(cues));
+    const cues=await evaluate('window.__layoutOtherTiming()');if(cues.flameBefore||!cues.flameAfter||cues.dangerBefore||!cues.dangerAfter||cues.survivalBefore.acc!=='100%'||cues.survivalBefore.full!==3||cues.survivalAfter!=='75%')throw Error('Early result cues '+JSON.stringify(cues));
     console.log(JSON.stringify({otherTiming:true,width,height,...cues,pass:true}));
     }
     if(process.env.PLAY_LAYOUT_NAV_ONLY){

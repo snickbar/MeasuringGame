@@ -107,7 +107,7 @@ export function applyCareerRecord(profile,record){
   const stats={...profile.stats};
   if(record.mode==='worlds'){
     const levels=profile.worlds?.[record.world]||{},previous=levels['l'+record.level]||0,best=Math.max(previous,record.stars);
-    coins=(best-previous)*5;
+    coins=Math.max(0,record.stars||0)*5;
     result.worlds={...profile.worlds,[record.world]:{...levels,['l'+record.level]:best}};
     stats.worldLevels=(stats.worldLevels||0)+1;
     const old=profile.worldRecords?.[record.world]?.['l'+record.level]||{};
@@ -142,7 +142,7 @@ export function applyCareerRecord(profile,record){
       ghostCoins:(old.ghostCoins||0)+(record.ghost||0),knockedOut:(old.knockedOut||0)+(record.out?1:0)};
     stats.highStakesGames=(stats.highStakesGames||0)+1;
   }else if(record.mode==='survival'){
-    const old=profile.survival||{};coins=Math.max(0,record.survived)*2;
+    const old=profile.survival||{};coins=Math.max(0,record.survived)*3+Math.max(0,Math.min(record.survived||0,record.themedWins||0))*2;
     result.survival={...old,best:Math.max(old.best||0,record.survived),runs:(old.runs||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy)};
     stats.survivalRuns=(stats.survivalRuns||0)+1;
   }else if(record.mode==='whichbigger'){
@@ -154,7 +154,7 @@ export function applyCareerRecord(profile,record){
     stats.whichBiggerRuns=(stats.whichBiggerRuns||0)+1;
   }else if(record.mode==='daily'){
     const old=profile.dailyStreak||{},count=old.last===record.date?(old.count||1):old.last===record.yesterday?(old.count||0)+1:1;
-    coins=({3:20,7:50,30:200})[count]||0;
+    coins=10+(({3:20,7:50,30:200})[count]||0);
     result.dailyStreak={count,best:Math.max(old.best||0,count),last:record.date};
     result.daily={...record.saved,done:true};stats.dailies=(stats.dailies||0)+1;
     result.dailyHistory={...profile.dailyHistory,[record.date]:{s:record.accuracy||0,t:record.t,...(record.perfect?{p:1}:{})}};
