@@ -12,7 +12,7 @@ const clone = (v) => (v === undefined ? null : JSON.parse(JSON.stringify(v)));
 const parts = (p) => String(p || '').split('/').filter(Boolean);
 
 // Firebase drops nulls and empty containers, and stores arrays as objects keyed by index.
-function normalize(v, now) {
+export function normalize(v, now) {
   if (v === undefined || v === null) return null;
   if (typeof v === 'object' && v['.sv'] === 'timestamp') return now();
   if (Array.isArray(v)) {
@@ -28,7 +28,7 @@ function normalize(v, now) {
   return v;
 }
 // ...and hands objects with dense integer keys back as arrays.
-function present(v) {
+export function present(v) {
   if (v === null || typeof v !== 'object') return v;
   const keys = Object.keys(v);
   const out = {};
