@@ -2144,6 +2144,17 @@ if (location.protocol === "file:") {
     border: none; background: transparent; display: flex; align-items: center; justify-content: center;
   }
   .toolbar-badge-btn img { width: 100%; height: 100%; object-fit: contain; }
+  /* Free avatar pull waiting: a glowing gold star in the corner of the STYLE button and the Avatars tab. */
+  .toolbar-badge-btn.has-free-pull, button.cosm-tab-btn.has-free-pull { position: relative; overflow: visible; }
+  .toolbar-badge-btn.has-free-pull::after, button.cosm-tab-btn.has-free-pull::after {
+    content: ""; position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; pointer-events: none;
+    background: url(icons/flair/star.png) center / contain no-repeat;
+    filter: drop-shadow(0 0 4px #ffd54a) drop-shadow(0 0 8px rgba(255, 190, 40, .85));
+    animation: free-pull-glow 1.6s ease-in-out infinite;
+  }
+  button.cosm-tab-btn.has-free-pull::after { top: -9px; right: -5px; width: 20px; height: 20px; }
+  @keyframes free-pull-glow { 0%, 100% { opacity: .85; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.12); } }
+  :root[data-motion="reduce"] .toolbar-badge-btn.has-free-pull::after, :root[data-motion="reduce"] button.cosm-tab-btn.has-free-pull::after { animation: none; }
   /* Home isn't in the right-hand group, so it kept the fixed 45px while the others grow to 54px; match them. */
   #toolbar-home-btn { width: clamp(38px, calc(20vw - 27px), 54px); height: clamp(38px, calc(20vw - 27px), 54px); }
   @keyframes helpHintPulse {
@@ -5554,7 +5565,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lastSyncedFlair = f;
     update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
   }
+  // A glowing gold star on the STYLE button and the Avatars tab while there is a free avatar pull waiting.
+  function renderFreePullStar() {
+    const on = (myProfile.freePulls | 0) > 0;
+    document.getElementById("toolbar-cosmetics-btn")?.classList.toggle("has-free-pull", on);
+    document.querySelectorAll('.cosm-tab-btn[data-tab="avatars"]').forEach((b) => b.classList.toggle("has-free-pull", on));
+  }
   function renderProfileDependentUi() {
+    try { renderFreePullStar(); } catch (e) {}
     try { debugTools && debugTools.refresh(); } catch (e) {}
     discoveryUI?.refresh();
     tutorialUI?.refresh();
