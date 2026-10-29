@@ -2168,6 +2168,33 @@ if (location.protocol === "file:") {
   .lu-pull img { width: 22px; height: 22px; filter: drop-shadow(0 0 4px rgba(255,190,40,.8)); }
   .lu-card .dc-btn { position: relative; width: 100%; margin-top: 2px; }
   :root[data-motion="reduce"] .lu-rays, :root[data-motion="reduce"] .lu-badge, :root[data-motion="reduce"] .lu-card { animation: none; }
+  /* Lobby room options: one panel, a row per option with a switch on the right. */
+  .lobby-opts { display: flex; flex-direction: column; margin: 0 0 10px; background: var(--cozy-paper, #fffaf0); border: 2px solid var(--cozy-edge, #d9c3a3); border-radius: 18px; overflow: hidden; }
+  .lobby-opts:not(:has(.lobby-opt:not([hidden]))) { display: none; }
+  button.lobby-opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; margin: 0; padding: 8px 12px; border: 0; border-image: none; border-radius: 0; background: transparent; box-shadow: none; filter: none; color: #5b3a26; text-align: left; font-family: 'Fredoka', sans-serif; }
+  button.lobby-opt + button.lobby-opt:not([hidden]) { border-top: 2px solid rgba(185,154,107,.35); }
+  button.lobby-opt[hidden] { display: none; }
+  .lobby-opt-ic { width: 34px; height: 34px; object-fit: contain; flex: none; }
+  .lobby-opt-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .lobby-opt-tx b { font-size: 15px; font-weight: 700; line-height: 1.15; color: #5b3a26; text-shadow: none; }
+  .lobby-opt-tx small { font-size: 12px; font-weight: 600; line-height: 1.2; color: #8a7358; }
+  .lobby-switch { position: relative; flex: none; width: 62px; height: 30px; border-radius: 999px; background: #c9bba3; box-shadow: inset 0 2px 4px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: flex-end; padding: 0 9px; box-sizing: border-box; transition: background .15s; }
+  .lobby-switch::before { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: transform .15s; }
+  .lobby-switch-state { font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  button.lobby-opt[aria-pressed="true"] .lobby-switch { background: #5fb43a; justify-content: flex-start; }
+  button.lobby-opt[aria-pressed="true"] .lobby-switch::before { transform: translateX(32px); }
+  button.lobby-opt:disabled { opacity: .7; }
+  /* Stats: recent games / attempts */
+  .cs-recent { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 14px; }
+  .cs-recent-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; background: #fffaf0; border: 2px solid #e6d3ae; border-radius: 16px; box-shadow: 0 2px 0 #d8c08f; text-align: left; }
+  .cs-recent-ic { width: 46px; height: 46px; object-fit: contain; flex: none; border-radius: 12px; background: #f6ebd2; padding: 3px; box-sizing: border-box; }
+  .cs-recent-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .cs-recent-tx b { font-family: 'Fredoka', sans-serif; font-size: 16px; font-weight: 700; line-height: 1.15; color: #4a2f1c; text-shadow: none; }
+  .cs-recent-tx small { font-size: 12.5px; font-weight: 600; color: #8a7358; line-height: 1.2; }
+  .cs-recent-badge { flex: none; min-width: 58px; padding: 6px 10px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; text-align: center; color: #5b3a26; background: #efe4cc; border: 2px solid #d9c5a0; font-variant-numeric: tabular-nums; }
+  .cs-recent-badge.gold { background: linear-gradient(#ffe688, #f6bf2c); border-color: #c8921a; color: #5e3a05; }
+  .cs-recent-badge.silver { background: linear-gradient(#f4f6f8, #cfd6dd); border-color: #9aa5b1; color: #3f4a55; }
+  .cs-recent-badge.bronze { background: linear-gradient(#f6c79a, #d98a4c); border-color: #a8602a; color: #5a2d0a; }
   /* Free avatar pull waiting: a glowing gold star in the corner of the STYLE button and the Avatars tab. */
   .toolbar-badge-btn.has-free-pull, button.cosm-tab-btn.has-free-pull { position: relative; overflow: visible; }
   .toolbar-badge-btn.has-free-pull::after, button.cosm-tab-btn.has-free-pull::after {
@@ -4476,8 +4503,10 @@ if (location.protocol === "file:") {
   </div>
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
-  <button type="button" id="lobby-reveal-toggle" class="back-btn" aria-pressed="true">Answer animation: On</button>
-  <button type="button" id="lobby-make-believe-toggle" class="back-btn" aria-pressed="true" hidden>Include make-believe objects: On</button>
+  <div class="lobby-opts" role="group" aria-label="Room options">
+    <button type="button" id="lobby-reveal-toggle" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true"><img class="lobby-opt-ic" src="items/fireworks.webp" alt=""><span class="lobby-opt-tx"><b>Answer animation</b><small>Watch the answer play out each round</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
+    <button type="button" id="lobby-make-believe-toggle" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" hidden><img class="lobby-opt-ic" src="items/unicorn.webp" alt=""><span class="lobby-opt-tx"><b>Make-believe objects</b><small>Include dragons, unicorns and more</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
+  </div>
   <div class="lobby-room-box">
     <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
@@ -12694,6 +12723,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const list = Array.isArray(h) ? h : (h ? Object.values(h) : []);
     return list.filter((x) => x && Number.isFinite(x.r) && x.r >= 0 && x.answered !== false && OBJECT_BY_ID.has(x.u) && OBJECT_BY_ID.has(x.g));
   }
+  // Recent games / attempts on the Stats screen: one card row each - mode art, name and detail, result badge on the right.
+  const RECENT_ICONS = { party: "icons/shop-host-crown.webp", quick: "items/ant.webp", daily: "icons/toolbar-daily.png", worlds: "items/hot-air-balloon.webp", survival: "items/t-rex.webp", teamvteam: "items/soccer-ball.webp", teamworlds: "icons/mode-team-worlds.webp", hlsurvival: "icons/mode-high-low.webp", highstakes: "items/poker-chip.webp", bluff: "icons/reactions/giggle.png", whichbigger: "items/elephant.webp" };
+  const ordinal = (n) => { n = Number(n) || 0; const v = n % 100; return n + ((v >= 11 && v <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th")); };
+  function recentRowHtml(r, kind) {
+    const mode = r.mode, name = MODE_NAMES[mode] || "Monthly practice";
+    const icon = mode === "monthly" || !RECENT_ICONS[mode] ? monthlyIcon() : RECENT_ICONS[mode];
+    const when = r.t ? new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+    const acc = r.accuracy == null || isNaN(r.accuracy) ? null : r.accuracy;
+    const bits = [];
+    let badge = "", tone = "plain";
+    if (kind === "match") {
+      if (r.won || Number(r.place) === 1) { badge = "Won"; tone = "gold"; }
+      else { badge = ordinal(r.place); tone = Number(r.place) === 2 ? "silver" : Number(r.place) === 3 ? "bronze" : "plain"; }
+      if (mode === "highstakes") bits.push(`${r.score} coins left`); else if (acc != null) bits.push(`${formatAccuracy(acc)}% accurate`);
+    } else {
+      if (mode === "highstakes") { badge = `${r.coins} coins`; tone = "gold"; }
+      else if (acc != null) { badge = formatAccuracy(acc) + "%"; tone = acc >= 75 ? "gold" : acc >= 50 ? "silver" : "plain"; }
+      if (r.survived !== null && r.survived !== undefined) bits.push(`${r.survived} survived`);
+    }
+    if (when) bits.push(when);
+    return `<div class="cs-recent-row"><img class="cs-recent-ic" src="${icon}" alt="" draggable="false"><div class="cs-recent-tx"><b>${escapeHtml(name)}</b><small>${escapeHtml(bits.join(" · "))}</small></div><span class="cs-recent-badge ${tone}">${escapeHtml(badge)}</span></div>`;
+  }
   function careerChartSvg(points) {
     const W = 320, H = 150, L = 34, R = 10, T = 10, B = 22;
     const x = (i) => L + (points.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (points.length - 1));
@@ -12749,9 +12800,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if(statsMode==='all')html+=`<h3 class="cs-h">Your collection</h3><div class="cozy-panel cs-tiles">${statTile(Object.keys(myProfile.seenObjects||{}).length,'Objects seen')}${statTile(Object.keys(myProfile.seenCombos||{}).length,'Combinations seen')}${statTile(ownedNonDefaultAvatars().length,'Avatars collected')}</div>`;
     const attempts=(myProfile.attemptHistory||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
-    if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cozy-panel">'+attempts.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode]||'Monthly practice')+' · '+(r.mode==='highstakes'?r.coins+' coins':formatAccuracy(r.accuracy)+'%'+(r.survived!==null?' · '+r.survived+' survived':''))+'</p>').join('')+'</div>';
+    if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cs-recent">'+attempts.map(r=>recentRowHtml(r,'attempt')).join('')+'</div>';
     const matches=(myProfile.matches||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
-    if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cozy-panel">'+matches.map(r=>'<p>'+escapeHtml(MODE_NAMES[r.mode])+' · '+(r.won?'Won':'Place '+r.place)+(r.mode==='highstakes'?' · '+r.score+' coins left':' · '+formatAccuracy(r.accuracy)+'%')+'</p>').join('')+'</div>';
+    if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cs-recent">'+matches.map(r=>recentRowHtml(r,'match')).join('')+'</div>';
 
     const frequent = Object.entries(objectFrequency(myProfile, statsMode)).filter(([id,n])=>OBJECT_BY_ID.has(id)&&n>0).sort((a,b)=>b[1]-a[1]||OBJECT_BY_ID.get(a[0]).name.localeCompare(OBJECT_BY_ID.get(b[0]).name)).slice(0,6);
     const frequencyHtml = `<h3 class="cs-h">Object frequency</h3><div class="cs-card"><p class="cs-note">Your most-seen objects in completed rounds, on either side. Includes missed submissions${statsMode==='all'?'':` in ${escapeHtml(MODE_NAMES[statsMode])}`}. Counts include available past history and keep growing as you play.</p>${frequent.length?frequent.map(([id,n])=>{const ob=OBJECT_BY_ID.get(id);return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase()+ob.name.slice(1))}</span><span class="cs-obj-val">${n} ${n===1?'time':'times'}</span></div>`;}).join(''):'<p class="cs-note">Complete a round to start your list.</p>'}</div>`;
@@ -19471,6 +19522,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitScoreNames);
   // Solo Game: no room code anywhere, one "+ Add bot" button instead of the
   // Low/Medium/High add buttons (accuracy is set per bot row).
+  function setLobbySwitch(btn,on){btn.setAttribute('aria-pressed',String(on));btn.setAttribute('aria-checked',String(on));const st=btn.querySelector('.lobby-switch-state');if(st)st.textContent=on?'On':'Off';}
   document.getElementById('lobby-reveal-toggle').addEventListener('click', async () => {
     if (!isHost || roomState.phase !== 'waiting') return;
     await update(ref(db,'rooms/'+currentRoomCode+'/settings'),{animationReveal:roomState.settings?.animationReveal === false});
@@ -19492,15 +19544,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function applyLobbyMode(data) {
     const animationToggle=document.getElementById('lobby-reveal-toggle');
     animationToggle.hidden=!isHost;animationToggle.disabled=data.phase!=='waiting';
-    animationToggle.textContent='Answer animation: '+(data.settings?.animationReveal===false?'Off':'On');
-    animationToggle.setAttribute('aria-pressed',String(data.settings?.animationReveal!==false));
+    setLobbySwitch(animationToggle,data.settings?.animationReveal!==false);
     const solo = !!(data.settings && data.settings.solo);
     const makeBelieveToggle=document.getElementById('lobby-make-believe-toggle');
     const party=isPartyRoomSettings(data.settings),makeBelieveOn=includesMakeBelieve(data.settings);
     makeBelieveToggle.hidden=!party;
     makeBelieveToggle.disabled=makeBelieveTogglePending||!isHost||data.phase!=='waiting';
-    makeBelieveToggle.textContent='Include make-believe objects: '+(makeBelieveOn?'On':'Off');
-    makeBelieveToggle.setAttribute('aria-pressed',String(makeBelieveOn));
+    setLobbySwitch(makeBelieveToggle,makeBelieveOn);
     const teamMode = data.settings?.mode === "teamvteam";
     const worldsMode = data.settings?.mode === "teamworlds";
     const hlMode = isHlSettings(data.settings);
