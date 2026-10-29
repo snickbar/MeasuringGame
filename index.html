@@ -4620,7 +4620,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { installMeasurementGuides } from "./anim/measurement-guides.mjs";
-  import { reserveHostStart, finishHostStart, hasHostAdGame, grantHostAdGame } from "./anim/host-allowance.mjs";
+  import { reserveHostStart, finishHostStart, hasHostAdGame, canWatchHostAd, grantHostAdGame } from "./anim/host-allowance.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
@@ -10013,6 +10013,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const badge = myProfile.hostUnlocked ? "" : hasHostAdGame(myProfile,mode)
         ? `<span class="home-free-badge">Extra game ready!</span>` : partyModeFreeToday(mode)
         ? `<span class="home-free-badge">&#11088; 1 free today!</span>`
+        : canWatchHostAd(myProfile,mode,todayDateStr()) ? `<span class="home-ad-badge"><span aria-hidden="true">▶</span> Watch ad</span>`
         : `<span class="home-lock-badge"><img src="icons/reactions/padlock.png" alt=""></span>`;
       return `<button type="button" class="sh-card sh-banner" id="${id}"><img class="sh-bimg" src="${banner}" alt="" draggable="false"><img class="sh-bic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
     };
@@ -10516,14 +10517,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hsFly(fromEl, toEl, n) {
     if (!fromEl || !toEl) return;
-    const a = fromEl.getBoundingClientRect(), t = toEl.getBoundingClientRect();
+    // The responsive shell reparents the table after render. Measure only once
+    // that layout has settled, and aim at the artwork rather than its wide box.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (!fromEl.isConnected || !toEl.isConnected || !hsScreenEl.classList.contains("active")) return;
+    if (prefersReducedMotion()) { if(toEl.id === "hs-pot")hsClink(); return; }
+    const a = (fromEl.id === "hs-pot" ? fromEl.querySelector("img") : null)?.getBoundingClientRect() || fromEl.getBoundingClientRect();
+    const t = (toEl.id === "hs-pot" ? toEl.querySelector("img") : null)?.getBoundingClientRect() || toEl.getBoundingClientRect();
     const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = t.left + t.width / 2, y1 = t.top + t.height / 2;
     for (let i = 0; i < n; i++) {
       const c = document.createElement("img");
       c.src = "icons/poker-chip-blue.webp"; c.className = "hs-coin"; c.alt = ""; c.draggable = false;
       c.style.left = (x0 - 13) + "px"; c.style.top = (y0 - 13) + "px";
       document.body.appendChild(c);
-      const jx = (Math.random() - 0.5) * 26, jy = (Math.random() - 0.5) * 26;
+      const jx = (Math.random() - 0.5) * 8, jy = (Math.random() - 0.5) * 8;
       const an = c.animate([
         { transform: "translate(0,0) scale(.6)", opacity: 0 },
         { transform: "translate(0,0) scale(1.15)", opacity: 1, offset: .12 },
@@ -10533,6 +10540,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       an.onfinish = () => { c.remove(); if (toEl.id === "hs-pot") hsClink(); };
     }
     if (toEl.id !== "hs-pot") { try { playSound("select"); } catch (e) { /* sound is optional */ } }
+    }));
   }
   function hsRenderInto(html, hs, data, animating, started = animating) {
     hsContentEl.innerHTML = html;
@@ -10707,7 +10715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         if (revealing && !animating && hs.result?.winners?.includes(id)) { tag = "+" + hs.result.share; tagCls = "win"; cls = " win"; }
       }
-      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + " &#128176;"}</span>${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
     };
     const colL = [], colR = [];
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
@@ -13683,7 +13691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function confirmAndPurchaseHostUnlock(mode, allowFree = true) {
     if (myProfile.hostUnlocked) return "unlocked";
     if (allowFree && (await claimFreeHostToday(mode))) return "free";
-    if (allowFree && mode) {
+    if (allowFree && mode && (hasHostAdGame(myProfile,mode) || canWatchHostAd(myProfile,mode,todayDateStr()))) {
       if (hasHostAdGame(myProfile,mode)) return "free";
       if (hostAdInFlight) return false;
       hostAdInFlight = true;
@@ -13694,7 +13702,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (choice === 'ad') {
           const earned = await showFakeAd();
           if (!earned || deviceId !== owner) return false;
-          const reward = {mode,rewardId:crypto.randomUUID(),now:Date.now()};
+          const reward = {mode,rewardId:crypto.randomUUID(),now:Date.now(),day:todayDateStr()};
           const grant = await runTransaction(ref(db,'profiles/'+owner),p=>grantHostAdGame(p,reward));
           if (deviceId !== owner) return false;
           if (!grant.snapshot.val()?.hostUnlocked && !hasHostAdGame(grant.snapshot.val(),mode)) return false;
@@ -13745,7 +13753,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const backgrounds = {newyear:"newyear",valentine:"valentine",stpatrick:"stpatrick",easter:"easter",may:"may",june:"june",july:"july",august:"august",september:"september",halloween:"halloween",thanksgiving:"thanksgiving",christmas:"christmas"};
     const backdrop = backgrounds[id];
     const image = o => `<img src="${o.image}" alt="${escapeHtml(o.name)}" loading="lazy" decoding="async" draggable="false">`;
-    return `<div class="tp-object-display"${backdrop ? ` style="background-image:url('backgrounds/${backdrop}-bg.webp')"` : ""}><div class="tp-object-shelf">${sample.map(image).join("")}</div></div><span class="tp-preview-note">${objects.length} objects · sample shown</span><div class="tp-object-thumbnails">${objects.slice(0,4).map(o=>`<figure>${image(o)}<figcaption>${escapeHtml(o.name)}</figcaption></figure>`).join("")}</div>`;
+    return `<div class="tp-object-display"${backdrop ? ` style="background-image:url('backgrounds/${backdrop}-bg.webp')"` : ""}><div class="tp-object-shelf">${sample.map(image).join("")}</div></div><span class="tp-preview-note">${objects.length} objects · sample shown</span>`;
   }
   function renderThemedPackShop() {
     const el = document.getElementById("themed-pack-shop");

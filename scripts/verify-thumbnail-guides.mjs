@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const orient=fs.readFileSync('anim/orient-data.js','utf8').match(/export const ORIENT = ([^;]+);/)[1];
+const guideSource=fs.readFileSync('anim/measurement-guides.mjs','utf8').replace("import {ORIENT} from './orient-data.js';",'const ORIENT = '+orient+';');
+const {measurementGuideAxis}=await import('data:text/javascript;base64,'+Buffer.from(guideSource).toString('base64'));
+const object=(id,dimension='length')=>({id,measurement:{dimension}});
+assert.equal(measurementGuideAxis(object('key'),{width:25,height:80}),'vertical','stored key is tall; its thumbnail rotation then turns this arrow horizontal');
+assert.equal(measurementGuideAxis(object('key'),{width:80,height:25}),'horizontal');
+assert.equal(measurementGuideAxis(object('big-ben','height'),{width:90,height:30}),'horizontal');
+assert.equal(measurementGuideAxis(object('broom','height'),{width:90,height:20}),'horizontal');
+assert.equal(measurementGuideAxis(object('bald-eagle'),{width:80,height:80}),'vertical');
+assert.equal(measurementGuideAxis(object('manta-ray','width'),{width:50,height:80}),'horizontal');
+assert.equal(measurementGuideAxis(object('grand-canyon','depth'),{width:80,height:50}),'vertical');
+const source=fs.readFileSync('index.html','utf8');
+const start=source.indexOf('  function hsFly('),end=source.indexOf('\n  function hsRenderInto',start);
+const callbacks=[],animations=[];let targetTop=500;
+const pot={id:'hs-pot',isConnected:true,querySelector:()=>({getBoundingClientRect:()=>({left:140,top:targetTop,width:40,height:40})}),getBoundingClientRect:()=>({left:100,top:900,width:200,height:100})};
+const card={id:'player',isConnected:true,getBoundingClientRect:()=>({left:20,top:50,width:40,height:40})};
+const context=vm.createContext({Math,requestAnimationFrame:f=>callbacks.push(f),prefersReducedMotion:()=>false,hsScreenEl:{classList:{contains:()=>true}},document:{body:{appendChild(){}},createElement:()=>({style:{},animate:(frames,options)=>{animations.push({frames,options});return {};}})},hsClink(){},playSound(){}});
+vm.runInContext(source.slice(start,end),context);context.hsFly(card,pot,2);assert.equal(animations.length,0);
+callbacks.shift()();targetTop=200;callbacks.shift()();
+assert.equal(animations.length,2);
+for(const a of animations){const match=a.frames[2].transform.match(/translate\(([-\d.]+)px,([-\d.]+)px\)/);assert(Math.abs(Number(match[1])-120)<=4);assert(Math.abs(Number(match[2])-150)<=4,'Target must follow settled pot artwork');}
+assert(!source.includes('hsFmt(shown[id] ?? 0) + " &#128176;"'));
+console.log('PASS: guide directions for padded/sideways artwork; chip flights wait for settled layout and land on pot artwork; active table uses chips.');

@@ -3,9 +3,15 @@
 export function hasHostAdGame(profile, mode) {
   return !!profile?.hostAdGames?.[mode]?.id && !profile.hostAdGames[mode].used;
 }
-export function grantHostAdGame(profile, {mode, rewardId, now}) {
-  if (!profile || profile.hostUnlocked || hasHostAdGame(profile, mode) || profile.hostAdGames?.[mode]?.id === rewardId) return profile;
-  return {...profile,hostAdGames:{...profile.hostAdGames,[mode]:{id:rewardId,earnedAt:now,used:false}}};
+export function canWatchHostAd(profile, mode, day) {
+  const grant=profile?.hostAdGames?.[mode];
+  const at=grant?.earnedAt!=null?new Date(grant.earnedAt):null;
+  const earnedDay=grant?.day||(at?`${at.getFullYear()}-${String(at.getMonth()+1).padStart(2,'0')}-${String(at.getDate()).padStart(2,'0')}`:null);
+  return !profile?.hostUnlocked && !hasHostAdGame(profile,mode) && earnedDay!==day;
+}
+export function grantHostAdGame(profile, {mode, rewardId, now, day}) {
+  if (!profile || profile.hostUnlocked || hasHostAdGame(profile, mode) || profile.hostAdGames?.[mode]?.id === rewardId || (day&&!canWatchHostAd(profile,mode,day))) return profile;
+  return {...profile,hostAdGames:{...profile.hostAdGames,[mode]:{id:rewardId,earnedAt:now,...(day?{day}:{}),used:false}}};
 }
 export function reserveHostStart(profile, {mode, day, room, now}) {
   if (!profile || profile.hostUnlocked) return profile;

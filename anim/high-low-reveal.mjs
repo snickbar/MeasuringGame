@@ -129,9 +129,17 @@ function formatBottleNumbers(){
  }
  function showStep(n,animate=true){
   cancel();step=n;busy=animate&&!reduced();layout();resetGap();ui();const c=model,el=n===1?boat:n===2?bird:shark,current=token;
+  let splashed=false,previousWaterSide=null;
+  function crossing(){
+   if(n===1||splashed||document.hidden||paused)return;
+   const r=el.getBoundingClientRect(),sea=stage.getBoundingClientRect().top+p.sea;
+   const side=r.top+r.height/2-sea;
+   if(previousWaterSide!=null&&((previousWaterSide<0&&side>=0)||(previousWaterSide>0&&side<=0))){splashed=true;options.onCue?.('ocean-splash');}
+   previousWaterSide=side;
+  }
   reaction(bird,step>2&&c.hi!=null&&c.hi<answer);reaction(shark,false);
   function done(){if(current!==token||destroyed)return;cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];busy=false;
-   if(animate&&!reduced()){settleWater();if(!document.hidden&&(n===3||(n===2&&c.hi<answer)))options.onCue?.('ocean-splash');}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
+   if(animate&&!reduced()){crossing();settleWater();}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
    if(step===3)revealGap();syncMeterMarks();
    if(step===3&&!settledResult){settledResult=true;options.onResult?.({fresh:animate&&!document.hidden,passed:model.passed,saved:model.saved});}
    options.onSettled?.(n-1);
@@ -143,6 +151,7 @@ function formatBottleNumbers(){
   const a=el.animate(frames,{duration,delay,fill:'backwards',easing:'cubic-bezier(.22,.6,.24,1)'});animations.push(a);syncMeterMarks();
   if(n===2)wait(()=>{if(!document.hidden)options.onCue?.('ocean-flutter');},delay);
   function watch(){if(current!==token||!busy)return;if(!paused&&!document.hidden){syncMeterMarks();const sea=stage.getBoundingClientRect().top+p.sea;
+   crossing();
    if(n===2&&c.hi!=null&&c.hi<answer&&bird.getBoundingClientRect().top+bird.offsetHeight/2>sea+2)reaction(bird,true);
    if(n===3&&c.lo!=null&&c.lo>answer&&shark.getBoundingClientRect().top+shark.offsetHeight/2<sea-2)reaction(shark,true);
   }raf=requestAnimationFrame(watch);}

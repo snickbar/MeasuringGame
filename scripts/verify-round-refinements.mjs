@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {applyCareerRecord} from '../anim/career-ledger.mjs';
-import {reserveHostStart,finishHostStart,grantHostAdGame,hasHostAdGame} from '../anim/host-allowance.mjs';
+import {reserveHostStart,finishHostStart,grantHostAdGame,hasHostAdGame,canWatchHostAd} from '../anim/host-allowance.mjs';
 import {roundAccuracy} from '../anim/accuracy.mjs';
 const source=fs.readFileSync('index.html','utf8');
 const extract=name=>{const a=source.indexOf('  function '+name+'(')>=0?source.indexOf('  function '+name+'('):source.indexOf('  async function '+name+'(');assert(a>=0,name);return source.slice(a,source.indexOf('\n  }',a)+4);};
@@ -41,6 +41,14 @@ p=grantHostAdGame(p,{...reward,rewardId:'ad-2'});assert(hasHostAdGame(p,'classic
 p=finishHostStart(reserveHostStart(p,{...ticket,day:'2026-10-29'}),{...ticket,day:'2026-10-29'},true);
 assert.equal(p.hostFreeDates.classic,'2026-10-29');assert(hasHostAdGame(p,'classic'));
 assert.equal(finishHostStart(p,ticket,true),undefined);
+const datedReward={...reward,day:ticket.day};
+p=grantHostAdGame({hostFreeDates:{classic:ticket.day}},datedReward);
+assert(!canWatchHostAd(p,'classic',ticket.day));
+p=finishHostStart(reserveHostStart(p,ticket),ticket,true);
+assert(!canWatchHostAd(p,'classic',ticket.day),'Used ad game shows a lock for the rest of that day');
+assert(!hasHostAdGame(grantHostAdGame(p,{...datedReward,rewardId:'again'}),'classic'));
+assert(canWatchHostAd(p,'classic','2026-10-29'));
+assert(canWatchHostAd(p,'bluff',ticket.day));
 
 const bot=vm.createContext({Math});vm.runInContext(source.match(/  const HL_BOT_LEVELS = [^;]+;/)[0]+'\n'+extract('hlBotGuess'),bot);for(const level of ['easy','medium','hard'])for(const answer of [1.5,1.789,100,1234.567])for(let i=0;i<1000;i++){assert(bot.hlBotGuess(answer,level,'high',2.5)>=answer);assert(bot.hlBotGuess(answer,level,'low',2.5)<=answer);}
 assert(source.includes('await addBot("easy")'));

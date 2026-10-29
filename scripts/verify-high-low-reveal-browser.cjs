@@ -1,6 +1,12 @@
 // Exercise the real game adapter and approved renderer against an isolated database.
 const fs=require('fs'),path=require('path');let runner=fs.readFileSync(path.join(__dirname,'verify-game-polish-browser.cjs'),'utf8');
 const api=String.raw`
+window.__waterCues=[];
+const originalWaterSound=playSound;
+playSound=(name,...args)=>{
+ if(name==='ocean-splash'&&hlOceanReveal){const r=hlOceanReveal.root,animal=r.querySelector(r.dataset.step==='2'?'.oc-bird':'.oc-shark'),a=animal.getBoundingClientRect(),water=r.querySelector('.oc-water').getBoundingClientRect();window.__waterCues.push({step:r.dataset.step,distance:a.top+a.height/2-water.top});}
+ return originalWaterSound(name,...args);
+};
 window.__hl={
  ready:()=>!!myProfile?.stats,
  busy:()=>hlOceanReveal?.busy,root:()=>hlOceanReveal?.root,
@@ -35,6 +41,13 @@ try{
  $('reveal-next-btn').click();await api.pump();await wait(100);assert($('show-summary-btn').disabled,'Progress waits for LOW');assert(!$('hud-round-label').querySelector('.hl-flame'),'Streak waits for LOW to settle');
  api.pause(true);const pausedAnimation=root.querySelector('.oc-shark').getAnimations()[0];await pausedAnimation.ready;const paused=pausedAnimation.currentTime;await wait(140);assert(Math.abs(pausedAnimation.currentTime-paused)<3,'Pause freezes entrance');api.pause(false);
  await until(()=>!api.busy(),'LOW settles');assert(root.querySelector('.cw-meter').dataset.result==='won','Win feedback');assert(root.querySelector('.oc-shark').classList.contains('is-happy'),'Shared win pose');assert(!$('show-summary-btn').disabled,'Progress enabled after animation');assert($('hud-round-label').querySelector('.hl-flame'),'Streak updates after LOW settles');
+ for(const scenario of ['under','over']){
+  window.__waterCues=[];await api.show(scenario,0);await until(()=>!api.busy(),'Bottle for water crossing');
+  $('reveal-next-btn').click();await api.pump();await until(()=>!api.busy(),'Bird crossing');
+  $('reveal-next-btn').click();await api.pump();await until(()=>!api.busy(),'Shark crossing');
+  assert(window.__waterCues.length===1,'One splash only on actual water crossing '+scenario);
+  assert(Math.abs(window.__waterCues[0].distance)<22,'Splash follows crossing rather than delayed settlement '+JSON.stringify(window.__waterCues));
+ }
  for(const scenario of ['safe','wide','under','over','crossed','missing','zero','saved','million','trillion','close']){
   await api.show(scenario,2);await until(()=>api.root()?.dataset.busy==='false','Reconnect complete '+scenario);const r=api.root(),d=api.data(),m=d.hlLast;
   assert(r.querySelector('.cw-meter').dataset.result===(m.passed?'won':'lost'),'Authoritative round result '+scenario);
