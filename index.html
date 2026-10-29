@@ -616,10 +616,14 @@ if (location.protocol === "file:") {
     padding: 8px 10px; background: #fffaf0; border: 3px solid #d9c3a3; border-radius: 14px;
   }
   .cosm-actions { display: flex; align-items: center; gap: 6px; }
-  /* A buyable row: Preview on the left, the coin price stacked over the $ price on the right, so the item name keeps its room. */
-  .cosm-actions.has-usd { display: grid; grid-template-columns: auto 96px; gap: 4px 6px; }
-  .cosm-actions.has-usd .cosm-preview { grid-row: 1 / 3; align-self: center; }
-  .cosm-actions.has-usd button.cosm-buy { --pic-h: 28px; }
+  /* A buyable row: Preview, coin price and $ price side by side, a little smaller so the item name keeps its room. */
+  .cosm-actions.has-usd { gap: 4px; }
+  .cosm-actions.has-usd button.cosm-buy { --pic-h: 30px; width: 58px; font-size: 12px; padding: 0 1px; border-width: 0 6px; }
+  .cosm-actions.has-usd .cosm-preview { padding: 6px 5px; font-size: 11.5px; }
+  .cosm-row:has(.cosm-actions.has-usd) .cosm-name { font-size: 13px; }
+  .cosm-row:has(.cosm-actions.has-usd) .cosm-board-pic { width: 52px; height: 36px; }
+  .cosm-row:has(.cosm-actions.has-usd) .cosm-lead { gap: 8px; }
+  .cosm-actions.has-usd .cosm-coin { width: 13px; height: 13px; margin-right: 2px; }
   button.cosm-buy.cosm-buy-usd { border-image-source: url(icons/btn-bot-easy.png); border-image-slice: 0 137 fill; }
   .cosm-preview {
     width: auto; margin: 0; padding: 6px 10px; font-size: 13px; font-weight: 700; font-family: 'Fredoka', sans-serif;
@@ -6701,8 +6705,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (row.__usd) wrap.appendChild(row.__usd);
       row.appendChild(wrap);
     } else {
-      row.appendChild(btn);
-      if (row.__usd) row.appendChild(row.__usd);
+      if (row.__usd) {
+        const wrap = document.createElement("div");
+        wrap.className = "cosm-actions has-usd";
+        wrap.append(btn, row.__usd);
+        row.appendChild(wrap);
+      } else row.appendChild(btn);
     }
     return row;
   }
