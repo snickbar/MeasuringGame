@@ -5867,6 +5867,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!have) return undefined;
     return `You already own ${have} of the ${total} ${noun} in this pack. Buying it still unlocks all ${total}.`;
   }
+  // A pack's price follows what you don't own yet: own 3 of 5 and you pay for the other 2 (rounded up to the cent, never under $0.25).
+  function packQuote(pack) {
+    let have = 0, total = 1, noun = "items";
+    if (pack.emojis) { have = pack.emojis.filter((e) => ownsEmoji(e)).length; total = pack.emojis.length; noun = "reactions"; }
+    else if (pack.flairs) { const items = COSMETIC_CATALOG.effects; have = pack.flairs.filter((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); }).length; total = pack.flairs.length; noun = "flairs"; }
+    else if (pack.backgrounds) { have = pack.backgrounds.filter((b) => ownsBackground(b.id)).length; total = pack.backgrounds.length; noun = "backgrounds"; }
+    else if (pack.boards) { have = pack.boards.filter((b) => ownsBoard(b.id)).length; total = pack.boards.length; noun = "boards"; }
+    if (!have || have >= total) return { price: pack.price };
+    const base = parseFloat(String(pack.price).replace(/[^0-9.]/g, "")) || 0.99;
+    const cents = Math.max(25, Math.ceil(base * 100 * (total - have) / total));
+    return { price: "$" + (cents / 100).toFixed(2), desc: `You already own ${have} of the ${total} ${noun}, so you only pay for the ${total - have} you don't have yet.` };
+  }
   const ITEM_PRICE_USD = "$0.99";   // every single 100-coin item can also be bought for this
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
@@ -6126,9 +6138,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.type = "button";
       btn.className = "coin-pack-buy-btn";
       btn.disabled = owned;
-      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy`;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price, desc: packOwnedNote(pack.emojis.filter((e) => ownsEmoji(e)).length, pack.emojis.length, "reactions") });
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
@@ -6154,9 +6166,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.type = "button";
       btn.className = "coin-pack-buy-btn";
       btn.disabled = owned;
-      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy`;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, price: pack.price, desc: packOwnedNote(pack.flairs.filter((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); }).length, pack.flairs.length, "flairs") });
+        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
@@ -6220,9 +6232,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.type = "button";
       btn.className = "coin-pack-buy-btn";
       btn.disabled = owned;
-      btn.textContent = owned ? "\u2713 Unlocked" : `${pack.price} \u00B7 Buy`;
+      btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price, desc: packOwnedNote(pack.backgrounds.filter((b) => ownsBackground(b.id)).length, pack.backgrounds.length, "backgrounds") });
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
@@ -6563,7 +6575,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, price: pack.price, desc: packOwnedNote(pack.backgrounds.filter((b) => ownsBackground(b.id)).length, pack.backgrounds.length, "backgrounds") });
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
       }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
@@ -6656,7 +6668,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BOARD_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F3AD}", title: pack.label, price: pack.price, desc: packOwnedNote(pack.boards.filter((b) => ownsBoard(b.id)).length, pack.boards.length, "boards") });
+        const bought = await showFakePurchase({ icon: "\u{1F3AD}", title: pack.label, ...packQuote(pack) });
         if (bought) purchaseBoardPack(pack.id);
       }, `${pack.boards.length} boards, or buy each with coins`));
       pack.boards.forEach((b) => container.appendChild(cosmRow({
@@ -6824,7 +6836,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     btn.type = "button";
     btn.className = "cosm-unlock";
     btn.disabled = owned;
-    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${pack.price}`;
+    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${packQuote(pack).price}`;
     if (!owned) btn.addEventListener("click", onUnlock);
     head.appendChild(btn);
     return head;
@@ -6858,7 +6870,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // individually with coins - the bundle would have nothing left to add.
       const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, price: pack.price, desc: packOwnedNote(pack.emojis.filter((e) => ownsEmoji(e)).length, pack.emojis.length, "reactions") });
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
@@ -6888,7 +6900,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const owned = !!(myProfile.flairPacks || {})[pack.id]
         || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, price: pack.price, desc: packOwnedNote(pack.flairs.filter((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); }).length, pack.flairs.length, "flairs") });
+        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       }, `${pack.flairs.length} flairs, or buy each with coins`));
@@ -14319,7 +14331,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<div class="coin-pack-card pack-card board-pack${c.has ? " unlocked" : ""}" style="background:linear-gradient(180deg, ${look[1]} 0%, ${look[2]} 100%)">
         <div class="pack-title">${c.title}</div>
         <div class="pack-boards">${pics}</div>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : BOARD_PACK_PRICE + " · Unlock"}</button>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : packQuote(pack).price + " · Unlock"}</button>
       </div>`;
     }).join("");
     el.innerHTML = cardHtml(cards.filter((c) => !BOARD_SHOP_PACKS[c.id]));
@@ -14341,7 +14353,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const packId = b.dataset.pack;
     if (BOARD_SHOP_PACKS[packId]) {
       const t = b.closest(".tp-card, .pack-card"), tt = t && t.querySelector(".tp-title, .pack-title"), title = tt ? tt.textContent : BOARD_PACK_NAME;
-      const bought = await showFakePurchase({ icon: PACK_LOOK[packId][0], title, price: BOARD_PACK_PRICE });
+      const bought = await showFakePurchase({ icon: PACK_LOOK[packId][0], title, ...packQuote(BOARD_PACK_CATALOG.find((p) => p.id === BOARD_SHOP_PACKS[packId])) });
       if (bought) purchaseBoardPack(BOARD_SHOP_PACKS[packId]);
       return;
     }
