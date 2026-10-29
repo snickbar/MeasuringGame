@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {createObjectMemory,weightedPick} from '../anim/object-memory.mjs';
+import {includesMakeBelieve,partyObjectAllowed} from '../anim/make-believe.mjs';
 let seed=62413;
 const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
 const data=new Map(),storage={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v)};
@@ -48,7 +49,7 @@ for(let i=0;i<1000;i++){
 }
 // Survival considers every pair in its existing difficulty window, including
 // recently seen objects with a positive weight; no 400-index truncation bias.
-const survival=vm.createContext({svPairs:null,OBJECTS:[a,b,c],objectMemory:fresh,
+const survival=vm.createContext({svPairs:null,OBJECTS:[a,b,c],objectMemory:fresh,includesMakeBelieve,partyObjectAllowed,
   dailyQuestionFor:q=>q,survivalTarget:()=>Math.log(10)});
 vm.runInContext(fn('survivalPairs')+'\n'+fn('survivalNextQuestion'),survival);
 const state={asked:0,recent:['a','b','c']};

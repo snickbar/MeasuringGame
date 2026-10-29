@@ -4410,6 +4410,7 @@ if (location.protocol === "file:") {
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
   <button type="button" id="lobby-reveal-toggle" class="back-btn" aria-pressed="true">Answer animation: On</button>
+  <button type="button" id="lobby-make-believe-toggle" class="back-btn" aria-pressed="true" hidden>Include make-believe objects: On</button>
   <div class="lobby-room-box">
     <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
@@ -4621,6 +4622,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { installMeasurementGuides } from "./anim/measurement-guides.mjs";
   import { reserveHostStart, finishHostStart, hasHostAdGame, canWatchHostAd, grantHostAdGame } from "./anim/host-allowance.mjs";
+  import { isPartyRoomSettings, includesMakeBelieve, partyObjectAllowed, filterPartyObjects } from "./anim/make-believe.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
@@ -7293,7 +7295,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["thanksgiving", "casserole-dish", "casserole dish", "casserole dishes", 330],
     ["thanksgiving", "napkin", "napkin", "napkins", 400],
     ["thanksgiving", "fall-leaf", "colored fall leaf", "colored fall leaves", 150],
-    ["valentine", "heart", "heart", "hearts", 120],
+    ["valentine", "heart", "heart-shaped lollipop", "heart-shaped lollipops", 150],
     ["valentine", "chocolate", "chocolate", "chocolates", 30],
     ["valentine", "chocolate-box", "heart-shaped box of chocolates", "heart-shaped boxes of chocolates", 300],
     ["valentine", "cupid", "Cupid", "Cupids", 450],
@@ -7315,7 +7317,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["stpatrick", "horseshoe", "horseshoe", "horseshoes", 130],
     ["stpatrick", "shillelagh", "shillelagh", "shillelaghs", 900],
     ["easter", "easter-egg", "Easter egg", "Easter eggs", 55],
-    ["easter", "egg-basket", "egg basket", "egg baskets", 250],
+    // Keep the saved ID so existing monthly attempts and object history still load.
+    ["easter", "egg-basket", "Easter egg carton", "Easter egg cartons", 160],
     ["easter", "chocolate-bunny", "chocolate bunny", "chocolate bunnies", 150],
     ["easter", "bunny-ears", "bunny ears headband", "bunny ears headbands", 300],
     ["easter", "easter-basket", "Easter basket", "Easter baskets", 300],
@@ -7331,7 +7334,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ["newyear", "balloon", "balloon", "balloons", 300],
     ["newyear", "fireworks", "firework burst", "firework bursts", 100000],
     ["newyear", "clock", "clock", "clocks", 300],
-    ["newyear", "countdown-sign", "countdown sign", "countdown signs", 1200],
+    ["newyear", "countdown-sign", "countdown sign", "countdown signs", 300],
     ["newyear", "times-square-ball", "Times Square ball", "Times Square balls", 42400],
     ["newyear", "streamer", "party streamer", "party streamers", 4000],
     ["newyear", "novelty-glasses", "oversized novelty glasses", "oversized novelty glasses", 400],
@@ -7484,6 +7487,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wingspan: ["bat", "phoenix"],
   };
   const MEASUREMENT_DETAILS = {
+    "heart": { "dimension": "length", "qualifier": "from the top of the candy to the end of the stick" },
+    "chicken-nugget": { "qualifier": "along its longest end-to-end dimension" },
+    "countdown-sign": { "dimension": "width", "qualifier": "across the signboard, excluding the handle" },
+    "horseshoe": { "qualifier": "from the heel ends to the rounded toe" },
+    "confetti": { "qualifier": "top to bottom of one piece" },
+    "pizza-slice": { "qualifier": "from the tip to the middle of the crust" },
+    "rabbit": { "qualifier": "nose to rump, excluding the ears and tail" },
+    "seashell": { "qualifier": "from the hinge to the opposite rim" },
+    "textbook": { "qualifier": "along the long edge of the front cover" },
+    "egg-basket": { "qualifier": "along the long edge of the carton" },
     "tennis-court": {
       "dimension": "length"
     },
@@ -7588,7 +7601,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       "qualifier": "end to end"
     },
     "pearl-necklace": {
-      "qualifier": "laid straight"
+      "qualifier": "clasp to clasp with the necklace unclasped and laid straight"
     },
     "napkin": {
       "dimension": "length"
@@ -7610,7 +7623,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       "qualifier": "wingtip to wingtip"
     },
     "stingray": {
-      "qualifier": "including the tail"
+      "qualifier": "snout to tail tip, including the tail"
     },
     "giant-squid": {
       "qualifier": "including the extended tentacles"
@@ -7744,14 +7757,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // recent-object weights, rather than a shuffled bag reset by every Home tap.
   const poolCache = new Map();
   const objectMemory = createObjectMemory({owner:()=>deviceId,history:()=>myProfile.history});
-  function poolFor(activePacks, seasonPacks, fantasyIds) {
+  function poolFor(activePacks, seasonPacks, fantasyIds, settings = null) {
     const packs = (activePacks || []).slice().sort();
     const season = (seasonPacks || []).slice().sort();
     const fantasy = (fantasyIds || []).slice().sort();
-    const key = packs.join(",") + "|" + season.join(",") + "|" + fantasy.join(",");
+    const key = packs.join(",") + "|" + season.join(",") + "|" + fantasy.join(",") + "|" + includesMakeBelieve(settings);
     let pool = poolCache.get(key);
     if (!pool) {
-      const objects = OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))), FANTASY_OBJECTS.filter((o) => fantasy.includes(o.id)));
+      const objects = filterPartyObjects(OBJECTS.concat(HOLIDAY_OBJECTS.filter((o) => packs.includes(o.pack) || (packs.includes("sampler") && SAMPLER_IDS.has(o.id))), FANTASY_OBJECTS.filter((o) => fantasy.includes(o.id))), settings);
       pool = { objects, seasonal: objects.filter((o) => o.pack && season.includes(o.pack)), partners: null };
       poolCache.set(key, pool);
     }
@@ -7799,7 +7812,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return ALT_ART_IDS.has(o.id) && variant === 1 ? { ...o, image: o.image.replace(/\.webp$/, "-2.webp") } : o;
   }
   function generateQuestion() {
-    const pool = poolFor(roomState.activePacks, roomState.seasonPacks, roomState.fantasyIds);
+    const pool = poolFor(roomState.activePacks, roomState.seasonPacks, roomState.fantasyIds, roomState.settings);
     const [unit, target] = currentSettings.itemSelectionMode === "relative" ? pickRelativePair(pool) : pickRandomPair(pool);
     objectMemory.remember(unit.id,target.id);
     return {
@@ -9149,7 +9162,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true };
+    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true, includeMakeBelieve: true };
   }
 
   // ==================== Home screen ====================
@@ -11171,8 +11184,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // slicing like solo's worldQuestions(w, level) - this is the single-pass redesign: one
   // repeatable attempt per World, not a 5-level progression, so there's no "level" to resume
   // and no confusion about whose progress counts when you switch partners.
-  function teamWorldQuestions(w) {
-    const objs = worldObjects(w);
+  function teamWorldQuestions(w, settings = null) {
+    const objs = filterPartyObjects(worldObjects(w), settings);
     const pairs = [];
     for (let i = 0; i < objs.length; i++) for (let j = i + 1; j < objs.length; j++) {
       const [u, t] = objs[i].mm <= objs[j].mm ? [objs[i], objs[j]] : [objs[j], objs[i]];
@@ -11693,8 +11706,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const close = () => { if (!b.isConnected) return; b.classList.add("out"); setTimeout(() => b.remove(), 300); };
     b.addEventListener("click", close); setTimeout(close, 1900);
   }
-  function survivalNextQuestion(state = sv) {
-    const pairs = state.themeId ? survivalThemePairs(state.themeId) : survivalPairs(), target = survivalTarget(state.asked);
+  function survivalNextQuestion(state = sv, settings = null) {
+    const base = state.themeId ? survivalThemePairs(state.themeId) : survivalPairs();
+    const pairs = includesMakeBelieve(settings) ? base : base.filter(p => partyObjectAllowed(OBJECT_BY_ID.get(p.u),settings) && partyObjectAllowed(OBJECT_BY_ID.get(p.t),settings)), target = survivalTarget(state.asked);
     let lo = 0, hi = pairs.length;
     while (lo < hi) { const mid = (lo + hi) >> 1; if (pairs[mid].r < target) lo = mid + 1; else hi = mid; }
     for (let w = 0.25; w < 8; w *= 1.8) {
@@ -14776,7 +14790,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       settings.mode = "teamworlds";
       settings.worldId = pendingWorldId;
       settings.totalRounds = 5; // always exactly 5 - no level/round-count choice in this mode
-      teamWorldQuestionsOut = teamWorldQuestions(WORLDS.find((w) => w.id === pendingWorldId));
+      teamWorldQuestionsOut = teamWorldQuestions(WORLDS.find((w) => w.id === pendingWorldId), settings);
     }
     if (pendingFreeGame) settings.totalRounds = 5;
     pendingFreeGame = false;
@@ -15653,7 +15667,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const hl = isHlSettings(roomState.settings);
     const hlState = hl ? { asked: roomState.hlAsked || 0, recent: [...(roomState.hlRecent || [])], themeId: hlThemeDue(roomState.hlSurvived || 0) ? survivalPickTheme({themeId: roomState.hlThemeId}) : "" } : null;
     const q = hl
-      ? { ...survivalNextQuestion(hlState), theme: hlState.themeId, powerupKey: crypto.randomUUID() }
+      ? { ...survivalNextQuestion(hlState, roomState.settings), theme: hlState.themeId, powerupKey: crypto.randomUUID() }
       : (roomState.settings || currentSettings).mode === "teamworlds"
       ? { ...roomState.teamWorldQuestions[roundNum - 1], powerupKey: crypto.randomUUID() }
       : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
@@ -16238,7 +16252,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     updates.phase='waiting';updates.bluff=null;updates.bluffRounds=null;updates.countdownEndsAt=null;updates.currentQuestion=null;updates.revealOrder=null;updates.lastRoundPoints=null;updates.round=0;
     // A rematch needs a fresh set of 5 questions too, or it'd silently replay the exact same ones.
     if (isHlSettings(roomState.settings)) Object.assign(updates, hlFreshGameFields());
-    if (roomState.settings?.mode === "teamworlds" && !isHlSettings(roomState.settings)) updates.teamWorldQuestions = teamWorldQuestions(WORLDS.find((w) => w.id === roomState.settings.worldId));
+    if (roomState.settings?.mode === "teamworlds" && !isHlSettings(roomState.settings)) updates.teamWorldQuestions = teamWorldQuestions(WORLDS.find((w) => w.id === roomState.settings.worldId), roomState.settings);
     await update(ref(db,`rooms/${roomCode}`),updates);
   }
   playAgainBtn.addEventListener('click',()=>{if(!currentPlayers[currentPlayerId]?.rewardCollected){gameRewards.open();return;}if(isHost)playAgain(currentRoomCode);});
@@ -19118,12 +19132,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isHost || roomState.phase !== 'waiting') return;
     await update(ref(db,'rooms/'+currentRoomCode+'/settings'),{animationReveal:roomState.settings?.animationReveal === false});
   });
+  let makeBelieveTogglePending=false;
+  async function toggleLobbyMakeBelieve() {
+    const settings=roomState.settings;
+    if(makeBelieveTogglePending||!isHost||roomState.phase!=='waiting'||!isPartyRoomSettings(settings))return;
+    const room=currentRoomCode,host=currentPlayerId,next=!includesMakeBelieve(settings);
+    makeBelieveTogglePending=true;
+    document.getElementById('lobby-make-believe-toggle').disabled=true;
+    try { await runTransaction(ref(db,'rooms/'+room),cur=>{
+      if(!cur||cur.phase!=='waiting'||!cur.players?.[host]?.isHost||!isPartyRoomSettings(cur.settings)||includesMakeBelieve(cur.settings)!==includesMakeBelieve(settings)||cur.settings.worldId!==settings.worldId)return;
+      return {...cur,settings:{...cur.settings,includeMakeBelieve:next}};
+    }); } catch { showAchToast('Could not save the room setting. Please try again.'); }
+    finally { makeBelieveTogglePending=false;if(currentRoomCode===room&&roomState.phase==='waiting')applyLobbyMode(roomState); }
+  }
+  document.getElementById('lobby-make-believe-toggle').addEventListener('click',toggleLobbyMakeBelieve);
   function applyLobbyMode(data) {
     const animationToggle=document.getElementById('lobby-reveal-toggle');
     animationToggle.hidden=!isHost;animationToggle.disabled=data.phase!=='waiting';
     animationToggle.textContent='Answer animation: '+(data.settings?.animationReveal===false?'Off':'On');
     animationToggle.setAttribute('aria-pressed',String(data.settings?.animationReveal!==false));
     const solo = !!(data.settings && data.settings.solo);
+    const makeBelieveToggle=document.getElementById('lobby-make-believe-toggle');
+    const party=isPartyRoomSettings(data.settings),makeBelieveOn=includesMakeBelieve(data.settings);
+    makeBelieveToggle.hidden=!party;
+    makeBelieveToggle.disabled=makeBelieveTogglePending||!isHost||data.phase!=='waiting';
+    makeBelieveToggle.textContent='Include make-believe objects: '+(makeBelieveOn?'On':'Off');
+    makeBelieveToggle.setAttribute('aria-pressed',String(makeBelieveOn));
     const teamMode = data.settings?.mode === "teamvteam";
     const worldsMode = data.settings?.mode === "teamworlds";
     const hlMode = isHlSettings(data.settings);
@@ -19179,7 +19213,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : `<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}</p>`;
     hostStartBtn.textContent='Start game';
     hostStartBtn.disabled = needsFriend;
-    hostStartBtn.style.opacity = needsFriend ? ".5" : "";
+    hostStartBtn.style.opacity = hostStartBtn.disabled ? ".5" : "";
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
   }
   function applyPhase(data) {

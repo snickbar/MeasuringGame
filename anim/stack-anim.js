@@ -293,8 +293,8 @@ function leanOf(o, extraMirror, st = orientOf(o)) {
 }
 // The picture turned and flipped so it stands on the ground facing right (before any turning).
 function poseOf(img, st, mirrorExtra) {
-  const q = st.rot % 180 !== 0;
-  const w = q ? img.naturalHeight : img.naturalWidth, h = q ? img.naturalWidth : img.naturalHeight;
+  const angle = st.rot * Math.PI / 180, cos = Math.abs(Math.cos(angle)), sin = Math.abs(Math.sin(angle));
+  const w = Math.round(img.naturalWidth * cos + img.naturalHeight * sin), h = Math.round(img.naturalWidth * sin + img.naturalHeight * cos);
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const x = c.getContext('2d');
   x.translate(w / 2, h / 2);

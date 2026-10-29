@@ -1,7 +1,7 @@
 import {ORIENT} from './orient-data.js';
 
-const VERTICAL_LENGTH = new Set('acorn tooth chocolate-drop whiskey-glass jack-in-the-box pigeon owl rabbit bald-eagle teddy-bear candy-corn easter-egg plastic-egg mothers-day-card valentines-card tie-dye-shirt serape vampire-cape school-desk ice-skates sunflower-bouquet fall-leaf'.split(' '));
-const REGIONS = {'globe':[0,0,1,.78],'snow-globe':[0,0,1,.78],'clock':[.12,.17,.9,.87],'cauldron':[.15,.2,.85,.76],'cranberry':[.02,.4,.54,1],'black-cat':[0,.22,.83,1]};
+const VERTICAL_LENGTH = new Set('acorn tooth chocolate-drop whiskey-glass jack-in-the-box pigeon owl bald-eagle teddy-bear candy-corn easter-egg plastic-egg mothers-day-card valentines-card tie-dye-shirt serape vampire-cape school-desk ice-skates sunflower-bouquet fall-leaf horseshoe confetti pizza-slice seashell stingray textbook'.split(' '));
+const REGIONS = {'globe':[0,0,1,.78],'snow-globe':[0,0,1,.78],'clock':[.12,.17,.9,.87],'cauldron':[.15,.2,.85,.76],'cranberry':[.02,.4,.54,1],'black-cat':[0,.22,.83,1],'rabbit':[0,.38,.91,.93],'countdown-sign':[0,0,1,.63]};
 export function measurementGuideAxis(object,bounds){
   const dimension=object.measurement?.dimension||'length';
   if(dimension==='height')return Math.abs(ORIENT[object.id]?.rot||0)%180===90?'horizontal':'vertical';
@@ -40,7 +40,7 @@ export function installMeasurementGuides({objects,document:doc=document}) {
     const right=(w-iw)/2+(original.left+(original.right-original.left)*region[2])*iw;
     const bottom=(h-ih)/2+(original.top+(original.bottom-original.top)*region[3])*ih;
     const axis=measurementGuideAxis(object,{width:right-left,height:bottom-top});
-    const points=axis==='vertical'?[[Math.max(3,left-3),top],[Math.max(3,left-3),bottom]]:[[left,Math.min(h-3,bottom+3)],[right,Math.min(h-3,bottom+3)]];
+    const points=object.id==='chicken-nugget'?[[left+(right-left)*.08,top+(bottom-top)*.9],[left+(right-left)*.8,top+(bottom-top)*.08]]:axis==='vertical'?[[Math.max(3,left-3),top],[Math.max(3,left-3),bottom]]:[[left,Math.min(h-3,bottom+3)],[right,Math.min(h-3,bottom+3)]];
     const matrix=new DOMMatrix(style.transform==='none'?undefined:style.transform);
     const sx=b.width/card.offsetWidth,sy=b.height/card.offsetHeight;
     const cx=(r.left+r.width/2-b.left)/sx-card.clientLeft,cy=(r.top+r.height/2-b.top)/sy-card.clientTop;

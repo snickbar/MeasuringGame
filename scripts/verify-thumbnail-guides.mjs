@@ -12,6 +12,8 @@ assert.equal(measurementGuideAxis(object('broom','height'),{width:90,height:20})
 assert.equal(measurementGuideAxis(object('bald-eagle'),{width:80,height:80}),'vertical');
 assert.equal(measurementGuideAxis(object('manta-ray','width'),{width:50,height:80}),'horizontal');
 assert.equal(measurementGuideAxis(object('grand-canyon','depth'),{width:80,height:50}),'vertical');
+for(const id of ['horseshoe','confetti','pizza-slice','seashell','stingray','textbook'])assert.equal(measurementGuideAxis(object(id),{width:100,height:90}),'vertical',id);
+assert.equal(measurementGuideAxis(object('rabbit'),{width:100,height:65}),'horizontal','Rabbit body length excludes the ears');
 const source=fs.readFileSync('index.html','utf8');
 const start=source.indexOf('  function hsFly('),end=source.indexOf('\n  function hsRenderInto',start);
 const callbacks=[],animations=[];let targetTop=500;
