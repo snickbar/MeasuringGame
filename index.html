@@ -4690,6 +4690,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     getDatabase, ref as fbRef, get as fbGet, set as fbSet, update as fbUpdate, remove as fbRemove, push as fbPush, onValue as fbOnValue, onChildAdded as fbOnChildAdded, serverTimestamp, onDisconnect as fbOnDisconnect, runTransaction as fbRunTransaction, query, orderByChild, limitToLast, limitToFirst, startAfter
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
   import { createLocalRooms } from "./anim/local-rooms.mjs";
+  import { createOfflineProfile } from "./anim/offline-profile.mjs";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
   // own npm package wants) - these CDN modules only guarantee mutual
@@ -4718,17 +4719,83 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // so they work offline. Every room read/write below goes through these wrappers: paths of a local room are
   // answered locally, everything else (profiles, leaderboards, party rooms) goes to Firebase unchanged.
   const localRooms = createLocalRooms();
-  const ref = (database, path) => (typeof path === "string" && localRooms.owns(path) ? localRooms.ref(path) : fbRef(database, path));
+  // Profile writes (coins, rewards, stats, unlocks) made while offline go to a saved local copy of the profile and
+  // are merged into the server profile when the connection returns - see anim/offline-profile.mjs.
+  const offlineProfile = createOfflineProfile();
+  let dbConnected = null; // null until Firebase reports; set from .info/connected below
+  const isOffline = () => (typeof navigator !== "undefined" && navigator.onLine === false) || dbConnected === false;
+  const ref = (database, path) => {
+    if (typeof path === "string" && localRooms.owns(path)) return localRooms.ref(path);
+    const r = fbRef(database, path);
+    if (typeof path === "string" && path.startsWith("profiles/")) r.__path = path;
+    return r;
+  };
   const isLocalRef = (r) => localRooms.isLocalRef(r);
+  // Is this a write to the player's own profile while offline? -> { id, rel }
+  const offlineProfileOp = (r, opts) => {
+    if (opts && opts.applyLocally === false) return null;
+    const m = r && r.__path && /^profiles\/([^/]+)(?:\/(.*))?$/.exec(r.__path);
+    // Only once this phone has synced the profile at least once (or the saved profile is still brand new), so an
+    // offline launch can never replace a real balance with defaults.
+    if (!(m && m[1] === deviceId && isOffline())) return null;
+    if (!offlineProfile.hasBase(m[1])) {
+      if (!profileLooksNew(loadCachedProfile(m[1]))) return null;
+      offlineProfile.seedIfEmpty(m[1], defaultProfile());
+    }
+    return { id: m[1], rel: m[2] || "" };
+  };
+  let localProfileRefreshQueued = false;
+  function refreshFromLocalProfile(id) {
+    if (localProfileRefreshQueued) return;
+    localProfileRefreshQueued = true;
+    queueMicrotask(() => { localProfileRefreshQueued = false; if (id === deviceId) applyProfileData(id, offlineProfile.local(id)); });
+  }
+  const localSnap = (path, value) => ({ key: path.split("/").pop(), val: () => (value === undefined ? null : JSON.parse(JSON.stringify(value))), exists: () => value !== null && value !== undefined });
   const get = (r) => (isLocalRef(r) ? localRooms.get(r) : fbGet(r));
-  const set = (r, v) => (isLocalRef(r) ? localRooms.set(r, v) : fbSet(r, v));
-  const update = (r, v) => (isLocalRef(r) ? localRooms.update(r, v) : fbUpdate(r, v));
-  const remove = (r) => (isLocalRef(r) ? localRooms.remove(r) : fbRemove(r));
+  const set = (r, v) => {
+    if (isLocalRef(r)) return localRooms.set(r, v);
+    const op = offlineProfileOp(r);
+    if (op) { offlineProfile.set(op.id, op.rel, v); refreshFromLocalProfile(op.id); return Promise.resolve(); }
+    return fbSet(r, v);
+  };
+  const update = (r, v) => {
+    if (isLocalRef(r)) return localRooms.update(r, v);
+    const op = offlineProfileOp(r);
+    if (op) { offlineProfile.update(op.id, op.rel, v); refreshFromLocalProfile(op.id); return Promise.resolve(); }
+    return fbUpdate(r, v);
+  };
+  const remove = (r) => {
+    if (isLocalRef(r)) return localRooms.remove(r);
+    const op = offlineProfileOp(r);
+    if (op) { offlineProfile.set(op.id, op.rel, null); refreshFromLocalProfile(op.id); return Promise.resolve(); }
+    return fbRemove(r);
+  };
   const push = (r, v) => (isLocalRef(r) ? localRooms.push(r, v) : fbPush(r, v));
   const onValue = (r, cb, opts) => (isLocalRef(r) ? localRooms.onValue(r, cb, opts) : fbOnValue(r, cb, opts));
   const onChildAdded = (r, cb, opts) => (isLocalRef(r) ? localRooms.onChildAdded(r, cb) : fbOnChildAdded(r, cb, opts));
   const onDisconnect = (r) => (isLocalRef(r) ? localRooms.onDisconnect(r) : fbOnDisconnect(r));
-  const runTransaction = (r, fn, opts) => (isLocalRef(r) ? localRooms.runTransaction(r, fn) : fbRunTransaction(r, fn, opts));
+  const runTransaction = (r, fn, opts) => {
+    if (isLocalRef(r)) return localRooms.runTransaction(r, fn);
+    const op = offlineProfileOp(r, opts);
+    if (op) {
+      const res = offlineProfile.transaction(op.id, op.rel, fn);
+      if (res.committed) refreshFromLocalProfile(op.id);
+      return Promise.resolve({ committed: res.committed, snapshot: localSnap(r.__path, res.value) });
+    }
+    return fbRunTransaction(r, fn, opts);
+  };
+  // Sends the offline changes to the server once, safely merged with whatever it has now.
+  let profileMerging = false;
+  async function mergeOfflineProfile() {
+    const id = deviceId;
+    if (profileMerging || !offlineProfile.isDirty(id) || isOffline()) return;
+    profileMerging = true;
+    try {
+      const res = await fbRunTransaction(fbRef(db, `profiles/${id}`), offlineProfile.mergeInto(id));
+      offlineProfile.markSynced(id, res.snapshot.val()); // committed, or already merged by an earlier attempt
+    } catch (err) { /* still offline or interrupted: tried again at the next reconnect */ }
+    finally { profileMerging = false; }
+  }
 
   // ---- Google Sign-In (Android app only - see isNativeApp below) ----
   // Account identity is intentionally independent of the game's existing
@@ -4839,6 +4906,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(() => { if (!document.hidden) touchRoom(); }, 600000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) touchRoom(); });
   onValue(ref(db, ".info/connected"), (snap) => { if (snap.val() === true) setTimeout(touchRoom, 3000); });
+  // Track the connection for offline profile writes; when it returns, merge anything saved while offline.
+  onValue(ref(db, ".info/connected"), (snap) => {
+    dbConnected = snap.val() === true;
+    if (dbConnected) setTimeout(() => { void mergeOfflineProfile(); }, 1500);
+  });
+  window.addEventListener("online", () => setTimeout(() => { void mergeOfflineProfile(); }, 2500));
 
   // ==================== Local (per-user, per-browser) identity/prefs ====================
 
@@ -5376,6 +5449,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   }
+  // A profile that has never played a round has nothing to lose: offline writes may start it from scratch.
+  function profileLooksNew(p) {
+    return !p || (!(p.history && p.history.length) && !(p.stats && (p.stats.rounds || p.stats.gamesPlayed)) && !p.hostUnlocked);
+  }
   function saveCachedProfile(id, profile) {
     try { localStorage.setItem(profileCacheKey(id), JSON.stringify(profile)); } catch (e) {}
   }
@@ -5501,95 +5578,103 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(survivalScreenEl?.classList.contains('active')&&sv&&['intro','over'].includes(sv.phase))renderSurvival();
     powerups?.render();
   }
+  // Applies a profile's raw data (from the server, or the saved offline copy) to myProfile and the UI.
+  function applyProfileData(profileId, data) {
+    if (profileId !== deviceId) return;
+    homePrefsPlaceholder = !data;
+    if (!data) {
+      myProfile = defaultProfile();
+      // Creation and starter coins are committed atomically below; never
+      // overwrite a concurrent device's profile with an empty default.
+    } else {
+      const defaults = defaultCosmeticState();
+      myProfile = {
+        coins: data.coins || 0,
+        freePulls: Math.max(0, data.freePulls | 0),
+        levelPaid: Math.max(0, data.levelPaid | 0),
+        unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
+        hostUnlocked: !!data.hostUnlocked,
+        hostFreeDates: data.hostFreeDates || {},
+        adsWatchedDate: data.adsWatchedDate || null,
+        adsWatchedCount: data.adsWatchedCount || 0,
+        cosmetics: {
+          owned: {
+            borders: { ...defaults.owned.borders, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.borders) || {}) },
+            effects: { ...defaults.owned.effects, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.effects) || {}) },
+            colors: { ...defaults.owned.colors, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.colors) || {}) },
+            backgrounds: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.backgrounds) || {}) },
+            boards: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.boards) || {}) },
+            homeScreens: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.homeScreens) || {}) },
+          },
+          equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
+        },
+        presets: { ...(data.presets || {}) },
+        emojiPacks: { ...(data.emojiPacks || {}) },
+        emojiOwned: { ...(data.emojiOwned || {}) },
+        reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
+        flairPacks: { ...(data.flairPacks || {}) },
+        backgroundPacks: { ...(data.backgroundPacks || {}) },
+        holidayPacks: { ...(data.holidayPacks || {}) },
+        boardPacks: { ...(data.boardPacks || {}) },
+        starterBundle: !!data.starterBundle,
+        randomEquip: { ...(data.randomEquip || {}) },
+        // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
+        // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
+        // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
+        activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length)
+          ? (data.activeReactions[0] === "none" ? ["none"] : data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean))
+          : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
+        seenObjects: { ...(data.seenObjects || {}) },
+        objectDiscoveries: { ...(data.objectDiscoveries || {}) },
+        seenCombos: { ...(data.seenCombos || {}) },
+        objectFrequency: data.objectFrequency || null,
+        stats: { ...(data.stats || {}) },
+        tutorial: data.tutorial || null,
+        modeStats:data.modeStats||{},difficultyStats:data.difficultyStats||{},worldRecords:data.worldRecords||{},
+        attemptHistory:Array.isArray(data.attemptHistory)?data.attemptHistory:Object.values(data.attemptHistory||{}),
+        matches:Array.isArray(data.matches)?data.matches:Object.values(data.matches||{}),
+        history: Array.isArray(data.history) ? data.history : (data.history ? Object.values(data.history) : []),
+        daily: data.daily || null,
+        dailyStreak: data.dailyStreak || null,
+        worlds: data.worlds || {},
+        monthly: data.monthly || null,
+        survival: data.survival || null,
+        whichBigger: data.whichBigger || null,
+        achClaimed: { ...(data.achClaimed || {}) },
+        accountUpgrade: data.accountUpgrade || null,
+        // Were missing from this normalization entirely until now - every real
+        // profile update from the server was silently dropping them back to
+        // undefined right after load, even though applyCareerRecord writes them
+        // correctly. Caught while wiring up teamHistory below.
+        dailyHistory: data.dailyHistory || {},
+        monthlyHistory: data.monthlyHistory || {},
+        teamHistory: data.teamHistory || {},
+        teamWorlds: data.teamWorlds || {},
+        teamWorldsHistory: data.teamWorldsHistory || {},
+        hlSurvival: data.hlSurvival || {},
+        hlHistory: data.hlHistory || {},
+        hsStats: data.hsStats || {},
+      };
+    }
+    walletProfileOwner = profileId;
+    saveCachedProfile(deviceId, myProfile);
+    renderProfileDependentUi();
+    grantLevelRewards();
+    powerups?.recover(data, deviceId);
+    gameRewards?.recover();
+    void careerLedger?.flush();
+    void grantStarterAchievements(profileId);
+  }
   function watchMyProfile() {
     if (unwatchProfile) { unwatchProfile(); unwatchProfile = null; }
     const profileId = deviceId;
+    // Offline changes waiting to merge are shown straight away, before the server answers.
+    if (offlineProfile.isDirty(profileId) && offlineProfile.local(profileId)) applyProfileData(profileId, offlineProfile.local(profileId));
     unwatchProfile = onValue(ref(db, `profiles/${profileId}`), (snap) => {
       if (profileId !== deviceId) return;
-      const data = snap.val();
-      homePrefsPlaceholder = !data;
-      if (!data) {
-        myProfile = defaultProfile();
-        // Creation and starter coins are committed atomically below; never
-        // overwrite a concurrent device's profile with an empty default.
-      } else {
-        const defaults = defaultCosmeticState();
-        myProfile = {
-          coins: data.coins || 0,
-          freePulls: Math.max(0, data.freePulls | 0),
-          levelPaid: Math.max(0, data.levelPaid | 0),
-          unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
-          hostUnlocked: !!data.hostUnlocked,
-          hostFreeDates: data.hostFreeDates || {},
-          adsWatchedDate: data.adsWatchedDate || null,
-          adsWatchedCount: data.adsWatchedCount || 0,
-          cosmetics: {
-            owned: {
-              borders: { ...defaults.owned.borders, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.borders) || {}) },
-              effects: { ...defaults.owned.effects, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.effects) || {}) },
-              colors: { ...defaults.owned.colors, ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.colors) || {}) },
-              backgrounds: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.backgrounds) || {}) },
-              boards: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.boards) || {}) },
-              homeScreens: { ...((data.cosmetics && data.cosmetics.owned && data.cosmetics.owned.homeScreens) || {}) },
-            },
-            equipped: { ...defaults.equipped, ...((data.cosmetics && data.cosmetics.equipped) || {}) },
-          },
-          presets: { ...(data.presets || {}) },
-          emojiPacks: { ...(data.emojiPacks || {}) },
-          emojiOwned: { ...(data.emojiOwned || {}) },
-          reactionSlotsExtra: Math.max(0, Math.min(2, data.reactionSlotsExtra | 0)),
-          flairPacks: { ...(data.flairPacks || {}) },
-          backgroundPacks: { ...(data.backgroundPacks || {}) },
-          holidayPacks: { ...(data.holidayPacks || {}) },
-          boardPacks: { ...(data.boardPacks || {}) },
-          starterBundle: !!data.starterBundle,
-          randomEquip: { ...(data.randomEquip || {}) },
-          // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
-          // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
-          // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
-          activeEmojis: (Array.isArray(data.activeReactions) && data.activeReactions.length)
-            ? (data.activeReactions[0] === "none" ? ["none"] : data.activeReactions.map((id) => REACTION_BY_ID[id] && REACTION_BY_ID[id].emoji).filter(Boolean))
-            : (Array.isArray(data.activeEmojis) && data.activeEmojis.length) ? data.activeEmojis : [...START_EMOJIS],
-          seenObjects: { ...(data.seenObjects || {}) },
-          objectDiscoveries: { ...(data.objectDiscoveries || {}) },
-          seenCombos: { ...(data.seenCombos || {}) },
-          objectFrequency: data.objectFrequency || null,
-          stats: { ...(data.stats || {}) },
-          tutorial: data.tutorial || null,
-          modeStats:data.modeStats||{},difficultyStats:data.difficultyStats||{},worldRecords:data.worldRecords||{},
-          attemptHistory:Array.isArray(data.attemptHistory)?data.attemptHistory:Object.values(data.attemptHistory||{}),
-          matches:Array.isArray(data.matches)?data.matches:Object.values(data.matches||{}),
-          history: Array.isArray(data.history) ? data.history : (data.history ? Object.values(data.history) : []),
-          daily: data.daily || null,
-          dailyStreak: data.dailyStreak || null,
-          worlds: data.worlds || {},
-          monthly: data.monthly || null,
-          survival: data.survival || null,
-          whichBigger: data.whichBigger || null,
-          achClaimed: { ...(data.achClaimed || {}) },
-          accountUpgrade: data.accountUpgrade || null,
-          // Were missing from this normalization entirely until now - every real
-          // profile update from the server was silently dropping them back to
-          // undefined right after load, even though applyCareerRecord writes them
-          // correctly. Caught while wiring up teamHistory below.
-          dailyHistory: data.dailyHistory || {},
-          monthlyHistory: data.monthlyHistory || {},
-          teamHistory: data.teamHistory || {},
-          teamWorlds: data.teamWorlds || {},
-          teamWorldsHistory: data.teamWorldsHistory || {},
-          hlSurvival: data.hlSurvival || {},
-          hlHistory: data.hlHistory || {},
-          hsStats: data.hsStats || {},
-        };
-      }
-      walletProfileOwner = profileId;
-      saveCachedProfile(deviceId, myProfile);
-      renderProfileDependentUi();
-      grantLevelRewards();
-      powerups?.recover(data, deviceId);
-      gameRewards?.recover();
-      void careerLedger?.flush();
-      void grantStarterAchievements(profileId);
+      const shown = offlineProfile.serverSnapshot(profileId, snap.val());
+      applyProfileData(profileId, shown.data);
+      if (shown.pending) void mergeOfflineProfile();
     });
   }
 
