@@ -537,6 +537,9 @@ if (location.protocol === "file:") {
   #shop-tabs .shop-strip .cosm-tab-btn { flex: 0 0 calc((100% - 8px) / 3); }
   #shop-tabs #shop-strip-cosm { flex-wrap: nowrap; gap: 3px; }
   #shop-tabs #shop-strip-cosm .cosm-tab-btn { flex: 1 1 0; border-width: 0 5px; font-size: 12px; letter-spacing: -.2px; }
+  /* One label size for every Style tab (auto-fit used to shrink only "Reactions"); that tab just gets more width instead. */
+  #shop-tabs #shop-strip-cosm .cosm-tab-btn { font-size: clamp(11px, 3.3vw, 13.5px) !important; padding-inline: 0; white-space: nowrap; }
+  #shop-tabs #shop-strip-cosm .cosm-tab-btn[data-tab="emojis"] { flex-grow: 1.6; }
   .shop-subpanel { padding-top: 6px; }
   #toolbar-cosmetics-btn { position: relative; }
   .shop-tab-btn {
@@ -3784,17 +3787,17 @@ if (location.protocol === "file:") {
   <button id="gacha-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
   <div id="shop-tabs">
     <div class="cosm-tabs shop-strip" id="shop-strip-shop" role="group" aria-label="Shop">
-      <button type="button" class="cosm-tab-btn fit-text" data-tab="coins">Coins</button>
       <button type="button" class="cosm-tab-btn fit-text" data-tab="hosting">Offers</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="coins">Coins</button>
       <button type="button" class="cosm-tab-btn fit-text" data-tab="packs">Packs</button>
     </div>
     <div class="cosm-tabs shop-strip" id="shop-strip-cosm" role="group" aria-label="Cosmetics" hidden>
-      <button type="button" class="cosm-tab-btn" data-tab="avatars">Avatars</button>
-      <button type="button" class="cosm-tab-btn" data-tab="emojis">Reactions</button>
-      <button type="button" class="cosm-tab-btn" data-tab="flairs">Flairs</button>
-      <button type="button" class="cosm-tab-btn" data-tab="boards">Boards</button>
-      <button type="button" class="cosm-tab-btn" data-tab="backgrounds">Scenes</button>
-      <button type="button" class="cosm-tab-btn" data-tab="homes">Home</button>
+      <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="avatars">Avatars</button>
+      <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="emojis">Reactions</button>
+      <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="flairs">Flairs</button>
+      <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="boards">Boards</button>
+      <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="backgrounds">Scenes</button>
+      <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="homes">Home</button>
     </div>
   </div>
 
@@ -6193,7 +6196,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.body.dataset.mode = mode;
       document.body.style.setProperty('--mode-accent', palette.accent);
       document.body.style.setProperty('--mode-ink', palette.ink);
-      document.body.style.setProperty('--mode-art', "url('" + (mode === 'monthly' ? monthlyIcon() : palette.art) + "')");
     } else delete document.body.dataset.mode;
     // Equip Random scenes: moving to another menu screen picks a new random scene (game screens keep theirs; they re-roll every round).
     if (screen && screen.id !== lastBgScreenId) {
@@ -9429,7 +9431,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function openLeaveGameConfirm() {
     if (isGameOver()) { if (isHost) hostExit(); else guestExit(); return; }
-    if (isHost) {
+    if (isHost && roomState && roomState.settings && roomState.settings.solo) {
+      openExitConfirm("leaveGame", "Quit this game?", "Your progress in this game won't be saved. Quit?");
+    } else if (isHost) {
       openExitConfirm("leaveGame", "End the game?", "You're the host - leaving now ends the game and removes everyone from the room. Are you sure?");
     } else {
       openExitConfirm("leaveGame", "Leave the game?", "You'll leave this game, but you can rejoin anytime with the room code. Continue?");
@@ -12701,7 +12705,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", fitAllButtonText);
 
   // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
-  const SHOP_TABS = ["coins", "hosting", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
+  const SHOP_TABS = ["hosting", "coins", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
   // Style (cosmetics) reopens on whichever tab you were last on.
   let lastCosmTab = (() => { try { const t = localStorage.getItem("mg_lastStyleTab"); return COSM_TABS.includes(t) ? t : "avatars"; } catch (e) { return "avatars"; } })();
   let lastShopTab = (() => { try { const t = localStorage.getItem("mg_lastShopTab"); return SHOP_TABS.includes(t) ? t : "coins"; } catch (e) { return "coins"; } })();
@@ -12762,7 +12766,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openOverlay(gachaScreen);
     setShopTab(tab || "coins");
   }
-  toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(lastShopTab)));
+  // Offers is the first tab; until the Party unlock is owned the Shop always opens on it.
+  toolbarShopBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(myProfile.hostUnlocked ? lastShopTab : "hosting")));
   toolbarCoinBalanceEl.addEventListener("click", guardToolbarNav(() => openGachaScreen("coins")));
   toolbarCosmeticsBtn.addEventListener("click", guardToolbarNav(() => openGachaScreen(lastCosmTab)));
   document.querySelectorAll("#shop-tabs [data-tab]").forEach((btn) => {
@@ -13655,7 +13660,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hudRoomCodeEl.classList.remove("code-locked");
       return;
     }
-    const unlocked = myProfile.hostUnlocked || !!(currentRoomCode && roomState.settings && !roomState.settings.solo);
+    // Being in a room at all means access was already granted (purchase, free daily game or ad game), so the code is never blurred
+    // here - it used to blur for a moment (or for good) when this ran before the room settings had arrived.
+    const unlocked = myProfile.hostUnlocked || !!currentRoomCode;
     hostUnlockBannerEl.classList.toggle("active", !unlocked);
     roomCodeDisplay.classList.toggle("code-locked", !unlocked);
     shareRoomBtn.style.display = unlocked ? "" : "none";
@@ -14243,7 +14250,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       playerList.appendChild(li);
     });
     const playerCount = Object.keys(currentPlayers).length;
-    lobbyPlayerCountEl.textContent = `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here` + (playerCount >= FRAME_COUNT ? ` \u2022 Room full (${FRAME_COUNT} max)` : "");
+    lobbyPlayerCountEl.textContent = (roomState.settings && roomState.settings.solo
+      ? (playerCount <= 1 ? "Just you" : `You + ${playerCount - 1} ${playerCount === 2 ? "bot" : "bots"}`)
+      : `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here`) + (playerCount >= FRAME_COUNT ? ` \u2022 Room full (${FRAME_COUNT} max)` : "");
     fitTextToBox(lobbyPlayerCountEl);
     if (!isFirstRender && roomState.phase === "waiting") {
       for (const id of renderedPlayerListIds) {
@@ -14675,6 +14684,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     nameAvatarCameFrom = cameFrom;
     nameAvatarStatusEl.textContent = "";
     nameInput.value = currentName;
+    // A solo game has no lobby to join, so the button just says Let's go.
+    joinLobbyBtn.textContent = pendingSettings && pendingSettings.solo ? "Let's go" : "Join Lobby";
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
@@ -15052,6 +15063,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // tap doesn't skip straight into the countdown.
   hostStartBtn.addEventListener("click", () => {
     if (hostStartBtn.disabled) return;
+    // Solo has nobody to wait for, so no "Start game?" question.
+    if (roomState && roomState.settings && roomState.settings.solo) { startGameNow(); return; }
     openExitConfirm('startGame','Start game?',"Everyone in the room will join the game. Let's play!");
   });
 
@@ -16299,6 +16312,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   exitBtnGuest.addEventListener("click", openLeaveGameConfirm);
   exitBtn.addEventListener("click", () => {
+    if (roomState && roomState.settings && roomState.settings.solo) { openExitConfirm("hostGame", "Quit this game?", "Your progress in this game won't be saved. Quit?"); return; }
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });
   endedReloadBtn.addEventListener("click", () => location.reload());
