@@ -13049,6 +13049,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const countFrom = observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance ? observedCoinBalance : null;
     if (countFrom !== null) {
       sparkleCoins(toolbarCoinBalanceEl, prefersReducedMotion());
+      flyCoinsToToolbar(myProfile.coins - countFrom);
     }
     observedCoinOwner = deviceId;
     observedCoinBalance = myProfile.coins || 0;
@@ -13063,6 +13064,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lastVisibleWallet = { owner: deviceId, balance: myProfile.coins || 0 };
     localStorage.setItem("mg_visibleWallet", JSON.stringify(lastVisibleWallet));
     localStorage.setItem(CACHED_COINS_KEY, String(myProfile.coins));
+  }
+
+  // Coins pop out of where the player just tapped and fly up into the toolbar balance whenever it goes up.
+  let lastTapPoint = { x: innerWidth / 2, y: innerHeight * 0.6, t: 0 };
+  document.addEventListener("pointerdown", (e) => { lastTapPoint = { x: e.clientX, y: e.clientY, t: performance.now() }; }, true);
+  function flyCoinsToToolbar(gain) {
+    try {
+      if (prefersReducedMotion() || !(gain > 0) || coinCountTweenActive || levelUpOpen) return;
+      const target = document.getElementById("toolbar-coin-icon") || toolbarCoinBalanceEl;
+      const tr = target.getBoundingClientRect();
+      if (!tr.width) return;
+      const fresh = performance.now() - lastTapPoint.t < 1500;
+      const ox = fresh ? lastTapPoint.x : innerWidth / 2, oy = fresh ? lastTapPoint.y : innerHeight * 0.6;
+      const tx = tr.left + tr.width / 2, ty = tr.top + tr.height / 2;
+      const n = Math.max(4, Math.min(14, 4 + Math.round(gain / 12)));
+      const layer = document.createElement("div");
+      layer.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden";
+      document.body.appendChild(layer);
+      let done = 0;
+      for (let i = 0; i < n; i++) {
+        const c = document.createElement("img");
+        c.src = "icons/coin-v2.png"; c.alt = "";
+        c.style.cssText = "position:absolute;left:0;top:0;width:26px;height:26px;opacity:0;will-change:transform";
+        layer.appendChild(c);
+        const ang = Math.random() * Math.PI * 2, r = 20 + Math.random() * 50;
+        const mx = ox + Math.cos(ang) * r, my = oy + Math.sin(ang) * r - 20;
+        const anim = c.animate([
+          { transform: `translate(${ox - 13}px,${oy - 13}px) scale(.4)`, opacity: 0, offset: 0 },
+          { transform: `translate(${mx - 13}px,${my - 13}px) scale(1.1)`, opacity: 1, offset: 0.3 },
+          { transform: `translate(${tx - 13}px,${ty - 13}px) scale(.55)`, opacity: 1, offset: 0.92 },
+          { transform: `translate(${tx - 13}px,${ty - 13}px) scale(.3)`, opacity: 0, offset: 1 },
+        ], { duration: 750 + Math.random() * 150, delay: i * 55, easing: "ease-in-out", fill: "both" });
+        anim.onfinish = () => { if (++done === n) layer.remove(); };
+      }
+      setTimeout(() => layer.remove(), 2500);
+    } catch (err) {}
   }
 
   let coinCountTweenActive = false;
