@@ -1740,11 +1740,9 @@ if (location.protocol === "file:") {
   #settings-screen .hdr-sub, #settings-screen .settings-profile-name label, #settings-screen .settings-profile-hint,
   #settings-screen #settings-account-status, #settings-screen #settings-toggles-panel label,
   #settings-screen .google-account-row, #settings-screen input, #settings-screen .settings-footer-link a { color: #000; }
-  /* In-app updates: settings row, "updated" toast and the Play update dialog. */
+  /* In-app updates: settings row, status line and the Play update dialog. */
   #settings-update-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
   #settings-update-row[hidden], #settings-version[hidden] { display: none; }
-  #app-update-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); z-index: 9999; max-width: min(92vw, 420px); padding: 12px 18px; border-radius: 16px; background: #1a1208; color: #fff7e0; font-weight: 700; font-size: 15px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.35); opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; }
-  #app-update-toast.show { opacity: 1; transform: translate(-50%, 0); }
   #app-update-dialog { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.55); }
   #app-update-dialog[hidden] { display: none; }
   #app-update-dialog .aud-card { width: min(100%, 340px); padding: 22px 20px 18px; border-radius: 22px; background: #fff7e0; color: #1a1208; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
@@ -19812,12 +19810,51 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let liveError = "";
     let readyBundleId = ""; // id of a downloaded update that is waiting to be switched to
 
-    function toast(msg) {
-      let t = $("app-update-toast");
-      if (!t) { t = document.createElement("div"); t.id = "app-update-toast"; t.setAttribute("role", "status"); document.body.append(t); }
-      t.textContent = msg;
-      requestAnimationFrame(() => t.classList.add("show"));
-      setTimeout(() => t.classList.remove("show"), 4500);
+    // ---- status line (Settings > About) ----
+    // No toasts: every update event is written to the status line under "Check for updates",
+    // which keeps the last result (with the time it was checked) until the next check.
+    const statusEl = () => $("settings-update-status");
+    const clock = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    function setStatus(text) { const el = statusEl(); if (el) el.textContent = text; }
+    function showRestart() {
+      const row = $("settings-update-row");
+      if (!row) return;
+      let go = $("settings-restart-btn");
+      if (!go) {
+        go = document.createElement("button");
+        go.id = "settings-restart-btn"; go.type = "button"; go.className = "settings-cream-btn"; go.textContent = "Restart now";
+        row.appendChild(go);
+        go.addEventListener("click", async () => {
+          go.disabled = true; setStatus("Restarting into the new version…");
+          try { await updater.set({ id: readyBundleId }); } // switches to the new version and reloads the app
+          catch (err) { go.disabled = false; setStatus("Couldn't restart (" + String((err && err.message) || err).slice(0, 60) + "). It will start next time you open the app."); }
+        });
+      }
+      go.disabled = false;
+    }
+    // One check, used by the Settings button (manual) and the quiet launch/resume checks.
+    let checking = false, lastCheckAt = 0;
+    async function runCheck(manual) {
+      if (checking) return;
+      checking = true; lastCheckAt = Date.now();
+      const btn = $("settings-update-btn");
+      if (manual && btn) btn.disabled = true;
+      setStatus("Checking for a newer version…");
+      try {
+        const [live, play] = await Promise.all([
+          checkLive(manual, (waiting) => setStatus(waiting ? "New version found and already downloaded…" : "New version found. Downloading it now (about 100 MB)…")),
+          checkPlay(),
+        ]);
+        if (play.state === "available") { setStatus("A new version is on Google Play."); if (manual) offerPlayUpdate(play.info); }
+        else if ((live === "downloaded" || live === "ready") && readyBundleId) {
+          setStatus("New version downloaded. Tap Restart now to switch, or it starts next time you open the app.");
+          showRestart();
+        }
+        else if (live === "downloaded" || live === "ready") setStatus("New version downloaded. It starts next time you open the app.");
+        else if (live === "cellular") setStatus("A download will wait for Wi-Fi to save your mobile data. Tap Check for updates to download it now.");
+        else if (live === "error") setStatus(/fetch|network|abort|timed? ?out/i.test(liveError) || !navigator.onLine ? "Couldn't reach the update server. You may be offline. Last tried at " + clock() + "." : "The update check hit a problem (" + liveError.slice(0, 80) + "). Last tried at " + clock() + ".");
+        else setStatus("You have the latest version. Checked at " + clock() + ".");
+      } finally { checking = false; if (manual && btn) btn.disabled = false; }
     }
 
     // ---- live updates ----
@@ -19880,15 +19917,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ver.textContent = m ? `Build ${m[1]}.${m[2]}.${m[3]} ${m[4]}:${m[5]}${m[6] ? " (" + m[6] + ")" : ""}` : "Version " + runningVersion;
         ver.hidden = false;
       }
-      // Tell the user once when a live update has just been applied.
+      // When a live update has just been applied, say so on the Settings status line (no toast).
       const last = store.get("seu_lastVersion");
       if (runningVersion) {
-        if (last && last !== runningVersion) toast("Updated to the latest version!");
+        if (last && last !== runningVersion) setStatus("Updated to the newest version when the app opened (" + new Date().toLocaleDateString([], { month: "short", day: "numeric" }) + ").");
         store.set("seu_lastVersion", runningVersion);
       }
       if (updater) { try { updater.notifyAppReady(); } catch (err) {} }
       // Quiet background checks a few seconds after launch.
-      setTimeout(checkLive, 8000);
+      setTimeout(() => runCheck(false), 8000);
       setTimeout(async () => {
         const today = new Date().toISOString().slice(0, 10);
         if (store.get("seu_playCheck") === today) return; // at most one prompt per day
@@ -19898,36 +19935,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     })();
 
     // ---- Settings > About > Check for updates ----
-    const row = $("settings-update-row"), btn = $("settings-update-btn"), status = $("settings-update-status");
+    const row = $("settings-update-row"), btn = $("settings-update-btn");
     if (row && btn) {
       row.hidden = false;
-      btn.addEventListener("click", async () => {
-        btn.disabled = true;
-        status.textContent = "Checking…";
-        // As soon as a newer version turns up, say so instead of staying on "Checking…" while it downloads.
-        const [live, play] = await Promise.all([checkLive(true, () => { status.textContent = "Update found! Downloading…"; }), checkPlay()]);
-        btn.disabled = false;
-        if (play.state === "available") { status.textContent = "A new version is on Google Play."; offerPlayUpdate(play.info); }
-        else if ((live === "downloaded" || live === "ready") && readyBundleId) {
-          status.textContent = "Update downloaded.";
-          let go = $("settings-restart-btn");
-          if (!go) {
-            go = document.createElement("button");
-            go.id = "settings-restart-btn"; go.type = "button"; go.className = "settings-cream-btn"; go.textContent = "Restart now";
-            row.appendChild(go);
-            go.addEventListener("click", async () => {
-              go.disabled = true; status.textContent = "Restarting…";
-              try { await updater.set({ id: readyBundleId }); } // switches to the new version and reloads the app
-              catch (err) { go.disabled = false; status.textContent = "Couldn't restart (" + String((err && err.message) || err).slice(0, 60) + "). It will start next time you open the app."; }
-            });
-          }
-          go.disabled = false;
-        }
-        else if (live === "downloaded" || live === "ready") status.textContent = "Update downloaded - it will start next time you open the app.";
-        else if (live === "error") status.textContent = "Couldn't check right now (" + liveError.slice(0, 80) + ").";
-        else status.textContent = "You're up to date.";
-      });
+      btn.addEventListener("click", () => runCheck(true));
     }
+    // Coming back to the app after a while (or after the phone slept) also looks for a new version quietly.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && runningVersion && Date.now() - lastCheckAt > 30 * 60 * 1000) runCheck(false);
+    });
   })();
 
   if (DEBUG_TOOLS) {
