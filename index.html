@@ -2311,6 +2311,7 @@ if (location.protocol === "file:") {
   /* Coloured pill buttons (green = go on, red = leave, yellow = coins), as 9-slice pictures:
      the round ends keep their shape and only the middle stretches. Height comes from --pic-h. */
   #reveal-next-btn,
+  #reveal-all-btn,
   #show-summary-btn,
   #next-round-btn,
   #play-again-btn,
@@ -2326,6 +2327,10 @@ if (location.protocol === "file:") {
     text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26,
                  0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26;
   }
+  button#reveal-all-btn { border-image-source: url(icons/btn-bot-medium.png); }
+  /* Solo reveal row (Auto | Reveal next | Reveal all): Auto stays small so both labels fit on one line */
+  #bottom-actions:has(#reveal-all-btn:not([style*="display: none"]):not([style*="display:none"])) #hud-auto-toggle { flex: 0 0 auto; min-width: 72px; }
+  #bottom-actions:has(#reveal-all-btn:not([style*="display: none"]):not([style*="display:none"])) :is(#reveal-next-btn,#reveal-all-btn) { white-space: nowrap; font-size: 13px; }
   button#reveal-next-btn,
   button#show-summary-btn,
   button#next-round-btn,
@@ -3779,6 +3784,7 @@ if (location.protocol === "file:") {
   <div id="bottom-actions">
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
+  <button id="reveal-all-btn" style="display:none;">Reveal all</button>
   <button id="show-summary-btn" style="display:none;">Show summary</button>
   <button id="next-round-btn" style="display:none;">Next round</button>
   <button id="play-again-btn" style="display:none;">Play Again</button>
@@ -9034,6 +9040,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const revealListEl = document.getElementById("reveal-list");
   const revealNextBtn = document.getElementById("reveal-next-btn");
+  const revealAllBtn = document.getElementById("reveal-all-btn");
   const showSummaryBtn = document.getElementById("show-summary-btn");
 
   const summaryViewEl = document.getElementById("summary-view");
@@ -16155,6 +16162,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     advanceReveal(currentRoomCode);
   });
 
+  // Solo "Reveal all": snaps every remaining card to its final state at once (the render path already
+  // handles a jump of several steps), then the normal auto-advance / Show summary takes over.
+  revealAllBtn.addEventListener("click", () => {
+    if (revealAnimating || roomState.phase !== "reveal") return;
+    navGuardAt = nowMs();
+    const total = revealStepCount(roomState.revealOrder || []);
+    const revealAdvanceAt = nowMs() + 1500;
+    revealAllBtn.style.display = "none";
+    update(ref(db, `rooms/${currentRoomCode}`), { revealIndex: total, revealAdvanceAt });
+    scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(currentRoomCode));
+  });
+
   showSummaryBtn.addEventListener("click", () => { if (navBlocked()) return; navGuardAt = nowMs(); cancelRevealEffects(); goToSummary(currentRoomCode); });
 
   // Live in-HUD auto-mode toggle — separate from the lobby's pre-game setting,
@@ -17469,7 +17488,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     if (order.length === 0) {
       revealListEl.innerHTML = "<li>No one answered in time.</li>";
-      if (isHost) { revealNextBtn.style.display = "none"; showSummaryBtn.style.display = "flex"; }
+      if (isHost) { revealNextBtn.style.display = "none"; revealAllBtn.style.display = "none"; showSummaryBtn.style.display = "flex"; }
       return;
     }
 
@@ -17478,7 +17497,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const answersOrderIds = (roomState.answers || []).map((a) => a.playerId);
       const idOrder = answersOrderIds.length ? answersOrderIds : order.map((e) => e.playerId);
       renderFaceDownCards(order, idOrder);
-      if (isHost) revealNextBtn.disabled = true;
+      if (isHost) { revealNextBtn.disabled = true; revealAllBtn.disabled = true; }
       setTimeout(() => {
         if ((roomState.revealIndex || 0) === 0) {
           flipReorder(revealListEl, () => renderFaceDownCards(order, order.slice().reverse().map((e) => e.playerId)));
@@ -17489,6 +17508,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (lastLi) lastLi.scrollIntoView({ behavior: "smooth", block: "end" });
         }
         if (isHost) revealNextBtn.disabled = !!(roomState.settings || currentSettings).autoAdvanceEnabled;
+        if (isHost) revealAllBtn.disabled = false;
       }, 700);
       // Instantly show any entries already revealed (e.g. a client joining mid-reveal)
       for (let i = 0; i < revealIndex; i++) {
@@ -17535,6 +17555,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     if (isHost) {
       revealNextBtn.style.display = revealIndex < order.length ? "flex" : "none";
+      // Solo only: skip straight past the remaining one-by-one reveals (needs two or more still hidden)
+      revealAllBtn.style.display = (roomState.settings || currentSettings).solo && order.length - revealIndex >= 2 ? "flex" : "none";
       const showSum = revealIndex >= order.length;
       if (showSum && showSummaryBtn.style.display !== "flex") navGuardAt = nowMs();
       showSummaryBtn.style.display = showSum ? "flex" : "none";
@@ -19408,6 +19430,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (phase !== "reveal") {
       revealNextBtn.style.display = "none";
+      revealAllBtn.style.display = "none";
       showSummaryBtn.style.display = "none";
     }
     if (phase !== "summary") nextRoundBtn.style.display = "none";
