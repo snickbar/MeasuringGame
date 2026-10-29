@@ -2186,6 +2186,36 @@ if (location.protocol === "file:") {
   button.lobby-opt[aria-pressed="true"] .lobby-switch::before { transform: translateX(32px); }
   button.lobby-opt:disabled { opacity: .7; }
   /* Stats: recent games / attempts */
+  /* Badges tab */
+  .bd-head { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 2px 8px; font-family: 'Fredoka', sans-serif; }
+  .bd-head h3 { margin: 0; font-size: 18px; }
+  .bd-head span { font-size: 13px; font-weight: 600; color: #9a7a4f; }
+  .bd-card { background: #fffdf6; border: 2.5px solid #d9bf90; border-radius: 20px; padding: 12px; }
+  .bd-ranks { display: flex; justify-content: space-between; gap: 4px; }
+  .bd-rank { flex: 1; min-width: 0; text-align: center; font: 700 11px/1.1 'Fredoka', sans-serif; color: #5a3a1a; background: none; border: 0; padding: 0; }
+  .bd-rank.off { opacity: .5; }
+  .bd-rank.off .bd-medal { filter: grayscale(1); }
+  .bd-sub { font-size: 12px; color: #9a7a4f; margin: 8px 2px 0; }
+  .bd-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 6px; align-items: start; }
+  .bd-item { text-align: center; font: 700 10.5px/1.15 'Fredoka', sans-serif; color: #5a3a1a; background: none; border: 0; padding: 0; min-width: 0; }
+  .bd-item small { display: block; font-weight: 600; color: #9a7a4f; font-size: 10.5px; }
+  .bd-item .bd-name { display: block; overflow-wrap: anywhere; }
+  .bd-medal { position: relative; width: 58px; height: 58px; margin: 0 auto 4px; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), transparent 45%), var(--rim); border: 3px solid var(--edge); box-shadow: 0 3px 0 var(--edge), 0 6px 8px rgba(0,0,0,.2); }
+  .bd-medal::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #fffaf0; border: 2px solid var(--edge); }
+  .bd-medal img { position: relative; width: 30px; height: 30px; object-fit: contain; }
+  .bd-medal.bronze { --rim: #d99a5b; --edge: #8a5628; } .bd-medal.silver { --rim: #cfd6df; --edge: #7a8798; } .bd-medal.gold { --rim: #f6cf54; --edge: #a8741a; } .bd-medal.rank { --rim: #7fc3e8; --edge: #2f6f96; }
+  .bd-item.locked .bd-medal { filter: grayscale(1); opacity: .6; }
+  .bd-item.locked .bd-medal img { opacity: .4; }
+  .bd-tier { position: absolute; bottom: -4px; right: -3px; background: #fff; border: 2px solid var(--edge); border-radius: 999px; font: 700 9px/1.3 'Fredoka', sans-serif; padding: 0 4px; color: #5a3a1a; }
+  .bd-new { position: absolute; top: -5px; right: 0; z-index: 2; background: #e0482f; color: #fff; border-radius: 999px; font: 700 9px/1.3 'Fredoka', sans-serif; padding: 1px 5px; border: 2px solid #fff; }
+  .bd-bar { height: 5px; border-radius: 3px; background: #e8dcc5; margin: 3px 6px 0; overflow: hidden; }
+  .bd-bar i { display: block; height: 100%; background: #4caf50; }
+  .bd-cat { font: 700 12px 'Fredoka', sans-serif; color: #9a7a4f; letter-spacing: .05em; text-transform: uppercase; margin: 14px 2px 8px; }
+  .bd-pop-ov { position: fixed; inset: 0; z-index: 9000; background: rgba(40,25,10,.5); display: grid; place-items: center; padding: 20px; }
+  .bd-pop { width: min(300px, 100%); background: #fffdf6; border: 3px solid #c9a26d; border-radius: 22px; padding: 18px 16px; text-align: center; font-family: 'Fredoka', sans-serif; color: #5a3a1a; }
+  .bd-pop .bd-medal { width: 84px; height: 84px; margin: 0 auto 8px; } .bd-pop .bd-medal img { width: 44px; height: 44px; }
+  .bd-pop b { font-size: 19px; display: block; } .bd-pop p { margin: 5px 0; font-size: 14px; color: #7a5a30; }
   .cs-recent { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 14px; }
   .cs-recent-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; background: #fffaf0; border: 2px solid #e6d3ae; border-radius: 16px; box-shadow: 0 2px 0 #d8c08f; text-align: left; }
   .cs-recent-ic { width: 46px; height: 46px; object-fit: contain; flex: none; border-radius: 12px; background: #f6ebd2; padding: 3px; box-sizing: border-box; }
@@ -12752,6 +12782,68 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML=`<button type="button" class="dc-btn dc-alt" data-stats-history-back>&larr; Back to Stats</button><h3 class="cs-h">${isDaily?'Daily Challenge':'Monthly Challenge'} history</h3>`+
       (rows.length?`<div class="cozy-panel">${rowsHtml}</div>`:`<div class="cs-empty">Play the ${isDaily?'Daily':'Monthly'} Challenge to start your history.</div>`);
   }
+  // ---- Badges: every achievement is a collectible medal; ranks have their own medals. ----
+  const BADGE_CAT_ICONS = { "Getting started": "icons/flair/star.png", Collector: "icons/flair/gem-ruby.png", Accuracy: "icons/reactions/point.png", Winning: "icons/reactions/trophy.png",
+    "Second chance": "icons/flair/heart.png", Social: "icons/reactions/clap.png", Fun: "icons/reactions/popper.png", Worlds: "icons/flair/balloon-red.png", Monthly: "icons/flair/leaf-maple.png", Fantasy: "icons/flair/butterfly-gold.png" };
+  const BADGE_RANK_ICONS = ["icons/reactions/crown.png", "icons/reactions/cool.png", "icons/reactions/think.png", "icons/reactions/point.png", "icons/reactions/trophy.png"];
+  const ROMAN = ["I", "II", "III"];
+  function badgeIcon(a) { return a.icon || (ACH_ICON_IDS.has(a.id) ? `icons/ach/${a.id}.png` : BADGE_CAT_ICONS[a.cat] || "icons/flair/star.png"); }
+  function badgeTierClass(a) { return a.tier === 0 ? "bronze" : a.tier === 2 ? "gold" : "silver"; }
+  function badgeSeen() { try { return new Set(JSON.parse(localStorage.getItem("mg_badges_seen") || "[]")); } catch (e) { return new Set(); } }
+  function badgeState(a) {
+    const claimed = !!(myProfile.achClaimed || {})[a.id];
+    let prog = 0; try { prog = a.progress(); } catch (e) {}
+    return { earned: claimed || prog >= a.target, claimed, prog: Math.min(prog, a.target) };
+  }
+  function badgeMedal(a, st, seen) {
+    const tier = a.tier != null && a.tier >= 0 && ACHIEVEMENTS.filter((x) => x.cat === a.cat && x.name.replace(/ I{1,3}$/, "") === a.name.replace(/ I{1,3}$/, "")).length > 1 ? `<span class="bd-tier">${ROMAN[a.tier]}</span>` : "";
+    const fresh = st.earned && !seen.has(a.id) ? `<span class="bd-new">NEW</span>` : "";
+    return `<span class="bd-medal ${badgeTierClass(a)}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}</span>`;
+  }
+  function badgesTabHtml(lv) {
+    const seen = badgeSeen();
+    const all = ACHIEVEMENTS.filter((a) => !a.test).map((a) => ({ a, st: badgeState(a) }));
+    const earned = all.filter((x) => x.st.earned);
+    const item = ({ a, st }) => `<button type="button" class="bd-item${st.earned ? "" : " locked"}" data-badge="${a.id}">${badgeMedal(a, st, seen)}<span class="bd-name">${escapeHtml(a.name)}</span>${st.earned || !(a.target > 1) ? "" : `<small>${Math.floor(st.prog)} / ${a.target}</small><div class="bd-bar"><i style="width:${Math.round(st.prog / a.target * 100)}%"></i></div>`}</button>`;
+    const ranks = CAREER_RANKS.map(([minLvl, name], i) => {
+      const on = lv.lvl >= minLvl;
+      return `<button type="button" class="bd-rank${on ? "" : " off"}" data-badge-rank="${i}"><span class="bd-medal rank"><img src="${BADGE_RANK_ICONS[i] || "icons/flair/star.png"}" alt="" draggable="false"></span>${name}</button>`;
+    }).join("");
+    const nextRank = CAREER_RANKS.find(([minLvl]) => minLvl > lv.lvl);
+    let html = `<div class="bd-head"><h3>Badges</h3><span>${earned.length} of ${all.length}</span></div>
+      <div class="bd-card"><div class="cs-lab">RANKS</div><div class="bd-ranks">${ranks}</div><div class="bd-sub">${nextRank ? `Next rank: ${nextRank[1]} at Level ${nextRank[0]}` : "You reached the top rank!"}</div></div>`;
+    const upNext = all.filter((x) => !x.st.earned && x.st.prog > 0 && x.a.target > 1).sort((p, q) => q.st.prog / q.a.target - p.st.prog / p.a.target).slice(0, 4);
+    if (upNext.length) html += `<div class="bd-head"><h3>Up next</h3><span>closest first</span></div><div class="bd-card"><div class="bd-grid">${upNext.map(item).join("")}</div></div>`;
+    ACH_CATS.forEach((cat) => {
+      const list = all.filter((x) => x.a.cat === cat);
+      if (list.length) html += `<div class="bd-cat">${cat} · ${list.filter((x) => x.st.earned).length}/${list.length}</div><div class="bd-card"><div class="bd-grid">${list.map(item).join("")}</div></div>`;
+    });
+    return html;
+  }
+  function badgesMarkSeen() {
+    try { localStorage.setItem("mg_badges_seen", JSON.stringify(ACHIEVEMENTS.filter((a) => !a.test && badgeState(a).earned).map((a) => a.id))); } catch (e) {}
+  }
+  function openBadgePopup(id, rankIdx) {
+    let medal, title, line1, line2 = "";
+    if (rankIdx != null) {
+      const [minLvl, name] = CAREER_RANKS[rankIdx];
+      const st = myProfile.stats || {}, lv = careerLevel(careerXp({ ...st, rounds: Math.max(st.rounds || 0, careerHistory().length) }));
+      medal = `<span class="bd-medal rank"><img src="${BADGE_RANK_ICONS[rankIdx] || "icons/flair/star.png"}" alt=""></span>`;
+      title = name; line1 = lv.lvl >= minLvl ? `Rank earned at Level ${minLvl}` : `Reach Level ${minLvl} to earn this rank`;
+    } else {
+      const a = ACHIEVEMENTS.find((x) => x.id === id); if (!a) return;
+      const st = badgeState(a);
+      medal = badgeMedal(a, { earned: false }, new Set()); title = a.name; line1 = a.desc;
+      if (st.earned) line2 = st.claimed ? (a.reward ? `Earned \u00b7 +${a.reward} coins` : "Earned") : "Earned \u00b7 claim your reward in Awards";
+      else line2 = a.target > 1 ? `${Math.floor(st.prog)} / ${a.target}` + (a.reward ? ` \u00b7 +${a.reward} coins` : "") : (a.reward ? `+${a.reward} coins` : "Not earned yet");
+    }
+    const ov = document.createElement("div");
+    ov.className = "bd-pop-ov";
+    ov.innerHTML = `<div class="bd-pop" role="dialog" aria-label="${escapeHtml(title)}">${medal}<b>${escapeHtml(title)}</b><p>${escapeHtml(line1)}</p>${line2 ? `<p>${line2}</p>` : ""}</div>`;
+    ov.addEventListener("click", () => ov.remove());
+    document.body.appendChild(ov);
+  }
+
   function renderCareerStats() {
     const el = document.getElementById("career-content");
     if (!el) return;
@@ -12764,7 +12856,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div><div class="cs-lvl-sub">Every new level: a free avatar pull and ${levelRewardCoins(lv.lvl + 1)} coins</div></div>`;
     const scoped=myProfile.modeStats?.[statsMode]||{},hsView=statsMode==='highstakes',bluffView=statsMode==='bluff',roomMode=['all','quick','party','teamvteam','highstakes','bluff'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
     const average=hist.length?hist.reduce((n,h)=>n+roundAccuracy(h.r),0)/hist.length:null;
-    html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-label="${name}" title="${name}" aria-pressed="${statsMode===id}">${({monthly:"Month",survival:"Surv.",hlsurvival:"Hi/Lo"})[id]||name}</button>`).join('')}</div>`;
+    html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['badges','Badges'],['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-label="${name}" title="${name}" aria-pressed="${statsMode===id}">${({monthly:"Month",survival:"Surv.",hlsurvival:"Hi/Lo"})[id]||name}</button>`).join('')}</div>`;
+    if(statsMode==='badges'){el.innerHTML=html+badgesTabHtml(lv);badgesMarkSeen();return;}
     html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(scoped.attempts||0,'Attempts finished')+statTile(scoped.rounds||0,'Rounds completed')+statTile(scoped.bestAccuracy?formatAccuracy(scoped.bestAccuracy)+'%':'—','Best accuracy')}${bluffView?statTile(scoped.judged?Math.round((scoped.correctVotes||0)/scoped.judged*100)+'%':'—','Vote accuracy'):hsView?statTile((myProfile.modeStats?.highstakes?.podiums)||0,'Podium finishes'):statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
     if(hsView){const h=myProfile.hsStats||{};html+=`<p class="cs-note">Finished High Stakes games. The biggest stack of coins wins; ties share the win.</p><h3 class="cs-h">High Stakes</h3><div class="cozy-panel cs-tiles">${statTile(h.roundsWon||0,'Rounds won')}${statTile(h.roundsPlayed?Math.round((h.roundsWon||0)/h.roundsPlayed*100)+'%':'—','Round win rate')}${statTile(h.biggestWin||0,'Biggest single win')}${statTile(h.peakStack||0,'Highest stack')}${statTile(h.bluffs||0,'Bluffs that worked')}${statTile(h.knockedOut||0,'Times knocked out')}${statTile(h.ghostCoins||0,'Ghost bounty coins')}</div>`;}
     if(bluffView)html+=`<p class="cs-note">Points rank first, then vote accuracy. Missed votes count as incorrect for the tiebreaker. Maker turns are excluded from vote accuracy.</p><div class="cozy-panel cs-tiles">${statTile(scoped.makerTurns||0,'Maker turns')}${statTile(scoped.fooled||0,'Players fooled')}${statTile(scoped.correctVotes||0,'Correct votes')}${statTile(scoped.votes||0,'Votes submitted')}${statTile(scoped.missedVotes||0,'Missed votes')}${statTile(scoped.rounds||0,'Rounds completed')}</div>`;
@@ -12833,6 +12926,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   document.getElementById('career-content').addEventListener('click',e=>{
     if(e.target.closest('[data-stats-history-back]')){statsHistoryMode=null;renderCareerStats();return;}
+    const badgeBtn=e.target.closest('[data-badge],[data-badge-rank]');
+    if(badgeBtn){openBadgePopup(badgeBtn.dataset.badge,badgeBtn.dataset.badgeRank!=null?Number(badgeBtn.dataset.badgeRank):null);return;}
     const histBtn=e.target.closest('[data-stats-history]');
     if(histBtn){statsHistoryMode=histBtn.dataset.statsHistory;renderCareerStats();return;}
     const button=e.target.closest('[data-stats-view]');if(!button)return;statsMode=button.dataset.statsView;renderCareerStats();document.querySelector(`[data-stats-view="${statsMode}"]`)?.focus({preventScroll:true});
@@ -13339,7 +13434,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function achTier(cat, base, desc, prog, steps) {
     const romans = ["", " II", " III"];
     steps.forEach(([target, reward], i) => {
-      ACHIEVEMENTS.push({ id: `${cat}-${base}-${target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: (cat === "Accuracy" && base === "Spot on" ? "The 1%" : base) + romans[i], desc: desc(target), target, reward, progress: prog });
+      ACHIEVEMENTS.push({ id: `${cat}-${base}-${target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: (cat === "Accuracy" && base === "Spot on" ? "The 1%" : base) + romans[i], desc: desc(target), target, reward, progress: prog, tier: i });
     });
   }
   achTier("Collector", "Avatar fan", (n) => `Own ${n} avatars from the machine`, () => ownedNonDefaultAvatars().length, [[5, 20], [25, 60], [75, 150]]);
