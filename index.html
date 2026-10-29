@@ -616,6 +616,11 @@ if (location.protocol === "file:") {
     padding: 8px 10px; background: #fffaf0; border: 3px solid #d9c3a3; border-radius: 14px;
   }
   .cosm-actions { display: flex; align-items: center; gap: 6px; }
+  /* A buyable row: Preview on the left, the coin price stacked over the $ price on the right, so the item name keeps its room. */
+  .cosm-actions.has-usd { display: grid; grid-template-columns: auto 96px; gap: 4px 6px; }
+  .cosm-actions.has-usd .cosm-preview { grid-row: 1 / 3; align-self: center; }
+  .cosm-actions.has-usd button.cosm-buy { --pic-h: 28px; }
+  button.cosm-buy.cosm-buy-usd { border-image-source: url(icons/btn-bot-easy.png); border-image-slice: 0 137 fill; }
   .cosm-preview {
     width: auto; margin: 0; padding: 6px 10px; font-size: 13px; font-weight: 700; font-family: 'Fredoka', sans-serif;
     border: 2px solid #d9c3a3; border-radius: 10px; background: #fff; color: #5a4a3a;
@@ -5756,6 +5761,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!have) return undefined;
     return `You already own ${have} of the ${total} ${noun} in this pack. Buying it still unlocks all ${total}.`;
   }
+  const ITEM_PRICE_USD = "$0.99";   // every single 100-coin item can also be bought for this
+  // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
+  const purchase = (details) => showFakePurchase(details);
   function showFakePurchase({ icon, title, price, desc }) {
     return new Promise((resolve) => {
       const ov = document.createElement("div");
@@ -6337,14 +6345,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.body.style.setProperty('--game-bg-size', 'calc(min(100vw, 430px) * ' + (TILE_PX[id] / 390).toFixed(4) + ')');
     } else ['--game-bg-pos', '--game-bg-repeat', '--game-bg-size'].forEach(k => document.body.style.removeProperty(k));
   }
-  async function buyBackgroundWithCoins(bg) {
-    if ((myProfile.coins || 0) < BACKGROUND_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+  async function buyBackgroundWithCoins(bg, money = false) {
+    const cost = money ? 0 : BACKGROUND_COIN_COST;
+    if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
       const cosmetics = profile.cosmetics || defaultCosmeticState();
       const owned = (cosmetics.owned && cosmetics.owned.backgrounds) || {};
-      if (owned[bg.id] || (profile.coins || 0) < BACKGROUND_COIN_COST) return profile;
-      return { ...profile, coins: (profile.coins || 0) - BACKGROUND_COIN_COST,
+      if (owned[bg.id] || (profile.coins || 0) < cost) return profile;
+      return { ...profile, coins: (profile.coins || 0) - cost,
         cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, backgrounds: { ...owned, [bg.id]: true } } } };
     });
   }
@@ -6455,7 +6464,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
         leadHtml: bgThumbHtml(b.id, "cosm-bg-pic", 34), name: b.label,
         owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
-        onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: () => buyBackgroundWithCoins(b),
+        onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: (m) => buyBackgroundWithCoins(b, m === true),
       })));
     });
     // Monthly Challenge rewards only appear once earned (and are never for sale); locked months stay hidden.
@@ -6507,14 +6516,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.board;
     return id && id !== "none" && ownsBoard(id) && allBoards().some((b) => b.id === id) ? id : "none";
   }
-  async function buyBoardWithCoins(b) {
-    if ((myProfile.coins || 0) < BOARD_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+  async function buyBoardWithCoins(b, money = false) {
+    const cost = money ? 0 : BOARD_COIN_COST;
+    if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
       const cosmetics = profile.cosmetics || defaultCosmeticState();
       const owned = (cosmetics.owned && cosmetics.owned.boards) || {};
-      if (owned[b.id] || (profile.coins || 0) < BOARD_COIN_COST) return profile;
-      return { ...profile, coins: (profile.coins || 0) - BOARD_COIN_COST,
+      if (owned[b.id] || (profile.coins || 0) < cost) return profile;
+      return { ...profile, coins: (profile.coins || 0) - cost,
         cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, boards: { ...owned, [b.id]: true } } } };
     });
   }
@@ -6546,7 +6556,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
         owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id,
-        onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id), onBuy: () => buyBoardWithCoins(b),
+        onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id), onBuy: (m) => buyBoardWithCoins(b, m === true),
       })));
     });
   }
@@ -6577,13 +6587,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     clearTimeout(cosmNoteTimer);
     cosmNoteTimer = setTimeout(() => { if (n) n.textContent = ""; }, 2200);
   }
-  async function buyEmojiWithCoins(e) {
-    if ((myProfile.coins || 0) < EMOJI_COIN_COST) { cosmNote("Not enough coins yet."); return; }
+  async function buyEmojiWithCoins(e, money = false) {
+    const cost = money ? 0 : EMOJI_COIN_COST;
+    if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     const key = emojiKey(e);
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
-      if ((profile.emojiOwned || {})[key] || (profile.coins || 0) < EMOJI_COIN_COST) return profile;
-      return { ...profile, coins: (profile.coins || 0) - EMOJI_COIN_COST, emojiOwned: { ...(profile.emojiOwned || {}), [key]: true } };
+      if ((profile.emojiOwned || {})[key] || (profile.coins || 0) < cost) return profile;
+      return { ...profile, coins: (profile.coins || 0) - cost, emojiOwned: { ...(profile.emojiOwned || {}), [key]: true } };
     });
   }
   // Tapping a locked slot in the game: offer to unlock it (or say how many coins are missing).
@@ -6598,8 +6609,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     openExitConfirm("unlockSlot" + n, `Unlock slot ${n} for ${cost} coins?`, "You'll get one more spot in your reaction bar.", "Unlock", "Not now");
   }
-  async function buyReactionSlot(n) {
-    const cost = REACTION_SLOT_COSTS[n - 6];
+  async function buyReactionSlot(n, money = false) {
+    const cost = money ? 0 : REACTION_SLOT_COSTS[n - 6];
     if (ownedReactionSlots() >= n) return;
     if (n > ownedReactionSlots() + 1) { cosmNote(`Unlock slot ${n - 1} first.`); return; }
     if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
@@ -6610,17 +6621,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return { ...profile, coins: (profile.coins || 0) - cost, reactionSlotsExtra: extra + 1 };
     });
   }
-  async function buyFlairWithCoins(item) {
-    const wasOwned=ownsFlair(item),buyer=deviceId;let purchased=false;
-    if ((myProfile.coins || 0) < item.cost) { cosmNote("Not enough coins yet."); return; }
+  async function buyFlairWithCoins(item, money = false) {
+    const wasOwned=ownsFlair(item),buyer=deviceId;let purchased=false;const cost = money ? 0 : item.cost;
+    if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     const result=await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       purchased=false;
       const profile = current || defaultProfile();
       const cosmetics = profile.cosmetics || defaultCosmeticState();
       const owned = (cosmetics.owned && cosmetics.owned.effects) || {};
-      if (owned[item.id] || (profile.coins || 0) < item.cost) return profile;
+      if (owned[item.id] || (profile.coins || 0) < cost) return profile;
       purchased=true;
-      return { ...profile, coins: (profile.coins || 0) - item.cost,
+      return { ...profile, coins: (profile.coins || 0) - cost,
         cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, effects: { ...owned, [item.id]: true } } } };
     });
     if(result.committed&&purchased&&!wasOwned&&buyer===deviceId)uiDelight?.unlock({name:item.name||item.label||"New flair",image:`icons/flair/${item.pic}.png`,equip:()=>equipUnlockedCosmetic(buyer,{"cosmetics/equipped/effects":item.id,"randomEquip/flairs":false})});
@@ -6662,11 +6673,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.className = "cosm-buy";
       btn.innerHTML = `<img class="cosm-coin" src="icons/coin-v2.png" alt="">${o.cost}`;
       btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
-      btn.addEventListener("click", o.onBuy);
+      btn.addEventListener("click", () => o.onBuy(false));
+      if (o.cost > 0) {
+        // The same item for money. One purchase() call is the only place that will talk to real billing later.
+        const usd = document.createElement("button");
+        usd.type = "button"; usd.className = "cosm-buy cosm-buy-usd";
+        usd.textContent = ITEM_PRICE_USD;
+        usd.setAttribute("aria-label", `Buy ${o.name} for ${ITEM_PRICE_USD}`);
+        usd.addEventListener("click", async () => {
+          if (await purchase({ title: o.name, price: ITEM_PRICE_USD, icon: "icons/coin-v2.png" })) o.onBuy(true);
+        });
+        btn.classList.add("has-usd");
+        row.__usd = usd;
+      }
     }
     if (o.onPreview) {
       const wrap = document.createElement("div");
-      wrap.className = "cosm-actions";
+      wrap.className = "cosm-actions" + (row.__usd ? " has-usd" : "");
       const pv = document.createElement("button");
       pv.type = "button";
       pv.className = "cosm-preview";
@@ -6675,9 +6698,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       pv.addEventListener("click", o.onPreview);
       wrap.appendChild(pv);
       wrap.appendChild(btn);
+      if (row.__usd) wrap.appendChild(row.__usd);
       row.appendChild(wrap);
     } else {
       row.appendChild(btn);
+      if (row.__usd) row.appendChild(row.__usd);
     }
     return row;
   }
@@ -6708,13 +6733,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!active.includes(e) && active.length >= slots) { cosmNote(`All ${slots} slots are full. Unequip one first.`); return; }
         toggleActiveEmoji(e);
       },
-      onBuy: () => buyEmojiWithCoins(e),
+      onBuy: (m) => buyEmojiWithCoins(e, m === true),
     });
     [6, 7].forEach((n) => {
       const have = slots >= n, cost = REACTION_SLOT_COSTS[n - 6];
       container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-reaction-pic" alt="" src="icons/reactions/padlock.png">`, name: `Reaction slot ${n}`,
-        owned: have, ownedLabel: "Unlocked", cost, onBuy: () => buyReactionSlot(n),
+        owned: have, ownedLabel: "Unlocked", cost, onBuy: (m) => buyReactionSlot(n, m === true),
       }));
     });
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
@@ -6742,7 +6767,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
       owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id,
       onPreview: () => previewFlair(item.id),
-      onEquip: () => equipFlair(item.id), onBuy: () => buyFlairWithCoins(item),
+      onEquip: () => equipFlair(item.id), onBuy: (m) => buyFlairWithCoins(item, m === true),
     });
     container.classList.toggle("cosm-random-on", rndOn("flairs")); container.dataset.rndCat = "flairs";
     const items = COSMETIC_CATALOG.effects;
