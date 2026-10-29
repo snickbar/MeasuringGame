@@ -12123,6 +12123,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function survivalLoadBoard() {
     let rows = null;
+    if (isOffline()) { const h = document.getElementById("sv-board"); if (h) h.textContent = "Leaderboard needs a connection."; return; }
     try {
       const snap = await get(query(ref(db, "survival"), orderByChild("s"), limitToLast(50)));
       rows = [];
@@ -19843,7 +19844,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Retry old pending receipts even when the profile itself has not changed.
   setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
 
-  careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
+  careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,isOffline()?{}:{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
     onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
     onSaved:async (row,id)=>{if(id===deviceId&&['round','bluffRound'].includes(row.kind))objectMemory.observe(row.history?.u,row.history?.g,row.key);void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
