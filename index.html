@@ -357,7 +357,11 @@ if (location.protocol === "file:") {
      family of same-size tiles now, instead of a separate full-width hero
      card sitting above a 3-across row - bigger cells means bigger icons/
      text/buttons fit comfortably instead of being squeezed 3-up. */
-  #coin-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
+  #coin-pack-row, #boost-pack-row, #pull-pack-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
+  .shop-sub { margin: 20px 4px 0; font: 700 17px/1.2 'Fredoka', sans-serif; text-align: center; color: #3a2610; }
+  .shop-sub-note { margin: 2px 8px 0; font-size: 12.5px; text-align: center; color: #7a5a30; }
+  #pull-pack-row .coin-pack-card.wide { grid-column: 1 / -1; }
+  #boost-pack-row, #pull-pack-row { margin-top: 8px; }
   .coin-pack-card {
     position: relative; display: grid; align-items: center; column-gap: 8px; row-gap: 0;
     grid-template-columns: 44px 1fr;
@@ -367,8 +371,8 @@ if (location.protocol === "file:") {
     box-shadow: 0 2px 6px rgba(0,0,0,.1);
     border: 2px solid transparent;
   }
-  #coin-pack-row .coin-pack-card:not(.pack-card) { grid-template-columns: 44px 1fr 44px; grid-template-areas: "icon amt icon2" "icon lbl icon2" "st st st" "btn btn btn"; }
-  #coin-pack-row .coin-pack-card .coin-pack-amount, #coin-pack-row .coin-pack-card .coin-pack-label { text-align: center; }
+  #coin-pack-row .coin-pack-card:not(.pack-card), #boost-pack-row .coin-pack-card:not(.pack-card), #pull-pack-row .coin-pack-card:not(.pack-card) { grid-template-columns: 44px 1fr 44px; grid-template-areas: "icon amt icon2" "icon lbl icon2" "st st st" "btn btn btn"; }
+  #coin-pack-row .coin-pack-card .coin-pack-amount, #coin-pack-row .coin-pack-card .coin-pack-label, #boost-pack-row .coin-pack-card .coin-pack-amount, #boost-pack-row .coin-pack-card .coin-pack-label, #pull-pack-row .coin-pack-card .coin-pack-amount, #pull-pack-row .coin-pack-card .coin-pack-label { text-align: center; }
   .coin-pack-card > .coin-pack-icon.dup { grid-area: icon2; }
   .coin-pack-card > .coin-pack-icon { grid-area: icon; }
   .coin-pack-card > .coin-pack-amount { grid-area: amt; align-self: end; }
@@ -423,7 +427,7 @@ if (location.protocol === "file:") {
      unrelated emoji-pack-shop buttons that reuse the same base class.
      (margin-top:auto is restated further down, after the shared picture-
      button rule that resets margin to 0 - see the comment there.) */
-  #coin-pack-row .coin-pack-buy-btn { font-size: 13px; --pic-h: 32px; }
+  #coin-pack-row .coin-pack-buy-btn, #boost-pack-row .coin-pack-buy-btn, #pull-pack-row .coin-pack-buy-btn { font-size: 13px; --pic-h: 32px; }
   #pack-row, #flair-pack-row, #bg-pack-row, #board-pack-shop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   /* Purchases: each kind of pack sits in its own slim rounded box with a small title inside. */
   .shop-box { margin: 10px 0 0; padding: 6px 8px 8px; border: 2px solid rgba(60,40,20,.28); border-radius: 18px; background: rgba(255,255,255,.34); }
@@ -2447,7 +2451,7 @@ if (location.protocol === "file:") {
      since its row-mate (the Free/Watch-Ad card, with an extra status line) is
      taller. Same specificity as the rule above (one #id + two classes) so this
      has to come after it in the file to actually win. */
-  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn), #pack-row .coin-pack-buy-btn, #flair-pack-row .coin-pack-buy-btn, #bg-pack-row .coin-pack-buy-btn { margin-top: 6px; }
+  #coin-pack-row .coin-pack-buy-btn:not(.ad-reward-btn), #boost-pack-row .coin-pack-buy-btn, #pull-pack-row .coin-pack-buy-btn, #pack-row .coin-pack-buy-btn, #flair-pack-row .coin-pack-buy-btn, #bg-pack-row .coin-pack-buy-btn { margin-top: 6px; }
   /* Cream (cancel/secondary), blue (info) and green-small pills, as 9-slice pictures. */
   button#exit-confirm-no-btn, button#preset-save-cancel-btn, button.preset-slot-action-btn[data-action="load"],
   button.edit-preset-settings-btn, button#hud-auto-toggle:not(.is-on),
@@ -3956,6 +3960,33 @@ if (location.protocol === "file:") {
           <div class="coin-pack-label">Coins</div>
           <div class="coin-pack-status"></div>
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
+        </div>
+      </div>
+      <div class="shop-sub">Avatar pulls</div>
+      <div class="shop-sub-note">Added to your free pulls. Spend them at the machine, or pull for 50 coins each.</div>
+      <div id="pull-pack-row">
+        <div class="coin-pack-card">
+          <img class="coin-pack-icon" src="icons/gacha-capsule.png" alt="">
+          <div class="coin-pack-amount">2</div>
+          <div class="coin-pack-label">Pulls</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-pulls="2">$0.99 &middot; Buy Now</button>
+        </div>
+        <div class="coin-pack-card popular">
+          <span class="coin-pack-ribbon">POPULAR</span>
+          <img class="coin-pack-icon" src="icons/gacha-capsule.png" alt="">
+          <div class="coin-pack-amount">6</div>
+          <div class="coin-pack-label">Pulls</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-pulls="6">$2.49 &middot; Buy Now</button>
+        </div>
+        <div class="coin-pack-card best-value wide">
+          <span class="coin-pack-ribbon">BEST VALUE</span>
+          <img class="coin-pack-icon" src="icons/gacha-capsule.png" alt="">
+          <div class="coin-pack-amount">15</div>
+          <div class="coin-pack-label">Pulls</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-pulls="15">$5.99 &middot; Buy Now</button>
         </div>
       </div>
 
@@ -8214,7 +8245,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const shareRoomBtn = document.getElementById("share-room-btn");
   const hostUnlockBannerEl = document.getElementById("host-unlock-banner");
   const hostUnlockBtn = document.getElementById("host-unlock-btn");
-  document.querySelectorAll("#coin-pack-row .coin-pack-card > .coin-pack-icon").forEach((ic) => { const d = ic.cloneNode(); d.classList.add("dup"); ic.after(d); });
+  document.querySelectorAll("#coin-pack-row .coin-pack-card > .coin-pack-icon, #boost-pack-row .coin-pack-card > .coin-pack-icon, #pull-pack-row .coin-pack-card > .coin-pack-icon").forEach((ic) => { const d = ic.cloneNode(); d.classList.add("dup"); ic.after(d); });
   const hostUnlockShopBoxEl = document.getElementById("host-unlock-shop-box");
   const hostUnlockShopBtn = document.getElementById("host-unlock-shop-btn");
   const playerList = document.getElementById("player-list");
@@ -13023,6 +13054,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!bought) return;
       btn.disabled = true;
       await addCoins(amount);
+      btn.disabled = false;
+    });
+  });
+  document.querySelectorAll("button[data-pulls]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const n = parseInt(btn.dataset.pulls, 10);
+      const priceText = (btn.textContent.split("\u00b7")[0] || "").trim();
+      const bought = await purchase({ icon: "icons/gacha-capsule.png", title: `${n} Avatar Pulls`, price: priceText || "Buy Now" });
+      if (!bought) return;
+      btn.disabled = true;
+      await runTransaction(ref(db, `profiles/${deviceId}/freePulls`), (cur) => (cur | 0) + n);
       btn.disabled = false;
     });
   });
