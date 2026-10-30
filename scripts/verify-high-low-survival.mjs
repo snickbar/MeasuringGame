@@ -28,7 +28,7 @@ assert(source.includes('hlThemeId: hlState.themeId'));assert(source.includes('th
 const start=source.slice(source.indexOf('  async function startRound(roomCode, roundNum) {'),source.indexOf('  function checkQuestionAdvance('));
 const captured=[],themes=[],ctx={roomState:{settings:{mode:'teamworlds',variant:'hl'},hlSurvived:4,players:{one:{},two:{}}},currentSettings:{},
  isHlSettings:()=>true,hlThemeDue,survivalPickTheme:s=>s.themeId||'food',survivalNextQuestion:s=>{themes.push(s.themeId);return {answer:5,prompt:'Test'};},
- crypto:{randomUUID:()=> 'test'},nowMs:()=>100,HL_NO_TIMER_MS:100000,ref:()=>({}),db:{},update:async(_,v)=>captured.push(v),console:{log(){}},scheduleBotGuesses(){}};
+ crypto:{randomUUID:()=> 'test'},nowMs:()=>100,TEAM_ROUND_CAP_MS:100000,ref:()=>({}),db:{},update:async(_,v)=>captured.push(v),console:{log(){}},scheduleBotGuesses(){}};
 vm.createContext(ctx);vm.runInContext(start,ctx);
 await vm.runInContext('startRound("test",5)',ctx);assert.equal(captured.at(-1).currentQuestion.theme,'food');
 ctx.roomState.hlThemeId='critters';await vm.runInContext('startRound("test",6)',ctx);assert.equal(captured.at(-1).hlThemeId,'critters','Failed themed attempt keeps category');
