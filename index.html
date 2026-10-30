@@ -16689,7 +16689,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // the averaged guess - those are different numbers (two guesses landing on opposite sides of
     // the answer can average their raw guesses very close to it despite both individually being
     // way off, which doesn't match "takes the average percent of the 2 guesses" at all).
-    const accuracy = answered.length ? answered.reduce((sum, id) => sum + roundAccuracy(guesses[id] / answer), 0) / answered.length : 0;
+    // A teammate who didn't answer counts as 0%, so letting your partner (or a bot) carry the round costs the team.
+    const accuracy = activeIds.length ? answered.reduce((sum, id) => sum + roundAccuracy(guesses[id] / answer), 0) / activeIds.length : 0;
     // Same left/right order every round of this game (randomized once at game start, see
     // randomTeamWorldsOrder()) - sorting by error instead would put whoever guessed worse THIS
     // round in the same spot every time, making it predictable and inconsistent round to round.
@@ -16933,6 +16934,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!p.bestGuess || Math.abs(e.accuracyPercent - 100) < Math.abs(p.bestGuess.percent - 100)) {
         updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.effectiveGuess, rawGuess: e.guess, answer, prompt: q.prompt };
       }
+    });
+    // Sitting a round out counts as a 0% round in your average, so skipping questions can't protect your accuracy.
+    activeIds.filter((id) => guesses[id] === undefined && playersSnap[id]).forEach((id) => {
+      const p = playersSnap[id];
+      updates[`players/${id}/accuracySum`] = p.accuracySum || 0;
+      updates[`players/${id}/roundsCounted`] = (p.roundsCounted || 0) + 1;
     });
     console.log("[measuring-game] scoring computed", entries, lastRoundPoints);
     try {
@@ -18822,6 +18829,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function twSumRowHtml(e, p) {
     return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p?.avatar)}</span><span class="name">${escapeHtml(e.name || "")}</span><span class="tw-sumrow-said">said <b>${twFmt(e.guess)}</b></span><b class="tw-sumrow-pct">${Math.round(e.accuracyPercent)}%</b>${markSvg(e.accuracyPercent)}</div>`;
   }
+  // One summary row per teammate in fixed order; someone who timed out gets a 0% "No answer" row instead of vanishing.
+  function twSumSlot(entries, slot, data) {
+    const ids = (data.teamWorldsOrder || Object.keys(data.players || {})).filter((id) => (data.players || {})[id]);
+    const id = ids[slot];
+    if (!id) return entries[slot] ? twSumRowHtml(entries[slot], currentPlayers[entries[slot].playerId] || {}) : "";
+    const e = entries.find((x) => x.playerId === id);
+    if (e) return twSumRowHtml(e, currentPlayers[id] || {});
+    const p = currentPlayers[id] || {};
+    return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name || "Player")}</span><span class="tw-sumrow-said">no answer</span><b class="tw-sumrow-pct">0%</b>${markSvg(0)}</div>`;
+  }
   let twSummarySig = null;
   function renderTeamWorldsSummary(data) {
     recordRoundStats(data);
@@ -18876,9 +18893,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const li = document.createElement("li");
     li.className = "summary-row tw-sum";
     li.innerHTML = twQTopHtml(q, ans)
-      + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
-      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg, true)}</div>`
-      + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
+      + (twSumSlot(entries, 0, data)) + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg, true)}</div>`
+      + twSumSlot(entries, 1, data);
     summaryListEl.appendChild(li);
     if (runningAvg == null || prefersReducedMotion()) return;
     const bar = li.querySelector(".wl-progress"), fill = li.querySelector(".wl-progress-fill"), head = li.querySelector(".wl-progress-heading strong");
