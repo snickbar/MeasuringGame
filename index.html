@@ -361,6 +361,10 @@ if (location.protocol === "file:") {
   .shop-sub { margin: 20px 4px 0; font: 700 17px/1.2 'Fredoka', sans-serif; text-align: center; color: #3a2610; }
   .shop-sub-note { margin: 2px 8px 0; font-size: 12.5px; text-align: center; color: #7a5a30; }
   #pull-pack-row .coin-pack-card.wide { grid-column: 1 / -1; }
+  #tip-pack-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+  #tip-pack-row .tip-card { grid-template-columns: 1fr; grid-template-areas: "icon" "amt" "lbl" "st" "btn"; justify-items: center; text-align: center; padding: 14px 6px 8px; }
+  #tip-pack-row .tip-card .coin-pack-label { font-size: 11px; }
+  #tip-pack-row .tip-card .coin-pack-buy-btn { width: 100%; font-size: 13px; --pic-h: 32px; }
   #boost-pack-row, #pull-pack-row { margin-top: 8px; }
   .coin-pack-card {
     position: relative; display: grid; align-items: center; column-gap: 8px; row-gap: 0;
@@ -4010,6 +4014,34 @@ if (location.protocol === "file:") {
           <button type="button" class="coin-pack-buy-btn" data-pulls="15">$5.99 &middot; Buy Now</button>
         </div>
       </div>
+      <div class="shop-sub">Tip jar</div>
+      <div class="shop-sub-note">Like the game? A tip helps keep it growing. Tippers get a Supporter medal.</div>
+      <div id="tip-pack-row">
+        <div class="coin-pack-card tip-card">
+          
+          <img class="coin-pack-icon" src="icons/flair/heart.png" alt="">
+          <div class="coin-pack-amount">$1</div>
+          <div class="coin-pack-label">Thanks!</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-tip="1">$1 &middot; Tip</button>
+        </div>
+        <div class="coin-pack-card tip-card popular">
+          <span class="coin-pack-ribbon">FAN FAVORITE</span>
+          <img class="coin-pack-icon" src="icons/flair/heart.png" alt="">
+          <div class="coin-pack-amount">$5</div>
+          <div class="coin-pack-label">Big thanks!</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-tip="5">$5 &middot; Tip</button>
+        </div>
+        <div class="coin-pack-card tip-card">
+          
+          <img class="coin-pack-icon" src="icons/flair/heart.png" alt="">
+          <div class="coin-pack-amount">$10</div>
+          <div class="coin-pack-label">You rock!</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-tip="10">$10 &middot; Tip</button>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -5561,6 +5593,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       coins: 0,
       freePulls: 0,
       booster: 0,
+      tipCount: 0,
+      tipDollars: 0,
       levelPaid: 0,
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
@@ -5771,6 +5805,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         coins: data.coins || 0,
         freePulls: Math.max(0, data.freePulls | 0),
         booster: Math.max(0, data.booster | 0),
+        tipCount: Math.max(0, data.tipCount | 0),
+        tipDollars: Math.max(0, data.tipDollars | 0),
         levelPaid: Math.max(0, data.levelPaid | 0),
         unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
         hostUnlocked: !!data.hostUnlocked,
@@ -13110,6 +13146,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = true;
       await addCoins(amount);
       btn.disabled = false;
+    });
+  });
+  // Tip jar: a pure thank-you purchase. Records how many tips and how many dollars so the Supporter medal (and anything later) can read it.
+  document.querySelectorAll("button[data-tip]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const d = parseInt(btn.dataset.tip, 10);
+      const bought = await purchase({ icon: "icons/ach/supporter.png", title: `Tip $${d}`, desc: "Thank you for supporting Size Em Up!", price: `$${d}` });
+      if (!bought) return;
+      runTransaction(ref(db, `profiles/${deviceId}/tipCount`), (cur) => (cur | 0) + 1).catch(() => {});
+      runTransaction(ref(db, `profiles/${deviceId}/tipDollars`), (cur) => (cur | 0) + d).catch(() => {});
     });
   });
   document.querySelectorAll("button[data-pulls]").forEach((btn) => {
