@@ -81,7 +81,7 @@ export const MODE_TUTORIALS = {
     { scene: 'hlOcean', example: 'under', head: 'HIGH must not go under', text: 'HIGH picks 9, below the answer of 10. The bird gets wet, and the team loses a life.' },
     { scene: 'hlOcean', example: 'over', head: 'LOW must not go over', text: 'LOW picks 11, above the answer of 10. The shark leaves the water, and the team loses a life.' },
     { scene: 'hlOcean', example: 'wide', head: 'Stay close together, too', text: '5 and 20 surround 10, but their 4× gap is wider than 2.5×. You lose a life. The limit tightens as you survive.' },
-    { scene:'extraExample',lesson:'hlShield',head:'Survive together to earn a shield',text:'Three survivals in a row charge one shared shield. It blocks one lost life, then is used up. You can hold only one.' },
+    { scene:'extraExample',lesson:'hlShield',head:'Survive together to earn a shield',text:'Three survivals charge one shared shield. It blocks one lost life, then is used up. You can hold only one.' },
     { scene:'extraExample',lesson:'hlRewards',head:'Themed rounds mix things up',text:'Each player earns 2 coins per normal survival and 4 for a themed survival. Every fifth survival is themed.' },
   ] },
   quick: { title: 'Quick Game', autoplay:true, slideMs:7500, slides: [

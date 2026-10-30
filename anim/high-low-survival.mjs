@@ -4,7 +4,7 @@ export const hlThemeDue = survived => survived > 0 && survived % 5 === 4;
 export function hlSurvivalOutcome(room, passed, themed = false) {
   const saved = !passed && !!room.hlShield;
   let shield = !!room.hlShield, charge = room.hlShieldCharge || 0;
-  if (!passed) { shield = false; charge = 0; }
+  if (!passed) shield = false; // a miss uses the shield but never wipes progress toward the next one
   else if (!shield && ++charge >= HL_SHIELD_CHAIN) { shield = true; charge = 0; }
   const survived = (room.hlSurvived || 0) + (passed ? 1 : 0);
   return {
