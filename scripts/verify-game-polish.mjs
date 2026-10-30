@@ -44,7 +44,7 @@ try {
   effects.reward({ element: receipt, total: 10, added: 5, key: 'double' });
   assert.equal(value.textContent, '10', 'reduced motion shows the accurate total immediately');
   effects.reward({ element: receipt, total: 10, added: 5, key: 'double' });
-  assert.equal(sounds.filter(s => s === 'coins').length, 1, 'receipt refresh never repeats its sound');
+  assert.equal(sounds.filter(s => s === 'coins').length, 0, 'the coin sound belongs to the toolbar coin arrival, so the receipt never plays it twice');
   group.dataset.celebrationKey = 'reduced-attempt'; effects.refresh(doc);
   assert.equal(timers.length, 3, 'reduced motion does not schedule bouncing stars');
   reduced = false; showing = false; group.dataset.celebrationKey = 'hidden-attempt'; effects.refresh(doc);

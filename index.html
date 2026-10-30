@@ -2025,7 +2025,7 @@ if (location.protocol === "file:") {
      grows to fill everything after it, see #toolbar-right-group) starts
      right where the coin balance ends instead of wherever its fixed width
      happened to land. */
-  #toolbar-center { flex: 0 0 auto; min-width: 0; display: flex; align-items: center; justify-content: flex-start; gap: 6px; overflow: hidden; }
+  #toolbar-center { flex: 0 0 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; overflow: hidden; } /* the booster tag sits under the coin meter */
   #toolbar-coin-balance {
     display: flex; align-items: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px;
     border: none; background: transparent; padding: 2px; margin: 0; color: var(--text); cursor: pointer;
@@ -6041,7 +6041,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 3 * 60 * 1000) return;
       const k = String(row.key).replace(/[.#$\[\]/]/g, "_");
       const prof = (await get(ref(db, `profiles/${id}`))).val() || {};
-      const coins = prof.attemptReceipts?.[k]?.coins || 0;
+      const coins = prof.attemptReceipts?.[k]?.base ?? prof.attemptReceipts?.[k]?.coins ?? 0; // the ad bonus matches the normal payout, not the booster-doubled one
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
       if (AD_BAR_MODES[row.mode]) { adOffers[row.mode] = { k, coins, key: row.key, t: Date.now() }; adBarRefresh(row.mode); return; } // solo results screens show the offer inside their split bar
@@ -6092,7 +6092,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       paid = true;
       return { ...cur, coins: (cur.coins || 0) + coins, adDoubled: { ...(cur.adDoubled || {}), [k]: Date.now() } };
     });
-    if (paid) { try { playSound("coins"); } catch (err) { /* optional */ } vibrate([30, 40, 30]); }
+    if (paid) vibrate([30, 40, 30]); // the coin sound plays when the coins land in the toolbar
     return paid ? "paid" : "already";
   }
   // Split results bar for solo modes: green "Finish" beside a gold "watch an ad to double the coins, then finish".
@@ -10208,7 +10208,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
     dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
-    if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
+    if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; vibrate([30, 40, 30, 40, 60]); }
   }
 
   // The page after each guess: the verdict with a little reaction, the answer, and an accuracy meter. (Reaction pictures, never plain emoji.)
@@ -12749,7 +12749,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         shown = Math.min(total, shown + per); i++;
         el.textContent = "+" + shown;
         try { playSoundAt("tap", Math.min(2, 1 + i * 0.06)); } catch (e) {}
-        if (shown >= total) { clearInterval(wbCoinTimer); try { playSound("coins"); } catch (e) {} }
+        if (shown >= total) clearInterval(wbCoinTimer); // the coin sound plays when the coins land in the toolbar
       }, 95);
     }, 650);
   }
@@ -13352,43 +13352,122 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       toolbarCoinCountEl.textContent = keep ? formatCoinDisplay(lastVisibleWallet.balance) : "…";
       return;
     }
-    const countFrom = observedCoinOwner === deviceId && myProfile.coins > observedCoinBalance ? observedCoinBalance : null;
-    if (countFrom !== null) {
-      sparkleCoins(toolbarCoinBalanceEl, prefersReducedMotion());
-      flyCoinsToToolbar(myProfile.coins - countFrom);
-    }
+    const bal = myProfile.coins || 0;
+    const gain = observedCoinOwner === deviceId && bal > observedCoinBalance ? bal - observedCoinBalance : 0;
+    if (observedCoinOwner !== deviceId) coinArrival.reset();
     observedCoinOwner = deviceId;
-    observedCoinBalance = myProfile.coins || 0;
-    // Skipped mid-tween so the final-screen coin-fly's own count-up animation
-    // (see animateCoinCount) isn't stomped by the profile update landing
-    // partway through it.
-    if (!coinCountTweenActive) {
-      // Earned coins tick up to the new balance instead of jumping.
-      if (countFrom !== null && !prefersReducedMotion() && myProfile.coins - countFrom <= 100000) animateCoinCount(countFrom, myProfile.coins, Math.min(900, 350 + (myProfile.coins - countFrom) * 4));
-      else toolbarCoinCountEl.textContent = formatCoinDisplay(myProfile.coins);
-    }
-    lastVisibleWallet = { owner: deviceId, balance: myProfile.coins || 0 };
+    observedCoinBalance = bal;
+    coinArrival.update(bal, gain);
+    lastVisibleWallet = { owner: deviceId, balance: bal };
     localStorage.setItem("mg_visibleWallet", JSON.stringify(lastVisibleWallet));
     localStorage.setItem(CACHED_COINS_KEY, String(myProfile.coins));
   }
 
-  // Coins pop out of where the player just tapped and fly up into the toolbar balance whenever it goes up.
+  // Earned coins arrive in three beats: the coins fly up to the toolbar, the coin sound plays as they land, and only
+  // then does the counter tick up (slowly enough to read). The number never moves before the coins reach it.
+  // Some screens credit coins a moment before the player sees the reward (a Daily saves on the last answer, a party game on its
+  // final screen): registerCoinHold(fn, maxMs) makes the arrival wait while fn() is true (never longer than maxMs).
+  const coinHolds = [];
+  const registerCoinHold = (fn, maxMs = 25000) => { coinHolds.push({ fn, maxMs }); };
+  const coinResultsShowing = (mode) => {
+    const on = (el) => !!el && el.classList.contains("active");
+    if (mode === "daily") return !!daily && daily.phase === "done" && on(dailyScreenEl);
+    if (mode === "monthly") return !!mo && mo.phase === "done" && on(monthlyScreenEl);
+    if (mode === "survival") return !!sv && sv.phase === "over" && on(survivalScreenEl);
+    if (mode === "worlds") return wl.phase === "done" && on(worldsScreenEl);
+    if (mode === "whichbigger") return !!wb && (wb.phase === "over" || wb.phase === "done") && on(wbScreenEl);
+    return true;
+  };
+  registerCoinHold(() => {
+    const w = coinResultsWait;
+    if (!w) return false;
+    if (performance.now() - w.t > 60000 || coinResultsShowing(w.mode)) { coinResultsWait = null; return false; }
+    return true;
+  });
+  registerCoinHold(() => !!(gameRewards && gameRewards.pending && !gameRewards.active), 15 * 60 * 1000); // party coins are credited on the final screen; wait for the reward screen
+  const coinArrival = (() => {
+    let shown = null;          // the number on screen right now
+    let target = 0;            // the real balance
+    let phase = "idle";        // idle | waiting | flying | counting
+    let gainPending = 0, waitSince = 0, rafId = 0, waitTimer = 0;
+    const show = (n) => { shown = n; toolbarCoinCountEl.textContent = formatCoinDisplay(n); };
+    const settleNow = () => { phase = "idle"; gainPending = 0; clearTimeout(waitTimer); cancelAnimationFrame(rafId); show(target); };
+    const lvlOpen = () => { try { return levelUpOpen; } catch (e) { return false; } };
+    function held() { const waited = performance.now() - waitSince; try { return coinHolds.some((h) => waited < h.maxMs && h.fn()); } catch (e) { return false; } }
+    function begin() {
+      const gain = gainPending; gainPending = 0;
+      const sound = () => { try { playSound("coins"); } catch (e) {} };
+      const fx = flyCoinsToToolbar(gain);
+      if (!fx) { sound(); settleNow(); return; }                       // toolbar not on screen: just show the new total
+      phase = "flying";
+      setTimeout(() => {
+        if (phase !== "flying") return;
+        sound(); sparkleCoins(toolbarCoinBalanceEl, false);
+        count(gain, fx.remaining());
+      }, fx.firstLand);
+    }
+    function count(gain, extra) {
+      phase = "counting"; gainPending = 0;
+      const from = shown, t0 = performance.now();
+      const dur = Math.min(3000, Math.max(1000, 700 + gain * 18, extra + 500));
+      const step = (now) => {
+        if (phase !== "counting") return;
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 1.6);
+        if (target < from) { settleNow(); return; }
+        show(Math.round(from + (target - from) * e));
+        if (k < 1) rafId = requestAnimationFrame(step);
+        else { phase = "idle"; show(target); }
+      };
+      rafId = requestAnimationFrame(step);
+    }
+    function tryStart() {
+      if (phase === "flying" || phase === "counting") return;
+      if (lvlOpen() || held()) { phase = "waiting"; clearTimeout(waitTimer); waitTimer = setTimeout(tryStart, 250); return; }
+      begin();
+    }
+    return {
+      reset() { settleNow(); shown = null; },
+      update(bal, gain) {
+        target = bal;
+        if (shown === null) { show(bal); return; }
+        if (gain > 0 && !prefersReducedMotion() && gain <= 100000) {
+          const wasIdle = phase === "idle";
+          gainPending += gain;
+          if (wasIdle) { waitSince = performance.now(); shown = bal - gain; tryStart(); }
+          else if (phase === "counting") { gainPending = 0; count(gain, 0); } // more coins landed mid-count: keep counting up to the new total
+          return;
+        }
+        if (phase === "idle") show(bal);
+        else if (bal < shown) settleNow();                                  // spent coins: never leave a stale number up
+      },
+    };
+  })();
+
+  // Coins pop out of where the reward is (the reward hero if one is on screen, else where the player just tapped)
+  // and fly up into the toolbar balance. Returns timing so the counter can wait for the first coin to land.
   let lastTapPoint = { x: innerWidth / 2, y: innerHeight * 0.6, t: 0 };
   document.addEventListener("pointerdown", (e) => { lastTapPoint = { x: e.clientX, y: e.clientY, t: performance.now() }; }, true);
+  function coinOrigin() {
+    for (const sel of [".coin-reward-hero", "[data-coin-source]"]) {
+      const el = [...document.querySelectorAll(sel)].find((n) => n.offsetParent !== null && n.getBoundingClientRect().width);
+      if (el) { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+    }
+    const fresh = performance.now() - lastTapPoint.t < 1500;
+    return fresh ? { x: lastTapPoint.x, y: lastTapPoint.y } : { x: innerWidth / 2, y: innerHeight * 0.6 };
+  }
   function flyCoinsToToolbar(gain) {
     try {
-      if (prefersReducedMotion() || !(gain > 0) || coinCountTweenActive || levelUpOpen) return;
+      if (!(gain > 0)) return null;
       const target = document.getElementById("toolbar-coin-icon") || toolbarCoinBalanceEl;
       const tr = target.getBoundingClientRect();
-      if (!tr.width) return;
-      const fresh = performance.now() - lastTapPoint.t < 1500;
-      const ox = fresh ? lastTapPoint.x : innerWidth / 2, oy = fresh ? lastTapPoint.y : innerHeight * 0.6;
+      if (!tr.width || !tr.height) return null;
+      const { x: ox, y: oy } = coinOrigin();
       const tx = tr.left + tr.width / 2, ty = tr.top + tr.height / 2;
-      const n = Math.max(4, Math.min(14, 4 + Math.round(gain / 12)));
+      const n = Math.max(5, Math.min(14, 5 + Math.round(gain / 12)));
       const layer = document.createElement("div");
       layer.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden";
       document.body.appendChild(layer);
-      let done = 0;
+      let done = 0, lastEnd = 0, firstEnd = Infinity;
       for (let i = 0; i < n; i++) {
         const c = document.createElement("img");
         c.src = "icons/coin-v2.png"; c.alt = "";
@@ -13396,34 +13475,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         layer.appendChild(c);
         const ang = Math.random() * Math.PI * 2, r = 20 + Math.random() * 50;
         const mx = ox + Math.cos(ang) * r, my = oy + Math.sin(ang) * r - 20;
+        const dur = 800 + Math.random() * 150, delay = i * 70;
+        lastEnd = Math.max(lastEnd, delay + dur); firstEnd = Math.min(firstEnd, delay + dur * 0.92);
         const anim = c.animate([
           { transform: `translate(${ox - 13}px,${oy - 13}px) scale(.4)`, opacity: 0, offset: 0 },
           { transform: `translate(${mx - 13}px,${my - 13}px) scale(1.1)`, opacity: 1, offset: 0.3 },
           { transform: `translate(${tx - 13}px,${ty - 13}px) scale(.55)`, opacity: 1, offset: 0.92 },
           { transform: `translate(${tx - 13}px,${ty - 13}px) scale(.3)`, opacity: 0, offset: 1 },
-        ], { duration: 750 + Math.random() * 150, delay: i * 55, easing: "ease-in-out", fill: "both" });
+        ], { duration: dur, delay, easing: "ease-in-out", fill: "both" });
         anim.onfinish = () => { if (++done === n) layer.remove(); };
       }
-      setTimeout(() => layer.remove(), 2500);
-    } catch (err) {}
-  }
-
-  let coinCountTweenActive = false;
-  function animateCoinCount(fromVal, toVal, durationMs) {
-    coinCountTweenActive = true;
-    const start = performance.now();
-    function step(now) {
-      const t = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - t, 3);
-      toolbarCoinCountEl.textContent = formatCoinDisplay(Math.round(fromVal + (toVal - fromVal) * eased));
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else {
-        toolbarCoinCountEl.textContent = formatCoinDisplay(toVal);
-        coinCountTweenActive = false;
-      }
-    }
-    requestAnimationFrame(step);
+      setTimeout(() => layer.remove(), 3500);
+      const t0 = performance.now();
+      return { firstLand: firstEnd, remaining: () => Math.max(0, lastEnd - (performance.now() - t0)) };
+    } catch (err) { return null; }
   }
 
   // Set for the whole span of a pull (click -> result popup dismissed), so
@@ -13975,7 +14040,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       rawR:guess/q.answer,answered:true,p:0,f:accuracy>=99?1:0,s:MODE_CODE[actualMode],mode:actualMode,buffer:effective!==guess},
       inc:{spotOns:accuracy>=99?1:0,perfects:Math.abs(effective-q.answer)<.005?1:0}});
   }
-  function completedAttempt(record) { careerLedger.save({kind:'attempt',t:Date.now(),...record}); }
+  // Coins for a finished run are credited the moment it ends, but the player sees them when the results appear: hold the toolbar arrival until then.
+  let coinResultsWait = null;
+  function completedAttempt(record) { coinResultsWait = { mode: record.mode === "practice" ? "monthly" : record.mode, t: performance.now() }; careerLedger.save({kind:'attempt',t:Date.now(),...record}); }
 
   const HISTORY_MAX = 300;
   function appendRoundHistory(rec, owner = deviceId) {

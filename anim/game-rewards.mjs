@@ -5,16 +5,18 @@ export function gameReward(score) {
   return { score: fromScore, minimum: Math.max(0, 5 - fromScore), base: Math.max(5, fromScore) };
 }
 
+export const adBonus = (r) => r.adBase ?? r.base;
+
 export function rewardProfile(profile, key, score, { double = false, complete = false } = {}) {
   if (!profile) return;
   const old = profile.gameRewards?.[key];
   if (old?.completed || (old && !double && !complete) || (old?.doubled && !complete)) return;
   const receipt = old ? { ...old } : { ...gameReward(score), doubled: false };
-  // Coin booster: one charge doubles a game's first payout (the ad double still stacks on top).
+  // Coin booster: one charge doubles a game's first payout. The ad bonus matches only the normal payout (adBase), so booster + ad is 3x, not 4x.
   const boosted = !old && (profile.booster | 0) > 0;
-  if (boosted) { receipt.base *= 2; receipt.boosted = true; }
+  if (boosted) { receipt.adBase = receipt.base; receipt.base *= 2; receipt.boosted = true; }
   let credit = old ? 0 : receipt.base;
-  if (double && !receipt.doubled) { credit += receipt.base; receipt.doubled = true; }
+  if (double && !receipt.doubled) { credit += adBonus(receipt); receipt.doubled = true; }
   if (complete) receipt.completed = true;
   return { ...profile, coins: (profile.coins || 0) + credit, ...(boosted ? { booster: (profile.booster | 0) - 1 } : {}),
     gameRewards: { ...(profile.gameRewards || {}), [key]: receipt } };
@@ -61,7 +63,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
   function render() {
     if (!current) return;
     const r = receipt || gameReward(current.score);
-    get('[data-total]').textContent = r.base * (r.doubled ? 2 : 1);
+    get('[data-total]').textContent = r.base + (r.doubled ? adBonus(r) : 0);
     const earned = get('[data-earned]'); if (earned) earned.textContent = r.boosted ? 'coins earned \u00b7 2x booster' : 'coins earned';
     get('[data-score]').textContent = r.score + ' coins';
     get('[data-minimum]').textContent = '+' + r.minimum + ' coins';
@@ -70,8 +72,8 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     get('[data-booster-row]').hidden = !r.boosted;
     get('[data-booster]').textContent = '+' + (r.boosted ? r.base - r.score - r.minimum : 0) + ' coins';
     get('[data-ad-row]').hidden = !r.doubled;
-    get('[data-bonus]').textContent = '+' + r.base + ' coins';
-    get('[data-ad-bonus]').textContent = 'Watch an ad · +' + r.base + ' bonus';
+    get('[data-bonus]').textContent = '+' + adBonus(r) + ' coins';
+    get('[data-ad-bonus]').textContent = 'Watch an ad · +' + adBonus(r) + ' bonus';
     get('[data-double]').hidden = !!(r.doubled || r.completed);
     get('[data-double]').disabled = busy || !receipt;
     get('[data-doubled]').hidden = !r.doubled;
@@ -82,7 +84,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     const presentation = current.owner + ':' + current.key + ':' + !!r.doubled;
     if (active && receipt && !receipt.completed && presentation !== presented) {
       presented = presentation;
-      try { onReward({ element: el, total: r.base * (r.doubled ? 2 : 1), added: r.base, key: presentation }); } catch {}
+      try { onReward({ element: el, total: r.base + (r.doubled ? adBonus(r) : 0), added: r.doubled ? adBonus(r) : r.base, key: presentation }); } catch {}
     }
 
   }

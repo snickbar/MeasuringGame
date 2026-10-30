@@ -61,6 +61,7 @@ for (const score of [0,2,10]) for (const charges of [0,1,3]) {
     assert.equal(profile.booster,Math.max(0,charges-1),'one charge per game');
   };
   check();await get('[data-double]').click();check();
+  assert.equal(Number.parseInt(get('[data-bonus]').textContent),Math.max(5,score),'ad bonus matches the normal payout, never the booster-doubled one');
   await get('[data-continue]').click();
   assert.equal(profile.booster,Math.max(0,charges-1),'ad and completion do not spend another charge');
   const recovered=createGameRewards({owner:()=> 'me',document:doc,storage,ad:async()=>true,finish:async()=>{},

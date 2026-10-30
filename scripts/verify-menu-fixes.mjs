@@ -14,7 +14,7 @@ assert.equal(initialText.textContent,'4366','restore the current number before d
 const walletText = {}, cached = new Map();
 const wallet = vm.createContext({walletAuthReady:false,walletProfileOwner:'guest',deviceId:'account',
   myProfile:{coins:5979},toolbarCoinCountEl:walletText,observedCoinOwner:'guest',observedCoinBalance:5979,
-  coinCountTweenActive:false,formatCoinDisplay:String,CACHED_COINS_KEY:'legacy',
+  coinArrival:{reset(){},update(balance){walletText.textContent=String(balance);}},formatCoinDisplay:String,CACHED_COINS_KEY:'legacy',
   lastVisibleWallet:null,localStorage:{setItem:(key,value)=>cached.set(key,value)},sparkleCoins(){},prefersReducedMotion:()=>true,toolbarCoinBalanceEl:{}});
 vm.runInContext(actual('renderCoinBalance'),wallet);
 wallet.renderCoinBalance();assert.equal(walletText.textContent,'…');assert.equal(cached.size,0);
