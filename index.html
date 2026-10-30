@@ -1026,6 +1026,10 @@ if (location.protocol === "file:") {
   .pin-top { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 4px; padding: 2px 12px 8px; background: transparent; }
   .pin-bottom { position: sticky; bottom: 0; z-index: 6; margin: 6px -12px 0; padding: 16px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: transparent; }
   .pin-bottom > .dc-btn { margin-top: 0; }
+  .pin-bottom > .dc-btn + .dc-btn { margin-top: 8px; }
+  /* Mode info screens (Classic, High/Low, High Stakes, Bluff, Team vs Team, Team Worlds): Create Room stays at the bottom, the rules scroll. */
+  :is(#teamvteam-content,#teamworlds-content):has(> .pin-bottom) { display: flex; flex-direction: column; min-height: calc(100dvh - 62px); padding-bottom: 0; }
+  :is(#teamvteam-content,#teamworlds-content) > .pin-bottom { margin-top: auto; }
   .pin-top > .dc-title { margin-top: 0; }
   .pin-bottom > .hs-hint { margin: 0 0 6px; }
   /* Party: Lock it in stays at the bottom of the scrolling column. */
@@ -10478,8 +10482,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Closest guess wins</div><div class="dc-note">Everyone sees the same two objects and guesses how many of one fit in the other. Whoever lands closest takes the round.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
-      <button type="button" class="dc-btn" id="classic-start">Create Room</button>
-      <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}`;
+      <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="classic-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -10488,8 +10492,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
       <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life. Survive 3 rounds in a row to earn a shared shield that blocks one lost life. The shield holds one charge. Every fifth survival is a themed round worth double coins; a failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
-      <button type="button" class="dc-btn" id="hl-start">Create Room</button>
-      <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}`;
+      <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="hl-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -10498,7 +10502,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Find the real answer</div><div class="dc-note">Everyone antes some coins and sees the question with 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.</div></div>
       <div class="dc-card"><div class="dc-big">Bet like poker</div><div class="dc-note">Then it goes around the table: fold, check, call or raise. Everyone still in who picked the real answer splits the pot. If nobody did, the pot rolls over to the next round. If everyone else folds, you take the pot even if you were wrong &mdash; so bluffing works.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast everyone</div><div class="dc-note">You start with ${HS.HS_START_COINS} table chips and the ante doubles every 2 rounds. Run out of coins and you're out. Last player standing, or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds, wins.</div></div>
-      <button type="button" class="dc-btn" id="hs-start">Create Room</button>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="hs-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -10525,7 +10529,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Points rank first; vote accuracy breaks ties. A complete tie shares the win.</div>
         <div class="bl-setup-options" role="group" aria-label="Maker turns each">${[['auto','Auto'],[1,'1 each'],[2,'2 each']].map(([id,label])=>`<button type="button" data-bluff-turns="${id}" aria-pressed="${bluffTurnsChoice===id}">${label}</button>`).join('')}</div>
         <p class="dc-note">25 seconds to choose a claim, then 30 seconds to vote. Tap to submit; you have up to 10 seconds to change your vote before time runs out. No Second Chance or power-ups. See the round summary and rankings after every reveal.</p></div>
-      <button type="button" class="dc-btn" id="bluff-start">Create Room</button>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(b=>b.onclick=()=>{bluffTurnsChoice=b.dataset.bluffTurns==='auto'?'auto':Number(b.dataset.bluffTurns);teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
     document.getElementById('bluff-start').onclick=async()=>{
@@ -10591,8 +10595,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
-      <button type="button" class="dc-btn" id="tvt-start">Create Room</button>
-      <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}`;
+      <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="tvt-start">Create Room</button></div>`;
   }
   function openTeamVTeamInfo() {
     renderTeamVTeamInfo();
@@ -11628,9 +11632,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2><p class="dc-sub">Team Worlds</p>${tourBtn('teamworlds')}
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
-      <button type="button" class="dc-btn" id="tw-start">Create Room</button>
-      <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button>
-      <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}`;
+      <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="tw-start">Create Room</button>
+      <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button></div>`;
   }
   function openTeamWorldsScreen() {
     twWorldId = null;
