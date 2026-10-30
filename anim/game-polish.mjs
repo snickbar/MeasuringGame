@@ -84,8 +84,8 @@ export function createPolish({ document: doc = document, reduced = () => false, 
     if (!visible(element)) return;
     const value = element.querySelector('[data-total]');
     count(value, Math.max(0, total - added), total);
-    trail(element.querySelector('.coin-reward-hero'), doc.getElementById('toolbar-coin-balance'));
-    if (!celebrated.has('coin:' + key)) { celebrated.add('coin:' + key); sound('coins'); }
+    // The coins' flight to the toolbar, the coin sound and the counter tick-up now live in one place (the toolbar's coin arrival), so they always agree.
+    celebrated.add('coin:' + key);
   }
   function stars(el) {
     const key = 'stars:' + el.dataset.celebrationKey;
