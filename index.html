@@ -2678,6 +2678,8 @@ if (location.protocol === "file:") {
     50% { scale: 1.055; filter: drop-shadow(0 0 7px #ff8a35); }
   }
   #toolbar-coin-balance { position: relative; }
+  #toolbar-boost-tag { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 11px; line-height: 1; white-space: nowrap; padding: 3px 7px; border-radius: 999px; background: #ffd23f; color: #5a3a1a; border: 2px solid #c8660a; flex-shrink: 0; }
+  #boost-pack-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .coin-sparkle { position: absolute; z-index: 3; color: #ffcf35; text-shadow: 0 0 2px #8f5810; font-size: 13px; pointer-events: none; }
   .lead-celebration { position: absolute; right: 2px; top: 1px; z-index: 4; padding: 2px 5px; border: 1px solid #b77d16; border-radius: 9px; background: #fff0a6; color: #65400b; font: 700 10px 'Fredoka',sans-serif; pointer-events: none; animation: leadLabel 2.2s ease both; }
   @keyframes leadLabel { 0% { opacity: 0; translate: 0 5px; } 15%,80% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 0 -4px; } }
@@ -3833,6 +3835,7 @@ if (location.protocol === "file:") {
   <button id="toolbar-home-btn" class="toolbar-badge-btn" type="button" aria-label="Home"><img src="icons/toolbar-home.png" alt=""></button>
   <div id="toolbar-center">
     <button id="toolbar-coin-balance" type="button"><img id="toolbar-coin-icon" src="icons/toolbar-coin.png" alt=""><span id="toolbar-coin-box"><span id="toolbar-coin-count">0</span></span></button>
+    <span id="toolbar-boost-tag" hidden></span>
     <script id="restore-visible-coins">
       // Restore presentation before the module/auth downloads can paint a temporary zero.
       try {
@@ -3960,6 +3963,24 @@ if (location.protocol === "file:") {
           <div class="coin-pack-label">Coins</div>
           <div class="coin-pack-status"></div>
           <button type="button" class="coin-pack-buy-btn" data-coins="3000">$7.99 &middot; Buy Now</button>
+        </div>
+      </div>
+      <div class="shop-sub">Coin booster</div>
+      <div class="shop-sub-note">Doubles the coins from each finished game or run. Charges stack, up to 60.</div>
+      <div id="boost-pack-row">
+        <div class="coin-pack-card">
+          <img class="coin-pack-icon" src="icons/flair/bolt.png" alt="">
+          <div class="coin-pack-amount">10</div>
+          <div class="coin-pack-label">2x Games</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" data-boost="10">$0.99 &middot; Buy Now</button>
+        </div>
+        <div class="coin-pack-card popular">
+          <img class="coin-pack-icon" src="icons/flair/bolt.png" alt="">
+          <div class="coin-pack-amount">3</div>
+          <div class="coin-pack-label">2x Games</div>
+          <div class="coin-pack-status"></div>
+          <button type="button" class="coin-pack-buy-btn" id="boost-ad-btn" data-boost-ad="3">Watch Ad &middot; Free</button>
         </div>
       </div>
       <div class="shop-sub">Avatar pulls</div>
@@ -5536,6 +5557,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return {
       coins: 0,
       freePulls: 0,
+      booster: 0,
       levelPaid: 0,
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
@@ -5686,8 +5708,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("toolbar-cosmetics-btn")?.classList.toggle("has-free-pull", on);
     document.querySelectorAll('.cosm-tab-btn[data-tab="avatars"]').forEach((b) => b.classList.toggle("has-free-pull", on));
   }
+  const BOOSTER_MAX = 60;
+  function renderBoosterTag() {
+    const n = myProfile.booster | 0, tag = document.getElementById("toolbar-boost-tag");
+    if (!tag) return;
+    tag.hidden = n <= 0;
+    tag.textContent = `2x \u00b7 ${n} left`;
+  }
+  async function addBoosterCharges(n) {
+    await runTransaction(ref(db, `profiles/${deviceId}/booster`), (cur) => Math.min(BOOSTER_MAX, (cur | 0) + n));
+  }
   function renderProfileDependentUi() {
     try { renderFreePullStar(); } catch (e) {}
+    try { renderBoosterTag(); } catch (e) {}
     try { debugTools && debugTools.refresh(); } catch (e) {}
     discoveryUI?.refresh();
     tutorialUI?.refresh();
@@ -5733,6 +5766,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       myProfile = {
         coins: data.coins || 0,
         freePulls: Math.max(0, data.freePulls | 0),
+        booster: Math.max(0, data.booster | 0),
         levelPaid: Math.max(0, data.levelPaid | 0),
         unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
         hostUnlocked: !!data.hostUnlocked,
@@ -13042,6 +13076,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     await watchAdForCoins();
     renderWatchAdStatus();
   });
+  document.querySelectorAll("button[data-boost]").forEach((btn) => { btn.addEventListener("click", async () => {
+    const n = parseInt(btn.dataset.boost, 10);
+    const priceText = (btn.textContent.split("\u00b7")[0] || "").trim();
+    const bought = await purchase({ icon: "icons/flair/bolt.png", title: `Coin Booster (${n} games)`, price: priceText || "Buy Now" });
+    if (!bought) return;
+    btn.disabled = true; await addBoosterCharges(n); btn.disabled = false;
+  }); });
+  document.querySelectorAll("button[data-boost-ad]").forEach((btn) => { btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    await showFakeAd();
+    await addBoosterCharges(parseInt(btn.dataset.boostAd, 10));
+    btn.disabled = false;
+  }); });
   coinPackBtns.forEach((btn) => {
     // .coin-pack-buy-btn is also shared by the ad-reward and host-unlock
     // buttons, which have their own dedicated listeners elsewhere - only

@@ -10,10 +10,13 @@ export function rewardProfile(profile, key, score, { double = false, complete = 
   const old = profile.gameRewards?.[key];
   if (old?.completed || (old && !double && !complete) || (old?.doubled && !complete)) return;
   const receipt = old ? { ...old } : { ...gameReward(score), doubled: false };
+  // Coin booster: one charge doubles a game's first payout (the ad double still stacks on top).
+  const boosted = !old && (profile.booster | 0) > 0;
+  if (boosted) { receipt.base *= 2; receipt.boosted = true; }
   let credit = old ? 0 : receipt.base;
   if (double && !receipt.doubled) { credit += receipt.base; receipt.doubled = true; }
   if (complete) receipt.completed = true;
-  return { ...profile, coins: (profile.coins || 0) + credit,
+  return { ...profile, coins: (profile.coins || 0) + credit, ...(boosted ? { booster: (profile.booster | 0) - 1 } : {}),
     gameRewards: { ...(profile.gameRewards || {}), [key]: receipt } };
 }
 
@@ -36,7 +39,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     <div class="coin-reward-content">
       <header><span class="coin-reward-eyebrow">GAME COMPLETE</span><h1 class="polish-banner" style="--banner:url(icons/banner-blank-blue.png)"><img src="icons/coin-v2.png" alt="">Your rewards</h1><p>Here’s what you earned.</p></header>
       <div class="coin-reward-ticket">
-        <div class="coin-reward-hero"><img src="icons/coin-v2.png" alt=""><div><strong data-total>5</strong><span>coins earned</span></div></div>
+        <div class="coin-reward-hero"><img src="icons/coin-v2.png" alt=""><div><strong data-total>5</strong><span data-earned>coins earned</span></div></div>
         <div class="coin-reward-divider"></div>
         <div class="coin-reward-row"><span>From your score</span><b data-score>0 coins</b></div>
         <div class="coin-reward-row" data-minimum-row><span>Minimum reward bonus</span><b data-minimum>+5 coins</b></div>
@@ -58,6 +61,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     if (!current) return;
     const r = receipt || gameReward(current.score);
     get('[data-total]').textContent = r.base * (r.doubled ? 2 : 1);
+    const earned = get('[data-earned]'); if (earned) earned.textContent = r.boosted ? 'coins earned \u00b7 2x booster' : 'coins earned';
     get('[data-score]').textContent = r.score + ' coins';
     get('[data-minimum]').textContent = '+' + r.minimum + ' coins';
     get('[data-minimum-row]').hidden = !r.minimum;

@@ -182,8 +182,12 @@ export function applyCareerRecord(profile,record){
   }
   const mode=record.mode==='practice'?'monthly':record.mode,old=profile.modeStats?.[mode]||{};
   result.modeStats={...profile.modeStats,[mode]:{...old,attempts:(old.attempts||0)+1,bestAccuracy:Math.max(old.bestAccuracy||0,record.accuracy||0)}};
-  result.stats=stats;result.coins=(profile.coins||0)+coins;
-  result.attemptReceipts={...profile.attemptReceipts,[key]:{mode:record.mode,coins,accuracy:record.accuracy||0,t:record.t}};
+  // Coin booster: one charge doubles what this finished game/run pays.
+  const boosted=coins>0&&(profile.booster|0)>0;
+  if(boosted)result.booster=(profile.booster|0)-1;
+  const paid=boosted?coins*2:coins;
+  result.stats=stats;result.coins=(profile.coins||0)+paid;
+  result.attemptReceipts={...profile.attemptReceipts,[key]:{mode:record.mode,coins:paid,accuracy:record.accuracy||0,t:record.t,...(boosted?{boosted:true}:{})}};
   result.attemptHistory=[...list(profile.attemptHistory),{...result.attemptReceipts[key],world:record.world||null,level:record.level||null,survived:record.survived??null}].slice(-60);
   return result;
 }
