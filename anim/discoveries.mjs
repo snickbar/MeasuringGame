@@ -10,6 +10,22 @@ export function recentDiscoveries(profile, {session,limit=6,allowed}={}) {
   .sort((a,b)=>(b[1].t||0)-(a[1].t||0)||a[0].localeCompare(b[0]))
   .slice(0,limit).map(([id,row])=>({id,...row}));
 }
+// Once everything is discovered, "recently discovered" can never change again, so the box follows what you SEE instead:
+// the newest rounds' objects, each new one taking the top spot (and moving itself up if it was already listed).
+export function recentlySeen(profile, {limit=6,allowed}={}) {
+ const rounds=Array.isArray(profile.history)?profile.history:Object.values(profile.history||{});
+ const out=[],have=new Set();
+ for(const h of rounds.filter(h=>h&&(h.u||h.g)).sort((a,b)=>(b.t||0)-(a.t||0))){
+  for(const id of [h.g,h.u]){
+   if(!id||have.has(id)||!profile.seenObjects?.[id]||(allowed&&!allowed.has(id)))continue;
+   have.add(id);out.push({id});
+   if(out.length>=limit)return out;
+  }
+ }
+ // History is a rolling window; top up from the discovery list if it ever holds fewer than the box needs.
+ for(const row of recentDiscoveries(profile,{limit:limit*2,allowed})){if(out.length>=limit)break;if(!have.has(row.id)){have.add(row.id);out.push({id:row.id});}}
+ return out;
+}
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function discoveryTiles(rows, object) {
  return rows.map(({id})=>{const o=object(id);return o?`<button type="button" class="discovery-thumb" data-id="${escape(id)}" aria-label="View ${escape(o.name)}"><img src="${escape(o.image)}" alt=""><span>${escape(o.name)}</span></button>`:'';}).join('');

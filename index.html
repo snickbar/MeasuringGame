@@ -4842,7 +4842,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
   import { createPolish, applyMenuBanner, MENU_BANNERS } from "./anim/game-polish.mjs";
-  import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
+  import { recentDiscoveries, recentlySeen, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createModeTutorial } from "./anim/mode-tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
@@ -13693,8 +13693,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
     const comboKeys = Object.keys(myProfile.seenCombos || {});
     const NORMAL_LIST = OBJECTS.concat(FANTASY_OBJECTS);
-    const recent = recentDiscoveries(myProfile,{limit:6,allowed:new Set(isHoliday?HOLIDAY_OBJECT_DEFS.map(d=>d[1]):NORMAL_LIST.map(o=>o.id))});
-    const recentHtml = `<section class="recent-discoveries"><h3>Recently discovered</h3>${recent.length?`<div class="discovery-grid">${discoveryTiles(recent,id=>OBJECT_BY_ID.get(id))}</div>`:'<p class="cs-note">New discoveries will appear here as you play.</p>'}</section>`;
+    const listIds = isHoliday ? HOLIDAY_OBJECT_DEFS.map(d=>d[1]) : NORMAL_LIST.map(o=>o.id);
+    const allFound = listIds.length > 0 && listIds.every((id) => seenSet[id]);
+    const recent = (allFound ? recentlySeen : recentDiscoveries)(myProfile,{limit:6,allowed:new Set(listIds)});
+    const recentHtml = `<section class="recent-discoveries"><h3>${allFound ? "Most recently seen" : "Recently discovered"}</h3>${recent.length?`<div class="discovery-grid">${discoveryTiles(recent,id=>OBJECT_BY_ID.get(id))}</div>`:'<p class="cs-note">New discoveries will appear here as you play.</p>'}</section>`;
     const normalTotal = NORMAL_LIST.length, holidayTotal = HOLIDAY_OBJECT_DEFS.length;
     let seenCount, totalCount, seenComboCount, comboCount, listHtml;
     if (!isHoliday) {
