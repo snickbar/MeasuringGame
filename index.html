@@ -6041,7 +6041,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 3 * 60 * 1000) return;
       const k = String(row.key).replace(/[.#$\[\]/]/g, "_");
       const prof = (await get(ref(db, `profiles/${id}`))).val() || {};
-      const coins = prof.attemptReceipts?.[k]?.coins || 0;
+      const coins = prof.attemptReceipts?.[k]?.base ?? prof.attemptReceipts?.[k]?.coins ?? 0; // the ad bonus matches the normal payout, not the booster-doubled one
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
       if (AD_BAR_MODES[row.mode]) { adOffers[row.mode] = { k, coins, key: row.key, t: Date.now() }; adBarRefresh(row.mode); return; } // solo results screens show the offer inside their split bar
