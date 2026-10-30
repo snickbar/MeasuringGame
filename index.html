@@ -361,6 +361,16 @@ if (location.protocol === "file:") {
   .shop-sub { margin: 20px 4px 0; font: 700 17px/1.2 'Fredoka', sans-serif; text-align: center; color: #3a2610; }
   .shop-sub-note { margin: 2px 8px 0; font-size: 12.5px; text-align: center; color: #7a5a30; }
   #pull-pack-row .coin-pack-card.wide { grid-column: 1 / -1; }
+  #tip-thanks { position: fixed; inset: 0; z-index: 2200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); padding: 20px; }
+  #tip-thanks .tt-card { position: relative; overflow: hidden; width: min(320px, 100%); box-sizing: border-box; padding: 26px 20px 20px; border-radius: 24px; background: #fffaf0; border: 3px solid #fff; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  #tip-thanks .tt-rays { position: absolute; left: 50%; top: 100px; width: 520px; height: 520px; margin: -260px 0 0 -260px; background: repeating-conic-gradient(rgba(255,205,80,.35) 0 10deg, rgba(255,205,80,0) 10deg 20deg); -webkit-mask: radial-gradient(circle, #000 0 30%, transparent 68%); mask: radial-gradient(circle, #000 0 30%, transparent 68%); animation: ttSpin 14s linear infinite; }
+  #tip-thanks .tt-medal { position: relative; width: 150px; height: 150px; object-fit: contain; animation: ttPop .5s cubic-bezier(.34,1.56,.64,1) both; }
+  #tip-thanks h3 { position: relative; margin: 6px 0 4px; font: 700 26px/1.1 'Fredoka', sans-serif; color: #3a2610; }
+  #tip-thanks p { position: relative; margin: 0 0 14px; font-size: 14.5px; color: #6a4a22; }
+  #tip-thanks .tt-close { position: relative; width: 100%; padding: 12px; border: 0; border-radius: 14px; font: 700 16px 'Fredoka', sans-serif; color: #fff; background: linear-gradient(180deg, #ff7a7a, #f04e5a); box-shadow: 0 3px 0 #b82f3a; cursor: pointer; }
+  @keyframes ttSpin { to { transform: rotate(360deg); } }
+  @keyframes ttPop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  :root[data-motion="reduce"] #tip-thanks .tt-rays, :root[data-motion="reduce"] #tip-thanks .tt-medal { animation: none; }
   #tip-pack-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
   #tip-pack-row .tip-card { grid-template-columns: 1fr; grid-template-areas: "icon" "amt" "lbl" "st" "btn"; justify-items: center; text-align: center; padding: 14px 6px 8px; }
   #tip-pack-row .tip-card .coin-pack-label { font-size: 11px; }
@@ -4278,6 +4288,12 @@ if (location.protocol === "file:") {
     <p class="settings-profile-hint">For testing: lock or unlock things, set coins, reset progress. Changes your real profile.</p>
     <div id="debug-tools-root"></div>
   </details>
+
+  <div class="settings-card" id="settings-support-card">
+    <div class="settings-about-row"><h3>Support the game</h3>
+    <button id="settings-tip-btn" type="button" class="settings-cream-btn">Tip jar</button></div>
+    <p class="settings-profile-hint settings-preset-hint">Enjoying Size Em Up? A tip keeps it growing and earns you a Supporter medal.</p>
+  </div>
 
   <div class="settings-card" id="settings-about-card">
     <div class="settings-about-row"><h3>About</h3>
@@ -13148,12 +13164,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = false;
     });
   });
+  // The thank-you after a tip: the Supporter medal pops in over spinning rays. Taps close it straight away.
+  function showTipThanks(dollars) {
+    document.getElementById("tip-thanks")?.remove();
+    const first = (myProfile.tipCount | 0) < 1;
+    const ov = document.createElement("div");
+    ov.id = "tip-thanks";
+    ov.innerHTML = `<div class="tt-card"><div class="tt-rays"></div><img class="tt-medal" src="icons/ach/supporter.png" alt="" draggable="false">
+      <h3>Thank you!</h3><p>Your $${dollars} tip helps Size Em Up keep growing.${first ? " Your Supporter medal is waiting in Awards." : ""}</p>
+      <button type="button" class="tt-close">You're welcome</button></div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".tt-close")) close(); });
+    ov.querySelector(".tt-close").focus({ preventScroll: true });
+    try { playSound("roundwin"); } catch (e) {}
+  }
+  document.getElementById("settings-tip-btn")?.addEventListener("click", () => {
+    openGachaScreen("coins");
+    requestAnimationFrame(() => document.getElementById("tip-pack-row")?.scrollIntoView({ block: "center" }));
+  });
   // Tip jar: a pure thank-you purchase. Records how many tips and how many dollars so the Supporter medal (and anything later) can read it.
   document.querySelectorAll("button[data-tip]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const d = parseInt(btn.dataset.tip, 10);
       const bought = await purchase({ icon: "icons/ach/supporter.png", title: `Tip $${d}`, desc: "Thank you for supporting Size Em Up!", price: `$${d}` });
       if (!bought) return;
+      showTipThanks(d);
       runTransaction(ref(db, `profiles/${deviceId}/tipCount`), (cur) => (cur | 0) + 1).catch(() => {});
       runTransaction(ref(db, `profiles/${deviceId}/tipDollars`), (cur) => (cur | 0) + d).catch(() => {});
     });
@@ -13596,7 +13632,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", ...MODE_AWARD_CATEGORIES];
+  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", "Supporter", ...MODE_AWARD_CATEGORIES];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -13682,11 +13718,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   ACHIEVEMENTS.push({ id: "home-giraffe", cat: "Accuracy", name: "Head above the rest", desc: "Land 15 guesses within 1%", target: 15, reward: 0, home: "giraffe", homeLabel: "Safari", progress: ACH_STAT("spotOns") });
   ACHIEVEMENTS.push({ id: "home-dragon", cat: "Fun", name: "Dragon slayer", desc: "Reach 20 in Survival", target: 20, reward: 0, home: "dragon", homeLabel: "Kingdom", progress: () => survivalBest() });
   ACHIEVEMENTS.push({ id: "home-space", cat: "Worlds", name: "Star collector", desc: "Earn a star on the last level of every world", target: WORLDS.length, reward: 0, home: "space", homeLabel: "Space", progress: () => WORLDS.filter((w) => worldSceneEarned(w.id)).length });
+  // Supporter medal: earned by leaving any tip in the Tip jar. A pure thank-you, so no coins.
+  ACHIEVEMENTS.push({ id: "supporter-tipper", cat: "Supporter", name: "Supporter", desc: "Leave a tip in the Tip jar", target: 1, reward: 0, thanks: true, icon: "icons/ach/supporter.png", progress: () => ((myProfile.tipCount | 0) >= 1 ? 1 : 0) });
   function achDone(a) { return a.progress() >= a.target; }
   function achClaimable(a) { return !a.auto && achDone(a) && !((myProfile.achClaimed || {})[a.id]); }
 
   // ids that have art in icons/ach/<id>.png (add each id here when its file is added)
-  const ACH_ICON_IDS = new Set(["social-party_time-25", "fun-gacha_fan-10", "fun-gacha_fan-50", "fun-ad_watcher-10", "winning-round_winner-1", "winning-round_winner-10", "winning-round_winner-50", "winning-on_a_roll-3", "second_chance-second_look-25", "second_chance-double_down-5", "second_chance-double_down-25", "social-party_time-5", "winning-on_a_roll-5", "winning-champion-1", "winning-champion-10", "winning-champion-50", "accuracy-spot_on-10", "accuracy-spot_on-50", "accuracy-perfect-1", "accuracy-perfect-5", "winning-regular-5", "winning-regular-25", "winning-regular-100", "second_chance-second_look-5", "collector-ultra_lucky-5", "collector-object_spotter-25", "collector-object_spotter-75", "collector-object_spotter-116", "collector-combo_hunter-50", "collector-combo_hunter-250", "collector-combo_hunter-1000", "accuracy-spot_on-1", "collector-avatar_fan-5", "collector-avatar_fan-25", "collector-avatar_fan-75", "collector-ultra_lucky-1"]);
+  const ACH_ICON_IDS = new Set(["supporter-tipper", "social-party_time-25", "fun-gacha_fan-10", "fun-gacha_fan-50", "fun-ad_watcher-10", "winning-round_winner-1", "winning-round_winner-10", "winning-round_winner-50", "winning-on_a_roll-3", "second_chance-second_look-25", "second_chance-double_down-5", "second_chance-double_down-25", "social-party_time-5", "winning-on_a_roll-5", "winning-champion-1", "winning-champion-10", "winning-champion-50", "accuracy-spot_on-10", "accuracy-spot_on-50", "accuracy-perfect-1", "accuracy-perfect-5", "winning-regular-5", "winning-regular-25", "winning-regular-100", "second_chance-second_look-5", "collector-ultra_lucky-5", "collector-object_spotter-25", "collector-object_spotter-75", "collector-object_spotter-116", "collector-combo_hunter-50", "collector-combo_hunter-250", "collector-combo_hunter-1000", "accuracy-spot_on-1", "collector-avatar_fan-5", "collector-avatar_fan-25", "collector-avatar_fan-75", "collector-ultra_lucky-1"]);
   const TROPHY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none" stroke="#8a4f00" stroke-width="1.6"/><path d="M12 14v4M8 21h8M9 18h6v3H9z" fill="#ffd23c" stroke="#8a4f00" stroke-width="1.6" stroke-linejoin="round"/></svg>';
   let achHideDone = false;
   try { achHideDone = localStorage.getItem("mg_ach_hide") === "1"; } catch (e) {}
@@ -13714,7 +13752,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const btn = document.getElementById("toolbar-awards-btn");
     if (btn) btn.classList.toggle("has-claim", real.some(achClaimable));
     updateCareerDot();
-    const rewardText = (a) => (a.fantasy ? `Unlocks the ${a.fantasyLabel}` : a.bg ? `Scene: ${a.bgLabel}` : a.home ? `Home screen: ${a.homeLabel}` : `+${a.reward} coins`);
+    const rewardText = (a) => (a.fantasy ? `Unlocks the ${a.fantasyLabel}` : a.bg ? `Scene: ${a.bgLabel}` : a.home ? `Home screen: ${a.homeLabel}` : a.thanks ? "Our thanks!" : `+${a.reward} coins`);
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
       const done = p >= a.target, isClaimed = !!claimed[a.id];
@@ -13800,7 +13838,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
       return;
     }
-    const fresh = ACHIEVEMENTS.filter((a) => !a.test && !a.auto && achDone(a) && !seen.includes(a.id));
+    const fresh = ACHIEVEMENTS.filter((a) => !a.test && !a.auto && !a.thanks && achDone(a) && !seen.includes(a.id)); // the tip thank-you popup already tells them about the Supporter medal
     if (!fresh.length) return;
     try { localStorage.setItem("mg_ach_seen", JSON.stringify(doneIds)); } catch (e) {}
     showAchToast(fresh.length === 1 ? `Award unlocked: ${fresh[0].name}! +${fresh[0].reward} coins ready` : `${fresh.length} awards unlocked! Check the Awards button`);
