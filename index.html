@@ -16731,8 +16731,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updates.hlBestSyncStreak = Math.max(roomState.hlBestSyncStreak || 0, updates.hlSyncStreak);
       updates.hlSyncTotal = (roomState.hlSyncTotal || 0) + (syncSurvived ? 1 : 0);
       // Average % off: how far each pick was from the answer (each capped at 100%), averaged over the team and the game.
-      if (bothIn && answer > 0) {
-        const off = (v) => Math.min(100, Math.abs(v / answer - 1) * 100);
+      // A missing pick counts as 100% off, same as a 0% accuracy round elsewhere.
+      if (answer > 0) {
+        const off = (v) => (typeof v === "number" ? Math.min(100, Math.abs(v / answer - 1) * 100) : 100);
         updates.hlOffSum = (roomState.hlOffSum || 0) + (off(hv) + off(lv)) / 2;
         updates.hlOffRounds = (roomState.hlOffRounds || 0) + 1;
       }
