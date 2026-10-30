@@ -4479,6 +4479,14 @@ if (location.protocol === "file:") {
         </span>
       </label>
     </div>
+    <div class="settings-group" id="create-room-opts">
+      <h2 class="settings-eyebrow">Room options</h2>
+      <div class="lobby-opts" role="group" aria-label="Room options">
+        <button type="button" id="cs-tour" class="lobby-opt" role="switch" aria-checked="false" aria-pressed="false" data-opt="tour"><img class="lobby-opt-ic" src="icons/flair/bolt.png" alt=""><span class="lobby-opt-tx"><b>Show how to play</b><small>A short slideshow for everyone before round 1</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">Off</span></span></button>
+        <button type="button" id="cs-anim" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" data-opt="anim"><img class="lobby-opt-ic" src="items/fireworks.webp" alt=""><span class="lobby-opt-tx"><b>Answer animation</b><small>Watch the answer play out each round</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
+        <button type="button" id="cs-mb" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" data-opt="mb"><img class="lobby-opt-ic" src="items/unicorn.webp" alt=""><span class="lobby-opt-tx"><b>Make-believe objects</b><small>Include dragons, unicorns and more</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
+      </div>
+    </div>
     <details class="cozy-host-settings" id="host-settings-card">
       <summary>Host disconnect settings</summary>
       <label class="settings-row-stack">If host disconnects
@@ -4642,11 +4650,6 @@ if (location.protocol === "file:") {
   </div>
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
-  <div class="lobby-opts" role="group" aria-label="Room options">
-    <button type="button" id="lobby-tour-toggle" class="lobby-opt" role="switch" aria-checked="false" aria-pressed="false" hidden><img class="lobby-opt-ic" src="icons/flair/bolt.png" alt=""><span class="lobby-opt-tx"><b>Show how to play</b><small>A short slideshow for everyone before round 1</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">Off</span></span></button>
-    <button type="button" id="lobby-reveal-toggle" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true"><img class="lobby-opt-ic" src="items/fireworks.webp" alt=""><span class="lobby-opt-tx"><b>Answer animation</b><small>Watch the answer play out each round</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
-    <button type="button" id="lobby-make-believe-toggle" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" hidden><img class="lobby-opt-ic" src="items/unicorn.webp" alt=""><span class="lobby-opt-tx"><b>Make-believe objects</b><small>Include dragons, unicorns and more</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
-  </div>
   <div class="lobby-room-box">
     <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
@@ -10491,6 +10494,45 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
+  // ---- Room options: the switches that used to sit in the lobby are chosen before the room exists ----
+  let roomOptsPending = null, roomOptsBack = null;
+  const roomOptsAvail = (like) => { const key = tourKeyFor(like); return { tour: !like.solo && !!key && !!modeTutorialUI?.count(key), mb: isPartyRoomSettings(like) }; };
+  const ROOM_OPT_ROWS = [
+    ["tour", "icons/flair/bolt.png", "Show how to play", "A short slideshow for everyone before round 1"],
+    ["anim", "items/fireworks.webp", "Answer animation", "Watch the answer play out each round"],
+    ["mb", "items/unicorn.webp", "Make-believe objects", "Include dragons, unicorns and more"],
+  ];
+  function roomOptsHtml(avail, st) {
+    return `<div class="lobby-opts" role="group" aria-label="Room options">${ROOM_OPT_ROWS.map(([id, ic, t, sub]) => `<button type="button" class="lobby-opt" role="switch" data-opt="${id}" aria-checked="${!!st[id]}" aria-pressed="${!!st[id]}"${avail[id] === false ? " hidden" : ""}><img class="lobby-opt-ic" src="${ic}" alt=""><span class="lobby-opt-tx"><b>${t}</b><small>${sub}</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">${st[id] ? "On" : "Off"}</span></span></button>`).join("")}</div>`;
+  }
+  function applyRoomOpts() { if (roomOptsPending) { Object.assign(currentSettings, roomOptsPending); roomOptsPending = null; } }
+  function showRoomOptions({ title, like, extrasHtml = "", bindExtras = null, onCreate, back, host = teamvteamContentEl }) {
+    const avail = roomOptsAvail(like), st = { tour: avail.tour && tourWanted(like), anim: true, mb: true };
+    host.innerHTML = `<h2 class="dc-title">${title}</h2><p class="dc-sub">Room options</p>${roomOptsHtml(avail, st)}${extrasHtml}
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="ro-create">Create Room</button></div>`;
+    roomOptsBack = back;
+    host.querySelectorAll(".lobby-opt").forEach((b) => b.addEventListener("click", () => { st[b.dataset.opt] = !st[b.dataset.opt]; setLobbySwitch(b, st[b.dataset.opt]); }));
+    bindExtras?.();
+    host.querySelector("#ro-create").addEventListener("click", (e) => activateButton(e.currentTarget, () => {
+      roomOptsPending = { animationReveal: st.anim, ...(avail.tour ? { showTutorial: st.tour } : {}), ...(avail.mb ? { includeMakeBelieve: st.mb } : {}) };
+      roomOptsBack = null;
+      return onCreate();
+    }));
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  // Create screen (Classic Party, Quick Game, Team vs Team): the same three switches live in its settings list.
+  function syncCreateRoomOpts() {
+    const like = createMode === "solo" ? { solo: true } : createMode === "teamvteam" ? { mode: "teamvteam" } : {};
+    const avail = roomOptsAvail(like), s = currentSettings;
+    if (avail.tour && s.showTutorial === undefined) s.showTutorial = tourWanted(like);
+    const on = { tour: !!s.showTutorial, anim: s.animationReveal !== false, mb: s.includeMakeBelieve !== false };
+    document.querySelectorAll("#create-room-opts .lobby-opt").forEach((b) => { b.hidden = avail[b.dataset.opt] === false; setLobbySwitch(b, on[b.dataset.opt]); });
+  }
+  document.querySelectorAll("#create-room-opts .lobby-opt").forEach((b) => b.addEventListener("click", () => {
+    const o = b.dataset.opt, key = o === "tour" ? "showTutorial" : o === "anim" ? "animationReveal" : "includeMakeBelieve";
+    currentSettings[key] = !(key === "showTutorial" ? !!currentSettings[key] : currentSettings[key] !== false);
+    syncCreateRoomOpts();
+  }));
   function openHlInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>${tourBtn('hl')}
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
@@ -10517,7 +10559,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingWorldId = null;
     // Nothing to configure, so skip the Create Room screen (same as High/Low Survival).
     createMode = "highstakes";
-    currentSettings = DEFAULT_SETTINGS();
+    currentSettings = DEFAULT_SETTINGS(); applyRoomOpts();
     hostTransferModeChoice = "reassign";
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     overlayReturnScreen = null;
@@ -10531,17 +10573,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">One claim. Is it believable?</div><div class="dc-note">Take turns being the maker. Only the maker sees three numbers labeled Correct, Too Low, and Too High. They choose one number to show everyone else.</div></div>
       <div class="dc-card"><div class="dc-big">Call the bluff</div><div class="dc-note">Everyone else sees just that one claim and votes Too Low, Correct, or Too High. +2 for a correct vote. The maker gets +1 for each submitted vote they fool. Unanswered votes earn nobody points.</div></div>
       <div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Points rank first; vote accuracy breaks ties. A complete tie shares the win.</div>
-        <div class="bl-setup-options" role="group" aria-label="Maker turns each">${[['auto','Auto'],[1,'1 each'],[2,'2 each']].map(([id,label])=>`<button type="button" data-bluff-turns="${id}" aria-pressed="${bluffTurnsChoice===id}">${label}</button>`).join('')}</div>
         <p class="dc-note">25 seconds to choose a claim, then 30 seconds to vote. Tap to submit; you have up to 10 seconds to change your vote before time runs out. No Second Chance or power-ups. See the round summary and rankings after every reveal.</p></div>
       <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
-    teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(b=>b.onclick=()=>{bluffTurnsChoice=b.dataset.bluffTurns==='auto'?'auto':Number(b.dataset.bluffTurns);teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
-    document.getElementById('bluff-start').onclick=async()=>{
-      const button=document.getElementById('bluff-start');button.disabled=true;
-      try{const granted=await confirmAndPurchaseHostUnlock('bluff');if(!granted)return;pendingFreeGame=false;pendingWorldId=null;pendingRoomCode=null;createMode='bluff';currentSettings=DEFAULT_SETTINGS();currentSettings.bluffTurns=bluffTurnsChoice;hostTransferModeChoice='reassign';ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));overlayReturnScreen=null;syncOverlayReturnFlag();let status='';await hostRoomNow(text=>{status=text;nameAvatarStatusEl.textContent=text;});if(!pendingRoomCode){openBluffInfo();showAchToast(status||'Could not create a room. Try again.');}}
+    document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
+      extrasHtml:`<div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more.</div>
+        <div class="bl-setup-options" role="group" aria-label="Maker turns each">${[['auto','Auto'],[1,'1 each'],[2,'2 each']].map(([id,label])=>`<button type="button" data-bluff-turns="${id}" aria-pressed="${bluffTurnsChoice===id}">${label}</button>`).join('')}</div></div>`,
+      bindExtras:()=>teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(b=>b.onclick=()=>{bluffTurnsChoice=b.dataset.bluffTurns==='auto'?'auto':Number(b.dataset.bluffTurns);teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}),
+      onCreate:async()=>{
+      const button=document.getElementById('ro-create');if(button)button.disabled=true;
+      try{const granted=await confirmAndPurchaseHostUnlock('bluff');if(!granted)return;pendingFreeGame=false;pendingWorldId=null;pendingRoomCode=null;createMode='bluff';currentSettings=DEFAULT_SETTINGS();applyRoomOpts();currentSettings.bluffTurns=bluffTurnsChoice;hostTransferModeChoice='reassign';ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));overlayReturnScreen=null;syncOverlayReturnFlag();let status='';await hostRoomNow(text=>{status=text;nameAvatarStatusEl.textContent=text;});if(!pendingRoomCode){openBluffInfo();showAchToast(status||'Could not create a room. Try again.');}}
       catch{openBluffInfo();showAchToast('Could not create a room. Check your connection and try again.');}
-      finally{button.disabled=false;}
-    };
+      finally{if(button)button.disabled=false;}
+    }});
   }
   async function startBluffGame(){
     const code=currentRoomCode,host=currentPlayerId,now=nowMs(),roster=Object.keys(roomState.players||{});
@@ -10572,7 +10616,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingWorldId = null;
     // Nothing to configure (no World, rounds or timer), so skip the Create Room screen like Team Worlds does.
     createMode = "hlsurvival";
-    currentSettings = DEFAULT_SETTINGS();
+    currentSettings = DEFAULT_SETTINGS(); applyRoomOpts();
     hostTransferModeChoice = "reassign";
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
     overlayReturnScreen = null;
@@ -10609,9 +10653,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   teamvteamContentEl.addEventListener("click", (e) => {
     const classicBtn = e.target.closest("#classic-start"), hlBtn = e.target.closest("#hl-start"), hsBtn = e.target.closest("#hs-start");
-    if (hsBtn) { activateButton(hsBtn, () => startHsFromInfo()); return; }
+    if (hsBtn) { activateButton(hsBtn, () => showRoomOptions({ title: "High Stakes", like: { mode: "highstakes" }, back: openHsInfo, onCreate: () => startHsFromInfo() })); return; }
     if (classicBtn) { activateButton(classicBtn, () => startClassicFromInfo()); return; }
-    if (hlBtn) { activateButton(hlBtn, () => startHlFromInfo()); return; }
+    if (hlBtn) { activateButton(hlBtn, () => showRoomOptions({ title: "High/Low Survival", like: { mode: "teamworlds", variant: "hl" }, back: openHlInfo, onCreate: () => startHlFromInfo() })); return; }
     if (!e.target.closest("#tvt-start")) return;
     activateButton(e.target.closest("#tvt-start"), async () => {
       const granted = await confirmAndPurchaseHostUnlock("teamvteam");
@@ -10622,7 +10666,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       showCreateScreen("teamvteam");
     });
   });
-  document.getElementById("teamvteam-close-btn").addEventListener("click", () => closeOverlay());
+  document.getElementById("teamvteam-close-btn").addEventListener("click", () => { if (roomOptsBack && document.getElementById("ro-create")) { const f = roomOptsBack; roomOptsBack = null; f(); return; } closeOverlay(); });
 
   // ==================== High Stakes: bet your coins on the real answer ====================
   // Rules live in anim/high-stakes.mjs (pure functions). This block is the screen, the host's driver (the host's
@@ -11656,7 +11700,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "tw-back-to-list") { twWorldId = null; renderTeamWorldsScreen(); return; }
     if (b.id === "tw-start") {
-      activateButton(b, async () => {
+      activateButton(b, () => showRoomOptions({ title: WORLDS.find((x) => x.id === twWorldId)?.name || "Team Worlds", like: { mode: "teamworlds" }, host: teamworldsContentEl, back: renderTeamWorldsScreen, onCreate: async () => {
         const granted = await confirmAndPurchaseHostUnlock("teamworlds");
         if (!granted) return;
         pendingFreeGame = granted === "free";
@@ -11669,7 +11713,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // same way the real Create Room button's click does - set up here instead of via
         // showCreateScreen, since that screen is never shown for this mode.
         createMode = "teamworlds";
-        currentSettings = DEFAULT_SETTINGS();
+        currentSettings = DEFAULT_SETTINGS(); applyRoomOpts();
         hostTransferModeChoice = "reassign";
         // NOT closeOverlay() - that restores this overlay's own "return screen"
         // (overlayReturnScreen, the Party hub) as newly .active, same as it always does when
@@ -11685,10 +11729,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         overlayFocusReturn = null;
         syncOverlayReturnFlag();
         await hostRoomNow((text) => { createStatusEl.textContent = text; });
-      });
+      } }));
     }
   });
   document.getElementById("teamworlds-close-btn").addEventListener("click", () => {
+    if (roomOptsBack && document.getElementById("ro-create")) { const f = roomOptsBack; roomOptsBack = null; f(); return; }
     if (twWorldId) { twWorldId = null; renderTeamWorldsScreen(); return; }
     closeOverlay();
   });
@@ -15422,6 +15467,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       b.classList.toggle("selected", b.dataset.mode === "reassign");
     });
     renderLocalSettingsPanel();
+    syncCreateRoomOpts();
     createStatusEl.textContent = "";
     // Clear EVERY screen, not just homeScreen - this can be reached from the Party Mode
     // hub or the Team vs Team info screen too (via closeOverlay(), which reactivates
@@ -19999,42 +20045,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const MODE_TOUR_OK = (key) => !!modeTutorialUI?.count(key);
   setInterval(() => { try { syncRoomTour(); } catch (e) {} }, 300);
-  document.getElementById('lobby-tour-toggle').addEventListener('click', async () => {
-    if (!isHost || roomState.phase !== 'waiting') return;
-    await update(ref(db, 'rooms/' + currentRoomCode + '/settings'), { showTutorial: !tourWanted(roomState.settings) });
-  });
   function setLobbySwitch(btn,on){btn.setAttribute('aria-pressed',String(on));btn.setAttribute('aria-checked',String(on));const st=btn.querySelector('.lobby-switch-state');if(st)st.textContent=on?'On':'Off';}
-  document.getElementById('lobby-reveal-toggle').addEventListener('click', async () => {
-    if (!isHost || roomState.phase !== 'waiting') return;
-    await update(ref(db,'rooms/'+currentRoomCode+'/settings'),{animationReveal:roomState.settings?.animationReveal === false});
-  });
-  let makeBelieveTogglePending=false;
-  async function toggleLobbyMakeBelieve() {
-    const settings=roomState.settings;
-    if(makeBelieveTogglePending||!isHost||roomState.phase!=='waiting'||!isPartyRoomSettings(settings))return;
-    const room=currentRoomCode,host=currentPlayerId,next=!includesMakeBelieve(settings);
-    makeBelieveTogglePending=true;
-    document.getElementById('lobby-make-believe-toggle').disabled=true;
-    try { await runTransaction(ref(db,'rooms/'+room),cur=>{
-      if(!cur||cur.phase!=='waiting'||!cur.players?.[host]?.isHost||!isPartyRoomSettings(cur.settings)||includesMakeBelieve(cur.settings)!==includesMakeBelieve(settings)||cur.settings.worldId!==settings.worldId)return;
-      return {...cur,settings:{...cur.settings,includeMakeBelieve:next}};
-    }); } catch { showAchToast('Could not save the room setting. Please try again.'); }
-    finally { makeBelieveTogglePending=false;if(currentRoomCode===room&&roomState.phase==='waiting')applyLobbyMode(roomState); }
-  }
-  document.getElementById('lobby-make-believe-toggle').addEventListener('click',toggleLobbyMakeBelieve);
   function applyLobbyMode(data) {
-    const animationToggle=document.getElementById('lobby-reveal-toggle');
-    animationToggle.hidden=!isHost;animationToggle.disabled=data.phase!=='waiting';
-    setLobbySwitch(animationToggle,data.settings?.animationReveal!==false);
     const solo = !!(data.settings && data.settings.solo);
-    const tourToggle=document.getElementById('lobby-tour-toggle');
-    tourToggle.hidden=!isHost||solo||!tourKeyFor(data.settings);tourToggle.disabled=data.phase!=='waiting';
-    setLobbySwitch(tourToggle,tourWanted(data.settings||{}));
-    const makeBelieveToggle=document.getElementById('lobby-make-believe-toggle');
-    const party=isPartyRoomSettings(data.settings),makeBelieveOn=includesMakeBelieve(data.settings);
-    makeBelieveToggle.hidden=!party;
-    makeBelieveToggle.disabled=makeBelieveTogglePending||!isHost||data.phase!=='waiting';
-    setLobbySwitch(makeBelieveToggle,makeBelieveOn);
     const teamMode = data.settings?.mode === "teamvteam";
     const worldsMode = data.settings?.mode === "teamworlds";
     const hlMode = isHlSettings(data.settings);
