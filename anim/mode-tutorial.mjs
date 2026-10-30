@@ -32,6 +32,21 @@ const SCENES = {
     <div class="mt-row mt-votes"><span class="mt-btn">Too Low</span><span class="mt-btn">Correct</span><span class="mt-btn sel">Too High</span></div>`; },
   bluff3: s => { const n = bluffNums(s); return `<div class="mt-reveal"><small>The answer</small><b>${n.ans}</b></div>
     <div class="mt-row mt-verdict"><span class="mt-chip">${n.high} was <b>Too High</b></span><span class="mt-chip good">Voters who said Too High: +2</span></div>`; },
+  hs1: s => { const n = bluffNums(s), o = [Math.max(1, Math.round(n.ans / 2)), Math.round(n.ans * .75), n.ans, n.ans * 2]; return `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div>
+    <div class="mt-row mt-opts four">${o.map((v, i) => `<div class="mt-opt${i === 2 ? ' pick' : ''}"><b>${v}</b>${i === 2 ? '<i class="mt-circle"></i>' : ''}</div>`).join('')}</div>
+    <div class="mt-tag mt-late">Secretly pick the real one</div>`; },
+  hs2: s => `<div class="mt-table"><div class="mt-pot">${img('icons/coin.png', 'mt-potcoin')}<span>Pot</span></div>
+    ${[0, 1, 2].map(i => `<div class="mt-seat s${i}">${img((s.avatars || [])[i] || '', 'mt-av sm')}${[0, 1].map(k => img('icons/coin.png', `mt-fly up f${i} k${k}`)).join('')}</div>`).join('')}</div>
+    <div class="mt-row mt-acts"><span>Fold</span><span>Check</span><span>Call</span><span>Raise</span></div>`,
+  hs3: s => { const n = bluffNums(s), o = [Math.max(1, Math.round(n.ans / 2)), Math.round(n.ans * .75), n.ans, n.ans * 2]; return `<div class="mt-row mt-opts four small">${o.map((v, i) => `<div class="mt-opt${i === 2 ? ' real' : ' dim'}"><b>${v}</b>${i === 2 ? '<em>✓ real</em>' : ''}</div>`).join('')}</div>
+    <div class="mt-table short"><div class="mt-pot">${img('icons/coin.png', 'mt-potcoin')}<span>Pot</span></div>
+    ${[0, 1, 2].map(i => `<div class="mt-seat s${i}${i === 2 ? ' win' : ''}">${img((s.avatars || [])[i] || '', 'mt-av sm')}${i === 2 ? [0, 1, 2].map(k => img('icons/coin.png', `mt-fly down k${k}`)).join('') : ''}</div>`).join('')}</div>`; },
+  partners: s => `<div class="mt-row mt-partners"><div class="mt-team t0">${(s.avatars || []).slice(0, 2).map(a => img(a, 'mt-av sm')).join('')}<b>Your team</b></div></div><div class="mt-tag">Always you and one partner</div>`,
+  starmeter: () => `<div class="mt-sm"><div class="mt-sm-stars">${[60, 75, 90].map((n, i) => `<div class="mt-sm-star st${i}" style="left:${n}%">${img('icons/flair/star.png', 'mt-sm-img')}<small>${n}%</small></div>`).join('')}</div>
+    <div class="mt-sm-bar"><i class="mt-sm-fill"></i></div><div class="mt-sm-label">Team accuracy <b>82%</b></div></div>`,
+  hlLow: s => `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div><div class="mt-role">You are the <b>LOW</b>!</div><div class="mt-tag mt-late">Pick as close as you can without going over</div>`,
+  hlReveal: s => { const n = bluffNums(s), lo = Math.round(n.ans * .8), hi = Math.round(n.ans * 1.3), g = (hi / lo).toFixed(1); return `<div class="mt-line"><span class="mt-pt lo" style="left:12%"><small>LOW</small><b>${lo}</b></span><span class="mt-pt ans" style="left:50%"><small>Answer</small><b>${n.ans}</b></span><span class="mt-pt hi" style="left:88%"><small>HIGH</small><b>${hi}</b></span><i class="mt-span"></i></div>
+    <div class="mt-tag mt-late">Gap ${g}× &middot; limit 2.5× &middot; Survived!</div>`; },
   streak: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}${img('icons/survival-shield-full.webp', 'mt-shield')}</div>
     <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
 };
@@ -40,7 +55,7 @@ export const MODE_TUTORIALS = {
   party: { title: 'Party', slides: [
     { scene: 'bots', head: 'Everyone guesses together', text: 'Each round, everyone guesses how many of the small object fit along the big one.' },
     { scene: 'guess', head: 'Lock in before time runs out', text: 'Type your guess before the timer ends. The closest guess wins the round.' },
-    { scene: 'botsSC', head: 'Then a Second Chance', text: 'See everyone’s guesses, then back your own with Double Down or pick the one you think is real.' },
+    { scene: 'botsSC', head: 'Then a Second Chance', text: 'Second guessing yourself? Pick the answer you think is real to earn a point. Feeling confident? Double Down on your own guess to earn even more if it is the closest.' },
     { scene: 'wins', head: 'Closest scores points', text: 'The closest guess scores +3, or +5 if it is within 1% of the answer. Most points wins.' },
   ] },
   teamvteam: { title: 'Team vs Team', slides: [
@@ -49,19 +64,19 @@ export const MODE_TUTORIALS = {
     { scene: 'botsSC', head: 'Second Chance works the same', text: 'Back your guess or switch after seeing the table. Points go to your team.' },
   ] },
   teamworlds: { title: 'Team Worlds', slides: [
-    { scene: 'teams', head: 'You and a partner', text: 'Work through a World together, one question at a time.' },
+    { scene: 'partners', head: 'You and a partner', text: 'Team Worlds is always two players on one team, working through a World together.' },
     { scene: 'guess', head: 'Both of you guess', text: 'Each question asks how many of the small thing fit along the big one.' },
-    { scene: 'stars', head: 'Earn stars as a team', text: 'Your average accuracy sets your stars: 60%, 75% and 90%.' },
+    { scene: 'starmeter', head: 'Earn stars as a team', text: 'Your average accuracy fills the meter. Reach 60%, 75% and 90% for up to 3 stars.' },
   ] },
   hl: { title: 'High / Low Survival', slides: [
     { scene: 'hearts', head: 'You share 3 lives', text: 'Survive together as long as you can.' },
-    { scene: 'bracket', head: 'One high, one low', text: 'One player guesses at or below the answer and the other at or above it. The real answer must land between your picks.' },
-    { scene: 'wins', head: 'Keep the bracket tight', text: 'Too wide a gap, crossed picks or a miss costs a life. The allowed gap shrinks every round you survive.' },
+    { scene: 'hlLow', head: 'You are the LOW!', text: 'One of you is HIGH and one is LOW. The LOW picks a number as close to the answer as possible without going over.' },
+    { scene: 'hlReveal', head: 'The answer is revealed', text: 'The answer must land between your picks, and the gap between them must stay small enough. The limit shrinks as you survive.' },
   ] },
   highstakes: { title: 'High Stakes', slides: [
-    { scene: 'guess', head: 'Pick the real answer', text: 'Several numbers are on the table and only one is the real answer.' },
-    { scene: 'pot', head: 'Bet your table coins', text: 'Put coins in the pot when you think you have it, or fold to keep what you have.' },
-    { scene: 'coins', head: 'Win the pot', text: 'Whoever was right takes the pot. Watch it grow and know when to fold.' },
+    { scene: 'hs1', head: 'Find the real answer', text: 'Every round shows 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.' },
+    { scene: 'hs2', head: 'Bet like poker', text: 'Everyone puts coins in the pot, then it goes around the table: fold, check, call or raise.' },
+    { scene: 'hs3', head: 'The answer is revealed', text: 'Everyone still in who picked the real answer splits the pot. If everyone else folds, you win it even if you were wrong, so bluffing works.' },
   ] },
   bluff: { title: 'Bluff the Room', slides: [
     { scene: 'bluff1', head: 'The maker sees three answers', text: 'One is too low, one is correct and one is too high. The maker must claim one of them, even a wrong one, to fool the room.' },
