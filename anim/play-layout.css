@@ -235,12 +235,15 @@ body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom
 
 /* Party layout squeezes every question box with one generic padding, which beat the framed boards' own padding, so the
    text ran under the curtain drapes / chalk and whiteboard frames. Keep each frame's text inside its picture. */
-#hud[data-play-layout=party] .question-prompt[data-board=curtains]{padding:26px 50px 32px}
-#hud[data-play-layout=party] .question-prompt[data-board=chalkboard]{padding:16px 24px 22px}
-#hud[data-play-layout=party] .question-prompt[data-board=whiteboard]{padding:14px 22px 20px}
-#hud.active[data-play-layout=party] .question-prompt[data-board=curtains]{padding:26px 50px 32px}
-#hud.active[data-play-layout=party] .question-prompt[data-board=chalkboard]{padding:16px 24px 22px}
-#hud.active[data-play-layout=party] .question-prompt[data-board=whiteboard]{padding:14px 22px 20px}
+#hud[data-play-layout=party] .question-prompt[data-board=curtains]{padding:30px 54px 36px}
+#hud[data-play-layout=party] .question-prompt[data-board=chalkboard]{padding:24px 32px 32px}
+#hud[data-play-layout=party] .question-prompt[data-board=whiteboard]{padding:20px 30px 28px}
+#hud.active[data-play-layout=party] .question-prompt[data-board=curtains]{padding:30px 54px 36px}
+#hud.active[data-play-layout=party] .question-prompt[data-board=chalkboard]{padding:24px 32px 32px}
+#hud.active[data-play-layout=party] .question-prompt[data-board=whiteboard]{padding:20px 30px 28px}
+/* Framed boards: the question sits centered inside the frame, the same as when the answer is revealed. */
+.question-prompt:is([data-board=chalkboard],[data-board=whiteboard],[data-board=curtains]) #q-body{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:100%}
+.question-prompt:is([data-board=chalkboard],[data-board=whiteboard],[data-board=curtains]){display:flex;flex-direction:column;justify-content:center}
 
 /* Final results: the Finish / collect-coins bar sits straight over the page, no white backing. */
 body:has(#final-screen.active) #bottom-toolbar{background:transparent;box-shadow:none}
@@ -248,7 +251,8 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip{position:relative
 body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
 
 /* Party question boards: start big and let qbFitParty shrink only as far as the text needs (same size in question and reveal). */
-#hud[data-play-layout=party] .question-prompt:not([data-scene]){font-size:25px}
+#hud[data-play-layout=party] .question-prompt:not([data-scene]):not(:is([data-board=chalkboard],[data-board=whiteboard],[data-board=curtains])){font-size:25px}
+#hud[data-play-layout=party] .question-prompt:is([data-board=chalkboard],[data-board=whiteboard],[data-board=curtains]){font-size:19px}
 
 /* Every mode: the bottom bar (Auto / Next round / Finish...) never paints a white box. Only the reaction row keeps a backing. */
 #bottom-toolbar{background:transparent!important;box-shadow:none!important}
