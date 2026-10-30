@@ -20530,7 +20530,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const botReactions = createBotReactions({
     getState: () => ({roomCode:currentRoomCode, playerId:currentPlayerId, host:isHost, room:roomState,
       blocked:document.hidden || (roomState?.phase === 'hs' && roomState.hs && hsAnimating(roomState.hs)) || OVERLAY_SCREENS.some(el => el.classList.contains('active'))}),
-    reactions:Object.keys(REACTIONS), now:nowMs,
+    reactions:Object.keys(REACTIONS), resolve: id => REACTION_BY_ID[id]?.emoji || null, now:nowMs,
     send: ({id,player,emoji}) => {
       const entry = push(ref(db, 'rooms/' + currentRoomCode + '/reactions'));
       set(entry, {playerId:id, name:player.name, avatar:player.avatar, emoji, rid:REACTIONS[emoji]?.id || null, sentAt:nowMs()})
