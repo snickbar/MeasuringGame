@@ -10690,7 +10690,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function hsDealRound(hs, now) {
     const q = roomState.hsPre && roomState.hsQ ? { ...roomState.hsQ } : { ...generateQuestion() };
-    const custom = Object.entries(roomState.hsFakes || {}).filter(([, n]) => Number.isFinite(n)).map(([id, v]) => ({ id, v }));
+    const custom = Object.entries(roomState.hsFakes || {}).filter(([, n]) => Number.isFinite(n)).map(([id, v]) => ({ id, v, bot: !!roomState.players?.[id]?.isBot }));
     const { options, realIdx, fakeBy } = HS.hsMakeOptions(q.answer, Math.random, custom);
     const next = HS.hsStartRound(hs, { options, realIdx, fakeBy, now });
     next.nextAt = null; next.showStand = null; next.waitHost = null;
