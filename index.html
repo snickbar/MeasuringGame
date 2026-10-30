@@ -6092,7 +6092,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       paid = true;
       return { ...cur, coins: (cur.coins || 0) + coins, adDoubled: { ...(cur.adDoubled || {}), [k]: Date.now() } };
     });
-    if (paid) { try { playSound("coins"); } catch (err) { /* optional */ } vibrate([30, 40, 30]); }
+    if (paid) vibrate([30, 40, 30]); // the coin sound plays when the coins land in the toolbar
     return paid ? "paid" : "already";
   }
   // Split results bar for solo modes: green "Finish" beside a gold "watch an ad to double the coins, then finish".
@@ -10208,7 +10208,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
     dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
-    if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
+    if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; vibrate([30, 40, 30, 40, 60]); }
   }
 
   // The page after each guess: the verdict with a little reaction, the answer, and an accuracy meter. (Reaction pictures, never plain emoji.)
@@ -12749,7 +12749,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         shown = Math.min(total, shown + per); i++;
         el.textContent = "+" + shown;
         try { playSoundAt("tap", Math.min(2, 1 + i * 0.06)); } catch (e) {}
-        if (shown >= total) { clearInterval(wbCoinTimer); try { playSound("coins"); } catch (e) {} }
+        if (shown >= total) clearInterval(wbCoinTimer); // the coin sound plays when the coins land in the toolbar
       }, 95);
     }, 650);
   }
@@ -13369,6 +13369,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // final screen): registerCoinHold(fn, maxMs) makes the arrival wait while fn() is true (never longer than maxMs).
   const coinHolds = [];
   const registerCoinHold = (fn, maxMs = 25000) => { coinHolds.push({ fn, maxMs }); };
+  const coinResultsShowing = (mode) => {
+    const on = (el) => !!el && el.classList.contains("active");
+    if (mode === "daily") return !!daily && daily.phase === "done" && on(dailyScreenEl);
+    if (mode === "monthly") return !!mo && mo.phase === "done" && on(monthlyScreenEl);
+    if (mode === "survival") return !!sv && sv.phase === "over" && on(survivalScreenEl);
+    if (mode === "worlds") return wl.phase === "done" && on(worldsScreenEl);
+    if (mode === "whichbigger") return !!wb && (wb.phase === "over" || wb.phase === "done") && on(wbScreenEl);
+    return true;
+  };
+  registerCoinHold(() => {
+    const w = coinResultsWait;
+    if (!w) return false;
+    if (performance.now() - w.t > 60000 || coinResultsShowing(w.mode)) { coinResultsWait = null; return false; }
+    return true;
+  });
   registerCoinHold(() => !!(gameRewards && gameRewards.pending && !gameRewards.active), 15 * 60 * 1000); // party coins are credited on the final screen; wait for the reward screen
   const coinArrival = (() => {
     let shown = null;          // the number on screen right now
@@ -14025,7 +14040,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       rawR:guess/q.answer,answered:true,p:0,f:accuracy>=99?1:0,s:MODE_CODE[actualMode],mode:actualMode,buffer:effective!==guess},
       inc:{spotOns:accuracy>=99?1:0,perfects:Math.abs(effective-q.answer)<.005?1:0}});
   }
-  function completedAttempt(record) { careerLedger.save({kind:'attempt',t:Date.now(),...record}); }
+  // Coins for a finished run are credited the moment it ends, but the player sees them when the results appear: hold the toolbar arrival until then.
+  let coinResultsWait = null;
+  function completedAttempt(record) { coinResultsWait = { mode: record.mode === "practice" ? "monthly" : record.mode, t: performance.now() }; careerLedger.save({kind:'attempt',t:Date.now(),...record}); }
 
   const HISTORY_MAX = 300;
   function appendRoundHistory(rec, owner = deviceId) {
