@@ -3782,6 +3782,24 @@ if (location.protocol === "file:") {
   .wl-progress-star b { position:absolute; inset:0; display:grid; place-items:center; padding-top:2px; font-size:11px; color:#573015; }
   .wl-progress-marker.earned .wl-progress-star { filter:none; opacity:1; }
   .wl-progress-threshold { display:block; margin-top:2px; font-size:11px; line-height:1.2; white-space:nowrap; }
+  /* Team Worlds accuracy meter: a night sky with a rocket flying above the bar, its trail ending where the fill ends. */
+  .wl-progress.wl-sky { position:relative; overflow:hidden; border-color:#3b3a86; color:#f4efff; background:radial-gradient(1.2px 1.2px at 6% 22%,#fff,transparent),radial-gradient(1px 1px at 17% 70%,#fff,transparent),radial-gradient(1.6px 1.6px at 31% 30%,#ffe9a8,transparent),radial-gradient(1px 1px at 44% 80%,#fff,transparent),radial-gradient(1.3px 1.3px at 57% 18%,#fff,transparent),radial-gradient(1px 1px at 69% 62%,#cfe2ff,transparent),radial-gradient(1.6px 1.6px at 82% 28%,#fff,transparent),radial-gradient(1px 1px at 93% 75%,#fff,transparent),radial-gradient(1px 1px at 38% 55%,#fff,transparent),radial-gradient(1.2px 1.2px at 76% 85%,#ffe9a8,transparent),linear-gradient(180deg,#14103a,#2a2766 70%,#3b3a86); }
+  .wl-sky .wl-progress-heading strong { color:#ffd23c; text-shadow:0 0 8px rgba(255,200,60,.6); }
+  .wl-sky .wl-progress-threshold { color:#d9d3ff; }
+  .wl-sky .wl-progress-scale { margin-top:32px; background:rgba(255,255,255,.14); box-shadow:inset 0 0 0 1px rgba(255,255,255,.18); }
+  .wl-sky .wl-progress-fill { clip-path:none; background:none; transition:none; overflow:visible; }
+  .wl-sky .wl-bar { position:absolute; inset:0; border-radius:8px; background:linear-gradient(90deg,#e95048 0 60%,#f39432 60% 75%,#65b94e 75% 90%,#3999ef 90% 100%); box-shadow:0 0 8px rgba(255,170,60,.55); clip-path:inset(0 calc(100% - var(--accuracy,0%)) 0 0 round 8px); transition:clip-path var(--wl-t,.3s ease); }
+  .wl-sky .wl-progress-fill::before { clip-path:inset(0 calc(100% - var(--accuracy,0%)) 0 0 round 8px); transition:clip-path var(--wl-t,.3s ease); }
+  .wl-sky.three-stars .wl-progress-fill::after { clip-path:inset(0 calc(100% - var(--accuracy,0%)) 0 0); }
+  .wl-sky .wl-progress-star { filter:grayscale(1) brightness(.85); opacity:.55; }
+  .wl-sky .wl-progress-marker.earned .wl-progress-star { filter:drop-shadow(0 0 4px #ffd23c) drop-shadow(0 0 9px rgba(255,170,0,.8)); opacity:1; }
+  .wl-sky .wl-progress-marker { z-index:2; }
+  .wl-trail { position:absolute; top:-28px; height:8px; border-radius:8px; pointer-events:none; left:max(0px,calc(var(--accuracy,0%) - 110px)); right:calc(100% - var(--accuracy,0%) + 12px); background:linear-gradient(90deg,rgba(255,170,40,0),#ffb23a 70%,#ffe98a); filter:blur(.8px); transition:left var(--wl-t,.3s ease),right var(--wl-t,.3s ease); }
+  .wl-rocket { position:absolute; top:-24px; left:max(var(--accuracy,0%),14px); width:0; height:0; pointer-events:none; z-index:3; transition:left var(--wl-t,.3s ease); }
+  .wl-rocket img { position:absolute; left:-18px; top:-18px; width:36px; height:36px; transform:rotate(45deg); }
+  .wl-rocket::after { content:''; position:absolute; left:0; top:12px; height:10px; border-left:2px dotted #ffb23a; }
+  .tw-sum .wl-progress.wl-sky { background-color:#14103a; --wl-t:1.3s cubic-bezier(.25,.8,.25,1); }
+  @media (prefers-reduced-motion: reduce) { .wl-progress.wl-sky { --wl-t:0s linear; } }
   @media(prefers-reduced-motion:reduce) { .wl-progress-fill { transition:none; } .wl-progress.three-stars .wl-progress-fill::after { animation:none; background-position:50% 0; } }
   /* Compact solo input screens: keep generous tap targets without tall gutters. Team Worlds'
      own question screen (#question-view) reuses these exact same classes/sizing on purpose -
@@ -11312,13 +11330,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldStarsFor = (avg) => (avg > WORLD_STAR_AT[2] ? 3 : avg > WORLD_STAR_AT[1] ? 2 : avg > WORLD_STAR_AT[0] ? 1 : 0);
   // Takes the average directly, so it's reusable outside solo Worlds' own local `wl` state
   // (Team Worlds' room-based accuracy below).
-  function worldProgressBarHtml(avg) {
+  function worldProgressBarHtml(avg, sky = false) {
     const stars = avg == null ? 0 : worldStarsFor(avg);
     const text = avg == null ? 'No answers yet' : formatAccuracy(avg) + '%';
-    return `<div class="wl-progress${stars === 3 ? ' three-stars' : ''}" aria-label="Worlds running accuracy and star requirements">
+    return `<div class="wl-progress${stars === 3 ? ' three-stars' : ''}${sky ? ' wl-sky' : ''}" aria-label="Worlds running accuracy and star requirements">
       <div class="wl-progress-heading"><span>Accuracy so far</span><strong>${text}</strong></div>
       <div class="wl-progress-scale" role="progressbar" aria-label="Average accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${avg ?? 0}" aria-valuetext="${avg == null ? text : text + ' accurate, currently ' + stars + ' of 3 stars'}">
-        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%"></span>
+        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%">${sky ? '<span class="wl-bar"></span><span class="wl-trail"></span><span class="wl-rocket"><img src="icons/flair/rocket.png" alt=""></span>' : ''}</span>
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
   }
@@ -17401,7 +17419,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
     const hl = isHlSettings(roomState.settings);
     const hlRoles = roomState.hlRoles || {};
-    twQuestionProgressEl.innerHTML = hl ? hlHeartsHtml(roomState) : worldProgressBarHtml(teamAvg);
+    twQuestionProgressEl.innerHTML = hl ? hlHeartsHtml(roomState) : worldProgressBarHtml(teamAvg, true);
     const pair = q ? questionObjects(q) : null;
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
     if (hl && q) {
@@ -18859,7 +18877,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     li.className = "summary-row tw-sum";
     li.innerHTML = twQTopHtml(q, ans)
       + (entries[0] ? twSumRowHtml(entries[0], currentPlayers[entries[0].playerId] || {}) : "")
-      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg)}</div>`
+      + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg, true)}</div>`
       + (entries[1] ? twSumRowHtml(entries[1], currentPlayers[entries[1].playerId] || {}) : "");
     summaryListEl.appendChild(li);
     if (runningAvg == null || prefersReducedMotion()) return;
@@ -20220,7 +20238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // completed rounds; Game Progress introduces this round's accuracy later.
         const completed = Math.max(0, (meNow?.roundsCounted || 0) - 1);
         const avgNow = completed ? (meNow.accuracySum - (roomState.lastRoundAccuracy || 0)) / completed : null;
-        const html = worldProgressBarHtml(avgNow);
+        const html = worldProgressBarHtml(avgNow, true);
         if (bar.dataset.html !== html) { bar.innerHTML = html; bar.dataset.html = html; }
       }
       bar.hidden = !showBar;
