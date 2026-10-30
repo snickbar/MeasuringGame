@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import {MODE_TUTORIALS} from '../anim/mode-tutorial.mjs';
 import {HIGH_LOW_EXAMPLES} from '../anim/high-low-tutorial.mjs';
 import {PARTY_TUTORIAL_EXAMPLE,partyTutorialScene} from '../anim/party-tutorial.mjs';
+import {MORE_MODE_TUTORIALS,extraTutorialScene} from '../anim/more-tutorials.mjs';
 const source=fs.readFileSync('index.html','utf8');
 const route=source.match(/  function tourKeyFor\(settings\) \{[\s\S]*?\n  \}/)[0];
 const isHl=source.match(/  const isHlSettings = [^\n]+/)[0];
@@ -18,7 +19,7 @@ const daily=MODE_TUTORIALS.daily.slides.map(s=>s.text).join(' ');
 assert.match(daily,/10 coins/);assert.match(daily,/streak.*milestone bonuses/);
 assert.doesNotMatch(daily,/closer.*more coins/);
 assert.equal(MODE_TUTORIALS.hl.autoplay,true);
-assert.equal(MODE_TUTORIALS.hl.slides.length,5);
+assert.equal(MODE_TUTORIALS.hl.slides.length,7);
 for(const [id,picks] of Object.entries(HIGH_LOW_EXAMPLES)){
   const safe=picks.low<=10&&picks.high>=10&&picks.high/picks.low<=2.5;
   assert.equal(picks.passed,safe,id+' verdict');
@@ -35,4 +36,20 @@ for(const mode of ['quick','party','teamvteam']){
     for(const match of html.matchAll(/src="([^"]+)"/g))assert(fs.existsSync(match[1]),'Art exists: '+match[1]);
   }
 }
+for(const [mode,def] of Object.entries(MORE_MODE_TUTORIALS)){
+  assert(MODE_TUTORIALS[mode]===def);assert(def.autoplay);assert(def.slides.length>=3);
+  for(const slide of def.slides){
+    const html=extraTutorialScene(slide.lesson,{});
+    assert(html.length>100,mode+' lesson content');
+    assert(!/<(?:input|textarea|select|button)\b/.test(html),'No gameplay input');
+    for(const match of html.matchAll(/src="([^"]+)"/g))assert(fs.existsSync(match[1]),'Art exists: '+match[1]);
+  }
+}
+assert.match(MODE_TUTORIALS.survival.slides.find(s=>s.lesson==='svShield').text,/75%/);
+assert.match(MODE_TUTORIALS.worlds.slides.find(s=>s.lesson==='stars').text,/above 60%, 75% and 90%/);
+assert.match(MODE_TUTORIALS.highstakes.slides.find(s=>s.lesson==='hsCarry').text,/several players.*nobody correct/);
+assert.match(extraTutorialScene('average'),/85%/);
+assert.match(extraTutorialScene('hsPayout'),/Pot: 60/);
+assert.equal((extraTutorialScene('hsPayout').match(/\+30/g)||[]).length,2);
+assert.match(extraTutorialScene('monthlyLevels'),/All 15 questions/);
 console.log('Mode tutorials: actual High/Low room routing, other party modes, solo exclusion and fixed Daily reward wording passed.');

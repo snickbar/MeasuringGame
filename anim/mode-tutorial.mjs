@@ -2,12 +2,14 @@
 // sample objects, and (for party use) a hook that lets the host end the slideshow for everyone.
 import {mountHighLowTutorial} from './high-low-tutorial.mjs';
 import {partyTutorialScene} from './party-tutorial.mjs';
+import {MORE_MODE_TUTORIALS,extraTutorialScene} from './more-tutorials.mjs';
 const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const img = (src, cls = '') => `<img class="${cls}" src="${esc(src)}" alt="" draggable="false">`;
 
 // Each scene is plain HTML whose CSS animations loop; changing slides re-renders it, so it restarts.
 const bluffNums = s => { const ans = Math.max(2, Math.round(s.answer || 11)); return { ans, low: Math.max(1, Math.round(ans / 2)), high: ans * 2 }; };
 const SCENES = {
+  extraExample: s => extraTutorialScene(s.lesson,s),
   partyExample: s => partyTutorialScene(s.lesson,{team:s.lessonMode==='teamvteam',quick:s.lessonMode==='quick'}),
   hlRoles: () => `<div class="mt-hl-roles"><div><img src="anim/high-low-art/shark.webp" alt="LOW shark"><b>LOW ≤ answer</b><small>Close, without going over</small></div><div><img src="anim/high-low-art/bird.webp" alt="HIGH bird"><b>HIGH ≥ answer</b><small>Close, without going under</small></div></div><div class="mt-hl-lives">${[0,1,2].map(()=>img('icons/life-heart-full.webp','')).join('')}<span>Three shared lives</span></div>`,
   hlOcean: () => '<div class="mt-hl-demo"></div>',
@@ -73,47 +75,14 @@ export const MODE_TUTORIALS = {
     { scene:'partyExample',lesson:'double',head:'Double Down can help your team',text:'Alex’s 1.8 is closest: +3 for Red. Double Down adds +2. It only pays when your own guess wins.' },
     { scene:'partyExample',lesson:'score',head:'The points go into one team total',text:'Alex earns 5 and Sam earns 1: Red gets 6. Tied teammates’ closest-win points count only once for their team.' },
   ] },
-  teamworlds: { title: 'Team Worlds', slides: [
-    { scene: 'partners', head: 'You and a partner', text: 'Team Worlds is always two players on one team, working through a World together.' },
-    { scene: 'guess', head: 'Both of you guess', text: 'Each question asks how many of the small thing fit along the big one.' },
-    { scene: 'starmeter', head: 'Earn stars as a team', text: 'Your average accuracy fills the meter. Reach 60%, 75% and 90% for up to 3 stars.' },
-  ] },
   hl: { title: 'High / Low Survival', autoplay: true, slideMs: 9500, slides: [
     { scene: 'hlRoles', head: 'Two roles. One team.', text: 'LOW stays at or below the answer. HIGH stays at or above it. Both aim as close as possible.' },
     { scene: 'hlOcean', example: 'safe', head: 'Keep the answer between you', text: 'Answer: 10. LOW picks 8; HIGH picks 12. The 1.5× gap fits the 2.5× limit. You survive!' },
     { scene: 'hlOcean', example: 'under', head: 'HIGH must not go under', text: 'HIGH picks 9, below the answer of 10. The bird gets wet, and the team loses a life.' },
     { scene: 'hlOcean', example: 'over', head: 'LOW must not go over', text: 'LOW picks 11, above the answer of 10. The shark leaves the water, and the team loses a life.' },
     { scene: 'hlOcean', example: 'wide', head: 'Stay close together, too', text: '5 and 20 surround 10, but their 4× gap is wider than 2.5×. You lose a life. The limit tightens as you survive.' },
-  ] },
-  highstakes: { title: 'High Stakes', slides: [
-    { scene: 'hs1', head: 'Find the real answer', text: 'Every round shows 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.' },
-    { scene: 'hs2', head: 'Bet like poker', text: 'Everyone puts coins in the pot, then it goes around the table: fold, check, call or raise.' },
-    { scene: 'hs3', head: 'The answer is revealed', text: 'Everyone still in who picked the real answer splits the pot. If everyone else folds, you win it even if you were wrong, so bluffing works.' },
-  ] },
-  bluff: { title: 'Bluff the Room', slides: [
-    { scene: 'bluff1', head: 'The maker sees three answers', text: 'One is too low, one is correct and one is too high. The maker must claim one of them, even a wrong one, to fool the room.' },
-    { scene: 'bluff2', head: 'Everyone else votes', text: 'The rest of the room only sees the claim. Is it Too Low, Correct or Too High?' },
-    { scene: 'bluff3', head: 'Then the answer is revealed', text: 'Correct votes earn +2. The maker earns +1 for every player they fool.' },
-  ] },
-  worlds: { title: 'Worlds', slides: [
-    { scene: 'guess', head: 'Five questions a level', text: 'Guess how many of the small thing fit along the big one. No timer, so take your time.' },
-    { scene: 'stars', head: 'Earn up to 3 stars', text: 'Your average accuracy across the five questions sets your stars: 60%, 75% and 90%.' },
-    { scene: 'wins', head: 'Unlock the next level', text: 'Earn 1 star on a level to open the next one, and keep collecting stars to fill each world.' },
-  ] },
-  daily: { title: 'Daily Challenge', slides: [
-    { scene: 'daily', head: 'Three questions, one try', text: 'A fresh set every day. Once you finish it, come back tomorrow for a new one.' },
-    { scene: 'guess', head: 'Guess how many', text: 'Everyone gets the same questions, so your score goes on the daily leaderboard.' },
-    { scene: 'coins', head: 'Earn coins', text: 'Finish today’s challenge to earn 10 coins. Keep a daily streak for milestone bonuses.' },
-  ] },
-  monthly: { title: 'Monthly Challenge', slides: [
-    { scene: 'month', head: 'A new pack every month', text: 'Every object in this month’s pack shows up exactly once.' },
-    { scene: 'guess', head: 'Guess how many', text: 'Each question asks how many of one object fit along another.' },
-    { scene: 'coins', head: 'Climb the board', text: 'Your results go on the monthly leaderboard and earn coins.' },
-  ] },
-  wb: { title: 'Which Is Bigger', slides: [
-    { scene: 'pick', head: 'Tap the bigger one', text: 'Two objects appear. Tap the one that is really bigger.' },
-    { scene: 'hearts', head: 'A wrong pick costs a life', text: 'You have three lives. Lose them all and the run is over.' },
-    { scene: 'coins', head: 'It gets trickier', text: 'The objects get closer in size the further you go. Keep going for coins.' },
+    { scene:'extraExample',lesson:'hlShield',head:'Survive together to earn a shield',text:'Three survivals in a row charge one shared shield. It blocks one lost life, then is used up. You can hold only one.' },
+    { scene:'extraExample',lesson:'hlRewards',head:'Themed rounds mix things up',text:'Each player earns 2 coins per normal survival and 4 for a themed survival. Every fifth survival is themed.' },
   ] },
   quick: { title: 'Quick Game', autoplay:true, slideMs:7500, slides: [
     { scene:'partyExample',lesson:'players',head:'A quick game against bots',text:'Choose the bot difficulty, then play the same round format as Classic Party.' },
@@ -123,15 +92,7 @@ export const MODE_TUTORIALS = {
     { scene:'partyExample',lesson:'double',head:'Or back your own guess',text:'Alex doubles down on 1.8 and wins closest: 3 + 2 = 5 points. Double Down adds nothing if your guess loses.' },
     { scene:'partyExample',lesson:'score',head:'Most points wins the game',text:'Closest earns +3, or +5 within 1%. Accuracy adds end-game bonuses. Power-ups are available in Quick Game.' },
   ] },
-  survival: {
-    title: 'Survival',
-    slides: [
-      { scene: 'hearts', head: 'You have 3 lives', text: 'Keep guessing as long as you have a life left. No timer, no Second Chance.' },
-      { scene: 'guess', head: 'Guess how many', text: 'How many of the small thing fit along the big one? Type your best guess.' },
-      { scene: 'gauge', head: 'Under 60% costs a life', text: 'The closer your guess, the better. Less than 60% accurate and a heart cracks.' },
-      { scene: 'streak', head: 'Stack wins, earn coins', text: 'Every round you survive pays coins. Three in a row earns a shield that blocks one lost life.' },
-    ],
-  },
+  ...MORE_MODE_TUTORIALS,
 };
 
 export function createModeTutorial({ owner, sample, storage }) {

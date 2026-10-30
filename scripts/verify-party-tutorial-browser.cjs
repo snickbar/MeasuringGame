@@ -15,9 +15,10 @@ server.listen(0,'127.0.0.1',()=>{
    const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/tutorials/party/test'},sessionId);
    const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true},sessionId);if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result?.value;};
    for(let n=0;n<100;n++){if(await evaluate('!!window.ui'))break;await new Promise(r=>setTimeout(r,30));}
-   for(const mode of ['quick','party','teamvteam']){
+   for(const mode of (process.env.TUTORIAL_MODES||'quick,party,teamvteam').split(',')){
+    const slides=await evaluate(`window.defs['${mode}'].slides.length`);
     await evaluate(`window.ui.play('${mode}');true`);
-    for(let slide=0;slide<6;slide++){
+    for(let slide=0;slide<slides;slide++){
      const result=await evaluate(`(async()=>{
       const d=document.getElementById('mode-tutorial'),assert=(v,m)=>{if(!v)throw Error(m)};await new Promise(r=>setTimeout(r,90));
       await Promise.all([...d.querySelectorAll('img')].map(im=>im.decode()));await document.fonts.ready;
@@ -25,23 +26,26 @@ server.listen(0,'127.0.0.1',()=>{
       const r=d.getBoundingClientRect(),s=d.querySelector('.mt-scene'),b=s.getBoundingClientRect();
       assert(r.left>=0&&r.right<=innerWidth+1,'Dialog fits width');assert(r.top>=0&&r.bottom<=innerHeight+1,'Dialog fits height');assert(d.scrollWidth<=d.clientWidth+1,'No horizontal scroll');
       assert(!d.querySelector('input,textarea,select,[contenteditable]'),'No gameplay input');assert([...d.querySelectorAll('img')].every(im=>im.naturalWidth>0),'All graphics loaded');
-      for(const el of s.querySelectorAll('img,.pt-note,.pt-question,.pt-score-row,.pt-keypad,.pt-option,.pt-team-score')){const a=el.getBoundingClientRect();assert(a.left>=b.left-1&&a.right<=b.right+1,'Scene element fits horizontally: '+el.className);assert(a.top>=b.top-1&&a.bottom<=b.bottom+1,'Scene element fits vertically: '+el.className);}
-      const kind=d.querySelector('[data-party-example]').dataset.partyExample;
+      for(const el of s.querySelectorAll('img,.pt-note,.pt-question,.pt-score-row,.pt-keypad,.pt-option,.pt-team-score,.xt-note,.xt-label,.xt-results,.xt-team-total,.xt-options')){const a=el.getBoundingClientRect();assert(a.left>=b.left-1&&a.right<=b.right+1,'Scene element fits horizontally: '+el.className);assert(a.top>=b.top-1&&a.bottom<=b.bottom+1,'Scene element fits vertically: '+el.className);}
+      const kind=d.querySelector('[data-party-example]')?.dataset.partyExample||d.querySelector('[data-extra-lesson]')?.dataset.extraLesson;
       if('${mode}'==='teamvteam'&&!['players','score'].includes(kind))assert(d.querySelector('.pt-team-strip').textContent.includes('Alex + Sam')&&d.querySelector('.pt-team-strip').textContent.includes('Lee + Jo'),'Both teams visible throughout');
       if(kind==='chance')assert(d.querySelectorAll('.pt-option').length===('${mode}'==='teamvteam'?5:4),'All guesses plus the hidden answer');
       if(kind==='score'&&'${mode}'==='teamvteam')assert(d.querySelector('.pt-team-score.red strong').textContent==='6','Shared Red score');
+      if('${mode}'==='teamvteam'&&kind==='guess'){assert(d.querySelectorAll('.pt-team-guess-group').length===2,'Two team boxes');for(const group of d.querySelectorAll('.pt-team-guess-group'))assert(group.querySelectorAll('.pt-player').length===2,'Two teammates inside each box');}
+      if('${mode}'==='teamvteam'&&kind==='score')assert(d.querySelectorAll('.pt-team-result').length===2,'Team results stay in two colored boxes');
+      if('${mode}'==='wb'&&['wbPick','wbWrong'].includes(kind))assert(new DOMMatrixReadOnly(getComputedStyle(d.querySelector('.xt-elephant')).transform).a<0,'Elephant faces the middle');
       return {pass:true,mode:'${mode}',slide:${slide},kind};
      })()`);
      if(width===390){fs.mkdirSync(path.join(root,'output','party-tutorial'),{recursive:true});const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','party-tutorial',`${mode}-${result.kind}.png`),Buffer.from(shot.data,'base64'));}
-     if(slide<5)await evaluate(`document.querySelector('#mode-tutorial [data-next]').click();true`);
+     if(slide<slides-1)await evaluate(`document.querySelector('#mode-tutorial [data-next]').click();true`);
     }
-    await evaluate(`window.ui.close();window.defs['${mode}'].slideMs=100;window.ui.play('${mode}');true`);await new Promise(r=>setTimeout(r,800));
+    await evaluate(`window.ui.close();window.defs['${mode}'].slideMs=100;window.ui.play('${mode}');true`);await new Promise(r=>setTimeout(r,slides*100+200));
     await evaluate(`if(document.querySelector('#mode-tutorial[open]'))throw Error('Autoplay needs no interaction');window.defs['${mode}'].slideMs=7500;window.ui.synced('${mode}',3,{host:false});if(document.querySelector('#mode-tutorial button,input'))throw Error('Guest is watch-only');window.ui.endSynced();true`);
-    console.log({pass:true,width,height,mode,slides:6});
+    console.log({pass:true,width,height,mode,slides});
    }
    await call('Target.closeTarget',{targetId});
   }
-  if(errors.length)throw Error(errors.join('\n'));console.log('PASS: all 18 Party-format lessons, phone/landscape bounds, loaded graphics, no inputs, automatic playback and guest controls.');
+  if(errors.length)throw Error(errors.join('\n'));console.log('PASS: selected mode lessons, phone/landscape bounds, loaded graphics, no inputs, automatic playback and guest controls.');
  }catch(e){console.error(e);process.exitCode=1;}finally{clearTimeout(timeout);socket?.close();chrome.kill();server.close();}
  });
 });
