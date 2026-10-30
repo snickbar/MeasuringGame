@@ -4587,6 +4587,7 @@ if (location.protocol === "file:") {
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
   <div class="lobby-opts" role="group" aria-label="Room options">
+    <button type="button" id="lobby-tour-toggle" class="lobby-opt" role="switch" aria-checked="false" aria-pressed="false" hidden><img class="lobby-opt-ic" src="icons/flair/bolt.png" alt=""><span class="lobby-opt-tx"><b>Show how to play</b><small>A short slideshow for everyone before round 1</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">Off</span></span></button>
     <button type="button" id="lobby-reveal-toggle" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true"><img class="lobby-opt-ic" src="items/fireworks.webp" alt=""><span class="lobby-opt-tx"><b>Answer animation</b><small>Watch the answer play out each round</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
     <button type="button" id="lobby-make-believe-toggle" class="lobby-opt" role="switch" aria-checked="true" aria-pressed="true" hidden><img class="lobby-opt-ic" src="items/unicorn.webp" alt=""><span class="lobby-opt-tx"><b>Make-believe objects</b><small>Include dragons, unicorns and more</small></span><span class="lobby-switch" aria-hidden="true"><span class="lobby-switch-state">On</span></span></button>
   </div>
@@ -15665,6 +15666,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         reserved = !profile.hostUnlocked;
       }
       if (deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
+      if (tourWanted(roomState.settings || {})) {
+        await runRoomTour();
+        if (deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
+      }
       begun = !!(await beginGameNow());
       if (reserved && begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true));
     } catch (error) {
@@ -19803,6 +19808,46 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitScoreNames);
   // Solo Game: no room code anywhere, one "+ Add bot" button instead of the
   // Low/Medium/High add buttons (accuracy is set per bot row).
+  // ---- Party "how to play" slideshow: the host's lobby option; everyone watches it together before the game begins ----
+  const TOUR_SLIDE_MS = 6500;
+  function tourKeyFor(settings) {
+    if (!settings || settings.solo) return null;
+    const m = settings.mode;
+    if (m === "teamvteam" || m === "teamworlds" || m === "bluff" || m === "highstakes") return m;
+    if (isHlSettings(settings)) return "hl";
+    return "party";
+  }
+  function tourWanted(settings) {
+    const key = tourKeyFor(settings);
+    if (!key || !modeTutorialUI?.count(key)) return false;
+    return settings.showTutorial === undefined ? !modeTutorialUI.seen(key) : !!settings.showTutorial;
+  }
+  let tourResolve = null;
+  function tourEndsAt(t) { return t.startsAt + t.count * t.slideMs; }
+  // Host: show the slideshow to the whole room, then resolve (it ends by itself, or when the host skips it).
+  function runRoomTour() {
+    const key = tourKeyFor(roomState.settings), room = currentRoomCode, count = modeTutorialUI.count(key);
+    const tour = { key, startsAt: nowMs() + 800, slideMs: TOUR_SLIDE_MS, count };
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => { if (done) return; done = true; tourResolve = null; clearTimeout(timer); modeTutorialUI.mark(key); resolve(); };
+      tourResolve = () => { if (currentRoomCode === room) update(ref(db, "rooms/" + room), { tour: null }).catch(() => {}); finish(); };
+      const timer = setTimeout(finish, Math.max(0, tourEndsAt(tour) - nowMs()) + 200);
+      update(ref(db, "rooms/" + room), { tour }).catch(() => finish());
+    });
+  }
+  function syncRoomTour() {
+    const t = roomState && roomState.phase === "waiting" && currentRoomCode ? roomState.tour : null;
+    if (!t || nowMs() >= tourEndsAt(t) || !MODE_TOUR_OK(t.key)) { modeTutorialUI?.endSynced(); return; }
+    const i = Math.max(0, Math.floor((nowMs() - t.startsAt) / t.slideMs));
+    modeTutorialUI?.synced(t.key, i, { host: isHost, onSkip: () => tourResolve && tourResolve() });
+  }
+  const MODE_TOUR_OK = (key) => !!modeTutorialUI?.count(key);
+  setInterval(() => { try { syncRoomTour(); } catch (e) {} }, 300);
+  document.getElementById('lobby-tour-toggle').addEventListener('click', async () => {
+    if (!isHost || roomState.phase !== 'waiting') return;
+    await update(ref(db, 'rooms/' + currentRoomCode + '/settings'), { showTutorial: !tourWanted(roomState.settings) });
+  });
   function setLobbySwitch(btn,on){btn.setAttribute('aria-pressed',String(on));btn.setAttribute('aria-checked',String(on));const st=btn.querySelector('.lobby-switch-state');if(st)st.textContent=on?'On':'Off';}
   document.getElementById('lobby-reveal-toggle').addEventListener('click', async () => {
     if (!isHost || roomState.phase !== 'waiting') return;
@@ -19827,6 +19872,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     animationToggle.hidden=!isHost;animationToggle.disabled=data.phase!=='waiting';
     setLobbySwitch(animationToggle,data.settings?.animationReveal!==false);
     const solo = !!(data.settings && data.settings.solo);
+    const tourToggle=document.getElementById('lobby-tour-toggle');
+    tourToggle.hidden=!isHost||solo||!tourKeyFor(data.settings);tourToggle.disabled=data.phase!=='waiting';
+    setLobbySwitch(tourToggle,tourWanted(data.settings||{}));
     const makeBelieveToggle=document.getElementById('lobby-make-believe-toggle');
     const party=isPartyRoomSettings(data.settings),makeBelieveOn=includesMakeBelieve(data.settings);
     makeBelieveToggle.hidden=!party;

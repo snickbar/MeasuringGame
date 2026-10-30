@@ -20,11 +20,46 @@ const SCENES = {
   wins: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}</div>`,
   coins: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}</div>
     <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
+  teams: s => `<div class="mt-row mt-teams">${[0, 1].map(t => `<div class="mt-team t${t}">${(s.avatars || []).slice(t * 2, t * 2 + 2).map(a => img(a, 'mt-av sm')).join('')}<b>${t ? 'Blue' : 'Red'}</b></div>`).join('<span class="mt-vs">vs</span>')}</div><div class="mt-tag">Closest guess scores for the whole team</div>`,
+  bracket: () => `<div class="mt-bar"><i class="mt-lo">LOW</i><i class="mt-ans">answer</i><i class="mt-hi">HIGH</i></div><div class="mt-tag">Answer sits between your picks</div>`,
+  pot: () => `<div class="mt-row mt-chips">${[0, 1, 2, 3].map(i => img('icons/coin.png', 'mt-coin big k' + i)).join('')}</div><div class="mt-row"><span class="mt-btn">Bet</span><span class="mt-btn fold">Fold</span></div>`,
+  bluff: () => `<div class="mt-claim">“It's <b>Too High</b>”</div><div class="mt-row mt-votes"><span class="mt-btn">Too Low</span><span class="mt-btn v1">Correct</span><span class="mt-btn v2">Too High</span></div>`,
   streak: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}${img('icons/survival-shield-full.webp', 'mt-shield')}</div>
     <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
 };
 
 export const MODE_TUTORIALS = {
+  party: { title: 'Party', slides: [
+    { scene: 'bots', head: 'Everyone guesses together', text: 'Each round, everyone guesses how many of the small object fit along the big one.' },
+    { scene: 'guess', head: 'Lock in before time runs out', text: 'Type your guess before the timer ends. The closest guess wins the round.' },
+    { scene: 'botsSC', head: 'Then a Second Chance', text: 'See everyone’s guesses, then back your own with Double Down or pick the one you think is real.' },
+    { scene: 'wins', head: 'Closest scores points', text: 'The closest guess scores +3, or +5 if it is within 1% of the answer. Most points wins.' },
+  ] },
+  teamvteam: { title: 'Team vs Team', slides: [
+    { scene: 'teams', head: 'Play as a team', text: 'Pick a team color with your partner. Whoever guesses closest wins the point for the whole team.' },
+    { scene: 'guess', head: 'Everyone still guesses', text: 'Each player locks in their own guess every round.' },
+    { scene: 'botsSC', head: 'Second Chance works the same', text: 'Back your guess or switch after seeing the table. Points go to your team.' },
+  ] },
+  teamworlds: { title: 'Team Worlds', slides: [
+    { scene: 'teams', head: 'You and a partner', text: 'Work through a World together, one question at a time.' },
+    { scene: 'guess', head: 'Both of you guess', text: 'Each question asks how many of the small thing fit along the big one.' },
+    { scene: 'stars', head: 'Earn stars as a team', text: 'Your average accuracy sets your stars: 60%, 75% and 90%.' },
+  ] },
+  hl: { title: 'High / Low Survival', slides: [
+    { scene: 'hearts', head: 'You share 3 lives', text: 'Survive together as long as you can.' },
+    { scene: 'bracket', head: 'One high, one low', text: 'One player guesses at or below the answer and the other at or above it. The real answer must land between your picks.' },
+    { scene: 'wins', head: 'Keep the bracket tight', text: 'Too wide a gap, crossed picks or a miss costs a life. The allowed gap shrinks every round you survive.' },
+  ] },
+  highstakes: { title: 'High Stakes', slides: [
+    { scene: 'guess', head: 'Pick the real answer', text: 'Several numbers are on the table and only one is the real answer.' },
+    { scene: 'pot', head: 'Bet your table coins', text: 'Put coins in the pot when you think you have it, or fold to keep what you have.' },
+    { scene: 'coins', head: 'Win the pot', text: 'Whoever was right takes the pot. Watch it grow and know when to fold.' },
+  ] },
+  bluff: { title: 'Bluff the Room', slides: [
+    { scene: 'bluff', head: 'The maker makes a claim', text: 'The maker sees three numbers labeled Too Low, Correct and Too High, then claims one of them.' },
+    { scene: 'bluff', head: 'Everyone else votes', text: 'Other players only see the claim and vote: Too Low, Correct or Too High.' },
+    { scene: 'wins', head: 'Fool the room', text: 'Correct votes earn +2. The maker earns +1 for each vote they fool.' },
+  ] },
   worlds: { title: 'Worlds', slides: [
     { scene: 'guess', head: 'Five questions a level', text: 'Guess how many of the small thing fit along the big one. No timer, so take your time.' },
     { scene: 'stars', head: 'Earn up to 3 stars', text: 'Your average accuracy across the five questions sets your stars: 60%, 75% and 90%.' },
@@ -98,8 +133,30 @@ export function createModeTutorial({ owner, sample, storage }) {
     dialog.showModal();
     return new Promise(res => { finish = res; });
   }
+  // Party playback: the app decides which slide is showing (from a shared clock), so every player
+  // sees the same slide at the same moment. Only the host gets a button, and it ends it for everyone.
+  let syncedIdx = -1;
+  function synced(mode, i, { host = false, onSkip = () => {} } = {}) {
+    const def = MODE_TUTORIALS[mode];
+    if (!def) return false;
+    i = Math.max(0, Math.min(def.slides.length - 1, i));
+    if (finish) return false; // a solo slideshow is open
+    if (dialog.open && syncedIdx === i && dialog.dataset.synced === mode) return true;
+    syncedIdx = i;
+    const sl = def.slides[i];
+    dialog.dataset.synced = mode;
+    dialog.innerHTML = `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${host ? '<button type="button" class="mt-skip" data-skip>Skip for everyone</button>' : ''}</header>
+      <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene](sample())}</div>
+      <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
+      <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
+      <p class="mt-wait">${host ? 'Everyone is watching this together.' : 'The host is showing how to play.'}</p>`;
+    dialog.querySelector('[data-skip]')?.addEventListener('click', onSkip);
+    if (!dialog.open) dialog.showModal();
+    return true;
+  }
+  function endSynced() { if (dialog.dataset.synced) { delete dialog.dataset.synced; syncedIdx = -1; if (dialog.open) dialog.close(); } }
   dialog.addEventListener('cancel', e => { e.preventDefault(); });
-  return { play, seen, has: mode => !!MODE_TUTORIALS[mode], close: () => close('closed'),
+  return { play, synced, endSynced, seen, mark, count: mode => MODE_TUTORIALS[mode]?.slides.length || 0, has: mode => !!MODE_TUTORIALS[mode], close: () => close('closed'),
     // Plays once, the first time a solo mode opens.
     auto: mode => (!seen(mode) && MODE_TUTORIALS[mode]) ? play(mode) : Promise.resolve('seen') };
 }
