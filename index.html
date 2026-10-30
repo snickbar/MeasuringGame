@@ -6040,12 +6040,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // game's coins are saved. The bonus is a second transaction guarded by profile.adDoubled[key], so it can never pay twice.)
   const adOfferShown = new Set();
   let finalAdOffer = null;
-  async function offerAdDouble(row, id) {
+  async function offerAdDouble(row, id, attempt = 0) {
     try {
-      if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 3 * 60 * 1000) return;
+      if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 10 * 60 * 1000) return; // a stuck sync can delay the save, so allow a generous window
       const k = String(row.key).replace(/[.#$\[\]/]/g, "_");
       const prof = (await get(ref(db, `profiles/${id}`))).val() || {};
       const coins = prof.attemptReceipts?.[k]?.base ?? prof.attemptReceipts?.[k]?.coins ?? 0; // the ad bonus matches the normal payout, not the booster-doubled one
+      // The receipt can land a moment after the save callback (slow connection, queued sync): look again a few times before giving up.
+      if (!prof.attemptReceipts?.[k] && attempt < 5) { setTimeout(() => void offerAdDouble(row, id, attempt + 1), 1500); return; }
       if (coins <= 0 || prof.adDoubled?.[k]) return;
       adOfferShown.add(row.key);
       if (AD_BAR_MODES[row.mode]) { adOffers[row.mode] = { k, coins, key: row.key, t: Date.now() }; adBarRefresh(row.mode); return; } // solo results screens show the offer inside their split bar
