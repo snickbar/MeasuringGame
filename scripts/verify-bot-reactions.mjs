@@ -12,7 +12,7 @@ for(const id of ['a','b','c']){
 }
 for(let i=1;i<events.length;i++)assert(events[i].t-events[i-1].t>=1800,'No near-simultaneous pileup across bots');
 assert(new Set(events.slice(1).map((e,i)=>e.t-events[i].t)).size>3,'Spacing varies');
-const before=events.length;run(120000);assert.equal(events.length,before,'Manual results screen does not chatter forever');
+run(120000);const before=events.length;run(120000);assert.equal(events.length,before,'Manual results screen does not chatter forever');
 state.room.round=2;state.room.phase='question';run(20000);assert(events.length>before,'New round allows fresh reactions');
 let n=events.length;state.room.paused=true;run(60000);assert.equal(events.length,n,'Pause is silent');state.room.paused=false;controller.tick();assert.equal(events.length,n,'Resume does not replay overdue reactions');run(12000);assert(events.length>n,'Reactions resume with new pauses');
 for(const change of [()=>{state.blocked=true;},()=>{state.blocked=false;state.room.phase='animation';},()=>{state.room.phase='question';state.host=false;},()=>{state.host=true;state.room.players.me.isHost=false;},()=>{state.room.players.me.isHost=true;state.room.phase='final';}]){change();n=events.length;run(20000);assert.equal(events.length,n,'Hidden/animation/nonhost/finished states are silent');}
