@@ -4,6 +4,7 @@ const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const img = (src, cls = '') => `<img class="${cls}" src="${esc(src)}" alt="" draggable="false">`;
 
 // Each scene is plain HTML whose CSS animations loop; changing slides re-renders it, so it restarts.
+const bluffNums = s => { const ans = Math.max(2, Math.round(s.answer || 11)); return { ans, low: Math.max(1, Math.round(ans / 2)), high: ans * 2 }; };
 const SCENES = {
   hearts: () => `<div class="mt-row">${[0, 1, 2].map(i => img('icons/life-heart-full.webp', 'mt-heart mt-bounce d' + i)).join('')}</div>`,
   guess: s => `<div class="mt-row mt-objs"><div class="mt-many">${[0, 1, 2].map(() => img(s.unit.image, 'mt-obj tiny')).join('')}</div><span class="mt-vs">fit along</span>${img(s.target.image, 'mt-obj big')}</div>
@@ -23,7 +24,14 @@ const SCENES = {
   teams: s => `<div class="mt-row mt-teams">${[0, 1].map(t => `<div class="mt-team t${t}">${(s.avatars || []).slice(t * 2, t * 2 + 2).map(a => img(a, 'mt-av sm')).join('')}<b>${t ? 'Blue' : 'Red'}</b></div>`).join('<span class="mt-vs">vs</span>')}</div><div class="mt-tag">Closest guess scores for the whole team</div>`,
   bracket: () => `<div class="mt-bar"><i class="mt-lo">LOW</i><i class="mt-ans">answer</i><i class="mt-hi">HIGH</i></div><div class="mt-tag">Answer sits between your picks</div>`,
   pot: () => `<div class="mt-row mt-chips">${[0, 1, 2, 3].map(i => img('icons/coin.png', 'mt-coin big k' + i)).join('')}</div><div class="mt-row"><span class="mt-btn">Bet</span><span class="mt-btn fold">Fold</span></div>`,
-  bluff: () => `<div class="mt-claim">“It's <b>Too High</b>”</div><div class="mt-row mt-votes"><span class="mt-btn">Too Low</span><span class="mt-btn v1">Correct</span><span class="mt-btn v2">Too High</span></div>`,
+  bluff1: s => { const n = bluffNums(s); return `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div>
+    <div class="mt-row mt-opts">${[['Too Low', n.low], ['Correct', n.ans], ['Too High', n.high]].map(([l, v], i) => `<div class="mt-opt${i === 2 ? ' pick' : ''}"><small>${l}</small><b>${v}</b>${i === 2 ? '<i class="mt-circle"></i>' : ''}</div>`).join('')}</div>
+    <div class="mt-tag mt-late">You have to claim one</div>`; },
+  bluff2: s => { const n = bluffNums(s); return `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div>
+    <div class="mt-claim2">The maker says <b>${n.high}</b></div>
+    <div class="mt-row mt-votes"><span class="mt-btn">Too Low</span><span class="mt-btn">Correct</span><span class="mt-btn sel">Too High</span></div>`; },
+  bluff3: s => { const n = bluffNums(s); return `<div class="mt-reveal"><small>The answer</small><b>${n.ans}</b></div>
+    <div class="mt-row mt-verdict"><span class="mt-chip">${n.high} was <b>Too High</b></span><span class="mt-chip good">Voters who said Too High: +2</span></div>`; },
   streak: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}${img('icons/survival-shield-full.webp', 'mt-shield')}</div>
     <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
 };
@@ -56,9 +64,9 @@ export const MODE_TUTORIALS = {
     { scene: 'coins', head: 'Win the pot', text: 'Whoever was right takes the pot. Watch it grow and know when to fold.' },
   ] },
   bluff: { title: 'Bluff the Room', slides: [
-    { scene: 'bluff', head: 'The maker makes a claim', text: 'The maker sees three numbers labeled Too Low, Correct and Too High, then claims one of them.' },
-    { scene: 'bluff', head: 'Everyone else votes', text: 'Other players only see the claim and vote: Too Low, Correct or Too High.' },
-    { scene: 'wins', head: 'Fool the room', text: 'Correct votes earn +2. The maker earns +1 for each vote they fool.' },
+    { scene: 'bluff1', head: 'The maker sees three answers', text: 'One is too low, one is correct and one is too high. The maker must claim one of them, even a wrong one, to fool the room.' },
+    { scene: 'bluff2', head: 'Everyone else votes', text: 'The rest of the room only sees the claim. Is it Too Low, Correct or Too High?' },
+    { scene: 'bluff3', head: 'Then the answer is revealed', text: 'Correct votes earn +2. The maker earns +1 for every player they fool.' },
   ] },
   worlds: { title: 'Worlds', slides: [
     { scene: 'guess', head: 'Five questions a level', text: 'Guess how many of the small thing fit along the big one. No timer, so take your time.' },
