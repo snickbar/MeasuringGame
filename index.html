@@ -4371,6 +4371,7 @@ if (location.protocol === "file:") {
   <div class="setup-header">
     <button id="create-room-btn" type="button">Create Room</button>
   </div>
+  <button type="button" class="dc-btn dc-alt tour-btn" id="create-tour-btn" data-tour="quick" hidden><img src="icons/watch-play.png" alt=""><span>Watch how to play</span></button>
   <p id="create-settings-summary" class="cozy-settings-summary"></p>
   <p id="create-status" aria-live="polite"></p>
 
@@ -9826,6 +9827,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The scoring explainer can be opened from a game screen (Survival's "How scoring works" button); Back from
   // there returns to that same screen, with the run exactly as it was, instead of dumping you on the hub.
   let howtoReturnEl = null;
+  function tourBtn(key) { return `<button type="button" class="dc-btn dc-alt tour-btn" data-tour="${key}"><img src="icons/watch-play.png" alt=""><span>Watch how to play</span></button>`; }
   function openScoringHelp(fromEl) {
     const keep = overlayReturnScreen;
     howtoReturnEl = fromEl;
@@ -10095,10 +10097,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const streak = dailyStreakNow();
     if (daily.phase === "intro") {
       dailyStop();
-      el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
+      el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>${tourBtn('daily')}
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>
         ${dailyFlameHtml(streak, false, `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
-        <button type="button" class="dc-btn dc-alt" data-tour="daily">How to play</button>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
       dailyLoadBoard();
@@ -10144,14 +10145,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     dailyStop();
     const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10, perfect = accs.every((x) => x >= 90);
     const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
-    el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
+    el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>${tourBtn('daily')}
       ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7))}
       ${perfect ? `<div class="dc-card dc-hot dc-perfect"><div class="dc-pf-burst" aria-hidden="true">${daily.justFinished ? svCoinBurstHtml() : ""}</div><div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>` : `<div class="dc-card dc-hot"><div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div></div>`}
       <div class="dc-card dc-rank" id="dc-rank" hidden></div>
       <div class="dc-card">${rows}</div>
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.justFinished && !daily.replay ? `<div class="dc-note"><b>+10 coins for today</b></div>` : ""}${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
-      <button type="button" class="dc-btn dc-alt" data-tour="daily">How to play</button>
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
     dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
@@ -10421,33 +10421,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `${r.s} round${r.s === 1 ? "" : "s"} survived${r.syncStreak ? ` &middot; best streak ${r.syncStreak}` : ""}`, r.t)).join("")}</div>`;
   }
   function openClassicInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Classic Party</h2><p class="dc-sub">Everyone for themselves &mdash; bots can fill in</p>
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Classic Party</h2><p class="dc-sub">Everyone for themselves &mdash; bots can fill in</p>${tourBtn('party')}
       <div class="dc-card dc-hot"><div class="dc-big">Closest guess wins</div><div class="dc-note">Everyone sees the same two objects and guesses how many of one fit in the other. Whoever lands closest takes the round.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
-      <button type="button" class="dc-btn dc-alt" data-tour="party">How to play</button>
       <button type="button" class="dc-btn" id="classic-start">Create Room</button>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
   function openHlInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>${tourBtn('hl')}
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
       <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life. Survive 3 rounds in a row to earn a shared shield that blocks one lost life. The shield holds one charge. Every fifth survival is a themed round worth double coins; a failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
-      <button type="button" class="dc-btn dc-alt" data-tour="hl">How to play</button>
       <button type="button" class="dc-btn" id="hl-start">Create Room</button>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
   function openHsInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High Stakes</h2><p class="dc-sub">2 to 10 players &mdash; bots can fill in</p>
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High Stakes</h2><p class="dc-sub">2 to 10 players &mdash; bots can fill in</p>${tourBtn('highstakes')}
       <div class="dc-card dc-hot"><div class="dc-big">Find the real answer</div><div class="dc-note">Everyone antes some coins and sees the question with 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.</div></div>
       <div class="dc-card"><div class="dc-big">Bet like poker</div><div class="dc-note">Then it goes around the table: fold, check, call or raise. Everyone still in who picked the real answer splits the pot. If nobody did, the pot rolls over to the next round. If everyone else folds, you take the pot even if you were wrong &mdash; so bluffing works.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast everyone</div><div class="dc-note">You start with ${HS.HS_START_COINS} table chips and the ante doubles every 2 rounds. Run out of coins and you're out. Last player standing, or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds, wins.</div></div>
-      <button type="button" class="dc-btn dc-alt" data-tour="highstakes">How to play</button>
       <button type="button" class="dc-btn" id="hs-start">Create Room</button>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
@@ -10469,13 +10466,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let bluffTurnsChoice='auto';
   function openBluffInfo(){
-    teamvteamContentEl.innerHTML=`<h2 class="dc-title">Bluff the Room</h2><p class="dc-sub">3–10 players · friends and bots</p>
+    teamvteamContentEl.innerHTML=`<h2 class="dc-title">Bluff the Room</h2><p class="dc-sub">3–10 players · friends and bots</p>${tourBtn('bluff')}
       <div class="dc-card dc-hot"><div class="dc-big">One claim. Is it believable?</div><div class="dc-note">Take turns being the maker. Only the maker sees three numbers labeled Correct, Too Low, and Too High. They choose one number to show everyone else.</div></div>
       <div class="dc-card"><div class="dc-big">Call the bluff</div><div class="dc-note">Everyone else sees just that one claim and votes Too Low, Correct, or Too High. +2 for a correct vote. The maker gets +1 for each submitted vote they fool. Unanswered votes earn nobody points.</div></div>
       <div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Points rank first; vote accuracy breaks ties. A complete tie shares the win.</div>
         <div class="bl-setup-options" role="group" aria-label="Maker turns each">${[['auto','Auto'],[1,'1 each'],[2,'2 each']].map(([id,label])=>`<button type="button" data-bluff-turns="${id}" aria-pressed="${bluffTurnsChoice===id}">${label}</button>`).join('')}</div>
         <p class="dc-note">25 seconds to choose a claim, then 30 seconds to vote. Tap to submit; you have up to 10 seconds to change your vote before time runs out. No Second Chance or power-ups. See the round summary and rankings after every reveal.</p></div>
-      <button type="button" class="dc-btn dc-alt" data-tour="bluff">How to play</button>
       <button type="button" class="dc-btn" id="bluff-start">Create Room</button>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(b=>b.onclick=()=>{bluffTurnsChoice=b.dataset.bluffTurns==='auto'?'auto':Number(b.dataset.bluffTurns);teamvteamContentEl.querySelectorAll('[data-bluff-turns]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
@@ -10538,11 +10534,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `${r.s} points${r.accuracy ? ` &middot; ${formatAccuracy(r.accuracy)}% avg` : ""}`, r.t)).join("")}</div>`;
   }
   function renderTeamVTeamInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2><p class="dc-sub">2 teams of 2 &mdash; bots can fill in</p>
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2><p class="dc-sub">2 teams of 2 &mdash; bots can fill in</p>${tourBtn('teamvteam')}
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
-      <button type="button" class="dc-btn dc-alt" data-tour="teamvteam">How to play</button>
       <button type="button" class="dc-btn" id="tvt-start">Create Room</button>
       <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}`;
   }
@@ -11325,7 +11320,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
-      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${soloResumeHtml("worlds")}<button type="button" class="dc-btn dc-alt" data-tour="worlds">How to play</button>` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${tourBtn('worlds')}${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
@@ -11569,7 +11564,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderTeamWorldsScreen() {
     const el = teamworldsContentEl;
     if (!twWorldId) {
-      el.innerHTML = `<h2 class="dc-title">Team Worlds</h2><p class="dc-sub">Pick a World to play together</p><button type="button" class="dc-btn dc-alt" data-tour="teamworlds">How to play</button>` +
+      el.innerHTML = `<h2 class="dc-title">Team Worlds</h2><p class="dc-sub">Pick a World to play together</p>${tourBtn('teamworlds')}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i);
           return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : (x.unlockHolidays ? "Finish 2 holiday Monthly Challenges first" : "Unlock this World in Solo first"), { disabled: !open });
@@ -11577,10 +11572,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     const w = WORLDS.find((x) => x.id === twWorldId);
-    el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2><p class="dc-sub">Team Worlds</p>
+    el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2><p class="dc-sub">Team Worlds</p>${tourBtn('teamworlds')}
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
-      <button type="button" class="dc-btn dc-alt" data-tour="teamworlds">How to play</button>
       <button type="button" class="dc-btn" id="tw-start">Create Room</button>
       <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}`;
@@ -11784,15 +11778,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return `<div class="mc-node ${st}${l === 4 ? " mega" : ""}"><div class="mc-dot">${l === 4 ? "\u2605" : l}</div>
           <div class="mc-card"${st === "lock" ? "" : ` data-mo-level="${l}" role="button" tabindex="0"`}><div class="mc-top"><div><b>${title}</b><small class="mc-s2">${sub}</small></div><div class="mc-end">${pill}${best}${why}</div></div>${thumbs(idxs, seen)}</div></div>`;
       };
-      el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${days} day${days === 1 ? "" : "s"} left this month</p><button type="button" class="dc-btn dc-alt" data-tour="monthly">How to play</button><div class="mc-path">${[1, 2, 3, 4].map(node).join("")}</div>`;
+      el.innerHTML = `<h2 class="dc-title">${name} Challenge</h2><p class="dc-sub">${days} day${days === 1 ? "" : "s"} left this month</p>${tourBtn('monthly')}<div class="mc-path">${[1, 2, 3, 4].map(node).join("")}</div>`;
       return;
     }
     if (mo.phase === "intro") {
       monthlyStop();
       const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
-      el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>
+      el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>${tourBtn('monthly')}
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
-        <button type="button" class="dc-btn dc-alt" data-tour="monthly">How to play</button>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
         <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
       monthlyLoadBoard();
@@ -11830,13 +11823,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
     const monthDone = [1, 2, 3].every((l) => mo.prog[l] && mo.prog[l].done);
     const bgNote = mbg && monthDone && mo.level !== 4 ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Style, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
-    el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${lvTitle}</h2>
+    el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${lvTitle}</h2>${tourBtn('monthly')}
       <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
       ${adBarSlot("monthly", "mo-finish")}
       <button type="button" class="dc-btn dc-alt" id="mo-replay">Replay for coins</button>
-      <button type="button" class="dc-btn dc-alt" data-tour="monthly">How to play</button>
       <button type="button" class="dc-btn dc-alt" id="mo-share">Share my result</button>
       <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
@@ -12241,11 +12233,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "intro" || sv.phase === "over") svApplyThemeVars("");
     if (sv.phase === "intro") {
       survivalStop();
-      el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>
+      el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>${tourBtn('survival')}
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds in a row at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
-        <button type="button" class="dc-btn dc-alt" id="sv-tour">How to play</button>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
@@ -12366,7 +12357,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!b || !sv) return;
     if(b.id==='sv-resume'){const saved=readSoloSession('survival');if(saved){sv=saved;renderSurvival();}return;}
     if(b.id==='sv-discard'){clearSoloSession('survival');renderSurvival();return;}
-    if (b.id === "sv-tour") { modeTutorialUI?.play("survival"); return; }
     if (b.id === "sv-help") { openScoringHelp(survivalScreenEl); return; }
     if (b.id === "sv-start" || b.id === "sv-again") { sv = { runId:crypto.randomUUID(),phase: "question", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
@@ -12570,10 +12560,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const el = wbContentEl;
     wbScreenEl.classList.toggle("wb-playing", ["question", "reveal", "result"].includes(wb.phase));
     if (wb.phase === "intro") {
-      el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
+      el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>${tourBtn('wb')}
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">1 coin for every 2 right picks, rounded up.</div></div>
-        <button type="button" class="dc-btn dc-alt" data-tour="wb">How to play</button>
         ${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">Start</button></div>`;
       return;
     }
@@ -15249,6 +15238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
     createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
+    document.getElementById("create-tour-btn").hidden = createMode !== "solo";
     applyMenuBanner(createRoomBtn, createMode === "solo" ? "quick" : createMode);
     // Team Worlds has no configurable rounds/timer/item-selection at all - always exactly 5
     // questions from the chosen World's pool (settings.totalRounds=5 is hardcoded at room
