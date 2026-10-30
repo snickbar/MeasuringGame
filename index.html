@@ -3020,7 +3020,7 @@ if (location.protocol === "file:") {
   @media (prefers-reduced-motion: reduce) { .hl-wm-fill { transition: none; } }
   .hl-shield { display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700; }
   .hl-shield img { width:23px;height:23px;object-fit:contain; }
-  /* The team shield needs three survived rounds in a row, shown as three dots. */
+  /* The team shield needs three survived rounds, shown as three dots. */
   .hl-pips { display:flex;gap:4px;align-items:center; }
   .hl-pips i { display:block;width:11px;height:11px;border-radius:50%;border:2px solid #9a8466;box-sizing:border-box; }
   .hl-pips i.on { background:#3b82e0;border-color:#1f5fb8; }
@@ -4386,7 +4386,7 @@ if (location.protocol === "file:") {
     <p>For an answer of 100, guessing <b>75 is 75% accurate</b> and guessing <b>150 is 50% accurate</b>. Across those two rounds, your average accuracy is <b>62.5%</b>. A very large miss earns 0%, never a negative percentage.</p>
     <p><b>Examples</b> for an answer of 10: guess 11 is 90%, guess 12 is 80%, guess 8 is 80%, guess 7 is 70%, guess 5 is 50%, and guess 0 or 20 is 0%.</p>
     <p><b>The marks</b> you see on results: a green check is 90% or better, a yellow check is 70% to 89%, an orange X is 40% to 69%, and a red X is under 40%.</p>
-    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from 6 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The Accuracy box is your running average for the run. Get <b>3 rounds in a row at 75% or better</b> to earn a <b>shield</b>. You can hold one at a time. If you miss while holding it, the shield breaks instead of a heart, but that round doesn't count as survived, and your 3-in-a-row starts over.</p>
+    <p><b>Survival:</b> you have 3 lives. A guess under 60% accurate costs one, and the game ends when they're gone. For an answer of 10, anything from 6 up to 14 keeps you safe. Questions get trickier the longer you last, and your score is how many rounds you survive. The Accuracy box is your running average for the run. Get <b>3 rounds at 75% or better</b> to earn a <b>shield</b>. You can hold one at a time. If you miss while holding it, the shield breaks instead of a heart, but that round doesn't count as survived, and your 3-in-a-row starts over.</p>
   </div></details>
 
   <details class="howto-section"><summary>Tiebreakers</summary><div class="howto-body">
@@ -10490,7 +10490,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function openHlInfo() {
     teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>${tourBtn('hl')}
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
-      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life. Survive 3 rounds in a row to earn a shared shield that blocks one lost life. The shield holds one charge. Every fifth survival is a themed round worth double coins; a failed attempt keeps that theme.</div></div>
+      <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 lives. You survive when the real answer sits between your two picks AND your bracket isn't too wide: HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a life. Survive 3 rounds to earn a shared shield that blocks one lost life. The shield holds one charge. Every fifth survival is a themed round worth double coins; a failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}
       <div class="pin-bottom"><button type="button" class="dc-btn" id="hl-start">Create Room</button></div>`;
@@ -12137,7 +12137,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Header: hearts, the round number and your run accuracy, clear of the Back button.
   const SURVIVAL_SHIELD_ACC = 75, SURVIVAL_SHIELD_CHAIN = 3;
   // Shield state under the hearts: a full shield when you hold one, otherwise an empty one and three pips for your chain.
-  const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds in a row at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
+  const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
   const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div></div>`;
   // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
   function svDifficulty(answer) {
@@ -12291,7 +12291,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "intro") {
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>${tourBtn('survival')}
-        <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds in a row at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
+        <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
@@ -12429,7 +12429,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if(sv.phase!=="question")return;
       const g = parseFloat(sv.input); if (!(g > 0)) return;
       const acc = roundAccuracy(effectiveGuess(sv.q, g, deviceId) / sv.q.answer), ok = acc >= SURVIVAL_PASS;
-      // Shield: 3 rounds in a row at 75%+ earns one (you can only hold one). It absorbs a failed guess: no life lost, but the round doesn't count as survived.
+      // Shield: 3 rounds at 75%+ (not necessarily in a row; a miss keeps your progress) earns one (you can only hold one). It absorbs a failed guess: no life lost, but the round doesn't count as survived.
       sv.prevShield = !!sv.shield; sv.prevChain = sv.chain || 0; sv.shieldEvent = ""; sv.shieldShown = false;
       const saved = !ok && sv.shield;
       sv.g = g; sv.input = ""; sv.asked++; sv.lastOk = ok; sv.resultShown = false; sv.lossPending = !ok && !saved;
@@ -12439,11 +12439,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         sv.survived++;
         if (sv.themeId) { sv.bonusWins = (sv.bonusWins || 0) + 1; sv.themeId = ""; }
         if (!sv.shield) {
-          sv.chain = acc >= SURVIVAL_SHIELD_ACC ? (sv.chain || 0) + 1 : 0;
+          if (acc >= SURVIVAL_SHIELD_ACC) sv.chain = (sv.chain || 0) + 1;
           if (sv.chain >= SURVIVAL_SHIELD_CHAIN) { sv.shield = true; sv.chain = 0; sv.shieldEvent = "earned"; }
         }
-      } else if (saved) { sv.shield = false; sv.chain = 0; sv.shieldEvent = "saved"; }
-      else { sv.lives--; sv.chain = 0; }
+      } else if (saved) { sv.shield = false; sv.shieldEvent = "saved"; }
+      else { sv.lives--; }
       sv.phase = "reveal"; playSound("pick"); vibrate(20);
       if (sv.lives <= 0 && sv.revived) await survivalFinish();   // the first death waits: the player may revive with an ad
       renderSurvival(); return;

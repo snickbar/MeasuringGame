@@ -12,7 +12,7 @@ const saved=result(room,false,true);assert.equal(saved.saved,true);assert.equal(
 const lost=result({...room,...saved},false,true);assert.equal(lost.hlLives,2);assert.equal(lost.hlShieldCharge,0);assert.equal(lost.hlThemeWins,0);
 const themed=result({...room,...lost},true,true);assert.equal(themed.hlSurvived,5);assert.equal(themed.hlThemeWins,1);assert.equal(themed.milestone,5);assert(!hlThemeDue(5));
 for(const n of [4,9,14,19])assert(hlThemeDue(n));for(const n of [0,1,3,5,8,10])assert(!hlThemeDue(n));
-const reset=result({hlLives:1,hlShieldCharge:2},false);assert.equal(reset.hlLives,0);assert.equal(reset.hlShieldCharge,0);
+const kept=result({hlLives:1,hlShieldCharge:2},false);assert.equal(kept.hlLives,0);assert.equal(kept.hlShieldCharge,2,'A miss keeps progress toward the shield');const gap=result({hlLives:3,hlShieldCharge:2},false);const third=result({...gap,hlSurvived:3},true);assert.equal(third.hlShield,true,'Three survivals earn a shield even with a miss between');
 const old=result({settings:{lives:3}},false);assert.equal(old.hlLives,2,'Older rooms default safely');
 const record={kind:'attempt',mode:'hlsurvival',key:'hl-theme-test',survived:5,themedWins:1,t:1};
 let profile=applyCareerRecord({coins:0,stats:{}},record);assert.equal(profile.coins,12);assert.deepEqual(applyCareerRecord(profile,record),profile,'Bonus not paid twice');

@@ -48,7 +48,7 @@ export function extraTutorialScene(kind,s={}) {
   if(kind==='svShield')body=`<div class="xt-levels xt-charge">${[80,90,85].map(n=>`<span class="xt-current">${n}%</span>`).join('')}</div>${pic('icons/survival-shield-full.webp','Shield ready','xt-shield xt-arrive')}${note('Three consecutive rounds at 75% or better')}`;
   if(kind==='svSave')body=`<span class="xt-label">Next guess: 50% · shield ready</span><span class="xt-shield-swap">${pic('icons/survival-shield-full.webp','','xt-before')}${pic('icons/survival-shield-cracked.webp','','xt-after')}</span>${hearts()}${note('Shield used · all three lives kept')}<span class="xt-label">This round does not add a survival</span>`;
   if(kind==='svCoins')body=`${rows([['Normal survival','+3 coins'],['Every fifth survival: themed','+5 coins']])}${coin('3 / 5')}${note('A failed themed round keeps its theme')}`;
-  if(kind==='hlShield')body=`<div class="xt-levels xt-charge">${[1,2,3].map(n=>`<span class="xt-current">✓ ${n}</span>`).join('')}</div>${pic('icons/survival-shield-full.webp','Shared shield ready','xt-shield xt-arrive')}${hearts()}${note('Three survivals in a row → one shared shield')}`;
+  if(kind==='hlShield')body=`<div class="xt-levels xt-charge">${[1,2,3].map(n=>`<span class="xt-current">✓ ${n}</span>`).join('')}</div>${pic('icons/survival-shield-full.webp','Shared shield ready','xt-shield xt-arrive')}${hearts()}${note('Three survivals → one shared shield')}`;
   if(kind==='hlRewards')body=`${rows([['Normal survival','+2 coins each'],['Every fifth survival: themed','+4 coins each']])}${note('A failed themed round keeps its theme')}<span class="xt-label">Keep surviving to beat your best run</span>`;
   return `<div class="xt-stage xt-${kind}" data-extra-lesson="${kind}">${body}</div>`;
 }
@@ -107,7 +107,7 @@ export const MORE_MODE_TUTORIALS={
     slide('measure','Use the same measuring idea','Estimate how many small objects fit along the big one. You can use decimal guesses.'),
     slide('svSafe','60% or better keeps you safe','The answer is 2. A guess of 1.8 is 90% accurate, so you survive this round.'),
     slide('svMiss','Below 60% costs a life','A guess of 1 is only 50% accurate. Without a shield, one heart breaks.'),
-    slide('svShield','Strong guesses charge a shield','Three rounds in a row at 75% or better earn one shield. You can hold only one at a time.'),
+    slide('svShield','Strong guesses charge a shield','Three rounds at 75% or better earn one shield. You can hold only one at a time.'),
     slide('svSave','A shield blocks one lost life','A bad guess uses the shield instead of a heart. You keep your lives, but that round is not counted as survived.'),
     slide('svCoins','Surviving pays coins','Normal survived rounds pay 3 coins. Every fifth survival is a themed round worth 5 coins.'),
   ]),
