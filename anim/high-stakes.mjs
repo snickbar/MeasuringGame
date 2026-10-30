@@ -18,8 +18,8 @@ export const HS_TURN_SECONDS = 30;
 // Ghost bounty: an eliminated player whose fake gets picked earns this many profile coins per player fooled.
 export const HS_GHOST_COINS_PER_FOOL = 2;
 
-// 5 coins for rounds 1-2, then 10, 20, 40 ... (doubles every 2 rounds)
-export const hsAnteFor = (round) => 5 * 2 ** Math.floor((Math.max(1, round) - 1) / 2);
+// 5 coins for rounds 1-2, then 10, 15, 20, 25 (goes up by 5 every 2 rounds)
+export const hsAnteFor = (round) => 5 + 5 * Math.floor((Math.max(1, round) - 1) / 2);
 export const hsRaiseStep = (ante) => ante * 2;
 
 // ---------- answers ----------
