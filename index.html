@@ -5705,7 +5705,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // A glowing gold star on the STYLE button and the Avatars tab while there is a free avatar pull waiting.
   function renderFreePullStar() {
-    const on = (myProfile.freePulls | 0) > 0;
+    // Banked pulls are kept, but the star only shows while there is still an avatar left to pull.
+    const on = (myProfile.freePulls | 0) > 0 && AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
     document.getElementById("toolbar-cosmetics-btn")?.classList.toggle("has-free-pull", on);
     document.querySelectorAll('.cosm-tab-btn[data-tab="avatars"]').forEach((b) => b.classList.toggle("has-free-pull", on));
   }
