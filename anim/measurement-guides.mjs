@@ -40,16 +40,18 @@ export function installMeasurementGuides({objects,document:doc=document}) {
     const right=(w-iw)/2+(original.left+(original.right-original.left)*region[2])*iw;
     const bottom=(h-ih)/2+(original.top+(original.bottom-original.top)*region[3])*ih;
     const axis=measurementGuideAxis(object,{width:right-left,height:bottom-top});
-    const points=object.id==='chicken-nugget'?[[left+(right-left)*.08,top+(bottom-top)*.9],[left+(right-left)*.8,top+(bottom-top)*.08]]:axis==='vertical'?[[Math.max(3,left-3),top],[Math.max(3,left-3),bottom]]:[[left,Math.min(h-3,bottom+3)],[right,Math.min(h-3,bottom+3)]];
-    const matrix=new DOMMatrix(style.transform==='none'?undefined:style.transform);
-    const sx=b.width/card.offsetWidth,sy=b.height/card.offsetHeight;
-    const cx=(r.left+r.width/2-b.left)/sx-card.clientLeft,cy=(r.top+r.height/2-b.top)/sy-card.clientTop;
+    // One uniform guide per card, spanning the box rather than tracing the artwork: a left-hand card puts a vertical guide on
+    // its right edge, a right-hand card on its left edge; a horizontal guide always runs along the bottom, above the caption.
+    const sy=b.height/card.offsetHeight||1;
     const caption=card.querySelector('span,figcaption')?.getBoundingClientRect();
     const yMax=Math.min(card.clientHeight-3,caption?(caption.top-b.top)/sy-card.clientTop-3:card.clientHeight-3);
-    const mapped=points.map(([x,y])=>{x-=w/2;y-=h/2;return [Math.max(3,Math.min(card.clientWidth-3,cx+matrix.a*x+matrix.c*y)),Math.max(3,Math.min(yMax,cy+matrix.b*x+matrix.d*y))];});
-    const signature=JSON.stringify(mapped);if(painted.get(card)===signature)return;painted.set(card,signature);
-    let svg=card.querySelector(':scope>.measurement-guide');if(!svg){svg=doc.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('measurement-guide');svg.setAttribute('aria-hidden','true');card.append(svg);}
-    svg.setAttribute('viewBox',`0 0 ${card.clientWidth} ${card.clientHeight}`);svg.style.cssText='position:absolute;pointer-events:none;left:0;top:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)';
+    const sibs=[...(card.parentElement?.children||[])].filter(n=>n.matches(selectors));
+    const onRight=sibs.length>1&&sibs.indexOf(card)>0;
+    const pad=6,W=card.clientWidth,H=card.clientHeight;
+    const mapped=axis==='vertical'?[[onRight?pad:W-pad,pad],[onRight?pad:W-pad,yMax]]:[[pad,yMax],[W-pad,yMax]];
+    const signature=JSON.stringify([mapped,W,H]);if(painted.get(card)===signature)return;painted.set(card,signature);
+    let svg=card.querySelector(':scope>.measurement-guide');if(!svg){svg=doc.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('measurement-guide');svg.setAttribute('aria-hidden','true');svg.style.cssText='position:absolute;pointer-events:none;left:0;top:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)';card.append(svg);}
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
     const [[x1,y1],[x2,y2]]=mapped,dist=Math.hypot(x2-x1,y2-y1)||1,ux=(x2-x1)/dist,uy=(y2-y1)/dist;
     const heads=`M${x1+ux*4-uy*3} ${y1+uy*4+ux*3}L${x1} ${y1}L${x1+ux*4+uy*3} ${y1+uy*4-ux*3}M${x2-ux*4-uy*3} ${y2-uy*4+ux*3}L${x2} ${y2}L${x2-ux*4+uy*3} ${y2-uy*4-ux*3}`;
     svg.innerHTML=`<path d="M${x1} ${y1}L${x2} ${y2}" fill="none" stroke="#4a2c12" stroke-width="1.5" stroke-dasharray="3 3"/><path d="${heads}" fill="none" stroke="#4a2c12" stroke-width="1.5" stroke-linejoin="round"/>`;
