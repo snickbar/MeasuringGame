@@ -163,7 +163,7 @@ export function createPowerupController(ports) {
           const next = { ...room, currentQuestion: transform(room.currentQuestion), powerupReceipts: { ...(room.powerupReceipts || {}), [operation]: true } };
           if (REROLLS.includes(id)) {
             next.guesses = null; next.graceEndsAt = null;
-            next.questionEndsAt = room.questionEndsAt ? ports.now() + (room.settings.timerSeconds || 30) * 1000 : null;
+            next.questionEndsAt = room.questionEndsAt ? ports.now() + (room.settings.mode === 'teamworlds' ? 24 * 3600 * 1000 : (room.settings.timerSeconds || 30) * 1000) : null;
           }
           return next;
         });

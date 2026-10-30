@@ -16491,7 +16491,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           playSound("count"); vibrate(12);
         }
       }
-      const noTimer = isHlSettings(roomState.settings);
+      const noTimer = roomState.settings?.mode === "teamworlds";
       hudTimerEl.style.visibility = noTimer ? "hidden" : "";
       let deadline = null;
       if (roomState.phase === "question") deadline = noTimer && !roomState.graceEndsAt ? null : (roomState.graceEndsAt || roomState.questionEndsAt);
@@ -16533,7 +16533,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Host-authoritative round transitions ====================
 
-  const HL_NO_TIMER_MS = 20 * 24 * 3600 * 1000;
+  // Team Worlds and High/Low Survival have no visible countdown; the real cap is 24 hours so a room can't sit forever.
+  const TEAM_ROUND_CAP_MS = 24 * 3600 * 1000;
   async function startRound(roomCode, roundNum) {
     // Team Worlds plays through a fixed, pre-generated set of 5 questions sampled from the
     // chosen World at room creation (teamWorldQuestions()) rather than the general pool -
@@ -16545,9 +16546,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : (roomState.settings || currentSettings).mode === "teamworlds"
       ? { ...roomState.teamWorldQuestions[roundNum - 1], powerupKey: crypto.randomUUID() }
       : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
-    // High/Low Survival has no timer: the "deadline" is parked ~20 days out (the longest a browser timer can wait)
-    // so every timer-based code path still has a number to work with but never actually fires.
-    const endsAt = hl ? nowMs() + HL_NO_TIMER_MS : nowMs() + (currentSettings.timerSeconds || 30) * 1000;
+    // Team modes (Worlds and High/Low) have no countdown on screen: the deadline is a 24-hour cap, so a teammate who
+    // walks away eventually counts as 0% instead of stalling the room forever.
+    const endsAt = (roomState.settings || currentSettings).mode === "teamworlds" ? nowMs() + TEAM_ROUND_CAP_MS : nowMs() + (currentSettings.timerSeconds || 30) * 1000;
     let hlRoles = null;
     if (hl) {
       // Re-rolled every round: one player is HIGH (a number it can't possibly be more than), the other LOW.
