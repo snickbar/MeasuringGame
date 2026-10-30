@@ -4766,6 +4766,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
+  import { createModeTutorial } from "./anim/mode-tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
   import { pickBiggerPair, isCorrectPick, difficultyOf } from "./anim/which-bigger.mjs";
   import { wbMascotsHtml, preloadWbReactionArt } from "./anim/which-bigger-summary.mjs";
@@ -4776,7 +4777,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { reactionEntrance } from "./anim/reaction-entrance.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
-  var gamePolish, uiDelight, discoveryUI, tutorialUI, bluffUI;
+  var gamePolish, uiDelight, discoveryUI, tutorialUI, modeTutorialUI, bluffUI;
   let nativeAudioActive = true, audioPageActive = true;
   const audioLifecycle = createAudioLifecycle({
     visible:()=>!document.hidden && nativeAudioActive && audioPageActive,
@@ -12215,6 +12216,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSurvival();
     openOverlay(survivalScreenEl);
     if (fromHub) overlayReturnScreen = soloScreenEl;
+    modeTutorialUI?.auto('survival');
   }
   function survivalStop() { if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
   function renderSurvival() {
@@ -12229,6 +12231,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds in a row at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
+        <button type="button" class="dc-btn dc-alt" id="sv-tour">How to play</button>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
@@ -12349,6 +12352,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!b || !sv) return;
     if(b.id==='sv-resume'){const saved=readSoloSession('survival');if(saved){sv=saved;renderSurvival();}return;}
     if(b.id==='sv-discard'){clearSoloSession('survival');renderSurvival();return;}
+    if (b.id === "sv-tour") { modeTutorialUI?.play("survival"); return; }
     if (b.id === "sv-help") { openScoringHelp(survivalScreenEl); return; }
     if (b.id === "sv-start" || b.id === "sv-again") { sv = { runId:crypto.randomUUID(),phase: "question", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
@@ -20386,6 +20390,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     canOffer:()=>walletProfileOwner===deviceId&&walletAuthReady&&homeScreen.classList.contains('active')&&!document.hidden&&!document.querySelector('dialog[open]')&&!document.body.classList.contains('collecting-game-reward')&&!gameRewards?.pending,
   });
   document.getElementById('play-tutorial-btn').addEventListener('click',()=>tutorialUI.open());
+  modeTutorialUI = createModeTutorial({
+    owner:()=>deviceId,
+    sample:()=>({unit:OBJECT_BY_ID.get('pencil'),target:OBJECT_BY_ID.get('door')})
+  });
 
   // ==================== In-app updates (native app only) ====================
   // 1) LIVE UPDATES - main publishes a GitHub release ZIP and public manifest;
