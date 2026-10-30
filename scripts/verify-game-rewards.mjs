@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { gameReward, rewardProfile, gameRewardKey } from '../anim/game-rewards.mjs';
+import { gameReward, rewardProfile, gameRewardKey, createGameRewards } from '../anim/game-rewards.mjs';
 
 for (const score of [0,2,4,5,8,20]) {
   const base = Math.max(score,5), key = 'ROOM_game';
@@ -40,6 +40,33 @@ assert.equal(gameRewardKey('ABCD',{gameId:'same',countdownEndsAt:1}),gameRewardK
 assert.notEqual(gameRewardKey('ABCD',{gameId:'first'}),gameRewardKey('ABCD',{gameId:'replay'}));
 assert.equal(gameRewardKey('ABCD',{currentQuestion:{powerupKey:'old'}}),'ABCD_old');
 assert.throws(()=>gameRewardKey('ABCD',{}));
+// Render the actual reward UI: score, minimum, booster and ad rows must sum
+// to the credited total, including recovered receipts and spent charges.
+for (const score of [0,2,10]) for (const charges of [0,1,3]) {
+  let profile={coins:100,booster:charges};
+  const nodes=new Map();
+  const get=selector=>{if(!nodes.has(selector))nodes.set(selector,{hidden:false,textContent:'',addEventListener(type,fn){this[type]=fn;}});return nodes.get(selector);};
+  const el={hidden:true,setAttribute(){},querySelector:get,style:{setProperty(){}}};
+  const doc={createElement:()=>el,body:{appendChild(){},classList:{add(){},remove(){}}},querySelectorAll:()=>[],getElementById:()=>null};
+  const storage={setItem(){},removeItem(){}};
+  const rewards=createGameRewards({owner:()=> 'me',document:doc,storage,ad:async()=>true,finish:async()=>{},
+    transaction:async(_,fn)=>{profile=fn(profile)||profile;return {snapshot:{val:()=>profile}};}});
+  await rewards.prepare({key:'boosted',score});rewards.open();
+  const check=()=>{
+    let sum=Number.parseInt(get('[data-score]').textContent);
+    for(const [row,value] of [['minimum','minimum'],['booster','booster'],['ad','bonus']])if(!get(`[data-${row}-row]`).hidden)sum+=Number.parseInt(get(`[data-${value}]`).textContent);
+    assert.equal(sum,Number(get('[data-total]').textContent),'visible breakdown sums to total');
+    assert.equal(sum,profile.coins-100,'display matches wallet credit');
+    assert.equal(get('[data-booster-row]').hidden,charges===0);
+    assert.equal(profile.booster,Math.max(0,charges-1),'one charge per game');
+  };
+  check();await get('[data-double]').click();check();
+  await get('[data-continue]').click();
+  assert.equal(profile.booster,Math.max(0,charges-1),'ad and completion do not spend another charge');
+  const recovered=createGameRewards({owner:()=> 'me',document:doc,storage,ad:async()=>true,finish:async()=>{},
+    transaction:async(_,fn)=>{profile=fn(profile)||profile;return {snapshot:{val:()=>profile}};}});
+  await recovered.prepare({key:'boosted',score});recovered.open();check();
+}
 // Exercise the game's actual room-cleanup handler, including a recovered
 // receipt after the room disappeared or its code was reused for a newer game.
 const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');

@@ -44,6 +44,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
         <div class="coin-reward-row"><span>From your score</span><b data-score>0 coins</b></div>
         <div class="coin-reward-row" data-minimum-row><span>Minimum reward bonus</span><b data-minimum>+5 coins</b></div>
         <p class="coin-reward-note" data-minimum-note>We topped you up to the 5-coin minimum.</p>
+        <div class="coin-reward-row" data-booster-row hidden><span>2x coin booster bonus</span><b data-booster>+0 coins</b></div>
         <div class="coin-reward-row coin-reward-ad-row" data-ad-row hidden><span>Ad bonus</span><b data-bonus>+5 coins</b></div>
         <span class="coin-reward-stamp" data-stamp>ADDING YOUR COINS…</span>
       </div>
@@ -66,6 +67,8 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     get('[data-minimum]').textContent = '+' + r.minimum + ' coins';
     get('[data-minimum-row]').hidden = !r.minimum;
     get('[data-minimum-note]').hidden = !r.minimum;
+    get('[data-booster-row]').hidden = !r.boosted;
+    get('[data-booster]').textContent = '+' + (r.boosted ? r.base - r.score - r.minimum : 0) + ' coins';
     get('[data-ad-row]').hidden = !r.doubled;
     get('[data-bonus]').textContent = '+' + r.base + ' coins';
     get('[data-ad-bonus]').textContent = 'Watch an ad · +' + r.base + ' bonus';

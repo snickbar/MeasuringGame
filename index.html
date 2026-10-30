@@ -19805,12 +19805,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Solo Game: no room code anywhere, one "+ Add bot" button instead of the
   // Low/Medium/High add buttons (accuracy is set per bot row).
   // ---- Party "how to play" slideshow: the host's lobby option; everyone watches it together before the game begins ----
-  const TOUR_SLIDE_MS = 6500;
   function tourKeyFor(settings) {
     if (!settings || settings.solo) return null;
     const m = settings.mode;
-    if (m === "teamvteam" || m === "teamworlds" || m === "bluff" || m === "highstakes") return m;
     if (isHlSettings(settings)) return "hl";
+    if (m === "teamvteam" || m === "teamworlds" || m === "bluff" || m === "highstakes") return m;
     return "party";
   }
   function tourWanted(settings) {
@@ -19823,7 +19822,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Host: show the slideshow to the whole room, then resolve (it ends by itself, or when the host skips it).
   function runRoomTour() {
     const key = tourKeyFor(roomState.settings), room = currentRoomCode, count = modeTutorialUI.count(key);
-    const tour = { key, startsAt: nowMs() + 800, slideMs: TOUR_SLIDE_MS, count };
+    const tour = { key, startsAt: nowMs() + 800, slideMs: modeTutorialUI.duration(key), count };
     return new Promise((resolve) => {
       let done = false;
       const finish = () => { if (done) return; done = true; tourResolve = null; clearTimeout(timer); modeTutorialUI.mark(key); resolve(); };

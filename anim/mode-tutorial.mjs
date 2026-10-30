@@ -1,11 +1,16 @@
 // Per-mode animated how-to-play slideshows. Self-contained dialog; the host app only supplies
 // sample objects, and (for party use) a hook that lets the host end the slideshow for everyone.
+import {mountHighLowTutorial} from './high-low-tutorial.mjs';
+import {partyTutorialScene} from './party-tutorial.mjs';
 const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const img = (src, cls = '') => `<img class="${cls}" src="${esc(src)}" alt="" draggable="false">`;
 
 // Each scene is plain HTML whose CSS animations loop; changing slides re-renders it, so it restarts.
 const bluffNums = s => { const ans = Math.max(2, Math.round(s.answer || 11)); return { ans, low: Math.max(1, Math.round(ans / 2)), high: ans * 2 }; };
 const SCENES = {
+  partyExample: s => partyTutorialScene(s.lesson,{team:s.lessonMode==='teamvteam',quick:s.lessonMode==='quick'}),
+  hlRoles: () => `<div class="mt-hl-roles"><div><img src="anim/high-low-art/shark.webp" alt="LOW shark"><b>LOW ≤ answer</b><small>Close, without going over</small></div><div><img src="anim/high-low-art/bird.webp" alt="HIGH bird"><b>HIGH ≥ answer</b><small>Close, without going under</small></div></div><div class="mt-hl-lives">${[0,1,2].map(()=>img('icons/life-heart-full.webp','')).join('')}<span>Three shared lives</span></div>`,
+  hlOcean: () => '<div class="mt-hl-demo"></div>',
   hearts: () => `<div class="mt-row">${[0, 1, 2].map(i => img('icons/life-heart-full.webp', 'mt-heart mt-bounce d' + i)).join('')}</div>`,
   guess: s => `<div class="mt-row mt-objs"><div class="mt-many">${[0, 1, 2].map(() => img(s.unit.image, 'mt-obj tiny')).join('')}</div><span class="mt-vs">fit along</span>${img(s.target.image, 'mt-obj big')}</div>
     <div class="mt-input"><span class="mt-type t1">1</span><span class="mt-type t2">2</span><span class="mt-type t3">0</span></div>`,
@@ -52,26 +57,33 @@ const SCENES = {
 };
 
 export const MODE_TUTORIALS = {
-  party: { title: 'Party', slides: [
-    { scene: 'bots', head: 'Everyone guesses together', text: 'Each round, everyone guesses how many of the small object fit along the big one.' },
-    { scene: 'guess', head: 'Lock in before time runs out', text: 'Type your guess before the timer ends. The closest guess wins the round.' },
-    { scene: 'botsSC', head: 'Then a Second Chance', text: 'Second guessing yourself? Pick the answer you think is real to earn a point. Feeling confident? Double Down on your own guess to earn even more if it is the closest.' },
-    { scene: 'wins', head: 'Closest scores points', text: 'The closest guess scores +3, or +5 if it is within 1% of the answer. Most points wins.' },
+  party: { title: 'Classic Party', autoplay:true, slideMs:7500, slides: [
+    { scene:'partyExample',lesson:'players',head:'Same question. Your own guess.',text:'Everyone plays on their own device. Try to be the closest each round.' },
+    { scene:'partyExample',lesson:'measure',head:'Think end to end',text:'Imagine lining up the smaller object along the bigger one. Here, two hot dogs fit along the ruler.' },
+    { scene:'partyExample',lesson:'guess',head:'Make your guess, then lock it in',text:'Alex guesses 1.8 before the timer ends. Decimal guesses are allowed.' },
+    { scene:'partyExample',lesson:'chance',head:'A Second Chance to score',text:'One card is the hidden real answer. Sam picks 2 and earns +1 because Sam did not win. Picking the winner’s guess earns nothing.' },
+    { scene:'partyExample',lesson:'double',head:'Confident in your own guess?',text:'Alex doubles down on 1.8. It wins closest: +3, plus +2 for Double Down. A losing guess gets no Double Down bonus.' },
+    { scene:'partyExample',lesson:'score',head:'Build your score round by round',text:'Closest earns +3, or +5 within 1%. End-game accuracy bonuses also count. Most points wins.' },
   ] },
-  teamvteam: { title: 'Team vs Team', slides: [
-    { scene: 'teams', head: 'Play as a team', text: 'Pick a team color with your partner. Whoever guesses closest wins the point for the whole team.' },
-    { scene: 'guess', head: 'Everyone still guesses', text: 'Each player locks in their own guess every round.' },
-    { scene: 'botsSC', head: 'Second Chance works the same', text: 'Back your guess or switch after seeing the table. Points go to your team.' },
+  teamvteam: { title: 'Team vs Team', autoplay:true, slideMs:7500, slides: [
+    { scene:'partyExample',lesson:'players',head:'Pick a color with your partner',text:'Each team has two players. Everyone makes their own guess; points go to the team.' },
+    { scene:'partyExample',lesson:'measure',head:'Same question for both teams',text:'Red and Blue both answer this question. Picture the small objects end to end: two hot dogs fit along this ruler.' },
+    { scene:'partyExample',lesson:'guess',head:'Your own guess. Your team’s points.',text:'Alex and Sam are Red; Lee and Jo are Blue. Each of the four players locks in their own number.' },
+    { scene:'partyExample',lesson:'chance',head:'Your partner can score, too',text:'Sam picks the hidden answer, 2, and earns +1 for Red. Picking a winning teammate’s guess would earn nothing.' },
+    { scene:'partyExample',lesson:'double',head:'Double Down can help your team',text:'Alex’s 1.8 is closest: +3 for Red. Double Down adds +2. It only pays when your own guess wins.' },
+    { scene:'partyExample',lesson:'score',head:'The points go into one team total',text:'Alex earns 5 and Sam earns 1: Red gets 6. Tied teammates’ closest-win points count only once for their team.' },
   ] },
   teamworlds: { title: 'Team Worlds', slides: [
     { scene: 'partners', head: 'You and a partner', text: 'Team Worlds is always two players on one team, working through a World together.' },
     { scene: 'guess', head: 'Both of you guess', text: 'Each question asks how many of the small thing fit along the big one.' },
     { scene: 'starmeter', head: 'Earn stars as a team', text: 'Your average accuracy fills the meter. Reach 60%, 75% and 90% for up to 3 stars.' },
   ] },
-  hl: { title: 'High / Low Survival', slides: [
-    { scene: 'hearts', head: 'You share 3 lives', text: 'Survive together as long as you can.' },
-    { scene: 'hlLow', head: 'You are the LOW!', text: 'One of you is HIGH and one is LOW. The LOW picks a number as close to the answer as possible without going over.' },
-    { scene: 'hlReveal', head: 'The answer is revealed', text: 'The answer must land between your picks, and the gap between them must stay small enough. The limit shrinks as you survive.' },
+  hl: { title: 'High / Low Survival', autoplay: true, slideMs: 9500, slides: [
+    { scene: 'hlRoles', head: 'Two roles. One team.', text: 'LOW stays at or below the answer. HIGH stays at or above it. Both aim as close as possible.' },
+    { scene: 'hlOcean', example: 'safe', head: 'Keep the answer between you', text: 'Answer: 10. LOW picks 8; HIGH picks 12. The 1.5× gap fits the 2.5× limit. You survive!' },
+    { scene: 'hlOcean', example: 'under', head: 'HIGH must not go under', text: 'HIGH picks 9, below the answer of 10. The bird gets wet, and the team loses a life.' },
+    { scene: 'hlOcean', example: 'over', head: 'LOW must not go over', text: 'LOW picks 11, above the answer of 10. The shark leaves the water, and the team loses a life.' },
+    { scene: 'hlOcean', example: 'wide', head: 'Stay close together, too', text: '5 and 20 surround 10, but their 4× gap is wider than 2.5×. You lose a life. The limit tightens as you survive.' },
   ] },
   highstakes: { title: 'High Stakes', slides: [
     { scene: 'hs1', head: 'Find the real answer', text: 'Every round shows 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.' },
@@ -91,7 +103,7 @@ export const MODE_TUTORIALS = {
   daily: { title: 'Daily Challenge', slides: [
     { scene: 'daily', head: 'Three questions, one try', text: 'A fresh set every day. Once you finish it, come back tomorrow for a new one.' },
     { scene: 'guess', head: 'Guess how many', text: 'Everyone gets the same questions, so your score goes on the daily leaderboard.' },
-    { scene: 'coins', head: 'Earn coins', text: 'The closer your guesses, the more coins you earn.' },
+    { scene: 'coins', head: 'Earn coins', text: 'Finish today’s challenge to earn 10 coins. Keep a daily streak for milestone bonuses.' },
   ] },
   monthly: { title: 'Monthly Challenge', slides: [
     { scene: 'month', head: 'A new pack every month', text: 'Every object in this month’s pack shows up exactly once.' },
@@ -103,10 +115,13 @@ export const MODE_TUTORIALS = {
     { scene: 'hearts', head: 'A wrong pick costs a life', text: 'You have three lives. Lose them all and the run is over.' },
     { scene: 'coins', head: 'It gets trickier', text: 'The objects get closer in size the further you go. Keep going for coins.' },
   ] },
-  quick: { title: 'Quick Game', slides: [
-    { scene: 'bots', head: 'Play against bots', text: 'Pick how sharp the bots are, then everyone guesses the same question.' },
-    { scene: 'guess', head: 'Guess how many', text: 'Type how many of the small thing fit along the big one, then lock it in.' },
-    { scene: 'botsSC', head: 'Take a Second Chance', text: 'After seeing everyone’s guesses you can back your own guess or switch to a better one.' },
+  quick: { title: 'Quick Game', autoplay:true, slideMs:7500, slides: [
+    { scene:'partyExample',lesson:'players',head:'A quick game against bots',text:'Choose the bot difficulty, then play the same round format as Classic Party.' },
+    { scene:'partyExample',lesson:'measure',head:'Picture the objects end to end',text:'How many small objects fit along the bigger one? In this example, two hot dogs fit along a ruler.' },
+    { scene:'partyExample',lesson:'guess',head:'Lock in your best guess',text:'Alex guesses 1.8. Decimals are allowed. Submit before the timer ends.' },
+    { scene:'partyExample',lesson:'chance',head:'Find the hidden real answer',text:'One Second Chance card is the real answer. Sam chooses 2 and earns +1 as a non-winner. The winner’s guess gives no bonus.' },
+    { scene:'partyExample',lesson:'double',head:'Or back your own guess',text:'Alex doubles down on 1.8 and wins closest: 3 + 2 = 5 points. Double Down adds nothing if your guess loses.' },
+    { scene:'partyExample',lesson:'score',head:'Most points wins the game',text:'Closest earns +3, or +5 within 1%. Accuracy adds end-game bonuses. Power-ups are available in Quick Game.' },
   ] },
   survival: {
     title: 'Survival',
@@ -126,9 +141,18 @@ export function createModeTutorial({ owner, sample, storage }) {
   const key = mode => `size-em-up:mode-tutorial:${owner()}:${mode}`;
   const seen = mode => { try { return storage.getItem(key(mode)) === '1'; } catch { return false; } };
   const mark = mode => { try { storage.setItem(key(mode), '1'); } catch {} };
-  let finish = null;
+  let finish = null, clearScene = () => {}, autoTimer = null, autoAt = 0, autoLeft = 0, advance = null;
+  function stopScene() { clearTimeout(autoTimer);autoTimer=null;advance=null;clearScene();clearScene=()=>{}; }
+  function armAuto() { if(advance&&!document.hidden){autoAt=performance.now();autoTimer=setTimeout(()=>advance?.(),autoLeft);} }
+  document.addEventListener('visibilitychange',()=>{
+    if(!advance)return;
+    if(document.hidden){clearTimeout(autoTimer);autoTimer=null;autoLeft=Math.max(0,autoLeft-(performance.now()-autoAt));}
+    else armAuto();
+  });
+  function startScene(sl) { if(sl.example)clearScene=mountHighLowTutorial(dialog.querySelector('.mt-hl-demo'),sl.example); }
 
   function close(result) {
+    stopScene();
     if (dialog.open) dialog.close();
     const f = finish; finish = null;
     if (f) f(result);
@@ -141,16 +165,20 @@ export function createModeTutorial({ owner, sample, storage }) {
     let i = 0;
     const s = sample();
     function render() {
+      stopScene();
       const sl = def.slides[i], last = i === def.slides.length - 1;
       const canSkip = controls !== 'guest';
+      dialog.dataset.mode=mode;
       dialog.innerHTML = `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${canSkip ? `<button type="button" class="mt-skip" data-skip>${controls === 'host' ? 'Skip for everyone' : 'Skip'}</button>` : ''}</header>
-        <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene](s)}</div>
+        <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene]({...s,lesson:sl.lesson,lessonMode:mode})}</div>
         <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
         <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
         ${controls === 'guest' ? '<p class="mt-wait">The host is showing how to play.</p>' : `<footer>${i > 0 ? '<button type="button" data-back>Back</button>' : ''}<button type="button" data-next class="mt-go">${last ? 'Got it' : 'Next'}</button></footer>`}`;
       dialog.querySelector('[data-skip]')?.addEventListener('click', () => { mark(mode); close('skipped'); });
       dialog.querySelector('[data-back]')?.addEventListener('click', () => { i--; render(); });
       dialog.querySelector('[data-next]')?.addEventListener('click', () => { if (last) { mark(mode); close('done'); } else { i++; render(); } });
+      startScene(sl);
+      if(def.autoplay&&controls==='self'){advance=()=>{if(last){mark(mode);close('done');}else{i++;render();}};autoLeft=def.slideMs;armAuto();}
     }
     render();
     dialog.showModal();
@@ -166,20 +194,23 @@ export function createModeTutorial({ owner, sample, storage }) {
     if (finish) return false; // a solo slideshow is open
     if (dialog.open && syncedIdx === i && dialog.dataset.synced === mode) return true;
     syncedIdx = i;
+    stopScene();
     const sl = def.slides[i];
     dialog.dataset.synced = mode;
+    dialog.dataset.mode = mode;
     dialog.innerHTML = `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${host ? '<button type="button" class="mt-skip" data-skip>Skip for everyone</button>' : ''}</header>
-      <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene](sample())}</div>
+      <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene]({...sample(),lesson:sl.lesson,lessonMode:mode})}</div>
       <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
       <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
       <p class="mt-wait">${host ? 'Everyone is watching this together.' : 'The host is showing how to play.'}</p>`;
     dialog.querySelector('[data-skip]')?.addEventListener('click', onSkip);
     if (!dialog.open) dialog.showModal();
+    startScene(sl);
     return true;
   }
-  function endSynced() { if (dialog.dataset.synced) { delete dialog.dataset.synced; syncedIdx = -1; if (dialog.open) dialog.close(); } }
+  function endSynced() { if (dialog.dataset.synced) { stopScene();delete dialog.dataset.synced; syncedIdx = -1; if (dialog.open) dialog.close(); } }
   dialog.addEventListener('cancel', e => { e.preventDefault(); });
-  return { play, synced, endSynced, seen, mark, count: mode => MODE_TUTORIALS[mode]?.slides.length || 0, has: mode => !!MODE_TUTORIALS[mode], close: () => close('closed'),
+  return { play, synced, endSynced, seen, mark, duration: mode => MODE_TUTORIALS[mode]?.slideMs || 6500, count: mode => MODE_TUTORIALS[mode]?.slides.length || 0, has: mode => !!MODE_TUTORIALS[mode], close: () => close('closed'),
     // Plays once, the first time a solo mode opens.
     auto: mode => (!seen(mode) && MODE_TUTORIALS[mode]) ? play(mode) : Promise.resolve('seen') };
 }
