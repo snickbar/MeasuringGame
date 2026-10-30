@@ -51,7 +51,8 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
     const v = hsRound3(Number(c.v));
     if (!(v > 0) || fakes.length >= HS_OPTION_COUNT - 1) continue;
     if (v > real * 5 || v < real / 5) continue; // wildly off (9999999 as a joke) is thrown out; anything plausible is kept
-    if (far(Math.log(v)) && hsRound3(v) !== real) { fakes.push(v); taken.push(Math.log(v)); if (c.id) fakeAuthor[v] = c.id; }
+    // Real players' fakes only need to be different numbers (two players can honestly guess very close to each other); bots' and computer fakes keep the spacing rule.
+    if (hsRound3(v) !== real && !fakes.includes(v) && (!c.bot ? true : far(Math.log(v)))) { fakes.push(v); taken.push(Math.log(v)); if (c.id) fakeAuthor[v] = c.id; }
   }
   // The real answer's slot is picked first (uniformly), then that many fakes go below it and the rest above, so
   // "the real one is always in the middle" is not a pattern anyone can use.

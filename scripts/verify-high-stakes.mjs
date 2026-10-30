@@ -23,6 +23,8 @@ function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) 
   {
   const r2 = H.hsMakeOptions(1000, seeded(3), [{ id: "bot", v: 2520, bot: true }, { id: "me", v: 2523 }, { id: "joke", v: 9999999 }]);
   const mine = r2.options.indexOf(2520); assert(mine >= 0 && r2.fakeBy && r2.fakeBy[mine] === "me", "player's fake beats a bot's near-duplicate (2523 shows as 2520)");
+  const r3 = H.hsMakeOptions(1000, seeded(4), [{ id: "a", v: 2520 }, { id: "b", v: 2600 }]);
+  assert(r3.options.includes(2520) && r3.options.includes(2600), "two close player fakes both stay");
   assert(!r2.options.includes(9999999), "wildly off fakes are dropped"); }
   const { options } = H.hsMakeOptions(100, seeded(5), [37, 250, 100, "abc", -4]);
   assert.ok(options.includes(37) && options.includes(250), "custom fakes used");
