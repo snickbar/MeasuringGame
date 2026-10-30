@@ -165,7 +165,6 @@ export function installHomeInteractions(root, home, scene, sound, stopSound = ()
     if (document.hidden || !root.isConnected || !home.classList.contains("active")) return;
     reset(); void root.offsetWidth;
     root.dataset.reaction = HOME_MOTION[scene].taps[role];
-    if (scene === "town" && role === 1) root.dataset.lamp = root.dataset.lamp === "on" ? "off" : "on";
     // A tap shortens an idle gesture to one cycle. Explicitly seek that cycle
     // to its start; changing CSS duration alone would keep the old idle time.
     const gestures = [...root.querySelectorAll("*")].filter(el => {
