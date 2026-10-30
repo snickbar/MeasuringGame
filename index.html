@@ -9571,6 +9571,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       await remove(ref(db, `rooms/${roomCode}`));
     }
   }
+  // A room the host paused and never resumed closes itself after a week. Nothing runs on a server, so whoever
+  // next touches the room (a join, a rejoin, the recent-rooms list) or the host who paused it does the closing.
+  const PAUSE_MAX_MS = 7 * 24 * 3600 * 1000;
+  const pausedTooLong = (d) => !!(d && d.paused && d.pausedAt && nowMs() - d.pausedAt > PAUSE_MAX_MS);
+  async function closeIfPausedTooLong(code, d) {
+    if (!pausedTooLong(d)) return false;
+    try { await set(ref(db, `rooms/${code}/phase`), "ended"); } catch (e) { /* someone else closed it first */ }
+    return true;
+  }
   let myKickDeadline = null;
   let takenAvatars = new Set();
   let takenAvatarsUnsub = null;
@@ -14930,6 +14939,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       recentRoomsListEl.appendChild(row);
       onValue(ref(db, `rooms/${r.code}`), (snap) => {
         const d = snap.val();
+        if (pausedTooLong(d)) { closeIfPausedTooLong(r.code, d); removeRecentRoom(r.code); row.remove(); return; }
         if (d && d.phase && d.phase !== "ended") {
           const humans = Object.values(d.players || {}).filter((p) => p && !p.isBot);
           const n = humans.length;
@@ -15792,6 +15802,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     const data = snap.val();
     if (data === null) { nameAvatarStatusEl.textContent = "Room not found. Check the code."; return; }
+    if (await closeIfPausedTooLong(pendingRoomCode, data)) { nameAvatarStatusEl.textContent = "This room was paused for over a week and has closed."; return; }
     if (data.phase === "ended") { nameAvatarStatusEl.textContent = "This game is over and the room is closed."; return; }
     // Final authoritative avatar-uniqueness check right before writing —
     // the live grid greying-out is just a preview and can race or be
@@ -15833,6 +15844,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     const data = snap.val();
     if (data === null) { joinStatusEl.textContent = "Room not found."; return; }
+    if (await closeIfPausedTooLong(code, data)) { joinStatusEl.textContent = "This room was paused for over a week and has closed."; return; }
     if (data.phase === "ended") { joinStatusEl.textContent = "This game is over and the room is closed."; return; }
     // Same exclusion as the manual-join path above - a disconnected
     // same-named slot (almost always this exact rejoin's own stale entry)
@@ -16731,8 +16743,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updates.hlBestSyncStreak = Math.max(roomState.hlBestSyncStreak || 0, updates.hlSyncStreak);
       updates.hlSyncTotal = (roomState.hlSyncTotal || 0) + (syncSurvived ? 1 : 0);
       // Average % off: how far each pick was from the answer (each capped at 100%), averaged over the team and the game.
-      if (bothIn && answer > 0) {
-        const off = (v) => Math.min(100, Math.abs(v / answer - 1) * 100);
+      // A missing pick counts as 100% off, same as a 0% accuracy round elsewhere.
+      if (answer > 0) {
+        const off = (v) => (typeof v === "number" ? Math.min(100, Math.abs(v / answer - 1) * 100) : 100);
         updates.hlOffSum = (roomState.hlOffSum || 0) + (off(hv) + off(lv)) / 2;
         updates.hlOffRounds = (roomState.hlOffRounds || 0) + 1;
       }
@@ -17158,7 +17171,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   async function togglePause() {
     if (!roomState.paused) {
-      await update(ref(db, `rooms/${currentRoomCode}`), { paused: true, pausedAt: nowMs() });
+      const pausedAt = nowMs(), code = currentRoomCode;
+      await update(ref(db, `rooms/${code}`), { paused: true, pausedAt });
+      setTimeout(() => { if (currentRoomCode === code && roomState?.paused && roomState.pausedAt === pausedAt) set(ref(db, `rooms/${code}/phase`), "ended").catch(() => {}); }, PAUSE_MAX_MS);
       return;
     }
     const pauseDurationMs = nowMs() - (roomState.pausedAt || nowMs());
