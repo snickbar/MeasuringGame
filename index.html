@@ -2964,7 +2964,9 @@ if (location.protocol === "file:") {
   :root[data-motion="reduce"] .tw-qs-half.hl-mine { animation: none; }
   .hl-sub { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 13px; color: #000; text-align: center; }
   .hl-role[hidden] { display: none; }
-  .hl-role { display: block; margin: 8px 0; padding: 14px 16px; width: 100%; max-width: 100%; box-sizing: border-box; border-radius: 16px; font-size: 22px; line-height: 1.25; font-weight: 800; color: #000; text-align: center; border: 3px solid #4a2c12; }
+  .hl-role .hl-role-word { font-size: 1.5em; line-height: 1; letter-spacing: .06em; font-weight: 800; }
+  .hl-role .hl-role-desc { font-size: .8em; line-height: 1.2; font-weight: 700; }
+  .hl-role { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 8px 0; padding: 14px 16px; width: 100%; max-width: 100%; box-sizing: border-box; border-radius: 16px; font-size: 22px; line-height: 1.25; font-weight: 800; color: #000; text-align: center; border: 3px solid #4a2c12; }
   .hl-role.hl-high { background: linear-gradient(180deg, #ffd9c8, #ffb59a); }
   .hl-role.hl-low { background: linear-gradient(180deg, #d4ebff, #a9d2fb); }
   .hl-sub-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; }
@@ -4818,7 +4820,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
-  import { createPolish, applyMenuBanner } from "./anim/game-polish.mjs";
+  import { createPolish, applyMenuBanner, MENU_BANNERS } from "./anim/game-polish.mjs";
   import { recentDiscoveries, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createModeTutorial } from "./anim/mode-tutorial.mjs";
@@ -17358,11 +17360,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionPicsEl.innerHTML = pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "";
     if (hl && q) {
       const myRole = hlRoles[currentPlayerId];
-      const ask = myRole === "high" ? "HIGH: get close without going under." : myRole === "low" ? "LOW: get close without going over." : "";
+      const ask = myRole === "high" ? "Get close without going under." : myRole === "low" ? "Get close without going over." : "";
       twQuestionPromptEl.textContent = q.prompt;
       if (hlHintEl) {
         hlHintEl.hidden = !ask;
-        hlHintEl.textContent = ask;
+        hlHintEl.innerHTML = ask ? `<b class="hl-role-word">${myRole === "high" ? "HIGH" : "LOW"}</b><span class="hl-role-desc">${ask}</span>` : "";
         hlHintEl.className = "hl-role" + (ask ? " hl-" + myRole : "");
       }
     } else twQuestionPromptEl.textContent = q ? q.prompt : "";
@@ -20077,15 +20079,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       waitingMsg = "Waiting for at least one friend to join. Share the room code!";
     }
     const rules=document.getElementById('lobby-rules');
-    rules.innerHTML = bluffMode ? `<p>Bluff the Room · ${data.settings.bluffTurns===1?'1 turn each':data.settings.bluffTurns===2?'2 turns each':'Auto: 2 turns each with 3 players, otherwise 1'}</p><p>+2 correct vote · +1 per player fooled · no Second Chance</p>` : teamMode
-      ? `<p>${data.settings?.totalRounds||5} rounds · Team vs Team</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
-      : hsMode
-      ? `<p>High Stakes · ${data.settings?.startCoins || HS.HS_START_COINS} coins each · up to ${HS.HS_MAX_ROUNDS} rounds</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
-      : hlMode
-      ? `<p>High/Low Survival · ${data.settings?.lives || HL_LIVES} lives${data.settings?.cap ? ` · up to ${data.settings.cap} rounds` : " · endless"}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
-      : worldsMode
-      ? `<p>5 questions · ${escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || "")}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots</p>`
-      : `<p>${data.settings?.totalRounds||5} rounds · ${data.settings?.timerSeconds||30} seconds · ${data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'}</p><p>${Object.values(data.players||{}).filter(p=>p.isBot).length} bots · Power-ups ${solo?'available':'off'}</p>`;
+    const botCount = Object.values(data.players||{}).filter(p=>p.isBot).length;
+    const chip = (icon, text) => `<span class="lr-chip">${icon.startsWith('<') ? icon : `<i>${icon}</i>`}<b>${text}</b></span>`;
+    const img = (src) => `<img src="${src}" alt="" draggable="false">`;
+    const botChip = chip(img('items/robot.webp'), `${botCount} bot${botCount===1?'':'s'}`);
+    let lrKey, lrTitle, lrChips;
+    if (bluffMode) { lrKey='bluff'; lrTitle='Bluff the Room'; lrChips=[chip('🔁', data.settings.bluffTurns===1?'1 turn each':data.settings.bluffTurns===2?'2 turns each':'Auto turns'), chip('✅','+2 correct vote'), chip('🎭','+1 per player fooled'), chip('🚫','No Second Chance'), botChip]; }
+    else if (teamMode) { lrKey='teamvteam'; lrTitle='Team vs Team'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), botChip]; }
+    else if (hsMode) { lrKey='highstakes'; lrTitle='High Stakes'; lrChips=[chip(img('icons/coin.png'), `${data.settings?.startCoins || HS.HS_START_COINS} coins each`), chip('🏁', `Up to ${HS.HS_MAX_ROUNDS} rounds`), botChip]; }
+    else if (hlMode) { lrKey='hlsurvival'; lrTitle='High/Low Survival'; lrChips=[chip(img('icons/life-heart-full.webp'), `${data.settings?.lives || HL_LIVES} lives`), chip(data.settings?.cap ? '🏁' : '♾️', data.settings?.cap ? `Up to ${data.settings.cap} rounds` : 'Endless'), botChip]; }
+    else if (worldsMode) { lrKey='teamworlds'; lrTitle='Team Worlds'; lrChips=[chip('🌍', escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || 'World')), chip('❓','5 questions'), botChip]; }
+    else { lrKey = solo ? 'quick' : 'classic'; lrTitle = solo ? 'Quick Game' : 'Classic Party'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), chip(img('icons/ui-stopwatch.png'), `${data.settings?.timerSeconds||30} seconds`), chip('🎯', data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'), botChip, chip(img('icons/flair/bolt.png'), `Power-ups ${solo?'on':'off'}`)]; }
+    const lrIcon = MENU_BANNERS[lrKey]?.[1];
+    rules.dataset.mode = lrKey;
+    rules.innerHTML = `<div class="lr-head">${lrIcon ? img(lrIcon) : ''}<h2>${lrTitle}</h2></div><div class="lr-chips">${lrChips.join('')}</div>`;
     hostStartBtn.textContent='Start game';
     hostStartBtn.disabled = needsFriend;
     hostStartBtn.style.opacity = hostStartBtn.disabled ? ".5" : "";
