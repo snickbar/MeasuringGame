@@ -20079,17 +20079,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       waitingMsg = "Waiting for at least one friend to join. Share the room code!";
     }
     const rules=document.getElementById('lobby-rules');
-    const botCount = Object.values(data.players||{}).filter(p=>p.isBot).length;
     const chip = (icon, text) => `<span class="lr-chip">${icon.startsWith('<') ? icon : `<i>${icon}</i>`}<b>${text}</b></span>`;
     const img = (src) => `<img src="${src}" alt="" draggable="false">`;
-    const botChip = chip(img('items/robot.webp'), `${botCount} bot${botCount===1?'':'s'}`);
     let lrKey, lrTitle, lrChips;
-    if (bluffMode) { lrKey='bluff'; lrTitle='Bluff the Room'; lrChips=[chip('🔁', data.settings.bluffTurns===1?'1 turn each':data.settings.bluffTurns===2?'2 turns each':'Auto turns'), chip('✅','+2 correct vote'), chip('🎭','+1 per player fooled'), chip('🚫','No Second Chance'), botChip]; }
-    else if (teamMode) { lrKey='teamvteam'; lrTitle='Team vs Team'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), botChip]; }
-    else if (hsMode) { lrKey='highstakes'; lrTitle='High Stakes'; lrChips=[chip(img('icons/coin.png'), `${data.settings?.startCoins || HS.HS_START_COINS} coins each`), chip('🏁', `Up to ${HS.HS_MAX_ROUNDS} rounds`), botChip]; }
-    else if (hlMode) { lrKey='hlsurvival'; lrTitle='High/Low Survival'; lrChips=[chip(img('icons/life-heart-full.webp'), `${data.settings?.lives || HL_LIVES} lives`), chip(data.settings?.cap ? '🏁' : '♾️', data.settings?.cap ? `Up to ${data.settings.cap} rounds` : 'Endless'), botChip]; }
-    else if (worldsMode) { lrKey='teamworlds'; lrTitle='Team Worlds'; lrChips=[chip('🌍', escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || 'World')), chip('❓','5 questions'), botChip]; }
-    else { lrKey = solo ? 'quick' : 'classic'; lrTitle = solo ? 'Quick Game' : 'Classic Party'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), chip(img('icons/ui-stopwatch.png'), `${data.settings?.timerSeconds||30} seconds`), chip('🎯', data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'), botChip, chip(img('icons/flair/bolt.png'), `Power-ups ${solo?'on':'off'}`)]; }
+    if (bluffMode) { lrKey='bluff'; lrTitle='Bluff the Room'; lrChips=[chip('🔁', data.settings.bluffTurns===1?'1 turn each':data.settings.bluffTurns===2?'2 turns each':'Auto turns'), chip('✅','+2 correct vote'), chip('🎭','+1 per player fooled'), chip('🚫','No Second Chance')]; }
+    else if (teamMode) { lrKey='teamvteam'; lrTitle='Team vs Team'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`)]; }
+    else if (hsMode) { lrKey='highstakes'; lrTitle='High Stakes'; lrChips=[chip(img('icons/coin.png'), `${data.settings?.startCoins || HS.HS_START_COINS} coins each`), chip('🏁', `Up to ${HS.HS_MAX_ROUNDS} rounds`)]; }
+    else if (hlMode) { lrKey='hlsurvival'; lrTitle='High/Low Survival'; lrChips=[chip(img('icons/life-heart-full.webp'), `${data.settings?.lives || HL_LIVES} lives`), chip(data.settings?.cap ? '🏁' : '♾️', data.settings?.cap ? `Up to ${data.settings.cap} rounds` : 'Endless')]; }
+    else if (worldsMode) { lrKey='teamworlds'; lrTitle='Team Worlds'; lrChips=[chip('🌍', escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || 'World')), chip('❓','5 questions')]; }
+    else { lrKey = solo ? 'quick' : 'classic'; lrTitle = solo ? 'Quick Game' : 'Classic Party'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), chip(img('icons/ui-stopwatch.png'), `${data.settings?.timerSeconds||30} seconds`), chip('🎯', data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'), chip(img('icons/flair/bolt.png'), `Power-ups ${solo?'on':'off'}`)]; }
     const lrIcon = MENU_BANNERS[lrKey]?.[1];
     rules.dataset.mode = lrKey;
     rules.innerHTML = `<div class="lr-head">${lrIcon ? img(lrIcon) : ''}<h2>${lrTitle}</h2></div><div class="lr-chips">${lrChips.join('')}</div>`;
