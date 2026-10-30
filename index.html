@@ -10097,6 +10097,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>
         ${dailyFlameHtml(streak, false, `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
+        <button type="button" class="dc-btn dc-alt" data-tour="daily">How to play</button>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
       dailyLoadBoard();
@@ -10332,12 +10333,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   soloContentEl.addEventListener("click", (e) => {
     const b = e.target.closest(".sh-card");
     if (!b || b.disabled) return;
+    const tourMode = { "sh-daily": "daily", "sh-worlds": "worlds", "sh-monthly": "monthly", "sh-wb": "wb", "sh-quick": "quick" }[b.id];
     if (b.id === "sh-daily") openDaily();
     else if (b.id === "sh-worlds") openWorlds();
     else if (b.id === "sh-monthly") openMonthly();
     else if (b.id === "sh-survival") openSurvival();
     else if (b.id === "sh-wb") openWhichBigger();
     else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(true); showCreateScreen("solo"); }
+    if (tourMode) modeTutorialUI?.auto(tourMode);
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
   try { updateDailyBadge(); } catch (e) {}
@@ -11315,7 +11318,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
-      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${soloResumeHtml("worlds")}` +
+      el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${soloResumeHtml("worlds")}<button type="button" class="dc-btn dc-alt" data-tour="worlds">How to play</button>` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
@@ -11781,6 +11784,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
       el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
+        <button type="button" class="dc-btn dc-alt" data-tour="monthly">How to play</button>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
         <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
       monthlyLoadBoard();
@@ -12560,6 +12564,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">1 coin for every 2 right picks, rounded up.</div></div>
+        <button type="button" class="dc-btn dc-alt" data-tour="wb">How to play</button>
         ${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">Start</button></div>`;
       return;
     }
@@ -20393,8 +20398,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById('play-tutorial-btn').addEventListener('click',()=>tutorialUI.open());
   modeTutorialUI = createModeTutorial({
     owner:()=>deviceId,
-    sample:()=>({unit:OBJECT_BY_ID.get('pencil'),target:OBJECT_BY_ID.get('door')})
+    sample:()=>({unit:OBJECT_BY_ID.get('pencil'),target:OBJECT_BY_ID.get('door'),
+      items:['pencil','door','mailbox','ant','town-fountain','soccer-ball'].map(id=>OBJECT_BY_ID.get(id)).filter(Boolean),
+      avatars:AVATARS.filter(a=>AVATAR_TIERS[a]==='default').slice(0,3).map(a=>`avatars/${a}.png`)})
   });
+  document.addEventListener('click',e=>{const t=e.target.closest('[data-tour]');if(t)modeTutorialUI.play(t.dataset.tour);});
 
   // ==================== In-app updates (native app only) ====================
   // 1) LIVE UPDATES - main publishes a GitHub release ZIP and public manifest;

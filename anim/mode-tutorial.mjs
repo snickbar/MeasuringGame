@@ -10,11 +10,43 @@ const SCENES = {
     <div class="mt-input"><span class="mt-type t1">1</span><span class="mt-type t2">2</span><span class="mt-type t3">0</span></div>`,
   gauge: () => `<div class="mt-gauge"><i class="mt-fill"></i><b class="mt-mark"><em>60%</em></b></div>
     <div class="mt-row mt-heartswap">${img('icons/life-heart-full.webp', 'mt-heart mt-h-full')}${img('icons/life-heart-cracked.webp', 'mt-heart mt-h-crack')}</div>`,
+  stars: () => `<div class="mt-row mt-stars">${[60, 75, 90].map((n, i) => `<div class="mt-star s${i}">${img('icons/flair/star.png', 'mt-starimg')}<b>${n}%</b></div>`).join('')}</div><div class="mt-tag">Average of 5 questions</div>`,
+  daily: () => `<div class="mt-row">${[1, 2, 3].map(n => `<span class="mt-check q c${n - 1}">${n}</span>`).join('')}</div><div class="mt-tag mt-once">One try</div>`,
+  month: s => `<div class="mt-grid">${(s.items || []).slice(0, 6).map((it, i) => `<span class="mt-cell" style="animation-delay:${(i * .35).toFixed(2)}s">${img(it.image, 'mt-cellimg')}</span>`).join('')}</div><div class="mt-tag">Each one shows up once</div>`,
+  pick: s => `<div class="mt-row mt-objs"><div class="mt-cand">${img(s.unit.image, 'mt-obj')}</div><span class="mt-vs">or</span><div class="mt-cand win">${img(s.target.image, 'mt-obj big')}<i class="mt-ring"></i><b class="mt-tick">✓</b></div></div>`,
+  bots: s => SCENES.botsBase(s),
+  botsSC: s => SCENES.botsBase({ ...s, sc: true }),
+  botsBase: s => `<div class="mt-row mt-bots">${(s.avatars || []).slice(0, 3).map((a, i) => `<div class="mt-bot b${i}">${img(a, 'mt-av')}<span>${[80, 130, 120][i]}</span></div>`).join('')}</div>${s.sc ? '<div class="mt-tag mt-sc">Second Chance</div>' : ''}`,
   streak: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}${img('icons/survival-shield-full.webp', 'mt-shield')}</div>
     <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
 };
 
 export const MODE_TUTORIALS = {
+  worlds: { title: 'Worlds', slides: [
+    { scene: 'guess', head: 'Five questions a level', text: 'Guess how many of the small thing fit along the big one. No timer, so take your time.' },
+    { scene: 'stars', head: 'Earn up to 3 stars', text: 'Your average accuracy across the five questions sets your stars: 60%, 75% and 90%.' },
+    { scene: 'streak', head: 'Unlock the next level', text: 'Earn 1 star on a level to open the next one, and keep collecting stars to fill each world.' },
+  ] },
+  daily: { title: 'Daily Challenge', slides: [
+    { scene: 'daily', head: 'Three questions, one try', text: 'A fresh set every day. Once you finish it, come back tomorrow for a new one.' },
+    { scene: 'guess', head: 'Guess how many', text: 'Everyone gets the same questions, so your score goes on the daily leaderboard.' },
+    { scene: 'streak', head: 'Earn coins', text: 'The closer your guesses, the more coins you earn.' },
+  ] },
+  monthly: { title: 'Monthly Challenge', slides: [
+    { scene: 'month', head: 'A new pack every month', text: 'Every object in this month’s pack shows up exactly once.' },
+    { scene: 'guess', head: 'Guess how many', text: 'Each question asks how many of one object fit along another.' },
+    { scene: 'streak', head: 'Climb the board', text: 'Your results go on the monthly leaderboard and earn coins.' },
+  ] },
+  wb: { title: 'Which Is Bigger', slides: [
+    { scene: 'pick', head: 'Tap the bigger one', text: 'Two objects appear. Tap the one that is really bigger.' },
+    { scene: 'hearts', head: 'A wrong pick costs a life', text: 'You have three lives. Lose them all and the run is over.' },
+    { scene: 'streak', head: 'It gets trickier', text: 'The objects get closer in size the further you go. Keep going for coins.' },
+  ] },
+  quick: { title: 'Quick Game', slides: [
+    { scene: 'bots', head: 'Play against bots', text: 'Pick how sharp the bots are, then everyone guesses the same question.' },
+    { scene: 'guess', head: 'Guess how many', text: 'Type how many of the small thing fit along the big one, then lock it in.' },
+    { scene: 'botsSC', head: 'Take a Second Chance', text: 'After seeing everyone’s guesses you can back your own guess or switch to a better one.' },
+  ] },
   survival: {
     title: 'Survival',
     slides: [
