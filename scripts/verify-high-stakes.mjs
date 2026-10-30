@@ -20,6 +20,12 @@ function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) 
   posCount.forEach((c) => assert.ok(c > 4000 * 0.15, "real answer can sit in every position " + posCount));
   assert.ok(posCount[0] > 0 && posCount[H.HS_OPTION_COUNT - 1] > 0, "real answer appears at both extremes");
   // custom fakes from eliminated players replace generated ones
+  {
+  const r2 = H.hsMakeOptions(1000, seeded(3), [{ id: "bot", v: 2520, bot: true }, { id: "me", v: 2523 }, { id: "joke", v: 9999999 }]);
+  const mine = r2.options.indexOf(2520); assert(mine >= 0 && r2.fakeBy && r2.fakeBy[mine] === "me", "player's fake beats a bot's near-duplicate (2523 shows as 2520)");
+  const r3 = H.hsMakeOptions(1000, seeded(4), [{ id: "a", v: 2520 }, { id: "b", v: 2600 }]);
+  assert(r3.options.includes(2520) && r3.options.includes(2600), "two close player fakes both stay");
+  assert(!r2.options.includes(9999999), "wildly off fakes are dropped"); }
   const { options } = H.hsMakeOptions(100, seeded(5), [37, 250, 100, "abc", -4]);
   assert.ok(options.includes(37) && options.includes(250), "custom fakes used");
   assert.equal(options.filter((o) => o === 100).length, 1, "a custom fake equal to the real answer is dropped");
