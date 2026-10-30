@@ -11,7 +11,7 @@
 
 export const HS_START_COINS = 100;
 export const HS_MAX_ROUNDS = 10;
-export const HS_MAX_RAISES = 2;
+export const HS_MAX_RAISES = 5;
 export const HS_OPTION_COUNT = 4;
 export const HS_PICK_SECONDS = 30;
 export const HS_TURN_SECONDS = 30;

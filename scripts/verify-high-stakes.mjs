@@ -54,7 +54,7 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
   hs = H.hsApplyAction(hs, "a", "raise", NOW); assert.equal(hs.bet.n, 1); assert.equal(hs.bet.cur, 10); assert.equal(hs.pot, 15 + 10);
   assert.equal(hs.bet.turn, "b");
   hs = H.hsApplyAction(hs, "b", "raise", NOW); assert.equal(hs.bet.cur, 20); assert.equal(hs.bet.raises, 2);
-  assert.equal(H.hsLegalActions(hs, "c").canRaise, false, "max 2 raises");
+  assert.equal(H.hsLegalActions(hs, "c").canRaise, true, "more than two raises allowed");assert.equal(H.HS_MAX_RAISES, 5);
   hs = H.hsApplyAction(hs, "c", "fold", NOW);
   assert.equal(hs.bet.turn, "a", "a must answer b's raise");
   hs = H.hsApplyAction(hs, "a", "call", NOW);
