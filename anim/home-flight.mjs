@@ -7,12 +7,12 @@ export const HOME_FLIGHT={
   'snacks:0':butterfly([44,58],[55,63]),
   'corgi:0':butterfly([47,58],[57,64]),
   'giraffe:0':butterfly([45,58],[56,62]),
-  'wheels:1':{kind:'bird',wings:[{pivot:[43,56],poly:[[0,0],[45,0],[47,49],[43,63],[20,66],[0,40]]},{pivot:[70,64],poly:[[70,64],[74,35],[100,8],[100,73],[81,82]]}]},
-  'lighthouse:0':{kind:'bird',wings:[{pivot:[43,60],poly:[[0,0],[32,0],[43,38],[48,56],[38,72],[17,52],[0,30]]},{pivot:[64,77],poly:[[64,73],[100,76],[100,103],[57,103],[55,88]]}]},
-  'cactus:1':{kind:'bird',wings:[{pivot:[42,61],poly:[[0,0],[27,0],[43,48],[47,61],[35,76],[10,55],[0,30]]},{pivot:[70,73],poly:[[70,69],[100,72],[100,103],[64,103],[61,85]]}]},
+  'wheels:1':{kind:'bird',wings:[{pivot:[45,63],poly:[[0,0],[45,0],[47,49],[45,63],[20,66],[0,40]]},{pivot:[70,64],poly:[[70,64],[74,35],[100,8],[100,73],[81,82]]}]},
+  'lighthouse:0':{kind:'bird',wings:[{pivot:[49,64],poly:[[0,0],[32,0],[43,38],[49,61],[38,72],[17,52],[0,30]]},{pivot:[64,80],poly:[[64,77],[100,76],[100,103],[58,103],[58,89]]}]},
+  'cactus:1':{kind:'bird',wings:[{pivot:[57,64],poly:[[-2,-2],[40,-2],[59,55],[60,64],[48,69],[36,72],[18,60],[0,45]]},{pivot:[70,78],poly:[[70,75],[100,72],[100,103],[65,103],[64,86]]}]},
   'giraffe:1':{kind:'bird',wings:[{pivot:[45,61],poly:[[0,0],[40,0],[48,42],[48,67],[24,71],[0,44]]}]},
   'dragon:0':{kind:'bat',wings:[{pivot:[43,65],poly:[[0,0],[34,0],[44,59],[43,72],[19,78],[0,60]]},{pivot:[61,73],poly:[[61,71],[80,38],[100,39],[100,100],[61,100]]}]},
-  'dragon:1':{kind:'bird',wings:[{pivot:[49,52],poly:[[0,0],[43,0],[52,44],[49,62],[17,64],[0,40]]},{pivot:[78,52],poly:[[78,52],[85,28],[100,20],[100,63],[80,69]]}]},
+  'dragon:1':{kind:'bird',protect:[[[0,46],[15,53],[30,63],[40,65],[57,59],[65,55],[72,41],[69,35],[75,39],[75,32],[81,41],[84,47],[84,61],[72,63],[66,75],[60,90],[30,105],[0,105]]],wings:[{pivot:[57,59],poly:[[-5,-5],[65,-5],[65,65],[-5,65]]},{pivot:[79,50],poly:[[65,10],[110,10],[110,65],[65,65]]}]},
 };
 export const FRAMED_HOME_BIRDS=new Set(['games:0','town:1']);
 let flightId=0;
@@ -26,10 +26,10 @@ export function makeHomeFlight(scene,index,img,spec){
   // A protected body silhouette keeps antennae, face and feet out of both wing masks.
   // Wings can overlap at their roots behind this complete, steady foreground body.
   let masks;
-  if(rig.kind==='bug'){
+  if(rig.kind==='bug'||rig.protect){
     const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),defs=document.createElementNS(ns,'defs'),id='home-flight-'+(++flightId);
     svg.setAttribute('width','0');svg.setAttribute('height','0');svg.style.position='absolute';svg.appendChild(defs);wrapper.appendChild(svg);
-    const protect=[
+    const protect=rig.protect||[
       [[39,3],[51,3],[56,13],[58,34],[54,40],[51,33],[51,18],[47,12],[39,12]],
       [[57,39],[62,40],[71,28],[85,30],[89,23],[82,18],[69,21],[61,29]],
       [[42,34],[58,32],[66,44],[65,58],[57,64],[58,71],[65,80],[57,83],[53,75],[47,95],[30,94],[32,78],[38,65],[38,50]],
@@ -47,5 +47,13 @@ export function makeHomeFlight(scene,index,img,spec){
     if(masks){part.style.clipPath='none';part.style.mask=`url(#${masks[i+1]})`;}
     part.style.transformOrigin=point(wing.pivot);part.style.setProperty('--wing-side',i===0?1:-1);wrapper.appendChild(part);
   });
-  wrapper.appendChild(body);return wrapper;
+  wrapper.appendChild(body);
+  if(rig.kind!=='bug')for(const wing of rig.wings){
+    // Keep an overlapping shoulder cap in front of the hinged wing. Cutting the
+    // base exactly at the wing edge left a transparent wedge at the downstroke.
+    const joint=img.cloneNode();joint.alt='';joint.className='hs-part hs-flight-joint';
+    joint.style.clipPath=`ellipse(${ab.width/W*8}% ${ab.height/H*10}% at ${point(wing.pivot)})`;
+    wrapper.appendChild(joint);
+  }
+  return wrapper;
 }

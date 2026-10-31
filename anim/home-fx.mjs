@@ -2,7 +2,7 @@
 // so every Home picture gets its own mood. Particles never intercept buttons; a Home-only hit test handles pops. Animation: Reduced hides them.
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
-import {HOME_PARTICLES,RISING_PARTICLES,FALLING_PARTICLES} from './home-particle-recipes.mjs';
+import {HOME_PARTICLES,RISING_PARTICLES,FALLING_PARTICLES,SIDEWAYS_PARTICLES} from './home-particle-recipes.mjs';
 let popAudio;
 const activePops=new Set();
 function stopPopAudio(){for(const source of activePops){try{source.stop();}catch{}}activePops.clear();}
@@ -59,10 +59,16 @@ function make(kind, opts = {}) {
   el._homeParticleOptions=opts;
   const rising = RISING_PARTICLES.has(kind), falling = FALLING_PARTICLES.has(kind);
   el.style.setProperty("--x", rnd(2, 98).toFixed(1) + "%");
+  if(SIDEWAYS_PARTICLES.has(kind)){
+    el.style.setProperty('--x',kind==='mist'?'-60%':'-8%');
+    el.style.setProperty('--y',rnd(kind==='mist'?34:15,kind==='mist'?68:94).toFixed(1)+'%');
+    el.style.setProperty('--wind-bob',rnd(-14,14).toFixed(1)+'px');
+  }
   if (kind === "star" || kind === "sparkle" || kind === "shoot") el.style.setProperty("--y", rnd(4, kind === "shoot" ? 30 : 78).toFixed(1) + "%");
   const size = kind === "bubble" ? rnd(12, 36) : kind === "snow" ? rnd(5, 11) : kind === "ember" ? rnd(7, 14) : kind === "star" ? rnd(5, 12) : kind === "sparkle" ? rnd(10, 20) : kind === "petal" ? rnd(11, 18) : kind === "confetti" ? rnd(8, 13) : rnd(7, 13);
   el.style.setProperty("--s", size.toFixed(1) + "px");
-  const dur = rising ? rnd(9, 17) : falling ? rnd(8, 15) : kind === "shoot" ? 11 : rnd(2.2, 5);
+  if(kind==='mist')el.style.setProperty('--s',rnd(170,250).toFixed(0)+'px');
+  const dur = kind==='mist'?rnd(25,36):kind==='sand'?rnd(7,12):kind==='puff'?rnd(18,27):rising ? rnd(9, 17) : falling ? rnd(8, 15) : kind === "shoot" ? 11 : rnd(2.2, 5);
   el.style.setProperty("--d", dur.toFixed(1) + "s");
   el.style.setProperty("--dl", (-rnd(0, dur)).toFixed(1) + "s");
   if (kind === "shoot") el.style.setProperty("--dl", (-rnd(0, 6)).toFixed(1) + "s");
