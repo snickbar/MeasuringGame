@@ -1,11 +1,18 @@
 // Actual Home modules and assets, without Firebase or profile writes.
 const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'),{spawn}=require('child_process');
 const root=path.resolve(__dirname,'..');
+const app=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const sounds=app.slice(app.indexOf('  const SFX_FILES = {'),app.indexOf('  // Brightness feedback'));
+const popListener=app.match(/  document\.addEventListener\('home-particle-pop',[\s\S]*?\n  \}\);/)[0];
 const html=`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/"><link rel="stylesheet" href="anim/fonts/fredoka.css"><link rel="stylesheet" href="anim/home-fx.css"><link rel="stylesheet" href="anim/home-motion.css"><link rel="stylesheet" href="anim/home-new-scenes.css"><style>body{margin:0;background:#eaf5fc}#home-screen{position:relative;height:100dvh;overflow:hidden}#test-button{position:absolute;left:20px;bottom:20px;width:140px;height:60px;z-index:10}.hs-tap{pointer-events:auto}</style><div id="home-screen" class="active"><button id="test-button">Play</button></div><script type="module">
 window.starts=0;const AC=window.AudioContext;window.AudioContext=class extends AC{createOscillator(){const o=super.createOscillator(),start=o.start.bind(o);o.start=(...args)=>{starts++;start(...args)};return o;}};
+const originalPlay=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(...args){if(this.src.includes('/particle-pop.wav'))starts++;return originalPlay.apply(this,args)};
+let localSoundEnabled=true;const homeScreen=document.getElementById('home-screen'),audioLifecycle={canPlay:()=>!document.hidden,guard:fn=>fn};
+${sounds}
+${popListener}
 const scene=await import('./anim/home-scene.mjs'),fx=await import('./anim/home-fx.mjs');window.api={...scene,...fx};window.ready=true;
 </script>`;
-const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://localhost');if(u.pathname==='/test'){res.setHeader('Content-Type','text/html');res.end(html);return;}const p=path.resolve(root,'.'+decodeURIComponent(u.pathname));if(!p.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.css':'text/css','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p));}catch{res.writeHead(404);res.end();}});
+const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://localhost');if(u.pathname==='/test'){res.setHeader('Content-Type','text/html');res.end(html);return;}const p=path.resolve(root,'.'+decodeURIComponent(u.pathname));if(!p.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.css':'text/css','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf','.wav':'audio/wav','.mp3':'audio/mpeg'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p));}catch{res.writeHead(404);res.end();}});
 server.listen(0,'127.0.0.1',()=>{
  const chrome=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--autoplay-policy=no-user-gesture-required','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'home-particle-'+process.pid),'about:blank'],{windowsHide:true});let stderr='',started=false,socket;
  const timeout=setTimeout(()=>{chrome.kill();server.close();process.exitCode=1;},120000);
@@ -16,6 +23,7 @@ server.listen(0,'127.0.0.1',()=>{
  const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width:390,height:780,deviceScaleFactor:1,mobile:true},sessionId);
  const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true},sessionId);if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result?.value;};
  await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);for(let i=0;i<150;i++){if(await evaluate('window.ready'))break;await new Promise(r=>setTimeout(r,30));}
+ if(!await evaluate('window.ready'))throw Error('Home fixture failed: '+errors.join(' | '));
  const {HOME_PARTICLES}=await import('../anim/home-particle-recipes.mjs');
  for(const scene of Object.keys(HOME_PARTICLES)){
   const result=await evaluate(`(async()=>{const assert=(v,m)=>{if(!v)throw Error(m)},scene=${JSON.stringify(scene)};document.documentElement.dataset.homeScene=scene;await api.installHomeScene();api.installHomeFx();await new Promise(r=>setTimeout(r,30));const art=document.getElementById('home-art');assert(art?.dataset.scene===scene,'Scene assembled: '+scene);await Promise.all([...art.querySelectorAll('img')].map(im=>im.decode()));assert([...art.querySelectorAll('img')].every(im=>im.naturalWidth),'Art decoded');assert(document.querySelectorAll('#home-fx').length===1,'One particle layer');const bad=[...art.querySelectorAll('.hs-flutter .hs-crit-img')].some(el=>getComputedStyle(el).animationName==='hsFlapB');assert(!bad,'No whole-body squeeze');
@@ -25,6 +33,15 @@ server.listen(0,'127.0.0.1',()=>{
   for(const route of routes){const moving=route.querySelector('.hs-crit'),sprite=route.querySelector('.hs-crit-img'),anims=route.getAnimations({subtree:true}),seconds=parseFloat(route.style.getPropertyValue('--cs')),delay=parseFloat(route.style.getPropertyValue('--cd'));let visible=false;anims.forEach(a=>a.pause());for(let k=1;k<40;k++){anims.forEach(a=>a.currentTime=(delay+seconds*k/40)*1000);const r=sprite.getBoundingClientRect();if(Number(getComputedStyle(moving).opacity)>.5&&r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight){visible=true;break;}}assert(visible,'Creature crosses the visible stage: '+scene+' '+route.dataset.critterIndex);anims.forEach(a=>{a.currentTime=0;a.play()});}
   if(scene==='corgi'){const leaf=art.querySelector('.hs-fall'),a=leaf.getAnimations()[0],duration=a.effect.getTiming().duration,delay=a.effect.getTiming().delay;a.pause();for(const fraction of [.5,.65,.8,.9]){a.currentTime=delay+duration*fraction;assert(Number(getComputedStyle(leaf).opacity)>.99,'Large leaf does not fade midway');}a.currentTime=delay+duration*.99;assert(leaf.querySelector('.hs-crit-img').getBoundingClientRect().top>innerHeight,'Leaf exits below screen before fading');a.play();}
   if(scene==='cactus'){const dust=document.querySelector('#home-fx .hf-sand'),a=dust.getAnimations()[0],originalDelay=a.effect.getTiming().delay;a.pause();a.effect.updateTiming({delay:0});a.currentTime=a.effect.getTiming().duration*.2;const first=dust.getBoundingClientRect();a.currentTime=a.effect.getTiming().duration*.7;const last=dust.getBoundingClientRect();assert(last.x-first.x>innerWidth*.4&&Math.abs(last.y-first.y)<20,'Desert dust flies sideways: '+JSON.stringify({first:first.toJSON(),last:last.toJSON(),timing:a.effect.getTiming(),time:a.currentTime}));a.effect.updateTiming({delay:originalDelay});a.play();}
+  if(scene==='house'){
+   const magnets=[...art.querySelectorAll('.hs-fridge-magnet')],door=art.querySelector('.hs-fridge-clean');assert(magnets.length===4&&door,'Clean fridge and four separate magnets');
+   art.querySelector('[data-subject=prop]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+   const bounds=door.getBoundingClientRect(),before=magnets.map(m=>m.getBoundingClientRect());
+   for(const magnet of magnets){const a=magnet.getAnimations()[0];assert(a,'Magnet has its own tap animation');a.pause();a.currentTime=1100;}
+   magnets.forEach((m,i)=>{const r=m.getBoundingClientRect();assert(Math.hypot(r.x-before[i].x,r.y-before[i].y)>3,'Each magnet slides visibly');assert(r.left>=bounds.left&&r.right<=bounds.right&&r.top>=bounds.top&&r.bottom<=bounds.top+bounds.height*.34,'Magnets stay attached to the upper door');});
+   const still=door.getBoundingClientRect();assert(still.x===bounds.x&&still.y===bounds.y,'The fridge stays stationary');
+   document.getElementById('home-screen').classList.remove('active');await new Promise(r=>setTimeout(r,10));document.getElementById('home-screen').classList.add('active');await new Promise(r=>setTimeout(r,10));
+  }
   if(['ants','sunflower'].includes(scene))assert(document.querySelector('#home-fx .hf-puff'),'White falling dandelion puffs');
   if(['dragon','make-believe'].includes(scene)){
    const mist=[...document.querySelectorAll('#home-fx .hf-mist')];assert(mist.length>=4,'Enough staggered wisps for continuous mist');
@@ -38,9 +55,10 @@ server.listen(0,'127.0.0.1',()=>{
   for(const bird of art.querySelectorAll('.hs-bird-framed')){const frames=[...bird.querySelectorAll('.hs-fxf')],anims=frames.map(f=>f.getAnimations()[0]);for(const a of anims)a.pause();for(let t=0;t<8400;t+=42){anims.forEach(a=>a.currentTime=t);assert(frames.filter(f=>Number(getComputedStyle(f).opacity)>.5).length===1,'One bird pose at every point; no flashing away');}for(const a of anims)a.play();}
   return {scene,particles:document.querySelectorAll('#home-fx>.hf').length,wingRigs:art.querySelectorAll('.hs-flight').length};})()`);
   console.log(result);
-  if(['dragon','make-believe'].includes(scene)){
+  if(['dragon','make-believe','house'].includes(scene)){
    await evaluate(`for(const route of document.querySelectorAll('#home-art .hs-route[data-critter-index]'))for(const a of route.getAnimations({subtree:true})){a.pause();a.currentTime=(parseFloat(route.style.getPropertyValue('--cd'))+parseFloat(route.style.getPropertyValue('--cs'))*(route.dataset.critterIndex==='1'?.14:.25))*1000;}true`);
-   fs.mkdirSync(path.join(root,'output','home-polish'),{recursive:true});const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','home-polish',scene==='dragon'?'dragon-flight.png':'make-believe-mist.png'),Buffer.from(shot.data,'base64'));
+   if(scene==='house')await evaluate(`document.querySelector('#home-art [data-subject=prop]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));for(const m of document.querySelectorAll('.hs-fridge-magnet')){const a=m.getAnimations()[0];a.pause();a.currentTime=1100;}true`);
+   fs.mkdirSync(path.join(root,'output','home-polish'),{recursive:true});const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','home-polish',scene==='dragon'?'dragon-flight.png':scene==='house'?'fridge-magnets.png':'make-believe-mist.png'),Buffer.from(shot.data,'base64'));
   }
  }
  await evaluate(`(async()=>{const wait=ms=>new Promise(r=>setTimeout(r,ms)),assert=(v,m)=>{if(!v)throw Error(m)};document.documentElement.dataset.homeScene='penguin';await api.installHomeScene();for(let n=0;n<100&&document.getElementById('home-art')?.dataset.scene!=='penguin';n++)await wait(20);api.installHomeFx();const home=document.getElementById('home-screen'),art=document.getElementById('home-art'),hero=art.querySelector('[data-subject=hero]'),prop=art.querySelector('[data-subject=prop]'),tap=el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));

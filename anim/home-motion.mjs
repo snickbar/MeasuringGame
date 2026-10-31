@@ -27,7 +27,7 @@ export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map
   const p=HOME_LAYER_PLACEMENTS[scene], files=p?[HOME_LAYER_SHEETS[p.id].file]:[];
   if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
-  if(scene==='house')files.push('refined/mouse-cheese-walk.webp');
+  if(scene==='house')files.push('refined/mouse-cheese-walk.webp','fridge-clean-v2.webp','fridge-magnets-v2.webp');
   if(scene==='dragon')files.push('flying-dragon-parts-v2.webp');
   if(scene==='make-believe')files.push('unicorn-tail-v3.webp','books-make-believe.webp','spellbook-textures-v2.webp','fairy-parts-v2.webp');
   if(scene==='holiday-mix')files.push('snowman-parts-v2.webp','gifts-holiday-mix.webp','gift-lid-v2.webp','gift-turkey-v2.webp','holiday-rainbow-v2.webp');
@@ -76,6 +76,22 @@ function sheen(parent, img, cls = "") {
 
 export function decorateHomeProps(scene, { hop, img, spec, extras }) {
   const added=decorateNewHomeProp(scene,{hop,img,extras});if(added)return added;
+  if(scene==='house'){
+    img.hidden=true;img.style.display='none';
+    const clean=artCell(extras.get('fridge-clean-v2.webp'),[210,85,641,1330],[216,87,635,1328],spec,'hs-fridge-clean');hop.appendChild(clean);
+    const magnets=extras.get('fridge-magnets-v2.webp');
+    const pieces=[
+      {cell:[133,128,424,413],box:[396,212,100,100],dx:144,dy:88,turn:16},
+      {cell:[743,161,366,366],box:[599,210,80,80],dx:-179,dy:5,turn:-14},
+      {cell:[190,718,315,391],box:[528,306,68,80],dx:132,dy:-76,turn:18},
+      {cell:[755,688,387,474],box:[644,302,90,116],dx:-199,dy:3,turn:-18},
+    ];
+    for(const [i,p]of pieces.entries()){
+      const magnet=artCell(magnets,p.cell,p.box,spec,'hs-fridge-magnet');
+      magnet.style.setProperty('--magnet-x',p.dx/spec.sw*100+'cqw');magnet.style.setProperty('--magnet-y',p.dy/spec.sw*100+'cqw');magnet.style.setProperty('--magnet-turn',p.turn+'deg');magnet.style.setProperty('--magnet-delay',i*.08+'s');hop.appendChild(magnet);
+    }
+    return {magnets:true};
+  }
   const layers=assembleHomeProp(scene,{hop,img,spec,extras},HOME_LAYER_SHEETS);
   if(layers){
     if(scene==='snacks'){const drip=document.createElement('i');drip.className='hs-ice-drip';hop.appendChild(drip);}

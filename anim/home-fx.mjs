@@ -5,18 +5,16 @@ const pick = (list) => list[Math.floor(Math.random() * list.length)];
 import {HOME_PARTICLES,RISING_PARTICLES,FALLING_PARTICLES,SIDEWAYS_PARTICLES} from './home-particle-recipes.mjs';
 let popAudio;
 const activePops=new Set();
-function stopPopAudio(){for(const source of activePops){try{source.stop();}catch{}}activePops.clear();}
+function stopPopAudio(){for(const source of activePops){try{source.pause();}catch{}}activePops.clear();}
 export function particleBloop(){
   try{
     if(localStorage.getItem('mg_soundEnabled')==='false')return;
-    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-    if(!popAudio||popAudio.state==='closed')popAudio=new AC();
-    if(popAudio.state==='suspended'||popAudio.state==='interrupted')popAudio.resume().catch(()=>{});
-    const t=popAudio.currentTime,o=popAudio.createOscillator(),g=popAudio.createGain();
-    o.type='sine';o.frequency.setValueAtTime(850,t);o.frequency.exponentialRampToValueAtTime(430,t+.11);
-    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.13,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+.15);
-    o.connect(g);g.connect(popAudio.destination);activePops.add(o);
-    o.onended=()=>{activePops.delete(o);o.disconnect();g.disconnect();};o.start(t);o.stop(t+.17);
+    // The app handles this through its preloaded, lifecycle-aware sound pool.
+    // A standalone Home preview falls back to the exact same audible clip.
+    if(!document.dispatchEvent(new CustomEvent('home-particle-pop',{cancelable:true})))return;
+    if(!popAudio){popAudio=new Audio(new URL('../sfx/particle-pop.wav',import.meta.url).href);popAudio.preload='auto';}
+    const source=popAudio.cloneNode(true);source.volume=.85;activePops.add(source);
+    const done=()=>activePops.delete(source);source.addEventListener('ended',done,{once:true});source.addEventListener('error',done,{once:true});source.play().catch(done);
   }catch{}
 }
 function installParticlePops(home,layer){
