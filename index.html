@@ -11401,7 +11401,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const state=readSoloSession(mode);if(!state||(worldId&&WORLDS[state.wi]?.id!==worldId))return '';
     const prefix=mode==='worlds'?'wl':mode==='wb'?'wb':'sv';
     const art=mode==='worlds'?(OBJECT_BY_ID.get(WORLD_ICON[WORLDS[state.wi].id])||{}).image:'icons/life-heart-full.webp';
-    const title=mode==='worlds'?WORLDS[state.wi].name:mode==='wb'?'Which Is Bigger':'Survival',sub=mode==='worlds'?'Level '+state.level:mode==='wb'?state.score+' right pick'+(state.score===1?'':'s'):state.survived+' rounds survived';
+    const title=mode==='worlds'?WORLDS[state.wi].name:mode==='wb'?'Which Is Bigger':'Survival',sub=mode==='worlds'?'Level '+state.level:mode==='wb'?state.score+' right pick'+(state.score===1?'':'s'):state.survived+(state.survived===1?' round':' rounds')+' survived';
     return '<div class="cozy-panel resume-card"><b class="rc-head">Continue?</b><div class="rc-art">'+(art?'<img src="'+art+'" alt="" draggable="false">':'')+'</div><div class="rc-info"><strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(sub)+'</span></div><div class="rc-actions"><button type="button" id="'+prefix+'-resume">Resume</button><button type="button" id="'+prefix+'-discard">Discard</button></div></div>';
   }
   function worldRewardCard(world){
@@ -12373,7 +12373,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>${tourBtn('survival')}
         <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
-        ${survivalRecordsHtml()}${soloResumeHtml("survival")}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
+        ${soloResumeHtml("survival")}${survivalRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
       survivalLoadBoard();
@@ -12715,7 +12715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>${tourBtn('wb')}
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">1 coin for every 2 right picks, rounded up.</div></div>
-        ${wbRecordsHtml()}${soloResumeHtml("wb")}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">${readSoloSession("wb")?"New run":"Start"}</button></div>`;
+        ${soloResumeHtml("wb")}${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">${readSoloSession("wb")?"New run":"Start"}</button></div>`;
       return;
     }
     if (wb.phase === "question") {
