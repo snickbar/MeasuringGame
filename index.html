@@ -11398,7 +11398,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function soloResumeHtml(mode,worldId){
     const state=readSoloSession(mode);if(!state||(worldId&&WORLDS[state.wi]?.id!==worldId))return '';
     const prefix=mode==='worlds'?'wl':'sv',label=mode==='worlds'?WORLDS[state.wi].name+' · Level '+state.level:'Survival · '+state.survived+' rounds survived';
-    return '<div class="cozy-panel resume-card"><b>Continue your attempt</b><p>'+escapeHtml(label)+'</p><div class="cozy-actions"><button type="button" id="'+prefix+'-resume">Resume</button><button type="button" id="'+prefix+'-discard">Discard attempt</button></div><small>Completed rounds stay in your stats.</small></div>';
+    const art=mode==='worlds'?(OBJECT_BY_ID.get(WORLD_ICON[WORLDS[state.wi].id])||{}).image:'icons/life-heart-full.webp';
+    const title=mode==='worlds'?WORLDS[state.wi].name:'Survival',sub=mode==='worlds'?'Level '+state.level:state.survived+' rounds survived';
+    return '<div class="cozy-panel resume-card"><b class="rc-head">Continue?</b><div class="rc-art">'+(art?'<img src="'+art+'" alt="" draggable="false">':'')+'</div><div class="rc-info"><strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(sub)+'</span></div><div class="rc-actions"><button type="button" id="'+prefix+'-resume">Resume</button><button type="button" id="'+prefix+'-discard">Discard</button></div><small class="rc-note">Completed rounds stay in your stats.</small></div>';
   }
   function worldRewardCard(world){
     const home=HOME_SCREENS.find(h=>h.world===world.id);if(!home)return '';
