@@ -11390,16 +11390,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function clearSoloSession(mode){try{localStorage.removeItem('mg_resume_'+deviceId+'_'+mode);}catch{}}
   function readSoloSession(mode){
-    try{const state=JSON.parse(localStorage.getItem('mg_resume_'+deviceId+'_'+mode));if(!state?.runId||!['question','reveal'].includes(state.phase))return null;
+    try{const state=JSON.parse(localStorage.getItem('mg_resume_'+deviceId+'_'+mode));
+      if(mode==='wb')return state?.runId&&state.lives>0&&state.round>0?state:null;
+      if(!state?.runId||!['question','reveal'].includes(state.phase))return null;
       const qs=mode==='worlds'?state.questions:[state.q].filter(Boolean);if(!qs?.length||qs.some(q=>!OBJECT_BY_ID.has(q.unitId)||!OBJECT_BY_ID.has(q.targetId)))return null;
       if(mode==='worlds'&&!WORLDS[state.wi])return null;return state;
     }catch{return null;}
   }
   function soloResumeHtml(mode,worldId){
     const state=readSoloSession(mode);if(!state||(worldId&&WORLDS[state.wi]?.id!==worldId))return '';
-    const prefix=mode==='worlds'?'wl':'sv',label=mode==='worlds'?WORLDS[state.wi].name+' · Level '+state.level:'Survival · '+state.survived+' rounds survived';
+    const prefix=mode==='worlds'?'wl':mode==='wb'?'wb':'sv';
     const art=mode==='worlds'?(OBJECT_BY_ID.get(WORLD_ICON[WORLDS[state.wi].id])||{}).image:'icons/life-heart-full.webp';
-    const title=mode==='worlds'?WORLDS[state.wi].name:'Survival',sub=mode==='worlds'?'Level '+state.level:state.survived+' rounds survived';
+    const title=mode==='worlds'?WORLDS[state.wi].name:mode==='wb'?'Which Is Bigger':'Survival',sub=mode==='worlds'?'Level '+state.level:mode==='wb'?state.score+' right pick'+(state.score===1?'':'s'):state.survived+' rounds survived';
     return '<div class="cozy-panel resume-card"><b class="rc-head">Continue?</b><div class="rc-art">'+(art?'<img src="'+art+'" alt="" draggable="false">':'')+'</div><div class="rc-info"><strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(sub)+'</span></div><div class="rc-actions"><button type="button" id="'+prefix+'-resume">Resume</button><button type="button" id="'+prefix+'-discard">Discard</button></div><small class="rc-note">Completed rounds stay in your stats.</small></div>';
   }
   function worldRewardCard(world){
@@ -12576,6 +12578,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const old = wbBest(), best = Math.max(old, score), beat = score > 0 && score >= old;
     return `<div class="wb-hud"><div class="sv-hearts" id="wb-hearts">${Array.from({ length: WB_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div><div class="wb-score${bump ? " bump" : ""}${spot ? " spot" : ""}"><span class="wb-score-l">Score</span><b>${score}</b>${bump ? '<i class="wb-plus">+1</i>' : ""}</div><div class="wb-best${beat ? " beat" : ""}"><span class="wb-score-l">Best</span><b>${best}</b></div></div>${wbStreakHtml(streak)}`;
   };
+  // Saves a run in progress so it can be continued later. A finished answer is saved as the start of the next round, so backing out can't redo it.
+  function wbSave() {
+    if (!wb || !wb.runId) return;
+    if (wb.finished || wb.lives <= 0) { clearSoloSession('wb'); return; }
+    if (!['question', 'reveal'].includes(wb.phase)) return;
+    const next = wb.phase === 'reveal', p = wb.pair;
+    const snap = { runId: wb.runId, phase: 'question', lives: wb.lives, score: wb.score, round: wb.round + (next ? 1 : 0), streak: wb.streak || 0, bestStreak: wb.bestStreak || 0, startBest: wb.startBest, revived: !!wb.revived, used: [...wb.used], pair: !next && p ? { l: p.left.id, r: p.right.id, ratio: p.ratio, kind: p.kind } : null };
+    try { localStorage.setItem('mg_resume_' + deviceId + '_wb', JSON.stringify(snap)); } catch (e) {}
+  }
+  function wbRestore(s) {
+    const run = { ...wbNewRun(), ...s, used: new Set(s.used || []), prevStreak: s.streak || 0, pair: null, picked: null, ok: null };
+    const l = s.pair && OBJECT_BY_ID.get(s.pair.l), r = s.pair && OBJECT_BY_ID.get(s.pair.r);
+    if (l && r) { const big = l.mm >= r.mm ? l : r, small = big === l ? r : l; run.pair = { left: l, right: r, bigger: big, smaller: small, ratio: s.pair.ratio, kind: s.pair.kind, recycled: false }; }
+    return run;
+  }
   const wbNewRun = () => ({ runId: crypto.randomUUID(), finished: false, streak: 0, prevStreak: 0, bestStreak: 0, startBest: wbBest(), phase: "question", lives: WB_LIVES, score: 0, round: 1, used: new Set(), pair: null, picked: null, ok: null });
   function wbDim(o) { return (o.measurement && o.measurement.dimension) || "length"; }
   // Reveal juice. All of it stands down with Animation: Reduced.
@@ -12698,7 +12715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>${tourBtn('wb')}
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">1 coin for every 2 right picks, rounded up.</div></div>
-        ${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">Start</button></div>`;
+        ${wbRecordsHtml()}${soloResumeHtml("wb")}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">${readSoloSession("wb")?"New run":"Start"}</button></div>`;
       return;
     }
     if (wb.phase === "question") {
@@ -12709,7 +12726,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         wb.used.add(wb.pair.left.id); wb.used.add(wb.pair.right.id);
       }
       const p = wb.pair, wbDiff = difficultyOf(p.ratio);
-      wbSetTier();
+      wbSetTier(); wbSave();
       el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
@@ -12719,6 +12736,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     if (wb.phase === "reveal") {
+      wbSave();
       // Hearts and score still show the numbers from before this pick; the result screen updates them.
       el.innerHTML = `${wbHeartsHtml(wb.lives + (wb.ok ? 0 : 1), wb.score - (wb.ok ? 1 : 0), false, false, wb.prevStreak)}
         <p class="dc-prompt">Which is bigger?</p>
@@ -12892,7 +12910,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   wbContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b || !wb) return;
-    if (b.id === "wb-start" || b.id === "wb-again") { wb = wbNewRun(); renderWhichBigger(); return; }
+    if (b.id === "wb-resume") { const saved = readSoloSession("wb"); if (saved) { wb = wbRestore(saved); renderWhichBigger(); } return; }
+    if (b.id === "wb-discard") { clearSoloSession("wb"); renderWhichBigger(); return; }
+    if (b.id === "wb-start" || b.id === "wb-again") { clearSoloSession("wb"); wb = wbNewRun(); renderWhichBigger(); return; }
     if (b.id === "wb-finish") { wb = { phase: "intro" }; renderWhichBigger(); window.scrollTo(0, 0); return; }
     if (b.id === "wb-share") {
       const text = `Size Em Up! Which Is Bigger: ${wb.score} right pick${wb.score === 1 ? "" : "s"}`;
