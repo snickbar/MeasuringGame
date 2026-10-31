@@ -38,7 +38,7 @@ assert.equal(played[0].volume,.6,'Star keeps old mix');
 assert(source.includes('m.classList.add("earned", "pop"); playSound("star");'),'Team Worlds stars use the kept star role too');
 assert.equal(play('count')[0].file,'sfx/crisp/count.wav','Countdown beat unchanged');
 assert.equal(play('particle-pop')[0].file,'sfx/particle-pop.wav','Particle pop uses the normal preloaded sound pool');
-assert.equal(played[0].volume,1,'Particle bloop is mixed for phone speakers');
+assert.equal(played[0].volume,.85,'Particle bloop is mixed for phone speakers');
 assert.equal(play('lead')[0].file,'sfx/crisp/perfect.wav');assert.equal(play('best')[0].file,'sfx/crisp/perfect.wav');
 play('submit');assert.equal(played[0].file,'sfx/select.mp3');played[0].end();assert.equal(played[1].file,'sfx/crisp/count.wav');
 play('drumroll');assert.equal(played[0].file,suspense.build.file);assert.equal(played[0].volume,suspense.build.gain);played[0].end();assert.equal(played[1].file,'sfx/crisp/drumroll-end.wav','Approved existing ending remains original');assert.equal(played[1].volume,.6,'Ending mix unchanged');
