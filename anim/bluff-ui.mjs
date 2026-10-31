@@ -10,9 +10,10 @@ export function bluffPickHtml(s,me){
 // then the winning bin glows and the others shake. Reduced motion shows the finished picture straight away.
 export function bluffRevealTimes(s,motion=true){
   const n=s.order.filter(id=>id!==s.maker&&Object.hasOwn(BLUFF_LABELS,s.votes?.[id])).length;
-  if(!motion)return {tip:0,verdict:0,drop0:0,step:0,judged:0,n};
-  const drop0=1700,step=380;
-  return {tip:250,verdict:1100,drop0,step,judged:drop0+Math.max(0,n-1)*step+700,n};
+  if(!motion)return {tip:0,claimLand:0,answerFall:0,answerLand:0,verdict:0,drop0:0,step:0,judged:0,n};
+  // The claim falls into its cup and tips it, then the real answer falls in and settles the scale.
+  const claimFall=250,fall=520,claimLand=claimFall+fall,answerFall=claimLand+1000,answerLand=answerFall+fall,verdict=answerLand+950,drop0=verdict+650,step=380;
+  return {tip:claimLand,claimFall,fall,claimLand,answerFall,answerLand,verdict,drop0,step,judged:drop0+Math.max(0,n-1)*step+700,n};
 }
 export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const voters=s.order.filter(id=>id!==s.maker);
@@ -22,10 +23,14 @@ export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const person=(id,drop=true)=>{const delay=live&&drop?` style="animation-delay:${Math.round(T.drop0+(dropIndex.get(id)||0)*T.step-age)}ms"`:'';return `<div class="bl-result-person${id===me?' is-you':''}${live&&drop?' bl-drop':''}" data-result-player="${esc(id)}" title="${esc(name(id))}"${delay}><span class="avatar">${avatar(players[id]?.avatar||s.avatars?.[id])}</span><span>${id===me?'You':esc(name(id))}</span></div>`;};
   const box=kind=>{const win=kind===s.claim.kind,ids=voters.filter(id=>s.votes?.[id]===kind);return `<section class="bl-result-choice ${win?'win':'wrong'}" data-result-choice="${kind}" aria-label="${BLUFF_LABELS[kind]}: ${win?'winning':'wrong'} choice"><h3>${BLUFF_LABELS[kind]}</h3><div class="bl-result-people">${ids.length?ids.map(id=>person(id)).join(''):'<span class="bl-empty-votes">No votes</span>'}</div></section>`;};
   const missed=voters.filter(id=>!Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
-  const tilt=s.claim.kind==='correct'?0:8; // the bigger number is always on the right, so the right side sinks
+  // The real answer is always the blue cup on the left and the claim the red cup on the right. The claim lands first and
+  // sinks its side; then the real answer lands: a bigger answer tips the scale the other way, an equal one levels it,
+  // and a smaller one is too light to move it (the scale just bounces under its weight).
+  const T1=9,kind=s.claim.kind,T2=kind==='low'?-T1:kind==='correct'?0:T1,kick=kind==='high'?1.6:0;
   const at=ms=>live?` style="animation-delay:${Math.round(ms-age)}ms"`:'';
-  const pan=(side,cls,label,value)=>`<div class="bl-ss-end ${side}"><div class="bl-ss-hang ${cls}"${at(T.tip)}><svg viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 4 30M50 0 96 30" stroke="#51351f" stroke-width="5" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/><path d="M50 0 4 30M50 0 96 30" stroke="#efc66c" stroke-width="2" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="bl-ss-bowl"><span>${label}</span><strong${value.length>8?' class="long"':''}>${value}</strong></div></div></div>`;
-  const seesaw=`<div class="bl-seesaw${live?' live':''}" style="--tilt:${tilt}deg" aria-label="The claim is ${s.claim.kind==='low'?'lower than':s.claim.kind==='high'?'higher than':'equal to'} the real answer"><div class="bl-ss-beam"${at(T.tip)}>${s.claim.kind==='high'?pan('l','real','Real answer',bluffNumber(s.q.answer))+pan('r','claim','The claim',bluffNumber(s.claim.value)):pan('l','claim','The claim',bluffNumber(s.claim.value))+pan('r','real','Real answer',bluffNumber(s.q.answer))}</div><div class="bl-ss-post"></div><div class="bl-ss-base"></div><div class="bl-ss-scale" aria-hidden="true">${['low','correct','high'].map(k=>`<b class="bl-v-${k}${k===s.claim.kind?' on':''}"${k===s.claim.kind?at(T.verdict):''}>${BLUFF_LABELS[k]}</b>`).join('')}</div></div>`;
+  const fall=(ms)=>live?`animation-delay:${Math.round(ms-age)}ms;`:'';
+  const cup=(side,cls,label,value,land)=>`<div class="bl-ss-end ${side}"><div class="bl-ss-hang ${cls}"><img class="bl-ss-rope" src="icons/bluff2-rope.webp" alt=""><div class="bl-ss-cup"${live?` style="animation-delay:${Math.round(land-age)}ms"`:''}><img class="bl-ss-cupimg" src="icons/bluff2-cup-${cls==='claim'?'red':'blue'}.webp" alt=""><span class="bl-ss-label">${label}</span><div class="bl-ss-numwrap"><strong class="bl-ss-num${value.length>8?' long':''}" style="${fall(land-T.fall)}">${value}</strong></div></div></div></div>`;
+  const seesaw=`<div class="bl-seesaw${live?' live':''}" style="--t1:${T1}deg;--t2:${T2}deg;--kick:${kick}deg${live?`;--d1:${Math.round(T.claimLand-age)}ms;--d2:${Math.round(T.answerLand-age)}ms`:''}" aria-label="The claim is ${kind==='low'?'lower than':kind==='high'?'higher than':'equal to'} the real answer"><div class="bl-ss-beam"><img class="bl-ss-beamimg" src="icons/bluff2-beam.webp" alt=""${''}>${cup('l','real','The real answer',bluffNumber(s.q.answer),T.answerLand)+cup('r','claim','The claim',bluffNumber(s.claim.value),T.claimLand)}</div><div class="bl-ss-post"><img src="icons/bluff2-stand.webp" alt=""></div><div class="bl-ss-scale" aria-hidden="true">${['low','correct','high'].map(k=>`<b class="bl-v-${k}${k===s.claim.kind?' on':''}"${k===s.claim.kind?at(T.verdict):''}>${BLUFF_LABELS[k]}</b>`).join('')}</div></div>`;
   return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.png" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><b class="bl-maker-name">${esc(name(s.maker))}</b><span class="bl-pill faker">Faker</span><span class="bl-pill fooled">${s.autoClaim?'Auto claim':`${s.result.wrong} fooled`}</span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
 }
 export function bluffRankingsHtml(s,players,avatar,me){
@@ -138,6 +143,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       fn();
     },ms));
     const T=bluffRevealTimes(s,true),{me}=context(),voters=s.order.filter(id=>id!==s.maker&&Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
+    later(()=>sound('podium-thud'),T.claimLand);later(()=>sound('podium-thud'),T.answerLand);
     later(()=>sound('popup-open'),T.verdict);
     voters.forEach((id,i)=>later(()=>{sound('tick');if(id===me)vibrate(18);},T.drop0+i*T.step+330));
     if(voters.some(id=>s.votes[id]!==s.claim.kind))later(()=>sound('tap'),T.judged);
