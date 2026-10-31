@@ -143,7 +143,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       fn();
     },ms));
     const T=bluffRevealTimes(s,true),{me}=context(),voters=s.order.filter(id=>id!==s.maker&&Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
-    later(()=>sound('podium-thud'),T.claimLand);later(()=>sound('podium-thud'),T.answerLand);
+    later(()=>sound('bluff-thud'),T.claimLand);later(()=>sound('bluff-thud-2'),T.answerLand);
     later(()=>sound('popup-open'),T.verdict);
     voters.forEach((id,i)=>later(()=>{sound('tick');if(id===me)vibrate(18);},T.drop0+i*T.step+330));
     if(voters.some(id=>s.votes[id]!==s.claim.kind))later(()=>sound('tap'),T.judged);
