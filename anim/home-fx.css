@@ -24,6 +24,35 @@
 @keyframes hfTwinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: var(--o, 1); transform: scale(1.25); } }
 @keyframes hfShoot { 0% { opacity: 0; transform: translate(0, 0) rotate(28deg); } 4% { opacity: 1; } 12% { opacity: 0; transform: translate(-260px, 130px) rotate(28deg); } 100% { opacity: 0; transform: translate(-260px, 130px) rotate(28deg); } }
 
+/* Setting-specific ambient pieces. All are small code-drawn shapes, not extra image downloads. */
+#home-fx :is(.hf-pollen,.hf-seed,.hf-fizz,.hf-steam,.hf-smoke,.hf-spray,.hf-caustic,.hf-music,.hf-heat,.hf-rune){bottom:-4%;animation-name:hfRise}
+#home-fx :is(.hf-sugar,.hf-heart,.hf-paper,.hf-crystal,.hf-sand,.hf-feather,.hf-ash){top:-4%;animation-name:hfFallSpin}
+#home-fx .hf-pollen{background:#ffe58b;box-shadow:0 0 5px #fff1b8;width:4px;height:4px}
+#home-fx .hf-seed{width:12px;height:16px;background:linear-gradient(90deg,transparent 46%,#fff6dd 47% 54%,transparent 55%);border-top:3px dotted #fff9e5;border-radius:50% 50% 0 0}
+#home-fx .hf-fizz{border:1px solid #fff9d5;background:#e7fbff33;width:7px;height:7px}
+#home-fx :is(.hf-steam,.hf-smoke){width:22px;height:32px;background:radial-gradient(ellipse,#fff8 15%,#fff3 48%,transparent 72%);filter:blur(1px)}
+#home-fx .hf-smoke{background:radial-gradient(ellipse,#c8d8e788 20%,transparent 70%)}
+#home-fx .hf-spray{width:5px;height:9px;border-radius:60% 40% 60% 50%;background:#e3fbff;box-shadow:0 0 3px #fff}
+#home-fx .hf-caustic{width:26px;height:9px;border:2px solid #c7fbff80;border-radius:50%;background:none}
+#home-fx .hf-sugar{width:5px;height:5px;border-radius:1px;background:#fff5d7;box-shadow:0 0 1px #ba8c52}
+#home-fx .hf-heart{background:#ff9bb0;border-radius:0;clip-path:polygon(50% 92%,8% 50%,0 28%,10% 9%,30% 4%,50% 23%,70% 4%,90% 9%,100% 28%,92% 50%);width:13px;height:13px}
+#home-fx .hf-paper{background:#fff9df;border:1px solid #c9b18a;border-radius:2px;width:15px;height:10px;box-shadow:inset 0 -3px #eadabc}
+#home-fx .hf-crystal{border-radius:0;background:#e5f8ff;clip-path:polygon(45% 0,55% 0,55% 36%,86% 18%,92% 28%,60% 47%,100% 47%,100% 57%,62% 57%,92% 76%,86% 86%,55% 66%,55% 100%,45% 100%,45% 66%,14% 86%,8% 76%,38% 57%,0 57%,0 47%,40% 47%,8% 28%,14% 18%,45% 36%);width:16px;height:16px}
+#home-fx .hf-sand{width:4px;height:3px;background:#e8b56b;box-shadow:6px 3px #ffdaa2,-4px 7px #bf8f50}
+#home-fx .hf-heat{width:24px;height:45px;background:repeating-linear-gradient(115deg,transparent 0 8px,#fff3 10px 12px,transparent 14px 22px);filter:blur(2px)}
+#home-fx .hf-feather{background:linear-gradient(85deg,#fff4cc 45%,#cfb36c 48% 53%,#fff8dd 56%);width:9px;height:21px;border-radius:80% 5% 70% 15%}
+#home-fx .hf-ash{background:#d3c5ba;width:4px;height:4px}
+#home-fx .hf-music{border:0;background:none;color:#bb75d7;font:700 22px/1 sans-serif;overflow:visible}
+#home-fx .hf-music::before{content:'♪'}
+#home-fx .hf-rune{background:none;border:2px solid #edd3ff;transform-origin:center;box-shadow:0 0 5px #e5b3ff;border-radius:3px;width:10px;height:16px}
+#home-fx.hf-paused *{animation-play-state:paused!important}
+#home-fx .hf[data-popped]{visibility:hidden!important}
+#home-fx .hf-pop{position:absolute;width:0;height:0;pointer-events:none}
+#home-fx .hf-pop::before{content:'';position:absolute;left:-8px;top:-8px;width:16px;height:16px;border:3px solid #fff6c9;border-radius:50%;animation:hfPopRing .36s ease-out both}
+#home-fx .hf-pop i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff2b5;animation:hfPopDot .36s ease-out both}
+@keyframes hfPopRing{from{transform:scale(.3);opacity:1}to{transform:scale(2.1);opacity:0}}
+@keyframes hfPopDot{from{transform:rotate(var(--angle)) translateX(4px);opacity:1}to{transform:rotate(var(--angle)) translateX(23px) scale(.3);opacity:0}}
+
 /* title: stays still; a shine sweeps across the letters now and then */
 #home-title-shine { position: absolute; left: 0; right: 0; margin-inline: auto; top: 9%; width: min(96%, 560px); pointer-events: none; aspect-ratio: var(--ta, 3.4);
   -webkit-mask: var(--tm) center / 100% 100% no-repeat; mask: var(--tm) center / 100% 100% no-repeat;
@@ -113,11 +142,20 @@ html[data-motion=reduce] #home-art * { animation: none !important; }
 @keyframes hsScuttle { from { transform: translate(calc(-1 * var(--cx)), calc(-1 * var(--cy))) scaleX(var(--flip)) rotate(-3deg); } to { transform: translate(calc(-1 * var(--cx)), calc(-1 * var(--cy) - 2.5%)) scaleX(var(--flip)) rotate(3deg); } }
 #home-art .hs-flutter { animation-name: hsCrossL; }
 #home-art .hs-glide .hs-crit-img { animation: hsBobG 1.1s ease-in-out infinite; }
-#home-art .hs-flutter .hs-crit-img { animation: hsFlapB .42s ease-in-out infinite alternate; }
+#home-art .hs-flutter .hs-crit-img { animation: hsBobG 1.8s ease-in-out infinite; }
 @keyframes hsCrossR { 0% { opacity: 0; transform: translate(calc(var(--sw) * -.2), 0); } 3% { opacity: 1; } 40% { opacity: 1; transform: translate(calc(var(--sw) * 1.05), calc(var(--sw) * -.03)); } 43%, 100% { opacity: 0; transform: translate(calc(var(--sw) * 1.1), calc(var(--sw) * -.03)); } }
 @keyframes hsCrossL { 0% { opacity: 0; transform: translate(calc(var(--sw) * 1.1), 0); } 3% { opacity: 1; } 18% { transform: translate(calc(var(--sw) * .8), calc(var(--sw) * -.05)); } 34% { transform: translate(calc(var(--sw) * .5), calc(var(--sw) * .02)); } 50% { opacity: 1; transform: translate(calc(var(--sw) * .2), calc(var(--sw) * -.04)); } 58% { opacity: 1; transform: translate(calc(var(--sw) * -.12), calc(var(--sw) * -.02)); } 61%, 100% { opacity: 0; transform: translate(calc(var(--sw) * -.2), 0); } }
 @keyframes hsBobG { 0%, 100% { transform: translate(calc(-1 * var(--cx)), calc(-1 * var(--cy))) scaleX(var(--flip)) rotate(-3deg); } 50% { transform: translate(calc(-1 * var(--cx)), calc(-1 * var(--cy) - 7%)) scaleX(var(--flip)) rotate(3deg); } }
-@keyframes hsFlapB { from { transform: translate(calc(-1 * var(--cx)), calc(-1 * var(--cy))) scaleX(var(--flip)); } to { transform: translate(calc(-1 * var(--cx)), calc(-1 * var(--cy) - 5%)) scaleX(calc(var(--flip) * .68)); } }
+/* Only wings change pose; the creature's body never squeezes to fake a flap. */
+#home-art .hs-flight-wing{animation:hsBirdWing 8.4s ease-in-out infinite;will-change:transform}
+#home-art .hs-flight-bug .hs-flight-wing{animation:hsBugWing .32s ease-in-out infinite alternate}
+#home-art .hs-flight-bat .hs-flight-wing{animation:hsBirdWing 2.4s ease-in-out infinite}
+@keyframes hsBugWing{from{transform:rotateY(calc(var(--wing-side) * 8deg)) rotate(calc(var(--wing-side) * -4deg))}to{transform:rotateY(calc(var(--wing-side) * 65deg)) rotate(calc(var(--wing-side) * 8deg))}}
+@keyframes hsBirdWing{0%,5%,14%,23%,100%{transform:rotate(0)}9%,18%{transform:rotate(calc(var(--wing-side) * 22deg)) rotateX(28deg)}}
+@keyframes hsBirdFrame0{0%,20%,38%,100%{opacity:1}5%,23%{opacity:0}}
+@keyframes hsBirdFrame1{0%,8%,20%,26%,38%,100%{opacity:0}5%,17%,23%,35%{opacity:1}}
+@keyframes hsBirdFrame2{0%,11%,17%,29%,35%,100%{opacity:0}8%,14%,26%,32%{opacity:1}}
+@keyframes hsBirdFrame3{0%,14%,32%,100%{opacity:0}11%,29%{opacity:1}}
 html[data-motion=reduce] #home-art .hs-crit { display: none; }
 html[data-motion=reduce] #home-art .hs-layer { animation: none; }
 /* flag fluttering on the top mailbox: small swing around its base */

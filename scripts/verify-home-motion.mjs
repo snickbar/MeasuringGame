@@ -13,7 +13,7 @@ for(const [scene,motion]of Object.entries(HOME_MOTION)){
  assert.equal(JSON.stringify(HOME_RIG[scene]),original,'Generated art metadata stays untouched');
  assert.equal(motion.taps.length,2);assert.notEqual(...motion.taps);
  assert(![motion.hero,motion.prop].includes('breathe'),'No old rubbery whole-object animation');
- for(const tap of motion.taps)assert(css.includes('[data-reaction='+tap+']'),'A visual response exists for '+tap);
+ for(const tap of motion.taps)assert(css.includes('[data-reaction~='+tap+']'),'A visual response exists for '+tap);
  for(const entry of (rig?[rig.base,rig.hero2,...rig.parts,...rig.patches,...rig.fx.flatMap(f=>f.frames)]:[]).filter(Boolean)){
   assert(entry.file.endsWith('.webp'));assert(fs.existsSync(new URL('../anim/home-art/top/'+entry.file,import.meta.url)));
  }

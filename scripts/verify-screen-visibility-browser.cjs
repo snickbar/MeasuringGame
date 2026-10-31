@@ -90,7 +90,7 @@ try{
   if(!HOME_MOTION[scene].prop)for(const ms of [0,4500,8500]){at(ms);assert(getComputedStyle(art.querySelector('.hs-back')).transform==='none','Rigid prop never breathes: '+scene);}
   if(scene==='town'){
    for(const [ms,opened]of [[1000,0],[4100,1],[9000,0]]){at(ms);assert(opacity('.hs-open')===opened&&opacity('.hs-mail-closed')===1-opened,'Exactly one mailbox door at '+ms);}
-   at(1000);const dark=getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage;at(6000);assert(getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage!==dark,'Lamp visibly switches on');
+   at(1000);const lit=getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage;at(6000);assert(getComputedStyle(art.querySelector('.hs-lamp-pane')).backgroundImage===lit&&opacity('.hs-lamp-pane')===1,'Town lamp stays lit between taps');
   }
   const behind=(a,b)=>Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING);
   if(scene==='make-believe'||scene==='holiday-mix'){
@@ -193,12 +193,15 @@ try{
   // Tap late in an idle loop: a short gesture must restart, not instantly finish
   // because its old CSS currentTime is longer than the new duration.
   for(const [role,subject]of ['hero','prop'].entries()){
+   $('home-screen').classList.remove('active');await wait(10);$('home-screen').classList.add('active');await wait(10);
    at(13000);const zone=art.querySelector('[data-subject='+subject+']'),bounds=zone.getBoundingClientRect();
    const hit=document.elementFromPoint(bounds.x+bounds.width/2,bounds.y+bounds.height/2);assert(hit===zone,'Tap area receives input: '+scene+' '+subject+' '+JSON.stringify({hit:hit?.className,bounds:bounds.toJSON(),scrollY}));
    const audioBefore=tapAudio.length;zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    assert(tapAudio.length===audioBefore+1,'Audible cue is scheduled for '+scene+' '+subject);
    assert(art.dataset.reaction===HOME_MOTION[scene].taps[role],'Specific '+scene+' '+subject+' reaction');
-   if(scene==='town'&&role===1){assert(art.dataset.lamp==='on','Tap switches lamp on');}
+   const justStarted=art.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations===1);
+   if(HOME_MOTION[scene].taps[role]!=='lamp-glow')assert(justStarted.length&&justStarted.every(a=>a.currentTime<200),'Fresh tap starts at the beginning: '+scene+' '+subject);
+   if(scene==='town'&&role===1){assert(getComputedStyle(art.querySelector('.hs-lamp-halo')).animationName==='hsLampBurst','Tap brightens the lit lamp');}
    if(scene==='toy-box'&&role===0){
     const arm=art.querySelector('.hs-armIdle'),forearm=art.querySelector('.hs-forearm');
     at(1200);const upperAngle=Math.atan2(new DOMMatrix(getComputedStyle(arm).transform).b,new DOMMatrix(getComputedStyle(arm).transform).a)*180/Math.PI;
@@ -221,7 +224,7 @@ try{
     zone.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
    }
    const finite=art.getAnimations({subtree:true}).filter(a=>a.effect?.getTiming().iterations===1);
-   if(HOME_MOTION[scene].taps[role]!=='lamp-glow')assert(finite.length&&finite.every(a=>a.currentTime<200),'Tap gesture restarts: '+scene+' '+subject);
+   // Repeat taps no longer restart a running animation; dedicated Home tests cover the independent locks.
    $('home-screen').classList.remove('active');await wait(20);
    assert(art.classList.contains('hs-paused')&&!art.dataset.reaction,'Leaving Home cancels tap feedback');
    assert(!art.getAnimations({subtree:true}).some(a=>a.playState==='running'),'Home animations pause offscreen');

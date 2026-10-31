@@ -1,34 +1,63 @@
 // Builds the drifting-particle layer behind the Home buttons. The scene id comes from the page's top script (data-home-scene),
-// so every Home picture gets its own mood. Pure decoration: pointer-events are off and Animation: Reduced hides it.
+// so every Home picture gets its own mood. Particles never intercept buttons; a Home-only hit test handles pops. Animation: Reduced hides them.
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
-const WARM = ["#ffb3c7", "#ffd27a", "#fff1b8"], LEAF = ["#9bd36a", "#c8e07a", "#e8b04a"], PARTY = ["#ff6b6b", "#ffd24a", "#5ec8ff", "#8be26a", "#c58bff"];
-// kind: particle type, n: how many, extra: per-particle style tweaks
-const PINK = ["#ff9ec0", "#ffc2d9", "#d9a8ff", "#ffe08a"], GOLD = ["#ffd24a", "#ffb23e", "#ffe9a0"], AUTUMN = ["#e8863a", "#d9532f", "#e8b04a", "#9bd36a"], FROST = ["#ffffff", "#d8f0ff"];
-const SCENES = {
-  'make-believe': [['sparkle',14,{ colors: PINK }],['petal',8,{ colors: PINK }],['mote',6]],
-  'holiday-mix': [['snow',26],['sparkle',8],['confetti',6,{ colors: ["#ff6b6b", "#5ec8ff", "#8be26a", "#ffd24a"] }]],
-  ants: [["mote", 12], ["petal", 9, { colors: LEAF }]],
-  sunflower: [["mote", 12], ["petal", 9, { colors: GOLD }]],
-  games: [["sparkle", 16], ["bubble", 8], ["confetti", 5, { colors: PARTY }]],
-  house: [["mote", 12, { dr: 14 }], ["sparkle", 8], ["petal", 5, { colors: AUTUMN }]],
-  snacks: [["petal", 10, { colors: LEAF }], ["mote", 8], ["sparkle", 4]],
-  town: [["sparkle", 14], ["petal", 6, { colors: AUTUMN }], ["mote", 6]],
-  corgi: [["petal", 11, { colors: AUTUMN }], ["mote", 6]],
-  wheels: [["ember", 16], ["sparkle", 6], ["mote", 6, { dr: 60 }]],
-  lighthouse: [["sparkle", 14], ["bubble", 8], ["snow", 6, { colors: FROST }]],
-  underwater: [["bubble", 26], ["sparkle", 6]],
-  "toy-box": [["confetti", 18, { colors: PARTY }], ["sparkle", 8], ["bubble", 4]],
-  penguin: [["snow", 32], ["sparkle", 6]],
-  cactus: [["mote", 14, { dr: 90 }], ["petal", 4, { colors: PINK }], ["sparkle", 4]],
-  giraffe: [["petal", 10, { colors: LEAF }], ["mote", 10]],
-  dragon: [["ember", 18], ["sparkle", 10], ["mote", 4]],
-  space: [["star", 30], ["sparkle", 6], ["shoot", 1]],
-};
+import {HOME_PARTICLES,RISING_PARTICLES,FALLING_PARTICLES} from './home-particle-recipes.mjs';
+let popAudio;
+const activePops=new Set();
+function stopPopAudio(){for(const source of activePops){try{source.stop();}catch{}}activePops.clear();}
+export function particleBloop(){
+  try{
+    if(localStorage.getItem('mg_soundEnabled')==='false')return;
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!popAudio||popAudio.state==='closed')popAudio=new AC();
+    if(popAudio.state==='suspended'||popAudio.state==='interrupted')popAudio.resume().catch(()=>{});
+    const t=popAudio.currentTime,o=popAudio.createOscillator(),g=popAudio.createGain();
+    o.type='sine';o.frequency.setValueAtTime(850,t);o.frequency.exponentialRampToValueAtTime(430,t+.11);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.13,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+.15);
+    o.connect(g);g.connect(popAudio.destination);activePops.add(o);
+    o.onended=()=>{activePops.delete(o);o.disconnect();g.disconnect();};o.start(t);o.stop(t+.17);
+  }catch{}
+}
+function installParticlePops(home,layer){
+  const events=new AbortController(),timers=new Set();
+  const later=(fn,ms)=>{const id=setTimeout(()=>{timers.delete(id);fn();},ms);timers.add(id);};
+  const pause=()=>{
+    const paused=document.hidden||!home.classList.contains('active');
+    layer.classList.toggle('hf-paused',paused);
+    if(paused){stopPopAudio();layer.querySelectorAll('.hf-pop').forEach(el=>el.remove());}
+  };
+  const observer=new MutationObserver(pause);observer.observe(home,{attributes:true,attributeFilter:['class']});
+  document.addEventListener('visibilitychange',pause,{signal:events.signal});pause();
+  home.addEventListener('pointerdown',e=>{
+    if(e.isPrimary===false||e.button>0||document.hidden||!home.classList.contains('active')||document.documentElement.dataset.motion==='reduce')return;
+    // Keep all navigation, tiles and other controls fully reliable, even under a particle.
+    if(e.target.closest('button,a,input,select,textarea,[role=button],.home-tile'))return;
+    let hit,distance=Infinity;
+    for(const el of layer.querySelectorAll('.hf:not([data-popped])')){
+      if(Number(getComputedStyle(el).opacity)<.18)continue;
+      const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+      if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)continue;
+      const d=Math.hypot(e.clientX-x,e.clientY-y);
+      if(d<=Math.max(18,Math.min(28,r.width/2+8))&&d<distance){hit=el;distance=d;}
+    }
+    if(!hit)return;
+    e.preventDefault();e.stopImmediatePropagation();hit.dataset.popped='true';hit.style.visibility='hidden';
+    const bounds=layer.getBoundingClientRect(),pop=document.createElement('span');pop.className='hf-pop';
+    pop.style.cssText=`left:${e.clientX-bounds.left}px;top:${e.clientY-bounds.top}px`;
+    for(let i=0;i<6;i++){const dot=document.createElement('i');dot.style.setProperty('--angle',i*60+'deg');pop.appendChild(dot);}
+    layer.appendChild(pop);particleBloop();later(()=>pop.remove(),400);
+    // Reset at a new offscreen route; the popped particle cannot flash back at the tap location.
+    later(()=>{if(!layer.isConnected)return;const next=make(hit.dataset.kind,hit._homeParticleOptions);next.style.setProperty('--dl','0s');hit.replaceWith(next);},650);
+  },{capture:true,signal:events.signal});
+  layer.addEventListener('dispose',()=>{events.abort();observer.disconnect();for(const id of timers)clearTimeout(id);stopPopAudio();},{once:true});
+}
 function make(kind, opts = {}) {
   const el = document.createElement("i");
   el.className = "hf hf-" + kind;
-  const rising = ["mote", "ember", "bubble"].includes(kind), falling = ["snow", "petal", "confetti"].includes(kind);
+  el.dataset.kind=kind;
+  el._homeParticleOptions=opts;
+  const rising = RISING_PARTICLES.has(kind), falling = FALLING_PARTICLES.has(kind);
   el.style.setProperty("--x", rnd(2, 98).toFixed(1) + "%");
   if (kind === "star" || kind === "sparkle" || kind === "shoot") el.style.setProperty("--y", rnd(4, kind === "shoot" ? 30 : 78).toFixed(1) + "%");
   const size = kind === "bubble" ? rnd(12, 36) : kind === "snow" ? rnd(5, 11) : kind === "ember" ? rnd(7, 14) : kind === "star" ? rnd(5, 12) : kind === "sparkle" ? rnd(10, 20) : kind === "petal" ? rnd(11, 18) : kind === "confetti" ? rnd(8, 13) : rnd(7, 13);
@@ -50,17 +79,19 @@ export function installHomeFx() {
   const scene = document.documentElement.dataset.homeScene || "ants";
   const previous = document.getElementById("home-fx");
   if (previous?.dataset.scene === scene) return;
+  previous?.dispatchEvent(new Event("dispose"));
   previous?.remove();
   const layer = document.createElement("div");
   layer.id = "home-fx";
   layer.dataset.scene = scene;
   layer.setAttribute("aria-hidden", "true");
   const small = Math.min(window.innerWidth, window.innerHeight) < 420;
-  for (const [kind, n, opts] of SCENES[scene] || SCENES.ants) {
+  for (const [kind, n, opts] of HOME_PARTICLES[scene] || HOME_PARTICLES.ants) {
     const count = Math.max(0, Math.round(n * (small ? .6 : .95)));
     for (let i = 0; i < count; i++) layer.appendChild(make(kind, opts));
   }
   home.prepend(layer);
+  installParticlePops(home,layer);
   // Shine sweep over the title letters: a copy of the title's shape (as a mask) with a light band sliding across it.
   const title = document.getElementById("home-title-img");
   if (title && !document.getElementById("home-title-shine")) {

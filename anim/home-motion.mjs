@@ -159,17 +159,19 @@ export function decorateHomeHero(scene, { hop, img, base, W, H, extras }) {
 }
 
 export function installHomeInteractions(root, home, scene, sound, stopSound = () => {}) {
-  let feedback = null;
-  const reset = () => { clearTimeout(feedback); delete root.dataset.reaction; };
+  const feedback=new Map();
+  const refresh=()=>{const tokens=[...feedback.keys()].map(role=>HOME_MOTION[scene].taps[role]);if(tokens.length)root.dataset.reaction=tokens.join(' ');else delete root.dataset.reaction;};
+  const reset = () => { for(const timer of feedback.values())clearTimeout(timer);feedback.clear();refresh(); };
   function react(role) {
-    if (document.hidden || !root.isConnected || !home.classList.contains("active")) return;
-    reset(); void root.offsetWidth;
-    root.dataset.reaction = HOME_MOTION[scene].taps[role];
+    if (![0,1].includes(role)||feedback.has(role)||document.hidden || !root.isConnected || !home.classList.contains("active")) return;
+    const signature=el=>{const s=getComputedStyle(el);return [s.animationName,s.animationDuration,s.animationIterationCount].join('|');};
+    const previous=new Map([...root.querySelectorAll('*')].map(el=>[el,signature(el)]));
+    feedback.set(role,null);void root.offsetWidth;refresh();
     // A tap shortens an idle gesture to one cycle. Explicitly seek that cycle
     // to its start; changing CSS duration alone would keep the old idle time.
     const gestures = [...root.querySelectorAll("*")].filter(el => {
       const style = getComputedStyle(el);
-      return style.animationName !== "none" && style.animationIterationCount.split(",").some(n => n.trim() === "1");
+      return previous.get(el)!==signature(el)&&style.animationName !== "none" && style.animationIterationCount.split(",").some(n => n.trim() === "1");
     }).map(el => [el, el.style.cssText]);
     // A finished CSS animation is omitted by getAnimations(). Removing its
     // animation-name for one style calculation also restarts that late case.
@@ -177,7 +179,9 @@ export function installHomeInteractions(root, home, scene, sound, stopSound = ()
     void root.offsetWidth;
     for (const [el, inline] of gestures) el.style.cssText = inline;
     sound(scene, role);
-    feedback = setTimeout(reset, ['make-believe','holiday-mix'].includes(scene)?4000:scene === "dragon" ? 3300 : 2300);
+    // Unlock this object after its own last delayed animation ends. Other objects keep playing.
+    const end=Math.max(300,...gestures.flatMap(([el])=>el.getAnimations().map(a=>a.effect.getComputedTiming().endTime).filter(Number.isFinite)));
+    feedback.set(role,setTimeout(()=>{feedback.delete(role);refresh();},end+40));
   }
   const sync = () => { const active = !document.hidden && home.classList.contains("active"); root.classList.toggle("hs-paused", !active); if (!active) { reset(); stopSound(); } };
   const observer = new MutationObserver(sync); observer.observe(home, { attributes: true, attributeFilter: ["class"] });

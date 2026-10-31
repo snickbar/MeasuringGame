@@ -3,6 +3,7 @@
 // Decode the complete scene offscreen and swap it in once. Never paint the differently composed flat picture first.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 import { HOME_RIG } from "./home-art-rig.mjs";
+import {makeHomeFlight,FRAMED_HOME_BIRDS} from './home-flight.mjs';
 import { decorateNewHomeBackground, makeHomeFairy } from './home-new-scenes.mjs';
 import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorateHomeHero, decorateHomePart, installHomeInteractions } from "./home-motion.mjs";
 const BASE = "anim/home-art/";
@@ -223,16 +224,18 @@ async function buildHomeScene(home, scene, current) {
         const sprite=extras.get('refined/mouse-cheese-walk.webp').cloneNode();sprite.alt='';sprite.style.left=frame*-100+'%';cell.appendChild(sprite);img.appendChild(cell);
       }
     }
+    const birdFrames=FRAMED_HOME_BIRDS.has(scene+':'+i);
     if (fr) { // animated frames take the picture's place
       img = document.createElement("div"); img.className = "hs-wingbox"; img.style.aspectRatio = c.w + "/" + c.h;
       fr.frames.forEach((q, j) => {
         const im = rigImgs.get(q.file).cloneNode(); im.alt = ""; im.className = "hs-fxf";
         im.style.cssText = `left:${fr.cell.x}%;top:${fr.cell.y}%;width:${fr.cell.w}%;height:${fr.cell.h}%;animation-name:hsFx${fr.frames.length};animation-duration:${fr.dur}s;animation-delay:${j ? -((fr.frames.length - j) * fr.dur / fr.frames.length) : 0}s`;
+        if(birdFrames){im.style.animationName='hsBirdFrame'+j;im.style.animationDuration='8.4s';im.style.animationDelay='0s';}
         img.appendChild(im);
       });
     }
     if (!img) return;
-    wrap.className = "hs-crit hs-" + cc.kind + (cc.dir < 0 ? " hs-rtl" : "") + (fr ? " hs-framed" : "");
+    wrap.className = "hs-crit hs-" + cc.kind + (cc.dir < 0 ? " hs-rtl" : "") + (fr ? " hs-framed" : "")+(birdFrames?' hs-bird-framed':'');
     // Size by the creature itself (the picture has transparent margins around it) and centre it on its visible part.
     const visible = c.ab.width / c.w, imgW = cc.size / visible;
     wrap.style.setProperty("--ct", cc.row + "%"); wrap.style.setProperty("--cw", imgW + "%");
@@ -250,6 +253,7 @@ async function buildHomeScene(home, scene, current) {
         wing.style.transformOrigin = P(w.pivot[0], w.pivot[1]); wing.style.animationDelay = (w.delay != null ? w.delay : k * -0.05) + "s"; wing.style.setProperty("--wd", (w.deg || 14) + "deg"); body.appendChild(wing);
       });
     }
+    if(!fr)body=makeHomeFlight(scene,i,img,c)||body;
     body.classList.add("hs-crit-img"); body.style.setProperty("--flip", (cc.kind === "glide" || cc.kind === "rise" || cc.kind === "swoop" ? 1 : cc.kind === "fall" ? cc.dir : -1) * (cc.faces || 1) > 0 ? 1 : -1); wrap.appendChild(body);
     // Ground and water critters walk behind the big objects (but in front of the background), flyers pass in front.
     const slide = scene === "penguin" && i === 0;
