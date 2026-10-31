@@ -15,14 +15,8 @@ export function bluffRevealTimes(s,motion=true){
   const claimFall=250,fall=520,claimLand=claimFall+fall,answerFall=claimLand+1000,answerLand=answerFall+fall,verdict=answerLand+950,drop0=verdict+650,step=380;
   return {tip:claimLand,claimFall,fall,claimLand,answerFall,answerLand,verdict,drop0,step,judged:drop0+Math.max(0,n-1)*step+700,n};
 }
-export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
-  const voters=s.order.filter(id=>id!==s.maker);
-  const T=bluffRevealTimes(s,motion&&Number.isFinite(age)),live=motion&&Number.isFinite(age),judged=!live||age>=T.judged;
-  const dropIndex=new Map(voters.filter(id=>Object.hasOwn(BLUFF_LABELS,s.votes?.[id])).map((id,i)=>[id,i]));
-  const name=id=>players[id]?.name||s.names?.[id]||'Player';
-  const person=(id,drop=true)=>{const delay=live&&drop?` style="animation-delay:${Math.round(T.drop0+(dropIndex.get(id)||0)*T.step-age)}ms"`:'';return `<div class="bl-result-person${id===me?' is-you':''}${live&&drop?' bl-drop':''}" data-result-player="${esc(id)}" title="${esc(name(id))}"${delay}><span class="avatar">${avatar(players[id]?.avatar||s.avatars?.[id])}</span><span>${id===me?'You':esc(name(id))}</span></div>`;};
-  const box=kind=>{const win=kind===s.claim.kind,ids=voters.filter(id=>s.votes?.[id]===kind);return `<section class="bl-result-choice ${win?'win':'wrong'}" data-result-choice="${kind}" aria-label="${BLUFF_LABELS[kind]}: ${win?'winning':'wrong'} choice"><h3>${BLUFF_LABELS[kind]}</h3><div class="bl-result-people">${ids.length?ids.map(id=>person(id)).join(''):'<span class="bl-empty-votes">No votes</span>'}</div></section>`;};
-  const missed=voters.filter(id=>!Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
+export function bluffScaleHtml(s,T=bluffRevealTimes(s),age=Infinity,motion=true){
+  const live=motion&&Number.isFinite(age);
   // The real answer is always the blue cup on the left and the claim the red cup on the right. The claim lands first and
   // sinks its side; then the real answer lands: a bigger answer tips the scale the other way, an equal one levels it,
   // and a smaller one is too light to move it (the scale just bounces under its weight).
@@ -31,6 +25,17 @@ export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const fall=(ms)=>live?`animation-delay:${Math.round(ms-age)}ms;`:'';
   const cup=(side,cls,label,value,land)=>`<div class="bl-ss-end ${side}"><div class="bl-ss-hang ${cls}"><img class="bl-ss-rope" src="icons/bluff2-rope.webp" alt=""><div class="bl-ss-cup"${live?` style="animation-delay:${Math.round(land-age)}ms"`:''}><img class="bl-ss-cupimg" src="icons/bluff2-cup-${cls==='claim'?'red':'blue'}.webp" alt=""><span class="bl-ss-label">${label}</span><div class="bl-ss-numwrap"><strong class="bl-ss-num${value.length>8?' long':''}" style="${fall(land-T.fall)}">${value}</strong></div></div></div></div>`;
   const seesaw=`<div class="bl-seesaw${live?' live':''}" style="--t1:${T1}deg;--t2:${T2}deg;--kick:${kick}deg${live?`;--d1:${Math.round(T.claimLand-age)}ms;--d2:${Math.round(T.answerLand-age)}ms`:''}" aria-label="The claim is ${kind==='low'?'lower than':kind==='high'?'higher than':'equal to'} the real answer"><div class="bl-ss-beam"><img class="bl-ss-beamimg" src="icons/bluff2-beam.webp" alt=""${''}>${cup('l','real','The real answer',bluffNumber(s.q.answer),T.answerLand)+cup('r','claim','The claim',bluffNumber(s.claim.value),T.claimLand)}</div><div class="bl-ss-post"><img src="icons/bluff2-stand.webp" alt=""></div><div class="bl-ss-scale" aria-hidden="true">${['low','correct','high'].map(k=>`<b class="bl-v-${k}${k===s.claim.kind?' on':''}"${k===s.claim.kind?at(T.verdict):''}>${BLUFF_LABELS[k]}</b>`).join('')}</div></div>`;
+  return seesaw;
+}
+export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
+  const voters=s.order.filter(id=>id!==s.maker);
+  const T=bluffRevealTimes(s,motion&&Number.isFinite(age)),live=motion&&Number.isFinite(age),judged=!live||age>=T.judged;
+  const dropIndex=new Map(voters.filter(id=>Object.hasOwn(BLUFF_LABELS,s.votes?.[id])).map((id,i)=>[id,i]));
+  const name=id=>players[id]?.name||s.names?.[id]||'Player';
+  const person=(id,drop=true)=>{const delay=live&&drop?` style="animation-delay:${Math.round(T.drop0+(dropIndex.get(id)||0)*T.step-age)}ms"`:'';return `<div class="bl-result-person${id===me?' is-you':''}${live&&drop?' bl-drop':''}" data-result-player="${esc(id)}" title="${esc(name(id))}"${delay}><span class="avatar">${avatar(players[id]?.avatar||s.avatars?.[id])}</span><span>${id===me?'You':esc(name(id))}</span></div>`;};
+  const box=kind=>{const win=kind===s.claim.kind,ids=voters.filter(id=>s.votes?.[id]===kind);return `<section class="bl-result-choice ${win?'win':'wrong'}" data-result-choice="${kind}" aria-label="${BLUFF_LABELS[kind]}: ${win?'winning':'wrong'} choice"><h3>${BLUFF_LABELS[kind]}</h3><div class="bl-result-people">${ids.length?ids.map(id=>person(id)).join(''):'<span class="bl-empty-votes">No votes</span>'}</div></section>`;};
+  const missed=voters.filter(id=>!Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
+  const seesaw=bluffScaleHtml(s,T,age,motion);
   return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.png" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><b class="bl-maker-name">${esc(name(s.maker))}</b><span class="bl-pill faker">Faker</span><span class="bl-pill fooled">${s.autoClaim?'Auto claim':`${s.result.wrong} fooled`}</span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
 }
 export function bluffRankingsHtml(s,players,avatar,me){

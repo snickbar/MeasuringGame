@@ -28,6 +28,19 @@ server.listen(0,'127.0.0.1',()=>{
       assert(!d.querySelector('input,textarea,select,[contenteditable]'),'No gameplay input');assert([...d.querySelectorAll('img')].every(im=>im.naturalWidth>0),'All graphics loaded');
       for(const el of s.querySelectorAll('img,.pt-note,.pt-question,.pt-score-row,.pt-keypad,.pt-option,.pt-team-score,.xt-note,.xt-label,.xt-results,.xt-team-total,.xt-options')){const a=el.getBoundingClientRect();assert(a.left>=b.left-1&&a.right<=b.right+1,'Scene element fits horizontally: '+el.className);assert(a.top>=b.top-1&&a.bottom<=b.bottom+1,'Scene element fits vertically: '+el.className);}
       const kind=d.querySelector('[data-party-example]')?.dataset.partyExample||d.querySelector('[data-extra-lesson]')?.dataset.extraLesson;
+      if(kind==='bluffReveal'){
+       assert(d.querySelectorAll('.bl-ss-cupimg').length===2,'Both game cups are shown');
+       const animations=d.getAnimations({subtree:true});
+       const seek=t=>animations.forEach(a=>{a.pause();a.currentTime=t});
+       const opacity=selector=>Number(getComputedStyle(d.querySelector(selector)).opacity);
+       seek(0);assert(opacity('.claim .bl-ss-num')===0&&opacity('.real .bl-ss-num')===0,'Numbers wait to drop');
+       seek(1000);assert(opacity('.claim .bl-ss-num')===1&&opacity('.real .bl-ss-num')===0,'Claim lands before the answer');
+       const angle=el=>{const m=new DOMMatrixReadOnly(getComputedStyle(el).transform);return Math.atan2(m.b,m.a)};
+       assert(Math.abs(angle(d.querySelector('.bl-ss-beam'))+angle(d.querySelector('.bl-ss-hang')))<.01,'Cups remain level while beam tips');
+       seek(2600);assert(opacity('.real .bl-ss-num')===1&&opacity('.xt-bluff-bins')===0,'Answer lands before results');
+       seek(4300);assert(opacity('.xt-bluff-bins')===1&&opacity('.xt-bluff-maker')===0,'Votes precede maker points');
+       seek(5600);assert(opacity('.xt-bluff-maker')===1,'Maker points finish within the slide');
+      }
       if('${mode}'==='teamvteam'&&!['players','score'].includes(kind))assert(d.querySelector('.pt-team-strip').textContent.includes('Alex + Sam')&&d.querySelector('.pt-team-strip').textContent.includes('Lee + Jo'),'Both teams visible throughout');
       if(kind==='chance')assert(d.querySelectorAll('.pt-option').length===('${mode}'==='teamvteam'?5:4),'All guesses plus the hidden answer');
       if(kind==='score'&&'${mode}'==='teamvteam')assert(d.querySelector('.pt-team-score.red strong').textContent==='6','Shared Red score');
@@ -42,6 +55,12 @@ server.listen(0,'127.0.0.1',()=>{
     await evaluate(`window.ui.close();window.defs['${mode}'].slideMs=100;window.ui.play('${mode}');true`);await new Promise(r=>setTimeout(r,slides*100+200));
     await evaluate(`if(document.querySelector('#mode-tutorial[open]'))throw Error('Autoplay needs no interaction');window.defs['${mode}'].slideMs=7500;window.ui.synced('${mode}',3,{host:false});if(document.querySelector('#mode-tutorial button,input'))throw Error('Guest is watch-only');window.ui.endSynced();true`);
     console.log({pass:true,width,height,mode,slides});
+    if(mode==='bluff'){
+     await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]},sessionId);
+     await evaluate(`window.ui.play('bluff');for(let i=0;i<3;i++)document.querySelector('#mode-tutorial [data-next]').click();true`);
+     await evaluate(`(async()=>{await new Promise(r=>setTimeout(r,50));const d=document.getElementById('mode-tutorial');for(const selector of ['.claim .bl-ss-num','.real .bl-ss-num','.xt-bluff-bins','.xt-bluff-maker'])if(Number(getComputedStyle(d.querySelector(selector)).opacity)!==1)throw Error('Reduced motion must show completed results');window.ui.close();})()`);
+     await call('Emulation.setEmulatedMedia',{features:[]},sessionId);
+    }
    }
    await call('Target.closeTarget',{targetId});
   }
