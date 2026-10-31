@@ -67,7 +67,7 @@ function make(kind, opts = {}) {
   if (kind === "star" || kind === "sparkle" || kind === "shoot") el.style.setProperty("--y", rnd(4, kind === "shoot" ? 30 : 78).toFixed(1) + "%");
   const size = kind === "bubble" ? rnd(12, 36) : kind === "snow" ? rnd(5, 11) : kind === "ember" ? rnd(7, 14) : kind === "star" ? rnd(5, 12) : kind === "sparkle" ? rnd(10, 20) : kind === "petal" ? rnd(11, 18) : kind === "confetti" ? rnd(8, 13) : rnd(7, 13);
   el.style.setProperty("--s", size.toFixed(1) + "px");
-  if(kind==='mist')el.style.setProperty('--s',rnd(170,250).toFixed(0)+'px');
+  if(kind==='mist')el.style.setProperty('--s',rnd(320,470).toFixed(0)+'px');
   const dur = kind==='mist'?rnd(25,36):kind==='sand'?rnd(7,12):kind==='puff'?rnd(18,27):rising ? rnd(9, 17) : falling ? rnd(8, 15) : kind === "shoot" ? 11 : rnd(2.2, 5);
   el.style.setProperty("--d", dur.toFixed(1) + "s");
   el.style.setProperty("--dl", (-rnd(0, dur)).toFixed(1) + "s");
@@ -94,7 +94,15 @@ export function installHomeFx() {
   const small = Math.min(window.innerWidth, window.innerHeight) < 420;
   for (const [kind, n, opts] of HOME_PARTICLES[scene] || HOME_PARTICLES.ants) {
     const count = Math.max(0, Math.round(n * (small ? .6 : .95)));
-    for (let i = 0; i < count; i++) layer.appendChild(make(kind, opts));
+    for (let i = 0; i < count; i++) {
+      const particle=make(kind,opts);
+      if(kind==='mist'){
+        const duration=parseFloat(particle.style.getPropertyValue('--d'));
+        particle.style.setProperty('--dl',(-duration*(.2+i/count*.65)).toFixed(2)+'s');
+        particle.style.setProperty('--y',[39,53,64,47][i%4]+'%');
+      }
+      layer.appendChild(particle);
+    }
   }
   home.prepend(layer);
   installParticlePops(home,layer);

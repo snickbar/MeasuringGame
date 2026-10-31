@@ -1,5 +1,15 @@
 // Wing polygons are in percent of the visible artwork bounds, not the padded canvas.
 // Keep the original artwork, routes, facing and occlusion. Only wing layers hinge.
+import {artCell} from './home-layer-art.mjs';
+export const DETAILED_HOME_DRAGON={w:1000,h:800,ab:{x:45,y:105,width:910,height:685}};
+export function makeDetailedHomeDragon(extras){
+  const sheet=extras.get('flying-dragon-parts-v2.webp'),spec={sw:1000,sh:800};
+  const root=document.createElement('div');root.className='hs-wingbox hs-flight hs-flight-bird hs-detailed-dragon';root.style.aspectRatio='1000/800';
+  const far=artCell(sheet,[1673,161,476,362],[600,260,340,260],spec,'hs-flight-wing hs-dragon-far');far.style.transformOrigin='7% 89%';far.style.setProperty('--wing-side',-1);
+  const near=artCell(sheet,[906,92,649,496],[65,110,595,455],spec,'hs-flight-wing hs-dragon-near');near.style.transformOrigin='93% 92%';near.style.setProperty('--wing-side',1);
+  const body=artCell(sheet,[23,106,878,490],[50,290,900,500],spec,'hs-flight-body hs-dragon-body');
+  root.append(far,near,body);return root;
+}
 const butterfly=(left,right)=>({kind:'bug',wings:[{pivot:left,poly:[[0,0],[40,0],[left[0],left[1]],[30,94],[0,100]]},{pivot:right,poly:[[100,0],[100,100],[44,100],[right[0],right[1]],[65,34]]}]});
 export const HOME_FLIGHT={
   'ants:1':butterfly([44,62],[54,66]),
@@ -12,7 +22,6 @@ export const HOME_FLIGHT={
   'cactus:1':{kind:'bird',wings:[{pivot:[57,64],poly:[[-2,-2],[40,-2],[59,55],[60,64],[48,69],[36,72],[18,60],[0,45]]},{pivot:[70,78],poly:[[70,75],[100,72],[100,103],[65,103],[64,86]]}]},
   'giraffe:1':{kind:'bird',wings:[{pivot:[45,61],poly:[[0,0],[40,0],[48,42],[48,67],[24,71],[0,44]]}]},
   'dragon:0':{kind:'bat',wings:[{pivot:[43,65],poly:[[0,0],[34,0],[44,59],[43,72],[19,78],[0,60]]},{pivot:[61,73],poly:[[61,71],[80,38],[100,39],[100,100],[61,100]]}]},
-  'dragon:1':{kind:'bird',protect:[[[0,46],[15,53],[30,63],[40,65],[57,59],[65,55],[72,41],[69,35],[75,39],[75,32],[81,41],[84,47],[84,61],[72,63],[66,75],[60,90],[30,105],[0,105]]],wings:[{pivot:[57,59],poly:[[-5,-5],[65,-5],[65,65],[-5,65]]},{pivot:[79,50],poly:[[65,10],[110,10],[110,65],[65,65]]}]},
 };
 export const FRAMED_HOME_BIRDS=new Set(['games:0','town:1']);
 let flightId=0;

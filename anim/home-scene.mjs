@@ -3,7 +3,7 @@
 // Decode the complete scene offscreen and swap it in once. Never paint the differently composed flat picture first.
 import { HOME_ART, HOME_ART_REF } from "./home-art-layout.mjs";
 import { HOME_RIG } from "./home-art-rig.mjs";
-import {makeHomeFlight,FRAMED_HOME_BIRDS} from './home-flight.mjs';
+import {makeHomeFlight,FRAMED_HOME_BIRDS,makeDetailedHomeDragon,DETAILED_HOME_DRAGON} from './home-flight.mjs';
 import { decorateNewHomeBackground, makeHomeFairy } from './home-new-scenes.mjs';
 import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorateHomeHero, decorateHomePart, installHomeInteractions } from "./home-motion.mjs";
 const BASE = "anim/home-art/";
@@ -212,6 +212,7 @@ async function buildHomeScene(home, scene, current) {
     ].map(w => ({ ...w, cls:"hs-leg", wt:.18, deg:9 }));
     const wrap = document.createElement("div"), fr = rig && (rig.critFrames || []).find((f) => f.i === i);
     let img = img0;
+    if(scene==='dragon'&&i===1){c=DETAILED_HOME_DRAGON;img=makeDetailedHomeDragon(extras);}
     if(scene==='make-believe'){
       c={w:800,h:800,ab:{x:0,y:0,width:800,height:800}};
       img=makeHomeFairy(extras);

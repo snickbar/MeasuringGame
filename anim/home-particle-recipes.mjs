@@ -15,9 +15,9 @@ export const HOME_PARTICLES={
   penguin:[['snow',24],['crystal',7]],
   cactus:[['sand',16],['heat',4]],
   giraffe:[['petal',7,{colors:green}],['feather',5]],
-  dragon:[['ember',14],['ash',7],['mist',4]],
+  dragon:[['ember',14],['ash',7],['mist',7]],
   space:[['star',28],['shoot',1]],
-  'make-believe':[['sparkle',12,{colors:['#ffb8eb','#bceaff','#ffe08a']}],['rune',6],['mist',4]],
+  'make-believe':[['sparkle',12,{colors:['#ffb8eb','#bceaff','#ffe08a']}],['rune',6],['mist',7]],
   'holiday-mix':[['snow',18],['heart',5],['confetti',5]],
 };
 export const RISING_PARTICLES=new Set(['mote','ember','bubble','pollen','seed','fizz','steam','smoke','spray','caustic','music','heat','rune']);
