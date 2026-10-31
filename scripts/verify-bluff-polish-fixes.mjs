@@ -10,7 +10,7 @@ for(const change of ['none','hidden','paused','standings','next-round','next-gam
  vm.createContext(context);vm.runInContext(functions,context);context.sample=room.bluff;vm.runInContext('scheduleReveal(sample,"g1:1")',context);
  if(change==='hidden')shown=false;if(change==='paused')room.paused=true;if(change==='standings')room.bluff.showStand=true;
  if(change==='next-round')room.bluff.round=2;if(change==='next-game')room.gameId='g2';if(change==='left')leaving=true;if(change==='final')room.phase='final';if(change==='reduced')quiet=true;
- tasks.forEach(fn=>fn());assert.equal(played.length,change==='none'?5:0,'Delayed sound and vibration: '+change);
+ tasks.forEach(fn=>fn());assert.equal(played.length,change==='none'?7:0,'Delayed sound and vibration: '+change);
 }
 const index=fs.readFileSync('index.html','utf8');
 const keyLine=index.match(/const rollKey =[^\n]+/)[0];
