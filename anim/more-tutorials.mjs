@@ -19,7 +19,7 @@ export function extraTutorialScene(kind,s={}) {
   if(kind==='worlds')body=`<div class="xt-worlds">${['tiny','food','sea'].map((w,i)=>`<span>${pic('icons/badges/world-'+w+'.webp')}<b>${['Tiny Things','Snack Time','Under the Sea'][i]}</b></span>`).join('')}</div><div class="xt-levels">${[1,2,3,4,5].map(n=>`<span class="${n===1?'xt-current':''}">${n}</span>`).join('')}</div>${note('Five questions per level')}`;
   if(kind==='worldReward')body=`<div class="xt-levels">${[1,2,3,4,5].map(n=>`<span class="${n<=2?'xt-current':''}">${n===1?'★':n}</span>`).join('')}</div>${note('A star opens the next level')}${coin(10)}${note('Example: 2 stars × 5 coins')}`;
   if(kind==='teamReward')body=`<div class="xt-partners">${av('av07','You')}${av('av19','Partner')}</div><div class="xt-team-total">85% together · 2 stars</div>${coin(10)}${note('10 coins each in this example')}`;
-  if(kind==='hsPick')body=`<span class="xt-label">How many hot dogs long is a ruler?</span>${options()}${note('The other players cannot see your pick')}`;
+  if(kind==='hsPick')body=`<span class="xt-label">How many hot dogs long is a sneaker?</span>${options()}${note('The other players cannot see your pick')}`;
   if(kind==='hsAnte')body=`<div class="xt-chip-table"><div class="xt-pot">${pic('icons/poker-chip-stack.webp')}<b>Pot: 20</b></div>${['av07','av19','av06','av20'].map((id,i)=>`<span class="xt-seat seat-${i}">${pic('avatars/'+id+'.png')}${pic('icons/poker-chip-blue.webp','','xt-flying-chip')}</span>`).join('')}</div>${note('Example: four players ante 5 each')}`;
   if(kind==='hsActions')body=`<div class="xt-actions"><span><b>Check</b><small>Add nothing when no bet is owed</small></span><span><b>Call</b><small>Match the current bet</small></span><span><b>Raise</b><small>Increase the bet</small></span><span><b>Fold</b><small>Leave this round</small></span></div>${chip('20 → 60')}${note('Example: everyone adds 10 more')}`;
   if(kind==='hsPayout')body=`${options(true)}<div class="xt-pot-inline">${pic('icons/poker-chip-stack.webp')}<b>Pot: 60</b></div><div class="xt-partners"><span>${av('av07','Alex picked 2')}${chip('+30')}</span><span>${av('av19','Sam picked 2')}${chip('+30')}</span></div>`;
@@ -66,7 +66,7 @@ export const MORE_MODE_TUTORIALS={
     slide('hsFinish','Finish with the biggest stack','Most chips wins; ties share the win. Running out eliminates you, but you can still submit fake answers to earn wallet coins.'),
   ]),
   bluff:mode('Bluff the Room',[
-    slide('measure','One question for the whole room','Use this example: two hot dogs fit along the ruler. The real answer is 2.'),
+    slide('measure','One question for the whole room','Use this example: two hot dogs fit along the sneaker. The real answer is 2.'),
     slide('bluffMaker','The maker knows the truth','Only the maker sees which answer is Too Low, Correct or Too High. Lee decides to claim 3.'),
     slide('bluffVote','Voters only see the claim','Alex and Sam do not see the private labels. They decide whether Lee’s 3 is Too Low, Correct or Too High.'),
     slide('bluffReveal','Truth revealed. Points awarded.','Alex correctly said Too High: +2. Sam was fooled, so Lee earns +1. Wrong votes earn nothing.'),
@@ -81,7 +81,7 @@ export const MORE_MODE_TUTORIALS={
   ]),
   worlds:mode('Worlds',[
     slide('worlds','Pick a World and a level','Each World has five levels. Each level is five questions, with no timer or Second Chance.'),
-    slide('measure','Think end to end','Picture how many small objects fit along the bigger one. Here, two hot dogs fit along a ruler.'),
+    slide('measure','Think end to end','Picture how many small objects fit along the bigger one. Here, two hot dogs fit along a sneaker.'),
     slide('guess','Decimals are welcome','A guess of 1.8 is allowed. Take your time, then lock in your estimate.'),
     slide('stars','Your five answers earn stars','Average accuracy must be above 60%, 75% and 90% for up to three stars. This 85% example earns two.'),
     slide('worldReward','Stars open the next level','Earn a star to progress. Every completed attempt pays 5 coins per star, so improving and replaying both pay.'),

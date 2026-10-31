@@ -61,7 +61,7 @@ const SCENES = {
 export const MODE_TUTORIALS = {
   party: { title: 'Classic Party', autoplay:true, slideMs:7500, slides: [
     { scene:'partyExample',lesson:'players',head:'Same question. Your own guess.',text:'Everyone plays on their own device. Try to be the closest each round.' },
-    { scene:'partyExample',lesson:'measure',head:'Think end to end',text:'Imagine lining up the smaller object along the bigger one. Here, two hot dogs fit along the ruler.' },
+    { scene:'partyExample',lesson:'measure',head:'Think end to end',text:'Imagine lining up the smaller object along the bigger one. Here, two hot dogs fit along the sneaker.' },
     { scene:'partyExample',lesson:'guess',head:'Make your guess, then lock it in',text:'Alex guesses 1.8 before the timer ends. Decimal guesses are allowed.' },
     { scene:'partyExample',lesson:'chance',head:'A Second Chance to score',text:'One card is the hidden real answer. Sam picks 2 and earns +1 because Sam did not win. Picking the winner’s guess earns nothing.' },
     { scene:'partyExample',lesson:'double',head:'Confident in your own guess?',text:'Alex doubles down on 1.8. It wins closest: +3, plus +2 for Double Down. A losing guess gets no Double Down bonus.' },
@@ -69,7 +69,7 @@ export const MODE_TUTORIALS = {
   ] },
   teamvteam: { title: 'Team vs Team', autoplay:true, slideMs:7500, slides: [
     { scene:'partyExample',lesson:'players',head:'Pick a color with your partner',text:'Each team has two players. Everyone makes their own guess; points go to the team.' },
-    { scene:'partyExample',lesson:'measure',head:'Same question for both teams',text:'Red and Blue both answer this question. Picture the small objects end to end: two hot dogs fit along this ruler.' },
+    { scene:'partyExample',lesson:'measure',head:'Same question for both teams',text:'Red and Blue both answer this question. Picture the small objects end to end: two hot dogs fit along this sneaker.' },
     { scene:'partyExample',lesson:'guess',head:'Your own guess. Your team’s points.',text:'Alex and Sam are Red; Lee and Jo are Blue. Each of the four players locks in their own number.' },
     { scene:'partyExample',lesson:'chance',head:'Your partner can score, too',text:'Sam picks the hidden answer, 2, and earns +1 for Red. Picking a winning teammate’s guess would earn nothing.' },
     { scene:'partyExample',lesson:'double',head:'Double Down can help your team',text:'Alex’s 1.8 is closest: +3 for Red. Double Down adds +2. It only pays when your own guess wins.' },
@@ -86,7 +86,7 @@ export const MODE_TUTORIALS = {
   ] },
   quick: { title: 'Quick Game', autoplay:true, slideMs:7500, slides: [
     { scene:'partyExample',lesson:'players',head:'A quick game against bots',text:'Choose the bot difficulty, then play the same round format as Classic Party.' },
-    { scene:'partyExample',lesson:'measure',head:'Picture the objects end to end',text:'How many small objects fit along the bigger one? In this example, two hot dogs fit along a ruler.' },
+    { scene:'partyExample',lesson:'measure',head:'Picture the objects end to end',text:'How many small objects fit along the bigger one? In this example, two hot dogs fit along a sneaker.' },
     { scene:'partyExample',lesson:'guess',head:'Lock in your best guess',text:'Alex guesses 1.8. Decimals are allowed. Submit before the timer ends.' },
     { scene:'partyExample',lesson:'chance',head:'Find the hidden real answer',text:'One Second Chance card is the real answer. Sam chooses 2 and earns +1 as a non-winner. The winner’s guess gives no bonus.' },
     { scene:'partyExample',lesson:'double',head:'Or back your own guess',text:'Alex doubles down on 1.8 and wins closest: 3 + 2 = 5 points. Double Down adds nothing if your guess loses.' },
