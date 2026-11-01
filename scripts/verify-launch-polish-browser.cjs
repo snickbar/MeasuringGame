@@ -93,10 +93,15 @@ runFixture({html,modules:{'/__fake/app.mjs':'export const initializeApp=()=>({})
   assert(!survival.overflow&&survival.rigs===1,'Survival fits narrow phones');assert(survival.arm||survival.jaw);assert.equal(survival.animation,'Infinity','actions repeat with a quiet rest');
   await screenshot('survival-'+kind+'-'+width+'.png');
  }
- const shut=await evaluate("window.__launch.survivalPose('lost',0)"),open=await evaluate("window.__launch.survivalPose('lost',2600)"),end=await evaluate("window.__launch.survivalPose('lost',6500)");
+ const shut=await evaluate("window.__launch.survivalPose('lost',0)"),open=await evaluate("window.__launch.survivalPose('lost',2600)"),end=await evaluate("window.__launch.survivalPose('lost',9500)");
  assert.equal(shut.flame,0);assert(open.flame>.9);assert.equal(end.flame,0);assert.notEqual(shut.jaw,open.jaw);assert.equal(shut.jaw,end.jaw);assert.equal(shut.body,'none');assert.equal(open.body,'none');
+ assert.equal(await evaluate("Number(getComputedStyle(document.querySelector('.sv-x-fire')).opacity)"),0,'the X finishes burning before the rest');
+ const sustained=await evaluate("window.__launch.survivalPose('lost',6500)");assert(sustained.flame>.9,'fire keeps streaming more than six seconds into the action');
+ assert(await evaluate("Number(getComputedStyle(document.querySelector('.sv-x-fire')).opacity)>.9"),'the red X burns while the stream hits it');
+ await screenshot('survival-burning-X-'+width+'.png');
  const swordReady=await evaluate("window.__launch.survivalPose('safe',0)"),victory=await evaluate("window.__launch.survivalPose('safe',2000)");assert.notEqual(swordReady.arm,victory.arm);
- for(const [kind,active,idle] of [['safe',1800,5000],['lost',2600,6500],['saved',2600,6500]]){
+ await evaluate("window.__launch.survivalPose('safe',5000)");await screenshot('survival-straight-sword-'+width+'.png');
+ for(const [kind,active,idle] of [['safe',1800,5000],['lost',6500,9500],['saved',6500,9500]]){
   await evaluate(`window.__launch.survivalPose('${kind}',${active})`);
   const busy=await evaluate(`(()=>{const rig=document.querySelector('.sv-rig'),clock=document.querySelector('.sv-sword-arm,.sv-dragon-jaw').getAnimations()[0];rig.click();return clock.currentTime})()`);
   assert.equal(busy,active,'taps during an action neither interrupt nor queue it');

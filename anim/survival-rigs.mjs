@@ -1,7 +1,7 @@
 // Original sheet coordinates stay explicit so moving joints overlap, never separate.
 const SHEET = [1774,887];
 export const SURVIVAL_IMPACT_MS = 2400;
-export const SURVIVAL_CYCLES = Object.freeze({knight:{duration:7000,action:3500},dragon:{duration:8000,action:5000}});
+export const SURVIVAL_CYCLES = Object.freeze({knight:{duration:7000,action:3500},dragon:{duration:11000,action:8800}});
 export function survivalReplayReady(kind, time) {
   const timing = SURVIVAL_CYCLES[kind];
   return !!timing && Number.isFinite(time) && time >= 0 && time % timing.duration >= timing.action;
@@ -9,7 +9,7 @@ export function survivalReplayReady(kind, time) {
 let preloaded;
 export function preloadSurvivalRigArt() {
   if (typeof Image === 'undefined') return Promise.resolve();
-  return preloaded ||= Promise.all(['../icons/survival-knight-parts-v2.webp','../icons/survival-dragon-parts-v2.webp','../icons/survival-dragon-flame.webp','../icons/survival-knight-block.webp'].map(file=>{
+  return preloaded ||= Promise.all(['../icons/survival-knight-parts-v2.webp','../icons/survival-knight-parts-v3.webp','../icons/survival-dragon-parts-v2.webp','../icons/survival-dragon-flame.webp','../icons/survival-knight-block.webp'].map(file=>{
     const image=new Image();image.src=new URL(file,import.meta.url).href;
     return image.decode().catch(()=>{});
   }));
@@ -21,7 +21,10 @@ function part(file, cls, crop, placement, pivot) {
 }
 export function survivalKnightRig() {
   const file='survival-knight-parts-v2.webp';
-  return `<span class="sv-knight sv-rig" role="button" tabindex="0" aria-label="Replay knight celebration">${part(file,'sv-knight-body',[140,30,820,835],[120,92,370])}<svg class="sv-sword-trail" aria-hidden="true" viewBox="0 0 512 512"><path d="M38 319 Q5 112 224 30"/></svg>${part(file,'sv-sword-arm',[1143,110,530,625],[-1.5,26.4,239.14],[1605,650])}</span>`;
+  // Use the corrected sword arm while keeping the original body untouched.
+  // Extend the arm crop upward to include the straightened blade's full tip;
+  // the shoulder pivot stays at the same assembled coordinates.
+  return `<span class="sv-knight sv-rig" role="button" tabindex="0" aria-label="Replay knight celebration">${part(file,'sv-knight-body',[140,30,820,835],[120,92,370])}<svg class="sv-sword-trail" aria-hidden="true" viewBox="0 0 512 512"><path d="M-65 300 Q-80 90 153 4"/></svg>${part('survival-knight-parts-v3.webp','sv-sword-arm',[1143,80,530,655],[-1.5,12.864,239.14],[1605,650])}</span>`;
 }
 export function survivalDragonRig() {
   const file='survival-dragon-parts-v2.webp';
@@ -45,7 +48,7 @@ export function installSurvivalReplay(doc = document) {
     const animations = new Set();
     // Replay the characters and fire only. Hearts, coins, rewards and verdicts
     // remain untouched, including the one-time shield/life impact callbacks.
-    for (const part of scene.querySelectorAll('.sv-rig,.sv-flame,.sv-scene.saved>.sv-knight,.sv-spark')) {
+    for (const part of scene.querySelectorAll('.sv-rig,.sv-flame,.sv-scene.saved>.sv-knight,.sv-spark,.sv-x-fire')) {
       part.getAnimations({subtree:true}).forEach(animation=>animations.add(animation));
     }
     animations.forEach(animation=>{animation.currentTime=0;});

@@ -5,9 +5,19 @@ Generated with the built-in `image_gen` tool on 2026-11-01. Transparent PNG sour
 - `knight-parts.png` → `icons/survival-knight-parts-v2.webp`
 - `dragon-parts-v3.png` → `icons/survival-dragon-parts-v2.webp`
 - Sheet coordinates and overlapping hinges: `anim/survival-rigs.mjs`.
-- Single sword flourish / mouth opening and fire timing: `anim/which-bigger-summary.css`.
+- Sword flourish / mouth opening, sustained fire and burning-X timing: `anim/which-bigger-summary.css`.
 
 The dragon's cheek, upper jaw and throat remain fixed. Only the lower jaw and tongue rotate. The arm and jaw roots overlap their sockets, and the complete scene scales proportionally on narrow phones. No new sounds were added.
+
+## Straight sword correction (November 1 follow-up)
+
+Built-in `image_gen` editing was used to straighten the blade, grip and pommel onto one axis. Final transparent source: `knight-straight-sword.png`; runtime encoding: `icons/survival-knight-parts-v3.webp` (1774 × 887, WebP quality 0.96, alpha preserved). Only the corrected right-hand arm crop is used from this new sheet. The body still uses the original v2 sheet, so its artwork is unchanged. The arm crop now starts at y=80 to retain the entire blade tip; its shoulder pivot remains (1605,650) in source coordinates and the same position in the assembled character.
+
+The first edit requested a straight common blade/grip/pommel axis while preserving the arm, hand and body. The final correction prompt, using that first edit as its reference, was:
+
+> Correct the RIGHT sword only. The current sword blade still bends left at the hilt! It must be almost VERTICAL directly above the gold pommel, all on one line. On this 1774x887 canvas, place the sword TIP roughly at x1320 y115, the middle of the gold crossguard at x1355 y450, and the gold bottom pommel remains at x1370 y575. These three points lie on one straight axis. The blade must lean only very slightly to the left, about 6 degrees from vertical. Currently it leans about 25 degrees, which is wrong. Rotate/redraw the blade around its base to bring its tip RIGHTWARD until it is above the grip and pommel. Make the gold crossguard nearly horizontal and perpendicular to this nearly vertical sword. Keep silver blade width, length, cartoon shading and outline matching. Leave the hand, armored arm, shoulder and the whole knight on the left entirely unchanged. Do not redraw other parts. Same canvas, transparent background, no text.
+
+The burning X reuses the existing `survival-dragon-flame.webp` as three upward flame tongues. Its ignition follows the first fire impact at 2.4 seconds; the stream stays visible for about five seconds. These visual loops never replay life deductions, shield spending, rewards or impact sounds.
 
 ## Knight generation prompt
 

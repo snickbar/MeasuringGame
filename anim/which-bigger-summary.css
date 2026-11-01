@@ -194,23 +194,33 @@ html[data-motion=reduce] .sv-spark{display:none}
 @keyframes svVictoryWeight{0%,10%,35%,100%{translate:0 0}27%{translate:1px -1px}}
 @keyframes svSwordTrail{0%,14%{opacity:0;stroke-dashoffset:420}18%{opacity:.8}29%{opacity:.55;stroke-dashoffset:0}35%,100%{opacity:0;stroke-dashoffset:-30}}
 .sv-dragon.sv-rig{animation:none!important}
-.sv-dragon-jaw{z-index:0;animation:svJawBreathe 8s ease-in-out infinite}
+.sv-dragon-jaw{z-index:0;animation:svJawBreathe 11s ease-in-out infinite}
 .sv-dragon-body{z-index:1}
-@keyframes svJawBreathe{0%,5%,62%,100%{transform:rotate(-4deg)}18%,46%{transform:rotate(16deg)}54%{transform:rotate(12deg)}}
-.sv-scene.lost .sv-flame{left:108px;top:27px;animation:svFlameBreath 8s ease-out infinite}
-.sv-scene.saved .sv-flame{--tilt:0deg;left:85px;top:29px;animation:svFlameBreath 8s ease-out infinite}
-@keyframes svFlameBreath{0%,18%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(0)}24%{opacity:1;transform:rotate(var(--tilt,0deg)) scaleX(.65)}30%,40%,50%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1,1)}35%,45%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1.015,1.05)}56%,100%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(.3)}}
-.sv-scene.saved .sv-knight{animation:svBlockLoop 8s ease-out infinite}
-.sv-scene.saved .sv-spark{animation:svBlockSpark 8s ease-out infinite}
-@keyframes svBlockLoop{0%,30%,42%,100%{transform:none}33%{transform:translateX(7px) rotate(2deg)}}
-@keyframes svBlockSpark{0%,29%,38%,100%{opacity:0;transform:scale(.2)}31%{opacity:1;transform:scale(1.5)}36%{opacity:0;transform:scale(2.2)}}
+@keyframes svJawBreathe{0%,4%,76%,100%{transform:rotate(-4deg)}13.09%,64%{transform:rotate(16deg)}70%{transform:rotate(12deg)}}
+.sv-scene.lost .sv-flame{left:108px;top:27px;animation:svFlameBreath 11s ease-out infinite}
+.sv-scene.saved .sv-flame{--tilt:0deg;left:85px;top:29px;animation:svFlameBreath 11s ease-out infinite}
+/* Keep the first impact at 2.4s, then sustain the breath for about five seconds. */
+@keyframes svFlameBreath{0%,13.09%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(0)}17.45%{opacity:1;transform:rotate(var(--tilt,0deg)) scaleX(.65)}21.818%,32%,42%,52%,63.64%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1,1)}27%,37%,47%,57%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1.015,1.05)}70%,100%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(.3)}}
+.sv-scene.saved .sv-knight{animation:svBlockLoop 11s ease-out infinite}
+.sv-scene.saved .sv-spark{animation:svBlockSpark 11s ease-out infinite}
+@keyframes svBlockLoop{0%,21.818%,31%,100%{transform:none}24%{transform:translateX(7px) rotate(2deg)}}
+@keyframes svBlockSpark{0%,21%,28%,100%{opacity:0;transform:scale(.2)}22.55%{opacity:1;transform:scale(1.5)}26.18%{opacity:0;transform:scale(2.2)}}
+.sv-scene.lost .sv-markpos{isolation:isolate}
+.sv-scene.lost .sv-markpos .wb-burst{position:relative;z-index:1}
+.sv-x-fire{position:absolute;left:0;top:-32%;width:100%;height:140%;z-index:0;pointer-events:none;opacity:0;filter:drop-shadow(0 0 5px #ff932b);animation:svXIgnite 11s ease-out infinite}
+.sv-x-fire i{position:absolute;left:0;top:15%;width:100%;height:45%;background:url('../icons/survival-dragon-flame.webp') center/100% 100% no-repeat;--fire-angle:-90deg;transform:rotate(var(--fire-angle));animation:svXFlutter .24s ease-in-out infinite alternate}
+.sv-x-fire i:first-child{left:-20%;top:30%;--fire-angle:-110deg;animation-delay:-.08s}
+.sv-x-fire i:last-child{left:20%;top:30%;--fire-angle:-70deg;animation-delay:-.16s}
+@keyframes svXIgnite{0%,21%{opacity:0}24%,68%{opacity:1}77%,100%{opacity:0}}
+@keyframes svXFlutter{to{transform:rotate(calc(var(--fire-angle) + 3deg)) scaleY(1.07)}}
 .sv-scene [role=button]{pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .sv-scene [role=button]:focus-visible{outline:2px dashed #548db3;outline-offset:2px;border-radius:12px}
 #survival-screen:not(.active) .sv-scene *{animation-play-state:paused!important}
 html[data-motion=reduce] .sv-rig,html[data-motion=reduce] .sv-rig *,html[data-motion=reduce] .sv-scene .sv-flame{animation:none!important}
 html[data-motion=reduce] .sv-sword-trail{display:none}
+html[data-motion=reduce] .sv-x-fire{display:none}html[data-motion=reduce] .sv-x-fire,html[data-motion=reduce] .sv-x-fire *{animation:none!important}
 html[data-motion=reduce] .sv-dragon-jaw{transform:rotate(5deg)}
-@media(prefers-reduced-motion:reduce){.sv-rig,.sv-rig *,.sv-scene .sv-flame,.sv-scene.saved .sv-knight,.sv-spark{animation:none!important}.sv-sword-trail,.sv-spark{display:none}.sv-dragon-jaw{transform:rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.sv-rig,.sv-rig *,.sv-scene .sv-flame,.sv-scene.saved .sv-knight,.sv-spark,.sv-x-fire,.sv-x-fire *{animation:none!important}.sv-sword-trail,.sv-spark,.sv-x-fire{display:none}.sv-dragon-jaw{transform:rotate(5deg)}}
 /* Scale the whole composition together; fixed pixel offsets clipped the mark
    and blocking knight on narrower phones. Joint coordinates remain local. */
 .sv-scene{width:100%;max-width:320px;height:auto;aspect-ratio:320/150;container-type:inline-size}
