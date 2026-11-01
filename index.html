@@ -10196,7 +10196,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>
         ${dailyFlameHtml(streak, false, `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
-        <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
+        <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
       dailyLoadBoard();
       return;
     }
@@ -10248,7 +10248,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.justFinished && !daily.replay ? `<div class="dc-note"><b>+10 coins for today</b></div>` : ""}${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
-      <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
+      <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
     dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
     if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; vibrate([30, 40, 30, 40, 60]); }
   }
@@ -10357,8 +10357,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { rows = null; }
     const now = document.getElementById("dc-board");
     if (now !== host || !daily || daily.date !== date) return;
-    if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
+    if (!rows) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
+    if (!rows.length) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "You could be first!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${formatAccuracy(r.s / 3)}%</span></div>`).join("");
     now.innerHTML = html;
@@ -10509,7 +10509,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function classicBestHtml() {
     const games = (myProfile.matches || []).filter((m) => m.mode === "party" && Number.isFinite(m.score));
     const st = myProfile.modeStats?.party || {};
-    if (!games.length && !st.games) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
+    if (!games.length && !st.games) return `<div class="dc-card">${emptyHtml("icons/party-results-podium.webp", "No games yet", "Host one to get started!")}</div>`;
     const rows = games.slice().sort((a, b) => b.score - a.score || b.t - a.t).slice(0, 3);
     const head = st.games ? `<div class="dc-note" style="text-align:center;font-weight:700">${st.games} game${st.games === 1 ? "" : "s"} played &middot; ${st.wins || 0} win${(st.wins || 0) === 1 ? "" : "s"}</div>` : "";
     return `<div class="dc-card">${head}${rows.map((r) => `<div class="tw-best-row"><div class="tw-best-avatars"><span class="avatar">${avatarHtml(r.myAvatar)}</span></div>
@@ -10517,7 +10517,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hlBestHtml() {
     const rows = topScores(historyRows(myProfile.hlHistory || {}), 3);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No runs yet &mdash; play with a partner to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/mode-team-worlds.webp", "No runs yet", "Play with a partner to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${r.s} round${r.s === 1 ? "" : "s"} survived${r.syncStreak ? ` &middot; best streak ${r.syncStreak}` : ""}`, r.t)).join("")}</div>`;
   }
@@ -10671,7 +10671,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function teamVTeamBestHtml() {
     const rows = topScores(historyRows(myProfile.teamHistory || {}), 3);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/party-results-podium.webp", "No games yet", "Host one to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${r.s} points${r.accuracy ? ` &middot; ${formatAccuracy(r.accuracy)}% avg` : ""}`, r.t)).join("")}</div>`;
   }
@@ -11106,7 +11106,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (leavingGame) return;
     const hs = data.hs;
     hsRenderedAnimating = false;
-    if (!hs) { hsContentEl.innerHTML = `<p class="dc-sub">Loading...</p>`; return; }
+    if (!hs) { hsContentEl.innerHTML = skelRows(3); return; }
     const me = currentPlayerId, seated = hs.seats?.includes(me), isOut = !!hs.out?.[me];
     const stage = hs.stage;
     let html = "";
@@ -11697,7 +11697,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let twWorldId = null; // which World is picked while its info screen is open
   function teamWorldsBestHtml(worldId) {
     const rows = topScores(historyRows(myProfile.teamWorldsHistory?.[worldId] || {}), 5);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/mode-team-worlds.webp", "No attempts yet", "Play with a partner to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}%`, r.t)).join("")}</div>`;
   }
@@ -11706,7 +11706,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const all = [];
     WORLDS.forEach((x) => historyRows(myProfile.teamWorldsHistory?.[x.id] || {}).forEach((r) => all.push({ ...r, worldName: x.name })));
     const rows = topScores(all, 5);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/mode-team-worlds.webp", "No attempts yet", "Play with a partner to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}% &middot; ${escapeHtml(r.worldName)}`, r.t)).join("")}</div>`;
   }
@@ -11937,7 +11937,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>${tourBtn('monthly')}
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
-        <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+        <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
       monthlyLoadBoard();
       return;
     }
@@ -11980,7 +11980,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${adBarSlot("monthly", "mo-finish")}
       <button type="button" class="dc-btn dc-alt" id="mo-replay">Replay for coins</button>
       <button type="button" class="dc-btn dc-alt" id="mo-share">Share my result</button>
-      <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+      <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
   }
   async function monthlyRunReveal() {
@@ -12050,8 +12050,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { rows = null; }
     const now = document.getElementById("mo-board");
     if (!now || !mo || mo.key !== key || mo.level !== level) return;
-    if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
+    if (!rows) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
+    if (!rows.length) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "You could be first!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s / 5 * 10) / 10}%</span></div>`).join("");
     now.innerHTML = html;
@@ -12392,7 +12392,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${soloResumeHtml("survival")}${survivalRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
-        <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+        <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
       survivalLoadBoard();
       return;
     }
@@ -12455,7 +12455,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${adBarSlot("survival", "sv-finish")}
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
-      <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+      <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
     svShowRank();
     survivalLoadBoard();
   }
@@ -12498,8 +12498,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { rows = null; }
     const host = document.getElementById("sv-board");
     if (!host || !sv) return;
-    if (!rows) { host.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { host.textContent = "No scores yet. Be the first!"; return; }
+    if (!rows) { host.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
+    if (!rows.length) { host.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "Be the first on the board!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
     host.innerHTML = html;
@@ -13048,7 +13048,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const isDaily=mode==='daily',rows=isDaily?dailyHistoryRows():monthlyHistoryRows();
     const rowsHtml=rows.map(r=>`<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(isDaily?dailyPretty(r.key):monthlyKeyLabel(r.key))}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join('');
     el.innerHTML=`<button type="button" class="dc-btn dc-alt" data-stats-history-back>&larr; Back to Stats</button><h3 class="cs-h">${isDaily?'Daily Challenge':'Monthly Challenge'} history</h3>`+
-      (rows.length?`<div class="cozy-panel">${rowsHtml}</div>`:`<div class="cs-empty">Play the ${isDaily?'Daily':'Monthly'} Challenge to start your history.</div>`);
+      (rows.length?`<div class="cozy-panel">${rowsHtml}</div>`:emptyHtml("icons/toolbar-daily.png", "No history yet", `Play the ${isDaily?'Daily':'Monthly'} Challenge to start your history.`));
   }
   // ---- Badges: every achievement is a collectible medal; ranks have their own medals. ----
   const BADGE_CAT_ICONS = { "Getting started": "icons/flair/star.png", Collector: "icons/flair/gem-ruby.png", Accuracy: "icons/reactions/point.png", Winning: "icons/reactions/trophy.png",
@@ -13182,7 +13182,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const frequencyHtml = `<h3 class="cs-h">Object frequency</h3><div class="cs-card"><p class="cs-note">Your most-seen objects in completed rounds, on either side. Includes missed submissions${statsMode==='all'?'':` in ${escapeHtml(MODE_NAMES[statsMode])}`}. Counts include available past history and keep growing as you play.</p>${frequent.length?frequent.map(([id,n])=>{const ob=OBJECT_BY_ID.get(id);return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase()+ob.name.slice(1))}</span><span class="cs-obj-val">${n} ${n===1?'time':'times'}</span></div>`;}).join(''):'<p class="cs-note">Complete a round to start your list.</p>'}</div>`;
     if (hsView || bluffView) { el.innerHTML = html + frequencyHtml; return; } // no per-round accuracy graph for High Stakes
     if (hist.length < 3) {
-      html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
+      html += emptyHtml("items/hot-air-balloon.webp", "Nothing to chart yet", "Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.");
       el.innerHTML = html + frequencyHtml; return;
     }
     // Accuracy over time: average per bucket so a long history still reads as a trend.
@@ -13594,6 +13594,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const fresh = performance.now() - lastTapPoint.t < 1500;
     return fresh ? { x: lastTapPoint.x, y: lastTapPoint.y } : { x: innerWidth / 2, y: innerHeight * 0.6 };
   }
+  // Shared loading and empty looks: shimmering placeholder rows while a list loads, and a little picture + hint when it has nothing yet.
+  function skelRows(n = 4) {
+    return `<div class="skel-list" role="status" aria-label="Loading">${Array.from({ length: n }, (_, i) => `<div class="skel-row" style="--i:${i}"><i class="skel-rank"></i><i class="skel-name" style="width:${70 - i * 9}%"></i><i class="skel-val"></i></div>`).join("")}</div>`;
+  }
+  function emptyHtml(pic, title, hint) {
+    return `<div class="empty-state"><img src="${pic}" alt="" draggable="false"><b>${title}</b><span>${hint}</span></div>`;
+  }
   function flyCoinsToToolbar(gain) {
     try {
       if (!(gain > 0)) return null;
@@ -13698,7 +13705,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="collection-grid">${tiles}</div>
         </div>`;
     }).join("");
-    if (!body) body = `<div class="ach-empty">No avatars discovered yet — give the machine a spin!</div>`;
+    if (!body) body = `<div class="ach-empty">${emptyHtml("icons/shop-starter-gift.webp", "No avatars yet", "Give the machine a spin!")}</div>`;
     collectionContentEl.innerHTML = head + body;
   }
 
