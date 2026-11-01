@@ -95,7 +95,7 @@ try{
  const rects=buttons.map(b=>b.getBoundingClientRect());
  assert(rects.every(r=>Math.abs(r.width-rects[0].width)<1&&r.height===44),'all controls same size');
  const buffer=document.querySelector('[data-powerup="buffer"]'),lower=buttons.filter(b=>b!==buffer);
- assert(new Set(lower.slice(1).map(b=>Math.round(b.getBoundingClientRect().top))).size===(box.classList.contains('pu-narrow')?2:1)&&buffer.getBoundingClientRect().bottom<=lower[0].getBoundingClientRect().top+1,'stacked aids and grouped rerolls');
+ assert(new Set(lower.slice(1).map(b=>Math.round(b.getBoundingClientRect().top))).size===1&&buffer.getBoundingClientRect().bottom<=lower[0].getBoundingClientRect().top+1,'Buffer then Reveal, then one row of Small, Big and Both');
  assert(lower.slice(1).every(b=>b.getBoundingClientRect().top>=document.getElementById('question-prompt').getBoundingClientRect().bottom),'rerolls never overlap the question board');
  assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'no player-card overlap');
  assert(box.getBoundingClientRect().top>=document.getElementById('question-note').getBoundingClientRect().bottom,'no tip overlap');
@@ -120,7 +120,7 @@ try{
  board.style.minHeight='';note.textContent='Tip: This longer tip wraps onto many lines to check that no power-up can ever overlap the timer or the tip text on a narrow phone.';c.render();assert(box.getBoundingClientRect().top>=note.getBoundingClientRect().bottom,'long tips do not overlap panel');assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'cards remain below connected box');
  note.textContent=normalTip;c.render();
  assert(document.getElementById('howto-powerup-list').textContent.includes('Reroll small')&&document.getElementById('howto-powerup-list').textContent.includes('10% buffer'),'help card explains power-ups');
- results.push('one connected L-shaped box, five equal controls, four across bottom, no overlap, and accessible touch targets');
+ results.push('Buffer then Reveal, with Small/Big/Both together below, no overlap, and accessible touch targets');
  const initialPositions=Object.fromEntries([...document.querySelectorAll('[data-powerup]')].map(b=>[b.dataset.powerup,{x:b.getBoundingClientRect().left,y:b.getBoundingClientRect().top}]));
  await buy('buffer');assert(wallet.coins===90&&debits===1&&room.currentQuestion.powerups.used.buffer,'double tap charges once');
  assert(document.querySelectorAll('[data-powerup]').length===5&&document.querySelector('[data-powerup="buffer"]').disabled,'used buffer stays disabled');

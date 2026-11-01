@@ -4868,7 +4868,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createRoundScoreReveal } from "./anim/round-score-reveal.mjs";
   import { reactionAvailability } from "./anim/reaction-availability.mjs";
   import { createWorldProgressPolish } from "./anim/world-progress-polish.mjs";
-  import { survivalKnightRig, survivalDragonRig, preloadSurvivalRigArt } from "./anim/survival-rigs.mjs";
+  import { survivalKnightRig, survivalDragonRig, preloadSurvivalRigArt, installSurvivalReplay, SURVIVAL_IMPACT_MS } from "./anim/survival-rigs.mjs";
   import { reactionEntrance } from "./anim/reaction-entrance.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
@@ -12376,7 +12376,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Survival's mascots (only one scene at a time): knight cheers when safe, dragon breathes fire on a lost life,
   // and when the shield saves you the dragon's fire hits the knight's raised shield.
   function svSceneHtml(r, ok) {
-    if (r.saved) return `<div class="sv-scene saved">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false"><img class="sv-knight" src="icons/survival-knight-block.webp" alt="" draggable="false"><span class="sv-spark" aria-hidden="true"></span></div>`;
+    if (r.saved) return `<div class="sv-scene saved">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false"><img class="sv-knight" src="icons/survival-knight-block.webp" alt="" draggable="false" role="button" tabindex="0" aria-label="Replay shield block"><span class="sv-spark" aria-hidden="true"></span></div>`;
     const mark = `<div class="sv-markpos"><div class="wb-burst">${r.checkpoint ? svCoinBurstHtml() : ""}<div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? "Safe" : "Lost a life"}">${ok ? "&#10004;" : "&#10006;"}</div></div></div>`;
     if (ok) return `<div class="sv-scene safe">${survivalKnightRig()}${mark}</div>`;
     return `<div class="sv-scene lost">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false">${mark}</div>`;
@@ -12459,27 +12459,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "result") {
       survivalStop();
       el.innerHTML = svResultHtml();
+      const result = sv.res, impactDelay = prefersReducedMotion() ? 0 : SURVIVAL_IMPACT_MS;
       requestAnimationFrame(() => requestAnimationFrame(svFit));
       // Shield moments: it breaks like a heart when it saves you; earning one pops it into the header; chain pips tick up.
       if (sv.res.checkpoint) { try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
       if (sv.res.saved && !sv.shieldShown) {
-        sv.shieldShown = true; const result = sv.res;
-        setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart('shield'); }, prefersReducedMotion() ? 0 : 950);
+        sv.shieldShown = true;
+        setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart('shield'); }, impactDelay);
       }
       else if (sv.res.earned) { try { playSound("streak"); } catch (e) {} }
       setTimeout(() => {
-        const el2 = document.getElementById("sv-shield"); if (!el2 || !sv || sv.phase !== "result") return;
+        const el2 = document.getElementById("sv-shield"); if (!el2 || !sv || sv.phase !== "result" || sv.res !== result) return;
         const changed = (!!sv.prevShield !== !!sv.shield) || (sv.prevChain || 0) !== (sv.chain || 0);
         el2.outerHTML = svShieldHtml(!!sv.shield, sv.chain || 0);
         const n2 = document.getElementById("sv-shield"); if (n2 && changed) n2.classList.add(sv.shield ? "pop" : "tick");
-      }, sv.res.saved ? 1100 : 650);
+      }, sv.res.saved ? impactDelay + 150 : 650);
       if (sv.lossPending) {
-        sv.lossPending = false; const result = sv.res;
-        setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart(); }, prefersReducedMotion() ? 0 : 950);
+        sv.lossPending = false;
+        setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart(); }, impactDelay);
         setTimeout(() => {
           const h = document.getElementById("sv-hearts");
-          if (h && sv && sv.phase === "result") { h.innerHTML = Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < sv.lives)).join(""); const hs = h.querySelectorAll(".sv-heart"); if (hs[sv.lives]) hs[sv.lives].classList.add("drop"); }
-        }, 1100);
+          if (h && sv && sv.phase === "result" && sv.res === result) { h.innerHTML = Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < sv.lives)).join(""); const hs = h.querySelectorAll(".sv-heart"); if (hs[sv.lives]) hs[sv.lives].classList.add("drop"); }
+        }, impactDelay + 150);
       }
       return;
     }
@@ -20744,6 +20745,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });
   new MutationObserver(records => { if (records.some(r => ALL_SCREEN_ELS.includes(r.target))) applyBackground(); }).observe(document.body, {attributes:true, attributeFilter:['class'], subtree:true});
   applyBackground();
+  installSurvivalReplay();
   uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
   discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),reduced:prefersReducedMotion,context:()=>{
       const active=id=>document.getElementById(id)?.classList.contains('active');

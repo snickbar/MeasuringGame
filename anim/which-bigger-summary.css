@@ -182,30 +182,35 @@ html[data-motion=reduce] .sv-shieldrow.pop img,html[data-motion=reduce] .sv-shie
 @keyframes svSpark{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.5)}100%{opacity:0;transform:scale(2.2)}}
 html[data-motion=reduce] .sv-scene img,html[data-motion=reduce] .sv-spark{animation:none!important}
 html[data-motion=reduce] .sv-spark{display:none}
-/* A single jointed action, then a held pose. No whole-character squash loops. */
+/* Jointed actions with a quiet pause between repeats. */
 .sv-rig{position:absolute;display:block;aspect-ratio:1;overflow:visible}
 .sv-part{position:absolute;display:block;overflow:hidden;pointer-events:none}
 .sv-part>img{position:absolute!important;max-width:none!important;object-fit:fill}
-.sv-knight-body{z-index:1}.sv-sword-arm{z-index:2;animation:svSwordFlourish 1.55s ease-in-out both}
-.sv-scene.safe .sv-knight.sv-rig{animation:svVictoryWeight 1.55s ease-out both}
+.sv-knight-body{z-index:1}.sv-sword-arm{z-index:2;animation:svSwordFlourish 7s ease-in-out infinite}
+.sv-scene.safe .sv-knight.sv-rig{animation:svVictoryWeight 7s ease-out infinite}
 .sv-sword-trail{position:absolute;inset:0;width:100%;height:100%;z-index:0;overflow:visible;pointer-events:none}
-.sv-sword-trail path{fill:none;stroke:#a7e8ff;stroke-width:9;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:420;opacity:0;animation:svSwordTrail .45s .25s ease-out both}
-@keyframes svSwordFlourish{0%{transform:rotate(-55deg)}16%{transform:rotate(-68deg)}43%{transform:rotate(15deg)}62%{transform:rotate(-12deg)}84%{transform:rotate(8deg)}100%{transform:rotate(0)}}
-@keyframes svVictoryWeight{0%,100%{translate:0 0}38%{translate:1px -1px}65%{translate:0 0}}
-@keyframes svSwordTrail{10%{opacity:.8}65%{opacity:.55;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:-30}}
+.sv-sword-trail path{fill:none;stroke:#a7e8ff;stroke-width:9;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:420;opacity:0;animation:svSwordTrail 7s ease-out infinite}
+@keyframes svSwordFlourish{0%{transform:rotate(0)}10%{transform:rotate(-55deg)}16%{transform:rotate(-68deg)}27%{transform:rotate(15deg)}35%{transform:rotate(-12deg)}43%{transform:rotate(8deg)}50%,100%{transform:rotate(0)}}
+@keyframes svVictoryWeight{0%,10%,35%,100%{translate:0 0}27%{translate:1px -1px}}
+@keyframes svSwordTrail{0%,14%{opacity:0;stroke-dashoffset:420}18%{opacity:.8}29%{opacity:.55;stroke-dashoffset:0}35%,100%{opacity:0;stroke-dashoffset:-30}}
 .sv-dragon.sv-rig{animation:none!important}
-.sv-dragon-jaw{z-index:0;animation:svJawBreathe 2.65s ease-in-out both}
+.sv-dragon-jaw{z-index:0;animation:svJawBreathe 8s ease-in-out infinite}
 .sv-dragon-body{z-index:1}
-@keyframes svJawBreathe{0%,12%{transform:rotate(-27deg)}25%,69%{transform:rotate(5deg)}79%{transform:rotate(2deg)}100%{transform:rotate(-27deg)}}
-.sv-scene.lost .sv-flame{left:108px;top:27px;animation:svFlameBreath 2.65s ease-out both}
-.sv-scene.saved .sv-flame{--tilt:0deg;left:85px;top:29px;animation:svFlameBreath 2.65s ease-out both}
-@keyframes svFlameBreath{0%,23%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(0)}30%{opacity:1;transform:rotate(var(--tilt,0deg)) scaleX(.65)}39%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1,1)}46%,61%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1.015,1.05)}53%,68%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(.98,.96)}78%,100%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(.3)}}
-.sv-scene.saved .sv-knight{animation-delay:.95s}
-.sv-scene.saved .sv-spark{animation-delay:.98s}
+@keyframes svJawBreathe{0%,5%,62%,100%{transform:rotate(-4deg)}18%,46%{transform:rotate(16deg)}54%{transform:rotate(12deg)}}
+.sv-scene.lost .sv-flame{left:108px;top:27px;animation:svFlameBreath 8s ease-out infinite}
+.sv-scene.saved .sv-flame{--tilt:0deg;left:85px;top:29px;animation:svFlameBreath 8s ease-out infinite}
+@keyframes svFlameBreath{0%,18%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(0)}24%{opacity:1;transform:rotate(var(--tilt,0deg)) scaleX(.65)}30%,40%,50%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1,1)}35%,45%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1.015,1.05)}56%,100%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(.3)}}
+.sv-scene.saved .sv-knight{animation:svBlockLoop 8s ease-out infinite}
+.sv-scene.saved .sv-spark{animation:svBlockSpark 8s ease-out infinite}
+@keyframes svBlockLoop{0%,30%,42%,100%{transform:none}33%{transform:translateX(7px) rotate(2deg)}}
+@keyframes svBlockSpark{0%,29%,38%,100%{opacity:0;transform:scale(.2)}31%{opacity:1;transform:scale(1.5)}36%{opacity:0;transform:scale(2.2)}}
+.sv-scene [role=button]{pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.sv-scene [role=button]:focus-visible{outline:2px dashed #548db3;outline-offset:2px;border-radius:12px}
+#survival-screen:not(.active) .sv-scene *{animation-play-state:paused!important}
 html[data-motion=reduce] .sv-rig,html[data-motion=reduce] .sv-rig *,html[data-motion=reduce] .sv-scene .sv-flame{animation:none!important}
 html[data-motion=reduce] .sv-sword-trail{display:none}
 html[data-motion=reduce] .sv-dragon-jaw{transform:rotate(5deg)}
-@media(prefers-reduced-motion:reduce){.sv-rig,.sv-rig *,.sv-scene .sv-flame{animation:none!important}.sv-sword-trail{display:none}.sv-dragon-jaw{transform:rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.sv-rig,.sv-rig *,.sv-scene .sv-flame,.sv-scene.saved .sv-knight,.sv-spark{animation:none!important}.sv-sword-trail,.sv-spark{display:none}.sv-dragon-jaw{transform:rotate(5deg)}}
 /* Scale the whole composition together; fixed pixel offsets clipped the mark
    and blocking knight on narrower phones. Joint coordinates remain local. */
 .sv-scene{width:100%;max-width:320px;height:auto;aspect-ratio:320/150;container-type:inline-size}

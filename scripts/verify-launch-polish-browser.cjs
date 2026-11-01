@@ -89,13 +89,21 @@ runFixture({html,modules:{'/__fake/app.mjs':'export const initializeApp=()=>({})
  assert.deepEqual(tutorial,{backs:1,objects:2,actions:4,choices:3,inputs:0});await screenshot('tutorial-controls-'+width+'.png');
  for(const kind of ['safe','lost','saved']){
   await evaluate('window.__launch.survival('+JSON.stringify(kind)+')');await wait(850);
-  const survival=await evaluate(`(()=>{const scene=document.querySelector('.sv-scene'),r=scene.getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,rigs:scene.querySelectorAll('.sv-rig').length,jaw:!!scene.querySelector('.sv-dragon-jaw'),arm:!!scene.querySelector('.sv-sword-arm'),animation:scene.querySelector('.sv-sword-arm,.sv-dragon-jaw')?.getAnimations()[0]?.effect.getTiming().iterations}})()`);
-  assert(!survival.overflow&&survival.rigs===1,'Survival fits narrow phones');assert(survival.arm||survival.jaw);assert.equal(survival.animation,1,'one complete action then settles');
+  const survival=await evaluate(`(()=>{const scene=document.querySelector('.sv-scene'),r=scene.getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,rigs:scene.querySelectorAll('.sv-rig').length,jaw:!!scene.querySelector('.sv-dragon-jaw'),arm:!!scene.querySelector('.sv-sword-arm'),animation:String(scene.querySelector('.sv-sword-arm,.sv-dragon-jaw')?.getAnimations()[0]?.effect.getTiming().iterations)}})()`);
+  assert(!survival.overflow&&survival.rigs===1,'Survival fits narrow phones');assert(survival.arm||survival.jaw);assert.equal(survival.animation,'Infinity','actions repeat with a quiet rest');
   await screenshot('survival-'+kind+'-'+width+'.png');
  }
- const shut=await evaluate("window.__launch.survivalPose('lost',0)"),open=await evaluate("window.__launch.survivalPose('lost',1000)"),end=await evaluate("window.__launch.survivalPose('lost',3000)");
+ const shut=await evaluate("window.__launch.survivalPose('lost',0)"),open=await evaluate("window.__launch.survivalPose('lost',2600)"),end=await evaluate("window.__launch.survivalPose('lost',6500)");
  assert.equal(shut.flame,0);assert(open.flame>.9);assert.equal(end.flame,0);assert.notEqual(shut.jaw,open.jaw);assert.equal(shut.jaw,end.jaw);assert.equal(shut.body,'none');assert.equal(open.body,'none');
  const swordReady=await evaluate("window.__launch.survivalPose('safe',0)"),victory=await evaluate("window.__launch.survivalPose('safe',2000)");assert.notEqual(swordReady.arm,victory.arm);
+ for(const [kind,active,idle] of [['safe',1800,5000],['lost',2600,6500],['saved',2600,6500]]){
+  await evaluate(`window.__launch.survivalPose('${kind}',${active})`);
+  const busy=await evaluate(`(()=>{const rig=document.querySelector('.sv-rig'),clock=document.querySelector('.sv-sword-arm,.sv-dragon-jaw').getAnimations()[0];rig.click();return clock.currentTime})()`);
+  assert.equal(busy,active,'taps during an action neither interrupt nor queue it');
+  await evaluate(`window.__launch.survivalPose('${kind}',${idle})`);
+  const replay=await evaluate(`(()=>{const rig=document.querySelector('${kind==='saved'?'.sv-scene.saved .sv-knight':'.sv-rig'}'),clock=document.querySelector('.sv-sword-arm,.sv-dragon-jaw').getAnimations()[0];rig.click();const reset=clock.currentTime;clock.currentTime=1200;rig.click();return {reset,busy:clock.currentTime,fire:document.querySelector('.sv-flame')?.getAnimations()[0]?.currentTime}})()`);
+  assert.equal(replay.reset,0,'tapping a resting character replays it');assert.equal(replay.busy,1200,'second tap never restarts an active replay');if(kind!=='safe')assert.equal(replay.fire,0,'fire restarts with its dragon');
+ }
  await evaluate("document.documentElement.dataset.motion='reduce'");
  const reduced=await evaluate("window.__launch.survivalPose('lost',1000)");assert.equal(reduced.body,'none');assert.equal(await evaluate("document.querySelector('.sv-scene').getAnimations({subtree:true}).length"),0);
  await evaluate("document.documentElement.dataset.motion='full'");

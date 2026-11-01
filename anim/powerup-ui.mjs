@@ -80,19 +80,19 @@ export function createPowerupController(ports) {
     const lower = ['reveal', 'small', 'big', 'both', 'fifty'].filter(id => available.includes(id));
     const ordered = raised ? ['buffer', ...lower] : available;
     const width = sideRect.right - mainRect.right - 6;
-    const columns = width >= 140 ? 3 : 2;
-    const narrow = available.length > 1 && columns === 2;
+    // Keep Small, Big and Both together; wrapping Both added an unwanted row.
+    const columns = 3;
     const cell = Math.max(44, (width - 10) / 4);
     const top = raised ? colRect.bottom + 6 : body.getBoundingClientRect().top + 4;
     // Buffer and Reveal fit below the timer. The wider reroll row starts only
     // after the question board ends, so it never covers question text/artwork.
     const board = document.getElementById('question-prompt');
     const spacer = raised ? Math.max(0, (board?.getBoundingClientRect().bottom || top) + 4 - (top + 90)) : 0;
-    const panelHeight = raised ? 92 + spacer + Math.ceil(3 / columns) * 44 : 48;
+    const panelHeight = raised ? 136 + spacer : 48;
     const content = ordered.map(id => button(id, false, c)).join('');
     if (tray.innerHTML !== content) tray.innerHTML = content;
     tray.classList.toggle('pu-l-shape', raised);
-    tray.classList.toggle('pu-narrow', narrow);
+    tray.classList.remove('pu-narrow');
     tray.style.setProperty('--pu-columns', columns);
     tray.style.setProperty('--pu-lower-rows', Math.ceil(3 / columns));
     tray.style.setProperty('--pu-spacer', `${spacer}px`);
