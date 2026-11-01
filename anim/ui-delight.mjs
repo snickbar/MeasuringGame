@@ -5,6 +5,24 @@ export function createUIDelight({screens, reduced, document:doc=document}) {
   const unlockQueue=[];
   const rangeFill=el=>{const min=Number(el.min)||0,max=Number(el.max)||100;el.style.setProperty('--range-fill',`${Math.max(0,Math.min(100,(Number(el.value)-min)/(max-min)*100))}%`);};
   doc.addEventListener('input',e=>{if(e.target.matches?.('#settings-screen input[type=range]'))rangeFill(e.target);});
+  // Tap sparkle: a few tiny stars pop out from the fingertip on the big buttons. Cosmetic only: it sits in its own click-through
+  // layer, reads no layout and never delays the tap, which still fires on click exactly as before.
+  const SPARK_TARGETS='.dc-btn,.sh-card,.home-tile,.menu-tile,.ach-claim';
+  doc.addEventListener('pointerdown',e=>{
+    if(reduced()||e.button>0)return;
+    const b=e.target.closest?.(SPARK_TARGETS);
+    if(!b||b.disabled)return;
+    const layer=doc.createElement('div');
+    layer.style.cssText='position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:99998';
+    for(let i=0;i<5;i++){
+      const st=doc.createElement('i'),a=(i/5)*Math.PI*2+Math.random()*.9,d=22+Math.random()*16;
+      st.style.cssText=`position:absolute;left:${e.clientX-6}px;top:${e.clientY-6}px;width:13px;height:13px;background:#fff7cf;clip-path:polygon(50% 0,62% 36%,100% 38%,70% 60%,80% 100%,50% 76%,20% 100%,30% 60%,0 38%,38% 36%);opacity:0`;
+      layer.appendChild(st);
+      st.animate([{transform:'translate(0,0) scale(.3) rotate(0)',opacity:1},{transform:`translate(${Math.cos(a)*d*.7}px,${Math.sin(a)*d*.7-6}px) scale(1) rotate(70deg)`,opacity:1,offset:.55},{transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d-8}px) scale(.8) rotate(120deg)`,opacity:0}],{duration:420,easing:'ease-out',fill:'both'});
+    }
+    doc.body.appendChild(layer);
+    setTimeout(()=>layer.remove(),520);
+  },{passive:true,capture:true});
   screens.forEach(s=>active.set(s,s.classList.contains('active')));
   const gameplay=new Set(['hud','hs-screen','final-screen','left-screen','ended-screen']);
   function refresh(){

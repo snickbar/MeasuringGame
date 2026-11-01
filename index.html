@@ -10231,7 +10231,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>
         ${dailyFlameHtml(streak, false, `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
-        <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
+        <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
       dailyLoadBoard();
       return;
     }
@@ -10283,7 +10283,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.justFinished && !daily.replay ? `<div class="dc-note"><b>+10 coins for today</b></div>` : ""}${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${adBarSlot("daily", "dc-finish")}
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
-      <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">Loading...</div>`;
+      <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
     dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
     if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; vibrate([30, 40, 30, 40, 60]); }
   }
@@ -10392,8 +10392,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { rows = null; }
     const now = document.getElementById("dc-board");
     if (now !== host || !daily || daily.date !== date) return;
-    if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
+    if (!rows) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
+    if (!rows.length) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "You could be first!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${formatAccuracy(r.s / 3)}%</span></div>`).join("");
     now.innerHTML = html;
@@ -10441,13 +10441,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
+  // Where each Solo banner's artwork sits (left, top, width, height in % of the banner) and its tilt start delay.
+  const SOLO_ART_POS = { quick: [4.9, 8.56, 23.9, 72.97, 0], daily: [9.2, 7.21, 23.3, 75.68, -.7], monthly: [8.7, 7.21, 16.8, 75.68, -1.4],
+    worlds: [3.5, 14.41, 14.9, 64.86, -2.1], survival: [2.5, 13.06, 20.9, 77.48, -2.8], "which-bigger": [3, 14.41, 25.4, 71.17, -3.5] };
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
     const card = (id, img, name, sub, extra) => {
       const banner = extra && extra.banner;
       const cls = `sh-card${extra && extra.hot ? " sh-hot" : ""}${banner ? " sh-banner" : ""}`;
-      const pic = banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
+      // The picture on each banner is its own layer so it can tilt: a blank button plus the artwork on top.
+      const bk = banner && (banner.match(/banner-(.+)\.png$/) || [])[1], pos = bk && SOLO_ART_POS[bk];
+      const pic = pos ? `<img class="sh-bimg" src="icons/banner-${bk}-blank.png" alt="" draggable="false"><img class="sh-tilt sh-bart" src="icons/banner-${bk}-art.png" alt="" draggable="false" style="left:${pos[0]}%;top:${pos[1]}%;width:${pos[2]}%;height:${pos[3]}%;--tilt-delay:${pos[4]}s">`
+        : banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
       return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
     soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
@@ -10538,7 +10544,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function classicBestHtml() {
     const games = (myProfile.matches || []).filter((m) => m.mode === "party" && Number.isFinite(m.score));
     const st = myProfile.modeStats?.party || {};
-    if (!games.length && !st.games) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
+    if (!games.length && !st.games) return `<div class="dc-card">${emptyHtml("icons/party-results-podium.webp", "No games yet", "Host one to get started!")}</div>`;
     const rows = games.slice().sort((a, b) => b.score - a.score || b.t - a.t).slice(0, 3);
     const head = st.games ? `<div class="dc-note" style="text-align:center;font-weight:700">${st.games} game${st.games === 1 ? "" : "s"} played &middot; ${st.wins || 0} win${(st.wins || 0) === 1 ? "" : "s"}</div>` : "";
     return `<div class="dc-card">${head}${rows.map((r) => `<div class="tw-best-row"><div class="tw-best-avatars"><span class="avatar">${avatarHtml(r.myAvatar)}</span></div>
@@ -10546,7 +10552,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hlBestHtml() {
     const rows = topScores(historyRows(myProfile.hlHistory || {}), 3);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No runs yet &mdash; play with a partner to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/mode-team-worlds.webp", "No runs yet", "Play with a partner to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${r.s} round${r.s === 1 ? "" : "s"} survived${r.syncStreak ? ` &middot; best streak ${r.syncStreak}` : ""}`, r.t)).join("")}</div>`;
   }
@@ -10700,7 +10706,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function teamVTeamBestHtml() {
     const rows = topScores(historyRows(myProfile.teamHistory || {}), 3);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No games yet &mdash; host one to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/party-results-podium.webp", "No games yet", "Host one to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${r.s} points${r.accuracy ? ` &middot; ${formatAccuracy(r.accuracy)}% avg` : ""}`, r.t)).join("")}</div>`;
   }
@@ -11135,7 +11141,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (leavingGame) return;
     const hs = data.hs;
     hsRenderedAnimating = false;
-    if (!hs) { hsContentEl.innerHTML = `<p class="dc-sub">Loading...</p>`; return; }
+    if (!hs) { hsContentEl.innerHTML = skelRows(3); return; }
     const me = currentPlayerId, seated = hs.seats?.includes(me), isOut = !!hs.out?.[me];
     const stage = hs.stage;
     let html = "";
@@ -11471,10 +11477,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     return `<span class="wl-meter" role="img" aria-label="${total} of ${WORLD_LEVELS * 3} stars">${groups}</span>`;
   }
+  // "NEW" shows only on something just unlocked and not yet tried: a world or level after the first, with no stars and no attempts.
+  const worldIsNew = (i) => i > 0 && worldUnlocked(i) && worldStarsOf(WORLDS[i].id) === 0 && !Object.keys(myProfile.worldRecords?.[WORLDS[i].id] || {}).length;
+  const worldLevelIsNew = (wid, l) => l > 1 && worldLevelUnlocked(wid, l) && worldLevelStars(wid, l) === 0 && !(myProfile.worldRecords?.[wid]?.["l" + l]?.attempts > 0);
   function worldCard(id, img, name, sub, extra) {
     const world=WORLDS.find(w=>w.name===name),home=world&&HOME_SCREENS.find(h=>h.world===world.id);
     const scenery=home?` data-world-art="${world.id}" style="--world-art:url('${new URL(home.file,document.baseURI).href}')"`:"";
-    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
+    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}${extra && extra.isNew ? " sh-isnew" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
   let focusedPlayLayout;
   const getPlayLayout = () => focusedPlayLayout ||= createPlayLayout(document);
@@ -11500,7 +11509,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
-          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
+          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, isNew: worldIsNew(i), hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
       worldProgressPolish.apply(el, null);
       return;
@@ -11510,7 +11519,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p></div>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
         [1, 2, 3, 4, 5].map((l) => {
           const open = worldLevelUnlocked(w.id, l), st = worldLevelStars(w.id, l);
-          return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
+          return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}${worldLevelIsNew(w.id, l) ? " sh-isnew" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
         }).join("");
       worldProgressPolish.apply(el, w.id);
       return;
@@ -11729,7 +11738,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let twWorldId = null; // which World is picked while its info screen is open
   function teamWorldsBestHtml(worldId) {
     const rows = topScores(historyRows(myProfile.teamWorldsHistory?.[worldId] || {}), 5);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/mode-team-worlds.webp", "No attempts yet", "Play with a partner to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}%`, r.t)).join("")}</div>`;
   }
@@ -11738,7 +11747,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const all = [];
     WORLDS.forEach((x) => historyRows(myProfile.teamWorldsHistory?.[x.id] || {}).forEach((r) => all.push({ ...r, worldName: x.name })));
     const rows = topScores(all, 5);
-    if (!rows.length) return `<div class="dc-card"><div class="dc-note">No attempts yet &mdash; play with a partner to get started!</div></div>`;
+    if (!rows.length) return `<div class="dc-card">${emptyHtml("icons/mode-team-worlds.webp", "No attempts yet", "Play with a partner to get started!")}</div>`;
     return `<div class="dc-card">${rows.map((r) => twBestRowHtml(r.myAvatar, r.partnerName, r.partnerAvatar,
       `${worldStarsHtml(worldStarsFor(r.s))} &middot; ${formatAccuracy(r.s)}% &middot; ${escapeHtml(r.worldName)}`, r.t)).join("")}</div>`;
   }
@@ -11969,7 +11978,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>${tourBtn('monthly')}
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
-        <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+        <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
       monthlyLoadBoard();
       return;
     }
@@ -12012,7 +12021,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${adBarSlot("monthly", "mo-finish")}
       <button type="button" class="dc-btn dc-alt" id="mo-replay">Replay for coins</button>
       <button type="button" class="dc-btn dc-alt" id="mo-share">Share my result</button>
-      <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">Loading...</div>`;
+      <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
   }
   async function monthlyRunReveal() {
@@ -12082,8 +12091,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { rows = null; }
     const now = document.getElementById("mo-board");
     if (!now || !mo || mo.key !== key || mo.level !== level) return;
-    if (!rows) { now.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { now.textContent = "No scores yet. You're first!"; return; }
+    if (!rows) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
+    if (!rows.length) { now.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "You could be first!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-em">${r.a.map((a) => markSvg(a)).join("")}</span><span class="dc-lb-score">${Math.round(r.s / 5 * 10) / 10}%</span></div>`).join("");
     now.innerHTML = html;
@@ -12160,7 +12169,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A guess under SURVIVAL_PASS % accurate costs a life. Questions get bigger-gap (harder) the further you get,
   // with random wobble so the climb isn't obvious. Score = rounds survived; the global board keeps each player's best.
   const SURVIVAL_LIVES = 3, SURVIVAL_PASS = 60, SURVIVAL_COINS_PER = 3, SURVIVAL_THEME_COINS = 5;
+  // Livelier numbers: a number that changes gives one quick pop. Web Animations, so nothing is measured or re-laid out.
+  function popNum(el) {
+    if (!el || prefersReducedMotion() || !el.animate) return;
+    el.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)", offset: .4 }, { transform: "scale(1)" }], { duration: 340, easing: "ease-out" });
+  }
+  // Watches a screen that redraws itself: any [data-pop] number that differs from the last redraw (within 20s) pops.
+  function popChangedNumbers(root) {
+    const prev = { t: 0, vals: {} };
+    new MutationObserver(() => {
+      const now = performance.now(), vals = {};
+      root.querySelectorAll("[data-pop]").forEach((el) => {
+        const k = el.dataset.pop, v = el.textContent; vals[k] = v;
+        if (now - prev.t < 20000 && k in prev.vals && prev.vals[k] !== v) popNum(el);
+      });
+      prev.t = now; prev.vals = vals;
+    }).observe(root, { childList: true });
+  }
   const survivalContentEl = document.getElementById("survival-content");
+  popChangedNumbers(survivalContentEl);
   let sv = null, svAnim = null, svPairs = null;
   function survivalPairs() {
     if (svPairs) return svPairs;
@@ -12263,7 +12290,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const SURVIVAL_SHIELD_ACC = 75, SURVIVAL_SHIELD_CHAIN = 3;
   // Shield state under the hearts: a full shield when you hold one, otherwise an empty one and three pips for your chain.
   const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
-  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div><div class="sv-coinbox" aria-label="Coins earned this run"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="sv-coins">${sv ? sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER) : 0}</b></div></div>`;
+  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b data-pop="round">${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc" data-pop="acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div><div class="sv-coinbox" aria-label="Coins earned this run"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="sv-coins" data-pop="coins">${sv ? sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER) : 0}</b></div></div>`;
   // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
   function svDifficulty(answer) {
     const tiers = [[5, 1, "Very easy"], [20, 2, "Easy"], [100, 3, "Medium"], [1000, 4, "Hard"]];
@@ -12426,7 +12453,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${soloResumeHtml("survival")}${survivalRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
-        <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+        <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
       survivalLoadBoard();
       return;
     }
@@ -12494,7 +12521,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${adBarSlot("survival", "sv-finish")}
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
-      <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">Loading...</div>`;
+      <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
     svShowRank();
     survivalLoadBoard();
   }
@@ -12537,8 +12564,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { rows = null; }
     const host = document.getElementById("sv-board");
     if (!host || !sv) return;
-    if (!rows) { host.textContent = "The leaderboard isn't available right now."; return; }
-    if (!rows.length) { host.textContent = "No scores yet. Be the first!"; return; }
+    if (!rows) { host.innerHTML = emptyHtml("icons/shop-host-crown.webp", "Can't reach the leaderboard", "Check your connection and try again later."); return; }
+    if (!rows.length) { host.innerHTML = emptyHtml("icons/shop-host-crown.webp", "No scores yet", "Be the first on the board!"); return; }
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
     host.innerHTML = html;
@@ -13087,7 +13114,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const isDaily=mode==='daily',rows=isDaily?dailyHistoryRows():monthlyHistoryRows();
     const rowsHtml=rows.map(r=>`<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(isDaily?dailyPretty(r.key):monthlyKeyLabel(r.key))}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join('');
     el.innerHTML=`<button type="button" class="dc-btn dc-alt" data-stats-history-back>&larr; Back to Stats</button><h3 class="cs-h">${isDaily?'Daily Challenge':'Monthly Challenge'} history</h3>`+
-      (rows.length?`<div class="cozy-panel">${rowsHtml}</div>`:`<div class="cs-empty">Play the ${isDaily?'Daily':'Monthly'} Challenge to start your history.</div>`);
+      (rows.length?`<div class="cozy-panel">${rowsHtml}</div>`:emptyHtml("icons/toolbar-daily.png", "No history yet", `Play the ${isDaily?'Daily':'Monthly'} Challenge to start your history.`));
   }
   // ---- Badges: every achievement is a collectible medal; ranks have their own medals. ----
   const BADGE_CAT_ICONS = { "Getting started": "icons/flair/star.png", Collector: "icons/flair/gem-ruby.png", Accuracy: "icons/reactions/point.png", Winning: "icons/reactions/trophy.png",
@@ -13221,7 +13248,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const frequencyHtml = `<h3 class="cs-h">Object frequency</h3><div class="cs-card"><p class="cs-note">Your most-seen objects in completed rounds, on either side. Includes missed submissions${statsMode==='all'?'':` in ${escapeHtml(MODE_NAMES[statsMode])}`}. Counts include available past history and keep growing as you play.</p>${frequent.length?frequent.map(([id,n])=>{const ob=OBJECT_BY_ID.get(id);return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase()+ob.name.slice(1))}</span><span class="cs-obj-val">${n} ${n===1?'time':'times'}</span></div>`;}).join(''):'<p class="cs-note">Complete a round to start your list.</p>'}</div>`;
     if (hsView || bluffView) { el.innerHTML = html + frequencyHtml; return; } // no per-round accuracy graph for High Stakes
     if (hist.length < 3) {
-      html += `<div class="cs-empty">Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.</div>`;
+      html += emptyHtml("items/hot-air-balloon.webp", "Nothing to chart yet", "Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.");
       el.innerHTML = html + frequencyHtml; return;
     }
     // Accuracy over time: average per bucket so a long history still reads as a trend.
@@ -13580,7 +13607,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       phase = "flying";
       setTimeout(() => {
         if (phase !== "flying") return;
-        sound(); sparkleCoins(toolbarCoinBalanceEl, false);
+        sound(); sparkleCoins(toolbarCoinBalanceEl, false); popNum(toolbarCoinCountEl);
         count(gain, fx.remaining());
       }, fx.firstLand);
     }
@@ -13594,7 +13621,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (target < from) { settleNow(); return; }
         show(Math.round(from + (target - from) * e));
         if (k < 1) rafId = requestAnimationFrame(step);
-        else { phase = "idle"; show(target); }
+        else { phase = "idle"; show(target); popNum(toolbarCoinCountEl); }
       };
       rafId = requestAnimationFrame(step);
     }
@@ -13633,9 +13660,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const fresh = performance.now() - lastTapPoint.t < 1500;
     return fresh ? { x: lastTapPoint.x, y: lastTapPoint.y } : { x: innerWidth / 2, y: innerHeight * 0.6 };
   }
-  function flyCoinsToToolbar(gain) {
+  // Shared loading and empty looks: shimmering placeholder rows while a list loads, and a little picture + hint when it has nothing yet.
+  function skelRows(n = 4) {
+    return `<div class="skel-list" role="status" aria-label="Loading">${Array.from({ length: n }, (_, i) => `<div class="skel-row" style="--i:${i}"><i class="skel-rank"></i><i class="skel-name" style="width:${70 - i * 9}%"></i><i class="skel-val"></i></div>`).join("")}</div>`;
+  }
+  function emptyHtml(pic, title, hint) {
+    return `<div class="empty-state"><img src="${pic}" alt="" draggable="false"><b>${title}</b><span>${hint}</span></div>`;
+  }
+  // An "early" flight (Awards: the coins leave the instant Claim is tapped) is remembered, so when the saved balance arrives a
+  // moment later and asks for the same flight, it reuses this one (same timings for the counter) instead of flying a second batch.
+  let earlyFly = null;
+  function flyCoinsToToolbar(gain, opts) {
     try {
       if (!(gain > 0)) return null;
+      if (!(opts && opts.early) && earlyFly && earlyFly.gain === gain && performance.now() - earlyFly.t0 < 6000) {
+        const e = earlyFly; earlyFly = null;
+        return { firstLand: Math.max(0, e.firstEnd - (performance.now() - e.t0)), remaining: () => Math.max(0, e.lastEnd - (performance.now() - e.t0)) };
+      }
       const target = document.getElementById("toolbar-coin-icon") || toolbarCoinBalanceEl;
       const tr = target.getBoundingClientRect();
       if (!tr.width || !tr.height) return null;
@@ -13665,6 +13706,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       setTimeout(() => layer.remove(), 3500);
       const t0 = performance.now();
+      if (opts && opts.early) earlyFly = { gain, t0, firstEnd, lastEnd };
       return { firstLand: firstEnd, remaining: () => Math.max(0, lastEnd - (performance.now() - t0)) };
     } catch (err) { return null; }
   }
@@ -13737,7 +13779,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="collection-grid">${tiles}</div>
         </div>`;
     }).join("");
-    if (!body) body = `<div class="ach-empty">No avatars discovered yet — give the machine a spin!</div>`;
+    if (!body) body = `<div class="ach-empty">${emptyHtml("icons/shop-starter-gift.webp", "No avatars yet", "Give the machine a spin!")}</div>`;
     collectionContentEl.innerHTML = head + body;
   }
 
@@ -14038,6 +14080,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     achHold[id] = Date.now() + ACH_HOLD_MS;
     setTimeout(() => { delete achHold[id]; if (document.getElementById("achievements-content")) renderAchievementsScreen(); }, ACH_HOLD_MS + 50);
     playSound("roundwin");
+    if (typeof flyCoinsToToolbar === "function") flyCoinsToToolbar(a.reward, { early: true });  // coins leave the Claim button the moment it's tapped, not after the save
     let newlyClaimed=false;
     const res = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       newlyClaimed=false;
