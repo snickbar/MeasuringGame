@@ -18,6 +18,8 @@ runFixture({html:sandbox.html,out:'output/home-stories',check:async({width,evalu
  await seek(13600);assert(await evaluate("document.querySelector('.hs-story-dolphin').getBoundingClientRect().top>=document.querySelector('.hs-dolphin-water').getBoundingClientRect().bottom"),'dolphin is below the clip before disappearing');
  assert(await evaluate("!!document.querySelector('.hs-story-ship').closest('.hs-ship-horizon') && getComputedStyle(document.querySelector('.hs-ship-horizon')).clipPath.startsWith('polygon(')"),'ship is masked by the plate waterline and wave crest');
  assert(await evaluate("!document.querySelector('.hs-story-dolphin').closest('.hs-ship-horizon')"),'dolphin remains in front of the wave');
+ assert(await evaluate("getComputedStyle(document.querySelector('.hs-ship-horizon')).clipPath.includes('79% 100%')"),'flat sea is unobstructed; only raised right wave occludes the ship');
+ await seek(0);await screenshot('ship-clear-water-'+width+'.png');
  await seek(40000);await screenshot('ship-approaching-wave-'+width+'.png');
  await seek(50000);await screenshot('distant-ship-'+width+'.png');
  await open('toy-box');await seek(0);
@@ -25,7 +27,9 @@ runFixture({html:sandbox.html,out:'output/home-stories',check:async({width,evalu
  await tap();assert(await evaluate("document.querySelector('.hs-story-jack').dataset.playing==='true'"),'tap starts the jack');
  await seek(1200);const busy=await evaluate("document.querySelector('.hs-jack-spring').getAnimations()[0].currentTime");await tap();assert.equal(await evaluate("document.querySelector('.hs-jack-spring').getAnimations()[0].currentTime"),busy,'repeat tap does not restart or queue the jack');
  await screenshot('jack-open-'+width+'.png');
- assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid'),m=new DOMMatrix(getComputedStyle(lid).transform);return Math.abs(m.a*m.d-m.b*m.c)>.95&&m.b<-.9})()`),'open lid keeps its full face and swings sideways instead of flattening edge-on');
+ assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid-open'),m=new DOMMatrix(getComputedStyle(lid).transform);return Number(getComputedStyle(lid).opacity)>.99&&m.d>.99&&Number(getComputedStyle(document.querySelector('.hs-jack-lid')).opacity)<.01})()`),'full illustrated inner lid is visible behind clown; closed lid is hidden');
+ assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid-open'),jack=document.querySelector('.hs-story-jack').getBoundingClientRect(),r=lid.getBoundingClientRect();return getComputedStyle(lid).position==='absolute'&&Math.abs(r.bottom-(jack.top+jack.height*174/300))<1})()`),'open lid lower hinge remains attached to the rear box rim');
+ for(const time of [0,150,300,550,2900,3300,3750]){await seek(time);await screenshot('jack-transition-'+time+'-'+width+'.png');}
  const horizontal=[];for(const t of [5000,6000,7000]){await seek(t);horizontal.push(await evaluate("document.querySelector('.hs-bouncing-ball').getBoundingClientRect().left"));}
  assert(Math.abs((horizontal[1]-horizontal[0])-(horizontal[2]-horizontal[1]))<1,'ball travels horizontally at a steady speed');
  await evaluate("document.getElementById('home-screen').classList.remove('active')");await new Promise(r=>setTimeout(r,30));assert(await evaluate("!document.querySelector('.hs-story-jack').dataset.playing"),'leaving cancels jack replay lock');

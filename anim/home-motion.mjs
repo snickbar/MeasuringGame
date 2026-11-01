@@ -30,7 +30,7 @@ export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp','fridge-clean-v2.webp','fridge-magnets-v2.webp');
   if(scene==='house')files.push('idle/kitchen-clean.webp','idle/kitchen-utensils.webp');
   if(scene==='wheels')files.push('stories/rider.webp');
-  if(scene==='toy-box')files.push('stories/jack.webp');
+  if(scene==='toy-box')files.push('stories/jack.webp','stories/jack-lid-open-v2.webp');
   if(scene==='make-believe')files.push('stories/rabbit.webp');
   if(scene==='games')files.push('../../items/dolphin.webp','../../items/cruise-ship.webp');
   if(scene==='dragon')files.push('flying-dragon-parts-v2.webp');
