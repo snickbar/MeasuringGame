@@ -52,11 +52,13 @@ export function decorateHomeStories(root,home,scene,extras){
   }
   if(scene==='toy-box'){
     const jack=rect(el('hs-story-jack',back),[38,950,135,202.5]),spec={sw:200,sh:300},image=extras.get('stories/jack.webp');
-    const openLid=rect(el('hs-jack-lid-open',jack),[8,38,165,136],spec);
+    const openLid=rect(el('hs-jack-lid-open',jack),[21,77,128,105],spec);
     openLid.appendChild(extras.get('stories/jack-lid-open-v2.webp').cloneNode());
     const contents=rect(el('hs-jack-opening',jack),[4,0,172,220],spec),spring=el('hs-jack-spring',contents);
     sprite(spring,image,STORY_ART.jack[2],[25,0,145,225],{sw:172,sh:220},'hs-jack-clown');
     sprite(jack,image,STORY_ART.jack[0],[0,165,200,135],spec,'hs-jack-box');
+    // Same box again, cut along the front rim, so the spring rises out of the opening instead of stopping at the back edge.
+    sprite(jack,image,STORY_ART.jack[0],[0,165,200,135],spec,'hs-jack-box-front').style.clipPath='polygon(0% 11.5%,10.4% 13.2%,49.2% 22.1%,73.1% 13.7%,80% 12%,100% 10%,100% 100%,0% 100%)';
     const lid=sprite(jack,image,STORY_ART.jack[1],[0,150,172,83],spec,'hs-jack-lid');
     lid.style.cssText+='left:4%;top:53.3%;width:80%;height:14%;';
     const tap=rect(el('hs-tap hs-jack-tap',stage),[38,950,135,220]);tap.dataset.subject='jack';
