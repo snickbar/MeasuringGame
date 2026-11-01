@@ -52,7 +52,10 @@ export function decorateHomeStories(root,home,scene,extras){
   }
   if(scene==='toy-box'){
     const jack=rect(el('hs-story-jack',back),[38,950,135,202.5]),spec={sw:200,sh:300},image=extras.get('stories/jack.webp');
-    const openLid=rect(el('hs-jack-lid-open',jack),[36,82,128,105],spec);
+    // Match the ART edge, not the transparent image rectangle: in the 200x300
+    // assembly the rear rim runs (72,169) -> (160,179). The inner lid's lower
+    // edge (.02,.79) -> (.89,.924) is fitted to those same two points.
+    const openLid=rect(el('hs-jack-lid-open',jack),[70,103,101,83],spec);
     openLid.appendChild(extras.get('stories/jack-lid-open-v2.webp').cloneNode());
     const contents=rect(el('hs-jack-opening',jack),[16,0,172,220],spec),spring=el('hs-jack-spring',contents);
     sprite(spring,image,STORY_ART.jack[2],[25,0,145,225],{sw:172,sh:220},'hs-jack-clown');
