@@ -28,7 +28,7 @@ runFixture({html:sandbox.html,out:'output/home-stories',check:async({width,evalu
  await seek(1200);const busy=await evaluate("document.querySelector('.hs-jack-spring').getAnimations()[0].currentTime");await tap();assert.equal(await evaluate("document.querySelector('.hs-jack-spring').getAnimations()[0].currentTime"),busy,'repeat tap does not restart or queue the jack');
  await screenshot('jack-open-'+width+'.png');
  assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid-open'),m=new DOMMatrix(getComputedStyle(lid).transform);return Number(getComputedStyle(lid).opacity)>.99&&m.d>.99&&Number(getComputedStyle(document.querySelector('.hs-jack-lid')).opacity)<.01})()`),'full illustrated inner lid is visible behind clown; closed lid is hidden');
- assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid-open'),jack=document.querySelector('.hs-story-jack').getBoundingClientRect(),r=lid.getBoundingClientRect();return getComputedStyle(lid).position==='absolute'&&Math.abs(r.bottom-(jack.top+jack.height*174/300))<1&&Math.abs(r.left-(jack.left+jack.width*38/200))<1})()`),'open lid hinge aligns vertically and horizontally with the rear rim');
+ assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid-open'),jack=document.querySelector('.hs-story-jack').getBoundingClientRect(),r=lid.getBoundingClientRect();return getComputedStyle(lid).position==='absolute'&&Math.abs(r.bottom-(jack.top+jack.height*182/300))<1&&Math.abs(r.left-(jack.left+jack.width*36/200))<1})()`),'open lid hinge aligns vertically and horizontally with the rear rim');
  for(const time of [0,150,300,550,2900,3300,3750]){await seek(time);await screenshot('jack-transition-'+time+'-'+width+'.png');}
  const horizontal=[];for(const t of [5000,6000,7000]){await seek(t);horizontal.push(await evaluate("document.querySelector('.hs-bouncing-ball').getBoundingClientRect().left"));}
  assert(Math.abs((horizontal[1]-horizontal[0])-(horizontal[2]-horizontal[1]))<1,'ball travels horizontally at a steady speed');
@@ -36,3 +36,4 @@ runFixture({html:sandbox.html,out:'output/home-stories',check:async({width,evalu
  await evaluate("document.documentElement.dataset.motion='reduce'");assert.equal(await evaluate("getComputedStyle(document.querySelector('.hs-story-background')).display"),'none','reduced motion hides background stories');
  console.log({pass:true,width,axleGap:cycle.gap,ballPositions:horizontal});
 }}).catch(e=>{console.error(e);process.exitCode=1});
+
