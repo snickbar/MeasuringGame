@@ -13197,6 +13197,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.body.appendChild(ov);
   }
 
+  // Stats motion: when a stats view is drawn, the tiles pop in and count up to their numbers, the level bar and the accuracy line
+  // draw in. Presentation only (Web Animations, nothing measured); skipped on quick redraws of the same view and with Reduce Motion.
+  (() => {
+    const root = document.getElementById("career-content"); let lastKey = "", lastT = 0;
+    const countUp = (el, ms, delay) => {
+      const m = /^(\D*)([\d,]+(?:\.\d+)?)(\D*)$/.exec(el.textContent.trim()); if (!m) return;
+      const to = parseFloat(m[2].replace(/,/g, "")), dec = (m[2].split(".")[1] || "").length, comma = m[2].includes(","); if (!(to > 0)) return;
+      const fmt = (v) => m[1] + (dec ? v.toFixed(dec) : comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + m[3];
+      const t0 = performance.now() + delay; el.textContent = fmt(0);
+      const step = (now) => { if (!el.isConnected) return; const k = Math.max(0, Math.min(1, (now - t0) / ms)); el.textContent = fmt(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); else popNum(el); };
+      requestAnimationFrame(step);
+    };
+    new MutationObserver(() => {
+      if (prefersReducedMotion()) return;
+      const key = statsMode + "|" + statsHistoryMode, now = performance.now();
+      if (key === lastKey && now - lastT < 6000) { lastT = now; return; }
+      lastKey = key; lastT = now;
+      root.querySelectorAll(".cs-tile").forEach((t, i) => {
+        t.animate([{ opacity: 0, transform: "translateY(10px) scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: i * 70, easing: "cubic-bezier(.2,1.4,.4,1)", fill: "backwards" });
+        const n = t.querySelector("strong,.cs-num"); if (n) countUp(n, 900, i * 70);
+      });
+      const bar = root.querySelector(".cs-bar-fill");
+      if (bar) bar.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: 800, easing: "cubic-bezier(.2,.9,.2,1)" }), bar.style.transformOrigin = "0 50%";
+      const line = root.querySelector(".cs-chart polyline");
+      if (line && line.getTotalLength) {
+        const len = line.getTotalLength();
+        line.animate([{ strokeDasharray: len, strokeDashoffset: len }, { strokeDasharray: len, strokeDashoffset: 0 }], { duration: 1300, easing: "cubic-bezier(.5,0,.2,1)" });
+        const poly = root.querySelector(".cs-chart polygon"); if (poly) poly.animate([{ opacity: 0 }, { opacity: 0, offset: .6 }, { opacity: 1 }], { duration: 1300 });
+        root.querySelectorAll(".cs-chart circle").forEach((c, i, all) => c.animate([{ transform: "scale(0)" }, { transform: "scale(1)" }], { duration: 300, delay: 100 + i * (900 / all.length), easing: "cubic-bezier(.2,1.6,.4,1)", fill: "backwards" }));
+      }
+    }).observe(root, { childList: true });
+  })();
   function renderCareerStats() {
     const el = document.getElementById("career-content");
     if (!el) return;
