@@ -37,3 +37,11 @@
 #unlock-spotlight p:empty{display:none}
 @media(prefers-reduced-motion:reduce){.result-arrival>*{animation:none!important}}
 html[data-motion=reduce] .result-arrival>*{animation:none!important}
+/* Tilting art: the picture on each Solo and Worlds button rocks gently back and forth. The button itself never moves. */
+@keyframes shTilt{from{rotate:-5deg}to{rotate:5deg}}
+.sh-card.sh-banner .sh-bart{position:absolute;pointer-events:none;transform-origin:50% 62%}
+.sh-tilt,:is(#worlds-content,#teamworlds-content) .sh-card:not(:disabled) .sh-ic{animation:shTilt 2.8s ease-in-out infinite alternate;animation-delay:var(--tilt-delay,0s);transform-origin:50% 62%}
+:is(#worlds-content,#teamworlds-content) .sh-card:nth-of-type(3n+2) .sh-ic{--tilt-delay:-.9s}
+:is(#worlds-content,#teamworlds-content) .sh-card:nth-of-type(3n) .sh-ic{--tilt-delay:-1.8s}
+@media(prefers-reduced-motion:reduce){.sh-tilt,:is(#worlds-content,#teamworlds-content) .sh-card .sh-ic{animation:none!important}}
+html[data-motion=reduce] .sh-tilt,html[data-motion=reduce] :is(#worlds-content,#teamworlds-content) .sh-card .sh-ic{animation:none!important}

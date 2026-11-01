@@ -10406,13 +10406,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
+  // Where each Solo banner's artwork sits (left, top, width, height in % of the banner) and its tilt start delay.
+  const SOLO_ART_POS = { quick: [4.9, 8.56, 23.9, 72.97, 0], daily: [9.2, 7.21, 23.3, 75.68, -.7], monthly: [8.7, 7.21, 16.8, 75.68, -1.4],
+    worlds: [3.5, 14.41, 14.9, 64.86, -2.1], survival: [2.5, 13.06, 20.9, 77.48, -2.8], "which-bigger": [3, 14.41, 25.4, 71.17, -3.5] };
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
     const card = (id, img, name, sub, extra) => {
       const banner = extra && extra.banner;
       const cls = `sh-card${extra && extra.hot ? " sh-hot" : ""}${banner ? " sh-banner" : ""}`;
-      const pic = banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
+      // The picture on each banner is its own layer so it can tilt: a blank button plus the artwork on top.
+      const bk = banner && (banner.match(/banner-(.+)\.png$/) || [])[1], pos = bk && SOLO_ART_POS[bk];
+      const pic = pos ? `<img class="sh-bimg" src="icons/banner-${bk}-blank.png" alt="" draggable="false"><img class="sh-tilt sh-bart" src="icons/banner-${bk}-art.png" alt="" draggable="false" style="left:${pos[0]}%;top:${pos[1]}%;width:${pos[2]}%;height:${pos[3]}%;--tilt-delay:${pos[4]}s">`
+        : banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
       return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
     soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
