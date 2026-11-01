@@ -52,7 +52,7 @@ export function decorateHomeStories(root,home,scene,extras){
   }
   if(scene==='toy-box'){
     const jack=rect(el('hs-story-jack',back),[38,950,135,202.5]),spec={sw:200,sh:300},image=extras.get('stories/jack.webp');
-    const openLid=rect(el('hs-jack-lid-open',jack),[36,77,128,105],spec);
+    const openLid=rect(el('hs-jack-lid-open',jack),[36,82,128,105],spec);
     openLid.appendChild(extras.get('stories/jack-lid-open-v2.webp').cloneNode());
     const contents=rect(el('hs-jack-opening',jack),[16,0,172,220],spec),spring=el('hs-jack-spring',contents);
     sprite(spring,image,STORY_ART.jack[2],[25,0,145,225],{sw:172,sh:220},'hs-jack-clown');
