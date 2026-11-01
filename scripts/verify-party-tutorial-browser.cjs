@@ -19,6 +19,7 @@ server.listen(0,'127.0.0.1',()=>{
     const slides=await evaluate(`window.defs['${mode}'].slides.length`);
     await evaluate(`window.ui.play('${mode}');true`);
     for(let slide=0;slide<slides;slide++){
+     if(process.env.TUTORIAL_TRACE)console.log({width,height,mode,slide});
      const result=await evaluate(`(async()=>{
       const d=document.getElementById('mode-tutorial'),assert=(v,m)=>{if(!v)throw Error(m)};await new Promise(r=>setTimeout(r,90));
       await Promise.all([...d.querySelectorAll('img')].map(im=>im.decode()));await document.fonts.ready;

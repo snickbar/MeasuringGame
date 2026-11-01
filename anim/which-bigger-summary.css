@@ -182,6 +182,60 @@ html[data-motion=reduce] .sv-shieldrow.pop img,html[data-motion=reduce] .sv-shie
 @keyframes svSpark{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.5)}100%{opacity:0;transform:scale(2.2)}}
 html[data-motion=reduce] .sv-scene img,html[data-motion=reduce] .sv-spark{animation:none!important}
 html[data-motion=reduce] .sv-spark{display:none}
+/* Jointed actions with a quiet pause between repeats. */
+.sv-rig{position:absolute;display:block;aspect-ratio:1;overflow:visible}
+.sv-part{position:absolute;display:block;overflow:hidden;pointer-events:none}
+.sv-part>img{position:absolute!important;max-width:none!important;object-fit:fill}
+.sv-knight-body{z-index:1}.sv-sword-arm{z-index:2;animation:svSwordFlourish 7s ease-in-out infinite}
+.sv-scene.safe .sv-knight.sv-rig{animation:svVictoryWeight 7s ease-out infinite}
+.sv-sword-trail{position:absolute;inset:0;width:100%;height:100%;z-index:0;overflow:visible;pointer-events:none}
+.sv-sword-trail path{fill:none;stroke:#a7e8ff;stroke-width:9;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:420;opacity:0;animation:svSwordTrail 7s ease-out infinite}
+@keyframes svSwordFlourish{0%{transform:rotate(0)}10%{transform:rotate(-55deg)}16%{transform:rotate(-68deg)}27%{transform:rotate(15deg)}35%{transform:rotate(-12deg)}43%{transform:rotate(8deg)}50%,100%{transform:rotate(0)}}
+@keyframes svVictoryWeight{0%,10%,35%,100%{translate:0 0}27%{translate:1px -1px}}
+@keyframes svSwordTrail{0%,14%{opacity:0;stroke-dashoffset:420}18%{opacity:.8}29%{opacity:.55;stroke-dashoffset:0}35%,100%{opacity:0;stroke-dashoffset:-30}}
+.sv-dragon.sv-rig{animation:none!important}
+.sv-dragon-jaw{z-index:0;animation:svJawBreathe 11s ease-in-out infinite}
+.sv-dragon-body{z-index:1}
+@keyframes svJawBreathe{0%,4%,76%,100%{transform:rotate(-4deg)}13.09%,64%{transform:rotate(16deg)}70%{transform:rotate(12deg)}}
+.sv-scene.lost .sv-flame{left:108px;top:27px;animation:svFlameBreath 11s ease-out infinite}
+.sv-scene.saved .sv-flame{--tilt:0deg;left:85px;top:29px;animation:svFlameBreath 11s ease-out infinite}
+/* Keep the first impact at 2.4s, then sustain the breath for about five seconds. */
+@keyframes svFlameBreath{0%,13.09%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(0)}17.45%{opacity:1;transform:rotate(var(--tilt,0deg)) scaleX(.65)}21.818%,32%,42%,52%,63.64%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1,1)}27%,37%,47%,57%{opacity:1;transform:rotate(var(--tilt,0deg)) scale(1.015,1.05)}70%,100%{opacity:0;transform:rotate(var(--tilt,0deg)) scaleX(.3)}}
+.sv-scene.saved .sv-knight{animation:svBlockLoop 11s ease-out infinite}
+.sv-scene.saved .sv-spark{animation:svBlockSpark 11s ease-out infinite}
+@keyframes svBlockLoop{0%,21.818%,31%,100%{transform:none}24%{transform:translateX(7px) rotate(2deg)}}
+@keyframes svBlockSpark{0%,21%,28%,100%{opacity:0;transform:scale(.2)}22.55%{opacity:1;transform:scale(1.5)}26.18%{opacity:0;transform:scale(2.2)}}
+.sv-scene.lost .sv-markpos{isolation:isolate}
+.sv-scene.lost .sv-markpos .wb-burst{position:relative;z-index:1}
+.sv-x-fire{position:absolute;left:0;top:-32%;width:100%;height:140%;z-index:0;pointer-events:none;opacity:0;filter:drop-shadow(0 0 5px #ff932b);animation:svXIgnite 11s ease-out infinite}
+.sv-x-fire i{position:absolute;left:0;top:15%;width:100%;height:45%;background:url('../icons/survival-dragon-flame.webp') center/100% 100% no-repeat;--fire-angle:-90deg;transform:rotate(var(--fire-angle));animation:svXFlutter .24s ease-in-out infinite alternate}
+.sv-x-fire i:first-child{left:-20%;top:30%;--fire-angle:-110deg;animation-delay:-.08s}
+.sv-x-fire i:last-child{left:20%;top:30%;--fire-angle:-70deg;animation-delay:-.16s}
+@keyframes svXIgnite{0%,21%{opacity:0}24%,68%{opacity:1}77%,100%{opacity:0}}
+@keyframes svXFlutter{to{transform:rotate(calc(var(--fire-angle) + 3deg)) scaleY(1.07)}}
+.sv-scene [role=button]{pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.sv-scene [role=button]:focus-visible{outline:2px dashed #548db3;outline-offset:2px;border-radius:12px}
+#survival-screen:not(.active) .sv-scene *{animation-play-state:paused!important}
+html[data-motion=reduce] .sv-rig,html[data-motion=reduce] .sv-rig *,html[data-motion=reduce] .sv-scene .sv-flame{animation:none!important}
+html[data-motion=reduce] .sv-sword-trail{display:none}
+html[data-motion=reduce] .sv-x-fire{display:none}html[data-motion=reduce] .sv-x-fire,html[data-motion=reduce] .sv-x-fire *{animation:none!important}
+html[data-motion=reduce] .sv-dragon-jaw{transform:rotate(5deg)}
+@media(prefers-reduced-motion:reduce){.sv-rig,.sv-rig *,.sv-scene .sv-flame,.sv-scene.saved .sv-knight,.sv-spark,.sv-x-fire,.sv-x-fire *{animation:none!important}.sv-sword-trail,.sv-spark,.sv-x-fire{display:none}.sv-dragon-jaw{transform:rotate(5deg)}}
+/* Scale the whole composition together; fixed pixel offsets clipped the mark
+   and blocking knight on narrower phones. Joint coordinates remain local. */
+.sv-scene{width:100%;max-width:320px;height:auto;aspect-ratio:320/150;container-type:inline-size}
+.sv-scene.safe .sv-knight{left:15.625%;top:4%;width:43.125%;height:auto}
+.sv-scene.safe .sv-markpos{left:62.5%;top:21.333%}
+.sv-markpos{width:26.25%}
+.sv-markpos .wb-burst{width:100%;height:auto;aspect-ratio:1}
+.sv-markpos .wb-mark{width:85.714%;height:auto;aspect-ratio:1;font-size:15.625cqw}
+.sv-scene.lost .sv-dragon{left:0;top:8%;width:37.5%;height:auto}
+.sv-scene.lost .sv-flame{left:33.75%;top:18%;width:43.75%;height:46.667%}
+.sv-scene.lost .sv-markpos{left:72.5%;top:20%}
+.sv-scene.saved .sv-dragon{left:0;top:13.333%;width:29.6875%;height:auto}
+.sv-scene.saved .sv-flame{left:26.5625%;top:19.333%;width:39.0625%;height:40%}
+.sv-scene.saved .sv-knight{left:60.9375%;top:9.333%;width:39.0625%;height:auto}
+.sv-scene.saved .sv-spark{left:65.625%;top:44%;width:10.625%;height:22.667%;margin:0}
 :is(#survival-content,#daily-content) .play-middle .sv-scene-wrap{zoom:1}
 
 /* Survival themed round: colored strip under the header, tinted cards, and the surprise banner. */
@@ -241,3 +295,4 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 #survival-content .sv-top .wb-best{min-width:58px;padding:4px 5px 5px}
 #survival-content .sv-top .wb-best b{font-size:19px}
 #survival-content .sv-coinbox{min-width:48px;padding:5px 7px}
+@media(max-width:340px){#survival-content .wb-hud.sv-top{padding:7px 40px 7px 4px}#survival-content .sv-top .sv-heart{width:16px}#survival-content .sv-top .wb-score{min-width:36px;padding:4px 3px 5px}#survival-content .sv-top .wb-score b{font-size:22px}#survival-content .sv-top .wb-best{min-width:48px;padding:4px 3px 5px}#survival-content .sv-top .wb-best b{font-size:17px}#survival-content .sv-coinbox{min-width:42px;padding:5px 4px}#survival-content .sv-coinbox img{width:16px;height:16px}#survival-content .sv-coinbox b{font-size:16px}}

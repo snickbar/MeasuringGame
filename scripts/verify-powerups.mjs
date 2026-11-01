@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { POWERUPS, bufferedGuess, quickEligible, availablePowerups, eliminationChoices, replacementPairs, debitPowerup, settlePowerup } from '../anim/powerups.mjs';
 import { createPowerupController } from '../anim/powerup-ui.mjs';
+import { createWorldProgressPolish } from '../anim/world-progress-polish.mjs';
 import { roundAccuracy } from '../anim/accuracy.mjs';
 
 for (const [raw, expected] of [[85,95],[95,100],[100,100],[120,110],[0,10],[200,190]]) {
@@ -85,7 +86,7 @@ assert(!dailySource.includes('effectiveGuess'));assert(!dailySource.includes('bu
 assert(html.includes('roundAccuracy(effectiveGuess(sv.q, g, deviceId) / sv.q.answer)'));
 // Worlds rewards, stars, and history must all agree with its result card.
 let worldProfile={coins:0,stats:{}};const history=[],world={questions:Array.from({length:5},()=>({unitId:'ant',targetId:'canoe',answer:100,powerups:{owner:'me',used:{buffer:true}}})),guesses:[95,95,95,95,95],wi:0,level:1};
-Object.assign(sandbox,{myProfile:worldProfile,wl:world,deviceId:'me',WORLDS:[{id:'tiny'}],WORLD_STAR_COINS:5,WORLD_Q:5,
+Object.assign(sandbox,{myProfile:worldProfile,wl:world,deviceId:'me',WORLDS:[{id:'tiny'}],WORLD_STAR_COINS:5,WORLD_Q:5,worldProgressPolish:createWorldProgressPolish(),
   roundAccuracy:r=>Math.max(0,100-Math.abs(r-1)*100),worldStarsFor:avg=>avg>90?3:avg>75?2:avg>60?1:0,
   completedAttempt:r=>{worldProfile=applyCareerRecord(worldProfile,{...r,kind:'attempt',key:'world-test'});sandbox.worldCoins=worldProfile.coins;},clearSoloSession:()=>{},worldLevelStars:()=>0,set:async()=>{},addCoins:async coins=>{sandbox.worldCoins=coins},bumpStats:()=>{},appendRoundHistory:async r=>history.push(r),
 });

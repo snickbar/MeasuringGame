@@ -36,13 +36,25 @@ export function eliminationChoices(answers, playerId, answer, rng = Math.random)
 }
 export function replacementPairs(q, kind, objects, allowed = () => true) {
   const out = [];
-  for (const u of objects) {
-    if (kind === 'big' ? u.id !== q.unitId : u.id === q.unitId) continue;
-    for (const t of objects) {
-      if (kind === 'small' ? t.id !== q.targetId : t.id === q.targetId) continue;
+  const units = objects.filter(u => kind === 'big' ? u.id === q.unitId : u.id !== q.unitId);
+  const targets = objects.filter(t => kind === 'small' ? t.id === q.targetId : t.id !== q.targetId);
+  for (const u of units) {
+    for (const t of targets) {
       if (u.id === t.id || u.mm >= t.mm || !allowed(u, t)) continue;
       out.push([u, t]);
     }
+  }
+  return out;
+}
+
+// Yield between expensive chunks so the pending state and keypad keep painting.
+export async function replacementPairsResponsive(q, kind, objects, allowed = () => true, yieldFrame = () => new Promise(resolve => requestAnimationFrame(resolve))) {
+  if (kind !== 'both') return replacementPairs(q, kind, objects, allowed);
+  const out = [], units = objects.filter(u => u.id !== q.unitId), targets = objects.filter(t => t.id !== q.targetId);
+  let yieldedAt = performance.now();
+  for (const u of units) {
+    for (const t of targets) if (u.id !== t.id && u.mm < t.mm && allowed(u, t)) out.push([u, t]);
+    if (performance.now() - yieldedAt >= 8) { await yieldFrame(); yieldedAt = performance.now(); }
   }
   return out;
 }

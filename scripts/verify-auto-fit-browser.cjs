@@ -64,6 +64,8 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
  document.querySelectorAll('button[data-autofit-stress]').forEach(b=>b.remove());
  const stress=document.createElement('button');stress.dataset.autofitStress='';stress.style.cssText='display:flex;align-items:center;gap:8px;width:130px;height:48px;padding:8px;border:2px solid brown;font:700 24px Fredoka;';stress.innerHTML='<img src="/icons/coin-v2.png" style="width:28px;height:28px"><span>Collect all your bonus coins</span>';document.querySelector('.screen.active')?.append(stress);
  await wait(650);
+ // Measure settled artwork, including a newly appended stress button's entrance.
+ document.querySelector('.screen.active')?.getAnimations({subtree:true}).forEach(a=>{if(a.effect.getTiming().iterations!==Infinity)a.finish();});
  if(Math.abs(stress.getBoundingClientRect().height-48)>1)failures.push({kind:'button height changed',height:stress.getBoundingClientRect().height});
  for(const button of document.querySelectorAll('button')){
  if(!button.clientWidth||!button.getClientRects().length)continue;
