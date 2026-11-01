@@ -1,0 +1,9 @@
+# Home background story artwork
+
+Generated with the built-in `image_gen` tool November 1, 2026. Exact prompts and references are retained in `prompts.json`. Original transparent PNG sheets are kept here; the game uses quality-0.96 alpha WebP encodings under `anim/home-art/stories/`.
+
+- `rider.png` → `rider.webp`: a blue/orange toy robot seated on a red unicycle strut, with its wheel separate. A correction replaced a front-view fork with one aligned side-view axle socket. Wheel/crank center is pinned to the source socket. Articulated silver legs follow pedal positions using two-link inverse kinematics; CSS performs animation without a JavaScript frame loop. Travel distance determines wheel rotation and pedal speed. Mirroring the route reverses facing and rolling direction together.
+- `rabbit.png` → `rabbit.webp`: four complete generated hop poses. The four silhouettes are placed into equal-sized cells at their original scale, centered horizontally and aligned to a common baseline. No body, ear or paw is cropped. Exactly one pose is visible, with a settled pose during the route's pause.
+- `jack.png` → `jack.webp`: separate box, lid and clown/spring. The lid stays on its hinge. The clown rises through a clipped opening, with the front box wall covering the hidden spring. Automatic and tapped cycles have separate timing; repeated taps never restart or queue an active action. Timers and listeners are disposed when leaving or replacing the scene.
+
+The dolphin and cruise ship reuse the existing `items/dolphin.webp` and `items/cruise-ship.webp`. The dolphin is clipped at a fixed local waterline, and entry/exit splash cues follow its crossing. All stories render behind foreground subjects, pause when Home is hidden, and honor reduced motion. No new sounds or collection objects are introduced.

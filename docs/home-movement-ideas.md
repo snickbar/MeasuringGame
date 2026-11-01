@@ -25,21 +25,21 @@ Saved November 1, 2026. The first ambient-movement pass is implemented below; la
 
 All detail animations use the scene's existing pause/disposal and reduced-motion handling. Ambient motion never synthesizes taps, queues reactions or plays new sounds. Button sparkles are unchanged.
 
-## New ideas awaiting discussion
+## Approved second pass — November 1
 
-- Wheels: bicycle or unicycle riding past, with correctly turning wheels/pedals.
-- Toy Box: jack-in-the-box opening on tap and occasionally by itself; revisit the beach ball's bounce.
-- Add missing measurement objects after reviewing the Home object audit: cherry, mouse, spinning top and a single toy jack are confirmed missing.
-- Make Believe: rabbit, enchanted paper bird, little purple dragon, or glowing wisp alongside the fairy; no choice made yet.
-- Surfboard beach: distant cruise ship and/or an occasional leaping dolphin with a splash; no implementation yet.
+- Wheels: a small robot rides a unicycle behind the rocket/cones. Articulated legs follow the pedals; wheel rotation matches linear travel and reverses visually on return crossings.
+- Toy Box: an independently layered jack-in-the-box opens automatically and on tap. Active taps never queue or restart it. The beach ball now has separate horizontal, vertical and rotation layers, keeping its sideways speed steady through each bounce.
+- Missing measurement objects are recorded in `docs/object-backlog.md`; the approved list does not yet change collection entries or sizes.
+- Make Believe: a grey rabbit hops along the farther path, pauses in a settled pose, and passes behind the foreground. Original fairy remains.
+- Surfboard beach: a slow distant cruise ship and occasional dolphin leap with entry/exit splashes. Dolphin stays clipped below the water before/after the leap; both sit behind foreground subjects.
 
 ### Home object audit for discussion
 
 Confirmed existing measurement objects: bicycle, unicycle, jack-in-the-box, dolphin, cruise ship, rabbit, pigeon, honeybee, butterfly, ladybug, jellyfish, flying saucer, and the main foreground subjects/props (including lighthouse, refrigerator, corgi, turtle, ice cream cone and crocodile/alligator).
 
-Confirmed missing: cherry, mouse, spinning top, and a single toy jack. Other Home artwork without a corresponding specific object: seagull, small songbird, puffin, seal pup, hawk, tumbleweed, satellite, tropical fish, and ordinary crab (the current collection has a horseshoe crab, a different animal). The mouse's cheese wedge and the kitchen whisk/ladle/cooking turner also need review; a cheese wheel and grill spatula already exist. These are findings, not authorization to add all of them.
+Confirmed missing: cherry, mouse, spinning top, and a single toy jack. Other Home artwork without a corresponding specific object: seagull, small songbird, puffin, seal pup, hawk, tumbleweed, satellite, tropical fish, and ordinary crab (the current collection has a horseshoe crab, a different animal). The mouse's cheese wedge and the kitchen whisk/ladle/cooking turner also need review; a cheese wheel and grill spatula already exist. These are now tracked in the approved object backlog; artwork, measurements and collection integration remain separate work.
 
-The beach ball's current bounce eases horizontal and vertical movement together. Proposed fix for discussion: steady horizontal travel, separate vertical bounce arcs, decreasing bounce height, and rotation matched to travel. No ball change is included in this ambient pass.
+The ball fix is implemented: steady horizontal travel, separate vertical bounce arcs, decreasing bounce height, and rotation matched to travel. The existing alternating route mirrors the rotation automatically on return crossings.
 
 ## Original suggestions
 

@@ -1,7 +1,7 @@
 const assert=require('assert/strict');
 const {runFixture}=require('./browser-fixture.cjs');
 const html=`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/">
-${['home-fx','home-motion','home-new-scenes','home-idle','ui-delight'].map(name=>'<link rel="stylesheet" href="anim/'+name+'.css">').join('')}
+${['home-fx','home-motion','home-new-scenes','home-idle','home-stories','ui-delight'].map(name=>'<link rel="stylesheet" href="anim/'+name+'.css">').join('')}
 <style>body{margin:0}#home-screen{position:relative;height:100dvh;overflow:hidden}#daily-probe{position:fixed;visibility:hidden;top:0;width:260px}#daily-probe i{display:block;height:12px;width:65%}</style>
 <div id="daily-probe" class="dc-streak-bar"><i></i></div><div id="home-screen" class="active"></div>
 <script type="module">localStorage.setItem('mg_soundEnabled','false');window.api=await import('./anim/home-scene.mjs');window.ready=true;</script>`;

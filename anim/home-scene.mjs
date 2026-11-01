@@ -8,6 +8,7 @@ import { decorateNewHomeBackground, makeHomeFairy } from './home-new-scenes.mjs'
 import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorateHomeHero, decorateHomePart, installHomeInteractions } from "./home-motion.mjs";
 import { decorateHomeIdle } from './home-idle.mjs';
 import { KITCHEN_TOOL_CROPS } from './home-idle-art.mjs';
+import { decorateHomeStories } from './home-stories.mjs';
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
@@ -278,7 +279,8 @@ async function buildHomeScene(home, scene, current) {
   if(scene==='toy-box'){
     const route=document.createElement('div');route.className='hs-route hs-bidirectional';route.dataset.directionPolicy='alternating';route.style.cssText='--cs:18s;--cd:2s';
     const ball=document.createElement('div');ball.className='hs-bouncing-ball';
-    const sprite=extras.get('../../items/beach-ball.webp').cloneNode();sprite.alt='';ball.appendChild(sprite);route.appendChild(ball);
+    const sprite=extras.get('../../items/beach-ball.webp').cloneNode();sprite.alt='';
+    const height=document.createElement('div');height.className='hs-ball-height';height.appendChild(sprite);ball.appendChild(height);route.appendChild(ball);
     stage.insertBefore(route,stage.querySelector('.hs-layer'));
   }
   if (scene === "dragon") {
@@ -302,10 +304,11 @@ async function buildHomeScene(home, scene, current) {
     stage.style.setProperty("--sh", HOME_ART_REF.height * s + "px");
   };
   decorateHomeIdle(root,scene,extras,KITCHEN_TOOL_CROPS);
+  const disposeStories=decorateHomeStories(root,home,scene,extras);
   size(); resizeStage = size;
   disposeScene(); stopHomeSound();
   interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound);
-  disposeScene = interactions.cleanup;
+  disposeScene = () => {interactions.cleanup();disposeStories();};
   const previous = document.getElementById("home-art");
   if (previous) previous.replaceWith(root); else home.prepend(root);
   home.classList.add("has-art");
