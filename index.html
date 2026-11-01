@@ -12128,7 +12128,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A guess under SURVIVAL_PASS % accurate costs a life. Questions get bigger-gap (harder) the further you get,
   // with random wobble so the climb isn't obvious. Score = rounds survived; the global board keeps each player's best.
   const SURVIVAL_LIVES = 3, SURVIVAL_PASS = 60, SURVIVAL_COINS_PER = 3, SURVIVAL_THEME_COINS = 5;
+  // Livelier numbers: a number that changes gives one quick pop. Web Animations, so nothing is measured or re-laid out.
+  function popNum(el) {
+    if (!el || prefersReducedMotion() || !el.animate) return;
+    el.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)", offset: .4 }, { transform: "scale(1)" }], { duration: 340, easing: "ease-out" });
+  }
+  // Watches a screen that redraws itself: any [data-pop] number that differs from the last redraw (within 20s) pops.
+  function popChangedNumbers(root) {
+    const prev = { t: 0, vals: {} };
+    new MutationObserver(() => {
+      const now = performance.now(), vals = {};
+      root.querySelectorAll("[data-pop]").forEach((el) => {
+        const k = el.dataset.pop, v = el.textContent; vals[k] = v;
+        if (now - prev.t < 20000 && k in prev.vals && prev.vals[k] !== v) popNum(el);
+      });
+      prev.t = now; prev.vals = vals;
+    }).observe(root, { childList: true });
+  }
   const survivalContentEl = document.getElementById("survival-content");
+  popChangedNumbers(survivalContentEl);
   let sv = null, svAnim = null, svPairs = null;
   function survivalPairs() {
     if (svPairs) return svPairs;
@@ -12231,7 +12249,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const SURVIVAL_SHIELD_ACC = 75, SURVIVAL_SHIELD_CHAIN = 3;
   // Shield state under the hearts: a full shield when you hold one, otherwise an empty one and three pips for your chain.
   const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
-  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div><div class="sv-coinbox" aria-label="Coins earned this run"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="sv-coins">${sv ? sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER) : 0}</b></div></div>`;
+  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b data-pop="round">${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc" data-pop="acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div><div class="sv-coinbox" aria-label="Coins earned this run"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="sv-coins" data-pop="coins">${sv ? sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER) : 0}</b></div></div>`;
   // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
   function svDifficulty(answer) {
     const tiers = [[5, 1, "Very easy"], [20, 2, "Easy"], [100, 3, "Medium"], [1000, 4, "Hard"]];
@@ -13541,7 +13559,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       phase = "flying";
       setTimeout(() => {
         if (phase !== "flying") return;
-        sound(); sparkleCoins(toolbarCoinBalanceEl, false);
+        sound(); sparkleCoins(toolbarCoinBalanceEl, false); popNum(toolbarCoinCountEl);
         count(gain, fx.remaining());
       }, fx.firstLand);
     }
@@ -13555,7 +13573,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (target < from) { settleNow(); return; }
         show(Math.round(from + (target - from) * e));
         if (k < 1) rafId = requestAnimationFrame(step);
-        else { phase = "idle"; show(target); }
+        else { phase = "idle"; show(target); popNum(toolbarCoinCountEl); }
       };
       rafId = requestAnimationFrame(step);
     }
@@ -13601,9 +13619,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function emptyHtml(pic, title, hint) {
     return `<div class="empty-state"><img src="${pic}" alt="" draggable="false"><b>${title}</b><span>${hint}</span></div>`;
   }
-  function flyCoinsToToolbar(gain) {
+  // An "early" flight (Awards: the coins leave the instant Claim is tapped) is remembered, so when the saved balance arrives a
+  // moment later and asks for the same flight, it reuses this one (same timings for the counter) instead of flying a second batch.
+  let earlyFly = null;
+  function flyCoinsToToolbar(gain, opts) {
     try {
       if (!(gain > 0)) return null;
+      if (!(opts && opts.early) && earlyFly && earlyFly.gain === gain && performance.now() - earlyFly.t0 < 6000) {
+        const e = earlyFly; earlyFly = null;
+        return { firstLand: Math.max(0, e.firstEnd - (performance.now() - e.t0)), remaining: () => Math.max(0, e.lastEnd - (performance.now() - e.t0)) };
+      }
       const target = document.getElementById("toolbar-coin-icon") || toolbarCoinBalanceEl;
       const tr = target.getBoundingClientRect();
       if (!tr.width || !tr.height) return null;
@@ -13633,6 +13658,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       setTimeout(() => layer.remove(), 3500);
       const t0 = performance.now();
+      if (opts && opts.early) earlyFly = { gain, t0, firstEnd, lastEnd };
       return { firstLand: firstEnd, remaining: () => Math.max(0, lastEnd - (performance.now() - t0)) };
     } catch (err) { return null; }
   }
@@ -14006,7 +14032,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     achHold[id] = Date.now() + ACH_HOLD_MS;
     setTimeout(() => { delete achHold[id]; if (document.getElementById("achievements-content")) renderAchievementsScreen(); }, ACH_HOLD_MS + 50);
     playSound("roundwin");
-    if (typeof flyCoinsToToolbar === "function") flyCoinsToToolbar(a.reward);  // coins leave the Claim button the moment it's tapped, not after the save
+    if (typeof flyCoinsToToolbar === "function") flyCoinsToToolbar(a.reward, { early: true });  // coins leave the Claim button the moment it's tapped, not after the save
     let newlyClaimed=false;
     const res = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       newlyClaimed=false;
@@ -14115,7 +14141,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <h2 class="lu-title" id="lu-title">Level up!</h2>
       <div class="lu-badge" aria-label="Level ${g.to}"><span class="lu-badge-n">${g.to}</span></div>
       <div class="lu-rank${rankUp ? " lu-rank-new" : ""}">${rankUp ? "New rank! " : ""}${escapeHtml(rank)}</div>
-      <div class="lu-coins"><img src="icons/coin-v2.png" alt="" data-coin-source><b id="lu-coin-n">+0</b><span>coins</span><div class="lu-burst" id="lu-burst" aria-hidden="true"></div></div>
+      <div class="lu-coins"><img src="icons/coin-v2.png" alt=""><b id="lu-coin-n">+0</b><span>coins</span><div class="lu-burst" id="lu-burst" aria-hidden="true"></div></div>
       <div class="lu-pull"><img src="icons/flair/star.png" alt="">${g.pulls === 1 ? "1 free avatar pull" : g.pulls + " free avatar pulls"}</div>
       <button type="button" class="dc-btn" id="lu-pull">Pull now</button>
       <button type="button" class="dc-btn dc-alt" id="lu-close">Continue</button></div>`;
@@ -14145,7 +14171,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (k < 1) requestAnimationFrame(step); else playSound("coins");
     };
     setTimeout(() => requestAnimationFrame(step), reduced ? 0 : 250);
-    const close = () => { if (!reduced) flyCoinsToToolbar(g.coins); ov.remove(); levelUpOpen = false; if (levelUpWaiting.length) queueLevelUp(levelUpWaiting.shift()); };
+    const close = () => { ov.remove(); levelUpOpen = false; if (levelUpWaiting.length) queueLevelUp(levelUpWaiting.shift()); };
     ov.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
