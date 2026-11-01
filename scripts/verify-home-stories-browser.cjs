@@ -16,12 +16,16 @@ runFixture({html:sandbox.html,out:'output/home-stories',check:async({width,evalu
  await open('games');await seek(11500);assert(await evaluate("!!document.querySelector('.hs-story-ship')&&!!document.querySelector('.hs-story-dolphin')"));await screenshot('beach-'+width+'.png');
  await seek(13100);assert.equal(await evaluate("Number(getComputedStyle(document.querySelector('.hs-story-dolphin')).opacity)"),1,'dolphin stays opaque until it goes back below water');
  await seek(13600);assert(await evaluate("document.querySelector('.hs-story-dolphin').getBoundingClientRect().top>=document.querySelector('.hs-dolphin-water').getBoundingClientRect().bottom"),'dolphin is below the clip before disappearing');
+ assert(await evaluate("!!document.querySelector('.hs-story-ship').closest('.hs-ship-horizon') && getComputedStyle(document.querySelector('.hs-ship-horizon')).clipPath.startsWith('polygon(')"),'ship is masked by the plate waterline and wave crest');
+ assert(await evaluate("!document.querySelector('.hs-story-dolphin').closest('.hs-ship-horizon')"),'dolphin remains in front of the wave');
+ await seek(40000);await screenshot('ship-approaching-wave-'+width+'.png');
  await seek(50000);await screenshot('distant-ship-'+width+'.png');
  await open('toy-box');await seek(0);
  const tap=()=>evaluate("document.querySelector('.hs-jack-tap').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));true");
  await tap();assert(await evaluate("document.querySelector('.hs-story-jack').dataset.playing==='true'"),'tap starts the jack');
  await seek(1200);const busy=await evaluate("document.querySelector('.hs-jack-spring').getAnimations()[0].currentTime");await tap();assert.equal(await evaluate("document.querySelector('.hs-jack-spring').getAnimations()[0].currentTime"),busy,'repeat tap does not restart or queue the jack');
  await screenshot('jack-open-'+width+'.png');
+ assert(await evaluate(`(()=>{const lid=document.querySelector('.hs-jack-lid'),m=new DOMMatrix(getComputedStyle(lid).transform);return Math.abs(m.a*m.d-m.b*m.c)>.95&&m.b<-.9})()`),'open lid keeps its full face and swings sideways instead of flattening edge-on');
  const horizontal=[];for(const t of [5000,6000,7000]){await seek(t);horizontal.push(await evaluate("document.querySelector('.hs-bouncing-ball').getBoundingClientRect().left"));}
  assert(Math.abs((horizontal[1]-horizontal[0])-(horizontal[2]-horizontal[1]))<1,'ball travels horizontally at a steady speed');
  await evaluate("document.getElementById('home-screen').classList.remove('active')");await new Promise(r=>setTimeout(r,30));assert(await evaluate("!document.querySelector('.hs-story-jack').dataset.playing"),'leaving cancels jack replay lock');

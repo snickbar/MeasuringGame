@@ -42,7 +42,10 @@ export function decorateHomeStories(root,home,scene,extras){
     sprite(hop,image,STORY_ART.rabbit[3],[0,0,100,100],{sw:100,sh:100},'hs-rabbit-rest');
   }
   if(scene==='games'){
-    const ship=el('hs-story-ship',back);ship.appendChild(extras.get('../../items/cruise-ship.webp').cloneNode());
+    // The plate's crest rises above the horizon on the right. Clip only the
+    // distant ship to that contour; the dolphin stays in the foreground water.
+    const horizon=el('hs-ship-horizon',back);
+    const ship=el('hs-story-ship',horizon);ship.appendChild(extras.get('../../items/cruise-ship.webp').cloneNode());
     const water=rect(el('hs-dolphin-water',back),[0,735,704,175]),dolphin=el('hs-story-dolphin',water);
     dolphin.appendChild(extras.get('../../items/dolphin.webp').cloneNode());
     for(const side of ['entry','exit']){const splash=el('hs-dolphin-splash hs-splash-'+side,water);for(let i=0;i<5;i++){const drop=el('hs-splash-drop',splash);drop.style.setProperty('--drop',i);}}
@@ -53,7 +56,7 @@ export function decorateHomeStories(root,home,scene,extras){
     sprite(spring,image,STORY_ART.jack[2],[25,0,145,225],{sw:172,sh:220},'hs-jack-clown');
     sprite(jack,image,STORY_ART.jack[0],[0,165,200,135],spec,'hs-jack-box');
     const lid=sprite(jack,image,STORY_ART.jack[1],[0,150,172,83],spec,'hs-jack-lid');
-    lid.style.cssText+='left:4%;top:55%;width:80%;height:14%;';
+    lid.style.cssText+='left:4%;top:55%;width:80%;height:26.2%;';
     const tap=rect(el('hs-tap hs-jack-tap',stage),[38,950,135,220]);tap.dataset.subject='jack';
     let timer=0;
     const reset=()=>{clearTimeout(timer);timer=0;delete jack.dataset.playing;jack.getAnimations({subtree:true}).forEach(a=>{a.currentTime=0;});};
