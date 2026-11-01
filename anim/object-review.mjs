@@ -3,7 +3,7 @@ import {measurementQuestionPrompt} from './object-review-prompts.mjs';
 import {MOTIONS,currentSettings,validateSettings,validatePicks,sameSettings} from './object-review-model.mjs';
 
 const $=id=>document.getElementById(id),key='size-em-up-object-draft-v1',pageSize=30;
-let data,draft={},selected,page=0,views={},generation=0,refreshTimer,invalid=false,displayUnit=1,reviewed=new Set(),activeRole='small';
+let data,latestCollection,draft={},selected,page=0,views={},generation=0,refreshTimer,invalid=false,displayUnit=1,reviewed=new Set(),activeRole='small';
 const status=text=>$('status').textContent=text;
 const chosen=o=>draft[o.id]||currentSettings(o);
 const setting=o=>$('use-current').checked?currentSettings(o):chosen(o);
@@ -14,7 +14,7 @@ function persist(){
 }
 function filteredObjects(){
   const query=$('search').value.trim().toLowerCase();
-  return data.objects.filter(o=>(!query||`${o.name} ${o.id} ${o.pack}`.toLowerCase().includes(query))&&(!$('group').value||o.group===$('group').value)&&(!$('dimension-filter').value||chosen(o).measurement.dimension===$('dimension-filter').value)&&(!$('new-objects').checked||o.collection?.startsWith('new-'))&&(!$('monthly-objects').checked||o.monthlyExpansion)&&(!$('changed').checked||draft[o.id])&&(!$('unreviewed').checked||!reviewed.has(o.id)));
+  return data.objects.filter(o=>(!query||`${o.name} ${o.id} ${o.pack}`.toLowerCase().includes(query))&&(!$('group').value||o.group===$('group').value)&&(!$('dimension-filter').value||chosen(o).measurement.dimension===$('dimension-filter').value)&&(!$('new-objects').checked||o.collection?.startsWith('new-'))&&(!$('latest-objects').checked||o.collection===latestCollection)&&(!$('monthly-objects').checked||o.monthlyExpansion)&&(!$('changed').checked||draft[o.id])&&(!$('unreviewed').checked||!reviewed.has(o.id)));
 }
 function renderList(){
   const objects=filteredObjects();
@@ -157,17 +157,21 @@ document.querySelector('.role-tabs').onkeydown=e=>{if(['ArrowLeft','ArrowRight']
 for(const id of ['rot','mirror-small','mirror-big','lean-small','lean-big','motion-small','motion-big','dimension','units'])$(id).onchange=edit;
 $('units').onchange=()=>{const nextUnit=Number($('units').value);$('size').value=Number((Number($('size').value)*displayUnit/nextUnit).toPrecision(12));displayUnit=nextUnit;edit();};
 for(const id of ['size','qualifier','subject'])$(id).oninput=edit;
-for(const id of ['search','group','dimension-filter','changed','unreviewed','new-objects','monthly-objects'])$(id).addEventListener(id==='search'?'input':'change',()=>{if(id==='new-objects'&&$('new-objects').checked)$('monthly-objects').checked=false;if(id==='monthly-objects'&&$('monthly-objects').checked)$('new-objects').checked=false;page=0;renderList();});
+for(const id of ['search','group','dimension-filter','changed','unreviewed','new-objects','latest-objects','monthly-objects'])$(id).addEventListener(id==='search'?'input':'change',()=>{if(['new-objects','latest-objects','monthly-objects'].includes(id)&&$(id).checked)for(const other of ['new-objects','latest-objects','monthly-objects'])if(other!==id)$(other).checked=false;page=0;renderList();});
 $('prev').onclick=()=>{page--;renderList();};$('next').onclick=()=>{page++;renderList();};
 $('export').onclick=()=>{if(invalid)return;const url=URL.createObjectURL(new Blob([JSON.stringify(exportData(),null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='size-em-up-object-picks.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Choices exported. Send me the JSON file when you’re ready to apply them.');};
 $('import').onclick=()=>$('file').click();$('file').onchange=async()=>{try{const text=await $('file').files[0]?.text();if(!text)return;const input=JSON.parse(text),next=validatePicks(input,data);draft=next;reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));persist();if(selected)selectObject(selected);renderList();}catch(e){status('Import failed: '+e.message);}finally{$('file').value='';}};
 let resizeTimer;window.addEventListener('resize',()=>{chooseRole(activeRole);clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>refresh(false),250);});
 try{
   const response=await fetch('./object-review-data.json',{cache:'no-store'});if(!response.ok)throw Error('Could not load object catalog');data=await response.json();
+  latestCollection=data.objects.map(o=>o.collection).filter(c=>c?.startsWith('new-')).sort().at(-1);
+  $('latest-count').textContent=data.objects.filter(o=>o.collection===latestCollection).length;
+  $('new-count').textContent=data.objects.filter(o=>o.collection?.startsWith('new-')).length;
   for(const [id,type]of Object.entries(data.types)){ $('dimension').add(new Option(type.noun,id));$('dimension-filter').add(new Option(type.noun,id)); }
   for(const role of ['small','big'])for(const [id,name]of Object.entries(MOTIONS))$('motion-'+role).add(new Option(name,id));
   let restoreError='';try{const saved=localStorage.getItem(key);if(saved){const input=JSON.parse(saved);draft=validatePicks(input,data);reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));}}catch{restoreError='Saved draft could not be restored. Import your last export to recover it.';}
   $('new-objects').checked=new URLSearchParams(location.search).get('collection')==='new';
+  $('latest-objects').checked=new URLSearchParams(location.search).get('collection')==='latest';
   $('monthly-objects').checked=new URLSearchParams(location.search).get('collection')==='monthly';
   $('export').disabled=$('import').disabled=false;renderList();
   let last;try{last=localStorage.getItem(key+'-last');}catch{}

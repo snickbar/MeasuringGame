@@ -5,7 +5,7 @@ const root=path.resolve(__dirname,'..'),port=Number(process.argv[2])||4174;
 const files=new Set([
  '/anim/object-review.html','/anim/object-review.mjs','/anim/object-review-model.mjs',
  '/anim/object-review-prompts.mjs','/anim/object-review-data.json',
- '/anim/stack-anim.js','/anim/orient-data.js','/anim/reveal-style.mjs',
+ '/anim/stack-anim.js','/anim/orient-data.js','/anim/reveal-style.mjs','/anim/landing-effects.mjs',
  '/anim/scenery.mjs','/anim/scenery-data.mjs','/anim/grass.png','/anim/cloud.png',
  '/anim/scenery-objects.html','/anim/scenery-objects.mjs','/anim/scenery-object-data.json',
  '/anim/scenery-gallery.html','/anim/stadium-preview.html',

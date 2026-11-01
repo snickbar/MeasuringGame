@@ -112,6 +112,11 @@ try{
   for(const role of ['small','big']){const v=api.getViews()[role];assert(v.scene.unit.id===object.id||v.scene.target.id===object.id,'new object has both roles');$(role+'-end').click();}
   assert(d.documentElement.scrollWidth<=innerWidth,'new object fits '+object.id);
  }
+ await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=latest';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
+ assert($('latest-objects').checked&&$('latest-count').textContent==='10'&&$('count').textContent.startsWith('10 of 563'),'latest link isolates the ten new additions');
+ assert(d.querySelectorAll('.object').length===10,'all ten are visible in the list together');
+ for(const object of api.data.objects.filter(o=>o.collection==='new-2026-11')){api.select(object.id);await ready();for(const role of ['small','big']){const v=api.getViews()[role];assert(v.scene.unit.id===object.id||v.scene.target.id===object.id,'latest object previews in both roles');$(role+'-end').click();}}
+ assert(api.exportData().reviewedIds.includes('ant'),'latest filter preserves existing reviewed choices');
  await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=monthly';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
  assert($('monthly-objects').checked&&!$('new-objects').checked,'monthly link selects the new batch');
  assert(api.data.objects.filter(o=>o.monthlyExpansion).length===55&&$('count').textContent.includes('55'),'all 55 monthly objects available');
