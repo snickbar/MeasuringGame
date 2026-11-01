@@ -14115,7 +14115,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <h2 class="lu-title" id="lu-title">Level up!</h2>
       <div class="lu-badge" aria-label="Level ${g.to}"><span class="lu-badge-n">${g.to}</span></div>
       <div class="lu-rank${rankUp ? " lu-rank-new" : ""}">${rankUp ? "New rank! " : ""}${escapeHtml(rank)}</div>
-      <div class="lu-coins"><img src="icons/coin-v2.png" alt=""><b id="lu-coin-n">+0</b><span>coins</span><div class="lu-burst" id="lu-burst" aria-hidden="true"></div></div>
+      <div class="lu-coins"><img src="icons/coin-v2.png" alt="" data-coin-source><b id="lu-coin-n">+0</b><span>coins</span><div class="lu-burst" id="lu-burst" aria-hidden="true"></div></div>
       <div class="lu-pull"><img src="icons/flair/star.png" alt="">${g.pulls === 1 ? "1 free avatar pull" : g.pulls + " free avatar pulls"}</div>
       <button type="button" class="dc-btn" id="lu-pull">Pull now</button>
       <button type="button" class="dc-btn dc-alt" id="lu-close">Continue</button></div>`;
@@ -14145,7 +14145,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (k < 1) requestAnimationFrame(step); else playSound("coins");
     };
     setTimeout(() => requestAnimationFrame(step), reduced ? 0 : 250);
-    const close = () => { ov.remove(); levelUpOpen = false; if (levelUpWaiting.length) queueLevelUp(levelUpWaiting.shift()); };
+    const close = () => { if (!reduced) flyCoinsToToolbar(g.coins); ov.remove(); levelUpOpen = false; if (levelUpWaiting.length) queueLevelUp(levelUpWaiting.shift()); };
     ov.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
