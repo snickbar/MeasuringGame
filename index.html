@@ -13214,18 +13214,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const key = statsMode + "|" + statsHistoryMode, now = performance.now();
       if (key === lastKey && now - lastT < 6000) { lastT = now; return; }
       lastKey = key; lastT = now;
+      // Each piece waits, in its starting look, until it scrolls into view, then plays (so charts further down aren't missed).
+      const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); (e.target._play || (() => {}))(); } }), { threshold: .35 });
+      const later = (el, play) => { el._play = play; io.observe(el); };
+      const paused = (el, frames, opts) => { const an = el.animate(frames, { ...opts, fill: "both" }); an.pause(); an.currentTime = 0; return () => an.play(); };
       root.querySelectorAll(".cs-tile").forEach((t, i) => {
-        t.animate([{ opacity: 0, transform: "translateY(10px) scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: i * 70, easing: "cubic-bezier(.2,1.4,.4,1)", fill: "backwards" });
-        const n = t.querySelector("strong,.cs-num"); if (n) countUp(n, 900, i * 70);
+        const go = paused(t, [{ opacity: 0, transform: "translateY(10px) scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 420, delay: i % 3 * 70, easing: "cubic-bezier(.2,1.4,.4,1)" });
+        const n = t.querySelector("strong,.cs-num"), final = n && n.textContent;
+        if (n) { const m = /^(\D*)([\d,]+(?:\.\d+)?)(\D*)$/.exec(final.trim()); if (m && parseFloat(m[2].replace(/,/g, "")) > 0) n.textContent = m[1] + "0" + (m[2].includes(".") ? "." + "0".repeat(m[2].split(".")[1].length) : "") + m[3]; }
+        later(t, () => { go(); if (n) { n.textContent = final; countUp(n, 900, i % 3 * 70); } });
       });
       const bar = root.querySelector(".cs-bar-fill");
-      if (bar) bar.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: 800, easing: "cubic-bezier(.2,.9,.2,1)" }), bar.style.transformOrigin = "0 50%";
-      const line = root.querySelector(".cs-chart polyline");
+      if (bar) { bar.style.transformOrigin = "0 50%"; const go = paused(bar, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: 800, easing: "cubic-bezier(.2,.9,.2,1)" }); later(bar, go); }
+      const chart = root.querySelector(".cs-chart"), line = chart && chart.querySelector("polyline");
       if (line && line.getTotalLength) {
-        const len = line.getTotalLength();
-        line.animate([{ strokeDasharray: len, strokeDashoffset: len }, { strokeDasharray: len, strokeDashoffset: 0 }], { duration: 1300, easing: "cubic-bezier(.5,0,.2,1)" });
-        const poly = root.querySelector(".cs-chart polygon"); if (poly) poly.animate([{ opacity: 0 }, { opacity: 0, offset: .6 }, { opacity: 1 }], { duration: 1300 });
-        root.querySelectorAll(".cs-chart circle").forEach((c, i, all) => c.animate([{ transform: "scale(0)" }, { transform: "scale(1)" }], { duration: 300, delay: 100 + i * (900 / all.length), easing: "cubic-bezier(.2,1.6,.4,1)", fill: "backwards" }));
+        const len = line.getTotalLength(), plays = [];
+        plays.push(paused(line, [{ strokeDasharray: len, strokeDashoffset: len }, { strokeDasharray: len, strokeDashoffset: 0 }], { duration: 1300, easing: "cubic-bezier(.5,0,.2,1)" }));
+        const poly = chart.querySelector("polygon"); if (poly) plays.push(paused(poly, [{ opacity: 0 }, { opacity: 0, offset: .6 }, { opacity: 1 }], { duration: 1300 }));
+        chart.querySelectorAll("circle").forEach((c, i, all) => plays.push(paused(c, [{ transform: "scale(0)" }, { transform: "scale(1)" }], { duration: 300, delay: 100 + i * (900 / all.length), easing: "cubic-bezier(.2,1.6,.4,1)" })));
+        later(chart, () => plays.forEach((f) => f()));
       }
     }).observe(root, { childList: true });
   })();
