@@ -6,7 +6,7 @@ export function validateSettings(value, types) {
   const fail = () => {throw Error('Invalid measurement, orientation or entrance setting.');};
   if(!value || !Number.isFinite(value.mm) || value.mm<=0 || value.mm>1e12)fail();
   const m=value.measurement,r=value.orientation;
-  if(!m || !Object.hasOwn(types,m.dimension) || !r || ![0,90,180,270].includes(r.rot))fail();
+  if(!m || !Object.hasOwn(types,m.dimension) || !r || ![0,45,90,135,180,225,270,315].includes(r.rot))fail();
   if(typeof r.flip!=='boolean'||typeof r.mirR!=='boolean'||!['none','cw','ccw'].includes(r.leanL)||!['none','cw','ccw'].includes(r.leanR))fail();
   if(!Object.hasOwn(MOTIONS,value.motionSmall)||!Object.hasOwn(MOTIONS,value.motionBig))fail();
   const measurement={dimension:m.dimension};

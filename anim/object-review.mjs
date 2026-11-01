@@ -14,7 +14,7 @@ function persist(){
 }
 function filteredObjects(){
   const query=$('search').value.trim().toLowerCase();
-  return data.objects.filter(o=>(!query||`${o.name} ${o.id} ${o.pack}`.toLowerCase().includes(query))&&(!$('group').value||o.group===$('group').value)&&(!$('dimension-filter').value||chosen(o).measurement.dimension===$('dimension-filter').value)&&(!$('new-objects').checked||o.collection==='new-2026-10')&&(!$('monthly-objects').checked||o.monthlyExpansion)&&(!$('changed').checked||draft[o.id])&&(!$('unreviewed').checked||!reviewed.has(o.id)));
+  return data.objects.filter(o=>(!query||`${o.name} ${o.id} ${o.pack}`.toLowerCase().includes(query))&&(!$('group').value||o.group===$('group').value)&&(!$('dimension-filter').value||chosen(o).measurement.dimension===$('dimension-filter').value)&&(!$('new-objects').checked||o.collection?.startsWith('new-'))&&(!$('monthly-objects').checked||o.monthlyExpansion)&&(!$('changed').checked||draft[o.id])&&(!$('unreviewed').checked||!reviewed.has(o.id)));
 }
 function renderList(){
   const objects=filteredObjects();

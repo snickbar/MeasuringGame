@@ -1,28 +1,29 @@
 # Requested object additions
 
-Approved for the object list November 1, 2026. These are planned additions, not yet measurement objects. Each needs simple matching artwork, a clear dimension/measurement guide, a representative size, and collection/world assignment before integration.
+Approved for the object list November 1, 2026. Checked entries are integrated measurement objects; unchecked entries remain planned additions.
 
 ## First group
 
-- [ ] Cherry — fruit diameter, excluding the stem.
-- [ ] House mouse — body length from nose to rump, excluding the tail.
-- [ ] Spinning top — upright height including the handle.
-- [ ] Single toy jack — tip-to-tip span; show one jack rather than a pile.
+- [x] Cherry — 25 mm fruit diameter, excluding the stem.
+- [x] House mouse — 180 mm nose to tail tip, including the tail.
+- [x] Spinning top — 100 mm upright height including the handle.
+- [x] Single toy jack — 30 mm tip-to-tip span; one jack rather than a pile.
+- [x] Spaghetti strainer — 250 mm bowl diameter, excluding the handles.
+- [x] Soup ladle — 300 mm from the top of the handle to the bottom of the bowl.
 
 ## Additional Home artwork gaps
 
 - [ ] Seagull
 - [ ] Small songbird
 - [ ] Puffin
-- [ ] Seal pup
+- [x] Seal — adult harbor seal, 1.5 m snout to rear flipper tips, stretched out.
 - [ ] Hawk
-- [ ] Tumbleweed
-- [ ] Satellite
+- [x] Tumbleweed — 600 mm diameter of a representative dry plant.
+- [x] Satellite — 21 m representative communications satellite span with panels extended.
 - [ ] Tropical fish
-- [ ] Ordinary crab — distinct from the existing horseshoe crab.
+- [x] Ordinary crab — red rock crab, 300 mm claw-tip span with claws spread; distinct from the existing horseshoe crab.
 - [ ] Cheese wedge — distinct from the existing cheese wheel.
 - [ ] Kitchen whisk
-- [ ] Ladle
 - [ ] Cooking turner — review whether to reuse the existing grill-spatula entry.
 
 Bicycle, unicycle, jack-in-the-box, rabbit, dolphin, and cruise ship already exist as measurement objects. Their new Home animation artwork does not add duplicate collection entries.

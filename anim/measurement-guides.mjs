@@ -1,6 +1,6 @@
 import {ORIENT} from './orient-data.js';
 
-const VERTICAL_LENGTH = new Set('acorn tooth chocolate-drop whiskey-glass jack-in-the-box pigeon owl bald-eagle teddy-bear candy-corn easter-egg plastic-egg mothers-day-card valentines-card tie-dye-shirt serape vampire-cape school-desk ice-skates sunflower-bouquet fall-leaf horseshoe confetti pizza-slice seashell stingray textbook'.split(' '));
+const VERTICAL_LENGTH = new Set('soup-ladle acorn tooth chocolate-drop whiskey-glass jack-in-the-box pigeon owl bald-eagle teddy-bear candy-corn easter-egg plastic-egg mothers-day-card valentines-card tie-dye-shirt serape vampire-cape school-desk ice-skates sunflower-bouquet fall-leaf horseshoe confetti pizza-slice seashell stingray textbook'.split(' '));
 const REGIONS = {'globe':[0,0,1,.78],'snow-globe':[0,0,1,.78],'clock':[.12,.17,.9,.87],'cauldron':[.15,.2,.85,.76],'cranberry':[.02,.4,.54,1],'black-cat':[0,.22,.83,1],'rabbit':[0,.38,.91,.93],'countdown-sign':[0,0,1,.63]};
 export function measurementGuideAxis(object,bounds){
   const dimension=object.measurement?.dimension||'length';

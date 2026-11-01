@@ -148,6 +148,8 @@ const VISUAL = {
 // How each object travels in: 'walk' bounces along, 'drive' rattles along, 'fly' lifts off and
 // lands, 'sail' rocks gently, and anything else gives a few hops.
 const MOTION = {
+  cherry:'slide',mouse:'walk','spinning-top':'slide','toy-jack':'slide',
+  seal:'slide',satellite:'fly',crab:'walk',tumbleweed:'slide','spaghetti-strainer':'slide','soup-ladle':'slide',
   'tennis-court':'slide','ice-hockey-rink':'slide','coast-redwood':'slide',
   submarine:'fly','cargo-ship':'sail','freight-train':'drive','radio-mast':'slide',
   'sports-stadium':'slide','radio-telescope':'slide','water-slide':'slide',

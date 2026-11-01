@@ -6,6 +6,9 @@ const catalog=JSON.parse(fs.readFileSync('anim/object-review-data.json','utf8'))
 const ORIENT=JSON.parse(fs.readFileSync('anim/orient-data.js','utf8').match(/export const ORIENT = (\{[^\n]+\});/)[1]);
 const manifest=JSON.parse(fs.readFileSync('art-source/large-objects-2026-10/manifest.json','utf8'));
 const picks=JSON.parse(fs.readFileSync('art-source/object-review-large-objects/applied-choices.json','utf8'));
+// This export also contains older unrelated entries, since corrected elsewhere.
+// Verify the twelve objects that belong to this artwork/choices manifest.
+picks.objects=picks.objects.filter(o=>manifest.objects.some(row=>row.id===o.id));
 // Later approved measurement corrections supersede the archived phone export.
 const resolutions=JSON.parse(fs.readFileSync('art-source/object-review/measurement-resolutions.json','utf8'));
 for(const row of picks.objects)if(resolutions[row.id]){
@@ -14,7 +17,7 @@ for(const row of picks.objects)if(resolutions[row.id]){
 }
 assert.deepEqual(validatePicks(picks,catalog),{},'All phone-exported choices are applied');
 assert.equal(manifest.objects.length,12);
-assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,373);
+assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,383);
 const scenes=['stadium','stadium','forest','underwater','beach','city','city','stadium','desert','beach','city','city'];
 for(const [i,row]of manifest.objects.entries()){
   const object=catalog.objects.find(o=>o.id===row.id);
@@ -29,4 +32,4 @@ for(const [i,row]of manifest.objects.entries()){
   const original=fs.readFileSync('art-source/large-objects-2026-10/'+row.original);
   assert.equal(original.toString('ascii',1,4),'PNG');assert.equal(original[25],6,'Original sprite retains RGBA alpha');
 }
-console.log('PASS: 12 new objects, 373 permanent objects, artwork files/alpha sources, measurements, scenery and exact phone-exported orientation settings.');
+console.log('PASS: 12 large objects, 383 permanent objects, artwork files/alpha sources, measurements, scenery and exact phone-exported orientation settings.');

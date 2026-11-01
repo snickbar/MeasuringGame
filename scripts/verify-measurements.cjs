@@ -28,8 +28,12 @@ vm.runInContext([
   'globalThis.api = {ALL_OBJECTS,OBJECT_BY_ID,MEASUREMENT_GROUPS,MEASUREMENT_DETAILS,MEASUREMENT_TYPES,measurementQuestionPrompt,dailyQuestionFor};',
 ].join('\n'), sandbox);
 const {ALL_OBJECTS: all, OBJECT_BY_ID: objects, MEASUREMENT_GROUPS: groups, MEASUREMENT_DETAILS: details, MEASUREMENT_TYPES: types, measurementQuestionPrompt: prompt, dailyQuestionFor: question} = sandbox.api;
-assert.equal(all.length, 553);
-assert.equal(objects.size, 553);
+assert.equal(all.length, 563);
+assert.equal(objects.size, 563);
+for(const [id,mm,dimension]of [['cherry',25,'diameter'],['mouse',180,'length'],['spinning-top',100,'height'],['toy-jack',30,'width'],['seal',1500,'length'],['satellite',21000,'width'],['crab',300,'width'],['tumbleweed',600,'diameter'],['spaghetti-strainer',250,'diameter'],['soup-ladle',300,'length']]){
+  assert.equal(objects.get(id).mm,mm,id);assert.equal(objects.get(id).measurement.dimension,dimension,id);
+  assert(objects.get(id).measurement.qualifier,id+' has an explicit measurement boundary');
+}
 const ids = new Set();
 for (const [dimension, members] of Object.entries(groups)) {
   assert(types[dimension]);

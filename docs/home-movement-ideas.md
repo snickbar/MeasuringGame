@@ -29,7 +29,7 @@ All detail animations use the scene's existing pause/disposal and reduced-motion
 
 - Wheels: a small robot rides a unicycle behind the rocket/cones. Articulated legs follow the pedals; wheel rotation matches linear travel and reverses visually on return crossings.
 - Toy Box: an independently layered jack-in-the-box opens automatically and on tap. Active taps never queue or restart it. The beach ball now has separate horizontal, vertical and rotation layers, keeping its sideways speed steady through each bounce.
-- Missing measurement objects are recorded in `docs/object-backlog.md`; the approved list does not yet change collection entries or sizes.
+- Missing measurement objects are recorded in `docs/object-backlog.md`. The subsequent approved batch integrated cherry, mouse, spinning top, toy jack, seal, satellite, crab, tumbleweed, spaghetti strainer and soup ladle as regular measurement objects.
 - Make Believe: a grey rabbit hops along the farther path, pauses in a settled pose, and passes behind the foreground. Original fairy remains.
 - Surfboard beach: a slow distant cruise ship and occasional dolphin leap with entry/exit splashes. Dolphin stays clipped below the water before/after the leap; both sit behind foreground subjects.
 
@@ -37,7 +37,7 @@ All detail animations use the scene's existing pause/disposal and reduced-motion
 
 Confirmed existing measurement objects: bicycle, unicycle, jack-in-the-box, dolphin, cruise ship, rabbit, pigeon, honeybee, butterfly, ladybug, jellyfish, flying saucer, and the main foreground subjects/props (including lighthouse, refrigerator, corgi, turtle, ice cream cone and crocodile/alligator).
 
-Confirmed missing: cherry, mouse, spinning top, and a single toy jack. Other Home artwork without a corresponding specific object: seagull, small songbird, puffin, seal pup, hawk, tumbleweed, satellite, tropical fish, and ordinary crab (the current collection has a horseshoe crab, a different animal). The mouse's cheese wedge and the kitchen whisk/ladle/cooking turner also need review; a cheese wheel and grill spatula already exist. These are now tracked in the approved object backlog; artwork, measurements and collection integration remain separate work.
+The audit originally found cherry, mouse, spinning top, a single toy jack, seal, satellite, ordinary crab and tumbleweed missing; those are now integrated, together with spaghetti strainer and soup ladle. Remaining gaps include seagull, small songbird, puffin, hawk, tropical fish, cheese wedge, kitchen whisk and cooking turner. A cheese wheel and grill spatula already exist. See the object backlog for current status.
 
 The ball fix is implemented: steady horizontal travel, separate vertical bounce arcs, decreasing bounce height, and rotation matched to travel. The existing alternating route mirrors the rotation automatically on return crossings.
 

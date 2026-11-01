@@ -36,7 +36,7 @@ assert(source.includes('#f39432 60% 75%,#65b94e 75% 90%,#3999ef 90% 100%'));
 assert(source.includes('left:90%; right:0; top:0; bottom:0; background:linear-gradient(110deg'));
 assert(source.includes('WORLD_STAR_AT.map((at, i)'));
 assert.deepEqual(Array.from(api.WORLDS,w=>w.id).filter(id=>!['under-the-sea','toy-box'].includes(id)),['tiny','games','home','food','town','critters','wheels','landmarks','make-believe','holiday-mix']);
-for(const [id,count,home]of [['under-the-sea',19,'underwater'],['toy-box',18,'toy-box']]){
+for(const [id,count,home]of [['under-the-sea',21,'underwater'],['toy-box',20,'toy-box']]){
   const world=api.WORLDS.find(w=>w.id===id);assert.equal(world.ids.length,count);assert.equal(new Set(world.ids).size,count);
   assert(objects.has(api.WORLD_ICON[id]));
   for(const objectId of world.ids)assert.equal(objects.get(objectId)?.group,'Standard',objectId+' must not require a pack');
