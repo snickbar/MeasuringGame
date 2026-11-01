@@ -11441,10 +11441,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     return `<span class="wl-meter" role="img" aria-label="${total} of ${WORLD_LEVELS * 3} stars">${groups}</span>`;
   }
+  // "NEW" shows only on something just unlocked and not yet tried: a world or level after the first, with no stars and no attempts.
+  const worldIsNew = (i) => i > 0 && worldUnlocked(i) && worldStarsOf(WORLDS[i].id) === 0 && !Object.keys(myProfile.worldRecords?.[WORLDS[i].id] || {}).length;
+  const worldLevelIsNew = (wid, l) => l > 1 && worldLevelUnlocked(wid, l) && worldLevelStars(wid, l) === 0 && !(myProfile.worldRecords?.[wid]?.["l" + l]?.attempts > 0);
   function worldCard(id, img, name, sub, extra) {
     const world=WORLDS.find(w=>w.name===name),home=world&&HOME_SCREENS.find(h=>h.world===world.id);
     const scenery=home?` data-world-art="${world.id}" style="--world-art:url('${new URL(home.file,document.baseURI).href}')"`:"";
-    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
+    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}${extra && extra.isNew ? " sh-isnew" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
   let focusedPlayLayout;
   const getPlayLayout = () => focusedPlayLayout ||= createPlayLayout(document);
@@ -11470,7 +11473,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
-          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
+          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, isNew: worldIsNew(i), hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
       return;
     }
@@ -11479,7 +11482,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">${w.name}</h2><p class="dc-sub">${worldStarsOf(w.id)} / ${WORLD_LEVELS * 3} stars &middot; 1 star opens the next level</p></div>${worldRewardCard(w)}${soloResumeHtml("worlds",w.id)}` +
         [1, 2, 3, 4, 5].map((l) => {
           const open = worldLevelUnlocked(w.id, l), st = worldLevelStars(w.id, l);
-          return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
+          return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}${worldLevelIsNew(w.id, l) ? " sh-isnew" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
         }).join("");
       return;
     }
