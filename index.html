@@ -2247,6 +2247,8 @@ if (location.protocol === "file:") {
   .cs-recent-tx b { font-family: 'Fredoka', sans-serif; font-size: 16px; font-weight: 700; line-height: 1.15; color: #4a2f1c; text-shadow: none; }
   .cs-recent-tx small { font-size: 12.5px; font-weight: 600; color: #8a7358; line-height: 1.2; }
   .cs-recent-badge { flex: none; min-width: 58px; padding: 6px 10px; border-radius: 999px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; text-align: center; color: #5b3a26; background: #efe4cc; border: 2px solid #d9c5a0; font-variant-numeric: tabular-nums; }
+  .cs-recent-tx .wl-stars { display: inline-flex; gap: 1px; vertical-align: middle; } .cs-recent-tx .wl-stars img { width: 17px; height: 17px; } .cs-recent-tx .wl-stars .off img { filter: grayscale(1) opacity(.35); }
+  .cs-recent-row .cs-recent-badge + .cs-recent-badge { margin-left: -2px; }
   .cs-recent-badge.gold { background: linear-gradient(#ffe688, #f6bf2c); border-color: #c8921a; color: #5e3a05; }
   .cs-recent-badge.silver { background: linear-gradient(#f4f6f8, #cfd6dd); border-color: #9aa5b1; color: #3f4a55; }
   .cs-recent-badge.bronze { background: linear-gradient(#f6c79a, #d98a4c); border-color: #a8602a; color: #5a2d0a; }
@@ -11411,8 +11413,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bests=Object.values(myProfile.worldRecords?.[world.id]||{}),best=bests.length?Math.max(...bests.map(r=>r.bestAccuracy||0)):null;
     return `<div class="cozy-panel world-reward"><button class="home-reward-preview" data-world-reward="${home.id}" aria-label="Preview ${home.name} home screen"><img src="${home.file}" alt="${home.name} home screen"></button><div><b>${escapeHtml(home.name)} home screen</b><p>${owned?'<span class="world-reward-owned">&#10003; Unlocked</span>':worldSceneEarned(world.id)?'Last level cleared':'Earn a star on Level '+WORLD_LEVELS+' to unlock'} · ${stars}/15 mastered</p>${best===null?'':`<p>Best level accuracy: ${formatAccuracy(best)}%</p>`}<div class="cozy-actions"><button data-world-reward="${home.id}">Preview</button>${owned?`<button data-equip-world="${home.id}" ${equipped?'disabled':''}>${equipped?'Equipped':'Equip'}</button>`:worldSceneEarned(world.id)?`<button data-claim-world="${world.id}">Claim home screen</button>`:''}</div></div></div>`;
   }
-  function survivalRecordsHtml(){
-    const data=myProfile.survival||{},stats=myProfile.modeStats?.survival||{},history=(myProfile.attemptHistory||[]).filter(r=>r.mode==='survival').slice(-5).reverse();
+  function survivalRecordsHtml(noRecent){
+    const data=myProfile.survival||{},stats=myProfile.modeStats?.survival||{},history=noRecent?[]:(myProfile.attemptHistory||[]).filter(r=>r.mode==='survival').slice(-5).reverse();
     return `<div class="cozy-panel"><div class="cs-tiles">${statTile(data.best||0,'Best run')}${statTile(data.runs||0,'Runs finished')}${statTile(stats.answered?formatAccuracy(stats.accuracyTotal/stats.answered)+'%':'—','Average accuracy')}</div>${history.length?'<h3>Recent runs</h3>'+history.map(r=>'<p>'+r.survived+' survived · '+formatAccuracy(r.accuracy)+'% accurate</p>').join(''):''}</div>`;
   }
   function worldStop() { if (wlAnim) { try { wlAnim.destroy(); } catch (e) {} wlAnim = null; } }
@@ -12988,18 +12990,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const when = r.t ? new Date(r.t).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
     const acc = r.accuracy == null || isNaN(r.accuracy) ? null : r.accuracy;
     const bits = [];
-    let badge = "", tone = "plain";
+    let badge = "", tone = "plain", coinBadge = "", starsHtml = "";
+    const starRow = (n) => worldStarsHtml(n);
+    // Old attempts never saved their partner; the Team Worlds history has them, matched by the same finish time.
+    const twPartner = () => { if (r.partnerName) return r.partnerName; for (const w of Object.values(myProfile.teamWorldsHistory || {})) for (const h of Object.values(w || {})) if (h && h.t === r.t && h.partnerName) return h.partnerName; return ""; };
     if (kind === "match") {
       if (r.won || Number(r.place) === 1) { badge = "Won"; tone = "gold"; }
       else { badge = ordinal(r.place); tone = Number(r.place) === 2 ? "silver" : Number(r.place) === 3 ? "bronze" : "plain"; }
-      if (mode === "highstakes") bits.push(`${r.score} coins left`); else if (acc != null) bits.push(`${formatAccuracy(acc)}% accurate`);
+      if (mode === "highstakes") {
+        bits.push(`${r.score} coins left`);
+        const paid = (myProfile.attemptReceipts || {})[r.key + "_hs"];
+        if (paid && paid.coins != null) coinBadge = `<span class="cs-recent-badge gold">${paid.coins} coin${paid.coins === 1 ? "" : "s"}</span>`;
+      } else if (acc != null) bits.push(`${formatAccuracy(acc)}% accurate`);
+      if (mode === "teamvteam" && r.partnerName) bits.push(`with ${r.partnerName}`);
     } else {
       if (mode === "highstakes") { badge = `${r.coins} coins`; tone = "gold"; }
       else if (acc != null) { badge = formatAccuracy(acc) + "%"; tone = acc >= 75 ? "gold" : acc >= 50 ? "silver" : "plain"; }
       if (r.survived !== null && r.survived !== undefined) bits.push(`${r.survived} survived`);
+      if (mode === "worlds" || mode === "teamworlds") starsHtml = starRow(r.stars != null ? r.stars : worldStarsFor(acc || 0));
+      if (mode === "teamworlds") { const pn = twPartner(); if (pn) bits.push(`with ${pn}`); }
+      if (mode === "whichbigger" && r.rounds) bits.unshift(`Level ${r.rounds}`);
     }
     if (when) bits.push(when);
-    return `<div class="cs-recent-row"><img class="cs-recent-ic" src="${icon}" alt="" draggable="false"><div class="cs-recent-tx"><b>${escapeHtml(name)}</b><small>${escapeHtml(bits.join(" · "))}</small></div><span class="cs-recent-badge ${tone}">${escapeHtml(badge)}</span></div>`;
+    return `<div class="cs-recent-row"><img class="cs-recent-ic" src="${icon}" alt="" draggable="false"><div class="cs-recent-tx"><b>${escapeHtml(name)}</b><small>${starsHtml}${starsHtml && bits.length ? " " : ""}${escapeHtml(bits.join(" · "))}</small></div>${coinBadge}<span class="cs-recent-badge ${tone}">${escapeHtml(badge)}</span></div>`;
   }
   function careerChartSvg(points) {
     const W = 320, H = 150, L = 34, R = 10, T = 10, B = 22;
@@ -13134,7 +13147,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(!hsView&&!bluffView)html+=`<div class="cs-tiles">${tile(shownRounds,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(shownSpot,'Within 1%')}${tile(shownPerfect,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
     if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot accuracy</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(botLevelLabel(level))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
-    if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml();
+    if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml(true);
     if(['all','daily'].includes(statsMode)){
       html+=`<h3 class="cs-h">Daily Challenge</h3><div class="cozy-panel cs-tiles">${statTile(dailyStreakNow(),'Current streak')}${statTile(myProfile.dailyStreak?.best||0,'Best streak')}${statTile(st.dailies||0,'Challenges finished')}</div>`;
       const dTop=topScores(dailyHistoryRows(),3);
@@ -13146,7 +13159,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if(mTop.length)html+=`<p class="cs-note">Your top 3 scores</p><div class="cozy-panel">${mTop.map(r=>`<div class="dc-lb-row"><span class="dc-lb-name">${escapeHtml(monthlyKeyLabel(r.key))}</span><span class="dc-lb-score">${formatAccuracy(r.s)}%</span></div>`).join('')}</div><button type="button" class="dc-btn dc-alt" data-stats-history="monthly">See all monthly scores</button>`;
     }
     if(statsMode==='all')html+=`<h3 class="cs-h">Your collection</h3><div class="cozy-panel cs-tiles">${statTile(Object.keys(myProfile.seenObjects||{}).length,'Objects seen')}${statTile(Object.keys(myProfile.seenCombos||{}).length,'Combinations seen')}${statTile(ownedNonDefaultAvatars().length,'Avatars collected')}</div>`;
-    const attempts=(myProfile.attemptHistory||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
+    const attempts=(myProfile.attemptHistory||[]).filter(r=>r.mode!=='highstakes'&&(statsMode==='all'||r.mode===statsMode)).slice(-5).reverse();
     if(attempts.length)html+='<h3 class="cs-h">Recent attempts</h3><div class="cs-recent">'+attempts.map(r=>recentRowHtml(r,'attempt')).join('')+'</div>';
     const matches=(myProfile.matches||[]).filter(r=>statsMode==='all'||r.mode===statsMode).slice(-5).reverse();
     if(matches.length)html+='<h3 class="cs-h">Recent games</h3><div class="cs-recent">'+matches.map(r=>recentRowHtml(r,'match')).join('')+'</div>';
