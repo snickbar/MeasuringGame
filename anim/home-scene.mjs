@@ -6,6 +6,8 @@ import { HOME_RIG } from "./home-art-rig.mjs";
 import {makeHomeFlight,FRAMED_HOME_BIRDS,makeDetailedHomeDragon,DETAILED_HOME_DRAGON} from './home-flight.mjs';
 import { decorateNewHomeBackground, makeHomeFairy } from './home-new-scenes.mjs';
 import { HOME_MOTION, HOME_EXTRA_ART, homeRigMotion, decorateHomeProps, decorateHomeHero, decorateHomePart, installHomeInteractions } from "./home-motion.mjs";
+import { decorateHomeIdle } from './home-idle.mjs';
+import { KITCHEN_TOOL_CROPS } from './home-idle-art.mjs';
 const BASE = "anim/home-art/";
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
@@ -91,7 +93,7 @@ async function buildHomeScene(home, scene, current) {
   const extraImages = await Promise.all(extraFiles.map(file => load(BASE + file)));
   const extras = new Map(extraFiles.map((file, i) => [file, extraImages[i]]));
   // Optimized builds omit the old whole hero when a rig supplies its base.
-  const images = Promise.all([art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters].map(l => l ? load(BASE + l.file) : null));
+  const images = Promise.all([scene==='house' ? null : art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters].map(l => l ? load(BASE + l.file) : null));
   images.catch(() => {}); // The rig may still be loading when a required image fails.
   if (rig) {
     try {
@@ -100,7 +102,8 @@ async function buildHomeScene(home, scene, current) {
       rigImgs = new Map(list.map((l, i) => [l.file, loaded[i]]));
     } catch (e) { rig = null; rigImgs = null; }
   }
-  const [plate, originalHero, originalHero2, ...crits] = await images;
+  const [loadedPlate, originalHero, originalHero2, ...crits] = await images;
+  const plate = scene==='house' ? extras.get('idle/kitchen-clean.webp') : loadedPlate;
   if (!home.isConnected || !current()) return;
   let hero = originalHero, hero2 = originalHero2;
   if (rig && rig.base) hero = rigImgs.get(rig.base.file);
@@ -298,6 +301,7 @@ async function buildHomeScene(home, scene, current) {
     stage.style.setProperty("--sw", HOME_ART_REF.width * s + "px");
     stage.style.setProperty("--sh", HOME_ART_REF.height * s + "px");
   };
+  decorateHomeIdle(root,scene,extras,KITCHEN_TOOL_CROPS);
   size(); resizeStage = size;
   disposeScene(); stopHomeSound();
   interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound);

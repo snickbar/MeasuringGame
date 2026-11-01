@@ -28,6 +28,7 @@ export const HOME_EXTRA_ART = Object.fromEntries(Object.entries(HOME_MOTION).map
   if(scene==='toy-box')files.push('refined/robot-arm-parts.webp','../../items/beach-ball.webp');
   if(scene==='corgi')files.push('refined/kibble.webp');
   if(scene==='house')files.push('refined/mouse-cheese-walk.webp','fridge-clean-v2.webp','fridge-magnets-v2.webp');
+  if(scene==='house')files.push('idle/kitchen-clean.webp','idle/kitchen-utensils.webp');
   if(scene==='dragon')files.push('flying-dragon-parts-v2.webp');
   if(scene==='make-believe')files.push('unicorn-tail-v3.webp','books-make-believe.webp','spellbook-textures-v2.webp','fairy-parts-v2.webp');
   if(scene==='holiday-mix')files.push('snowman-parts-v2.webp','gifts-holiday-mix.webp','gift-lid-v2.webp','gift-turkey-v2.webp','holiday-rainbow-v2.webp');

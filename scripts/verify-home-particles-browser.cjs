@@ -11,7 +11,7 @@ let localSoundEnabled=true;const homeScreen=document.getElementById('home-screen
 ${sounds}
 ${popListener}
 const scene=await import('./anim/home-scene.mjs'),fx=await import('./anim/home-fx.mjs');window.api={...scene,...fx};window.ready=true;
-</script>`;
+</script>`.replace('<style>','<link rel="stylesheet" href="anim/home-idle.css"><style>');
 const server=http.createServer((req,res)=>{const u=new URL(req.url,'http://localhost');if(u.pathname==='/test'){res.setHeader('Content-Type','text/html');res.end(html);return;}const p=path.resolve(root,'.'+decodeURIComponent(u.pathname));if(!p.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.css':'text/css','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.ttf':'font/ttf','.wav':'audio/wav','.mp3':'audio/mpeg'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p));}catch{res.writeHead(404);res.end();}});
 server.listen(0,'127.0.0.1',()=>{
  const chrome=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--autoplay-policy=no-user-gesture-required','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'home-particle-'+process.pid),'about:blank'],{windowsHide:true});let stderr='',started=false,socket;
