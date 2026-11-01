@@ -52,6 +52,12 @@ window.__launch={
   scene.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=time});
   const css=selector=>{const node=scene.querySelector(selector);return node?getComputedStyle(node):null};
   return {jaw:css('.sv-dragon-jaw')?.transform,body:css('.sv-dragon-body')?.transform,flame:Number(css('.sv-flame')?.opacity),arm:css('.sv-sword-arm')?.transform};
+ },
+ survivalQuestion:()=>{
+  modeTutorialUI.mark('survival');modeTutorialUI.close();
+  ALL_SCREEN_ELS.forEach(e=>e.classList.remove('active'));survivalScreenEl.classList.add('active');bottomToolbarEl.classList.remove('active');
+  sv={runId:'ui-test',phase:'question',lives:3,shield:true,chain:0,survived:123,asked:124,bonusWins:1,accs:[{r:.98}],input:'',recent:[],q:dailyQuestionFor({unitId:'ant',targetId:'door'})};
+  renderSurvival();
  }
 };
 `;
@@ -93,5 +99,8 @@ runFixture({html,modules:{'/__fake/app.mjs':'export const initializeApp=()=>({})
  await evaluate("document.documentElement.dataset.motion='reduce'");
  const reduced=await evaluate("window.__launch.survivalPose('lost',1000)");assert.equal(reduced.body,'none');assert.equal(await evaluate("document.querySelector('.sv-scene').getAnimations({subtree:true}).length"),0);
  await evaluate("document.documentElement.dataset.motion='full'");
+ await evaluate('window.__launch.survivalQuestion()');await wait(150);
+ const header=await evaluate(`(()=>{const h=document.querySelector('#survival-content .sv-top'),r=h.getBoundingClientRect();return {coins:document.getElementById('sv-coins').textContent,overflow:h.scrollWidth>h.clientWidth+1,children:[...h.children].every(e=>e.getBoundingClientRect().right<=r.right-35),page:document.documentElement.scrollWidth>innerWidth}})()`);
+ assert.equal(header.coins,'371');assert(!header.overflow&&!header.page&&header.children,'merged four-status Survival header fits with a larger round/coin count');await screenshot('survival-header-'+width+'.png');
  console.log({pass:true,width,checks:'actual app Stats, collection, consistent reaction states/fallback, earned Worlds progress, watch-only tutorial controls and Survival rigs'});
 }}).catch(e=>{console.error(e);process.exitCode=1});

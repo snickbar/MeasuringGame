@@ -39,7 +39,8 @@ const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,ow
  profile:async()=>wallet,room:async()=>room,quickApplied:()=>{},refresh:()=>{},finished:()=>{},
 });
 const local=document.createElement('div');document.body.append(local);
-const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3,WORLD_STAR_AT=[60,75,90],deviceId='me';
+const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,WORLD_STAR_AT=[60,75,90],deviceId='me';
+${extractLine('  const SURVIVAL_LIVES =')}
 ${extractLine('  const worldStarsFor =')}
 ${extractFunction('effectiveGuess')}
 ${extractFunction('worldProgressBarHtml')}
@@ -67,7 +68,7 @@ globalThis.showSoloCompactPreview=async which=>{
  document.getElementById('worlds-screen').classList.toggle('active',which==='worlds');
  document.getElementById('survival-screen').classList.toggle('active',which==='survival');
  if(which==='worlds'){wl={phase:'question',wi:0,level:1,questions:[room.currentQuestion],guesses:[],input:''};renderWorlds()}
- else{sv={phase:'question',asked:0,lives:3,q:room.currentQuestion,accs:[],input:''};renderSurvival()}
+ else{sv={phase:'question',asked:0,lives:3,survived:0,q:room.currentQuestion,accs:[],input:''};renderSurvival()}
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  const host=which==='worlds'?worldsContentEl:survivalContentEl,keys=[...host.querySelectorAll('.dc-key')];
  const pad=host.querySelector('.dc-keys'),pill=host.querySelector('.dc-prompt');
