@@ -4864,6 +4864,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { MODE_IDENTITIES, MODE_BACKGROUNDS, modeGradient, screenMode, backgroundPresentation } from "./anim/mode-identity.mjs";
   import { createAudioLifecycle } from "./anim/audio-lifecycle.mjs";
   import { createRoundScoreReveal } from "./anim/round-score-reveal.mjs";
+  import { reactionAvailability } from "./anim/reaction-availability.mjs";
+  import { createWorldProgressPolish } from "./anim/world-progress-polish.mjs";
+  import { survivalKnightRig, survivalDragonRig, preloadSurvivalRigArt } from "./anim/survival-rigs.mjs";
   import { reactionEntrance } from "./anim/reaction-entrance.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
@@ -8813,19 +8816,36 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       reactionStripEl.appendChild(b);
     }
+    updateReactionAvailability();
+  }
+  function reactionState() {
+    return reactionAvailability({room:roomState, connected:!!currentRoomCode && !!roomState?.players?.[currentPlayerId],
+      visible:!document.hidden && gameplayAudioVisible(), now:nowMs(),
+      overlay:OVERLAY_SCREENS.some(el=>el.classList.contains('active')) || !!document.querySelector('dialog[open]')});
+  }
+  function updateReactionAvailability() {
+    const state = reactionState();
+    const cooling = Date.now() - lastReactionTapAt < REACTION_COOLDOWN_MS;
+    if (!cooling) reactionStripEl.classList.remove('cooling');
+    reactionStripEl.classList.toggle('anim-locked', !state.allowed);
+    reactionStripEl.setAttribute('aria-disabled', String(!state.allowed || cooling));
+    for (const b of reactionStripEl.querySelectorAll('[data-emoji]')) {
+      b.disabled = !state.allowed || cooling; b.title = !state.allowed ? state.reason : cooling ? 'Ready in a moment' : (REACTIONS[b.dataset.emoji]?.label || '');
+    }
   }
   reactionStripEl.addEventListener("click", (ev) => {
     const lk = ev.target.closest(".react-slot.lock-tap");
     if (lk) { openSlotUnlock(Number(lk.dataset.slot)); return; }
     const b = ev.target.closest(".react-slot[data-emoji]");
     if (!b || !currentRoomCode) return;
-    if (roomState && (roomState.phase === "animation" || (roomState.phase==='bluff'&&roomState.bluff?.stage==='animation'))) return; // grayed out, not just visually - belt and suspenders alongside the CSS pointer-events:none
+    if (!reactionState().allowed) { updateReactionAvailability(); return; }
     const t = Date.now();
     if (t - lastReactionTapAt < REACTION_COOLDOWN_MS) return;
     lastReactionTapAt = t;
     reactionStripEl.classList.remove("cooling");
     void reactionStripEl.offsetWidth; // restart the sweeping ring
     reactionStripEl.classList.add("cooling");
+    updateReactionAvailability();
     setTimeout(() => reactionStripEl.classList.remove("cooling"), REACTION_COOLDOWN_MS);
     sendReaction(b.dataset.emoji);
   });
@@ -11352,6 +11372,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   };
   const worldLevelUnlocked = (wid, l) => l === 1 || worldLevelStars(wid, l - 1) >= 1;
   const worldStarsHtml = (n) => `<span class="wl-stars" aria-label="${n} of 3 stars">${[1, 2, 3].map((i) => `<span${i > n ? ' class="off"' : ''}><img src="icons/flair/star.png" alt=""></span>`).join("")}</span>`;
+  const worldProgressPolish = createWorldProgressPolish({owner:()=>deviceId, reduced:prefersReducedMotion});
   const worldStarsFor = (avg) => (avg > WORLD_STAR_AT[2] ? 3 : avg > WORLD_STAR_AT[1] ? 2 : avg > WORLD_STAR_AT[0] ? 1 : 0);
   // Takes the average directly, so it's reusable outside solo Worlds' own local `wl` state
   // (Team Worlds' room-based accuracy below).
@@ -11478,6 +11499,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
           return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
+      worldProgressPolish.apply(el, null);
       return;
     }
     if (wl.phase === "world") {
@@ -11487,6 +11509,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const open = worldLevelUnlocked(w.id, l), st = worldLevelStars(w.id, l);
           return `<button type="button" class="sh-card${open && st === 0 ? " sh-hot" : ""}" id="wl-level-${l}"${open ? "" : " disabled"}><span class="sh-tx"><span class="sh-name">Level ${l} &middot; ${WORLD_LEVEL_NAMES[l - 1]}</span><span class="sh-sub">${open ? worldStarsHtml(st) : "Locked"}${myProfile.worldRecords?.[w.id]?.["l"+l]?`<span class="cs-note">Best ${formatAccuracy(myProfile.worldRecords[w.id]["l"+l].bestAccuracy)}% · ${myProfile.worldRecords[w.id]["l"+l].attempts} attempts</span>`:""}</span></span></button>`;
         }).join("");
+      worldProgressPolish.apply(el, w.id);
       return;
     }
     const header = `<h2 class="dc-title wl-run-title"><span>${escapeHtml(w.name)}</span><span class="wl-level-badge">Level ${wl.level}</span></h2>`;
@@ -11612,6 +11635,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const w=WORLDS[wl.wi],accs=wl.questions.map((q,k)=>roundAccuracy(effectiveGuess(q,wl.guesses[k],deviceId)/q.answer));
     const avg=accs.reduce((a,b)=>a+b,0)/accs.length;wl.stars=worldStarsFor(avg);wl.gain=wl.stars*WORLD_STAR_COINS;
     wl.newBest=avg>(myProfile.worldRecords?.[w.id]?.["l"+wl.level]?.bestAccuracy||0);
+    const previousStars = worldLevelStars(w.id, wl.level);
+    worldProgressPolish.record({world:w.id, level:wl.level, from:previousStars, to:Math.max(previousStars,wl.stars), best:wl.newBest, run:wl.runId,
+      nextWorldIndex:wl.level===5 && previousStars<2 && wl.stars>=2 && wl.wi+1<WORLDS.length && !worldUnlocked(wl.wi+1) ? wl.wi+1 : null});
     completedAttempt({key:wl.runId,mode:'worlds',world:w.id,level:wl.level,stars:wl.stars,accuracy:avg});
     clearSoloSession('worlds');
   }
@@ -12342,10 +12368,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Survival's mascots (only one scene at a time): knight cheers when safe, dragon breathes fire on a lost life,
   // and when the shield saves you the dragon's fire hits the knight's raised shield.
   function svSceneHtml(r, ok) {
-    if (r.saved) return `<div class="sv-scene saved"><img class="sv-dragon" src="icons/survival-dragon-breathe.webp" alt="" draggable="false"><img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false"><img class="sv-knight" src="icons/survival-knight-block.webp" alt="" draggable="false"><span class="sv-spark" aria-hidden="true"></span></div>`;
+    if (r.saved) return `<div class="sv-scene saved">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false"><img class="sv-knight" src="icons/survival-knight-block.webp" alt="" draggable="false"><span class="sv-spark" aria-hidden="true"></span></div>`;
     const mark = `<div class="sv-markpos"><div class="wb-burst">${r.checkpoint ? svCoinBurstHtml() : ""}<div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? "Safe" : "Lost a life"}">${ok ? "&#10004;" : "&#10006;"}</div></div></div>`;
-    if (ok) return `<div class="sv-scene safe"><img class="sv-knight cheer" src="icons/survival-knight-cheer.webp" alt="" draggable="false">${mark}</div>`;
-    return `<div class="sv-scene lost"><img class="sv-dragon" src="icons/survival-dragon-breathe.webp" alt="" draggable="false"><img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false">${mark}</div>`;
+    if (ok) return `<div class="sv-scene safe">${survivalKnightRig()}${mark}</div>`;
+    return `<div class="sv-scene lost">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false">${mark}</div>`;
   }
   function svResultHtml() {
     const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok && !r.saved;
@@ -12370,6 +12396,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="pin-bottom">${over && !sv.revived ? `<div class="wl-done-split"><button type="button" class="dc-btn" id="sv-next">See my score</button><button type="button" class="dc-btn wl-ad-btn" id="sv-revive"><span>Watch ad: revive</span><small>+1 life, once per run</small></button></div>` : `<button type="button" class="dc-btn" id="sv-next">${over ? "See my score" : "Next round"}</button>`}</div>`;
   }
   function openSurvival() {
+    void preloadSurvivalRigArt();
     const fromHub = soloScreenEl.classList.contains("active");
     sv = { phase: "intro", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 };
     renderSurvival();
@@ -12428,7 +12455,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       requestAnimationFrame(() => requestAnimationFrame(svFit));
       // Shield moments: it breaks like a heart when it saves you; earning one pops it into the header; chain pips tick up.
       if (sv.res.checkpoint) { try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
-      if (sv.res.saved && !sv.shieldShown) { sv.shieldShown = true; svCrackHeart("shield"); }
+      if (sv.res.saved && !sv.shieldShown) {
+        sv.shieldShown = true; const result = sv.res;
+        setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart('shield'); }, prefersReducedMotion() ? 0 : 950);
+      }
       else if (sv.res.earned) { try { playSound("streak"); } catch (e) {} }
       setTimeout(() => {
         const el2 = document.getElementById("sv-shield"); if (!el2 || !sv || sv.phase !== "result") return;
@@ -12437,7 +12467,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const n2 = document.getElementById("sv-shield"); if (n2 && changed) n2.classList.add(sv.shield ? "pop" : "tick");
       }, sv.res.saved ? 1100 : 650);
       if (sv.lossPending) {
-        sv.lossPending = false; svCrackHeart();
+        sv.lossPending = false; const result = sv.res;
+        setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart(); }, prefersReducedMotion() ? 0 : 950);
         setTimeout(() => {
           const h = document.getElementById("sv-hearts");
           if (h && sv && sv.phase === "result") { h.innerHTML = Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < sv.lives)).join(""); const hs = h.querySelectorAll(".sv-heart"); if (hs[sv.lives]) hs[sv.lives].classList.add("drop"); }
@@ -13140,7 +13171,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const shownBest=Math.max(scoped.bestAccuracy||0,dmRows?Math.max(0,...dmRows.map(r=>r.s||0)):0);
     const shownSpot=Math.max(statsMode==='all'?st.spotOns||0:scoped.spotOns||0,histSpot);
     const shownPerfect=Math.max(statsMode==='all'?st.perfects||0:scoped.perfects||0,histPerfect,dmRows?dmRows.filter(r=>r.p).length:0);
-    if(statsMode!=='badges')html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-label="${name}" title="${name}" aria-pressed="${statsMode===id}">${({monthly:"Month",survival:"Surv.",hlsurvival:"Hi/Lo"})[id]||name}</button>`).join('')}</div>`;
+    if(statsMode!=='badges')html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-label="${name}" title="${name}" aria-pressed="${statsMode===id}">${({hlsurvival:"High/Low"})[id]||name}</button>`).join('')}</div>`;
     if(statsMode==='badges'){el.innerHTML=html+badgesTabHtml(lv);badgesMarkSeen();return;}
     html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(shownAttempts,'Attempts finished')+statTile(shownRounds,'Rounds completed')+statTile(shownBest?formatAccuracy(shownBest)+'%':'—','Best accuracy')}${bluffView?statTile(scoped.judged?Math.round((scoped.correctVotes||0)/scoped.judged*100)+'%':'—','Vote accuracy'):hsView?statTile((myProfile.modeStats?.highstakes?.podiums)||0,'Podium finishes'):statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
     if(hsView){const h=myProfile.hsStats||{};html+=`<p class="cs-note">Finished High Stakes games. The biggest stack of coins wins; ties share the win.</p><h3 class="cs-h">High Stakes</h3><div class="cozy-panel cs-tiles">${statTile(h.roundsWon||0,'Rounds won')}${statTile(h.roundsPlayed?Math.round((h.roundsWon||0)/h.roundsPlayed*100)+'%':'—','Round win rate')}${statTile(h.biggestWin||0,'Biggest single win')}${statTile(h.peakStack||0,'Highest stack')}${statTile(h.bluffs||0,'Bluffs that worked')}${statTile(h.knockedOut||0,'Times knocked out')}${statTile(h.ghostCoins||0,'Ghost bounty coins')}</div>`;}
@@ -13737,7 +13768,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const mk = (id, name, image, seen) => ({ id, display: name.charAt(0).toUpperCase() + name.slice(1), image, seen: !!seen });
     const rowHtml = (o) => o.seen
       ? `<div class="items-row" data-id="${o.id}" role="button" tabindex="0"><span class="items-thumb"><img src="${o.image}" alt="" draggable="false"${itemRotStyle(o.id)}></span><span class="items-name">${o.display}</span></div>`
-      : `<div class="items-row locked"><span class="items-thumb locked">?</span><span class="items-name">????</span></div>`;
+      : `<div class="items-row locked" aria-label="Undiscovered object"><span class="items-thumb locked" aria-hidden="true">?</span><span class="items-name">Undiscovered</span></div>`;
     const comboKeys = Object.keys(myProfile.seenCombos || {});
     const NORMAL_LIST = OBJECTS.concat(FANTASY_OBJECTS);
     const listIds = isHoliday ? HOLIDAY_OBJECT_DEFS.map(d=>d[1]) : NORMAL_LIST.map(o=>o.id);
@@ -17565,6 +17596,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Emoji reactions ====================
 
   function sendReaction(emoji) {
+    if (!reactionState().allowed) return;
     const reactionsRef = ref(db, `rooms/${currentRoomCode}/reactions`);
     const newRef = push(reactionsRef);
     set(newRef, { playerId: currentPlayerId, name: currentName, avatar: currentAvatar, emoji, rid: (REACTIONS[emoji] && REACTIONS[emoji].id) || null, sentAt: nowMs() });
@@ -17757,8 +17789,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderReactionBubble(r) {
     if (!r) return;
-    if (!r.previewAt && !gameplayAudioVisible()) return;
-    if (roomState && roomState.phase === "animation") return; // nothing plays over the stacking animation
+    if (!r.previewAt && !reactionState().allowed) return;
     playSound("emoji");
     const byId = r.rid && REACTION_BY_ID[r.rid];
     if (byId) r = { ...r, emoji: byId.emoji };
@@ -17766,7 +17797,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // High Stakes: smaller pictures that pop out beside the sender's card, on the side facing the middle.
     const bluffCard=roomState?.phase==='bluff'?document.querySelector(`[data-bluff-player="${r.playerId}"]`):null;
     const hsCard = roomState && roomState.phase === "hs" ? hsContentEl.querySelector(`[data-hs-pl="${r.playerId}"]`) : null;
-    const card = bluffCard || hsCard || scoreCardFor(r.playerId);
+    const visibleCard = candidate => candidate && candidate.getBoundingClientRect().width > 0 && candidate.getBoundingClientRect().height > 0;
+    const candidate = bluffCard || hsCard || scoreCardFor(r.playerId);
+    const card = visibleCard(candidate) ? candidate : null;
     const reactionSide=bluffCard?.dataset.bluffSide||hsCard?.dataset.hsSide;
     const RXS = hsCard || bluffCard ? 72 : RX_STAGE;
     let left = 0, top = 70;
@@ -17784,6 +17817,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       top = mid - RXS / 2;
     }
     if (r.previewAt) { left = r.previewAt.x - RXS / 2; top = r.previewAt.y - RXS / 2; }
+    else {
+      const toolbarTop = bottomToolbarEl.getBoundingClientRect().top || innerHeight;
+      const toolbarBottom = document.getElementById('app-toolbar').getBoundingClientRect().bottom;
+      if (!card) { left = innerWidth / 2 - RXS / 2; top = toolbarTop - RXS - 8; }
+      top = Math.max(toolbarBottom+4, Math.min(top, toolbarTop-RXS-4));
+      left = Math.min(Math.max(0,left), Math.max(0,innerWidth-RXS));
+    }
     // A reaction still lingering (mid fade-out) from this same player used to
     // get yanked off instantly when a new one came in - now it just keeps
     // playing out on its own (same self-cleanup via life.onfinish below), and
@@ -20270,9 +20310,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hsEnsureTicker(phase === "hs" && !overlayStillOpen);
     bluffScreenEl.classList.toggle('active',phase==='bluff'&&!overlayStillOpen);
     bluffUI?.refresh();
-    reactionStripEl.classList.toggle("anim-locked", phase === "animation");
     updateInstallBannerVisibility();
     finalScreenEl.classList.toggle("active", phase === "final" && !overlayStillOpen);
+    updateReactionAvailability();
     if (phase === "ended") {
       fillExitStats(document.getElementById("ended-stats"), gameRecapTiles());
       document.querySelector("#ended-screen .exit-icon").innerHTML = gameOutcomeArt("icons/reactions/padlock.png");
@@ -20663,7 +20703,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   const botReactions = createBotReactions({
     getState: () => ({roomCode:currentRoomCode, playerId:currentPlayerId, host:isHost, room:roomState,
-      blocked:document.hidden || (roomState?.phase === 'hs' && roomState.hs && hsAnimating(roomState.hs)) || OVERLAY_SCREENS.some(el => el.classList.contains('active'))}),
+      blocked:!reactionState().allowed}),
     reactions:Object.keys(REACTIONS), resolve: id => REACTION_BY_ID[id]?.emoji || null, now:nowMs,
     send: ({id,player,emoji}) => {
       const entry = push(ref(db, 'rooms/' + currentRoomCode + '/reactions'));
@@ -20672,6 +20712,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         .catch(() => {});
     }
   });
+  setInterval(updateReactionAvailability, 250);
   setInterval(() => botReactions.tick(), 400);
   powerups.render();
   // Retry old pending receipts even when the profile itself has not changed.

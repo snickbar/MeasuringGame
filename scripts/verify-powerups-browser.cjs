@@ -4,6 +4,7 @@ const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'
 const root=path.resolve(__dirname,'..'), source=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=source.match(/<style>([\s\S]*?)<\/style>/)[1];
 const hud=source.slice(source.indexOf('<div id="hud">'),source.indexOf('<script type="module">'));
+const toolbar=source.slice(source.indexOf('<div id="app-toolbar">'),source.indexOf('<div id="exit-confirm-overlay">'));
 const actualTips=source.match(/const QUESTION_TIPS = (\[[\s\S]*?\n  \]);/);
 if(!actualTips)throw Error('Cannot find game tip list');
 const extractFunction=name=>{const start=source.indexOf('  function '+name+'('),end=source.indexOf('\n  }',start);if(start<0||end<0)throw Error('Missing '+name);return source.slice(start,end+4)};
@@ -12,6 +13,7 @@ const test=`
 import {createPowerupController} from '/anim/powerup-ui.mjs';
 import {POWERUPS,bufferedGuess} from '/anim/powerups.mjs';
 import {roundAccuracy,formatAccuracy} from '/anim/accuracy.mjs';
+import {createPlayLayout} from '/anim/play-layout.mjs';
 const assert=(v,m)=>{if(!v)throw Error(m)}, results=[];
 const browserErrors=[];window.addEventListener('error',e=>browserErrors.push(e.message));
 const tick=()=>new Promise(r=>setTimeout(r,0));
@@ -37,45 +39,53 @@ const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,ow
  profile:async()=>wallet,room:async()=>room,quickApplied:()=>{},refresh:()=>{},finished:()=>{},
 });
 const local=document.createElement('div');document.body.append(local);
-const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3,WORLD_STAR_AT=[60,80,92],deviceId='me';
+const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,SURVIVAL_LIVES=3,WORLD_STAR_AT=[60,75,90],deviceId='me';
 ${extractLine('  const worldStarsFor =')}
 ${extractFunction('effectiveGuess')}
+${extractFunction('worldProgressBarHtml')}
 ${extractFunction('worldProgressHtml')}
 const worldsContentEl=document.getElementById('worlds-content'),survivalContentEl=document.getElementById('survival-content');
+const worldsScreenEl=document.getElementById('worlds-screen');
 const OBJECT_BY_ID=new Map(objects.map(o=>[o.id,{...o,name:o.id,plural:o.id+'s'}]));
 const escapeHtml=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 const worldStop=()=>{},survivalStop=()=>{},svRunAcc=()=>null;
+const playLayout=createPlayLayout(document),getPlayLayout=()=>playLayout;
+const persistSoloSession=()=>{},rerollPerRound=()=>{},svApplyThemeVars=()=>{},svFit=()=>{};
 const powerups=c,powerupContext=()=>context();
 let wl,sv;
 ${extractLine('  const svHeartSvg =')}
-${extractLine('  const svAccHtml =')}
-${extractLine('  const survivalHeartsHtml =')}
+${extractLine('  const SURVIVAL_SHIELD_ACC =')}
+${extractLine('  const svShieldHtml =')}
+${extractLine('  const svHudHtml =')}
+${extractFunction('svDifficulty')}
+${extractLine('  const svStampHtml =')}
 ${extractFunction('renderWorlds')}
 ${extractFunction('renderSurvival')}
-globalThis.showSoloCompactPreview=which=>{
+globalThis.showSoloCompactPreview=async which=>{
  document.getElementById('hud').classList.remove('active');local.innerHTML='';mode=which;room=newRoom();
  room.currentQuestion.prompt='How many ants long is the length of a canoe?';
  document.getElementById('worlds-screen').classList.toggle('active',which==='worlds');
  document.getElementById('survival-screen').classList.toggle('active',which==='survival');
  if(which==='worlds'){wl={phase:'question',wi:0,level:1,questions:[room.currentQuestion],guesses:[],input:''};renderWorlds()}
  else{sv={phase:'question',asked:0,lives:3,q:room.currentQuestion,accs:[],input:''};renderSurvival()}
+ await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  const host=which==='worlds'?worldsContentEl:survivalContentEl,keys=[...host.querySelectorAll('.dc-key')];
  const pad=host.querySelector('.dc-keys'),pill=host.querySelector('.dc-prompt');
  assert(keys.length===12&&keys.every(b=>b.getBoundingClientRect().height>=44),'solo keypad touch targets');
- assert(pad.getBoundingClientRect().height<=200,'compact keypad height');
+ assert(pad.getBoundingClientRect().height<=208,'four compact 48px rows: '+pad.getBoundingClientRect().height+' in '+which);
  assert(keys.every(b=>getComputedStyle(b).marginTop==='0px'&&getComputedStyle(b).marginBottom==='0px'),'no hidden keypad margins');
  assert(getComputedStyle(pill).backgroundColor.startsWith('rgba(')&&parseFloat(getComputedStyle(pill).borderRadius)>=20,'semi-transparent question pill');
  assert(host.scrollWidth<=innerWidth,'solo content fits horizontally');
  const submit=host.querySelector(which==='worlds'?'#wl-submit':'#sv-submit');
  return {mode:which,keypadHeight:pad.getBoundingClientRect().height,submitBottom:Math.round(submit.getBoundingClientRect().bottom),viewportHeight:innerHeight};
 };
-globalThis.showWorldProgressPreview=(accuracy=null)=>{
- showSoloCompactPreview('worlds');
+globalThis.showWorldProgressPreview=async(accuracy=null)=>{
+ await showSoloCompactPreview('worlds');
  wl.questions=Array.from({length:5},()=>({...room.currentQuestion}));wl.guesses=accuracy==null?[75,90]:[accuracy,accuracy];
  room.currentQuestion=wl.questions[2];room.currentQuestion.powerups={owner:'me',used:{buffer:true}};renderWorlds();
  return worldsContentEl.querySelector('.wl-progress').textContent;
 };
-const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]');b.click();b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up');if(mode==='worlds'||mode==='survival')local.innerHTML=c.html(context())};
+const buy=async id=>{c.render();local.innerHTML=mode==='worlds'||mode==='survival'?c.html(context()):'';const b=document.querySelector('[data-powerup="'+id+'"]'),enabled=!b.disabled;b.click();if(enabled){const pending=document.querySelector('[data-powerup="'+id+'"]');assert(c.busy&&pending.classList.contains('pu-pending')&&pending.getAttribute('aria-busy')==='true'&&pending.querySelector('small').textContent==='Using…','pending feedback is synchronous, before wallet/network work');}b.click();for(let n=0;n<600&&c.busy;n++)await new Promise(r=>setTimeout(r,25));assert(!c.busy,'purchase finishes');assert(!document.querySelector('dialog'),'no purchase pop-up');if(mode==='worlds'||mode==='survival')local.innerHTML=c.html(context())};
 try{
  c.render();const buttons=[...document.querySelectorAll('[data-powerup]')];assert(buttons.length===5,'five buttons');
  assert(buttons.every(b=>b.getBoundingClientRect().width>=44),'44px touch widths');
@@ -84,7 +94,8 @@ try{
  const rects=buttons.map(b=>b.getBoundingClientRect());
  assert(rects.every(r=>Math.abs(r.width-rects[0].width)<1&&r.height===44),'all controls same size');
  const buffer=document.querySelector('[data-powerup="buffer"]'),lower=buttons.filter(b=>b!==buffer);
- assert(new Set(lower.map(b=>Math.round(b.getBoundingClientRect().top))).size===1&&buffer.getBoundingClientRect().bottom<=lower[0].getBoundingClientRect().top+1,'one raised control and four across bottom');
+ assert(new Set(lower.slice(1).map(b=>Math.round(b.getBoundingClientRect().top))).size===(box.classList.contains('pu-narrow')?2:1)&&buffer.getBoundingClientRect().bottom<=lower[0].getBoundingClientRect().top+1,'stacked aids and grouped rerolls');
+ assert(lower.slice(1).every(b=>b.getBoundingClientRect().top>=document.getElementById('question-prompt').getBoundingClientRect().bottom),'rerolls never overlap the question board');
  assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'no player-card overlap');
  assert(box.getBoundingClientRect().top>=document.getElementById('question-note').getBoundingClientRect().bottom,'no tip overlap');
  assert(lower[0].getBoundingClientRect().left>=pics.getBoundingClientRect().right,'no object overlap');
@@ -104,7 +115,7 @@ try{
   tipCases.push({tip,boardHeight,tipHeight:n.height,playerOffset:Math.round(card.top-document.querySelector('.game-body').getBoundingClientRect().top)});
  }
  results.push('all '+actualTips.length+' actual tips × 3 board heights: '+tipCases.length+' layout cases');
- board.style.minHeight='280px';c.render();assert(box.getBoundingClientRect().height===92,'same L shape on tall boards');
+ board.style.minHeight='280px';c.render();assert([...box.children].every(b=>b.getBoundingClientRect().bottom<=box.getBoundingClientRect().bottom+1),'responsive L shape contains all actions on tall boards');
  board.style.minHeight='';note.textContent='Tip: This longer tip wraps onto many lines to check that no power-up can ever overlap the timer or the tip text on a narrow phone.';c.render();assert(box.getBoundingClientRect().top>=note.getBoundingClientRect().bottom,'long tips do not overlap panel');assert(cards.getBoundingClientRect().top>=box.getBoundingClientRect().bottom,'cards remain below connected box');
  note.textContent=normalTip;c.render();
  assert(document.getElementById('howto-powerup-list').textContent.includes('Reroll small')&&document.getElementById('howto-powerup-list').textContent.includes('10% buffer'),'help card explains power-ups');
@@ -146,21 +157,21 @@ try{
  const old=Date.now()-120000;wallet={coins:0,powerupReceipts:{lost:{cost:10,status:'charged',at:old,mode:'worlds'},applied:{cost:5,status:'charged',at:old,mode:'quick',room:'TEST'}}};room.powerupReceipts={applied:true};await c.recover(wallet,'me');assert(wallet.coins===10&&wallet.powerupReceipts.applied.status==='applied','receipt reconciliation');await c.recover(wallet,'me');assert(wallet.coins===10,'no repeated refund');
  results.push('interrupted purchase reconciliation is idempotent');
  wallet={coins:100};c.render();
- const soloLayouts=['worlds','survival'].map(showSoloCompactPreview);results.push('actual Worlds and Survival renderers: compact keypads, 44px targets, translucent question pills');
- showSoloCompactPreview('worlds');
+ const soloLayouts=[];for(const which of ['worlds','survival'])soloLayouts.push(await showSoloCompactPreview(which));results.push('actual Worlds and Survival renderers: compact keypads, 44px targets, translucent question pills');
+ await showSoloCompactPreview('worlds');
  let progress=worldsContentEl.querySelector('.wl-progress');assert(progress&&progress.textContent.includes('No answers yet'),'empty progress state');
  assert(progress.compareDocumentPosition(worldsContentEl.querySelector('.dc-pics'))&Node.DOCUMENT_POSITION_FOLLOWING,'bar above objects');
  assert(worldsContentEl.querySelector('.dc-dots').compareDocumentPosition(progress)&Node.DOCUMENT_POSITION_FOLLOWING,'bar below round dots');
  const temp=document.createElement('div');document.body.append(temp);
- for(const [avg,stars] of [[0,0],[60,0],[60.1,1],[80,1],[80.1,2],[92,2],[92.1,3],[100,3]]){
+ for(const [avg,stars] of [[0,0],[60,0],[60.1,1],[75,1],[75.1,2],[90,2],[90.1,3],[100,3]]){
   wl={guesses:[avg],questions:[{answer:100}]};temp.innerHTML=worldProgressHtml();
   assert(Math.abs(Number(temp.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'))-avg)<1e-9,'running percent '+avg);
   assert(temp.querySelectorAll('.wl-progress-marker.earned').length===stars,'strict star threshold '+avg);
-  assert(temp.querySelector('.wl-progress').classList.contains('three-stars')===(avg>92),'blue shine only above 92');
+  assert(temp.querySelector('.wl-progress').classList.contains('three-stars')===(avg>90),'blue shine only above 90');
  }
  wl={guesses:[75,150],questions:[{answer:100},{answer:100}]};temp.innerHTML=worldProgressHtml();assert(temp.textContent.includes('62.5%'),'average per-round accuracy');
  wl={guesses:[95],questions:[{answer:100,powerups:{owner:'me',used:{buffer:true}}}]};temp.innerHTML=worldProgressHtml();assert(temp.textContent.includes('100%'),'progress includes buffer');
- temp.remove();results.push('Worlds running bar, actual star artwork, strict 60/80/92 requirements, per-round averaging and buffer-adjusted accuracy');
+ temp.remove();results.push('Worlds running bar, actual star artwork, strict 60/75/90 requirements, per-round averaging and buffer-adjusted accuracy');
  const audio=new Audio('/sfx/crisp/powerup.wav');await new Promise((resolve,reject)=>{audio.onloadedmetadata=resolve;audio.onerror=()=>reject(Error('power-up sound decode failed'));audio.load()});
  assert(audio.duration>0&&Number.isFinite(audio.duration),'power-up sound decodes');results.push('successful-use sound once only, failures silent, dedicated audio decodes');
  document.getElementById('worlds-screen').classList.remove('active');document.getElementById('survival-screen').classList.remove('active');document.getElementById('hud').classList.add('active');mode='quick';c.render();
@@ -169,12 +180,12 @@ try{
 }catch(e){document.getElementById('test-output').textContent=JSON.stringify({pass:false,error:e.stack,browserErrors,results});document.title='FAIL power-ups'}
 `;
 // Measure settled layout, rather than the brief scale-in entrance animation.
-const fixture='<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+' #worlds-content,#survival-content{animation:none!important}</style></head><body>'+hud+'<div id="worlds-screen" class="screen"><div id="worlds-content"></div></div><div id="survival-screen" class="screen"><div id="survival-content"></div></div><div id="howto-powerup-list" hidden></div><pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
+const fixture='<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+' #worlds-content,#survival-content{animation:none!important}</style><link rel="stylesheet" href="/anim/play-layout.css"><link rel="stylesheet" href="/anim/game-polish.css"><link rel="stylesheet" href="/anim/which-bigger-summary.css"></head><body>'+toolbar+hud+'<div id="worlds-screen" class="screen"><div id="worlds-content"></div></div><div id="survival-screen" class="screen"><div id="survival-content"></div></div><div id="howto-powerup-list" hidden></div><pre id="test-output" style="display:none"></pre><script type="module">'+test+'</script></body></html>';
 const server=http.createServer((req,res)=>{
  if(req.url.startsWith('/__powerup-test')){res.setHeader('Content-Type','text/html');res.end(fixture);return}
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
  if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
- const type={'.mjs':'text/javascript','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.wav':'audio/wav'}[path.extname(file)]||'application/octet-stream';
+ const type={'.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.wav':'audio/wav'}[path.extname(file)]||'application/octet-stream';
  try{res.setHeader('Content-Type',type);res.end(fs.readFileSync(file))}catch{res.writeHead(404);res.end()}
 });
 server.listen(0,'127.0.0.1',()=>{
@@ -190,12 +201,14 @@ server.listen(0,'127.0.0.1',()=>{
   try{
    socket=new WebSocket(match[1]);await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject});
    let serial=0;const pending=new Map();
-   socket.onmessage=e=>{const r=JSON.parse(e.data);if(!r.id)return;const p=pending.get(r.id);if(!p)return;pending.delete(r.id);r.error?p.reject(Error(r.error.message)):p.resolve(r.result)};
+   const errors=[];
+   socket.onmessage=e=>{const r=JSON.parse(e.data);if(r.method==='Runtime.exceptionThrown')errors.push(r.params.exceptionDetails.exception?.description||r.params.exceptionDetails.text);if(!r.id)return;const p=pending.get(r.id);if(!p)return;pending.delete(r.id);r.error?p.reject(Error(r.error.message)):p.resolve(r.result)};
    const call=(method,params={},sessionId)=>new Promise((resolve,reject)=>{const id=++serial;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}))});
    const widths=process.env.POWERUP_TEST_WIDTH?[Number(process.env.POWERUP_TEST_WIDTH)]:[320,390,430];
    for(const width of widths){
     const {targetId}=await call('Target.createTarget',{url:'about:blank'});
     const {sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});
+    await call('Runtime.enable',{},sessionId);
     await call('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},sessionId);
     await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/__powerup-test'},sessionId);
     let result;
@@ -204,23 +217,23 @@ server.listen(0,'127.0.0.1',()=>{
      const evaluated=await call('Runtime.evaluate',{expression:'document.getElementById("test-output")?.textContent',returnByValue:true},sessionId);
      if(evaluated.result?.value){result=JSON.parse(evaluated.result.value);break}
     }
-    if(!result)throw Error('No test result at '+width+'px');
+    if(!result)throw Error('No test result at '+width+'px: '+errors.join('\n'));
     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
     fs.writeFileSync(path.join(outDir,'quick-game-'+width+'.png'),Buffer.from(shot.data,'base64'));
     console.log(JSON.stringify(result,null,2));if(!result.pass)process.exitCode=1;
     if(result.pass)for(const height of [700,844])for(const mode of ['worlds','survival']){
      await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},sessionId);
-     const checked=await call('Runtime.evaluate',{expression:'showSoloCompactPreview('+JSON.stringify(mode)+')',returnByValue:true},sessionId);
+     const checked=await call('Runtime.evaluate',{expression:'showSoloCompactPreview('+JSON.stringify(mode)+')',returnByValue:true,awaitPromise:true},sessionId);
      if(checked.exceptionDetails)throw Error('Solo layout check failed at '+width+'×'+height);
      const soloShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
      fs.writeFileSync(path.join(outDir,mode+'-'+width+'x'+height+'.png'),Buffer.from(soloShot.data,'base64'));
     }
     if(result.pass){
-     const running=await call('Runtime.evaluate',{expression:'showWorldProgressPreview()',returnByValue:true},sessionId);
+     const running=await call('Runtime.evaluate',{expression:'showWorldProgressPreview()',returnByValue:true,awaitPromise:true},sessionId);
      if(running.exceptionDetails||!running.result.value.includes('82.5%'))throw Error('Running progress preview failed');
      const runningShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
      fs.writeFileSync(path.join(outDir,'worlds-progress-'+width+'.png'),Buffer.from(runningShot.data,'base64'));
-     await call('Runtime.evaluate',{expression:'showWorldProgressPreview(95)',returnByValue:true},sessionId);
+     await call('Runtime.evaluate',{expression:'showWorldProgressPreview(95)',returnByValue:true,awaitPromise:true},sessionId);
      const blueShot=await call('Page.captureScreenshot',{format:'png'},sessionId);
      fs.writeFileSync(path.join(outDir,'worlds-blue-'+width+'.png'),Buffer.from(blueShot.data,'base64'));
     }

@@ -1,9 +1,10 @@
-import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairs, eliminationChoices, debitPowerup, settlePowerup } from './powerups.mjs';
+import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairsResponsive, eliminationChoices, debitPowerup, settlePowerup } from './powerups.mjs';
 
 // The controller owns immediate purchases and the reveal; the game owns scoring.
 export function createPowerupController(ports) {
-  let busy = false, messageTimer, messagePhase = null, messageQuestion = null;
+  let busy = false, pendingId = null, messageTimer, messagePhase = null, messageQuestion = null;
   const active = new Set(), recovering = new Set();
+  const reducedMotion = () => document.documentElement?.dataset.motion === 'reduce' || !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const tray = document.getElementById('quick-powerups');
   const hud = document.getElementById('hud');
   if (hud && tray.parentElement !== hud) hud.append(tray);
@@ -26,7 +27,7 @@ export function createPowerupController(ports) {
     const top = Math.max(toolbarBottom + 34, Math.min(innerHeight - rect.height - 12, start.y - rect.height - 18));
     message.style.left = `${left}px`; message.style.top = `${top}px`;
     message.style.transformOrigin = `${start.x - left}px ${start.y - top}px`;
-    if (message.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) message.animate([
+    if (message.animate && !reducedMotion()) message.animate([
       { transform: 'translateY(0) scale(.035)', borderRadius: '50%', opacity: .4, offset: 0 },
       { transform: 'translateY(0) scale(1)', borderRadius: '10px', opacity: 1, offset: .13 },
       { transform: 'translateY(-12px) scale(1)', borderRadius: '10px', opacity: 1, offset: .82 },
@@ -54,9 +55,9 @@ export function createPowerupController(ports) {
   function button(id, compact, c) {
     const p = POWERUPS[id];
     const used = !!c.q.powerups?.used?.[id], rerollLocked = REROLLS.includes(id) && c.q.powerups?.used?.reroll;
-    const status = used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.png" alt="coins">`;
+    const status = busy && pendingId === id ? 'Using…' : used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.png" alt="coins">`;
     const disabled = busy || !ids(c).includes(id) || ports.coins() < p.cost;
-    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}" data-powerup="${id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : p.cost + ' coins'}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.png" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
+    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}${busy && pendingId === id ? ' pu-pending' : ''}" data-powerup="${id}" aria-busy="${busy && pendingId === id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : p.cost + ' coins'}" title="${p.description}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.png" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
   }
   function html(c) {
     const visible = visibleIds(c);
@@ -72,33 +73,47 @@ export function createPowerupController(ports) {
     const available = visibleIds(c);
     if (!available.length) { tray.innerHTML = ''; return; }
     const col = document.querySelector('.hud-timer-col'), main = document.querySelector('.main-col');
-    const pics = document.getElementById('q-preview'), body = document.querySelector('.game-body');
+    const body = document.querySelector('.game-body');
     const hudRect = hud.getBoundingClientRect(), colRect = col.getBoundingClientRect();
     const mainRect = main.getBoundingClientRect(), sideRect = side.getBoundingClientRect();
     const raised = available.includes('buffer') && available.length > 1;
     const lower = ['reveal', 'small', 'big', 'both', 'fifty'].filter(id => available.includes(id));
     const ordered = raised ? ['buffer', ...lower] : available;
     const width = sideRect.right - mainRect.right - 6;
-    const cell = (width - 10) / 4;
-    const top = raised ? Math.max(colRect.bottom + 2, pics.getBoundingClientRect().top - 46) : body.getBoundingClientRect().top + 4;
+    const columns = width >= 140 ? 3 : 2;
+    const narrow = available.length > 1 && columns === 2;
+    const cell = Math.max(44, (width - 10) / 4);
+    const top = raised ? colRect.bottom + 6 : body.getBoundingClientRect().top + 4;
+    // Buffer and Reveal fit below the timer. The wider reroll row starts only
+    // after the question board ends, so it never covers question text/artwork.
+    const board = document.getElementById('question-prompt');
+    const spacer = raised ? Math.max(0, (board?.getBoundingClientRect().bottom || top) + 4 - (top + 90)) : 0;
+    const panelHeight = raised ? 92 + spacer + Math.ceil(3 / columns) * 44 : 48;
     const content = ordered.map(id => button(id, false, c)).join('');
     if (tray.innerHTML !== content) tray.innerHTML = content;
     tray.classList.toggle('pu-l-shape', raised);
+    tray.classList.toggle('pu-narrow', narrow);
+    tray.style.setProperty('--pu-columns', columns);
+    tray.style.setProperty('--pu-lower-rows', Math.ceil(3 / columns));
+    tray.style.setProperty('--pu-spacer', `${spacer}px`);
+    tray.style.setProperty('--pu-height', `${panelHeight}px`);
+    tray.style.setProperty('--pu-indent', `${(columns - 1) / columns * 100}%`);
+    tray.style.setProperty('--pu-lower-top', `${90 + spacer}px`);
     tray.style.width = `${available.length === 1 ? cell + 4 : width}px`;
     tray.style.left = `${(available.length === 1 ? sideRect.right - cell - 4 : mainRect.right + 6) - hudRect.left}px`;
     tray.style.top = `${top - hudRect.top}px`;
     tray.hidden = false;
-    side.style.paddingTop = `${Math.max(0, top + (raised ? 92 : 48) - body.getBoundingClientRect().top + 6)}px`;
+    side.style.paddingTop = `${Math.max(0, top + panelHeight - body.getBoundingClientRect().top + 6)}px`;
   }
   function same(c) {
     const live = context();
     return live && live.mode === c.mode && live.q.powerupKey === c.q.powerupKey &&
       live.q.unitId === c.q.unitId && live.q.targetId === c.q.targetId && live.phase === c.phase && live.playerId === c.playerId;
   }
-  function effect(c, id) {
+  async function effect(c, id) {
     let replacement = null, removed = null;
     if (REROLLS.includes(id)) {
-      const candidates = replacementPairs(c.q, id, c.objects, c.allowed);
+      const candidates = await replacementPairsResponsive(c.q, id, c.objects, c.allowed);
       const unseen = candidates.filter(([u, t]) => !c.seen?.has(`${u.id}|${t.id}`));
       const choices = unseen.length ? unseen : candidates;
       if (!choices.length) throw Error('No replacement is available for this object. No coins spent.');
@@ -126,9 +141,18 @@ export function createPowerupController(ports) {
     const owner = ports.owner(), operation = crypto.randomUUID();
     let charged = false, applied = false, sounded = false;
     const successSound = () => { if (!sounded) { sounded = true; ports.onUsed?.(id); } };
-    busy = true; active.add(operation); render();
+    busy = true; pendingId = id; active.add(operation); render();
+    for (const b of document.querySelectorAll('[data-powerup]')) {
+      b.disabled = true;
+      const pending = b.dataset.powerup === id;
+      b.classList.toggle('pu-pending', pending); b.setAttribute('aria-busy', String(pending));
+      if (pending && b.querySelector('small')) b.querySelector('small').textContent = 'Using…';
+    }
     try {
-      const transform = effect(c, id);
+      // Give the immediate pressed/pending feedback a frame before pair search or decoding.
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      if (!same(c) || !ids(context()).includes(id)) throw Error('That power-up is no longer available. No coins spent.');
+      const transform = await effect(c, id);
       // Decode before spending: missing artwork must not sell an empty preview.
       const previewImages = id === 'reveal' ? await Promise.all([c.q.unitId, c.q.targetId].map(async (key, i) => {
         const object = ports.object(key, i ? c.q.targetArt : c.q.unitArt);
@@ -187,7 +211,7 @@ export function createPowerupController(ports) {
       }
       successSound();
       if (id === 'reveal') await preview(previewImages);
-      await settle(owner, operation, true);
+      if (c.mode === 'quick') await settle(owner, operation, true);
       const result = { small: 'Small object replaced', big: 'Big object replaced', both: 'Both objects replaced', buffer: '10% buffer ready for your result!', reveal: 'Size preview complete', fifty: 'Wrong choices removed' }[id];
       say(result + (REROLLS.includes(id) && c.mode === 'quick' ? ' · timer restarted' : ''), origin, id);
     } catch (err) {
@@ -202,7 +226,9 @@ export function createPowerupController(ports) {
       if (applied) successSound();
       say(applied ? 'Power-up applied.' : (err.message || 'Could not use this power-up.'), origin, id);
     } finally {
-      active.delete(operation); busy = false; ports.refresh(c.mode); render(); ports.finished();
+      active.delete(operation); busy = false; pendingId = null;
+      if (context()?.mode === c.mode) { ports.refresh(c.mode); ports.finished(); }
+      render();
     }
   }
   async function preview(images) {
@@ -214,7 +240,7 @@ export function createPowerupController(ports) {
     // The shared stage uses measured edges, not arbitrary equal-size thumbnails.
     // Log interpolation gives extreme ratios time to zoom without extending the view.
     const ratio = t.mm / u.mm, canvas = layer.querySelector('canvas'), ctx = canvas.getContext('2d');
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = reducedMotion();
     await new Promise(resolve => {
       let began;
       function frame(now) {

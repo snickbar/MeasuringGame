@@ -1,4 +1,43 @@
 :root{--cozy-ink:#4b301c;--cozy-note:#765735}
+/* The timer's old rotating hint box is retired; this space belongs to power-ups. */
+#question-note{display:none!important}
+/* Quiet mystery rows retain the existing list and disclose no object identity. */
+.items-row.locked{background:linear-gradient(110deg,#f1eadc,#f9f5eb)!important;border:1.5px solid #d6c8ad!important;box-shadow:none!important}
+.items-row.locked .items-name{font-size:14px;font-weight:500!important;letter-spacing:0!important;color:#89785e!important}
+.items-row.locked .items-thumb.locked{background:#e9dfca;border:1px solid #d2bf9d;border-radius:12px;color:#a38b67;box-shadow:inset 0 1px #fff8}
+/* Shared states stay legible without shifting the button or its neighbours. */
+:is(.settings-cream-btn,.cozy-actions button,.cosm-tab-btn,.pu-button):focus-visible{outline:3px solid #287cb8;outline-offset:2px}
+.pu-button{position:relative;font-family:Fredoka,sans-serif!important;transition:box-shadow .12s,filter .12s}
+.pu-button:not(:disabled){box-shadow:inset 0 0 0 1px #cbb78e66;background:linear-gradient(#fffdf5,#f4ecd9)}
+.pu-button:not(:disabled):active{box-shadow:inset 0 2px 4px #80633c55;filter:brightness(.94)}
+.pu-button.pu-pending{opacity:1;filter:none;box-shadow:inset 0 0 0 2px #9882ba;background:#eee5fa}
+#quick-powerups.pu-l-shape{grid-template-columns:repeat(var(--pu-columns,3),minmax(0,1fr));grid-template-rows:44px 44px var(--pu-spacer,0px) repeat(var(--pu-lower-rows,1),44px);height:var(--pu-height,136px);clip-path:polygon(var(--pu-indent,66.667%) 0,100% 0,100% 100%,0 100%,0 var(--pu-lower-top,90px),var(--pu-indent,66.667%) var(--pu-lower-top,90px))}
+#quick-powerups.pu-l-shape .pu-button:first-child{grid-column:var(--pu-columns,3);grid-row:1}
+#quick-powerups.pu-l-shape .pu-button:nth-child(2){grid-column:var(--pu-columns,3);grid-row:2}
+#quick-powerups.pu-l-shape .pu-button:nth-child(n+3){grid-row:4}
+#quick-powerups.pu-l-shape.pu-narrow .pu-button:nth-child(5){grid-row:5;grid-column:1}
+#quick-powerups .pu-button.pu-pending{background:#eee5fa}
+#quick-powerups .pu-button{font-size:9.5px}
+#quick-powerups .pu-button>img{width:22px;height:22px}
+#quick-powerups .pu-button small{font-size:9px}
+.pu-button .pu-coin,.pu-help-item .pu-coin{display:inline-block;width:10px!important;height:10px!important;vertical-align:-1px;object-fit:contain}
+.pu-pending>img{animation:puWorking .85s ease-in-out infinite}
+.pu-button.pu-used{filter:none;opacity:.65}
+.pu-used>img{filter:saturate(.5)}
+.pu-used::after{content:'✓';position:absolute;right:2px;top:1px;line-height:1;color:#3c7934;font-size:13px}
+#reaction-strip .react-slot[data-emoji]:disabled{opacity:.45;filter:grayscale(.7);cursor:default}
+#reaction-strip.anim-locked .react-slot[data-emoji]:disabled{opacity:1;filter:none}
+@keyframes puWorking{50%{transform:rotate(-12deg);filter:brightness(1.15)}}
+.world-star-land{display:inline-block;animation:worldStarLand .55s cubic-bezier(.2,1.35,.4,1) both;animation-delay:var(--world-delay,0ms)}
+.world-best-updated{animation:worldBestUpdated 1s ease-out both;animation-delay:var(--world-delay,0ms)}
+.world-level-open{animation:worldLevelOpen 1.15s ease-out both;animation-delay:var(--world-delay,0ms)}
+@keyframes worldStarLand{0%{transform:scale(.6);filter:brightness(1.7)}60%{transform:scale(1.2)}100%{transform:none;filter:none}}
+@keyframes worldBestUpdated{30%{color:#3d7e35;text-shadow:0 0 7px #cde6ab}100%{text-shadow:none}}
+@keyframes worldLevelOpen{35%{filter:brightness(1.13);box-shadow:0 0 0 4px #94c16477}100%{filter:none}}
+html[data-motion=reduce] :is(.world-star-land,.world-best-updated,.world-level-open){animation:none}
+@media(prefers-reduced-motion:reduce){:is(.world-star-land,.world-best-updated,.world-level-open){animation:none}}
+html[data-motion=reduce] .pu-pending>img{animation:none}
+@media(prefers-reduced-motion:reduce){.pu-pending>img{animation:none}}
 /* User preference: pinned header/action wrappers stay transparent. The illustrated
    banner supplies its own decoration; do not add white or tan backing panels. */
 .screen>.screen-back-btn{margin:0}
