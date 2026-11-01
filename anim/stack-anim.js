@@ -20,6 +20,7 @@
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
 import { ORIENT } from './orient-data.js';
 import { landingStyleFor, landingPose } from './reveal-style.mjs';
+import { landingSurfaceFor, drawLandingEffect } from './landing-effects.mjs';
 import { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor } from './scenery.mjs';
 import { FLOOR_DATA } from './scenery-data.mjs';
 
@@ -774,16 +775,8 @@ export function createStackAnimation(container, options = {}) {
       ctx.restore();
     }
 
-    function dust(x, y, age, width, objectMm) {
-      const heft = clamp(.8 + Math.log10(Math.max(1, objectMm)) / 3, .85, 2.4);
-      const lifetime = .32 + .08 * heft;
-      if (reduceMotion || age < 0 || age > lifetime) return;
-      const p = age / lifetime;
-      ctx.save(); ctx.fillStyle = theme.dust || '#e9dcc0'; ctx.globalAlpha = .65 * (1 - p);
-      for (const dir of [-1, 1]) for (let j = 0; j < 3; j++) {
-        ctx.beginPath(); ctx.ellipse(x + dir * (width * .25 + p * (10 + j * 6) * heft), y - p * (4 + j * 4) * heft, (2 + p * 3) * heft, (1.5 + p * 2) * heft, 0, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.restore();
+    function dust(x, y, age, width, objectMm, stacked = false, surface = landingSurfaceFor(scenery)) {
+      drawLandingEffect(ctx, {surface, x, y, age, width, objectMm, stacked, reduced: reduceMotion});
     }
 
     // Draws the picture of time t (in seconds). dt is how long since the last frame, used only to
@@ -921,7 +914,7 @@ export function createStackAnimation(container, options = {}) {
           drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
         }
       }
-      if (bigKind !== 'fly' && bigKind !== 'sail') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm);
+      if (bigKind !== 'fly') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm, false, bigKind === 'sail' ? 'water' : landingSurfaceFor(scenery));
       if (count >= 1) shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 2, 6), .30);
 
       // Anything of the stack above the big object's height line is cut off.
@@ -952,7 +945,7 @@ export function createStackAnimation(container, options = {}) {
       // Objects hopping in.
       const dHop = sx0 + wcol / 2 + 24;
       const landed = landedAt(t);
-      if (!reduceMotion) for (let i = 0; i < nHop; i++) dust(sx0, sy0 - i * Ls, t - starts[i] - durs[i], wcol, unit.mm);
+      if (!reduceMotion) for (let i = 0; i < nHop; i++) dust(sx0, sy0 - i * Ls, t - starts[i] - durs[i], wcol, unit.mm, i > 0);
       for (let i = landed; i < nHop && starts[i] <= t; i++) {
         if (t >= starts[i] + durs[i]) continue;
         if (i === 0 && smLean) {
@@ -1131,15 +1124,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.restore();
     }
     function dust(x, y, age, width, objectMm) {
-      const heft = clamp(.8 + Math.log10(Math.max(1, objectMm)) / 3, .85, 2.4);
-      const lifetime = .32 + .08 * heft;
-      if (reduceMotion || age < 0 || age > lifetime) return;
-      const p = age / lifetime;
-      ctx.save(); ctx.fillStyle = theme.dust || '#e9dcc0'; ctx.globalAlpha = .65 * (1 - p);
-      for (const dir of [-1, 1]) for (let j = 0; j < 3; j++) {
-        ctx.beginPath(); ctx.ellipse(x + dir * (width * .25 + p * (10 + j * 6) * heft), y - p * (4 + j * 4) * heft, (2 + p * 3) * heft, (1.5 + p * 2) * heft, 0, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.restore();
+      drawLandingEffect(ctx, {surface: landingSurfaceFor(scenery), x, y, age, width, objectMm, reduced: reduceMotion});
     }
 
     function render(t) {
