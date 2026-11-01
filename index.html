@@ -12994,7 +12994,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let badge = "", tone = "plain", coinBadge = "", starsHtml = "";
     const starRow = (n) => worldStarsHtml(n);
     // Old attempts never saved their partner; the Team Worlds history has them, matched by the same finish time.
-    const twPartner = () => { if (r.partnerName) return r.partnerName; for (const w of Object.values(myProfile.teamWorldsHistory || {})) for (const h of Object.values(w || {})) if (h && h.t === r.t && h.partnerName) return h.partnerName; return ""; };
+    const twPartner = () => { if (r.partnerName) return r.partnerName; for (const w of Object.values(myProfile.teamWorldsHistory || {})) for (const h of Object.values(w || {})) if (h && h.t === r.t && h.partnerName) return h.partnerName; for (const h of Object.values(myProfile.hlHistory || {})) if (h && h.t === r.t && h.partnerName) return h.partnerName; return ""; };
     if (kind === "match") {
       if (r.won || Number(r.place) === 1) { badge = "Won"; tone = "gold"; }
       else { badge = ordinal(r.place); tone = Number(r.place) === 2 ? "silver" : Number(r.place) === 3 ? "bronze" : "plain"; }
@@ -13009,7 +13009,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       else if (acc != null) { badge = formatAccuracy(acc) + "%"; tone = acc >= 75 ? "gold" : acc >= 50 ? "silver" : "plain"; }
       if (r.survived !== null && r.survived !== undefined) bits.push(`${r.survived} survived`);
       if (mode === "worlds" || mode === "teamworlds") starsHtml = starRow(r.stars != null ? r.stars : worldStarsFor(acc || 0));
-      if (mode === "teamworlds") { const pn = twPartner(); if (pn) bits.push(`with ${pn}`); }
+      if (mode === "teamworlds" || mode === "hlsurvival") { const pn = twPartner(); if (pn) bits.push(`with ${pn}`); }
       if (mode === "whichbigger" && r.rounds) bits.unshift(`Level ${r.rounds}`);
     }
     if (when) bits.push(when);
