@@ -85,3 +85,14 @@ html[data-motion=reduce] .skel-row i,html[data-motion=reduce] .empty-state img{a
 .cozy-panel.resume-card .rc-actions button:last-child{background:#f4ead6;opacity:.85}
 @media(prefers-reduced-motion:reduce){.lu-badge::after,.lu-badge-n,.dc-streak-bar i,.dc-streak-bar i::after,.dc-flame::before,.dc-flame::after,.cozy-panel.resume-card,.cozy-panel.resume-card .rc-art img{animation:none!important}}
 html[data-motion=reduce] .lu-badge::after,html[data-motion=reduce] .lu-badge-n,html[data-motion=reduce] .dc-streak-bar i,html[data-motion=reduce] .dc-streak-bar i::after,html[data-motion=reduce] .dc-flame::before,html[data-motion=reduce] .dc-flame::after,html[data-motion=reduce] .cozy-panel.resume-card,html[data-motion=reduce] .cozy-panel.resume-card .rc-art img{animation:none!important}
+/* Badge shine: earned badges get a glossy highlight and a soft gleam that sweeps across now and then, staggered so they don't flash together. */
+:is(.bd-item:not(.locked),.bd-rank:not(.off)) .bd-medal::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.9) 50%,transparent 60%) no-repeat,radial-gradient(circle at 30% 24%,rgba(255,255,255,.45),transparent 38%);
+  background-size:260% 100%,100% 100%;background-position:130% 0,0 0;animation:bdShine 5.5s ease-in-out infinite}
+.bd-grid .bd-item:nth-child(5n+2) .bd-medal::after,.bd-ranks .bd-rank:nth-child(5n+2) .bd-medal::after{animation-delay:-1.1s}
+.bd-grid .bd-item:nth-child(5n+3) .bd-medal::after,.bd-ranks .bd-rank:nth-child(5n+3) .bd-medal::after{animation-delay:-2.2s}
+.bd-grid .bd-item:nth-child(5n+4) .bd-medal::after,.bd-ranks .bd-rank:nth-child(5n+4) .bd-medal::after{animation-delay:-3.3s}
+.bd-grid .bd-item:nth-child(5n) .bd-medal::after,.bd-ranks .bd-rank:nth-child(5n) .bd-medal::after{animation-delay:-4.4s}
+@keyframes bdShine{0%{background-position:130% 0,0 0}22%,100%{background-position:-60% 0,0 0}}
+@media(prefers-reduced-motion:reduce){:is(.bd-item,.bd-rank) .bd-medal::after{animation:none!important;background-position:-60% 0,0 0}}
+html[data-motion=reduce] :is(.bd-item,.bd-rank) .bd-medal::after{animation:none!important;background-position:-60% 0,0 0}
