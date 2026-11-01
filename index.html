@@ -603,7 +603,7 @@ if (location.protocol === "file:") {
   .cosm-sticky-header { position: sticky; top: 0; z-index: 5; background: #fbfaf6; padding-top: 2px; }
   .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
   /* Stats: the level card scrolls away, then the mode tabs pin just under the Stats/Objects/Awards strip */
-  #career-content .cosm-tabs.stats-views { position: sticky; top: 112px; z-index: 6; margin: 0 -6px 4px; padding: 4px 6px 14px; background: linear-gradient(#fbfaf6 calc(100% - 8px), rgba(251,250,246,0)); }
+  #career-content .cosm-tabs.stats-views { position: sticky; top: 112px; z-index: 6; margin: 0 -6px 4px; padding: 4px 6px 14px; background: none; }
   .cosm-pane[hidden] { display: none; }
   .cosm-note:empty { display: none; }
   .cosm-note { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
@@ -2054,7 +2054,7 @@ if (location.protocol === "file:") {
     background: #fffaf0; box-shadow: 0 1px 3px rgba(0,0,0,.18);
     position: relative; z-index: 1;
   }
-  #toolbar-coin-count { display: inline-block; text-align: center; white-space: nowrap; }
+  #toolbar-coin-count { display: inline-block; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
   /* Grows to fill whatever's left after the home button + coin balance take
      their own natural width, instead of sitting fixed-width (and far from
      them) at the right edge - min-width:0 lets it shrink below its
@@ -10446,10 +10446,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     worlds: [3.5, 14.41, 14.9, 64.86, -2.1], survival: [2.5, 13.06, 20.9, 77.48, -2.8], "which-bigger": [3, 14.41, 25.4, 71.17, -3.5] };
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
+    const savedW = readSoloSession("worlds"), savedS = readSoloSession("survival"), savedB = readSoloSession("wb");   // a run in progress shows a "Saved" tag
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
     const card = (id, img, name, sub, extra) => {
       const banner = extra && extra.banner;
-      const cls = `sh-card${extra && extra.hot ? " sh-hot" : ""}${banner ? " sh-banner" : ""}`;
+      const cls = `sh-card${extra && extra.hot ? " sh-hot" : ""}${banner ? " sh-banner" : ""}${extra && extra.saved ? " sh-saved" : ""}`;
       // The picture on each banner is its own layer so it can tilt: a blank button plus the artwork on top.
       const bk = banner && (banner.match(/banner-(.+)\.png$/) || [])[1], pos = bk && SOLO_ART_POS[bk];
       const pic = pos ? `<img class="sh-bimg" src="icons/banner-${bk}-blank.png" alt="" draggable="false"><img class="sh-tilt sh-bart" src="icons/banner-${bk}-art.png" alt="" draggable="false" style="left:${pos[0]}%;top:${pos[1]}%;width:${pos[2]}%;height:${pos[3]}%;--tilt-delay:${pos[4]}s">`
@@ -10460,9 +10461,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots", { banner: "icons/banner-quick.png" })}
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
-      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png" })}
-      ${card("sh-survival", "items/t-rex.webp", "Survival", survivalSub(), { banner: "icons/banner-survival.png" })}
-      ${card("sh-wb", "items/elephant.webp", "Which Is Bigger", wbSub(), { banner: "icons/banner-which-bigger.png" })}`;
+      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", savedW ? `Saved &middot; ${escapeHtml(WORLDS[savedW.wi].name)}, Level ${savedW.level}` : `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png", saved: !!savedW })}
+      ${card("sh-survival", "items/t-rex.webp", "Survival", savedS ? `Saved &middot; ${savedS.survived} round${savedS.survived === 1 ? "" : "s"} survived` : survivalSub(), { banner: "icons/banner-survival.png", saved: !!savedS })}
+      ${card("sh-wb", "items/elephant.webp", "Which Is Bigger", savedB ? `Saved &middot; ${savedB.score} right pick${savedB.score === 1 ? "" : "s"}` : wbSub(), { banner: "icons/banner-which-bigger.png", saved: !!savedB })}`;
   }
   function openSolo() {
     renderSoloHub();
@@ -11483,7 +11484,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function worldCard(id, img, name, sub, extra) {
     const world=WORLDS.find(w=>w.name===name),home=world&&HOME_SCREENS.find(h=>h.world===world.id);
     const scenery=home?` data-world-art="${world.id}" style="--world-art:url('${new URL(home.file,document.baseURI).href}')"`:"";
-    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}${extra && extra.isNew ? " sh-isnew" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
+    return `<button${scenery} type="button" class="sh-card${extra && extra.hot ? " sh-hot" : ""}${extra && extra.isNew ? " sh-isnew" : ""}${extra && extra.saved ? " sh-saved" : ""}" id="${id}"${extra && extra.disabled ? " disabled" : ""}><img class="sh-ic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span></button>`;
   }
   let focusedPlayLayout;
   const getPlayLayout = () => focusedPlayLayout ||= createPlayLayout(document);
@@ -11505,11 +11506,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const el = worldsContentEl, w = WORLDS[wl.wi];
     if (wl.phase === "list") {
       worldStop();
+      const wlSaved = readSoloSession("worlds");
       el.innerHTML = `<div class="wl-menu-header"><h2 class="dc-title">Worlds</h2><p class="dc-sub">${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars</p></div>${tourBtn('worlds')}${soloResumeHtml("worlds")}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i), st = worldStarsOf(x.id);
           const sub = open ? worldMeterHtml(x.id) : (x.unlockCount ? `Locked: ${Math.min(unlockedFantasyIds().length, x.unlockCount)} of ${x.unlockCount} creatures unlocked` : x.unlockHolidays ? `Locked: finish ${x.unlockHolidays} holiday Monthly Challenges (${Math.min(holidayMonthsPlayed().length, x.unlockHolidays)} of ${x.unlockHolidays})` : `Locked: get 2 stars on Level 5 of ${WORLDS[i - 1].name}`);
-          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, isNew: worldIsNew(i), hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
+          return worldCard("wl-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, sub, { disabled: !open, isNew: worldIsNew(i), saved: wlSaved && wlSaved.wi === i, hot: open && st === 0 && (i === 0 || x.unlockCount || x.unlockHolidays || worldStarsOf(WORLDS[i - 1].id) > 0) });
         }).join("");
       worldProgressPolish.apply(el, null);
       return;
@@ -13646,7 +13648,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       phase = "flying";
       setTimeout(() => {
         if (phase !== "flying") return;
-        sound(); sparkleCoins(toolbarCoinBalanceEl, false); popNum(toolbarCoinCountEl);
+        sound(); sparkleCoins(toolbarCoinBalanceEl, false);
         count(gain, fx.remaining());
       }, fx.firstLand);
     }
@@ -13660,7 +13662,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (target < from) { settleNow(); return; }
         show(Math.round(from + (target - from) * e));
         if (k < 1) rafId = requestAnimationFrame(step);
-        else { phase = "idle"; show(target); popNum(toolbarCoinCountEl); }
+        else { phase = "idle"; show(target); }
       };
       rafId = requestAnimationFrame(step);
     }
