@@ -10244,7 +10244,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="wb-result-stage dc-stage">${soloResultAvatarHtml(r.acc)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
           <div class="wb-verdict-t">${r.label}</div>
           <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
-          <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${Math.round(r.acc)}% accurate</span></p>
+          <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
           ${dcGaugeHtml(r.acc)}
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-next">${last ? "See my results" : "Next question"}</button></div>`;
@@ -12237,7 +12237,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const SURVIVAL_SHIELD_ACC = 75, SURVIVAL_SHIELD_CHAIN = 3;
   // Shield state under the hearts: a full shield when you hold one, otherwise an empty one and three pips for your chain.
   const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
-  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div></div>`;
+  const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b>${round}</b></div><div class="wb-best sv-accbox"><span class="wb-score-l">Accuracy</span><b id="sv-acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div><div class="sv-coinbox" aria-label="Coins earned this run"><img src="icons/coin-v2.png" alt="" draggable="false"><b id="sv-coins">${sv ? sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER) : 0}</b></div></div>`;
   // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
   function svDifficulty(answer) {
     const tiers = [[5, 1, "Very easy"], [20, 2, "Easy"], [100, 3, "Medium"], [1000, 4, "Hard"]];
@@ -12262,14 +12262,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // How safe was that guess? A bar from 0 to 100 % with the line you have to clear and a pin where you landed.
   function svGaugeHtml(acc) {
-    const a = Math.max(0, Math.min(100, acc)), m = Math.round(a - SURVIVAL_PASS);
-    const msg = m >= 0 ? `Safe by ${m} point${m === 1 ? "" : "s"}` : `${-m} point${m === -1 ? "" : "s"} short`;
+    // Same rule the game uses to take a life: at or above SURVIVAL_PASS is safe, anything under is not, even by 0.1.
+    const a = Math.max(0, Math.min(100, acc)), safe = a >= SURVIVAL_PASS, gap = Math.abs(a - SURVIVAL_PASS);
+    const pts = gap >= 1 ? String(Math.round(gap)) : (Math.round(gap * 10) / 10).toFixed(1).replace(/\.0$/, ""), plural = pts === "1" ? "" : "s";
+    const m = safe ? gap : -gap;
+    const msg = safe ? `Safe by ${pts} point${plural}` : `${pts} point${plural} short`;
     // Close calls get a plain callout (no screen effects): barely safe, so close, or a great guess.
-    const call = m >= 0 && m < 5 ? "Phew, barely safe!" : m < 0 && m >= -5 ? "So close!" : a >= 90 ? "Great guess!" : "";
-    const near = Math.abs(m) < 5;
+    const call = safe && gap < 5 ? "Phew, barely safe!" : !safe && gap <= 5 ? "So close!" : a >= 90 ? "Great guess!" : "";
+    const near = gap < 5;
     return `<div class="sv-gauge"><div class="sv-gauge-bar"><span class="sv-gauge-line" style="left:${SURVIVAL_PASS}%"></span><span class="sv-gauge-pin${near ? " near" : ""}" style="left:${a}%"></span></div>
       <div class="sv-gauge-labels"><span style="left:${SURVIVAL_PASS / 2}%">Lose a life</span><span style="left:${(SURVIVAL_PASS + 80) / 2}%">Safe</span><span style="left:90%">Great</span></div>
-      ${call ? `<div class="sv-callout ${m >= 0 ? "ok" : "bad"}">${call}</div>` : ""}<div class="dc-note"><b>${msg}</b></div></div>`;
+      <div class="sv-gauge-foot">${call ? `<span class="sv-callout ${m >= 0 ? "ok" : "bad"}">${call}</span>` : ""}<span class="dc-note"><b>${msg}</b></span></div></div>`;
   }
   // Show the result of the round: the card with the gauge, then (if it cost a life) the cracking heart and the hearts update.
   function svShowResult(m) {
@@ -12334,7 +12337,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function svQuip(ok, acc) {
     const pick = (list) => list[Math.floor(Math.random() * list.length)];
-    if (ok) return acc >= 90 ? pick(["Great eye!", "Eagle eyes!", "Nailed it!", "Wow, that was close to perfect."]) : pick(["Nice one.", "Safe and sound.", "You've got a feel for this.", "Smooth."]);
+    if (acc >= 100) return pick(["Bullseye!", "Exactly right!", "Dead on!", "Flawless!"]);
+    if (acc >= 99) return pick(["Wow, that was close to perfect.", "So close to perfect!", "Off by a hair!"]);
+    if (ok) return acc >= 90 ? pick(["Great eye!", "Eagle eyes!", "Nailed it!"]) : pick(["Nice one.", "Safe and sound.", "You've got a feel for this.", "Smooth."]);
     return pick(["Ouch, that one stung.", "Not quite - shake it off!", "It happens.", "Tricky one!"]);
   }
   // Fits the cards, verdict and stamp to the screen height (same method as Which Is Bigger).
@@ -12361,12 +12366,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
         <div class="wb-result-stage sv-scene-wrap">${svSceneHtml(r, ok)}</div>
         <div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>
-        ${r.checkpoint ? `<div class="sv-callout cp"><img src="icons/coin-v2.png" alt="">${r.checkpoint} rounds survived &middot; ${sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER)} coins banked</div>` : ""}
         ${r.themed && ok ? `<div class="sv-callout bonus"><b>Bonus!</b> Themed round won &middot; +${SURVIVAL_THEME_COINS} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
         <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
         ${r.boost || ""}
-        ${r.earned ? `<div class="sv-callout earn">Shield earned! It will save you from one lost life.</div>` : ""}
-        <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${Math.round(r.acc)}% accurate</span></p>
+        ${r.earned ? `<div class="sv-callout earn"><span class="sv-earn-shield"><img src="icons/survival-shield-full.webp" alt="" draggable="false"></span>Shield earned! It will save you from one lost life.</div>` : ""}
+        <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
         ${svGaugeHtml(r.acc)}
       </div>
       <div class="wb-diff wb-diff-res">${svStampHtml(q.answer)}</div>

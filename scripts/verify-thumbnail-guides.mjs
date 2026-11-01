@@ -7,8 +7,9 @@ const {measurementGuideAxis}=await import('data:text/javascript;base64,'+Buffer.
 const object=(id,dimension='length')=>({id,measurement:{dimension}});
 assert.equal(measurementGuideAxis(object('key'),{width:25,height:80}),'vertical','stored key is tall; its thumbnail rotation then turns this arrow horizontal');
 assert.equal(measurementGuideAxis(object('key'),{width:80,height:25}),'horizontal');
-assert.equal(measurementGuideAxis(object('big-ben','height'),{width:90,height:30}),'horizontal');
-assert.equal(measurementGuideAxis(object('broom','height'),{width:90,height:20}),'horizontal');
+// Big Ben and the broom are now saved upright, so their height arrows run up and down.
+assert.equal(measurementGuideAxis(object('big-ben','height'),{width:30,height:90}),'vertical');
+assert.equal(measurementGuideAxis(object('broom','height'),{width:20,height:90}),'vertical');
 assert.equal(measurementGuideAxis(object('bald-eagle'),{width:80,height:80}),'vertical');
 assert.equal(measurementGuideAxis(object('manta-ray','width'),{width:50,height:80}),'horizontal');
 assert.equal(measurementGuideAxis(object('grand-canyon','depth'),{width:80,height:50}),'vertical');
