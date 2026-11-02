@@ -15,22 +15,22 @@ export function createObjectMemory({owner,history=()=>[],storage=localStorage,ra
       let rows;
       try{const saved=JSON.parse(storage.getItem('mg_object_memory_v1_'+id));if(Array.isArray(saved))rows=saved.filter(r=>Array.isArray(r)&&[2,3].includes(r.length)&&r.every(x=>typeof x==='string'));}catch{}
       if(!rows)rows=(Array.isArray(history())?history():Object.values(history()||{})).filter(h=>h?.u&&h?.g).map(h=>[h.u,h.g]);
-      caches.set(id,rows.slice(-100));
+      caches.set(id,rows.slice(-300));
     }
     return {id,rows:caches.get(id)};
   }
   function objectWeight(id){
     const {rows}=current();let pressure=0;
-    for(let i=rows.length-1;i>=0;i--)if(rows[i][0]===id||rows[i][1]===id)pressure+=Math.pow(0.5,(rows.length-1-i)/12);
+    for(let i=rows.length-1;i>=0;i--)if(rows[i][0]===id||rows[i][1]===id)pressure+=Math.pow(0.5,(rows.length-1-i)/50);
     return 1/(1+3*pressure);
   }
   function pairWeight(a,b){
     const {rows}=current();let pressure=0;
-    for(let i=rows.length-1;i>=0;i--)if((rows[i][0]===a&&rows[i][1]===b)||(rows[i][0]===b&&rows[i][1]===a))pressure+=Math.pow(0.5,(rows.length-1-i)/20);
+    for(let i=rows.length-1;i>=0;i--)if((rows[i][0]===a&&rows[i][1]===b)||(rows[i][0]===b&&rows[i][1]===a))pressure+=Math.pow(0.5,(rows.length-1-i)/60);
     return Math.sqrt(objectWeight(a)*objectWeight(b))/(1+2*pressure);
   }
   function remember(a,b){
-    if(!a||!b)return;const {id,rows}=current();rows.push([a,b]);if(rows.length>100)rows.shift();
+    if(!a||!b)return;const {id,rows}=current();rows.push([a,b]);if(rows.length>300)rows.shift();
     try{storage.setItem('mg_object_memory_v1_'+id,JSON.stringify(rows));}catch{}
   }
   function observe(a,b,key){
@@ -38,7 +38,7 @@ export function createObjectMemory({owner,history=()=>[],storage=localStorage,ra
     if(rows.some(r=>r[2]===key))return;
     // Claim a generated selection rather than counting it twice when completed.
     const prior=rows.findLast(r=>!r[2]&&((r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a)));
-    if(prior)prior[2]=key;else{rows.push([a,b,key]);if(rows.length>100)rows.shift();}
+    if(prior)prior[2]=key;else{rows.push([a,b,key]);if(rows.length>300)rows.shift();}
     try{storage.setItem('mg_object_memory_v1_'+id,JSON.stringify(rows));}catch{}
   }
   const pairIds=p=>Array.isArray(p)?p.map(o=>o.id):[p.u?.id||p.u,p.t?.id||p.t];

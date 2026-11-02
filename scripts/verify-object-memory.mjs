@@ -24,11 +24,11 @@ owner='two';assert.equal(memory.objectWeight('ant'),1,'account histories stay se
 const objects=[{id:'ant'},{id:'car'}],counts={ant:0,car:0};
 for(let i=0;i<30000;i++)counts[restored.pickObject(objects).id]++;
 assert(counts.ant>4000&&counts.ant<8000&&counts.car>22000,'recent item remains possible at lower weight');
-for(let i=0;i<48;i++)memory.remember('other'+i,'different'+i);
-assert(memory.objectWeight('ant')>.8,'chance recovers as other objects appear');
+for(let i=0;i<200;i++)memory.remember('other'+i,'different'+i);
+assert(memory.objectWeight('ant')>.8,'chance recovers over a couple hundred rounds');
 for(let i=0;i<150;i++)memory.remember('same','again');
 assert(memory.objectWeight('same')>0,'even repeated objects never get zero weight');
-assert(JSON.parse(data.get('mg_object_memory_v1_one')).length===100,'bounded persistent storage');
+assert(JSON.parse(data.get('mg_object_memory_v1_one')).length===300,'bounded persistent storage');
 const fromHistory=createObjectMemory({owner:()=> 'legacy',storage,history:()=>[{u:'old',g:'big',answered:false}],random});
 assert.equal(fromHistory.objectWeight('old'),.25,'seed older profiles, including missed submissions');
 const unavailable=createObjectMemory({owner:()=> 'offline',storage:{getItem(){throw Error();},setItem(){throw Error();}},random});
