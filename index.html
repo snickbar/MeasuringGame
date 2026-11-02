@@ -664,6 +664,9 @@ if (location.protocol === "file:") {
   .cosm-now:empty { display: none; }
   .cosm-now h4 { margin: 0 0 6px; font: 700 14px 'Fredoka', sans-serif; color: #4a2c12; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .cosm-now h4 small { font-weight: 600; font-size: 11px; color: #7a5c33; }
+  .cosm-slot.buy { border: 2px solid #d9c7a1; background: #f1e8d3; }
+  .cosm-slot.buy img { opacity: .8; }
+  .cosm-slot-buy { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 13px 'Fredoka', sans-serif; color: #4a2c12; }
   .cosm-now-cap { margin: 8px 0 0; font-size: 11px; color: #5b3a26; }
   .cosm-bar { display: flex; gap: 6px; justify-content: space-between; }
   .cosm-slot { position: relative; flex: 1; aspect-ratio: 1; max-width: 46px; border-radius: 12px; display: grid; place-items: center; border: 2px dashed #9bb7d6; background: #e8f2fc; font: 700 18px 'Fredoka', sans-serif; color: #5b86b8; }
@@ -5712,12 +5715,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const pool = rndPoolOf("reactions", Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e)));
       const poolN = Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e) && inRndPool("reactions", e)).length;
       let bar = "";
-      for (let n = 0; n < slots; n++) {
+      for (let n = 0; n < REACTION_SLOTS_MAX; n++) {
         const e = locks[n];
+        if (n >= slots) { bar += `<span class="cosm-slot buy" aria-label="Reaction slot ${n + 1}, not unlocked yet"><img src="icons/reactions/padlock.png" alt=""></span>`; continue; }
         bar += e ? `<span class="cosm-slot lk"><img src="${reactionPic(e)}" alt=""${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}></span>` : `<span class="cosm-slot ${on ? "rnd" : "empty"}">${on ? "?" : ""}</span>`;
       }
       const open = Math.max(0, slots - locks.length);
-      pnl.innerHTML = `<h4>Your reaction bar<small>${slots} slots</small></h4><div class="cosm-bar">${bar}</div><p class="cosm-now-cap">${locks.length} locked: always there${on && open ? ` &middot; ${open} filled at random from ${poolN ? `your ${poolN} equipped` : `the ${pool.length} you own`}` : ""}</p>`;
+      pnl.innerHTML = `<h4>Your reaction bar<small>${slots} of ${REACTION_SLOTS_MAX} slots unlocked</small></h4><div class="cosm-bar">${bar}</div><p class="cosm-now-cap">${locks.length} locked: always there${on && open ? ` &middot; ${open} filled at random from ${poolN ? `your ${poolN} equipped` : `the ${pool.length} you own`}` : ""}</p>`;
+      if (slots < REACTION_SLOTS_MAX) {
+        const n = slots + 1, buy = document.createElement("div");
+        buy.className = "cosm-slot-buy";
+        buy.innerHTML = `<span>Unlock slot ${n}</span><div class="cosm-actions has-usd"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n - 6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n - 6]}</button><button type="button" class="cosm-buy cosm-buy-usd" aria-label="Unlock slot ${n} for ${ITEM_PRICE_USD}">${ITEM_PRICE_USD}</button></div>`;
+        const [coinBtn, usdBtn] = buy.querySelectorAll("button");
+        coinBtn.addEventListener("click", () => buyReactionSlot(n, false));
+        usdBtn.addEventListener("click", async () => { if (await purchase({ title: `Reaction slot ${n}`, price: ITEM_PRICE_USD, icon: "icons/coin-v2.png" })) buyReactionSlot(n, true); });
+        pnl.appendChild(buy);
+      }
       return pnl;
     }
     const items = cosmCatItems(cat), byId = Object.fromEntries(items.map((i) => [i.id, i]));
@@ -7166,13 +7179,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         toggleActiveEmoji(e);
       },
       onBuy: (m) => buyEmojiWithCoins(e, m === true),
-    });
-    [6, 7].forEach((n) => {
-      const have = slots >= n, cost = REACTION_SLOT_COSTS[n - 6];
-      container.appendChild(cosmRow({
-        leadHtml: `<img class="cosm-reaction-pic" alt="" src="icons/reactions/padlock.png">`, name: `Reaction slot ${n}`,
-        owned: have, ownedLabel: "Unlocked", cost, onBuy: (m) => buyReactionSlot(n, m === true),
-      }));
     });
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
