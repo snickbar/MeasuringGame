@@ -2824,6 +2824,46 @@ if (location.protocol === "file:") {
      attribute-selector rules above (and the profile listener that keeps re-applying it) can't be
      reliably beaten by clearing the attribute/inline style alone (see the comment where .tw-plain
      is toggled). Wins regardless of what data-board/data-scene the element still carries. */
+  /* Still copies of the equipped board on the solo Daily / Monthly question screens. */
+  .qbs { font-family: 'Fredoka', sans-serif; font-weight: 600; text-align: center; margin: 6px 0; color: var(--text); }
+  .qbs p { margin: 0; line-height: 1.22; font-size: 19px; }
+  .qbs-flat { box-sizing: border-box; min-height: 128px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-size: 100% 100%; background-repeat: no-repeat; }
+  .qbs-scene { height: 176px; position: relative; }
+  .qbs-stage { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); max-width: 100%; height: 100%; }
+  .qbs-stage > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .qbs-body { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+  .qbs-body p { width: 100%; }
+  .qbs[data-board="chalkboard"] { color: #f7f7f0; } .qbs[data-board="whiteboard"] { color: #1d3f9a; } .qbs[data-board="curtains"] { color: #5b3a26; }
+  .qbs[data-board="terminal"] { color: #7fe08a; font-family: 'Courier New', monospace; font-weight: 700; }
+  .qbs[data-board="tv"] { color: #14307a; } .qbs[data-board="typewriter"] { color: #161616; font-family: 'Courier New', monospace; font-weight: 700; }
+  .qbs[data-board="letterboard"] { color: #f3f1e8; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .qbs[data-board="neon"] { color: #ffb3d9; text-shadow: 0 0 4px #ff4fa3, 0 0 10px #ff2d95; }
+  .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
+  .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
+  /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
+  #hud #question-view.tw-mode { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-auto-flow: row dense; column-gap: 8px; align-content: start; }
+  #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
+  #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; justify-content: stretch; }
+  #hud #question-view.tw-mode > #tw-question-stats { grid-column: 2; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; margin: 0; align-self: stretch; }
+  #hud #question-view.tw-mode .tw-qs-pair { flex: 1 1 0; width: 100%; }
+  #hud #question-view.tw-mode .tw-qs-gutter { display: none; }
+  #hud #question-view.tw-mode .tw-qs-half { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; box-sizing: border-box; gap: 3px; padding: 6px 4px; border-radius: 16px; }
+  #hud #question-view.tw-mode .tw-qs-half .avatar { width: 52px; height: 52px; grid-row: auto; }
+  #hud #question-view.tw-mode .tw-qs-half .avatar .avatar-icon { width: 100%; height: 100%; }
+  #hud #question-view.tw-mode .tw-qs-half .name { font-size: 13px; }
+  #hud #question-view.tw-mode .tw-qs-half .tw-qs-acc { font-size: 15px; }
+  #hud #tw-question-prompt .qbs-scene, :is(#worlds-content, #survival-content) .qbs-scene { height: 152px; margin: 0; }
+  :is(#worlds-content, #survival-content) .qbs-flat { min-height: 118px; margin: 0; }
+  :is(#worlds-content, #survival-content) .qbs { margin: 4px 0 6px; }
+  .qbs .dc-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
+  /* Worlds / Survival: keypad on the left, the power-ups in a two-column block on its right. */
+  .dc-padrow { display: block; }
+  .dc-padrow:has(.pu-row) { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px; align-items: start; }
+  .dc-padrow .pu-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 56px); align-content: start; gap: 4px; margin: 0; padding: 4px; }
+  .dc-padrow .pu-button { min-height: 0; height: 100%; }
+  #hud #tw-question-prompt .qbs-flat { min-height: 118px; margin: 0; }
+  #hud #tw-question-prompt.tw-qboard { background: none; border: 0; padding: 0; margin: 4px 0 8px; font-size: inherit; line-height: normal; }
+  #hud #tw-question-prompt .dc-display, #hud #tw-question-prompt #tw-guess-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
   .question-prompt.tw-plain {
     background: #fffdf6 !important; border: 1px solid rgba(217,194,154,.7) !important; border-radius: 24px !important;
     height: auto !important; min-height: 0 !important; box-shadow: none !important; padding: 8px 12px !important;
@@ -6950,6 +6990,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ] },
   ];
   const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp", terminal: "icons/bd-terminal-kb.webp", tv: "icons/bd-tv-dark.webp", typewriter: "icons/bd-typewriter.webp", phone: "icons/bd-phone-tight.webp", splitflap: "icons/bd-splitflap.webp", letterboard: "icons/bd-letterboard.webp", neon: "icons/bd-neon.webp", sand: "icons/bd-sand.webp", scroll: "icons/bd-scroll.webp" };
+  // A still (non-animated) copy of the equipped question board for solo screens (Daily, Monthly): the picture with the question laid inside it.
+  // Boards with no still picture here (Scroll) and Team Worlds' plain box fall back to the normal translucent question pill.
+  const QBS_FLAT = { paper: { img: "icons/board-paper.webp", pad: "22px 28px 28px" }, chalkboard: { img: "icons/board-chalk.webp", pad: "24px 32px 30px" }, whiteboard: { img: "icons/board-white.webp", pad: "22px 30px 28px" }, curtains: { img: "icons/board-curtain.webp", pad: "30px 66px 36px" } };
+  function qBoardPromptHtml(text, extra = "") {
+    const raw = rndOn("boards") ? rndGet("boards") : equippedBoard(), id = raw === "none" ? "paper" : raw, safe = escapeHtml(text);
+    if (QBS_FLAT[id]) return `<div class="qbs qbs-flat" data-board="${id}" style="background-image:url(${QBS_FLAT[id].img});padding:${QBS_FLAT[id].pad}"><p>${safe}</p>${extra}</div>`;
+    const d = typeof SB_DEFS !== "undefined" ? SB_DEFS[id] : null;
+    if (!d || !d.img || id === "typewriter") return `<p class="dc-prompt">${safe}</p>${extra}`;
+    const b = id === "phone" ? [d.box[0] + 4, d.box[1], d.box[2] + 4, d.box[3]] : d.box;
+    return `<div class="qbs qbs-scene" data-board="${id}"><div class="qbs-stage" style="aspect-ratio:${d.ar};"><img src="${d.img}" alt="" draggable="false"><div class="qbs-body" data-fmax="${d.fmax || 19}" style="left:${b[0]}%;top:${b[1]}%;right:${b[2]}%;bottom:${b[3]}%"><p>${safe}</p>${extra}</div></div></div>`;
+  }
+  // Shrinks each still board's text until it fits its screen area.
+  function qBoardFit(root) {
+    (root || document).querySelectorAll(".qbs").forEach((box) => {
+      const body = box.querySelector(".qbs-body") || box, p = box.querySelector("p"); if (!p) return;
+      let fs = Number((box.querySelector(".qbs-body") || {}).dataset?.fmax) || (box.dataset.board === "curtains" ? 17 : 19);
+      const flat = box.classList.contains("qbs-flat"), cs = flat ? getComputedStyle(box) : null;
+      const availW = flat ? box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : body.clientWidth;
+      const extra = [...body.children].filter((c) => c !== p).reduce((n, c) => n + c.offsetHeight, 0);
+      const availH = flat ? Infinity : body.clientHeight - extra;
+      for (; fs > 8; fs -= 0.5) { p.style.fontSize = fs + "px"; if (p.offsetHeight <= availH + 1 && p.scrollWidth <= availW + 1) break; }
+    });
+  }
   function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards); }
   function boardPackOf(id) { return BOARD_PACK_CATALOG.find((p) => p.boards.some((b) => b.id === id)); }
   function ownsBoard(id) {
@@ -10445,10 +10508,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${qBoardPromptHtml(q.prompt)}
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (daily.phase === "reveal") {
@@ -11773,12 +11837,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${header}${dots(i)}${worldProgressHtml()}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
-        ${powerups?.html(powerupContext()) || ""}
-        <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
-        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        ${qBoardPromptHtml(q.prompt, `<div class="dc-display" id="wl-display">${wl.input || "0"}</div>`)}
+        <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (wl.phase === "reveal") {
@@ -12234,10 +12297,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${qBoardPromptHtml(q.prompt)}
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (mo.phase === "reveal") {
@@ -12753,15 +12817,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}${sv.q.theme ? svThemeStripHtml(sv.q.theme) : ""}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${qBoardPromptHtml(q.prompt, `<div class="dc-display" id="sv-display">${sv.input || "0"}</div>`)}
         <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
-        ${powerups?.html(powerupContext()) || ""}
-        <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
-        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       svApplyThemeVars(sv.q.theme);
       if (sv.q.theme && sv.bannerFor !== sv.asked) { sv.bannerFor = sv.asked; svShowThemeBanner(sv.q.theme); }
       requestAnimationFrame(() => requestAnimationFrame(svFit));
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (sv.phase === "reveal") {
@@ -17888,6 +17951,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
     return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hlShieldHtml(room)}${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>${room.currentQuestion?.theme ? `<div class="hl-theme" style="${svThemeVars(room.currentQuestion.theme)}">${svThemeStripHtml(room.currentQuestion.theme)}</div>` : ""}</div>`;
   }
+  // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
+  function setTwBoardPrompt(text) {
+    const raw = rndOn("boards") ? rndGet("boards") : equippedBoard(), key = raw + "|" + text;
+    if (twQuestionPromptEl.dataset.qbKey === key && twQuestionPromptEl.contains(twGuessDisplayEl)) return;
+    twQuestionPromptEl.dataset.qbKey = key;
+    questionViewEl.insertBefore(twGuessDisplayEl, numpadEl); // rescued before the board's markup is replaced
+    twQuestionPromptEl.classList.add("tw-qboard");
+    twQuestionPromptEl.innerHTML = text ? qBoardPromptHtml(text) : "";
+    (twQuestionPromptEl.querySelector(".qbs-body") || twQuestionPromptEl.querySelector(".qbs-flat") || twQuestionPromptEl).appendChild(twGuessDisplayEl);
+    requestAnimationFrame(() => qBoardFit(twQuestionPromptEl));
+  }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
     // Several of these elements' own base rules set display directly via an ID selector, which
@@ -17930,13 +18004,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (hl && q) {
       const myRole = hlRoles[currentPlayerId];
       const ask = myRole === "high" ? "Get close without going under." : myRole === "low" ? "Get close without going over." : "";
-      twQuestionPromptEl.textContent = q.prompt;
+      setTwBoardPrompt(q.prompt);
       if (hlHintEl) {
         hlHintEl.hidden = !ask;
         hlHintEl.innerHTML = ask ? `<b class="hl-role-word">${myRole === "high" ? "HIGH" : "LOW"}</b><span class="hl-role-desc">${ask}</span>` : "";
         hlHintEl.className = "hl-role" + (ask ? " hl-" + myRole : "");
       }
-    } else twQuestionPromptEl.textContent = q ? q.prompt : "";
+    } else setTwBoardPrompt(q ? q.prompt : "");
     // In High/Low Survival, order the two avatar boxes HIGH then LOW and tag each with its role.
     const ids = hl ? Object.keys(currentPlayers).sort((a, b) => (hlRoles[a] === "high" ? 0 : 1) - (hlRoles[b] === "high" ? 0 : 1)) : Object.keys(currentPlayers);
     // Each player's box is wrapped with its own dedicated empty gutter to its left (a reaction's
