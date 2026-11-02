@@ -119,3 +119,17 @@ html[data-motion=reduce] .sh-card.sh-banner .sh-bic{animation:none!important}
 #survival-content .sv-arr-gauge .sv-gauge-pin{animation:svPinSlide .8s calc(var(--a,0s) + .15s) cubic-bezier(.2,.9,.25,1.12) both}
 @media(prefers-reduced-motion:reduce){#survival-content .sv-arr,#survival-content .sv-arr-gauge .sv-gauge-pin{animation:none}}
 html[data-motion=reduce] #survival-content .sv-arr,html[data-motion=reduce] #survival-content .sv-arr-gauge .sv-gauge-pin{animation:none}
+
+/* Game over: new objects pop in one after another, and a new personal best becomes a gold ribbon with a few sparkles. */
+@keyframes svObjPop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+.session-discoveries .discovery-thumb{animation:svObjPop .4s calc(1.4s + var(--i,0)*.14s) cubic-bezier(.2,1.7,.4,1) both}
+.session-discoveries .discovery-thumb:nth-child(2){--i:1}.session-discoveries .discovery-thumb:nth-child(3){--i:2}.session-discoveries .discovery-thumb:nth-child(4){--i:3}
+.session-discoveries .discovery-thumb:nth-child(5){--i:4}.session-discoveries .discovery-thumb:nth-child(6){--i:5}.session-discoveries .discovery-thumb:nth-child(n+7){--i:6}
+@keyframes svRibbonIn{from{opacity:0;transform:scale(.3) rotate(-10deg)}to{opacity:1;transform:rotate(-1.5deg)}}
+@keyframes svTwinkle{0%{opacity:0;transform:scale(.2)}30%{opacity:1;transform:scale(1.3)}100%{opacity:0;transform:scale(.6) translateY(-8px)}}
+.dc-note.polish-personal-best{position:relative;display:block;width:fit-content;max-width:94%;margin:6px auto;padding:6px 18px;border-radius:20px;background:linear-gradient(#ffd34d,#f2a81d);border:3px solid #9b6a12;color:#4a2c12!important;box-shadow:0 2px 0 #9b6a1255;animation:svRibbonIn .6s .5s cubic-bezier(.2,1.6,.4,1) both;text-shadow:none}
+.dc-note.polish-personal-best::before,.dc-note.polish-personal-best::after{content:"";position:absolute;width:12px;height:12px;background:#fff3a6;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);opacity:0;animation:svTwinkle 1.1s 1.1s ease-out both}
+.dc-note.polish-personal-best::before{left:-4px;top:-9px}
+.dc-note.polish-personal-best::after{right:-2px;bottom:-9px;animation-delay:1.4s}
+@media(prefers-reduced-motion:reduce){.session-discoveries .discovery-thumb,.dc-note.polish-personal-best,.dc-note.polish-personal-best::before,.dc-note.polish-personal-best::after{animation:none!important;opacity:1}}
+html[data-motion=reduce] .session-discoveries .discovery-thumb,html[data-motion=reduce] .dc-note.polish-personal-best,html[data-motion=reduce] .dc-note.polish-personal-best::before,html[data-motion=reduce] .dc-note.polish-personal-best::after{animation:none!important;opacity:1}
