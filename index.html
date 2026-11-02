@@ -3813,6 +3813,32 @@ if (location.protocol === "file:") {
   .wl-rocket { position:absolute; top:-24px; left:max(var(--accuracy,0%),14px); width:0; height:0; pointer-events:none; z-index:3; transition:left var(--wl-t,.3s ease); }
   .wl-rocket img { position:absolute; left:-18px; top:-18px; width:36px; height:36px; transform:rotate(45deg); }
   .wl-rocket::after { content:''; position:absolute; left:0; top:12px; height:10px; border-left:2px dotted #ffb23a; }
+  /* Accuracy label + percent live under the meter (same row as the star thresholds), in Team Worlds and solo Worlds. */
+  .wl-sky .wl-progress-heading { position:absolute; left:10px; bottom:5px; justify-content:flex-start; gap:8px; align-items:baseline; font-size:12px; }
+  .wl-sky .wl-progress-heading strong { font-size:15px; }
+  @media (max-width:360px) { .wl-sky .wl-progress-heading { font-size:11px; gap:5px; } .wl-sky .wl-progress-heading strong { font-size:13px; } }
+  /* Solo Worlds: day sky, drifting clouds, hot air balloon with cloud puffs behind it. */
+  .wl-progress.wl-sky.wl-day { border-color:#8fc3ea; color:#2b4a66; background:linear-gradient(180deg,#8fd0ff,#cdeaff 62%,#eaf7ff); }
+  .wl-day .wl-progress-heading strong { color:#e8730e; text-shadow:0 1px 0 #fff; }
+  .wl-day .wl-progress-threshold { color:#2b4a66; }
+  .wl-day .wl-progress-scale { margin-top:48px; background:rgba(255,255,255,.55); box-shadow:inset 0 0 0 1px rgba(60,120,170,.25); }
+  .wl-day .wl-bar { box-shadow:none; }
+  .wl-day .wl-progress-marker.earned .wl-progress-star { filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 6px rgba(255,190,40,.9)); }
+  .wl-balloon { position:absolute; top:-38px; left:max(var(--accuracy,0%),16px); width:0; height:0; pointer-events:none; z-index:3; transition:left var(--wl-t,.3s ease); }
+  .wl-balloon img { position:absolute; left:-13px; top:-3px; width:26px; height:auto; transform-origin:50% 100%; transform:rotate(4deg); animation:wlBalloonBob 3s ease-in-out infinite; }
+  .wl-puff { position:absolute; top:24px; border-radius:50%; background:#fff; }
+  .wl-puff.p1 { left:-24px; width:8px; height:8px; opacity:.85; } .wl-puff.p2 { left:-36px; width:6px; height:6px; opacity:.6; } .wl-puff.p3 { left:-46px; width:4px; height:4px; opacity:.4; }
+  .wl-cloud { position:absolute; display:block; height:12px; border-radius:12px; background:rgba(255,255,255,.85); pointer-events:none; animation:wlCloudDrift linear infinite; }
+  .wl-cloud::before, .wl-cloud::after { content:''; position:absolute; background:inherit; border-radius:50%; }
+  .wl-cloud::before { width:15px; height:15px; left:8px; top:-8px; } .wl-cloud::after { width:11px; height:11px; left:22px; top:-5px; }
+  .wl-cloud.c1 { left:0; top:14px; width:42px; animation-duration:38s; }
+  .wl-cloud.c2 { left:0; top:30px; width:30px; opacity:.7; animation-duration:52s; animation-delay:-20s; }
+  .wl-cloud.c3 { left:0; top:8px; width:36px; animation-duration:44s; animation-delay:-8s; }
+  @keyframes wlBalloonBob { 50% { transform:translateY(-3px) rotate(4deg); } }
+  @keyframes wlCloudDrift { from { transform:translateX(-60px); } to { transform:translateX(420px); } }
+  .wl-rs .wl-progress.wl-day { --wl-t:1.3s cubic-bezier(.25,.8,.25,1); }
+  @media (prefers-reduced-motion: reduce) { .wl-balloon img, .wl-cloud { animation:none; } .wl-day { --wl-t:0s linear; } }
+  html[data-motion=reduce] .wl-balloon img, html[data-motion=reduce] .wl-cloud { animation:none; }
   .tw-sum .wl-progress.wl-sky { background-color:#14103a; --wl-t:1.3s cubic-bezier(.25,.8,.25,1); }
   @media (prefers-reduced-motion: reduce) { .wl-progress.wl-sky { --wl-t:0s linear; } }
   @media(prefers-reduced-motion:reduce) { .wl-progress-fill { transition:none; } .wl-progress.three-stars .wl-progress-fill::after { animation:none; background-position:50% 0; } }
@@ -11426,20 +11452,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const worldStarsFor = (avg) => (avg > WORLD_STAR_AT[2] ? 3 : avg > WORLD_STAR_AT[1] ? 2 : avg > WORLD_STAR_AT[0] ? 1 : 0);
   // Takes the average directly, so it's reusable outside solo Worlds' own local `wl` state
   // (Team Worlds' room-based accuracy below).
+  // sky = true: Team Worlds night sky + rocket. sky = 'day': solo Worlds day sky + hot air balloon.
   function worldProgressBarHtml(avg, sky = false) {
     const stars = avg == null ? 0 : worldStarsFor(avg);
     const text = avg == null ? 'No answers yet' : formatAccuracy(avg) + '%';
-    return `<div class="wl-progress${stars === 3 ? ' three-stars' : ''}${sky ? ' wl-sky' : ''}" aria-label="Worlds running accuracy and star requirements">
-      <div class="wl-progress-heading"><span>Accuracy so far</span><strong>${text}</strong></div>
+    const day = sky === 'day';
+    return `<div class="wl-progress${stars === 3 ? ' three-stars' : ''}${sky ? ' wl-sky' : ''}${day ? ' wl-day' : ''}" aria-label="Worlds running accuracy and star requirements">
+      ${day ? '<i class="wl-cloud c1"></i><i class="wl-cloud c2"></i><i class="wl-cloud c3"></i>' : ''}
+      <div class="wl-progress-heading"><span>Accuracy so far</span><strong>${sky && avg == null ? '0%' : text}</strong></div>
       <div class="wl-progress-scale" role="progressbar" aria-label="Average accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${avg ?? 0}" aria-valuetext="${avg == null ? text : text + ' accurate, currently ' + stars + ' of 3 stars'}">
-        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%">${sky ? '<span class="wl-bar"></span><span class="wl-trail"></span><span class="wl-rocket"><img src="icons/flair/rocket.png" alt=""></span>' : ''}</span>
+        <span class="wl-progress-fill" style="--accuracy:${avg ?? 0}%">${day ? '<span class="wl-bar"></span><span class="wl-balloon"><i class="wl-puff p1"></i><i class="wl-puff p2"></i><i class="wl-puff p3"></i><img src="items/hot-air-balloon.webp" alt=""></span>' : sky ? '<span class="wl-bar"></span><span class="wl-trail"></span><span class="wl-rocket"><img src="icons/flair/rocket.png" alt=""></span>' : ''}</span>
         ${WORLD_STAR_AT.map((at, i) => `<span class="wl-progress-marker${i < stars ? ' earned' : ''}" style="left:${at}%" aria-label="${i + 1} star${i ? 's' : ''}: above ${at}%"><span class="wl-progress-star"><img src="icons/flair/star.png" alt=""><b>${i + 1}</b></span><span class="wl-progress-threshold">&gt;${at}%</span></span>`).join('')}
       </div></div>`;
   }
   function worldProgressHtml(completed = wl.guesses.length) {
     const accs = wl.guesses.slice(0, completed).map((g, k) => roundAccuracy(effectiveGuess(wl.questions[k], g, deviceId) / wl.questions[k].answer));
     const avg = accs.length ? accs.reduce((sum, a) => sum + a, 0) / accs.length : null;
-    return worldProgressBarHtml(avg);
+    return worldProgressBarHtml(avg, 'day');
   }
   // Fresh questions every attempt. Pairs are ranked by how many times bigger the target is than the unit
   // (a bigger gap is harder), and each level draws from its own fifth of that ranking, easiest to hardest.
@@ -11606,7 +11635,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <div class="wl-rs-verdict">${markSvg(acc)}<span>${label}</span></div>
             ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
             <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
-          <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0))}</div>
+          <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0), "day")}</div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-next">${last ? "See my results" : "Next question"}</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
