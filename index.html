@@ -11211,8 +11211,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // Arrival (first draw of this game's results only): rows slide in with their chips counting up, then the earnings lines, total last.
       if (hsOverArrKey !== data.gameId) {
         hsOverArrKey = data.gameId;
-        hsContentEl.querySelectorAll(".hs-final-row").forEach((r, i) => { r.classList.add("hl-arr-r"); r.style.setProperty("--a", (0.5 + i * 0.3).toFixed(2) + "s"); countNode(r.querySelector(".hs-final-coins"), 600, 500 + i * 300); });
-        hsContentEl.querySelectorAll(".hs-rw-row").forEach((r, i, all) => { r.classList.add("hl-arr"); r.style.setProperty("--a", (1.9 + i * 0.35).toFixed(2) + "s"); if (i === all.length - 1) countNode(r.querySelector("b"), 600, 1900 + i * 350); });
+        const finRows = [...hsContentEl.querySelectorAll(".hs-final-row")]; // a ranking arrives bottom-up: last place first, the winner last
+        finRows.forEach((r, i) => { const j = finRows.length - 1 - i; r.classList.add("hl-arr-r"); r.style.setProperty("--a", (0.5 + j * 0.3).toFixed(2) + "s"); countNode(r.querySelector(".hs-final-coins"), 600, 500 + j * 300); });
+        hsContentEl.querySelectorAll(".hs-rw-row").forEach((r, i, all) => { r.classList.add("hl-arr"); const t = 0.5 + finRows.length * 0.3 + 0.4 + i * 0.35; r.style.setProperty("--a", t.toFixed(2) + "s"); if (i === all.length - 1) countNode(r.querySelector("b"), 600, t * 1000); });
       }
       if (!nobodyLeft && hs.winners.length === 1 && hsFlairOverKey !== data.gameId) {
         hsFlairOverKey = data.gameId;
