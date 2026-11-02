@@ -682,8 +682,8 @@ if (location.protocol === "file:") {
   .cosm-th .cosm-now-pic { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cosm-equip-bar .cosm-equip-count { display: none; }
   .cosm-sub-desc.cosm-equip-bar { display: none; }
-  #cosm-random-slot .cosm-rnd-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .cosm-rnd-clear { display: block; width: auto; margin: 5px 0 0; padding: 3px 12px; border: 2px solid #d9c3a0; border-radius: 12px; background: #fff; font: 700 12.5px 'Fredoka', sans-serif; color: #5b3a1e; }
+  #cosm-random-slot .cosm-rnd-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .cosm-rnd-clear { width: auto; height: 34px; margin: 0; padding: 0 8px; border: 2px solid #d9c3a0; border-radius: 12px; background: #fff; font: 700 12.5px 'Fredoka', sans-serif; color: #5b3a1e; }
   .cosm-rnd-clear:disabled { opacity: .45; }
   .cosm-rnd-clear:active { filter: brightness(.93); }
   .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -5668,7 +5668,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (rndPick[cat] !== undefined) return rndPick[cat];
     let v = null;
     if (cat === "boards") v = rndOf(rndPoolOf("boards", ["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard))));
-    else if (cat === "backgrounds") { const ids = rndPoolOf("backgrounds", allBackgrounds().map((b) => b.id).filter(ownsBackground)); v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
+    else if (cat === "backgrounds") { // Match game mode ("none") and Plain are only picked when you have equipped them yourself
+      const base = allBackgrounds().map((b) => b.id).filter(ownsBackground), extra = ["none", "plain"].filter((id) => inRndPool("backgrounds", id));
+      const eq = base.filter((id) => inRndPool("backgrounds", id)).concat(extra), ids = eq.length ? eq : base; v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
     else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
     else if (cat === "reactions") {
       // Locked reactions are always there; the open slots are filled at random from the equipped pool (or everything owned when none is equipped).
@@ -5701,7 +5703,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Everything Random could pick in a category: id, name and a small picture.
   function cosmCatItems(cat) {
-    if (cat === "backgrounds") return allBackgrounds().filter((b) => ownsBackground(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: bgThumbHtml(b.id, "cosm-now-pic", 34) }));
+    if (cat === "backgrounds") return [{ id: "none", name: "Match game mode", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' }, { id: "plain", name: "Plain", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' }].concat(allBackgrounds().filter((b) => ownsBackground(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: bgThumbHtml(b.id, "cosm-now-pic", 34) })));
     if (cat === "boards") return [{ id: "none", name: "Paper and pencil", thumb: `<img class="cosm-now-pic" src="${BOARD_PIC.paper}" alt="">` }].concat(allBoards().filter((b) => ownsBoard(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: `<img class="cosm-now-pic" src="${BOARD_PIC[b.id]}" alt="">` })));
     if (cat === "flairs") return COSMETIC_CATALOG.effects.filter((i) => ownsFlair(i) && FLAIRS[i.id]).map((i) => ({ id: i.id, name: i.label, thumb: `<img class="cosm-now-pic" src="${flairPic(i.pic)}" alt="">` }));
     if (cat === "homeScreens") return HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)).map((h) => ({ id: h.id, name: h.name, thumb: `<img class="cosm-now-pic" src="${h.file}" alt="">` }));
@@ -5778,7 +5780,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (cat === "reactions") Object.assign(patch, { activeEmojis: ["none"], activeReactions: ["none"] });
       update(ref(db, `profiles/${deviceId}`), patch);
     });
-    row.querySelector(".cosm-name").appendChild(clr);
+    row.insertBefore(clr, btn);
     return row;
   }
   // The active tab's header (what is locked / what Random picks from, then the "Equip Random" row) lives in the sticky header
@@ -6885,9 +6887,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.classList.toggle("cosm-random-on", rndOn("backgrounds")); container.dataset.rndCat = "backgrounds"; cosmRowCat = "backgrounds";
     container.appendChild(cosmRow({
       leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Match game mode", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(cosmForceEquip ? "none" : equipped),
+      equipped: equipped === "none", poolId: "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(cosmForceEquip ? "none" : equipped),
     }));
-    container.appendChild(cosmRow({leadHtml:'<span class="cosm-bg-pic cosm-bg-none"></span>', name:'Plain', owned:true, free:true, equipped:equipped === 'plain', onPreview:()=>openBackgroundPreview('plain','Plain'), onEquip:()=>equipBackground('plain')}));
+    container.appendChild(cosmRow({leadHtml:'<span class="cosm-bg-pic cosm-bg-none"></span>', name:'Plain', owned:true, free:true, equipped:equipped === 'plain', poolId:'plain', onPreview:()=>openBackgroundPreview('plain','Plain'), onEquip:()=>equipBackground('plain')}));
     MODE_BACKGROUNDS.forEach(b => container.appendChild(cosmRow({
       leadHtml:bgThumbHtml(b.id,'cosm-bg-pic',34), name:b.label, owned:true, free:true,
       equipped:equipped === b.id, poolId:b.id, onPreview:()=>openBackgroundPreview(b.id,b.label), onEquip:()=>equipBackground(b.id)
