@@ -2824,6 +2824,22 @@ if (location.protocol === "file:") {
      attribute-selector rules above (and the profile listener that keeps re-applying it) can't be
      reliably beaten by clearing the attribute/inline style alone (see the comment where .tw-plain
      is toggled). Wins regardless of what data-board/data-scene the element still carries. */
+  /* Still copies of the equipped board on the solo Daily / Monthly question screens. */
+  .qbs { font-family: 'Fredoka', sans-serif; font-weight: 600; text-align: center; margin: 6px 0; color: var(--text); }
+  .qbs p { margin: 0; line-height: 1.22; font-size: 19px; }
+  .qbs-flat { box-sizing: border-box; min-height: 128px; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; background-repeat: no-repeat; }
+  .qbs-scene { height: 176px; position: relative; }
+  .qbs-stage { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); max-width: 100%; height: 100%; }
+  .qbs-stage > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .qbs-body { position: absolute; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .qbs-body p { width: 100%; }
+  .qbs[data-board="chalkboard"] { color: #f7f7f0; } .qbs[data-board="whiteboard"] { color: #1d3f9a; } .qbs[data-board="curtains"] { color: #5b3a26; }
+  .qbs[data-board="terminal"] { color: #7fe08a; font-family: 'Courier New', monospace; font-weight: 700; }
+  .qbs[data-board="tv"] { color: #14307a; } .qbs[data-board="typewriter"] { color: #161616; font-family: 'Courier New', monospace; font-weight: 700; }
+  .qbs[data-board="letterboard"] { color: #f3f1e8; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .qbs[data-board="neon"] { color: #ffb3d9; text-shadow: 0 0 4px #ff4fa3, 0 0 10px #ff2d95; }
+  .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
+  .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
   .question-prompt.tw-plain {
     background: #fffdf6 !important; border: 1px solid rgba(217,194,154,.7) !important; border-radius: 24px !important;
     height: auto !important; min-height: 0 !important; box-shadow: none !important; padding: 8px 12px !important;
@@ -6950,6 +6966,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ] },
   ];
   const BOARD_PIC = { paper: "icons/board-paper.webp", chalkboard: "icons/board-chalk.webp", whiteboard: "icons/board-white.webp", curtains: "icons/board-curtain.webp", terminal: "icons/bd-terminal-kb.webp", tv: "icons/bd-tv-dark.webp", typewriter: "icons/bd-typewriter.webp", phone: "icons/bd-phone-tight.webp", splitflap: "icons/bd-splitflap.webp", letterboard: "icons/bd-letterboard.webp", neon: "icons/bd-neon.webp", sand: "icons/bd-sand.webp", scroll: "icons/bd-scroll.webp" };
+  // A still (non-animated) copy of the equipped question board for solo screens (Daily, Monthly): the picture with the question laid inside it.
+  // Boards with no still picture here (Scroll) and Team Worlds' plain box fall back to the normal translucent question pill.
+  const QBS_FLAT = { paper: { img: "icons/board-paper.webp", pad: "22px 28px 28px" }, chalkboard: { img: "icons/board-chalk.webp", pad: "24px 32px 30px" }, whiteboard: { img: "icons/board-white.webp", pad: "22px 30px 28px" }, curtains: { img: "icons/board-curtain.webp", pad: "30px 66px 36px" } };
+  function qBoardPromptHtml(text) {
+    const id = activeBoard() === "none" ? "paper" : activeBoard(), safe = escapeHtml(text);
+    if (QBS_FLAT[id]) return `<div class="qbs qbs-flat" data-board="${id}" style="background-image:url(${QBS_FLAT[id].img});padding:${QBS_FLAT[id].pad}"><p>${safe}</p></div>`;
+    const d = typeof SB_DEFS !== "undefined" ? SB_DEFS[id] : null;
+    if (!d || !d.img || id === "typewriter") return `<p class="dc-prompt">${safe}</p>`;
+    const b = id === "phone" ? [d.box[0] + 4, d.box[1], d.box[2] + 4, d.box[3]] : d.box;
+    return `<div class="qbs qbs-scene" data-board="${id}"><div class="qbs-stage" style="aspect-ratio:${d.ar};"><img src="${d.img}" alt="" draggable="false"><div class="qbs-body" data-fmax="${d.fmax || 19}" style="left:${b[0]}%;top:${b[1]}%;right:${b[2]}%;bottom:${b[3]}%"><p>${safe}</p></div></div></div>`;
+  }
+  // Shrinks each still board's text until it fits its screen area.
+  function qBoardFit(root) {
+    (root || document).querySelectorAll(".qbs").forEach((box) => {
+      const body = box.querySelector(".qbs-body") || box, p = box.querySelector("p"); if (!p) return;
+      let fs = Number((box.querySelector(".qbs-body") || {}).dataset?.fmax) || (box.dataset.board === "curtains" ? 17 : 19);
+      const flat = box.classList.contains("qbs-flat"), cs = flat ? getComputedStyle(box) : null;
+      const availW = flat ? box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : body.clientWidth;
+      const availH = flat ? Infinity : body.clientHeight;
+      for (; fs > 8; fs -= 0.5) { p.style.fontSize = fs + "px"; if (p.offsetHeight <= availH + 1 && p.scrollWidth <= availW + 1) break; }
+    });
+  }
   function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards); }
   function boardPackOf(id) { return BOARD_PACK_CATALOG.find((p) => p.boards.some((b) => b.id === id)); }
   function ownsBoard(id) {
@@ -10445,10 +10483,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${qBoardPromptHtml(q.prompt)}
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (daily.phase === "reveal") {
@@ -12234,10 +12273,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${qBoardPromptHtml(q.prompt)}
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (mo.phase === "reveal") {
