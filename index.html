@@ -10097,9 +10097,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let daily = null;        // today's session: { date, questions, guesses, phase, input }
   let dailyAnim = null;    // the reveal animation's controller
   // Result marks: the shape says right (check) or wrong (X), the colour says how close.
-  // 90%+ green check, 70-89% yellow check, 40-69% orange X, under 40% red X.
+  // 90%+ green check, 60-89% yellow check (same 60% line as the first Worlds star), 40-59% orange X, under 40% red X.
   const MARK_LEVELS = { g: ["check", "#4fb83a"], y: ["check", "#f7c21b"], o: ["x", "#f58a1f"], r: ["x", "#e5322d"] };
-  const markLevel = (a) => (a >= 90 ? "g" : a >= 70 ? "y" : a >= 40 ? "o" : "r");
+  const markLevel = (a) => (a >= 90 ? "g" : a >= 60 ? "y" : a >= 40 ? "o" : "r");
   function markSvg(a, cls) {
     const [shape, col] = MARK_LEVELS[markLevel(a)];
     const d = shape === "check" ? "M9 26 L19.5 36.5 L39 11" : "M11 11 L37 37 M37 11 L11 37";
@@ -10110,7 +10110,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const accLabel = (a) => (a >= 100 ? "Perfect!" : a >= 99 ? "The 1%!" : a >= 90 ? "So close!" : a >= 70 ? "Nice guess" : a >= 40 ? "In the neighborhood" : "Way off");
   // The card shown after a guess: big check or X, the verdict, then the numbers in large text.
   function soloResultAvatarHtml(acc, delay = 0) {
-    return `<span class="solo-result-avatar ${acc >= 70 ? "cheer" : "encourage"}" style="--solo-react-delay:${delay}ms" aria-hidden="true">${avatarHtml(currentAvatar)}</span>`;
+    return `<span class="solo-result-avatar ${acc >= 60 ? "cheer" : "encourage"}" style="--solo-react-delay:${delay}ms" aria-hidden="true">${avatarHtml(currentAvatar)}</span>`;
   }
   function showMonthlyResultCard(host, acc, g, ans, label) {
     const stage = document.getElementById("mo-stage");
@@ -10318,7 +10318,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function dailyShowSummary(mod) {
     if (!daily || daily.phase !== "reveal") return;
-    const i = daily.guesses.length - 1, q = daily.questions[i], g = daily.guesses[i], acc = roundAccuracy(g / q.answer), ok = acc >= 70;
+    const i = daily.guesses.length - 1, q = daily.questions[i], g = daily.guesses[i], acc = roundAccuracy(g / q.answer), ok = acc >= 60;
     const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     vibeAccuracy(acc);
     daily.res = { i, acc, ok, ans, label: dcLabel(acc), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false, true), quip: svQuip(ok, acc) };
