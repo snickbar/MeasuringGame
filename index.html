@@ -19266,6 +19266,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       opponents:Object.entries(currentPlayers).filter(([id])=>id!==me).map(([,p])=>p.isBot?p.botDifficulty||'medium':'human')});
     document.getElementById('final-session-recap')?.remove();
     finalListEl.innerHTML=bluffFinalHtml(s,currentPlayers,avatarHtml);
+    // Bottom-up arrival: last place first, the winner's card last (then the hero dances); scores count up, detail lines fade in.
+    const finCards=[...finalListEl.querySelectorAll('.bl-final-card')],finStep=300,finLast=Math.max(0,finCards.length-1)*finStep;
+    finCards.forEach((li,i)=>{const d=(finCards.length-1-i)*finStep;li.style.animationDelay=d+'ms';countNode(li.querySelector('.bl-final-score'),500,d+200);const det=li.querySelector('.bl-final-detail');if(det){det.classList.add('hl-arr');det.style.setProperty('--a',((d+350)/1000).toFixed(2)+'s');}});
     const recap=document.createElement('section');recap.id='final-session-recap';recap.className='cozy-panel bl-final-hero';
     const winners=standings.filter(r=>r.rank===1),names=winners.map(r=>escapeHtml(currentPlayers[r.id]?.name||s.names?.[r.id]||'Player'));
     recap.innerHTML=`<div class="bl-final-winners">${winners.map(r=>`<span class="avatar" data-bluff-hero-winner="${escapeHtml(r.id)}">${avatarHtml(currentPlayers[r.id]?.avatar)}</span>`).join('')}<img class="bl-hero-trophy" src="icons/reactions/trophy.png" alt=""></div><h2>${winners.length>1?'Shared victory!':mine.rank===1?'You won!':`${names[0]} wins!`}</h2><div class="bl-final-personal"><span><b>${mine.score}</b> your points</span><span><b>${Math.round(mine.accuracy)}%</b> vote accuracy</span><span><b>${s.fooled?.[me]||0}</b> fooled</span></div>`;
@@ -19273,13 +19276,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(!document.hidden){
       playSound('win');
       if(!prefersReducedMotion()){
-        recap.querySelectorAll('[data-bluff-hero-winner]').forEach(el=>el.classList.add('bl-win-dance'));
-        finalListEl.querySelectorAll('[data-bluff-winner] .avatar').forEach(el=>el.classList.add('bl-win-dance'));
         const finalKey=roomState.gameId;
-        setTimeout(()=>{
+        setTimeout(()=>{ // the winner's card has just landed
           if(document.hidden||!finalScreenEl.classList.contains('active')||roomState.gameId!==finalKey)return;
+          recap.querySelectorAll('[data-bluff-hero-winner]').forEach(el=>el.classList.add('bl-win-dance'));
+          finalListEl.querySelectorAll('[data-bluff-winner] .avatar').forEach(el=>el.classList.add('bl-win-dance'));
           winners.forEach(w=>{const el=recap.querySelector(`[data-bluff-hero-winner="${w.id}"]`);if(el?.isConnected)flairBurst(el,flairIdFor({flair:currentPlayers[w.id]?.flair}));});
-        },650);
+        },finLast+450);
       }
     }
   }

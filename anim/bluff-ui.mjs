@@ -1,4 +1,12 @@
 import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,botMakerChoice,botVoteChoice} from './bluff.mjs';
+
+// Counts a number up from 0 (presentation only; skipped when motion is reduced).
+function countUpEl(el,ms,delay,reduced){
+  if(!el||reduced)return;const to=parseInt(el.textContent,10);if(!(to>0))return;
+  const t0=performance.now()+delay;el.textContent='0';
+  const step=now=>{if(!el.isConnected)return;const k=Math.max(0,Math.min(1,(now-t0)/ms));el.textContent=String(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const bluffNumber=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
 export function bluffPickHtml(s,me){
@@ -44,7 +52,7 @@ export function bluffRankingsHtml(s,players,avatar,me){
   return `<section class="bl-rankings" aria-label="Current rankings"><h2>Current rankings</h2><p class="bl-rank-sub">After round ${s.round}</p><div class="hs-stand bl-stand-list">${rows.map((row,i)=>{
     const was=prev.get(row.id),move=was?was.rank-row.rank:0,shift=was?was.pos-i:0;
     const mv=move>0?`<span class="hs-mv up" aria-label="Up ${move}">&#9650;${move}</span>`:move<0?`<span class="hs-mv down" aria-label="Down ${-move}">&#9660;${-move}</span>`:'<span class="hs-mv same" aria-label="Same place">&ndash;</span>';
-    return `<div class="hs-srow bl-standing${row.rank===1?' leader':''}${row.id===me?' me':''}${newLeaders.includes(row.id)?' bl-new-leader':''}${shift>0?' bl-climb':shift<0?' bl-fall':''}" data-bluff-rank="${esc(row.id)}" style="--shift:${shift};animation-delay:${i*70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><span class="hs-sname"><b>${row.id===me?'You':esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b>${newLeaders.includes(row.id)?'<span class="bl-leader-badge">New leader</span>':''}<small>${Math.round(row.accuracy)}% vote accuracy</small></span>${mv}<span class="bl-standing-score"><strong>${row.score}</strong><small>points</small></span><span class="hs-delta${s.result.points[row.id]?' up':''}">+${s.result.points[row.id]||0}<small>this round</small></span></div>`;}).join('')}</div></section>`;
+    return `<div class="hs-srow bl-standing${row.rank===1?' leader':''}${row.id===me?' me':''}${newLeaders.includes(row.id)?' bl-new-leader':''}${shift>0?' bl-climb':shift<0?' bl-fall':''}" data-bluff-rank="${esc(row.id)}" style="--shift:${shift};animation-delay:${(rows.length-1-i)*180}ms,${(rows.length-1)*180+450}ms"><span class="hs-srank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><span class="hs-sname"><b>${row.id===me?'You':esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b>${newLeaders.includes(row.id)?'<span class="bl-leader-badge">New leader</span>':''}<small>${Math.round(row.accuracy)}% vote accuracy</small></span>${mv}<span class="bl-standing-score"><strong>${row.score}</strong><small>points</small></span><span class="hs-delta${s.result.points[row.id]?' up':''}">+${s.result.points[row.id]||0}<small>this round</small></span></div>`;}).join('')}</div></section>`;
 }
 export function bluffFinalHtml(s,players,avatar){
   return bluffStandings(s).map(row=>`<li class="final-row bl-final-card${row.rank===1?' rank-1':''}" data-bluff-final-player="${esc(row.id)}"${row.rank===1?' data-bluff-winner':''}><div class="bl-final-row"><span class="bl-final-rank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><div class="bl-final-identity"><b>${esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b><small>${Math.round(row.accuracy)}% vote accuracy</small></div><strong class="bl-final-score">${row.score}<small>points</small></strong></div><p class="bl-final-detail">${s.correct?.[row.id]||0}/${s.judged?.[row.id]||0} correct · ${s.fooled?.[row.id]||0} fooled</p></li>`).join('');
@@ -73,7 +81,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     if(s.stage==='reveal'){const ck=room.gameId+':'+s.round,sAge=ck===celebrationKey?(celebrationAbandoned?Infinity:now()-celebrationAt):0;content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,!reduced()&&visible());}
     const stageChanged=cueKey!==key;
     element.classList.toggle('bl-stage-enter',stageChanged);
-    const cardFor=(id,side)=>{const p=room.players?.[id],maker=id===s.maker,tag=maker?'Maker':s.stage==='vote'?(s.votes?.[id]?'Voted':'Thinking…'):s.stage==='reveal'?(s.result.points[id]?'+'+s.result.points[id]:'0 points'):p?'Ready':'Away';return `<div class="hs-pl bl-player${maker?' turn':''}" data-bluff-player="${esc(id)}" data-bluff-side="${side}"><span class="avatar">${avatar(p?.avatar||s.avatars?.[id])}</span><b class="hs-pl-name" title="${esc(p?.name||s.names?.[id])}">${esc(p?.name||s.names?.[id]||'Player')}</b><span class="hs-pl-coins">${s.scores[id]||0} pts</span><span class="hs-tag${maker?' turn':s.votes?.[id]?' ok':''}">${tag}</span></div>`;};
+    const cardFor=(id,side)=>{const p=room.players?.[id],maker=id===s.maker,tag=maker?'Maker':s.stage==='vote'?(s.votes?.[id]?'Voted':'Thinking…'):s.stage==='reveal'?(s.result.points[id]?'+'+s.result.points[id]:'0 points'):p?'Ready':'Away';return `<div class="hs-pl bl-player${maker?' turn':s.stage==='vote'&&s.votes?.[id]?' voted':''}" data-bluff-player="${esc(id)}" data-bluff-side="${side}"><span class="avatar">${avatar(p?.avatar||s.avatars?.[id])}</span><b class="hs-pl-name" title="${esc(p?.name||s.names?.[id])}">${esc(p?.name||s.names?.[id]||'Player')}</b><span class="hs-pl-coins">${s.scores[id]||0} pts</span><span class="hs-tag${maker?' turn':s.votes?.[id]?' ok':''}">${tag}</span></div>`;};
     const left=[],right=[];s.order.forEach((id,i)=>(i%2?right:left).push(cardFor(id,i%2?'r':'l')));
     const nextLabel=!s.showStand?'Show standings':s.round===s.total?'Finish game':'Start next round';
     const dock=s.stage==='reveal'?`<div class="bl-dock">${host?`<button type="button" class="dc-btn bl-dock-btn" data-next ${busy?'disabled':''}>${nextLabel}</button>`:`<p class="hs-hint">Waiting for the host to ${s.showStand?(s.round===s.total?'finish the game':'start the next round'):'show the standings'}…</p>`}</div>`:'';
@@ -155,7 +163,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   }
   function celebrateRound(){
     const {room}=context(),s=room?.bluff;
-    if(s?.stage==='reveal'&&s.showStand&&visible()&&!room.paused){const key=room.gameId+':'+s.round;if(key!==rankingCueKey){rankingCueKey=key;if(bluffNewLeaders(s).length)sound('winner');}}
+    if(s?.stage==='reveal'&&s.showStand&&visible()&&!room.paused){const key=room.gameId+':'+s.round;if(key!==rankingCueKey){rankingCueKey=key;if(bluffNewLeaders(s).length)sound('winner');const rs=[...element.querySelectorAll('.bl-standing')];rs.forEach((r,i)=>countUpEl(r.querySelector('.bl-standing-score strong'),500,(rs.length-1-i)*180+200,reduced()));}}
     if(!s||s.stage!=='reveal'||s.showStand||room.paused||!visible()){
       cancelRevealTimers();
       if(celebrationKey)celebrationAbandoned=true;
