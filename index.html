@@ -2843,7 +2843,7 @@ if (location.protocol === "file:") {
   /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
   #hud #question-view.tw-mode { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-auto-flow: row dense; column-gap: 8px; align-content: start; }
   #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
-  #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; justify-content: stretch; }
+  #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-template-columns: repeat(3, minmax(0, 60px)); gap: 6px; justify-content: start; }
   #hud #question-view.tw-mode > #tw-question-stats { grid-column: 2; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; margin: 0; align-self: stretch; }
   #hud #question-view.tw-mode .tw-qs-pair { flex: 1 1 0; width: 100%; }
   #hud #question-view.tw-mode .tw-qs-gutter { display: none; }
@@ -18019,7 +18019,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionStatsEl.innerHTML = ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-pair"><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
+      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
     }).join("");
   }
 
