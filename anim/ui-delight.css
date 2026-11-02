@@ -109,3 +109,13 @@ html[data-motion=reduce] .sh-card.sh-banner .sh-bic{animation:none!important}
 .sh-card.sh-saved::after{content:"SAVED";position:absolute;top:-7px;right:14px;z-index:2;background:#4f9a34;color:#fff;border:2px solid #fff;border-radius:999px;padding:1px 8px;font:700 12px/1.3 'Fredoka',sans-serif;letter-spacing:.04em;box-shadow:0 2px 0 rgba(74,44,18,.35);pointer-events:none}
 :is(#worlds-content,#teamworlds-content) .sh-card.sh-saved::after{top:6px;right:10px}
 .sh-card.sh-banner.sh-saved::after{right:5%}
+
+/* Survival result: the pieces arrive one after another (scene first, then title, line, answer, gauge). The big tick/X,
+   quip and callouts stay exactly as they were. The difficulty stamp is deliberately not part of this: it just sits there. */
+@keyframes svArrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes svPinSlide{from{left:0%}}
+#survival-content .sv-arr{animation:svArrive .35s var(--a,0s) ease-out both}
+#survival-content .sv-arr .wb-verdict-t{animation-delay:var(--a,0s)}
+#survival-content .sv-arr-gauge .sv-gauge-pin{animation:svPinSlide .8s calc(var(--a,0s) + .15s) cubic-bezier(.2,.9,.25,1.12) both}
+@media(prefers-reduced-motion:reduce){#survival-content .sv-arr,#survival-content .sv-arr-gauge .sv-gauge-pin{animation:none}}
+html[data-motion=reduce] #survival-content .sv-arr,html[data-motion=reduce] #survival-content .sv-arr-gauge .sv-gauge-pin{animation:none}
