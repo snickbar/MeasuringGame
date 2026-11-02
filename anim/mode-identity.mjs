@@ -10,7 +10,11 @@ export const MODE_IDENTITIES = {
  monthly:{label:'Monthly Challenge',accent:'#b285c8',wash:'#f0e3f7',ink:'#805298',art:'items/pumpkin.webp'}
 };
 export const MODE_BACKGROUNDS=Object.entries(MODE_IDENTITIES).map(([mode,m])=>({id:'mode-'+mode,label:m.label+' gradient'}));
-export const modeGradient=id=>MODE_IDENTITIES[id.replace(/^mode-/,'')]?`linear-gradient(${MODE_IDENTITIES[id.replace(/^mode-/,'')].wash}, #fff7e5 80%)`:null;
+// Each mode's own colour, boldest at the top and holding most of the way down before fading to cream.
+const mixHex=(a,b,t)=>'#'+[1,3,5].map(i=>Math.round(parseInt(a.slice(i,i+2),16)*t+parseInt(b.slice(i,i+2),16)*(1-t)).toString(16).padStart(2,'0')).join('');
+// Background tints that differ from the mode's accent, so Bluff and Monthly don't look like High Stakes' purple.
+const BG_TINT={daily:{accent:'#e3c235',wash:'#fcf3c4'},bluff:{accent:'#d65fa0',wash:'#fbe0ee'},monthly:{accent:'#3fae9c',wash:'#d9f1ec'}};
+export const modeGradient=id=>{const k=id.replace(/^mode-/,''),m=MODE_IDENTITIES[k]&&{...MODE_IDENTITIES[k],...BG_TINT[k]};return m?`linear-gradient(${mixHex(m.accent,m.wash,.8)}, ${mixHex(m.accent,m.wash,.4)} 40%, ${m.wash} 75%, #fff7e5)`:null;};
 export function screenMode(id,setup,settings={}){
  const fixed={'bluff-screen':'bluff','worlds-screen':'worlds','teamworlds-screen':'worlds','daily-screen':'daily','monthly-screen':'monthly','survival-screen':'survival','hs-screen':'highstakes','teamvteam-screen':'quick'};
  if(fixed[id])return fixed[id];
