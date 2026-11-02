@@ -38,7 +38,7 @@ if (location.protocol === "file:") {
   var G = typeof window !== "undefined" ? window : globalThis;
   G.mgPickHome = function () {
     var pool = JSON.parse(localStorage.getItem("mg_homeOwned") || "[]").filter(function (k) { return F[k]; });
-    if (pool.indexOf("ants") < 0) pool.push("ants");
+    if (!pool.length) pool.push("ants");
     var last = localStorage.getItem("mg_homeLast"), other = pool.filter(function (k) { return k !== last; });
     if (pool.length >= 3 && other.length) pool = other;
     return pool[Math.floor(Math.random() * pool.length)];
@@ -648,6 +648,40 @@ if (location.protocol === "file:") {
     border: 2px solid #d9c3a3; border-radius: 10px; background: #fff; color: #5a4a3a;
   }
   .cosm-row.equipped { border-color: #4caf50; background: #f1fae9; }
+  /* Tap the picture to preview; the Equip button adds the item to the Random pool, the padlock locks it in (always used). */
+  .cosm-row { position: relative; }
+  .cosm-pv-wrap { position: relative; display: inline-flex; flex: none; cursor: pointer; }
+  .cosm-zoom { position: absolute; right: -5px; bottom: -4px; width: 17px; height: 17px; border-radius: 50%; background: #fff; border: 1.5px solid #8a6a3c; display: grid; place-items: center; pointer-events: none; }
+  .cosm-zoom svg { width: 10px; height: 10px; }
+  .cosm-actions .cosm-equip { width: 84px; }
+  button.cosm-lock { width: 46px; height: 40px; margin: 0; padding: 0; display: grid; place-items: center; flex: none; border: 2px solid #b99a6b; border-radius: 14px; background: #fff6de; box-shadow: 0 2px 0 #b99a6b; }
+  button.cosm-lock img { width: 22px; height: 22px; opacity: .55; filter: grayscale(1); }
+  button.cosm-lock.on { background: linear-gradient(#ffe38a, #f6b83a); border-color: #b97a10; box-shadow: 0 2px 0 #b97a10; }
+  button.cosm-lock.on img { opacity: 1; filter: none; }
+  .cosm-row.cosm-locked { border-color: #e0a82a; background: #fff3cf; }
+  .cosm-row.cosm-locked::after { content: "LOCKED"; position: absolute; top: -8px; left: 12px; font: 700 9px 'Fredoka', sans-serif; letter-spacing: .06em; background: #f0b23a; color: #4a2c12; border-radius: 8px; padding: 1px 7px; }
+  .cosm-now { margin: 8px 0 6px; padding: 10px 12px; border-radius: 16px; border: 2px solid #d9c7a1; background: #fffbee; font: 600 13px 'Fredoka', sans-serif; color: #5b3a26; }
+  .cosm-now:empty { display: none; }
+  .cosm-now h4 { margin: 0 0 6px; font: 700 14px 'Fredoka', sans-serif; color: #4a2c12; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .cosm-now h4 small { font-weight: 600; font-size: 11px; color: #7a5c33; }
+  .cosm-slot.buy { border: 2px solid #d9c7a1; background: #f1e8d3; }
+  .cosm-slot.buy img { opacity: .8; }
+  .cosm-slot-buy { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 13px 'Fredoka', sans-serif; color: #4a2c12; }
+  .cosm-now-cap { margin: 8px 0 0; font-size: 11px; color: #5b3a26; }
+  .cosm-bar { display: flex; gap: 6px; justify-content: space-between; }
+  .cosm-slot { position: relative; flex: 1; aspect-ratio: 1; max-width: 46px; border-radius: 12px; display: grid; place-items: center; border: 2px dashed #9bb7d6; background: #e8f2fc; font: 700 18px 'Fredoka', sans-serif; color: #5b86b8; }
+  .cosm-slot.empty { border-color: #d9c7a1; background: #f6efe0; }
+  .cosm-slot img { width: 70%; height: 70%; object-fit: contain; }
+  .cosm-slot.lk { border: 2px solid #e0a82a; background: #fff3cf; }
+  .cosm-slot.lk::after { content: ""; position: absolute; right: -4px; top: -5px; width: 15px; height: 15px; background: url(icons/reactions/padlock.png) center / contain no-repeat; }
+  .cosm-thumbs { display: flex; gap: 6px; align-items: center; }
+  .cosm-thumbs em { font-style: normal; font-size: 12px; color: #7a5c33; }
+  .cosm-th { width: 34px; height: 46px; flex: none; border-radius: 8px; border: 2px solid #6bb35a; background: #dfe9d2; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .cosm-th.lk { border-color: #e0a82a; }
+  .cosm-th.more { background: #fff3c9; border-color: #d9a93a; font: 700 14px 'Fredoka', sans-serif; color: #7a4a10; }
+  .cosm-th .cosm-now-pic { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cosm-equip-bar .cosm-equip-count { display: none; }
+  .cosm-equip-bar { justify-content: flex-end; }
   .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .cosm-flair-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
   .cosm-flair-pic.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
@@ -1694,6 +1728,11 @@ if (location.protocol === "file:") {
   /* Keep navigation above scrolling content; Lobby pins only Start game and Back. */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: transparent; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
+  .avatar-random-btn { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; margin: 0; border: 2px solid #b99a6b; border-radius: 14px; background: linear-gradient(#ffe9a8, #f6c75a); box-shadow: 0 2px 0 #b97a10; font: 700 14px 'Fredoka', sans-serif; color: #4a2c12; }
+  .avatar-random-btn svg { width: 22px; height: 22px; flex: none; }
+  .avatar-random-btn:active { filter: brightness(.93); }
+  #name-avatar-random { margin: 8px auto 0; }
+  .avatar-picker-heading .avatar-random-btn { margin-left: auto; margin-right: 8px; }
   #avatar-grid, #settings-avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 8px 0 12px; }
   .avatar-choice {
     font-size: 24px; padding: 2px; min-width: 0; aspect-ratio: 1;
@@ -4209,7 +4248,7 @@ if (location.protocol === "file:") {
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
     <div class="cosm-sticky-header">
       <p id="cosm-note" class="cosm-note" role="status"></p>
-      <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
+      <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unlock all</button></div>
       <div id="cosm-random-slot"></div>
     </div>
     <div id="cosm-pane-emojis" class="cosm-pane">
@@ -4315,7 +4354,7 @@ if (location.protocol === "file:") {
       <div id="settings-name-keyboard" class="custom-kbd"></div>
     </div>
     <dialog id="settings-avatar-picker" class="cozy-dialog" aria-labelledby="settings-avatar-title">
-      <div class="avatar-picker-heading"><h3 id="settings-avatar-title">Choose your avatar</h3><button id="settings-avatar-close" type="button" class="settings-cream-btn">Done</button></div>
+      <div class="avatar-picker-heading"><h3 id="settings-avatar-title">Choose your avatar</h3><button id="settings-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random</button><button id="settings-avatar-close" type="button" class="settings-cream-btn">Done</button></div>
       <div id="settings-avatar-grid"></div>
     </dialog>
   </div>
@@ -4700,6 +4739,7 @@ if (location.protocol === "file:") {
   </div>
   <div id="name-keyboard" class="custom-kbd"></div>
 
+  <button id="name-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random avatar</button>
   <div id="avatar-grid"></div>
 
   <p id="name-avatar-status"></p>
@@ -5627,9 +5667,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (cat === "backgrounds") { const ids = rndPoolOf("backgrounds", allBackgrounds().map((b) => b.id).filter(ownsBackground)); v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
     else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
     else if (cat === "reactions") {
-      const own = Object.keys(REACTIONS).filter((e) => ownsEmoji(e));
+      // Locked reactions are always there; the open slots are filled at random from the equipped pool (or everything owned when none is equipped).
+      const locks = equippedReactions();
+      const own = rndPoolOf("reactions", Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e)));
       for (let i = own.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [own[i], own[j]] = [own[j], own[i]]; }
-      v = own.slice(0, ownedReactionSlots());
+      v = locks.concat(own).slice(0, ownedReactionSlots());
     }
     rndPick[cat] = v;
     return v;
@@ -5653,37 +5695,88 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     state._rr = index;
     if (Object.values((myProfile && myProfile.randomEquip) || {}).some(Boolean)) rollRandomEquips();
   }
+  // Everything Random could pick in a category: id, name and a small picture.
+  function cosmCatItems(cat) {
+    if (cat === "backgrounds") return allBackgrounds().filter((b) => ownsBackground(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: bgThumbHtml(b.id, "cosm-now-pic", 34) }));
+    if (cat === "boards") return [{ id: "none", name: "Paper and pencil", thumb: `<img class="cosm-now-pic" src="${BOARD_PIC.paper}" alt="">` }].concat(allBoards().filter((b) => ownsBoard(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: `<img class="cosm-now-pic" src="${BOARD_PIC[b.id]}" alt="">` })));
+    if (cat === "flairs") return COSMETIC_CATALOG.effects.filter((i) => ownsFlair(i) && FLAIRS[i.id]).map((i) => ({ id: i.id, name: i.label, thumb: `<img class="cosm-now-pic" src="${flairPic(i.pic)}" alt="">` }));
+    if (cat === "homeScreens") return HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)).map((h) => ({ id: h.id, name: h.name, thumb: `<img class="cosm-now-pic" src="${h.file}" alt="">` }));
+    return [];
+  }
+  const cosmLockedId = (cat) => (cat === "backgrounds" ? equippedBackground() : cat === "boards" ? equippedBoard() : cat === "homeScreens" ? equippedHomeScreen() : ((myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects) || "classic"));
+  const CAT_NOUN = { reactions: "reactions", flairs: "flairs", backgrounds: "scenes", boards: "boards", homeScreens: "home screens" };
+  // The panel at the top of each Style tab: what is locked and what Random is choosing from.
+  function cosmNowPanel(cat) {
+    const pnl = document.createElement("div");
+    pnl.className = "cosm-now";
+    const on = rndOn(cat), noun = CAT_NOUN[cat];
+    if (cat === "reactions") {
+      const slots = ownedReactionSlots(), locks = equippedReactions();
+      const pool = rndPoolOf("reactions", Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e)));
+      const poolN = Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e) && inRndPool("reactions", e)).length;
+      let bar = "";
+      for (let n = 0; n < REACTION_SLOTS_MAX; n++) {
+        const e = locks[n];
+        if (n >= slots) { bar += `<span class="cosm-slot buy" aria-label="Reaction slot ${n + 1}, not unlocked yet"><img src="icons/reactions/padlock.png" alt=""></span>`; continue; }
+        bar += e ? `<span class="cosm-slot lk"><img src="${reactionPic(e)}" alt=""${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}></span>` : `<span class="cosm-slot ${on ? "rnd" : "empty"}">${on ? "?" : ""}</span>`;
+      }
+      const open = Math.max(0, slots - locks.length);
+      pnl.innerHTML = `<h4>Your reaction bar<small>${slots} of ${REACTION_SLOTS_MAX} slots unlocked</small></h4><div class="cosm-bar">${bar}</div><p class="cosm-now-cap">${locks.length} locked: always there${on && open ? ` &middot; ${open} filled at random from ${poolN ? `your ${poolN} equipped` : `the ${pool.length} you own`}` : ""}</p>`;
+      if (slots < REACTION_SLOTS_MAX) {
+        const n = slots + 1, buy = document.createElement("div");
+        buy.className = "cosm-slot-buy";
+        buy.innerHTML = `<span>Unlock slot ${n}</span><div class="cosm-actions has-usd"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n - 6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n - 6]}</button><button type="button" class="cosm-buy cosm-buy-usd" aria-label="Unlock slot ${n} for ${ITEM_PRICE_USD}">${ITEM_PRICE_USD}</button></div>`;
+        const [coinBtn, usdBtn] = buy.querySelectorAll("button");
+        coinBtn.addEventListener("click", () => buyReactionSlot(n, false));
+        usdBtn.addEventListener("click", async () => { if (await purchase({ title: `Reaction slot ${n}`, price: ITEM_PRICE_USD, icon: "icons/coin-v2.png" })) buyReactionSlot(n, true); });
+        pnl.appendChild(buy);
+      }
+      return pnl;
+    }
+    const items = cosmCatItems(cat), byId = Object.fromEntries(items.map((i) => [i.id, i]));
+    if (on) {
+      const eq = items.filter((i) => inRndPool(cat, i.id)), list = eq.length ? eq : items;
+      const shown = list.slice(0, 5), more = list.length - shown.length;
+      pnl.innerHTML = `<h4>Random is picking from ${eq.length ? `your ${eq.length} equipped ${noun}` : `all ${items.length} ${noun} you own`}</h4><div class="cosm-thumbs">${shown.map((i) => `<span class="cosm-th">${i.thumb}</span>`).join("")}${more > 0 ? `<span class="cosm-th more">+${more}</span>` : ""}</div>`;
+    } else {
+      const id = cosmLockedId(cat), it = byId[id] || (cat === "backgrounds" ? { name: "Match game mode", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' } : null);
+      pnl.innerHTML = it ? `<h4>Locked: ${it.name}</h4><div class="cosm-thumbs"><span class="cosm-th lk">${it.thumb}</span><em>Random is off. Turn it on to pick from your equipped ${noun}.</em></div>` : "";
+    }
+    return pnl;
+  }
   function cosmRandomRow(cat, subText) {
     const on = rndOn(cat);
+    const poolN = cat === "reactions" ? 0 : cosmCatItems(cat).filter((i) => inRndPool(cat, i.id)).length;
     const row = document.createElement("div");
     row.className = "cosm-row cosm-rnd-row" + (on ? " equipped" : "");
     row.innerHTML = `<div class="cosm-lead"><span class="cosm-emoji"><svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg></span><span class="cosm-name">Equip Random<span class="cosm-rnd-sub">${subText}</span></span></div>`;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "cosm-equip cosm-rnd-btn" + (on ? " is-on" : "");
-    btn.textContent = on ? "On" : "Off";
+    btn.textContent = on ? "On" : poolN ? "Paused" : "Off";
     btn.setAttribute("aria-pressed", String(on));
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       rndPick[cat] = undefined;
-      await update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: !on });
+      update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: !on });
     });
     row.appendChild(btn);
     return row;
   }
-  // The active tab's "Equip Random" row lives in the sticky header (not the scrolling list
-  // below it), so it stays put while that tab's items scroll underneath it.
+  // The active tab's header (what is locked / what Random picks from, then the "Equip Random" row) lives in the sticky header
+  // (not the scrolling list below it), so it stays put while that tab's items scroll underneath it.
   let cosmSub = "emojis";
   function renderCosmRandomSlot() {
     const slot = document.getElementById("cosm-random-slot");
     if (!slot) return;
     const sub = cosmSub;
     const cat = sub === "emojis" ? "reactions" : sub === "homes" ? "homeScreens" : sub;
-    const subText = cat === "reactions" ? `${ownedReactionSlots()} random reactions you own each game`
-      : cat === "flairs" ? "A random flair you own each game"
-      : cat === "backgrounds" ? "A random background you own each game"
-      : cat === "homeScreens" ? "A different home screen you own each time you open Home"
-      : "A random board you own each game";
+    const subText = cat === "reactions" ? "Open slots get a random one of your equipped reactions"
+      : cat === "flairs" ? "A different equipped flair each game"
+      : cat === "backgrounds" ? "A different equipped scene each game"
+      : cat === "homeScreens" ? "A different equipped home screen each time you open Home"
+      : "A different equipped board each game";
     slot.innerHTML = "";
+    slot.appendChild(cosmNowPanel(cat));
     slot.appendChild(cosmRandomRow(cat, subText));
   }
   function defaultProfile() {
@@ -6579,7 +6672,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (homePrefsPlaceholder || !walletAuthReady || walletProfileOwner !== deviceId) return;
     try {
       localStorage.setItem("mg_homeSel", myProfile.randomEquip && myProfile.randomEquip.homeScreens ? "random" : equippedHomeScreen());
-      localStorage.setItem("mg_homeOwned", JSON.stringify(HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen)));
+      localStorage.setItem("mg_homeOwned", JSON.stringify(rndPoolOf("homeScreens", HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen))));
     } catch (e) {}
     // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
     if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) {
@@ -6609,12 +6702,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = equippedHomeScreen();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", !!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)); container.dataset.rndCat = "homeScreens";
+    container.classList.toggle("cosm-random-on", !!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)); container.dataset.rndCat = "homeScreens"; cosmRowCat = "homeScreens";
     // Owned scenes first, then the locked ones with how to earn them.
     const owned = HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)), locked = HOME_SCREENS.filter((h) => !ownsHomeScreen(h.id));
     owned.concat(locked).forEach((h) => container.appendChild(cosmRow({
       leadHtml: `<img class="cosm-bg-pic" src="${h.file}" alt="" loading="lazy">`, name: h.name,
-      owned: ownsHomeScreen(h.id), lockedHint: homeHowText(h), equipped: equipped === h.id,
+      owned: ownsHomeScreen(h.id), lockedHint: homeHowText(h), equipped: equipped === h.id, poolId: h.id,
       onPreview: () => openHomePreview(h), onEquip: () => equipHomeScreen(h.id),
     })));
   }
@@ -6770,7 +6863,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = equippedBackground();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", rndOn("backgrounds")); container.dataset.rndCat = "backgrounds";
+    container.classList.toggle("cosm-random-on", rndOn("backgrounds")); container.dataset.rndCat = "backgrounds"; cosmRowCat = "backgrounds";
     container.appendChild(cosmRow({
       leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Match game mode", owned: true, free: true, cost: 0,
       equipped: equipped === "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(cosmForceEquip ? "none" : equipped),
@@ -6778,7 +6871,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.appendChild(cosmRow({leadHtml:'<span class="cosm-bg-pic cosm-bg-none"></span>', name:'Plain', owned:true, free:true, equipped:equipped === 'plain', onPreview:()=>openBackgroundPreview('plain','Plain'), onEquip:()=>equipBackground('plain')}));
     MODE_BACKGROUNDS.forEach(b => container.appendChild(cosmRow({
       leadHtml:bgThumbHtml(b.id,'cosm-bg-pic',34), name:b.label, owned:true, free:true,
-      equipped:equipped === b.id, onPreview:()=>openBackgroundPreview(b.id,b.label), onEquip:()=>equipBackground(b.id)
+      equipped:equipped === b.id, poolId:b.id, onPreview:()=>openBackgroundPreview(b.id,b.label), onEquip:()=>equipBackground(b.id)
     })));
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
@@ -6789,7 +6882,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
       pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
         leadHtml: bgThumbHtml(b.id, "cosm-bg-pic", 34), name: b.label,
-        owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id,
+        owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id, poolId: b.id,
         onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: (m) => buyBackgroundWithCoins(b, m === true),
       })));
     });
@@ -6868,10 +6961,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = equippedBoard();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", rndOn("boards")); container.dataset.rndCat = "boards";
+    container.classList.toggle("cosm-random-on", rndOn("boards")); container.dataset.rndCat = "boards"; cosmRowCat = "boards";
     container.appendChild(cosmRow({
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
+      equipped: equipped === "none", poolId: "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
     }));
     BOARD_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
@@ -6881,7 +6974,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }, `${pack.boards.length} boards, or buy each with coins`));
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
-        owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id,
+        owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id, poolId: b.id,
         onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id), onBuy: (m) => buyBoardWithCoins(b, m === true),
       })));
     });
@@ -6965,31 +7058,63 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function equipFlair(id) {
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/effects": id });
   }
-  let cosmForceEquip = false;
+  let cosmForceEquip = false, cosmRowCat = null;
+  const PADLOCK_SVG = `<img src="icons/reactions/padlock.png" alt="">`;
   function cosmRow(o) {
+    const cat = cosmRowCat;
     const row = document.createElement("div");
-    row.className = "cosm-row" + (o.equipped ? " equipped" : "");
+    const canPool = !!(o.owned && !o.ownedLabel && cat && o.poolId != null);
+    const pooled = canPool && inRndPool(cat, o.poolId);
+    const isLocked = !!(o.owned && !o.ownedLabel && cat && (o.locked !== undefined ? o.locked : (o.equipped && !rndOn(cat))));
+    row.className = "cosm-row" + (isLocked ? " cosm-locked" : pooled || (!canPool && o.equipped && !o.ownedLabel && o.owned && !rndOn(cat)) ? " equipped" : "");
     row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.name}</span></div>`;
+    // Tap the little picture to preview it (there is no separate Preview button any more).
+    const pic = row.querySelector(".cosm-lead").firstElementChild;
+    if (o.onPreview && pic) {
+      const w = document.createElement("span");
+      w.className = "cosm-pv-wrap";
+      w.setAttribute("role", "button");
+      w.setAttribute("aria-label", `Preview ${o.name}`);
+      pic.replaceWith(w);
+      w.append(pic);
+      w.insertAdjacentHTML("beforeend", `<span class="cosm-zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="#5b3a26" stroke-width="3"/><path d="M15 15l6 6" stroke="#5b3a26" stroke-width="3.4" stroke-linecap="round"/></svg></span>`);
+      w.addEventListener("click", o.onPreview);
+    }
     const btn = document.createElement("button");
     btn.type = "button";
+    let lockBtn = null;
     if (o.owned && o.ownedLabel) {
       btn.className = "cosm-unlock";
       btn.disabled = true;
-      btn.textContent = "\u2713 " + o.ownedLabel;
+      btn.textContent = "✓ " + o.ownedLabel;
     } else if (o.owned) {
-      btn.className = "cosm-equip" + (o.equipped ? " is-on" : "");
-      btn.textContent = o.equipped ? "Equipped" : "Equip";
-      // With Equip Random on, tapping Equip on a specific item turns random off for that tab and equips it, in one tap.
-      btn.addEventListener("click", async (ev) => {
-        const cat = btn.closest("[data-rnd-cat]")?.dataset.rndCat;
-        if (cat && rndOn(cat)) {
+      const doLock = async (ev) => {
+        // Locking pins this one item: Random pauses for the tab. Tapping a locked item's padlock again turns Random back on.
+        if (cat && o.locked === undefined && isLocked === false && rndOn(cat)) {
           rndPick[cat] = undefined;
           cosmForceEquip = true;
           try { await update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: false }); await o.onEquip(ev); } finally { cosmForceEquip = false; }
           return;
         }
+        if (cat && o.locked === undefined && isLocked) { rndPick[cat] = undefined; update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: true }); return; }
         return o.onEquip(ev);
-      });
+      };
+      if (canPool) {
+        btn.className = "cosm-equip" + (pooled ? " is-on" : "");
+        btn.textContent = pooled ? "Equipped" : "Equip";
+        btn.addEventListener("click", () => {
+          rndPick[cat] = undefined;
+          update(ref(db, `profiles/${deviceId}`), { [`randomPool/${cat}/${o.poolId}`]: pooled ? null : true });
+        });
+      }
+      lockBtn = document.createElement("button");
+      lockBtn.type = "button";
+      lockBtn.className = "cosm-lock" + (isLocked ? " on" : "");
+      lockBtn.innerHTML = PADLOCK_SVG;
+      lockBtn.setAttribute("aria-label", (isLocked ? "Unlock " : "Lock ") + o.name);
+      lockBtn.setAttribute("aria-pressed", String(isLocked));
+      lockBtn.addEventListener("click", doLock);
+      if (!canPool) { btn.className = "cosm-equip" + (isLocked ? " is-on" : ""); btn.textContent = isLocked ? "Locked" : "Lock"; btn.addEventListener("click", doLock); lockBtn = null; }
     } else if (o.lockedHint) {
       btn.className = "cosm-unlock";
       btn.disabled = true;
@@ -7013,27 +7138,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         row.__usd = usd;
       }
     }
-    if (o.onPreview) {
+    if (row.__usd) {
       const wrap = document.createElement("div");
-      wrap.className = "cosm-actions" + (row.__usd ? " has-usd" : "");
-      const pv = document.createElement("button");
-      pv.type = "button";
-      pv.className = "cosm-preview";
-      pv.textContent = "Preview";
-      pv.setAttribute("aria-label", `Preview ${o.name}`);
-      pv.addEventListener("click", o.onPreview);
-      wrap.appendChild(pv);
-      wrap.appendChild(btn);
-      if (row.__usd) wrap.appendChild(row.__usd);
+      wrap.className = "cosm-actions has-usd";
+      wrap.append(btn, row.__usd);
       row.appendChild(wrap);
-    } else {
-      if (row.__usd) {
-        const wrap = document.createElement("div");
-        wrap.className = "cosm-actions has-usd";
-        wrap.append(btn, row.__usd);
-        row.appendChild(wrap);
-      } else row.appendChild(btn);
-    }
+    } else if (lockBtn) {
+      const wrap = document.createElement("div");
+      wrap.className = "cosm-actions";
+      wrap.append(btn, lockBtn);
+      row.appendChild(wrap);
+    } else row.appendChild(btn);
     return row;
   }
   function cosmPackHead(pack, owned, onUnlock, subText) {
@@ -7054,23 +7169,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const active = equippedReactions();
     const slots = ownedReactionSlots();
     container.innerHTML = "";
-    container.classList.toggle("cosm-random-on", rndOn("reactions")); container.dataset.rndCat = "reactions";
+    container.classList.toggle("cosm-random-on", rndOn("reactions")); container.dataset.rndCat = "reactions"; cosmRowCat = "reactions";
     const row = (e, cost) => cosmRow({
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
-      equipped: active.includes(e),
+      equipped: active.includes(e), locked: active.includes(e), poolId: e,
       onPreview: () => previewReaction(e),
       onEquip: () => {
-        if (!active.includes(e) && active.length >= slots) { cosmNote(`All ${slots} slots are full. Unequip one first.`); return; }
+        if (!active.includes(e) && active.length >= slots) { cosmNote(`All ${slots} slots are locked. Unlock one first.`); return; }
         toggleActiveEmoji(e);
       },
       onBuy: (m) => buyEmojiWithCoins(e, m === true),
-    });
-    [6, 7].forEach((n) => {
-      const have = slots >= n, cost = REACTION_SLOT_COSTS[n - 6];
-      container.appendChild(cosmRow({
-        leadHtml: `<img class="cosm-reaction-pic" alt="" src="icons/reactions/padlock.png">`, name: `Reaction slot ${n}`,
-        owned: have, ownedLabel: "Unlocked", cost, onBuy: (m) => buyReactionSlot(n, m === true),
-      }));
     });
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
@@ -7084,10 +7192,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
       pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
     });
-    if (statusEl) statusEl.textContent = `${active.length} / ${slots} equipped`;
-    statusEl.classList.toggle("full", active.length >= slots);
+    if (statusEl) { statusEl.textContent = `${active.length} / ${slots} locked`; statusEl.classList.toggle("full", active.length >= slots); }
     const unBtn = document.getElementById("cosm-unequip-all-btn");
-    if (unBtn) unBtn.disabled = active.length === 0 || rndOn("reactions");
+    if (unBtn) unBtn.disabled = active.length === 0;
   }
   function renderFlairRows(container) {
     if (!container) return;
@@ -7095,11 +7202,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.innerHTML = "";
     const row = (item) => cosmRow({
       leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
-      owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id,
+      owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id, poolId: item.id,
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: (m) => buyFlairWithCoins(item, m === true),
     });
-    container.classList.toggle("cosm-random-on", rndOn("flairs")); container.dataset.rndCat = "flairs";
+    container.classList.toggle("cosm-random-on", rndOn("flairs")); container.dataset.rndCat = "flairs"; cosmRowCat = "flairs";
     const items = COSMETIC_CATALOG.effects;
     items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
     FLAIR_PACK_CATALOG.forEach((pack) => {
@@ -9766,6 +9873,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   document.getElementById("settings-avatar-close").addEventListener("click", () => settingsAvatarPickerEl.close());
   settingsAvatarPickerEl.addEventListener("close", () => { settingsAvatarBigEl.setAttribute("aria-expanded", "false"); settingsAvatarBigEl.focus(); });
+  // Random avatar: any avatar you own that nobody in the room has taken, other than the one you have now.
+  function pickRandomAvatar() {
+    const opts = AVATARS.filter((a) => isAvatarUnlocked(a) && !takenAvatars.has(a) && a !== currentAvatar);
+    if (!opts.length) return;
+    currentAvatar = opts[Math.floor(Math.random() * opts.length)];
+    localStorage.setItem("mg_avatar", currentAvatar);
+    renderAvatarGrid();
+    renderSettingsAvatarGrid();
+    playSound("pick");
+  }
+  document.getElementById("name-avatar-random").addEventListener("click", pickRandomAvatar);
+  document.getElementById("settings-avatar-random").addEventListener("click", pickRandomAvatar);
   function renderSettingsAvatarGrid() {
     settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
     settingsAvatarGridEl.innerHTML = "";
