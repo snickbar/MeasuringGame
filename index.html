@@ -2855,6 +2855,8 @@ if (location.protocol === "file:") {
   #hud #tw-question-prompt .qbs-scene, :is(#worlds-content, #survival-content) .qbs-scene { height: 152px; margin: 0; }
   :is(#worlds-content, #survival-content) .qbs-flat { min-height: 118px; margin: 0; }
   :is(#worlds-content, #survival-content) .qbs { margin: 4px 0 6px; }
+  .dq-board { margin: 6px 0; }
+  .dq-board > .question-prompt { flex: none; width: 100%; }
   .qbs .dc-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
   /* Worlds / Survival: keypad on the left, the power-ups in a two-column block on its right. */
   .dc-padrow { display: block; }
@@ -6876,6 +6878,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The real question card is borrowed for the preview (so every board animates exactly as in a game) and put back on close.
   function openBoardPreview(id, label) {
     if (document.getElementById("cosm-pv-overlay")) return;
+    if (!qPromptEl.isConnected) qBoardHome(); // left in a discarded Daily/Monthly screen: bring it back first
     const saved = { parent: qPromptEl.parentNode, next: qPromptEl.nextSibling, txt: questionPromptTextEl.dataset.txt || "",
       ans: questionAnswerLineEl.innerHTML, ansDisp: questionAnswerLineEl.style.display };
     const host = document.createElement("div");
@@ -9672,6 +9675,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     startBoardLoop();
   }
   applyBoard(activeBoard());
+  // Daily and Monthly show the real question card (every board picture and its writing animation) by borrowing it into
+  // their question screen; it goes back to the game screen whenever anything else is drawn.
+  const qBoardHomeEl = qPromptEl.parentNode;
+  function qBoardHome() {
+    if (qPromptEl.parentNode === qBoardHomeEl) return;
+    qBoardHomeEl.insertBefore(qPromptEl, qBoardHomeEl.firstChild);
+    qPromptEl.style.display = "";
+  }
+  function qBoardMount(slot, text) {
+    if (!slot) return;
+    slot.appendChild(qPromptEl);
+    qPromptEl.style.display = "";
+    applyBoard(activeBoard());
+    setPromptText(text, true);
+    requestAnimationFrame(() => { if (qSB) sbLayout(); });
+  }
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -10508,13 +10527,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        ${qBoardPromptHtml(q.prompt)}
+        <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
-      requestAnimationFrame(() => qBoardFit(el));
+      qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
     }
+    qBoardHome();
     if (daily.phase === "reveal") {
       const i = daily.guesses.length - 1;
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div><p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button></div>`;
@@ -12297,13 +12317,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        ${qBoardPromptHtml(q.prompt)}
+        <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
-      requestAnimationFrame(() => qBoardFit(el));
+      qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
     }
+    qBoardHome();
     if (mo.phase === "reveal") {
       const i = mo.guesses.length - 1;
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div><p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button></div>`;
@@ -20757,6 +20778,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
   }
   function applyPhase(data) {
+    if (!dailyScreenEl.classList.contains("active") && !monthlyScreenEl.classList.contains("active")) qBoardHome(); // the question card may still be borrowed by a Daily/Monthly screen
     focusedPlayLayout?.restoreHighLow();
     if (leftScreenEl.classList.contains("active") || leavingGame) return; // the "you left" page is showing: don't draw a game screen behind it
     if(data.phase==='waiting')finalRendered=false;
