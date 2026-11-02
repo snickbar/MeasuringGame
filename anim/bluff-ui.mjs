@@ -59,7 +59,7 @@ export function bluffFinalHtml(s,players,avatar){
 }
 export function createBluffUI({element,context,now,transact,act,question,object,avatar,sound,visible,revealAnimation,reduced=()=>false,laugh=()=>{},vibrate=()=>{},toast=()=>{}}){
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
-  let handle=null,busy=false,busySince=0,selection=null,selectionKey='',signature='',cueKey='',error='';
+  let handle=null,busy=false,busySince=0,autoClaimKey='',selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
   let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='',finalKey='',introKey='',introAt=0,timers=[],timersKey='';
   let celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
@@ -125,7 +125,10 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   function clock(){
     const {room,me}=context(),s=room?.bluff;if(!s)return;
     for(const next of element.querySelectorAll('[data-next]'))next.disabled=busy||room.paused;
-    const time=room.paused?(room.pausedAt||now()):now(),voted=s.votes?.[me],left=Math.max(0,Math.ceil((bluffVoteDeadline(s,me)-time)/1000));
+    const time=room.paused?(room.pausedAt||now()):now();
+    // A claim picked but never confirmed with "Set as answer" is sent just before the clock runs out, so the maker's choice still counts.
+    if(s.stage==='make'&&s.maker===me&&selection!==null&&!busy&&!room.paused&&time<s.endsAt&&s.endsAt-time<=1200){const ak=room.gameId+':'+s.round;if(autoClaimKey!==ak){autoClaimKey=ak;void send('claim',selection);}}
+    const voted=s.votes?.[me],left=Math.max(0,Math.ceil((bluffVoteDeadline(s,me)-time)/1000));
     for(const b of element.querySelectorAll('[data-vote]'))b.disabled=busy||room.paused||time>=s.endsAt||!!(voted&&!left);
     const status=element.querySelector('[data-vote-status]');if(status)status.textContent=voted?(left?`Change your vote · ${left}s`:`Vote final: ${BLUFF_LABELS[voted]}`):'Tap to vote. You get 10s to change it.';
     const bar=element.querySelector('[data-lock-bar]');
