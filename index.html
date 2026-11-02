@@ -2852,7 +2852,15 @@ if (location.protocol === "file:") {
   #hud #question-view.tw-mode .tw-qs-half .avatar .avatar-icon { width: 100%; height: 100%; }
   #hud #question-view.tw-mode .tw-qs-half .name { font-size: 13px; }
   #hud #question-view.tw-mode .tw-qs-half .tw-qs-acc { font-size: 15px; }
-  #hud #tw-question-prompt .qbs-scene { height: 152px; margin: 0; }
+  #hud #tw-question-prompt .qbs-scene, :is(#worlds-content, #survival-content) .qbs-scene { height: 152px; margin: 0; }
+  :is(#worlds-content, #survival-content) .qbs-flat { min-height: 118px; margin: 0; }
+  :is(#worlds-content, #survival-content) .qbs { margin: 4px 0 6px; }
+  .qbs .dc-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
+  /* Worlds / Survival: keypad on the left, the power-ups in a two-column block on its right. */
+  .dc-padrow { display: block; }
+  .dc-padrow:has(.pu-row) { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px; align-items: start; }
+  .dc-padrow .pu-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 56px); align-content: start; gap: 4px; margin: 0; padding: 4px; }
+  .dc-padrow .pu-button { min-height: 0; height: 100%; }
   #hud #tw-question-prompt .qbs-flat { min-height: 118px; margin: 0; }
   #hud #tw-question-prompt.tw-qboard { background: none; border: 0; padding: 0; margin: 4px 0 8px; font-size: inherit; line-height: normal; }
   #hud #tw-question-prompt .dc-display, #hud #tw-question-prompt #tw-guess-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
@@ -6985,13 +6993,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A still (non-animated) copy of the equipped question board for solo screens (Daily, Monthly): the picture with the question laid inside it.
   // Boards with no still picture here (Scroll) and Team Worlds' plain box fall back to the normal translucent question pill.
   const QBS_FLAT = { paper: { img: "icons/board-paper.webp", pad: "22px 28px 28px" }, chalkboard: { img: "icons/board-chalk.webp", pad: "24px 32px 30px" }, whiteboard: { img: "icons/board-white.webp", pad: "22px 30px 28px" }, curtains: { img: "icons/board-curtain.webp", pad: "30px 66px 36px" } };
-  function qBoardPromptHtml(text) {
+  function qBoardPromptHtml(text, extra = "") {
     const raw = rndOn("boards") ? rndGet("boards") : equippedBoard(), id = raw === "none" ? "paper" : raw, safe = escapeHtml(text);
-    if (QBS_FLAT[id]) return `<div class="qbs qbs-flat" data-board="${id}" style="background-image:url(${QBS_FLAT[id].img});padding:${QBS_FLAT[id].pad}"><p>${safe}</p></div>`;
+    if (QBS_FLAT[id]) return `<div class="qbs qbs-flat" data-board="${id}" style="background-image:url(${QBS_FLAT[id].img});padding:${QBS_FLAT[id].pad}"><p>${safe}</p>${extra}</div>`;
     const d = typeof SB_DEFS !== "undefined" ? SB_DEFS[id] : null;
-    if (!d || !d.img || id === "typewriter") return `<p class="dc-prompt">${safe}</p>`;
+    if (!d || !d.img || id === "typewriter") return `<p class="dc-prompt">${safe}</p>${extra}`;
     const b = id === "phone" ? [d.box[0] + 4, d.box[1], d.box[2] + 4, d.box[3]] : d.box;
-    return `<div class="qbs qbs-scene" data-board="${id}"><div class="qbs-stage" style="aspect-ratio:${d.ar};"><img src="${d.img}" alt="" draggable="false"><div class="qbs-body" data-fmax="${d.fmax || 19}" style="left:${b[0]}%;top:${b[1]}%;right:${b[2]}%;bottom:${b[3]}%"><p>${safe}</p></div></div></div>`;
+    return `<div class="qbs qbs-scene" data-board="${id}"><div class="qbs-stage" style="aspect-ratio:${d.ar};"><img src="${d.img}" alt="" draggable="false"><div class="qbs-body" data-fmax="${d.fmax || 19}" style="left:${b[0]}%;top:${b[1]}%;right:${b[2]}%;bottom:${b[3]}%"><p>${safe}</p>${extra}</div></div></div>`;
   }
   // Shrinks each still board's text until it fits its screen area.
   function qBoardFit(root) {
@@ -11829,12 +11837,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${header}${dots(i)}${worldProgressHtml()}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
-        ${powerups?.html(powerupContext()) || ""}
-        <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
-        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        ${qBoardPromptHtml(q.prompt, `<div class="dc-display" id="wl-display">${wl.input || "0"}</div>`)}
+        <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (wl.phase === "reveal") {
@@ -12810,15 +12817,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}${sv.q.theme ? svThemeStripHtml(sv.q.theme) : ""}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        <p class="dc-prompt">${escapeHtml(q.prompt)}</p>
+        ${qBoardPromptHtml(q.prompt, `<div class="dc-display" id="sv-display">${sv.input || "0"}</div>`)}
         <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
-        ${powerups?.html(powerupContext()) || ""}
-        <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
-        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       svApplyThemeVars(sv.q.theme);
       if (sv.q.theme && sv.bannerFor !== sv.asked) { sv.bannerFor = sv.asked; svShowThemeBanner(sv.q.theme); }
       requestAnimationFrame(() => requestAnimationFrame(svFit));
+      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
     if (sv.phase === "reveal") {
