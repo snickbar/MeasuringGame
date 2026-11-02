@@ -29,7 +29,7 @@ export function extraTutorialScene(kind,s={}) {
   if(kind==='hsFinish')body=`${rows([['Alex','115 chips'],['Sam','115 chips'],['Lee','85 chips'],['Jo','85 chips']])}${note('Tied biggest stacks share the win')}`;
   const ball=(c,l,v,x='')=>`<span class="xb-ball ${c} ${x}"><small>${l}</small><b>${v}</b></span>`;
   if(kind==='bluffMaker')body=`<span class="xt-label">Only Lee, the maker, sees the labels</span><div class="xb-flank">${`<span class="xb-ball red xb-swap"><small>Claim</small><b class="xb-q">?</b><b class="xb-v">3</b></span>`}${pic('avatars/av06.png','Lee','xb-av')}${ball('blue','Truth','2')}</div><div class="xt-bluff-options">${[['Too Low',1],['Correct',2],['Too High',3]].map(([l,n])=>`<span class="${n===3?'xt-selected xb-pickme':''}"><small>${l}</small><b>${n}</b></span>`).join('')}</div>${note('Lee chooses to claim 3')}`;
-  if(kind==='bluffVote')body=`<span class="xt-label">What the voters see</span><div class="xb-flank">${ball('red','Claim','3')}${pic('avatars/av06.png','Lee','xb-av')}${ball('blue','Truth','?')}</div><div class="xb-votes"><span class="hi xb-vote-pick">Too High</span><span class="ok">Correct</span><span class="lo">Too Low</span></div><div class="xt-partners">${av('av07','Alex: Too High')}${av('av19','Sam: Correct')}</div>`;
+  if(kind==='bluffVote')body=`<span class="xt-label">What the voters see</span><div class="xb-flank">${ball('red','Claim','3')}${pic('avatars/av06.png','Lee','xb-av')}${ball('blue','Truth','?')}</div><div class="xb-votes"><span class="lo">Too Low</span><span class="ok">Correct</span><span class="hi xb-vote-pick">Too High</span></div><div class="xt-partners">${av('av07','Alex: Too High')}${av('av19','Sam: Correct')}</div>`;
   if(kind==='bluffReveal'){
     const example={order:['lee','alex','sam'],maker:'lee',votes:{alex:'high',sam:'correct'},q:{answer:2},claim:{kind:'high',value:3}};
     const timing=bluffRevealTimes(example);
@@ -74,7 +74,7 @@ export const MORE_MODE_TUTORIALS={
   bluff:mode('Bluff the Room',[
     slide('measure','One question for the whole room','Use this example: two hot dogs fit along the sneaker. The real answer is 2.'),
     slide('bluffMaker','The maker knows the truth','Only the maker sees which answer is Too Low, Correct or Too High. Lee picks a number to claim: 3.'),
-    slide('bluffVote','Voters only see the claim','Alex and Sam see the red Claim ball, not the private labels. They vote whether Lee’s 3 is Too High, Correct or Too Low.'),
+    slide('bluffVote','Voters only see the claim','Alex and Sam see the red Claim ball, not the private labels. They vote whether Lee’s 3 is Too Low, Correct or Too High.'),
     slide('bluffReveal','Truth revealed. Points awarded.','Alex correctly said Too High: +2. Sam was fooled, so Lee earns +1. Wrong votes earn nothing.'),
     slide('bluffTurns','Everyone gets a turn as maker','The roles rotate fairly. Correct votes earn +2; each player fooled earns the maker +1. Most points wins.'),
   ]),
