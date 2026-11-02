@@ -9681,8 +9681,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Daily and Monthly show the real question card (every board picture and its writing animation) by borrowing it into
   // their question screen; it goes back to the game screen whenever anything else is drawn.
   const qBoardHomeEl = qPromptEl.parentNode;
-  function qBoardHome() {
+  function qBoardHome(owner) {
     if (qPromptEl.parentNode === qBoardHomeEl) return;
+    if (owner && !owner.contains(qPromptEl)) return; // a screen redrawing in the background must not pull the card out of another screen
     qBoardHomeEl.insertBefore(qPromptEl, qBoardHomeEl.firstChild);
     qPromptEl.style.display = "";
     qPromptEl.style.removeProperty("--qh");
@@ -10543,10 +10544,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
-      qBoardMount(el.querySelector("#dq-board"), q.prompt);
+      if (dailyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
     }
-    qBoardHome();
+    qBoardHome(el);
     if (daily.phase === "reveal") {
       const i = daily.guesses.length - 1;
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of 3</h2>${dailyDots(i, i)}</div><p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button></div>`;
@@ -11873,11 +11874,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
         <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
-      qBoardMount(el.querySelector("#dq-board"), q.prompt);
+      if (worldsScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       getPlayLayout().worlds(worldsScreenEl, el);
       return;
     }
-    qBoardHome();
+    qBoardHome(el);
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml(k)}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
@@ -12335,10 +12336,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
-      qBoardMount(el.querySelector("#dq-board"), q.prompt);
+      if (monthlyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
     }
-    qBoardHome();
+    qBoardHome(el);
     if (mo.phase === "reveal") {
       const i = mo.guesses.length - 1;
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div><p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button></div>`;
@@ -12859,11 +12860,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       svApplyThemeVars(sv.q.theme);
       if (sv.q.theme && sv.bannerFor !== sv.asked) { sv.bannerFor = sv.asked; svShowThemeBanner(sv.q.theme); }
-      qBoardMount(el.querySelector("#dq-board"), q.prompt);
+      if (survivalScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       requestAnimationFrame(() => requestAnimationFrame(svFit));
       return;
     }
-    qBoardHome();
+    qBoardHome(el);
     if (sv.phase === "reveal") {
       el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length - 1), !!sv.prevShield, sv.prevChain || 0)}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
       survivalRunReveal();
