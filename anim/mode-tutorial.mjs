@@ -98,19 +98,47 @@ export const MODE_TUTORIALS = {
 export function createModeTutorial({ owner, sample, storage }) {
   if (!storage) { try { storage = globalThis.localStorage; } catch {} }
   const sheet = document.createElement('link'); sheet.rel = 'stylesheet'; sheet.href = new URL('./mode-tutorial.css', import.meta.url); document.head.append(sheet);
-  const dialog = document.createElement('dialog'); dialog.id = 'mode-tutorial'; dialog.setAttribute('aria-labelledby', 'mt-head'); document.body.append(dialog);
+  const dialog = document.createElement('dialog'); dialog.id = 'mode-tutorial'; dialog.tabIndex = -1; dialog.setAttribute('aria-labelledby', 'mt-head'); document.body.append(dialog);
   const key = mode => `size-em-up:mode-tutorial:${owner()}:${mode}`;
   const seen = mode => { try { return storage.getItem(key(mode)) === '1'; } catch { return false; } };
   const mark = mode => { try { storage.setItem(key(mode), '1'); } catch {} };
-  let finish = null, clearScene = () => {}, autoTimer = null, autoAt = 0, autoLeft = 0, advance = null;
+  let finish = null, clearScene = () => {}, autoTimer = null, autoAt = 0, autoLeft = 0, advance = null, lastAutoAt = -1e9;
   function stopScene() { clearTimeout(autoTimer);autoTimer=null;advance=null;clearScene();clearScene=()=>{}; }
-  function armAuto() { if(advance&&!document.hidden){autoAt=performance.now();autoTimer=setTimeout(()=>advance?.(),autoLeft);} }
+  function armAuto() { if(advance&&!document.hidden){autoAt=performance.now();autoTimer=setTimeout(()=>{autoTimer=null;lastAutoAt=performance.now();advance?.();},autoLeft);} }
+  // Pressing a button pauses the countdown so it can't fire between the press and the click; if the press never becomes a click it resumes.
+  dialog.addEventListener('pointerdown',e=>{
+    if(!advance||!e.target.closest('footer button, [data-skip]')||!autoTimer)return;
+    clearTimeout(autoTimer);autoTimer=null;autoLeft=Math.max(1500,autoLeft-(performance.now()-autoAt));
+  });
+  const resumeIfIdle=()=>setTimeout(()=>{if(advance&&!autoTimer&&dialog.open)armAuto();},80);
+  dialog.addEventListener('pointerup',resumeIfIdle);dialog.addEventListener('pointercancel',resumeIfIdle);
   document.addEventListener('visibilitychange',()=>{
     if(!advance)return;
     if(document.hidden){clearTimeout(autoTimer);autoTimer=null;autoLeft=Math.max(0,autoLeft-(performance.now()-autoAt));}
     else armAuto();
   });
-  function startScene(sl) { if(sl.example)clearScene=mountHighLowTutorial(dialog.querySelector('.mt-hl-demo'),sl.example); }
+  // The star-meter slide uses the real in-game meter (balloon / rocket) and slides it to 85%, lighting stars as it passes them.
+  function mountMeter(wrap) {
+    const bar = wrap.querySelector('.wl-progress'), fill = wrap.querySelector('.wl-progress-fill'), num = wrap.querySelector('.wl-progress-heading strong');
+    const marks = [...wrap.querySelectorAll('.wl-progress-marker')], to = Number(wrap.dataset.meterTo) || 85, DUR = 2200, AT = [60, 75, 90];
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce';
+    const timers = []; let raf = 0;
+    const finish = () => { fill.style.setProperty('--accuracy', to + '%'); num.textContent = to + '%'; marks.forEach((m, i) => m.classList.toggle('earned', to > AT[i])); };
+    if (reduced) { finish(); return () => {}; }
+    bar.style.setProperty('--wl-t', DUR + 'ms cubic-bezier(.25,.8,.25,1)');
+    timers.push(setTimeout(() => {
+      fill.style.setProperty('--accuracy', to + '%');
+      const t0 = performance.now();
+      const tick = now => { const k = Math.min(1, (now - t0) / DUR); num.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + '%'; if (k < 1) raf = requestAnimationFrame(tick); };
+      raf = requestAnimationFrame(tick);
+      marks.forEach((m, i) => { if (to > AT[i]) timers.push(setTimeout(() => m.classList.add('earned'), DUR * Math.pow(AT[i] / to, 0.8))); });
+    }, 700));
+    return () => { timers.forEach(clearTimeout); cancelAnimationFrame(raf); };
+  }
+  function startScene(sl) {
+    if (sl.example) clearScene = mountHighLowTutorial(dialog.querySelector('.mt-hl-demo'), sl.example);
+    else { const w = dialog.querySelector('.xt-meter-wrap'); if (w) clearScene = mountMeter(w); }
+  }
 
   function close(result) {
     stopScene();
@@ -136,13 +164,14 @@ export function createModeTutorial({ owner, sample, storage }) {
         <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
         ${controls === 'guest' ? '<p class="mt-wait">The host is showing how to play.</p>' : `<footer>${i > 0 ? '<button type="button" data-back>Back</button>' : ''}<button type="button" data-next class="mt-go">${last ? 'Got it' : 'Next'}</button></footer>`}`;
       dialog.querySelector('[data-skip]')?.addEventListener('click', () => { mark(mode); close('skipped'); });
-      dialog.querySelector('[data-back]')?.addEventListener('click', () => { i--; render(); });
-      dialog.querySelector('[data-next]')?.addEventListener('click', () => { if (last) { mark(mode); close('done'); } else { i++; render(); } });
+      dialog.querySelector('[data-back]')?.addEventListener('click', () => { if (performance.now() - lastAutoAt < 800) return; i--; render(); });
+      dialog.querySelector('[data-next]')?.addEventListener('click', () => { if (performance.now() - lastAutoAt < 800) return; if (last) { mark(mode); close('done'); } else { i++; render(); } });
       startScene(sl);
-      if(def.autoplay&&controls==='self'){advance=()=>{if(last){mark(mode);close('done');}else{i++;render();}};autoLeft=def.slideMs;armAuto();}
+      if(def.autoplay&&controls==='self'){advance=()=>{if(last){mark(mode);close('done');}else{i++;render();}};autoLeft=Math.round(def.slideMs*1.6);armAuto();}
     }
     render();
     dialog.showModal();
+    dialog.focus({ preventScroll: true });
     return new Promise(res => { finish = res; });
   }
   // Party playback: the app decides which slide is showing (from a shared clock), so every player
@@ -165,7 +194,7 @@ export function createModeTutorial({ owner, sample, storage }) {
       <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
       <p class="mt-wait">${host ? 'Everyone is watching this together.' : 'The host is showing how to play.'}</p>`;
     dialog.querySelector('[data-skip]')?.addEventListener('click', onSkip);
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) { dialog.showModal(); dialog.focus({ preventScroll: true }); }
     startScene(sl);
     return true;
   }
