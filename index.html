@@ -2843,12 +2843,12 @@ if (location.protocol === "file:") {
   .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
   .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
   /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
-  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-template-rows: auto minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
+  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-template-rows: auto auto minmax(auto, 1fr) auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
   #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
   /* rows, top to bottom: progress, the two objects (takes any spare height, so everything else sits down against the Lock button), board, answer box + keypad with the two player cards beside them, role hint, status */
   #hud #question-view.tw-mode > #tw-question-progress { grid-row: 1; }
   #hud #question-view.tw-mode > #tw-question-pics { grid-row: 2; align-self: stretch; align-items: stretch; }
-  #hud #question-view.tw-mode > #tw-question-prompt { grid-row: 3; }
+  #hud #question-view.tw-mode > #tw-question-prompt { grid-row: 3; align-self: center; } /* spare height goes to the board row, the board sits centred in it */
   #hud #question-view.tw-mode > #tw-guess-display { grid-column: 1; grid-row: 4; justify-self: start; width: 192px; margin: 4px 0; font-size: 26px; } /* as wide as the keypad, right above it */
   #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-row: 5; grid-template-columns: repeat(3, minmax(0, 60px)); gap: 6px; justify-content: start; }
   #hud #question-view.tw-mode > #tw-question-stats { grid-column: 2; grid-row: 4 / span 2; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; margin: 0; align-self: stretch; }
@@ -9719,25 +9719,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (fresh) requestAnimationFrame(() => { if (qSB) sbLayout(); });
     qBoardAutoFit(slot, text, maxH);
   }
-  // A new question / board / screen height starts the card at its normal size, then shrinks it (once) only if the screen's keys and
-  // objects already shrank and it still does not fit. The result is remembered, so a screen redrawing the same question does not flicker.
-  let qFitMemo = { key: "", h: 0 };
-  // The play layout reports after every fit pass: if the keys and objects already shrank and the screen still scrolls, shrink the card (never grows back, so no flicker).
-  document.addEventListener("playfit", (e) => {
-    const owner = e.target;
-    if (!qFitMemo.key || !qPromptEl.isConnected || !owner.contains(qPromptEl)) return;
-    const d = owner.dataset.playDensity, want = d === "tight" ? 110 : d === "compact" ? 130 : 0;
-    if (want && (qCardH || SB_CARD_H) > want) { qFitMemo.h = want; qBoardSetH(want); getPlayLayout().measure(); }
-  });
+  // The question card on a solo / team question screen finds the largest height at which the screen still fits (keys and objects at full size).
+  // It starts from the normal size, shrinks while the layout overflows, grows back one step at a time if there is room, and remembers the
+  // answer per screen + window height, so later questions start at the right size instead of re-measuring.
+  const qFit = {}; // "<owner id>|<window height>" -> { h: current height, bad: smallest height known to overflow }
+  let qFitKey = "";
   function qBoardAutoFit(slot, text, maxH) {
     const owner = slot.closest("#hud,.screen");
     if (!owner) return;
-    const key = (qPromptEl.dataset.board || "") + "|" + text + "|" + window.innerHeight + "|" + owner.id;
-    if (qFitMemo.key === key) { if (qCardH !== qFitMemo.h) qBoardSetH(qFitMemo.h); return; }
-    qFitMemo = { key, h: qBoardBaseH(maxH) };
-    qBoardSetH(qFitMemo.h);
+    qFitKey = owner.id + "|" + window.innerHeight + "|" + (maxH || 0);
+    const m = qFit[qFitKey] || (qFit[qFitKey] = { h: qBoardBaseH(maxH), bad: 9999, base: qBoardBaseH(maxH) });
+    if (qCardH !== m.h) qBoardSetH(m.h);
     requestAnimationFrame(() => requestAnimationFrame(() => getPlayLayout().measure()));
   }
+  // The play layout reports after every fit pass.
+  document.addEventListener("playfit", (e) => {
+    const owner = e.target, m = qFit[qFitKey];
+    if (!m || !qPromptEl.isConnected || !owner.contains(qPromptEl) || !owner.id || !qFitKey.startsWith(owner.id + "|")) return;
+    const cur = qCardH || SB_CARD_H, d = owner.dataset.playDensity;
+    if (d) {
+      m.bad = Math.min(m.bad, cur);
+      const next = Math.max(100, cur - (d === "tight" ? 24 : 12));
+      if (next < cur) { m.h = next; qBoardSetH(next); getPlayLayout().measure(); }
+    } else if (cur < (m.base || SB_CARD_H) && cur + 12 < m.bad) {
+      m.h = Math.min(m.base || SB_CARD_H, cur + 12); qBoardSetH(m.h); getPlayLayout().measure();
+    }
+  });
   const scoreColEl = document.getElementById("score-col");
 
   const questionViewEl = document.getElementById("question-view");
@@ -18027,7 +18034,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
   function setTwBoardPrompt(text) {
     twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
-    qBoardMount(twQuestionPromptEl, text, 230); // the real question card (with its writing animation) is borrowed into this slot
+    qBoardMount(twQuestionPromptEl, text, 260); // the real question card (with its writing animation) is borrowed into this slot
     if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
   }
   function renderTeamWorldsQuestionStats(q) {
@@ -18073,11 +18080,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const myRole = hlRoles[currentPlayerId];
       const ask = myRole === "high" ? "Get close without going under." : myRole === "low" ? "Get close without going over." : "";
       setTwBoardPrompt(q.prompt);
-      if (hlHintEl) {
-        hlHintEl.hidden = !ask;
-        hlHintEl.innerHTML = ask ? `<b class="hl-role-word">${myRole === "high" ? "HIGH" : "LOW"}</b><span class="hl-role-desc">${ask}</span>` : "";
-        hlHintEl.className = "hl-role" + (ask ? " hl-" + myRole : "");
-      }
+      // The role word + helper line now live inside each player's own card (see below), so the separate strip above Lock it in stays hidden.
     } else setTwBoardPrompt(q ? q.prompt : "");
     // In High/Low Survival, order the two avatar boxes HIGH then LOW and tag each with its role.
     const ids = hl ? Object.keys(currentPlayers).sort((a, b) => (hlRoles[a] === "high" ? 0 : 1) - (hlRoles[b] === "high" ? 0 : 1)) : Object.keys(currentPlayers);
@@ -18087,7 +18090,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionStatsEl.innerHTML = ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
+      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) + `<span class="tw-qs-ask">${hlRoles[id] === "high" ? "Get close without going under." : "Get close without going over."}</span>` : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
     }).join("");
   }
 
