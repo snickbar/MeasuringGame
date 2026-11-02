@@ -676,12 +676,16 @@ if (location.protocol === "file:") {
   .cosm-slot.lk::after { content: ""; position: absolute; right: -4px; top: -5px; width: 15px; height: 15px; background: url(icons/reactions/padlock.png) center / contain no-repeat; }
   .cosm-thumbs { display: flex; gap: 6px; align-items: center; }
   .cosm-thumbs em { font-style: normal; font-size: 12px; color: #7a5c33; }
-  .cosm-th { width: 34px; height: 46px; flex: none; border-radius: 8px; border: 2px solid #6bb35a; background: #dfe9d2; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .cosm-th { width: 34px; min-width: 24px; height: 46px; flex: 0 1 34px; border-radius: 8px; border: 2px solid #6bb35a; background: #dfe9d2; overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .cosm-th.lk { border-color: #e0a82a; }
   .cosm-th.more { background: #fff3c9; border-color: #d9a93a; font: 700 14px 'Fredoka', sans-serif; color: #7a4a10; }
   .cosm-th .cosm-now-pic { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cosm-equip-bar .cosm-equip-count { display: none; }
-  .cosm-equip-bar { justify-content: flex-end; }
+  .cosm-sub-desc.cosm-equip-bar { display: none; }
+  #cosm-random-slot .cosm-rnd-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .cosm-rnd-clear { grid-column: 1 / -1; justify-self: end; width: auto; margin: 0; padding: 4px 12px; border: 2px solid #d9c3a0; border-radius: 12px; background: #fff; font: 700 12.5px 'Fredoka', sans-serif; color: #5b3a1e; }
+  .cosm-rnd-clear:disabled { opacity: .45; }
+  .cosm-rnd-clear:active { filter: brightness(.93); }
   .cosm-lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .cosm-flair-pic { width: 46px; height: 42px; object-fit: contain; flex: none; }
   .cosm-flair-pic.rainbow { filter: hue-rotate(150deg) saturate(1.4); }
@@ -4248,7 +4252,7 @@ if (location.protocol === "file:") {
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
     <div class="cosm-sticky-header">
       <p id="cosm-note" class="cosm-note" role="status"></p>
-      <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unlock all</button></div>
+      <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
       <div id="cosm-random-slot"></div>
     </div>
     <div id="cosm-pane-emojis" class="cosm-pane">
@@ -5736,7 +5740,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const items = cosmCatItems(cat), byId = Object.fromEntries(items.map((i) => [i.id, i]));
     if (on) {
       const eq = items.filter((i) => inRndPool(cat, i.id)), list = eq.length ? eq : items;
-      const shown = list.slice(0, 5), more = list.length - shown.length;
+      const shown = list.length <= 8 ? list : list.slice(0, 7), more = list.length - shown.length;
       pnl.innerHTML = `<h4>Random is picking from ${eq.length ? `your ${eq.length} equipped ${noun}` : `all ${items.length} ${noun} you own`}</h4><div class="cosm-thumbs">${shown.map((i) => `<span class="cosm-th">${i.thumb}</span>`).join("")}${more > 0 ? `<span class="cosm-th more">+${more}</span>` : ""}</div>`;
     } else {
       const id = cosmLockedId(cat), it = byId[id] || (cat === "backgrounds" ? { name: "Match game mode", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' } : null);
@@ -5744,6 +5748,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     return pnl;
   }
+  const inRndAny = (cat) => !!(myProfile.randomPool && myProfile.randomPool[cat] && Object.keys(myProfile.randomPool[cat]).length);
   function cosmRandomRow(cat, subText) {
     const on = rndOn(cat);
     const poolN = cat === "reactions" ? 0 : cosmCatItems(cat).filter((i) => inRndPool(cat, i.id)).length;
@@ -5760,6 +5765,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: !on });
     });
     row.appendChild(btn);
+    // Unequip all: empties the equipped pool (and, for reactions, unlocks every reaction too).
+    const clr = document.createElement("button");
+    clr.type = "button";
+    clr.className = "cosm-rnd-clear";
+    clr.textContent = "Unequip all";
+    const anyEq = cat === "reactions" ? (equippedReactions().length > 0 || inRndAny(cat)) : inRndAny(cat);
+    clr.disabled = !anyEq;
+    clr.addEventListener("click", () => {
+      rndPick[cat] = undefined;
+      const patch = { [`randomPool/${cat}`]: null };
+      if (cat === "reactions") Object.assign(patch, { activeEmojis: ["none"], activeReactions: ["none"] });
+      update(ref(db, `profiles/${deviceId}`), patch);
+    });
+    row.appendChild(clr);
     return row;
   }
   // The active tab's header (what is locked / what Random picks from, then the "Equip Random" row) lives in the sticky header
