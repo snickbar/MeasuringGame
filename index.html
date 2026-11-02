@@ -5614,14 +5614,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- Equip Random: with a category's toggle on, each game gives you random items you own from it.
   // What is really equipped is left alone, so switching the toggle off goes straight back to it. ----
   const rndOn = (cat) => !!(myProfile.randomEquip && myProfile.randomEquip[cat]);
+  // Equipped pool: the items Random may pick from, per category (profile.randomPool[cat][id] = true).
+  // A pool with nothing owned in it means "everything you own", so players who never equip anything see no change.
+  const inRndPool = (cat, id) => !!(myProfile.randomPool && myProfile.randomPool[cat] && myProfile.randomPool[cat][id]);
+  const rndPoolOf = (cat, ownedIds) => { const eq = ownedIds.filter((id) => inRndPool(cat, id)); return eq.length ? eq : ownedIds; };
   let rndPick = {}, rndBgOwnedCount = -1;
   const rndOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
   function rndGet(cat) {
     if (rndPick[cat] !== undefined) return rndPick[cat];
     let v = null;
-    if (cat === "boards") v = rndOf(["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard)));
-    else if (cat === "backgrounds") { const ids = allBackgrounds().map((b) => b.id).filter(ownsBackground); v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
-    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(ids) : "classic"; }
+    if (cat === "boards") v = rndOf(rndPoolOf("boards", ["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard))));
+    else if (cat === "backgrounds") { const ids = rndPoolOf("backgrounds", allBackgrounds().map((b) => b.id).filter(ownsBackground)); v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
+    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
     else if (cat === "reactions") {
       const own = Object.keys(REACTIONS).filter((e) => ownsEmoji(e));
       for (let i = own.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [own[i], own[j]] = [own[j], own[i]]; }
@@ -5706,6 +5710,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       boardPacks: {},
       starterBundle: false,
       randomEquip: {},
+      randomPool: {},
       activeEmojis: [...START_EMOJIS],
       seenObjects: {},
       seenCombos: {},
@@ -5928,6 +5933,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         boardPacks: { ...(data.boardPacks || {}) },
         starterBundle: !!data.starterBundle,
         randomEquip: { ...(data.randomEquip || {}) },
+        randomPool: Object.fromEntries(Object.entries(data.randomPool || {}).map(([c, m]) => [c, { ...(m || {}) }])),
         // "none" is the explicit-empty sentinel (Firebase drops real empty arrays on write,
         // see cosm-unequip-all-btn) - it has to survive this remap as-is so equippedReactions()'s
         // own length check still sees a non-empty array and doesn't fall back to START_EMOJIS.
