@@ -19589,6 +19589,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="tw-fin-members">${memberRows}</div>
     `;
     finalListEl.appendChild(li);
+    // After the accuracy lands: the two players arrive bottom-up (the MVP last), their % counting up, then the MVP tag pops.
+    const memEls = [...li.querySelectorAll(".tw-fin-member")], arrival = [...memEls].sort((x, y) => (x.classList.contains("mvp") ? 1 : 0) - (y.classList.contains("mvp") ? 1 : 0));
+    arrival.forEach((m, j) => { const t = 2.0 + j * 0.3; m.classList.add("hl-arr-r"); m.style.setProperty("--a", t.toFixed(2) + "s"); countText(m.querySelector(".member-acc"), 600, t * 1000); const tag = m.querySelector(".tw-mvp"); if (tag) { tag.classList.add("mvp-pop"); tag.style.setProperty("--a", (t + 0.5).toFixed(2) + "s"); } });
     const finPct = li.querySelector(".tw-fin-pct");
     if (finPct && !prefersReducedMotion()) {
       setTimeout(() => { twCountUp(finPct, Math.round(avg), 1300, "%"); }, 500);
