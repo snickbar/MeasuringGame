@@ -5943,6 +5943,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = rndOn("flairs") ? rndGet("flairs") : (myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects);
     return FLAIRS[id] ? id : "classic";
   }
+  // Pops the player's own equipped flair on a solo screen's celebration (game-level moments only), after ms, if the page is still there.
+  function soloFlair(el, ms) {
+    if (!el || (typeof prefersReducedMotion === "function" && prefersReducedMotion())) return;
+    setTimeout(() => { try { if (el.isConnected) flairBurst(el, myEquippedFlair()); } catch (e) { /* flourish is optional */ } }, ms || 0);
+  }
   let lastSyncedFlair = null;
   function syncFlairToRoom() {
     if (!currentRoomCode || !currentPlayerId) return;
@@ -10489,6 +10494,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       arriveMarks(el, 0.5);
       arriveRows(el, ".dc-card:not(.dc-hot):not(.dc-rank) > .dc-row", 0.9);
       el.querySelectorAll(".dc-note b").forEach((b) => { if (/^\+\d+ coins/.test(b.textContent.trim())) countText(b, 600, 1700); });
+      if (!daily.flairShown) { daily.flairShown = true; soloFlair(el.querySelector(".dc-hot"), 900); }
     }
     if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; vibrate([30, 40, 30, 40, 60]); }
   }
@@ -10504,6 +10510,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const i = daily.guesses.length - 1, q = daily.questions[i], g = daily.guesses[i], acc = roundAccuracy(g / q.answer), ok = acc >= 60;
     const ans = mod ? mod.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     vibeAccuracy(acc);
+    if (acc >= 90) setTimeout(() => soloFlair(dailyContentEl.querySelector(".dc-gauge, .dc-hot, .dc-card"), 0), 350);
     daily.res = { i, acc, ok, ans, label: dcLabel(acc), side: wbSidePick(ok, acc >= 90 ? 2 : 20, "", false, true), quip: svQuip(ok, acc) };
     daily.phase = "result"; renderDaily();
   }
@@ -11816,7 +11823,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         accNum.classList.add("pop"); accCard.classList.add("glow");
         twShowQuip(accCard, acc, wl.runId + k);
         playSound(acc >= 75 ? "roundwin" : "select");
-        if (acc >= 90) celebrate("spotOn");
+        if (acc >= 90) { celebrate("spotOn"); soloFlair(accCard, 120); }
       }, 1150);
       const DELAY = 2300, DUR = 1300;
       setTimeout(() => {
@@ -11854,6 +11861,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     countText(el.querySelector(".dc-big"), 800, 200);
     const gainNote = [...el.querySelectorAll(".dc-hot .dc-note")].find((n) => /coins$/.test(n.textContent.trim()));
     countText(gainNote, 600, 1800);
+    if (wl.stars > 0 && !wl.flairShown) { wl.flairShown = true; soloFlair(el.querySelector(".wl-big"), 1100); }
   }
   let wlResultSig = null;
   async function worldRunReveal() {
@@ -12271,6 +12279,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     arriveMarks(el, 0.5);
     arriveRows(el, ".dc-card:not(.dc-hot) > .dc-row", 0.9);
     const n = el.querySelector(".dc-hot .dc-note"); if (n && /coins/.test(n.textContent)) countText(n, 600, 1700);
+    if (mo && !mo.flairShown && el.querySelector(".mo-tot")) { mo.flairShown = true; soloFlair(el.querySelector(".dc-hot"), 900); }
   }
   async function monthlyRunReveal() {
     const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], last = mo.guesses.length >= mo.questions.length;
@@ -12281,6 +12290,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const host = document.getElementById("mo-result"); if (!host) return;
       vibeAccuracy(acc);
       showMonthlyResultCard(host, acc, g, ans, label);
+      if (acc >= 90) soloFlair(host.querySelector(".dc-card, .dc-gauge") || host, 350);
       restoreRevealSkip("mo-skip");
       const skip = document.getElementById("mo-skip");
       if (skip) { skip.id = "mo-next"; skip.className = "dc-btn"; skip.textContent = last ? "See my results" : "Next question"; }
@@ -12798,6 +12808,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
     svShowRank();
+    if (sv.survived > 0 && !sv.flairShown) { sv.flairShown = true; soloFlair(el.querySelector(".dc-hot"), 900); }
     countText(el.querySelector(".wl-big"), 700, 250);
     el.querySelectorAll(".dc-hot .dc-note").forEach((n) => { if (/coins$/.test(n.textContent.trim())) countText(n, 600, 1000); });
     el.querySelectorAll(".sv-recap-stats b").forEach((b, i) => countNode(b, 700, 1100 + i * 150));
@@ -13181,6 +13192,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="wb-share">Share my score</button>
       ${wbRecordsHtml(true)}`;
       wbCountCoins();
+      if (wb.score > 0 && !wb.flairShown) { wb.flairShown = true; soloFlair(el.querySelector(".wb-over-hero"), 900); }
   }
   // Your own high scores only: a row of medal tiles (best first). While a just-finished run is still being saved
   // to the profile, it is merged in here so the numbers never lag behind the score on screen.
@@ -19825,6 +19837,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       celebrate("spotOn");
       spawnStreamerConfetti();
       playSound("win");
+      if (!prefersReducedMotion()) { try { ids.forEach((id) => flairBurst(li, flairIdFor({ flair: currentPlayers[id]?.flair }))); } catch (e) { /* optional */ } }
     }, 350);
   }
 
