@@ -16,7 +16,7 @@ export function extraTutorialScene(kind,s={}) {
   let body='';
   if(kind==='partners')body=`<div class="xt-partners">${av('av07','You')}<span>+</span>${av('av19','Partner')}</div><div class="xt-team-total">One team</div>${note('Same World · five questions')}`;
   if(kind==='average')body=`<div class="xt-partners">${av('av07','You: 80%')}<span>+</span>${av('av19','Partner: 90%')}</div><div class="xt-team-total xt-arrive">Team average: 85%</div>${note('Both guesses contribute')}`;
-  if(kind==='stars')body=stars();
+  if(kind==='stars')body=s.meter?`<div class="xt-meter-wrap" data-meter-to="85">${s.meter(0,s.lessonMode==='teamworlds'?true:'day')}</div>${note('85% · 2 stars')}`:stars();
   if(kind==='worlds')body=`<div class="xt-worlds">${['tiny','food','sea'].map((w,i)=>`<span>${pic('icons/badges/world-'+w+'.webp')}<b>${['Tiny Things','Snack Time','Under the Sea'][i]}</b></span>`).join('')}</div><div class="xt-levels">${[1,2,3,4,5].map(n=>`<span class="${n===1?'xt-current':''}">${n}</span>`).join('')}</div>${note('Five questions per level')}`;
   if(kind==='worldReward')body=`<div class="xt-levels">${[1,2,3,4,5].map(n=>`<span class="${n<=2?'xt-current':''}">${n===1?'★':n}</span>`).join('')}</div>${note('A star opens the next level')}${coin(10)}${note('Example: 2 stars × 5 coins')}`;
   if(kind==='teamReward')body=`<div class="xt-partners">${av('av07','You')}${av('av19','Partner')}</div><div class="xt-team-total">85% together · 2 stars</div>${coin(10)}${note('10 coins each in this example')}`;
@@ -27,8 +27,9 @@ export function extraTutorialScene(kind,s={}) {
   if(kind==='hsBluff')body=`<div class="xt-folds">${av('av07','Alex stays')}${av('av19','Fold')}${av('av06','Fold')}${av('av20','Fold')}</div><div class="xt-team-total xt-arrive">Alex takes the pot</div>${note('Even a wrong pick can win this way')}`;
   if(kind==='hsCarry')body=`<span class="xt-label">Two or more players still in · no correct picks</span><div class="xt-pot-inline">${pic('icons/poker-chip-stack.webp')}<b>60</b><span class="xt-big">→</span>${pic('icons/poker-chip-stack.webp')}<b>Next round</b></div>${note('The pot carries over')}`;
   if(kind==='hsFinish')body=`${rows([['Alex','115 chips'],['Sam','115 chips'],['Lee','85 chips'],['Jo','85 chips']])}${note('Tied biggest stacks share the win')}`;
-  if(kind==='bluffMaker')body=`<span class="xt-label">Only Lee, the maker, sees these labels</span>${av('av06','Lee · maker')}<div class="xt-bluff-options">${[['Too Low',1],['Correct',2],['Too High',3]].map(([l,n])=>`<span class="${n===3?'xt-selected':''}"><small>${l}</small><b>${n}</b></span>`).join('')}</div>${note('Lee chooses to claim 3')}`;
-  if(kind==='bluffVote')body=`<span class="xt-label">What the voters see</span><div class="xt-claim">Lee claims <b>3</b></div><div class="xt-vote-labels"><span data-choice="low">Too Low</span><span data-choice="correct">Correct</span><span data-choice="high" class="xt-selected">Too High</span></div><div class="xt-partners">${av('av07','Alex: Too High')}${av('av19','Sam: Correct')}</div>`;
+  const ball=(c,l,v,x='')=>`<span class="xb-ball ${c} ${x}"><small>${l}</small><b>${v}</b></span>`;
+  if(kind==='bluffMaker')body=`<span class="xt-label">Only Lee, the maker, sees the labels</span><div class="xb-flank">${`<span class="xb-ball red xb-swap"><small>Claim</small><b class="xb-q">?</b><b class="xb-v">3</b></span>`}${pic('avatars/av06.png','Lee','xb-av')}${ball('blue','Truth','2')}</div><div class="xt-bluff-options">${[['Too Low',1],['Correct',2],['Too High',3]].map(([l,n])=>`<span class="${n===3?'xt-selected xb-pickme':''}"><small>${l}</small><b>${n}</b></span>`).join('')}</div>${note('Lee chooses to claim 3')}`;
+  if(kind==='bluffVote')body=`<span class="xt-label">What the voters see</span><div class="xb-flank">${ball('red','Claim','3')}${pic('avatars/av06.png','Lee','xb-av')}${ball('blue','Truth','?')}</div><div class="xb-votes"><span class="hi xb-vote-pick">Too High</span><span class="ok">Correct</span><span class="lo">Too Low</span></div><div class="xt-partners">${av('av07','Alex: Too High')}${av('av19','Sam: Correct')}</div>`;
   if(kind==='bluffReveal'){
     const example={order:['lee','alex','sam'],maker:'lee',votes:{alex:'high',sam:'correct'},q:{answer:2},claim:{kind:'high',value:3}};
     const timing=bluffRevealTimes(example);
@@ -55,7 +56,7 @@ export function extraTutorialScene(kind,s={}) {
   if(kind==='svCoins')body=`${rows([['Normal survival','+3 coins'],['Every fifth survival: themed','+5 coins']])}${coin('3 / 5')}${note('A failed themed round keeps its theme')}`;
   if(kind==='hlShield')body=`<div class="xt-levels xt-charge">${[1,2,3].map(n=>`<span class="xt-current">✓ ${n}</span>`).join('')}</div>${pic('icons/survival-shield-full.webp','Shared shield ready','xt-shield xt-arrive')}${hearts()}${note('Three survivals → one shared shield')}`;
   if(kind==='hlRewards')body=`${rows([['Normal survival','+2 coins each'],['Every fifth survival: themed','+4 coins each']])}${note('A failed themed round keeps its theme')}<span class="xt-label">Keep surviving to beat your best run</span>`;
-  return `<div class="xt-stage xt-${kind}" data-extra-lesson="${kind}">${body}</div>`;
+  return `<div class="xt-stage xt-${kind==='stars'&&s.meter?'meterstage':kind}" data-extra-lesson="${kind}">${body}</div>`;
 }
 
 const slide=(lesson,head,text)=>({scene:'extraExample',lesson,head,text});
@@ -72,8 +73,8 @@ export const MORE_MODE_TUTORIALS={
   ]),
   bluff:mode('Bluff the Room',[
     slide('measure','One question for the whole room','Use this example: two hot dogs fit along the sneaker. The real answer is 2.'),
-    slide('bluffMaker','The maker knows the truth','Only the maker sees which answer is Too Low, Correct or Too High. Lee decides to claim 3.'),
-    slide('bluffVote','Voters only see the claim','Alex and Sam do not see the private labels. They decide whether Lee’s 3 is Too Low, Correct or Too High.'),
+    slide('bluffMaker','The maker knows the truth','Only the maker sees which answer is Too Low, Correct or Too High. Lee picks a number to claim: 3.'),
+    slide('bluffVote','Voters only see the claim','Alex and Sam see the red Claim ball, not the private labels. They vote whether Lee’s 3 is Too High, Correct or Too Low.'),
     slide('bluffReveal','Truth revealed. Points awarded.','Alex correctly said Too High: +2. Sam was fooled, so Lee earns +1. Wrong votes earn nothing.'),
     slide('bluffTurns','Everyone gets a turn as maker','The roles rotate fairly. Correct votes earn +2; each player fooled earns the maker +1. Most points wins.'),
   ]),
