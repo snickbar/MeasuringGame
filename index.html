@@ -12223,9 +12223,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // with random wobble so the climb isn't obvious. Score = rounds survived; the global board keeps each player's best.
   const SURVIVAL_LIVES = 3, SURVIVAL_PASS = 60, SURVIVAL_COINS_PER = 3, SURVIVAL_THEME_COINS = 5;
   // Livelier numbers: a number that changes gives one quick pop. Web Animations, so nothing is measured or re-laid out.
-  function popNum(el) {
+  function popNum(el, peak = 1.35) {
     if (!el || prefersReducedMotion() || !el.animate) return;
-    el.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)", offset: .4 }, { transform: "scale(1)" }], { duration: 340, easing: "ease-out" });
+    el.animate([{ transform: "scale(1)" }, { transform: "scale(" + peak + ")", offset: .4 }, { transform: "scale(1)" }], { duration: 340, easing: "ease-out" });
   }
   // Count a number up from 0 (keeps any text around it, e.g. "+23 coins"). Presentation only; skipped with Reduce Motion.
   function countText(el, ms, delay) {
@@ -12260,7 +12260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const now = performance.now(), vals = {};
       root.querySelectorAll("[data-pop]").forEach((el) => {
         const k = el.dataset.pop, v = el.textContent; vals[k] = v;
-        if (now - prev.t < 20000 && k in prev.vals && prev.vals[k] !== v) popNum(el);
+        if (now - prev.t < 20000 && k in prev.vals && prev.vals[k] !== v) popNum(el, 1.15); // the Survival bar only gets a small pop
       });
       prev.t = now; prev.vals = vals;
     }).observe(root, { childList: true });
@@ -12435,8 +12435,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!accs.length) return "";
     const hi = Math.max(...accs), lo = Math.min(...accs), avg = accs.reduce((t, x) => t + x, 0) / accs.length;
     const hiI = accs.indexOf(hi), loI = accs.indexOf(lo);
-    const bars = accs.map((a, i) => `<span class="sv-bar ${sv.accs[i].sh ? "saved" : a >= 90 ? "great" : a >= SURVIVAL_PASS ? "safe" : "lost"}${i === hiI ? " best" : ""}${i === loI && accs.length > 1 ? " worst" : ""}" style="height:${Math.max(4, Math.round(a))}%" title="Round ${i + 1}: ${Math.round(a)}%"></span>`).join("");
-    return `<div class="dc-card sv-recap"><div class="sv-recap-h">Your run</div><div class="sv-bars"><i class="sv-bars-line" style="bottom:${SURVIVAL_PASS}%"></i>${bars}</div>
+    const bars = accs.map((a, i) => `<span class="sv-bar ${sv.accs[i].sh ? "saved" : a >= 90 ? "great" : a >= SURVIVAL_PASS ? "safe" : "lost"}${i === hiI ? " best" : ""}${i === loI && accs.length > 1 ? " worst" : ""} sv-bar-arr" style="height:${Math.max(4, Math.round(a))}%;--a:${(0.75 + i * 0.12).toFixed(2)}s" title="Round ${i + 1}: ${Math.round(a)}%"></span>`).join("");
+    return `<div class="dc-card sv-recap sv-arr" style="--a:.4s"><div class="sv-recap-h">Your run</div><div class="sv-bars"><i class="sv-bars-line" style="bottom:${SURVIVAL_PASS}%"></i>${bars}</div>
       <div class="sv-recap-stats"><div><b>${Math.round(hi)}%</b><span>Best round (${hiI + 1})</span></div><div><b>${Math.round(avg)}%</b><span>Average</span></div><div><b>${Math.round(lo)}%</b><span>Worst round (${loI + 1})</span></div></div></div>`;
   }
   // Ranking moment: where this score lands on the global board, counting down into place.
@@ -12455,6 +12455,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rank = n >= CAP ? CAP : n + 1, plus = n >= CAP ? "+" : "";
     const lead = sv.newBest ? "You're ranked" : "This run would rank";
     host.hidden = false;
+    host.classList.add("sv-arr"); host.style.setProperty("--a", "0s");
     host.innerHTML = `<div class="sv-rank-l">${lead}</div><div class="sv-rank-n"><span class="sv-rank-hash">#</span><span id="sv-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 40, rank * 4)}</span>${plus}</div><div class="sv-rank-l">worldwide</div>`;
     if (!prefersReducedMotion()) {
       const num = document.getElementById("sv-rank-num"), from = Number(num.textContent), t0 = performance.now(), dur = 1100;
@@ -12594,7 +12595,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     survivalStop();
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
-      <div class="dc-card dc-hot"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div>${svBestLine()}${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
+      <div class="dc-card dc-hot sv-arr" style="--a:.05s"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div>${svBestLine()}${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
       ${svRecapHtml()}
       <div class="dc-card sv-rank" id="sv-rank" hidden></div>
       ${adBarSlot("survival", "sv-finish")}
@@ -12604,6 +12605,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     svShowRank();
     countText(el.querySelector(".wl-big"), 700, 250);
     el.querySelectorAll(".dc-hot .dc-note").forEach((n) => { if (/coins$/.test(n.textContent.trim())) countText(n, 600, 1000); });
+    el.querySelectorAll(".sv-recap-stats b").forEach((b, i) => countNode(b, 700, 1100 + i * 150));
     survivalLoadBoard();
   }
   async function survivalRunReveal() {
@@ -12650,8 +12652,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const medal = (n) => (n >= 1 && n <= 3 ? `<span class="medal ${["gold", "silver", "bronze"][n - 1]}" style="display:inline-block;width:24px;height:24px;vertical-align:middle"></span>` : String(n));
     const html = rows.map((r, i) => `<div class="dc-lb-row${r.id === deviceId ? " me" : ""}"><span class="dc-lb-rank">${medal(i + 1)}</span><span class="dc-lb-name">${escapeHtml(r.n)}</span><span class="dc-lb-score">${r.s}</span></div>`).join("");
     host.innerHTML = html;
+    const boardArrive = () => { const lb = host.querySelectorAll(".dc-lb-row"), step = Math.min(0.12, 1.2 / Math.max(1, lb.length)); lb.forEach((r, i) => { r.classList.add("wl-row-arr"); r.style.setProperty("--a", ((lb.length - 1 - i) * step).toFixed(2) + "s"); }); };
+    if (sv && sv.phase === "over") boardArrive();
     const mineHtml = await boardMyRankHtml("survival", rows, (v) => v);
-    if (mineHtml && document.getElementById("sv-board") === host && sv) host.innerHTML = html + mineHtml;
+    if (mineHtml && document.getElementById("sv-board") === host && sv) { host.innerHTML = html + mineHtml; if (sv.phase === "over") boardArrive(); }
   }
   survivalContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
