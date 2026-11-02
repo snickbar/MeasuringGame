@@ -9314,8 +9314,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function sbFit() {
     if (!qSB || !questionPromptTextEl.dataset.txt) return;
     const bh = qBodyEl.clientHeight;
-    const rsv = hudEl.dataset.playLayout === 'party' && questionViewEl.classList.contains('active') ? [0, 4] : qSB.def.rsv || [2.7, 24];
-    let fs = qSB.def.fmax || 19;
+    const pl = hudEl.dataset.playLayout, qv = questionViewEl.classList.contains('active'), twq = qv && (pl === 'highlow' || pl === 'teamworlds'); // no answer line on these question screens, so the text may use the whole board
+    const rsv = (pl === 'party' && qv) || twq ? [0, 4] : qSB.def.rsv || [2.7, 24];
+    let fs = twq ? Math.max(qSB.def.fmax || 19, 24) : qSB.def.fmax || 19;
     for (; fs > 8; fs -= 0.5) {
       qBodyEl.style.setProperty("--qfs", fs + "px");
       if (questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] <= bh) break;
