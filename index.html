@@ -9560,7 +9560,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // a visible flash of a screen we're already on our way out of.
   let leavingGame = false;
 
-  let currentGuessStr = "";
+  let currentGuessStr = ""; let lastDraftSent = "";
   let hasSubmittedThisRound = false;
   let guessLocked = false;
   let lastSeenRound = null;
@@ -10788,6 +10788,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!on && hsTickHandle) { clearInterval(hsTickHandle); hsTickHandle = null; }
   }
   function hsRefreshTimers() {
+    // A fake answer typed but never sent goes in just before the fake-answer clock ends, so it still counts.
+    if (roomState?.hsPre && hsFakeStr && roomState.hsFakes?.[currentPlayerId] === undefined && nowMs() >= roomState.hsPre.endsAt - 1200 && nowMs() < roomState.hsPre.endsAt) hsSendFake();
     hsContentEl.querySelectorAll("[data-hs-bar]").forEach((el) => {
       const msLeft = Number(el.dataset.hsBar) - nowMs();
       el.firstElementChild.style.transform = "scaleX(" + Math.max(0, Math.min(1, msLeft / HS_CHANGE_MS)) + ")";
@@ -16790,6 +16792,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } else if (secondsLeft > 5) {
         lastTickSecond = null;
       }
+      // An answer typed but never locked in is sent just before the clock ends, so it still beats the host closing the round.
+      if (remaining > 0 && remaining <= 1200 && roomState.phase === "question" && !hasSubmittedThisRound && !guessLocked && !powerups?.busy) {
+        const draft = parseFloat(currentGuessStr), draftKey = roomState.round + ":" + draft;
+        if (!isNaN(draft) && draftKey !== lastDraftSent) { lastDraftSent = draftKey; set(ref(db, `rooms/${currentRoomCode}/guesses/${currentPlayerId}`), draft); }
+      }
       if (remaining <= 0 && roomState.phase === "question") lockOwnGuessIfNeeded();
     }, 200);
   }
@@ -17370,13 +17377,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ranked.forEach((r) => { const t = players[r.id].team; if (t) (byTeam[t] = byTeam[t] || []).push(r); });
         const teamRank = Object.entries(byTeam).map(([t, rs]) => ({ t, avg: rs.reduce((a, r) => a + r.avg, 0) / rs.length })).sort((a, b) => b.avg - a.avg);
         const teamBonus = {};
-        teamRank.forEach((tr, idx) => { teamBonus[tr.t] = [10, 6, 3][idx] || 0; });
+        // Tied teams share a rank, and a team at 0% earns no accuracy bonus.
+        teamRank.forEach((tr) => { const k = Number(tr.avg.toFixed(1)); teamBonus[tr.t] = k > 0 ? [10, 6, 3][teamRank.filter((o) => Number(o.avg.toFixed(1)) > k).length] || 0 : 0; });
         ranked = ranked.filter((r) => players[r.id].team).map((r, i) => ({ ...r, teamBonus: teamBonus[players[r.id].team] || 0, idx: i }));
       }
       const accuracyBonuses = [10, 6, 3];
       const updates = { phase: "final" };
       ranked.forEach((r, idx) => {
-        const bonus = r.teamBonus !== undefined ? r.teamBonus : (accuracyBonuses[idx] || 0);
+        // Tied players share a rank (same bonus), and nobody gets a bonus for 0% accuracy.
+        const shownAvg = Number(r.avg.toFixed(1));
+        const bonus = r.teamBonus !== undefined ? r.teamBonus : (shownAvg > 0 ? accuracyBonuses[ranked.filter((o) => Number(o.avg.toFixed(1)) > shownAvg).length] || 0 : 0);
         if (bonus > 0) {
           updates[`players/${r.id}/score`] = (players[r.id].score || 0) + bonus;
           updates[`players/${r.id}/accuracyBonus`] = bonus;
