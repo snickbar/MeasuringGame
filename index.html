@@ -11014,7 +11014,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ---- reveal: the stacking animation plays first, then the result; coins fly in and out of the pot ----
   const HS_ANIM_HOLD_MS = 4000, HS_COIN_HOLD_MS = 2200;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
-  let hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFlairOverKey = null, hsFooledKey = null, hsActSent = null;
+  let hsOverArrKey = null, hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFlairOverKey = null, hsFooledKey = null, hsActSent = null;
   let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.showStand; // the host taps "Show standings" once the winner box has had its moment
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
@@ -11208,6 +11208,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       html += adBarSlot("highstakes", "hs-exit");
       html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
       hsContentEl.innerHTML = html;
+      // Arrival (first draw of this game's results only): rows slide in with their chips counting up, then the earnings lines, total last.
+      if (hsOverArrKey !== data.gameId) {
+        hsOverArrKey = data.gameId;
+        hsContentEl.querySelectorAll(".hs-final-row").forEach((r, i) => { r.classList.add("hl-arr-r"); r.style.setProperty("--a", (0.5 + i * 0.3).toFixed(2) + "s"); countNode(r.querySelector(".hs-final-coins"), 600, 500 + i * 300); });
+        hsContentEl.querySelectorAll(".hs-rw-row").forEach((r, i, all) => { r.classList.add("hl-arr"); r.style.setProperty("--a", (1.9 + i * 0.35).toFixed(2) + "s"); if (i === all.length - 1) countNode(r.querySelector("b"), 600, 1900 + i * 350); });
+      }
       if (!nobodyLeft && hs.winners.length === 1 && hsFlairOverKey !== data.gameId) {
         hsFlairOverKey = data.gameId;
         const wid = hs.winners[0];
@@ -12231,6 +12237,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Result lists: each matching row slides in one after another; marks pop in one at a time. CSS only, skipped with Reduce Motion.
   function arriveRows(root, sel, start, step = 0.18) { root.querySelectorAll(sel).forEach((r, i) => { r.classList.add("wl-row-arr"); r.style.setProperty("--a", (start + i * step).toFixed(2) + "s"); }); }
+  // Count a number inside the first text node of an element (keeps any icon next to it).
+  function countNode(el, ms, delay) {
+    if (!el || prefersReducedMotion()) return;
+    const find = () => { const w = document.createTreeWalker(el, 4); let n; while ((n = w.nextNode())) if (/\d/.test(n.nodeValue)) return n; return null; };
+    const first = find(); if (!first) return;
+    const m = /^(\D*)([\d,]+)(\D*)$/.exec(first.nodeValue); if (!m) return;
+    const to = parseInt(m[2].replace(/,/g, ""), 10); if (!(to > 0)) return;
+    const comma = m[2].includes(","), fmt = (v) => m[1] + (comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + m[3];
+    const t0 = performance.now() + delay; first.nodeValue = fmt(0);
+    const step = (now) => { if (!el.isConnected) return; const node = find(); if (!node) return; const cur = /^(\D*)([\d,]+)([\s\S]*)$/.exec(node.nodeValue); if (!cur) return; const k = Math.max(0, Math.min(1, (now - t0) / ms)), v = k < 1 ? to * (1 - Math.pow(1 - k, 3)) : to; node.nodeValue = cur[1] + (comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + cur[3]; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
   function arriveMarks(root, start) { root.querySelectorAll(".dc-marks .res-mark").forEach((m, i) => { m.classList.add("mk-pop"); m.style.setProperty("--a", (start + i * 0.22).toFixed(2) + "s"); }); }
   // Watches a screen that redraws itself: any [data-pop] number that differs from the last redraw (within 20s) pops.
   function popChangedNumbers(root) {
