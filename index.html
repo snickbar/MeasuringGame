@@ -9720,6 +9720,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A new question / board / screen height starts the card at its normal size, then shrinks it (once) only if the screen's keys and
   // objects already shrank and it still does not fit. The result is remembered, so a screen redrawing the same question does not flicker.
   let qFitMemo = { key: "", h: 0 };
+  // The play layout reports after every fit pass: if the keys and objects already shrank and the screen still scrolls, shrink the card (never grows back, so no flicker).
+  document.addEventListener("playfit", (e) => {
+    const owner = e.target;
+    if (!qFitMemo.key || !qPromptEl.isConnected || !owner.contains(qPromptEl)) return;
+    const d = owner.dataset.playDensity, want = d === "tight" ? 110 : d === "compact" ? 130 : 0;
+    if (want && (qCardH || SB_CARD_H) > want) { qFitMemo.h = want; qBoardSetH(want); getPlayLayout().measure(); }
+  });
   function qBoardAutoFit(slot, text, maxH) {
     const owner = slot.closest("#hud,.screen");
     if (!owner) return;
@@ -9727,15 +9734,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (qFitMemo.key === key) { if (qCardH !== qFitMemo.h) qBoardSetH(qFitMemo.h); return; }
     qFitMemo = { key, h: qBoardBaseH(maxH) };
     qBoardSetH(qFitMemo.h);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const layout = getPlayLayout();
-      layout.measure();
-      setTimeout(() => {
-        if (qFitMemo.key !== key || !qPromptEl.isConnected || !owner.contains(qPromptEl)) return;
-        const d = owner.dataset.playDensity, want = d === "tight" ? 110 : d === "compact" ? 130 : 0;
-        if (want && qCardH > want) { qFitMemo.h = want; qBoardSetH(want); layout.measure(); }
-      }, 80);
-    }));
+    requestAnimationFrame(() => requestAnimationFrame(() => getPlayLayout().measure()));
   }
   const scoreColEl = document.getElementById("score-col");
 
@@ -18026,7 +18025,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
   function setTwBoardPrompt(text) {
     twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
-    qBoardMount(twQuestionPromptEl, text, 150); // the real question card (with its writing animation) is borrowed into this slot
+    qBoardMount(twQuestionPromptEl, text, 180); // the real question card (with its writing animation) is borrowed into this slot
     if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
   }
   function renderTeamWorldsQuestionStats(q) {
