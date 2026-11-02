@@ -18003,6 +18003,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
     qBoardMount(twQuestionPromptEl, text, 150); // the real question card (with its writing animation) is borrowed into this slot
     if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
+    const fitKey = (qPromptEl.dataset.board || "") + "|" + text; // a new question or board changes the height: re-check that everything fits (keys and objects shrink if not)
+    if (twQuestionPromptEl.dataset.fitKey !== fitKey) {
+      twQuestionPromptEl.dataset.fitKey = fitKey;
+      requestAnimationFrame(() => requestAnimationFrame(() => getPlayLayout().measure()));
+    }
   }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";

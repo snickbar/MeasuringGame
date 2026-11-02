@@ -231,7 +231,6 @@ body:has(.screen.active[data-play-layout=solo]),body:has(#hs-screen.active[data-
 #hud:is([data-tw-phase=reveal],[data-tw-phase=summary]) .main-col{padding-bottom:140px}
 body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar{background:transparent;box-shadow:none}
 body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar #reaction-strip{position:relative;isolation:isolate}
-body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
 
 /* Party layout squeezes every question box with one generic padding, which beat the framed boards' own padding, so the
    text ran under the curtain drapes / chalk and whiteboard frames. Keep each frame's text inside its picture. */
@@ -248,16 +247,14 @@ body:has(#hud.active:is([data-tw-phase=reveal],[data-tw-phase=summary])) #bottom
 /* Final results: the Finish / collect-coins bar sits straight over the page, no white backing. */
 body:has(#final-screen.active) #bottom-toolbar{background:transparent;box-shadow:none}
 body:has(#final-screen.active) #bottom-toolbar #reaction-strip{position:relative;isolation:isolate}
-body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
 
 /* Party question boards: start big and let qbFitParty shrink only as far as the text needs (same size in question and reveal). */
 #hud[data-play-layout=party] .question-prompt:not([data-scene]):not(:is([data-board=chalkboard],[data-board=whiteboard],[data-board=curtains])){font-size:25px}
 #hud[data-play-layout=party] .question-prompt:is([data-board=chalkboard],[data-board=whiteboard],[data-board=curtains]){font-size:19px}
 
-/* Every mode: the bottom bar (Auto / Next round / Finish...) never paints a white box. Only the reaction row keeps a backing. */
+/* Every mode: the bottom bar (Auto / Next round / Finish...) and the reaction row never paint a white box; the reaction buttons are their own cards. */
 #bottom-toolbar{background:transparent!important;box-shadow:none!important}
 #bottom-toolbar #reaction-strip{position:relative;isolation:isolate}
-#bottom-toolbar #reaction-strip::before{content:"";position:absolute;z-index:-1;left:-10px;right:-10px;top:-6px;bottom:-6px;background:#fbfaf6;box-shadow:0 -2px 6px rgba(0,0,0,.08);pointer-events:none}
 /* Results / summary in every game mode: the list runs down behind the buttons and scrolls under them. */
 #hud.active:is([data-phase=reveal],[data-phase=summary]){bottom:0}
 #hud:is([data-phase=reveal],[data-phase=summary]) .main-col{padding-bottom:140px}
@@ -278,3 +275,9 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
 /* Team Worlds' question meter is narrow: the label can't share the star-threshold row, so it sits on its own line under the meter. */
 #tw-question-progress .wl-progress.wl-sky{display:flex;flex-direction:column}
 #tw-question-progress .wl-sky .wl-progress-heading{order:3;position:static;justify-content:flex-start;margin-top:-4px;padding-bottom:1px}
+
+/* Team Worlds / High-Low: when the question screen does not fit, shrink the keys and objects instead of cutting the keypad off. */
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds])[data-play-density=compact] #numpad :is(.num-btn,#backspace-btn){height:44px;min-height:44px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds])[data-play-density=tight] #numpad :is(.num-btn,#backspace-btn){height:32px;min-height:32px}
+#hud[data-play-density=compact] #question-view.tw-mode .dc-pic img{min-height:44px}
+#hud[data-play-density=tight] #question-view.tw-mode .dc-pic img{min-height:28px}
