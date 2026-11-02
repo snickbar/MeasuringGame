@@ -12198,6 +12198,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!el || prefersReducedMotion() || !el.animate) return;
     el.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)", offset: .4 }, { transform: "scale(1)" }], { duration: 340, easing: "ease-out" });
   }
+  // Count a number up from 0 (keeps any text around it, e.g. "+23 coins"). Presentation only; skipped with Reduce Motion.
+  function countText(el, ms, delay) {
+    if (!el || prefersReducedMotion()) return;
+    const m = /^(\D*)([\d,]+)(\D*)$/.exec(el.textContent.trim()); if (!m) return;
+    const to = parseInt(m[2].replace(/,/g, ""), 10); if (!(to > 0)) return;
+    const comma = m[2].includes(","), fmt = (v) => m[1] + (comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + m[3];
+    const t0 = performance.now() + delay; el.textContent = fmt(0);
+    const step = (now) => { if (!el.isConnected) return; const k = Math.max(0, Math.min(1, (now - t0) / ms)); el.textContent = fmt(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
   // Watches a screen that redraws itself: any [data-pop] number that differs from the last redraw (within 20s) pops.
   function popChangedNumbers(root) {
     const prev = { t: 0, vals: {} };
@@ -12443,13 +12453,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
         <div class="wb-result-stage sv-scene-wrap">${svSceneHtml(r, ok)}</div>
-        <div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>
-        ${r.themed && ok ? `<div class="sv-callout bonus"><b>Bonus!</b> Themed round won &middot; +${SURVIVAL_THEME_COINS} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
-        <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
-        ${r.boost || ""}
-        ${r.earned ? `<div class="sv-callout earn"><span class="sv-earn-shield"><img src="icons/survival-shield-full.webp" alt="" draggable="false"></span>Shield earned! It will save you from one lost life.</div>` : ""}
-        <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
-        ${svGaugeHtml(r.acc)}
+        <div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div></div>
+        ${r.themed && ok ? `<div class="sv-callout bonus sv-arr" style="--a:.55s"><b>Bonus!</b> Themed round won &middot; +${SURVIVAL_THEME_COINS} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
+        <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
+        ${r.boost ? `<div class="sv-arr" style="--a:.75s">${r.boost}</div>` : ""}
+        ${r.earned ? `<div class="sv-callout earn sv-arr" style="--a:.85s"><span class="sv-earn-shield"><img src="icons/survival-shield-full.webp" alt="" draggable="false"></span>Shield earned! It will save you from one lost life.</div>` : ""}
+        <p class="wb-line sv-arr" style="--a:1s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
+        <div class="sv-arr sv-arr-gauge" style="--a:1.3s">${svGaugeHtml(r.acc)}</div>
       </div>
       <div class="wb-diff wb-diff-res">${svStampHtml(q.answer)}</div>
       <div class="pin-bottom">${over && !sv.revived ? `<div class="wl-done-split"><button type="button" class="dc-btn" id="sv-next">See my score</button><button type="button" class="dc-btn wl-ad-btn" id="sv-revive"><span>Watch ad: revive</span><small>+1 life, once per run</small></button></div>` : `<button type="button" class="dc-btn" id="sv-next">${over ? "See my score" : "Next round"}</button>`}</div>`;
@@ -12547,6 +12557,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
     svShowRank();
+    countText(el.querySelector(".wl-big"), 700, 250);
+    el.querySelectorAll(".dc-hot .dc-note").forEach((n) => { if (/coins$/.test(n.textContent.trim())) countText(n, 600, 1000); });
     survivalLoadBoard();
   }
   async function survivalRunReveal() {
