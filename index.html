@@ -10284,10 +10284,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
           <div class="wb-result-stage dc-stage">${soloResultAvatarHtml(r.acc)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
-          <div class="wb-verdict-t">${r.label}</div>
-          <div class="wb-result-quip">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
-          <p class="wb-line"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
-          ${dcGaugeHtml(r.acc)}
+          <div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t">${r.label}</div></div>
+          <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
+          <p class="wb-line sv-arr" style="--a:1s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
+          <div class="sv-arr sv-arr-gauge" style="--a:1.3s">${dcGaugeHtml(r.acc)}</div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-next">${last ? "See my results" : "Next question"}</button></div>`;
       requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(dailyContentEl.querySelector(".play-middle"), 0.5)));
@@ -10307,6 +10307,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
     dailyLoadBoard(); dailyShowRank(total); flushAdOffer("daily");
+    if (daily.justFinished) {
+      countText(el.querySelector(".dc-hot .dc-big"), 800, 200);
+      arriveMarks(el, 0.5);
+      arriveRows(el, ".dc-card:not(.dc-hot):not(.dc-rank) > .dc-row", 0.9);
+      el.querySelectorAll(".dc-note b").forEach((b) => { if (/^\+\d+ coins/.test(b.textContent.trim())) countText(b, 600, 1700); });
+    }
     if (perfect && daily.justFinished && !daily.perfectShown) { daily.perfectShown = true; vibrate([30, 40, 30, 40, 60]); }
   }
 
@@ -10396,8 +10402,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     host.hidden = false;
     host.innerHTML = `<span class="dc-rank-l">You're</span><span class="dc-rank-n"><span class="dc-rank-hash">#</span><span id="dc-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 30, rank * 4)}</span></span><span class="dc-rank-l">${players > 1 && !capped ? `of ${players} today` : "today"}</span>`;
     if (!prefersReducedMotion()) {
-      const num = document.getElementById("dc-rank-num"), from = Number(num.textContent), t0 = performance.now(), dur = 900;
-      const tick = (t) => { if (!num.isConnected) return; const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); num.textContent = Math.round(from + (rank - from) * e); if (k < 1) requestAnimationFrame(tick); else host.classList.add("landed"); };
+      const num = document.getElementById("dc-rank-num"), from = Number(num.textContent), t0 = performance.now() + 600, dur = 900;
+      const tick = (t) => { if (!num.isConnected) return; const k = Math.max(0, Math.min(1, (t - t0) / dur)), e = 1 - Math.pow(1 - k, 3); num.textContent = Math.round(from + (rank - from) * e); if (k < 1) requestAnimationFrame(tick); else host.classList.add("landed"); };
       requestAnimationFrame(tick);
     } else host.classList.add("landed");
   }
@@ -12034,17 +12040,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const lvTitle = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
     if (mo.practice) {
       el.innerHTML = `<h2 class="dc-title">${name} ${lvTitle} replay</h2><p class="dc-sub">New questions. Half coins, and the leaderboard keeps your first try.</p>
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="dc-big"><span class="mo-tot">${total}</span> / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${adBarSlot("practice", "mo-main")}
       <button type="button" class="dc-btn dc-alt" id="mo-replay">Replay again</button>`;
+      moArrive(el);
       return;
     }
     const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
     const monthDone = [1, 2, 3].every((l) => mo.prog[l] && mo.prog[l].done);
     const bgNote = mbg && monthDone && mo.level !== 4 ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Style, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
     el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${lvTitle}</h2>${tourBtn('monthly')}
-      <div class="dc-card dc-hot"><div class="dc-big">${total} / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
+      <div class="dc-card dc-hot"><div class="dc-big"><span class="mo-tot">${total}</span> / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
       ${bgNote}
       ${adBarSlot("monthly", "mo-finish")}
@@ -12052,6 +12059,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" class="dc-btn dc-alt" id="mo-share">Share my result</button>
       <h3 class="cs-h">${lvTitle} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
     monthlyLoadBoard(); flushAdOffer("monthly");
+    moArrive(el);
+  }
+  // Monthly result arrival: total counts up, marks pop one by one, rows slide in, coins count up last.
+  function moArrive(el) {
+    countText(el.querySelector(".mo-tot"), 800, 200);
+    arriveMarks(el, 0.5);
+    arriveRows(el, ".dc-card:not(.dc-hot) > .dc-row", 0.9);
+    const n = el.querySelector(".dc-hot .dc-note"); if (n && /coins/.test(n.textContent)) countText(n, 600, 1700);
   }
   async function monthlyRunReveal() {
     const i = mo.guesses.length - 1, q = mo.questions[i], g = mo.guesses[i], last = mo.guesses.length >= mo.questions.length;
@@ -12206,13 +12221,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Count a number up from 0 (keeps any text around it, e.g. "+23 coins"). Presentation only; skipped with Reduce Motion.
   function countText(el, ms, delay) {
     if (!el || prefersReducedMotion()) return;
-    const m = /^(\D*)([\d,]+)(\D*)$/.exec(el.textContent.trim()); if (!m) return;
-    const to = parseInt(m[2].replace(/,/g, ""), 10); if (!(to > 0)) return;
-    const comma = m[2].includes(","), fmt = (v) => m[1] + (comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + m[3];
+    const m = /^(\D*)([\d,]*\.?\d+)(\D*)$/.exec(el.textContent.trim()); if (!m) return;
+    const to = parseFloat(m[2].replace(/,/g, "")); if (!(to > 0)) return;
+    const dec = (m[2].split(".")[1] || "").length, comma = m[2].includes(",");
+    const fmt = (v) => m[1] + (comma ? v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) : v.toFixed(dec)) + m[3];
     const t0 = performance.now() + delay; el.textContent = fmt(0);
     const step = (now) => { if (!el.isConnected) return; const k = Math.max(0, Math.min(1, (now - t0) / ms)); el.textContent = fmt(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
+  // Result lists: each matching row slides in one after another; marks pop in one at a time. CSS only, skipped with Reduce Motion.
+  function arriveRows(root, sel, start, step = 0.18) { root.querySelectorAll(sel).forEach((r, i) => { r.classList.add("wl-row-arr"); r.style.setProperty("--a", (start + i * step).toFixed(2) + "s"); }); }
+  function arriveMarks(root, start) { root.querySelectorAll(".dc-marks .res-mark").forEach((m, i) => { m.classList.add("mk-pop"); m.style.setProperty("--a", (start + i * 0.22).toFixed(2) + "s"); }); }
   // Watches a screen that redraws itself: any [data-pop] number that differs from the last redraw (within 20s) pops.
   function popChangedNumbers(root) {
     const prev = { t: 0, vals: {} };
