@@ -2442,7 +2442,7 @@ if (location.protocol === "file:") {
   #next-round-btn,
   #play-again-btn,
   #final-home-btn,
-  #exit-confirm-yes-btn,
+  #exit-confirm-yes-btn, #paused-resume-btn, #kick-yes-btn,
   .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn) {
     --pic-h: 38px;
     display: flex; align-items: center; justify-content: center; text-align: center;
@@ -2460,11 +2460,11 @@ if (location.protocol === "file:") {
   button#reveal-next-btn,
   button#show-summary-btn,
   button#next-round-btn,
-  button#play-again-btn { border-image-source: url(icons/btn-bot-easy.png); }
+  button#play-again-btn, button#paused-resume-btn, button#kick-yes-btn { border-image-source: url(icons/btn-bot-easy.png); }
   button#final-home-btn,
   button#exit-confirm-yes-btn { border-image-source: url(icons/btn-bot-hard.png); }
   .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn) { border-image-source: url(icons/btn-bot-medium.png); }
-  #exit-confirm-yes-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
+  #exit-confirm-yes-btn, #paused-resume-btn, #kick-yes-btn { --pic-h: 44px; width: 100%; font-size: 16px; }
   .coin-pack-buy-btn:not(.ad-reward-btn):not(#host-unlock-shop-btn):disabled { opacity: .6; filter: grayscale(.4); }
   /* The rule above resets margin to 0, which cancels the margin-top:auto that's
      supposed to pin every coin-pack button to the bottom of its (grid-stretched,
@@ -3679,18 +3679,20 @@ if (location.protocol === "file:") {
 
   /* ---- Paused overlay / kick modal / left screen ---- */
   #paused-overlay, #kick-modal {
-    display: none; position: fixed; inset: 0; background: rgba(90,74,58,0.8); color: #fff;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); color: var(--text);
     align-items: center; justify-content: center; flex-direction: column; text-align: center;
     padding: 24px; z-index: 1000;
   }
   #paused-overlay.active, #kick-modal.active { display: flex; }
   .overlay-card {
-    padding: 24px 28px; font-size: 20px; font-weight: 700; color: #fff;
-    border-width: 16px; border-style: solid; border-image-source: var(--accent2); border-image-slice: 55 fill;
+    width: 240px; max-width: 100%; box-sizing: border-box; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4); font-family: 'Fredoka', sans-serif;
   }
-  #kick-modal button, #paused-overlay button { width: auto; margin-top: 12px; }
-  #kick-timer { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; margin-top: 8px; }
-  #kick-timer.low { color: #ffe066; animation: pulse 1s infinite; }
+  .overlay-card h3 { margin: 0 0 8px; font-size: 18px; color: #000; text-shadow: none; }
+  .overlay-card p { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
+  #kick-modal button, #paused-overlay button { width: 100%; margin: 12px 0 0; }
+  #kick-timer { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 21px; margin-top: 8px; color: var(--text); }
+  #kick-timer.low { color: #d6452b; animation: pulse 1s infinite; }
 
   /* ---- House style for text that sits directly on a background: bold black, centered, in a faint pill. ----
      One width per screen (sized for that screen's longest label) so every pill there matches. */
@@ -4827,16 +4829,17 @@ if (location.protocol === "file:") {
 
 <div id="paused-overlay">
   <div class="overlay-card">
-    <div>Game paused</div>
-    <button id="paused-resume-btn" style="display:none;">Resume</button>
+    <h3>Game paused</h3>
+    <p id="paused-msg">Waiting for the host to resume</p>
+    <button id="paused-resume-btn" type="button" style="display:none;">Resume</button>
   </div>
 </div>
 
 <div id="kick-modal">
   <div class="overlay-card">
-    <div>Are you still there?</div>
+    <h3>Are you still there?</h3>
     <div id="kick-timer"></div>
-    <button id="kick-yes-btn">Yes, I'm here</button>
+    <button id="kick-yes-btn" type="button">Yes, I'm here</button>
   </div>
 </div>
 
@@ -18951,7 +18954,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function renderPausedOverlay(paused) {
     pausedOverlayEl.classList.toggle("active", !!paused);
-    pausedResumeBtn.style.display = isHost || (roomState.settings && roomState.settings.solo && currentPlayers[currentPlayerId] && !currentPlayers[currentPlayerId].isBot) ? "block" : "none"; // a solo player can always resume their own game
+    const canResume = isHost || (roomState.settings && roomState.settings.solo && currentPlayers[currentPlayerId] && !currentPlayers[currentPlayerId].isBot); // a solo player can always resume their own game
+    pausedResumeBtn.style.display = canResume ? "flex" : "none";
+    document.getElementById("paused-msg").textContent = canResume ? "Tap resume when you're ready" : "Waiting for the host to resume";
   }
 
   // ==================== Summary / final ====================
