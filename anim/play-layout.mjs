@@ -32,6 +32,7 @@ export function createPlayLayout(doc = document) {
         owner.dataset.playDensity = 'compact';
         if (middle.scrollHeight > middle.clientHeight + 1) owner.dataset.playDensity = 'tight';
       }
+      owner.dispatchEvent(new win.CustomEvent('playfit', {bubbles: true})); // lets the borrowed question card shrink too if the layout still does not fit
     }
   }
   function measure() {

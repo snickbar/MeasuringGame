@@ -4784,6 +4784,7 @@ if (location.protocol === "file:") {
 
 <div id="name-avatar-screen" class="screen">
   <button id="name-avatar-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <div class="na-pin">
   <div class="setup-header">
     <button id="join-lobby-btn">Join Lobby</button>
   </div>
@@ -4796,9 +4797,10 @@ if (location.protocol === "file:") {
       <span class="settings-profile-hint">Pick your avatar below</span>
     </div>
   </div>
+  <div class="na-random-bar"><button id="name-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random avatar</button></div>
+  </div>
   <div id="name-keyboard" class="custom-kbd"></div>
 
-  <button id="name-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random avatar</button>
   <div id="avatar-grid"></div>
 
   <p id="name-avatar-status"></p>
@@ -9720,6 +9722,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A new question / board / screen height starts the card at its normal size, then shrinks it (once) only if the screen's keys and
   // objects already shrank and it still does not fit. The result is remembered, so a screen redrawing the same question does not flicker.
   let qFitMemo = { key: "", h: 0 };
+  // The play layout reports after every fit pass: if the keys and objects already shrank and the screen still scrolls, shrink the card (never grows back, so no flicker).
+  document.addEventListener("playfit", (e) => {
+    const owner = e.target;
+    if (!qFitMemo.key || !qPromptEl.isConnected || !owner.contains(qPromptEl)) return;
+    const d = owner.dataset.playDensity, want = d === "tight" ? 110 : d === "compact" ? 130 : 0;
+    if (want && (qCardH || SB_CARD_H) > want) { qFitMemo.h = want; qBoardSetH(want); getPlayLayout().measure(); }
+  });
   function qBoardAutoFit(slot, text, maxH) {
     const owner = slot.closest("#hud,.screen");
     if (!owner) return;
@@ -9727,15 +9736,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (qFitMemo.key === key) { if (qCardH !== qFitMemo.h) qBoardSetH(qFitMemo.h); return; }
     qFitMemo = { key, h: qBoardBaseH(maxH) };
     qBoardSetH(qFitMemo.h);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const layout = getPlayLayout();
-      layout.measure();
-      setTimeout(() => {
-        if (qFitMemo.key !== key || !qPromptEl.isConnected || !owner.contains(qPromptEl)) return;
-        const d = owner.dataset.playDensity, want = d === "tight" ? 110 : d === "compact" ? 130 : 0;
-        if (want && qCardH > want) { qFitMemo.h = want; qBoardSetH(want); layout.measure(); }
-      }, 80);
-    }));
+    requestAnimationFrame(() => requestAnimationFrame(() => getPlayLayout().measure()));
   }
   const scoreColEl = document.getElementById("score-col");
 
@@ -18026,7 +18027,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
   function setTwBoardPrompt(text) {
     twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
-    qBoardMount(twQuestionPromptEl, text, 150); // the real question card (with its writing animation) is borrowed into this slot
+    qBoardMount(twQuestionPromptEl, text, 180); // the real question card (with its writing animation) is borrowed into this slot
     if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
   }
   function renderTeamWorldsQuestionStats(q) {
