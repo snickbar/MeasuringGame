@@ -19283,6 +19283,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
   }
+  // A ranked row's numbers count up as it lands; a team's member lines fade in just after it.
+  function finalRowArrive(li, delayMs, hiddenUntilPodium) {
+    if (!hiddenUntilPodium) { // with a podium the list stays hidden until the podium finishes, so counting would run unseen
+      countText(li.querySelector(".final-metrics .pts"), 500, delayMs + 200);
+      countText(li.querySelector(".final-metrics .final-avg-pct"), 500, delayMs + 200);
+    }
+    const mem = li.querySelector(".team-final-members"); if (mem) { mem.classList.add("hl-arr"); mem.style.setProperty("--a", ((delayMs + 350) / 1000).toFixed(2) + "s"); }
+  }
   // Party finale: places 4+ slide in as a quick list, then the top three rise on a podium (winner last, on the right).
   let partyFinaleToken = 0;
   function partyPodiumStage(ranked, contestants = currentPlayers) {
@@ -19409,9 +19417,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         li.className = "final-row team-final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         li.dataset.place = rank === 1 ? 'Winning team' : `Place ${rank}`;
         li.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
-        const delayMs = idx * 150;
+        const delayMs = (teamRanked.length - 1 - idx) * 300; // bottom-up: last place first, the winner lands last
         li.style.animationDelay = `${delayMs}ms`;
-        if (rank === 1) rank1Delay = delayMs;
+        if (rank === 1) rank1Delay = Math.max(rank1Delay, delayMs);
         const winnerStars = rank === 1 && score > 0
           ? `<div class="drumroll-stars"><span></span><span></span><span></span><span></span></div>`
           : "";
@@ -19421,6 +19429,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="team-final-members">${memberRows}</div>
         `;
         finalListEl.appendChild(li);
+        finalRowArrive(li, delayMs, !!podium);
         if (rank === 1 && score > 0) rank1Rows.push({ li, pid: members[0] });
       });
     } else {
@@ -19449,9 +19458,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const li = document.createElement("li");
       li.className = "final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
       li.dataset.place = rank === 1 ? 'Winner' : `Place ${rank}`;
-      const delayMs = idx * 150;
+      const delayMs = (ranked.length - 1 - idx) * 300; // bottom-up: last place first, the winner lands last
       li.style.animationDelay = `${delayMs}ms`;
-      if (rank === 1) rank1Delay = delayMs;
+      if (rank === 1) rank1Delay = Math.max(rank1Delay, delayMs);
       const winnerStars = rank === 1 && score > 0
         ? `<div class="drumroll-stars"><span></span><span></span><span></span><span></span></div>`
         : "";
@@ -19461,6 +19470,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${statsHtml}
       `;
       finalListEl.appendChild(li);
+      finalRowArrive(li, delayMs, !!podium);
       if (rank === 1 && score > 0) rank1Rows.push({ li, pid: id });
     });
     }
