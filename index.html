@@ -2857,6 +2857,8 @@ if (location.protocol === "file:") {
   :is(#worlds-content, #survival-content) .qbs { margin: 4px 0 6px; }
   .dq-board { margin: 6px 0; }
   .dq-board > .question-prompt { flex: none; width: 100%; }
+  .dq-board > .question-prompt[data-scene] { height: var(--qh, 196px); min-height: var(--qh, 196px); }
+  .dq-board > .question-prompt:not([data-scene]) { min-height: var(--qh, 184px); }
   .qbs .dc-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
   /* Worlds / Survival: keypad on the left, the power-ups in a two-column block on its right. */
   .dc-padrow { display: block; }
@@ -5726,7 +5728,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
   // Team Worlds / High-Low use a plain question box: no equipped skin is built at all in those rooms.
-  function plainBoardMode() { try { return !!(roomState && roomState.settings && roomState.settings.mode === "teamworlds"); } catch (e) { return false; } }
+  function plainBoardMode() { try { return !!(roomState && roomState.settings && roomState.settings.mode === "teamworlds") && !twQuestionPromptEl.contains(qPromptEl); } catch (e) { return false; } } // plain, except while the real card is on the Team Worlds question screen
   const activeBoard = () => (plainBoardMode() ? "plain" : rndOn("boards") ? rndGet("boards") : equippedBoard());
   let monthlyPlayBg = null; // while a Monthly Challenge is being played, that month's own background is shown
   const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
@@ -9250,6 +9252,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   };
   Object.keys(SB_DEFS).forEach((k) => { QB_DEFS[k] = { tool: null, scene: true }; });
   const SB_CARD_H = 196;
+  let qCardH = 0; // card height while borrowed by a solo question screen (shorter on small phones); 0 = the normal height
   const SB_LB_COLORS = ["#ef4b43", "#4bc460", "#4aa3ff", "#ffa63a", "#b777e8", "#ffe14d"]; // red, green, blue, orange, purple, yellow letters
   let qSB = null;
   const sbEase = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
@@ -9283,7 +9286,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function sbLayout() {
     if (!qSB) return;
-    const W = qPromptEl.clientWidth, H = hudEl.dataset.playLayout === 'party' ? qPromptEl.clientHeight : SB_CARD_H, ar = qSB.def.ar;
+    const W = qPromptEl.clientWidth, H = hudEl.dataset.playLayout === 'party' ? qPromptEl.clientHeight : (qCardH || SB_CARD_H), ar = qSB.def.ar;
     if (!W) return;
     const sw = Math.min(W, H * ar), sh = sw / ar, sx = (W - sw) / 2, sy = (H - sh) / 2;
     Object.assign(qSB.stage.style, { left: sx + "px", top: sy + "px", width: sw + "px", height: sh + "px" });
@@ -9682,14 +9685,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (qPromptEl.parentNode === qBoardHomeEl) return;
     qBoardHomeEl.insertBefore(qPromptEl, qBoardHomeEl.firstChild);
     qPromptEl.style.display = "";
+    qPromptEl.style.removeProperty("--qh");
+    qCardH = 0;
   }
-  function qBoardMount(slot, text) {
+  function qBoardMount(slot, text, maxH) {
     if (!slot) return;
-    slot.appendChild(qPromptEl);
+    const fresh = qPromptEl.parentNode !== slot;
+    if (fresh) slot.appendChild(qPromptEl);
     qPromptEl.style.display = "";
+    qPromptEl.classList.remove("tw-plain");
+    qCardH = window.innerHeight < 680 ? 124 : window.innerHeight < 740 ? 160 : 0;
+    if (maxH && (!qCardH || qCardH > maxH)) qCardH = maxH;
+    if (qCardH) qPromptEl.style.setProperty("--qh", qCardH + "px"); else qPromptEl.style.removeProperty("--qh");
+    const boardBefore = qPromptEl.dataset.board;
     applyBoard(activeBoard());
+    if (qPromptEl.dataset.board !== boardBefore) questionPromptTextEl.dataset.txt = ""; // a new board starts blank, so write the question onto it
     setPromptText(text, true);
-    requestAnimationFrame(() => { if (qSB) sbLayout(); });
+    if (fresh) requestAnimationFrame(() => { if (qSB) sbLayout(); });
   }
   const scoreColEl = document.getElementById("score-col");
 
@@ -11857,13 +11869,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = wl.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${header}${dots(i)}${worldProgressHtml()}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        ${qBoardPromptHtml(q.prompt, `<div class="dc-display" id="wl-display">${wl.input || "0"}</div>`)}
+        <div class="dq-board" id="dq-board"></div>
+        <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
         <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
+      qBoardMount(el.querySelector("#dq-board"), q.prompt);
       getPlayLayout().worlds(worldsScreenEl, el);
-      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
+    qBoardHome();
     if (wl.phase === "reveal") {
       const k = wl.guesses.length - 1;
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}${worldProgressHtml(k)}</div><p class="dc-prompt">${escapeHtml(wl.questions[k].prompt)}</p><div id="wl-stage"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="wl-skip">Skip</button></div>`;
@@ -12838,16 +12852,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const q = sv.q, u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
       el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives, sv.asked + 1, svRunAcc(sv.accs.length))}${sv.q.theme ? svThemeStripHtml(sv.q.theme) : ""}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
-        ${qBoardPromptHtml(q.prompt, `<div class="dc-display" id="sv-display">${sv.input || "0"}</div>`)}
+        <div class="dq-board" id="dq-board"></div>
+        <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
         <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       svApplyThemeVars(sv.q.theme);
       if (sv.q.theme && sv.bannerFor !== sv.asked) { sv.bannerFor = sv.asked; svShowThemeBanner(sv.q.theme); }
+      qBoardMount(el.querySelector("#dq-board"), q.prompt);
       requestAnimationFrame(() => requestAnimationFrame(svFit));
-      requestAnimationFrame(() => qBoardFit(el));
       return;
     }
+    qBoardHome();
     if (sv.phase === "reveal") {
       el.innerHTML = `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length - 1), !!sv.prevShield, sv.prevChain || 0)}</div><p class="dc-prompt">${escapeHtml(sv.q.prompt)}</p><div id="sv-stage"></div><div id="sv-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="sv-skip">Skip</button></div>`;
       survivalRunReveal();
@@ -17974,14 +17990,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
   function setTwBoardPrompt(text) {
-    const raw = rndOn("boards") ? rndGet("boards") : equippedBoard(), key = raw + "|" + text;
-    if (twQuestionPromptEl.dataset.qbKey === key && twQuestionPromptEl.contains(twGuessDisplayEl)) return;
-    twQuestionPromptEl.dataset.qbKey = key;
-    questionViewEl.insertBefore(twGuessDisplayEl, numpadEl); // rescued before the board's markup is replaced
-    twQuestionPromptEl.classList.add("tw-qboard");
-    twQuestionPromptEl.innerHTML = text ? qBoardPromptHtml(text) : "";
-    (twQuestionPromptEl.querySelector(".qbs-body") || twQuestionPromptEl.querySelector(".qbs-flat") || twQuestionPromptEl).appendChild(twGuessDisplayEl);
-    requestAnimationFrame(() => qBoardFit(twQuestionPromptEl));
+    twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
+    qBoardMount(twQuestionPromptEl, text, 150); // the real question card (with its writing animation) is borrowed into this slot
+    if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
   }
   function renderTeamWorldsQuestionStats(q) {
     const isTw = roomState.settings?.mode === "teamworlds";
@@ -20778,7 +20789,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";
   }
   function applyPhase(data) {
-    if (!dailyScreenEl.classList.contains("active") && !monthlyScreenEl.classList.contains("active")) qBoardHome(); // the question card may still be borrowed by a Daily/Monthly screen
+    if (![dailyScreenEl, monthlyScreenEl, worldsScreenEl, survivalScreenEl].some((s) => s.classList.contains("active")) && !(data.phase === "question" && data.settings?.mode === "teamworlds")) qBoardHome(); // the question card may still be borrowed by a Daily/Monthly screen
     focusedPlayLayout?.restoreHighLow();
     if (leftScreenEl.classList.contains("active") || leavingGame) return; // the "you left" page is showing: don't draw a game screen behind it
     if(data.phase==='waiting')finalRendered=false;
@@ -20875,7 +20886,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // #question-view or the reveal/summary screens are the active view) and shown - but
     // stripped of all the board decoration - specifically during "animation".
     const twShowPrompt = isTeamWorlds && phase === "animation";
-    qPromptEl.style.display = (isTeamWorlds && !twShowPrompt) ? "none" : "";
+    const twBorrowed = twQuestionPromptEl.contains(qPromptEl); // the real card is sitting on the Team Worlds question screen
+    qPromptEl.style.display = (isTeamWorlds && !twShowPrompt && !twBorrowed) ? "none" : "";
     // Team Worlds: keep the running accuracy bar at the top during the stacking animation too (it is part of the
     // question screen, which is hidden while the animation plays).
     {
@@ -20902,7 +20914,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // listener happens to fire on. A CSS class with !important sidesteps the race entirely -
     // it keeps winning regardless of what applyBoard resets the attribute/inline styles to,
     // as long as the class itself stays on, which only this code ever touches.
-    qPromptEl.classList.toggle("tw-plain", isTeamWorlds);
+    qPromptEl.classList.toggle("tw-plain", isTeamWorlds && !twBorrowed);
     applyBoard(activeBoard()); // plain box for Team Worlds / High-Low, the equipped board everywhere else (no-op when unchanged)
     hudEl.dataset.twPhase = isTeamWorlds ? phase : "";
     hudEl.dataset.phase = phase;
