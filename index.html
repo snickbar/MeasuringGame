@@ -9216,14 +9216,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   qBodyEl.appendChild(questionAnswerLineEl);
   const SB_DEFS = {
     terminal: { img: "icons/bd-terminal-kb.webp", ar: 760 / 671, box: [14, 11.5, 14, 35.5] },
-    tv: { img: "icons/bd-tv-dark.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5], fmax: 32, rsv: [1.8, 10] }, // grows to fill the screen, shrinks as needed; the answer line only needs a little room
+    tv: { img: "icons/bd-tv-dark.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5], fmax: 32 }, // grows to fill the screen, shrinks as needed
     typewriter: { img: "icons/bd-typewriter.webp", ar: 760 / 702, box: [22.9, 4, 22.8, 33.6] },
     letterboard: { img: "icons/bd-letterboard.webp", ar: 760 / 574, box: [9, 12, 9, 14], fmax: 25 },
     neon: { img: "icons/bd-neon.webp", ar: 760 / 556, box: [19, 20, 19, 22], fmax: 23 },
     sand: { img: "icons/bd-sand.webp", ar: 760 / 554, box: [10, 20, 10, 15], fmax: 27 },
     scroll: { img: null, ar: 668 / 501, box: [12.5, 21.2, 12.5, 21], fmax: 23, noStretch: true }, // its rollers are drawn at a fixed scale, so it cannot be widened
     splitflap: { img: "icons/bd-splitflap.webp", ar: 760 / 560, box: [9, 12, 9, 13], fmax: 24 },
-    phone: { img: "icons/bd-phone-tight.webp", ar: 760 / 384, box: [21.5, 16.6, 21.5, 24.8], rsv: [2.4, 14] },
+    phone: { img: "icons/bd-phone-tight.webp", ar: 760 / 384, box: [21.5, 16.6, 21.5, 24.8], rsv: [1.1, 12] },
   };
   Object.keys(SB_DEFS).forEach((k) => { QB_DEFS[k] = { tool: null, scene: true }; });
   const SB_CARD_H = 196;
@@ -9279,14 +9279,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!qSB || !questionPromptTextEl.dataset.txt) return;
     const bh = qBodyEl.clientHeight;
     const pl = hudEl.dataset.playLayout, qv = questionViewEl.classList.contains('active'), twq = qv && (pl === 'highlow' || pl === 'teamworlds'); // no answer line on these question screens, so the text may use the whole board
-    const rsv = (pl === 'party' && qv) || twq ? [0, 4] : qSB.def.rsv || [2.7, 24];
-    let fs = twq ? Math.max(qSB.def.fmax || 19, 24) : qSB.def.fmax || 19;
-    for (; fs > 8; fs -= 0.5) {
-      qBodyEl.style.setProperty("--qfs", fs + "px");
-      if (questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] <= bh) break;
-    }
+    const rsv = twq ? [0, 4] : qSB.def.rsv || [0, 4];
+    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML, extra = ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
+    // As big as will fit: binary-search the largest size at which the question (plus room for the answer line) stays inside the text area.
+    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + extra <= bh; };
+    let lo = 8, hi = 40;
+    if (fits(hi)) return;
+    while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+    fits(lo);
   }
   if (window.ResizeObserver) new ResizeObserver(() => { sbLayout(); qbFitParty(); }).observe(qPromptEl);
+  if (window.MutationObserver) new MutationObserver(() => { if (qSB) sbFit(); else qbFitParty(); }).observe(questionAnswerLineEl, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] }); // the answer appearing re-fits the question
   function sbSetText(text, animate) {
     qSB.chars = []; qSB.exiting = false; qSB.done = null;
     qBodyEl.style.opacity = ""; qBodyEl.style.transform = qBodyEl.style.clipPath = "";
@@ -9606,7 +9609,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function qbFitBorrowed() {
     if (!qPromptEl.clientHeight || !questionPromptTextEl.textContent) return;
     const cs = getComputedStyle(qPromptEl), target = parseFloat(cs.minHeight) || 184, pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-    for (let fs = 32; fs >= 16; fs -= 1) { qPromptEl.style.fontSize = fs + "px"; if (questionPromptTextEl.offsetHeight + pad + 34 <= target) break; }
+    const ans = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML ? questionAnswerLineEl.offsetHeight + 6 : 0;
+    const fits = (fs) => { qPromptEl.style.fontSize = fs + "px"; return questionPromptTextEl.offsetHeight + ans + pad + 12 <= target; }; // +12 keeps the text off the ledge, pencil and eraser
+    let lo = 11, hi = 48;
+    if (fits(hi)) return;
+    while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+    fits(lo);
   }
   function qbFitParty() {
     if (qSB) return; // scene boards fit themselves (sbFit)
