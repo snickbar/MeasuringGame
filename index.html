@@ -982,9 +982,10 @@ if (location.protocol === "file:") {
   .hs-deal-num .hs-pot-num { font-size: 44px; }
   @media (prefers-reduced-motion: reduce) { .hs-pile-chip { transition: none; } }
   /* Betting: whose turn we're waiting on, boxed at the bottom. */
-  .hs-think { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 6px; padding: 8px 14px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#fffdf6, #f6ead0); box-shadow: 0 3px 0 rgba(74,44,18,.45); font-size: 16px; color: #000; }
-  .hs-think .avatar { flex: none; font-size: 34px; }
-  .hs-think-txt { min-width: 0; overflow-wrap: anywhere; text-align: left; line-height: 1.15; }
+  .hs-think { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: min(100%, 176px); aspect-ratio: 1 / 1; box-sizing: border-box; margin: 10px auto 0; padding: 8px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#fffdf6, #f6ead0); box-shadow: 0 3px 0 rgba(74,44,18,.45); font-size: 15px; color: #000; }
+  .hs-think .avatar { flex: none; font-size: 64px; }
+  .hs-think-txt { min-width: 0; overflow-wrap: anywhere; text-align: center; line-height: 1.15; }
+  .hs-think-txt b { display: block; }
   .hs-tdots i { display: inline-block; width: 4px; height: 4px; margin-left: 3px; border-radius: 50%; background: #4a2c12; animation: hsThinkDot 1.2s ease-in-out infinite; }
   .hs-tdots i:nth-child(2) { animation-delay: .2s; } .hs-tdots i:nth-child(3) { animation-delay: .4s; }
   @keyframes hsThinkDot { 0%, 70%, 100% { opacity: .25; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
@@ -11651,7 +11652,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const tp = b.turn && b.turn !== me ? data.players?.[b.turn] : null;
         const think = tp ? `<div class="hs-think"><span class="avatar">${avatarHtml(tp.avatar)}</span><span class="hs-think-txt"><b>${escapeHtml(tp.name || "Someone")}</b> is thinking<span class="hs-tdots"><i></i><i></i><i></i></span></span></div>` : "";
         const note = folded ? `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>` : seated ? "" : `<p class="hs-hint">Watching &mdash; cheer the others on!</p>`;
-        if (think || note) html += `<div class="pin-bottom">${think}${note}</div>`;
+        winHtml = think; // sits in the middle column under the pot, like the winner box
+        if (note) html += `<div class="pin-bottom">${note}</div>`;
       }
     } else if (revealing && !animating) {
       const r = hs.result;
