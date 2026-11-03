@@ -995,6 +995,10 @@ if (location.protocol === "file:") {
   @keyframes hsWinGlow { 50% { box-shadow: 0 0 0 3px #fff3b0, 0 0 40px rgba(255,210,60,1), 0 5px 0 rgba(74,44,18,.5); } }
   .hs-win-shine { position: absolute; top: 0; bottom: 0; width: 38%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.85), transparent); transform: skewX(-18deg); animation: hsShine 2.2s ease-in-out .5s infinite; pointer-events: none; }
   @keyframes hsShine { 0% { left: -50%; } 55%, 100% { left: 130%; } }
+  #hs-content .hs-win { margin-left: 90px; margin-right: 90px; padding-left: 6px; padding-right: 6px; }
+  .hs-win-who { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
+  .hs-win-who .avatar { font-size: 38px; }
+  .hs-win-chip { width: 30px; height: 30px; vertical-align: -5px; -webkit-text-stroke: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
   .hs-win-trophy { width: 40px; height: 40px; object-fit: contain; animation: hsBob 1s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
   @keyframes hsBob { 50% { transform: translateY(-6px) rotate(6deg); } }
   .hs-win-names { font-size: 19px; line-height: 1.1; color: #000; }
@@ -11653,7 +11657,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const names = (r.winners || []).map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ");
       if (r.winners) {
         const sub = r.uncontested ? "Everyone else folded!" : r.winners.length > 1 ? "They found the real answer and split the pot" : "Found the real answer!";
-        html += `<div class="hs-win"><span class="hs-win-shine"></span><img class="hs-win-trophy" src="icons/reactions/trophy.png" alt=""><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(r.share)} <span>coins</span></div><div class="hs-win-sub">${sub}</div></div>`;
+        const wav = r.winners.map((id) => `<span class="avatar">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("");
+        html += `<div class="hs-win"><span class="hs-win-shine"></span><div class="hs-win-who">${wav}${r.winners.length === 1 ? `<img class="hs-win-trophy" src="icons/reactions/trophy.png" alt="">` : ""}</div><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(r.share)} <img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="coins"></div><div class="hs-win-sub">${sub}</div></div>`;
       } else {
         html += `<div class="hs-win roll"><div class="hs-win-names">Nobody found it!</div><div class="hs-win-amt">${hsFmt(r.pot)} <span>rolls over</span></div><div class="hs-win-sub">The pot grows next round</div></div>`;
       }
