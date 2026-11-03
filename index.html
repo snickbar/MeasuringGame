@@ -973,6 +973,22 @@ if (location.protocol === "file:") {
   .hs-pot-lab { font-size: 12px; letter-spacing: 2px; color: #6b3a05; line-height: 1; }
   .hs-pot-num { font-size: 40px; line-height: 1; color: #000; text-shadow: 0 2px 0 rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
   .hs-coin { position: fixed; z-index: 100000; width: 26px; height: 26px; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+  /* The opening deal: a big pot of chips in the middle that empties into the player cards. */
+  .hs-deal-pot { position: relative; width: 210px; height: 210px; margin: clamp(22px, 7vh, 56px) auto 14px; box-sizing: border-box; border: 4px solid #4a2c12; border-radius: 50%; background: radial-gradient(circle at 32% 24%, #fff3b0, #f7c948 58%, #e0a520); box-shadow: 0 5px 0 rgba(74,44,18,.5), inset 0 0 22px rgba(255,255,255,.6); }
+  .hs-deal-stack { position: absolute; z-index: 2; top: 10px; left: 50%; width: 92px; height: 92px; margin-left: -46px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+  .hs-pile-chip { position: absolute; z-index: 1; width: 34px; height: 34px; margin: -17px 0 0 -17px; object-fit: contain; transform: rotate(var(--r, 0deg)); filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); transition: opacity .25s ease, transform .3s ease; }
+  .hs-pile-chip.gone { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.2); }
+  .hs-deal-num { position: absolute; z-index: 3; left: 0; right: 0; bottom: 14px; }
+  .hs-deal-num .hs-pot-num { font-size: 44px; }
+  @media (prefers-reduced-motion: reduce) { .hs-pile-chip { transition: none; } }
+  /* Betting: whose turn we're waiting on, boxed at the bottom. */
+  .hs-think { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 6px; padding: 8px 14px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#fffdf6, #f6ead0); box-shadow: 0 3px 0 rgba(74,44,18,.45); font-size: 16px; color: #000; }
+  .hs-think .avatar { flex: none; font-size: 34px; }
+  .hs-think-txt { min-width: 0; overflow-wrap: anywhere; text-align: left; line-height: 1.15; }
+  .hs-tdots i { display: inline-block; width: 4px; height: 4px; margin-left: 3px; border-radius: 50%; background: #4a2c12; animation: hsThinkDot 1.2s ease-in-out infinite; }
+  .hs-tdots i:nth-child(2) { animation-delay: .2s; } .hs-tdots i:nth-child(3) { animation-delay: .4s; }
+  @keyframes hsThinkDot { 0%, 70%, 100% { opacity: .25; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
+  @media (prefers-reduced-motion: reduce) { .hs-tdots i { animation: none; } }
   #hs-anim { max-width: 360px; margin: 4px auto 2px; border-radius: 12px; }
   .hs-win { position: relative; overflow: hidden; margin: 8px 0 2px; padding: 8px 10px 8px; border: 4px solid #b8860b; border-radius: 20px; background: linear-gradient(#fff6c8, #ffd23c 55%, #f2a60f); box-shadow: 0 0 0 3px #fff3b0, 0 0 26px rgba(255,200,40,.95), 0 5px 0 rgba(74,44,18,.5); animation: hsWinPop .55s cubic-bezier(.34,1.56,.64,1) both, hsWinGlow 1.4s ease-in-out .55s infinite; }
   @keyframes hsWinPop { 0% { transform: scale(.4) rotate(-4deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
@@ -11371,6 +11387,40 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (toEl.id !== "hs-pot") { try { playSound("select"); } catch (e) { /* sound is optional */ } }
     }));
   }
+  // The opening deal: the pot holds every player's starting coins and empties into their cards, chips flying one card at a time.
+  const HS_PILE = [[52, 100, -20], [76, 108, 12], [101, 111, -6], [126, 108, 16], [150, 100, -14], [64, 84, 20], [138, 84, -18], [88, 92, 8], [114, 92, -10], [101, 80, 4]];
+  let hsDealKey = null;
+  function hsDealAnim(order, hs, data) {
+    const potEl = hsContentEl.querySelector("#hs-pot");
+    if (!potEl) return;
+    const numEl = potEl.querySelector(".hs-pot-num"), pile = [...potEl.querySelectorAll(".hs-pile-chip")];
+    const cards = order.map((id) => { const el = hsContentEl.querySelector(`[data-hs-pl="${id}"]`), node = el?.querySelector(".hs-pl-coins")?.firstChild; return { el, node, amt: hs.chips[id] || 0 }; })
+      .filter((c) => c.el && c.node && c.node.nodeType === 3);
+    const total = cards.reduce((s, c) => s + c.amt, 0);
+    const paint = (vals) => {
+      const given = vals.reduce((s, v) => s + v, 0);
+      cards.forEach((c, i) => { c.node.nodeValue = hsFmt(vals[i]) + " "; });
+      numEl.textContent = hsFmt(total - given);
+      const keep = total ? Math.ceil(pile.length * (total - given) / total) : 0; // the heap thins out as the pot empties
+      pile.forEach((p, i) => p.classList.toggle("gone", i >= keep));
+    };
+    if (hsDealKey === data.gameId || prefersReducedMotion() || !total) { hsDealKey = data.gameId; paint(cards.map((c) => c.amt)); return; }
+    hsDealKey = data.gameId;
+    paint(cards.map(() => 0));
+    const hold = 500, gap = Math.min(520, 2400 / Math.max(1, cards.length)), t0 = performance.now() + hold;
+    cards.forEach((c, i) => {
+      setTimeout(() => hsFly(potEl, c.el, 3), hold + i * gap);
+      setTimeout(() => { if (c.el.isConnected) c.el.animate([{ transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }], { duration: 320, easing: "ease-out" }); }, hold + i * gap + 900);
+    });
+    const end = (cards.length - 1) * gap + 1050;
+    const step = (now) => {
+      if (!potEl.isConnected) return;
+      const el = now - t0;
+      paint(cards.map((c, i) => { const k = Math.max(0, Math.min(1, (el - i * gap - 250) / 800)); return Math.round(c.amt * (1 - Math.pow(1 - k, 2))); }));
+      if (el < end) requestAnimationFrame(step); else paint(cards.map((c) => c.amt));
+    };
+    requestAnimationFrame(step);
+  }
   function hsRenderInto(html, hs, data, animating, started = animating) {
     hsContentEl.innerHTML = html;
     hsRenderedAnimating = started;
@@ -11416,7 +11466,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = (roomState.players || {})[id];
     const out = !!hs.out?.[id];
     const coins = hs.chips[id] ?? 0;
-    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
+    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}" data-hs-pl="${id}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
   }
   // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
   function hsSlideStand() {
@@ -11503,13 +11553,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hsContentEl.innerHTML = html;
       return;
     }
+    const prevSig = hsContentEl.dataset.sig;
     delete hsContentEl.dataset.sig;
     if (stage === "ready") {
       const order = [...hs.seatsAll].sort((a, b) => (hs.chips[b] || 0) - (hs.chips[a] || 0));
+      if (!hs.round) {
+        // Opening deal screen: a redraw must not restart the chips mid-flight, so an unchanged screen is left alone.
+        const sig = `deal|${data.gameId}|${isHost}|${order.map((id) => id + ":" + (hs.chips[id] || 0)).join(",")}`;
+        if (prevSig === sig && hsContentEl.querySelector("#hs-pot")) { hsContentEl.dataset.sig = sig; return; }
+        hsContentEl.dataset.sig = sig;
+      }
+      const dealTotal = order.reduce((s, id) => s + (hs.chips[id] || 0), 0);
       html += `<h2 class="dc-title">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " coins"}</p>`;
-      html += hs.round ? `<p class="hs-hint">Dealing...</p>` : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>`;
+      html += hs.round ? `<p class="hs-hint">Dealing...</p>` : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>
+        <div class="hs-deal-pot" id="hs-pot"><img class="hs-deal-stack" src="icons/poker-chip-stack.webp" alt="" draggable="false">${HS_PILE.map(([x, y, r]) => `<img class="hs-pile-chip" src="icons/poker-chip-blue.webp" alt="" draggable="false" style="left:${x}px;top:${y}px;--r:${r}deg">`).join("")}<div class="hs-deal-num"><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(dealTotal)}</div></div></div>`;
       if (!hs.round) html += isHost ? `<button type="button" class="dc-btn" id="hs-deal">Deal round 1</button>` : `<p class="hs-hint">Waiting for the host to deal the first round...</p>`;
       hsContentEl.innerHTML = html;
+      if (!hs.round) hsDealAnim(order, hs, data);
       return;
     }
     // pick / bet / reveal: question on top, players down both sides, the 4 answers and a big pot in the middle.
@@ -11581,9 +11641,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="hs-acts hs-acts-mine"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
           ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
           ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div></div>`;
-      } else if (folded) html += `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>`;
-      else if (seated) html += `<p class="hs-hint">${b.turn ? escapeHtml(data.players?.[b.turn]?.name || "Someone") + " is deciding..." : ""}</p>`;
-      else html += `<p class="hs-hint">Watching &mdash; cheer the others on!</p>`;
+      } else {
+        // Waiting on someone else: a box at the bottom shows whose turn it is.
+        const tp = b.turn && b.turn !== me ? data.players?.[b.turn] : null;
+        const think = tp ? `<div class="hs-think"><span class="avatar">${avatarHtml(tp.avatar)}</span><span class="hs-think-txt"><b>${escapeHtml(tp.name || "Someone")}</b> is thinking<span class="hs-tdots"><i></i><i></i><i></i></span></span></div>` : "";
+        const note = folded ? `<p class="hs-hint">You folded &mdash; watch it play out and send a reaction.</p>` : seated ? "" : `<p class="hs-hint">Watching &mdash; cheer the others on!</p>`;
+        if (think || note) html += `<div class="pin-bottom">${think}${note}</div>`;
+      }
     } else if (revealing && !animating) {
       const r = hs.result;
       const names = (r.winners || []).map((id) => escapeHtml(data.players?.[id]?.name || "Gone")).join(" & ");
