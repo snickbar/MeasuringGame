@@ -5725,13 +5725,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const rndPoolOf = (cat, ownedIds) => { const eq = ownedIds.filter((id) => inRndPool(cat, id)); return eq.length ? eq : ownedIds; };
   let rndPick = {}, rndBgOwnedCount = -1;
   const rndOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  // Boards and backgrounds never repeat the previous round's pick when there is anything else to choose, so Random feels random.
+  const rndLast = {};
+  const rndOfNew = (cat, arr) => { const other = arr.length > 1 ? arr.filter((x) => x !== rndLast[cat]) : arr; return rndOf(other); };
   function rndGet(cat) {
     if (rndPick[cat] !== undefined) return rndPick[cat];
     let v = null;
-    if (cat === "boards") v = rndOf(rndPoolOf("boards", ["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard))));
+    if (cat === "boards") v = rndOfNew("boards", rndPoolOf("boards", ["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard))));
     else if (cat === "backgrounds") { // Match game mode ("none") and Plain are only picked when you have equipped them yourself
       const base = allBackgrounds().map((b) => b.id).filter(ownsBackground), extra = ["none", "plain"].filter((id) => inRndPool("backgrounds", id));
-      const eq = base.filter((id) => inRndPool("backgrounds", id)).concat(extra), ids = eq.length ? eq : base; v = ids.length ? rndOf(ids) : "none"; } // never picks "none": that shows the plain tan
+      const eq = base.filter((id) => inRndPool("backgrounds", id)).concat(extra), ids = eq.length ? eq : base; v = ids.length ? rndOfNew("backgrounds", ids) : "none"; } // never picks "none": that shows the plain tan
     else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
     else if (cat === "reactions") {
       // Locked reactions are always there; the open slots are filled at random from the equipped pool (or everything owned when none is equipped).
@@ -5741,6 +5744,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       v = locks.concat(own).slice(0, ownedReactionSlots());
     }
     rndPick[cat] = v;
+    if (cat === "boards" || cat === "backgrounds") rndLast[cat] = v;
     return v;
   }
   const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
