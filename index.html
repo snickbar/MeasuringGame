@@ -10599,7 +10599,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, 3) : [];
     daily = { date, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro" };
     daily.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
-    if (guesses.length >= 3 && !(saved && saved.done)) { await dailyFinish(); daily.phase = "done"; } // closed right after the last guess
+    if (guesses.length >= 3 && !(saved && saved.done)) { await dailyFinish(true); daily.phase = "done"; } // closed right after the last guess (recovery: shows the results, and only celebrates if it never did)
     renderDaily();
   }
   function dailyStop() { if (dailyAnim) { try { dailyAnim.destroy(); } catch (e) {} dailyAnim = null; } }
@@ -10772,11 +10772,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return { count, best: Math.max(cur.best || 0, count), last: date };
   }
   // Called once, as the third guess is locked in: saves the day, updates the streak and posts to the leaderboard.
-  async function dailyFinish() {
+  // The celebration (flair, coin burst, +coins note) plays once per day on this device, however many times the finished day is opened.
+  const dailyCelebrated = (date) => { try { return localStorage.getItem("mg_daily_celebrated") === date; } catch (e) { return false; } };
+  const dailyMarkCelebrated = (date) => { try { localStorage.setItem("mg_daily_celebrated", date); } catch (e) {} };
+  async function dailyFinish(recovery) {
     const accs=dailyAccuracies(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10,streak=dailyUpdateStreak(daily.date);
     // Replay (debug "play again"): today is already on the board and in history, so don't post, pay or extend anything a second time.
     const replay=!!(myProfile.dailyHistory&&myProfile.dailyHistory[daily.date]);
-    daily.bonus=replay?0:(DAILY_STREAK_BONUS[streak.count]||0);daily.justFinished=true;
+    daily.bonus=replay?0:(DAILY_STREAK_BONUS[streak.count]||0);daily.justFinished=!(recovery&&dailyCelebrated(daily.date));if(daily.justFinished)dailyMarkCelebrated(daily.date);if(!daily.justFinished)daily.bonus=0;
     if(replay){daily.replay=true;updateDailyBadge();return;}
     const name=(!currentName||checkName(currentName))?soloDisplayName():currentName.trim().slice(0,12);
     completedAttempt({key:'daily_'+daily.date,mode:'daily',date:daily.date,yesterday:dailyShiftDate(daily.date,-1),accuracy:total/3,perfect:accs.every((x)=>x>=90),
