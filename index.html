@@ -5139,6 +5139,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const offlineProfile = createOfflineProfile();
   let dbConnected = null; // null until Firebase reports; set from .info/connected below
   const isOffline = () => (typeof navigator !== "undefined" && navigator.onLine === false) || dbConnected === false;
+  // One short line saying how this phone sees its connection and account, shown on the save pill and in claim errors so a stuck save can be diagnosed.
+  const syncDiag = () => { try { return `db:${dbConnected === null ? "?" : dbConnected ? "on" : "off"} net:${navigator.onLine ? "on" : "off"} acct:${auth?.currentUser ? "in" : "guest"} dirty:${offlineProfile.isDirty(deviceId) ? 1 : 0}`; } catch (e) { return ""; } };
   const ref = (database, path) => {
     if (typeof path === "string" && localRooms.owns(path)) return localRooms.ref(path);
     const r = fbRef(database, path);
@@ -14616,8 +14618,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         try { renderCoinBalance(); } catch (e) {}
         achJustClaimed = null; delete achHold[id]; renderAchievementsScreen();
       }
-      showAchToast("Could not save that claim. Tap Claim again." + (err?.code ? " (" + String(err.code).slice(0, 40) + ")" : ""));
+      showAchToast("Could not save that claim. Tap Claim again." + (err?.code ? " (" + String(err.code).slice(0, 40) + ")" : "") + " [" + syncDiag() + "]");
     });
+    // If the saved copy comes back without the claim a few seconds later, say so with the connection state instead of silently undoing it.
+    setTimeout(() => { if (deviceId === claimOwner && !(myProfile.achClaimed || {})[id]) showAchToast("The claim was undone by the server copy. [" + syncDiag() + "]"); }, 6000);
     if(typeof uiDelight!=="undefined"&&uiDelight&&res?.committed&&newlyClaimed&&claimOwner===deviceId&&a.home){const home=homeScreenOf(a.home);if(home)uiDelight?.unlock({name:home.name+" home screen",image:home.file,wide:true,equip:()=>equipUnlockedCosmetic(claimOwner,{"cosmetics/equipped/homeScreen":home.id,"randomEquip/homeScreens":false})});}
     else if(typeof uiDelight!=="undefined"&&uiDelight&&res?.committed&&newlyClaimed&&claimOwner===deviceId&&a.bg)uiDelight?.unlock({name:a.bgLabel||"New scene",image:backgroundUrl(a.bg),wide:true,equip:()=>equipUnlockedCosmetic(claimOwner,{"cosmetics/equipped/background":a.bg,"randomEquip/backgrounds":false})});
   }
@@ -21365,7 +21369,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
 
   careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,isOffline()?{}:{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
-    onPending:(n,why)=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…'+(why?' ('+why+')':''):'';},
+    onPending:(n,why)=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…'+(why?' ('+why+')':''):'';node.dataset.diag=syncDiag();if(!node.onclick){node.style.pointerEvents='auto';node.onclick=()=>showAchToast(node.dataset.diag||'no info');}},
     onSaved:async (row,id)=>{if(id===deviceId&&['round','bluffRound'].includes(row.kind))objectMemory.observe(row.history?.u,row.history?.g,row.key);void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
