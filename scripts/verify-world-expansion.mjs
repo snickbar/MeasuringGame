@@ -67,9 +67,14 @@ ctx.unlockedFantasyIds=()=>Array(20).fill('unlocked');assert(api.worldUnlocked(a
 // Exercise the real achievement definitions and claim transaction, without Firebase.
 ctx.ACHIEVEMENTS=[];ctx.achHold={};ctx.ACH_HOLD_MS=0;ctx.setTimeout=()=>{};ctx.playSound=()=>{};ctx.db={};ctx.deviceId='test';
 ctx.ref=(_,path)=>path;ctx.defaultProfile=()=>({coins:0});ctx.defaultCosmeticState=()=>({owned:{},equipped:{}});
-ctx.runTransaction=async(_path,update)=>{ctx.myProfile=update(ctx.myProfile);return {committed:true};};
+const at=(path)=>path.split('/').slice(2);
+const getp=(o,ks)=>ks.reduce((v,k)=>v==null?v:v[k],o);
+const setp=(o,ks,val)=>{const out={...o};let n=out;ks.slice(0,-1).forEach(k=>{n[k]={...(n[k]||{})};n=n[k];});n[ks.at(-1)]=val;return out;};
+ctx.runTransaction=async(path,update)=>{const ks=at(path),next=update(getp(ctx.myProfile,ks)??null);if(next===undefined)return {committed:false};ctx.myProfile=setp(ctx.myProfile,ks,next);return {committed:true};};
+ctx.update=async(path,vals)=>{for(const [k,v] of Object.entries(vals))ctx.myProfile=setp(ctx.myProfile,k.split('/'),v);};
+ctx.remove=async()=>{};ctx.showAchToast=()=>{};ctx.renderAchievementsScreen=()=>{};
 const achStart=source.indexOf('  WORLDS.forEach((w) => {',source.indexOf('// Worlds: a star on the last level'));
-vm.runInContext('let achJustClaimed=null;\n'+source.slice(achStart,source.indexOf('\n  });',achStart)+6)+'\n'+fn('achDone')+'\n'+fn('achClaimable')+'\n'+fn('claimAchievement')+'\nglobalThis.claim=claimAchievement;',ctx);
+vm.runInContext('let achJustClaimed=null;const achClaiming=new Set();\n'+source.slice(achStart,source.indexOf('\n  });',achStart)+6)+'\n'+fn('achDone')+'\n'+fn('achClaimable')+'\n'+fn('claimAchievement')+'\nglobalThis.claim=claimAchievement;',ctx);
 ctx.myProfile={coins:7,worlds:{},achClaimed:{},cosmetics:{owned:{homeScreens:{space:true,ants:true}},equipped:{homeScreen:'space'}}};
 for(const [id,home]of [['under-the-sea','underwater'],['toy-box','toy-box'],['make-believe','make-believe'],['holiday-mix','holiday-mix']]){
   const beat=ctx.ACHIEVEMENTS.find(a=>a.id==='world-beat-'+id),perfect=ctx.ACHIEVEMENTS.find(a=>a.id==='world-perfect-'+id);
