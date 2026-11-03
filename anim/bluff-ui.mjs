@@ -229,6 +229,11 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   }
   function refresh(){const {room,leaving}=context();if(room?.phase==='bluff'&&!leaving){render();if(!handle)handle=setInterval(()=>{const c=context();if(c.leaving||c.room?.phase!=='bluff'){refresh();return;}clock();void advance();},300);void advance();}else{cancelRevealTimers();if(handle)clearInterval(handle);handle=null;signature='';animationStop?.();animationKey='';animationStop=null;animationNode=null;}}
   new MutationObserver(()=>refresh()).observe(element.parentElement,{attributes:true,attributeFilter:['class']});
-  element.ownerDocument.addEventListener('visibilitychange',()=>{if(busy&&now()-busySince>8000){busy=false;signature='';}refresh();});
+  // A phone can silently kill a long-running setInterval while the app is minimized; refresh() alone would keep the dead handle,
+  // freezing the clock at 0s and the host's advance step. Coming back always restarts the loop.
+  function resume(){if(handle){clearInterval(handle);handle=null;}if(busy&&now()-busySince>8000){busy=false;}signature='';refresh();}
+  element.ownerDocument.addEventListener('visibilitychange',()=>{if(busy&&now()-busySince>8000){busy=false;signature='';}if(element.ownerDocument.hidden)refresh();else resume();});
+  element.ownerDocument.defaultView?.addEventListener('size-em-up:app-active',resume);
+  element.ownerDocument.defaultView?.addEventListener('pageshow',()=>resume());
   return {refresh,advance};
 }

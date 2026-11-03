@@ -11091,6 +11091,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (on && !hsTickHandle) hsTickHandle = setInterval(() => { hsRefreshTimers(); if (isHost) hsHostTick(); }, 150);
     if (!on && hsTickHandle) { clearInterval(hsTickHandle); hsTickHandle = null; }
   }
+  // A phone can silently kill a running setInterval while the app is minimized; coming back always restarts the High Stakes loop.
+  function hsResumeTicker() { if (!hsTickHandle) return; clearInterval(hsTickHandle); hsTickHandle = null; hsEnsureTicker(true); }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) hsResumeTicker(); });
+  window.addEventListener("size-em-up:app-active", hsResumeTicker);
   function hsRefreshTimers() {
     // A fake answer typed but never sent goes in just before the fake-answer clock ends, so it still counts.
     if (roomState?.hsPre && hsFakeStr && roomState.hsFakes?.[currentPlayerId] === undefined && nowMs() >= roomState.hsPre.endsAt - 1200 && nowMs() < roomState.hsPre.endsAt) hsSendFake();
