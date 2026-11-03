@@ -65,7 +65,7 @@ ctx.myProfile.worlds={home:{l1:1}};assert(api.worldUnlocked(api.WORLDS.findIndex
 ctx.unlockedFantasyIds=()=>Array(20).fill('unlocked');assert(api.worldUnlocked(api.WORLDS.findIndex(w=>w.id==='make-believe')),'fantasy unlock remains independent');
 
 // Exercise the real achievement definitions and claim transaction, without Firebase.
-ctx.ACHIEVEMENTS=[];ctx.achHold={};ctx.ACH_HOLD_MS=0;ctx.setTimeout=()=>{};ctx.playSound=()=>{};ctx.db={};ctx.deviceId='test';
+ctx.ACHIEVEMENTS=[];ctx.achChainOpen=()=>true;ctx.achHold={};ctx.ACH_HOLD_MS=0;ctx.setTimeout=()=>{};ctx.playSound=()=>{};ctx.db={};ctx.deviceId='test';
 ctx.ref=(_,path)=>path;ctx.defaultProfile=()=>({coins:0});ctx.defaultCosmeticState=()=>({owned:{},equipped:{}});
 const at=(path)=>path.split('/').slice(2);
 const getp=(o,ks)=>ks.reduce((v,k)=>v==null?v:v[k],o);

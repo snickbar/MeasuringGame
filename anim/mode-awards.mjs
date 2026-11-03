@@ -1,3 +1,4 @@
+import { ROMAN_SUFFIX, escalateSteps } from './award-tiers.mjs';
 // Dedicated awards use durable career totals, not the capped recent-game lists.
 export const MODE_AWARD_CATEGORIES = ['Team vs Team', 'Team Worlds', 'High/Low Survival', 'High Stakes', 'Daily'];
 const count = value => Math.max(0, Number(value) || 0);
@@ -44,10 +45,11 @@ export function createModeAwards(getProfile) {
       n => `Complete ${n} Daily Challenges`,
       p => Math.max(count(p.stats?.dailies), count(p.modeStats?.daily?.attempts), values(p.dailyHistory).length), 'icons/toolbar-daily.png'],
   ];
+  // Each family keeps its three hand-made tiers (same ids) and then keeps escalating; only the next unclaimed tier is shown.
   return families.flatMap(([id, cat, name, targets, rewards, describe, progress, icon]) =>
-    targets.map((target, tier) => ({
-      id: `mode-${id}-${target}`, cat, name: name + ['', ' II', ' III'][tier],
-      desc: describe(target), target, reward: rewards[tier], icon,
+    escalateSteps(targets.map((t, i) => [t, rewards[i]]), { ratio: 1.5 }).map(([target, reward], tier) => ({
+      id: `mode-${id}-${target}`, cat, name: name + ROMAN_SUFFIX[tier], chain: `mode-${id}`,
+      desc: describe(target), target, reward, icon, tier,
       progress: () => progress(getProfile() || {}),
     })));
 }

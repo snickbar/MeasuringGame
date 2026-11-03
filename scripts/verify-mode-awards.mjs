@@ -7,8 +7,8 @@ import {applyCareerRecord} from '../anim/career-ledger.mjs';
 let profile = {coins: 0};
 const awards = createModeAwards(() => profile);
 const award = id => awards.find(a => a.id === `mode-${id}`);
-assert.equal(awards.length, 30);
-assert.equal(new Set(awards.map(a => a.id)).size, 30);
+assert.equal(awards.length, 100, "ten families, ten escalating tiers each");
+assert.equal(new Set(awards.map(a => a.id)).size, 100);
 assert.deepEqual([...new Set(awards.map(a => a.cat))], MODE_AWARD_CATEGORIES);
 for (const a of awards) {
   assert.equal(a.progress(), 0);
@@ -59,7 +59,7 @@ const source = fs.readFileSync('index.html', 'utf8');
 profile = {coins: 100, modeStats: {highstakes: {wins: 1}}};
 let stored = structuredClone(profile);
 const context = vm.createContext({
-  ACHIEVEMENTS: awards, achClaimable: a => a.progress() >= a.target && !stored.achClaimed?.[a.id],
+  ACHIEVEMENTS: awards, achChainOpen: () => true, achClaimable: a => a.progress() >= a.target && !stored.achClaimed?.[a.id],
   achJustClaimed: null, achHold: {}, ACH_HOLD_MS: 1600,
   setTimeout() {}, playSound() {}, ref: (_, path) => path, db: {}, deviceId: 'test',
   achClaiming: new Set(), showAchToast() {}, renderAchievementsScreen() {}, remove: async () => {}, renderCoinBalance() {},
@@ -80,4 +80,4 @@ await context.claimAchievement('mode-high-roller-5');
 assert.equal(stored.coins, 125, 'locked tier cannot pay');
 assert.match(source, /ACHIEVEMENTS\.push\(\.\.\.createModeAwards\(\(\) => myProfile\)\)/);
 assert.match(source, /\.\.\.MODE_AWARD_CATEGORIES/);
-console.log('PASS: 30 mode awards, historical progress, exact star boundary, completion rules, artwork and one-time real claim transaction.');
+console.log('PASS: 100 mode awards, historical progress, exact star boundary, completion rules, artwork and one-time real claim transaction.');
