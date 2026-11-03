@@ -11266,7 +11266,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isHost || hsBusy || roomState.paused) return;
     const hs = roomState.hs; if (!hs) return;
     const now = nowMs(), players = roomState.players || {};
-    const run = (p) => { hsBusy = true; Promise.resolve(p).catch((e) => console.warn("[high-stakes]", e)).finally(() => { hsBusy = false; }); };
+    // A write caught in flight when the phone minimizes the app can never settle; without a deadline hsBusy would stay on and freeze the table.
+    const run = (p) => {
+      hsBusy = true; const mine = ++hsBusyTok;
+      const release = () => { if (hsBusyTok === mine) hsBusy = false; };
+      const dl = setTimeout(release, 6000);
+      Promise.resolve(p).catch((e) => console.warn("[high-stakes]", e)).finally(() => { clearTimeout(dl); release(); });
+    };
     if (hs.stage === "ready") {
       if (hs.waitHost || now < (hs.nextAt || 0)) return;
       const fakers = hsFakers(hs);
@@ -11604,6 +11610,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const list = hsContentEl.querySelector(".hs-stand"), rows = list ? list.children : [];
     if (rows.length > 1) list.style.setProperty("--step", (rows[1].offsetTop - rows[0].offsetTop) + "px");
   }
+  let hsStandSig = "", hsBusyTok = 0;
   function hsStandingsHtml(hs, data, me) {
     const rows = HS.hsStandings(hs);
     setTimeout(hsSlideStand, 0);
@@ -11715,6 +11722,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hsRenderedStandings = false;
     if (revealing && !animating && hsStandingsNow(hs)) {
       hsRenderedStandings = true;
+      // A redraw of identical standings (room updates pile up while the app is minimized) must not replay the slide-in.
+      const standSig = `${data.gameId}|${hs.round}|${isHost}|${HS.hsFinishRound(hs).stage}|` + HS.hsStandings(hs).map((r) => `${r.id}:${r.rank}:${r.coins}:${r.out ? 1 : 0}:${data.players?.[r.id]?.name || ""}:${data.players?.[r.id]?.avatar || ""}`).join(",");
+      if (hsStandSig === standSig && hsContentEl.querySelector(".hs-stand")) return;
+      hsStandSig = standSig;
       html += `<h2 class="dc-title">After round ${hs.round}</h2>` + hsStandingsHtml(hs, data, me);
       html += isHost ? `<button type="button" class="dc-btn" id="hs-skip">${HS.hsFinishRound(hs).stage === "over" ? "Finish game" : "Start next round"}</button>` : `<p class="hs-hint">Waiting for the host to ${HS.hsFinishRound(hs).stage === "over" ? "finish the game" : "start the next round"}...</p>`;
       hsRenderInto(html, hs, data, false, false);
