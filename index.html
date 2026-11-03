@@ -10327,7 +10327,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
   }
   // ---- Quick Game: leaving mid-game keeps it (paused, on this phone) so it can be resumed from the Solo hub ----
-  const QUICK_PLAYING = ["question", "answers", "animation", "reveal", "summary"];
+  const QUICK_PLAYING = ["countdown", "question", "answers", "animation", "reveal", "summary"]; // countdown = the 3-2-1 before each round
   const quickKey = () => "mg_resume_" + deviceId + "_quick";
   const quickCanSave = () => !!(isHost && roomState?.settings?.solo && QUICK_PLAYING.includes(roomState.phase));
   function readQuickSaved() {
@@ -10339,7 +10339,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const QUICK_LEAVE_TEXT = ["Leave for now?", "Your progress is saved, so you can pick this up again later. Are you sure you want to leave?"];
   async function quickSaveAndLeave() {
     const code = currentRoomCode, id = currentPlayerId, t = nowMs();
-    const info = { code, name: roomState.players?.[id]?.name || currentName || "Player", round: roomState.round || 1, total: roomState.settings?.totalRounds || 5, t };
+    const info = { code, name: roomState.players?.[id]?.name || currentName || "Player", round: (roomState.phase === "countdown" ? roomState.countdownRound : roomState.round) || 1, total: roomState.settings?.totalRounds || 5, t };
     cancelRevealEffects();
     leavingGame = true; // first: silence the room listener, or the seat change below would look like a host dropping out
     // Paused (every deadline is shifted when it resumes) with your seat held open, exactly like a dropped connection.
@@ -18055,6 +18055,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         updates.questionEndsAt = roomState.questionEndsAt + pauseDurationMs;
         scheduleHostDeadline(updates.questionEndsAt, () => checkQuestionAdvance(currentRoomCode));
       }
+    } else if (roomState.phase === "countdown" && roomState.countdownEndsAt) {
+      updates.countdownEndsAt = roomState.countdownEndsAt + pauseDurationMs;
+      scheduleHostDeadline(updates.countdownEndsAt, () => checkCountdownAdvance(currentRoomCode));
     } else if (roomState.phase === "answers") {
       updates.answersEndsAt = roomState.answersEndsAt + pauseDurationMs;
       scheduleHostDeadline(updates.answersEndsAt, () => checkAnswersAdvance(currentRoomCode));
