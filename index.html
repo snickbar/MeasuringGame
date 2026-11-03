@@ -5145,14 +5145,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A profile that grows without limit makes every save and every reconnect re-send it all; this shows the size and the three biggest parts.
   const profileSizeDiag = () => { try { const p = myProfile || {}, sizes = Object.entries(p).map(([k, v]) => [k, JSON.stringify(v ?? null).length]).sort((a, b) => b[1] - a[1]); const total = sizes.reduce((n, x) => n + x[1], 0); return `size:${Math.round(total / 1024)}KB (${sizes.slice(0, 3).map(([k, n]) => k + " " + Math.round(n / 1024) + "KB").join(", ")})`; } catch (e) { return ""; } };
   // Read-modify-save for the profile without a transaction: apply fn to the current copy and send only what changed.
-  // fn may return undefined to change nothing. Resolves like a transaction: { committed, snapshot }.
-  async function changeProfile(id, fn) {
-    const current = (await get(ref(db, "profiles/" + id))).val();
-    if (!current) throw Error("Profile not ready");
+  // fn may return undefined to change nothing. Resolves like a transaction: { committed, snapshot }. Calls for one profile run
+  // one after another so two saves never read the same old copy. allowCreate lets fn start from null (a brand new profile).
+  const profileChain = new Map();
+  let profileSizeWarned = false;
+  function changeProfile(id, fn, opts) {
+    const run = (profileChain.get(id) || Promise.resolve()).catch(() => {}).then(() => changeProfileNow(id, fn, opts));
+    profileChain.set(id, run);
+    return run;
+  }
+  async function changeProfileNow(id, fn, opts) {
+    const profileRef = ref(db, "profiles/" + id);
+    const current = (await get(profileRef)).val();
+    if (!current) {
+      if (!(opts && opts.allowCreate)) throw Error("Profile not ready");
+      const first = fn(null);
+      if (first === undefined || first === null) return { committed: false, snapshot: { val: () => null } };
+      await set(profileRef, first);
+      return { committed: true, snapshot: { val: () => first } };
+    }
     const next = fn(structuredClone(current));
     if (next === undefined || next === null) return { committed: false, snapshot: { val: () => current } };
+    if (!profileSizeWarned) { profileSizeWarned = true; try { const kb = JSON.stringify(current).length / 1024; if (kb > 500) console.warn("[measuring-game] profile is " + Math.round(kb) + "KB - it is growing without a cap"); } catch (e) {} }
     const changes = diffPaths(current, next);
-    if (Object.keys(changes).length) await update(ref(db, "profiles/" + id), changes);
+    if (Object.keys(changes).length) await update(profileRef, changes);
     return { committed: true, snapshot: { val: () => next } };
   }
   const ref = (database, path) => {
@@ -5213,6 +5229,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (res.committed) refreshFromLocalProfile(op.id);
       return Promise.resolve({ committed: res.committed, snapshot: localSnap(r.__path, res.value) });
     }
+    // SAFEGUARD: a transaction on a whole profile cannot be trusted (it ended in "maxretry" and froze saves, claims and lobbies), so every one
+    // is turned into a read, change and small update, whoever calls it. scripts/verify-no-profile-transactions.mjs keeps this in place.
+    if (r && r.__path && /^profiles\/[^/]+$/.test(r.__path)) return changeProfile(r.__path.split("/")[1], fn, { allowCreate: true });
     return fbRunTransaction(r, fn, opts);
   };
   // Sends the offline changes to the server once, safely merged with whatever it has now.
