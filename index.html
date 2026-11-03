@@ -5106,6 +5106,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
   import { createLocalRooms } from "./anim/local-rooms.mjs";
   import { createOfflineProfile } from "./anim/offline-profile.mjs";
+  import { diffPaths } from "./anim/profile-diff.mjs";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
   // own npm package wants) - these CDN modules only guarantee mutual
@@ -5143,6 +5144,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const syncDiag = () => { try { return `db:${dbConnected === null ? "?" : dbConnected ? "on" : "off"} net:${navigator.onLine ? "on" : "off"} acct:${auth?.currentUser ? "in" : "guest"} dirty:${offlineProfile.isDirty(deviceId) ? 1 : 0} ${profileSizeDiag()}`; } catch (e) { return ""; } };
   // A profile that grows without limit makes every save and every reconnect re-send it all; this shows the size and the three biggest parts.
   const profileSizeDiag = () => { try { const p = myProfile || {}, sizes = Object.entries(p).map(([k, v]) => [k, JSON.stringify(v ?? null).length]).sort((a, b) => b[1] - a[1]); const total = sizes.reduce((n, x) => n + x[1], 0); return `size:${Math.round(total / 1024)}KB (${sizes.slice(0, 3).map(([k, n]) => k + " " + Math.round(n / 1024) + "KB").join(", ")})`; } catch (e) { return ""; } };
+  // Read-modify-save for the profile without a transaction: apply fn to the current copy and send only what changed.
+  // fn may return undefined to change nothing. Resolves like a transaction: { committed, snapshot }.
+  async function changeProfile(id, fn) {
+    const current = (await get(ref(db, "profiles/" + id))).val();
+    if (!current) throw Error("Profile not ready");
+    const next = fn(structuredClone(current));
+    if (next === undefined || next === null) return { committed: false, snapshot: { val: () => current } };
+    const changes = diffPaths(current, next);
+    if (Object.keys(changes).length) await update(ref(db, "profiles/" + id), changes);
+    return { committed: true, snapshot: { val: () => next } };
+  }
   const ref = (database, path) => {
     if (typeof path === "string" && localRooms.owns(path)) return localRooms.ref(path);
     const r = fbRef(database, path);
@@ -5210,8 +5222,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (profileMerging || !offlineProfile.isDirty(id) || isOffline()) return;
     profileMerging = true;
     try {
-      const res = await fbRunTransaction(fbRef(db, `profiles/${id}`), offlineProfile.mergeInto(id));
-      offlineProfile.markSynced(id, res.snapshot.val()); // committed, or already merged by an earlier attempt
+      // Read, merge, and send only the differences. (The old whole-profile transaction ended in "maxretry" and left this
+      // phone showing its stale offline copy forever.)
+      const profileRef = fbRef(db, `profiles/${id}`);
+      const serverNow = (await fbGet(profileRef)).val();
+      const merged = offlineProfile.mergeInto(id)(serverNow);
+      if (merged !== undefined) {
+        if (serverNow === null) await fbSet(profileRef, merged);
+        else { const changes = diffPaths(serverNow, merged); if (Object.keys(changes).length) await fbUpdate(profileRef, changes); }
+      }
+      offlineProfile.markSynced(id, merged !== undefined ? merged : serverNow); // saved, or already merged by an earlier attempt
     } catch (err) { /* still offline or interrupted: tried again at the next reconnect */ }
     finally { profileMerging = false; }
   }
@@ -15250,7 +15270,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const earned = await showFakeAd();
           if (!earned || deviceId !== owner) return false;
           const reward = {mode,rewardId:crypto.randomUUID(),now:Date.now(),day:todayDateStr()};
-          const grant = await runTransaction(ref(db,'profiles/'+owner),p=>grantHostAdGame(p,reward));
+          const grant = await changeProfile(owner,p=>grantHostAdGame(p,reward));
           if (deviceId !== owner) return false;
           if (!grant.snapshot.val()?.hostUnlocked && !hasHostAdGame(grant.snapshot.val(),mode)) return false;
           showAchToast('Extra game ready! It is used when your game starts.');
@@ -16560,14 +16580,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (mode) {
         // The free-game reservation is bookkeeping: if it can't be written (offline blip, auth hiccup) the game still starts.
         try {
-          let attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
+          let attempt = await changeProfile(owner, p=>reserveHostStart(p,ticket));
           let profile = attempt.snapshot.val();
           if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) {
             // Today's free game is spent (e.g. "Play again" in the same room). Offer the same choices as creating a room -
             // watch an ad for one more game, or unlock for good - instead of silently doing nothing.
             const granted = await confirmAndPurchaseHostUnlock(mode);
             if (!granted || deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
-            attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
+            attempt = await changeProfile(owner, p=>reserveHostStart(p,ticket));
             profile = attempt.snapshot.val();
             if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) return;
           }
@@ -16580,13 +16600,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
       }
       begun = !!(await beginGameNow());
-      if (reserved && begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true));
+      if (reserved && begun) await changeProfile(owner,p=>finishHostStart(p,ticket,true));
     } catch (error) {
       console.error('startGameNow failed', error);
       showAchToast(begun ? 'The game started. Reconnecting to save your free-game use.' : 'Could not start the game. Please try again.' + (error?.code || error?.message ? ' (' + String(error.code || error.message).slice(0, 60) + ')' : ''));
-      if (reserved && begun) void runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true)).catch(()=>{});
+      if (reserved && begun) void changeProfile(owner,p=>finishHostStart(p,ticket,true)).catch(()=>{});
     } finally {
-      if (reserved && !begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,false)).catch(()=>{});
+      if (reserved && !begun) await changeProfile(owner,p=>finishHostStart(p,ticket,false)).catch(()=>{});
       startingGame = false;
     }
   }
@@ -21370,7 +21390,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Retry old pending receipts even when the profile itself has not changed.
   setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
 
-  careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,isOffline()?{}:{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
+  careerLedger=createCareerLedger({owner:()=>deviceId,transaction:(id,fn)=>changeProfile(id,fn),
     onPending:(n,why)=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…'+(why?' ('+why+')':''):'';node.dataset.diag=syncDiag();if(!node.onclick){node.style.pointerEvents='auto';node.onclick=()=>showAchToast(node.dataset.diag||'no info');}},
     onSaved:async (row,id)=>{if(id===deviceId&&['round','bluffRound'].includes(row.kind))objectMemory.observe(row.history?.u,row.history?.g,row.key);void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
