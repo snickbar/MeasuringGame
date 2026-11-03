@@ -9815,6 +9815,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!owner) return;
     qFitKey = owner.id + "|" + window.innerHeight + "|" + (maxH || 0);
     const m = qFit[qFitKey] || (qFit[qFitKey] = { h: qBoardBaseH(maxH), bad: 9999, base: qBoardBaseH(maxH) });
+    // A new question forgets the "this size overflowed" mark, so one cramped round (a taller side panel, a toast) doesn't leave the
+    // board small for the rest of the game; if the larger size really doesn't fit, the next fit pass steps back down.
+    if (m.text !== text) { m.text = text; m.bad = 9999; }
     if (qCardH !== m.h) qBoardSetH(m.h);
     requestAnimationFrame(() => requestAnimationFrame(() => getPlayLayout().measure()));
   }
