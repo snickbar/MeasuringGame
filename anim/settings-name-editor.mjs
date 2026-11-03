@@ -1,7 +1,7 @@
 // A draft-only editor. Only the game's keyboard can change the displayed name;
-// committing happens once, through Save (or the keyboard's Save key).
+// committing happens once, through Save (the third button in the bar above the keyboard).
 export function mountSettingsNameEditor({ screen, input, button, panel, keyboard,
-  status, clear, cancel, getName, saveName, validateName, renderKeyboard }) {
+  status, clear, cancel, saveButton, getName, saveName, validateName, renderKeyboard }) {
   let editing = false;
   input.readOnly = true;
   input.inputMode = 'none';
@@ -52,9 +52,9 @@ export function mountSettingsNameEditor({ screen, input, button, panel, keyboard
     input.setAttribute('aria-invalid', 'false');
   });
   cancel.addEventListener('click', () => close({ focus: true }));
-  renderKeyboard(keyboard, input, { maxLength: 12, onDone: save });
-  const done = keyboard.querySelector('[data-action="done"]');
-  done.textContent = 'Save';
+  saveButton.addEventListener('click', save);
+  renderKeyboard(keyboard, input, { maxLength: 12, caps: true });
+  const capsKey = keyboard.querySelector('[data-action="caps"]');
   const space = keyboard.ownerDocument.createElement('button');
   space.type = 'button';
   space.className = 'kbd-key kbd-key-space';
@@ -65,7 +65,7 @@ export function mountSettingsNameEditor({ screen, input, button, panel, keyboard
     input.value += ' ';
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  done.before(space);
+  capsKey.before(space);
   new MutationObserver(() => {
     if (editing && !screen.classList.contains('active')) close();
   }).observe(screen, { attributes: true, attributeFilter: ['class'] });
