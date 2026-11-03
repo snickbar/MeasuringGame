@@ -51,7 +51,7 @@ assert(!actual('hostExit').includes('careerLedger.save'));assert(!actual('guestE
 const classList=()=>{const values=new Set();return {toggle:(key,on)=>on?values.add(key):values.delete(key),contains:key=>values.has(key)}};
 const toolbar={classList:classList()},tabs=[{classList:classList()},{classList:classList()}],content={};
 const awards=vm.createContext({myProfile:{achClaimed:{}},ACHIEVEMENTS:[{id:'one',cat:'Test',name:'One',desc:'Test',target:1,reward:15,progress:()=>1}],
-  ACH_CATS:['Test'],ACH_ICON_IDS:new Set(),TROPHY_SVG:'',achHideDone:false,achJustClaimed:null,achHold:{},escapeHtml:String,
+  ACH_CATS:['Test'],achChainOpen:()=>true,ACH_ICON_IDS:new Set(),TROPHY_SVG:'',achHideDone:false,achJustClaimed:null,achHold:{},escapeHtml:String,
   document:{getElementById:id=>id==='achievements-content'?content:toolbar,querySelectorAll:()=>tabs}});
 for(const name of ['achDone','achClaimable'])vm.runInContext(source.match(new RegExp('  function '+name+'\\([^\\n]+'))[0],awards);
 vm.runInContext(actual('updateCareerDot')+'\n'+actual('renderAchievementsScreen'),awards);
