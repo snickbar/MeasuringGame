@@ -59,16 +59,18 @@ const source = fs.readFileSync('index.html', 'utf8');
 profile = {coins: 100, modeStats: {highstakes: {wins: 1}}};
 let stored = structuredClone(profile);
 const context = vm.createContext({
-  ACHIEVEMENTS: awards, achClaimable: a => a.progress() >= a.target && !profile.achClaimed?.[a.id],
+  ACHIEVEMENTS: awards, achClaimable: a => a.progress() >= a.target && !stored.achClaimed?.[a.id],
   achJustClaimed: null, achHold: {}, ACH_HOLD_MS: 1600,
   setTimeout() {}, playSound() {}, ref: (_, path) => path, db: {}, deviceId: 'test',
-  achClaiming: new Set(), showAchToast() {}, renderAchievementsScreen() {}, myProfile: {}, update: async () => {}, remove: async () => {},
+  achClaiming: new Set(), showAchToast() {}, renderAchievementsScreen() {}, remove: async () => {}, renderCoinBalance() {},
+  update: async (_, vals) => {for (const [k, v] of Object.entries(vals)) { const ks = k.split('/'); let n = stored; for (const x of ks.slice(0, -1)) n = n[x] = n[x] || {}; n[ks.at(-1)] = v; }},
   runTransaction: async (path, change) => {
     const keys = path.split('/').slice(2); let node = stored; for (const k of keys.slice(0, -1)) node = node[k] = node[k] || {};
     const next = change(node[keys.at(-1)] ?? null); if (next === undefined) return {committed: false};
     node[keys.at(-1)] = next; return {committed: true};
   },
 });
+Object.defineProperty(context, 'myProfile', {get: () => stored, set: v => { stored = v; }});
 vm.runInContext(source.match(/  async function claimAchievement\(id\) \{[\s\S]*?\n  \}/)[0], context);
 await context.claimAchievement('mode-high-roller-1');
 await context.claimAchievement('mode-high-roller-1');

@@ -72,7 +72,7 @@ const getp=(o,ks)=>ks.reduce((v,k)=>v==null?v:v[k],o);
 const setp=(o,ks,val)=>{const out={...o};let n=out;ks.slice(0,-1).forEach(k=>{n[k]={...(n[k]||{})};n=n[k];});n[ks.at(-1)]=val;return out;};
 ctx.runTransaction=async(path,update)=>{const ks=at(path),next=update(getp(ctx.myProfile,ks)??null);if(next===undefined)return {committed:false};ctx.myProfile=setp(ctx.myProfile,ks,next);return {committed:true};};
 ctx.update=async(path,vals)=>{for(const [k,v] of Object.entries(vals))ctx.myProfile=setp(ctx.myProfile,k.split('/'),v);};
-ctx.remove=async()=>{};ctx.showAchToast=()=>{};ctx.renderAchievementsScreen=()=>{};
+ctx.remove=async()=>{};ctx.renderCoinBalance=()=>{};ctx.showAchToast=()=>{};ctx.renderAchievementsScreen=()=>{};
 const achStart=source.indexOf('  WORLDS.forEach((w) => {',source.indexOf('// Worlds: a star on the last level'));
 vm.runInContext('let achJustClaimed=null;const achClaiming=new Set();\n'+source.slice(achStart,source.indexOf('\n  });',achStart)+6)+'\n'+fn('achDone')+'\n'+fn('achClaimable')+'\n'+fn('claimAchievement')+'\nglobalThis.claim=claimAchievement;',ctx);
 ctx.myProfile={coins:7,worlds:{},achClaimed:{},cosmetics:{owned:{homeScreens:{space:true,ants:true}},equipped:{homeScreen:'space'}}};

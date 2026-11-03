@@ -196,7 +196,7 @@ export function applyCareerRecord(profile,record){
 // Completed rounds and seen pairs survive abandoning a game, while only a
 // final match record can increase completed games or wins.
 export function createCareerLedger({owner,transaction,storage=localStorage,onPending=()=>{},onSaved=()=>{}}){
-  let flushing=null;
+  let flushing=null,lastError='';
   const storageKey=id=>'mg_career_pending_'+id;
   function read(id){try{return JSON.parse(storage.getItem(storageKey(id))||'[]');}catch{return [];}}
   function write(id,rows){storage.setItem(storageKey(id),JSON.stringify(rows));if(owner()===id)onPending(rows.length);}
@@ -208,11 +208,22 @@ export function createCareerLedger({owner,transaction,storage=localStorage,onPen
       while(rows.length){
         const row=rows[0];
         if(isRetiredMonthlyRecord(row)){rows=read(id).filter(r=>r.key!==row.key);write(id,rows);continue;}
-        await transaction(id,p=>applyCareerRecord(p,row));
+        // A row the code itself cannot apply (a bad record) must not block every row behind it forever: after 3 tries it is dropped.
+        let bad=null;
+        await transaction(id,p=>{try{return applyCareerRecord(p,row);}catch(e){bad=e;return undefined;}});
+        if(bad){
+          console.warn('career row could not be applied',row.key,bad);
+          const all=read(id),mine=all.find(r=>r.key===row.key);
+          if(mine){mine.tries=(mine.tries||0)+1;write(id,mine.tries>=3?all.filter(r=>r.key!==row.key):all);}
+          rows=read(id);
+          if(!mine||mine.tries<3)throw bad;
+          continue;
+        }
         await onSaved(row,id);
         rows=read(id).filter(r=>r.key!==row.key);write(id,rows);
       }
-    }catch{onPending(read(id).length);}}).finally(()=>{flushing=null;});
+      lastError='';
+    }catch(error){lastError=String(error?.code||error?.message||error).slice(0,40);console.warn('career save failed',error);onPending(read(id).length,lastError);}}).finally(()=>{flushing=null;});
     return flushing;
   }
   function save(row){
@@ -220,5 +231,5 @@ export function createCareerLedger({owner,transaction,storage=localStorage,onPen
     const rows=read(id);if(!rows.some(r=>r.key===row.key)){rows.push(JSON.parse(JSON.stringify(row)));write(id,rows);}
     void flush();
   }
-  return {save,flush,pending:()=>read(owner()).length};
+  return {save,flush,pending:()=>read(owner()).length,lastError:()=>lastError};
 }

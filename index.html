@@ -14596,35 +14596,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(() => { delete achHold[id]; if (document.getElementById("achievements-content")) renderAchievementsScreen(); }, ACH_HOLD_MS + 50);
     playSound("roundwin");
     if (typeof flyCoinsToToolbar === "function") flyCoinsToToolbar(a.reward, { early: true });  // coins leave the Claim button the moment it's tapped, not after the save
-    // Small targeted writes instead of one transaction over the whole profile: a big profile that changes under it (or a stale local copy) made that
-    // transaction abort, so the coins flew but the award never saved. The marker goes first so a double tap can never pay twice.
+    // Claim like the rest of the app writes: show it claimed at once, then save in the background. A transaction needs a live server round trip,
+    // so on a shaky connection it hung forever (coins flew, the award never changed). update() applies locally right away and syncs when it can.
     const base = `profiles/${deviceId}`;
-    let res = null, newlyClaimed = false;
-    try {
-      res = await runTransaction(ref(db, `${base}/achClaimed/${id}`), (cur) => (cur ? undefined : true));
-      newlyClaimed = !!res.committed;
-      if (newlyClaimed) {
-        const extra = {};
-        if (a.bg) extra[`cosmetics/owned/backgrounds/${a.bg}`] = true;
-        if (a.home) extra[`cosmetics/owned/homeScreens/${a.home}`] = true;
-        const pay = async () => {
-          if (a.reward > 0) await runTransaction(ref(db, `${base}/coins`), (cur) => (cur || 0) + a.reward);
-          if (Object.keys(extra).length) await update(ref(db, base), extra);
-        };
-        try { await pay(); } catch (err1) { console.warn("claim payout retry", err1); await pay(); }
-      }
-    } catch (err) {
+    const vals = { [`achClaimed/${id}`]: true };
+    if (a.reward > 0) vals.coins = (myProfile.coins || 0) + a.reward;
+    if (a.bg) vals[`cosmetics/owned/backgrounds/${a.bg}`] = true;
+    if (a.home) vals[`cosmetics/owned/homeScreens/${a.home}`] = true;
+    const before = { achClaimed: myProfile.achClaimed, coins: myProfile.coins };
+    myProfile = { ...myProfile, achClaimed: { ...(myProfile.achClaimed || {}), [id]: true }, coins: vals.coins ?? myProfile.coins };
+    try { renderCoinBalance(); } catch (e) {}
+    renderAchievementsScreen();
+    const res = { committed: true }, newlyClaimed = true;
+    Promise.resolve().then(() => update(ref(db, base), vals)).then(() => { achClaiming.delete(id); }).catch((err) => {
       console.warn("claim failed", err);
-      if (newlyClaimed) { try { await remove(ref(db, `${base}/achClaimed/${id}`)); } catch (e2) {} } // payout failed: undo the marker so Claim works again
-      res = { err, committed: false };
-    }
-    achClaiming.delete(id);
-    if (!res || res.err) {
-      achJustClaimed = null;
-      showAchToast("Could not save that claim. Check your connection and tap Claim again." + (res?.err?.code ? " (" + String(res.err.code).slice(0, 40) + ")" : ""));
-      delete achHold[id]; renderAchievementsScreen();
-      return;
-    }
+      achClaiming.delete(id);
+      if (deviceId === claimOwner) {
+        myProfile = { ...myProfile, achClaimed: before.achClaimed, coins: before.coins };
+        try { renderCoinBalance(); } catch (e) {}
+        achJustClaimed = null; delete achHold[id]; renderAchievementsScreen();
+      }
+      showAchToast("Could not save that claim. Tap Claim again." + (err?.code ? " (" + String(err.code).slice(0, 40) + ")" : ""));
+    });
     if(typeof uiDelight!=="undefined"&&uiDelight&&res?.committed&&newlyClaimed&&claimOwner===deviceId&&a.home){const home=homeScreenOf(a.home);if(home)uiDelight?.unlock({name:home.name+" home screen",image:home.file,wide:true,equip:()=>equipUnlockedCosmetic(claimOwner,{"cosmetics/equipped/homeScreen":home.id,"randomEquip/homeScreens":false})});}
     else if(typeof uiDelight!=="undefined"&&uiDelight&&res?.committed&&newlyClaimed&&claimOwner===deviceId&&a.bg)uiDelight?.unlock({name:a.bgLabel||"New scene",image:backgroundUrl(a.bg),wide:true,equip:()=>equipUnlockedCosmetic(claimOwner,{"cosmetics/equipped/background":a.bg,"randomEquip/backgrounds":false})});
   }
@@ -21372,7 +21365,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(async () => { try { const owner = deviceId; const p = (await get(ref(db, 'profiles/' + owner))).val(); await powerups.recover(p, owner); } catch {} }, 60000);
 
   careerLedger=createCareerLedger({owner:()=>deviceId,transaction:async(id,fn)=>{const result=await runTransaction(ref(db,'profiles/'+id),fn,isOffline()?{}:{applyLocally:false});if(!result.snapshot.val())throw Error('Profile not ready');return result;},
-    onPending:n=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…':'';},
+    onPending:(n,why)=>{let node=document.getElementById('progress-sync');if(!node){node=document.createElement('div');node.id='progress-sync';node.setAttribute('role','status');document.body.append(node);}node.hidden=!n;node.textContent=n?'Saving progress…'+(why?' ('+why+')':''):'';},
     onSaved:async (row,id)=>{if(id===deviceId&&['round','bluffRound'].includes(row.kind))objectMemory.observe(row.history?.u,row.history?.g,row.key);void offerAdDouble(row,id);if(row.board){const at=ref(db,row.board.path);await runTransaction(at,old=>row.board.best?(!old||row.board.value.s>old.s?row.board.value:undefined):(!old?row.board.value:undefined));}grantLevelRewards();}});
   void careerLedger.flush();window.addEventListener('online',()=>careerLedger.flush());setInterval(()=>careerLedger.flush(),15000);
 
