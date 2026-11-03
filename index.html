@@ -2895,6 +2895,8 @@ if (location.protocol === "file:") {
   .dq-board > .question-prompt { flex: none; width: 100%; }
   .dq-board > .question-prompt[data-scene] { height: var(--qh, 196px); min-height: var(--qh, 196px); }
   .dq-board > .question-prompt:not([data-scene]) { min-height: var(--qh, 184px); }
+  .dq-board > .question-prompt:not([data-scene]) { display: flex; flex-direction: column; justify-content: center; }
+  .dq-board > .question-prompt:not([data-scene]) #q-body { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .qbs .dc-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
   /* Worlds / Survival: keypad on the left, the power-ups in a two-column block on its right. */
   .dc-padrow { display: block; }
@@ -9214,7 +9216,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   qBodyEl.appendChild(questionAnswerLineEl);
   const SB_DEFS = {
     terminal: { img: "icons/bd-terminal-kb.webp", ar: 760 / 671, box: [14, 11.5, 14, 35.5] },
-    tv: { img: "icons/bd-tv-dark.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5], fmax: 23 },
+    tv: { img: "icons/bd-tv-dark.webp", ar: 760 / 667, box: [14.5, 35, 19.5, 17.5], fmax: 32, rsv: [1.8, 10] }, // grows to fill the screen, shrinks as needed; the answer line only needs a little room
     typewriter: { img: "icons/bd-typewriter.webp", ar: 760 / 702, box: [22.9, 4, 22.8, 33.6] },
     letterboard: { img: "icons/bd-letterboard.webp", ar: 760 / 574, box: [9, 12, 9, 14], fmax: 25 },
     neon: { img: "icons/bd-neon.webp", ar: 760 / 556, box: [19, 20, 19, 22], fmax: 23 },
@@ -9599,9 +9601,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // restart or wipe the writing.
   // Party/team question phase: the board is squeezed to make room for the keypad, but the question is still written at the
   // board's normal size (same as the next screen) and only shrinks when a long question would not fit.
+  // Paper / chalkboard / whiteboard / curtains on a solo or team question screen: the question starts big and shrinks only as far as it needs,
+  // keeping a little room for the answer line that appears at the reveal.
+  function qbFitBorrowed() {
+    if (!qPromptEl.clientHeight || !questionPromptTextEl.textContent) return;
+    const cs = getComputedStyle(qPromptEl), target = parseFloat(cs.minHeight) || 184, pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    for (let fs = 32; fs >= 16; fs -= 1) { qPromptEl.style.fontSize = fs + "px"; if (questionPromptTextEl.offsetHeight + pad + 34 <= target) break; }
+  }
   function qbFitParty() {
     if (qSB) return; // scene boards fit themselves (sbFit)
     qPromptEl.style.fontSize = "";
+    if (hudEl.dataset.playLayout !== "party" && qPromptEl.parentNode && qPromptEl.parentNode.classList.contains("dq-board")) { qbFitBorrowed(); return; }
     if (hudEl.dataset.playLayout !== "party" || !qPromptEl.clientHeight) return; // every phase, so the question is the same size before and after the answer shows
     let fs = parseFloat(getComputedStyle(qPromptEl).fontSize), guard = 30;
     while (fs > 12 && guard-- > 0 && qPromptEl.scrollHeight > qPromptEl.clientHeight + 1) { fs -= 0.5; qPromptEl.style.fontSize = fs + "px"; }
