@@ -5140,7 +5140,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let dbConnected = null; // null until Firebase reports; set from .info/connected below
   const isOffline = () => (typeof navigator !== "undefined" && navigator.onLine === false) || dbConnected === false;
   // One short line saying how this phone sees its connection and account, shown on the save pill and in claim errors so a stuck save can be diagnosed.
-  const syncDiag = () => { try { return `db:${dbConnected === null ? "?" : dbConnected ? "on" : "off"} net:${navigator.onLine ? "on" : "off"} acct:${auth?.currentUser ? "in" : "guest"} dirty:${offlineProfile.isDirty(deviceId) ? 1 : 0}`; } catch (e) { return ""; } };
+  const syncDiag = () => { try { return `db:${dbConnected === null ? "?" : dbConnected ? "on" : "off"} net:${navigator.onLine ? "on" : "off"} acct:${auth?.currentUser ? "in" : "guest"} dirty:${offlineProfile.isDirty(deviceId) ? 1 : 0} ${profileSizeDiag()}`; } catch (e) { return ""; } };
+  // A profile that grows without limit makes every save and every reconnect re-send it all; this shows the size and the three biggest parts.
+  const profileSizeDiag = () => { try { const p = myProfile || {}, sizes = Object.entries(p).map(([k, v]) => [k, JSON.stringify(v ?? null).length]).sort((a, b) => b[1] - a[1]); const total = sizes.reduce((n, x) => n + x[1], 0); return `size:${Math.round(total / 1024)}KB (${sizes.slice(0, 3).map(([k, n]) => k + " " + Math.round(n / 1024) + "KB").join(", ")})`; } catch (e) { return ""; } };
   const ref = (database, path) => {
     if (typeof path === "string" && localRooms.owns(path)) return localRooms.ref(path);
     const r = fbRef(database, path);
