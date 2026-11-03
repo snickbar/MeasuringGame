@@ -1201,6 +1201,10 @@ if (location.protocol === "file:") {
   .sv-hearts { display: flex; justify-content: center; gap: 8px; }
   .sv-heart { width: 40px; height: auto; display: block; filter: drop-shadow(0 2px 2px rgba(74,44,18,.3)); }
   .sv-heart.drop { animation: svHeartDrop .5s ease-out; }
+  .hl-pop { opacity: 0; animation: popIn 380ms cubic-bezier(.2,1.3,.4,1) both; }
+  .hl-heart-break { animation: hlHeartBreak 450ms ease-in both; }
+  @keyframes hlHeartBreak { 0% { transform: scale(1); } 20% { transform: scale(1.3) rotate(-6deg); } 40% { transform: scale(1.2) rotate(6deg); } 60% { transform: scale(1.25) rotate(-5deg); } 100% { transform: scale(.85); filter: grayscale(1) brightness(1.2); } }
+  html[data-motion=reduce] .hl-pop { animation: none; opacity: 1; }
   @keyframes svHeartDrop { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .sv-acc { font-size: 14px; color: #000; }
   .sv-acc b { font-size: 16px; }
@@ -17372,7 +17376,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         updates.hlOffSum = (roomState.hlOffSum || 0) + (off(hv) + off(lv)) / 2;
         updates.hlOffRounds = (roomState.hlOffRounds || 0) + 1;
       }
-      updates.hlLast = { saved, earned, milestone, previousShield: !!roomState.hlShield, previousCharge: roomState.hlShieldCharge || 0, previousSyncStreak: roomState.hlSyncStreak || 0, passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
+      updates.hlLast = { saved, earned, milestone, previousLives: roomState.hlLives ?? (roomState.settings?.lives || HL_LIVES), previousShield: !!roomState.hlShield, previousCharge: roomState.hlShieldCharge || 0, previousSyncStreak: roomState.hlSyncStreak || 0, passed, crossed, inSync, accuracy, limit, ratio: isFinite(ratio) ? Math.round(ratio * 100) / 100 : null, tooWide, low: lv ?? null, high: hv ?? null };
     }
     let animEndsAt = null;
     const animPair = entries.length ? questionObjects(q) : null;
@@ -18028,8 +18032,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const held = !!room.hlShield, charge = room.hlShieldCharge || 0;
     return `<div class="hl-shield" aria-label="${held ? 'Team shield ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward a shield'}"><img src="icons/survival-shield-${held ? 'full' : 'empty'}.webp" alt=""><span>${held ? 'Shield ready' : 'Team shield'}</span>${held ? '' : `<span class="hl-pips" role="progressbar" aria-label="Team shield charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : ''}"></i>`).join('')}</span>`}</div>`;
   }
-  function hlHeartsHtml(room, hideLimit) {
-    const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
+  function hlHeartsHtml(room, hideLimit, shownLeft) {
+    const total = room.settings?.lives || HL_LIVES, left = shownLeft ?? room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
     return `<div class="sv-hud"><div class="sv-hearts">${Array.from({ length: total }, (_, i) => svHeartSvg(i < left)).join("")}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hlShieldHtml(room)}${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>${room.currentQuestion?.theme ? `<div class="hl-theme" style="${svThemeVars(room.currentQuestion.theme)}">${svThemeStripHtml(room.currentQuestion.theme)}</div>` : ""}</div>`;
   }
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
@@ -19529,12 +19533,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       sLi.className = "summary-row tw-sum";
       const hlAvg = data.hlOffRounds ? data.hlOffSum / data.hlOffRounds : null;
       const hlPlayer = (e) => e ? `<div class="dc-card dc-hot tw-sumrow hl-sumplayer"><span class="avatar">${avatarHtml((currentPlayers[e.playerId] || {}).avatar)}</span><span class="name hl-has-chip"><span class="hl-nm">${escapeHtml(e.name || "")}</span>${e.role ? hlChipHtml(e.role) : ""}</span></div>` : "";
+      // Lives before this round: if one was just lost, show it full first, then turn it empty.
+      const livesNow = data.hlLives ?? (data.settings?.lives || HL_LIVES), livesBefore = Math.max(livesNow, data.hlLast?.previousLives ?? livesNow);
+      const lostOne = livesBefore > livesNow && !prefersReducedMotion();
       sLi.innerHTML = hlPlayer(entries[0])
-        + `<div class="dc-card dc-hot tw-avg hl-sum-card"><div class="tw-avg-label">${over ? "Game over" : "Team lives"}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data, true)}</div>`
+        + `<div class="dc-card dc-hot tw-avg hl-sum-card"><div class="tw-avg-label">${over ? "Game over" : "Team lives"}</div><div class="hl-verdict-hearts">${hlHeartsHtml(data, true, lostOne ? livesBefore : livesNow)}</div>`
         + `<div class="hl-sum-stats"><div class="hl-sum-avg"><b>${hlAvg == null ? "--" : Math.round(hlAvg) + "%"}</b><span>On average you guess this far off</span></div></div>`
         + `<div class="hl-sum-stats"><div><b>${data.hlSyncStreak || 0}</b><span>In sync streak</span></div><div><b>${data.hlBestSyncStreak || 0}</b><span>Best streak</span></div></div></div>`
         + hlPlayer(entries[1]);
       summaryListEl.appendChild(sLi);
+      // Everything pops in one piece at a time (HIGH player, lives, hearts, average, streaks, LOW player).
+      if (!prefersReducedMotion()) {
+        const card = sLi.querySelector(".hl-sum-card");
+        const parts = [sLi.querySelector(".hl-sumplayer"), card.querySelector(".tw-avg-label"), card.querySelector(".sv-hearts"), card.querySelector(".hl-sub-row"), ...card.querySelectorAll(".hl-sum-stats"), sLi.querySelectorAll(".hl-sumplayer")[1]].filter(Boolean);
+        parts.forEach((el, i) => { el.classList.add("hl-pop"); el.style.animationDelay = (150 + i * 260) + "ms"; });
+        const popEnd = 150 + parts.length * 260;
+        if (lostOne) {
+          const hearts = card.querySelectorAll(".sv-heart"), cracked = hearts[livesNow];
+          const heartsAt = 150 + 2 * 260 + 500;
+          setTimeout(() => {
+            if (twSummarySig !== sig || !cracked || !cracked.isConnected) return;
+            cracked.classList.add("hl-heart-break");
+            playSound("error");
+            setTimeout(() => { if (twSummarySig === sig && cracked.isConnected) { cracked.src = "icons/life-heart-empty.webp"; cracked.classList.remove("hl-heart-break"); cracked.classList.add("drop"); } }, 450);
+          }, heartsAt);
+        }
+      }
       return;
     }
     const me = currentPlayers[currentPlayerId];
