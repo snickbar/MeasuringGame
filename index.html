@@ -1471,6 +1471,16 @@ if (location.protocol === "file:") {
   }
   #avatar-zoom-overlay .avatar-zoom-card img { width: 100%; height: 100%; object-fit: contain; }
   #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
+  /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
+  .avatar-choice, .collection-tile { position: relative; }
+  .fav-dot { position: absolute; top: 2px; right: 2px; width: 15px; height: 15px; pointer-events: none; display: block; }
+  .fav-dot svg, .fav-title-heart svg { width: 100%; height: 100%; display: block; fill: #e8465a; stroke: #fff; stroke-width: 1.6; paint-order: stroke; }
+  .fav-title-heart { display: inline-block; width: 16px; height: 16px; margin-right: 6px; vertical-align: -2px; }
+  .avatar-grid-label { grid-column: 1 / -1; font-weight: 700; font-size: 13px; color: #4a2c12; margin: 2px 0 -2px; }
+  #avatar-zoom-overlay .avatar-zoom-fav { position: absolute; top: -12px; left: -12px; width: 34px; height: 34px; margin: 0; padding: 6px; border-radius: 50%; border: 2px solid #fff; border-image: none; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; }
+  #avatar-zoom-overlay .avatar-zoom-fav svg { width: 100%; height: 100%; fill: transparent; stroke: #c4506a; stroke-width: 2; }
+  #avatar-zoom-overlay .avatar-zoom-fav.on svg { fill: #e8465a; stroke: #e8465a; }
+  #avatar-zoom-overlay .avatar-zoom-fav:active { filter: brightness(.93); }
   #avatar-zoom-overlay .avatar-zoom-close {
     position: absolute; top: -12px; right: -12px; width: 28px; height: 28px; margin: 0; padding: 0;
     border-radius: 50%; border: 2px solid #fff; border-image: none; background: #d9534f; color: #fff;
@@ -5687,6 +5697,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function avatarsSortedForPicker() {
     return [...AVATARS].sort((a, b) => (isAvatarUnlocked(b) ? 1 : 0) - (isAvatarUnlocked(a) ? 1 : 0));
   }
+  // Favorite avatars: saved on the profile (so they follow the account) and shown first in every avatar picker as well as in their usual place.
+  const FAV_HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+  const isFavAvatar = (id) => !!(myProfile.favAvatars || {})[id];
+  function toggleFavAvatar(id) {
+    if (!id || !isAvatarUnlocked(id)) return;
+    const on = !isFavAvatar(id), favs = { ...(myProfile.favAvatars || {}) };
+    if (on) favs[id] = true; else delete favs[id];
+    myProfile = { ...myProfile, favAvatars: favs };   // shown at once; the save goes out in the background
+    try { update(ref(db, `profiles/${deviceId}`), { [`favAvatars/${id}`]: on ? true : null }).catch(() => {}); } catch (e) {}
+    renderAvatarGrid(); renderSettingsAvatarGrid();
+    if (collectionScreen && collectionScreen.classList.contains("active")) renderCollectionScreen();
+    playSound("pick");
+  }
 
   function defaultUnlockedAvatars() {
     const obj = {};
@@ -5937,6 +5960,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function defaultProfile() {
     return {
       coins: 0,
+      favAvatars: {},
       freePulls: 0,
       booster: 0,
       tipCount: 0,
@@ -6210,6 +6234,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         survival: data.survival || null,
         whichBigger: data.whichBigger || null,
         achClaimed: { ...(data.achClaimed || {}) },
+        favAvatars: { ...(data.favAvatars || {}) },
         accountUpgrade: data.accountUpgrade || null,
         // Were missing from this normalization entirely until now - every real
         // profile update from the server was silently dropping them back to
@@ -10004,11 +10029,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar);
     // Only avatars the player has unlocked - the full catalog, locked ones
     // included, is only ever shown via the Shop's "View All Avatars".
-    avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)).forEach((a) => {
+    const owned = avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)), favs = owned.filter(isFavAvatar);
+    const label = (t) => { const d = document.createElement("div"); d.className = "avatar-grid-label"; d.textContent = t; avatarGridEl.appendChild(d); };
+    if (favs.length) label("Favorites");
+    [...favs, ...(favs.length ? ["--all"] : []), ...owned].forEach((a) => {
+      if (a === "--all") { label("All avatars"); return; }
       const taken = takenAvatars.has(a) && a !== currentAvatar;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.innerHTML = avatarHtml(a);
+      btn.innerHTML = avatarHtml(a) + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
       btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "") + (taken ? " taken" : "");
       btn.disabled = taken;
       btn.addEventListener("click", () => {
@@ -10081,10 +10110,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Only avatars the player actually owns - unlike the join/lobby avatar
     // picker, this one has no "locked" state to show; it's just your
     // available options for a default.
-    avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)).forEach((a) => {
+    const owned = avatarsSortedForPicker().filter((a) => isAvatarUnlocked(a)), favs = owned.filter(isFavAvatar);
+    const label = (t) => { const d = document.createElement("div"); d.className = "avatar-grid-label"; d.textContent = t; settingsAvatarGridEl.appendChild(d); };
+    if (favs.length) label("Favorites");
+    [...favs, ...(favs.length ? ["--all"] : []), ...owned].forEach((a) => {
+      if (a === "--all") { label("All avatars"); return; }
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.innerHTML = avatarHtml(a);
+      btn.innerHTML = avatarHtml(a) + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
       btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "");
       btn.addEventListener("click", () => {
         currentAvatar = a;
@@ -14325,7 +14358,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const unlockedCount = list.filter(isAvatarUnlocked).length;
       const shown = list.filter(a=>collectionOwnership==="locked"?!isAvatarUnlocked(a):(collectionHideLocked||collectionOwnership==="owned")?isAvatarUnlocked(a):true);
       if (!shown.length) return "";
-      const tiles = shown.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}" role="button" tabindex="0">${avatarHtml(a)}</div>`).join("");
+      const tiles = shown.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}" role="button" tabindex="0">${avatarHtml(a)}${isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : ""}</div>`).join("");
       return `
         <div class="collection-tier-group">
           <h3 class="collection-tier-title">
@@ -14336,6 +14369,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="collection-grid">${tiles}</div>
         </div>`;
     }).join("");
+    const favList = AVATARS.filter((a) => isAvatarUnlocked(a) && isFavAvatar(a));
+    if (favList.length && collectionOwnership !== "locked") body = `<div class="collection-tier-group"><h3 class="collection-tier-title"><span class="fav-title-heart">${FAV_HEART}</span>Favorites<span class="collection-tier-count">(${favList.length})</span></h3><div class="collection-grid">${favList.map((a) => `<div class="collection-tile" role="button" tabindex="0">${avatarHtml(a)}<i class="fav-dot">${FAV_HEART}</i></div>`).join("")}</div></div>` + body;
     if (!body) body = `<div class="ach-empty">${emptyHtml("icons/shop-starter-gift.webp", "No avatars yet", "Give the machine a spin!")}</div>`;
     collectionContentEl.innerHTML = head + body;
   }
@@ -14901,8 +14936,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const dim = tile.classList.contains("locked") || tile.classList.contains("taken");
     const ov = document.createElement("div");
     ov.id = "avatar-zoom-overlay";
-    ov.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(id, dim ? "zoom-dim" : "")}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
-    ov.addEventListener("click", closeAvatarZoom);
+    const canFav = !dim && isAvatarUnlocked(id);
+    ov.innerHTML = `<div class="avatar-zoom-card">${avatarHtml(id, dim ? "zoom-dim" : "")}${canFav ? `<button type="button" class="avatar-zoom-fav${isFavAvatar(id) ? " on" : ""}" aria-label="Favorite" aria-pressed="${isFavAvatar(id)}">${FAV_HEART}</button>` : ""}<button type="button" class="avatar-zoom-close" aria-label="Close">&times;</button></div>`;
+    ov.addEventListener("click", (e) => {
+      const heart = e.target.closest(".avatar-zoom-fav");
+      if (heart) { toggleFavAvatar(id); const on = isFavAvatar(id); heart.classList.toggle("on", on); heart.setAttribute("aria-pressed", String(on)); return; } // stays open so you can see it filled
+      closeAvatarZoom();
+    });
     document.body.appendChild(ov);
   }
   // Picker grids (join/name screen, settings default-avatar grid): tapping a
