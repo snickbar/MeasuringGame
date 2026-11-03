@@ -14564,17 +14564,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // steps are the hand-made first tiers; chains that can grow forever get escalated to 10 tiers (opts.total/ratio), finite collections stay as written.
   function achTier(cat, base, desc, prog, steps, opts) {
     const all = opts ? escalateSteps(steps, opts) : steps;
-    all.forEach(([target, reward], i) => {
-      ACHIEVEMENTS.push({ id: `${cat}-${base}-${target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: (cat === "Accuracy" && base === "Spot on" ? "The 1%" : base) + ROMAN_SUFFIX[i], desc: desc(target), target, reward, progress: prog, tier: i, chain: `${cat}-${base}` });
+    // A step may carry a stable id (3rd item) for a "collect everything" top tier whose target grows as content is added; the id must not change with it.
+    all.forEach(([target, reward, stableId], i) => {
+      ACHIEVEMENTS.push({ id: `${cat}-${base}-${stableId || target}`.toLowerCase().replace(/[^a-z0-9-]+/g, "_"), cat, name: (cat === "Accuracy" && base === "Spot on" ? "The 1%" : base) + ROMAN_SUFFIX[i], desc: desc(target, !!stableId), target, reward, progress: prog, tier: i, chain: `${cat}-${base}` });
     });
   }
-  achTier("Collector", "Avatar fan", (n) => `Own ${n} avatars from the machine`, () => ownedNonDefaultAvatars().length, [[5, 20], [25, 60], [75, 150]]);
-  achTier("Collector", "Ultra lucky", (n) => `Own ${n} ultra-rare avatar${n > 1 ? "s" : ""}`, () => ownedNonDefaultAvatars().filter((a) => AVATAR_TIERS[a] === "ultra").length, [[1, 50], [5, 150]]);
+  // Totals are read from the avatar list, so adding avatars later raises the "every avatar" top tiers by itself.
+  const AVATARS_COLLECTIBLE = Object.keys(AVATAR_TIERS).filter((a) => AVATAR_TIERS[a] !== "default");
+  const AVATARS_ULTRA = AVATARS_COLLECTIBLE.filter((a) => AVATAR_TIERS[a] === "ultra");
+  achTier("Collector", "Avatar fan", (n, all) => all ? `Own every avatar from the machine (${n})` : `Own ${n} avatars from the machine`, () => ownedNonDefaultAvatars().length,
+    [[5, 20], [25, 60], [75, 150], [100, 175], [125, 200], [150, 200], [175, 200], [200, 200], [225, 200], [Math.max(AVATARS_COLLECTIBLE.length, 226), 200, "all"]]);
+  achTier("Collector", "Ultra lucky", (n, all) => all ? `Own every ultra-rare avatar (${n})` : `Own ${n} ultra-rare avatar${n > 1 ? "s" : ""}`, () => ownedNonDefaultAvatars().filter((a) => AVATAR_TIERS[a] === "ultra").length,
+    [[1, 50], [5, 150], [10, 175], [15, 200], [20, 200], [25, 200], [30, 200], [35, 200], [40, 200], [Math.max(AVATARS_ULTRA.length, 41), 200, "all"]]);
   // CHECK THESE TARGETS whenever objects/avatars/packs are added: Object spotter's top tier is "every normal object"
   // (OBJECTS.length, counted from the normal objects only so seasonal ones don't skip ahead); Combo hunter's top
-  // tier should stay well under the number of possible pairs (about 4,500 for normal objects alone, about 20,000 with every seasonal pack).
-  achTier("Collector", "Object spotter", (n) => `See ${n} different objects in rounds`, () => OBJECTS.filter((o) => ((myProfile.seenObjects) || {})[o.id]).length, [[25, 20], [75, 60], [OBJECTS.length, 200]]);
-  achTier("Collector", "Combo hunter", (n) => `See ${n} different item combinations`, () => Object.keys((myProfile.seenCombos) || {}).length, [[50, 20], [250, 60], [1000, 200]]);
+  // tier (3,000) should stay well under the number of possible pairs (about 4,500 for normal objects alone, about 20,000 with every seasonal pack).
+  achTier("Collector", "Object spotter", (n) => `See ${n} different objects in rounds`, () => OBJECTS.filter((o) => ((myProfile.seenObjects) || {})[o.id]).length, [[25, 20], [75, 60], [125, 100], [175, 130], [225, 160], [275, 180], [325, 200], [Math.max(OBJECTS.length, 326), 200]]); // the top tier keeps its original id (it carries the total), so claims already made stay claimed
+  achTier("Collector", "Combo hunter", (n) => `See ${n} different item combinations`, () => Object.keys((myProfile.seenCombos) || {}).length, [[50, 20], [250, 60], [1000, 200], [1500, 200], [2000, 200], [2500, 200], [3000, 200]]);
   achTier("Accuracy", "Spot on", (n) => `Land ${n} guess${n > 1 ? "es" : ""} within 1%`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]], { total: 10, ratio: 1.6 });
   achTier("Accuracy", "Perfect", (n) => `Guess exactly right ${n} time${n > 1 ? "s" : ""}`, ACH_STAT("perfects"), [[1, 75], [5, 250]], { total: 10, ratio: 1.8 });
   achTier("Winning", "Round winner", (n) => `Win ${n} round${n > 1 ? "s" : ""}`, ACH_STAT("roundWins"), [[1, 10], [10, 40], [50, 150]], { total: 10 });
