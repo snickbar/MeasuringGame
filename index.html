@@ -10326,8 +10326,52 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return action(...args);
     };
   }
+  // ---- Quick Game: leaving mid-game keeps it (paused, on this phone) so it can be resumed from the Solo hub ----
+  const QUICK_PLAYING = ["question", "answers", "animation", "reveal", "summary"];
+  const quickKey = () => "mg_resume_" + deviceId + "_quick";
+  const quickCanSave = () => !!(isHost && roomState?.settings?.solo && QUICK_PLAYING.includes(roomState.phase));
+  function readQuickSaved() {
+    try {
+      const s = JSON.parse(localStorage.getItem(quickKey()) || "null");
+      return s && s.code && localRooms.owns("rooms/" + s.code) ? s : null;
+    } catch (e) { return null; }
+  }
+  const QUICK_LEAVE_TEXT = ["Leave for now?", "Your progress is saved, so you can pick this up again later. Are you sure you want to leave?"];
+  async function quickSaveAndLeave() {
+    const code = currentRoomCode, id = currentPlayerId, t = nowMs();
+    const info = { code, name: roomState.players?.[id]?.name || currentName || "Player", round: roomState.round || 1, total: roomState.settings?.totalRounds || 5, t };
+    cancelRevealEffects();
+    leavingGame = true; // first: silence the room listener, or the seat change below would look like a host dropping out
+    // Paused (every deadline is shifted when it resumes) with your seat held open, exactly like a dropped connection.
+    await update(ref(db, `rooms/${code}`), { paused: true, pausedAt: t, [`players/${id}/connected`]: false, [`players/${id}/disconnectedAt`]: t });
+    onDisconnect(ref(db, `rooms/${code}/players/${id}`)).cancel();
+    try { localStorage.setItem(quickKey(), JSON.stringify(info)); } catch (e) {}
+    localRooms.flush();
+    showLeftScreen("", {});
+    leftScreenEl.classList.remove("active");
+    homeScreen.classList.add("active");
+    openSolo();
+  }
+  async function quickResume() {
+    const s = readQuickSaved();
+    if (!s) { renderSoloHub(); return; }
+    const data = (await get(ref(db, `rooms/${s.code}`))).val();
+    if (!data || !QUICK_PLAYING.includes(data.phase)) { quickDiscard(); renderSoloHub(); return; }
+    try { localStorage.removeItem(quickKey()); } catch (e) {}
+    leavingGame = false;
+    ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
+    await joinRoomAsPlayer(s.code, s.name, false, data); // reclaims the held seat (and host role)
+    for (let i = 0; i < 60 && !(currentRoomCode === s.code && roomState?.paused); i++) await new Promise((r) => setTimeout(r, 50));
+    if (currentRoomCode === s.code && roomState?.paused && isHost) await togglePause(); // carries on exactly where it stopped
+  }
+  function quickDiscard() {
+    const s = (() => { try { return JSON.parse(localStorage.getItem(quickKey()) || "null"); } catch (e) { return null; } })();
+    try { localStorage.removeItem(quickKey()); } catch (e) {}
+    if (s && s.code) { try { localRooms.drop(s.code); removeRecentRoom(s.code); } catch (e) {} }
+  }
   function openLeaveGameConfirm() {
     if (isGameOver()) { if (isHost) hostExit(); else guestExit(); return; }
+    if (quickCanSave()) { openExitConfirm("quickSave", QUICK_LEAVE_TEXT[0], QUICK_LEAVE_TEXT[1], "Leave", "Keep playing"); return; }
     if (isHost && roomState && roomState.settings && roomState.settings.solo) {
       openExitConfirm("leaveGame", "Quit this game?", "Your progress in this game won't be saved. Quit?");
     } else if (isHost) {
@@ -10411,6 +10455,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   exitConfirmNoBtn.addEventListener("click", () => {
     exitConfirmOverlayEl.classList.remove("show");
+    if (pendingExitAction === "quickResume") { quickDiscard(); soloFromHub = true; closeOverlay(true); showCreateScreen("solo"); } // "Start new" drops the saved game
     pendingExitAction = null;
     pendingNavAction = null;
   });
@@ -10427,6 +10472,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
     if (action === "navFromLobby" || action === "navFromSolo") { if (nav) nav(); return; }
     if (action === "closeCreatedRoom") { closeCreatedRoom(); return; }
+    if (action === "quickSave") { quickSaveAndLeave(); return; }
+    if (action === "quickResume") { quickResume(); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
       return;
@@ -10886,7 +10933,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     worlds: [3.5, 14.41, 14.9, 64.86, -2.1], survival: [2.5, 13.06, 20.9, 77.48, -2.8], "which-bigger": [3, 14.41, 25.4, 71.17, -3.5] };
   function renderSoloHub() {
     const played = dailyPlayedToday(), streak = dailyStreakNow();
-    const savedW = readSoloSession("worlds"), savedS = readSoloSession("survival"), savedB = readSoloSession("wb");   // a run in progress shows a "Saved" tag
+    const savedW = readSoloSession("worlds"), savedS = readSoloSession("survival"), savedB = readSoloSession("wb"), savedQ = readQuickSaved();   // a run in progress shows a "Saved" tag
     const dailySub = played ? `Done for today${streak > 0 ? ` &middot; ${FIRE_IC} ${streak}-day streak` : ""}` : (streak > 0 ? `Keep your ${FIRE_IC} ${streak}-day streak alive` : "3 questions, same for everyone");
     const card = (id, img, name, sub, extra) => {
       const banner = extra && extra.banner;
@@ -10898,7 +10945,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
     soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
-      ${card("sh-quick", "items/ant.webp", "Quick Game", "A solo game against bots", { banner: "icons/banner-quick.png" })}
+      ${card("sh-quick", "items/ant.webp", "Quick Game", savedQ ? `Saved &middot; Round ${savedQ.round} of ${savedQ.total}` : "A solo game against bots", { banner: "icons/banner-quick.png", saved: !!savedQ })}
       ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
       ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", savedW ? `Saved &middot; ${escapeHtml(WORLDS[savedW.wi].name)}, Level ${savedW.level}` : `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png", saved: !!savedW })}
@@ -10918,7 +10965,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (b.id === "sh-monthly") openMonthly();
     else if (b.id === "sh-survival") openSurvival();
     else if (b.id === "sh-wb") openWhichBigger();
-    else if (b.id === "sh-quick") { soloFromHub = true; closeOverlay(true); showCreateScreen("solo"); }
+    else if (b.id === "sh-quick") {
+      const q = readQuickSaved();
+      if (q) { openExitConfirm("quickResume", "Resume your Quick Game?", `Round ${q.round} of ${q.total} is saved. Pick up where you left off, or start a new game (this drops the saved one).`, "Resume", "Start new"); return; } // no first-time tutorial for a game already underway
+      else { soloFromHub = true; closeOverlay(true); showCreateScreen("solo"); }
+    }
     if (tourMode) modeTutorialUI?.auto(tourMode);
   });
   document.getElementById("solo-close-btn").addEventListener("click", () => closeOverlay());
@@ -18025,6 +18076,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   exitBtnGuest.addEventListener("click", openLeaveGameConfirm);
   exitBtn.addEventListener("click", () => {
+    if (quickCanSave()) { openExitConfirm("quickSave", QUICK_LEAVE_TEXT[0], QUICK_LEAVE_TEXT[1], "Leave", "Keep playing"); return; }
     if (roomState && roomState.settings && roomState.settings.solo) { openExitConfirm("hostGame", "Quit this game?", "Your progress in this game won't be saved. Quit?"); return; }
     openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
   });
