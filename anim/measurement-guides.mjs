@@ -43,7 +43,7 @@ export function installMeasurementGuides({objects,document:doc=document}) {
     // One uniform guide per card, spanning the box rather than tracing the artwork: a left-hand card puts a vertical guide on
     // its right edge, a right-hand card on its left edge; a horizontal guide always runs along the bottom, above the caption.
     const sy=b.height/card.offsetHeight||1;
-    const caption=card.querySelector('span,figcaption')?.getBoundingClientRect();
+    const caption=card.querySelector('span:not(.wb-tag),figcaption')?.getBoundingClientRect();
     const yMax=Math.min(card.clientHeight-3,caption?(caption.top-b.top)/sy-card.clientTop-3:card.clientHeight-3);
     const sibs=[...(card.parentElement?.children||[])].filter(n=>n.matches(selectors));
     const onRight=sibs.length>1&&sibs.indexOf(card)>0;
