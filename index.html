@@ -16514,18 +16514,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let reserved = false, begun = false;
     try {
       if (mode) {
-        let attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
-        let profile = attempt.snapshot.val();
-        if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) {
-          // Today's free game is spent (e.g. "Play again" in the same room). Offer the same choices as creating a room -
-          // watch an ad for one more game, or unlock for good - instead of silently doing nothing.
-          const granted = await confirmAndPurchaseHostUnlock(mode);
-          if (!granted || deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
-          attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
-          profile = attempt.snapshot.val();
-          if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) return;
-        }
-        reserved = !profile.hostUnlocked;
+        // The free-game reservation is bookkeeping: if it can't be written (offline blip, auth hiccup) the game still starts.
+        try {
+          let attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
+          let profile = attempt.snapshot.val();
+          if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) {
+            // Today's free game is spent (e.g. "Play again" in the same room). Offer the same choices as creating a room -
+            // watch an ad for one more game, or unlock for good - instead of silently doing nothing.
+            const granted = await confirmAndPurchaseHostUnlock(mode);
+            if (!granted || deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
+            attempt = await runTransaction(ref(db,'profiles/'+owner), p=>reserveHostStart(p,ticket));
+            profile = attempt.snapshot.val();
+            if (!profile?.hostUnlocked && profile?.hostFreePending?.[mode]?.room !== room) return;
+          }
+          reserved = !profile.hostUnlocked;
+        } catch (reserveError) { console.warn('free-game reservation failed; starting anyway', reserveError); reserved = false; }
       }
       if (deviceId !== owner || currentRoomCode !== room || roomState.phase !== 'waiting' || !isHost) return;
       if (tourWanted(roomState.settings || {})) {
@@ -16535,7 +16538,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       begun = !!(await beginGameNow());
       if (reserved && begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true));
     } catch (error) {
-      showAchToast(begun ? 'The game started. Reconnecting to save your free-game use.' : 'Could not start the game. Please try again.');
+      console.error('startGameNow failed', error);
+      showAchToast(begun ? 'The game started. Reconnecting to save your free-game use.' : 'Could not start the game. Please try again.' + (error?.code || error?.message ? ' (' + String(error.code || error.message).slice(0, 60) + ')' : ''));
       if (reserved && begun) void runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,true)).catch(()=>{});
     } finally {
       if (reserved && !begun) await runTransaction(ref(db,'profiles/'+owner),p=>finishHostStart(p,ticket,false)).catch(()=>{});
