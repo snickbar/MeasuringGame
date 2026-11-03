@@ -9303,7 +9303,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function sbLayout() {
     if (!qSB) return;
-    const W = qPromptEl.clientWidth, H = hudEl.dataset.playLayout === 'party' ? qPromptEl.clientHeight : (qCardH || SB_CARD_H), ar = qSB.def.ar;
+    const pl = hudEl.dataset.playLayout, W = qPromptEl.clientWidth, H = pl === 'party' ? qPromptEl.clientHeight : (qCardH || SB_CARD_H);
+    // Screens that borrow the real card: the board art is stretched wider (about a third) so the text has more room, like the wide chalkboard.
+    const ar = pl !== 'party' && qPromptEl.parentNode && qPromptEl.parentNode.classList.contains('dq-board') ? Math.min(qSB.def.ar * 1.35, 1.9) : qSB.def.ar; // every screen that borrows the real card (Daily, Worlds, Monthly, Survival, Team Worlds, High/Low)
     if (!W) return;
     const sw = Math.min(W, H * ar), sh = sw / ar, sx = (W - sw) / 2, sy = (H - sh) / 2;
     Object.assign(qSB.stage.style, { left: sx + "px", top: sy + "px", width: sw + "px", height: sh + "px" });
