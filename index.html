@@ -13441,6 +13441,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     wbContentEl.replaceChildren(header, scroll, footer);
     wbFit(); requestAnimationFrame(wbFit);
     wbFitMascots(); requestAnimationFrame(wbFitMascots);
+    // Wait too long without picking and the mascots fidget.
+    const mc0 = document.getElementById("wb-mascots");
+    if (mc0) setTimeout(() => { if (mc0.isConnected && !mc0.dataset.pick) mc0.classList.add("idle"); }, 7000);
   }
   // The elephant and mouse sit in the empty space under the stamp; they hide when it is too small for them.
   function wbFitMascots() {
@@ -13477,7 +13480,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wbSetTier(); wbSave();
       el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
-        <div class="wb-mascots" id="wb-mascots" aria-hidden="true"><img class="wb-mc-e" src="icons/mascot-elephant.webp" alt=""><img class="wb-mc-m" src="icons/mascot-mouse.webp" alt=""></div>
+        <div class="wb-mascots${(wb.streak || 0) >= 3 ? " proud" : ""}" id="wb-mascots" aria-hidden="true"><img class="wb-mc-e" src="icons/mascot-elephant.webp" alt=""><img class="wb-mc-m" src="icons/mascot-mouse.webp" alt=""></div>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
         <div class="wb-diff"><span class="wb-diff-l">DIFFICULTY</span><span class="wb-diff-stamp t${wbDiff.tier}">${wbDiff.label.toUpperCase()}</span></div>
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
@@ -13673,7 +13676,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.classList.contains("wb-card") && wb.phase === "question") {
       wb.picked = b.dataset.id;
       wbContentEl.querySelectorAll(".wb-card").forEach((c) => c.classList.toggle("sel", c === b));
-      { const mc = document.getElementById("wb-mascots"), cs = [...wbContentEl.querySelectorAll(".wb-card")]; if (mc) { mc.dataset.pick = cs.indexOf(b) ? "r" : "l"; mc.classList.remove("hop"); void mc.offsetWidth; mc.classList.add("hop"); } }
+      { const mc = document.getElementById("wb-mascots"), cs = [...wbContentEl.querySelectorAll(".wb-card")]; if (mc) { mc.dataset.pick = cs.indexOf(b) ? "r" : "l"; mc.classList.remove("idle"); } }
       { const lk = document.getElementById("wb-lock"); lk.disabled = false; lk.classList.add("ready"); }
       try { playSound("pick"); } catch (err) {}
       return;
