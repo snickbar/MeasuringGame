@@ -192,6 +192,8 @@ if (location.protocol === "file:") {
   }
   button.kbd-key.kbd-key-disabled, button.kbd-key:disabled { background: #eee6d8; border-color: #d8c7ae; color: #9c8b74; opacity: .5; cursor: default; }
   button.kbd-key-backspace { flex: 1.9; background: #e8dcc5; font-size: 16px; }
+  button.kbd-key-caps { flex: 1.6; background: #e8dcc5; font-size: 12px; letter-spacing: .3px; }
+  button.kbd-key-caps.on { background: #5b3a26; border-color: #5b3a26; color: #fff; }
   button.kbd-key-done { flex: 1.6; background: #5b3a26; border-color: #5b3a26; color: #fff; font-size: 13px; }
   ul { list-style: none; padding: 0; }
   li { padding: 10px; margin: 6px 0;
@@ -1473,7 +1475,7 @@ if (location.protocol === "file:") {
   #avatar-zoom-overlay .avatar-zoom-card img.zoom-dim { opacity: .4; filter: grayscale(1); }
   /* Favorites: heart badge on tiles, labels in the pickers, and the heart on the zoomed avatar. */
   .avatar-choice, .collection-tile { position: relative; }
-  .fav-dot { position: absolute; top: 2px; right: 2px; width: 15px; height: 15px; pointer-events: none; display: block; }
+  .fav-dot { position: absolute; top: -4px; right: -4px; width: 15px; height: 15px; pointer-events: none; display: block; }
   .fav-dot svg, .fav-title-heart svg { width: 100%; height: 100%; display: block; fill: #e8465a; stroke: #fff; stroke-width: 1.6; paint-order: stroke; }
   .fav-title-heart { display: inline-block; width: 16px; height: 16px; margin-right: 6px; vertical-align: -2px; }
   .avatar-grid-label { grid-column: 1 / -1; font-weight: 700; font-size: 13px; color: #4a2c12; margin: 2px 0 -2px; }
@@ -8659,7 +8661,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // `charset`, when given, greys out/disables any key not in it (used for
   // the room-code charset); omit it to leave every key enabled.
   function renderCustomKeyboard(containerEl, inputEl, opts) {
-    const { maxLength, charset, onDone } = opts;
+    const { maxLength, charset, onDone, caps } = opts;
+    let upper = true;   // caps keyboards start in capitals; the CAPS key switches to lowercase and back
     const keyBtn = (ch, extraClass) => {
       const enabled = !charset || charset.has(ch);
       return `<button type="button" class="kbd-key${extraClass ? " " + extraClass : ""}${enabled ? "" : " kbd-key-disabled"}" data-key="${ch}"${enabled ? "" : " disabled"}>${ch}</button>`;
@@ -8668,19 +8671,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `<div class="kbd-row">${"1234567890".split("").map((c) => keyBtn(c)).join("")}</div>` +
       `<div class="kbd-row">${"QWERTYUIOP".split("").map((c) => keyBtn(c)).join("")}</div>` +
       `<div class="kbd-row kbd-row-home">${"ASDFGHJKL".split("").map((c) => keyBtn(c)).join("")}<button type="button" class="kbd-key kbd-key-backspace" data-action="backspace" aria-label="Backspace">&#9003;</button></div>` +
-      `<div class="kbd-row">${"ZXCVBNM".split("").map((c) => keyBtn(c)).join("")}<button type="button" class="kbd-key kbd-key-done" data-action="done">Done</button></div>`;
+      `<div class="kbd-row">${"ZXCVBNM".split("").map((c) => keyBtn(c)).join("")}${caps ? `<button type="button" class="kbd-key kbd-key-caps on" data-action="caps" aria-pressed="true">CAPS</button>` : `<button type="button" class="kbd-key kbd-key-done" data-action="done">Done</button>`}</div>`;
     containerEl.querySelectorAll(".kbd-key[data-key]:not(:disabled)").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (inputEl.value.length >= maxLength) return;
-        inputEl.value += btn.dataset.key;
+        const ch = btn.dataset.key;
+        inputEl.value += caps && !upper ? ch.toLowerCase() : ch;
         inputEl.dispatchEvent(new Event("input", { bubbles: true }));
       });
+    });
+    const capsBtn = containerEl.querySelector('[data-action="caps"]');
+    if (capsBtn) capsBtn.addEventListener("click", () => {
+      upper = !upper;
+      capsBtn.classList.toggle("on", upper); capsBtn.setAttribute("aria-pressed", String(upper));
+      containerEl.querySelectorAll(".kbd-key[data-key]").forEach((k) => { if (/^[A-Z]$/.test(k.dataset.key)) k.textContent = upper ? k.dataset.key : k.dataset.key.toLowerCase(); });
     });
     containerEl.querySelector('[data-action="backspace"]').addEventListener("click", () => {
       inputEl.value = inputEl.value.slice(0, -1);
       inputEl.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    containerEl.querySelector('[data-action="done"]').addEventListener("click", () => onDone(inputEl.value));
+    const doneBtn = containerEl.querySelector('[data-action="done"]');
+    if (doneBtn) doneBtn.addEventListener("click", () => onDone(inputEl.value));
   }
 
   const lobbyScreenEl = document.getElementById("lobby-screen");
@@ -16575,15 +16586,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderAvatarGrid();
     joinRoomAsPlayer(pendingRoomCode, name, false, data);
   });
-  renderCustomKeyboard(nameKeyboardEl, nameInput, {
-    maxLength: 12,
-    charset: null,
-    onDone: (value) => {
-      const name = value.trim().slice(0, 12);
-      if (!name) { nameAvatarStatusEl.textContent = "Enter your name first."; return; }
-      openExitConfirm("joinLobbyConfirmed", `Continue as ${name}?`, "", "Continue", "Cancel");
-    },
-  });
+  // Name entry: a CAPS key instead of Done (Done jumped to the next screen; "Join Lobby" at the top is how you continue).
+  renderCustomKeyboard(nameKeyboardEl, nameInput, { maxLength: 12, charset: null, caps: true });
 
   // One-tap shortcut from "Last game" — bypasses the code/name/avatar screens
   // entirely and rejoins under the remembered name/avatar.
