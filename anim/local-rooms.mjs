@@ -6,7 +6,7 @@
 // mid-game and coming back (Rejoin) still works.
 
 const SAVE_KEY = 'mg_localRooms';
-const KEEP_MS = 24 * 60 * 60 * 1000;
+const KEEP_MS = 7 * 24 * 60 * 60 * 1000; // a Quick Game you left to finish later stays saved for a week (same as a paused room)
 
 const clone = (v) => (v === undefined ? null : JSON.parse(JSON.stringify(v)));
 const parts = (p) => String(p || '').split('/').filter(Boolean);
