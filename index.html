@@ -16898,7 +16898,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!p || !p.isBot) return;
       if (existingPicks[id] !== undefined) return; // already picked - e.g. re-triggered after a host handoff
       const others = sorted.filter((e) => e.playerId !== id);
-      const delay = 1000 + Math.random() * 7000;
+      const delay = 1000 + Math.random() * 11000; // spread across the 15-second window
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
         if (roomState.phase !== "answers") return;
@@ -17473,7 +17473,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const sorted = real
       .sort((a, b) => a.value - b.value)
       .map((e, i) => (e.truth ? { slot: i, playerId: e.playerId, value: e.value, truth: true } : { slot: i, playerId: e.playerId, value: e.value }));
-    const answersEndsAt = nowMs() + 10000;
+    const answersEndsAt = nowMs() + 15000; // second chance / double down window
     console.log("[measuring-game] question locked, entering answers phase", sorted);
     await update(ref(db, `rooms/${roomCode}`), { answers: sorted, answersEndsAt, phase: "answers" });
     scheduleHostDeadline(answersEndsAt, () => checkAnswersAdvance(roomCode));
