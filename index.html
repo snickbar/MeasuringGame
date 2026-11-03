@@ -4662,7 +4662,7 @@ if (location.protocol === "file:") {
       <label><span class="cozy-setting-label">Timer<small>Seconds to guess</small></span>
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="setting-timer" data-step="-5">&minus;</button>
-          <input id="setting-timer" type="number" min="10" max="90" readonly />
+          <input id="setting-timer" type="number" min="10" max="120" readonly />
           <button type="button" class="stepper-btn plus" data-for="setting-timer" data-step="5">+</button>
         </span>
       </label>
@@ -4758,7 +4758,7 @@ if (location.protocol === "file:") {
       <label><span class="cozy-setting-label">Timer<small>Seconds to guess</small></span>
         <span class="stepper">
           <button type="button" class="stepper-btn minus" data-for="preset-setting-timer" data-step="-5">&minus;</button>
-          <input id="preset-setting-timer" type="number" min="10" max="90" readonly />
+          <input id="preset-setting-timer" type="number" min="10" max="120" readonly />
           <button type="button" class="stepper-btn plus" data-for="preset-setting-timer" data-step="5">+</button>
         </span>
       </label>
@@ -9932,7 +9932,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let isHost = false;
   let currentPlayers = {};
   let renderedPlayerListIds = new Set();
-  let currentSettings = { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything" };
+  let currentSettings = { timerSeconds: 60, totalRounds: 5, itemSelectionMode: "anything" };
   let roomState = {};
   // Set right before any of the "we're leaving/ending this room for good"
   // sequences (finalHomeBtn, guestExit, hostExit) start their own awaited
@@ -10038,7 +10038,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 30, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true, includeMakeBelieve: true };
+    return { timerSeconds: 60, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true, includeMakeBelieve: true };
   }
 
   // ==================== Home screen ====================
@@ -15961,7 +15961,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   settingTimerInput.addEventListener("change", () => {
-    currentSettings.timerSeconds = Math.max(10, Math.min(90, parseInt(settingTimerInput.value, 10) || 30));
+    currentSettings.timerSeconds = Math.max(10, Math.min(120, parseInt(settingTimerInput.value, 10) || 60));
     renderLocalSettingsPanel();
   });
   settingRoundsInput.addEventListener("change", () => {
@@ -16020,7 +16020,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     input.dispatchEvent(new Event("change", { bubbles: true }));
   });
   presetSettingTimerInput.addEventListener("change", () => {
-    presetEditSettings.timerSeconds = Math.max(10, Math.min(90, parseInt(presetSettingTimerInput.value, 10) || 30));
+    presetEditSettings.timerSeconds = Math.max(10, Math.min(120, parseInt(presetSettingTimerInput.value, 10) || 60));
     renderPresetEditPanel();
   });
   presetSettingRoundsInput.addEventListener("change", () => {
@@ -16872,7 +16872,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const players = roomState.players || {};
     // A brand-new round: roomState may still hold last round's guesses for a moment.
     const existingGuesses = freshRound ? {} : (roomState.guesses || {});
-    const timerMs = (currentSettings.timerSeconds || 30) * 1000;
+    const timerMs = (currentSettings.timerSeconds || 60) * 1000;
     Object.keys(players).forEach((id) => {
       const p = players[id];
       if (!p || !p.isBot) return;
@@ -17365,7 +17365,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
     // Team modes (Worlds and High/Low) have no countdown on screen: the deadline is a 24-hour cap, so a teammate who
     // walks away eventually counts as 0% instead of stalling the room forever.
-    const endsAt = (roomState.settings || currentSettings).mode === "teamworlds" ? nowMs() + TEAM_ROUND_CAP_MS : nowMs() + (currentSettings.timerSeconds || 30) * 1000;
+    const endsAt = (roomState.settings || currentSettings).mode === "teamworlds" ? nowMs() + TEAM_ROUND_CAP_MS : nowMs() + (currentSettings.timerSeconds || 60) * 1000;
     let hlRoles = null;
     if (hl) {
       // Re-rolled every round: one player is HIGH (a number it can't possibly be more than), the other LOW.

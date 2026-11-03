@@ -29,7 +29,7 @@ const $=id=>document.getElementById(id),assert=(v,m)=>{if(!v)throw Error(m)};
 window.fixture={show};
 (async()=>{try{
 show('quick');assert($('create-room-btn').textContent==='Create Game','Quick Game action');assert(!document.querySelector('#create-screen h1'),'No redundant setup heading');assert($('host-settings-card').hidden,'quick hides host settings');
-$('setting-timer').value=90;$('setting-timer').dispatchEvent(new Event('change'));document.querySelector('[data-for=setting-timer].plus').click();assert(currentSettings.timerSeconds===90,'timer upper limit');
+$('setting-timer').value=120;$('setting-timer').dispatchEvent(new Event('change'));document.querySelector('[data-for=setting-timer].plus').click();assert(currentSettings.timerSeconds===120,'timer upper limit');
 $('setting-timer').value=10;$('setting-timer').dispatchEvent(new Event('change'));document.querySelector('[data-for=setting-timer].minus').click();assert(currentSettings.timerSeconds===10,'timer lower limit');
 $('setting-auto-advance-manual').click();assert($('setting-auto-advance-seconds').disabled,'manual disables delay');$('setting-auto-advance-auto').click();assert(!$('setting-auto-advance-seconds').disabled,'auto enables delay');
 $('setting-item-relative').click();assert(currentSettings.itemSelectionMode==='relative'&&$('create-settings-summary').textContent.includes('Keep it relative'),'live summary');
