@@ -717,6 +717,11 @@ if (location.protocol === "file:") {
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   .cosm-rnd-sub { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
   #cosm-random-slot .cosm-rnd-row { margin: 8px 0 2px; }
+  /* The picking-from panel and the Equip Random row share one card (green while Random is on). */
+  #cosm-random-slot .cosm-rnd-card { margin: 8px 0 6px; padding: 10px 12px 10px; border: 3px solid #d9c3a3; border-radius: 16px; background: #fffaf0; }
+  #cosm-random-slot .cosm-rnd-card.on { border-color: #4caf50; background: #f1fae9; }
+  #cosm-random-slot .cosm-rnd-card .cosm-now { margin: 0; padding: 0; border: 0; background: transparent; }
+  #cosm-random-slot .cosm-rnd-card .cosm-rnd-row, #cosm-random-slot .cosm-rnd-card .cosm-rnd-row.equipped { margin: 10px 0 0; padding: 0; border: 0; background: transparent; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
@@ -5970,8 +5975,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : cat === "homeScreens" ? "A different equipped home screen each time you open Home"
       : "A different equipped board each game";
     slot.innerHTML = "";
-    slot.appendChild(cosmNowPanel(cat));
-    slot.appendChild(cosmRandomRow(cat, subText));
+    // One card: what Random is picking from, then the Equip Random row. Green while Random is on.
+    const card = document.createElement("div");
+    card.className = "cosm-rnd-card" + (rndOn(cat) ? " on" : "");
+    card.appendChild(cosmNowPanel(cat));
+    card.appendChild(cosmRandomRow(cat, subText));
+    slot.appendChild(card);
   }
   function defaultProfile() {
     return {
