@@ -7250,45 +7250,100 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  function pickGachaResult() {
+  // <gacha-pools>
+  // Everything a capsule pull can give. Only items that used to be sold in the paid packs are in the machine; monthly rewards,
+  // mode scenes, home screens and the free defaults are earned or free, so they never come out of it.
+  const GACHA_CATEGORIES = ["avatar", "reaction", "flair", "board", "scene"];
+  const gachaFlairItems = () => FLAIR_PACK_CATALOG.flatMap((p) => p.flairs).map((id) => COSMETIC_CATALOG.effects.find((x) => x.id === id)).filter(Boolean);
+  // The ids of one category that this player does not own yet.
+  function gachaPool(cat) {
+    if (cat === "avatar") return AVATARS.filter((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
+    if (cat === "reaction") return EMOJI_PACK_CATALOG.flatMap((p) => p.emojis).filter((e) => !ownsEmoji(e));
+    if (cat === "flair") return gachaFlairItems().filter((it) => !ownsFlair(it)).map((it) => it.id);
+    if (cat === "board") return allBoards().filter((b) => !ownsBoard(b.id)).map((b) => b.id);
+    if (cat === "scene") return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).filter((b) => !ownsBackground(b.id)).map((b) => b.id);
+    return [];
+  }
+  const gachaRemaining = (cat) => gachaPool(cat).length;
+  const gachaAnyRemaining = () => GACHA_CATEGORIES.some((c) => gachaRemaining(c) > 0);
+  // Avatars keep their rarity odds (common, rare, ultra); every other category is an even draw.
+  function gachaPickId(cat, rand = Math.random) {
+    const pool = gachaPool(cat);
+    if (!pool.length) return null;
+    if (cat !== "avatar") return pool[Math.floor(rand() * pool.length)];
     const lockedByTier = { common: [], rare: [], ultra: [] };
-    AVATARS.forEach((a) => {
-      const tier = AVATAR_TIERS[a];
-      if (tier !== "default" && !isAvatarUnlocked(a)) lockedByTier[tier].push(a);
-    });
+    pool.forEach((a) => lockedByTier[AVATAR_TIERS[a]].push(a));
     const availableTiers = Object.keys(GACHA_TIER_WEIGHTS).filter((t) => lockedByTier[t].length > 0);
-    if (availableTiers.length === 0) return null;
+    if (!availableTiers.length) return null;
     const totalWeight = availableTiers.reduce((sum, t) => sum + GACHA_TIER_WEIGHTS[t], 0);
-    let roll = Math.random() * totalWeight;
+    let roll = rand() * totalWeight;
     let chosenTier = availableTiers[availableTiers.length - 1];
     for (const t of availableTiers) {
       if (roll < GACHA_TIER_WEIGHTS[t]) { chosenTier = t; break; }
       roll -= GACHA_TIER_WEIGHTS[t];
     }
-    const pool = lockedByTier[chosenTier];
-    return pool[Math.floor(Math.random() * pool.length)];
+    const tierPool = lockedByTier[chosenTier];
+    return tierPool[Math.floor(rand() * tierPool.length)];
   }
+  // One random new item. "any" gives every category that still has something an equal chance, then picks inside it.
+  function gachaPick(cat, rand = Math.random) {
+    let c = cat;
+    if (cat === "any") {
+      const open = GACHA_CATEGORIES.filter((x) => gachaRemaining(x) > 0);
+      if (!open.length) return null;
+      c = open[Math.floor(rand() * open.length)];
+    }
+    const id = gachaPickId(c, rand);
+    return id == null ? null : { cat: c, id };
+  }
+  // The same ownership rules as ownsEmoji/ownsFlair/ownsBoard/ownsBackground, but read from a profile object (the one inside a transaction).
+  function gachaOwnedIn(profile, cat, id) {
+    const own = (profile.cosmetics && profile.cosmetics.owned) || {};
+    if (cat === "avatar") return !!(profile.unlockedAvatars || {})[id];
+    if (cat === "reaction") { const pk = emojiPackOf(id); return !!((pk && (profile.emojiPacks || {})[pk.id]) || (profile.emojiOwned || {})[emojiKey(id)]); }
+    if (cat === "flair") { const pk = flairPackOf(id); return !!((own.effects || {})[id] || (pk && (profile.flairPacks || {})[pk.id])); }
+    if (cat === "board") { const pk = boardPackOf(id); return !!((own.boards || {})[id] || (pk && (profile.boardPacks || {})[pk.id])); }
+    if (cat === "scene") { const pk = backgroundPackOf(id); return !!((own.backgrounds || {})[id] || (pk && (profile.backgroundPacks || {})[pk.id])); }
+    return false;
+  }
+  // The profile with one more item unlocked.
+  function gachaGrant(profile, cat, id) {
+    if (cat === "avatar") return { ...profile, unlockedAvatars: { ...(profile.unlockedAvatars || {}), [id]: true } };
+    if (cat === "reaction") return { ...profile, emojiOwned: { ...(profile.emojiOwned || {}), [emojiKey(id)]: true } };
+    const cosmetics = profile.cosmetics || defaultCosmeticState(), own = cosmetics.owned || {};
+    const slot = cat === "flair" ? "effects" : cat === "board" ? "boards" : "backgrounds";
+    return { ...profile, cosmetics: { ...cosmetics, owned: { ...own, [slot]: { ...(own[slot] || {}), [id]: true } } } };
+  }
+  // </gacha-pools>
 
-  async function pullGacha() {
+  // One capsule pull from a category ("avatar", "reaction", "flair", "board", "scene" or "any"). A banked free pull is spent before any coins.
+  // Resolves to { cat, id } for the new item, or null when nothing was pulled (not enough coins, nothing left, or it was taken meanwhile).
+  async function pullGachaItem(cat = "avatar") {
     if (myProfile.coins < GACHA_COST && !(myProfile.freePulls > 0)) return null;
-    const result = pickGachaResult();
-    if (!result) return null;
+    const pick = gachaPick(cat);
+    if (!pick) return null;
+    let granted = false;
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      granted = false;
       const profile = current || defaultProfile();
-      const useFree = (profile.freePulls | 0) > 0; // free pulls (from level-ups) are spent before any coins
+      const useFree = (profile.freePulls | 0) > 0;
       if (!useFree && (profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
-      if (profile.unlockedAvatars && profile.unlockedAvatars[result]) return profile; // abort: already unlocked (race)
+      if (gachaOwnedIn(profile, pick.cat, pick.id)) return profile; // abort: already unlocked (race)
+      granted = true;
       return {
-        ...profile,
+        ...gachaGrant(profile, pick.cat, pick.id),
         coins: useFree ? (profile.coins || 0) : (profile.coins || 0) - GACHA_COST,
         freePulls: useFree ? (profile.freePulls | 0) - 1 : (profile.freePulls | 0),
-        unlockedAvatars: { ...(profile.unlockedAvatars || {}), [result]: true },
       };
     });
-    if (!txResult.committed) return null;
-    const finalUnlocked = (txResult.snapshot.val() || {}).unlockedAvatars || {};
-    if (finalUnlocked[result]) bumpStats({ pulls: 1 });
-    return finalUnlocked[result] ? result : null;
+    if (!txResult.committed || !granted) return null;
+    bumpStats({ pulls: 1 });
+    return pick;
+  }
+  // The avatar machine as it works today: resolves to the avatar id.
+  async function pullGacha() {
+    const r = await pullGachaItem("avatar");
+    return r ? r.id : null;
   }
 
   watchMyProfile();
