@@ -9962,7 +9962,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let lastSeenPhaseForSound = null;
   let lastSeenPhaseForReset = null;
   let answersPhaseInputLockedUntil = 0;
-  let transitionInFlight = false;
+  // A host phase change in flight. It expires on its own: a network write that hangs while the app is in the background
+  // must never leave the round stuck with "a transition is running" forever.
+  let transitionFlag = 0;
+  const TRANSITION_MAX_MS = 8000;
+  const transitionBusy = () => transitionFlag > 0 && Date.now() - transitionFlag < TRANSITION_MAX_MS;
   let previousDisplayedScores = {};
   let previousScoreColumnRanks = {};
 
@@ -17361,9 +17365,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   async function goToReveal(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionBusy()) return;
     if (roomState.phase !== "animation") return;
-    transitionInFlight = true;
+    transitionFlag = Date.now();
     try {
       const baseDelay = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
       const delayMs = isHlSettings(roomState.settings) ? Math.max(baseDelay, HL_REVEAL_STEP_MS + 850) : baseDelay;
@@ -17371,11 +17375,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       await update(ref(db, `rooms/${roomCode}`), { phase: "reveal", revealIndex: 0, revealAdvanceAt });
       scheduleHostDeadline(revealAdvanceAt, () => checkRevealAdvance(roomCode));
     } finally {
-      transitionInFlight = false;
+      transitionFlag = 0;
     }
   }
   function checkAnimationAdvance(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionBusy()) return;
     if (roomState.phase !== "animation") return;
     if (roomState.paused) return;
     if (nowMs() < (roomState.animEndsAt || Infinity)) return;
@@ -17387,6 +17391,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function scheduleHostDeadline(deadlineMs, fn) {
     return setTimeout(fn, Math.max(0, deadlineMs - nowMs()));
   }
+  // Safety net for the host: each phase normally advances from a one-shot timer set at its deadline. If that timer was lost
+  // (app minimized, phone asleep, a write that never finished), the round would sit frozen on 0s. So every couple of seconds,
+  // and the moment the app comes back to the front, the host checks whether the current phase is overdue and moves it along.
+  function hostWatchdog() {
+    const d = roomState;
+    if (!isHost || !currentRoomCode || !d || d.paused || document.hidden) return;
+    const due = {
+      countdown: [d.countdownEndsAt, checkCountdownAdvance],
+      question: [d.graceEndsAt || d.questionEndsAt, checkQuestionAdvance],
+      answers: [d.answersEndsAt, checkAnswersAdvance],
+      animation: [d.animEndsAt, checkAnimationAdvance],
+      reveal: [d.revealAdvanceAt, checkRevealAdvance],
+      summary: [d.summaryAdvanceAt, checkSummaryAdvance],
+    }[d.phase];
+    if (due && due[0] && nowMs() > due[0] + 1500) due[1](currentRoomCode);
+  }
+  setInterval(hostWatchdog, 2000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(hostWatchdog, 400); });
+  window.addEventListener("size-em-up:app-active", () => setTimeout(hostWatchdog, 400));
 
   let hudTickHandle = null;
   let lastCountdownDisplayed = null;
@@ -17512,7 +17535,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkQuestionAdvance(roomCode) {
-    if (!isHost || transitionInFlight || powerups?.busy) return;
+    if (!isHost || transitionBusy() || powerups?.busy) return;
     if (roomState.phase !== "question") return;
     if (roomState.paused) return;
     const players = roomState.players || {};
@@ -17527,8 +17550,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = nowMs();
 
     if (now >= roomState.questionEndsAt || (roomState.graceEndsAt && now >= roomState.graceEndsAt)) {
-      transitionInFlight = true;
-      lockQuestionAndAdvance(roomCode, activeIds, guesses).finally(() => { transitionInFlight = false; });
+      transitionFlag = Date.now();
+      lockQuestionAndAdvance(roomCode, activeIds, guesses).finally(() => { transitionFlag = 0; });
       return;
     }
     if (!roomState.graceEndsAt && waitIds.length > 0 && guessedCount >= waitIds.length) {
@@ -17595,15 +17618,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkAnswersAdvance(roomCode) {
-    if (!isHost || transitionInFlight || powerups?.busy) return;
+    if (!isHost || transitionBusy() || powerups?.busy) return;
     if (roomState.phase !== "answers") return;
     if (roomState.paused) return;
     if (nowMs() < roomState.answersEndsAt) return;
-    transitionInFlight = true;
+    transitionFlag = Date.now();
     const activeIds = Object.keys(roomState.players || {});
     const scoreRound = (roomState.settings || currentSettings).mode === "teamworlds" ? finishTeamWorldsScoring : finishRoundScoring;
     scoreRound(roomCode, activeIds, roomState.guesses || {}, roomState.picks || {})
-      .finally(() => { transitionInFlight = false; });
+      .finally(() => { transitionFlag = 0; });
   }
 
   // Team Worlds' round scoring: no winner, no points - both players' guesses (whichever were
@@ -17911,7 +17934,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkRevealAdvance(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionBusy()) return;
     if (roomState.phase !== "reveal") return;
     if (roomState.paused) return;
     if (!(roomState.settings || currentSettings).autoAdvanceEnabled) return;
@@ -17922,8 +17945,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (idx < revealStepCount(order)) {
       advanceReveal(roomCode);
     } else {
-      transitionInFlight = true;
-      goToSummary(roomCode).finally(() => { transitionInFlight = false; });
+      transitionFlag = Date.now();
+      goToSummary(roomCode).finally(() => { transitionFlag = 0; });
     }
   }
 
@@ -17994,13 +18017,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkSummaryAdvance(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionBusy()) return;
     if (roomState.phase !== "summary") return;
     if (roomState.paused) return;
     if (!(roomState.settings || currentSettings).autoAdvanceEnabled) return;
     if (nowMs() < (roomState.summaryAdvanceAt || Infinity)) return;
-    transitionInFlight = true;
-    advanceAfterSummary(roomCode).finally(() => { transitionInFlight = false; });
+    transitionFlag = Date.now();
+    advanceAfterSummary(roomCode).finally(() => { transitionFlag = 0; });
   }
 
   nextRoundBtn.addEventListener("click", () => { if (navBlocked()) return; navGuardAt = nowMs(); advanceAfterSummary(currentRoomCode); });
@@ -18052,12 +18075,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkCountdownAdvance(roomCode) {
-    if (!isHost || transitionInFlight) return;
+    if (!isHost || transitionBusy()) return;
     if (roomState.phase !== "countdown") return;
     if (roomState.paused) return;
     if (nowMs() < (roomState.countdownEndsAt || Infinity)) return;
-    transitionInFlight = true;
-    startRound(roomCode, roomState.countdownRound).finally(() => { transitionInFlight = false; });
+    transitionFlag = Date.now();
+    startRound(roomCode, roomState.countdownRound).finally(() => { transitionFlag = 0; });
   }
 
   async function playAgain(roomCode) {
@@ -21565,7 +21588,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const relative = currentSettings.itemSelectionMode === "relative" ? (pool.partners || (pool.partners = buildRelativeIndex(pool.objects))) : null;
     return { mode: "quick", q, phase: roomState.phase, playerId: currentPlayerId, roomCode: currentRoomCode,
       submitted: hasSubmittedThisRound || roomState.guesses?.[currentPlayerId] !== undefined || guessLocked,
-      paused: roomState.paused || transitionInFlight,
+      paused: roomState.paused || transitionBusy(),
       deadline: roomState.phase === "answers" ? roomState.answersEndsAt : (roomState.graceEndsAt || roomState.questionEndsAt),
       answers: roomState.answers || [], objects: pool.objects, seen: powerupSeen,
       allowed: (u, t) => !relative || relative.get(u.name).some(pair => pair[0].id === u.id && pair[1].id === t.id),
