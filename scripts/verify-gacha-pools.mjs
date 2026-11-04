@@ -35,7 +35,7 @@ const src = [
    const ownsBackground = (id) => gachaOwnedIn(P, "scene", id);
    const defaultCosmeticState = () => ({ owned: {}, equipped: {} });`,
   block,
-  'globalThis.api = { gachaPool, gachaRemaining, gachaAnyRemaining, gachaPick, gachaPickId, gachaOwnedIn, gachaGrant, GACHA_CATEGORIES, setProfile: (p) => { P = p; }, MONTH_BACKGROUNDS, MODE_BACKGROUNDS, BACKGROUND_PACK_CATALOG, EMOJI_PACK_CATALOG, FLAIR_PACK_CATALOG, BOARD_PACK_CATALOG };',
+  'globalThis.api = { gachaPool, gachaRemaining, gachaAnyRemaining, gachaPick, gachaPickId, gachaOwnedIn, gachaGrant, GACHA_CATEGORIES, ITEM_TIERS, itemTier, itemCoinCost, setProfile: (p) => { P = p; }, MONTH_BACKGROUNDS, MODE_BACKGROUNDS, BACKGROUND_PACK_CATALOG, EMOJI_PACK_CATALOG, FLAIR_PACK_CATALOG, BOARD_PACK_CATALOG };',
 ].join('\n');
 vm.runInContext(src, sb);
 const a = sb.api;
@@ -82,6 +82,26 @@ assert.equal(a.gachaPickId('avatar', () => 0.95), 'u1');
 // With no ultra left, the weights are shared by the tiers that remain.
 a.setProfile({ unlockedAvatars: { u1: true } });
 assert.equal(a.gachaPickId('avatar', () => 0.99).startsWith('r'), true);
+
+// Rarity for every category: the planned splits, every listed id is a real machine item, and picks follow 65/25/10.
+a.setProfile({});
+const tierCount = (cat) => a.gachaPool(cat).reduce((m, id) => { const t = a.itemTier(cat, id); m[t] = (m[t] || 0) + 1; return m; }, {});
+assert.deepEqual(tierCount('reaction'), { common: 14, rare: 7, ultra: 3 });
+assert.deepEqual(tierCount('flair'), { common: 11, rare: 6, ultra: 3 });
+assert.deepEqual(tierCount('board'), { common: 7, rare: 3, ultra: 2 });
+assert.deepEqual(tierCount('scene'), { common: 14, rare: 7, ultra: 3 });
+for (const cat of ['reaction', 'flair', 'board', 'scene']) {
+  const pool = new Set(a.gachaPool(cat));
+  for (const t of ['rare', 'ultra']) a.ITEM_TIERS[cat][t].forEach((id) => assert(pool.has(id), cat + ' ' + t + ' lists an id that is not in the machine: ' + id));
+  assert.equal(a.gachaPickId(cat, () => 0) && a.itemTier(cat, a.gachaPickId(cat, () => 0)), 'common', cat + ': low roll is common');
+  assert.equal(a.itemTier(cat, a.gachaPickId(cat, () => 0.7)), 'rare', cat + ': 0.7 roll is rare');
+  assert.equal(a.itemTier(cat, a.gachaPickId(cat, () => 0.95)), 'ultra', cat + ': 0.95 roll is ultra');
+}
+assert.deepEqual([a.itemCoinCost('flair', 'fireflies'), a.itemCoinCost('board', 'phone'), a.itemCoinCost('scene', 'tile-dots')], [200, 150, 100]);
+assert.equal(a.itemCoinCost('reaction', '\u2620\uFE0F'), 150);
+// An emptied tier hands its odds to the others.
+a.setProfile({ cosmetics: { owned: { effects: { fireworks: true, lightning: true, fireflies: true } } } });
+assert.equal(a.itemTier('flair', a.gachaPickId('flair', () => 0.99)), 'rare');
 
 // "Any": each open category is equally likely, an empty category is skipped, and nothing left gives null.
 a.setProfile({});

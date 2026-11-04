@@ -777,6 +777,9 @@ if (location.protocol === "file:") {
     background: rgba(255,255,255,.62); border: 2px solid rgba(255,255,255,.9); border-radius: 12px;
   }
   .gacha-cat:active { filter: brightness(.92); }
+  .rar-dot { display: inline-block; width: .6em; height: .6em; margin-right: .35em; border-radius: 50%; vertical-align: .05em; background: #7a8fa6; }
+  .rar-dot.rare { background: #9a6fc1; }
+  .rar-dot.ultra { background: #d9a441; box-shadow: 0 0 5px #d9a441; }
   .gacha-cat-name { font-size: 15px; line-height: 1.1; }
   .gacha-cat-left { font-size: 12px; font-weight: 600; opacity: .75; line-height: 1.1; }
   .gacha-cat.done { opacity: .6; }
@@ -6661,7 +6664,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ---- Cosmetics rows: picture on the left, Equip in the middle, coin price on the right ----
   // Pack bundles are real-money (simulated for now, like the emoji pack was); each item can also be bought with coins.
-  const EMOJI_COIN_COST = 100; // reactions and flairs: one price
   const EMOJI_NAMES = {
     "\u{1F937}": "Shrug", "\u{1F600}": "Grin", "\u23F0": "Alarm clock", "\u{1F44F}": "Clap", "\u2764\uFE0F": "Heart",
     "\u{1F44D}": "Thumbs up", "\u{1F602}": "Laughing", "\u{1F525}": "Fire", "\u{1F389}": "Party popper",
@@ -6670,7 +6672,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Backgrounds: a picture behind every screen except Home. Packs are 6 backgrounds; each can be bought with
   // coins, or the whole pack unlocked at once (simulated purchase, like the flair packs). Only backgrounds with
   // art are listed; more are added here as their pictures arrive.
-  const BACKGROUND_COIN_COST = 100;
   // The 12 holiday backgrounds are not sold: each is the reward for finishing that month's Monthly Challenge
   // (an achievement). legacyPack keeps them for anyone who already owns the old pack they used to be sold in.
   const MONTH_BACKGROUNDS = [
@@ -6855,7 +6856,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else ['--game-bg-pos', '--game-bg-repeat', '--game-bg-size'].forEach(k => document.body.style.removeProperty(k));
   }
   async function buyBackgroundWithCoins(bg, money = false) {
-    const cost = money ? 0 : BACKGROUND_COIN_COST;
+    const cost = money ? 0 : itemCoinCost("scene", bg.id);
     if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
@@ -6967,7 +6968,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
         leadHtml: bgThumbHtml(b.id, "cosm-bg-pic", 34), name: b.label,
-        owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id, poolId: b.id,
+        owned: ownsBackground(b.id), free: false, cost: itemCoinCost("scene", b.id), tier: itemTier("scene", b.id), equipped: equipped === b.id, poolId: b.id,
         onPreview: () => openBackgroundPreview(b.id, b.label), onEquip: () => equipBackground(b.id), onBuy: (m) => buyBackgroundWithCoins(b, m === true),
       })));
     });
@@ -6987,7 +6988,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
-  const BOARD_COIN_COST = 100;
   const BOARD_PACK_CATALOG = [
     { id: "boardpack1", label: "Question Board Pack 1", price: "$1.49", boards: [
       { id: "chalkboard", label: "Chalkboard" },
@@ -7044,7 +7044,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return id && id !== "none" && ownsBoard(id) && allBoards().some((b) => b.id === id) ? id : "none";
   }
   async function buyBoardWithCoins(b, money = false) {
-    const cost = money ? 0 : BOARD_COIN_COST;
+    const cost = money ? 0 : itemCoinCost("board", b.id);
     if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       const profile = current || defaultProfile();
@@ -7071,7 +7071,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BOARD_PACK_CATALOG.forEach((pack) => {
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
-        owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id, poolId: b.id,
+        owned: ownsBoard(b.id), free: false, cost: itemCoinCost("board", b.id), tier: itemTier("board", b.id), equipped: equipped === b.id, poolId: b.id,
         onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id), onBuy: (m) => buyBoardWithCoins(b, m === true),
       })));
     });
@@ -7104,7 +7104,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     cosmNoteTimer = setTimeout(() => { if (n) n.textContent = ""; }, 2200);
   }
   async function buyEmojiWithCoins(e, money = false) {
-    const cost = money ? 0 : EMOJI_COIN_COST;
+    const cost = money ? 0 : itemCoinCost("reaction", e);
     if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     const key = emojiKey(e);
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -7138,7 +7138,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   async function buyFlairWithCoins(item, money = false) {
-    const wasOwned=ownsFlair(item),buyer=deviceId;let purchased=false;const cost = money ? 0 : item.cost;
+    const wasOwned=ownsFlair(item),buyer=deviceId;let purchased=false;const cost = money || item.cost === 0 ? 0 : itemCoinCost("flair", item.id);
     if ((myProfile.coins || 0) < cost) { cosmNote("Not enough coins yet."); return; }
     const result=await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       purchased=false;
@@ -7164,7 +7164,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const pooled = canPool && inRndPool(cat, o.poolId);
     const isLocked = !!(o.owned && !o.ownedLabel && cat && (o.locked !== undefined ? o.locked : (o.equipped && !rndOn(cat))));
     row.className = "cosm-row" + (isLocked ? " cosm-locked" : pooled || (!canPool && o.equipped && !o.ownedLabel && o.owned && !rndOn(cat)) ? " equipped" : "");
-    row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.name}</span></div>`;
+    row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.tier ? `<span class="rar-dot ${o.tier}" title="${({ common: "Common", rare: "Rare", ultra: "Ultra-rare" })[o.tier]}"></span>` : ""}${o.name}</span></div>`;
     // Tap the little picture to preview it (there is no separate Preview button any more).
     const pic = row.querySelector(".cosm-lead").firstElementChild;
     if (o.onPreview && pic) {
@@ -7237,7 +7237,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const slots = ownedReactionSlots();
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("reactions")); container.dataset.rndCat = "reactions"; cosmRowCat = "reactions";
-    const row = (e, cost) => cosmRow({
+    const row = (e, cost, tier) => cosmRow({
+      tier,
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e), locked: active.includes(e), poolId: e,
       onPreview: () => previewReaction(e),
@@ -7249,7 +7250,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
-      pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
+      pack.emojis.forEach((e) => container.appendChild(row(e, itemCoinCost("reaction", e), itemTier("reaction", e))));
     });
     if (statusEl) { statusEl.textContent = `${active.length} / ${slots} locked`; statusEl.classList.toggle("full", active.length >= slots); }
     const unBtn = document.getElementById("cosm-unequip-all-btn");
@@ -7261,7 +7262,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.innerHTML = "";
     const row = (item) => cosmRow({
       leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
-      owned: ownsFlair(item), free: item.cost === 0, cost: item.cost, equipped: equipped === item.id, poolId: item.id,
+      owned: ownsFlair(item), free: item.cost === 0, cost: item.cost === 0 ? 0 : itemCoinCost("flair", item.id), tier: item.cost === 0 ? undefined : itemTier("flair", item.id), equipped: equipped === item.id, poolId: item.id,
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: (m) => buyFlairWithCoins(item, m === true),
     });
@@ -7277,6 +7278,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Everything a capsule pull can give. Only items that used to be sold in the paid packs are in the machine; monthly rewards,
   // mode scenes, home screens and the free defaults are earned or free, so they never come out of it.
   const GACHA_CATEGORIES = ["avatar", "reaction", "flair", "board", "scene"];
+  // Rarity of every item the machine can give. Anything not listed is common. Avatars keep their own tiers (AVATAR_TIERS).
+  const ITEM_TIERS = {
+    reaction: { ultra: ["\u{1F451}", "\u{1F92F}", "\u{1F60E}"], rare: ["\u{1F3C6}", "\u{1F62D}", "\u{1F913}", "\u{1FAE3}", "\u{1F370}", "\u{1F926}", "\u2620\uFE0F"] },
+    flair: { ultra: ["fireworks", "lightning", "fireflies"], rare: ["fire", "planes", "butterfly", "paws", "blossom", "food"] },
+    board: { ultra: ["neon", "tv"], rare: ["terminal", "sand", "phone"] },
+    scene: { ultra: ["nature-meadow", "nature-beach", "candy-lollipops"], rare: ["table-card", "table-coffee", "nature-snow", "nature-water", "candy-cottoncandy", "candy-gumdrops", "candy-chocolate"] },
+  };
+  function itemTier(cat, id) {
+    if (cat === "avatar") return AVATAR_TIERS[id];
+    const t = ITEM_TIERS[cat];
+    return t && t.ultra.includes(id) ? "ultra" : t && t.rare.includes(id) ? "rare" : "common";
+  }
+  // What picking one item costs in coins (a random pull is always GACHA_COST).
+  const RARITY_COIN_COST = { common: 100, rare: 150, ultra: 200 };
+  const itemCoinCost = (cat, id) => RARITY_COIN_COST[itemTier(cat, id)];
   const gachaFlairItems = () => FLAIR_PACK_CATALOG.flatMap((p) => p.flairs).map((id) => COSMETIC_CATALOG.effects.find((x) => x.id === id)).filter(Boolean);
   // The ids of one category that this player does not own yet.
   function gachaPool(cat) {
@@ -7289,13 +7305,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const gachaRemaining = (cat) => gachaPool(cat).length;
   const gachaAnyRemaining = () => GACHA_CATEGORIES.some((c) => gachaRemaining(c) > 0);
-  // Avatars keep their rarity odds (common, rare, ultra); every other category is an even draw.
+  // Every category rolls its rarity first (common, rare, ultra), then an even draw inside that tier.
   function gachaPickId(cat, rand = Math.random) {
     const pool = gachaPool(cat);
     if (!pool.length) return null;
-    if (cat !== "avatar") return pool[Math.floor(rand() * pool.length)];
     const lockedByTier = { common: [], rare: [], ultra: [] };
-    pool.forEach((a) => lockedByTier[AVATAR_TIERS[a]].push(a));
+    pool.forEach((a) => lockedByTier[itemTier(cat, a)].push(a));
     const availableTiers = Object.keys(GACHA_TIER_WEIGHTS).filter((t) => lockedByTier[t].length > 0);
     if (!availableTiers.length) return null;
     const totalWeight = availableTiers.reduce((sum, t) => sum + GACHA_TIER_WEIGHTS[t], 0);
@@ -7383,8 +7398,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bg = BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).find((x) => x.id === id) || {};
     return { name: bg.label || "", img: backgroundUrl(id) };
   }
-  // Only avatars have rarities so far; everything else reveals as a common until they get theirs.
-  const gachaTierOf = (cat, id) => (cat === "avatar" ? AVATAR_TIERS[id] : "common");
+  const gachaTierOf = itemTier;
   // The Equip button on the reveal card: puts a new item to use right away. Resolves to false when there is nothing to equip.
   function gachaEquipResult(cat, id) {
     if (cat === "avatar") {
@@ -15175,7 +15189,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaResultImgEl.dataset.itemId = pulled.id;
     gachaResultImgEl.src = info.img;
     gachaResultNameEl.textContent = info.name;
-    gachaResultRarityEl.textContent = pulled.cat === "avatar" ? `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}` : GACHA_CAT_LABEL[pulled.cat];
+    gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}`;
     gachaResultEquipBtn.textContent = pulled.cat === "avatar" ? "Equip avatar" : "Equip";
     gachaResultEquipBtn.style.display = pulled.cat === "reaction" && equippedReactions().length >= ownedReactionSlots() ? "none" : "";
     gachaResultOverlayEl.classList.add("show");
