@@ -8,8 +8,11 @@ const block=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.in
  await c.buy();assert.equal(profile.freeCategoryPulls.board,1);assert.equal(profile.coins,100,'repeat purchase cannot credit again');
  assert.equal(await c.pull('board'),null);assert.equal(profile.freeCategoryPulls.board,1,'empty category never consumes its credit');
  newBoard=true;await c.pull('board');assert.equal(profile.freeCategoryPulls.board,0);assert.equal(profile.coins,100,'new item consumes category credit, not coins');assert(profile.owned.board);
+ profile={coins:0,freePulls:2};c.myProfile=profile;newBoard=true;
+ assert.equal(await c.pull('board'),null);assert.equal(profile.freePulls,2,'general free pulls never work on a chosen category');assert(!profile.owned?.board);
+ assert.notEqual(await c.pull('any'),null);assert.equal(profile.freePulls,1,'the random pull spends a general free pull');
  const classes=new Set(),el=()=>({disabled:false,textContent:'',classList:{add(){},remove(){}}});let attempted=0;
- const s={myProfile:{coins:100},GACHA_COST:50,gachaFreePulls:()=>0,gachaStatusEl:el(),gachaPullBtn:el(),gachaCatRowEl:el(),document:{body:{classList:{add:v=>classes.add(v),remove:v=>classes.delete(v)}}},resetGachaScene(){classes.delete('gacha-pull-lock')},renderGachaScreen(){s.gachaPullBtn.disabled=false},pullGachaItem:async()=>{attempted++;throw Error('permission-denied')},gachaRetrigger(){},playSound(){}};
+ const s={myProfile:{coins:100},GACHA_COST:50,gachaFreePulls:()=>0,gachaStatusEl:el(),gachaPullBtn:el(),gachaCatRowEl:el(),gachaPanelEl:el(),document:{body:{classList:{add:v=>classes.add(v),remove:v=>classes.delete(v)}}},resetGachaScene(){classes.delete('gacha-pull-lock')},renderGachaScreen(){s.gachaPullBtn.disabled=false},pullGachaItem:async()=>{attempted++;throw Error('permission-denied')},gachaRetrigger(){},playSound(){}};
  vm.createContext(s);vm.runInContext('let gachaPullInProgress=false;'+block('  async function runGachaPull(','  gachaPullBtn.addEventListener')+';globalThis.run=runGachaPull;globalThis.busy=()=>gachaPullInProgress;',s);
  await s.run('any',s.gachaPullBtn);assert(!s.busy()&&!classes.has('gacha-pull-lock')&&!s.gachaPullBtn.disabled);assert.match(s.gachaStatusEl.textContent,/try again/i);
  await s.run('any',s.gachaPullBtn);assert.equal(attempted,2,'failed pull can immediately be retried');
