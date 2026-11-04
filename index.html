@@ -725,35 +725,49 @@ if (location.protocol === "file:") {
   .coming-soon-sub { margin: 0; font-size: 13px; color: var(--text-muted); }
   #gacha-status { text-align: center; font-size: 14px; min-height: 1.4em; }
   #gacha-status.error { color: var(--red); font-weight: 700; }
-  #gacha-pull-btn { position: relative; display: block; width: 100%; margin: 6px 0 0; padding: 0; border: none; background: none; }
+  /* The red panel under the machine: the "any item" title bar on top and one metal coin slot per category below it. */
+  #gacha-panel {
+    position: relative; margin: 12px 0 0; padding: 8px 10px 10px; box-sizing: border-box; border-radius: 22px;
+    border: 3px solid #6b3f0e; background: radial-gradient(circle at 50% 0, #d9574a, #b23a31 70%);
+    box-shadow: inset 0 0 0 3px #f2c75a, inset 0 0 0 5px #a8741f, inset 0 10px 22px rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.3);
+  }
+  .gacha-panel-coin { position: absolute; top: -18px; width: 62px; height: auto; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+  .gacha-panel-coin.l { left: -4px; }
+  .gacha-panel-coin.r { right: -4px; }
+  #gacha-pull-btn { position: relative; display: block; width: calc(100% - 96px); min-height: 40px; margin: 0 auto 2px; padding: 0 6px; border: none; background: none; }
   #gacha-pull-btn.shake { animation: gachaPullShake .4s ease-in-out; }
-  #gacha-pull-btn-img { display: block; width: 100%; height: auto; }
-  #gacha-pull-btn-text { display: none; }
-  /* The banner art (icons/gacha-pull-btn.png) used to have "Pull for 100
-     coins" baked into the image - the price text now lives here instead, as
-     a real overlay centered on the (price-free) art, so a cost change is
-     just a number in code and never needs new art again. Styled to match
-     the look the baked-in text used to have (white fill, dark maroon
-     outline sampled from the original art). */
-  #gacha-pull-btn:not(.soldout) #gacha-pull-btn-text {
-    display: flex; position: absolute; inset: 0; align-items: center; justify-content: center;
-    padding: 0 14%; overflow: hidden; white-space: nowrap;
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #fff;
+  #gacha-pull-btn:active { filter: brightness(.9); }
+  #gacha-pull-btn-text {
+    display: flex; align-items: center; justify-content: center; min-height: 40px; overflow: hidden; white-space: nowrap;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #fff;
     text-shadow: -1.5px -1.5px 0 #4b0d0c, 1.5px -1.5px 0 #4b0d0c, -1.5px 1.5px 0 #4b0d0c, 1.5px 1.5px 0 #4b0d0c,
                  0 -1.5px 0 #4b0d0c, 0 1.5px 0 #4b0d0c, -1.5px 0 0 #4b0d0c, 1.5px 0 0 #4b0d0c;
   }
-  /* Mid-pull (.busy): keep the artwork (and its price text) visible, just
-     dimmed, rather than swapping to a different message - only "every
-     avatar is already unlocked" (.soldout) replaces it with a real message,
-     since that's a different, non-temporary reason the button can't be used. */
-  #gacha-pull-btn.busy #gacha-pull-btn-img { opacity: .5; filter: grayscale(.3); }
-  #gacha-pull-btn.busy #gacha-pull-btn-text { opacity: .5; filter: grayscale(.3); }
-  #gacha-pull-btn.soldout #gacha-pull-btn-img { display: none; }
-  #gacha-pull-btn.soldout #gacha-pull-btn-text {
-    display: block; padding: 14px; border-radius: 999px;
-    background: #e8e2d4; color: var(--text-muted);
-    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; text-align: center;
+  /* Mid-pull (.busy) everything is dimmed; .soldout is the one lasting state: nothing is left in any category. */
+  #gacha-pull-btn.busy, #gacha-panel.busy .gacha-cat { opacity: .55; filter: grayscale(.3); }
+  #gacha-pull-btn.soldout #gacha-pull-btn-text { font-size: 17px; opacity: .85; }
+  #gacha-cat-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 0; }
+  .gacha-cat {
+    flex: 0 0 33.333%; box-sizing: border-box; padding: 2px 2px 0; border: 0; background: none;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; color: #fff;
+    text-shadow: -1px -1px 0 #4b0d0c, 1px -1px 0 #4b0d0c, -1px 1px 0 #4b0d0c, 1px 1px 0 #4b0d0c;
   }
+  .gacha-cat:active { filter: brightness(.88); }
+  .gacha-cat-name { font-size: 15px; line-height: 1.1; }
+  .gacha-cat-left { font-size: 12px; font-weight: 600; line-height: 1.1; }
+  /* A brushed-metal coin slot (drawn in code until real art arrives). */
+  .gacha-slot {
+    position: relative; display: block; width: 24px; height: 40px; border-radius: 8px; box-sizing: border-box;
+    border: 2px solid #3f464e; background: linear-gradient(90deg, #7d868f, #eef2f6 32%, #c3cbd3 58%, #6f7882);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.4), 0 2px 3px rgba(0,0,0,.45);
+  }
+  .gacha-slot::before {
+    content: ""; position: absolute; left: 50%; top: 7px; bottom: 7px; width: 6px; transform: translateX(-50%); border-radius: 4px;
+    background: #12161a; box-shadow: inset 0 2px 3px #000, 0 1px 0 rgba(255,255,255,.75);
+  }
+  .gacha-cat.done { opacity: .65; filter: grayscale(.6); }
+  .gacha-cat.shake { animation: gachaPullShake .4s ease-in-out; }
   @keyframes gachaPullShake {
     0%, 100% { transform: translateX(0); }
     20% { transform: translateX(-6px); }
@@ -769,22 +783,6 @@ if (location.protocol === "file:") {
     background: rgba(255,255,255,.55);
   }
   .gacha-viewall-avatar[src=""] { visibility: hidden; }
-  #gacha-cat-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 0; }
-  .gacha-cat {
-    flex: 0 0 calc(33.333% - 6px); box-sizing: border-box; min-height: 46px; padding: 5px 4px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    font-family: 'Fredoka', sans-serif; font-weight: 700; color: #000; text-shadow: none;
-    background: rgba(255,255,255,.62); border: 2px solid rgba(255,255,255,.9); border-radius: 12px;
-  }
-  .gacha-cat:active { filter: brightness(.92); }
-  .rar-dot { display: inline-block; width: .6em; height: .6em; margin-right: .35em; border-radius: 50%; vertical-align: .05em; background: #7a8fa6; }
-  .rar-dot.rare { background: #9a6fc1; }
-  .rar-dot.ultra { background: #d9a441; box-shadow: 0 0 5px #d9a441; }
-  .gacha-cat-name { font-size: 15px; line-height: 1.1; }
-  .gacha-cat-left { font-size: 12px; font-weight: 600; opacity: .75; line-height: 1.1; }
-  .gacha-cat.done { opacity: .6; }
-  #gacha-cat-row.busy .gacha-cat { filter: grayscale(.4); opacity: .6; }
-  .gacha-cat.shake { animation: gachaPullShake .4s ease-in-out; }
   .collection-tier-group { margin-bottom: 18px; }
   .collection-tier-title {
     display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700;
@@ -1725,8 +1723,9 @@ if (location.protocol === "file:") {
   .gacha-result-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 1.05rem; color: #3a2a1c; margin: 0 0 8px; }
   .gacha-result-name:empty { display: none; }
   .gacha-result-card.cat-reaction #gacha-result-img, .gacha-result-card.cat-flair #gacha-result-img { object-fit: contain; padding: 8px; box-sizing: border-box; }
-  .gacha-result-card.cat-board #gacha-result-img, .gacha-result-card.cat-scene #gacha-result-img { width: 180px; height: 104px; object-fit: cover; }
-  .gacha-result-card.cat-board #gacha-result-img { object-fit: contain; }
+  .gacha-result-card.cat-board #gacha-result-img { width: 180px; height: 104px; object-fit: contain; }
+  /* A scene is a tall phone-sized picture: show all of it, never cropped. */
+  .gacha-result-card.cat-scene #gacha-result-img { width: auto; height: auto; max-width: 100%; max-height: min(250px, 36vh); object-fit: contain; }
   .gacha-result-rarity {
     display: inline-flex; align-items: center; gap: 3px; max-width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 5px 12px;
     border-radius: 999px; background: var(--tier-color, #7a8fa6); color: #fff;
@@ -2376,7 +2375,7 @@ if (location.protocol === "file:") {
   .cs-recent-badge.gold { background: linear-gradient(#ffe688, #f6bf2c); border-color: #c8921a; color: #5e3a05; }
   .cs-recent-badge.silver { background: linear-gradient(#f4f6f8, #cfd6dd); border-color: #9aa5b1; color: #3f4a55; }
   .cs-recent-badge.bronze { background: linear-gradient(#f6c79a, #d98a4c); border-color: #a8602a; color: #5a2d0a; }
-  /* Free avatar pull waiting: a glowing gold star in the corner of the SHOP button and the Capsules tab. */
+  /* Free capsule pull waiting: a glowing gold star in the corner of the SHOP button and the Capsules tab. */
   .toolbar-badge-btn.has-free-pull, button.cosm-tab-btn.has-free-pull { position: relative; overflow: visible; }
   .toolbar-badge-btn.has-free-pull::after, button.cosm-tab-btn.has-free-pull::after {
     content: ""; position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; pointer-events: none;
@@ -4326,16 +4325,17 @@ if (location.protocol === "file:") {
     </div>
     </div>
 
-    <button id="gacha-pull-btn" type="button" class="big-cta">
-      <img id="gacha-pull-btn-img" src="icons/gacha-pull-btn.png" alt="">
-      <span id="gacha-pull-btn-text" class="fit-text"></span>
-    </button>
-    <div id="gacha-cat-row" role="group" aria-label="Pull from one category">
-      <button type="button" class="gacha-cat" data-cat="avatar"><span class="gacha-cat-name">Avatars</span><span class="gacha-cat-left"></span></button>
-      <button type="button" class="gacha-cat" data-cat="reaction"><span class="gacha-cat-name">Reactions</span><span class="gacha-cat-left"></span></button>
-      <button type="button" class="gacha-cat" data-cat="flair"><span class="gacha-cat-name">Flairs</span><span class="gacha-cat-left"></span></button>
-      <button type="button" class="gacha-cat" data-cat="board"><span class="gacha-cat-name">Boards</span><span class="gacha-cat-left"></span></button>
-      <button type="button" class="gacha-cat" data-cat="scene"><span class="gacha-cat-name">Scenes</span><span class="gacha-cat-left"></span></button>
+    <div id="gacha-panel">
+      <img class="gacha-panel-coin l" src="icons/gacha-star-coin.png" alt="">
+      <img class="gacha-panel-coin r" src="icons/gacha-star-coin.png" alt="">
+      <button id="gacha-pull-btn" type="button"><span id="gacha-pull-btn-text" class="fit-text"></span></button>
+      <div id="gacha-cat-row" role="group" aria-label="Insert a coin to pull from one category">
+        <button type="button" class="gacha-cat" data-cat="avatar"><span class="gacha-cat-name">Avatars</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
+        <button type="button" class="gacha-cat" data-cat="reaction"><span class="gacha-cat-name">Reactions</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
+        <button type="button" class="gacha-cat" data-cat="flair"><span class="gacha-cat-name">Flairs</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
+        <button type="button" class="gacha-cat" data-cat="board"><span class="gacha-cat-name">Boards</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
+        <button type="button" class="gacha-cat" data-cat="scene"><span class="gacha-cat-name">Scenes</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
+      </div>
     </div>
     <p id="gacha-status"></p>
   </div>
@@ -6124,7 +6124,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lastSyncedFlair = f;
     update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
   }
-  // A glowing gold star on the SHOP button and the Capsules tab while there is a free avatar pull waiting.
+  // A glowing gold star on the SHOP button and the Capsules tab while there is a free capsule pull waiting.
   function renderFreePullStar() {
     // Banked pulls are kept, but the star only shows while there is still something left to pull.
     const on = (myProfile.freePulls | 0) > 0 && gachaAnyRemaining();
@@ -7356,17 +7356,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // </gacha-pools>
 
-  // One capsule pull from a category ("avatar", "reaction", "flair", "board", "scene" or "any"). A banked free pull is spent before any coins.
+  // One capsule pull from a category ("avatar", "reaction", "flair", "board", "scene" or "any"). Banked free pulls only work on "any"
+  // (they are random by design); aiming at a category always costs coins.
   // Resolves to { cat, id } for the new item, or null when nothing was pulled (not enough coins, nothing left, or it was taken meanwhile).
   async function pullGachaItem(cat = "avatar") {
-    if (myProfile.coins < GACHA_COST && !(myProfile.freePulls > 0)) return null;
+    if (myProfile.coins < GACHA_COST && !(cat === "any" && myProfile.freePulls > 0)) return null;
     const pick = gachaPick(cat);
     if (!pick) return null;
     let granted = false;
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       granted = false;
       const profile = current || defaultProfile();
-      const useFree = (profile.freePulls | 0) > 0;
+      const useFree = cat === "any" && (profile.freePulls | 0) > 0;
       if (!useFree && (profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
       if (gachaOwnedIn(profile, pick.cat, pick.id)) return profile; // abort: already unlocked (race)
       granted = true;
@@ -8786,6 +8787,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const watchAdStatusEl = document.getElementById("watch-ad-status");
   const coinPackBtns = document.querySelectorAll(".coin-pack-buy-btn");
   const gachaCatRowEl = document.getElementById("gacha-cat-row");
+  const gachaPanelEl = document.getElementById("gacha-panel");
   const collectionContentEl = document.getElementById("collection-content");
   const itemsScreen = document.getElementById("items-screen");
   const careerScreenEl = document.getElementById("career-screen");
@@ -14196,7 +14198,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaResultOverlayEl.classList.remove("show");
     gachaResultCardEl.className = "gacha-result-card";
     gachaPullBtn.classList.remove("busy");
-    gachaCatRowEl.classList.remove("busy");
+    gachaPanelEl.classList.remove("busy");
     document.body.classList.remove("gacha-pull-lock");
   }
   function openGachaScreen(tab) {
@@ -14831,7 +14833,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     showAchToast(fresh.length === 1 ? `Award unlocked: ${fresh[0].name}! +${fresh[0].reward} coins ready` : `${fresh.length} awards unlocked! Check the Awards button`);
   }
 
-  // Level-ups pay out: each new level gives a free avatar pull plus coins that grow with the level (10 per level, up to 100).
+  // Level-ups pay out: each new level gives a free (random) capsule pull plus coins that grow with the level (10 per level, up to 100).
   // levelPaid remembers the highest level already paid, so a level is never paid twice (and existing players get their past levels once).
   const levelRewardCoins = (l) => Math.min(100, 10 * l);
   let levelGrantBusy = false;
@@ -14888,7 +14890,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="lu-badge" aria-label="Level ${g.to}"><span class="lu-badge-n">${g.to}</span></div>
       <div class="lu-rank${rankUp ? " lu-rank-new" : ""}">${rankUp ? "New rank! " : ""}${escapeHtml(rank)}</div>
       <div class="lu-coins"><img src="icons/coin-v2.png" alt=""><b id="lu-coin-n">+0</b><span>coins</span><div class="lu-burst" id="lu-burst" aria-hidden="true"></div></div>
-      <div class="lu-pull"><img src="icons/flair/star.png" alt="">${g.pulls === 1 ? "1 free avatar pull" : g.pulls + " free avatar pulls"}</div>
+      <div class="lu-pull"><img src="icons/flair/star.png" alt="">${g.pulls === 1 ? "1 free capsule pull" : g.pulls + " free capsule pulls"}</div>
       <button type="button" class="dc-btn" id="lu-pull">Pull now</button>
       <button type="button" class="dc-btn dc-alt" id="lu-close">Continue</button></div>`;
     document.body.appendChild(ov);
@@ -15140,7 +15142,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // One pull from a category ("any" for the big button), played out as the machine animation and a reveal card.
   async function runGachaPull(cat, btn) {
     if (gachaPullInProgress) return;
-    if (myProfile.coins < GACHA_COST && !(myProfile.freePulls > 0)) {
+    if (myProfile.coins < GACHA_COST && !(cat === "any" && myProfile.freePulls > 0)) {
       gachaStatusEl.textContent = "Not enough coins!";
       gachaStatusEl.classList.add("error");
       gachaRetrigger(btn, "shake");
@@ -15160,7 +15162,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // isn't obscured.
     document.body.classList.add("gacha-pull-lock");
     gachaPullBtn.classList.add("busy");
-    gachaCatRowEl.classList.add("busy");
+    gachaPanelEl.classList.add("busy");
 
     const pulled = await pullGachaItem(cat);
     if (!pulled) {
