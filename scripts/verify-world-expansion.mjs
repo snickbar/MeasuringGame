@@ -70,11 +70,13 @@ ctx.ref=(_,path)=>path;ctx.defaultProfile=()=>({coins:0});ctx.defaultCosmeticSta
 const at=(path)=>path.split('/').slice(2);
 const getp=(o,ks)=>ks.reduce((v,k)=>v==null?v:v[k],o);
 const setp=(o,ks,val)=>{const out={...o};let n=out;ks.slice(0,-1).forEach(k=>{n[k]={...(n[k]||{})};n=n[k];});n[ks.at(-1)]=val;return out;};
-ctx.runTransaction=async(path,update)=>{const ks=at(path),next=update(getp(ctx.myProfile,ks)??null);if(next===undefined)return {committed:false};ctx.myProfile=setp(ctx.myProfile,ks,next);return {committed:true};};
+ctx.runTransaction=async(path,update)=>{const ks=at(path),next=update(getp(ctx.serverProfile,ks)??null);if(next===undefined)return {committed:false};ctx.serverProfile=ks.length?setp(ctx.serverProfile,ks,next):next;ctx.myProfile=structuredClone(ctx.serverProfile);return {committed:true};};
 ctx.update=async(path,vals)=>{for(const [k,v] of Object.entries(vals))ctx.myProfile=setp(ctx.myProfile,k.split('/'),v);};
 ctx.remove=async()=>{};ctx.renderCoinBalance=()=>{};ctx.showAchToast=()=>{};ctx.renderAchievementsScreen=()=>{};
 const achStart=source.indexOf('  WORLDS.forEach((w) => {',source.indexOf('// Worlds: a star on the last level'));
 vm.runInContext('let achJustClaimed=null;const achClaiming=new Set();\n'+source.slice(achStart,source.indexOf('\n  });',achStart)+6)+'\n'+fn('achDone')+'\n'+fn('achClaimable')+'\n'+fn('claimAchievement')+'\nglobalThis.claim=claimAchievement;',ctx);
+const actualClaim=ctx.claim;
+ctx.claim=async id=>{ctx.serverProfile=structuredClone(ctx.myProfile);await actualClaim(id);await new Promise(resolve=>setImmediate(resolve));};
 ctx.myProfile={coins:7,worlds:{},achClaimed:{},cosmetics:{owned:{homeScreens:{space:true,ants:true}},equipped:{homeScreen:'space'}}};
 for(const [id,home]of [['under-the-sea','underwater'],['toy-box','toy-box'],['make-believe','make-believe'],['holiday-mix','holiday-mix']]){
   const beat=ctx.ACHIEVEMENTS.find(a=>a.id==='world-beat-'+id),perfect=ctx.ACHIEVEMENTS.find(a=>a.id==='world-perfect-'+id);

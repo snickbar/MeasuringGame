@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {writeProfile} from '../anim/profile-writes.mjs';
+const host=process.env.FIREBASE_DATABASE_EMULATOR_HOST;
+assert(host&&/^(127\.0\.0\.1|localhost):/.test(host),'This test only runs against the local emulator');
+const url=`http://${host}/profiles/0123456789abcdef0123456789abcdef.json?ns=demo-profile-write-default-rtdb`;
+const read=async()=>{const r=await fetch(url);assert(r.ok);return r.json()};
+const write=async patch=>{const r=await fetch(url,{method:'PATCH',body:JSON.stringify(patch)});if(!r.ok)throw Object.assign(Error(await r.text()),{code:r.status===401||r.status===403?'PERMISSION_DENIED':'HTTP_'+r.status})};
+await write({coins:100,_writeVersion:1});
+await Promise.all([writeProfile({read,write,change:p=>({...p,coins:p.coins+10})}),writeProfile({read,write,change:p=>({...p,coins:p.coins+20})})]);
+assert.equal((await read()).coins,130,'real rules reject stale balance overwrite and helper retries');
+const grant=p=>p.receipts?.award?p:{...p,coins:p.coins+25,receipts:{...p.receipts,award:true}};
+await Promise.all([writeProfile({read,write,change:grant}),writeProfile({read,write,change:grant})]);assert.equal((await read()).coins,155,'same award pays only once');
+await write({displayName:'Settings still work'});assert.equal((await read()).displayName,'Settings still work','unrelated partial updates remain compatible');
+const before=await read();await assert.rejects(write({coins:999,_writeVersion:before._writeVersion}),/denied/i);assert.equal((await read()).coins,155,'stale version rejects whole write');
+await assert.rejects(write({_writeVersion:before._writeVersion+2}),/denied/i);
+console.log('PASS: real database rules enforce atomic version conflicts; concurrent credits and duplicate receipts are safe; ordinary settings still save.');

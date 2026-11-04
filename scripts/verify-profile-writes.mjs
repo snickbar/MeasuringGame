@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {writeProfile} from '../anim/profile-writes.mjs';
+let profile,patches=[];
+const clone=v=>structuredClone(v);
+const write=async patch=>{
+  if(patch._writeVersion!==(profile?._writeVersion||0)+1)throw Object.assign(Error('permission-denied'),{code:'PERMISSION_DENIED'});
+  patches.push(clone(patch));const out=clone(profile||{});
+  for(const [path,value]of Object.entries(patch)){const keys=path.split('/');let n=out;for(const k of keys.slice(0,-1))n=n[k]||={};if(value===null)delete n[keys.at(-1)];else n[keys.at(-1)]=clone(value)}profile=out;
+};
+const client=change=>writeProfile({read:async()=>clone(profile),write,change});
+profile={coins:100,history:Array(20000).fill('existing history')};
+await Promise.all([client(p=>({...p,coins:p.coins+10})),client(p=>({...p,coins:p.coins+20}))]);
+assert.equal(profile.coins,130);assert(patches.every(p=>JSON.stringify(p).length<100),'large history never gets resent');
+const reward=p=>p.receipts?.same?p:{...p,coins:p.coins+15,receipts:{...p.receipts,same:true}};
+await Promise.all([client(reward),client(reward)]);assert.equal(profile.coins,145,'same reward pays once across two clients');
+profile={coins:60};const spend=id=>p=>p.coins<50?undefined:{...p,coins:p.coins-50,owned:{...p.owned,[id]:true}};
+const results=await Promise.all([client(spend('a')),client(spend('b'))]);assert.equal(profile.coins,10);assert.equal(Object.keys(profile.owned).length,1);assert.equal(results.filter(r=>r.committed).length,1);
+let calls=0;await assert.rejects(writeProfile({read:async()=>({coins:10}),write:async()=>{calls++;throw Error('permission-denied')},change:p=>({...p,coins:20})}),/permission/);assert.equal(calls,1,'real denied save is not endlessly retried');
+profile=null;await Promise.all([writeProfile({read:async()=>clone(profile),write,change:p=>p||{coins:100},allowCreate:true}),writeProfile({read:async()=>clone(profile),write,change:p=>p||{coins:100},allowCreate:true})]);assert.equal(profile.coins,100,'concurrent profile creation never overwrites an existing profile');
+console.log('PASS: concurrent rewards, receipt idempotence, overspend prevention, first profile, real denial, and small payloads.');
