@@ -769,7 +769,19 @@ if (location.protocol === "file:") {
     background: rgba(255,255,255,.55);
   }
   .gacha-viewall-avatar[src=""] { visibility: hidden; }
-  #gacha-collection-status { text-align: center; font-size: 13px; color: var(--brand); margin: 6px 0 0; }
+  #gacha-cat-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 0; }
+  .gacha-cat {
+    flex: 0 0 calc(33.333% - 6px); box-sizing: border-box; min-height: 46px; padding: 5px 4px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; color: #000; text-shadow: none;
+    background: rgba(255,255,255,.62); border: 2px solid rgba(255,255,255,.9); border-radius: 12px;
+  }
+  .gacha-cat:active { filter: brightness(.92); }
+  .gacha-cat-name { font-size: 15px; line-height: 1.1; }
+  .gacha-cat-left { font-size: 12px; font-weight: 600; opacity: .75; line-height: 1.1; }
+  .gacha-cat.done { opacity: .6; }
+  #gacha-cat-row.busy .gacha-cat { filter: grayscale(.4); opacity: .6; }
+  .gacha-cat.shake { animation: gachaPullShake .4s ease-in-out; }
   .collection-tier-group { margin-bottom: 18px; }
   .collection-tier-title {
     display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700;
@@ -1707,6 +1719,11 @@ if (location.protocol === "file:") {
     box-shadow: 0 8px 18px rgba(0,0,0,0.25); background: #fff; margin-bottom: 12px;
   }
   .gacha-result-card.ultra #gacha-result-img { box-shadow: 0 0 20px #d9a441, 0 8px 18px rgba(0,0,0,0.25); }
+  .gacha-result-name { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 1.05rem; color: #3a2a1c; margin: 0 0 8px; }
+  .gacha-result-name:empty { display: none; }
+  .gacha-result-card.cat-reaction #gacha-result-img, .gacha-result-card.cat-flair #gacha-result-img { object-fit: contain; padding: 8px; box-sizing: border-box; }
+  .gacha-result-card.cat-board #gacha-result-img, .gacha-result-card.cat-scene #gacha-result-img { width: 180px; height: 104px; object-fit: cover; }
+  .gacha-result-card.cat-board #gacha-result-img { object-fit: contain; }
   .gacha-result-rarity {
     display: inline-flex; align-items: center; gap: 3px; max-width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 5px 12px;
     border-radius: 999px; background: var(--tier-color, #7a8fa6); color: #fff;
@@ -3855,7 +3872,7 @@ if (location.protocol === "file:") {
 
   /* ---- House style for text that sits directly on a background: bold black, centered, in a faint pill. ----
      One width per screen (sized for that screen's longest label) so every pill there matches. */
-  .shop-section-label, #gacha-collection-status, .collection-tier-title, .items-letter-title, .ach-cat-title,
+  .shop-section-label, .collection-tier-title, .items-letter-title, .ach-cat-title,
   #preset-settings-screen > h3, #lobby-player-count, .countdown-label, #summary-view > h3 {
     display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px;
     box-sizing: border-box; width: var(--pill-w, 66.667%); max-width: 100%; min-height: 40px;
@@ -3864,7 +3881,6 @@ if (location.protocol === "file:") {
     background: rgba(255,255,255,.62); border: 0; border-radius: 12px;
   }
   .shop-section-label { --pill-w: 66.667%; margin-top: 16px; margin-bottom: 0; font-size: 14px; }
-  #gacha-collection-status { --pill-w: 66.667%; margin-top: 8px; font-size: 15px; }
   .collection-tier-title { --pill-w: 300px; margin-bottom: 8px; font-size: 14px; }
   .collection-tier-count { color: #000; opacity: 1; font-weight: 700; }
   .items-letter-title { --pill-w: 300px; margin-bottom: 8px; padding-bottom: 5px; font-size: 14px; }
@@ -4310,6 +4326,7 @@ if (location.protocol === "file:") {
     <div class="gacha-result-overlay" id="gacha-result-overlay">
       <div class="gacha-result-card" id="gacha-result-card">
         <img id="gacha-result-img" src="" alt="">
+        <div class="gacha-result-name" id="gacha-result-name"></div>
         <div class="gacha-result-rarity" id="gacha-result-rarity"></div>
         <button id="gacha-result-equip-btn" type="button" class="big-cta">Equip avatar</button>
         <button id="gacha-result-close-btn" type="button" class="big-cta">Keep current</button>
@@ -4320,7 +4337,13 @@ if (location.protocol === "file:") {
       <img id="gacha-pull-btn-img" src="icons/gacha-pull-btn.png" alt="">
       <span id="gacha-pull-btn-text" class="fit-text"></span>
     </button>
-    <p id="gacha-collection-status"></p>
+    <div id="gacha-cat-row" role="group" aria-label="Pull from one category">
+      <button type="button" class="gacha-cat" data-cat="avatar"><span class="gacha-cat-name">Avatars</span><span class="gacha-cat-left"></span></button>
+      <button type="button" class="gacha-cat" data-cat="reaction"><span class="gacha-cat-name">Reactions</span><span class="gacha-cat-left"></span></button>
+      <button type="button" class="gacha-cat" data-cat="flair"><span class="gacha-cat-name">Flairs</span><span class="gacha-cat-left"></span></button>
+      <button type="button" class="gacha-cat" data-cat="board"><span class="gacha-cat-name">Boards</span><span class="gacha-cat-left"></span></button>
+      <button type="button" class="gacha-cat" data-cat="scene"><span class="gacha-cat-name">Scenes</span><span class="gacha-cat-left"></span></button>
+    </div>
     <p id="gacha-status"></p>
   </div>
 
@@ -6099,8 +6122,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // A glowing gold star on the SHOP button and the Capsules tab while there is a free avatar pull waiting.
   function renderFreePullStar() {
-    // Banked pulls are kept, but the star only shows while there is still an avatar left to pull.
-    const on = (myProfile.freePulls | 0) > 0 && AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
+    // Banked pulls are kept, but the star only shows while there is still something left to pull.
+    const on = (myProfile.freePulls | 0) > 0 && gachaAnyRemaining();
     document.getElementById("toolbar-shop-btn")?.classList.toggle("has-free-pull", on);
     document.querySelectorAll('.cosm-tab-btn[data-tab="capsules"]').forEach((b) => b.classList.toggle("has-free-pull", on));
   }
@@ -7344,6 +7367,41 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function pullGacha() {
     const r = await pullGachaItem("avatar");
     return r ? r.id : null;
+  }
+  // What the reveal card shows for a pulled item: its name, picture and a label for the category.
+  const GACHA_CAT_LABEL = { avatar: "Avatar", reaction: "Reaction", flair: "Flair", board: "Question board", scene: "Scene" };
+  function gachaItemInfo(cat, id) {
+    if (cat === "avatar") return { name: "", img: `avatars/${id}.png` };
+    if (cat === "reaction") {
+      const r = REACTIONS[id];
+      const name = (r && r.label) || EMOJI_NAMES[id] || "";
+      const img = r ? reactionPic(id) : "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50" y="72" font-size="70" text-anchor="middle">${id}</text></svg>`);
+      return { name, img };
+    }
+    if (cat === "flair") { const it = COSMETIC_CATALOG.effects.find((x) => x.id === id) || {}; return { name: it.label || "", img: flairPic(it.pic) }; }
+    if (cat === "board") { const b = allBoards().find((x) => x.id === id) || {}; return { name: b.label || "", img: BOARD_PIC[id] || "" }; }
+    const bg = BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).find((x) => x.id === id) || {};
+    return { name: bg.label || "", img: backgroundUrl(id) };
+  }
+  // Only avatars have rarities so far; everything else reveals as a common until they get theirs.
+  const gachaTierOf = (cat, id) => (cat === "avatar" ? AVATAR_TIERS[id] : "common");
+  // The Equip button on the reveal card: puts a new item to use right away. Resolves to false when there is nothing to equip.
+  function gachaEquipResult(cat, id) {
+    if (cat === "avatar") {
+      if (!isAvatarUnlocked(id)) return false;
+      currentAvatar = id; localStorage.setItem("mg_avatar", id); renderAvatarGrid(); renderSettingsAvatarGrid();
+      return true;
+    }
+    if (cat === "reaction") {
+      if (equippedReactions().length >= ownedReactionSlots()) return false;
+      toggleActiveEmoji(id);
+      return true;
+    }
+    const vals = cat === "flair" ? { "cosmetics/equipped/effects": id, "randomEquip/flairs": false }
+      : cat === "board" ? { "cosmetics/equipped/board": id, "randomEquip/boards": false }
+      : { "cosmetics/equipped/background": id, "randomEquip/backgrounds": false };
+    equipUnlockedCosmetic(deviceId, vals).catch(() => {});
+    return true;
   }
 
   watchMyProfile();
@@ -8711,7 +8769,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const watchAdBtn = document.getElementById("watch-ad-btn");
   const watchAdStatusEl = document.getElementById("watch-ad-status");
   const coinPackBtns = document.querySelectorAll(".coin-pack-buy-btn");
-  const gachaCollectionStatusEl = document.getElementById("gacha-collection-status");
+  const gachaCatRowEl = document.getElementById("gacha-cat-row");
   const collectionContentEl = document.getElementById("collection-content");
   const itemsScreen = document.getElementById("items-screen");
   const careerScreenEl = document.getElementById("career-screen");
@@ -8747,6 +8805,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const gachaResultCardEl = document.getElementById("gacha-result-card");
   const gachaResultImgEl = document.getElementById("gacha-result-img");
   const gachaResultRarityEl = document.getElementById("gacha-result-rarity");
+  const gachaResultNameEl = document.getElementById("gacha-result-name");
+  const gachaResultEquipBtn = document.getElementById("gacha-result-equip-btn");
   const gachaResultCloseBtn = document.getElementById("gacha-result-close-btn");
   const gachaBackBtn = document.getElementById("gacha-back-btn");
   const settingsSoundToggle = document.getElementById("settings-sound-toggle");
@@ -14120,6 +14180,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaResultOverlayEl.classList.remove("show");
     gachaResultCardEl.className = "gacha-result-card";
     gachaPullBtn.classList.remove("busy");
+    gachaCatRowEl.classList.remove("busy");
     document.body.classList.remove("gacha-pull-lock");
   }
   function openGachaScreen(tab) {
@@ -14312,22 +14373,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // button let multiple pulls' machine/capsule animations run concurrently.
   let gachaPullInProgress = false;
   function renderGachaScreen() {
-    const anyLocked = AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
+    const anyLocked = gachaAnyRemaining();
     if (!gachaPullInProgress) {
       if (!anyLocked) {
         gachaPullBtn.disabled = true;
         gachaPullBtn.classList.add("soldout");
-        gachaPullBtnTextEl.textContent = "All avatars unlocked!";
+        gachaPullBtnTextEl.textContent = "Everything unlocked!";
       } else {
         // Left enabled even without enough coins - the click handler itself
         // gives a "not enough" shake/error instead of silently doing nothing.
         gachaPullBtn.disabled = false;
         gachaPullBtn.classList.remove("soldout");
-        gachaPullBtnTextEl.textContent = myProfile.freePulls > 0 ? `Free pull (${myProfile.freePulls})` : `Pull for ${GACHA_COST} coins`;
+        gachaPullBtnTextEl.textContent = myProfile.freePulls > 0 ? `Free pull (${myProfile.freePulls})` : `Any item for ${GACHA_COST}`;
       }
     }
 
-    gachaCollectionStatusEl.textContent = `${AVATARS.filter(isAvatarUnlocked).length} / ${AVATARS.length} avatars unlocked`;
+    // One pill per category, each saying how many are still in the machine.
+    gachaCatRowEl.querySelectorAll(".gacha-cat").forEach((b) => {
+      const left = gachaRemaining(b.dataset.cat);
+      b.classList.toggle("done", left === 0);
+      b.disabled = left === 0;
+      b.querySelector(".gacha-cat-left").textContent = left === 0 ? "\u2713 Complete" : `${left} left`;
+    });
     renderCollectionIfShown();
   }
   // The avatar collection lives in Style > Avatars; keep it current while that tab is on screen.
@@ -15026,11 +15093,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(() => { gachaCoinFlyEl.innerHTML = ""; }, count * staggerMs + 600);
   }
 
-  gachaPullBtn.addEventListener("click", async () => {
+  // One pull from a category ("any" for the big button), played out as the machine animation and a reveal card.
+  async function runGachaPull(cat, btn) {
+    if (gachaPullInProgress) return;
     if (myProfile.coins < GACHA_COST && !(myProfile.freePulls > 0)) {
       gachaStatusEl.textContent = "Not enough coins!";
       gachaStatusEl.classList.add("error");
-      gachaRetrigger(gachaPullBtn, "shake");
+      gachaRetrigger(btn, "shake");
       playSound("error");
       return;
     }
@@ -15039,24 +15108,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaPullInProgress = true;
     gachaStatusEl.textContent = "Pulling...";
     resetGachaScene();
-    // Blocks every other button on screen (View All Avatars, shop tabs, the
-    // toolbar) from the moment the pull starts, not just once the result
-    // popup appears at the end - previously there was a window where the
-    // user could tap away mid-animation. Invisible (no dimming) until the
-    // result card actually shows via the existing "show" class, so the
-    // machine animation itself isn't obscured.
+    // Blocks every other button on screen (shop tabs, the toolbar) from the
+    // moment the pull starts, not just once the result popup appears at the
+    // end - previously there was a window where the user could tap away
+    // mid-animation. Invisible (no dimming) until the result card actually
+    // shows via the existing "show" class, so the machine animation itself
+    // isn't obscured.
     document.body.classList.add("gacha-pull-lock");
     gachaPullBtn.classList.add("busy");
+    gachaCatRowEl.classList.add("busy");
 
-    const result = await pullGacha();
-    if (!result) {
+    const pulled = await pullGachaItem(cat);
+    if (!pulled) {
       gachaPullInProgress = false;
       gachaStatusEl.textContent = "Nothing to pull right now.";
       resetGachaScene();
       renderGachaScreen();
       return;
     }
-    const tier = AVATAR_TIERS[result];
+    const tier = gachaTierOf(pulled.cat, pulled.id);
     const tierColor = GACHA_TIER_HEX[tier];
     gachaCapsuleEl.style.setProperty("--tier-color", tierColor);
     gachaRevealWrapEl.style.setProperty("--tier-color", tierColor);
@@ -15086,7 +15156,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaCapsuleEl.classList.add("open");
     gachaRevealWrapEl.className = `gacha-reveal-wrap ${tier}`;
     gachaRevealWrapEl.classList.add("show");
-    gachaStatusEl.textContent = "New avatar unlocked!";
+    gachaStatusEl.textContent = `New ${GACHA_CAT_LABEL[pulled.cat].toLowerCase()} unlocked!`;
 
     playSound(tier === "ultra" ? "avatar-ultra" : tier === "rare" ? "roundwin" : "avatar-unlock");
     celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
@@ -15096,21 +15166,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     // Final result goes in its own popup the player has to explicitly
     // dismiss, rather than a floating label that lingers mid-scene - also
-    // means the pull button and "View all" stay blocked behind it until
-    // they close it, so there's no path back to a stale reveal state.
+    // means the pull buttons stay blocked behind it until they close it, so
+    // there's no path back to a stale reveal state.
+    const info = gachaItemInfo(pulled.cat, pulled.id);
     gachaResultCardEl.style.setProperty("--tier-color", tierColor);
-    gachaResultCardEl.className = `gacha-result-card ${tier}`;
-    gachaResultImgEl.dataset.avatarId = result;
-    gachaResultImgEl.src = `avatars/${result}.png`;
-    gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"★".repeat(stars)}`;
+    gachaResultCardEl.className = `gacha-result-card ${tier} cat-${pulled.cat}`;
+    gachaResultImgEl.dataset.cat = pulled.cat;
+    gachaResultImgEl.dataset.itemId = pulled.id;
+    gachaResultImgEl.src = info.img;
+    gachaResultNameEl.textContent = info.name;
+    gachaResultRarityEl.textContent = pulled.cat === "avatar" ? `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}` : GACHA_CAT_LABEL[pulled.cat];
+    gachaResultEquipBtn.textContent = pulled.cat === "avatar" ? "Equip avatar" : "Equip";
+    gachaResultEquipBtn.style.display = pulled.cat === "reaction" && equippedReactions().length >= ownedReactionSlots() ? "none" : "";
     gachaResultOverlayEl.classList.add("show");
+  }
+  gachaPullBtn.addEventListener("click", () => runGachaPull("any", gachaPullBtn));
+  gachaCatRowEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button.gacha-cat");
+    if (b && !b.disabled) runGachaPull(b.dataset.cat, b);
   });
 
-  document.getElementById("gacha-result-equip-btn").addEventListener("click", () => {
-    const id=gachaResultImgEl.dataset.avatarId;
-    if(!id||!isAvatarUnlocked(id))return;
-    currentAvatar=id;localStorage.setItem("mg_avatar",id);renderAvatarGrid();renderSettingsAvatarGrid();
-    gachaResultCloseBtn.click();
+  gachaResultEquipBtn.addEventListener("click", () => {
+    const cat = gachaResultImgEl.dataset.cat, id = gachaResultImgEl.dataset.itemId;
+    if (!cat || !id) return;
+    if (gachaEquipResult(cat, id)) gachaResultCloseBtn.click();
   });
   gachaResultCloseBtn.addEventListener("click", () => {
     gachaPullInProgress = false;
