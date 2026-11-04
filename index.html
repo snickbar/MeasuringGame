@@ -4234,7 +4234,7 @@ if (location.protocol === "file:") {
           <div class="coin-pack-amount">2</div>
           <div class="coin-pack-label">Pulls</div>
           <div class="coin-pack-status"></div>
-          <button type="button" class="coin-pack-buy-btn" data-pulls="2">$0.99 &middot; Buy Now</button>
+          <button type="button" class="coin-pack-buy-btn" data-pulls="2">$1.49 &middot; Buy Now</button>
         </div>
         <div class="coin-pack-card popular">
           <span class="coin-pack-ribbon">POPULAR</span>
@@ -4242,7 +4242,7 @@ if (location.protocol === "file:") {
           <div class="coin-pack-amount">6</div>
           <div class="coin-pack-label">Pulls</div>
           <div class="coin-pack-status"></div>
-          <button type="button" class="coin-pack-buy-btn" data-pulls="6">$2.49 &middot; Buy Now</button>
+          <button type="button" class="coin-pack-buy-btn" data-pulls="6">$3.99 &middot; Buy Now</button>
         </div>
         <div class="coin-pack-card best-value wide">
           <span class="coin-pack-ribbon">BEST VALUE</span>
@@ -4250,7 +4250,7 @@ if (location.protocol === "file:") {
           <div class="coin-pack-amount">15</div>
           <div class="coin-pack-label">Pulls</div>
           <div class="coin-pack-status"></div>
-          <button type="button" class="coin-pack-buy-btn" data-pulls="15">$5.99 &middot; Buy Now</button>
+          <button type="button" class="coin-pack-buy-btn" data-pulls="15">$7.99 &middot; Buy Now</button>
         </div>
       </div>
       <div class="shop-sub">Tip jar</div>
@@ -6385,14 +6385,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (pack.boards) { have = pack.boards.filter((b) => ownsBoard(b.id)).length; total = pack.boards.length; noun = "boards"; }
     if (!have || have >= total) return { price: pack.price };
     const base = parseFloat(String(pack.price).replace(/[^0-9.]/g, "")) || 0.99;
-    const cents = Math.max(25, Math.ceil(base * 100 * (total - have) / total));
+    const cents = Math.max(50, Math.ceil(base * 100 * (total - have) / total));
     return { price: "$" + (cents / 100).toFixed(2), desc: `You already own ${have} of the ${total} ${noun}, so you only pay for the ${total - have} you don't have yet.` };
   }
-  const ITEM_PRICE_USD = "$0.99";   // every single 100-coin item can also be bought for this
-  // Items that are also sold in a pack (reactions, flairs, backgrounds, question boards) cost less alone than the pack,
-  // but more than their share of it, so buying the whole pack is the better deal once you want about four of them.
-  const PACKED_ITEM_PRICE_USD = "$0.29";
-  const packedCats = ["reactions", "flairs", "backgrounds", "boards"];
+  const ITEM_PRICE_USD = "$0.50";   // every single 100-coin item can also be bought for this; no price anywhere is under 50 cents
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
   function showFakePurchase({ icon, title, price, desc }) {
@@ -6774,10 +6770,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // don't), not coin-priced like the single-equip cosmetics above - more
   // packs just get appended here.
   const EMOJI_PACK_CATALOG = [
-    { id: "pack1", label: "Reaction Pack 1", price: "$0.99", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
-    { id: "pack2", label: "Reaction Pack 2", price: "$0.99", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}", "\u{1F92D}"] },
-    { id: "pack3", label: "Reaction Pack 3", price: "$0.99", emojis: ["\u{1F60E}", "\u{1FAE3}", "\u{1F44B}", "\u{1F449}", "\u{1F48B}", "\u23F3"] },
-    { id: "pack4", label: "Reaction Pack 4", price: "$0.99", emojis: ["\u{1F44E}", "\u{1F92A}", "\u{1F370}", "\u{1F914}", "\u{1F926}", "\u{1F91E}"] },
+    { id: "pack1", label: "Reaction Pack 1", price: "$1.49", emojis: ["\u{1F624}", "\u{1F62B}", "\u{1F913}", "\u{1F4AA}", "☠️", "\u{1F62D}"] },
+    { id: "pack2", label: "Reaction Pack 2", price: "$1.49", emojis: ["\u{1F92F}", "\u{1F605}", "\u{1F451}", "\u{1F3C6}", "\u{1F612}", "\u{1F92D}"] },
+    { id: "pack3", label: "Reaction Pack 3", price: "$1.49", emojis: ["\u{1F60E}", "\u{1FAE3}", "\u{1F44B}", "\u{1F449}", "\u{1F48B}", "\u23F3"] },
+    { id: "pack4", label: "Reaction Pack 4", price: "$1.49", emojis: ["\u{1F44E}", "\u{1F92A}", "\u{1F370}", "\u{1F914}", "\u{1F926}", "\u{1F91E}"] },
   ];
   function emojiPool() {
     return [...DEFAULT_EMOJIS, ...EMOJI_PACK_CATALOG.flatMap((pack) => pack.emojis).filter(ownsEmoji)];
@@ -6812,7 +6808,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "christmas-bg", label: "Christmas", month: 12, legacyPack: "bgpack2" },
   ];
   const BACKGROUND_PACK_CATALOG = [
-    { id: "bgpack3", label: "Tiled Backgrounds", price: "$0.99", backgrounds: [
+    { id: "bgpack3", label: "Tiled Backgrounds", price: "$1.49", backgrounds: [
       { id: "tile-dots", label: "Polka Dots" },
       { id: "tile-stripes", label: "Stripes" },
       { id: "tile-checker", label: "Checkerboard" },
@@ -6820,7 +6816,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "tile-gingham", label: "Gingham" },
       { id: "tile-plus", label: "Plus Signs" },
     ] },
-    { id: "bgpack4", label: "Tabletop Backgrounds", price: "$0.99", backgrounds: [
+    { id: "bgpack4", label: "Tabletop Backgrounds", price: "$1.49", backgrounds: [
       { id: "table-card", label: "Card Table" },
       { id: "table-coffee", label: "Coffee Table" },
       { id: "table-school", label: "School Desk" },
@@ -6828,7 +6824,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "table-dining", label: "Dining Table" },
       { id: "table-kitchen", label: "Kitchen Counter" },
     ] },
-    { id: "bgpack5", label: "Nature Backgrounds", price: "$0.99", backgrounds: [
+    { id: "bgpack5", label: "Nature Backgrounds", price: "$1.49", backgrounds: [
       { id: "nature-grass", label: "Grass" },
       { id: "nature-meadow", label: "Flower Meadow" },
       { id: "nature-snow", label: "Snow" },
@@ -6836,7 +6832,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { id: "nature-clouds", label: "Clouds" },
       { id: "nature-water", label: "Water" },
     ] },
-    { id: "bgpack6", label: "Candy Backgrounds", price: "$0.99", backgrounds: [
+    { id: "bgpack6", label: "Candy Backgrounds", price: "$1.49", backgrounds: [
       { id: "candy-lollipops", label: "Lollipops" },
       { id: "candy-cottoncandy", label: "Cotton Candy" },
       { id: "candy-gumdrops", label: "Gumdrops" },
@@ -7119,19 +7115,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
   const BOARD_COIN_COST = 100;
   const BOARD_PACK_CATALOG = [
-    { id: "boardpack1", label: "Question Board Pack 1", price: "$0.99", boards: [
+    { id: "boardpack1", label: "Question Board Pack 1", price: "$1.49", boards: [
       { id: "chalkboard", label: "Chalkboard" },
       { id: "whiteboard", label: "Whiteboard" },
       { id: "curtains", label: "Stage Curtains" },
       { id: "typewriter", label: "Typewriter" },
     ] },
-    { id: "boardpack2", label: "Question Board Pack 2", price: "$0.99", boards: [
+    { id: "boardpack2", label: "Question Board Pack 2", price: "$1.49", boards: [
       { id: "terminal", label: "Computer Terminal" },
       { id: "tv", label: "Old TV" },
       { id: "phone", label: "Phone Chat" },
       { id: "splitflap", label: "Split-Flap Sign" },
     ] },
-    { id: "boardpack3", label: "Question Board Pack 3", price: "$0.99", boards: [
+    { id: "boardpack3", label: "Question Board Pack 3", price: "$1.49", boards: [
       { id: "letterboard", label: "Letterboard" },
       { id: "neon", label: "Neon Sign" },
       { id: "sand", label: "Sand Writing" },
@@ -7218,10 +7214,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   const FLAIR_PACK_CATALOG = [
-    { id: "fpack1", label: "Flair Pack 1", price: "$0.99", flairs: ["hearts", "coinshower", "rainbow", "snow", "leaves"] },
-    { id: "fpack2", label: "Flair Pack 2", price: "$0.99", flairs: ["fire", "lightning", "fireworks", "butterfly", "planes"] },
-    { id: "fpack3", label: "Flair Pack 3", price: "$0.99", flairs: ["popper", "soap", "blossom", "notes", "fireflies"] },
-    { id: "fpack4", label: "Flair Pack 4", price: "$0.99", flairs: ["balloons", "gems", "paws", "food", "applause"] },
+    { id: "fpack1", label: "Flair Pack 1", price: "$1.49", flairs: ["hearts", "coinshower", "rainbow", "snow", "leaves"] },
+    { id: "fpack2", label: "Flair Pack 2", price: "$1.49", flairs: ["fire", "lightning", "fireworks", "butterfly", "planes"] },
+    { id: "fpack3", label: "Flair Pack 3", price: "$1.49", flairs: ["popper", "soap", "blossom", "notes", "fireflies"] },
+    { id: "fpack4", label: "Flair Pack 4", price: "$1.49", flairs: ["balloons", "gems", "paws", "food", "applause"] },
   ];
   const emojiKey = (e) => Array.from(e).map((c) => c.codePointAt(0).toString(16)).join("-");
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
@@ -7367,7 +7363,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // The same item for money. One purchase() call is the only place that will talk to real billing later.
         const usd = document.createElement("button");
         usd.type = "button"; usd.className = "cosm-buy cosm-buy-usd";
-        const usdPrice = packedCats.includes(cat) ? PACKED_ITEM_PRICE_USD : ITEM_PRICE_USD;
+        const usdPrice = ITEM_PRICE_USD;
         usd.textContent = usdPrice;
         usd.setAttribute("aria-label", `Buy ${o.name} for ${usdPrice}`);
         usd.addEventListener("click", async () => {
@@ -15615,7 +15611,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (boardEl) boardEl.innerHTML = boardCardHtml(cards.filter((c) => BOARD_SHOP_PACKS[c.id]));
   }
   const BOARD_PACK_NAME = "Question Board Packs";
-  const BOARD_PACK_PRICE = "$0.99";
+  const BOARD_PACK_PRICE = "$1.49";
   const BOARD_SHOP_PACKS = { boards: "boardpack1", boards2: "boardpack2", boards3: "boardpack3" };
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
