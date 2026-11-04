@@ -1740,8 +1740,9 @@ if (location.protocol === "file:") {
   .gacha-result-card.cat-board #gacha-result-img { width: 180px; height: 104px; object-fit: contain; }
   /* A scene is a tall phone-sized picture: show all of it, never cropped. */
   .gacha-result-card.cat-scene #gacha-result-img { width: auto; height: auto; max-width: 100%; max-height: min(250px, 36vh); object-fit: contain; }
+  .gacha-result-cat { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 1.05rem; color: #7a6a58; margin: 0 0 6px; }
   .gacha-result-rarity {
-    display: inline-flex; align-items: center; gap: 3px; max-width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 5px 12px;
+    display: inline-flex; align-items: center; gap: 3px; max-width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 5px 12px;
     border-radius: 999px; background: var(--tier-color, #7a8fa6); color: #fff;
     font-weight: 700; font-size: .8rem; letter-spacing: .04em;
     box-shadow: 0 3px 6px rgba(0,0,0,0.2); position: relative; overflow: hidden;
@@ -4362,6 +4363,7 @@ if (location.protocol === "file:") {
         <img id="gacha-result-img" src="" alt="">
         <div class="gacha-result-name" id="gacha-result-name"></div>
         <div class="gacha-result-rarity" id="gacha-result-rarity"></div>
+        <div class="gacha-result-cat" id="gacha-result-cat"></div>
         <button id="gacha-result-equip-btn" type="button" class="big-cta">Equip avatar</button>
         <button id="gacha-result-close-btn" type="button" class="big-cta">Keep current</button>
       </div>
@@ -8842,6 +8844,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const gachaResultImgEl = document.getElementById("gacha-result-img");
   const gachaResultRarityEl = document.getElementById("gacha-result-rarity");
   const gachaResultNameEl = document.getElementById("gacha-result-name");
+  const gachaResultCatEl = document.getElementById("gacha-result-cat");
   const gachaResultEquipBtn = document.getElementById("gacha-result-equip-btn");
   const gachaResultCloseBtn = document.getElementById("gacha-result-close-btn");
   const gachaBackBtn = document.getElementById("gacha-back-btn");
@@ -15150,6 +15153,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaResultImgEl.dataset.itemId = pulled.id;
     gachaResultImgEl.src = info.img;
     gachaResultNameEl.textContent = info.name;
+    gachaResultCatEl.textContent = GACHA_CAT_LABEL[pulled.cat];
     gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}`;
     gachaResultEquipBtn.textContent = pulled.cat === "avatar" ? "Equip avatar" : "Equip";
     gachaResultEquipBtn.style.display = pulled.cat === "reaction" && equippedReactions().length >= ownedReactionSlots() ? "none" : "";
