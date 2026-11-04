@@ -13945,6 +13945,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }).observe(root, { childList: true });
   })();
+  // Which Is Bigger has runs (lives, a score, a level reached), not guessed rounds, so its stats come from those.
+  function wbRunRows() {
+    const rows = (myProfile.attemptHistory || []).filter((r) => r.mode === "whichbigger" && Number.isFinite(r.score));
+    const d = myProfile.whichBigger || {};
+    return { rows, runs: Math.max(d.runs || 0, rows.length), best: Math.max(d.best || 0, ...rows.map((r) => r.score), 0) };
+  }
+  function wbHeroTiles() {
+    const { rows, runs, best } = wbRunRows();
+    const picks = rows.reduce((n, r) => n + r.score, 0);
+    return statTile(runs, "Runs finished") + statTile(best, "Best run") + statTile(rows.length ? (picks / rows.length).toFixed(1) : "—", "Average run");
+  }
+  function wbDetailHtml() {
+    const { rows } = wbRunRows();
+    const picks = rows.reduce((n, r) => n + r.score, 0), rounds = rows.reduce((n, r) => n + (r.rounds || 0), 0);
+    const bestLevel = Math.max(0, ...rows.map((r) => r.rounds || 0));
+    const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
+    return `<p class="cs-note">Every run ends when you lose all three lives. Each right pick counts toward your score.</p><div class="cs-tiles">${tile(picks, "Right picks")}${tile(rounds ? Math.round(100 * picks / rounds) + "%" : "—", "Pick accuracy")}${tile(bestLevel || "—", "Best level reached")}</div>${wbRecordsHtml()}`;
+  }
   function renderCareerStats() {
     const el = document.getElementById("career-content");
     if (!el) return;
@@ -13955,7 +13973,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const lv = careerLevel(careerXp({ ...st, rounds }));
     const tile = (n, label) => `<div class="cs-tile"><div class="cs-num">${n}</div><div class="cs-lab">${label}</div></div>`;
     let html = `<div class="cs-level"><div class="cs-lvl-top"><span class="cs-lvl-num">Level ${lv.lvl}</span><span class="cs-rank">${lv.rank}</span></div><div class="cs-bar"><div class="cs-bar-fill" style="width:${Math.round((lv.into / lv.span) * 100)}%"></div></div><div class="cs-lvl-sub">${lv.into} / ${lv.span} XP to level ${lv.lvl + 1}</div><div class="cs-lvl-sub">Every new level: a free avatar pull and ${levelRewardCoins(lv.lvl + 1)} coins</div></div>`;
-    const scoped=myProfile.modeStats?.[statsMode]||{},hsView=statsMode==='highstakes',bluffView=statsMode==='bluff',roomMode=['all','quick','party','teamvteam','highstakes','bluff'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
+    const scoped=myProfile.modeStats?.[statsMode]||{},hsView=statsMode==='highstakes',bluffView=statsMode==='bluff',wbView=statsMode==='whichbigger',roomMode=['all','quick','party','teamvteam','highstakes','bluff'].includes(statsMode),games=statsMode==='all'?(st.gamesPlayed||0):(scoped.games||0),wins=statsMode==='all'?(st.gamesWon||0):(scoped.wins||0);
     // Per-mode counters only cover rounds saved since they were added, so never show less than the saved history (and, for Daily/Monthly, the full per-day record) proves.
     const dmRows=statsMode==='daily'?dailyHistoryRows():statsMode==='monthly'?monthlyHistoryRows():null,ans=hist.filter(h=>Number.isFinite(h.r));
     const histSpot=ans.filter(h=>roundAccuracy(h.r)>=99).length,histPerfect=ans.filter(h=>(h.f&2)||Math.abs(h.r-1)<1e-9).length;
@@ -13968,11 +13986,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const shownPerfect=Math.max(statsMode==='all'?st.perfects||0:scoped.perfects||0,histPerfect,dmRows?dmRows.filter(r=>r.p).length:0);
     if(statsMode!=='badges')html+=`<div class="cosm-tabs stats-views" role="group" aria-label="Stats view">${[['all','All'],...Object.entries(MODE_NAMES)].map(([id,name])=>`<button type="button" class="cosm-tab-btn${statsMode===id?' active':''}" data-stats-view="${id}" aria-label="${name}" title="${name}" aria-pressed="${statsMode===id}">${({hlsurvival:"High/Low"})[id]||name}</button>`).join('')}</div>`;
     if(statsMode==='badges'){el.innerHTML=badgesTabHtml(lv);badgesMarkSeen();return;}
-    html+=`<div class="cs-tiles stats-hero">${roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(shownAttempts,'Attempts finished')+statTile(shownRounds,'Rounds completed')+statTile(shownBest?formatAccuracy(shownBest)+'%':'—','Best accuracy')}${bluffView?statTile(scoped.judged?Math.round((scoped.correctVotes||0)/scoped.judged*100)+'%':'—','Vote accuracy'):hsView?statTile((myProfile.modeStats?.highstakes?.podiums)||0,'Podium finishes'):statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
+    html+=`<div class="cs-tiles stats-hero">${wbView?wbHeroTiles():roomMode?statTile(wins,'Games won')+statTile(games,'Games finished')+statTile(games?Math.round(wins/games*100)+'%':'—','Win rate'):statTile(shownAttempts,'Attempts finished')+statTile(shownRounds,'Rounds completed')+statTile(shownBest?formatAccuracy(shownBest)+'%':'—','Best accuracy')}${wbView?'':bluffView?statTile(scoped.judged?Math.round((scoped.correctVotes||0)/scoped.judged*100)+'%':'—','Vote accuracy'):hsView?statTile((myProfile.modeStats?.highstakes?.podiums)||0,'Podium finishes'):statTile(average===null?'—':formatAccuracy(average)+'%','Average accuracy')}</div>`;
     if(hsView){const h=myProfile.hsStats||{};html+=`<p class="cs-note">Finished High Stakes games. The biggest stack of coins wins; ties share the win.</p><h3 class="cs-h">High Stakes</h3><div class="cozy-panel cs-tiles">${statTile(h.roundsWon||0,'Rounds won')}${statTile(h.roundsPlayed?Math.round((h.roundsWon||0)/h.roundsPlayed*100)+'%':'—','Round win rate')}${statTile(h.biggestWin||0,'Biggest single win')}${statTile(h.peakStack||0,'Highest stack')}${statTile(h.bluffs||0,'Bluffs that worked')}${statTile(h.knockedOut||0,'Times knocked out')}${statTile(h.ghostCoins||0,'Ghost bounty coins')}</div>`;}
     if(bluffView)html+=`<p class="cs-note">Points rank first, then vote accuracy. Missed votes count as incorrect for the tiebreaker. Maker turns are excluded from vote accuracy.</p><div class="cozy-panel cs-tiles">${statTile(scoped.makerTurns||0,'Maker turns')}${statTile(scoped.fooled||0,'Players fooled')}${statTile(scoped.correctVotes||0,'Correct votes')}${statTile(scoped.votes||0,'Votes submitted')}${statTile(scoped.missedVotes||0,'Missed votes')}${statTile(scoped.rounds||0,'Rounds completed')}</div>`;
-    if(!hsView&&!bluffView)html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'competitive':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
-    if(!hsView&&!bluffView)html+=`<div class="cs-tiles">${tile(shownRounds,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(shownSpot,'Within 1%')}${tile(shownPerfect,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
+    if(!hsView&&!bluffView&&!wbView)html+=`<p class="cs-note">${roomMode?'Finished '+(statsMode==='all'?'competitive':MODE_NAMES[statsMode])+' games. Points rank first; accuracy breaks ties. Equal points and accuracy share the win. ':''}Accuracy uses submitted guesses; missed submissions are shown separately.</p>`;
+    if(wbView)html+=wbDetailHtml();
+    if(!hsView&&!bluffView&&!wbView)html+=`<div class="cs-tiles">${tile(shownRounds,'Rounds completed')}${statsMode==='all'?tile(st.roundWins||0,'Round wins'):''}${tile(shownSpot,'Within 1%')}${tile(shownPerfect,'Perfects')}${statsMode==='all'?tile(st.bestStreak||0,'Best round-win streak')+tile(st.missedRounds||0,'Missed submissions'):''}</div>`;
     if(statsMode==='quick'&&myProfile.difficultyStats)html+='<h3 class="cs-h">By bot accuracy</h3><div class="cozy-panel">'+Object.entries(myProfile.difficultyStats).map(([level,row])=>'<p><b>'+escapeHtml(botLevelLabel(level))+'</b> · '+(row.wins||0)+' wins / '+(row.games||0)+' finished · '+(row.games?Math.round(row.wins/row.games*100):0)+'% win rate</p>').join('')+'</div>';
     if(['all','worlds'].includes(statsMode))html+=`<h3 class="cs-h">Worlds</h3><div class="cozy-panel cs-tiles">${statTile(worldTotalStars()+'/'+(WORLDS.length*15),'Stars earned')}${statTile(WORLDS.filter(w=>worldStarsOf(w.id)===15).length+'/'+WORLDS.length,'Worlds mastered')}${statTile(st.worldLevels||0,'Levels finished')}</div>`;
     if(['all','survival'].includes(statsMode))html+='<h3 class="cs-h">Survival</h3>'+survivalRecordsHtml(true);
@@ -13994,6 +14013,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     const frequent = Object.entries(objectFrequency(myProfile, statsMode)).filter(([id,n])=>OBJECT_BY_ID.has(id)&&n>0).sort((a,b)=>b[1]-a[1]||OBJECT_BY_ID.get(a[0]).name.localeCompare(OBJECT_BY_ID.get(b[0]).name)).slice(0,6);
     const frequencyHtml = `<h3 class="cs-h">Object frequency</h3><div class="cs-card"><p class="cs-note">Your most-seen objects in completed rounds, on either side. Includes missed submissions${statsMode==='all'?'':` in ${escapeHtml(MODE_NAMES[statsMode])}`}. Counts include available past history and keep growing as you play.</p>${frequent.length?frequent.map(([id,n])=>{const ob=OBJECT_BY_ID.get(id);return `<div class="cs-obj"><img src="${ob.image}" alt="" draggable="false"><span class="cs-obj-name">${escapeHtml(ob.name.charAt(0).toUpperCase()+ob.name.slice(1))}</span><span class="cs-obj-val">${n} ${n===1?'time':'times'}</span></div>`;}).join(''):'<p class="cs-note">Complete a round to start your list.</p>'}</div>`;
+    if (wbView) { el.innerHTML = html; return; } // pick-by-pick modes have no guess accuracy graph
     if (hsView || bluffView) { el.innerHTML = html + frequencyHtml; return; } // no per-round accuracy graph for High Stakes
     if (hist.length < 3) {
       html += emptyHtml("items/hot-air-balloon.webp", "Nothing to chart yet", "Play a few more rounds and your accuracy graph, guessing habits and best and toughest objects show up here.");
