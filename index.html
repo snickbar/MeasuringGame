@@ -731,14 +731,28 @@ if (location.protocol === "file:") {
     border: 3px solid #6b3f0e; background: radial-gradient(circle at 50% 0, #d9574a, #b23a31 70%);
     box-shadow: inset 0 0 0 3px #f2c75a, inset 0 0 0 5px #a8741f, inset 0 10px 22px rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.3);
   }
-  .gacha-panel-coin { position: absolute; top: -18px; width: 62px; height: auto; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
-  .gacha-panel-coin.l { left: -4px; }
-  .gacha-panel-coin.r { right: -4px; }
-  #gacha-pull-btn { position: relative; display: block; width: calc(100% - 96px); min-height: 40px; margin: 0 auto 2px; padding: 0 6px; border: none; background: none; }
+  /* A star coin in each corner; the right-hand ones are mirrored so all four face inwards. */
+  .gacha-panel-coin { position: absolute; width: 62px; height: auto; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+  .gacha-panel-coin.tl { top: -18px; left: -4px; }
+  .gacha-panel-coin.tr { top: -18px; right: -4px; transform: scaleX(-1); }
+  .gacha-panel-coin.bl { bottom: -18px; left: -4px; }
+  .gacha-panel-coin.br { bottom: -18px; right: -4px; transform: scaleX(-1); }
+  .gacha-fly-coin { position: fixed; left: 0; top: 0; z-index: 900; width: 26px; height: 26px; pointer-events: none; will-change: transform, opacity; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+  #gacha-pull-btn.coin-hit { filter: brightness(1.5); }
+  .gacha-cat.coin-hit .gacha-slot { animation: gachaSlotHit .35s ease-out; }
+  @keyframes gachaSlotHit { 0% { filter: brightness(1); } 35% { filter: brightness(1.6); } 100% { filter: brightness(1); } }
+  /* The title bar is the random pull: its own gold-framed button so it reads as the thing to tap. */
+  #gacha-pull-btn {
+    position: relative; display: block; width: calc(100% - 100px); min-height: 44px; margin: 0 auto 8px; padding: 0 6px; box-sizing: border-box;
+    border: 3px solid #f2c75a; border-radius: 15px; background: linear-gradient(180deg, #8f2a24, #6c1d19);
+    box-shadow: inset 0 3px 7px rgba(0,0,0,.45), 0 2px 0 #a8741f, 0 3px 6px rgba(0,0,0,.35);
+  }
+  #gacha-pull-btn.has-free { animation: gachaFreeGlow 1.6s ease-in-out infinite; }
+  @keyframes gachaFreeGlow { 0%, 100% { box-shadow: inset 0 3px 7px rgba(0,0,0,.45), 0 2px 0 #a8741f, 0 0 6px rgba(255,214,102,.4); } 50% { box-shadow: inset 0 3px 7px rgba(0,0,0,.45), 0 2px 0 #a8741f, 0 0 16px rgba(255,214,102,.95); } }
   #gacha-pull-btn.shake { animation: gachaPullShake .4s ease-in-out; }
   #gacha-pull-btn:active { filter: brightness(.9); }
   #gacha-pull-btn-text {
-    display: flex; align-items: center; justify-content: center; min-height: 40px; overflow: hidden; white-space: nowrap;
+    display: flex; align-items: center; justify-content: center; min-height: 38px; overflow: hidden; white-space: nowrap;
     font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #fff;
     text-shadow: -1.5px -1.5px 0 #4b0d0c, 1.5px -1.5px 0 #4b0d0c, -1.5px 1.5px 0 #4b0d0c, 1.5px 1.5px 0 #4b0d0c,
                  0 -1.5px 0 #4b0d0c, 0 1.5px 0 #4b0d0c, -1.5px 0 0 #4b0d0c, 1.5px 0 0 #4b0d0c;
@@ -4326,8 +4340,10 @@ if (location.protocol === "file:") {
     </div>
 
     <div id="gacha-panel">
-      <img class="gacha-panel-coin l" src="icons/gacha-star-coin.png" alt="">
-      <img class="gacha-panel-coin r" src="icons/gacha-star-coin.png" alt="">
+      <img class="gacha-panel-coin tl" src="icons/gacha-star-coin.png" alt="">
+      <img class="gacha-panel-coin tr" src="icons/gacha-star-coin.png" alt="">
+      <img class="gacha-panel-coin bl" src="icons/gacha-star-coin.png" alt="">
+      <img class="gacha-panel-coin br" src="icons/gacha-star-coin.png" alt="">
       <button id="gacha-pull-btn" type="button"><span id="gacha-pull-btn-text" class="fit-text"></span></button>
       <div id="gacha-cat-row" role="group" aria-label="Insert a coin to pull from one category">
         <button type="button" class="gacha-cat" data-cat="avatar"><span class="gacha-cat-name">Avatars</span><span class="gacha-slot"></span><span class="gacha-cat-left"></span></button>
@@ -14398,12 +14414,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!anyLocked) {
         gachaPullBtn.disabled = true;
         gachaPullBtn.classList.add("soldout");
+        gachaPullBtn.classList.remove("has-free");
         gachaPullBtnTextEl.textContent = "Everything unlocked!";
       } else {
         // Left enabled even without enough coins - the click handler itself
         // gives a "not enough" shake/error instead of silently doing nothing.
         gachaPullBtn.disabled = false;
         gachaPullBtn.classList.remove("soldout");
+        gachaPullBtn.classList.toggle("has-free", gachaFreePulls('any') > 0);
         gachaPullBtnTextEl.textContent = gachaFreePulls('any')>0 ? `Free pull (${gachaFreePulls('any')})` : `Any item for ${GACHA_COST}`;
       }
     }
@@ -15149,6 +15167,36 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       await new Promise((res) => gachaResultCloseBtn.addEventListener("click", res, { once: true }));
     }
   }
+  // Coins fly from the coin bank in the toolbar down into the slot that was tapped (or the title bar for the random pull).
+  // Resolves when the last coin lands; resolves straight away with reduced motion or when nothing is being paid in coins.
+  function flyCoinsToSlot(btn) {
+    return new Promise((resolve) => {
+      try {
+        if (prefersReducedMotion()) return resolve();
+        const from = document.getElementById("toolbar-coin-icon"), target = btn.querySelector(".gacha-slot") || btn;
+        if (!from || !target) return resolve();
+        const a = from.getBoundingClientRect(), b = target.getBoundingClientRect();
+        const ox = a.left + a.width / 2 - 13, oy = a.top + a.height / 2 - 13, tx = b.left + b.width / 2 - 13, ty = b.top + b.height / 2 - 13;
+        const n = 5, gap = 70, dur = 520;
+        let done = 0;
+        for (let i = 0; i < n; i++) {
+          const c = document.createElement("img");
+          c.className = "gacha-fly-coin"; c.src = "icons/coin-v2.png"; c.alt = "";
+          document.body.appendChild(c);
+          const sway = (i - (n - 1) / 2) * 7;
+          const anim = c.animate([
+            { transform: `translate(${ox}px,${oy}px) scale(.6)`, opacity: 0, offset: 0 },
+            { transform: `translate(${ox + (tx - ox) * .15 + sway}px,${oy + (ty - oy) * .12}px) scale(1.05)`, opacity: 1, offset: .15 },
+            { transform: `translate(${tx}px,${ty}px) scale(.8)`, opacity: 1, offset: .92 },
+            { transform: `translate(${tx}px,${ty}px) scale(.4)`, opacity: 0, offset: 1 },
+          ], { duration: dur, delay: i * gap, easing: "cubic-bezier(.45,.05,.8,.6)", fill: "both" });
+          anim.onfinish = () => { c.remove(); if (++done === n) resolve(); };
+        }
+        setTimeout(() => { document.querySelectorAll(".gacha-fly-coin").forEach((x) => x.remove()); resolve(); }, n * gap + dur + 400);
+        setTimeout(() => { btn.classList.add("coin-hit"); setTimeout(() => btn.classList.remove("coin-hit"), 400); }, (n - 1) * gap + dur * .9);
+      } catch (e) { resolve(); }
+    });
+  }
   // One pull from a category ("any" for the big button), played out as the machine animation and a reveal card.
   async function runGachaPull(cat, btn) {
     if (gachaPullInProgress) return;
@@ -15173,6 +15221,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.body.classList.add("gacha-pull-lock");
     gachaPullBtn.classList.add("busy");
     gachaPanelEl.classList.add("busy");
+    // Paid in coins (not a free pull or a banked category credit)? Then the coins fly in while the save goes through.
+    const paysCoins = !gachaFreePulls(cat);
+    const coinsLanded = paysCoins ? flyCoinsToSlot(btn) : Promise.resolve();
 
     let pulled;
     try { pulled = await pullGachaItem(cat); }
@@ -15196,6 +15247,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaCapsuleEl.style.setProperty("--tier-color", tierColor);
     gachaRevealWrapEl.style.setProperty("--tier-color", tierColor);
 
+    await coinsLanded;
     playSound("tap");
     spawnGachaCoinBurst(10);
     await gachaWait(400);
