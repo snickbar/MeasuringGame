@@ -527,7 +527,7 @@ if (location.protocol === "file:") {
   .sb-top img { width: 70px; height: 86px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
   .starter-bundle-box h3 { margin: 0 0 4px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #fff; text-shadow: 0 2px 2px rgba(0,0,0,.2); }
   .starter-bundle-box p { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.4; color: #fff; }
-  .sb-grid { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+  .sb-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
   .sb-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px 5px; border-radius: 12px; background: rgba(255,255,255,.92); color: #4a2800; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,.15); }
   .sb-item img, .sb-item .bundle-thumb { width: 100%; height: 40px; object-fit: contain; border-radius: 6px; }
   .sb-item span { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 10px; line-height: 1.1; }
@@ -4326,16 +4326,6 @@ if (location.protocol === "file:") {
     </div>
     </div>
 
-    <div class="gacha-result-overlay" id="gacha-result-overlay">
-      <div class="gacha-result-card" id="gacha-result-card">
-        <img id="gacha-result-img" src="" alt="">
-        <div class="gacha-result-name" id="gacha-result-name"></div>
-        <div class="gacha-result-rarity" id="gacha-result-rarity"></div>
-        <button id="gacha-result-equip-btn" type="button" class="big-cta">Equip avatar</button>
-        <button id="gacha-result-close-btn" type="button" class="big-cta">Keep current</button>
-      </div>
-    </div>
-
     <button id="gacha-pull-btn" type="button" class="big-cta">
       <img id="gacha-pull-btn-img" src="icons/gacha-pull-btn.png" alt="">
       <span id="gacha-pull-btn-text" class="fit-text"></span>
@@ -4349,6 +4339,17 @@ if (location.protocol === "file:") {
     </div>
     <p id="gacha-status"></p>
   </div>
+
+  <!-- Reveal card for a capsule pull; lives at screen level so the Starter Bundle can show it from the Offers tab too. -->
+  <div class="gacha-result-overlay" id="gacha-result-overlay">
+      <div class="gacha-result-card" id="gacha-result-card">
+        <img id="gacha-result-img" src="" alt="">
+        <div class="gacha-result-name" id="gacha-result-name"></div>
+        <div class="gacha-result-rarity" id="gacha-result-rarity"></div>
+        <button id="gacha-result-equip-btn" type="button" class="big-cta">Equip avatar</button>
+        <button id="gacha-result-close-btn" type="button" class="big-cta">Keep current</button>
+      </div>
+    </div>
 
   <div id="shop-tab-avatars" class="shop-tab-panel">
     <div id="collection-content"></div>
@@ -6596,46 +6597,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       grid.appendChild(card);
     });
   }
-  // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs). Fixed items so nobody can cherry-pick rarities.
-  const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F624}", board: "chalkboard", background: "nature-grass" };
+  // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs): 100 coins plus one random item from each capsule category.
+  const STARTER_BUNDLE = { coins: 100, price: "$0.99" };
   function renderStarterBundle() {
     const box = document.getElementById("starter-bundle-box");
     if (!box) return;
     const B = STARTER_BUNDLE, owned = !!myProfile.starterBundle;
-    const flair = COSMETIC_CATALOG.effects.find((x) => x.id === B.flair);
     box.classList.toggle("unlocked", owned);
+    const pull = (label) => `<div class="sb-item"><img src="icons/gacha-capsule.png" alt=""><span>${label}</span></div>`;
     box.innerHTML = `<span class="host-unlock-ribbon">&#127873; ONE-TIME OFFER</span>
-      <div class="sb-top"><img src="icons/shop-starter-gift.webp" alt=""><div><h3>Starter Bundle</h3><p>A little of everything to get you started.</p></div></div>
+      <div class="sb-top"><img src="icons/shop-starter-gift.webp" alt=""><div><h3>Starter Bundle</h3><p>${B.coins} coins and one capsule from every category.</p></div></div>
       <div class="sb-grid">
         <div class="sb-item"><img src="icons/shop-host-coins.webp" alt=""><span>${B.coins} coins</span></div>
-        <div class="sb-item"><img src="${flair ? flairPic(flair.pic) : ""}" alt=""><span>${flair ? flair.label + " flair" : "Flair"}</span></div>
-        <div class="sb-item"><img src="${reactionPic(B.reaction)}" alt=""><span>Triumph</span></div>
-        <div class="sb-item"><img src="${BOARD_PIC[B.board]}" alt=""><span>Chalkboard</span></div>
-        <div class="sb-item">${bgThumbHtml(B.background, "bundle-thumb", 40)}<span>Background</span></div>
+        ${pull("Avatar")}${pull("Reaction")}${pull("Flair")}${pull("Board")}${pull("Scene")}
       </div>
       <button type="button" class="coin-pack-buy-btn" id="starter-bundle-btn"${owned ? " disabled" : ""}>${owned ? "\u2713 Unlocked" : `${B.price} \u00B7 Buy`}</button>`;
     const btn = document.getElementById("starter-bundle-btn");
     if (!owned) btn.addEventListener("click", async () => {
       const bought = await showFakePurchase({ icon: "icons/shop-starter-gift.webp", title: "Starter Bundle", price: B.price,
-        desc: `${B.coins} coins, the ${flair ? flair.label : "Hearts"} flair, the Triumph reaction, the Chalkboard board and the Grass background.` });
+        desc: `${B.coins} coins and one random capsule from each category: an avatar, a reaction, a flair, a question board and a scene.` });
       if (!bought) return;
       btn.disabled = true;
-      await purchaseStarterBundle();
+      const got = await purchaseStarterBundle();
+      if (got && got.length) await revealGachaItems(got);
     });
   }
+  // Pays out the coins and one random unowned item per category. Resolves to the items granted, in category order.
   async function purchaseStarterBundle() {
-    const B = STARTER_BUNDLE, key = emojiKey(B.reaction);
+    const B = STARTER_BUNDLE;
+    const picks = GACHA_CATEGORIES.map((c) => gachaPick(c)).filter(Boolean);
+    let granted = [], already = false;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
+      granted = []; already = false;
       const profile = current || defaultProfile();
-      if (profile.starterBundle) return profile;
-      const cosmetics = profile.cosmetics || defaultCosmeticState(), own = cosmetics.owned || {};
-      return { ...profile, starterBundle: true, coins: (profile.coins || 0) + B.coins,
-        emojiOwned: { ...(profile.emojiOwned || {}), [key]: true },
-        cosmetics: { ...cosmetics, owned: { ...own,
-          effects: { ...(own.effects || {}), [B.flair]: true },
-          boards: { ...(own.boards || {}), [B.board]: true },
-          backgrounds: { ...(own.backgrounds || {}), [B.background]: true } } } };
+      if (profile.starterBundle) { already = true; return profile; }
+      let next = { ...profile, starterBundle: true, coins: (profile.coins || 0) + B.coins };
+      picks.forEach((pk) => { if (!gachaOwnedIn(next, pk.cat, pk.id)) { next = gachaGrant(next, pk.cat, pk.id); granted.push(pk); } });
+      return next;
     });
+    if (already) return [];
+    if (granted.length) bumpStats({ pulls: granted.length });
+    return granted;
   }
   function renderCosmeticsShop() {
     renderEmojiRows(document.getElementById("cosm-emojis-list"), document.getElementById("cosm-emoji-status"));
@@ -15107,6 +15109,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(() => { gachaCoinFlyEl.innerHTML = ""; }, count * staggerMs + 600);
   }
 
+  // The reveal popup for one item. The player has to dismiss it, so the pull buttons stay blocked behind it and there is
+  // no path back to a stale reveal state.
+  function showGachaResultCard(pulled) {
+    const tier = gachaTierOf(pulled.cat, pulled.id), tierColor = GACHA_TIER_HEX[tier], stars = GACHA_TIER_STARS[tier];
+    const info = gachaItemInfo(pulled.cat, pulled.id);
+    gachaResultCardEl.style.setProperty("--tier-color", tierColor);
+    gachaResultCardEl.className = `gacha-result-card ${tier} cat-${pulled.cat}`;
+    gachaResultImgEl.dataset.cat = pulled.cat;
+    gachaResultImgEl.dataset.itemId = pulled.id;
+    gachaResultImgEl.src = info.img;
+    gachaResultNameEl.textContent = info.name;
+    gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}`;
+    gachaResultEquipBtn.textContent = pulled.cat === "avatar" ? "Equip avatar" : "Equip";
+    gachaResultEquipBtn.style.display = pulled.cat === "reaction" && equippedReactions().length >= ownedReactionSlots() ? "none" : "";
+    gachaResultOverlayEl.classList.add("show");
+  }
+  // Reveal several items one after another (the Starter Bundle), each on its own card with the usual sound and celebration.
+  async function revealGachaItems(items) {
+    for (const it of items) {
+      const tier = gachaTierOf(it.cat, it.id);
+      gachaPullInProgress = true;
+      document.body.classList.add("gacha-pull-lock");
+      playSound(tier === "ultra" ? "avatar-ultra" : tier === "rare" ? "roundwin" : "avatar-unlock");
+      celebrate(tier === "ultra" ? "perfect" : tier === "rare" ? "spotOn" : "normal");
+      showGachaResultCard(it);
+      await new Promise((res) => gachaResultCloseBtn.addEventListener("click", res, { once: true }));
+    }
+  }
   // One pull from a category ("any" for the big button), played out as the machine animation and a reveal card.
   async function runGachaPull(cat, btn) {
     if (gachaPullInProgress) return;
@@ -15178,21 +15208,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (tier === "ultra") gachaRetrigger(gachaFlashEl, "go");
     await gachaWait(850);
 
-    // Final result goes in its own popup the player has to explicitly
-    // dismiss, rather than a floating label that lingers mid-scene - also
-    // means the pull buttons stay blocked behind it until they close it, so
-    // there's no path back to a stale reveal state.
-    const info = gachaItemInfo(pulled.cat, pulled.id);
-    gachaResultCardEl.style.setProperty("--tier-color", tierColor);
-    gachaResultCardEl.className = `gacha-result-card ${tier} cat-${pulled.cat}`;
-    gachaResultImgEl.dataset.cat = pulled.cat;
-    gachaResultImgEl.dataset.itemId = pulled.id;
-    gachaResultImgEl.src = info.img;
-    gachaResultNameEl.textContent = info.name;
-    gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}`;
-    gachaResultEquipBtn.textContent = pulled.cat === "avatar" ? "Equip avatar" : "Equip";
-    gachaResultEquipBtn.style.display = pulled.cat === "reaction" && equippedReactions().length >= ownedReactionSlots() ? "none" : "";
-    gachaResultOverlayEl.classList.add("show");
+    showGachaResultCard(pulled);
   }
   gachaPullBtn.addEventListener("click", () => runGachaPull("any", gachaPullBtn));
   gachaCatRowEl.addEventListener("click", (e) => {
