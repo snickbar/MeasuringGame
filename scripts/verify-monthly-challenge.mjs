@@ -18,8 +18,7 @@ vm.runInContext([
  'globalThis.api={OBJECTS,OBJECT_BY_ID,HOLIDAY_OBJECTS,MONTH_PACKS,monthlyObjects,monthlyCombosLocal,monthlyLegacyCombosLocal,dailyRng};'
 ].join('\n'),ctx);
 const api=ctx.api,counts=[];let small=0,big=0,runs=0;
-// The turkey wishbone (November) is listed but waits for items/wishbone.webp; set this to 0 once that picture is added.
-const PENDING_ART={thanksgiving:1};
+const PENDING_ART={};
 for(const pack of api.MONTH_PACKS)assert.equal(api.HOLIDAY_OBJECTS.filter(o=>o.pack===pack.id).length,15-(PENDING_ART[pack.id]||0),'each themed pack has 15 illustrated objects (less any pending art): '+pack.id);
 for(const year of [2026,2027])for(let month=1;month<=12;month++){
  const key=year+'-'+String(month).padStart(2,'0'),monthly=api.monthlyObjects(key);
