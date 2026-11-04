@@ -1665,6 +1665,14 @@ if (location.protocol === "file:") {
     box-shadow: 0 14px 34px rgba(0,0,0,.4); animation: popIn 240ms cubic-bezier(.34,1.56,.64,1);
   }
   .fake-purchase-icon { font-size: 44px; line-height: 1; margin-bottom: 6px; }
+  .fake-purchase-icon.has-art { font-size: 0; }
+  .fake-purchase-icon .fp-art { display: flex; justify-content: center; align-items: center; gap: 8px; }
+  .fake-purchase-icon.has-art > .cosm-reaction-pic, .fake-purchase-icon.has-art > .cosm-flair-pic, .fp-art .cosm-reaction-pic, .fp-art .cosm-flair-pic { width: 64px; height: 60px; object-fit: contain; }
+  .fake-purchase-icon .cosm-board-pic { width: 110px; height: 70px; object-fit: contain; }
+  .fake-purchase-icon > .cosm-bg-pic { margin: 0 auto; }
+  .fake-purchase-icon .cosm-bg-pic { width: 44px; height: 78px; max-width: none; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; }
+  .fake-purchase-icon .fp-art .cosm-board-pic { width: 92px; height: 60px; }
+  .fake-purchase-icon .cosm-emoji { display: block; width: 64px; font-size: 48px; line-height: 1.1; text-align: center; }
   .fake-purchase-icon img { display: block; margin: 0 auto; height: 64px; width: auto; max-width: 110px; object-fit: contain; }
   .tp-badge { width: 56px; height: 56px; margin-top: 14px; }
   .tp-badge img { width: 80%; height: 80%; object-fit: contain; }
@@ -5912,7 +5920,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         buy.innerHTML = `<span>Unlock slot ${n}</span><div class="cosm-actions has-usd"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n - 6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n - 6]}</button><button type="button" class="cosm-buy cosm-buy-usd" aria-label="Unlock slot ${n} for ${ITEM_PRICE_USD}">${ITEM_PRICE_USD}</button></div>`;
         const [coinBtn, usdBtn] = buy.querySelectorAll("button");
         coinBtn.addEventListener("click", () => buyReactionSlot(n, false));
-        usdBtn.addEventListener("click", async () => { if (await purchase({ title: `Reaction slot ${n}`, price: ITEM_PRICE_USD, icon: "icons/coin-v2.png" })) buyReactionSlot(n, true); });
+        usdBtn.addEventListener("click", async () => { if (await purchase({ title: `Reaction slot ${n}`, price: ITEM_PRICE_USD, icon: "icons/reactions/padlock.png" })) buyReactionSlot(n, true); });
         pnl.appendChild(buy);
       }
       return pnl;
@@ -6391,12 +6399,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ITEM_PRICE_USD = "$0.50";   // every single 100-coin item can also be bought for this; no price anywhere is under 50 cents
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
-  function showFakePurchase({ icon, title, price, desc }) {
+  function showFakePurchase({ icon, iconHtml, title, price, desc }) {
     return new Promise((resolve) => {
       const ov = document.createElement("div");
       ov.id = "fake-purchase-overlay";
       ov.innerHTML = `<div class="fake-purchase-card">
-        <div class="fake-purchase-icon">${/\.(webp|png)$/.test(icon || "") ? `<img src="${icon}" alt="" draggable="false">` : (icon || "\u{1F6D2}")}</div>
+        <div class="fake-purchase-icon${iconHtml ? " has-art" : ""}">${iconHtml || (/\.(webp|png)$/.test(icon || "") ? `<img src="${icon}" alt="" draggable="false">` : (icon || "\u{1F6D2}"))}</div>
         <h3 class="fake-purchase-title">${title}</h3>
         ${desc ? `<p class="fake-purchase-desc">${desc}</p>` : ""}
         <div class="fake-purchase-price">${price}</div>
@@ -6416,6 +6424,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       cancelBtn.addEventListener("click", () => close(false));
       ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
     });
+  }
+  // The little pictures shown in a purchase popup: the first few items of a pack, drawn the same way as in the shop lists.
+  function packIconHtml(pack) {
+    let items = [];
+    if (pack.emojis) items = pack.emojis.slice(0, 3).map((e) => REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`);
+    else if (pack.flairs) items = pack.flairs.slice(0, 3).map((id) => { const it = COSMETIC_CATALOG.effects.find((x) => x.id === id); return it ? `<img class="cosm-flair-pic${it.rainbow ? " rainbow" : ""}" src="${flairPic(it.pic)}" alt="">` : ""; });
+    else if (pack.backgrounds) items = pack.backgrounds.slice(0, 3).map((b) => bgThumbHtml(b.id, "cosm-bg-pic", 34));
+    else if (pack.boards) items = pack.boards.slice(0, 2).map((b) => `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="">`);
+    return items.length ? `<span class="fp-art">${items.join("")}</span>` : "";
   }
   // ---- "Watch an ad to double your coins": offered after EVERY finished game that paid coins ----
   // (Party / Quick / Team vs Team have their own receipt screen with the same button; every other mode - Worlds, Survival,
@@ -6651,7 +6668,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
@@ -6679,7 +6696,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u2B50", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "\u2B50", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
@@ -6745,7 +6762,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = owned;
       btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
       if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         btn.disabled = true;
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
@@ -7087,7 +7104,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
       }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
@@ -7203,7 +7220,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     BOARD_PACK_CATALOG.forEach((pack) => {
       const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F3AD}", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "\u{1F3AD}", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (bought) purchaseBoardPack(pack.id);
       }, `${pack.boards.length} boards, or buy each with coins`));
       pack.boards.forEach((b) => container.appendChild(cosmRow({
@@ -7367,7 +7384,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         usd.textContent = usdPrice;
         usd.setAttribute("aria-label", `Buy ${o.name} for ${usdPrice}`);
         usd.addEventListener("click", async () => {
-          if (await purchase({ title: o.name, price: usdPrice, icon: "icons/coin-v2.png" })) o.onBuy(true);
+          if (await purchase({ title: o.name, price: usdPrice, icon: "icons/coin-v2.png", iconHtml: o.leadHtml })) o.onBuy(true);
         });
         btn.classList.add("has-usd");
         row.__usd = usd;
@@ -7421,7 +7438,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // individually with coins - the bundle would have nothing left to add.
       const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "\u{1F60A}", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
       }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
@@ -7450,7 +7467,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const owned = !!(myProfile.flairPacks || {})[pack.id]
         || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
       container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "⭐", title: pack.label, ...packQuote(pack) });
+        const bought = await showFakePurchase({ icon: "⭐", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
         if (!bought) return;
         await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
       }, `${pack.flairs.length} flairs, or buy each with coins`));
