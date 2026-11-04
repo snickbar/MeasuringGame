@@ -5917,10 +5917,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (slots < REACTION_SLOTS_MAX) {
         const n = slots + 1, buy = document.createElement("div");
         buy.className = "cosm-slot-buy";
-        buy.innerHTML = `<span>Unlock slot ${n}</span><div class="cosm-actions has-usd"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n - 6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n - 6]}</button><button type="button" class="cosm-buy cosm-buy-usd" aria-label="Unlock slot ${n} for ${ITEM_PRICE_USD}">${ITEM_PRICE_USD}</button></div>`;
-        const [coinBtn, usdBtn] = buy.querySelectorAll("button");
-        coinBtn.addEventListener("click", () => buyReactionSlot(n, false));
-        usdBtn.addEventListener("click", async () => { if (await purchase({ title: `Reaction slot ${n}`, price: ITEM_PRICE_USD, icon: "icons/reactions/padlock.png" })) buyReactionSlot(n, true); });
+        buy.innerHTML = `<span>Unlock slot ${n}</span><div class="cosm-actions"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n - 6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n - 6]}</button></div>`;
+        buy.querySelector("button").addEventListener("click", () => buyReactionSlot(n, false));
         pnl.appendChild(buy);
       }
       return pnl;
@@ -6396,7 +6394,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const cents = Math.max(50, Math.ceil(base * 100 * (total - have) / total));
     return { price: "$" + (cents / 100).toFixed(2), desc: `You already own ${have} of the ${total} ${noun}, so you only pay for the ${total - have} you don't have yet.` };
   }
-  const ITEM_PRICE_USD = "$0.50";   // every single 100-coin item can also be bought for this; no price anywhere is under 50 cents
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
   function showFakePurchase({ icon, iconHtml, title, price, desc }) {
@@ -7376,26 +7373,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.innerHTML = `<img class="cosm-coin" src="icons/coin-v2.png" alt="">${o.cost}`;
       btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
       btn.addEventListener("click", () => o.onBuy(false));
-      if (o.cost > 0) {
-        // The same item for money. One purchase() call is the only place that will talk to real billing later.
-        const usd = document.createElement("button");
-        usd.type = "button"; usd.className = "cosm-buy cosm-buy-usd";
-        const usdPrice = ITEM_PRICE_USD;
-        usd.textContent = usdPrice;
-        usd.setAttribute("aria-label", `Buy ${o.name} for ${usdPrice}`);
-        usd.addEventListener("click", async () => {
-          if (await purchase({ title: o.name, price: usdPrice, icon: "icons/coin-v2.png", iconHtml: o.leadHtml })) o.onBuy(true);
-        });
-        btn.classList.add("has-usd");
-        row.__usd = usd;
-      }
     }
-    if (row.__usd) {
-      const wrap = document.createElement("div");
-      wrap.className = "cosm-actions has-usd";
-      wrap.append(btn, row.__usd);
-      row.appendChild(wrap);
-    } else if (lockBtn) {
+    if (lockBtn) {
       const wrap = document.createElement("div");
       wrap.className = "cosm-actions";
       wrap.append(btn, lockBtn);
