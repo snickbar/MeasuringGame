@@ -25,6 +25,7 @@ function cleanCell(im){
   await flat.clone().scaleToFit({w:1100,h:1100}).write(path.join(root,'review',j.id+'.jpg'),{quality:88});
   await flat.clone().scaleToFit({w:420,h:420}).write(path.join(root,'thumbs',j.id+'.jpg'),{quality:85});
   const cut=cutout(im.clone());
+  if(Number.parseInt(j.id,10)>=66)trim(cut);
   await cut.clone().scaleToFit({w:640,h:640}).write(path.join(root,'motion',j.id+'.png'));
   if(sheets[i]){const [cols,rows]=sheets[i],h=Math.floor(cut.bitmap.height/rows);for(let k=0;k<cols*rows;k++){if(i===59&&k===5)continue;const row=Math.floor(k/cols),col=i===59&&row===1?k-3:k%cols,rowCols=i===59&&row===1?2:cols,w=Math.floor(cut.bitmap.width/rowCols);let cell=cut.clone().crop({x:col*w,y:row*h,w,h});if(i!==35)cell=cleanCell(cell);const part=trim(cell);await part.scaleToFit({w:240,h:240}).write(path.join(root,'motion',j.id+'-'+k+'.png'))}}
  }
