@@ -792,9 +792,8 @@ if (location.protocol === "file:") {
      and the Hide Undiscovered toggle stay put while the tier groups scroll
      underneath, with the back button riding fixed in that same strip
      instead of the (now-removed) "All Avatars" title row. */
-  #collection-content .collection-sticky-head { position: sticky; top: 62px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
+  #collection-content .collection-sticky-head { position: sticky; top: 0; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
   #collection-content .collection-sticky-head .items-stats { padding-right: 54px; }
-  #collection-screen.active #collection-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 7; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
   /* Tab toggle and stat boxes are pinned together as ONE sticky unit (not two separately-offset
@@ -2357,7 +2356,7 @@ if (location.protocol === "file:") {
   .cs-recent-badge.gold { background: linear-gradient(#ffe688, #f6bf2c); border-color: #c8921a; color: #5e3a05; }
   .cs-recent-badge.silver { background: linear-gradient(#f4f6f8, #cfd6dd); border-color: #9aa5b1; color: #3f4a55; }
   .cs-recent-badge.bronze { background: linear-gradient(#f6c79a, #d98a4c); border-color: #a8602a; color: #5a2d0a; }
-  /* Free avatar pull waiting: a glowing gold star in the corner of the STYLE button and the Avatars tab. */
+  /* Free avatar pull waiting: a glowing gold star in the corner of the SHOP button and the Capsules tab. */
   .toolbar-badge-btn.has-free-pull, button.cosm-tab-btn.has-free-pull { position: relative; overflow: visible; }
   .toolbar-badge-btn.has-free-pull::after, button.cosm-tab-btn.has-free-pull::after {
     content: ""; position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; pointer-events: none;
@@ -4162,7 +4161,7 @@ if (location.protocol === "file:") {
     <div class="cosm-tabs shop-strip" id="shop-strip-shop" role="group" aria-label="Shop">
       <button type="button" class="cosm-tab-btn fit-text" data-tab="hosting">Offers</button>
       <button type="button" class="cosm-tab-btn fit-text" data-tab="coins">Coins</button>
-      <button type="button" class="cosm-tab-btn fit-text" data-tab="packs">Packs</button>
+      <button type="button" class="cosm-tab-btn fit-text" data-tab="capsules">Capsules</button>
     </div>
     <div class="cosm-tabs shop-strip" id="shop-strip-cosm" role="group" aria-label="Cosmetics" hidden>
       <button type="button" class="cosm-tab-btn" data-no-autofit data-tab="avatars">Avatars</button>
@@ -4227,33 +4226,6 @@ if (location.protocol === "file:") {
           <button type="button" class="coin-pack-buy-btn" id="boost-ad-btn" data-boost-ad="3">Watch Ad &middot; Free</button>
         </div>
       </div>
-      <div class="shop-sub">Avatar pulls</div>
-      <div class="shop-sub-note">Added to your free pulls. Spend them at the machine, or pull for 50 coins each.</div>
-      <div id="pull-pack-row">
-        <div class="coin-pack-card">
-          <img class="coin-pack-icon" src="icons/gacha-capsule.png" alt="">
-          <div class="coin-pack-amount">2</div>
-          <div class="coin-pack-label">Pulls</div>
-          <div class="coin-pack-status"></div>
-          <button type="button" class="coin-pack-buy-btn" data-pulls="2">$1.49 &middot; Buy Now</button>
-        </div>
-        <div class="coin-pack-card popular">
-          <span class="coin-pack-ribbon">POPULAR</span>
-          <img class="coin-pack-icon" src="icons/gacha-capsule.png" alt="">
-          <div class="coin-pack-amount">6</div>
-          <div class="coin-pack-label">Pulls</div>
-          <div class="coin-pack-status"></div>
-          <button type="button" class="coin-pack-buy-btn" data-pulls="6">$3.99 &middot; Buy Now</button>
-        </div>
-        <div class="coin-pack-card best-value wide">
-          <span class="coin-pack-ribbon">BEST VALUE</span>
-          <img class="coin-pack-icon" src="icons/gacha-capsule.png" alt="">
-          <div class="coin-pack-amount">15</div>
-          <div class="coin-pack-label">Pulls</div>
-          <div class="coin-pack-status"></div>
-          <button type="button" class="coin-pack-buy-btn" data-pulls="15">$7.99 &middot; Buy Now</button>
-        </div>
-      </div>
       <div class="shop-sub">Tip jar</div>
       <div class="shop-sub-note">Like the game? A tip helps keep it growing. Tippers get a Supporter medal.</div>
       <div id="tip-pack-row">
@@ -4309,17 +4281,12 @@ if (location.protocol === "file:") {
         <button id="host-unlock-shop-btn" type="button" class="coin-pack-buy-btn">Unlock for $4.99 &middot; One time</button>
       </div>
       <div id="starter-bundle-box" class="starter-bundle-box"></div>
+      <section class="shop-box"><h3 class="shop-box-title">Object packs</h3><div id="themed-pack-shop"></div></section>
 
     </div>
   </div>
 
-  <div id="shop-tab-packs" class="shop-tab-panel">
-    <div class="shop-subpanel">
-      <section class="shop-box"><h3 class="shop-box-title">Monthly object packs</h3><div id="themed-pack-shop"></div></section>
-    </div>
-  </div>
-
-  <div id="shop-tab-avatars" class="shop-tab-panel">
+  <div id="shop-tab-capsules" class="shop-tab-panel">
     <div class="gacha-scene-wrap" id="gacha-scene-wrap">
     <div class="gacha-scene" id="gacha-scene">
       <div class="gacha-flash" id="gacha-flash"></div>
@@ -4353,13 +4320,12 @@ if (location.protocol === "file:") {
       <img id="gacha-pull-btn-img" src="icons/gacha-pull-btn.png" alt="">
       <span id="gacha-pull-btn-text" class="fit-text"></span>
     </button>
-    <button id="gacha-view-all-btn" type="button" class="gacha-viewall-btn" aria-label="View all avatars">
-      <img src="icons/btn-view-avatars.png" alt="" class="gacha-viewall-art">
-      <img id="gacha-viewall-avatar-left" class="gacha-viewall-avatar" src="" alt="" hidden>
-      <img id="gacha-viewall-avatar-right" class="gacha-viewall-avatar" src="" alt="" hidden>
-    </button>
     <p id="gacha-collection-status"></p>
     <p id="gacha-status"></p>
+  </div>
+
+  <div id="shop-tab-avatars" class="shop-tab-panel">
+    <div id="collection-content"></div>
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
@@ -4386,10 +4352,6 @@ if (location.protocol === "file:") {
   </div>
 </div>
 
-<div id="collection-screen" class="screen">
-  <button id="collection-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
-  <div id="collection-content"></div>
-</div>
 
 <div id="items-screen" class="screen">
   <button id="items-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
@@ -5725,7 +5687,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     myProfile = { ...myProfile, favAvatars: favs };   // shown at once; the save goes out in the background
     try { update(ref(db, `profiles/${deviceId}`), { [`favAvatars/${id}`]: on ? true : null }).catch(() => {}); } catch (e) {}
     renderAvatarGrid(); renderSettingsAvatarGrid();
-    if (collectionScreen && collectionScreen.classList.contains("active")) renderCollectionScreen();
+    renderCollectionIfShown();
     playSound("pick");
   }
 
@@ -6135,12 +6097,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lastSyncedFlair = f;
     update(ref(db, `rooms/${currentRoomCode}/players/${currentPlayerId}`), { flair: f }).catch(() => {});
   }
-  // A glowing gold star on the STYLE button and the Avatars tab while there is a free avatar pull waiting.
+  // A glowing gold star on the SHOP button and the Capsules tab while there is a free avatar pull waiting.
   function renderFreePullStar() {
     // Banked pulls are kept, but the star only shows while there is still an avatar left to pull.
     const on = (myProfile.freePulls | 0) > 0 && AVATARS.some((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
-    document.getElementById("toolbar-cosmetics-btn")?.classList.toggle("has-free-pull", on);
-    document.querySelectorAll('.cosm-tab-btn[data-tab="avatars"]').forEach((b) => b.classList.toggle("has-free-pull", on));
+    document.getElementById("toolbar-shop-btn")?.classList.toggle("has-free-pull", on);
+    document.querySelectorAll('.cosm-tab-btn[data-tab="capsules"]').forEach((b) => b.classList.toggle("has-free-pull", on));
   }
   const BOOSTER_MAX = 60;
   function renderBoosterTag() {
@@ -8694,12 +8656,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const watchAdBtn = document.getElementById("watch-ad-btn");
   const watchAdStatusEl = document.getElementById("watch-ad-status");
   const coinPackBtns = document.querySelectorAll(".coin-pack-buy-btn");
-  const gachaViewAllBtn = document.getElementById("gacha-view-all-btn");
-  const gachaViewAllAvatarLeftEl = document.getElementById("gacha-viewall-avatar-left");
-  const gachaViewAllAvatarRightEl = document.getElementById("gacha-viewall-avatar-right");
   const gachaCollectionStatusEl = document.getElementById("gacha-collection-status");
-  const collectionScreen = document.getElementById("collection-screen");
-  const collectionCloseBtn = document.getElementById("collection-close-btn");
   const collectionContentEl = document.getElementById("collection-content");
   const itemsScreen = document.getElementById("items-screen");
   const careerScreenEl = document.getElementById("career-screen");
@@ -10063,8 +10020,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderSoundToggleIcon();
   });
 
-  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, hsScreenEl, bluffScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, wbScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
-  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, collectionScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, wbScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
+  const ALL_SCREEN_ELS = [homeScreen, createScreenEl, joinScreen, nameAvatarScreenEl, lobbyScreenEl, hudEl, finalScreenEl, hsScreenEl, bluffScreenEl, leftScreenEl, endedScreenEl, settingsScreen, howtoScreen, gachaScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, wbScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
+  const OVERLAY_SCREENS = [settingsScreen, howtoScreen, gachaScreen, presetSettingsScreen, itemsScreen, achievementsScreen, careerScreenEl, dailyScreenEl, soloScreenEl, worldsScreenEl, monthlyScreenEl, survivalScreenEl, wbScreenEl, partyScreenEl, teamvteamScreenEl, teamworldsScreenEl];
   let overlayReturnScreen = null;
   let overlayFocusReturn=null;
   // Back on Shop / Cosmetics / Stats only shows when there is a lobby or room to go back to (see the CSS above).
@@ -10354,7 +10311,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       appPlugin.exitApp();
     }
   });
-  collectionCloseBtn.addEventListener("click", closeOverlay);
   collectionContentEl.addEventListener("click", (e) => {
     if(e.target.closest("[data-avatar-filter]")){collectionOwnership=e.target.closest("[data-avatar-filter]").dataset.avatarFilter;collectionHideLocked=collectionOwnership==="owned";renderCollectionScreen();return;}
     if (e.target.closest("#collection-hide-switch")) {
@@ -13912,15 +13868,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
   gachaBackBtn.addEventListener("click", closeOverlay);
-  gachaViewAllBtn.addEventListener("click", () => {
-    renderCollectionScreen();
-    openOverlay(collectionScreen);
-    // Overridden after the fact: openOverlay only remembers a return screen
-    // when opening from non-overlay ground, so nesting from the Avatar Shop
-    // (itself an overlay) would otherwise skip straight back to home. This
-    // nesting specifically should return to the shop, not home.
-    overlayReturnScreen = gachaScreen;
-  });
   function renderWatchAdStatus() {
     const today = todayDateStr();
     const countToday = myProfile.adsWatchedDate === today ? myProfile.adsWatchedCount : 0;
@@ -14002,17 +13949,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       runTransaction(ref(db, `profiles/${deviceId}/tipDollars`), (cur) => (cur | 0) + d).catch(() => {});
     });
   });
-  document.querySelectorAll("button[data-pulls]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const n = parseInt(btn.dataset.pulls, 10);
-      const priceText = (btn.textContent.split("\u00b7")[0] || "").trim();
-      const bought = await purchase({ icon: "icons/gacha-capsule.png", title: `${n} Avatar Pulls`, price: priceText || "Buy Now" });
-      if (!bought) return;
-      btn.disabled = true;
-      await runTransaction(ref(db, `profiles/${deviceId}/freePulls`), (cur) => (cur | 0) + n);
-      btn.disabled = false;
-    });
-  });
   toolbarHomeBtn.addEventListener("click", guardToolbarNav(async () => {
     // Returning Home is navigation, not a page reload. Keep the wallet and the decoded scene alive.
     worldStop(); survivalStop(); dailyStop(); monthlyStop();
@@ -14077,7 +14013,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", fitAllButtonText);
 
   // Two groups share this screen: Shop tabs (coins, hosting, packs) and Cosmetics tabs (avatars, reactions, flairs, boards, backgrounds).
-  const SHOP_TABS = ["hosting", "coins", "packs"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
+  const SHOP_TABS = ["hosting", "coins", "capsules"], COSM_TABS = ["avatars", "emojis", "flairs", "boards", "backgrounds", "homes"];
   // Style (cosmetics) reopens on whichever tab you were last on.
   let lastCosmTab = (() => { try { const t = localStorage.getItem("mg_lastStyleTab"); return COSM_TABS.includes(t) ? t : "avatars"; } catch (e) { return "avatars"; } })();
   let lastShopTab = (() => { try { const t = localStorage.getItem("mg_lastShopTab"); return SHOP_TABS.includes(t) ? t : "coins"; } catch (e) { return "coins"; } })();
@@ -14097,6 +14033,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const panelId = isCosm ? (tab === "avatars" ? "shop-tab-avatars" : "shop-tab-cosmetics") : `shop-tab-${tab}`;
     document.querySelectorAll(".shop-tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === panelId));
     if (isCosm && tab !== "avatars") setCosmSub(tab);
+    if (tab === "avatars") renderCollectionScreen();
     fitGachaScene();
     fitAllButtonText();
   }
@@ -14109,7 +14046,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // overlays) by exactly however much it's overflowing, so nothing needs to
   // scroll and the full machine is always visible.
   function fitGachaScene() {
-    const panel = document.getElementById("shop-tab-avatars");
+    const panel = document.getElementById("shop-tab-capsules");
     if (!panel.classList.contains("active") || !gachaScreen.classList.contains("active")) return;
     gachaSceneWrapEl.style.height = `${GACHA_SCENE_NATURAL_HEIGHT}px`;
     gachaSceneEl.style.transform = "none";
@@ -14335,17 +14272,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
 
-    const unlockedAvatars = AVATARS.filter(isAvatarUnlocked);
-    const previewPicks = [];
-    if (unlockedAvatars.length) {
-      const pool = [...unlockedAvatars];
-      for (let i = 0; i < 2 && pool.length; i++) {
-        previewPicks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-      }
-    }
-    gachaViewAllAvatarLeftEl.src = previewPicks[0] ? `avatars/${previewPicks[0]}.png` : "";
-    gachaViewAllAvatarRightEl.src = previewPicks[1] ? `avatars/${previewPicks[1]}.png` : "";
-    gachaCollectionStatusEl.textContent = `${unlockedAvatars.length} / ${AVATARS.length} unlocked`;
+    gachaCollectionStatusEl.textContent = `${AVATARS.filter(isAvatarUnlocked).length} / ${AVATARS.length} avatars unlocked`;
+    renderCollectionIfShown();
+  }
+  // The avatar collection lives in Style > Avatars; keep it current while that tab is on screen.
+  function renderCollectionIfShown() {
+    const panel = document.getElementById("shop-tab-avatars");
+    if (panel && panel.classList.contains("active") && gachaScreen.classList.contains("active")) renderCollectionScreen();
   }
 
   const GACHA_TIER_ORDER = ["default", "common", "rare", "ultra"];
@@ -14851,7 +14784,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const b = e.target.closest("button");
       if (!b) return;
       if (b.id === "lu-close") { close(); return; }
-      if (b.id === "lu-pull") { close(); try { openGachaScreen("avatars"); } catch (err) {} }
+      if (b.id === "lu-pull") { close(); try { openGachaScreen("capsules"); } catch (err) {} }
     });
   }
 

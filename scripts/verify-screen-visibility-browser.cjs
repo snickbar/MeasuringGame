@@ -246,7 +246,7 @@ try{
  await until(()=>api.homeState().room===null,'Leaving lobby detaches room');only('home-screen');
  await api.lobby(true);await api.flush();
  for(const mode of ['classic','quick','teamvteam','teamworlds','hlsurvival','highstakes','bluff']){
-  for(const menu of ['settings-screen','gacha-screen','career-screen','items-screen','achievements-screen','howto-screen','collection-screen','preset-settings-screen']){
+  for(const menu of ['settings-screen','gacha-screen','career-screen','items-screen','achievements-screen','howto-screen','preset-settings-screen']){
    api.visibilityReset();api.visibilityOpen(menu);only(menu);
    for(let update=0;update<3;update++){api.visibilityPhase(mode);await wait(10);only(menu);}
    document.dispatchEvent(new Event('visibilitychange'));await wait(15);only(menu);
