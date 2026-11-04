@@ -6389,6 +6389,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return { price: "$" + (cents / 100).toFixed(2), desc: `You already own ${have} of the ${total} ${noun}, so you only pay for the ${total - have} you don't have yet.` };
   }
   const ITEM_PRICE_USD = "$0.99";   // every single 100-coin item can also be bought for this
+  // Items that are also sold in a pack (reactions, flairs, backgrounds, question boards) cost less alone than the pack,
+  // but more than their share of it, so buying the whole pack is the better deal once you want about four of them.
+  const PACKED_ITEM_PRICE_USD = "$0.29";
+  const packedCats = ["reactions", "flairs", "backgrounds", "boards"];
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
   function showFakePurchase({ icon, title, price, desc }) {
@@ -7363,10 +7367,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // The same item for money. One purchase() call is the only place that will talk to real billing later.
         const usd = document.createElement("button");
         usd.type = "button"; usd.className = "cosm-buy cosm-buy-usd";
-        usd.textContent = ITEM_PRICE_USD;
-        usd.setAttribute("aria-label", `Buy ${o.name} for ${ITEM_PRICE_USD}`);
+        const usdPrice = packedCats.includes(cat) ? PACKED_ITEM_PRICE_USD : ITEM_PRICE_USD;
+        usd.textContent = usdPrice;
+        usd.setAttribute("aria-label", `Buy ${o.name} for ${usdPrice}`);
         usd.addEventListener("click", async () => {
-          if (await purchase({ title: o.name, price: ITEM_PRICE_USD, icon: "icons/coin-v2.png" })) o.onBuy(true);
+          if (await purchase({ title: o.name, price: usdPrice, icon: "icons/coin-v2.png" })) o.onBuy(true);
         });
         btn.classList.add("has-usd");
         row.__usd = usd;
