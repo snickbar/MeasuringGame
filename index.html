@@ -10275,9 +10275,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (toolbar Exit outside a game), as host ending the current game for
   // everyone (in-game Exit), and leaving an in-progress game via any top
   // toolbar button - so an accidental tap doesn't silently end/leave a game.
+  let exitAppAfterLeave = false; // Menu > Exit: after the usual leave/save confirmation, close the app too
   let pendingExitAction = null; // "app" | "hostGame" | "leaveGame" | "navFromLobby" | ...
   let pendingNavAction = null; // the deferred callback for "navFromLobby"
   function openExitConfirm(action, title, message, yesLabel, noLabel) {
+    exitAppAfterLeave = false;
     pendingExitAction = action;
     exitConfirmYesBtn.textContent = yesLabel || "Yes";
     exitConfirmNoBtn.textContent = noLabel || "No, go back";
@@ -10462,10 +10464,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
   toolbarExitBtn.addEventListener("click", () => {
     setToolbarMenu(false);
-    if (isInActiveGame()) { openLeaveGameConfirm(); return; }
+    // Exit always closes the app. Inside a game the usual leave/save question comes first, then the app closes too.
+    const run = activeSoloRun();
+    if (run) {
+      pendingNavAction = () => run[2]();
+      openExitConfirm("navFromSolo", "Exit the game?", "Your progress is saved, so you can pick this up again later. Are you sure you want to exit?", "Exit", "Keep playing");
+      exitAppAfterLeave = true; return;
+    }
+    if (isInActiveGame()) {
+      if (isGameOver()) { if (isHost) hostExit(); else guestExit(); closeAppNow(); return; } // results showing: nothing to confirm
+      openLeaveGameConfirm(); exitAppAfterLeave = true; return;
+    }
     openExitConfirm("app", "Exit the game?", "Are you sure you want to exit?");
   });
+  function closeAppNow() {
+    const appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (appPlugin && appPlugin.exitApp) appPlugin.exitApp();
+  }
   exitConfirmNoBtn.addEventListener("click", () => {
+    exitAppAfterLeave = false;
     exitConfirmOverlayEl.classList.remove("show");
     if (pendingExitAction === "quickResume") { quickDiscard(); soloFromHub = true; closeOverlay(true); showCreateScreen("solo"); } // "Start new" drops the saved game
     pendingExitAction = null;
@@ -10474,6 +10491,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   exitConfirmYesBtn.addEventListener("click", () => {
     const action = pendingExitAction;
     const nav = pendingNavAction;
+    const thenExit = exitAppAfterLeave; exitAppAfterLeave = false;
     exitConfirmOverlayEl.classList.remove("show");
     pendingExitAction = null;
     pendingNavAction = null;
@@ -10482,12 +10500,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (action === "joinContinueConfirmed") { joinContinueBtn.click(); return; }
     if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
-    if (action === "navFromLobby" || action === "navFromSolo") { if (nav) nav(); return; }
+    if (action === "navFromLobby" || action === "navFromSolo") { if (nav) nav(); if (thenExit) closeAppNow(); return; }
     if (action === "closeCreatedRoom") { closeCreatedRoom(); return; }
-    if (action === "quickSave") { quickSaveAndLeave(); return; }
+    if (action === "quickSave") { quickSaveAndLeave(); if (thenExit) closeAppNow(); return; }
     if (action === "quickResume") { quickResume(); return; }
     if (action === "hostGame" || action === "leaveGame") {
       if (isHost) hostExit(); else guestExit();
+      if (thenExit) closeAppNow();
       return;
     }
     // Capacitor auto-registers installed native plugins as globals - no
