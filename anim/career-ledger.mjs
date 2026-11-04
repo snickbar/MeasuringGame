@@ -150,7 +150,7 @@ export function applyCareerRecord(profile,record){
     const old=profile.whichBigger||{};coins=Math.ceil(Math.max(0,record.score||0)/2);
     // Your own top five runs (best first); nothing is posted anywhere.
     const top=[...list(old.top),...((record.score||0)>0?[{s:record.score,t:record.t||Date.now()}]:[])].sort((a,b)=>b.s-a.s||a.t-b.t).slice(0,5);
-    result.whichBigger={...old,best:Math.max(old.best||0,record.score||0),runs:(old.runs||0)+1,rounds:(old.rounds||0)+(record.rounds||0),top};
+    result.whichBigger={...old,best:Math.max(old.best||0,record.score||0),runs:(old.runs||0)+1,rounds:(old.rounds||0)+(record.rounds||0),picks:(old.picks||0)+(record.score||0),top};
     stats.whichBiggerRuns=(stats.whichBiggerRuns||0)+1;
   }else if(record.mode==='daily'){
     const old=profile.dailyStreak||{},count=old.last===record.date?(old.count||1):old.last===record.yesterday?(old.count||0)+1:1;
@@ -188,7 +188,7 @@ export function applyCareerRecord(profile,record){
   const paid=boosted?coins*2:coins;
   result.stats=stats;result.coins=(profile.coins||0)+paid;
   result.attemptReceipts={...profile.attemptReceipts,[key]:{mode:record.mode,coins:paid,accuracy:record.accuracy||0,t:record.t,...(boosted?{boosted:true,base:coins}:{})}};
-  result.attemptHistory=[...list(profile.attemptHistory),{...result.attemptReceipts[key],world:record.world||null,level:record.level||null,survived:record.survived??null,stars:record.stars??null,partnerName:record.partnerName||null,rounds:record.rounds??null}].slice(-60);
+  result.attemptHistory=[...list(profile.attemptHistory),{...result.attemptReceipts[key],world:record.world||null,level:record.level||null,survived:record.survived??null,stars:record.stars??null,partnerName:record.partnerName||null,rounds:record.rounds??null,score:record.mode==='whichbigger'?(record.score??null):null}].slice(-60);
   return result;
 }
 
