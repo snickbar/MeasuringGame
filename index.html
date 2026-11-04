@@ -5124,7 +5124,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
   import { createLocalRooms } from "./anim/local-rooms.mjs";
   import { createOfflineProfile } from "./anim/offline-profile.mjs";
-  import { diffPaths } from "./anim/profile-diff.mjs";
+  import { writeProfile } from "./anim/profile-writes.mjs";
   // Kept pinned to the exact same build as firebase-app/firebase-database above
   // (not the newer version the native @capacitor-firebase/authentication plugin's
   // own npm package wants) - these CDN modules only guarantee mutual
@@ -5164,9 +5164,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const profileSizeDiag = () => { try { const p = myProfile || {}, sizes = Object.entries(p).map(([k, v]) => [k, JSON.stringify(v ?? null).length]).sort((a, b) => b[1] - a[1]); const total = sizes.reduce((n, x) => n + x[1], 0); return `size:${Math.round(total / 1024)}KB (${sizes.slice(0, 3).map(([k, n]) => k + " " + Math.round(n / 1024) + "KB").join(", ")})`; } catch (e) { return ""; } };
   // Read-modify-save for the profile without a transaction: apply fn to the current copy and send only what changed.
   // fn may return undefined to change nothing. Resolves like a transaction: { committed, snapshot }. Calls for one profile run
-  // one after another so two saves never read the same old copy. allowCreate lets fn start from null (a brand new profile).
+  // one after another locally; the server version guard also rejects stale writes from other clients.
+  // allowCreate lets fn start from null (a brand new profile).
   const profileChain = new Map();
-  let profileSizeWarned = false;
   function changeProfile(id, fn, opts) {
     const run = (profileChain.get(id) || Promise.resolve()).catch(() => {}).then(() => changeProfileNow(id, fn, opts));
     profileChain.set(id, run);
@@ -5174,20 +5174,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function changeProfileNow(id, fn, opts) {
     const profileRef = ref(db, "profiles/" + id);
-    const current = (await get(profileRef)).val();
-    if (!current) {
-      if (!(opts && opts.allowCreate)) throw Error("Profile not ready");
-      const first = fn(null);
-      if (first === undefined || first === null) return { committed: false, snapshot: { val: () => null } };
-      await set(profileRef, first);
-      return { committed: true, snapshot: { val: () => first } };
-    }
-    const next = fn(structuredClone(current));
-    if (next === undefined || next === null) return { committed: false, snapshot: { val: () => current } };
-    if (!profileSizeWarned) { profileSizeWarned = true; try { const kb = JSON.stringify(current).length / 1024; if (kb > 500) console.warn("[measuring-game] profile is " + Math.round(kb) + "KB - it is growing without a cap"); } catch (e) {} }
-    const changes = diffPaths(current, next);
-    if (Object.keys(changes).length) await update(profileRef, changes);
-    return { committed: true, snapshot: { val: () => next } };
+    return writeProfile({read:async()=>(await get(profileRef)).val(),write:changes=>update(profileRef,changes),change:fn,allowCreate:!!opts?.allowCreate});
   }
   const ref = (database, path) => {
     if (typeof path === "string" && localRooms.owns(path)) return localRooms.ref(path);
@@ -5261,14 +5248,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try {
       // Read, merge, and send only the differences. (The old whole-profile transaction ended in "maxretry" and left this
       // phone showing its stale offline copy forever.)
-      const profileRef = fbRef(db, `profiles/${id}`);
-      const serverNow = (await fbGet(profileRef)).val();
-      const merged = offlineProfile.mergeInto(id)(serverNow);
-      if (merged !== undefined) {
-        if (serverNow === null) await fbSet(profileRef, merged);
-        else { const changes = diffPaths(serverNow, merged); if (Object.keys(changes).length) await fbUpdate(profileRef, changes); }
-      }
-      offlineProfile.markSynced(id, merged !== undefined ? merged : serverNow); // saved, or already merged by an earlier attempt
+      const result = await changeProfile(id, offlineProfile.mergeInto(id), {allowCreate:true});
+      offlineProfile.markSynced(id, result.snapshot.val());
     } catch (err) { /* still offline or interrupted: tried again at the next reconnect */ }
     finally { profileMerging = false; }
   }
@@ -6127,7 +6108,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // A glowing gold star on the SHOP button and the Capsules tab while there is a free capsule pull waiting.
   function renderFreePullStar() {
     // Banked pulls are kept, but the star only shows while there is still something left to pull.
-    const on = (myProfile.freePulls | 0) > 0 && gachaAnyRemaining();
+    const on = gachaFreePulls('any') > 0 && gachaAnyRemaining();
     document.getElementById("toolbar-shop-btn")?.classList.toggle("has-free-pull", on);
     document.querySelectorAll('.cosm-tab-btn[data-tab="capsules"]').forEach((b) => b.classList.toggle("has-free-pull", on));
   }
@@ -6186,6 +6167,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       myProfile = {
         coins: data.coins || 0,
         freePulls: Math.max(0, data.freePulls | 0),
+        freeCategoryPulls: data.freeCategoryPulls || {},
         booster: Math.max(0, data.booster | 0),
         tipCount: Math.max(0, data.tipCount | 0),
         tipDollars: Math.max(0, data.tipDollars | 0),
@@ -6285,7 +6267,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   async function addCoins(amount) {
     if (!amount || amount <= 0) return;
-    await runTransaction(ref(db, `profiles/${deviceId}/coins`), (current) => (current || 0) + amount);
+    await runTransaction(ref(db, `profiles/${deviceId}`), current=>({...current,coins:(current?.coins||0)+amount}));
   }
   async function awardCoinsForGameEnd(amount) {
     await addCoins(amount);
@@ -6618,25 +6600,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         desc: `${B.coins} coins and one random capsule from each category: an avatar, a reaction, a flair, a question board and a scene.` });
       if (!bought) return;
       btn.disabled = true;
-      const got = await purchaseStarterBundle();
-      if (got && got.length) await revealGachaItems(got);
+      try {
+        const got = await purchaseStarterBundle();
+        if (got && got.length) await revealGachaItems(got);
+        if (got?.banked) showAchToast(`${got.banked} free capsule pull${got.banked===1?'':'s'} saved for later.`);
+      } catch(error) { showAchToast("Could not save the Starter Bundle. Please try again."); }
+      finally { renderStarterBundle(); renderGachaScreen(); }
     });
   }
   // Pays out the coins and one random unowned item per category. Resolves to the items granted, in category order.
   async function purchaseStarterBundle() {
     const B = STARTER_BUNDLE;
-    const picks = GACHA_CATEGORIES.map((c) => gachaPick(c)).filter(Boolean);
-    let granted = [], already = false;
+    const picks = new Map(GACHA_CATEGORIES.map(c=>[c,gachaPick(c)]));
+    let granted = [], already = false, banked = 0;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
-      granted = []; already = false;
+      granted = []; already = false; banked = 0;
       const profile = current || defaultProfile();
       if (profile.starterBundle) { already = true; return profile; }
       let next = { ...profile, starterBundle: true, coins: (profile.coins || 0) + B.coins };
-      picks.forEach((pk) => { if (!gachaOwnedIn(next, pk.cat, pk.id)) { next = gachaGrant(next, pk.cat, pk.id); granted.push(pk); } });
+      GACHA_CATEGORIES.forEach(cat=>{
+        const pk=picks.get(cat);
+        if(pk&&!gachaOwnedIn(next,pk.cat,pk.id)){next=gachaGrant(next,pk.cat,pk.id);granted.push(pk);}
+        else {next={...next,freeCategoryPulls:{...next.freeCategoryPulls,[cat]:(next.freeCategoryPulls?.[cat]||0)+1}};banked++;}
+      });
       return next;
     });
     if (already) return [];
     if (granted.length) bumpStats({ pulls: granted.length });
+    granted.banked = banked;
     return granted;
   }
   function renderCosmeticsShop() {
@@ -7360,26 +7351,37 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (they are random by design); aiming at a category always costs coins.
   // Resolves to { cat, id } for the new item, or null when nothing was pulled (not enough coins, nothing left, or it was taken meanwhile).
   async function pullGachaItem(cat = "avatar") {
-    if (myProfile.coins < GACHA_COST && !(cat === "any" && myProfile.freePulls > 0)) return null;
+    if (myProfile.coins < GACHA_COST && !gachaFreePulls(cat)) return null;
+    if(cat==='any'&&!(myProfile.freePulls>0)){
+      const banked=GACHA_CATEGORIES.filter(c=>myProfile.freeCategoryPulls?.[c]>0&&gachaRemaining(c)>0);
+      if(banked.length)cat=banked[Math.floor(Math.random()*banked.length)];
+    }
     const pick = gachaPick(cat);
     if (!pick) return null;
     let granted = false;
     const txResult = await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
       granted = false;
       const profile = current || defaultProfile();
-      const useFree = cat === "any" && (profile.freePulls | 0) > 0;
+      const useCategory = (profile.freeCategoryPulls?.[pick.cat] | 0)>0;
+      const useGeneral = cat === "any" && (profile.freePulls | 0) > 0; // general free pulls are random-only
+      const useFree = useCategory || useGeneral;
       if (!useFree && (profile.coins || 0) < GACHA_COST) return profile; // abort: insufficient funds by the time this commits
       if (gachaOwnedIn(profile, pick.cat, pick.id)) return profile; // abort: already unlocked (race)
       granted = true;
       return {
         ...gachaGrant(profile, pick.cat, pick.id),
         coins: useFree ? (profile.coins || 0) : (profile.coins || 0) - GACHA_COST,
-        freePulls: useFree ? (profile.freePulls | 0) - 1 : (profile.freePulls | 0),
+        freePulls: useGeneral&&!useCategory ? (profile.freePulls | 0) - 1 : (profile.freePulls | 0),
+        ...(useCategory?{freeCategoryPulls:{...profile.freeCategoryPulls,[pick.cat]:profile.freeCategoryPulls[pick.cat]-1}}:{}),
       };
     });
     if (!txResult.committed || !granted) return null;
     bumpStats({ pulls: 1 });
     return pick;
+  }
+  function gachaFreePulls(cat,profile=myProfile){
+    const categories=cat==='any'?GACHA_CATEGORIES.filter(c=>gachaRemaining(c)>0):[cat];
+    return (cat==='any'?Math.max(0,profile.freePulls|0):0)+categories.reduce((n,c)=>n+Math.max(0,profile.freeCategoryPulls?.[c]|0),0);
   }
   // The avatar machine as it works today: resolves to the avatar id.
   async function pullGacha() {
@@ -14402,7 +14404,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // gives a "not enough" shake/error instead of silently doing nothing.
         gachaPullBtn.disabled = false;
         gachaPullBtn.classList.remove("soldout");
-        gachaPullBtnTextEl.textContent = myProfile.freePulls > 0 ? `Free pull (${myProfile.freePulls})` : `Any item for ${GACHA_COST}`;
+        gachaPullBtnTextEl.textContent = gachaFreePulls('any')>0 ? `Free pull (${gachaFreePulls('any')})` : `Any item for ${GACHA_COST}`;
       }
     }
 
@@ -14411,7 +14413,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const left = gachaRemaining(b.dataset.cat);
       b.classList.toggle("done", left === 0);
       b.disabled = left === 0;
-      b.querySelector(".gacha-cat-left").textContent = left === 0 ? "\u2713 Complete" : `${left} left`;
+      const banked=Math.max(0,myProfile.freeCategoryPulls?.[b.dataset.cat]|0);
+      b.querySelector(".gacha-cat-left").textContent = (left === 0 ? "\u2713 Complete" : `${left} left`)+(banked?` · ${banked} ${left?'free':'banked'}`:'');
     });
     renderCollectionIfShown();
   }
@@ -14769,23 +14772,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(() => { delete achHold[id]; if (document.getElementById("achievements-content")) renderAchievementsScreen(); }, ACH_HOLD_MS + 50);
     playSound("roundwin");
     if (typeof flyCoinsToToolbar === "function") flyCoinsToToolbar(a.reward, { early: true });  // coins leave the Claim button the moment it's tapped, not after the save
-    // Claim like the rest of the app writes: show it claimed at once, then save in the background. A transaction needs a live server round trip,
-    // so on a shaky connection it hung forever (coins flew, the award never changed). update() applies locally right away and syncs when it can.
+    // Show the claim immediately, then save its receipt, reward and unlock with
+    // the versioned small-write path. The saved balance is always read fresh.
     const base = `profiles/${deviceId}`;
     const vals = { [`achClaimed/${id}`]: true };
     if (a.reward > 0) vals.coins = (myProfile.coins || 0) + a.reward;
     if (a.bg) vals[`cosmetics/owned/backgrounds/${a.bg}`] = true;
     if (a.home) vals[`cosmetics/owned/homeScreens/${a.home}`] = true;
-    const before = { achClaimed: myProfile.achClaimed, coins: myProfile.coins };
     myProfile = { ...myProfile, achClaimed: { ...(myProfile.achClaimed || {}), [id]: true }, coins: vals.coins ?? myProfile.coins };
     try { renderCoinBalance(); } catch (e) {}
     renderAchievementsScreen();
     const res = { committed: true }, newlyClaimed = true;
-    Promise.resolve().then(() => update(ref(db, base), vals)).then(() => { achClaiming.delete(id); }).catch((err) => {
+    Promise.resolve().then(() => runTransaction(ref(db, base), profile => {
+      if(!profile)return undefined;
+      if(profile.achClaimed?.[id])return profile;
+      const next={...profile,achClaimed:{...profile.achClaimed,[id]:true},coins:(profile.coins||0)+a.reward};
+      if(a.bg)next.cosmetics={...profile.cosmetics,owned:{...profile.cosmetics?.owned,backgrounds:{...profile.cosmetics?.owned?.backgrounds,[a.bg]:true}}};
+      if(a.home)next.cosmetics={...next.cosmetics,owned:{...next.cosmetics?.owned,homeScreens:{...next.cosmetics?.owned?.homeScreens,[a.home]:true}}};
+      return next;
+    })).then(() => { achClaiming.delete(id); }).catch(async (err) => {
       console.warn("claim failed", err);
       achClaiming.delete(id);
       if (deviceId === claimOwner) {
-        myProfile = { ...myProfile, achClaimed: before.achClaimed, coins: before.coins };
+        try {const saved=(await get(ref(db,base))).val();if(deviceId===claimOwner&&saved)applyProfileData(claimOwner,saved);}
+        catch { if(deviceId===claimOwner&&myProfile.achClaimed?.[id]){const claims={...myProfile.achClaimed};delete claims[id];myProfile={...myProfile,achClaimed:claims,coins:Math.max(0,(myProfile.coins||0)-a.reward)};} }
         try { renderCoinBalance(); } catch (e) {}
         achJustClaimed = null; delete achHold[id]; renderAchievementsScreen();
       }
@@ -15142,7 +15152,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // One pull from a category ("any" for the big button), played out as the machine animation and a reveal card.
   async function runGachaPull(cat, btn) {
     if (gachaPullInProgress) return;
-    if (myProfile.coins < GACHA_COST && !(cat === "any" && myProfile.freePulls > 0)) {
+    if (myProfile.coins < GACHA_COST && !gachaFreePulls(cat)) {
       gachaStatusEl.textContent = "Not enough coins!";
       gachaStatusEl.classList.add("error");
       gachaRetrigger(btn, "shake");
@@ -15164,7 +15174,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaPullBtn.classList.add("busy");
     gachaPanelEl.classList.add("busy");
 
-    const pulled = await pullGachaItem(cat);
+    let pulled;
+    try { pulled = await pullGachaItem(cat); }
+    catch(error){
+      gachaPullInProgress=false;
+      resetGachaScene();renderGachaScreen();
+      gachaStatusEl.textContent="Could not save this pull. Please try again.";
+      gachaStatusEl.classList.add("error");
+      playSound("error");
+      return;
+    }
     if (!pulled) {
       gachaPullInProgress = false;
       gachaStatusEl.textContent = "Nothing to pull right now.";

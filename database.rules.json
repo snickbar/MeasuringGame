@@ -15,7 +15,10 @@
       ".write": false,
       "$id": {
         ".read": "$id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)",
-        ".write": "$id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)"
+        ".write": "$id.matches(/^[a-f0-9]{32}$/) || (auth != null && auth.uid === $id)",
+        "_writeVersion": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() === 1) || (data.isNumber() && newData.val() === data.val() + 1))"
+        }
       }
     },
     "dailyCombos": {
