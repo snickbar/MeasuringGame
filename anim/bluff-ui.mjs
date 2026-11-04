@@ -62,7 +62,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   let handle=null,busy=false,busySince=0,autoClaimKey='',selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
   let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='',finalKey='',introKey='',introAt=0,timers=[],timersKey='';
-  let celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
+  let scrolledKey='',celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
   const image=id=>{const o=object(id);return `<figure><img src="${esc(o?.image)}" alt="${esc(o?.name)}" draggable="false"><figcaption>${esc(o?.name)}</figcaption></figure>`;};
   function render(){
     const {room,me,host}=context(),s=room?.bluff;if(room?.phase!=='bluff'||!Array.isArray(s?.order)||!s.q)return;
@@ -91,7 +91,9 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const dock=s.stage==='reveal'?`<div class="bl-dock">${host?`<button type="button" class="dc-btn bl-dock-btn" data-next ${busy?'disabled':''}>${nextLabel}</button>`:`<p class="hs-hint">Waiting for the host to ${s.showStand?(s.round===s.total?'finish the game':'start the next round'):'show the standings'}…</p>`}</div>`:'';
     const standings=s.stage==='reveal'&&s.showStand?bluffRankingsHtml(s,room.players||{},avatar,me):'';
     const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="The claim is"><h2>The claim is…</h2>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}">${idleScale}<div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel${intro&&s.stage==='vote'?' bl-thud':''}"${intro&&s.stage==='vote'?introStyle:''} aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p></section><div class="hs-col r">${right.join('')}</div></div>`;
+    const keepView=element.ownerDocument.defaultView,keepY=keepView.scrollY; // a rebuild must not throw the page back to the top
     element.innerHTML=`<h1 class="bl-screen-reader">Bluff the Room</h1><div class="hs-top bl-meta"${s.stage==='reveal'?' hidden':''}>${s.stage==='make'?`<span class="bl-turn-notice" data-maker-spotlight>${mine?'Your turn!':'Maker’s turn'}</span>`:s.stage==='vote'?voteMeter:'<span></span>'}<span class="hs-clock bl-clock" data-clock></span></div>${s.stage==='reveal'&&s.showStand?'':`<div class="hs-q bl-question">${s.stage==='reveal'?'':`<div class="bl-objects">${image(s.q.unitId)}${image(s.q.targetId)}</div>`}<h2 class="hs-qtext">${esc(s.q.prompt)}</h2></div>`}${board}<p class="bl-error" role="status">${esc(error)}</p>${dock}${s.stage==='animation'?`<div class="bl-reveal-overlay" role="region" aria-label="Size reveal"><div class="bl-reveal-sheet"><h2>Let’s see the real size</h2><div id="bluff-animation-slot"></div>${bluffPickHtml(s,me)}</div></div>`:''}`;
+    if(keepY>0&&Math.abs(keepView.scrollY-keepY)>1)keepView.scrollTo({top:keepY,behavior:'instant'});
     {const tb=element.ownerDocument.getElementById('bottom-toolbar'),h=tb&&tb.classList.contains('active')?tb.getBoundingClientRect().height:0;element.style.setProperty('--bl-tb',Math.round(h)+'px');element.classList.toggle('bl-has-dock',!!dock);}
     {const list=element.querySelector('.bl-stand-list'),rows=list?list.children:[];if(rows.length>1)list.style.setProperty('--step',(rows[1].offsetTop-rows[0].offsetTop)+'px');}
     const select=value=>{
@@ -170,6 +172,15 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     voters.forEach((id,i)=>later(()=>{sound('tick');if(id===me)vibrate(18);},T.drop0+i*T.step+330));
     if(voters.some(id=>s.votes[id]!==s.claim.kind))later(()=>sound('tap'),T.judged);
   }
+  // Scrolls the faker's result row (who was fooled, and the points) up above the dock button and toolbar when a big table pushes it off screen.
+  function scrollToMaker(){
+    const doc=element.ownerDocument,maker=element.querySelector('.bl-maker-result'),rect=maker?.getBoundingClientRect();
+    if(!rect||!(rect.height>0))return false;
+    const tops=[doc.getElementById('bottom-toolbar'),element.querySelector('.bl-dock')].map(n=>n?.getBoundingClientRect().top).filter(t=>t>0);
+    const bottom=Math.min(innerHeight,...tops);
+    if(rect.bottom<=bottom-8)return false;
+    doc.defaultView.scrollBy({top:rect.bottom-bottom+20,behavior:reduced()?'instant':'smooth'});return true;
+  }
   function celebrateRound(){
     const {room}=context(),s=room?.bluff;
     if(s?.stage==='reveal'&&s.showStand&&visible()&&!room.paused){const key=room.gameId+':'+s.round;if(key!==rankingCueKey){rankingCueKey=key;if(bluffNewLeaders(s).length)sound('winner');const rs=[...element.querySelectorAll('.bl-standing')];rs.forEach((r,i)=>countUpEl(r.querySelector('.bl-standing-score strong'),500,(rs.length-1-i)*180+200,reduced()));}}
@@ -185,7 +196,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const T=bluffRevealTimes(s,!reduced()),raw=now()-celebrationAt,elapsed=raw-T.judged,hasWinners=element.querySelector('.win [data-result-player]');
     if(raw>=T.judged){
       element.querySelector('.bl-stage')?.classList.add('bl-judged');
-      if(raw>=T.judged+250)personalMoment(s,room);
+      if(raw>=T.judged+250){personalMoment(s,room);if(scrolledKey!==key){scrolledKey=key;scrollToMaker();}}
     }
     if(!reduced()&&elapsed>=0&&elapsed<1900){
       for(const av of element.querySelectorAll('.win .avatar'))if(!av.classList.contains('bl-win-dance')){
@@ -194,9 +205,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     }
     if(laughAt===null&&s.result.points[s.maker]>0&&elapsed>=(hasWinners&&!reduced()?2000:0)){
       if(laughReadyAt===null){
-        const maker=element.querySelector('.bl-maker-result'),rect=maker?.getBoundingClientRect(),bottom=element.ownerDocument.getElementById('bottom-toolbar')?.getBoundingClientRect().top||innerHeight;
-        const scroll=rect?.height>0&&rect.bottom>bottom-8;
-        if(scroll)element.ownerDocument.defaultView.scrollBy({top:rect.bottom-bottom+20,behavior:reduced()?'instant':'smooth'});
+        const scroll=scrollToMaker();
         laughReadyAt=now()+(scroll&&!reduced()?450:0);
       }
       if(now()>=laughReadyAt){laughAt=now();laugh();}
