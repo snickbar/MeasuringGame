@@ -1,0 +1,34 @@
+function monthlyMotion(month, jobs) {
+ if(month==='Capsule machine')return '';
+ const byIndex=i=>jobs.find(j=>j.id.startsWith(String(i+1).padStart(2,'0')+'-'));
+ const art=(i,cls='',style='',part=null)=>{const j=byIndex(i);return j?`<img class="piece ${cls}" src="motion/${j.id}${part===null?'':'-'+part}.webp" alt="" style="${style}" loading="lazy">`:''};
+ const reused=(id,cls,style)=>`<img class="piece ${cls}" src="motion/${id}.webp" alt="" style="${style}" loading="lazy">`;
+ const sample='<div class="sample-player"><span>SE</span><strong>Your card</strong><small>Monthly flair</small></div>';
+ const particles=(i,count,mode='orbit',parts=4)=>Array.from({length:count},(_,k)=>art(i,mode,`--a:${k*360/count}deg;--delay:${k*.17}s;left:${mode==='fall'?8+k*84/count:50}%;top:${mode==='fall'?0:50}%;width:${mode==='fall'?13:14}%`,k%parts)).join('');
+ let reaction='',flair='',extra='';
+ switch(month){
+ case 'January':reaction=art(0,'clink-left','width:35%;left:20%;top:10%')+art(0,'clink-right','width:35%;left:45%;top:10%')+art(1,'clink-flash','width:20%;left:40%;top:12%');flair=sample+particles(4,8,'fall',8)+art(3,'sparkle-orbit','width:18%;left:40%;top:40%');break;
+ case 'February':reaction=art(5,'gentle-bounce','width:62%;left:19%;top:12%')+'<div class="heart-eyes">'+art(6,'','width:25%;left:23%;top:28%')+art(6,'','width:25%;left:52%;top:28%')+'</div>';flair=sample+particles(8,9,'fall');break;
+ case 'March':reaction=art(9,'clover-spin','width:62%;left:19%;top:12%')+art(3,'clink-flash','width:20%;left:65%;top:8%');flair=sample+art(11,'rainbow-reveal','width:85%;left:7.5%;top:4%')+particles(12,7,'fall');break;
+ case 'April':reaction=art(14,'chick-rise','width:47%;left:26.5%;top:19%')+art(13,'egg-bottom','width:62%;left:19%;top:43%')+art(15,'egg-cap','width:62%;left:19%;top:10%');flair=sample+'<div class="bird-fly">'+art(17,'wing-up','width:100%;left:0;top:0')+art(18,'wing-down','width:100%;left:0;top:0')+'</div>'+art(19,'flower-rise','width:19%;left:8%;top:60%')+art(20,'flower-rise','width:20%;left:76%;top:65%;animation-delay:.8s');break;
+ case 'May':reaction=art(21,'rose-bud','width:57%;left:21.5%;top:8%')+art(22,'rose-open','width:57%;left:21.5%;top:8%')+art(23,'petal-fall','width:18%;left:56%;top:30%');flair=sample+art(25,'pinata-swing','width:45%;left:27.5%;top:5%')+particles(26,8,'candy-burst',6);extra='<label class="pinata-label">Piñata <select class="pinata-picker"><option value="25">Star</option><option value="61">Donkey</option><option value="62">Round fiesta</option></select></label>';break;
+ case 'June':reaction=art(27,'sun-heat','width:62%;left:17%;top:8%')+art(29,'fan-wave','width:34%;left:62%;top:48%')+art(28,'sweat-fly','width:12%;left:14%;top:25%');flair=sample+reused('beach-ball','ball-bounce','width:25%;left:4%;top:45%')+reused('beach-ball','ball-bounce','width:22%;left:74%;top:25%;animation-delay:.6s');break;
+ case 'July':reaction=art(31,'gentle-bounce','width:76%;left:12%;top:28%')+art(32,'mustard-pop','width:27%;left:56%;top:5%');flair=sample+particles(34,3,'balloon-orbit',3)+particles(35,4,'splash-burst',4);break;
+ case 'August':reaction=art(36,'gentle-bounce','width:48%;left:26%;top:23%')+art(37,'cherry-drop','width:20%;left:40%;top:0%');flair=sample+particles(39,3,'surf-orbit',3)+art(40,'wave-sweep','width:90%;left:0%;top:17%');break;
+ case 'September':reaction=art(41,'gentle-bounce','width:65%;left:17.5%;top:12%')+art(42,'worm-pop','width:25%;left:56%;top:23%');flair=sample+particles(44,4,'stamp',4)+art(45,'grade-slam','width:45%;left:28%;top:27%');break;
+ case 'October':reaction=art(47,'pumpkin-unlit','width:64%;left:18%;top:10%')+art(46,'pumpkin-lit','width:64%;left:18%;top:10%');flair=sample+art(49,'ghost-drift','width:27%;left:3%;top:8%')+art(50,'ghost-drift','width:27%;left:71%;top:48%;animation-delay:1.2s')+'<div class="bat-fly">'+art(51,'wing-up','width:100%;left:0;top:0')+art(52,'wing-down','width:100%;left:0;top:0')+'</div>';break;
+ case 'November':reaction=reused('wishbone','bone-whole','width:57%;left:21.5%;top:10%')+reused('wishbone','bone-left','width:57%;left:21.5%;top:10%')+reused('wishbone','bone-right','width:57%;left:21.5%;top:10%');flair=sample+art(54,'horn-tip','width:48%;left:6%;top:4%')+particles(55,6,'harvest-burst',6);break;
+ case 'December':reaction=art(56,'snowman-body','width:52%;left:24%;top:5%')+art(57,'twig-left','width:25%;left:7%;top:44%')+art(57,'twig-right','width:25%;left:68%;top:44%');flair=sample+particles(59,10,'bulb-chase',5)+reused('sleigh','sleigh-pass','width:46%;left:0%;top:0%')+particles(60,6,'fall');break;
+ }
+ const board=jobs.find(j=>j.month===month&&j.title.toLowerCase().includes('board'));
+ const stage=(name,body,type)=>`<article class="motion-card"><div class="motion-heading"><strong>${name}</strong><button class="replay-motion" aria-label="Replay ${month} ${name}">Replay ↻</button></div><div class="motion-stage ${type}" data-motion>${body}</div>${type==='flair-demo'?extra:''}</article>`;
+ const boardBody=board?`<img class="board-piece" src="motion/${board.id}.webp" alt="${board.title}" loading="lazy"><div class="board-question ${['January','October'].includes(month)?'light':''}">How many cherries long is a surfboard?</div>`:'';
+ return `<div class="motion-grid">${stage('Reaction',reaction,'reaction-demo')}${stage('Question board',boardBody,'board-demo')}${stage('Card flair',flair,'flair-demo')}</div>`;
+}
+let motionObserver;
+function attachMonthlyMotion(jobs){
+ motionObserver?.disconnect();motionObserver=new IntersectionObserver(entries=>entries.forEach(e=>e.target.classList.toggle('is-playing',e.isIntersecting)),{threshold:.15});
+ document.querySelectorAll('[data-motion]').forEach(stage=>motionObserver.observe(stage));
+ document.querySelectorAll('.replay-motion').forEach(button=>button.onclick=()=>{const stage=button.closest('.motion-card').querySelector('[data-motion]');stage.classList.remove('is-playing');stage.querySelectorAll('*').forEach(el=>{el.style.animation='none'});void stage.offsetWidth;stage.querySelectorAll('*').forEach(el=>el.style.removeProperty('animation'));stage.classList.add('is-playing')});
+ document.querySelectorAll('.pinata-picker').forEach(select=>select.onchange=()=>{const j=jobs.find(j=>j.id.startsWith(String(Number(select.value)+1).padStart(2,'0')+'-'));select.closest('.motion-card').querySelector('.pinata-swing').src='motion/'+j.id+'.webp';select.closest('.motion-card').querySelector('.replay-motion').click()});
+}
