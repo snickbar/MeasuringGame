@@ -624,13 +624,6 @@ if (location.protocol === "file:") {
   .cosm-list { display: flex; flex-direction: column; gap: 8px; }
   /* Category headings sit on top of the shop's background pictures, so they get a faint box and bold black text to stay readable. */
   .cosm-group-label { display: flex; align-items: center; justify-content: center; width: 66.667%; min-height: 46px; box-sizing: border-box; margin: 14px auto 0; padding: 5px 10px; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; color: #000; background: rgba(255,255,255,.62); border-radius: 12px; }
-  .cosm-pack-head > div:first-child { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0; min-width: 0; min-height: 46px; box-sizing: border-box; padding: 4px 8px; text-align: center; background: rgba(255,255,255,.62); border-radius: 12px; }
-  .cosm-pack-head .cosm-unlock { flex: 0 0 auto; width: 41%; min-width: 0; }
-  .cosm-pack-head .cosm-pack-title, .cosm-pack-head .cosm-pack-sub { color: #000; }
-  .cosm-pack-head .cosm-pack-title { font-weight: 700; }
-  .cosm-pack-head { display: flex; flex-direction: row; align-items: center; gap: 8px; margin-top: 14px; }
-  .cosm-pack-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
-  .cosm-pack-sub { font-size: 12px; color: var(--text-muted); }
   .cosm-row {
     display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px;
     padding: 8px 10px; background: #fffaf0; border: 3px solid #d9c3a3; border-radius: 14px;
@@ -4323,10 +4316,6 @@ if (location.protocol === "file:") {
   <div id="shop-tab-packs" class="shop-tab-panel">
     <div class="shop-subpanel">
       <section class="shop-box"><h3 class="shop-box-title">Monthly object packs</h3><div id="themed-pack-shop"></div></section>
-      <section class="shop-box"><h3 class="shop-box-title">Question board packs</h3><div id="board-pack-shop"></div></section>
-      <section class="shop-box"><h3 class="shop-box-title">Reaction packs</h3><div id="pack-row"></div></section>
-      <section class="shop-box"><h3 class="shop-box-title">Flair packs</h3><div id="flair-pack-row"></div></section>
-      <section class="shop-box"><h3 class="shop-box-title">Background packs</h3><div id="bg-pack-row"></div></section>
     </div>
   </div>
 
@@ -4647,7 +4636,7 @@ if (location.protocol === "file:") {
     <p>Your score becomes coins when a game ends, win or lose. Open <b>Shop</b> for coins, offers, and monthly packs. Open <b>Style</b> for avatars, reactions, flairs, boards, backgrounds, and home screens:</p>
     <p><b>Shop</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Party Mode games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
     <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
-    <p><b>Style</b> - buy and equip Reaction packs and Flair packs here; whatever you've equipped is what shows up in games.</p>
+    <p><b>Style</b> - unlock and equip reactions, flairs, question boards and scenes with coins; whatever you've equipped is what shows up in games.</p>
   </div></details>
 </div>
 
@@ -6188,9 +6177,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderItemsScreen();
     renderAchievementsScreen();
     checkAchievementToasts();
-    renderPackShop();
-    renderFlairPackShop();
-    renderBackgroundPackShop();
     renderStarterBundle();
     syncHomeScreenPrefs();
     if(careerScreenEl?.classList.contains('active'))renderCareerStats();
@@ -6377,23 +6363,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Buy, false on Cancel or tapping the backdrop. Swap the caller's follow-up
   // (the actual profile write) for a real receipt-validated grant later -
   // this function itself doesn't need to change.
-  // Shown in a pack's purchase dialog when some of its items are already owned (bought with coins).
-  function packOwnedNote(have, total, noun) {
-    if (!have) return undefined;
-    return `You already own ${have} of the ${total} ${noun} in this pack. Buying it still unlocks all ${total}.`;
-  }
-  // A pack's price follows what you don't own yet: own 3 of 5 and you pay for the other 2 (rounded up to the cent, never under $0.25).
-  function packQuote(pack) {
-    let have = 0, total = 1, noun = "items";
-    if (pack.emojis) { have = pack.emojis.filter((e) => ownsEmoji(e)).length; total = pack.emojis.length; noun = "reactions"; }
-    else if (pack.flairs) { const items = COSMETIC_CATALOG.effects; have = pack.flairs.filter((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); }).length; total = pack.flairs.length; noun = "flairs"; }
-    else if (pack.backgrounds) { have = pack.backgrounds.filter((b) => ownsBackground(b.id)).length; total = pack.backgrounds.length; noun = "backgrounds"; }
-    else if (pack.boards) { have = pack.boards.filter((b) => ownsBoard(b.id)).length; total = pack.boards.length; noun = "boards"; }
-    if (!have || have >= total) return { price: pack.price };
-    const base = parseFloat(String(pack.price).replace(/[^0-9.]/g, "")) || 0.99;
-    const cents = Math.max(50, Math.ceil(base * 100 * (total - have) / total));
-    return { price: "$" + (cents / 100).toFixed(2), desc: `You already own ${have} of the ${total} ${noun}, so you only pay for the ${total - have} you don't have yet.` };
-  }
   // The one place a real store purchase will plug in later. Resolves true once the purchase went through.
   const purchase = (details) => showFakePurchase(details);
   function showFakePurchase({ icon, iconHtml, title, price, desc }) {
@@ -6421,15 +6390,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       cancelBtn.addEventListener("click", () => close(false));
       ov.addEventListener("click", (e) => { if (e.target === ov) close(false); });
     });
-  }
-  // The little pictures shown in a purchase popup: the first few items of a pack, drawn the same way as in the shop lists.
-  function packIconHtml(pack) {
-    let items = [];
-    if (pack.emojis) items = pack.emojis.slice(0, 3).map((e) => REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`);
-    else if (pack.flairs) items = pack.flairs.slice(0, 3).map((id) => { const it = COSMETIC_CATALOG.effects.find((x) => x.id === id); return it ? `<img class="cosm-flair-pic${it.rainbow ? " rainbow" : ""}" src="${flairPic(it.pic)}" alt="">` : ""; });
-    else if (pack.backgrounds) items = pack.backgrounds.slice(0, 3).map((b) => bgThumbHtml(b.id, "cosm-bg-pic", 34));
-    else if (pack.boards) items = pack.boards.slice(0, 2).map((b) => `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="">`);
-    return items.length ? `<span class="fp-art">${items.join("")}</span>` : "";
   }
   // ---- "Watch an ad to double your coins": offered after EVERY finished game that paid coins ----
   // (Party / Quick / Team vs Team have their own receipt screen with the same button; every other mode - Worlds, Survival,
@@ -6648,60 +6608,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       grid.appendChild(card);
     });
   }
-  // Real-money reaction packs, shown on the Purchases tab (anything paid with real money lives there).
-  function renderPackShop() {
-    const row = document.getElementById("pack-row");
-    if (!row) return;
-    row.innerHTML = "";
-    EMOJI_PACK_CATALOG.forEach((pack, pi) => {
-      const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
-      const card = document.createElement("div");
-      card.className = "coin-pack-card pack-card";
-      tintPackCard(card, pi);
-      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-emojis">${pack.emojis.filter((e) => REACTIONS[e]).map((e) => `<img alt="" src="${reactionPic(e)}">`).join("")}</div>`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "coin-pack-buy-btn";
-      btn.disabled = owned;
-      btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
-      if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (!bought) return;
-        btn.disabled = true;
-        await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
-      });
-      card.appendChild(btn);
-      row.appendChild(card);
-    });
-  }
-  function renderFlairPackShop() {
-    const row = document.getElementById("flair-pack-row");
-    if (!row) return;
-    row.innerHTML = "";
-    const items = COSMETIC_CATALOG.effects;
-    FLAIR_PACK_CATALOG.forEach((pack, pi) => {
-      const owned = !!(myProfile.flairPacks || {})[pack.id]
-        || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
-      const flairHtml = pack.flairs.map((id) => { const it = items.find((x) => x.id === id); return it ? `<span class="pf"><img alt="" class="${it.rainbow ? "rainbow" : ""}" src="${flairPic(it.pic)}"></span>` : ""; }).join("");
-      const card = document.createElement("div");
-      card.className = "coin-pack-card pack-card";
-      tintPackCard(card, pi + 1);
-      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="pack-flairs">${flairHtml}</div>`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "coin-pack-buy-btn";
-      btn.disabled = owned;
-      btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
-      if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u2B50", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (!bought) return;
-        btn.disabled = true;
-        await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
-      });
-      card.appendChild(btn);
-      row.appendChild(card);
-    });
-  }
   // ---- Starter Bundle: a one-time sampler (simulated purchase, like the packs). Fixed items so nobody can cherry-pick rarities.
   const STARTER_BUNDLE = { coins: 300, price: "$0.99", flair: "hearts", reaction: "\u{1F624}", board: "chalkboard", background: "nature-grass" };
   function renderStarterBundle() {
@@ -6741,31 +6647,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           effects: { ...(own.effects || {}), [B.flair]: true },
           boards: { ...(own.boards || {}), [B.board]: true },
           backgrounds: { ...(own.backgrounds || {}), [B.background]: true } } } };
-    });
-  }
-  function renderBackgroundPackShop() {
-    const row = document.getElementById("bg-pack-row");
-    if (!row) return;
-    row.innerHTML = "";
-    BACKGROUND_PACK_CATALOG.forEach((pack, pi) => {
-      const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
-      const card = document.createElement("div");
-      card.className = "coin-pack-card pack-card";
-      tintPackCard(card, pi + 2);
-      card.innerHTML = `<div class="pack-title">${pack.label}</div><div class="bg-pack-thumbs">${pack.backgrounds.map((b) => bgThumbHtml(b.id, "bg-pack-thumb", 56)).join("")}</div>`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "coin-pack-buy-btn";
-      btn.disabled = owned;
-      btn.textContent = owned ? "\u2713 Unlocked" : `${packQuote(pack).price} \u00B7 Buy`;
-      if (!owned) btn.addEventListener("click", async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (!bought) return;
-        btn.disabled = true;
-        await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
-      });
-      card.appendChild(btn);
-      row.appendChild(card);
     });
   }
   function renderCosmeticsShop() {
@@ -7099,12 +6980,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       equipped:equipped === b.id, poolId:b.id, onPreview:()=>openBackgroundPreview(b.id,b.label), onEquip:()=>equipBackground(b.id)
     })));
     BACKGROUND_PACK_CATALOG.forEach((pack) => {
-      const owned = !!(myProfile.backgroundPacks || {})[pack.id] || pack.backgrounds.every((b) => ownsBackground(b.id));
-      container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F5BC}\uFE0F", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (!bought) return;
-        await update(ref(db, `profiles/${deviceId}`), { [`backgroundPacks/${pack.id}`]: true });
-      }, `${pack.backgrounds.length} backgrounds, or buy each with coins`));
       pack.backgrounds.forEach((b) => container.appendChild(cosmRow({
         leadHtml: bgThumbHtml(b.id, "cosm-bg-pic", 34), name: b.label,
         owned: ownsBackground(b.id), free: false, cost: BACKGROUND_COIN_COST, equipped: equipped === b.id, poolId: b.id,
@@ -7199,12 +7074,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = equippedBoard();
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/board": now === id && !cosmForceEquip ? "none" : id });
   }
-  async function purchaseBoardPack(packId) {
-    await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
-      const profile = current || defaultProfile();
-      return { ...profile, boardPacks: { ...(profile.boardPacks || {}), [packId]: true } };
-    });
-  }
   function renderBoardRows(container) {
     if (!container) return;
     const equipped = equippedBoard();
@@ -7215,11 +7084,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       equipped: equipped === "none", poolId: "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
     }));
     BOARD_PACK_CATALOG.forEach((pack) => {
-      const owned = !!(myProfile.boardPacks || {})[pack.id] || pack.boards.every((b) => ownsBoard(b.id));
-      container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F3AD}", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (bought) purchaseBoardPack(pack.id);
-      }, `${pack.boards.length} boards, or buy each with coins`));
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
         owned: ownsBoard(b.id), free: false, cost: BOARD_COIN_COST, equipped: equipped === b.id, poolId: b.id,
@@ -7382,19 +7246,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else row.appendChild(btn);
     return row;
   }
-  function cosmPackHead(pack, owned, onUnlock, subText) {
-    const head = document.createElement("div");
-    head.className = "cosm-pack-head";
-    head.innerHTML = `<div><div class="cosm-pack-title">${pack.label}</div><div class="cosm-pack-sub">${subText}</div></div>`;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "cosm-unlock";
-    btn.disabled = owned;
-    btn.textContent = owned ? "\u2713 Unlocked" : `Unlock all \u00B7 ${packQuote(pack).price}`;
-    if (!owned) btn.addEventListener("click", onUnlock);
-    head.appendChild(btn);
-    return head;
-  }
   function renderEmojiRows(container, statusEl) {
     if (!container) return;
     const active = equippedReactions();
@@ -7413,14 +7264,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
-      // Also "owned" once every reaction in the pack has been bought
-      // individually with coins - the bundle would have nothing left to add.
-      const owned = !!(myProfile.emojiPacks || {})[pack.id] || pack.emojis.every((e) => ownsEmoji(e));
-      container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "\u{1F60A}", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (!bought) return;
-        await update(ref(db, `profiles/${deviceId}`), { [`emojiPacks/${pack.id}`]: true });
-      }, `${pack.emojis.length} reactions, or ${EMOJI_COIN_COST} coins each`));
       pack.emojis.forEach((e) => container.appendChild(row(e, EMOJI_COIN_COST)));
     });
     if (statusEl) { statusEl.textContent = `${active.length} / ${slots} locked`; statusEl.classList.toggle("full", active.length >= slots); }
@@ -7441,15 +7284,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const items = COSMETIC_CATALOG.effects;
     items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
     FLAIR_PACK_CATALOG.forEach((pack) => {
-      // Also "owned" once every flair in the pack has been bought
-      // individually with coins - the bundle would have nothing left to add.
-      const owned = !!(myProfile.flairPacks || {})[pack.id]
-        || pack.flairs.every((id) => { const it = items.find((x) => x.id === id); return it && ownsFlair(it); });
-      container.appendChild(cosmPackHead(pack, owned, async () => {
-        const bought = await showFakePurchase({ icon: "⭐", iconHtml: packIconHtml(pack), title: pack.label, ...packQuote(pack) });
-        if (!bought) return;
-        await update(ref(db, `profiles/${deviceId}`), { [`flairPacks/${pack.id}`]: true });
-      }, `${pack.flairs.length} flairs, or buy each with coins`));
       pack.flairs.forEach((id) => { const it = items.find((x) => x.id === id); if (it) container.appendChild(row(it)); });
     });
   }
@@ -15549,9 +15383,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   // TEMP: simulated purchase, same pattern as the host unlock. Only the pack of the current month can be bought.
-  // Soft colour for each reaction / flair / background pack card, cycling through the set (the board packs have their own bolder colours).
-  const PACK_TINTS = [["#d9e8ff", "#b9d2f5"], ["#ffdce8", "#f5b9d0"], ["#dcf3d2", "#b5e0a3"], ["#fff0c2", "#f5d98a"], ["#e6dcff", "#c9b8f2"], ["#ffe0c4", "#f5bd8c"], ["#d2f1f0", "#a3dbd9"]];
-  const tintPackCard = (card, i) => { const t = PACK_TINTS[i % PACK_TINTS.length]; card.style.background = `linear-gradient(180deg, ${t[0]} 0%, ${t[1]} 100%)`; };
   const PACK_LOOK = {
     newyear: ["items/champagne-glass.webp", "#5b6ee1", "#2a2f8f"], valentine: ["items/heart.webp", "#f48fb1", "#c2185b"], stpatrick: ["items/four-leaf-clover.webp", "#66bb6a", "#1b7a3a"],
     easter: ["items/easter-egg.webp", "#f6c85f", "#e08a3c"], may: ["items/sombrero.webp", "#f8a5c2", "#d6528a"], june: ["items/necktie.webp", "#4fc3f7", "#1976d2"],
@@ -15578,13 +15409,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       desc: "Free this month. Unlock to use it all year round.", tag: "THIS MONTH", has: !!owned[id] }));
     cards.push({ id: "sampler", title: SAMPLER_PACK.name,
       desc: "One favourite from every pack, all year round." + (season.length ? "" : " Free this month."), tag: "MIX", has: !!owned.sampler });
-    cards.push({ id: "boards", title: "Question Board Pack 1",
-      desc: "Chalkboard, whiteboard, stage curtains and typewriter for your questions, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack1 });
-    cards.push({ id: "boards2", title: "Question Board Pack 2",
-      desc: "Computer terminal, old TV, phone chat and split-flap sign, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack2 });
-    cards.push({ id: "boards3", title: "Question Board Pack 3",
-      desc: "Letterboard, neon sign, sand writing and a parchment scroll, each with its own animation. Or buy each in Cosmetics.", tag: "NEW", has: !!(myProfile.boardPacks || {}).boardpack3 });
-    const boardEl = document.getElementById("board-pack-shop");
     const cardHtml = (list) => list.map((c) => {
       const look = PACK_LOOK[c.id] || PACK_LOOK.sampler;
       return `<div class="tp-card tp-object-card${c.has ? " unlocked" : ""}" style="--tp-a:${look[1]};--tp-b:${look[2]}">
@@ -15592,24 +15416,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="tp-title">${c.title}</div>
         ${objectPackArtHtml(c.id, look)}
         <p class="tp-desc">${c.desc}</p>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : (BOARD_SHOP_PACKS[c.id] ? BOARD_PACK_PRICE : (c.id === "sampler" ? "$0.99" : "$0.99")) + " · Unlock"}</button>
+        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : "$0.99 · Unlock"}</button>
       </div>`;
     }).join("");
-    const boardCardHtml = (list) => list.map((c) => {
-      const look = PACK_LOOK[c.id], pack = BOARD_PACK_CATALOG.find((p) => p.id === BOARD_SHOP_PACKS[c.id]);
-      const pics = pack.boards.map((b) => `<img src="${BOARD_PIC[b.id]}" alt="${b.label}" title="${b.label}" draggable="false">`).join("");
-      return `<div class="coin-pack-card pack-card board-pack${c.has ? " unlocked" : ""}" style="background:linear-gradient(180deg, ${look[1]} 0%, ${look[2]} 100%)">
-        <div class="pack-title">${c.title}</div>
-        <div class="pack-boards">${pics}</div>
-        <button type="button" class="coin-pack-buy-btn themed-pack-buy" data-pack="${c.id}"${c.has ? " disabled" : ""}>${c.has ? "✓ Unlocked" : packQuote(pack).price + " · Unlock"}</button>
-      </div>`;
-    }).join("");
-    el.innerHTML = cardHtml(cards.filter((c) => !BOARD_SHOP_PACKS[c.id]));
-    if (boardEl) boardEl.innerHTML = boardCardHtml(cards.filter((c) => BOARD_SHOP_PACKS[c.id]));
+    el.innerHTML = cardHtml(cards);
   }
-  const BOARD_PACK_NAME = "Question Board Packs";
-  const BOARD_PACK_PRICE = "$1.49";
-  const BOARD_SHOP_PACKS = { boards: "boardpack1", boards2: "boardpack2", boards3: "boardpack3" };
   async function purchaseThemedPack(id) {
     if (id !== "sampler" && !seasonPackIds(new Date()).includes(id)) return;
     await runTransaction(ref(db, `profiles/${deviceId}`), (current) => {
@@ -15621,12 +15432,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const b = e.target.closest && e.target.closest(".themed-pack-buy");
     if (!b || b.disabled) return;
     const packId = b.dataset.pack;
-    if (BOARD_SHOP_PACKS[packId]) {
-      const t = b.closest(".tp-card, .pack-card"), tt = t && t.querySelector(".tp-title, .pack-title"), title = tt ? tt.textContent : BOARD_PACK_NAME;
-      const bought = await showFakePurchase({ icon: PACK_LOOK[packId][0], title, ...packQuote(BOARD_PACK_CATALOG.find((p) => p.id === BOARD_SHOP_PACKS[packId])) });
-      if (bought) purchaseBoardPack(BOARD_SHOP_PACKS[packId]);
-      return;
-    }
     const pack = packId === "sampler" ? SAMPLER_PACK : MONTH_PACKS.find((x) => x.id === packId);
     if (!pack) return;
     const priceText = (b.textContent.split("·")[0] || "").trim();
