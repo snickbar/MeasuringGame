@@ -826,8 +826,16 @@ if (location.protocol === "file:") {
      and the Hide Undiscovered toggle stay put while the tier groups scroll
      underneath, with the back button riding fixed in that same strip
      instead of the (now-removed) "All Avatars" title row. */
-  #collection-content .collection-sticky-head { position: sticky; top: 0; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: #fbfaf6; }
-  #collection-content .collection-sticky-head .items-stats { padding-right: 54px; }
+  #collection-content .collection-sticky-head { position: sticky; top: 0; z-index: 6; display: flex; align-items: stretch; gap: 6px; margin: 0 0 10px; padding: 8px 0 6px; background: none; }
+  #collection-content .collection-sticky-head .items-stat-box { flex: 0 0 auto; padding: 5px 9px; }
+  #collection-content .collection-sticky-head .items-stat-value { font-size: 16px; }
+  #collection-content .collection-sticky-head .items-stat-label { font-size: 10px; margin-top: 1px; }
+  #collection-content .collection-sticky-head button.items-stat-box.ach-hide-box { flex: 1 1 auto; min-width: 0; }
+  /* Owned / Locked are filters: pale tan when off, bright yellow with a little x when on (tap again, or tap the other one, to clear). */
+  .coll-chip { position: relative; flex: 0 0 auto; margin: 0; width: auto; padding: 0 13px; border: 2px solid #c9b088; border-radius: 12px; background: #ead9b8; color: #7a6342; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .coll-chip:active { filter: brightness(.93); }
+  .coll-chip.on { background: linear-gradient(180deg, #ffe66d, #ffc928); border-color: #e0a100; color: #5a3a00; box-shadow: 0 2px 0 rgba(200,140,20,.4); }
+  .coll-chip.on::after { content: "\00d7"; position: absolute; top: -7px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #e0a100; color: #8a5a00; font-size: 14px; font-weight: 700; line-height: 13px; text-align: center; box-sizing: border-box; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
   /* Tab toggle and stat boxes are pinned together as ONE sticky unit (not two separately-offset
@@ -4632,7 +4640,7 @@ if (location.protocol === "file:") {
   <details class="howto-section"><summary>Objects &amp; collections</summary><div class="howto-body">
     <p>Open <b>Stats &gt; Objects</b> from the top toolbar to see every object that can show up in a round, grouped alphabetically - ones you haven't seen yet show as a locked "????" row. The stat boxes at the top track how many objects you've discovered and how many different <b>pairings</b> you've been asked to compare, with a <b>Hide Undiscovered</b> toggle to see only what you've found so far.</p>
     <p>The <b>Monthly</b> tab (next to Objects) holds seasonal items, like Christmas or Halloween props, in a pack for each month. Each one is free to use during its real-world month - the current month's category is highlighted with a "Currently Active" tag - and outside that window it shows "Back in &lt;Month&gt;" unless you've bought that pack (or the Yearly Object Sampler Pack) from the Shop to keep it in rotation all year.</p>
-    <p>Your avatar collection works the same way: open it from the <b>View All Avatars</b> button on the Shop's Avatars tab to see every avatar grouped by rarity, with a Discovered count and its own Hide Undiscovered toggle.</p>
+    <p>Your avatar collection works the same way: open <b>Style &gt; Avatars</b> to see every avatar grouped by rarity, with Owned and Locked filters, a Discovered count and its own Hide Undiscovered toggle.</p>
   </div></details>
 
   <details class="howto-section"><summary>Awards</summary><div class="howto-body">
@@ -4650,7 +4658,7 @@ if (location.protocol === "file:") {
   <details class="howto-section"><summary>The Shop</summary><div class="howto-body">
     <p>Your score becomes coins when a game ends, win or lose. Open <b>Shop</b> for coins, offers, and monthly packs. Open <b>Style</b> for avatars, reactions, flairs, boards, backgrounds, and home screens:</p>
     <p><b>Shop</b> - buy coin packs (or watch an ad for a few free coins), unlock unlimited Party Mode games for good, and pick up monthly object packs to keep seasonal objects in the mix year-round.</p>
-    <p><b>Avatars</b> - each <b>Pull</b> costs 50 coins and unlocks a random avatar you don't already have. Rarer avatars (Rare, Ultra-rare) show up less often than Common ones. Tap <b>View All Avatars</b> to see every avatar grouped by rarity, with locked ones grayed out.</p>
+    <p><b>Capsules</b> - each pull costs 50 coins and unlocks a random item you don't already have. Drop a coin in a category's slot to pull from just that category (avatars, reactions, flairs, boards or scenes), or tap the top bar to pull from anything. Free pulls from leveling up always pull from anything. Rarer items (Rare, Ultra-rare) show up less often. See your avatars in <b>Style &gt; Avatars</b>.</p>
     <p><b>Style</b> - unlock and equip reactions, flairs, question boards and scenes with coins; whatever you've equipped is what shows up in games.</p>
   </div></details>
 </div>
@@ -10474,7 +10482,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
   });
   collectionContentEl.addEventListener("click", (e) => {
-    if(e.target.closest("[data-avatar-filter]")){collectionOwnership=e.target.closest("[data-avatar-filter]").dataset.avatarFilter;collectionHideLocked=collectionOwnership==="owned";renderCollectionScreen();return;}
+    // Owned / Locked are filters: tapping one turns it on; tapping it again (or its counterpart) clears the filter.
+    const chip = e.target.closest("[data-avatar-filter]");
+    if (chip) { collectionOwnership = collectionOwnership === "all" ? chip.dataset.avatarFilter : "all"; renderCollectionScreen(); return; }
     if (e.target.closest("#collection-hide-switch")) {
       collectionHideLocked = !collectionHideLocked;
       try { localStorage.setItem("mg_coll_hide", collectionHideLocked ? "1" : "0"); } catch (err) {}
@@ -14464,11 +14474,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const byTier = { default: [], common: [], rare: [], ultra: [] };
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
     const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
-    const head = `<div class="collection-sticky-head"><div class="cozy-actions" role="group" aria-label="Avatar ownership">${["all","owned","locked"].map(id=>`<button data-avatar-filter="${id}" aria-pressed="${collectionOwnership===id}">${id==="all"?"All avatars":id==="owned"?"Owned":"Locked"}</button>`).join("")}</div>
-      <div class="items-stats">
-        <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
-      </div>
-      <div class="ach-filter"><span>Hide undiscovered</span><button type="button" id="collection-hide-switch" class="ach-switch${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"></button></div>
+    const chip = (id, label) => `<button type="button" class="coll-chip${collectionOwnership === id ? " on" : ""}" data-avatar-filter="${id}" aria-pressed="${collectionOwnership === id}">${label}</button>`;
+    const head = `<div class="collection-sticky-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
+      <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
+      <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
     </div>`;
     let body = GACHA_TIER_ORDER.map((tier) => {
       const list = byTier[tier];
