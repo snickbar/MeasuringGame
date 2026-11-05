@@ -11,7 +11,13 @@ const api=String.raw`window.__monthly={ready:()=>!!myProfile.stats?.gamesPlayed,
  restore:()=>{MM.ready=window.__origReady},
  rx:()=>{clearReactionBubbles();renderReactionBubble({playerId:'monthly-test',emoji:'m11',previewAt:{x:100,y:100}})},
  rxProbe:()=>{const el=document.querySelector('.rx-stage');return el?{poster:!!el.querySelector('img[src="monthly/art/poster-r11.webp"]'),state:el.getAnimations()[0]?.playState,time:el.getAnimations()[0]?.currentTime}:null},
- stop:()=>sbTeardown()
+ stop:()=>sbTeardown(),
+ rewards:level=>{const combos=monthlyCombosLocal('2026-11');mo={key:'2026-11',combos,all:combos,split:{1:[0],2:[1],3:[2],4:[0,1,2]},prog:{1:{done:true},2:{done:true},3:{done:true},4:{done:true}},questions:[{...combos[0],answer:1}],guesses:[1],coins:0,input:'',level,phase:level?'done':'hub',flairShown:true};openOverlay(monthlyScreenEl);renderMonthly();return{reward:level?monthlyLevelReward(mo.key,level).kind:null,text:monthlyContentEl.textContent,overflow:document.documentElement.scrollWidth>innerWidth}},
+ clock:()=>{currentRoomCode='TST1';currentPlayerId=deviceId;isHost=true;const key='clock-test';roomState={phase:'question',round:1,settings:{mode:'classic',timerSeconds:30},players:{[deviceId]:{connected:true,isHost:true,name:'Tester'},other:{connected:true,name:'Other'}},currentQuestion:{prompt:questionPromptTextEl.dataset.txt,powerupKey:key},questionClock:{key,duration:30000,waitUntil:nowMs()+15000,startedAt:0},questionEndsAt:nowMs()+45000};__fakeDB.put('rooms/TST1',roomState);startHudTicker()},
+ clockProbe:()=>{roomState=__fakeDB.read('rooms/TST1');syncQuestionClock();return{clock:roomState.questionClock,me:roomState.players[deviceId].questionReady,reading:questionReadingLeft(),timer:hudTimerEl.textContent,ends:roomState.questionEndsAt,now:nowMs()}},
+ settle:()=>sbReleaseAnswer(qSB),
+ otherReady:()=>{const p=__fakeDB.read('rooms/TST1');p.players.other.questionReady=questionReadyToken(p);__fakeDB.put('rooms/TST1',p)},
+ clockStop:()=>{clearInterval(hudTickHandle);hudTickHandle=null;currentRoomCode=null;roomState=null;isHost=false}
 };`;
 const html=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs').replace('\n</script>\n</body>',api+'\n</script>\n</body>');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -41,5 +47,16 @@ runFixture({html,modules:{'/__fake/app.mjs':'export const initializeApp=()=>({})
  await evaluate('__release()');await sleep(40);const playing=await evaluate('__monthly.rxProbe()');assert.equal(playing.poster,false);assert.equal(playing.state,'running');assert(playing.time<250);
  await evaluate('__monthly.restore();__monthly.delay();__monthly.rx();__reject(Error("offline"))');await sleep(40);
  const staticRx=await evaluate('__monthly.rxProbe()');assert.equal(staticRx.poster,true);assert.equal(staticRx.state,'running');
- await evaluate('__monthly.restore()');console.log({pass:true,width,ownership:true,longQuestions:true,delayedLoad:true,fallback:true,reactionTiming:true});
+ await evaluate('__monthly.restore()');
+ await evaluate('document.getElementById("monthly-test").style.visibility="hidden"');
+ const hub=await evaluate('__monthly.rewards(0)');assert(!hub.overflow);for(const label of ['Scene reward','Reaction reward','Question board reward','Flair reward'])assert(hub.text.includes(label));
+ for(const [level,kind] of [[1,'scene'],[2,'reaction'],[3,'board'],[4,'flair']]){const result=await evaluate(`__monthly.rewards(${level})`);assert.equal(result.reward,kind);assert(!result.overflow);assert(result.text.includes('Earned!')||result.text.includes('Unlocked!'));await sleep(400);await screenshot('reward-'+level+'-'+width+'.png')}
+ await evaluate('__monthly.rewards(2);document.getElementById("mo-reward").click()');assert(await evaluate('document.getElementById("achievements-screen").classList.contains("active")'));
+ await evaluate('document.getElementById("monthly-test").style.visibility="visible";__monthly.board("mb07","How many ants long is a spoon?");__monthly.clock()');await sleep(100);
+ let clock=await evaluate('__monthly.clockProbe()');assert(clock.reading>0);assert(!clock.me);assert.equal(clock.clock.startedAt,0);
+ await evaluate('__monthly.settle()');await sleep(30);await evaluate('__monthly.clockProbe()');await sleep(30);
+ clock=await evaluate('__monthly.clockProbe()');assert(clock.me);assert.equal(clock.clock.startedAt,0,'wait for the other player too');
+ await sleep(250);assert.equal((await evaluate('__monthly.clockProbe()')).timer,'30','full timer stays visible while reading');
+ await evaluate('__monthly.otherReady();__monthly.clockProbe()');await sleep(50);clock=await evaluate('__monthly.clockProbe()');assert(clock.clock.startedAt>0);assert(clock.ends-clock.now>29500,'full shared guessing duration starts after both boards');
+ await evaluate('__monthly.clockStop()');console.log({pass:true,width,ownership:true,longQuestions:true,delayedLoad:true,fallback:true,reactionTiming:true,rewardDiscovery:true,sharedTimer:true});
 }}).catch(e=>{console.error(e);process.exitCode=1});

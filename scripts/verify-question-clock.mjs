@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {beginQuestionClock,questionClockPending,boardReadingMs} from '../anim/question-clock.mjs';
+const room={phase:'question',questionEndsAt:45000,questionClock:{key:'round-1',duration:30000,waitUntil:15000,startedAt:0},players:{a:{questionReady:'round-1'},b:{questionReady:'old'},bot:{isBot:true}}};
+assert(questionClockPending(room));assert.equal(beginQuestionClock(room,'round-1',5000),undefined);
+const all=structuredClone(room);all.players.b.questionReady='round-1';const started=beginQuestionClock(all,'round-1',6500);
+assert.equal(started.questionEndsAt,36500);assert.equal(started.questionClock.startedAt,6500);assert(!questionClockPending(started));
+assert.equal(beginQuestionClock(started,'round-1',7000),undefined,'a retry never restarts a running clock');
+assert.equal(beginQuestionClock(room,'stale-round',16000),undefined);assert.equal(beginQuestionClock({...room,paused:true},'round-1',16000),undefined);
+assert.equal(beginQuestionClock({...room,phase:'answers'},'round-1',16000),undefined);
+assert.equal(beginQuestionClock(room,'round-1',15000).questionEndsAt,45000,'a stalled client cannot deadlock the room');
+assert.equal(beginQuestionClock(room,'round-1',5000,p=>p===room.players.b).questionEndsAt,35000,'away humans do not hold up the room');
+assert.equal(room.players.b.questionReady,'old');assert.equal(room.questionClock.startedAt,0);
+const changed={...all,currentQuestion:{prompt:'A rerolled question?'}};
+assert.equal(beginQuestionClock(changed,'round-1',6000),undefined,'readiness for the earlier text does not release a reroll');
+assert.equal(boardReadingMs('terminal',100),5600);assert.equal(boardReadingMs('phone',100),1420);
+for(const id of ['tv','typewriter','letterboard','neon','sand','scroll','splitflap'])assert(boardReadingMs(id,90)>0);
+console.log('PASS: full shared guessing time, mixed board readiness, bots/away players, timeout, pause, stale rounds and idempotence.');
