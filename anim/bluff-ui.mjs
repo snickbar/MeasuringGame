@@ -61,6 +61,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
   let handle=null,busy=false,busySince=0,autoClaimKey='',selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
+  let holdTimer=0;
   let rankingCueKey='',displayedAward=-1,lastTick='',momentKey='',finalKey='',introKey='',introAt=0,timers=[],timersKey='';
   let scrolledKey='',celebrationKey='',celebrationAt=0,laughAt=null,laughReadyAt=null,celebrationAbandoned=false;
   const image=id=>{const o=object(id);return `<figure><img src="${esc(o?.image)}" alt="${esc(o?.name)}" draggable="false"><figcaption>${esc(o?.name)}</figcaption></figure>`;};
@@ -92,6 +93,10 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const standings=s.stage==='reveal'&&s.showStand?bluffRankingsHtml(s,room.players||{},avatar,me):'';
     const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="The claim is"><h2>The claim is…</h2>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}">${idleScale}<div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel${intro&&s.stage==='vote'?' bl-thud':''}"${intro&&s.stage==='vote'?introStyle:''} aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p></section><div class="hs-col r">${right.join('')}</div></div>`;
     const keepView=element.ownerDocument.defaultView,keepY=keepView.scrollY; // a rebuild must not throw the page back to the top
+    // Pictures in the rebuilt board load a moment later, so for a beat the page is shorter and the browser clamps the scroll to the top.
+    // Hold the old height until they're in, so a scrolled-down player isn't snapped back up.
+    if(keepY>0&&!stageChanged&&element.offsetHeight){element.style.minHeight=element.offsetHeight+'px';clearTimeout(holdTimer);holdTimer=setTimeout(()=>{element.style.minHeight='';},900);}
+    else if(stageChanged){clearTimeout(holdTimer);element.style.minHeight='';}
     element.innerHTML=`<h1 class="bl-screen-reader">Bluff the Room</h1><div class="hs-top bl-meta"${s.stage==='reveal'?' hidden':''}>${s.stage==='make'?`<span class="bl-turn-notice" data-maker-spotlight>${mine?'Your turn!':'Maker’s turn'}</span>`:s.stage==='vote'?voteMeter:'<span></span>'}<span class="hs-clock bl-clock" data-clock></span></div>${s.stage==='reveal'&&s.showStand?'':`<div class="hs-q bl-question">${s.stage==='reveal'?'':`<div class="bl-objects">${image(s.q.unitId)}${image(s.q.targetId)}</div>`}<h2 class="hs-qtext">${esc(s.q.prompt)}</h2></div>`}${board}<p class="bl-error" role="status">${esc(error)}</p>${dock}${s.stage==='animation'?`<div class="bl-reveal-overlay" role="region" aria-label="Size reveal"><div class="bl-reveal-sheet"><h2>Let’s see the real size</h2><div id="bluff-animation-slot"></div>${bluffPickHtml(s,me)}</div></div>`:''}`;
     if(keepY>0&&Math.abs(keepView.scrollY-keepY)>1)keepView.scrollTo({top:keepY,behavior:'instant'});
     {const tb=element.ownerDocument.getElementById('bottom-toolbar'),h=tb&&tb.classList.contains('active')?tb.getBoundingClientRect().height:0;element.style.setProperty('--bl-tb',Math.round(h)+'px');element.classList.toggle('bl-has-dock',!!dock);}
