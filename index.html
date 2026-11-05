@@ -279,11 +279,6 @@ if (location.protocol === "file:") {
   .mr-tile.missed { opacity: .65; }
   .mr-locked .cosm-lead img { filter: grayscale(1) opacity(.5); }
   .question-prompt[data-hold] #question-answer-line { visibility: hidden; } /* a monthly board keeps the answer back until its question has finished writing in */
-  .mr-test { margin-top: 14px; padding-top: 10px; border-top: 2px dashed #d9c29a; color: #000; }
-  .mr-test h4 { margin: 0 0 6px; font-size: 15px; } .mr-test select { font: inherit; font-weight: 700; padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c29a; background: #fffaf0; }
-  .mr-test .mr-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
-  .mr-test button { width: auto; flex: 0 0 auto; font: inherit; font-weight: 800; font-size: 13px; padding: 8px 10px; border-radius: 10px; border: 2px solid #8a5a2b; background: #ffe9b8; color: #000; cursor: pointer; }
-  .mr-test button:active { filter: brightness(.92); } .mr-test button.mr-danger { background: #ffd2cc; } .mr-test .mr-status { min-height: 1.2em; font-size: 12.5px; font-weight: 700; }
   .cosm-bg-pic { width: 34px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; flex-shrink: 0; }
   .cosm-bg-none { display: inline-block; background: linear-gradient(150deg, #fbfaf6, #f3f1ea 45%, #fdf6ec); }
   #home-title-img { position: absolute; left: 0; right: 0; margin-inline: auto; top: 9%; width: min(96%, 560px); height: auto; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.18)); }
@@ -4551,7 +4546,6 @@ if (location.protocol === "file:") {
     <summary><h3>Debug / Admin tools</h3></summary>
     <p class="settings-profile-hint">For testing: lock or unlock things, set coins, reset progress. Changes your real profile.</p>
     <div id="debug-tools-root"></div>
-    <div id="mr-test-root" class="mr-test"></div>
   </details>
 
   <div class="settings-card" id="settings-support-card">
@@ -22085,45 +22079,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   })();
 
 
-  // ---- Settings > Debug / Admin tools > Monthly rewards test: earn, claim and play every monthly reward without waiting for the month ----
-  if (DEBUG_TOOLS) (function mrTestPanel() {
-    const root = document.getElementById("mr-test-root");
-    if (!root) return;
-    const pad = (m) => String(m).padStart(2, "0");
-    root.innerHTML = `<h4>Monthly rewards test</h4>
-      <div class="mr-row"><label for="mr-test-month"><b>Month</b></label><select id="mr-test-month">${MONTH_NAMES.map((n, i) => `<option value="${i + 1}">${n}</option>`).join("")}</select></div>
-      <div class="mr-row"><b>Earn:</b><button type="button" data-mr="earn1">Level 1</button><button type="button" data-mr="earn2">Level 2</button><button type="button" data-mr="earn3">Level 3</button><button type="button" data-mr="earn4">Mega</button></div>
-      <div class="mr-row"><b>Play:</b><button type="button" data-mr="play-r">Reaction</button><button type="button" data-mr="play-f">Flair</button><button type="button" data-mr="play-b">Board</button></div>
-      <div class="mr-row"><button type="button" data-mr="all">Earn and claim all 48</button><button type="button" data-mr="reset" class="mr-danger">Reset monthly rewards</button></div>
-      <p class="settings-profile-hint">Earn marks a level finished, then claim it in Stats, Awards. "Earn and claim all" does both for every month. Play works for any month, owned or not. Changes your real profile.</p>
-      <div class="mr-status" role="status" id="mr-test-status"></div>`;
-    const say = (t) => { document.getElementById("mr-test-status").textContent = t; };
-    const month = () => Number(document.getElementById("mr-test-month").value);
-    const refresh = () => { try { renderCosmeticsShop(); } catch (e) {} try { if (document.getElementById("achievements-content")) renderAchievementsScreen(); } catch (e) {} };
-    const write = (vals) => { // the screens update at once; the save follows
-      const next = { ...myProfile, stats: { ...(myProfile.stats || {}) }, achClaimed: { ...(myProfile.achClaimed || {}) } };
-      const cos = { ...(myProfile.cosmetics || {}), owned: { ...((myProfile.cosmetics || {}).owned || {}) } };
-      const setIn = (obj, path, v) => { const k = path.split("/"); let o = obj; for (let i = 0; i < k.length - 1; i++) o = o[k[i]] = { ...(o[k[i]] || {}) }; if (v === null) delete o[k[k.length - 1]]; else o[k[k.length - 1]] = v; };
-      Object.entries(vals).forEach(([path, v]) => { if (path.startsWith("cosmetics/")) setIn({ cosmetics: cos }, path, v); else setIn(next, path, v); });
-      myProfile = { ...next, cosmetics: cos };
-      update(ref(db, `profiles/${deviceId}`), vals).catch(() => say("Could not save that."));
-      refresh();
-    };
-    const idsFor = (m) => ({ 1: MONTH_BACKGROUNDS[m - 1].id, 2: "m" + pad(m), 3: mbId(m), 4: "mf" + pad(m) });
-    const claimVals = (m) => ({ [`achClaimed/monthly-${pad(m)}`]: true, [`achClaimed/monthly-${pad(m)}-reaction`]: true, [`achClaimed/monthly-${pad(m)}-board`]: true, [`achClaimed/monthly-${pad(m)}-flair`]: true,
-      [`cosmetics/owned/backgrounds/${idsFor(m)[1]}`]: true, [`cosmetics/owned/monthly/${idsFor(m)[2]}`]: true, [`cosmetics/owned/monthly/${idsFor(m)[3]}`]: true, [`cosmetics/owned/monthly/${idsFor(m)[4]}`]: true });
-    root.addEventListener("click", (e) => {
-      const b = e.target.closest("button[data-mr]");
-      if (!b) return;
-      const what = b.dataset.mr, m = month(), name = MONTH_NAMES[m - 1];
-      if (/^earn\d$/.test(what)) { const l = Number(what.slice(4)); write({ [`stats/mc${pad(m)}L${l}`]: 1 }); say(`${name} ${l === 4 ? "Mega" : "Level " + l} earned. Claim it in Stats, Awards.`); }
-      else if (what === "play-r") { previewReaction("m" + pad(m)); say(`Playing the ${name} reaction.`); }
-      else if (what === "play-f") { previewFlair("mf" + pad(m)); say(`Playing the ${name} flair.`); }
-      else if (what === "play-b") { openBoardPreview(mbId(m), MONTHLY_BOARD_LABELS[m - 1]); say(`Showing the ${name} board.`); }
-      else if (what === "all") { const vals = {}; for (let i = 1; i <= 12; i++) { for (let l = 1; l <= 4; l++) vals[`stats/mc${pad(i)}L${l}`] = 1; Object.assign(vals, claimVals(i)); } write(vals); say("All 48 monthly rewards earned and claimed."); }
-      else if (what === "reset") { const vals = {}; for (let i = 1; i <= 12; i++) { for (let l = 1; l <= 4; l++) vals[`stats/mc${pad(i)}L${l}`] = null; vals[`stats/mc${pad(i)}`] = null; Object.keys(claimVals(i)).forEach((k) => { vals[k] = null; }); } write(vals); say("Monthly rewards reset."); }
-    });
-  })();
 
   if (DEBUG_TOOLS) {
     document.getElementById("settings-debug-card").hidden = false;
