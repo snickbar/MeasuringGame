@@ -277,6 +277,7 @@ if (location.protocol === "file:") {
   .mr-now { font-size: 10px; font-weight: 800; background: #e8a317; color: #000; border-radius: 8px; padding: 1px 6px; }
   .mr-seas { font-size: 10px; font-style: normal; font-weight: 800; opacity: .6; }
   .mr-tile.missed { opacity: .65; }
+  .mr-locked .cosm-lead img { filter: grayscale(1) opacity(.5); }
   .question-prompt[data-hold] #question-answer-line { visibility: hidden; } /* a monthly board keeps the answer back until its question has finished writing in */
   .mr-test { margin-top: 14px; padding-top: 10px; border-top: 2px dashed #d9c29a; color: #000; }
   .mr-test h4 { margin: 0 0 6px; font-size: 15px; } .mr-test select { font: inherit; font-weight: 700; padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c29a; background: #fffaf0; }
@@ -6723,22 +6724,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const k = MONTHLY_REWARD_KINDS[kind];
     if (!container || !k) return;
     const nowM = new Date().getMonth() + 1;
-    // An earned monthly reaction is a normal row (preview, equip, lock); every other month is a tile.
-    const rows = kind === "reaction" && cosmEmojiRow ? MONTH_NAMES.map((n, i) => i + 1).filter((m) => monthlyOwned("m" + String(m).padStart(2, "0"))).map((m) => cosmEmojiRow("m" + String(m).padStart(2, "0"), 0))
-      : kind === "scene" && cosmBackgroundRow ? MONTH_BACKGROUNDS.filter((m) => ownsBackground(m.id)).map((m) => cosmBackgroundRow(m))
-      : kind === "board" && cosmBoardRow ? MONTHLY_BOARD_ITEMS.filter((b) => monthlyOwned(b.id)).map((b) => cosmBoardRow(b))
-      : kind === "flair" && cosmFlairRow ? MONTHLY_FLAIR_ITEMS.filter((it) => monthlyOwned(it.id)).map((it) => cosmFlairRow(it)) : [];
-    const tiles = MONTH_NAMES.map((name, i) => {
-      const m = i + 1, got = kind === "scene" ? ownsBackground(MONTH_BACKGROUNDS[i].id) : monthlyOwned(kind === "reaction" ? "m" + String(m).padStart(2, "0") : kind === "board" ? mbId(m) : MONTHLY_FLAIR_ITEMS[i].id), earnedNow = !got && monthlyRewardEarned(m, k.level);
-      if (rows.length && (kind === "reaction" || kind === "flair" || kind === "board" || kind === "scene") && got) return "";
-      const cur = m === nowM, missed = !got && !earnedNow && m < nowM;
-      const hint = got ? "Unlocked" : earnedNow ? "Earned! Claim it in Stats, Awards" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : missed ? "Missed this year" : `Opens in ${name}`;
-      return `<div class="mr-tile${got || earnedNow ? " got" : ""}${cur ? " cur" : ""}${missed ? " missed" : ""}"><div class="mr-pic"><img src="${k.art(m)}" alt="" draggable="false" loading="lazy"></div><b>${escapeHtml(name)}</b>${cur ? '<span class="mr-now">This month</span>' : ""}<small>${escapeHtml(hint)}</small><i class="mr-seas">Seasonal</i></div>`;
-    }).join("");
+    const build = kind === "reaction" ? cosmEmojiRow : kind === "scene" ? cosmBackgroundRow : kind === "board" ? cosmBoardRow : cosmFlairRow;
+    if (!build) return;
     const sec = document.createElement("div");
     sec.className = "mr-sec";
-    sec.innerHTML = `<h3 class="cs-h">Monthly rewards</h3><p class="mr-sub">One ${kind} a month from the Monthly Challenge. Just finish the level that month.</p><div class="mr-rows"></div><div class="mr-grid">${tiles}</div>`;
-    rows.forEach((r) => sec.querySelector(".mr-rows").appendChild(r));
+    sec.innerHTML = `<h3 class="cs-h">Monthly rewards</h3><p class="mr-sub">Seasonal: one ${kind} a month from the Monthly Challenge. Just finish the level that month.</p><div class="mr-rows"></div>`;
+    const host = sec.querySelector(".mr-rows");
+    MONTH_NAMES.forEach((name, i) => {
+      const m = i + 1, id2 = "m" + String(m).padStart(2, "0");
+      const got = kind === "scene" ? ownsBackground(MONTH_BACKGROUNDS[i].id) : monthlyOwned(kind === "reaction" ? id2 : kind === "board" ? mbId(m) : MONTHLY_FLAIR_ITEMS[i].id);
+      const earnedNow = !got && monthlyRewardEarned(m, k.level), cur = m === nowM;
+      // a reward you do not have yet is the normal row with its picture greyed out and a note instead of the buttons
+      const hint = earnedNow ? "Earned! Claim it in Stats, Awards" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : m > nowM ? `Opens in ${name}` : `${name} Monthly Challenge`;
+      const extra = got ? undefined : { owned: false, lockedHint: hint };
+      const row = kind === "reaction" ? build(id2, 0, undefined, extra) : kind === "scene" ? build(MONTH_BACKGROUNDS[i], extra) : kind === "board" ? build(MONTHLY_BOARD_ITEMS[i], extra) : build(MONTHLY_FLAIR_ITEMS[i], extra);
+      if (!got) row.classList.add("mr-locked");
+      if (cur) row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", '<span class="mr-now">This month</span>');
+      host.appendChild(row);
+    });
     container.appendChild(sec);
   }
 
@@ -7073,11 +7076,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       })));
     });
     // Monthly scenes (Level 1 of each Monthly Challenge) are listed in the Monthly rewards group below once earned; locked months stay silhouettes there.
-    cosmBackgroundRow = (m) => cosmRow({
+    cosmBackgroundRow = (m, extra) => cosmRow(Object.assign({
       leadHtml: bgThumbHtml(m.id, "cosm-bg-pic", 34), name: m.label,
       owned: true, free: false, cost: 0, equipped: equipped === m.id, poolId: m.id, // poolId lets Random pick it like any other scene
       onPreview: () => openBackgroundPreview(m.id, m.label), onEquip: () => equipBackground(m.id),
-    });
+    }, extra));
   }
   // Question boards: what the question and answer are written on. Paper is the free default;
   // each board can be bought with coins, or the whole pack unlocked at once (simulated purchase).
@@ -7164,10 +7167,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
       equipped: equipped === "none", poolId: "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
     }));
-    cosmBoardRow = (b) => cosmRow({ // an earned monthly board (listed in the Monthly rewards group)
+    cosmBoardRow = (b, extra) => cosmRow(Object.assign({ // an earned monthly board (listed in the Monthly rewards group)
       leadHtml: `<img class="cosm-board-pic" src="${b.img}" alt="" loading="lazy">`, name: b.label, owned: true, free: true, cost: 0, tier: undefined, equipped: equipped === b.id, poolId: b.id,
       onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id),
-    });
+    }, extra));
     BOARD_PACK_CATALOG.forEach((pack) => {
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
@@ -7340,7 +7343,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const slots = ownedReactionSlots();
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("reactions")); container.dataset.rndCat = "reactions"; cosmRowCat = "reactions";
-    const row = (e, cost, tier) => cosmRow({
+    const row = (e, cost, tier, extra) => cosmRow(Object.assign({
       tier,
       leadHtml: REACTIONS[e] ? `<img class="cosm-reaction-pic" alt="" src="${reactionPic(e)}"${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}>` : `<span class="cosm-emoji">${emojiHtml(e)}</span>`, name: (REACTIONS[e] && REACTIONS[e].label) || EMOJI_NAMES[e] || "", owned: ownsEmoji(e), free: cost === 0, cost,
       equipped: active.includes(e), locked: active.includes(e), poolId: e,
@@ -7350,7 +7353,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         toggleActiveEmoji(e);
       },
       onBuy: (m) => buyEmojiWithCoins(e, m === true),
-    });
+    }, extra));
     cosmEmojiRow = row;
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
@@ -7365,12 +7368,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container) return;
     const equipped = (myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects) || "classic";
     container.innerHTML = "";
-    const row = cosmFlairRow = (item) => cosmRow({
+    const row = cosmFlairRow = (item, extra) => cosmRow(Object.assign({
       leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${item.poster || flairPic(item.pic)}" alt="">`, name: item.label,
       owned: ownsFlair(item), free: item.cost === 0, cost: item.cost === 0 ? 0 : itemCoinCost("flair", item.id), tier: item.cost === 0 ? undefined : itemTier("flair", item.id), equipped: equipped === item.id, poolId: item.id,
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: (m) => buyFlairWithCoins(item, m === true),
-    });
+    }, extra));
     container.classList.toggle("cosm-random-on", rndOn("flairs")); container.dataset.rndCat = "flairs"; cosmRowCat = "flairs";
     const items = COSMETIC_CATALOG.effects;
     items.filter((i) => i.cost === 0).forEach((i) => container.appendChild(row(i)));
