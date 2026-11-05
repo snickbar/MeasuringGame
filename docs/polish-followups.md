@@ -2,9 +2,10 @@
 
 Saved November 5, 2026. These are follow-ups, not authorization to implement them.
 
-- Profile monthly animation performance on phones, especially April rain (about 300 animations) and August bubbles (about 259), preserving the approved appearance.
+- Profile monthly animation performance on another phone, especially April rain (about 300 animations) and August bubbles (about 259). User reports their current phone runs them well; preserve the approved appearance.
 - January sparkle replacement remains on hold.
 - Refresh the object rotator: its 563-object snapshot omits wishbone from the current 564-object catalog; remove the hardcoded count.
+- Consider loading monthly artwork per effect instead of waiting for the entire set. One slow/failed unrelated image currently sends other effects to their static fallback. Explanation given; no implementation approved.
 - Consider additional objects: seagull, songbird, puffin, hawk, tropical fish, cheese wedge, whisk, and cooking turner (check overlap with grill spatula).
 - Complete phone playtesting mode by mode, including two-device reconnect, pause, sync, reward persistence, and native update installation.
 - Recheck long-question readability on small phones following the recent larger writing-area changes.
