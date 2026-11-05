@@ -448,9 +448,21 @@ def('f3', 'f', FD + 5200, (s) => { const D = FD + 5200, g = box(s, 'left:0;top:0
   ffall(g, D, FD + 100, { pics: cl, n: 32, size: 24, life: 3300, stagger: 1500, sway: 22 }); });
 def('f4', 'f', FD + 5600, (s) => { const D = FD + 5600, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1); fcard(g, D);
   forbit(g, D, { pics: ['daisy', '20-daffodil'], move: 'bob', lap: 3000, size: 28, items: 10 });
-  /* big poofy dandelion seeds (no stems) drifting across, left to right and right to left at random */
-  for (let i = 0; i < 12; i++) { const e = mk(g, 'wseed' + (i % 5), 0, 0, 48 + rnd() * 24, { z: 7 }), dir = rnd() > .5 ? 1 : -1, y0 = 40 + rnd() * 340, dl = rnd() * 1900, L = 3000 + rnd() * 900, ph = rnd() * 6, dy = (rnd() - .5) * 90;
-    path(e, D, FD + dl, FD + dl + L, (u) => ({ x: dir > 0 ? lerp(-40, 340, u) : lerp(340, -40, u), y: y0 + dy * u + Math.sin(u * 9 + ph) * 18, r: Math.sin(u * 6 + ph) * 10, sx: dir, sy: 1, op: fade(u, .06, .06) }), 50); } });
+  /* rain falls from the top of the screen to the bottom while flowers pop up from the bottom edge, then sink back down */
+  const vt = FC.vt, vb = FC.vb, vl = FC.vl, vr = FC.vr, fall = (vb - vt + 30) / 0.85;
+  for (let i = 0; i < 130; i++) { const x0 = vl - 20 + rnd() * (vr - vl + 40), t0 = FD + rnd() * 3300, L = fall * (.85 + rnd() * .3), len = 15 + rnd() * 10, sl = 14 + rnd() * 10;
+    const e = box(g, `left:${-2}px;top:${-len / 2}px;width:4px;height:${len}px;background:linear-gradient(rgba(190,230,255,.15),#6ec0ff 70%,#3d97f0);border-radius:2px 2px 3px 3px;`, 6);
+    path(e, D, t0, t0 + L, (u) => ({ x: x0 + sl * u * (L / 1000) * .6, y: lerp(vt - 30, vb + 10, u), r: 9, op: u > .96 ? 0 : .85 }), 4); }
+  const fl = ['daisy', '20-daffodil'], N = 9;
+  for (let i = 0; i < N; i++) { const sz = 54 + rnd() * 22, x = vl + 26 + (i + .15 + rnd() * .7) / N * (vr - vl - 52), H = sz * 1.05 + 16 + rnd() * 46, t0 = FD + 300 + rnd() * 1900, R = 520, T1 = t0 + R + 1500 + rnd() * 700, T2 = T1 + 650, ph = rnd() * 6;
+    const st = box(g, `left:${x - 2.5}px;top:0;width:5px;height:${H}px;background:linear-gradient(90deg,#3f9b3c,#7bd05a,#3f9b3c);border-radius:3px;transform-origin:50% 100%;`, 6);
+    st.animate([{ transform: `translateY(${vb - H}px) scaleY(0)`, offset: 0 }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: t0 / D }, { transform: `translateY(${vb - H}px) scaleY(1)`, offset: (t0 + R) / D, easing: 'ease-out' }, { transform: `translateY(${vb - H}px) scaleY(1)`, offset: T1 / D }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: T2 / D }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: 1 }], { duration: D, fill: 'both' });
+    const e = mk(g, fl[i % 2], 0, 0, sz, { z: 7 });
+    path(e, D, t0, T2, (u) => { const ms = u * (T2 - t0); let y, sc = 1;
+      if (ms < R) { const q = ms / R, bk = 1 + 2.2 * Math.pow(q - 1, 3) + 1.2 * Math.pow(q - 1, 2); y = lerp(vb + sz * .7, vb - H, bk); sc = .5 + .5 * Math.min(1, q * 1.4); }
+      else if (ms < T1 - t0) { y = vb - H + Math.sin((ms - R) / 1000 * 3 + ph) * 3; }
+      else { const q = (ms - (T1 - t0)) / (T2 - T1); y = lerp(vb - H, vb + sz * .7, q * q); }
+      return { x: x + Math.sin(ms / 1000 * 2.2 + ph) * 3, y, r: Math.sin(ms / 1000 * 2 + ph) * 7, sx: sc, op: 1 }; }, Math.round((T2 - t0) / 18)); } });
 def('f5', 'f', FD + 4800, (s) => { const D = FD + 4800, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), cd = [0, 1, 2, 3, 4, 5].map((i) => '27-candy-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: ['26-star-pi-ata', '62-donkey-pinata'], move: 'bob', lap: 3000, size: 32, items: 6 });
   /* big donkey pinata: drops in and keeps hanging from its string, swings, then splits from the top of its back down; both halves keep dangling while candy spills */
