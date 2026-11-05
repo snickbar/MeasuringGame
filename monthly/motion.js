@@ -195,20 +195,20 @@ def('r7', 'r', 5400, (s) => { const D = 5400;
 
 /* ================= BOARDS (330 x 248, 4:3): the board art stays; a living layer and the question play on top ================= */
 const BH2 = 248, QS = 'How many bananas tall is a giraffe?';
-/* board facts for the game: art, where the question text sits (fractions of the picture: left, top, right, bottom), and its colour and glow */
+/* board facts for the game: art, where the question text sits (fractions of the picture: left, top, right, bottom), its colour and glow, and when the question has finished writing in and settled (settle ms for a 43-letter question, plus per ms for each letter more or fewer): the answer waits for that */
 const BOARD_META = [
-  { img: '03-midnight-sky-board', rect: [.1, .3, .9, .78], color: '#ffeaa8', css: 'text-shadow:0 0 8px rgba(255,200,80,.85),0 0 18px rgba(255,160,40,.5);' },
-  { img: '08-love-letter-board', rect: [.16, .24, .84, .76], color: '#a8174a', css: 'text-shadow:0 1px 0 #fff,0 0 8px rgba(255,255,255,.9);' },
-  { img: '11-green-hills-board', rect: [.1, .16, .9, .62], color: '#fff', css: '-webkit-text-stroke:3.5px #fff;paint-order:stroke fill;text-shadow:0 2px 5px rgba(0,70,130,.35);' },
-  { img: '17-spring-meadow-board', rect: [.1, .14, .9, .62], color: '#5a2d8c', css: '-webkit-text-stroke:3px #fff7c9;paint-order:stroke fill;text-shadow:0 2px 4px rgba(60,20,110,.25);' },
-  { img: '25-papel-picado-board', rect: [.1, .26, .9, .78], color: '#7a1030', css: '-webkit-text-stroke:2.5px #fff6cf;paint-order:stroke fill;' },
-  { img: '31-pool-deck-board', rect: [.08, .16, .8, .66], color: '#fff', css: 'font-weight:600;letter-spacing:.4px;-webkit-text-stroke:1.8px #fff;paint-order:stroke fill;text-shadow:0 2px 0 #dcebfa,0 5px 7px rgba(90,150,215,.45),0 0 10px rgba(255,255,255,.9);' },
-  { img: '34-backyard-dusk-board', rect: [.1, .22, .9, .72], color: '#fff3d6', css: 'filter:url(#paintJ);' },
-  { img: '39-underwater-board', rect: [.14, .2, .86, .74], color: '#fff', css: 'text-shadow:0 2px 6px rgba(0,70,140,.65),0 0 12px rgba(180,235,255,.7);' },
-  { img: '74-clean-notebook-board', rect: [.17, .2, .9, .78], color: '#2f3b55', css: 'filter:url(#penc);' },
-  { img: '49-haunted-window-board', rect: [.19, .33, .81, .8], color: '#efeaff', css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);' },
-  { img: '54-harvest-table-board', rect: [.17, .24, .83, .7], color: '#6b3410', css: 'text-shadow:0 1px 0 rgba(255,246,222,.9),0 0 6px rgba(255,246,222,.7);' },
-  { img: '59-fireplace-board', rect: [.1, .4, .9, .7], color: '#7a1c1c', css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' },
+  { img: '03-midnight-sky-board', rect: [.1, .3, .9, .78], color: '#ffeaa8', css: 'text-shadow:0 0 8px rgba(255,200,80,.85),0 0 18px rgba(255,160,40,.5);' , settle: 3200, per: 0 },
+  { img: '08-love-letter-board', rect: [.16, .24, .84, .76], color: '#a8174a', css: 'text-shadow:0 1px 0 #fff,0 0 8px rgba(255,255,255,.9);' , settle: 2900, per: 45 },
+  { img: '11-green-hills-board', rect: [.1, .16, .9, .62], color: '#fff', css: '-webkit-text-stroke:3.5px #fff;paint-order:stroke fill;text-shadow:0 2px 5px rgba(0,70,130,.35);' , settle: 2500, per: 0 },
+  { img: '17-spring-meadow-board', rect: [.1, .14, .9, .62], color: '#5a2d8c', css: '-webkit-text-stroke:3px #fff7c9;paint-order:stroke fill;text-shadow:0 2px 4px rgba(60,20,110,.25);' , settle: 3400, per: 40 },
+  { img: '25-papel-picado-board', rect: [.1, .26, .9, .78], color: '#7a1030', css: '-webkit-text-stroke:2.5px #fff6cf;paint-order:stroke fill;' , settle: 2900, per: 45 },
+  { img: '31-pool-deck-board', rect: [.08, .16, .8, .66], color: '#fff', css: 'font-weight:600;letter-spacing:.4px;-webkit-text-stroke:1.8px #fff;paint-order:stroke fill;text-shadow:0 2px 0 #dcebfa,0 5px 7px rgba(90,150,215,.45),0 0 10px rgba(255,255,255,.9);' , settle: 3600, per: 0 },
+  { img: '34-backyard-dusk-board', rect: [.1, .22, .9, .72], color: '#fff3d6', css: 'filter:url(#paintJ);' , settle: 5500, per: 105 },
+  { img: '39-underwater-board', rect: [.14, .2, .86, .74], color: '#fff', css: 'text-shadow:0 2px 6px rgba(0,70,140,.65),0 0 12px rgba(180,235,255,.7);' , settle: 4400, per: 0 },
+  { img: '74-clean-notebook-board', rect: [.17, .2, .9, .78], color: '#2f3b55', css: 'filter:url(#penc);' , settle: 6200, per: 120 },
+  { img: '49-haunted-window-board', rect: [.19, .33, .81, .8], color: '#efeaff', css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);' , settle: 2100, per: 0 },
+  { img: '54-harvest-table-board', rect: [.17, .24, .83, .7], color: '#6b3410', css: 'text-shadow:0 1px 0 rgba(255,246,222,.9),0 0 6px rgba(255,246,222,.7);' , settle: 3300, per: 40 },
+  { img: '59-fireplace-board', rect: [.1, .4, .9, .7], color: '#7a1c1c', css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' , settle: 2900, per: 45 },
 ];
 let HOOK = null; // in the game: {text, body, letters} = the real question text elements, whose letters the board animations drive
 const baseBoard = (s, name) => (HOOK ? null : mk(s, name, BW / 2, BH2 / 2, BW, { z: 0 }));

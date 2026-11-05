@@ -277,6 +277,7 @@ if (location.protocol === "file:") {
   .mr-now { font-size: 10px; font-weight: 800; background: #e8a317; color: #000; border-radius: 8px; padding: 1px 6px; }
   .mr-seas { font-size: 10px; font-style: normal; font-weight: 800; opacity: .6; }
   .mr-tile.missed { opacity: .65; }
+  .question-prompt[data-hold] #question-answer-line { display: none !important; } /* a monthly board keeps the answer back until its question has finished writing in */
   .mr-test { margin-top: 14px; padding-top: 10px; border-top: 2px dashed #d9c29a; color: #000; }
   .mr-test h4 { margin: 0 0 6px; font-size: 15px; } .mr-test select { font: inherit; font-weight: 700; padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c29a; background: #fffaf0; }
   .mr-test .mr-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
@@ -7011,7 +7012,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       reset();
       applyBoard(id);
       later(250, () => setPromptText(SAMPLE, true));
-      later(3400, () => {
+      const showAnswer = () => {
+        const wait = sbHoldLeft(); // a monthly board keeps the answer back until its question has settled
+        if (wait > 0) { later(wait + 60, showAnswer); return; }
         const t0 = performance.now(), target = 54.23;
         const step = () => {
           const k = Math.min(1, (performance.now() - t0) / 1600), e = 1 - Math.pow(1 - k, 3);
@@ -7019,9 +7022,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           if (k < 1) later(60, step);
         };
         step();
-      });
-      later(7000, () => clearBoard());
-      later(9800, play);
+        later(3600, () => clearBoard());
+        later(6400, play);
+      };
+      later(3400, showAnswer);
     };
     const replay = document.createElement("button");
     replay.type = "button"; replay.textContent = "Replay";
@@ -9379,6 +9383,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const sbEase = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
   const sbC01 = (x) => Math.max(0, Math.min(1, x));
   function sbTeardown() {
+    if (qSB) clearTimeout(qSB.holdT);
+    qPromptEl.removeAttribute("data-hold");
     if (qSB && qSB.stage) qSB.stage.remove();
     if (qSB && qSB.stick) qSB.stick.remove();
     qBodyEl.querySelectorAll(".sb-dots").forEach((n) => n.remove());
@@ -9426,7 +9432,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bh = qBodyEl.clientHeight;
     const pl = hudEl.dataset.playLayout, qv = questionViewEl.classList.contains('active'), twq = qv && (pl === 'highlow' || pl === 'teamworlds'); // no answer line on these question screens, so the text may use the whole board
     const rsv = twq ? [0, 4] : qSB.def.rsv || [0, 4];
-    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML, extra = ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
+    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML && !(qSB.holdUntil && performance.now() < qSB.holdUntil), extra = ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
     // As big as will fit: binary-search the largest size at which the question (plus room for the answer line) stays inside the text area.
     const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + extra <= bh; };
     let lo = 8, hi = 40;
@@ -9667,6 +9673,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       exitDone(sb, now) { return now - sb.t1 > 450; },
     },
   };
+  // A monthly board keeps the answer line back until the question has finished writing in and settled (ms from the start of the entrance).
+  function sbHoldAnswer(sb, ms) {
+    clearTimeout(sb.holdT);
+    sb.holdUntil = performance.now() + ms;
+    qPromptEl.dataset.hold = "1";
+    sb.holdT = setTimeout(() => sbReleaseAnswer(sb), ms);
+  }
+  function sbReleaseAnswer(sb) {
+    clearTimeout(sb.holdT);
+    if (qSB !== sb || !sb.holdUntil) return;
+    sb.holdUntil = 0;
+    qPromptEl.removeAttribute("data-hold");
+    sbFit();
+    if (questionAnswerLineEl.style.display !== "none" && questionAnswerLineEl.innerHTML) questionAnswerLineEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: "ease-out" });
+  }
+  const sbHoldLeft = () => (qSB && qSB.holdUntil ? Math.max(0, qSB.holdUntil - performance.now()) : 0);
   // Monthly boards: monthly/motion.js animates the letters of the real question and a decorative layer over the board picture.
   MONTHLY_BOARD_ITEMS.forEach((b) => {
     SB_KINDS[b.id] = {
@@ -9675,6 +9697,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         questionPromptTextEl.style.transition = qBodyEl.style.transition = "none";
         if (sb.mmHost) { sb.mmHost.remove(); sb.mmHost = null; }
         if (!sb.animated || !window.MM) return;
+        const meta = MM.boards[b.monthly - 1];
+        sbHoldAnswer(sb, Math.max(600, meta.settle + meta.per * (sb.chars.length - 43)) + 300);
         const host = document.createElement("div");
         host.style.cssText = "position:absolute;left:0;top:0;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:3";
         host.style.transform = `scale(${sb.sw / 330})`;
@@ -9687,6 +9711,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       },
       layout(sb) { if (sb.mmHost) sb.mmHost.style.transform = `scale(${sb.sw / 330})`; },
       exit(sb) {
+        sbReleaseAnswer(sb);
         qBodyEl.style.transition = "opacity .3s"; qBodyEl.style.opacity = "0";
         if (sb.mmHost) sb.mmHost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
       },
