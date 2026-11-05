@@ -2892,6 +2892,9 @@ if (location.protocol === "file:") {
   .question-prompt[data-scene] { background: none; height: 196px; min-height: 196px; padding: 0; overflow: visible; }
   .question-prompt[data-scene][data-board="mb12"] .answer-line-label, .question-prompt[data-scene][data-board="mb12"] .answer-line-value { display: inline; } /* December: "ANSWER: 54.23" on one row, so the question gets another line */
   .question-prompt[data-scene][data-board="mb12"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25); }
+  /* a monthly board keeps room for the answer line even before it shows, so the question stays exactly where its animation laid it out */
+  .question-prompt[data-scene][data-board^="mb"]:not([data-ans="1"]) #q-body::after { content: ""; display: block; flex: none; height: calc(var(--qfs, 16px) * 2.6 + 3px); }
+  .question-prompt[data-scene][data-board="mb12"]:not([data-ans="1"]) #q-body::after { height: calc(var(--qfs, 16px) * 1.4 + 3px); }
   #q-stage { position: absolute; z-index: 0; pointer-events: none; }
   #q-stage > img, #q-stage > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   .question-prompt[data-scene] #q-body { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-sizing: border-box; z-index: 1; }
@@ -9386,7 +9389,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const sbC01 = (x) => Math.max(0, Math.min(1, x));
   function sbTeardown() {
     if (qSB) clearTimeout(qSB.holdT);
-    qPromptEl.removeAttribute("data-hold");
+    qPromptEl.removeAttribute("data-hold"); qPromptEl.removeAttribute("data-ans");
     if (qSB && qSB.stage) qSB.stage.remove();
     if (qSB && qSB.mmOver) qSB.mmOver.remove();
     if (qSB && qSB.stick) qSB.stick.remove();
@@ -9476,7 +9479,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function sbTick(now, dt) {
     const k = SB_KINDS[qSB.id] || {};
     const shown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML;
-    if (shown !== qSB.ansShown) { qSB.ansShown = shown; qSB.tAns = now; if (k.answer) k.answer(qSB, shown); }
+    if (shown !== qSB.ansShown) { qSB.ansShown = shown; if (shown) qPromptEl.dataset.ans = "1"; else qPromptEl.removeAttribute("data-ans"); qSB.tAns = now; if (k.answer) k.answer(qSB, shown); }
     if (k.tick) k.tick(qSB, now, dt);
     if (qSB.exiting && k.exitDone && k.exitDone(qSB, now)) { const f = qSB.done; qSB.exiting = false; qSB.done = null; if (f) f(); }
     else if (qSB.exiting && !k.exitDone && now - qSB.t1 > 400) { const f = qSB.done; qSB.exiting = false; qSB.done = null; if (f) f(); }
