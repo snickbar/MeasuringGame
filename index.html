@@ -266,6 +266,17 @@ if (location.protocol === "file:") {
     background: linear-gradient(rgba(255,250,240,.38), rgba(255,250,240,.38)), var(--game-bg) var(--game-bg-pos, center) / var(--game-bg-size, cover) var(--game-bg-repeat, no-repeat); }
   body:has(#home-screen.active)::before { display: none; }
   .cosm-board-pic { width: 72px; height: 46px; object-fit: contain; flex-shrink: 0; }
+  .mr-sec { margin: 14px 0 6px; } .mr-sub { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; color: #000; text-align: center; }
+  .mr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .mr-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border: 2px solid #d9c29a; border-radius: 12px; background: rgba(255,255,255,.7); text-align: center; color: #000; min-width: 0; }
+  .mr-tile.cur { border-color: #e8a317; background: rgba(255,244,214,.9); }
+  .mr-pic { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
+  .mr-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .mr-tile:not(.got) .mr-pic img { filter: brightness(0) opacity(.55); }
+  .mr-tile b { font-size: 12.5px; } .mr-tile small { font-size: 10.5px; line-height: 1.15; font-weight: 700; opacity: .8; }
+  .mr-now { font-size: 10px; font-weight: 800; background: #e8a317; color: #000; border-radius: 8px; padding: 1px 6px; }
+  .mr-seas { font-size: 10px; font-style: normal; font-weight: 800; opacity: .6; }
+  .mr-tile.missed { opacity: .65; }
   .cosm-bg-pic { width: 34px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; flex-shrink: 0; }
   .cosm-bg-none { display: inline-block; background: linear-gradient(150deg, #fbfaf6, #f3f1ea 45%, #fdf6ec); }
   #home-title-img { position: absolute; left: 0; right: 0; margin-inline: auto; top: 9%; width: min(96%, 560px); height: auto; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.18)); }
@@ -6670,7 +6681,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderBackgroundRows(document.getElementById("cosm-backgrounds-list"));
     renderHomeRows(document.getElementById("cosm-homes-list"));
     renderBoardRows(document.getElementById("cosm-boards-list"));
+    appendMonthlyRewards(document.getElementById("cosm-emojis-list"), "reaction");
+    appendMonthlyRewards(document.getElementById("cosm-flairs-list"), "flair");
+    appendMonthlyRewards(document.getElementById("cosm-boards-list"), "board");
+    appendMonthlyRewards(document.getElementById("cosm-backgrounds-list"), "scene");
     renderCosmRandomSlot();
+  }
+  // ---- Monthly rewards: 12 seasonal tiles per tab. Level 1 = scene, 2 = reaction, 3 = question board, Mega (4) = flair.
+  // Participation only: finish that level for real in its month. A missed month stays missed until next year.
+  const MONTHLY_REWARD_KINDS = {
+    scene: { level: 1, label: "Scenes", art: (m) => `backgrounds/${MONTH_BACKGROUNDS[m - 1].id}.webp` },
+    reaction: { level: 2, label: "Reactions", art: (m) => `monthly/art/${["01-flute-glass", "07-heart-eye", "10-four-leaf-clover", "15-chick", "23-open-rose", "73-cool-sunglasses", "68-plain-hot-dog", "37-ice-cream-cone", "42-apple", "47-lit-jack-o-lantern", "wishbone", "57-snowman"][m - 1]}.webp` },
+    board: { level: 3, label: "Boards", art: (m) => `monthly/art/${["03-midnight-sky-board", "08-love-letter-board", "11-green-hills-board", "17-spring-meadow-board", "25-papel-picado-board", "31-pool-deck-board", "34-backyard-dusk-board", "39-underwater-board", "74-clean-notebook-board", "49-haunted-window-board", "54-harvest-table-board", "59-fireplace-board"][m - 1]}.webp` },
+    flair: { level: 4, label: "Flairs", art: (m) => `monthly/art/${["04-gold-sparkle", "09-paper-hearts-sheet-0", "13-clover-sheet-0", "20-daffodil", "62-donkey-pinata", "beach-ball", "35-water-balloon-sheet-0", "surfer", "46-giant-a", "50-smiling-ghost", "55-cornucopia", "sleigh"][m - 1]}.webp` },
+  };
+  function monthlyRewardEarned(m, level) { return !!((myProfile.stats || {})["mc" + String(m).padStart(2, "0") + "L" + level]); }
+  function appendMonthlyRewards(container, kind) {
+    const k = MONTHLY_REWARD_KINDS[kind];
+    if (!container || !k) return;
+    const nowM = new Date().getMonth() + 1;
+    const tiles = MONTH_NAMES.map((name, i) => {
+      const m = i + 1, got = monthlyRewardEarned(m, k.level), cur = m === nowM, missed = !got && m < nowM;
+      const hint = got ? "Unlocked" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : missed ? "Missed this year" : `Opens in ${name}`;
+      return `<div class="mr-tile${got ? " got" : ""}${cur ? " cur" : ""}${missed ? " missed" : ""}"><div class="mr-pic"><img src="${k.art(m)}" alt="" draggable="false" loading="lazy"></div><b>${escapeHtml(name)}</b>${cur ? '<span class="mr-now">This month</span>' : ""}<small>${escapeHtml(hint)}</small><i class="mr-seas">Seasonal</i></div>`;
+    }).join("");
+    const sec = document.createElement("div");
+    sec.className = "mr-sec";
+    sec.innerHTML = `<h3 class="cs-h">Monthly rewards</h3><p class="mr-sub">One ${kind} a month from the Monthly Challenge. Just finish the level that month.</p><div class="mr-grid">${tiles}</div>`;
+    container.appendChild(sec);
   }
 
   // TEMP: same simulated-purchase pattern as the host-unlock button below -
