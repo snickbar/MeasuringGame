@@ -195,16 +195,38 @@ def('r7', 'r', 5400, (s) => { const D = 5400;
 
 /* ================= BOARDS (330 x 248, 4:3): the board art stays; a living layer and the question play on top ================= */
 const BH2 = 248, QS = 'How many bananas tall is a giraffe?';
-const baseBoard = (s, name) => mk(s, name, BW / 2, BH2 / 2, BW, { z: 0 });
+/* board facts for the game: art, where the question text sits (fractions of the picture: left, top, right, bottom), and its colour and glow */
+const BOARD_META = [
+  { img: '03-midnight-sky-board', rect: [.1, .3, .9, .78], color: '#ffeaa8', css: 'text-shadow:0 0 8px rgba(255,200,80,.85),0 0 18px rgba(255,160,40,.5);' },
+  { img: '08-love-letter-board', rect: [.16, .24, .84, .76], color: '#a8174a', css: 'text-shadow:0 1px 0 #fff,0 0 8px rgba(255,255,255,.9);' },
+  { img: '11-green-hills-board', rect: [.1, .16, .9, .62], color: '#fff', css: '-webkit-text-stroke:3.5px #fff;paint-order:stroke fill;text-shadow:0 2px 5px rgba(0,70,130,.35);' },
+  { img: '17-spring-meadow-board', rect: [.1, .14, .9, .62], color: '#5a2d8c', css: '-webkit-text-stroke:3px #fff7c9;paint-order:stroke fill;text-shadow:0 2px 4px rgba(60,20,110,.25);' },
+  { img: '25-papel-picado-board', rect: [.1, .26, .9, .78], color: '#7a1030', css: '-webkit-text-stroke:2.5px #fff6cf;paint-order:stroke fill;' },
+  { img: '31-pool-deck-board', rect: [.08, .16, .8, .66], color: '#fff', css: 'font-weight:600;letter-spacing:.4px;-webkit-text-stroke:1.8px #fff;paint-order:stroke fill;text-shadow:0 2px 0 #dcebfa,0 5px 7px rgba(90,150,215,.45),0 0 10px rgba(255,255,255,.9);' },
+  { img: '34-backyard-dusk-board', rect: [.1, .22, .9, .72], color: '#fff3d6', css: 'filter:url(#paintJ);' },
+  { img: '39-underwater-board', rect: [.14, .2, .86, .74], color: '#fff', css: 'text-shadow:0 2px 6px rgba(0,70,140,.65),0 0 12px rgba(180,235,255,.7);' },
+  { img: '74-clean-notebook-board', rect: [.17, .2, .9, .78], color: '#2f3b55', css: 'filter:url(#penc);' },
+  { img: '49-haunted-window-board', rect: [.19, .33, .81, .8], color: '#efeaff', css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);' },
+  { img: '54-harvest-table-board', rect: [.17, .24, .83, .7], color: '#6b3410', css: 'text-shadow:0 1px 0 rgba(255,246,222,.9),0 0 6px rgba(255,246,222,.7);' },
+  { img: '59-fireplace-board', rect: [.1, .4, .9, .7], color: '#7a1c1c', css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' },
+];
+let HOOK = null; // in the game: {text, body, letters} = the real question text elements, whose letters the board animations drive
+const baseBoard = (s, name) => (HOOK ? null : mk(s, name, BW / 2, BH2 / 2, BW, { z: 0 }));
+const kOf = (el) => (el.getBoundingClientRect().width / (el.offsetWidth || 1)) || 1; // on-screen px per design px (the host is scaled in the game)
 const grp = (s, D) => { const g = box(s, 'left:0;top:0;width:330px;height:248px;', 1); g.animate([{ opacity: 1 }, { opacity: 1, offset: (D - 700) / D }, { opacity: 0 }], { duration: D, fill: 'both' }); return g; };
 function qtext(stage, rect, o) {
+  if (HOOK) { // use the game's own text: same colour and glow, its letters, its layout
+    HOOK.text.style.cssText += `;color:${o.color};${o.css || ''}`;
+    HOOK.letters.forEach((l) => { l.style.opacity = 1; }); // the game hides letters until its own kind shows them; here the animation decides
+    return { el: HOOK.body, t: HOOK.text, letters: HOOK.letters, stage: HOOK.stage };
+  }
   const el = box(stage, `left:${rect[0] * BW}px;top:${rect[1] * BH2}px;width:${(rect[2] - rect[0]) * BW}px;height:${(rect[3] - rect[1]) * BH2}px;display:flex;align-items:center;justify-content:center;text-align:center;`, o.z || 6);
   const t = document.createElement('div'); t.style.cssText = `font:700 ${o.size || 25}px/1.16 'Fredoka',system-ui,sans-serif;color:${o.color};${o.css || ''}`;
   const letters = [], words = QS.split(' ');
   words.forEach((wd, wi) => { const w = document.createElement('span'); w.style.cssText = 'display:inline-block;white-space:nowrap;'; [...wd].forEach((ch) => { const sp = document.createElement('span'); sp.textContent = ch; sp.style.display = 'inline-block'; w.appendChild(sp); letters.push(sp); }); t.appendChild(w); if (wi < words.length - 1) t.appendChild(document.createTextNode(' ')); });
   el.appendChild(t); return { el, t, letters, stage };
 }
-const lrect = (q, l) => { const a = l.getBoundingClientRect(), b = q.stage.getBoundingClientRect(); return { x: a.left - b.left + a.width / 2, y: a.top - b.top + a.height / 2, w: a.width, h: a.height, bt: a.bottom - b.top, l: a.left - b.left }; };
+const lrect = (q, l) => { const a = l.getBoundingClientRect(), b = q.stage.getBoundingClientRect(), k = kOf(q.stage); return { x: (a.left - b.left + a.width / 2) / k, y: (a.top - b.top + a.height / 2) / k, w: a.width / k, h: a.height / k, bt: (a.bottom - b.top) / k, l: (a.left - b.left) / k }; };
 const popLetters = (letters, t0, step, dur = 420, rise = 10) => letters.forEach((l, i) => l.animate([{ opacity: 0, transform: `translateY(${rise}px) scale(.3)` }, { opacity: 1, transform: 'translateY(-2px) scale(1.18)', offset: .6 }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: dur, delay: t0 + i * step, fill: 'both', easing: 'ease-out' }));
 const hideLetters = (letters) => letters.forEach((l) => { l.style.opacity = 0; });
 
@@ -229,12 +251,12 @@ def('b2', 'b', 6400, (s) => { const D = 6400; baseBoard(s, '08-love-letter-board
 });
 def('b3', 'b', 7000, (s) => { const D = 7000; baseBoard(s, '11-green-hills-board'); const g = grp(s, D);
   const q = qtext(g, [.1, .16, .9, .62], { color: '#fff', size: 27, css: '-webkit-text-stroke:3.5px #fff;paint-order:stroke fill;text-shadow:0 2px 5px rgba(0,70,130,.35);' });
-  const cols = [[255, 59, 48], [255, 149, 0], [255, 214, 10], [52, 199, 89], [10, 132, 255], [191, 90, 242]], eb = q.el.getBoundingClientRect(), st = s.getBoundingClientRect();
+  const cols = [[255, 59, 48], [255, 149, 0], [255, 214, 10], [52, 199, 89], [10, 132, 255], [191, 90, 242]], eb = q.el.getBoundingClientRect(), st = s.getBoundingClientRect(), kk = kOf(s);
   const x0 = q.letters.reduce((m, l) => Math.min(m, l.getBoundingClientRect().left), 1e9), x1 = q.letters.reduce((m, l) => Math.max(m, l.getBoundingClientRect().right), 0);
   q.letters.forEach((l) => { const r = l.getBoundingClientRect(), f = Math.max(0, Math.min(1, ((r.left + r.width / 2) - x0) / (x1 - x0))) * 5, i = Math.min(4, Math.floor(f)), u = f - i, c = cols[i].map((v, k) => Math.round(v + (cols[i + 1][k] - v) * u)); l.style.color = `rgb(${c})`; });
-  const TS = 400, TE = 2100, ex0 = x0 - st.left - 6, ex1 = x1 - st.left + 6;
+  const TS = 400, TE = 2100, ex0 = (x0 - st.left) / kk - 6, ex1 = (x1 - st.left) / kk + 6;
   q.t.animate([{ clipPath: 'inset(-10px 100% -10px 0)' }, { clipPath: 'inset(-10px 100% -10px 0)', offset: TS / D, easing: 'ease-in-out' }, { clipPath: 'inset(-10px -6px -10px 0)', offset: TE / D }, { clipPath: 'inset(-10px -6px -10px 0)' }], { duration: D, fill: 'both' });
-  const bar = box(g, `left:0;top:${eb.top - st.top}px;width:3px;height:${eb.height}px;background:linear-gradient(to bottom,transparent,#fff,transparent);box-shadow:0 0 10px #fff,0 0 20px #ffe27a;`, 8);
+  const bar = box(g, `left:0;top:${(eb.top - st.top) / kk}px;width:3px;height:${eb.height / kk}px;background:linear-gradient(to bottom,transparent,#fff,transparent);box-shadow:0 0 10px #fff,0 0 20px #ffe27a;`, 8);
   bar.animate([{ transform: `translateX(${ex0}px)`, opacity: 0 }, { transform: `translateX(${ex0}px)`, opacity: 1, offset: TS / D, easing: 'ease-in-out' }, { transform: `translateX(${ex1}px)`, opacity: 1, offset: TE / D }, { transform: `translateX(${ex1}px)`, opacity: 0, offset: (TE + 80) / D }, { opacity: 0 }], { duration: D, fill: 'both' });
   q.letters.forEach((l, i) => l.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-2.5px)' }, { transform: 'translateY(0)' }], { duration: 1300, delay: TE + 200 + i * 70, iterations: 3, easing: 'ease-in-out' }));
   for (let i = 0; i < 9; i++) sparkle(g, 262 + rnd() * 50, 156 + rnd() * 30, 11 + rnd() * 10, D, 300 + i * 520, 600, 3);
@@ -316,7 +338,7 @@ def('b9', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '74-clean-notebook-bo
 def('b10', 'b', 7800, (s) => { const D = 7800; baseBoard(s, '49-haunted-window-board'); const g = grp(s, D);
   const W0 = .17 * BW, W1 = .83 * BW, T0 = .3 * BH2, T1 = .85 * BH2;
   const q = qtext(g, [.19, .33, .81, .8], { color: '#efeaff', size: 26, css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);', z: 6 });
-  const x0 = q.letters.reduce((m, l) => Math.min(m, l.getBoundingClientRect().left), 1e9) - s.getBoundingClientRect().left - 4, x1 = q.letters.reduce((m, l) => Math.max(m, l.getBoundingClientRect().right), 0) - s.getBoundingClientRect().left + 4;
+  const kk = kOf(s), x0 = (q.letters.reduce((m, l) => Math.min(m, l.getBoundingClientRect().left), 1e9) - s.getBoundingClientRect().left) / kk - 4, x1 = (q.letters.reduce((m, l) => Math.max(m, l.getBoundingClientRect().right), 0) - s.getBoundingClientRect().left) / kk + 4;
   const TS = 1000, TE = 1700; q.t.animate([{ clipPath: 'inset(-10px 100% -10px 0)' }, { clipPath: 'inset(-10px 100% -10px 0)', offset: TS / D, easing: 'cubic-bezier(.6,0,.9,.5)' }, { clipPath: 'inset(-10px -6px -10px 0)', offset: TE / D }, { clipPath: 'inset(-10px -6px -10px 0)' }], { duration: D, fill: 'both' });
   const bar = box(g, `left:0;top:${T0 + 6}px;width:4px;height:${T1 - T0 - 6}px;background:linear-gradient(to bottom,transparent,#fff 20%,#fff 80%,transparent);box-shadow:0 0 10px #fff,0 0 22px #b9a6ff,0 0 40px #8b6cff;transform-origin:50% 50%;`, 8);
   bar.animate([{ transform: `translateX(${x0}px) skewX(-18deg)`, opacity: 0 }, { transform: `translateX(${x0}px) skewX(-18deg)`, opacity: 1, offset: TS / D, easing: 'cubic-bezier(.6,0,.9,.5)' }, { transform: `translateX(${x1}px) skewX(-18deg)`, opacity: 1, offset: TE / D }, { transform: `translateX(${x1}px) skewX(-18deg)`, opacity: 0, offset: (TE + 60) / D }, { opacity: 0 }], { duration: D, fill: 'both' });
@@ -514,8 +536,17 @@ const MM = window.MM = {
   build(key, stage) { SEED = 7; stage.innerHTML = ''; ANIM[key].build(stage); const r = RATE[key] || 1; if (r !== 1) stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = r; }); },
   /* a flair on the real winner card: host is a 300x440 box whose point (150,215) sits at the card centre; cardW/cardH are the card's size in host units */
   buildFlair(key, host, cardW, cardH) { NOCARD = true; FC.w = cardW; FC.h = cardH; try { MM.build(key, host); } finally { NOCARD = false; FC.w = 184; FC.h = 84; } },
+  /* a board animation over the real question: host = 330x248 box (scaled to the board picture) inside the board stage;
+     text = the game's question element, body = its container, letters = the per-letter spans the game made (empty = no letter animation) */
+  buildBoard(key, host, hook) { // real questions are longer than the sample, so a few keyframes can land past the end: clamp them to 1
+    const orig = Element.prototype.animate;
+    Element.prototype.animate = function (kf, o) { return orig.call(this, Array.isArray(kf) ? kf.map((k) => (k.offset > 1 ? Object.assign({}, k, { offset: 1 }) : k)) : kf, o); };
+    HOOK = Object.assign({ stage: host }, hook);
+    try { MM.build(key, host); } finally { HOOK = null; Element.prototype.animate = orig; }
+  },
   info(key) { const a = ANIM[key]; return a ? { kind: a.kind, D: a.D / (RATE[key] || 1) } : null; },
   keys: () => Object.keys(ANIM),
+  boards: BOARD_META,
   sizes: { r: [R, R], b: [BW, BH], f: [FW, FH] },
 };
 })();

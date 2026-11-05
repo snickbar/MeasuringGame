@@ -6716,10 +6716,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const nowM = new Date().getMonth() + 1;
     // An earned monthly reaction is a normal row (preview, equip, lock); every other month is a tile.
     const rows = kind === "reaction" && cosmEmojiRow ? MONTH_NAMES.map((n, i) => i + 1).filter((m) => monthlyRewardEarned(m, 2)).map((m) => cosmEmojiRow("m" + String(m).padStart(2, "0"), 0))
+      : kind === "board" && cosmBoardRow ? MONTHLY_BOARD_ITEMS.filter((b) => monthlyRewardEarned(b.monthly, 3)).map((b) => cosmBoardRow(b))
       : kind === "flair" && cosmFlairRow ? MONTHLY_FLAIR_ITEMS.filter((it) => monthlyRewardEarned(it.monthly, 4)).map((it) => cosmFlairRow(it)) : [];
     const tiles = MONTH_NAMES.map((name, i) => {
       const m = i + 1, got = monthlyRewardEarned(m, k.level);
-      if (rows.length && (kind === "reaction" || kind === "flair") && got) return "";
+      if (rows.length && (kind === "reaction" || kind === "flair" || kind === "board") && got) return "";
       const cur = m === nowM, missed = !got && m < nowM;
       const hint = got ? "Unlocked" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : missed ? "Missed this year" : `Opens in ${name}`;
       return `<div class="mr-tile${got ? " got" : ""}${cur ? " cur" : ""}${missed ? " missed" : ""}"><div class="mr-pic"><img src="${k.art(m)}" alt="" draggable="false" loading="lazy"></div><b>${escapeHtml(name)}</b>${cur ? '<span class="mr-now">This month</span>' : ""}<small>${escapeHtml(hint)}</small><i class="mr-seas">Seasonal</i></div>`;
@@ -7117,9 +7118,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       for (; fs > 8; fs -= 0.5) { p.style.fontSize = fs + "px"; if (p.offsetHeight <= availH + 1 && p.scrollWidth <= availW + 1) break; }
     });
   }
-  function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards); }
+  function allBoards() { return BOARD_PACK_CATALOG.flatMap((p) => p.boards).concat(MONTHLY_BOARD_ITEMS); }
   function boardPackOf(id) { return BOARD_PACK_CATALOG.find((p) => p.boards.some((b) => b.id === id)); }
   function ownsBoard(id) {
+    const mb = MONTHLY_BOARD_ITEMS.find((b) => b.id === id);
+    if (mb) return monthlyRewardEarned(mb.monthly, 3);
     const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.boards) || {};
     const pk = boardPackOf(id);
     return !!(own[id] || (pk && (myProfile.boardPacks || {})[pk.id]));
@@ -7144,6 +7147,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = equippedBoard();
     await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/board": now === id && !cosmForceEquip ? "none" : id });
   }
+  let cosmBoardRow = null; // renderBoardRows's row builder for earned monthly boards
   function renderBoardRows(container) {
     if (!container) return;
     const equipped = equippedBoard();
@@ -7153,6 +7157,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
       equipped: equipped === "none", poolId: "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
     }));
+    cosmBoardRow = (b) => cosmRow({ // an earned monthly board (listed in the Monthly rewards group)
+      leadHtml: `<img class="cosm-board-pic" src="${b.img}" alt="" loading="lazy">`, name: b.label, owned: true, free: true, cost: 0, tier: undefined, equipped: equipped === b.id, poolId: b.id,
+      onPreview: () => openBoardPreview(b.id, b.label), onEquip: () => equipBoard(b.id),
+    });
     BOARD_PACK_CATALOG.forEach((pack) => {
       pack.boards.forEach((b) => container.appendChild(cosmRow({
         leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC[b.id]}" alt="" loading="lazy">`, name: b.label,
@@ -9352,6 +9360,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     splitflap: { img: "icons/bd-splitflap.webp", ar: 760 / 560, box: [9, 12, 9, 13], fmax: 24 },
     phone: { img: "icons/bd-phone-tight.webp", ar: 760 / 384, box: [21.5, 16.6, 21.5, 24.8], rsv: [1.1, 12] },
   };
+  // Monthly boards (Level 3 of each Monthly Challenge): the art, text area and colours come from monthly/motion.js.
+  const MONTHLY_BOARD_LABELS = ["Skyrockets", "Love letters", "Rainbow sweep", "Spring meadow", "Papel picado", "Pool deck", "Painted fence", "Bubble words", "Pencil notebook", "Lightning window", "Harvest table", "Fireplace"];
+  const mbId = (m) => "mb" + String(m).padStart(2, "0");
+  const MONTHLY_BOARD_ITEMS = (window.MM ? MM.boards : []).map((b, i) => ({ id: mbId(i + 1), label: MONTHLY_BOARD_LABELS[i], monthly: i + 1, img: `monthly/art/${b.img}.webp`, color: b.color, css: b.css }));
+  MONTHLY_BOARD_ITEMS.forEach((b, i) => {
+    const r = window.MM.boards[i].rect;
+    SB_DEFS[b.id] = { img: b.img, ar: 640 / 480, box: [r[0] * 100, r[1] * 100, (1 - r[2]) * 100, (1 - r[3]) * 100], fmax: 23, noStretch: true, monthly: b.monthly };
+  });
+  {
+    const st = document.createElement("style"); // text colours for the live board and for the still copy on solo screens (a filter only exists while the animation plays, so it is left out here)
+    st.textContent = MONTHLY_BOARD_ITEMS.map((b) => { const css = b.css.replace(/filter:[^;]*;?/g, ""); return `.question-prompt[data-board="${b.id}"] #question-prompt-text{color:${b.color}!important;${css}}.qbs[data-board="${b.id}"] p{color:${b.color}!important;${css}}`; }).join("");
+    document.head.appendChild(st);
+  }
   Object.keys(SB_DEFS).forEach((k) => { QB_DEFS[k] = { tool: null, scene: true }; });
   const SB_CARD_H = 196;
   let qCardH = 0; // card height while borrowed by a solo question screen (shorter on small phones); 0 = the normal height
@@ -9648,6 +9669,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       exitDone(sb, now) { return now - sb.t1 > 450; },
     },
   };
+  // Monthly boards: monthly/motion.js animates the letters of the real question and a decorative layer over the board picture.
+  MONTHLY_BOARD_ITEMS.forEach((b) => {
+    SB_KINDS[b.id] = {
+      perChar: true,
+      enter(sb) {
+        questionPromptTextEl.style.transition = qBodyEl.style.transition = "none";
+        if (sb.mmHost) { sb.mmHost.remove(); sb.mmHost = null; }
+        if (!sb.animated || !window.MM) return;
+        const host = document.createElement("div");
+        host.style.cssText = "position:absolute;left:0;top:0;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:3";
+        host.style.transform = `scale(${sb.sw / 330})`;
+        sb.mmHost = host; sb.stage.appendChild(host); sb.mmScale = sb.sw / 330;
+        const chars = sb.chars.slice(), key = "b" + b.monthly;
+        MM.ready().then(() => {
+          if (!host.isConnected || sb.chars[0] !== chars[0]) return;
+          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars });
+        });
+      },
+      layout(sb) { if (sb.mmHost) sb.mmHost.style.transform = `scale(${sb.sw / 330})`; },
+      exit(sb) {
+        qBodyEl.style.transition = "opacity .3s"; qBodyEl.style.opacity = "0";
+        if (sb.mmHost) sb.mmHost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
+      },
+    };
+  });
   function applyBoard(id) {
     if (!QB_DEFS[id]) id = "paper";
     if (qBoard === id && qPromptEl.dataset.board === id) return;
