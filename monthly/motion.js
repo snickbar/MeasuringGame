@@ -217,7 +217,7 @@ const kOf = (el) => (el.getBoundingClientRect().width / (el.offsetWidth || 1)) |
 const grp = (s, D) => { const g = box(s, 'left:0;top:0;width:330px;height:248px;', 1); g.animate([{ opacity: 1 }, { opacity: 1, offset: (D - 700) / D }, { opacity: 0 }], { duration: D, fill: 'both' }); return g; };
 function qtext(stage, rect, o) {
   if (HOOK) { // use the game's own text: same colour and glow, its letters, its layout
-    HOOK.text.style.cssText += `;color:${o.color};${o.css || ''}`;
+    const fl = (o.css || '').match(/filter:[^;]*/); if (fl) HOOK.text.style.cssText += ';' + fl[0]; // only the effect that needs the animation; the colour and type style come from the game's own stylesheet rule for this board, so nothing stays behind on the shared text element
     HOOK.letters.forEach((l) => { l.style.opacity = 1; }); // the game hides letters until its own kind shows them; here the animation decides
     return { el: HOOK.body, t: HOOK.text, letters: HOOK.letters, stage: HOOK.stage };
   }
