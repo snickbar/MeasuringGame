@@ -5,7 +5,6 @@ Saved November 5, 2026. These are follow-ups, not authorization to implement the
 - Profile monthly animation performance on another phone, especially April rain (about 300 animations) and August bubbles (about 259). User reports their current phone runs them well; preserve the approved appearance.
 - January sparkle replacement remains on hold.
 - Refresh the object rotator: its 563-object snapshot omits wishbone from the current 564-object catalog; remove the hardcoded count.
-- Consider loading monthly artwork per effect instead of waiting for the entire set. One slow/failed unrelated image currently sends other effects to their static fallback. Explanation given; no implementation approved.
 - Consider additional objects: seagull, songbird, puffin, hawk, tropical fish, cheese wedge, whisk, and cooking turner (check overlap with grill spatula).
 - Complete phone playtesting mode by mode, including two-device reconnect, pause, sync, reward persistence, and native update installation.
 - Recheck long-question readability on small phones following the recent larger writing-area changes.
@@ -15,3 +14,5 @@ Saved November 5, 2026. These are follow-ups, not authorization to implement the
 Spring currently uses the approved rain and flowers. Wispy seed artwork is available; its absence from the effect is not an outstanding defect. Do not replace the current flair work independently.
 
 Completed November 5: monthly level cards identify their reward; each level's results show its actual reward and a route to Awards/Style. Timed question rooms wait for active players' boards to finish before starting their shared guessing clock, with a bounded static fallback.
+
+Also completed: monthly boards, reactions and flairs preload only their own artwork. Shared images stay cached; failed or stalled images do not block unrelated effects and can retry.
