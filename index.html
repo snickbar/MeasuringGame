@@ -1840,6 +1840,12 @@ if (location.protocol === "file:") {
   body.overlay-has-return .career-tabs { padding-right: 60px; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #wb-screen, #teamvteam-screen, #teamworlds-screen { position: relative; }
+  /* Settings opened over a running game: the game screens stay exactly as they are underneath (so the round keeps going),
+     and Settings is a full layer above them, under the top toolbar. */
+  #settings-back-game { display: none; width: 100%; margin: 0 0 12px; }
+  #settings-screen.peek { display: block !important; position: fixed; top: 62px; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto; z-index: 51; overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; padding: 10px 12px 40px; background: linear-gradient(150deg, #fbfaf6 0%, #f3f1ea 45%, #fdf6ec 100%); animation: none; }
+  #settings-screen.peek #settings-back-game { display: block; }
+  #settings-screen.peek #settings-close-btn { display: none; }
   /* Keep navigation above scrolling content; Lobby pins only Start game and Back. */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: transparent; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -4496,6 +4502,7 @@ if (location.protocol === "file:") {
 
 <div id="settings-screen" class="screen">
   <button id="settings-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <button id="settings-back-game" type="button" class="dc-btn">Back to game</button>
 
   <div class="settings-card" id="settings-profile-card">
     <h3>Profile</h3>
@@ -10629,7 +10636,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   toolbarSettingsBtn.addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(toolbarMenuEl.hidden); });
   document.addEventListener("click", (e) => { if (!toolbarMenuEl.hidden && !toolbarMenuEl.contains(e.target)) setToolbarMenu(false); });
-  document.getElementById("menu-settings-btn").addEventListener("click", () => { setToolbarMenu(false); guardToolbarNav(() => openOverlay(settingsScreen))(); });
+  // Settings while a game is on: open it as a layer over the running game (the game keeps going underneath); Settings again, or
+  // "Back to game", closes it. Only for the room games (their rounds run on the room clock, not on this screen).
+  const settingsBackGameBtn = document.getElementById("settings-back-game");
+  function settingsOverGameOpen() { return settingsScreen.classList.contains("peek"); }
+  function canPeekSettings() {
+    return !gameRewards?.active && !finalScreenEl.classList.contains("active") && (hudEl.classList.contains("active") || hsScreenEl.classList.contains("active") || bluffScreenEl.classList.contains("active"));
+  }
+  function setSettingsOverGame(open) {
+    if (open === settingsOverGameOpen()) return;
+    settingsScreen.classList.toggle("peek", open);
+    document.body.classList.toggle("settings-over-game", open);
+    if (open) settingsScreen.scrollTop = 0;
+    playSound(open ? "popup-open" : "popup-close");
+  }
+  settingsBackGameBtn.addEventListener("click", () => setSettingsOverGame(false));
+  // If the game ends or you leave it while Settings is up, there is nothing to go back to.
+  setInterval(() => { if (settingsOverGameOpen() && !canPeekSettings()) setSettingsOverGame(false); }, 400);
+  document.getElementById("menu-settings-btn").addEventListener("click", () => {
+    setToolbarMenu(false);
+    if (settingsOverGameOpen()) { setSettingsOverGame(false); return; }
+    if (canPeekSettings()) { setSettingsOverGame(true); return; }
+    guardToolbarNav(() => openOverlay(settingsScreen))();
+  });
   // How to Play moved into Settings - the first-open nudge (a pulsing ring) now
   // lives on the Settings icon itself instead, since that's the toolbar button
   // that actually gets you there now.
@@ -16105,6 +16134,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (Date.now() < qrScanGuardUntil) return;
     if (gameRewards?.active) return;
     if (exitConfirmOverlayEl.classList.contains("show")) { exitConfirmNoBtn.click(); return; }
+    if (settingsOverGameOpen()) { setSettingsOverGame(false); return; }
     const solo = activeSoloRun();
     if (solo) { solo[0].querySelector('.screen-back-btn').click(); return; }
     if (isInActiveGame()) { openLeaveGameConfirm(); return; }
