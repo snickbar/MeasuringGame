@@ -450,7 +450,7 @@ def('f4', 'f', FD + 5600, (s) => { const D = FD + 5600, g = box(s, 'left:0;top:0
   forbit(g, D, { pics: ['daisy', '20-daffodil'], move: 'bob', lap: 3000, size: 28, items: 10 });
   /* rain falls from the top of the screen to the bottom while flowers pop up from the bottom edge, then sink back down */
   const vt = FC.vt, vb = FC.vb, vl = FC.vl, vr = FC.vr, fall = (vb - vt + 30) / 0.85;
-  for (let i = 0; i < 130; i++) { const x0 = vl - 20 + rnd() * (vr - vl + 40), t0 = FD + rnd() * 3300, L = fall * (.85 + rnd() * .3), len = 15 + rnd() * 10, sl = 14 + rnd() * 10;
+  for (let i = 0; i < 280; i++) { const x0 = vl - 20 + rnd() * (vr - vl + 40), t0 = FD + rnd() * 3500, L = fall * (.85 + rnd() * .3), len = 15 + rnd() * 10, sl = 14 + rnd() * 10;
     const e = box(g, `left:${-2}px;top:${-len / 2}px;width:4px;height:${len}px;background:linear-gradient(rgba(190,230,255,.15),#6ec0ff 70%,#3d97f0);border-radius:2px 2px 3px 3px;`, 6);
     path(e, D, t0, t0 + L, (u) => ({ x: x0 + sl * u * (L / 1000) * .6, y: lerp(vt - 30, vb + 10, u), r: 9, op: u > .96 ? 0 : .85 }), 4); }
   // drawn flowers in different colours, each centred on its stem
@@ -461,14 +461,12 @@ def('f4', 'f', FD + 5600, (s) => { const D = FD + 5600, g = box(s, 'left:0;top:0
     else b = Array.from({ length: 10 }, (_, i) => `<ellipse cx="50" cy="26" rx="9" ry="21" transform="rotate(${i * 36} 50 50)" fill="${c}" stroke="${OL}" stroke-width="3"/>`).join('') + `<circle cx="50" cy="50" r="12" fill="#ffb61e" stroke="${OL}" stroke-width="3.5"/>`;
     return `<svg viewBox="0 0 100 100" width="100%" height="100%" style="overflow:visible">${b}</svg>`; }, N = 9;
   for (let i = 0; i < N; i++) { const sz = 54 + rnd() * 22, x = vl + 26 + (i + .15 + rnd() * .7) / N * (vr - vl - 52), H = sz * 1.05 + 16 + rnd() * 46, t0 = FD + 300 + rnd() * 1900, R = 520, T1 = t0 + R + 1500 + rnd() * 700, T2 = T1 + 650, ph = rnd() * 6;
-    const st = box(g, `left:${x - 2.5}px;top:0;width:5px;height:${H}px;background:linear-gradient(90deg,#3f9b3c,#7bd05a,#3f9b3c);border-radius:3px;transform-origin:50% 100%;`, 6);
-    st.animate([{ transform: `translateY(${vb - H}px) scaleY(0)`, offset: 0 }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: t0 / D }, { transform: `translateY(${vb - H}px) scaleY(1)`, offset: (t0 + R) / D, easing: 'ease-out' }, { transform: `translateY(${vb - H}px) scaleY(1)`, offset: T1 / D }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: T2 / D }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: 1 }], { duration: D, fill: 'both' });
-    const e = box(g, `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;`, 7); e.innerHTML = flowerSvg(i % 3, cols[(i * 3 + 1) % cols.length]);
+    const e = box(g, `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;`, 7); e.innerHTML = `<i style="position:absolute;left:${sz / 2 - 2.5}px;top:${sz / 2}px;width:5px;height:700px;background:linear-gradient(90deg,#3f9b3c,#7bd05a,#3f9b3c);border-radius:3px"></i><div style="position:absolute;inset:0">${flowerSvg(i % 3, cols[(i * 3 + 1) % cols.length])}</div>`; // the stem is part of the flower, so it can never lag behind it (it runs on down past the bottom of the screen)
     path(e, D, t0, T2, (u) => { const ms = u * (T2 - t0); let y, sc = 1;
       if (ms < R) { const q = ms / R, bk = 1 + 2.2 * Math.pow(q - 1, 3) + 1.2 * Math.pow(q - 1, 2); y = lerp(vb + sz * .7, vb - H, bk); sc = .5 + .5 * Math.min(1, q * 1.4); }
       else if (ms < T1 - t0) { y = vb - H + Math.sin((ms - R) / 1000 * 3 + ph) * 3; }
       else { const q = (ms - (T1 - t0)) / (T2 - T1); y = lerp(vb - H, vb + sz * .7, q * q); }
-      return { x: x + Math.sin(ms / 1000 * 2.2 + ph) * 3, y, r: Math.sin(ms / 1000 * 2 + ph) * 7, sx: sc, op: 1 }; }, Math.round((T2 - t0) / 18)); } });
+      return { x: x + Math.sin(ms / 1000 * 2.2 + ph) * 3, y, r: Math.sin(ms / 1000 * 2 + ph) * 4, sx: sc, op: 1 }; }, Math.round((T2 - t0) / 18)); } });
 def('f5', 'f', FD + 4800, (s) => { const D = FD + 4800, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), cd = [0, 1, 2, 3, 4, 5].map((i) => '27-candy-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: ['26-star-pi-ata', '62-donkey-pinata'], move: 'bob', lap: 3000, size: 32, items: 6 });
   /* big donkey pinata: drops in and keeps hanging from its string, swings, then splits from the top of its back down; both halves keep dangling while candy spills */
