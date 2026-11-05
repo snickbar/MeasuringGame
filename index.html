@@ -2887,7 +2887,9 @@ if (location.protocol === "file:") {
   /* Scene boards (terminal, TV, typewriter...): the card keeps one fixed size and a picture is fitted inside it. */
   .question-prompt[data-scene] { background: none; height: 196px; min-height: 196px; padding: 0; overflow: visible; }
   .question-prompt[data-scene][data-board^="mb"] .answer-line-label, .question-prompt[data-scene][data-board^="mb"] .answer-line-value { display: inline; } /* monthly boards: "ANSWER: 54.23" on one row, so the question gets the room of the second row */
-  .question-prompt[data-scene][data-board^="mb"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25); }
+  .question-prompt[data-scene][data-board^="mb"] #question-answer-line { white-space: nowrap; }
+  .question-prompt[data-scene][data-board^="mb"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25 * var(--ak, 1)); }
+  .question-prompt[data-scene][data-board^="mb"] .answer-line-label { font-size: calc(var(--qfs, 16px) * .6 * var(--ak, 1)); }
   /* a monthly board keeps room for the answer line even before it shows, so the question stays exactly where its animation laid it out */
   .question-prompt[data-scene][data-board^="mb"]:not([data-ans="1"]) #q-body::after { content: ""; display: block; flex: none; height: calc(var(--qfs, 16px) * 1.4 + 3px); }
   #q-stage { position: absolute; z-index: 0; pointer-events: none; }
@@ -10014,6 +10016,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     questionAnswerLineEl.innerHTML = html;
     questionAnswerLineEl.style.display = "block";
     fitTextToBox(questionAnswerLineEl.querySelector(".answer-line-value"), 22);
+    if (qPromptEl.dataset.scene && /^mb/.test(qPromptEl.dataset.board || "")) { // a monthly board's answer is one row ("ANSWER: 54.23"): a long number shrinks the row to fit instead of wrapping onto a second line
+      questionAnswerLineEl.style.removeProperty("--ak");
+      const room = qBodyEl.clientWidth; // the row sizes to its own content, so it is compared with the text area's width
+      for (let n = 0, k = 1; room && n < 3 && questionAnswerLineEl.scrollWidth > room; n++) { k = Math.max(.4, k * (room / questionAnswerLineEl.scrollWidth) * .97); questionAnswerLineEl.style.setProperty("--ak", String(k)); } // a second pass covers the parts of the row that don't scale (spaces)
+    }
     requestAnimationFrame(qbFitParty);
   }
   // Shared by every reveal code path that flips the winning card (the normal
