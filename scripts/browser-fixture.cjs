@@ -5,7 +5,8 @@ exports.runFixture=async function({html,modules={},widths=[320,390,430],height=8
  const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/fixture'){res.setHeader('Content-Type','text/html');res.end(html);return}
-  if(modules[url.pathname]!=null){res.setHeader('Content-Type','text/javascript');res.end(modules[url.pathname]);return}
+  const module=modules[url.pathname];
+  if(module!=null){res.setHeader('Content-Type','text/javascript');if(typeof module==='object'){res.statusCode=module.status||200;res.end(module.body||'')}else res.end(module);return}
   const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
   if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
   try{res.setHeader('Content-Type',({'.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg','.svg':'image/svg+xml','.ttf':'font/ttf','.woff2':'font/woff2','.wav':'audio/wav','.json':'application/json'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file))}catch{res.writeHead(404);res.end()}

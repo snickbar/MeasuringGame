@@ -16,3 +16,5 @@ Spring currently uses the approved rain and flowers. Wispy seed artwork is avail
 Completed November 5: monthly level cards identify their reward; each level's results show its actual reward and a route to Awards/Style. Timed question rooms wait for active players' boards to finish before starting their shared guessing clock, with a bounded static fallback.
 
 Also completed: monthly boards, reactions and flairs preload only their own artwork. Shared images stay cached; failed or stalled images do not block unrelated effects and can retry.
+
+Loader recovery completed: stalled monthly metadata requests now time out and retry, including stalled response bodies. Reveal-engine failures and timeouts no longer stay cached as a permanent fallback. Web retries refresh dependency URLs too; native bundled asset paths remain unchanged.

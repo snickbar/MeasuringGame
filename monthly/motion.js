@@ -593,9 +593,19 @@ const writingStep = (month, count) => Math.min(month === 7 ? 105 : 120, (month =
 const MM = window.MM = {
   ready(key) {
     if (key != null && !ART_BY_EFFECT[key]) return Promise.reject(Error('Unknown monthly effect: ' + key));
-    if (!manifestP) manifestP = fetch('monthly/art-manifest.json').then(r => {
-      if (!r.ok) throw Error('Monthly art manifest unavailable');
-      return r.json();
+    if (!manifestP) manifestP = new Promise((resolve, reject) => {
+      const controller = new AbortController();
+      let settled = false;
+      const finish = (error, manifest) => {
+        if (settled) return;
+        settled = true; clearTimeout(timeout);
+        error ? reject(error) : resolve(manifest);
+      };
+      const timeout = setTimeout(() => { finish(Error('Monthly art manifest timed out')); controller.abort(); }, 8000);
+      fetch('monthly/art-manifest.json', { signal: controller.signal }).then(r => {
+        if (!r.ok) throw Error('Monthly art manifest unavailable');
+        return r.json();
+      }).then(m => finish(null, m), error => finish(error));
     }).then(m => {
       for (const [name, size] of Object.entries(m)) A[name] = { ...size, u: 'monthly/art/' + name + '.webp' };
       if (A.daisy2) A.daisy = A.daisy2;

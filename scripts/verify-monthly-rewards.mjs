@@ -20,7 +20,7 @@ assert.equal(monthlyLevelEarned({stats:{mc02L4:1}},2,4),true);
 // Failed manifests/images must reject and allow a fresh attempt, rather than
 // permanently caching a failed promise or pretending missing artwork is ready.
 let attempts=0,failImage=true;
-const runtime={window:{},setTimeout,clearTimeout,fetch:async()=>{attempts++;return attempts===1?{ok:false}:{ok:true,json:async()=>({sample:{w:10,h:10}})}},Image:class {set src(value){queueMicrotask(()=>failImage?this.onerror():this.onload())}}};
+const runtime={window:{},AbortController,setTimeout,clearTimeout,fetch:async()=>{attempts++;return attempts===1?{ok:false}:{ok:true,json:async()=>({sample:{w:10,h:10}})}},Image:class {set src(value){queueMicrotask(()=>failImage?this.onerror():this.onload())}}};
 vm.runInNewContext(fs.readFileSync(new URL('../monthly/motion.js',import.meta.url),'utf8'),runtime);
 await assert.rejects(runtime.window.MM.ready(),/unavailable/);
 await assert.rejects(runtime.window.MM.ready(),/sample/);

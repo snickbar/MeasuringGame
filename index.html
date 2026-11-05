@@ -17331,6 +17331,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ANIM_LEAD_MS = 1500;   // pause before it starts, so every screen is ready
   const ANIM_HOLD_MS = 4500;   // time to look at the finished picture and the answer
   let animModulePromise = null;
+  let animModuleAttempts = 0;
   let animCtl = null;
   let animCtlHideTally = null; // which mode animCtl was built for - see getAnimCtl()
   let animModuleResolved = null; // settled copy of loadAnimModule()'s promise, for the synchronous formatCount use in applyPhase()
@@ -17342,7 +17343,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let animPreloadKey = null;
 
   // Loaded on first use, so a problem with it can never stop the game from running.
-  // No cache-busting query string on this import path - Capacitor's local
+  // No cache-busting query string on the native import path - Capacitor's local
   // WebView asset server (which is what actually resolves "./anim/..." in
   // the installed app, not a real HTTP server) doesn't reliably handle a
   // "?v=" suffix on a bundled asset URL; it can 404 and silently fail the
@@ -17353,10 +17354,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // anyway, so there's no real staleness risk from dropping the cache-buster.
   function loadAnimModule() {
     if (!animModulePromise) {
-      animModulePromise = import("./anim/stack-anim.js").catch((err) => {
+      const attempt = animModuleAttempts++;
+      // Browsers remember failed module URLs. A web-only retry URL also flows
+      // to the engine's dependencies; native bundled assets keep stable paths.
+      const url = "./anim/stack-anim.js" + (!isNativeApp && attempt ? "?retry=" + Date.now() + "-" + attempt : "");
+      let timeout;
+      const bounded = Promise.race([
+        import(url),
+        new Promise((_, reject) => { timeout = setTimeout(() => reject(Error("Animation engine load timed out")), 8000); }),
+      ]);
+      const job = bounded.catch((err) => {
+        if (animModulePromise === job) animModulePromise = null;
         console.warn("[measuring-game] animation unavailable", err);
         return null;
-      });
+      }).finally(() => clearTimeout(timeout));
+      animModulePromise = job;
     }
     return animModulePromise;
   }

@@ -18,11 +18,15 @@
 // object stands up on the left. noMirror: the picture has writing, so it is never mirrored.
 // axis 'height': the picture already has the object's length running up and down (a door, a
 // tower), so it is not turned. upright: stands upright but is stored lying down (Big Ben).
-import { ORIENT } from './orient-data.js';
-import { landingStyleFor, landingPose } from './reveal-style.mjs';
-import { landingSurfaceFor, drawLandingEffect } from './landing-effects.mjs';
-import { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor } from './scenery.mjs';
-import { FLOOR_DATA } from './scenery-data.mjs';
+// A web retry needs fresh dependency URLs too, because browsers cache failed
+// module loads. Native loads have no query string and retain bundled paths.
+const moduleRetry = new URL(import.meta.url).search;
+const [{ ORIENT }, { landingStyleFor, landingPose }, { landingSurfaceFor, drawLandingEffect },
+  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor }, { FLOOR_DATA }] = await Promise.all([
+  import('./orient-data.js' + moduleRetry), import('./reveal-style.mjs' + moduleRetry),
+  import('./landing-effects.mjs' + moduleRetry), import('./scenery.mjs' + moduleRetry),
+  import('./scenery-data.mjs' + moduleRetry),
+]);
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
 // Object Orientation page). It is kept here for reference.
