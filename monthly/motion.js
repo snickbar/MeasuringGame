@@ -487,7 +487,9 @@ def('f8', 'f', FD + 4400, (s) => { const D = FD + 4400, g = box(s, 'left:0;top:0
   forbit(g, D, { pics: sb, move: 'tangent', tang: 90, lap: 2600, size: 24, items: 7 });
   /* one big wave rolls across with a single surfboard riding it */
   const WW = 400, WH = WW * A['wave2'].h / A['wave2'].w, L = 3500, wp = (u) => ({ x: lerp(-230, 530, u), y: 330 + Math.sin(u * 9) * 5 });
-  const wv = mk(g, 'wave2', 0, 0, WW, { z: 7 }); path(wv, D, FD, FD + L, (u) => { const p = wp(u); return { x: p.x, y: p.y, r: Math.sin(u * 8) * 2, op: fade(u, .06, .06) }; }, 70);
+  const wv = mk(g, 'wave2', 0, 0, WW, { z: 7 });
+  { const m = 'linear-gradient(to right,transparent 0,#000 11%,#000 89%,transparent 100%),linear-gradient(to bottom,#000 74%,transparent 98%)'; // the art is cut flat at its left, right and bottom edges: melt those edges away so no hard crop shows
+    wv.style.webkitMaskImage = wv.style.maskImage = m; wv.style.webkitMaskComposite = 'source-in'; wv.style.maskComposite = 'intersect'; } path(wv, D, FD, FD + L, (u) => { const p = wp(u); return { x: p.x, y: p.y, r: Math.sin(u * 8) * 2, op: fade(u, .06, .06) }; }, 70);
   const sf = mk(g, 'surfer', 0, 0, 96, { z: 8 }); path(sf, D, FD, FD + L, (u) => { const p = wp(u); return { x: p.x - WW * .04, y: p.y - WH * .46 + Math.sin(u * 20) * 2, r: -10 + Math.sin(u * 12) * 3, op: fade(u, .06, .06) }; }, 90);
   for (let i = 0; i < 22; i++) { const sz = 5 + rnd() * 5, u0 = rnd() * .8, e = dot(g, '#e8f6ff', sz, 0, 0, false, 8), a = -Math.PI * (.15 + rnd() * .7), v = 50 + rnd() * 80, LL = 800;
     path(e, D, FD + u0 * L, FD + u0 * L + LL, (u) => { const tt = u * LL / 1000, p = wp(u0 + u * LL / L); return { x: p.x + WW * .3 + Math.cos(a) * v * tt, y: p.y - WH * .4 + Math.sin(a) * v * tt + 420 * tt * tt, op: fade(u, .05, .4) }; }, 16); } });
