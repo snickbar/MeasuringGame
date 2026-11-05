@@ -10637,11 +10637,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   toolbarSettingsBtn.addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(toolbarMenuEl.hidden); });
   document.addEventListener("click", (e) => { if (!toolbarMenuEl.hidden && !toolbarMenuEl.contains(e.target)) setToolbarMenu(false); });
   // Settings while a game is on: open it as a layer over the running game (the game keeps going underneath); Settings again, or
-  // "Back to game", closes it. Only for the room games (their rounds run on the room clock, not on this screen).
+  // "Back to game", closes it. Covers the room games and the solo runs (their screens stay as they are underneath).
   const settingsBackGameBtn = document.getElementById("settings-back-game");
   function settingsOverGameOpen() { return settingsScreen.classList.contains("peek"); }
   function canPeekSettings() {
-    return !gameRewards?.active && !finalScreenEl.classList.contains("active") && (hudEl.classList.contains("active") || hsScreenEl.classList.contains("active") || bluffScreenEl.classList.contains("active"));
+    return !gameRewards?.active && !finalScreenEl.classList.contains("active") && (hudEl.classList.contains("active") || hsScreenEl.classList.contains("active") || bluffScreenEl.classList.contains("active") || !!activeSoloRun());
   }
   function setSettingsOverGame(open) {
     if (open === settingsOverGameOpen()) return;
