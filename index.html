@@ -5071,6 +5071,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 </script>
 <script type="module" src="anim/home-fx.mjs"></script>
 <script type="module" src="anim/home-scene.mjs"></script>
+<script src="monthly/motion.js"></script>
 <script type="module">
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
@@ -5831,11 +5832,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     "\u{1F914}": { id: "think", label: "Thinking" },
     "\u{1F926}": { id: "facepalm", label: "Facepalm" },
     "\u{1F91E}": { id: "crossed", label: "Fingers crossed" },
+    // Monthly rewards (Level 2 of each Monthly Challenge): animated by monthly/motion.js, shown in the picker as their poster picture.
+    "m01": { id: "mrx1", label: "Champagne clink", monthly: 1, pic: "monthly/art/01-flute-glass.webp" },
+    "m02": { id: "mrx2", label: "Heart eyes", monthly: 2, pic: "monthly/art/07-heart-eye.webp" },
+    "m03": { id: "mrx3", label: "Lucky clover", monthly: 3, pic: "monthly/art/10-four-leaf-clover.webp" },
+    "m04": { id: "mrx4", label: "Hatching chick", monthly: 4, pic: "monthly/art/15-chick.webp" },
+    "m05": { id: "mrx5", label: "Rose bloom", monthly: 5, pic: "monthly/art/23-open-rose.webp" },
+    "m06": { id: "mrx6", label: "Cool sun", monthly: 6, pic: "monthly/art/73-cool-sunglasses.webp" },
+    "m07": { id: "mrx7", label: "Hot dog", monthly: 7, pic: "monthly/art/68-plain-hot-dog.webp" },
+    "m08": { id: "mrx8", label: "Cherry on top", monthly: 8, pic: "monthly/art/37-ice-cream-cone.webp" },
+    "m09": { id: "mrx9", label: "Worm in apple", monthly: 9, pic: "monthly/art/42-apple.webp" },
+    "m10": { id: "mrx10", label: "Jack-o-lantern", monthly: 10, pic: "monthly/art/47-lit-jack-o-lantern.webp" },
+    "m11": { id: "mrx11", label: "Wishbone snap", monthly: 11, pic: "monthly/art/wishbone.webp" },
+    "m12": { id: "mrx12", label: "Snowman", monthly: 12, pic: "monthly/art/57-snowman.webp" },
   };
   // the same reactions looked up by short id (what is sent with each reaction alongside the old emoji character, so older app versions still show the emoji)
   const REACTION_BY_ID = {};
   Object.entries(REACTIONS).forEach(([emoji, r]) => { REACTION_BY_ID[r.id] = { ...r, emoji }; });
-  const reactionPic = (emoji) => `icons/reactions/${REACTIONS[emoji].id}.png`; // sideeye.png is the "looking" eyes
+  const reactionPic = (emoji) => REACTIONS[emoji].pic || `icons/reactions/${REACTIONS[emoji].id}.png`; // sideeye.png is the "looking" eyes
   const REACTION_SLOTS_MAX = 7, REACTION_SLOTS_BASE = 5;
   const REACTION_SLOT_COSTS = [100, 100]; // coins for slot 6 and slot 7
   const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
@@ -6700,14 +6714,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const k = MONTHLY_REWARD_KINDS[kind];
     if (!container || !k) return;
     const nowM = new Date().getMonth() + 1;
+    // An earned monthly reaction is a normal row (preview, equip, lock); every other month is a tile.
+    const rows = kind === "reaction" && cosmEmojiRow ? MONTH_NAMES.map((n, i) => i + 1).filter((m) => monthlyRewardEarned(m, 2)).map((m) => cosmEmojiRow("m" + String(m).padStart(2, "0"), 0)) : [];
     const tiles = MONTH_NAMES.map((name, i) => {
-      const m = i + 1, got = monthlyRewardEarned(m, k.level), cur = m === nowM, missed = !got && m < nowM;
+      const m = i + 1, got = monthlyRewardEarned(m, k.level);
+      if (rows.length && kind === "reaction" && got) return "";
+      const cur = m === nowM, missed = !got && m < nowM;
       const hint = got ? "Unlocked" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : missed ? "Missed this year" : `Opens in ${name}`;
       return `<div class="mr-tile${got ? " got" : ""}${cur ? " cur" : ""}${missed ? " missed" : ""}"><div class="mr-pic"><img src="${k.art(m)}" alt="" draggable="false" loading="lazy"></div><b>${escapeHtml(name)}</b>${cur ? '<span class="mr-now">This month</span>' : ""}<small>${escapeHtml(hint)}</small><i class="mr-seas">Seasonal</i></div>`;
     }).join("");
     const sec = document.createElement("div");
     sec.className = "mr-sec";
-    sec.innerHTML = `<h3 class="cs-h">Monthly rewards</h3><p class="mr-sub">One ${kind} a month from the Monthly Challenge. Just finish the level that month.</p><div class="mr-grid">${tiles}</div>`;
+    sec.innerHTML = `<h3 class="cs-h">Monthly rewards</h3><p class="mr-sub">One ${kind} a month from the Monthly Challenge. Just finish the level that month.</p><div class="mr-rows"></div><div class="mr-grid">${tiles}</div>`;
+    rows.forEach((r) => sec.querySelector(".mr-rows").appendChild(r));
     container.appendChild(sec);
   }
 
@@ -7151,6 +7170,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function emojiPackOf(e) { return EMOJI_PACK_CATALOG.find((p) => p.emojis.includes(e)); }
   function ownsEmoji(e) {
     if (DEFAULT_EMOJIS.includes(e)) return true;
+    if (REACTIONS[e] && REACTIONS[e].monthly) return monthlyRewardEarned(REACTIONS[e].monthly, 2);
     const pk = emojiPackOf(e);
     return !!((pk && (myProfile.emojiPacks || {})[pk.id]) || (myProfile.emojiOwned || {})[emojiKey(e)]);
   }
@@ -7296,6 +7316,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else row.appendChild(btn);
     return row;
   }
+  let cosmEmojiRow = null; // renderEmojiRows's row builder, so earned monthly reactions can be listed as normal rows
   function renderEmojiRows(container, statusEl) {
     if (!container) return;
     const active = equippedReactions();
@@ -7313,6 +7334,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       },
       onBuy: (m) => buyEmojiWithCoins(e, m === true),
     });
+    cosmEmojiRow = row;
     DEFAULT_EMOJIS.forEach((e) => container.appendChild(row(e, 0)));
     EMOJI_PACK_CATALOG.forEach((pack) => {
       pack.emojis.forEach((e) => container.appendChild(row(e, itemCoinCost("reaction", e), itemTier("reaction", e))));
@@ -18763,6 +18785,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // the new one loads in behind it instead of on top (see insertBefore
     // below), so a quick second tap doesn't look like a jarring swap.
     const lingering = rxShowing[r.playerId];
+    let mmLife = 0; // a monthly reaction plays its whole animation (ms), others use the usual 2 s
     const stage = document.createElement("div");
     stage.className = "rx-stage";
     stage.style.cssText = `left:${Math.max(0, left)}px;top:${top}px;width:${RXS}px;height:${RXS}px`;
@@ -18771,6 +18794,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (def && def.id === "sideeye") {
       // still eyes with two pupils that slide across and back
       piv.innerHTML = `<div class="rx-eyes"${def.mirror ? ' style="transform:scaleX(-1)"' : ""}><img alt="" src="icons/reactions/fx/eyes-empty.png"><img class="rx-pupil" alt="" src="icons/reactions/fx/pupil.png" style="left:25%"><img class="rx-pupil" alt="" src="icons/reactions/fx/pupil.png" style="left:74%"></div>`;
+    } else if (def && def.monthly) {
+      // the monthly animation is built below, once it is on the page (the poster shows meanwhile)
+      piv.innerHTML = `<img alt="" src="${def.pic}">`;
     } else if (def && RX_BUILD[def.id]) {
       // drawn and animated below, once it is on the page
     } else if (def) {
@@ -18792,6 +18818,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         { transform: `translate(calc(-50% - ${d}px), -50%)` }, { transform: `translate(calc(-50% + ${d}px), -50%)`, offset: .4 },
         { transform: `translate(calc(-50% + ${d}px), -50%)`, offset: .6 }, { transform: `translate(calc(-50% - ${d}px), -50%)`, offset: .95 },
         { transform: `translate(calc(-50% - ${d}px), -50%)` }], { duration: 1500, easing: "ease-in-out" }));
+    } else if (def && def.monthly) {
+      const key = "r" + def.monthly;
+      if (window.MM && MM.info(key) && !prefersReducedMotion()) {
+        mmLife = MM.info(key).D + 600;
+        piv.innerHTML = "";
+        const host = document.createElement("div"), sc = RXS * 0.72 / 240;
+        host.style.cssText = `position:absolute;left:50%;top:50%;width:240px;height:240px;margin:-120px 0 0 -120px;transform:scale(${sc});transform-origin:50% 50%`;
+        piv.appendChild(host);
+        MM.ready().then(() => { if (host.isConnected) MM.build(key, host); });
+      } else piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.2)", offset: .3 }, { transform: "none" }], { duration: 700, easing: "ease-out" });
     } else if (def && RX_BUILD[def.id]) {
       RX_BUILD[def.id](piv, stage);
     } else if (def) {
@@ -18806,7 +18842,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.2)", offset: .3 }, { transform: "none" }], { duration: 700, easing: "ease-out" });
     }
     // after the little show it drifts left and fades
-    const life = stage.animate([
+    const life = mmLife ? stage.animate([ // a monthly reaction holds for its whole animation, then drifts off like the others
+      { opacity: 1, transform: "translateX(0)", offset: 0 },
+      { opacity: 1, transform: "translateX(0)", offset: 1 - 600 / mmLife },
+      { opacity: 0, transform: `translateX(${reactionSide === "l" ? 28 : -34}px)`, offset: 1 },
+    ], { duration: mmLife, easing: "ease-in", fill: "forwards" }) : stage.animate([
       { opacity: 1, transform: "translateX(0)", offset: 0 },
       { opacity: 1, transform: "translateX(0)", offset: .62 },
       { opacity: 0, transform: `translateX(${reactionSide === "l" ? 28 : -34}px)`, offset: 1 },
