@@ -2890,6 +2890,8 @@ if (location.protocol === "file:") {
   #q-body { position: relative; z-index: 1; }
   /* Scene boards (terminal, TV, typewriter...): the card keeps one fixed size and a picture is fitted inside it. */
   .question-prompt[data-scene] { background: none; height: 196px; min-height: 196px; padding: 0; overflow: visible; }
+  .question-prompt[data-scene][data-board="mb12"] .answer-line-label, .question-prompt[data-scene][data-board="mb12"] .answer-line-value { display: inline; } /* December: "ANSWER: 54.23" on one row, so the question gets another line */
+  .question-prompt[data-scene][data-board="mb12"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25); }
   #q-stage { position: absolute; z-index: 0; pointer-events: none; }
   #q-stage > img, #q-stage > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   .question-prompt[data-scene] #q-body { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-sizing: border-box; z-index: 1; }
@@ -9386,6 +9388,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (qSB) clearTimeout(qSB.holdT);
     qPromptEl.removeAttribute("data-hold");
     if (qSB && qSB.stage) qSB.stage.remove();
+    if (qSB && qSB.mmOver) qSB.mmOver.remove();
     if (qSB && qSB.stick) qSB.stick.remove();
     qBodyEl.querySelectorAll(".sb-dots").forEach((n) => n.remove());
     [questionPromptTextEl, questionAnswerLineEl].forEach((e) => { e.style.transform = e.style.opacity = ""; });
@@ -9432,16 +9435,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bh = qBodyEl.clientHeight;
     const pl = hudEl.dataset.playLayout, qv = questionViewEl.classList.contains('active'), twq = qv && (pl === 'highlow' || pl === 'teamworlds'); // no answer line on these question screens, so the text may use the whole board
     const rsv = twq ? [0, 4] : qSB.def.rsv || [0, 4];
-    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML && !(qSB.holdUntil && performance.now() < qSB.holdUntil), extra = ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
+    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML && !(qSB.holdUntil && performance.now() < qSB.holdUntil); // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
     // As big as will fit: binary-search the largest size at which the question (plus room for the answer line) stays inside the text area.
-    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + extra <= bh; };
+    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + (ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0) <= bh; }; // the answer line's height follows the font size, so it is measured at each size tried
     let lo = 8, hi = 40;
     if (fits(hi)) return;
     while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
     fits(lo);
   }
   if (window.ResizeObserver) new ResizeObserver(() => { sbLayout(); qbFitParty(); }).observe(qPromptEl);
-  if (window.MutationObserver) new MutationObserver(() => { if (qSB) sbFit(); else qbFitParty(); }).observe(questionAnswerLineEl, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] }); // the answer appearing re-fits the question
+  let sbAnsKey = "";
+  if (window.MutationObserver) new MutationObserver(() => { if (qSB) { const k = questionAnswerLineEl.style.display + "|" + !!questionAnswerLineEl.innerHTML + "|" + (qSB.holdUntil ? 1 : 0); if (k !== sbAnsKey) { sbAnsKey = k; sbFit(); } /* the count-up replaces the answer every frame: that must not re-fit the question each time (it made the text jitter) */ } else qbFitParty(); }).observe(questionAnswerLineEl, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] }); // the answer appearing re-fits the question
   function sbSetText(text, animate) {
     qSB.chars = []; qSB.exiting = false; qSB.done = null;
     qBodyEl.style.opacity = ""; qBodyEl.style.transform = qBodyEl.style.clipPath = "";
@@ -9689,6 +9693,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (questionAnswerLineEl.style.display !== "none" && questionAnswerLineEl.innerHTML) questionAnswerLineEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: "ease-out" });
   }
   const sbHoldLeft = () => (qSB && qSB.holdUntil ? Math.max(0, qSB.holdUntil - performance.now()) : 0);
+  const mmPlaceOver = (sb) => { if (sb.mmOver) { sb.mmOver.style.left = sb.sx + "px"; sb.mmOver.style.top = sb.sy + "px"; sb.mmOver.style.transform = `scale(${sb.sw / 330})`; } };
   // Monthly boards: monthly/motion.js animates the letters of the real question and a decorative layer over the board picture.
   MONTHLY_BOARD_ITEMS.forEach((b) => {
     SB_KINDS[b.id] = {
@@ -9696,6 +9701,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       enter(sb) {
         questionPromptTextEl.style.transition = qBodyEl.style.transition = "none";
         if (sb.mmHost) { sb.mmHost.remove(); sb.mmHost = null; }
+        if (sb.mmOver) { sb.mmOver.remove(); sb.mmOver = null; }
         if (!sb.animated || !window.MM) return;
         const meta = MM.boards[b.monthly - 1];
         sbHoldAnswer(sb, Math.max(600, meta.settle + meta.per * (sb.chars.length - 43)) + 300);
@@ -9703,17 +9709,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         host.style.cssText = "position:absolute;left:0;top:0;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:3";
         host.style.transform = `scale(${sb.sw / 330})`;
         sb.mmHost = host; sb.stage.appendChild(host); sb.mmScale = sb.sw / 330;
+        if (sb.mmOver) sb.mmOver.remove();
+        const over = document.createElement("div"); // pencil and paintbrush: above the question text, same place and scale as the board art
+        over.style.cssText = "position:absolute;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:2";
+        qPromptEl.appendChild(over); sb.mmOver = over; mmPlaceOver(sb);
         const chars = sb.chars.slice(), key = "b" + b.monthly;
         MM.ready().then(() => {
           if (!host.isConnected || sb.chars[0] !== chars[0]) return;
-          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars });
+          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over });
         });
       },
-      layout(sb) { if (sb.mmHost) sb.mmHost.style.transform = `scale(${sb.sw / 330})`; },
+      layout(sb) { if (sb.mmHost) sb.mmHost.style.transform = `scale(${sb.sw / 330})`; mmPlaceOver(sb); },
       exit(sb) {
         sbReleaseAnswer(sb);
         qBodyEl.style.transition = "opacity .3s"; qBodyEl.style.opacity = "0";
         if (sb.mmHost) sb.mmHost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
+        if (sb.mmOver) sb.mmOver.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
       },
     };
   });

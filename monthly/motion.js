@@ -208,9 +208,10 @@ const BOARD_META = [
   { img: '74-clean-notebook-board', rect: [.17, .2, .9, .78], color: '#2f3b55', css: 'filter:url(#penc);' , settle: 6200, per: 120 },
   { img: '49-haunted-window-board', rect: [.19, .33, .81, .8], color: '#efeaff', css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);' , settle: 2100, per: 0 },
   { img: '54-harvest-table-board', rect: [.17, .24, .83, .7], color: '#6b3410', css: 'text-shadow:0 1px 0 rgba(255,246,222,.9),0 0 6px rgba(255,246,222,.7);' , settle: 3300, per: 40 },
-  { img: '59-fireplace-board', rect: [.1, .4, .9, .7], color: '#7a1c1c', css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' , settle: 2900, per: 45 },
+  { img: '59-fireplace-board', rect: [.1, .35, .9, .72], color: '#7a1c1c', css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' , settle: 2900, per: 45 },
 ];
 let HOOK = null; // in the game: {text, body, letters} = the real question text elements, whose letters the board animations drive
+const penHost = (g) => (HOOK && HOOK.over) || g; // in the game the pen/brush lives in a layer above the question text
 const baseBoard = (s, name) => (HOOK ? null : mk(s, name, BW / 2, BH2 / 2, BW, { z: 0 }));
 const kOf = (el) => (el.getBoundingClientRect().width / (el.offsetWidth || 1)) || 1; // on-screen px per design px (the host is scaled in the game)
 const grp = (s, D) => { const g = box(s, 'left:0;top:0;width:330px;height:248px;', 1); g.animate([{ opacity: 1 }, { opacity: 1, offset: (D - 700) / D }, { opacity: 0 }], { duration: D, fill: 'both' }); return g; };
@@ -300,7 +301,7 @@ def('b7', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '34-backyard-dusk-boa
   const q = qtext(g, [.1, .22, .9, .72], { color: '#fff3d6', size: 27, css: 'filter:url(#paintJ);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 800, ST = 105, N = R.length;
   q.letters.forEach((l, i) => l.animate([{ clipPath: 'inset(-4px 100% -4px 0)' }, { clipPath: 'inset(-4px -2px -4px 0)' }], { duration: 190, delay: T0 + i * ST, fill: 'both', easing: 'ease-out' }));
   // the paintbrush: tip at the bottom-left of the drawing, handle up and to the right
-  const br = box(g, 'left:0;top:0;width:40px;height:66px;transform-origin:20px 64px;', 9);
+  const br = box(penHost(g), 'left:0;top:0;width:40px;height:66px;transform-origin:20px 64px;', 9);
   br.innerHTML = '<svg width="40" height="66" viewBox="0 0 40 66"><g stroke="#4a2a12" stroke-width="2" stroke-linejoin="round"><rect x="13" y="1" width="14" height="25" rx="6" fill="#d9482b"/><rect x="5" y="25" width="30" height="14" rx="2" fill="#c9ced6"/><path d="M4 39 H36 L37 58 Q36 64 30 64 H10 Q4 64 3 58Z" fill="#d8b27a"/><path d="M3.6 53 H36.4 L37 58 Q36 64 30 64 H10 Q4 64 3 58Z" fill="#fff3d6" stroke="none"/></g><path d="M9 28 V36 M16 28 V36 M24 28 V36 M31 28 V36" stroke="#8b929c" stroke-width="1.4"/><path d="M9 41 V52 M16 41 V52 M24 41 V52 M31 41 V52" stroke="#a9825a" stroke-width="1.2" stroke-opacity=".7"/></svg>';
   const ROT = 26, rows = [{ offset: 0, transform: `translate(380px,60px) rotate(${ROT}deg)`, opacity: 0 }, { offset: (T0 - 400) / D, transform: `translate(380px,60px) rotate(${ROT}deg)`, opacity: 0 }, { offset: (T0 - 330) / D, transform: `translate(${R[0].x + 80}px,${R[0].y + 20}px) rotate(${ROT}deg)`, opacity: 1 }];
   R.forEach((r, i) => { const t = T0 + i * ST + 95; rows.push({ offset: t / D, transform: `translate(${(r.x - 20).toFixed(1)}px,${(r.y + 4 - 64 + (i % 2 ? 2 : -2)).toFixed(1)}px) rotate(${ROT + (i % 2 ? 3 : -3)}deg)`, opacity: 1 }); });
@@ -327,7 +328,7 @@ def('b9', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '74-clean-notebook-bo
   g.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute"><filter id="penc" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="2" result="n2"/><feColorMatrix in="n2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.4 0 0 0 -.15" result="m"/><feComposite in="d" in2="m" operator="in"/></filter></svg>');
   const q = qtext(g, [.17, .2, .9, .78], { color: '#2f3b55', size: 29, css: 'filter:url(#penc);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 900, ST = 120, N = R.length;
   q.letters.forEach((l, i) => l.animate([{ clipPath: 'inset(-4px 100% -4px 0)' }, { clipPath: 'inset(-4px -2px -4px 0)' }], { duration: 210, delay: T0 + i * ST, fill: 'both', easing: 'ease-out' }));
-  const pw = 50, ph = pw * 640 / 517, tx = .04 * pw, ty = .995 * ph, pc = box(g, `left:0;top:0;width:${pw}px;height:${ph}px;transform-origin:${tx}px ${ty}px;`, 9);
+  const pw = 50, ph = pw * 640 / 517, tx = .04 * pw, ty = .995 * ph, pc = box(penHost(g), `left:0;top:0;width:${pw}px;height:${ph}px;transform-origin:${tx}px ${ty}px;`, 9);
   const pi = mk(pc, '75-chunky-pencil', pw / 2, ph / 2, pw, {});
   const rows = [{ offset: 0, transform: 'translate(380px,40px) rotate(0deg)', opacity: 0 }, { offset: (T0 - 400) / D, transform: 'translate(380px,40px) rotate(0deg)', opacity: 0 }, { offset: (T0 - 330) / D, transform: `translate(${R[0].x + 90}px,${R[0].y + 10}px) rotate(0deg)`, opacity: 1 }];
   R.forEach((r, i) => { const t = T0 + i * ST + 110; rows.push({ offset: t / D, transform: `translate(${(r.x - tx).toFixed(1)}px,${(r.bt - 3 - ty + (i % 2 ? 2 : -1)).toFixed(1)}px) rotate(${i % 2 ? 3 : -2}deg)`, opacity: 1 }); });
