@@ -2886,11 +2886,10 @@ if (location.protocol === "file:") {
   #q-body { position: relative; z-index: 1; }
   /* Scene boards (terminal, TV, typewriter...): the card keeps one fixed size and a picture is fitted inside it. */
   .question-prompt[data-scene] { background: none; height: 196px; min-height: 196px; padding: 0; overflow: visible; }
-  .question-prompt[data-scene][data-board="mb12"] .answer-line-label, .question-prompt[data-scene][data-board="mb12"] .answer-line-value { display: inline; } /* December: "ANSWER: 54.23" on one row, so the question gets another line */
-  .question-prompt[data-scene][data-board="mb12"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25); }
+  .question-prompt[data-scene][data-board^="mb"] .answer-line-label, .question-prompt[data-scene][data-board^="mb"] .answer-line-value { display: inline; } /* monthly boards: "ANSWER: 54.23" on one row, so the question gets the room of the second row */
+  .question-prompt[data-scene][data-board^="mb"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25); }
   /* a monthly board keeps room for the answer line even before it shows, so the question stays exactly where its animation laid it out */
-  .question-prompt[data-scene][data-board^="mb"]:not([data-ans="1"]) #q-body::after { content: ""; display: block; flex: none; height: calc(var(--qfs, 16px) * 2.6 + 3px); }
-  .question-prompt[data-scene][data-board="mb12"]:not([data-ans="1"]) #q-body::after { height: calc(var(--qfs, 16px) * 1.4 + 3px); }
+  .question-prompt[data-scene][data-board^="mb"]:not([data-ans="1"]) #q-body::after { content: ""; display: block; flex: none; height: calc(var(--qfs, 16px) * 1.4 + 3px); }
   #q-stage { position: absolute; z-index: 0; pointer-events: none; }
   #q-stage > img, #q-stage > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   .question-prompt[data-scene] #q-body { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-sizing: border-box; z-index: 1; }
@@ -9438,7 +9437,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rsv = twq ? [0, 4] : qSB.def.rsv || [0, 4];
     const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML ; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
     // As big as will fit: binary-search the largest size at which the question (plus room for the answer line) stays inside the text area.
-    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + (qSB.def.monthly ? (twq ? 0 : qSB.id === "mb12" ? fs * 1.5 + 7 : fs * 2.6 + 7) : ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0) <= bh; }; // the answer line's height follows the font size, so it is measured at each size tried; a monthly board always reserves a fixed room for it, so the question never changes size when the answer arrives (its animation was laid out for that size)
+    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + (qSB.def.monthly ? (twq ? 0 : fs * 1.5 + 7) : ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0) <= bh; }; // the answer line's height follows the font size, so it is measured at each size tried; a monthly board always reserves a fixed room for it, so the question never changes size when the answer arrives (its animation was laid out for that size)
     let lo = 8, hi = 40;
     if (fits(hi)) return;
     while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
