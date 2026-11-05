@@ -395,7 +395,7 @@ function forbit(g, D, sp) {
       switch (sp.move) { case 'twinkle': sc = .85 + .25 * Math.sin(s2 * 1.6); rot = Math.sin(s2) * 25; break; case 'pulse': sc = .85 + .25 * Math.abs(Math.sin(s2 * 1.2)); break;
         case 'spin': rot = t / 1000 * 120 + ph * 20; break; case 'bob': dy = Math.sin(s2 * 1.5) * 4; rot = Math.sin(s2) * 10; break; case 'glow': op = .55 + .45 * Math.abs(Math.sin(s2 * .9)); sc = .95 + .1 * Math.sin(s2 * 2); dy = Math.sin(s2) * 3; break;
         case 'tangent': { const A = at(off + t / sp.lap + .015), B = at(off + t / sp.lap - .015); rot = Math.atan2(A[1] - B[1], A[0] - B[0]) * 180 / Math.PI + (sp.tang || 0); dy = Math.sin(s2 * 2) * 2; break; } }
-      return { x: x0 + px, y: y0 + py + dy, r: rot, sx: sc * sx, sy: sc, op: op * Math.min(1, u * 14, (1 - u) * 16) }; }, Math.round(FD / 28)); }
+      return { x: x0 + px, y: y0 + py + dy, r: rot, sx: sc * sx, sy: sc, op: op * Math.min(1, u * 14, (1 - u) * 16) }; }, Math.round(FD / 14)); }
 }
 /* burst helpers: t0 = burst start (ms), each particle is a function of time */
 function fradial(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, pick(o.pics), 0, 0, o.size * (.7 + rnd() * .6), { z: 7 }), ang = rnd() * 6.2832, v = (o.r || 200) * (.35 + rnd() * .75), sp = (rnd() > .5 ? 1 : -1) * (200 + rnd() * 500), L = o.life * (.75 + rnd() * .5), dl = rnd() * (o.stagger || 120);
@@ -516,11 +516,11 @@ def('f11', 'f', FD + 5200, (s) => { const D = FD + 5200, g = box(s, 'left:0;top:
   path(c, D, FD, FD + 4300, (u) => { const e = Math.min(1, u / .16), out = Math.max(0, (u - .88) / .12); return { x: lerp(-100, cc.x, 1 - Math.pow(1 - e, 3)) - out * 170, y: cc.y, r: lerp(0, -8, e), op: 1 }; }, 60);
   for (let i = 0; i < 12; i++) { const t0 = FD + 800 + i * 170, wr = box(g, 'left:0;top:0;width:300px;height:440px;', 8), e = mk(wr, pr[i % 6], 0, 0, 34, { z: 1 }), vx = 35 + rnd() * 80, vy = -(120 + rnd() * 120), gv = 520, P = 320;
     const p1 = { x: hole.x + rx * .9, y: hole.y - ry * .35 }, tl = (-vy + Math.sqrt(vy * vy + 2 * gv * (418 - p1.y))) / gv, LL = P + (tl + .9) * 1000;
-    wr.animate([{ clipPath: ell(1.15), offset: 0 }, { clipPath: ell(1.15), offset: (t0 + P - 80) / D }, { clipPath: ell(80), offset: (t0 + P + 80) / D }, { clipPath: ell(80), offset: 1 }], { duration: D, fill: 'both' });
+    wr.animate([{ clipPath: ell(1.15), offset: 0 }, { clipPath: ell(1.15), offset: (t0 + P - 80) / D }, { clipPath: ell(80), offset: (t0 + P + 80) / D }, { clipPath: 'none', offset: (t0 + P + 100) / D }, { clipPath: 'none', offset: 1 }], { duration: D, fill: 'both' });
     path(e, D, t0, t0 + LL, (u) => { const ms = u * LL; let x, y, sc, r;
       if (ms < P) { const q = ms / P, qq = q * q * (3 - 2 * q); x = lerp(hole.x - rx * .2, p1.x, qq); y = lerp(hole.y + ry * .1, p1.y, qq); sc = .45 + .4 * qq; r = q * 40; }
       else { const tt = (ms - P) / 1000; x = p1.x + vx * Math.min(tt, tl) + (tt > tl ? vx * .3 * (tt - tl) : 0); y = p1.y + vy * tt + .5 * gv * tt * tt; if (tt > tl) y = 418 - Math.abs(Math.sin((tt - tl) * 7)) * 20 * Math.max(0, 1 - (tt - tl) * 1.3); y = Math.min(y, 420); sc = .85 + .15 * Math.min(1, tt / .3); r = 40 + Math.min(tt, tl) * 260 * (i % 2 ? 1 : -1); }
-      return { x, y, r, sx: sc, op: u > .88 ? (1 - u) / .12 : 1 }; }, 60); } });
+      return { x, y, r, sx: sc, op: u > .88 ? (1 - u) / .12 : 1 }; }, Math.round(LL / 16)); } });
 def('f12', 'f', FD + 5000, (s) => { const D = FD + 5000, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), pn = [0, 1, 2, 3].map((i) => '61-present-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: [0, 1, 2, 3, 4].map((i) => '60-christmas-bulb-sheet-' + i), move: 'twinkle', lap: 3000, size: 24, items: 14 });
   const sl = mk(g, 'sleigh', 0, 0, 130, { z: 8, flip: true }); path(sl, D, FD, FD + 3300, (u) => ({ x: lerp(-100, 400, u), y: 80 + Math.sin(u * 8) * 8 - u * 20, r: -6 + Math.sin(u * 8) * 3, op: fade(u, .05, .05) }), 50);
