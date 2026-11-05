@@ -123,8 +123,8 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     if(busy&&now()-busySince<8000)return;
     busy=true;const stamp=busySince=now();error='';render();
     let timer;
-    try{const result=await Promise.race([fn(),new Promise((_,rej)=>{timer=setTimeout(()=>rej(new Error('timeout')),8000);})]);if(result?.committed===false&&!quiet){selection=null;if(!finalKey)error='';}}
-    catch(e){if(!(quiet&&e?.message==='timeout'))error='Couldn’t save. Check your connection and try again.';}
+    try{const result=await Promise.race([fn(),new Promise((_,rej)=>{timer=setTimeout(()=>rej(new Error('timeout')),8000);})]);if(result?.committed===false){if(quiet){const {room:r,me:m}=context(),p=r?.players?.[m];console.warn('[bluff] host step not accepted',{stage:r?.bluff?.stage,isHost:p?.isHost,connected:p?.connected,paused:r?.paused});}else{selection=null;if(!finalKey)error='';}}}
+    catch(e){console.warn('[bluff] step failed',e);if(!(quiet&&e?.message==='timeout'))error='Couldn’t save. Check your connection and try again.';}
     finally{clearTimeout(timer);if(busySince===stamp){busy=false;signature='';render();}}
   }
   function send(action,value){return work(async()=>{const {room,me}=context();const result=await act({gameId:room.gameId,round:room.bluff.round,stage:room.bluff.stage,actor:me,action,value});
