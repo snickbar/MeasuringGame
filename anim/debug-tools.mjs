@@ -105,6 +105,30 @@ export function installDebugTools(ctx) {
       set: (id, on) => ({ [`holidayPacks/${id}`]: on ? true : null }),
       all: (on) => ({ holidayPacks: on ? Object.fromEntries(C.monthPacks.map((p) => [p.id, true])) : null }),
     };
+    // Monthly Challenge rewards (reactions m01.., boards mb01.., flairs mf01..), normally claimed in Awards. The month scenes are in Backgrounds.
+    const monthlyAwards = C.achievements.filter((a) => a.mrw);
+    const monthlyUnequip = (a, patch) => {
+      const k = a.mrw.kindLabel, eq = (P().cosmetics && P().cosmetics.equipped) || {};
+      if (k === "Board" && eq.board === a.mrw.id) patch["cosmetics/equipped/board"] = equipDefault.boards;
+      if (k === "Flair" && eq.effects === a.mrw.id) patch["cosmetics/equipped/effects"] = equipDefault.effects;
+      if (k === "Reaction" && (P().activeEmojis || []).includes(a.mrw.id)) patch.activeEmojis = P().activeEmojis.filter((e) => e !== a.mrw.id);
+      return patch;
+    };
+    sets.monthly = {
+      title: "Monthly rewards", items: monthlyAwards.map((a) => ({ id: a.mrw.id, label: `${a.mrw.kindLabel}: ${a.mrw.label}` })),
+      isOn: (id) => !!own("monthly")[id],
+      set(id, on) {
+        const a = monthlyAwards.find((x) => x.mrw.id === id), patch = { [`cosmetics/owned/monthly/${id}`]: on ? true : null, [`achClaimed/${a.id}`]: on ? true : null };
+        return on ? patch : monthlyUnequip(a, patch);
+      },
+      all(on) {
+        const patch = { "cosmetics/owned/monthly": on ? Object.fromEntries(monthlyAwards.map((a) => [a.mrw.id, true])) : null };
+        monthlyAwards.forEach((a) => { patch[`achClaimed/${a.id}`] = on ? true : null; if (!on && a.mrw.kindLabel !== "Reaction") monthlyUnequip(a, patch); });
+        const ids = new Set(monthlyAwards.map((a) => a.mrw.id)), active = P().activeEmojis || [];
+        if (!on && active.some((e) => ids.has(e))) patch.activeEmojis = active.filter((e) => !ids.has(e));
+        return patch;
+      },
+    };
     sets.perks = {
       title: "Perks", items: [{ id: "hostUnlocked", label: "Host unlock" }, { id: "starterBundle", label: "Starter bundle" }],
       isOn: (id) => !!P()[id], set: (id, on) => ({ [id]: on }), all: (on) => ({ hostUnlocked: on, starterBundle: on }),
@@ -164,7 +188,7 @@ export function installDebugTools(ctx) {
     return wrap;
   }
   function masterBody() {
-    const wrap = el("div", "dbg-body"), every = ["avatars", "homes", "borders", "colors", "flairs", "backgrounds", "boards", "reactions", "months", "perks"];
+    const wrap = el("div", "dbg-body"), every = ["avatars", "homes", "borders", "colors", "flairs", "backgrounds", "boards", "monthly", "reactions", "months", "perks"];
     const allOn = () => merge(...every.map((k) => sets[k].all(true)), ...ctx.worlds.map((w) => worldPatch(w.id, 3)));
     const allOff = () => merge(...every.map((k) => sets[k].all(false)), ...ctx.worlds.map((w) => worldPatch(w.id, null)));
     wrap.appendChild(row(btn("Unlock EVERYTHING", () => run(allOn(), "Everything unlocked (worlds perfect too)."), { warn: true }), btn("Lock EVERYTHING", () => run(allOff(), "Everything locked again. Coins are untouched."), { warn: true })));
@@ -190,7 +214,7 @@ export function installDebugTools(ctx) {
         ["borders", "Card borders", count(S.borders), setBody(S.borders)], ["colors", "Name colors", count(S.colors), setBody(S.colors)],
         ["flairs", "Winner flairs", count(S.flairs), setBody(S.flairs)], ["backgrounds", "Backgrounds", count(S.backgrounds), setBody(S.backgrounds)],
         ["boards", "Question boards", count(S.boards), setBody(S.boards)], ["reactions", "Reaction packs", count(S.reactions), setBody(S.reactions)],
-        ["months", "Monthly object packs", count(S.months), setBody(S.months)], ["perks", "Perks", count(S.perks), setBody(S.perks)],
+        ["months", "Monthly object packs", count(S.months), setBody(S.months)], ["monthly", "Monthly rewards", count(S.monthly), setBody(S.monthly)], ["perks", "Perks", count(S.perks), setBody(S.perks)],
         ["resets", "Reset progress", "", resetsBody()]].forEach(([k, t, sum, body]) => root.appendChild(section(k, t, sum, body)));
       if (scroller) scroller.scrollTop = keepScroll;
     } finally { building = false; }
