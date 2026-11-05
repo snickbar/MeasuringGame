@@ -453,11 +453,17 @@ def('f4', 'f', FD + 5600, (s) => { const D = FD + 5600, g = box(s, 'left:0;top:0
   for (let i = 0; i < 130; i++) { const x0 = vl - 20 + rnd() * (vr - vl + 40), t0 = FD + rnd() * 3300, L = fall * (.85 + rnd() * .3), len = 15 + rnd() * 10, sl = 14 + rnd() * 10;
     const e = box(g, `left:${-2}px;top:${-len / 2}px;width:4px;height:${len}px;background:linear-gradient(rgba(190,230,255,.15),#6ec0ff 70%,#3d97f0);border-radius:2px 2px 3px 3px;`, 6);
     path(e, D, t0, t0 + L, (u) => ({ x: x0 + sl * u * (L / 1000) * .6, y: lerp(vt - 30, vb + 10, u), r: 9, op: u > .96 ? 0 : .85 }), 4); }
-  const fl = ['daisy', '20-daffodil'], N = 9;
+  // drawn flowers in different colours, each centred on its stem
+  const cols = ['#ff6fa5', '#b57bff', '#ff9a3c', '#ff4b5c', '#ffd23f', '#5aa7ff', '#ffffff', '#ff8fd0'], OL = '#4a2434';
+  const flowerSvg = (k, c) => { let b;
+    if (k === 0) b = Array.from({ length: 6 }, (_, i) => `<circle cx="${50 + 24 * Math.cos(i * 1.0472)}" cy="${50 + 24 * Math.sin(i * 1.0472)}" r="19" fill="${c}" stroke="${OL}" stroke-width="3.5"/>`).join('') + `<circle cx="50" cy="50" r="13" fill="#ffd23f" stroke="${OL}" stroke-width="3.5"/><circle cx="46" cy="46" r="4" fill="#fff6b0"/>`;
+    else if (k === 1) b = `<path d="M27 62 Q20 32 31 22 L42 38 L50 18 L58 38 L69 22 Q80 32 73 62 Q50 86 27 62Z" fill="${c}" stroke="${OL}" stroke-width="3.5" stroke-linejoin="round"/><path d="M38 44 Q36 58 42 68" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="5" stroke-linecap="round"/>`;
+    else b = Array.from({ length: 10 }, (_, i) => `<ellipse cx="50" cy="26" rx="9" ry="21" transform="rotate(${i * 36} 50 50)" fill="${c}" stroke="${OL}" stroke-width="3"/>`).join('') + `<circle cx="50" cy="50" r="12" fill="#ffb61e" stroke="${OL}" stroke-width="3.5"/>`;
+    return `<svg viewBox="0 0 100 100" width="100%" height="100%" style="overflow:visible">${b}</svg>`; }, N = 9;
   for (let i = 0; i < N; i++) { const sz = 54 + rnd() * 22, x = vl + 26 + (i + .15 + rnd() * .7) / N * (vr - vl - 52), H = sz * 1.05 + 16 + rnd() * 46, t0 = FD + 300 + rnd() * 1900, R = 520, T1 = t0 + R + 1500 + rnd() * 700, T2 = T1 + 650, ph = rnd() * 6;
     const st = box(g, `left:${x - 2.5}px;top:0;width:5px;height:${H}px;background:linear-gradient(90deg,#3f9b3c,#7bd05a,#3f9b3c);border-radius:3px;transform-origin:50% 100%;`, 6);
     st.animate([{ transform: `translateY(${vb - H}px) scaleY(0)`, offset: 0 }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: t0 / D }, { transform: `translateY(${vb - H}px) scaleY(1)`, offset: (t0 + R) / D, easing: 'ease-out' }, { transform: `translateY(${vb - H}px) scaleY(1)`, offset: T1 / D }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: T2 / D }, { transform: `translateY(${vb - H}px) scaleY(0)`, offset: 1 }], { duration: D, fill: 'both' });
-    const e = mk(g, fl[i % 2], 0, 0, sz, { z: 7 });
+    const e = box(g, `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;`, 7); e.innerHTML = flowerSvg(i % 3, cols[(i * 3 + 1) % cols.length]);
     path(e, D, t0, T2, (u) => { const ms = u * (T2 - t0); let y, sc = 1;
       if (ms < R) { const q = ms / R, bk = 1 + 2.2 * Math.pow(q - 1, 3) + 1.2 * Math.pow(q - 1, 2); y = lerp(vb + sz * .7, vb - H, bk); sc = .5 + .5 * Math.min(1, q * 1.4); }
       else if (ms < T1 - t0) { y = vb - H + Math.sin((ms - R) / 1000 * 3 + ph) * 3; }
