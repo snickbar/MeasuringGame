@@ -20,11 +20,11 @@ assert.equal(monthlyLevelEarned({stats:{mc02L4:1}},2,4),true);
 // Failed manifests/images must reject and allow a fresh attempt, rather than
 // permanently caching a failed promise or pretending missing artwork is ready.
 let attempts=0,failImage=true;
-const runtime={window:{},fetch:async()=>{attempts++;return attempts===1?{ok:false}:{ok:true,json:async()=>({sample:{w:10,h:10}})}},Image:class {set src(value){queueMicrotask(()=>failImage?this.onerror():this.onload())}}};
+const runtime={window:{},setTimeout,clearTimeout,fetch:async()=>{attempts++;return attempts===1?{ok:false}:{ok:true,json:async()=>({sample:{w:10,h:10}})}},Image:class {set src(value){queueMicrotask(()=>failImage?this.onerror():this.onload())}}};
 vm.runInNewContext(fs.readFileSync(new URL('../monthly/motion.js',import.meta.url),'utf8'),runtime);
 await assert.rejects(runtime.window.MM.ready(),/unavailable/);
 await assert.rejects(runtime.window.MM.ready(),/sample/);
-failImage=false;await runtime.window.MM.ready();assert.equal(attempts,3);
-await runtime.window.MM.ready();assert.equal(attempts,3,'successful preload stays cached');
+failImage=false;await runtime.window.MM.ready();assert.equal(attempts,2,'retry failed artwork without downloading metadata again');
+await runtime.window.MM.ready();assert.equal(attempts,2,'successful preload stays cached');
 for(const month of [7,9])for(const count of [1,43,100,300])assert(runtime.window.MM.boardSettle(month,count)<7600,'long writing fits the animation');
 console.log('PASS: monthly reward compatibility, eligibility, ownership and Random categories.');

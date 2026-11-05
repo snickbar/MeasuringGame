@@ -1,13 +1,54 @@
 /* Size Em Up! monthly unlocks: the 12 reactions (r1-r12), 12 boards (b1-b12) and 12 flairs (f1-f12).
    Pure Web Animations on transparent cutouts from monthly/art. Exposes window.MM:
-   MM.ready()            promise: loads monthly/art-manifest.json and preloads the pictures
+   MM.ready(key)         promise: loads shared metadata and only that effect’s pictures (no key = explicit full gallery preload)
    MM.build(key, stage)  builds animation `key` (e.g. "r4") inside the empty positioned element `stage`
    MM.info(key)          {kind, D} (D = length in ms of one pass; kind r = 240x240, b = 330x220, f = 300x440 design space)
    MM.rate(key)          playback-rate to apply to the stage's animations (1 unless a piece needs speeding up) */
 (function () {
 'use strict';
 const A = {};
-let readyP = null;
+let manifestP = null;
+const artLoads = new Map();
+// External artwork required by each effect; shared helpers (such as sparkle) are included.
+const ART_BY_EFFECT = {
+  r1: ["01-flute-glass","02-clink-flash","04-gold-sparkle"],
+  r3: ["10-four-leaf-clover","04-gold-sparkle"],
+  r8: ["04-gold-sparkle","37-ice-cream-cone","38-cherry"],
+  r9: ["42-apple","43-worm"],
+  r10: ["47-lit-jack-o-lantern","48-unlit-jack-o-lantern"],
+  r2: ["06-face-with-no-eyes","07-heart-eye"],
+  r4: ["14-egg-bottom","15-chick","16-egg-cap","04-gold-sparkle"],
+  r5: ["23-open-rose","24-rose-petal","04-gold-sparkle"],
+  r11: ["04-gold-sparkle","wishbone"],
+  r12: ["57-snowman","58-twig-arm"],
+  r6: ["04-gold-sparkle","71-sun-face-disc","72-sun-rays-ring","73-cool-sunglasses"],
+  r7: ["68-plain-hot-dog","69-ketchup-bottle","70-mustard-bottle","04-gold-sparkle"],
+  b1: ["02-clink-flash","03-midnight-sky-board","04-gold-sparkle"],
+  b2: ["07-heart-eye","08-love-letter-board","04-gold-sparkle"],
+  b3: ["11-green-hills-board","04-gold-sparkle"],
+  b4: ["17-spring-meadow-board","24-rose-petal","04-gold-sparkle"],
+  b5: ["25-papel-picado-board","27-candy-sheet-0","27-candy-sheet-1","27-candy-sheet-2","27-candy-sheet-3","27-candy-sheet-4","27-candy-sheet-5","04-gold-sparkle"],
+  b6: ["31-pool-deck-board","beach-ball","pool-ring","04-gold-sparkle"],
+  b7: ["34-backyard-dusk-board"],
+  b8: ["39-underwater-board"],
+  b9: ["74-clean-notebook-board","75-chunky-pencil","04-gold-sparkle"],
+  b10: ["49-haunted-window-board"],
+  b11: ["54-harvest-table-board"],
+  b12: ["59-fireplace-board"],
+  f1: ["04-gold-sparkle","05-gold-and-silver-confetti-sheet-0","05-gold-and-silver-confetti-sheet-1","05-gold-and-silver-confetti-sheet-2","05-gold-and-silver-confetti-sheet-3","05-gold-and-silver-confetti-sheet-4","05-gold-and-silver-confetti-sheet-5","05-gold-and-silver-confetti-sheet-6","05-gold-and-silver-confetti-sheet-7"],
+  f2: ["09-paper-hearts-sheet-0","09-paper-hearts-sheet-1","09-paper-hearts-sheet-2","09-paper-hearts-sheet-3"],
+  f3: ["04-gold-sparkle","13-clover-sheet-0","13-clover-sheet-1","13-clover-sheet-2","13-clover-sheet-3"],
+  f4: ["20-daffodil","daisy"],
+  f5: ["26-star-pi-ata","27-candy-sheet-0","27-candy-sheet-1","27-candy-sheet-2","27-candy-sheet-3","27-candy-sheet-4","27-candy-sheet-5","62-donkey-pinata","04-gold-sparkle"],
+  f6: ["04-gold-sparkle","beach-ball"],
+  f7: ["35-water-balloon-sheet-0","35-water-balloon-sheet-1","35-water-balloon-sheet-2"],
+  f8: ["40-surfboard-sheet-0","40-surfboard-sheet-1","40-surfboard-sheet-2","surfer","wave2"],
+  f9: ["45-red-pen-marks-sheet-1","45-red-pen-marks-sheet-2","46-giant-a","great"],
+  f10: ["50-smiling-ghost","51-boo-ghost","bat1","bat2","bat3","bat4"],
+  f11: ["55-cornucopia","56-harvest-sheet-0","56-harvest-sheet-1","56-harvest-sheet-2","56-harvest-sheet-3","56-harvest-sheet-4","56-harvest-sheet-5"],
+  f12: ["04-gold-sparkle","60-christmas-bulb-sheet-0","60-christmas-bulb-sheet-1","60-christmas-bulb-sheet-2","60-christmas-bulb-sheet-3","60-christmas-bulb-sheet-4","61-present-sheet-0","61-present-sheet-1","61-present-sheet-2","61-present-sheet-3","sleigh"],
+};
+
 const R = 240, BW = 330, BH = 220, FW = 300, FH = 440;
 let SEED = 7;
 const rnd = () => { SEED = (SEED * 16807) % 2147483647; return (SEED - 1) / 2147483646; };
@@ -550,12 +591,31 @@ def('f12', 'f', FD + 5000, (s) => { const D = FD + 5000, g = box(s, 'left:0;top:
 const RATE = { r7: 1.4, r10: 1, r6: 1.15 };
 const writingStep = (month, count) => Math.min(month === 7 ? 105 : 120, (month === 7 ? 4600 : 4300) / Math.max(1, count));
 const MM = window.MM = {
-  ready() {
-    if (!readyP) readyP = fetch('monthly/art-manifest.json').then((r) => { if (!r.ok) throw Error('Monthly art unavailable'); return r.json(); }).then((m) => Promise.all(Object.keys(m).map((k) => {
-      A[k] = { w: m[k].w, h: m[k].h, u: 'monthly/art/' + k + '.webp' };
-      return new Promise((res, rej) => { const im = new Image(); im.onload = res; im.onerror = () => rej(Error('Monthly art unavailable: ' + k)); im.src = A[k].u; });
-    }))).then(() => { if (A['daisy2']) A['daisy'] = A['daisy2']; }).catch((error) => { readyP = null; throw error; });
-    return readyP;
+  ready(key) {
+    if (key != null && !ART_BY_EFFECT[key]) return Promise.reject(Error('Unknown monthly effect: ' + key));
+    if (!manifestP) manifestP = fetch('monthly/art-manifest.json').then(r => {
+      if (!r.ok) throw Error('Monthly art manifest unavailable');
+      return r.json();
+    }).then(m => {
+      for (const [name, size] of Object.entries(m)) A[name] = { ...size, u: 'monthly/art/' + name + '.webp' };
+      if (A.daisy2) A.daisy = A.daisy2;
+      return m;
+    }).catch(error => { manifestP = null; throw error; });
+    return manifestP.then(m => Promise.all((key == null ? Object.keys(m) : ART_BY_EFFECT[key]).map(name => {
+      if (!A[name]) throw Error('Monthly artwork is not registered: ' + name);
+      if (!artLoads.has(name)) {
+        const load = new Promise((resolve, reject) => {
+          const im = new Image();
+          const timeout = setTimeout(() => finish(Error('Monthly artwork timed out: ' + name)), 8000);
+          function finish(error) { clearTimeout(timeout); im.onload = im.onerror = null; error ? reject(error) : resolve(); }
+          im.onload = () => finish();
+          im.onerror = () => finish(Error('Monthly artwork unavailable: ' + name));
+          im.src = A[name].u;
+        }).catch(error => { artLoads.delete(name); throw error; });
+        artLoads.set(name, load);
+      }
+      return artLoads.get(name);
+    })));
   },
   build(key, stage) { SEED = 7; stage.innerHTML = ''; ANIM[key].build(stage); const r = RATE[key] || 1; if (r !== 1) stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = r; }); },
   /* a flair on the real winner card: host is a 300x440 box whose point (150,215) sits at the card centre; cardW/cardH are the card's size in host units */

@@ -5075,6 +5075,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module">
   import { monthlyLevelEarned, repairMonthlyRewards } from "./anim/monthly-rewards.mjs";
   import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
+  import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
@@ -9746,7 +9747,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           sbSetText(questionPromptTextEl.dataset.txt || questionPromptTextEl.textContent, false);
         };
         sb.mmLoadT = setTimeout(fallback, 4000);
-        MM.ready().then(() => {
+        MM.ready(key).then(() => {
           if (!current()) return;
           clearTimeout(sb.mmLoadT);
           MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over });
@@ -17217,8 +17218,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return Math.max(0, Math.round(answer * ratio * 100) / 100);
   }
 
-  function scheduleBotGuesses(roomCode, q, freshRound = false) {
-    if (questionClockPending(roomState)) return;
+  function scheduleBotGuesses(roomCode, q, freshRound = false, round = roomState.round) {
+    if (!freshRound && questionClockPending(roomState)) return;
+    const scope = botDecisionScope(roomState, q, round), hostId = currentPlayerId;
+    if (freshRound) scope.clockKey = undefined; // untimed rounds clear the previous room clock
     const players = roomState.players || {};
     // A brand-new round: roomState may still hold last round's guesses for a moment.
     const existingGuesses = freshRound ? {} : (roomState.guesses || {});
@@ -17230,18 +17233,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const delay = Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
+        if (!isHost || currentPlayerId !== hostId || roomState.paused) return;
         if (roomState.phase !== "question") return;
         if (questionClockPending(roomState)) return;
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
         let val = botGuessValue(q.answer, p.botDifficulty);
         // High/Low Survival: a bot partner plays its role, and how tight a bracket it makes depends on its accuracy level.
         if (isHlSettings(roomState.settings)) val = hlBotGuess(q.answer, p.botDifficulty, (roomState.hlRoles || {})[id], hlLimit(roomState.hlSurvived || 0));
-        set(ref(db, `rooms/${roomCode}/guesses/${id}`), val);
+        if (!commitBotDecision(roomState, scope, hostId, id, "guesses", val, nowMs())) return;
+        runTransaction(ref(db, `rooms/${roomCode}`), room => commitBotDecision(room, scope, hostId, id, "guesses", val, nowMs()), { applyLocally: false })
+          .catch(error => console.warn("Could not save bot guess", error));
       }, delay);
     });
   }
 
   function scheduleBotPicks(roomCode, sorted) {
+    const scope = botDecisionScope(roomState), hostId = currentPlayerId;
     const players = roomState.players || {};
     const existingPicks = roomState.picks || {};
     Object.keys(players).forEach((id) => {
@@ -17252,12 +17259,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const delay = 1000 + Math.random() * 11000; // spread across the 15-second window
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
+        if (!isHost || currentPlayerId !== hostId || roomState.paused) return;
         if (roomState.phase !== "answers") return;
         const doDoubleDown = others.length === 0 || Math.random() < 0.4;
         const pick = doDoubleDown
           ? { type: "doubledown", targetPlayerId: id }
           : { type: "pick", targetPlayerId: others[Math.floor(Math.random() * others.length)].playerId };
-        set(ref(db, `rooms/${roomCode}/picks/${id}`), pick);
+        if (!commitBotDecision(roomState, scope, hostId, id, "picks", pick, nowMs())) return;
+        runTransaction(ref(db, `rooms/${roomCode}`), room => commitBotDecision(room, scope, hostId, id, "picks", pick, nowMs()), { applyLocally: false })
+          .catch(error => console.warn("Could not save bot pick", error));
       }, delay);
     });
   }
@@ -17815,7 +17825,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       phase: "question",
     });
     if (!hl) scheduleHostDeadline(untimed ? endsAt : waitUntil, () => checkQuestionAdvance(roomCode));
-    if (untimed) scheduleBotGuesses(roomCode, q, true);
+    if (untimed) scheduleBotGuesses(roomCode, q, true, roundNum);
   }
 
   function checkQuestionAdvance(roomCode) {
@@ -19047,7 +19057,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             life.currentTime = 0; life.play();
           };
           const timeout = setTimeout(() => finishLoad(true), 4000);
-          MM.ready().then(() => {
+          MM.ready(key).then(() => {
             if (!pending || !stage.isConnected) { finishLoad(true); return; }
             piv.replaceChildren(host);
             try { MM.build(key, host); finishLoad(false); } catch { finishLoad(true); }
@@ -20778,7 +20788,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     host.style.cssText = `inset:auto;left:${r.left + r.width / 2 - 150 * s}px;top:${r.top + r.height / 2 - 215 * s}px;width:300px;height:440px;transform:scale(${s});transform-origin:0 0`;
     reactionsPanelEl.appendChild(host);
     li.__mmFlair = host;
-    MM.ready().then(() => {
+    MM.ready(key).then(() => {
       if (!host.isConnected || !li.isConnected) { host.remove(); return; }
       const hl = r.left + r.width / 2 - 150 * s, ht = r.top + r.height / 2 - 215 * s; // the host's corner: falling items run from the top of the screen to the bottom of it
       MM.buildFlair(key, host, r.width / s, r.height / s, { vt: -ht / s, vb: (window.innerHeight - ht) / s, vl: -hl / s, vr: (window.innerWidth - hl) / s });
