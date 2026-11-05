@@ -169,6 +169,8 @@ export function applyCareerRecord(profile,record){
     const nowDone=[1,2,3].every(l=>levels[l]?.done),wasDone=!!old.done&&same;
     result.monthly={...old,key:record.month,format:record.format,combos:record.combos||old.combos,levels,done:nowDone};
     stats.monthlyLevels=(stats.monthlyLevels||0)+1;
+    // Monthly rewards: one flag per month and level (L1 scene, L2 reaction, L3 board, L4 Mega flair). Participation only, and a missed month stays missed.
+    stats['mc'+record.month.slice(5)+'L'+level]=1;
     if(nowDone&&!wasDone){
       stats.monthlies=(stats.monthlies||0)+1;stats['mc'+record.month.slice(5)]=1;
       const avg=([1,2,3].reduce((a,l)=>a+(levels[l].acc||0),0))/3;
