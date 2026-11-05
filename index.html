@@ -277,7 +277,7 @@ if (location.protocol === "file:") {
   .mr-now { font-size: 10px; font-weight: 800; background: #e8a317; color: #000; border-radius: 8px; padding: 1px 6px; }
   .mr-seas { font-size: 10px; font-style: normal; font-weight: 800; opacity: .6; }
   .mr-tile.missed { opacity: .65; }
-  .question-prompt[data-hold] #question-answer-line { display: none !important; } /* a monthly board keeps the answer back until its question has finished writing in */
+  .question-prompt[data-hold] #question-answer-line { visibility: hidden; } /* a monthly board keeps the answer back until its question has finished writing in */
   .mr-test { margin-top: 14px; padding-top: 10px; border-top: 2px dashed #d9c29a; color: #000; }
   .mr-test h4 { margin: 0 0 6px; font-size: 15px; } .mr-test select { font: inherit; font-weight: 700; padding: 6px 8px; border-radius: 8px; border: 2px solid #d9c29a; background: #fffaf0; }
   .mr-test .mr-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
@@ -9435,9 +9435,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bh = qBodyEl.clientHeight;
     const pl = hudEl.dataset.playLayout, qv = questionViewEl.classList.contains('active'), twq = qv && (pl === 'highlow' || pl === 'teamworlds'); // no answer line on these question screens, so the text may use the whole board
     const rsv = twq ? [0, 4] : qSB.def.rsv || [0, 4];
-    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML && !(qSB.holdUntil && performance.now() < qSB.holdUntil); // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
+    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML ; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
     // As big as will fit: binary-search the largest size at which the question (plus room for the answer line) stays inside the text area.
-    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + (ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0) <= bh; }; // the answer line's height follows the font size, so it is measured at each size tried
+    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + (qSB.def.monthly ? (twq ? 0 : qSB.id === "mb12" ? fs * 1.5 + 7 : fs * 2.6 + 7) : ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0) <= bh; }; // the answer line's height follows the font size, so it is measured at each size tried; a monthly board always reserves a fixed room for it, so the question never changes size when the answer arrives (its animation was laid out for that size)
     let lo = 8, hi = 40;
     if (fits(hi)) return;
     while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
@@ -20651,7 +20651,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     li.__mmFlair = host;
     MM.ready().then(() => {
       if (!host.isConnected) return;
-      MM.buildFlair(key, host, r.width / s, r.height / s);
+      const hl = r.left + r.width / 2 - 150 * s, ht = r.top + r.height / 2 - 215 * s; // the host's corner: falling items run from the top of the screen to the bottom of it
+      MM.buildFlair(key, host, r.width / s, r.height / s, { vt: -ht / s, vb: (window.innerHeight - ht) / s, vl: -hl / s, vr: (window.innerWidth - hl) / s });
       if (burstOnly) host.getAnimations({ subtree: true }).forEach((a) => { a.currentTime = FLAIR_DRUM_MS; });
       setTimeout(() => host.remove(), MM.info(key).D + 300);
     });

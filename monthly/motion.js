@@ -203,7 +203,7 @@ const BOARD_META = [
   { img: '17-spring-meadow-board', rect: [.1, .14, .9, .62], color: '#5a2d8c', css: '-webkit-text-stroke:3px #fff7c9;paint-order:stroke fill;text-shadow:0 2px 4px rgba(60,20,110,.25);' , settle: 3400, per: 40 },
   { img: '25-papel-picado-board', rect: [.1, .26, .9, .78], color: '#7a1030', css: '-webkit-text-stroke:2.5px #fff6cf;paint-order:stroke fill;' , settle: 2900, per: 45 },
   { img: '31-pool-deck-board', rect: [.08, .16, .8, .66], color: '#fff', css: 'font-weight:600;letter-spacing:.4px;-webkit-text-stroke:1.8px #fff;paint-order:stroke fill;text-shadow:0 2px 0 #dcebfa,0 5px 7px rgba(90,150,215,.45),0 0 10px rgba(255,255,255,.9);' , settle: 3600, per: 0 },
-  { img: '34-backyard-dusk-board', rect: [.1, .22, .9, .72], color: '#fff3d6', css: 'filter:url(#paintJ);' , settle: 5500, per: 105 },
+  { img: '34-backyard-dusk-board', rect: [.1, .22, .9, .72], color: '#fff3d6', css: 'text-transform:uppercase;font-weight:700;letter-spacing:.6px;-webkit-text-stroke:3px #fff3d6;paint-order:stroke fill;text-shadow:0 2px 0 #c0561c,0 4px 0 rgba(90,35,5,.55);' , settle: 5500, per: 105 },
   { img: '39-underwater-board', rect: [.14, .2, .86, .74], color: '#fff', css: 'text-shadow:0 2px 6px rgba(0,70,140,.65),0 0 12px rgba(180,235,255,.7);' , settle: 4400, per: 0 },
   { img: '74-clean-notebook-board', rect: [.17, .2, .9, .78], color: '#2f3b55', css: 'filter:url(#penc);' , settle: 6200, per: 120 },
   { img: '49-haunted-window-board', rect: [.19, .33, .81, .8], color: '#efeaff', css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);' , settle: 2100, per: 0 },
@@ -298,7 +298,7 @@ def('b7', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '34-backyard-dusk-boa
   for (let i = 0; i < 9; i++) { const e = dot(g, '#fff4a0', 4, 0, 0, true, 2), x0 = 40 + rnd() * 250, y0 = 90 + rnd() * 100, t0 = i * 420;
     path(e, D, t0, t0 + 2800, (u) => ({ x: x0 + Math.sin(u * 5 + i) * 18, y: y0 - u * 24 + Math.cos(u * 4 + i) * 10, op: fade(u, .2, .2) * (.5 + .5 * Math.sin(u * 22)) }), 40); }
   g.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute"><filter id="paintJ" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" seed="9" result="n2"/><feColorMatrix in="n2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.4 0 0 0 -.62" result="m"/><feComposite in="d" in2="m" operator="in"/></filter></svg>');
-  const q = qtext(g, [.1, .22, .9, .72], { color: '#fff3d6', size: 27, css: 'filter:url(#paintJ);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 800, ST = 105, N = R.length;
+  const q = qtext(g, [.1, .22, .9, .72], { color: '#fff3d6', size: 25, css: 'text-transform:uppercase;font-weight:700;letter-spacing:.6px;-webkit-text-stroke:3px #fff3d6;paint-order:stroke fill;text-shadow:0 2px 0 #c0561c,0 4px 0 rgba(90,35,5,.55);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 800, ST = 105, N = R.length;
   q.letters.forEach((l, i) => l.animate([{ clipPath: 'inset(-4px 100% -4px 0)' }, { clipPath: 'inset(-4px -2px -4px 0)' }], { duration: 190, delay: T0 + i * ST, fill: 'both', easing: 'ease-out' }));
   // the paintbrush: tip at the bottom-left of the drawing, handle up and to the right
   const br = box(penHost(g), 'left:0;top:0;width:40px;height:66px;transform-origin:20px 64px;', 9);
@@ -307,8 +307,13 @@ def('b7', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '34-backyard-dusk-boa
   R.forEach((r, i) => { const t = T0 + i * ST + 95; rows.push({ offset: t / D, transform: `translate(${(r.x - 20).toFixed(1)}px,${(r.y + 4 - 64 + (i % 2 ? 2 : -2)).toFixed(1)}px) rotate(${ROT + (i % 2 ? 3 : -3)}deg)`, opacity: 1 }); });
   rows.push({ offset: (T0 + N * ST + 450) / D, transform: `translate(380px,20px) rotate(${ROT}deg)`, opacity: 1 }, { offset: (T0 + N * ST + 520) / D, transform: `translate(380px,20px) rotate(${ROT}deg)`, opacity: 0 }, { offset: 1, opacity: 0, transform: `translate(380px,20px) rotate(${ROT}deg)` });
   br.animate(rows, { duration: D, fill: 'both', easing: 'linear' });
-  const TD = T0 + N * ST + 300; [2, 7, 12, 17, 22, 27, 31].forEach((i, k) => { if (!q.letters[i] || /[?]/.test(q.letters[i].textContent)) return; const r = R[i], d = box(g, `left:${r.x - 1.3}px;top:${r.bt - 4}px;width:2.6px;height:0;background:#fff3d6;border-radius:0 0 2px 2px;box-shadow:0 1px 0 rgba(80,40,10,.4);`, 6), h = 7 + (k % 3) * 4;
-    d.animate([{ height: '0px', opacity: 0, easing: 'ease-out' }, { height: '0px', opacity: 0, offset: (TD + k * 260) / D }, { height: h + 'px', opacity: 1, offset: (TD + 1100 + k * 260) / D }, { height: h + 'px', opacity: 1 }], { duration: D, fill: 'both' }); });
+  // little paint drips run down from the letters on the last line, each starting just after its letter is painted
+  const lastBt = Math.max(...R.map((r) => r.bt)); let dk = 0;
+  q.letters.forEach((l, i) => { const r = R[i]; if (r.bt < lastBt - 3 || /[?.,!]/.test(l.textContent) || (i * 7 + 3) % 3) return;
+    const h = 7 + (dk % 3) * 4 + (i % 2) * 2, ts = (T0 + i * ST + 350 + dk * 40) / D, te = Math.min(.999, ts + (900 + (dk % 3) * 250) / D); dk++;
+    const d = box(g, `left:${(r.x - 1.6).toFixed(1)}px;top:${(r.bt - 5).toFixed(1)}px;width:3.2px;height:0;background:#fff3d6;border-radius:0 0 2px 2px;box-shadow:0 1px 0 rgba(90,35,5,.5);`, 6);
+    d.insertAdjacentHTML('beforeend', '<i style="position:absolute;left:-.9px;bottom:-3px;width:5px;height:5px;border-radius:50%;background:#fff3d6;box-shadow:0 1px 0 rgba(90,35,5,.5)"></i>');
+    d.animate([{ height: '0px', opacity: 0, offset: 0 }, { height: '0px', opacity: 0, offset: ts }, { height: h + 'px', opacity: 1, offset: te, easing: 'ease-in' }, { height: h + 'px', opacity: 1, offset: 1 }], { duration: D, fill: 'both' }); });
 });
 def('b8', 'b', 8200, (s) => { const D = 8200; baseBoard(s, '39-underwater-board'); const g = grp(s, D);
   for (let i = 0; i < 3; i++) { const r = box(g, `left:${60 + i * 95}px;top:-10px;width:46px;height:260px;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0));transform-origin:50% 0;`, 1);
@@ -377,7 +382,7 @@ const flap = (s, D, nameA, nameB, w, x0, y0, x1, y1, t0, t1, bob = 6, flip = fal
 };
 
 /* ================= FLAIRS (300 x 440): items circle the player card, then a big burst, like the game's own flairs ================= */
-const FD = 2300, FC = { x: 150, y: 215, w: 184, h: 84 };
+const FD = 2300, FC = { x: 150, y: 215, w: 184, h: 84, vt: -24, vb: 466, vl: 10, vr: 290 }; // vt/vb/vl/vr: the screen's top, bottom, left and right in flair units (falling items cross all of it)
 let NOCARD = false; // in the game the real winner card is on screen, so the stand-in card is not drawn
 function fcard(g, D) { if (NOCARD) return null; const c = box(g, `left:${FC.x - FC.w / 2}px;top:${FC.y - FC.h / 2}px;width:${FC.w}px;height:${FC.h}px;border-radius:16px;background:var(--cardbg);border:3px solid var(--cardline);display:flex;align-items:center;gap:12px;padding:0 14px;box-sizing:border-box;font:700 15px Fredoka,system-ui,sans-serif;color:var(--cardfg);`, 5);
   c.innerHTML = '<span style="width:50px;height:50px;border-radius:11px;background:linear-gradient(135deg,#ffd9a0,#ff9f6a);display:block;flex:none"></span><span style="line-height:1.25">Alex<br><small style="font-weight:600;opacity:.65">1st place</small></span>';
@@ -397,8 +402,8 @@ function fradial(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, 
   path(e, D, t0 + dl, t0 + dl + L, (u) => { const tt = u * L / 1000; return { x: FC.x + Math.cos(ang) * v * Math.min(1, tt * 1.4) * (o.spread || 1.2), y: FC.y + Math.sin(ang) * v * Math.min(1, tt * 1.4) + (o.grav || 0) * tt * tt, r: tt * sp, sx: 1 - u * .25, op: fade(u, .02, .3) }; }, 24); } }
 function fup(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, pick(o.pics), 0, 0, o.size * (.7 + rnd() * .6), { z: 7 }), x0 = 20 + rnd() * 260, dl = rnd() * (o.stagger || 900), L = (o.life || 3000) * (.8 + rnd() * .4), sw = 14 + rnd() * 22, ph = rnd() * 6;
   path(e, D, t0 + dl, t0 + dl + L, (u) => ({ x: x0 + Math.sin(u * 7 + ph) * sw, y: lerp(FC.y + 40 + rnd() * 0, -30, u) + (o.start || 0) * (1 - u), r: Math.sin(u * 5 + ph) * 18, sx: .7 + .3 * u, op: fade(u, .12, .25) }), 30); } }
-function ffall(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, pick(o.pics), 0, 0, o.size * (.75 + rnd() * .5), { z: 7 }), x0 = 10 + rnd() * 280, dl = rnd() * (o.stagger || 1200), L = (o.life || 3000) * (.8 + rnd() * .4), sw = o.sway == null ? 18 : o.sway, ph = rnd() * 6, tum = o.tumble;
-  path(e, D, t0 + dl, t0 + dl + L, (u) => ({ x: x0 + Math.sin(u * 5 + ph) * sw, y: lerp(-24, 466, u), r: u * (o.spin == null ? 280 : o.spin) * (i % 2 ? 1 : -1), sx: tum ? Math.cos(u * 9 + ph) : 1, sy: 1, op: fade(u, .05, .1) }), 34); } }
+function ffall(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, pick(o.pics), 0, 0, o.size * (.75 + rnd() * .5), { z: 7 }), x0 = FC.vl + rnd() * (FC.vr - FC.vl), dl = rnd() * (o.stagger || 1200), L = (o.life || 3000) * (.8 + rnd() * .4) * Math.max(1, (FC.vb - FC.vt) / 490), sw = o.sway == null ? 18 : o.sway, ph = rnd() * 6, tum = o.tumble;
+  path(e, D, t0 + dl, t0 + dl + L, (u) => ({ x: x0 + Math.sin(u * 5 + ph) * sw, y: lerp(FC.vt, FC.vb, u), r: u * (o.spin == null ? 280 : o.spin) * (i % 2 ? 1 : -1), sx: tum ? Math.cos(u * 9 + ph) : 1, sy: 1, op: fade(u, .05, .03) }), 34); } }
 const FL = {};
 
 /* temporary code-drawn daisy (real art to replace) */
@@ -476,8 +481,7 @@ def('f7', 'f', FD + 4200, (s) => { const D = FD + 4200, g = box(s, 'left:0;top:0
     const T0 = FD + dl, TL = 650 + (k % 3) * 120, sx = side < 0 ? -34 : 334, e = mk(g, bl[k % 3], 0, 0, 40, { z: 8 });
     path(e, D, T0, T0 + TL, (u) => { const v = u * u * .55 + u * .45; return { x: lerp(sx, px, v), y: lerp(sy, py, v), r: side * -14 + Math.sin(u * 8) * 6, sx: 1 + .25 * Math.max(0, (u - .85) / .15), op: u > .97 ? 0 : 1 }; }, 30);
     const tp = T0 + TL;
-    if (splat) { const e2 = mk(g, '36-water-splash-sheet-' + (k % 2), px, py, 96, { z: 8 }); seq(e2, D, [[0, 0, 0, 0, 0, 0], [tp - 10, 0, 0, 0, .25, 0], [tp + 150, 0, 0, 0, 1.1, 1, 'ease-out'], [tp + 330, 0, 4, 0, 1.15, 1], [tp + 760, 0, 14, 0, 1.2, 0], [D, 0, 14, 0, 1.2, 0]]); }
-    for (let i = 0; i < 12; i++) { const sz = 5 + rnd() * 5, d = dot(g, '#54b9ff', sz, px, py, false, 8), a = rnd() * 6.283, v = 60 + rnd() * 90, LL = 700 + rnd() * 300;
+    for (let i = 0; i < 16; i++) { const sz = 5 + rnd() * 5, d = dot(g, '#54b9ff', sz, px, py, false, 8), a = rnd() * 6.283, v = 60 + rnd() * 90, LL = 700 + rnd() * 300;
       path(d, D, tp, tp + LL, (u) => { const tt = u * LL / 1000; return { x: Math.cos(a) * v * tt, y: Math.sin(a) * v * tt + 380 * tt * tt, op: fade(u, .02, .45) }; }, 16); } }); });
 def('f8', 'f', FD + 4400, (s) => { const D = FD + 4400, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), sb = [0, 1, 2].map((i) => '40-surfboard-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: sb, move: 'tangent', tang: 90, lap: 2600, size: 24, items: 7 });
@@ -536,7 +540,7 @@ const MM = window.MM = {
   },
   build(key, stage) { SEED = 7; stage.innerHTML = ''; ANIM[key].build(stage); const r = RATE[key] || 1; if (r !== 1) stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = r; }); },
   /* a flair on the real winner card: host is a 300x440 box whose point (150,215) sits at the card centre; cardW/cardH are the card's size in host units */
-  buildFlair(key, host, cardW, cardH) { NOCARD = true; FC.w = cardW; FC.h = cardH; try { MM.build(key, host); } finally { NOCARD = false; FC.w = 184; FC.h = 84; } },
+  buildFlair(key, host, cardW, cardH, view) { NOCARD = true; FC.w = cardW; FC.h = cardH; if (view) Object.assign(FC, { vt: view.vt - 24, vb: view.vb + 26, vl: view.vl, vr: view.vr }); try { MM.build(key, host); } finally { NOCARD = false; FC.w = 184; FC.h = 84; Object.assign(FC, { vt: -24, vb: 466, vl: 10, vr: 290 }); } },
   /* a board animation over the real question: host = 330x248 box (scaled to the board picture) inside the board stage;
      text = the game's question element, body = its container, letters = the per-letter spans the game made (empty = no letter animation) */
   buildBoard(key, host, hook) { // real questions are longer than the sample, so a few keyframes can land past the end: clamp them to 1
