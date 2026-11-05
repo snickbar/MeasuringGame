@@ -16,4 +16,4 @@ node scripts/build-monthly-unlock-gallery.cjs
 
 The motion encoder uses the repository's isolated headless-browser fixture. Preview animations pause outside the viewport, run without sound, and can be replayed. They are review compositions rather than installed game changes.
 
-January's flair now uses five existing gold/silver confetti pieces in a single short burst. There is no orbiting sparkle or continuous falling confetti; the burst can be replayed with its button.
+January's sparkle replacement is deferred at the user's request. Its existing preview is preserved pending a later decision.
