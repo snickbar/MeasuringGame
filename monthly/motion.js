@@ -298,7 +298,7 @@ def('b7', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '34-backyard-dusk-boa
   for (let i = 0; i < 9; i++) { const e = dot(g, '#fff4a0', 4, 0, 0, true, 2), x0 = 40 + rnd() * 250, y0 = 90 + rnd() * 100, t0 = i * 420;
     path(e, D, t0, t0 + 2800, (u) => ({ x: x0 + Math.sin(u * 5 + i) * 18, y: y0 - u * 24 + Math.cos(u * 4 + i) * 10, op: fade(u, .2, .2) * (.5 + .5 * Math.sin(u * 22)) }), 40); }
   g.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute"><filter id="paintJ" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" seed="9" result="n2"/><feColorMatrix in="n2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.4 0 0 0 -.62" result="m"/><feComposite in="d" in2="m" operator="in"/></filter></svg>');
-  const q = qtext(g, [.1, .22, .9, .72], { color: '#fff3d6', size: 25, css: 'text-transform:uppercase;font-weight:700;letter-spacing:1.4px;text-shadow:1px 0 0 #7a3510,-1px 0 0 #7a3510,0 1px 0 #7a3510,0 -1px 0 #7a3510,0 2px 0 #7a3510,0 3px 2px rgba(60,25,5,.45);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 800, ST = 105, N = R.length;
+  const q = qtext(g, [.1, .22, .9, .72], { color: '#fff3d6', size: 25, css: 'text-transform:uppercase;font-weight:700;letter-spacing:1.4px;text-shadow:1px 0 0 #7a3510,-1px 0 0 #7a3510,0 1px 0 #7a3510,0 -1px 0 #7a3510,0 2px 0 #7a3510,0 3px 2px rgba(60,25,5,.45);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 800, ST = writingStep(7, R.length), N = R.length;
   q.letters.forEach((l, i) => l.animate([{ clipPath: 'inset(-4px 100% -4px 0)' }, { clipPath: 'inset(-4px -2px -4px 0)' }], { duration: 190, delay: T0 + i * ST, fill: 'both', easing: 'ease-out' }));
   // the paintbrush: tip at the bottom-left of the drawing, handle up and to the right
   const br = box(penHost(g), 'left:0;top:0;width:40px;height:66px;transform-origin:20px 64px;', 9);
@@ -331,7 +331,7 @@ def('b8', 'b', 8200, (s) => { const D = 8200; baseBoard(s, '39-underwater-board'
 });
 def('b9', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '74-clean-notebook-board'); const g = grp(s, D);
   g.insertAdjacentHTML('beforeend', '<svg width="0" height="0" style="position:absolute"><filter id="penc" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="2" result="n2"/><feColorMatrix in="n2" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.4 0 0 0 -.15" result="m"/><feComposite in="d" in2="m" operator="in"/></filter></svg>');
-  const q = qtext(g, [.17, .2, .9, .78], { color: '#2f3b55', size: 29, css: 'filter:url(#penc);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 900, ST = 120, N = R.length;
+  const q = qtext(g, [.17, .2, .9, .78], { color: '#2f3b55', size: 29, css: 'filter:url(#penc);' }); const R = q.letters.map((l) => lrect(q, l)), T0 = 900, ST = writingStep(9, R.length), N = R.length;
   q.letters.forEach((l, i) => l.animate([{ clipPath: 'inset(-4px 100% -4px 0)' }, { clipPath: 'inset(-4px -2px -4px 0)' }], { duration: 210, delay: T0 + i * ST, fill: 'both', easing: 'ease-out' }));
   const pw = 50, ph = pw * 640 / 517, tx = .04 * pw, ty = .995 * ph, pc = box(penHost(g), `left:0;top:0;width:${pw}px;height:${ph}px;transform-origin:${tx}px ${ty}px;`, 9);
   const pi = mk(pc, '75-chunky-pencil', pw / 2, ph / 2, pw, {});
@@ -548,12 +548,13 @@ def('f12', 'f', FD + 5000, (s) => { const D = FD + 5000, g = box(s, 'left:0;top:
 
 
 const RATE = { r7: 1.4, r10: 1, r6: 1.15 };
+const writingStep = (month, count) => Math.min(month === 7 ? 105 : 120, (month === 7 ? 4600 : 4300) / Math.max(1, count));
 const MM = window.MM = {
   ready() {
-    if (!readyP) readyP = fetch('monthly/art-manifest.json').then((r) => r.json()).then((m) => Promise.all(Object.keys(m).map((k) => {
+    if (!readyP) readyP = fetch('monthly/art-manifest.json').then((r) => { if (!r.ok) throw Error('Monthly art unavailable'); return r.json(); }).then((m) => Promise.all(Object.keys(m).map((k) => {
       A[k] = { w: m[k].w, h: m[k].h, u: 'monthly/art/' + k + '.webp' };
-      return new Promise((res) => { const im = new Image(); im.onload = im.onerror = res; im.src = A[k].u; });
-    }))).then(() => { if (A['daisy2']) A['daisy'] = A['daisy2']; });
+      return new Promise((res, rej) => { const im = new Image(); im.onload = res; im.onerror = () => rej(Error('Monthly art unavailable: ' + k)); im.src = A[k].u; });
+    }))).then(() => { if (A['daisy2']) A['daisy'] = A['daisy2']; }).catch((error) => { readyP = null; throw error; });
     return readyP;
   },
   build(key, stage) { SEED = 7; stage.innerHTML = ''; ANIM[key].build(stage); const r = RATE[key] || 1; if (r !== 1) stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = r; }); },
@@ -561,12 +562,13 @@ const MM = window.MM = {
   buildFlair(key, host, cardW, cardH, view) { NOCARD = true; FC.w = cardW; FC.h = cardH; if (view) Object.assign(FC, { vt: view.vt - 24, vb: view.vb + 26, vl: view.vl, vr: view.vr }); try { MM.build(key, host); } finally { NOCARD = false; FC.w = 184; FC.h = 84; Object.assign(FC, { vt: -24, vb: 466, vl: 10, vr: 290 }); } },
   /* a board animation over the real question: host = 330x248 box (scaled to the board picture) inside the board stage;
      text = the game's question element, body = its container, letters = the per-letter spans the game made (empty = no letter animation) */
-  buildBoard(key, host, hook) { // real questions are longer than the sample, so a few keyframes can land past the end: clamp them to 1
+  buildBoard(key, host, hook) { // Keep explicit offsets valid and ordered, including decorative tails on long questions.
     const orig = Element.prototype.animate;
-    Element.prototype.animate = function (kf, o) { return orig.call(this, Array.isArray(kf) ? kf.map((k) => (k.offset > 1 ? Object.assign({}, k, { offset: 1 }) : k)) : kf, o); };
+    Element.prototype.animate = function (kf, o) { let previous = 0; return orig.call(this, Array.isArray(kf) ? kf.map((k) => { if (typeof k.offset !== 'number') return k; previous = Math.max(previous, Math.min(1, Math.max(0, k.offset))); return Object.assign({}, k, { offset: previous }); }) : kf, o); };
     HOOK = Object.assign({ stage: host }, hook);
     try { MM.build(key, host); } finally { HOOK = null; Element.prototype.animate = orig; }
   },
+  boardSettle(month, count) { const meta = BOARD_META[month - 1]; return month === 7 || month === 9 ? (month === 7 ? 1100 : 1250) + Math.max(0, count - 1) * writingStep(month, count) : Math.max(600, meta.settle + meta.per * (count - 43)); },
   info(key) { const a = ANIM[key]; return a ? { kind: a.kind, D: a.D / (RATE[key] || 1) } : null; },
   keys: () => Object.keys(ANIM),
   boards: BOARD_META,

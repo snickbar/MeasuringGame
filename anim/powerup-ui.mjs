@@ -188,6 +188,11 @@ export function createPowerupController(ports) {
           if (REROLLS.includes(id)) {
             next.guesses = null; next.graceEndsAt = null;
             next.questionEndsAt = room.questionEndsAt ? ports.now() + (room.settings.mode === 'teamworlds' ? 24 * 3600 * 1000 : (room.settings.timerSeconds || 60) * 1000) : null;
+            if (room.questionClock) {
+              const waitUntil = ports.now() + Math.max(15000, next.currentQuestion.prompt.length * 60 + 6000);
+              next.questionClock = { key: operation, duration: room.questionClock.duration, waitUntil, startedAt: 0 };
+              next.questionEndsAt = waitUntil + next.questionClock.duration;
+            }
           }
           return next;
         });

@@ -1333,7 +1333,7 @@ if (location.protocol === "file:") {
   .mc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; font-family: 'Fredoka', sans-serif; }
   .mc-top b { font-size: 17px; }
   .mc-card small { display: block; color: #6b5a47; font-weight: 600; font-size: 12px; }
-  .mc-node.mega .mc-s2 { white-space: nowrap; font-size: 11px; }
+  .mc-node.mega .mc-s2 { font-size: 11px; }
   .mc-end { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; white-space: nowrap; }
   .mc-pill { display: inline-block; padding: 3px 12px; border-radius: 99px; font-weight: 700; font-size: 13px; color: #fff; }
   .mc-pill.ok { background: #2f9a5d; } .mc-pill.go { background: #d9811c; } .mc-pill.lk { background: #9a8d7a; }
@@ -5071,6 +5071,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script type="module" src="anim/home-scene.mjs"></script>
 <script src="monthly/motion.js"></script>
 <script type="module">
+  import { monthlyLevelEarned, repairMonthlyRewards } from "./anim/monthly-rewards.mjs";
+  import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
   import { mountHighLowReveal, HL_REVEAL_STEP_MS } from "./anim/high-low-reveal.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
@@ -5907,7 +5909,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function cosmCatItems(cat) {
     if (cat === "backgrounds") return [{ id: "none", name: "Match game mode", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' }, { id: "plain", name: "Plain", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' }].concat(allBackgrounds().filter((b) => ownsBackground(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: bgThumbHtml(b.id, "cosm-now-pic", 34) })));
     if (cat === "boards") return [{ id: "none", name: "Paper and pencil", thumb: `<img class="cosm-now-pic" src="${BOARD_PIC.paper}" alt="">` }].concat(allBoards().filter((b) => ownsBoard(b.id)).map((b) => ({ id: b.id, name: b.label, thumb: `<img class="cosm-now-pic" src="${BOARD_PIC[b.id]}" alt="">` })));
-    if (cat === "flairs") return COSMETIC_CATALOG.effects.filter((i) => ownsFlair(i) && FLAIRS[i.id]).map((i) => ({ id: i.id, name: i.label, thumb: `<img class="cosm-now-pic" src="${flairPic(i.pic)}" alt="">` }));
+    if (cat === "flairs") return COSMETIC_CATALOG.effects.concat(MONTHLY_FLAIR_ITEMS).filter((i) => ownsFlair(i) && FLAIRS[i.id]).map((i) => ({ id: i.id, name: i.label, thumb: `<img class="cosm-now-pic" src="${i.poster || flairPic(i.pic)}" alt="">` }));
     if (cat === "homeScreens") return HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)).map((h) => ({ id: h.id, name: h.name, thumb: `<img class="cosm-now-pic" src="${h.file}" alt="">` }));
     return [];
   }
@@ -6212,8 +6214,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     powerups?.render();
   }
   // Applies a profile's raw data (from the server, or the saved offline copy) to myProfile and the UI.
+  const monthlyRepairJobs = new Map();
+  function saveMonthlyRewardRepairs(profileId) {
+    if (monthlyRepairJobs.has(profileId)) return;
+    const job = changeProfile(profileId, current => repairMonthlyRewards(current, MONTH_BACKGROUNDS.map(b => b.id)))
+      .catch(error => console.warn("Monthly reward compatibility will retry on the next profile update", error))
+      .finally(() => monthlyRepairJobs.delete(profileId));
+    monthlyRepairJobs.set(profileId, job);
+  }
   function applyProfileData(profileId, data) {
     if (profileId !== deviceId) return;
+    const repaired = repairMonthlyRewards(data, MONTH_BACKGROUNDS.map(b => b.id));
+    if (repaired !== data) { data = repaired; saveMonthlyRewardRepairs(profileId); }
     homePrefsPlaceholder = !data;
     if (!data) {
       myProfile = defaultProfile();
@@ -6712,7 +6724,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const MONTHLY_FLAIR_ITEMS = ["Gold confetti", "Paper hearts", "Clover rain", "Spring blossoms", "Piñata candy", "Beach balls", "Water balloons", "Surf wave", "A+ stamps", "Ghost parade", "Cornucopia spill", "Sleigh and presents"]
     .map((label, i) => ({ id: "mf" + String(i + 1).padStart(2, "0"), label, cost: 0, monthly: i + 1, poster: MONTHLY_REWARD_KINDS.flair.art(i + 1) }));
   const monthlyOwned = (id) => !!(myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.monthly && myProfile.cosmetics.owned.monthly[id]); // claimed in Awards
-  function monthlyRewardEarned(m, level) { return !!((myProfile.stats || {})["mc" + String(m).padStart(2, "0") + "L" + level]); }
+  function monthlyRewardEarned(m, level) { return monthlyLevelEarned(myProfile, m, level); }
   function appendMonthlyRewards(container, kind) {
     const k = MONTHLY_REWARD_KINDS[kind];
     if (!container || !k) return;
@@ -6729,7 +6741,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const earnedNow = !got && monthlyRewardEarned(m, k.level), cur = m === nowM;
       // a reward you do not have yet is the normal row with its picture greyed out and a note instead of the buttons
       const hint = earnedNow ? "Earned! Claim it in Stats, Awards" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : m > nowM ? `Opens in ${name}` : `${name} Monthly Challenge`;
-      const extra = got ? undefined : { owned: false, lockedHint: hint };
+      const extra = { category: ({ reaction: "reactions", flair: "flairs", board: "boards", scene: "backgrounds" })[kind], ...(got ? {} : { owned: false, lockedHint: hint }) };
       const row = kind === "reaction" ? build(id2, 0, undefined, extra) : kind === "scene" ? build(MONTH_BACKGROUNDS[i], extra) : kind === "board" ? build(MONTHLY_BOARD_ITEMS[i], extra) : build(MONTHLY_FLAIR_ITEMS[i], extra);
       if (!got) row.classList.add("mr-locked");
       if (cur) row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", '<span class="mr-now">This month</span>');
@@ -7256,7 +7268,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let cosmForceEquip = false, cosmRowCat = null;
   const PADLOCK_SVG = `<img src="icons/reactions/padlock.png" alt="">`;
   function cosmRow(o) {
-    const cat = cosmRowCat;
+    const cat = o.category || cosmRowCat;
     const row = document.createElement("div");
     const canPool = !!(o.owned && !o.ownedLabel && cat && o.poolId != null);
     const pooled = canPool && inRndPool(cat, o.poolId);
@@ -7400,7 +7412,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (cat === "avatar") return AVATARS.filter((a) => AVATAR_TIERS[a] !== "default" && !isAvatarUnlocked(a));
     if (cat === "reaction") return EMOJI_PACK_CATALOG.flatMap((p) => p.emojis).filter((e) => !ownsEmoji(e));
     if (cat === "flair") return gachaFlairItems().filter((it) => !ownsFlair(it)).map((it) => it.id);
-    if (cat === "board") return allBoards().filter((b) => !ownsBoard(b.id)).map((b) => b.id);
+    if (cat === "board") return BOARD_PACK_CATALOG.flatMap((p) => p.boards).filter((b) => !ownsBoard(b.id)).map((b) => b.id);
     if (cat === "scene") return BACKGROUND_PACK_CATALOG.flatMap((p) => p.backgrounds).filter((b) => !ownsBackground(b.id)).map((b) => b.id);
     return [];
   }
@@ -9384,7 +9396,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const sbEase = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
   const sbC01 = (x) => Math.max(0, Math.min(1, x));
   function sbTeardown() {
-    if (qSB) clearTimeout(qSB.holdT);
+    if (qSB) { clearTimeout(qSB.holdT); clearTimeout(qSB.mmLoadT); qSB.mmRun = null; }
     qPromptEl.removeAttribute("data-hold"); qPromptEl.removeAttribute("data-ans");
     questionPromptTextEl.style.removeProperty("filter"); // the notebook board's pencil effect must not stay on the next board's text
     if (qSB && qSB.stage) qSB.stage.remove();
@@ -9451,7 +9463,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     qBodyEl.style.opacity = ""; qBodyEl.style.transform = qBodyEl.style.clipPath = "";
     const k = SB_KINDS[qSB.id] || {};
     questionPromptTextEl.textContent = "";
-    if (!text) { return; }
+    if (!text) {
+      if (qSB.mmRun) {
+        clearTimeout(qSB.mmLoadT); qSB.mmRun = null; sbReleaseAnswer(qSB);
+        qSB.mmHost?.remove(); qSB.mmHost = null;
+        qSB.mmOver?.remove(); qSB.mmOver = null;
+      }
+      return;
+    }
     if (k.perChar && animate && !qReduceMotion) {
       text.split(/(\s+)/).forEach((word) => {
         if (!word) return;
@@ -9682,7 +9701,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     clearTimeout(sb.holdT);
     sb.holdUntil = performance.now() + ms;
     qPromptEl.dataset.hold = "1";
-    sb.holdT = setTimeout(() => sbReleaseAnswer(sb), ms);
+    if (Number.isFinite(ms)) sb.holdT = setTimeout(() => sbReleaseAnswer(sb), ms);
   }
   function sbReleaseAnswer(sb) {
     clearTimeout(sb.holdT);
@@ -9692,19 +9711,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     sbFit();
     if (questionAnswerLineEl.style.display !== "none" && questionAnswerLineEl.innerHTML) questionAnswerLineEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: "ease-out" });
   }
-  const sbHoldLeft = () => (qSB && qSB.holdUntil ? Math.max(0, qSB.holdUntil - performance.now()) : 0);
+  const sbHoldLeft = () => (qSB && qSB.holdUntil ? (Number.isFinite(qSB.holdUntil) ? Math.max(0, qSB.holdUntil - performance.now()) : 100) : 0);
   const mmPlaceOver = (sb) => { if (sb.mmOver) { sb.mmOver.style.left = sb.sx + "px"; sb.mmOver.style.top = sb.sy + "px"; sb.mmOver.style.transform = `scale(${sb.sw / 330})`; } };
   // Monthly boards: monthly/motion.js animates the letters of the real question and a decorative layer over the board picture.
   MONTHLY_BOARD_ITEMS.forEach((b) => {
     SB_KINDS[b.id] = {
       perChar: true,
       enter(sb) {
+        clearTimeout(sb.mmLoadT);
+        const run = sb.mmRun = {};
+        sbReleaseAnswer(sb);
         questionPromptTextEl.style.transition = qBodyEl.style.transition = "none";
         if (sb.mmHost) { sb.mmHost.remove(); sb.mmHost = null; }
         if (sb.mmOver) { sb.mmOver.remove(); sb.mmOver = null; }
         if (!sb.animated || !window.MM) return;
-        const meta = MM.boards[b.monthly - 1];
-        sbHoldAnswer(sb, Math.max(600, meta.settle + meta.per * (sb.chars.length - 43)) + 300);
+        sbHoldAnswer(sb, Infinity);
         const host = document.createElement("div");
         host.style.cssText = "position:absolute;left:0;top:0;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:3";
         host.style.transform = `scale(${sb.sw / 330})`;
@@ -9714,13 +9735,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         over.style.cssText = "position:absolute;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:2";
         qPromptEl.appendChild(over); sb.mmOver = over; mmPlaceOver(sb);
         const chars = sb.chars.slice(), key = "b" + b.monthly;
+        const current = () => qSB === sb && sb.mmRun === run && host.isConnected && !sb.exiting;
+        const fallback = () => {
+          if (!current()) return;
+          clearTimeout(sb.mmLoadT);
+          [questionPromptTextEl, qBodyEl, ...chars].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+          questionPromptTextEl.style.removeProperty("filter");
+          sbSetText(questionPromptTextEl.dataset.txt || questionPromptTextEl.textContent, false);
+        };
+        sb.mmLoadT = setTimeout(fallback, 4000);
         MM.ready().then(() => {
-          if (!host.isConnected || sb.chars[0] !== chars[0]) return;
+          if (!current()) return;
+          clearTimeout(sb.mmLoadT);
           MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over });
-        });
+          sbHoldAnswer(sb, MM.boardSettle(b.monthly, chars.length) + 300);
+        }).catch(fallback);
       },
       layout(sb) { if (sb.mmHost) sb.mmHost.style.transform = `scale(${sb.sw / 330})`; mmPlaceOver(sb); },
       exit(sb) {
+        clearTimeout(sb.mmLoadT); sb.mmRun = null;
         sbReleaseAnswer(sb);
         qBodyEl.style.transition = "opacity .3s"; qBodyEl.style.opacity = "0";
         if (sb.mmHost) sb.mmHost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
@@ -12672,6 +12705,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     mo.phase = lv.done ? "done" : (mo.guesses.length ? "question" : "intro");
   }
   function monthlyLevelObjects(l) { return mo.split[l].map((i) => monthlyPackObject(mo.combos[i])); }
+  function monthlyLevelReward(key, level) {
+    const month = Number(key.slice(5)), mm = String(month).padStart(2, "0");
+    const kind = [null, "scene", "reaction", "board", "flair"][level];
+    const scene = MONTH_BACKGROUNDS.find(m => m.month === month);
+    const id = level === 1 ? scene?.id : (level === 2 ? "m" : level === 3 ? "mb" : "mf") + mm;
+    const label = level === 1 ? scene?.label : level === 2 ? REACTIONS[id]?.label : level === 3 ? MONTHLY_BOARD_LABELS[month - 1] : MONTHLY_FLAIR_ITEMS[month - 1]?.label;
+    return { kind, id, label, art: MONTHLY_REWARD_KINDS[kind].art(month), owned: level === 1 ? ownsBackground(id) : monthlyOwned(id) };
+  }
   function monthlyStop() { if (moAnim) { try { moAnim.destroy(); } catch (e) {} moAnim = null; } }
   function monthlyAccs() { return mo.questions.map((q, i) => (mo.guesses[i] > 0 ? roundAccuracy(mo.guesses[i] / q.answer) : 0)); }
   // The month's picture is the backdrop from the intro until the results; it switches back to the player's own background after.
@@ -12701,7 +12742,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const pill = st === "done" ? `<span class="mc-pill ok">\u2713 Done</span>` : st === "play" ? `<span class="mc-pill go">${monthlyLevelGuesses(l).length ? "Continue" : "Play"}</span>` : `<span class="mc-pill lk">\uD83D\uDD12</span>`;
         const why = st === "lock" ? `<small>${monthlyLockText(l)}</small>` : "";
         const title = l === 4 ? "MEGA" : `Level ${l}`;
-        const sub = l === 4 ? `All ${idxs.length} objects \u00b7 ${idxs.length} questions` : `${idxs.length} objects \u00b7 ${idxs.length} questions`;
+        const reward = monthlyLevelReward(mo.key, l);
+        const sub = `${idxs.length} questions \u00b7 ${reward.kind === "board" ? "Question board" : reward.kind[0].toUpperCase() + reward.kind.slice(1)} reward`;
         return `<div class="mc-node ${st}${l === 4 ? " mega" : ""}"><div class="mc-dot">${l === 4 ? "\u2605" : l}</div>
           <div class="mc-card"${st === "lock" ? "" : ` data-mo-level="${l}" role="button" tabindex="0"`}><div class="mc-top"><div><b>${title}</b><small class="mc-s2">${sub}</small></div><div class="mc-end">${pill}${best}${why}</div></div>${thumbs(idxs, seen)}</div></div>`;
       };
@@ -12750,9 +12792,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       moArrive(el);
       return;
     }
-    const mbg = MONTH_BACKGROUNDS.find((m) => m.month === Number(mo.key.slice(5)));
-    const monthDone = [1, 2, 3].every((l) => mo.prog[l] && mo.prog[l].done);
-    const bgNote = mbg && monthDone && mo.level !== 4 ? `<div class="dc-card"><div class="dc-big">${mbg.label} scene</div><div class="dc-note">${ownsBackground(mbg.id) ? "Unlocked! Equip it in Style, Scenes." : "Earned! Claim it in Stats, Awards."}</div></div>` : "";
+    const reward = monthlyLevelReward(mo.key, mo.level);
+    const bgNote = `<div class="dc-card mc-earned"><img src="${reward.art}" alt="" style="width:64px;height:64px;object-fit:contain;float:left;margin-right:12px"><div class="dc-big">${escapeHtml(reward.label)} ${reward.kind}</div><div class="dc-note">${reward.owned ? "Unlocked! Find it in Style." : "Earned! Claim it in Stats, Awards."}</div><button type="button" class="dc-btn dc-alt" id="mo-reward">${reward.owned ? "View in Style" : "Claim in Awards"}</button></div>`;
     el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${lvTitle}</h2>${tourBtn('monthly')}
       <div class="dc-card dc-hot"><div class="dc-big"><span class="mo-tot">${total}</span> / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
@@ -12860,6 +12901,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (monthlyLevelTap(e)) return;
     const b = e.target.closest("button");
     if (!b || !mo) return;
+    if (b.id === "mo-reward") {
+      const reward = monthlyLevelReward(mo.key, mo.level);
+      if (reward.owned) openGachaScreen(({scene:"backgrounds",reaction:"emojis",board:"boards",flair:"flairs"})[reward.kind]);
+      else showCareerTab("awards");
+      return;
+    }
     if (b.id === "mo-levels" || b.id === "mo-finish") { monthlyStop(); mo.phase = "hub"; mo.level = 0; mo.questions = []; mo.guesses = []; renderMonthly(); return; }
     if (b.id === "mo-start") { mo.phase = "question"; renderMonthly(); return; }
     if (b.id === "mo-replay") { monthlyStartReplay(); return; }
@@ -14830,7 +14877,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Participation only: finish that level for real (first try) in its month. No coins; the item is the reward. A missed month stays missed until next year.
   // (The old "finish the whole month" scene award is now the Level 1 one; a month already finished before still counts.)
   MONTH_BACKGROUNDS.forEach((m) => {
-    const mm = String(m.month).padStart(2, "0"), name = MONTH_NAMES[m.month - 1], flag = (l) => ((myProfile.stats || {})["mc" + mm + "L" + l] || 0) >= 1 ? 1 : 0;
+    const mm = String(m.month).padStart(2, "0"), name = MONTH_NAMES[m.month - 1], flag = (l) => monthlyLevelEarned(myProfile, m.month, l) ? 1 : 0;
     ACHIEVEMENTS.push({ id: `monthly-${mm}`, cat: "Monthly", name: `${name} Level 1`, desc: `Finish Level 1 of the ${name} Monthly Challenge`, target: 1, reward: 0, bg: m.id, bgLabel: m.label,
       progress: () => (flag(1) || ((myProfile.stats || {})["mc" + mm] || 0) >= 1 || (myProfile.monthly && myProfile.monthly.done && String(myProfile.monthly.key || "").slice(5) === mm)) ? 1 : 0 });
     [[2, "reaction", "Reaction", "m" + mm, REACTIONS["m" + mm].label, REACTIONS["m" + mm].pic], [3, "board", "Board", "mb" + mm, MONTHLY_BOARD_LABELS[m.month - 1], MONTHLY_BOARD_ITEMS[m.month - 1] && MONTHLY_BOARD_ITEMS[m.month - 1].img],
@@ -17164,6 +17211,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function scheduleBotGuesses(roomCode, q, freshRound = false) {
+    if (questionClockPending(roomState)) return;
     const players = roomState.players || {};
     // A brand-new round: roomState may still hold last round's guesses for a moment.
     const existingGuesses = freshRound ? {} : (roomState.guesses || {});
@@ -17176,6 +17224,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
         if (roomState.phase !== "question") return;
+        if (questionClockPending(roomState)) return;
         if (!roomState.currentQuestion || roomState.currentQuestion.prompt !== q.prompt) return;
         let val = botGuessValue(q.answer, p.botDifficulty);
         // High/Low Survival: a bot partner plays its role, and how tight a bracket it makes depends on its accuracy level.
@@ -17568,6 +17617,46 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function scheduleHostDeadline(deadlineMs, fn) {
     return setTimeout(fn, Math.max(0, deadlineMs - nowMs()));
   }
+  function questionReadingLeft() {
+    if (qReduceMotion) return 0;
+    if (qSB?.animated) {
+      if (qSB.id.startsWith("mb")) return sbHoldLeft();
+      return Math.max(0, qSB.t0 + boardReadingMs(qSB.id, qSB.chars.length) - performance.now());
+    }
+    if (qWrite) return Math.max(0, qWrite.start + qWrite.chars.length * 42 + 250 - performance.now());
+    if (qBoard === "curtains" && qCurtainO < qCurtainTarget) return 100;
+    return 0;
+  }
+  let questionReadyWrite = null, questionClockWrite = null, questionBotsKey = null;
+  function syncQuestionClock() {
+    if (roomState?.phase === "question" && !roomState.paused && isHost && roomState.questionClock?.startedAt && questionBotsKey !== roomState.questionClock.key) {
+      questionBotsKey = roomState.questionClock.key;
+      scheduleBotGuesses(currentRoomCode, roomState.currentQuestion);
+    }
+    if (!questionClockPending(roomState) || roomState.paused || !currentRoomCode || !roomState.players?.[currentPlayerId]) return;
+    const clock = roomState.questionClock, code = currentRoomCode, key = clock.key, readyToken = questionReadyToken(roomState);
+    if (questionPromptTextEl.dataset.txt !== roomState.currentQuestion?.prompt) return;
+    if (nowMs() >= clock.waitUntil && questionReadingLeft() > 0) setPromptTextStatic();
+    if (!document.hidden && !questionReadingLeft() && roomState.players?.[currentPlayerId]?.questionReady !== readyToken && questionReadyWrite !== readyToken) {
+      questionReadyWrite = readyToken;
+      set(ref(db, `rooms/${code}/players/${currentPlayerId}/questionReady`), readyToken)
+        .catch(() => {}).finally(() => { if (questionReadyWrite === readyToken) questionReadyWrite = null; });
+    }
+    if (!isHost || questionClockWrite === key) return;
+    if (!beginQuestionClock(roomState, key, nowMs(), isPlayerAway)) return;
+    questionClockWrite = key;
+    runTransaction(ref(db, `rooms/${code}`), room => beginQuestionClock(room, key, nowMs(), isPlayerAway))
+      .then(result => {
+        if (!result.committed || currentRoomCode !== code) return;
+        const room = result.snapshot.val();
+        scheduleHostDeadline(room.questionEndsAt, () => checkQuestionAdvance(code));
+      }).catch(() => {}).finally(() => { if (questionClockWrite === key) questionClockWrite = null; });
+  }
+  function setPromptTextStatic() {
+    const text = questionPromptTextEl.dataset.txt;
+    if (qSB) sbSetText(text, false);
+    else { qWrite = null; qCurtainO = qCurtainTarget; questionPromptTextEl.textContent = text; }
+  }
   // Safety net for the host: each phase normally advances from a one-shot timer set at its deadline. If that timer was lost
   // (app minimized, phone asleep, a write that never finished), the round would sit frozen on 0s. So every couple of seconds,
   // and the moment the app comes back to the front, the host checks whether the current phase is overdue and moves it along.
@@ -17576,7 +17665,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!isHost || !currentRoomCode || !d || d.paused || document.hidden) return;
     const due = {
       countdown: [d.countdownEndsAt, checkCountdownAdvance],
-      question: [d.graceEndsAt || d.questionEndsAt, checkQuestionAdvance],
+      question: [questionClockPending(d) ? d.questionClock.waitUntil : d.graceEndsAt || d.questionEndsAt, checkQuestionAdvance],
       answers: [d.answersEndsAt, checkAnswersAdvance],
       animation: [d.animEndsAt, checkAnimationAdvance],
       reveal: [d.revealAdvanceAt, checkRevealAdvance],
@@ -17625,6 +17714,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const timerBar = document.getElementById("hud-timer-bar");
       if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); if (timerBar) timerBar.hidden = true; return; }
       powerups?.render();
+      syncQuestionClock();
+      if (questionClockPending(roomState)) {
+        hudTimerEl.textContent = String(Math.ceil(roomState.questionClock.duration / 1000));
+        hudTimerEl.classList.remove("low");
+        if (timerBar) { timerBar.hidden = false; timerBar.firstElementChild.style.transform = "scaleX(1)"; timerBar.classList.remove("low"); }
+        return;
+      }
       const remaining = Math.max(0, deadline - nowMs());
       hudTimerEl.textContent = Math.ceil(remaining / 1000).toString();
       hudTimerEl.classList.toggle("low", remaining <= 5000);
@@ -17679,7 +17775,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : { ...generateQuestion(), powerupKey: crypto.randomUUID() };
     // Team modes (Worlds and High/Low) have no countdown on screen: the deadline is a 24-hour cap, so a teammate who
     // walks away eventually counts as 0% instead of stalling the room forever.
-    const endsAt = (roomState.settings || currentSettings).mode === "teamworlds" ? nowMs() + TEAM_ROUND_CAP_MS : nowMs() + (currentSettings.timerSeconds || 60) * 1000;
+    const untimed = hl || (roomState.settings || currentSettings).mode === "teamworlds";
+    const duration = untimed ? TEAM_ROUND_CAP_MS : (currentSettings.timerSeconds || 60) * 1000;
+    const waitUntil = nowMs() + Math.max(15000, q.prompt.length * 60 + 6000);
+    const endsAt = (untimed ? nowMs() : waitUntil) + duration;
     let hlRoles = null;
     if (hl) {
       // Re-rolled every round: one player is HIGH (a number it can't possibly be more than), the other LOW.
@@ -17704,17 +17803,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       graceEndsAt: null,
       answersEndsAt: null,
       questionEndsAt: endsAt,
+      questionClock: untimed ? null : { key: q.powerupKey, duration, waitUntil, startedAt: 0 },
       round: roundNum,
       phase: "question",
     });
-    if (!hl) scheduleHostDeadline(endsAt, () => checkQuestionAdvance(roomCode));
-    scheduleBotGuesses(roomCode, q, true);
+    if (!hl) scheduleHostDeadline(untimed ? endsAt : waitUntil, () => checkQuestionAdvance(roomCode));
+    if (untimed) scheduleBotGuesses(roomCode, q, true);
   }
 
   function checkQuestionAdvance(roomCode) {
     if (!isHost || transitionBusy() || powerups?.busy) return;
     if (roomState.phase !== "question") return;
     if (roomState.paused) return;
+    if (questionClockPending(roomState)) { syncQuestionClock(); return; }
     const players = roomState.players || {};
     const guesses = roomState.guesses || {};
     const activeIds = Object.keys(players);
@@ -18308,6 +18409,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       for (const [id, at] of Object.entries(roomState.hsPickAt || {})) if (typeof at === "number") updates["hsPickAt/" + id] = at + pauseDurationMs;
     }
     if (roomState.phase === "question") {
+      if (questionClockPending(roomState)) updates["questionClock/waitUntil"] = roomState.questionClock.waitUntil + pauseDurationMs;
       if (roomState.graceEndsAt) {
         updates.graceEndsAt = roomState.graceEndsAt + pauseDurationMs;
         scheduleHostDeadline(updates.graceEndsAt, () => checkQuestionAdvance(currentRoomCode));
@@ -18884,6 +18986,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // the new one loads in behind it instead of on top (see insertBefore
     // below), so a quick second tap doesn't look like a jarring swap.
     const lingering = rxShowing[r.playerId];
+    let monthlyStart = null;
     let mmLife = 0; // a monthly reaction plays its whole animation (ms), others use the usual 2 s
     const stage = document.createElement("div");
     stage.className = "rx-stage";
@@ -18921,11 +19024,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const key = "r" + def.monthly;
       if (window.MM && MM.info(key) && !prefersReducedMotion()) {
         mmLife = MM.info(key).D + 600;
-        piv.innerHTML = "";
         const host = document.createElement("div"), sc = RXS * 0.85 / 240; // the 240 box is mostly artwork, so it fills the stage like the other reactions (their picture takes 52% of it)
         host.style.cssText = `position:absolute;left:50%;top:50%;width:240px;height:240px;margin:-120px 0 0 -120px;transform:scale(${sc});transform-origin:50% 50%`;
-        piv.appendChild(host);
-        MM.ready().then(() => { if (host.isConnected) MM.build(key, host); });
+        monthlyStart = life => {
+          life.pause();
+          let pending = true;
+          const finishLoad = failed => {
+            if (!pending) return;
+            pending = false; clearTimeout(timeout);
+            if (!stage.isConnected) { life.cancel(); return; }
+            if (failed) {
+              piv.innerHTML = `<img alt="" src="${def.pic}">`;
+              life.effect.updateTiming({ duration: 2000 });
+            }
+            life.currentTime = 0; life.play();
+          };
+          const timeout = setTimeout(() => finishLoad(true), 4000);
+          MM.ready().then(() => {
+            if (!pending || !stage.isConnected) { finishLoad(true); return; }
+            piv.replaceChildren(host);
+            try { MM.build(key, host); finishLoad(false); } catch { finishLoad(true); }
+          }).catch(() => finishLoad(true));
+        };
       } else piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.2)", offset: .3 }, { transform: "none" }], { duration: 700, easing: "ease-out" });
     } else if (def && RX_BUILD[def.id]) {
       RX_BUILD[def.id](piv, stage);
@@ -18956,6 +19076,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       stage.animate(reactionEntrance({left:Math.max(0,left),size:RXS,cardLeft:rect.left,cardRight:rect.right,outward}),
         {duration:380,easing:'cubic-bezier(.2,.7,.3,1)'});
     }
+    if (monthlyStart) monthlyStart(life);
     life.onfinish = () => { stage.remove(); if (rxShowing[r.playerId] === stage) delete rxShowing[r.playerId]; };
   }
 
@@ -20651,12 +20772,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     reactionsPanelEl.appendChild(host);
     li.__mmFlair = host;
     MM.ready().then(() => {
-      if (!host.isConnected) return;
+      if (!host.isConnected || !li.isConnected) { host.remove(); return; }
       const hl = r.left + r.width / 2 - 150 * s, ht = r.top + r.height / 2 - 215 * s; // the host's corner: falling items run from the top of the screen to the bottom of it
       MM.buildFlair(key, host, r.width / s, r.height / s, { vt: -ht / s, vb: (window.innerHeight - ht) / s, vl: -hl / s, vr: (window.innerWidth - hl) / s });
       if (burstOnly) host.getAnimations({ subtree: true }).forEach((a) => { a.currentTime = FLAIR_DRUM_MS; });
       setTimeout(() => host.remove(), MM.info(key).D + 300);
-    });
+    }).catch(() => host.remove());
   }
   const flairPic = (n) => (n === "coin" ? "icons/coin-v2.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && prefersReducedMotion();
