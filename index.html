@@ -5874,7 +5874,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (cat === "backgrounds") { // Match game mode ("none") and Plain are only picked when you have equipped them yourself
       const base = allBackgrounds().map((b) => b.id).filter(ownsBackground), extra = ["none", "plain"].filter((id) => inRndPool("backgrounds", id));
       const eq = base.filter((id) => inRndPool("backgrounds", id)).concat(extra), ids = eq.length ? eq : base; v = ids.length ? rndOfNew("backgrounds", ids) : "none"; } // never picks "none": that shows the plain tan
-    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
+    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.concat(MONTHLY_FLAIR_ITEMS).filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
     else if (cat === "reactions") {
       // Locked reactions are always there; the open slots are filled at random from the equipped pool (or everything owned when none is equipped).
       const locks = equippedReactions();
@@ -6715,10 +6715,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!container || !k) return;
     const nowM = new Date().getMonth() + 1;
     // An earned monthly reaction is a normal row (preview, equip, lock); every other month is a tile.
-    const rows = kind === "reaction" && cosmEmojiRow ? MONTH_NAMES.map((n, i) => i + 1).filter((m) => monthlyRewardEarned(m, 2)).map((m) => cosmEmojiRow("m" + String(m).padStart(2, "0"), 0)) : [];
+    const rows = kind === "reaction" && cosmEmojiRow ? MONTH_NAMES.map((n, i) => i + 1).filter((m) => monthlyRewardEarned(m, 2)).map((m) => cosmEmojiRow("m" + String(m).padStart(2, "0"), 0))
+      : kind === "flair" && cosmFlairRow ? MONTHLY_FLAIR_ITEMS.filter((it) => monthlyRewardEarned(it.monthly, 4)).map((it) => cosmFlairRow(it)) : [];
     const tiles = MONTH_NAMES.map((name, i) => {
       const m = i + 1, got = monthlyRewardEarned(m, k.level);
-      if (rows.length && kind === "reaction" && got) return "";
+      if (rows.length && (kind === "reaction" || kind === "flair") && got) return "";
       const cur = m === nowM, missed = !got && m < nowM;
       const hint = got ? "Unlocked" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : missed ? "Missed this year" : `Opens in ${name}`;
       return `<div class="mr-tile${got ? " got" : ""}${cur ? " cur" : ""}${missed ? " missed" : ""}"><div class="mr-pic"><img src="${k.art(m)}" alt="" draggable="false" loading="lazy"></div><b>${escapeHtml(name)}</b>${cur ? '<span class="mr-now">This month</span>' : ""}<small>${escapeHtml(hint)}</small><i class="mr-seas">Seasonal</i></div>`;
@@ -7176,6 +7177,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function flairPackOf(id) { return FLAIR_PACK_CATALOG.find((p) => p.flairs.includes(id)); }
   function ownsFlair(item) {
+    if (item.monthly) return monthlyRewardEarned(item.monthly, 4);
     if (item.cost === 0) return true;
     const own = (myProfile.cosmetics && myProfile.cosmetics.owned && myProfile.cosmetics.owned.effects) || {};
     const pk = flairPackOf(item.id);
@@ -7343,12 +7345,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const unBtn = document.getElementById("cosm-unequip-all-btn");
     if (unBtn) unBtn.disabled = active.length === 0;
   }
+  let cosmFlairRow = null; // renderFlairRows's row builder, so earned monthly flairs are listed as normal rows
   function renderFlairRows(container) {
     if (!container) return;
     const equipped = (myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects) || "classic";
     container.innerHTML = "";
-    const row = (item) => cosmRow({
-      leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${flairPic(item.pic)}" alt="">`, name: item.label,
+    const row = cosmFlairRow = (item) => cosmRow({
+      leadHtml: `<img class="cosm-flair-pic${item.rainbow ? " rainbow" : ""}" src="${item.poster || flairPic(item.pic)}" alt="">`, name: item.label,
       owned: ownsFlair(item), free: item.cost === 0, cost: item.cost === 0 ? 0 : itemCoinCost("flair", item.id), tier: item.cost === 0 ? undefined : itemTier("flair", item.id), equipped: equipped === item.id, poolId: item.id,
       onPreview: () => previewFlair(item.id),
       onEquip: () => equipFlair(item.id), onBuy: (m) => buyFlairWithCoins(item, m === true),
@@ -20534,7 +20537,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     paws:      { pics: ["paw-dog", "paw-cat", "paw-bear"], move: "pulse", burst: "trail", lap: 3000, size: 38, items: 10, burstN: 27, life: 7000 },
     food:      { pics: ["pizza", "donut", "cookie"], move: "bob", burst: "fall", lap: 3000, size: 36, items: 9, burstN: 36, life: 5200 },
     applause:  { pics: ["clap"], move: "clap", burst: "claps", lap: 3000, size: 34, items: 10, burstN: 16, life: 4200 },
+    // Monthly flairs (the Mega level of each Monthly Challenge): monthly/motion.js plays the whole orbit and burst (see mmFlairPlay).
+    mf01: { monthly: 1, pics: ["star"], life: 5600 }, mf02: { monthly: 2, pics: ["star"], life: 5600 }, mf03: { monthly: 3, pics: ["star"], life: 5600 },
+    mf04: { monthly: 4, pics: ["star"], life: 5600 }, mf05: { monthly: 5, pics: ["star"], life: 5600 }, mf06: { monthly: 6, pics: ["star"], life: 5600 },
+    mf07: { monthly: 7, pics: ["star"], life: 5600 }, mf08: { monthly: 8, pics: ["star"], life: 5600 }, mf09: { monthly: 9, pics: ["star"], life: 5600 },
+    mf10: { monthly: 10, pics: ["star"], life: 5600 }, mf11: { monthly: 11, pics: ["star"], life: 5600 }, mf12: { monthly: 12, pics: ["star"], life: 5600 },
   };
+  // The 12 monthly flairs as shop items (earned by finishing the month's Mega level, never bought).
+  const MONTHLY_FLAIR_ITEMS = ["Gold confetti", "Rising hearts", "Clover rain", "Spring blossoms", "Piñata candy", "Beach balls", "Water balloons", "Surf wave", "A+ stamps", "Ghost parade", "Cornucopia spill", "Sleigh and presents"]
+    .map((label, i) => ({ id: "mf" + String(i + 1).padStart(2, "0"), label, cost: 0, monthly: i + 1, poster: MONTHLY_REWARD_KINDS.flair.art(i + 1) }));
+  // Plays a monthly flair around a card. From the drumroll it is called twice (orbit, then burst): the first call plays the whole thing, so the burst call only has to start it when nothing is already playing (a solo celebration).
+  function mmFlairPlay(li, f, burstOnly) {
+    const key = "f" + f.monthly;
+    if (!window.MM || !MM.info(key) || !li || !li.isConnected) return;
+    if (burstOnly && li.__mmFlair && li.__mmFlair.isConnected) return;
+    const r = li.getBoundingClientRect(), s = Math.min(2.2, Math.max(1, window.innerWidth / 300));
+    const host = document.createElement("div");
+    host.className = "flair-layer mm-flair";
+    host.style.cssText = `inset:auto;left:${r.left + r.width / 2 - 150 * s}px;top:${r.top + r.height / 2 - 215 * s}px;width:300px;height:440px;transform:scale(${s});transform-origin:0 0`;
+    reactionsPanelEl.appendChild(host);
+    li.__mmFlair = host;
+    MM.ready().then(() => {
+      if (!host.isConnected) return;
+      MM.buildFlair(key, host, r.width / s, r.height / s);
+      if (burstOnly) host.getAnimations({ subtree: true }).forEach((a) => { a.currentTime = FLAIR_DRUM_MS; });
+      setTimeout(() => host.remove(), MM.info(key).D + 300);
+    });
+  }
   const flairPic = (n) => (n === "coin" ? "icons/coin-v2.png" : n === "popper" ? "icons/reactions/popper.png" : /^conf-\d+$/.test(n) ? `icons/reactions/fx/${n}.png` : `icons/flair/${n}.png`);
   const reduceMotion = () => window.matchMedia && prefersReducedMotion();
   // ?flair=hearts previews a flair in-game; otherwise the winner's own equipped flair (default Classic Stars).
@@ -20552,6 +20581,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function flairOrbit(li, flairId, ms) {
     if (reduceMotion()) return;
     const f = FLAIRS[flairId], size = f.size;
+    if (f.monthly) { mmFlairPlay(li, f, false); return; }
     const layer = document.createElement("div");
     layer.className = "flair-layer";
     reactionsPanelEl.appendChild(layer);
@@ -20883,6 +20913,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function flairBurst(li, flairId) {
     if (reduceMotion()) return;
     const f = FLAIRS[flairId], size = f.size;
+    if (f.monthly) { mmFlairPlay(li, f, true); return; }
     const r = li.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const layer = document.createElement("div");
     layer.className = "flair-layer";

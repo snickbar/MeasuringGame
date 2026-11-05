@@ -355,7 +355,8 @@ const flap = (s, D, nameA, nameB, w, x0, y0, x1, y1, t0, t1, bob = 6, flip = fal
 
 /* ================= FLAIRS (300 x 440): items circle the player card, then a big burst, like the game's own flairs ================= */
 const FD = 2300, FC = { x: 150, y: 215, w: 184, h: 84 };
-function fcard(g, D) { const c = box(g, `left:${FC.x - FC.w / 2}px;top:${FC.y - FC.h / 2}px;width:${FC.w}px;height:${FC.h}px;border-radius:16px;background:var(--cardbg);border:3px solid var(--cardline);display:flex;align-items:center;gap:12px;padding:0 14px;box-sizing:border-box;font:700 15px Fredoka,system-ui,sans-serif;color:var(--cardfg);`, 5);
+let NOCARD = false; // in the game the real winner card is on screen, so the stand-in card is not drawn
+function fcard(g, D) { if (NOCARD) return null; const c = box(g, `left:${FC.x - FC.w / 2}px;top:${FC.y - FC.h / 2}px;width:${FC.w}px;height:${FC.h}px;border-radius:16px;background:var(--cardbg);border:3px solid var(--cardline);display:flex;align-items:center;gap:12px;padding:0 14px;box-sizing:border-box;font:700 15px Fredoka,system-ui,sans-serif;color:var(--cardfg);`, 5);
   c.innerHTML = '<span style="width:50px;height:50px;border-radius:11px;background:linear-gradient(135deg,#ffd9a0,#ff9f6a);display:block;flex:none"></span><span style="line-height:1.25">Alex<br><small style="font-weight:600;opacity:.65">1st place</small></span>';
   c.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1.05)', opacity: 1, offset: 350 / D }, { transform: 'scale(1)', offset: 500 / D }, { transform: 'scale(1)', offset: (FD - 160) / D }, { transform: 'scale(1.06,.96)', offset: (FD - 40) / D }, { transform: 'scale(0,1)', offset: (FD + 90) / D }, { transform: 'scale(1.04)', offset: (FD + 260) / D }, { transform: 'scale(1)', offset: (FD + 340) / D }, { transform: 'scale(1)', opacity: 1, offset: (D - 700) / D }, { transform: 'scale(1)', opacity: 0 }], { duration: D, fill: 'both' }); return c; }
 function forbit(g, D, sp) {
@@ -502,7 +503,7 @@ def('f12', 'f', FD + 5000, (s) => { const D = FD + 5000, g = box(s, 'left:0;top:
 
 
 const RATE = { r7: 1.4, r10: 1, r6: 1.15 };
-window.MM = {
+const MM = window.MM = {
   ready() {
     if (!readyP) readyP = fetch('monthly/art-manifest.json').then((r) => r.json()).then((m) => Promise.all(Object.keys(m).map((k) => {
       A[k] = { w: m[k].w, h: m[k].h, u: 'monthly/art/' + k + '.webp' };
@@ -511,6 +512,8 @@ window.MM = {
     return readyP;
   },
   build(key, stage) { SEED = 7; stage.innerHTML = ''; ANIM[key].build(stage); const r = RATE[key] || 1; if (r !== 1) stage.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = r; }); },
+  /* a flair on the real winner card: host is a 300x440 box whose point (150,215) sits at the card centre; cardW/cardH are the card's size in host units */
+  buildFlair(key, host, cardW, cardH) { NOCARD = true; FC.w = cardW; FC.h = cardH; try { MM.build(key, host); } finally { NOCARD = false; FC.w = 184; FC.h = 84; } },
   info(key) { const a = ANIM[key]; return a ? { kind: a.kind, D: a.D / (RATE[key] || 1) } : null; },
   keys: () => Object.keys(ANIM),
   sizes: { r: [R, R], b: [BW, BH], f: [FW, FH] },
