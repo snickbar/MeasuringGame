@@ -12,6 +12,7 @@ const block = html.slice(start, end);
 const sb = {};
 vm.createContext(sb);
 const src = [
+  `const MONTHLY_BOARD_ITEMS = Array.from({length:12}, (_,i)=>({id:'mb'+String(i+1).padStart(2,'0')}));`,
   ...['EMOJI_PACK_CATALOG', 'FLAIR_PACK_CATALOG', 'BOARD_PACK_CATALOG', 'BACKGROUND_PACK_CATALOG', 'MONTH_BACKGROUNDS'].map(arraySource),
   line(/  const GACHA_TIER_WEIGHTS = \{[^}]*\};/, 'GACHA_TIER_WEIGHTS'),
   line(/  const emojiKey = [^\n]*/, 'emojiKey'),
