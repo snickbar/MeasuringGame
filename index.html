@@ -1900,6 +1900,14 @@ if (location.protocol === "file:") {
   }
   .code-name-row { display: flex; gap: 8px; }
   .code-name-row input { flex: 1; min-width: 0; }
+  #settings-code-keys[hidden] { display: none; }
+  #settings-code-card .code-name-row { align-items: stretch; }
+  #settings-code-card .code-name-row input { flex: 1 1 auto; min-width: 0; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+  #settings-code-card #settings-code-btn { flex: 0 0 auto; width: auto; margin: 0; padding-inline: 20px; }
+  .settings-code-status { font-size: 13px; font-weight: 600; margin: 8px 0 0; min-height: 0; color: var(--text-muted); }
+  .settings-code-status:empty { display: none; }
+  .settings-code-status.ok { color: #2f7a2f; }
+  .settings-code-status.bad { color: #b3261e; }
 
   /* ---- Settings screen ---- */
   #settings-toggles-panel { padding: 2px 4px 14px; margin: 0; color: var(--text); }
@@ -4528,6 +4536,14 @@ if (location.protocol === "file:") {
   <p id="settings-account-status"></p>
   </div>
 
+  <div class="settings-card" id="settings-code-card">
+    <h3>Redeem a code</h3>
+    <p class="settings-profile-hint">Got a bonus code? Enter it for a reward. Each code works once per account, and you need to be signed in.</p>
+    <div class="code-name-row"><input id="settings-code-input" placeholder="Enter code" maxlength="20" readonly inputmode="none" autocomplete="off" autocapitalize="characters" aria-label="Bonus code" /><button id="settings-code-btn" type="button" class="settings-cream-btn">Redeem</button></div>
+    <div id="settings-code-keys" class="custom-kbd" hidden></div>
+    <p id="settings-code-status" class="settings-code-status" role="status"></p>
+  </div>
+
   <div class="settings-card" id="settings-game-card">
     <h3>Game</h3>
     <div id="settings-toggles-panel">
@@ -5074,6 +5090,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script src="monthly/motion.js"></script>
 <script type="module">
   import { monthlyLevelEarned, repairMonthlyRewards } from "./anim/monthly-rewards.mjs";
+  import { normalizeCode, resolveCode, applyRedeem, BUILT_IN_CODES, CODE_MAX_LENGTH } from "./anim/redeem-codes.mjs";
   import { questionClockPending, questionReadyToken, beginQuestionClock, boardReadingMs } from "./anim/question-clock.mjs";
   import { botDecisionScope, commitBotDecision } from "./anim/bot-decisions.mjs";
   import { HL_SHIELD_CHAIN, hlThemeDue, hlSurvivalOutcome } from "./anim/high-low-survival.mjs";
@@ -6021,6 +6038,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       unlockedAvatars: defaultUnlockedAvatars(),
       hostUnlocked: false,
       hostFreeDates: {},
+      redeemedCodes: {},
       adsWatchedDate: null,
       adsWatchedCount: 0,
       cosmetics: defaultCosmeticState(),
@@ -6247,6 +6265,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         unlockedAvatars: { ...defaultUnlockedAvatars(), ...(data.unlockedAvatars || {}) },
         hostUnlocked: !!data.hostUnlocked,
         hostFreeDates: data.hostFreeDates || {},
+        redeemedCodes: data.redeemedCodes || {},
         adsWatchedDate: data.adsWatchedDate || null,
         adsWatchedCount: data.adsWatchedCount || 0,
         cosmetics: {
@@ -8974,6 +8993,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // project's history, just with a different variable.
   let accountUser = null; // the signed-in Firebase Auth user, or null
   let authFlowInProgress = false; // true for the duration of an explicit sign-in/out, see onAuthStateChanged below
+
+  // ==================== Redeem a code (Settings) ====================
+  // A signed-in account can use each code once: the coins and the "used" mark are written together in one profile update, so a
+  // second tap, a second device or a retry can never pay twice. Codes: built-ins in anim/redeem-codes.mjs plus codes/<CODE> in the database.
+  const redeemInputEl = document.getElementById("settings-code-input"), redeemBtnEl = document.getElementById("settings-code-btn");
+  const redeemKeysEl = document.getElementById("settings-code-keys"), redeemStatusEl = document.getElementById("settings-code-status");
+  let redeemBusy = false;
+  function redeemSay(text, kind) { redeemStatusEl.textContent = text; redeemStatusEl.className = "settings-code-status" + (kind ? " " + kind : ""); }
+  async function redeemCode() {
+    if (redeemBusy) return;
+    const code = normalizeCode(redeemInputEl.value);
+    if (!code) { redeemSay("Type a code first.", "bad"); return; }
+    if (!accountUser) { redeemSay("Sign in with Google (in Account, above) to redeem codes.", "bad"); return; }
+    if ((myProfile.redeemedCodes || {})[code]) { redeemSay("You've already used that code.", "bad"); return; }
+    redeemBusy = true; redeemBtnEl.disabled = true; redeemSay("Checking...", "");
+    try {
+      let dbDef = null;
+      if (!Object.prototype.hasOwnProperty.call(BUILT_IN_CODES, code)) {
+        try { dbDef = (await get(ref(db, "codes/" + code))).val(); }
+        catch (err) { if (!/permission/i.test(String(err && (err.code || err.message)))) { redeemSay("Couldn't check that code. Check your connection and try again.", "bad"); return; } }
+      }
+      const reward = resolveCode(code, dbDef);
+      if (!reward) { redeemSay("That code isn't valid.", "bad"); return; }
+      let status = "used";
+      await runTransaction(ref(db, `profiles/${deviceId}`), (cur) => {
+        const r = applyRedeem(cur || defaultProfile(), code, reward);
+        status = r.status;
+        return r.status === "ok" ? r.profile : undefined; // already used: abort, nothing is paid
+      });
+      if (status === "ok") { redeemSay(`+${reward.coins} coins added!`, "ok"); redeemInputEl.value = ""; redeemKeysEl.hidden = true; vibrate([30, 40, 30]); }
+      else redeemSay("You've already used that code.", "bad");
+    } catch (err) {
+      console.warn("[redeem] failed", err);
+      redeemSay("Something went wrong. Try again.", "bad");
+    } finally { redeemBusy = false; redeemBtnEl.disabled = false; }
+  }
+  for (const type of ["keydown", "paste", "drop", "beforeinput"]) redeemInputEl.addEventListener(type, (e) => { if (type === "keydown" && e.key === "Tab") return; e.preventDefault(); });
+  renderCustomKeyboard(redeemKeysEl, redeemInputEl, { maxLength: CODE_MAX_LENGTH, onDone: () => { redeemKeysEl.hidden = true; } });
+  redeemInputEl.addEventListener("click", () => { redeemKeysEl.hidden = false; });
+  redeemInputEl.addEventListener("input", () => { if (redeemStatusEl.textContent) redeemSay("", ""); });
+  redeemBtnEl.addEventListener("click", redeemCode);
 
   function renderAccountUi() {
     if (!isNativeApp) return;
