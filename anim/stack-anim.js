@@ -470,12 +470,22 @@ export function createStackAnimation(container, options = {}) {
     const entry = { url };
     entry.promise = new Promise((resolve, reject) => {
       const im = new Image();
-      im.onload = () => {
-        entry.img = im;
-        resolve(entry);
-      };
-      im.onerror = () => reject(new Error('Could not load the picture for ' + o.id));
+      let settled = false;
+      const timeout = setTimeout(() => finish(new Error('Picture load timed out for ' + o.id)), 8000);
+      function finish(error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout); im.onload = im.onerror = null;
+        if (error) reject(error);
+        else { entry.img = im; resolve(entry); }
+      }
+      im.onload = () => finish();
+      im.onerror = () => finish(new Error('Could not load the picture for ' + o.id));
       im.src = url;
+    }).catch(error => {
+      // A late failure from old artwork must not evict its replacement.
+      if (pics.get(o.id) === entry) pics.delete(o.id);
+      throw error;
     });
     pics.set(o.id, entry);
     return entry.promise;

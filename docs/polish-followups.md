@@ -18,3 +18,5 @@ Completed November 5: monthly level cards identify their reward; each level's re
 Also completed: monthly boards, reactions and flairs preload only their own artwork. Shared images stay cached; failed or stalled images do not block unrelated effects and can retry.
 
 Loader recovery completed: stalled monthly metadata requests now time out and retry, including stalled response bodies. Reveal-engine failures and timeouts no longer stay cached as a permanent fallback. Web retries refresh dependency URLs too; native bundled asset paths remain unchanged.
+
+Reveal safety completed: Survival callbacks and delayed Skip actions are scoped to the current run, question and visible reveal. Failed or timed-out object pictures can retry; a late failure for old artwork cannot remove a newer picture from the cache.

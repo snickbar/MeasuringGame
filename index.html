@@ -13078,7 +13078,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const survivalContentEl = document.getElementById("survival-content");
   popChangedNumbers(survivalContentEl);
-  let sv = null, svAnim = null, svPairs = null;
+  let sv = null, svAnim = null, svPairs = null, svRevealToken = 0;
   function survivalPairs() {
     if (svPairs) return svPairs;
     svPairs = [];
@@ -13219,7 +13219,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // Show the result of the round: the card with the gauge, then (if it cost a life) the cracking heart and the hearts update.
   function svShowResult(m) {
-    if (!sv || sv.resultShown) return; sv.resultShown = true;
+    if (!sv || sv.phase !== "reveal" || sv.resultShown) return; sv.resultShown = true;
     const q = sv.q, g = sv.g, acc = roundAccuracy(effectiveGuess(q, g, deviceId) / q.answer), ok = acc >= SURVIVAL_PASS;
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
@@ -13330,7 +13330,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (fromHub) overlayReturnScreen = soloScreenEl;
     modeTutorialUI?.auto('survival');
   }
-  function survivalStop() { if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
+  function survivalStop() { svRevealToken++; if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
   function renderSurvival() {
     if (!sv) return;
     if (sv.phase === "question") rerollPerRound(sv, sv.asked);
@@ -13422,23 +13422,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     survivalLoadBoard();
   }
   async function survivalRunReveal() {
-    const q = sv.q;
-    const showResult = (m) => svShowResult(m);
+    survivalStop();
+    const run = sv, q = run.q, token = svRevealToken;
+    const current = () => sv === run && sv.q === q && sv.phase === "reveal" && svRevealToken === token && survivalScreenEl.classList.contains("active");
+    const showResult = (m) => { if (current()) svShowResult(m); };
     const pair = questionObjects(q);
     if (!pair) { showResult(null); return; }
     try {
       const m = await loadAnimModule();
-      if (!m || sv.phase !== "reveal") { showResult(m); return; }
-      survivalStop();
+      if (!current()) return;
+      if (!m) { showResult(null); return; }
       const stage = document.getElementById("sv-stage"); if (!stage) return;
       svAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = svAnim;
       dockRevealSkip(stage,"sv-skip");
       const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
-      if (svAnim !== ctl || sv.phase !== "reveal") return;
+      if (!current() || svAnim !== ctl) return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
-    } catch (err) { console.warn("[measuring-game] survival animation failed", err); showResult(null); }
+    } catch (err) { if (current()) { console.warn("[measuring-game] survival animation failed", err); showResult(null); } }
   }
   // Run over: save the best, post it, count the rounds. Coins are paid for every round survived.
   async function survivalFinish() {
@@ -13510,9 +13512,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderSurvival(); return;
     }
     if (b.id === "sv-skip") {
-      if (svAnim) { try { svAnim.stop(); } catch (err) {} }
+      survivalStop();
+      const run = sv, q = sv.q, token = svRevealToken;
       const m = await loadAnimModule();
-      svShowResult(m); return;
+      if (sv === run && sv.q === q && svRevealToken === token && survivalScreenEl.classList.contains("active")) svShowResult(m);
+      return;
     }
     if (b.id === "sv-finish") { sv = { phase: "intro", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); window.scrollTo(0, 0); return; }
     if (b.id === "sv-revive") {
