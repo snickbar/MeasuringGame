@@ -27,3 +27,7 @@ Approved for the object list November 1, 2026. Checked entries are integrated me
 - [ ] Cooking turner — review whether to reuse the existing grill-spatula entry.
 
 Bicycle, unicycle, jack-in-the-box, rabbit, dolphin, and cruise ship already exist as measurement objects. Their new Home animation artwork does not add duplicate collection entries.
+
+## Batch 2 (November 6, 2026) — path to 500+ standard objects
+
+Approved by the user. 105 objects with sizes and measurements are in `art-source/object-batch-2026-11-06/spec.json` (artwork not yet made). Standard + fantasy objects: 396 now, 501 after this batch. Checked against every seasonal pack; left out as duplicates: backpack, scissors, barbecue grill, spider web, tulip, bat, alarm clock (New Year "clock"), harp (St. Patrick's Irish harp), bucket (beach bucket), roast turkey (kept the live wild turkey).
