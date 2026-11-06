@@ -278,6 +278,14 @@ if (location.protocol === "file:") {
   .mr-seas { font-size: 10px; font-style: normal; font-weight: 800; opacity: .6; }
   .mr-tile.missed { opacity: .65; }
   .mr-locked .cosm-lead img { filter: grayscale(1) opacity(.5); }
+  /* A monthly reward you haven't unlocked is a plain silhouette; tapping it explains how to unlock it (no preview). */
+  .mr-sil { filter: brightness(0) opacity(.55) !important; }
+  .mr-locked .cosm-pv-wrap { cursor: pointer; }
+  .mr-lock-dlg { text-align: center; }
+  .mr-lock-dlg .mr-lock-pic { display: flex; align-items: center; justify-content: center; height: 120px; margin: 4px 0 8px; }
+  .mr-lock-dlg .mr-lock-pic > * { zoom: 2.8; }
+  .mr-lock-dlg h3 { margin: 0 0 6px; font-size: 22px; color: #1a1208; }
+  .mr-lock-dlg p { margin: 0 0 14px; font-size: 17px; font-weight: 600; color: #000; }
   .question-prompt[data-hold] #question-answer-line { visibility: hidden; } /* a monthly board keeps the answer back until its question has finished writing in */
   .cosm-bg-pic { width: 34px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #d9c29a; flex-shrink: 0; }
   .cosm-bg-none { display: inline-block; background: linear-gradient(150deg, #fbfaf6, #f3f1ea 45%, #fdf6ec); }
@@ -1840,6 +1848,12 @@ if (location.protocol === "file:") {
   body.overlay-has-return .career-tabs { padding-right: 60px; }
   #create-screen, #join-screen, #name-avatar-screen, #lobby-screen,
   #settings-screen, #howto-screen, #collection-screen, #preset-settings-screen, #items-screen, #achievements-screen, #career-screen, #daily-screen, #solo-screen, #worlds-screen, #monthly-screen, #survival-screen, #wb-screen, #teamvteam-screen, #teamworlds-screen { position: relative; }
+  /* Settings opened over a running game: the game screens stay exactly as they are underneath (so the round keeps going),
+     and Settings is a full layer above them, under the top toolbar. */
+  #settings-back-game { display: none; width: 100%; margin: 0 0 12px; }
+  #settings-screen.peek { display: block !important; position: fixed; top: 62px; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto; z-index: 51; overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; padding: 10px 12px 40px; background: linear-gradient(150deg, #fbfaf6 0%, #f3f1ea 45%, #fdf6ec 100%); animation: none; }
+  #settings-screen.peek #settings-back-game { display: block; }
+  #settings-screen.peek #settings-close-btn { display: none; }
   /* Keep navigation above scrolling content; Lobby pins only Start game and Back. */
   .screen-lock { position: sticky; top: 62px; z-index: 6; margin: 0 -12px 8px; padding: 6px 12px 6px; background: transparent; }
   .screen-lock .screen-back-btn { top: 0; right: 12px; }
@@ -1868,6 +1882,8 @@ if (location.protocol === "file:") {
   }
   .avatar-choice .avatar-icon { width: 100%; height: 100%; }
   /* avatars are cut-outs now: no square, no frame - a soft shadow keeps them crisp on any background */
+  /* Facing the middle: left-side cards flip avatars that look left, right-side cards flip the ones that look right. */
+  .hs-col.l .avatar-icon[data-face="l"], .hs-col.r .avatar-icon[data-face="r"], #score-col .avatar-icon[data-face="r"] { transform: scaleX(-1); }
   .avatar-icon { width: 1.8em; height: 1.8em; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 1.5px rgba(60,35,15,.35)); }
   .avatar-choice .avatar-icon, .collection-tile .avatar-icon { filter: none; }
   #recent-rooms-section { margin: 12px 0 0; padding: 10px 14px 12px; background: #fffdfa; border-radius: 14px; box-shadow: 0 1px 2px rgba(74,42,16,.05), 0 6px 18px rgba(90,58,38,.08); text-align: center; }
@@ -4496,6 +4512,7 @@ if (location.protocol === "file:") {
 
 <div id="settings-screen" class="screen">
   <button id="settings-close-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button>
+  <button id="settings-back-game" type="button" class="dc-btn">Back to game</button>
 
   <div class="settings-card" id="settings-profile-card">
     <h3>Profile</h3>
@@ -5393,6 +5410,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(async () => {
     if (!currentRoomCode || !roomState.players) return;
     const roomCode = currentRoomCode;
+    healPresence(); // a host marked disconnected can't move a Bluff round on; keep saying we're here
     maybeReassignHost(roomState, roomCode);
     let removedAny = false;
     for (const [id, p] of Object.entries(roomState.players)) {
@@ -5439,6 +5457,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // ==================== Local (per-user, per-browser) identity/prefs ====================
 
   // ==================== Gacha: avatar rarity tiers + coin economy ====================
+  // Which way the picture itself looks (only the ones clearly in profile; the rest face the front and are never flipped).
+  // Cards on the left of the table are shown looking right and cards on the right looking left, so everyone faces the middle.
+  const AVATAR_FACE = {av09: "r", av29: "r", av47: "r", av52: "r", av57: "r", av59: "r", av143: "r", av205: "r", av212: "r", av213: "r", av216: "r", av220: "r", av255: "r", av288: "r", av58: "l", av145: "l", av159: "l", av167: "l", av195: "l", av197: "l", av198: "l", av209: "l", av210: "l", av211: "l", av221: "l", av223: "l", av234: "l", av254: "l", av274: "l", av280: "l", av320: "l", av322: "l"};
   const AVATAR_TIERS = {
     av07: "default",
     av19: "default",
@@ -6763,7 +6784,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const earnedNow = !got && monthlyRewardEarned(m, k.level), cur = m === nowM;
       // a reward you do not have yet is the normal row with its picture greyed out and a note instead of the buttons
       const hint = earnedNow ? "Earned! Claim it in Stats, Awards" : cur ? `Finish Level ${k.level === 4 ? "Mega" : k.level} in the ${name} Monthly Challenge` : m > nowM ? `Opens in ${name}` : `${name} Monthly Challenge`;
-      const extra = { category: ({ reaction: "reactions", flair: "flairs", board: "boards", scene: "backgrounds" })[kind], ...(got ? {} : { owned: false, lockedHint: hint }) };
+      const lvName = k.level === 4 ? "Mega" : "Level " + k.level;
+      const how = earnedNow ? "Earned! Claim it in Stats, Awards." : `Finish ${lvName} in the ${name} Monthly Challenge${cur ? " this month." : m > nowM ? `, which opens in ${name}.` : ". It comes back next year."}`;
+      const extra = { category: ({ reaction: "reactions", flair: "flairs", board: "boards", scene: "backgrounds" })[kind], ...(got ? {} : { owned: false, lockedHint: hint, lockedHow: how, monthlyLock: true }) };
       const row = kind === "reaction" ? build(id2, 0, undefined, extra) : kind === "scene" ? build(MONTH_BACKGROUNDS[i], extra) : kind === "board" ? build(MONTHLY_BOARD_ITEMS[i], extra) : build(MONTHLY_FLAIR_ITEMS[i], extra);
       if (!got) row.classList.add("mr-locked");
       if (cur) row.querySelector(".cosm-name").insertAdjacentHTML("beforeend", '<span class="mr-now">This month</span>');
@@ -7289,6 +7312,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let cosmForceEquip = false, cosmRowCat = null;
   const PADLOCK_SVG = `<img src="icons/reactions/padlock.png" alt="">`;
+  function openMonthlyLockInfo(o, pic) {
+    let d = document.getElementById("mr-lock-dlg");
+    if (!d) {
+      d = document.createElement("dialog");
+      d.id = "mr-lock-dlg";
+      d.className = "cozy-dialog mr-lock-dlg";
+      d.addEventListener("click", (e) => { if (e.target === d || e.target.closest("[data-close]")) { d.close(); playSound("popup-close"); } });
+      document.body.appendChild(d);
+    }
+    d.setAttribute("aria-label", o.name);
+    d.innerHTML = `<div class="mr-lock-pic"></div><h3>${escapeHtml(o.name)}</h3><p>${escapeHtml(o.lockedHow)}</p><button type="button" class="dc-btn" data-close>OK</button>`;
+    const clone = pic.cloneNode(true);
+    clone.classList.add("mr-sil");
+    d.querySelector(".mr-lock-pic").appendChild(clone);
+    if (!d.open) d.showModal();
+    playSound("popup-open");
+  }
   function cosmRow(o) {
     const cat = o.category || cosmRowCat;
     const row = document.createElement("div");
@@ -7299,15 +7339,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.tier ? `<span class="rar-dot ${o.tier}" title="${({ common: "Common", rare: "Rare", ultra: "Ultra-rare" })[o.tier]}"></span>` : ""}${o.name}</span></div>`;
     // Tap the little picture to preview it (there is no separate Preview button any more).
     const pic = row.querySelector(".cosm-lead").firstElementChild;
-    if (o.onPreview && pic) {
+    // A locked Monthly reward can't be previewed: its picture stays a silhouette and tapping it says how to unlock it.
+    const howOnly = !!(o.monthlyLock && !o.owned && o.lockedHow);
+    if (howOnly && pic) pic.classList.add("mr-sil");
+    if ((howOnly || o.onPreview) && pic) {
       const w = document.createElement("span");
       w.className = "cosm-pv-wrap";
       w.setAttribute("role", "button");
-      w.setAttribute("aria-label", `Preview ${o.name}`);
+      w.setAttribute("aria-label", howOnly ? `How to unlock ${o.name}` : `Preview ${o.name}`);
       pic.replaceWith(w);
       w.append(pic);
-      w.insertAdjacentHTML("beforeend", `<span class="cosm-zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="#5b3a26" stroke-width="3"/><path d="M15 15l6 6" stroke="#5b3a26" stroke-width="3.4" stroke-linecap="round"/></svg></span>`);
-      w.addEventListener("click", o.onPreview);
+      if (!howOnly) w.insertAdjacentHTML("beforeend", `<span class="cosm-zoom"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="#5b3a26" stroke-width="3"/><path d="M15 15l6 6" stroke="#5b3a26" stroke-width="3.4" stroke-linecap="round"/></svg></span>`);
+      w.addEventListener("click", howOnly ? () => openMonthlyLockInfo(o, pic) : o.onPreview);
     }
     const btn = document.createElement("button");
     btn.type = "button";
@@ -7568,7 +7611,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   watchMyProfile();
 
   function avatarHtml(id, extraClass) {
-    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png" alt="" draggable="false">` : "";
+    const dir = typeof AVATAR_FACE !== "undefined" && Object.hasOwn(AVATAR_FACE, id) ? AVATAR_FACE[id] : "", face = dir ? ` data-face="${dir}"` : "";
+    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png"${face} alt="" draggable="false">` : "";
   }
   // Escapes any free-text value (player names, above all) before it's dropped into
   // an innerHTML template — without this, a name like "<img src=x onerror=...>"
@@ -10628,7 +10672,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   toolbarSettingsBtn.addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(toolbarMenuEl.hidden); });
   document.addEventListener("click", (e) => { if (!toolbarMenuEl.hidden && !toolbarMenuEl.contains(e.target)) setToolbarMenu(false); });
-  document.getElementById("menu-settings-btn").addEventListener("click", () => { setToolbarMenu(false); guardToolbarNav(() => openOverlay(settingsScreen))(); });
+  // Settings while a game is on: open it as a layer over the running game (the game keeps going underneath); Settings again, or
+  // "Back to game", closes it. Covers the room games and the solo runs (their screens stay as they are underneath).
+  const settingsBackGameBtn = document.getElementById("settings-back-game");
+  function settingsOverGameOpen() { return settingsScreen.classList.contains("peek"); }
+  function canPeekSettings() {
+    return !gameRewards?.active && !finalScreenEl.classList.contains("active") && (hudEl.classList.contains("active") || hsScreenEl.classList.contains("active") || bluffScreenEl.classList.contains("active") || !!activeSoloRun());
+  }
+  function setSettingsOverGame(open) {
+    if (open === settingsOverGameOpen()) return;
+    settingsScreen.classList.toggle("peek", open);
+    document.body.classList.toggle("settings-over-game", open);
+    if (open) settingsScreen.scrollTop = 0;
+    playSound(open ? "popup-open" : "popup-close");
+  }
+  settingsBackGameBtn.addEventListener("click", () => setSettingsOverGame(false));
+  // If the game ends or you leave it while Settings is up, there is nothing to go back to.
+  setInterval(() => { if (settingsOverGameOpen() && !canPeekSettings()) setSettingsOverGame(false); }, 400);
+  document.getElementById("menu-settings-btn").addEventListener("click", () => {
+    setToolbarMenu(false);
+    if (settingsOverGameOpen()) { setSettingsOverGame(false); return; }
+    if (canPeekSettings()) { setSettingsOverGame(true); return; }
+    guardToolbarNav(() => openOverlay(settingsScreen))();
+  });
   // How to Play moved into Settings - the first-open nudge (a pulsing ring) now
   // lives on the Settings icon itself instead, since that's the toolbar button
   // that actually gets you there now.
@@ -16104,6 +16170,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (Date.now() < qrScanGuardUntil) return;
     if (gameRewards?.active) return;
     if (exitConfirmOverlayEl.classList.contains("show")) { exitConfirmNoBtn.click(); return; }
+    if (settingsOverGameOpen()) { setSettingsOverGame(false); return; }
     const solo = activeSoloRun();
     if (solo) { solo[0].querySelector('.screen-back-btn').click(); return; }
     if (isInActiveGame()) { openLeaveGameConfirm(); return; }
