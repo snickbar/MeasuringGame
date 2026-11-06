@@ -4,6 +4,13 @@ import {mountHighLowTutorial} from './high-low-tutorial.mjs';
 import {partyTutorialScene} from './party-tutorial.mjs';
 import {MORE_MODE_TUTORIALS,extraTutorialScene} from './more-tutorials.mjs';
 const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// A mode's mascot stands on the dialog's top edge and points at the slide. It gets as tall as the room above the dialog allows.
+const mascotHtml = def => def.mascot ? `<img class="mt-mascot" src="${esc(def.mascot)}" alt="" draggable="false">` : '';
+function fitMascot(dialog) {
+  const m = dialog.querySelector('.mt-mascot'); if (!m || !dialog.open) return;
+  const room = dialog.getBoundingClientRect().top - 8;
+  dialog.style.setProperty('--mt-mh', Math.max(0, Math.min(96, room)) + 'px');
+}
 const img = (src, cls = '') => `<img class="${cls}" src="${esc(src)}" alt="" draggable="false">`;
 
 // Each scene is plain HTML whose CSS animations loop; changing slides re-renders it, so it restarts.
@@ -59,7 +66,7 @@ const SCENES = {
 };
 
 export const MODE_TUTORIALS = {
-  party: { title: 'Classic Party', autoplay:true, slideMs:7500, slides: [
+  party: { title: 'Classic Party', mascot:'anim/mode-mascots/classic-ant-tutorial.webp', autoplay:true, slideMs:7500, slides: [
     { scene:'partyExample',lesson:'players',head:'Same question. Your own guess.',text:'Everyone plays on their own device. Try to be the closest each round.' },
     { scene:'partyExample',lesson:'measure',head:'Think end to end',text:'Imagine lining up the smaller object along the bigger one. Here, two hot dogs fit along the sneaker.' },
     { scene:'partyExample',lesson:'guess',head:'Make your guess, then lock it in',text:'Alex guesses 1.8 before the timer ends. Decimal guesses are allowed.' },
@@ -158,11 +165,13 @@ export function createModeTutorial({ owner, sample, storage }) {
       const sl = def.slides[i], last = i === def.slides.length - 1;
       const canSkip = controls !== 'guest';
       dialog.dataset.mode=mode;
-      dialog.innerHTML = `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${canSkip ? `<button type="button" class="mt-skip" data-skip>${controls === 'host' ? 'Skip for everyone' : 'Skip'}</button>` : ''}</header>
+      dialog.toggleAttribute('data-mascot', !!def.mascot);
+      dialog.innerHTML = `${mascotHtml(def)}<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${canSkip ? `<button type="button" class="mt-skip" data-skip>${controls === 'host' ? 'Skip for everyone' : 'Skip'}</button>` : ''}</header>
         <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene]({...s,lesson:sl.lesson,lessonMode:mode})}</div>
         <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
         <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
         ${controls === 'guest' ? '<p class="mt-wait">The host is showing how to play.</p>' : `<footer>${i > 0 ? '<button type="button" data-back>Back</button>' : ''}<button type="button" data-next class="mt-go">${last ? 'Got it' : 'Next'}</button></footer>`}`;
+      fitMascot(dialog);
       dialog.querySelector('[data-skip]')?.addEventListener('click', () => { mark(mode); close('skipped'); });
       dialog.querySelector('[data-back]')?.addEventListener('click', () => { if (performance.now() - lastAutoAt < 800) return; i--; render(); });
       dialog.querySelector('[data-next]')?.addEventListener('click', () => { if (performance.now() - lastAutoAt < 800) return; if (last) { mark(mode); close('done'); } else { i++; render(); } });
@@ -172,6 +181,7 @@ export function createModeTutorial({ owner, sample, storage }) {
     render();
     dialog.showModal();
     dialog.focus({ preventScroll: true });
+    fitMascot(dialog);
     return new Promise(res => { finish = res; });
   }
   // Party playback: the app decides which slide is showing (from a shared clock), so every player
@@ -188,13 +198,15 @@ export function createModeTutorial({ owner, sample, storage }) {
     const sl = def.slides[i];
     dialog.dataset.synced = mode;
     dialog.dataset.mode = mode;
-    dialog.innerHTML = `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${host ? '<button type="button" class="mt-skip" data-skip>Skip for everyone</button>' : ''}</header>
+    dialog.toggleAttribute('data-mascot', !!def.mascot);
+    dialog.innerHTML = `${mascotHtml(def)}<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${host ? '<button type="button" class="mt-skip" data-skip>Skip for everyone</button>' : ''}</header>
       <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene]({...sample(),lesson:sl.lesson,lessonMode:mode})}</div>
       <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
       <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
       <p class="mt-wait">${host ? 'Everyone is watching this together.' : 'The host is showing how to play.'}</p>`;
     dialog.querySelector('[data-skip]')?.addEventListener('click', onSkip);
     if (!dialog.open) { dialog.showModal(); dialog.focus({ preventScroll: true }); }
+    fitMascot(dialog);
     startScene(sl);
     return true;
   }
