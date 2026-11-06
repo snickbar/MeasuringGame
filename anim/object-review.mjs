@@ -2,12 +2,17 @@ import {createStackAnimation} from './stack-anim.js';
 import {measurementQuestionPrompt} from './object-review-prompts.mjs';
 import {MOTIONS,currentSettings,validateSettings,validatePicks,sameSettings} from './object-review-model.mjs';
 
-const $=id=>document.getElementById(id),key='size-em-up-object-draft-v1',pageSize=30;
+const batch=document.documentElement.dataset.reviewBatch==='batch2-2026-11-06'?'batch2-2026-11-06':'';
+const $=id=>document.getElementById(id),key=batch?'size-em-up-object-draft-'+batch:'size-em-up-object-draft-v1',pageSize=30;
 let data,latestCollection,draft={},selected,page=0,views={},generation=0,refreshTimer,invalid=false,displayUnit=1,reviewed=new Set(),activeRole='small';
 const status=text=>$('status').textContent=text;
 const chosen=o=>draft[o.id]||currentSettings(o);
 const setting=o=>$('use-current').checked?currentSettings(o):chosen(o);
-const exportData=()=>({type:'size-em-up-object-picks',version:1,exportedAt:new Date().toISOString(),reviewedIds:[...reviewed],objects:data.objects.map(o=>({id:o.id,name:o.name,current:currentSettings(o),settings:chosen(o)}))});
+const exportData=()=>({type:'size-em-up-object-picks',version:1,...(batch?{batch}:{}),exportedAt:new Date().toISOString(),reviewedIds:[...reviewed],objects:data.objects.map(o=>({id:o.id,name:o.name,current:currentSettings(o),settings:chosen(o)}))});
+function validateReviewPicks(input){
+  if((input.batch||'')!==batch)throw Error('This choices file belongs to a different object review.');
+  return validatePicks(input,data);
+}
 function persist(){
   try{localStorage.setItem(key,JSON.stringify(exportData()));status(`${reviewed.size} reviewed · ${Object.keys(draft).length} changed · saved`);}
   catch{status('Browser storage is unavailable. Export your choices to save them.');}
@@ -159,17 +164,17 @@ $('units').onchange=()=>{const nextUnit=Number($('units').value);$('size').value
 for(const id of ['size','qualifier','subject'])$(id).oninput=edit;
 for(const id of ['search','group','dimension-filter','changed','unreviewed','new-objects','latest-objects','monthly-objects'])$(id).addEventListener(id==='search'?'input':'change',()=>{if(['new-objects','latest-objects','monthly-objects'].includes(id)&&$(id).checked)for(const other of ['new-objects','latest-objects','monthly-objects'])if(other!==id)$(other).checked=false;page=0;renderList();});
 $('prev').onclick=()=>{page--;renderList();};$('next').onclick=()=>{page++;renderList();};
-$('export').onclick=()=>{if(invalid)return;const url=URL.createObjectURL(new Blob([JSON.stringify(exportData(),null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='size-em-up-object-picks.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Choices exported. Send me the JSON file when you’re ready to apply them.');};
-$('import').onclick=()=>$('file').click();$('file').onchange=async()=>{try{const text=await $('file').files[0]?.text();if(!text)return;const input=JSON.parse(text),next=validatePicks(input,data);draft=next;reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));persist();if(selected)selectObject(selected);renderList();}catch(e){status('Import failed: '+e.message);}finally{$('file').value='';}};
+$('export').onclick=()=>{if(invalid)return;const url=URL.createObjectURL(new Blob([JSON.stringify(exportData(),null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=batch?'size-em-up-object-picks-batch2.json':'size-em-up-object-picks.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Choices exported. Send me the JSON file when you’re ready to apply them.');};
+$('import').onclick=()=>$('file').click();$('file').onchange=async()=>{try{const text=await $('file').files[0]?.text();if(!text)return;const input=JSON.parse(text),next=validateReviewPicks(input);draft=next;reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));persist();if(selected)selectObject(selected);renderList();}catch(e){status('Import failed: '+e.message);}finally{$('file').value='';}};
 let resizeTimer;window.addEventListener('resize',()=>{chooseRole(activeRole);clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>refresh(false),250);});
 try{
-  const response=await fetch('./object-review-data.json',{cache:'no-store'});if(!response.ok)throw Error('Could not load object catalog');data=await response.json();
+  const response=await fetch(batch?'./object-review-batch2-data.json':'./object-review-data.json',{cache:'no-store'});if(!response.ok)throw Error('Could not load object catalog');data=await response.json();
   latestCollection=data.objects.map(o=>o.collection).filter(c=>c?.startsWith('new-')).sort().at(-1);
   $('latest-count').textContent=data.objects.filter(o=>o.collection===latestCollection).length;
   $('new-count').textContent=data.objects.filter(o=>o.collection?.startsWith('new-')).length;
   for(const [id,type]of Object.entries(data.types)){ $('dimension').add(new Option(type.noun,id));$('dimension-filter').add(new Option(type.noun,id)); }
   for(const role of ['small','big'])for(const [id,name]of Object.entries(MOTIONS))$('motion-'+role).add(new Option(name,id));
-  let restoreError='';try{const saved=localStorage.getItem(key);if(saved){const input=JSON.parse(saved);draft=validatePicks(input,data);reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));}}catch{restoreError='Saved draft could not be restored. Import your last export to recover it.';}
+  let restoreError='';try{const saved=localStorage.getItem(key);if(saved){const input=JSON.parse(saved);draft=validateReviewPicks(input);reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));}}catch{restoreError='Saved draft could not be restored. Import your last export to recover it.';}
   $('new-objects').checked=new URLSearchParams(location.search).get('collection')==='new';
   $('latest-objects').checked=new URLSearchParams(location.search).get('collection')==='latest';
   $('monthly-objects').checked=new URLSearchParams(location.search).get('collection')==='monthly';
@@ -178,5 +183,5 @@ try{
   $('browse').open=!matchMedia('(max-width:650px)').matches;chooseRole(activeRole);
   selectObject(filteredObjects().find(o=>o.id===(new URLSearchParams(location.search).get('object')||last))||filteredObjects()[0]||data.objects[0]);
   status(restoreError||`${reviewed.size} reviewed · ${Object.keys(draft).length} changed · auto-saves`);
-  window.__objectReview={data,exportData,validatePicks:input=>validatePicks(input,data),select:id=>selectObject(data.objects.find(o=>o.id===id)),getDraft:()=>structuredClone(draft),getViews:()=>views};window.__objectReviewReady=true;
+  window.__objectReview={data,exportData,validatePicks:validateReviewPicks,select:id=>selectObject(data.objects.find(o=>o.id===id)),getDraft:()=>structuredClone(draft),getViews:()=>views};window.__objectReviewReady=true;
 }catch(e){status('Could not open the workshop: '+e.message);}

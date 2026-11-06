@@ -5,13 +5,14 @@ const root=path.resolve(__dirname,'..'),port=Number(process.argv[2])||4174;
 const files=new Set([
  '/anim/object-review.html','/anim/object-review.mjs','/anim/object-review-model.mjs',
  '/anim/object-review-prompts.mjs','/anim/object-review-data.json',
+ '/anim/object-review-batch2.html','/anim/object-review-batch2-data.json',
  '/anim/stack-anim.js','/anim/orient-data.js','/anim/reveal-style.mjs','/anim/landing-effects.mjs',
  '/anim/scenery.mjs','/anim/scenery-data.mjs','/anim/grass.png','/anim/cloud.png',
  '/anim/scenery-objects.html','/anim/scenery-objects.mjs','/anim/scenery-object-data.json',
  '/anim/scenery-gallery.html','/anim/stadium-preview.html',
  '/anim/cutout-review.html','/anim/cutout-review.mjs','/anim/cutout-review-data.json'
 ]);
-const allowed=p=>files.has(p)||/^\/items\/[a-z0-9-]+\.webp$/.test(p)||/^\/anim\/scenery\/[a-z0-9-]+\.png$/.test(p);
+const allowed=p=>files.has(p)||/^\/items\/[a-z0-9-]+\.webp$/.test(p)||/^\/anim\/scenery\/[a-z0-9-]+\.png$/.test(p)||/^\/art-source\/object-batch2-2026-11-06\/preview\/[a-z0-9-]+\.png$/.test(p);
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webp':'image/webp','.png':'image/png'};
 const server=http.createServer((req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Cache-Control','no-store');
