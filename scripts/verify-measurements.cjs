@@ -28,8 +28,8 @@ vm.runInContext([
   'globalThis.api = {ALL_OBJECTS,OBJECT_BY_ID,MEASUREMENT_GROUPS,MEASUREMENT_DETAILS,MEASUREMENT_TYPES,measurementQuestionPrompt,dailyQuestionFor};',
 ].join('\n'), sandbox);
 const {ALL_OBJECTS: all, OBJECT_BY_ID: objects, MEASUREMENT_GROUPS: groups, MEASUREMENT_DETAILS: details, MEASUREMENT_TYPES: types, measurementQuestionPrompt: prompt, dailyQuestionFor: question} = sandbox.api;
-assert.equal(all.length, 576);
-assert.equal(objects.size, 576);
+assert.equal(all.length, 681);
+assert.equal(objects.size, 681);
 for(const [id,mm,dimension]of [['cherry',25,'diameter'],['mouse',180,'length'],['spinning-top',100,'height'],['toy-jack',30,'width'],['seal',1500,'length'],['satellite',21000,'width'],['crab',300,'width'],['tumbleweed',600,'diameter'],['spaghetti-strainer',250,'diameter'],['soup-ladle',300,'length'],['piggy-bank',150,'length'],['cupcake',70,'height'],['sushi-piece',50,'length'],['red-spotted-mushroom',100,'height'],['fishbowl',250,'height'],['diving-helmet',450,'height'],['tape-measure',80,'width'],['paint-palette',300,'length'],['snowflake',20,'diameter'],['water-drop',5,'height'],['meteorite',250,'length'],['asteroid',490000,'diameter']]){
   assert.equal(objects.get(id).mm,mm,id);assert.equal(objects.get(id).measurement.dimension,dimension,id);
 }

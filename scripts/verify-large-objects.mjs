@@ -17,7 +17,7 @@ for(const row of picks.objects)if(resolutions[row.id]){
 }
 assert.deepEqual(validatePicks(picks,catalog),{},'All phone-exported choices are applied');
 assert.equal(manifest.objects.length,12);
-assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,396);
+assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,501);
 const scenes=['stadium','stadium','forest','underwater','beach','city','city','stadium','desert','beach','city','city'];
 for(const [i,row]of manifest.objects.entries()){
   const object=catalog.objects.find(o=>o.id===row.id);
@@ -32,4 +32,4 @@ for(const [i,row]of manifest.objects.entries()){
   const original=fs.readFileSync('art-source/large-objects-2026-10/'+row.original);
   assert.equal(original.toString('ascii',1,4),'PNG');assert.equal(original[25],6,'Original sprite retains RGBA alpha');
 }
-console.log('PASS: 12 large objects, 396 permanent objects, artwork files/alpha sources, measurements, scenery and exact phone-exported orientation settings.');
+console.log('PASS: 12 large objects, 501 permanent objects, artwork files/alpha sources, measurements, scenery and exact phone-exported orientation settings.');
