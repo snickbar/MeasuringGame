@@ -892,6 +892,7 @@ if (location.protocol === "file:") {
   .sh-card.sh-banner .sh-tx { position: absolute; inset: 14% 0; display: flex; flex-direction: column; justify-content: center; padding: 0 6% 0 31%; text-align: left; }
   .sh-card.sh-banner .sh-name { font-size: calc(22px * var(--fit, 1)); }
   .sh-card.sh-banner .sh-sub { font-size: calc(13px * var(--fit, 1)); }
+  .sh-card.sh-banner .sh-bic.sh-bmasc, .sh-card.sh-banner .sh-bart.sh-bmasc { position: absolute; transform: none; object-fit: contain; object-position: center bottom; pointer-events: none; filter: drop-shadow(0 2px 1px rgba(60,30,0,.35)); }
   .sh-card.sh-banner .sh-bic { position: absolute; left: 6%; top: 50%; width: 19%; height: 82%; transform: translateY(-50%); object-fit: contain; pointer-events: none; }  /* Party hub: the mode's own icon sits on a blank banner */
   #pm-teamworlds .sh-bic, #pm-hlsurvival .sh-bic { left:4.5%; width:22%; }
   .sh-card.sh-banner .sh-badge-slot { position: absolute; right: 5%; top: -6px; z-index: 2; }
@@ -11645,6 +11646,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
+  // Mode mascots that stand on the big mode buttons (picture aspect ratio = width / height after cropping). Banner buttons are 1000 x 222.
+  const BANNER_MASCOT = { classic: ["party-ant", .943], teamvteam: ["team", 2.357], teamworlds: ["teamworlds", 1.33], highstakes: ["highstakes", 1.117], bluff: ["bluff", .86],
+    quick: ["quick", .897], daily: ["daily", .87], monthly: ["monthly", 1.517], worlds: ["worlds", 1.063] };
+  function bannerMascot(mode) {
+    const m = BANNER_MASCOT[mode]; if (!m) return null;
+    const h = Math.min(92, 34 / (.222 * m[1])), w = h * .222 * m[1], left = 3.5;   // height and width in % of the banner, capped so the text keeps its room
+    const top = (100 - h) / 2;
+    return { src: `anim/mode-mascots/${m[0]}-banner.webp`, style: `left:${left}%;top:${top.toFixed(2)}%;width:${w.toFixed(2)}%;height:${h.toFixed(2)}%`, pad: (left + w + 2.5).toFixed(2) };
+  }
   // Where each Solo banner's artwork sits (left, top, width, height in % of the banner) and its tilt start delay.
   const SOLO_ART_POS = { quick: [4.9, 8.56, 23.9, 72.97, 0], daily: [9.2, 7.21, 23.3, 75.68, -.7], monthly: [8.7, 7.21, 16.8, 75.68, -1.4],
     worlds: [3.5, 14.41, 14.9, 64.86, -2.1], survival: [2.5, 13.06, 20.9, 77.48, -2.8], "which-bigger": [3, 14.41, 25.4, 71.17, -3.5] };
@@ -11657,15 +11667,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const cls = `sh-card${extra && extra.hot ? " sh-hot" : ""}${banner ? " sh-banner" : ""}${extra && extra.saved ? " sh-saved" : ""}`;
       // The picture on each banner is its own layer so it can tilt: a blank button plus the artwork on top.
       const bk = banner && (banner.match(/banner-(.+)\.png$/) || [])[1], pos = bk && SOLO_ART_POS[bk];
-      const pic = pos ? `<img class="sh-bimg" src="icons/banner-${bk}-blank.png" alt="" draggable="false"><img class="sh-tilt sh-bart" src="icons/banner-${bk}-art.png" alt="" draggable="false" style="left:${pos[0]}%;top:${pos[1]}%;width:${pos[2]}%;height:${pos[3]}%;--tilt-delay:${pos[4]}s">`
+      const mm = extra && extra.mascot && bannerMascot(extra.mascot);
+      const pic = mm ? `<img class="sh-bimg" src="icons/banner-${bk}-blank.png" alt="" draggable="false"><img class="sh-tilt sh-bart sh-bmasc" src="${mm.src}" alt="" draggable="false" style="${mm.style};--tilt-delay:${pos ? pos[4] : 0}s">`
+        : pos ? `<img class="sh-bimg" src="icons/banner-${bk}-blank.png" alt="" draggable="false"><img class="sh-tilt sh-bart" src="icons/banner-${bk}-art.png" alt="" draggable="false" style="left:${pos[0]}%;top:${pos[1]}%;width:${pos[2]}%;height:${pos[3]}%;--tilt-delay:${pos[4]}s">`
         : banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
-      return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
+      return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"${mm ? ` style="padding-left:${mm.pad}%"` : ""}><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
     soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
-      ${card("sh-quick", "items/ant.webp", "Quick Game", savedQ ? `Saved &middot; Round ${savedQ.round} of ${savedQ.total}` : "A solo game against bots", { banner: "icons/banner-quick.png", saved: !!savedQ })}
-      ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png" })}
-      ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png" })}
-      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", savedW ? `Saved &middot; ${escapeHtml(WORLDS[savedW.wi].name)}, Level ${savedW.level}` : `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png", saved: !!savedW })}
+      ${card("sh-quick", "items/ant.webp", "Quick Game", savedQ ? `Saved &middot; Round ${savedQ.round} of ${savedQ.total}` : "A solo game against bots", { banner: "icons/banner-quick.png", saved: !!savedQ, mascot: "quick" })}
+      ${card("sh-daily", "icons/toolbar-daily.png", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.png", mascot: "daily" })}
+      ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.png", mascot: "monthly" })}
+      ${card("sh-worlds", "items/hot-air-balloon.webp", "Worlds", savedW ? `Saved &middot; ${escapeHtml(WORLDS[savedW.wi].name)}, Level ${savedW.level}` : `${worldTotalStars()} / ${WORLDS.length * WORLD_LEVELS * 3} stars`, { banner: "icons/banner-worlds.png", saved: !!savedW, mascot: "worlds" })}
       ${card("sh-survival", "items/t-rex.webp", "Survival", savedS ? `Saved &middot; ${savedS.survived} round${savedS.survived === 1 ? "" : "s"} survived` : survivalSub(), { banner: "icons/banner-survival.png", saved: !!savedS })}
       ${card("sh-wb", "items/elephant.webp", "Which Is Bigger", savedB ? `Saved &middot; ${savedB.score} right pick${savedB.score === 1 ? "" : "s"}` : wbSub(), { banner: "icons/banner-which-bigger.png", saved: !!savedB })}`;
   }
@@ -11716,7 +11728,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ? `<span class="home-free-badge">&#11088; 1 free today!</span>`
         : canWatchHostAd(myProfile,mode,todayDateStr()) ? `<span class="home-ad-badge"><span aria-hidden="true">▶</span> Watch ad</span>`
         : `<span class="home-lock-badge"><img src="icons/reactions/padlock.png" alt=""></span>`;
-      return `<button type="button" class="sh-card sh-banner" id="${id}"><img class="sh-bimg" src="${banner}" alt="" draggable="false"><img class="sh-bic" src="${img}" alt="" draggable="false"><span class="sh-tx"><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
+      const mm = bannerMascot(mode);
+      return `<button type="button" class="sh-card sh-banner" id="${id}"><img class="sh-bimg" src="${banner}" alt="" draggable="false">${mm ? `<img class="sh-bic sh-bmasc" src="${mm.src}" alt="" draggable="false" style="${mm.style}">` : `<img class="sh-bic" src="${img}" alt="" draggable="false">`}<span class="sh-tx"${mm ? ` style="padding-left:${mm.pad}%"` : ""}><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
     };
     partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner party-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
       ${card("pm-classic", "icons/shop-host-crown.webp", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic", "icons/banner-blank-orange.png")}
