@@ -670,12 +670,6 @@ if (location.protocol === "file:") {
   .cosm-zoom { position: absolute; right: -5px; bottom: -4px; width: 17px; height: 17px; border-radius: 50%; background: #fff; border: 1.5px solid #8a6a3c; display: grid; place-items: center; pointer-events: none; }
   .cosm-zoom svg { width: 10px; height: 10px; }
   .cosm-actions .cosm-equip { width: 84px; }
-  button.cosm-lock { width: 46px; height: 40px; margin: 0; padding: 0; display: grid; place-items: center; flex: none; border: 2px solid #b99a6b; border-radius: 14px; background: #fff6de; box-shadow: 0 2px 0 #b99a6b; }
-  button.cosm-lock img { width: 22px; height: 22px; opacity: .55; filter: grayscale(1); }
-  button.cosm-lock.on { background: linear-gradient(#ffe38a, #f6b83a); border-color: #b97a10; box-shadow: 0 2px 0 #b97a10; }
-  button.cosm-lock.on img { opacity: 1; filter: none; }
-  .cosm-row.cosm-locked { border-color: #e0a82a; background: #fff3cf; }
-  .cosm-row.cosm-locked::after { content: "LOCKED"; position: absolute; top: -8px; left: 12px; font: 700 9px 'Fredoka', sans-serif; letter-spacing: .06em; background: #f0b23a; color: #4a2c12; border-radius: 8px; padding: 1px 7px; }
   .cosm-now { margin: 8px 0 6px; padding: 10px 12px; border-radius: 16px; border: 2px solid #d9c7a1; background: #fffbee; font: 600 13px 'Fredoka', sans-serif; color: #5b3a26; }
   .cosm-now:empty { display: none; }
   .cosm-now h4 { margin: 0 0 6px; font: 700 14px 'Fredoka', sans-serif; color: #4a2c12; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -688,17 +682,19 @@ if (location.protocol === "file:") {
   .cosm-slot { position: relative; flex: 1; aspect-ratio: 1; max-width: 46px; border-radius: 12px; display: grid; place-items: center; border: 2px dashed #9bb7d6; background: #e8f2fc; font: 700 18px 'Fredoka', sans-serif; color: #5b86b8; }
   .cosm-slot.empty { border-color: #d9c7a1; background: #f6efe0; }
   .cosm-slot img { width: 70%; height: 70%; object-fit: contain; }
-  .cosm-slot.lk { border: 2px solid #e0a82a; background: #fff3cf; }
-  .cosm-slot.lk::after { content: ""; position: absolute; right: -4px; top: -5px; width: 15px; height: 15px; background: url(icons/reactions/padlock.png) center / contain no-repeat; }
-  .cosm-thumbs { display: flex; gap: 6px; align-items: center; }
+  .cosm-thumbs { display: flex; gap: 10px; align-items: flex-start; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 4px 0 8px; overscroll-behavior-x: contain; touch-action: pan-x pan-y; scrollbar-width: thin; }
+  .cosm-selected-item { margin: 0; flex: 0 0 70px; min-width: 0; text-align: center; }
+  .cosm-selected-item .cosm-th { width: 66px; height: 48px; margin: 0 auto; }
+  .cosm-selected-item figcaption { margin-top: 4px; font-size: 11px; line-height: 1.2; overflow-wrap: anywhere; }
+  .cosm-empty-selection { padding: 8px 0; font-size: 12px; }
+  .cosm-thumbs:focus-visible { outline: 2px solid #266ea8; outline-offset: 2px; }
+  .cosm-now > .cosm-rnd-clear { margin-top: 8px; }
   .cosm-thumbs em { font-style: normal; font-size: 12px; color: #7a5c33; }
   .cosm-th { width: 34px; min-width: 24px; height: 46px; flex: 0 1 34px; border-radius: 8px; border: 2px solid #6bb35a; background: #dfe9d2; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .cosm-th.lk { border-color: #e0a82a; }
   .cosm-th.more { background: #fff3c9; border-color: #d9a93a; font: 700 14px 'Fredoka', sans-serif; color: #7a4a10; }
   .cosm-th .cosm-now-pic { width: 100%; height: 100%; object-fit: cover; display: block; }
   .cosm-equip-bar .cosm-equip-count { display: none; }
   .cosm-sub-desc.cosm-equip-bar { display: none; }
-  #cosm-random-slot .cosm-rnd-row { grid-template-columns: minmax(0, 1fr) auto auto; }
   .cosm-rnd-clear { width: auto; height: 34px; margin: 0; padding: 0 8px; border: 2px solid #d9c3a0; border-radius: 12px; background: #fff; font: 700 12.5px 'Fredoka', sans-serif; color: #5b3a1e; }
   .cosm-rnd-clear:disabled { opacity: .45; }
   .cosm-rnd-clear:active { filter: brightness(.93); }
@@ -730,12 +726,6 @@ if (location.protocol === "file:") {
   button.cosm-equip.is-on { border-image-source: url(icons/btn-blue.png); border-image-slice: 0 155 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   button.cosm-buy, button.cosm-unlock { border-image-source: url(icons/btn-bot-medium.png); border-image-slice: 0 137 fill; color: #fff; text-shadow: -1.5px -1.5px 0 #5b3a26, 1.5px -1.5px 0 #5b3a26, -1.5px 1.5px 0 #5b3a26, 1.5px 1.5px 0 #5b3a26, 0 -1.5px 0 #5b3a26, 0 1.5px 0 #5b3a26, -1.5px 0 0 #5b3a26, 1.5px 0 0 #5b3a26; }
   .cosm-rnd-sub { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
-  #cosm-random-slot .cosm-rnd-row { margin: 8px 0 2px; }
-  /* The picking-from panel and the Equip Random row share one card (green while Random is on). */
-  #cosm-random-slot .cosm-rnd-card { margin: 8px 0 6px; padding: 10px 12px 10px; border: 3px solid #d9c3a3; border-radius: 16px; background: #fffaf0; }
-  #cosm-random-slot .cosm-rnd-card.on { border-color: #4caf50; background: #f1fae9; }
-  #cosm-random-slot .cosm-rnd-card .cosm-now { margin: 0; padding: 0; border: 0; background: transparent; }
-  #cosm-random-slot .cosm-rnd-card .cosm-rnd-row, #cosm-random-slot .cosm-rnd-card .cosm-rnd-row.equipped { margin: 10px 0 0; padding: 0; border: 0; background: transparent; }
   button.cosm-buy:disabled, button.cosm-unlock:disabled { opacity: .6; filter: grayscale(.4); }
   .coming-soon-box {
     margin-top: 24px; padding: 32px 20px; text-align: center;
@@ -5122,6 +5112,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { recentDiscoveries, recentlySeen, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
   import { createMenuTour } from "./anim/menu-tour.mjs";
+  import { styleSelectedIds, styleSelectionPatch } from "./anim/style-selection.mjs";
   import { createModeTutorial } from "./anim/mode-tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
   import { pickBiggerPair, isCorrectPick, difficultyOf } from "./anim/which-bigger.mjs";
@@ -5910,43 +5901,51 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const ownedReactionSlots = () => Math.min(REACTION_SLOTS_MAX, REACTION_SLOTS_BASE + (myProfile.reactionSlotsExtra | 0));
   // What is really equipped: only reactions that have pictures, and no more than the slots you own.
   const equippedReactions = () => ((myProfile.activeEmojis && myProfile.activeEmojis.length) ? myProfile.activeEmojis : START_EMOJIS).filter((e) => REACTIONS[e]).slice(0, ownedReactionSlots());
-  // ---- Equip Random: with a category's toggle on, each game gives you random items you own from it.
-  // What is really equipped is left alone, so switching the toggle off goes straight back to it. ----
-  const rndOn = (cat) => !!(myProfile.randomEquip && myProfile.randomEquip[cat]);
-  // Equipped pool: the items Random may pick from, per category (profile.randomPool[cat][id] = true).
-  // A pool with nothing owned in it means "everything you own", so players who never equip anything see no change.
-  const inRndPool = (cat, id) => !!(myProfile.randomPool && myProfile.randomPool[cat] && myProfile.randomPool[cat][id]);
-  const rndPoolOf = (cat, ownedIds) => { const eq = ownedIds.filter((id) => inRndPool(cat, id)); return eq.length ? eq : ownedIds; };
-  let rndPick = {}, rndBgOwnedCount = -1;
+  // One equipped set per category. One item stays fixed; multiple items rotate automatically.
+  function styleEquippedIds(cat,profile=myProfile){
+    const owned=cat==='reactions'?Object.keys(REACTIONS).filter(ownsEmoji):cosmCatItems(cat).map(i=>i.id);
+    const rawReactions=profile.activeReactions?.length?profile.activeReactions.map(id=>REACTION_BY_ID[id]?.emoji).filter(Boolean):profile.activeEmojis?.length?profile.activeEmojis:START_EMOJIS;
+    const pinned=cat==='reactions'?rawReactions.slice(0,REACTION_SLOTS_BASE+(profile.reactionSlotsExtra||0)):[profile.cosmetics?.equipped?.[({boards:'board',backgrounds:'background',flairs:'effects',homeScreens:'homeScreen'}[cat])]||styleFallback(cat)];
+    const defaults=cat==='backgrounds'?owned.filter(id=>!['none','plain'].includes(id)):owned;
+    return styleSelectedIds(profile,cat,owned,pinned,defaults);
+  }
+  const rndOn = (cat) => styleEquippedIds(cat).length > 1;
+  const inRndPool = (cat, id) => styleEquippedIds(cat).includes(id);
+  const rndPoolOf = (cat, ownedIds) => styleEquippedIds(cat).filter(id=>ownedIds.includes(id));
+  const styleFallback = cat => cat==='boards'||cat==='backgrounds'?'none':cat==='homeScreens'?HOME_DEFAULT:'classic';
+  async function saveStyleSelection(cat,selection){
+    rndPick[cat]=undefined;
+    await changeProfile(deviceId,profile=>{
+      const ids=typeof selection==='function'?selection(styleEquippedIds(cat,profile)):selection;
+      const patch=styleSelectionPatch(cat,ids),next={...profile,randomPool:{...profile.randomPool,[cat]:patch[`randomPool/${cat}`]},randomEquip:{...profile.randomEquip,[cat]:true}};
+      if(cat==='reactions')Object.assign(next,{activeEmojis:ids.length?ids:['none'],activeReactions:ids.length?ids.map(e=>REACTIONS[e]?.id).filter(Boolean):['none']});
+      else next.cosmetics={...profile.cosmetics,equipped:{...profile.cosmetics?.equipped,[({boards:'board',backgrounds:'background',flairs:'effects',homeScreens:'homeScreen'}[cat])]:ids[0]||styleFallback(cat)}};
+      return next;
+    });
+  }
+  let rndPick = {}, rndBgOwnedCount = -1, rndSignatures = {};
   const rndOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
   // Boards and backgrounds never repeat the previous round's pick when there is anything else to choose, so Random feels random.
   const rndLast = {};
   const rndOfNew = (cat, arr) => { const other = arr.length > 1 ? arr.filter((x) => x !== rndLast[cat]) : arr; return rndOf(other); };
   function rndGet(cat) {
-    if (rndPick[cat] !== undefined) return rndPick[cat];
-    let v = null;
-    if (cat === "boards") v = rndOfNew("boards", rndPoolOf("boards", ["none"].concat(allBoards().map((b) => b.id).filter(ownsBoard))));
-    else if (cat === "backgrounds") { // Match game mode ("none") and Plain are only picked when you have equipped them yourself
-      const base = allBackgrounds().map((b) => b.id).filter(ownsBackground), extra = ["none", "plain"].filter((id) => inRndPool("backgrounds", id));
-      const eq = base.filter((id) => inRndPool("backgrounds", id)).concat(extra), ids = eq.length ? eq : base; v = ids.length ? rndOfNew("backgrounds", ids) : "none"; } // never picks "none": that shows the plain tan
-    else if (cat === "flairs") { const ids = COSMETIC_CATALOG.effects.concat(MONTHLY_FLAIR_ITEMS).filter(ownsFlair).map((i) => i.id).filter((id) => FLAIRS[id]); v = ids.length ? rndOf(rndPoolOf("flairs", ids)) : "classic"; }
-    else if (cat === "reactions") {
-      // Locked reactions are always there; the open slots are filled at random from the equipped pool (or everything owned when none is equipped).
-      const locks = equippedReactions();
-      const own = rndPoolOf("reactions", Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e)));
-      for (let i = own.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [own[i], own[j]] = [own[j], own[i]]; }
-      v = locks.concat(own).slice(0, ownedReactionSlots());
-    }
+    const ids=styleEquippedIds(cat),signature=JSON.stringify([deviceId,ids,cat==='reactions'?ownedReactionSlots():0]);
+    if (rndPick[cat] !== undefined&&rndSignatures[cat]===signature) return rndPick[cat];
+    rndSignatures[cat]=signature;let v;
+    if(cat==='reactions'){
+      const shuffled=[...ids];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
+      v=shuffled.slice(0,ownedReactionSlots());
+    }else v=(cat==='boards'||cat==='backgrounds'?rndOfNew(cat,ids):rndOf(ids))||styleFallback(cat);
     rndPick[cat] = v;
     if (cat === "boards" || cat === "backgrounds") rndLast[cat] = v;
     return v;
   }
-  const activeReactions = () => (rndOn("reactions") ? rndGet("reactions") : equippedReactions());
+  const activeReactions = () => rndGet("reactions");
   // Team Worlds / High-Low use a plain question box: no equipped skin is built at all in those rooms.
   function plainBoardMode() { try { return !!(roomState && roomState.settings && roomState.settings.mode === "teamworlds") && !twQuestionPromptEl.contains(qPromptEl); } catch (e) { return false; } } // plain, except while the real card is on the Team Worlds question screen
-  const activeBoard = () => (plainBoardMode() ? "plain" : rndOn("boards") ? rndGet("boards") : equippedBoard());
+  const activeBoard = () => plainBoardMode() ? "plain" : rndGet("boards");
   let monthlyPlayBg = null; // while a Monthly Challenge is being played, that month's own background is shown
-  const activeBackground = () => (rndOn("backgrounds") ? rndGet("backgrounds") : equippedBackground());
+  const activeBackground = () => rndGet("backgrounds");
   function rollRandomEquips() {
     rndPick = {};
     applyBackground();
@@ -5958,7 +5957,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function rerollPerRound(state, index) {
     if (!state || state._rr === index) return;
     state._rr = index;
-    if (Object.values((myProfile && myProfile.randomEquip) || {}).some(Boolean)) rollRandomEquips();
+    rollRandomEquips();
   }
   // Everything Random could pick in a category: id, name and a small picture.
   function cosmCatItems(cat) {
@@ -5968,99 +5967,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (cat === "homeScreens") return HOME_SCREENS.filter((h) => ownsHomeScreen(h.id)).map((h) => ({ id: h.id, name: h.name, thumb: `<img class="cosm-now-pic" src="${h.file}" alt="">` }));
     return [];
   }
-  const cosmLockedId = (cat) => (cat === "backgrounds" ? equippedBackground() : cat === "boards" ? equippedBoard() : cat === "homeScreens" ? equippedHomeScreen() : ((myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects) || "classic"));
   const CAT_NOUN = { reactions: "reactions", flairs: "flairs", backgrounds: "scenes", boards: "boards", homeScreens: "home screens" };
-  // The panel at the top of each Style tab: what is locked and what Random is choosing from.
+  // Equipped items are the only candidates; the strip never truncates the selection.
   function cosmNowPanel(cat) {
-    const pnl = document.createElement("div");
-    pnl.className = "cosm-now";
-    const on = rndOn(cat), noun = CAT_NOUN[cat];
-    if (cat === "reactions") {
-      const slots = ownedReactionSlots(), locks = equippedReactions();
-      const pool = rndPoolOf("reactions", Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e)));
-      const poolN = Object.keys(REACTIONS).filter((e) => ownsEmoji(e) && !locks.includes(e) && inRndPool("reactions", e)).length;
-      let bar = "";
-      for (let n = 0; n < REACTION_SLOTS_MAX; n++) {
-        const e = locks[n];
-        if (n >= slots) { bar += `<span class="cosm-slot buy" aria-label="Reaction slot ${n + 1}, not unlocked yet"><img src="icons/reactions/padlock.png" alt=""></span>`; continue; }
-        bar += e ? `<span class="cosm-slot lk"><img src="${reactionPic(e)}" alt=""${REACTIONS[e].mirror ? ' style="transform:scaleX(-1)"' : ""}></span>` : `<span class="cosm-slot ${on ? "rnd" : "empty"}">${on ? "?" : ""}</span>`;
-      }
-      const open = Math.max(0, slots - locks.length);
-      pnl.innerHTML = `<h4>Your reaction bar<small>${slots} of ${REACTION_SLOTS_MAX} slots unlocked</small></h4><div class="cosm-bar">${bar}</div><p class="cosm-now-cap">${locks.length} locked: always there${on && open ? ` &middot; ${open} filled at random from ${poolN ? `your ${poolN} equipped` : `the ${pool.length} you own`}` : ""}</p>`;
-      if (slots < REACTION_SLOTS_MAX) {
-        const n = slots + 1, buy = document.createElement("div");
-        buy.className = "cosm-slot-buy";
-        buy.innerHTML = `<span>Unlock slot ${n}</span><div class="cosm-actions"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n - 6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n - 6]}</button></div>`;
-        buy.querySelector("button").addEventListener("click", () => buyReactionSlot(n, false));
-        pnl.appendChild(buy);
-      }
-      return pnl;
+    const pnl=document.createElement('div');pnl.className='cosm-now';
+    const ids=styleEquippedIds(cat);
+    const items=cat==='reactions'?ids.map(id=>({id,name:REACTIONS[id].label||EMOJI_NAMES[id]||id,thumb:`<img class="cosm-now-pic" src="${reactionPic(id)}" alt=""${REACTIONS[id].mirror?' style="transform:scaleX(-1)"':''}>`}))
+      :cosmCatItems(cat).filter(i=>ids.includes(i.id));
+    pnl.innerHTML=`<h4>Equipped items <small>${items.length} equipped</small></h4><div class="cosm-thumbs" role="region" aria-label="Equipped ${CAT_NOUN[cat]}" tabindex="0">${items.map(i=>`<figure class="cosm-selected-item"><span class="cosm-th" title="${escapeHtml(i.name)}">${i.thumb}</span><figcaption>${escapeHtml(i.name)}</figcaption></figure>`).join('')||'<span class="cosm-empty-selection">No items equipped.</span>'}</div><p class="cosm-now-cap">${cat==='reactions'?`Your reaction bar has ${ownedReactionSlots()} slots. If you equip more, a random selection fills those slots each round.`:'If more than one item is equipped, they will be chosen randomly.'}</p>`;
+    if(cat==='reactions'&&ownedReactionSlots()<REACTION_SLOTS_MAX){
+      const n=ownedReactionSlots()+1,buy=document.createElement('div');buy.className='cosm-slot-buy';
+      buy.innerHTML=`<span>Unlock reaction slot ${n}</span><div class="cosm-actions"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n-6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n-6]}</button></div>`;
+      buy.querySelector('button').addEventListener('click',()=>buyReactionSlot(n,false));pnl.append(buy);
     }
-    const items = cosmCatItems(cat), byId = Object.fromEntries(items.map((i) => [i.id, i]));
-    if (on) {
-      const eq = items.filter((i) => inRndPool(cat, i.id)), list = eq.length ? eq : items;
-      const shown = list.length <= 8 ? list : list.slice(0, 7), more = list.length - shown.length;
-      pnl.innerHTML = `<h4>Random is picking from ${eq.length ? `your ${eq.length} equipped ${noun}` : `all ${items.length} ${noun} you own`}</h4><div class="cosm-thumbs">${shown.map((i) => `<span class="cosm-th">${i.thumb}</span>`).join("")}${more > 0 ? `<span class="cosm-th more">+${more}</span>` : ""}</div>`;
-    } else {
-      const id = cosmLockedId(cat), it = byId[id] || (cat === "backgrounds" ? { name: "Match game mode", thumb: '<span class="cosm-now-pic cosm-bg-none"></span>' } : null);
-      pnl.innerHTML = it ? `<h4>Locked: ${it.name}</h4><div class="cosm-thumbs"><span class="cosm-th lk">${it.thumb}</span><em>Random is off. Turn it on to pick from your equipped ${noun}.</em></div>` : "";
-    }
+    const clear=document.createElement('button');clear.type='button';clear.className='cosm-rnd-clear';clear.textContent='Unequip all';clear.disabled=!ids.length;
+    clear.addEventListener('click',async()=>{clear.disabled=true;try{await saveStyleSelection(cat,[]);}catch{cosmNote('Could not save your equipped items. Please try again.');clear.disabled=false;}});pnl.append(clear);
     return pnl;
   }
-  const inRndAny = (cat) => !!(myProfile.randomPool && myProfile.randomPool[cat] && Object.keys(myProfile.randomPool[cat]).length);
-  function cosmRandomRow(cat, subText) {
-    const on = rndOn(cat);
-    const poolN = cat === "reactions" ? 0 : cosmCatItems(cat).filter((i) => inRndPool(cat, i.id)).length;
-    const row = document.createElement("div");
-    row.className = "cosm-row cosm-rnd-row" + (on ? " equipped" : "");
-    row.innerHTML = `<div class="cosm-lead"><span class="cosm-emoji"><svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg></span><span class="cosm-name">Equip Random</span></div>`;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "cosm-equip cosm-rnd-btn" + (on ? " is-on" : "");
-    btn.textContent = on ? "On" : poolN ? "Paused" : "Off";
-    btn.setAttribute("aria-pressed", String(on));
-    btn.addEventListener("click", () => {
-      rndPick[cat] = undefined;
-      update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: !on });
-    });
-    row.appendChild(btn);
-    // Unequip all: empties the equipped pool (and, for reactions, unlocks every reaction too).
-    const clr = document.createElement("button");
-    clr.type = "button";
-    clr.className = "cosm-rnd-clear";
-    clr.textContent = "Unequip all";
-    const anyEq = cat === "reactions" ? (equippedReactions().length > 0 || inRndAny(cat)) : inRndAny(cat);
-    clr.disabled = !anyEq;
-    clr.addEventListener("click", () => {
-      rndPick[cat] = undefined;
-      const patch = { [`randomPool/${cat}`]: null };
-      if (cat === "reactions") Object.assign(patch, { activeEmojis: ["none"], activeReactions: ["none"] });
-      update(ref(db, `profiles/${deviceId}`), patch);
-    });
-    row.insertBefore(clr, btn);
-    return row;
-  }
-  // The active tab's header (what is locked / what Random picks from, then the "Equip Random" row) lives in the sticky header
-  // (not the scrolling list below it), so it stays put while that tab's items scroll underneath it.
   let cosmSub = "emojis";
   function renderCosmRandomSlot() {
-    const slot = document.getElementById("cosm-random-slot");
-    if (!slot) return;
-    const sub = cosmSub;
-    const cat = sub === "emojis" ? "reactions" : sub === "homes" ? "homeScreens" : sub;
-    const subText = cat === "reactions" ? "Open slots get a random one of your equipped reactions"
-      : cat === "flairs" ? "A different equipped flair each game"
-      : cat === "backgrounds" ? "A different equipped scene each game"
-      : cat === "homeScreens" ? "A different equipped home screen each time you open Home"
-      : "A different equipped board each game";
-    slot.innerHTML = "";
-    // One card: what Random is picking from, then the Equip Random row. Green while Random is on.
-    const card = document.createElement("div");
-    card.className = "cosm-rnd-card" + (rndOn(cat) ? " on" : "");
-    card.appendChild(cosmNowPanel(cat));
-    card.appendChild(cosmRandomRow(cat, subText));
-    slot.appendChild(card);
+    const slot=document.getElementById('cosm-random-slot');if(!slot)return;
+    const cat=cosmSub==='emojis'?'reactions':cosmSub==='homes'?'homeScreens':cosmSub;
+    const previous=slot.querySelector('.cosm-thumbs')?.scrollLeft||0;
+    slot.replaceChildren(cosmNowPanel(cat));
+    slot.querySelector('.cosm-thumbs').scrollLeft=previous;
   }
+
   function defaultProfile() {
     return {
       coins: 0,
@@ -6203,7 +6135,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // updated without the other.
   // The winner's flair plays for everyone, so each player's equipped flair lives on their room entry.
   function myEquippedFlair() {
-    const id = rndOn("flairs") ? rndGet("flairs") : (myProfile && myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.effects);
+    const id = rndGet("flairs");
     return FLAIRS[id] ? id : "classic";
   }
   // Pops the player's own equipped flair on a solo screen's celebration (game-level moments only), after ms, if the page is still there.
@@ -6926,20 +6858,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function syncHomeScreenPrefs() {
     if (homePrefsPlaceholder || !walletAuthReady || walletProfileOwner !== deviceId) return;
     try {
-      localStorage.setItem("mg_homeSel", myProfile.randomEquip && myProfile.randomEquip.homeScreens ? "random" : equippedHomeScreen());
+      localStorage.setItem("mg_homeSel", rndOn('homeScreens') ? "random" : (styleEquippedIds('homeScreens')[0]||HOME_DEFAULT));
       localStorage.setItem("mg_homeOwned", JSON.stringify(rndPoolOf("homeScreens", HOME_SCREENS.map((h) => h.id).filter(ownsHomeScreen))));
     } catch (e) {}
     // Choosing a picture shows it on Home straight away (with Random on, Home keeps changing each time it opens instead).
-    if (!(myProfile.randomEquip && myProfile.randomEquip.homeScreens)) {
-      const scene = equippedHomeScreen();
+    if (!rndOn('homeScreens')||!styleEquippedIds('homeScreens').includes(document.documentElement.dataset.homeScene)) {
+      const scene = styleEquippedIds('homeScreens')[0]||HOME_DEFAULT;
       document.documentElement.style.setProperty("--home-bg", `url('${homeScreenOf(scene).file}')`);
       document.documentElement.dataset.homeScene = scene;
     }
   }
   const homeHowText = (h) => (h.world ? `Earn a star on Level ${WORLD_LEVELS} of ${(WORLDS.find((w) => w.id === h.world) || {}).name}` : h.how);
   async function equipHomeScreen(id) {
-    if (equippedHomeScreen() === id && !cosmForceEquip) return;
-    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/homeScreen": id });
+    await saveStyleSelection('homeScreens',ids=>[...new Set([...ids,id])]);
   }
   function openHomePreview(h) {
     if (document.getElementById("cosm-pv-overlay")) return;
@@ -7031,10 +6962,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         cosmetics: { ...cosmetics, owned: { ...cosmetics.owned, backgrounds: { ...owned, [bg.id]: true } } } };
     });
   }
-  // Tapping the equipped one again goes back to the default look.
+  // Equip from previews and rewards joins the same selection as the Style list.
   async function equipBackground(id) {
-    const now = equippedBackground();
-    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/background": now === id && !cosmForceEquip ? "none" : id });
+    await saveStyleSelection('backgrounds',ids=>[...new Set([...ids,id])]);
   }
   // ---- Cosmetics previews: a small pop-up window (not full screen) showing a background, or a question board in action ----
   function cosmPreviewShell(title, bodyNode) {
@@ -7126,7 +7056,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.classList.toggle("cosm-random-on", rndOn("backgrounds")); container.dataset.rndCat = "backgrounds"; cosmRowCat = "backgrounds";
     container.appendChild(cosmRow({
       leadHtml: `<span class="cosm-bg-pic cosm-bg-none"></span>`, name: "Match game mode", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", poolId: "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground(cosmForceEquip ? "none" : equipped),
+      equipped: equipped === "none", poolId: "none", onPreview: () => openBackgroundPreview("mode-worlds", "Match game mode"), onEquip: () => equipBackground("none"),
     }));
     container.appendChild(cosmRow({leadHtml:'<span class="cosm-bg-pic cosm-bg-none"></span>', name:'Plain', owned:true, free:true, equipped:equipped === 'plain', poolId:'plain', onPreview:()=>openBackgroundPreview('plain','Plain'), onEquip:()=>equipBackground('plain')}));
     MODE_BACKGROUNDS.forEach(b => container.appendChild(cosmRow({
@@ -7174,7 +7104,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Boards with no still picture here (Scroll) and Team Worlds' plain box fall back to the normal translucent question pill.
   const QBS_FLAT = { paper: { img: "icons/board-paper.webp", pad: "22px 28px 28px" }, chalkboard: { img: "icons/board-chalk.webp", pad: "24px 32px 30px" }, whiteboard: { img: "icons/board-white.webp", pad: "22px 30px 28px" }, curtains: { img: "icons/board-curtain.webp", pad: "30px 66px 36px" } };
   function qBoardPromptHtml(text, extra = "") {
-    const raw = rndOn("boards") ? rndGet("boards") : equippedBoard(), id = raw === "none" ? "paper" : raw, safe = escapeHtml(text);
+    const raw = rndGet("boards"), id = raw === "none" ? "paper" : raw, safe = escapeHtml(text);
     if (QBS_FLAT[id]) return `<div class="qbs qbs-flat" data-board="${id}" style="background-image:url(${QBS_FLAT[id].img});padding:${QBS_FLAT[id].pad}"><p>${safe}</p>${extra}</div>`;
     const d = typeof SB_DEFS !== "undefined" ? SB_DEFS[id] : null;
     if (!d || !d.img || id === "typewriter") return `<p class="dc-prompt">${safe}</p>${extra}`;
@@ -7219,8 +7149,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
   async function equipBoard(id) {
-    const now = equippedBoard();
-    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/board": now === id && !cosmForceEquip ? "none" : id });
+    await saveStyleSelection('boards',ids=>[...new Set([...ids,id])]);
   }
   let cosmBoardRow = null; // renderBoardRows's row builder for earned monthly boards
   function renderBoardRows(container) {
@@ -7230,7 +7159,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     container.classList.toggle("cosm-random-on", rndOn("boards")); container.dataset.rndCat = "boards"; cosmRowCat = "boards";
     container.appendChild(cosmRow({
       leadHtml: `<img class="cosm-board-pic" src="${BOARD_PIC.paper}" alt="">`, name: "Paper and pencil", owned: true, free: true, cost: 0,
-      equipped: equipped === "none", poolId: "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard(cosmForceEquip ? "none" : equipped),
+      equipped: equipped === "none", poolId: "none", onPreview: () => openBoardPreview("paper", "Paper and pencil"), onEquip: () => equipBoard("none"),
     }));
     cosmBoardRow = (b, extra) => cosmRow(Object.assign({ // an earned monthly board (listed in the Monthly rewards group)
       leadHtml: `<img class="cosm-board-pic" src="${b.img}" alt="" loading="lazy">`, name: b.label, owned: true, free: true, cost: 0, tier: undefined, equipped: equipped === b.id, poolId: b.id,
@@ -7323,10 +7252,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(result.committed&&purchased&&!wasOwned&&buyer===deviceId)uiDelight?.unlock({name:item.name||item.label||"New flair",image:`icons/flair/${item.pic}.png`,equip:()=>equipUnlockedCosmetic(buyer,{"cosmetics/equipped/effects":item.id,"randomEquip/flairs":false})});
   }
   async function equipFlair(id) {
-    await update(ref(db, `profiles/${deviceId}`), { "cosmetics/equipped/effects": id });
+    await saveStyleSelection('flairs',ids=>[...new Set([...ids,id])]);
   }
-  let cosmForceEquip = false, cosmRowCat = null;
-  const PADLOCK_SVG = `<img src="icons/reactions/padlock.png" alt="">`;
+  let cosmRowCat = null;
   function openMonthlyLockInfo(o, pic) {
     let d = document.getElementById("mr-lock-dlg");
     if (!d) {
@@ -7349,8 +7277,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const row = document.createElement("div");
     const canPool = !!(o.owned && !o.ownedLabel && cat && o.poolId != null);
     const pooled = canPool && inRndPool(cat, o.poolId);
-    const isLocked = !!(o.owned && !o.ownedLabel && cat && (o.locked !== undefined ? o.locked : (o.equipped && !rndOn(cat))));
-    row.className = "cosm-row" + (isLocked ? " cosm-locked" : pooled || (!canPool && o.equipped && !o.ownedLabel && o.owned && !rndOn(cat)) ? " equipped" : "");
+    row.className = "cosm-row" + (pooled || (!canPool && o.equipped && !o.ownedLabel && o.owned) ? " equipped" : "");
     row.innerHTML = `<div class="cosm-lead">${o.leadHtml}<span class="cosm-name">${o.tier ? `<span class="rar-dot ${o.tier}" title="${({ common: "Common", rare: "Rare", ultra: "Ultra-rare" })[o.tier]}"></span>` : ""}${o.name}</span></div>`;
     // Tap the little picture to preview it (there is no separate Preview button any more).
     const pic = row.querySelector(".cosm-lead").firstElementChild;
@@ -7369,39 +7296,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     const btn = document.createElement("button");
     btn.type = "button";
-    let lockBtn = null;
     if (o.owned && o.ownedLabel) {
       btn.className = "cosm-unlock";
       btn.disabled = true;
       btn.textContent = "✓ " + o.ownedLabel;
     } else if (o.owned) {
-      const doLock = async (ev) => {
-        // Locking pins this one item: Random pauses for the tab. Tapping a locked item's padlock again turns Random back on.
-        if (cat && o.locked === undefined && isLocked === false && rndOn(cat)) {
-          rndPick[cat] = undefined;
-          cosmForceEquip = true;
-          try { await update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: false }); await o.onEquip(ev); } finally { cosmForceEquip = false; }
-          return;
-        }
-        if (cat && o.locked === undefined && isLocked) { rndPick[cat] = undefined; update(ref(db, `profiles/${deviceId}`), { [`randomEquip/${cat}`]: true }); return; }
-        return o.onEquip(ev);
-      };
-      if (canPool) {
-        btn.className = "cosm-equip" + (pooled ? " is-on" : "");
-        btn.textContent = pooled ? "Equipped" : "Equip";
-        btn.addEventListener("click", () => {
-          rndPick[cat] = undefined;
-          update(ref(db, `profiles/${deviceId}`), { [`randomPool/${cat}/${o.poolId}`]: pooled ? null : true });
-        });
-      }
-      lockBtn = document.createElement("button");
-      lockBtn.type = "button";
-      lockBtn.className = "cosm-lock" + (isLocked ? " on" : "");
-      lockBtn.innerHTML = PADLOCK_SVG;
-      lockBtn.setAttribute("aria-label", (isLocked ? "Unlock " : "Lock ") + o.name);
-      lockBtn.setAttribute("aria-pressed", String(isLocked));
-      lockBtn.addEventListener("click", doLock);
-      if (!canPool) { btn.className = "cosm-equip" + (isLocked ? " is-on" : ""); btn.textContent = isLocked ? "Locked" : "Lock"; btn.addEventListener("click", doLock); lockBtn = null; }
+      btn.className='cosm-equip'+(pooled?' is-on':'');
+      btn.textContent=pooled?'Equipped':'Equip';btn.setAttribute('aria-pressed',String(pooled));
+      btn.setAttribute('aria-label',`${pooled?'Unequip':'Equip'} ${o.name}`);
+      btn.addEventListener('click',async()=>{
+        btn.disabled=true;
+        try{
+          if(canPool)await saveStyleSelection(cat,selected=>selected.includes(o.poolId)?selected.filter(id=>id!==o.poolId):selected.concat(o.poolId));
+          else await o.onEquip();
+        }catch{cosmNote('Could not save your equipped items. Please try again.');btn.disabled=false;}
+      });
     } else if (o.lockedHint) {
       btn.className = "cosm-unlock";
       btn.disabled = true;
@@ -7413,18 +7322,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.setAttribute("aria-label", `Buy ${o.name} for ${o.cost} coins`);
       btn.addEventListener("click", () => o.onBuy(false));
     }
-    if (lockBtn) {
-      const wrap = document.createElement("div");
-      wrap.className = "cosm-actions";
-      wrap.append(btn, lockBtn);
-      row.appendChild(wrap);
-    } else row.appendChild(btn);
+    row.appendChild(btn);
     return row;
   }
   let cosmEmojiRow = null; // renderEmojiRows's row builder, so earned monthly reactions can be listed as normal rows
   function renderEmojiRows(container, statusEl) {
     if (!container) return;
-    const active = equippedReactions();
+    const active = styleEquippedIds('reactions');
     const slots = ownedReactionSlots();
     container.innerHTML = "";
     container.classList.toggle("cosm-random-on", rndOn("reactions")); container.dataset.rndCat = "reactions"; cosmRowCat = "reactions";
@@ -7434,7 +7338,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       equipped: active.includes(e), locked: active.includes(e), poolId: e,
       onPreview: () => previewReaction(e),
       onEquip: () => {
-        if (!active.includes(e) && active.length >= slots) { cosmNote(`All ${slots} slots are locked. Unlock one first.`); return; }
         toggleActiveEmoji(e);
       },
       onBuy: (m) => buyEmojiWithCoins(e, m === true),
@@ -7444,7 +7347,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     EMOJI_PACK_CATALOG.forEach((pack) => {
       pack.emojis.forEach((e) => container.appendChild(row(e, itemCoinCost("reaction", e), itemTier("reaction", e))));
     });
-    if (statusEl) { statusEl.textContent = `${active.length} / ${slots} locked`; statusEl.classList.toggle("full", active.length >= slots); }
+    if (statusEl) { statusEl.textContent = `${active.length} equipped · ${slots} reaction slots`; statusEl.classList.toggle("full", active.length >= slots); }
     const unBtn = document.getElementById("cosm-unequip-all-btn");
     if (unBtn) unBtn.disabled = active.length === 0;
   }
@@ -7612,8 +7515,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return true;
     }
     if (cat === "reaction") {
-      if (equippedReactions().length >= ownedReactionSlots()) return false;
-      toggleActiveEmoji(id);
+      if(!styleEquippedIds('reactions').includes(id))toggleActiveEmoji(id);
       return true;
     }
     const vals = cat === "flair" ? { "cosmetics/equipped/effects": id, "randomEquip/flairs": false }
@@ -9856,19 +9758,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   new ResizeObserver(() => document.documentElement.style.setProperty("--bottom-bar-h", `${bottomToolbarEl.offsetHeight || 58}px`)).observe(bottomToolbarEl);
 
   async function toggleActiveEmoji(emoji) {
-    const current = equippedReactions();
-    let next;
-    if (current.includes(emoji)) {
-      next = current.filter((e) => e !== emoji);
-    } else {
-      if (current.length >= 9) return; // full - deselect one first
-      next = [...current, emoji];
-    }
-    await update(ref(db, `profiles/${deviceId}`), { activeEmojis: next.length ? next : ["none"], activeReactions: next.length ? next.map((e) => REACTIONS[e] && REACTIONS[e].id).filter(Boolean) : ["none"] }); // Firebase drops empty arrays, so "none" marks "nothing equipped"
+    await saveStyleSelection('reactions',current=>current.includes(emoji)?current.filter(e=>e!==emoji):current.concat(emoji));
   }
 
   document.getElementById("cosm-unequip-all-btn").addEventListener("click", async () => {
-    await update(ref(db, `profiles/${deviceId}`), { activeEmojis: ["none"], activeReactions: ["none"] });
+    await saveStyleSelection('reactions',[]);
   });
 
   // Shows one Cosmetics list (reactions, flairs, backgrounds or boards) and its header bits.
@@ -15644,13 +15538,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   async function equipUnlockedCosmetic(owner, values) {
     if(owner!==deviceId)throw Error("Account changed");
-    await update(ref(db, `profiles/${owner}`), values);
+    const patch={...values};
+    for(const [cat,field]of Object.entries({boards:'board',backgrounds:'background',flairs:'effects',homeScreens:'homeScreen'})){
+      const id=values['cosmetics/equipped/'+field];if(id==null)continue;
+      await saveStyleSelection(cat,ids=>[...new Set([...ids,id])]);
+      delete patch['cosmetics/equipped/'+field];delete patch['randomEquip/'+cat];
+    }
+    if(Object.keys(patch).length)await update(ref(db, `profiles/${owner}`), patch);
   }
   // Equip from the unlock popup: a board or flair goes straight in; a reaction takes a free slot if there is one.
   async function mrwEquip(owner, id) {
     if (id[0] === "m" && id[1] === "b") return equipUnlockedCosmetic(owner, { "cosmetics/equipped/board": id });
     if (id[0] === "m" && id[1] === "f") return equipUnlockedCosmetic(owner, { "cosmetics/equipped/effects": id });
-    if (!equippedReactions().includes(id) && equippedReactions().length < ownedReactionSlots()) toggleActiveEmoji(id);
+    if (!styleEquippedIds('reactions').includes(id)) await toggleActiveEmoji(id);
   }
   async function claimAchievement(id) {
     const a = ACHIEVEMENTS.find((x) => x.id === id);
@@ -16028,7 +15928,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     gachaResultCatEl.textContent = GACHA_CAT_LABEL[pulled.cat];
     gachaResultRarityEl.textContent = `${GACHA_TIER_LABELS[tier]} ${"\u2605".repeat(stars)}`;
     gachaResultEquipBtn.textContent = pulled.cat === "avatar" ? "Equip avatar" : "Equip";
-    gachaResultEquipBtn.style.display = pulled.cat === "reaction" && equippedReactions().length >= ownedReactionSlots() ? "none" : "";
+    gachaResultEquipBtn.style.display = "";
     gachaResultOverlayEl.classList.add("show");
   }
   // Reveal several items one after another (the Starter Bundle), each on its own card with the usual sound and celebration.

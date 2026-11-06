@@ -8,8 +8,9 @@ Saved November 5, 2026. These are follow-ups, not authorization to implement the
 - Completed object gaps: seagull, songbird, puffin, hawk, tropical fish, cheese wedge and whisk are integrated. Cooking turner was declined by the user on November 6; do not add it.
 - Complete phone playtesting mode by mode, including two-device reconnect, pause, sync, reward persistence, and native update installation.
 - Recheck long-question readability on small phones following the recent larger writing-area changes.
-- Revisit mascots for other modes and collection/cosmetics presentation experiments only when requested.
-- Implemented November 6: optional four-step Home menu tour, Skip on every step, remembered completion/dismissal, and Replay menu tour in Settings. The How to Play practice tutorial's fifth slide lists all 12 game modes individually. Browser checks cover three phone widths; these changes still need to be committed and published.
+- Revisit mascots for other modes and further collection/cosmetics presentation experiments only when requested.
+- Published November 6: optional four-step Home menu tour, Skip on every step, remembered completion/dismissal, and Replay menu tour in Settings. The How to Play practice tutorial's fifth slide lists all 12 game modes individually. Browser checks cover three phone widths.
+- Implemented November 6: Style uses one equipped-items set per category. Removed owned-item pin/lock buttons and the separate Equip Random toggle; a horizontally scrollable Equipped items strip shows every selected item. One equipped item stays fixed; multiple items rotate automatically. Reactions fill their available slots from equipped reactions only. Unequip all leaves an explicit empty selection instead of choosing from the entire inventory. Older fixed and random selections are preserved when read; new unlocks are not automatically added to an explicit selection. Reward Equip uses the same set.
 - Mayhem and Order Up remain future game concepts.
 
 Spring currently uses the approved rain and flowers. Wispy seed artwork is available; its absence from the effect is not an outstanding defect. Do not replace the current flair work independently.
