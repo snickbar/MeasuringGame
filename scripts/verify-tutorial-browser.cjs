@@ -25,6 +25,7 @@ window.__fakeDB={read,put};
 const authStub='export const initializeAuth=()=>({currentUser:null}),indexedDBLocalPersistence={},browserLocalPersistence={},inMemoryPersistence={},GoogleAuthProvider={credential:()=>({})},signInWithCredential=async()=>({user:{uid:"test"}}),onAuthStateChanged=(_,fn)=>{queueMicrotask(()=>fn(null));return ()=>{}},signOut=async()=>{};';
 const injected=String.raw`
 window.__polish={
+ menuTour:()=>{const d=document.getElementById('game-tutorial');if(d.open)d.dispatchEvent(new Event('cancel',{cancelable:true}));ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));homeScreen.classList.add('active');menuTourUI.open();},
  tutorialState:()=>({walletProfileOwner,deviceId,walletAuthReady,hidden:document.hidden,home:homeScreen.classList.contains("active"),pending:gameRewards?.pending,tutorial:myProfile.tutorial,dialogs:[...document.querySelectorAll("dialog[open]")].map(d=>d.id),local:Object.fromEntries(Object.keys(localStorage).filter(k=>k.includes("tutorial")).map(k=>[k,localStorage.getItem(k)]))}),tutorial:()=>tutorialUI.open(),howto:()=>openOverlay(howtoScreen),home:()=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove("active"));hudEl.classList.remove("active");homeScreen.classList.add("active");tutorialUI.refresh();},otherOwner:()=>{deviceId="other-test-owner";tutorialUI.refresh();},
  owner:()=>deviceId,profile:()=>myProfile,flush:()=>careerLedger.flush(),stats:()=>{statsMode='all';showCareerTab('stats');},objects:()=>showCareerTab('objects'),
  world:()=>{openWorlds();wl.wi=0;wl.phase='world';renderWorlds();},startWorld:()=>{openWorlds();wl.wi=0;worldStartLevel(1);},
@@ -51,9 +52,21 @@ try{
  await until(()=>window.__polish?.profile()?.stats?.gamesPlayed===8,'Bootstrap');
  const api=window.__polish,$=id=>document.getElementById(id),dlg=$('game-tutorial');
  const baseline=JSON.stringify(api.profile()),oldOwner=api.owner();
- api.home();await until(()=>dlg.open,'Home offers tutorial');assert(dlg.textContent.includes('Skip for now'),'Welcome skip');
- dlg.querySelector('[data-exit]').click();await wait(1600);assert(!dlg.open,'Skip suppresses offer');
- assert(window.__fakeDB.read('profiles/'+oldOwner+'/tutorial').status==='skipped','Skip persisted');
+ api.home();const menu=$('menu-tour');await until(()=>menu.open,'Home offers menu tour');assert(menu.textContent.includes('Want a quick menu tour?'),'Optional menu invitation');assert(!dlg.open,'No competing practice invitation');
+ menu.querySelector('[data-skip]').click();await wait(1600);assert(!menu.open&&!dlg.open,'Skip suppresses menu offer and stacked invitations');
+ assert(localStorage.getItem('mg_menuTour_v1_'+oldOwner)==='skipped','Menu skip persisted');
+ const checkMenuFit=()=>{const r=menu.querySelector('.menu-tour-card').getBoundingClientRect();assert(r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1,'Menu card stays on screen');assert(menu.querySelector('[data-skip]'),'Skip on every step');};
+ for(let stop=0;stop<4;stop++){
+  api.settings();await wait(20);$('settings-menu-tour-btn').click();assert(menu.open,'Settings replays skipped tour');
+  assert($('home-screen').classList.contains('active'),'Replay returns Home');
+  for(let i=0;i<stop;i++)menu.querySelector('[data-next]').click();await wait(60);checkMenuFit();
+  assert(menu.querySelector('.menu-tour-count').textContent==='Step '+(stop+1)+' of 4','Correct menu step');menu.querySelector('[data-skip]').click();
+ }
+ api.settings();await wait(20);$('settings-menu-tour-btn').click();
+ for(let i=0;i<4;i++){await wait(60);checkMenuFit();menu.querySelector('[data-next]').click();}
+ assert(!menu.open&&localStorage.getItem('mg_menuTour_v1_'+oldOwner)==='completed','Menu completion remembered');
+ api.settings();await wait(20);$('settings-menu-tour-btn').click();menu.dispatchEvent(new Event('cancel',{cancelable:true}));assert(!menu.open,'Escape dismisses replay');
+ assert(JSON.stringify(api.profile())===baseline,'Menu tour does not change rewards or profile');
  api.howto();$('play-tutorial-btn').click();assert(dlg.open&&dlg.textContent.includes('Try a guess'),'Replay from How to Play');
  const fit=label=>{assert(dlg.scrollWidth<=dlg.clientWidth+1,'Dialog fits: '+label);assert(dlg.getBoundingClientRect().width<=innerWidth,'Phone width');for(const img of dlg.querySelectorAll('img'))assert(img.complete&&img.naturalWidth,'Loaded artwork '+img.src);for(const b of dlg.querySelectorAll('button'))assert(b.scrollWidth<=b.clientWidth+1,'Button text fits '+b.textContent);};
  await document.fonts.ready;await wait(100);fit('guess');
@@ -63,7 +76,7 @@ try{
  dlg.querySelector('[data-back]').click();assert(dlg.querySelector('output').textContent==='10.5','Back keeps guess');dlg.querySelector('[data-next]').click();
  dlg.querySelector('[data-choice="truth"]').click();dlg.querySelector('[data-next]').click();assert(dlg.textContent.includes('11.6 pencils'),'Actual object ratio');assert(dlg.textContent.includes('Accuracy'),'Accuracy shown');fit('result');
  dlg.querySelector('[data-next]').click();await wait(100);$('tutorial-buffer').click();assert(dlg.textContent.includes('Buffer applied'),'Free power-up demo');assert(dlg.textContent.includes('100%'),'Buffer improves accuracy');fit('buffer');
- dlg.querySelector('[data-next]').click();assert(dlg.querySelectorAll('details').length===7,'Mode guides');for(const d of dlg.querySelectorAll('details'))d.open=true;fit('modes');
+ dlg.querySelector('[data-next]').click();const names=[...dlg.querySelectorAll('summary')].map(x=>x.textContent);assert(names.length===12,'All twelve mode guides');for(const name of ['Quick Game','Classic Party','Team vs Team','Worlds','Team Worlds','Survival','High / Low Survival','High Stakes','Bluff the Room','Which Is Bigger','Daily Challenge','Monthly Challenge'])assert(names.includes(name),'Mode guide: '+name);for(const d of dlg.querySelectorAll('details'))d.open=true;fit('modes');
  dlg.querySelector('[data-next]').click();await wait(100);fit('finish');dlg.querySelector('[data-next]').click();assert(!dlg.open,'Finish closes');await wait(200);
  const after=api.profile();assert(after.tutorial.status==='completed','Completion saved');const clean=JSON.parse(JSON.stringify(after));delete clean.tutorial;const before=JSON.parse(baseline);delete before.tutorial;assert(JSON.stringify(clean)===JSON.stringify(before),'Coins, stats, inventory and discoveries unchanged');
  api.home();await wait(1500);assert(!dlg.open,'Completed does not offer again');api.howto();$('play-tutorial-btn').click();dlg.dispatchEvent(new Event('cancel',{cancelable:true}));assert(!dlg.open,'Escape skips');
@@ -83,6 +96,11 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
  for(const width of [320,390,430]){const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.enable',{},sessionId);await call('Page.addScriptToEvaluateOnNewDocument',{source:'try{localStorage.clear();}catch{}'},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);let result;
  for(let n=0;n<800;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');
  for(const page of (process.env.UI_DELIGHT_ONLY==='1'?['worldList','settings','lobby','quickLobby','unlockDemo']:['tutorial'])){await call('Runtime.evaluate',{expression:page==='lobby'?'window.__polish.lobby()':'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,350));const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','tutorial-tests',page+'-'+width+'.png'),Buffer.from(shot.data,'base64'));}
+ if(process.env.UI_DELIGHT_ONLY!=='1'){
+  await call('Runtime.evaluate',{expression:'window.__polish.menuTour()',awaitPromise:true},sessionId);
+  await new Promise(r=>setTimeout(r,150));
+  const menuShot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','tutorial-tests','menu-tour-'+width+'.png'),Buffer.from(menuShot.data,'base64'));
+ }
  if(errors.length)throw Error(errors.join('\n'));await call('Target.closeTarget',{targetId});}
  }catch(e){console.error(e);process.exitCode=1;}finally{clearTimeout(timer);socket?.close();child.kill();server.close();}});
 });

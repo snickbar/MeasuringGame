@@ -4574,6 +4574,7 @@ if (location.protocol === "file:") {
       <div class="seg" id="text-seg" role="radiogroup" aria-label="Menu text"><button type="button" role="radio" data-v="normal">Standard</button><button type="button" role="radio" data-v="large">Larger</button></div></div>
     <button id="edit-preset-settings-btn" type="button" class="settings-nav-row"><span>Game presets<small>Saved timer, rounds, and object rules</small></span></button>
     <button id="settings-howto-btn" type="button" class="settings-nav-row"><span>How to Play<small>Rules, scoring, and power-ups</small></span></button>
+    <button id="settings-menu-tour-btn" type="button" class="settings-nav-row"><span>Replay menu tour<small>Find games, rewards, Style and Settings</small></span></button>
   </div>
 
   <details class="settings-card" id="settings-debug-card" hidden>
@@ -5120,6 +5121,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPolish, applyMenuBanner, MENU_BANNERS } from "./anim/game-polish.mjs";
   import { recentDiscoveries, recentlySeen, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
+  import { createMenuTour } from "./anim/menu-tour.mjs";
   import { createModeTutorial } from "./anim/mode-tutorial.mjs";
   import { createLiveUpdater } from "./anim/live-updates.mjs";
   import { pickBiggerPair, isCorrectPick, difficultyOf } from "./anim/which-bigger.mjs";
@@ -5135,7 +5137,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { reactionEntrance } from "./anim/reaction-entrance.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
-  var gamePolish, uiDelight, discoveryUI, tutorialUI, modeTutorialUI, bluffUI;
+  var gamePolish, uiDelight, discoveryUI, tutorialUI, modeTutorialUI, bluffUI, menuTourUI;
   let nativeAudioActive = true, audioPageActive = true;
   const audioLifecycle = createAudioLifecycle({
     visible:()=>!document.hidden && nativeAudioActive && audioPageActive,
@@ -6241,6 +6243,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try { debugTools && debugTools.refresh(); } catch (e) {}
     discoveryUI?.refresh();
     tutorialUI?.refresh();
+    menuTourUI?.refresh();
     syncFlairToRoom();
     renderCoinBalance();
     renderAvatarGrid();
@@ -22690,12 +22693,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     visible:()=>bluffScreenEl.classList.contains('active')&&!document.hidden&&nativeAudioActive&&audioPageActive});
   bluffUI.refresh();
   getPlayLayout();
+  menuTourUI = createMenuTour({
+    owner:()=>deviceId,
+    canOffer:()=>walletProfileOwner===deviceId&&walletAuthReady&&homeScreen.classList.contains('active')&&!document.hidden&&!document.querySelector('dialog[open]')&&!document.body.classList.contains('collecting-game-reward')&&!gameRewards?.pending,
+    canReplay:()=>!currentRoomCode&&!settingsOverGameOpen()&&(!overlayReturnScreen||overlayReturnScreen===homeScreen),
+    goHome:()=>{setToolbarMenu(false);closeOverlay();},
+  });
   tutorialUI = createTutorial({
     profile:()=>({owner:deviceId,data:myProfile}),
     save:(owner,value)=>update(ref(db,'profiles/'+owner),{tutorial:value}),
     sample:()=>{const unit=OBJECT_BY_ID.get('pencil'),target=OBJECT_BY_ID.get('door');return {unit,target,prompt:measurementQuestionPrompt(unit,target),answer:target.mm/unit.mm};},
     location:()=>ALL_SCREEN_ELS.find(el=>el.classList.contains('active'))?.id || (hudEl.classList.contains('active')?'hud':null),
-    canOffer:()=>walletProfileOwner===deviceId&&walletAuthReady&&homeScreen.classList.contains('active')&&!document.hidden&&!document.querySelector('dialog[open]')&&!document.body.classList.contains('collecting-game-reward')&&!gameRewards?.pending,
+    canOffer:()=>!menuTourUI?.blocksPractice&&walletProfileOwner===deviceId&&walletAuthReady&&homeScreen.classList.contains('active')&&!document.hidden&&!document.querySelector('dialog[open]')&&!document.body.classList.contains('collecting-game-reward')&&!gameRewards?.pending,
   });
   document.getElementById('play-tutorial-btn').addEventListener('click',()=>tutorialUI.open());
   modeTutorialUI = createModeTutorial({

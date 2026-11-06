@@ -14,6 +14,8 @@ Use `npm run cap:sync` and the existing Android build for native changes. Increm
 
 ## Verification
 
+November 6, 2026: publishing succeeded for the approved-orientation merge `01ab832` and the newer published build `d9a1dc6`. A real public download check passed for `1.0.20261106191634-d9a1dc6`: the 234,699,293-byte ZIP matched its SHA-256, its embedded version matched the manifest, CORS was valid, and the updater adapter queued it successfully. This check does not install or restart the native app. Report: `output/update-delivery/verification.json`. No delivery fault was found.
+
 `npm run test:updates` covers primary availability, Firebase fallback, HTTP 509, failed ZIP download, missing/invalid metadata, checksum forwarding, failed cached bundles, queueing, timeouts, and concurrent checks. Public release downloads and the pointer should also be checked after publication. Native installation, download, and restart still need a phone smoke test.
 
 Run `node scripts/verify-published-update.cjs <installer-version>` for a real public download check. It requires a newer published version, checks the manifest's app-compatible CORS header, downloads the full ZIP from GitHub, hashes its bytes, checks `app-version.json` inside it, and exercises the app's queueing logic through an adapter. It saves the ZIP and verification report under `output/update-delivery/`; it does not install anything. This passed on October 25, 2026 with a 164,452,055-byte GitHub ZIP, independently of Firebase. The native plugin still needs a phone check after the bootstrap install.

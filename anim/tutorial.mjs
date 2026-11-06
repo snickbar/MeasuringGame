@@ -6,12 +6,17 @@ export const tutorialSeen = value => value?.version >= TUTORIAL_VERSION && ['ski
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const modes = [
   ['Quick Game','Practice against bots. Choose their accuracy and your round settings. Second Chance is included.'],
-  ['Party','Host a room or join with a code or QR scan. Classic Party and Team vs Team follow the guess, Second Chance, reveal flow.'],
-  ['Worlds','Five untimed questions per level. Average accuracy earns stars at 60%, 75%, and 90%. Team Worlds lets you progress together.'],
+  ['Classic Party','Host a room or join with a code or QR scan. Make your guess, choose a Second Chance card, then watch the reveal.'],
+  ['Team vs Team','Play the party guessing rounds in teams. The closest guess scores for its team; Second Chance follows before the reveal.'],
+  ['Worlds','Five untimed questions per level. Average accuracy earns stars above 60%, 75%, and 90%.'],
+  ['Team Worlds','Play Worlds together in a room, working toward stars as a team.'],
   ['Survival','Keep guessing with three lives. Less than 60% accuracy costs a life. No timer or Second Chance.'],
-  ['High / Low','Work together: one guess at or below the answer, the other at or above it. Keep the bracket tight enough to survive.'],
+  ['High / Low Survival','Work together: one guess at or below the answer, the other at or above it. Keep the bracket tight enough to survive.'],
   ['High Stakes','Pick the real answer and bet your table coins. Watch the pot and decide when to fold.'],
-  ['Daily & Monthly','Daily is three questions with one try. Monthly features every object in that month’s pack once.'],
+  ['Bluff the Room','Take turns making a claim about the answer. Other players judge whether it is Too Low, Correct or Too High; fool them to earn points.'],
+  ['Which Is Bigger','Pick which object is bigger in real life. A wrong pick costs a life; keep going to beat your best run.'],
+  ['Daily Challenge','Three questions with one try each day. Build your daily streak.'],
+  ['Monthly Challenge','Play through the month’s object pack, with every object appearing once. Earn the rewards shown on each level.'],
 ];
 
 // A self-contained practice UI: only tutorial preferences leave this module.

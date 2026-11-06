@@ -37,7 +37,7 @@ All detail animations use the scene's existing pause/disposal and reduced-motion
 
 Confirmed existing measurement objects: bicycle, unicycle, jack-in-the-box, dolphin, cruise ship, rabbit, pigeon, honeybee, butterfly, ladybug, jellyfish, flying saucer, and the main foreground subjects/props (including lighthouse, refrigerator, corgi, turtle, ice cream cone and crocodile/alligator).
 
-The audit originally found cherry, mouse, spinning top, a single toy jack, seal, satellite, ordinary crab and tumbleweed missing; those are now integrated, together with spaghetti strainer and soup ladle. Remaining gaps include seagull, small songbird, puffin, hawk, tropical fish, cheese wedge, kitchen whisk and cooking turner. A cheese wheel and grill spatula already exist. See the object backlog for current status.
+The audit's missing objects are now integrated: cherry, mouse, spinning top, a single toy jack, seal, satellite, ordinary crab, tumbleweed, spaghetti strainer, soup ladle, seagull, small songbird, puffin, hawk, tropical fish, cheese wedge and kitchen whisk. Cooking turner was declined by the user on November 6; the existing grill spatula remains. No additions remain outstanding from this audit. See the object backlog for current status.
 
 The ball fix is implemented: steady horizontal travel, separate vertical bounce arcs, decreasing bounce height, and rotation matched to travel. The existing alternating route mirrors the rotation automatically on return crossings.
 

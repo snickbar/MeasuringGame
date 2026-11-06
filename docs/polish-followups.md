@@ -3,12 +3,13 @@
 Saved November 5, 2026. These are follow-ups, not authorization to implement them.
 
 - Profile monthly animation performance on another phone, especially April rain (about 300 animations) and August bubbles (about 259). User reports their current phone runs them well; preserve the approved appearance.
-- January sparkle replacement remains on hold.
-- Completed November 6: orientation picker includes all 576 catalog objects, including wishbone and the 12 new objects. Latest objects isolates the newest 12; its builder no longer requires a fixed catalog count.
-- Consider additional objects: seagull, songbird, puffin, hawk, tropical fish, cheese wedge, whisk, and cooking turner (check overlap with grill spatula).
+- January appearance is satisfactory per the user on November 6; no sparkle replacement remains outstanding.
+- Completed November 6: all 105 batch 2 objects are active with approved measurements, orientations and travel styles, production artwork, scenery and Worlds assignments. The catalog contains 681 objects; the separate batch picker preserves the approved choices.
+- Completed object gaps: seagull, songbird, puffin, hawk, tropical fish, cheese wedge and whisk are integrated. Cooking turner was declined by the user on November 6; do not add it.
 - Complete phone playtesting mode by mode, including two-device reconnect, pause, sync, reward persistence, and native update installation.
 - Recheck long-question readability on small phones following the recent larger writing-area changes.
-- Revisit mascots for other modes, collection/cosmetics presentation experiments, and a menu-navigation tutorial only when requested.
+- Revisit mascots for other modes and collection/cosmetics presentation experiments only when requested.
+- Implemented November 6: optional four-step Home menu tour, Skip on every step, remembered completion/dismissal, and Replay menu tour in Settings. The How to Play practice tutorial's fifth slide lists all 12 game modes individually. Browser checks cover three phone widths; these changes still need to be committed and published.
 - Mayhem and Order Up remain future game concepts.
 
 Spring currently uses the approved rain and flowers. Wispy seed artwork is available; its absence from the effect is not an outstanding defect. Do not replace the current flair work independently.
