@@ -105,7 +105,7 @@ try{
  $('unreviewed').checked=true;$('unreviewed').dispatchEvent(new w.Event('change'));$('search').value='ant';$('search').dispatchEvent(new w.Event('input'));assert(!d.querySelector('.object[data-id="ant"]'),'reviewed objects can be skipped');
  $('unreviewed').checked=false;$('unreviewed').dispatchEvent(new w.Event('change'));$('search').value='';$('search').dispatchEvent(new w.Event('input'));api.select('ant');await ready();$('small-end').click();$('big-end').click();
  await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=new';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
- assert($('new-objects').checked&&$('count').textContent.includes('77'),'new-only link includes the larger additions and monthly batch');
+ assert($('new-objects').checked&&$('count').textContent.startsWith('89 of 576'),'new-only link includes all recent additions and monthly batch');
  assert(api.data.objects.find(o=>o.name===$('name').textContent)?.collection?.startsWith('new-'),'new link ignores an older selected object');
  for(const object of api.data.objects.filter(o=>o.collection==='new-2026-10'&&!o.monthlyExpansion)){
   api.select(object.id);await ready();
@@ -113,9 +113,9 @@ try{
   assert(d.documentElement.scrollWidth<=innerWidth,'new object fits '+object.id);
  }
  await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=latest';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
- assert($('latest-objects').checked&&$('latest-count').textContent==='10'&&$('count').textContent.startsWith('10 of 576'),'latest link isolates the ten new additions');
- assert(d.querySelectorAll('.object').length===10,'all ten are visible in the list together');
- for(const object of api.data.objects.filter(o=>o.collection==='new-2026-11')){api.select(object.id);await ready();for(const role of ['small','big']){const v=api.getViews()[role];assert(v.scene.unit.id===object.id||v.scene.target.id===object.id,'latest object previews in both roles');$(role+'-end').click();}}
+ assert($('latest-objects').checked&&$('latest-count').textContent==='12'&&$('count').textContent.startsWith('12 of 576'),'latest link isolates the twelve new additions');
+ assert(d.querySelectorAll('.object').length===12,'all twelve are visible in the list together');
+ for(const object of api.data.objects.filter(o=>o.collection==='new-2026-11-05')){api.select(object.id);await ready();for(const role of ['small','big']){const v=api.getViews()[role];assert(v.scene.unit.id===object.id||v.scene.target.id===object.id,'latest object previews in both roles');$(role+'-end').click();}}
  assert(api.exportData().reviewedIds.includes('ant'),'latest filter preserves existing reviewed choices');
  await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='/anim/object-review.html?collection=monthly';});await ready();w=frame.contentWindow;d=frame.contentDocument;api=w.__objectReview;$=id=>d.getElementById(id);
  assert($('monthly-objects').checked&&!$('new-objects').checked,'monthly link selects the new batch');
