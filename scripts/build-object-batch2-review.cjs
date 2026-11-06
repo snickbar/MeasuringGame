@@ -1,4 +1,4 @@
-// Review-only artwork pipeline. Never changes the game's object pools or orientations.
+// Rebuild the isolated picker; approved choices are also active in the game catalog.
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const root=path.resolve(__dirname,'..'),dir=path.join(root,'art-source/object-batch2-2026-11-06');
 const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.json'),'utf8'));
@@ -25,13 +25,22 @@ async function build(){
   const scenery=sceneryFor({id:s.id});
   objects.push({id:s.id,name:s.name,plural:s.plural,mm:item.mm,image:'art-source/object-batch2-2026-11-06/preview/'+item.file,group:s.kind==='animal'?'Animals':s.kind==='landmark'?'Landmarks':'Everyday objects',collection:'new-2026-11-06-batch2',pack:'',properNoun:s.kind==='landmark',measurement:{dimension:item.dimension},orientation:{rot:0,flip:false,leanL:'none',leanR:'none',mirR:s.kind==='animal'},motionSmall:motion,motionBig:motion,scenery,alternateImage:null});
  }
+ const choicesPath=path.join(dir,'approved-choices.json');
+ if(fs.existsSync(choicesPath)){
+  const picks=JSON.parse(fs.readFileSync(choicesPath,'utf8'));
+  const {validatePicks,validateSettings}=await import('../anim/object-review-model.mjs');
+  assert.equal(picks.batch,'batch2-2026-11-06');
+  validatePicks(picks,{objects,types:base.types});
+  assert.equal(picks.objects.length,objects.length,'Approved choices must cover the entire batch');
+  for(const row of picks.objects)Object.assign(objects.find(o=>o.id===row.id),validateSettings(row.settings,base.types));
+ }
  objects.sort((a,b)=>a.name.localeCompare(b.name));
  fs.writeFileSync(path.join(root,'anim/object-review-batch2-data.json'),JSON.stringify({version:1,batch:'batch2-2026-11-06',types:base.types,objects},null,2)+'\n');
  let html=fs.readFileSync(path.join(root,'anim/object-review.html'),'utf8')
   .replace('<html lang="en">','<html lang="en" data-review-batch="batch2-2026-11-06">')
   .replace('<title>Size Em Up! · Object workshop</title>','<title>Size Em Up! · Batch 2 orientation picker</title>')
   .replace('<h1>Object workshop</h1>','<h1>Batch 2 · 105 new objects</h1>')
-  .replace('Check the reveal, make a tweak, then move to the next object.','Review this batch only. Choices save separately from older objects. Artwork and settings here are drafts; they are not active in gameplay yet.')
+  .replace('Check the reveal, make a tweak, then move to the next object.','Review this batch only. Choices save separately from older objects. Approved settings are active in gameplay; further edits here remain drafts until applied.')
   .replace('<option>Standard</option><option>Seasonal</option><option>Fantasy</option>','<option>Animals</option><option>Everyday objects</option><option>Landmarks</option>')
   .replace('</style>','label:has(#latest-objects),label:has(#new-objects),label:has(#monthly-objects){display:none}</style>');
  assert(html.includes('data-review-batch="batch2-2026-11-06"'));

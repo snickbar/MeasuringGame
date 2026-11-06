@@ -8,6 +8,8 @@ Original PNGs are kept here. `preview/` contains 512-pixel transparent copies fo
 
 The separate orientation picker is `anim/object-review-batch2.html`. It contains only these 105 objects, uses separate browser storage, and exports `size-em-up-object-picks-batch2.json` tagged with this batch ID. Older picker exports are rejected here to prevent unrelated drafts from mixing in.
 
-These are review assets, not active gameplay objects. No live catalog, Worlds, challenges, saved game orientations, or flair artwork is changed by this batch.
+The user's completed November 6 review is saved in `approved-choices.json`. All 105 objects were reviewed; 71 have orientation changes. The picker builder validates and applies these settings after generating its initial defaults, so rebuilding preserves the approved choices. Sizes, measurement dimensions, and travel styles match the supplied batch defaults.
+
+All 105 approved objects are now active in the standard gameplay pool. Production artwork is copied to `items/<id>.png`; measurements, orientations and travel styles are stored in the live catalog and animation mappings. The isolated batch picker remains available for reviewing the source artwork. Existing themed Worlds keep their curated object lists.
 
 Review refinements requested during generation: natural closed mouths/beaks on the walrus, toucan and parrot; long loose tools upright rather than diagonally posed. Keep detail levels simple and readable at small sizes.
