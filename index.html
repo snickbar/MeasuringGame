@@ -14178,9 +14178,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const tier = scr.dataset.tier;
     const pose = mc.dataset.pick ? "breath" : scr.classList.contains("wb-danger") ? "nervous" : mc.classList.contains("idle") ? "waiting" : tier === "tight" ? "focused" : (wb && wb.streak || 0) >= 3 ? "proud" : tier === "easy" ? "relaxed" : "";
     if (mc.dataset.pose === pose) return;
+    const firstPose = mc.dataset.pose === undefined; // the first pose of a new question just appears; later changes pop
     mc.dataset.pose = pose;
     mc.querySelector(".wb-mc-e").src = pose ? `icons/mascot-elephant-${pose}.webp` : "icons/mascot-elephant.webp";
     mc.querySelector(".wb-mc-m").src = pose ? `icons/mascot-mouse-${pose}.webp` : "icons/mascot-mouse.webp";
+    // A quick squash and pop (the mouse a beat after the elephant) so a new pose lands instead of swapping. Cosmetic only: nothing waits on it.
+    if (!firstPose && document.documentElement.dataset.motion !== "reduce") mc.querySelectorAll(".wb-mc-w").forEach((w, i) => w.animate([{ transform: "scale(1,.86)", opacity: .4 }, { transform: "scale(.97,1.08)", opacity: 1, offset: .5 }, { transform: "scale(1,1)", opacity: 1 }], { duration: 420, delay: i * 70, easing: "cubic-bezier(.3,1.2,.5,1)", fill: "backwards" }));
   }
   // The elephant and mouse sit in the empty space under the stamp; they hide when it is too small for them.
   function wbFitMascots() {
@@ -14217,7 +14220,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wbSetTier(); wbSave();
       el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
-        <div class="wb-mascots${(wb.streak || 0) >= 3 ? " proud" : ""}" id="wb-mascots" aria-hidden="true"><img class="wb-mc-e" src="icons/mascot-elephant.webp" alt=""><img class="wb-mc-m" src="icons/mascot-mouse.webp" alt=""></div>
+        <div class="wb-mascots${(wb.streak || 0) >= 3 ? " proud" : ""}" id="wb-mascots" aria-hidden="true"><span class="wb-mc-w"><img class="wb-mc-e" src="icons/mascot-elephant.webp" alt=""></span><span class="wb-mc-w"><img class="wb-mc-m" src="icons/mascot-mouse.webp" alt=""></span></div>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
         <div class="wb-diff"><span class="wb-diff-l">DIFFICULTY</span><span class="wb-diff-stamp t${wbDiff.tier}">${wbDiff.label.toUpperCase()}</span></div>
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;
