@@ -14171,17 +14171,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Each mascot pose matches something the player already knows (never which object is bigger): tapped a card, one life
   // left, waited a long time, a tight pair, a streak, or an easy pair. Otherwise the plain mascot art shows.
   let wbMcLoaded = false;
+  // Each animal is a body picture plus a separate tail picture cut from the same pose, so the tail can swing on its own.
+  // Pivot is where the tail joins the body, as a percent of the picture.
+  const WB_TAIL = { elephant: { "": [11.2, 56.9], relaxed: [20.1, 72.8], breath: [31.4, 82.5], focused: [15.1, 73.3], nervous: [22.7, 80.8], waiting: [24.7, 77.2], proud: [28.1, 79.7] }, mouse: { "": [63.4, 83.3], relaxed: [57.7, 78.3], breath: [67.4, 81.4], focused: [80.1, 71.9], nervous: [62.9, 86.1], waiting: [60.5, 83.1], proud: [63.9, 78.9] } };
+  const wbMcSrc = (a, pose, part) => `icons/mascot-${a}${pose ? "-" + pose : ""}-${part}.webp`;
+  const wbMcTailPivot = (a, pose) => WB_TAIL[a][pose].map((v) => v + "%").join(" ");
+  const wbMcHtml = () => ["elephant", "mouse"].map((a) => `<span class="wb-mc-w"><span class="wb-mc-b ${a}"><img class="wb-mc-t" src="${wbMcSrc(a, "", "tail")}" style="--tp:${wbMcTailPivot(a, "")}" alt=""><img class="wb-mc-${a[0]}" src="${wbMcSrc(a, "", "body")}" alt=""></span></span>`).join("");
   function wbMascotPose() {
     const mc = document.getElementById("wb-mascots"), scr = document.getElementById("wb-screen");
     if (!mc || !scr) return;
-    if (!wbMcLoaded) { wbMcLoaded = true; ["elephant", "mouse"].forEach((w) => ["relaxed", "focused", "breath", "proud", "nervous", "waiting"].forEach((q) => { new Image().src = `icons/mascot-${w}-${q}.webp`; })); }
+    if (!wbMcLoaded) { wbMcLoaded = true; ["elephant", "mouse"].forEach((w) => ["relaxed", "focused", "breath", "proud", "nervous", "waiting"].forEach((q) => { new Image().src = wbMcSrc(w, q, "body"), new Image().src = wbMcSrc(w, q, "tail"); })); }
     const tier = scr.dataset.tier;
     const pose = mc.dataset.pick ? "breath" : scr.classList.contains("wb-danger") ? "nervous" : mc.classList.contains("idle") ? "waiting" : tier === "tight" ? "focused" : (wb && wb.streak || 0) >= 3 ? "proud" : tier === "easy" ? "relaxed" : "";
     if (mc.dataset.pose === pose) return;
     const firstPose = mc.dataset.pose === undefined; // the first pose of a new question just appears; later changes pop
     mc.dataset.pose = pose;
-    mc.querySelector(".wb-mc-e").src = pose ? `icons/mascot-elephant-${pose}.webp` : "icons/mascot-elephant.webp";
-    mc.querySelector(".wb-mc-m").src = pose ? `icons/mascot-mouse-${pose}.webp` : "icons/mascot-mouse.webp";
+    for (const a of ["elephant", "mouse"]) {
+      const body = mc.querySelector(".wb-mc-" + a[0]), tail = body.parentNode.querySelector(".wb-mc-t");
+      body.src = wbMcSrc(a, pose, "body"); tail.src = wbMcSrc(a, pose, "tail"); tail.style.setProperty("--tp", wbMcTailPivot(a, pose));
+    }
     // A quick squash and pop (the mouse a beat after the elephant) so a new pose lands instead of swapping. Cosmetic only: nothing waits on it.
     if (!firstPose && document.documentElement.dataset.motion !== "reduce") mc.querySelectorAll(".wb-mc-w").forEach((w, i) => w.animate([{ transform: "scale(1,.86)", opacity: .4 }, { transform: "scale(.97,1.08)", opacity: 1, offset: .5 }, { transform: "scale(1,1)", opacity: 1 }], { duration: 420, delay: i * 70, easing: "cubic-bezier(.3,1.2,.5,1)", fill: "backwards" }));
   }
@@ -14220,7 +14228,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wbSetTier(); wbSave();
       el.innerHTML = `${wbHeartsHtml(wb.lives, wb.score, false, false, wb.streak)}
         <p class="dc-prompt">Which is bigger?</p>
-        <div class="wb-mascots${(wb.streak || 0) >= 3 ? " proud" : ""}" id="wb-mascots" aria-hidden="true"><span class="wb-mc-w"><img class="wb-mc-e" src="icons/mascot-elephant.webp" alt=""></span><span class="wb-mc-w"><img class="wb-mc-m" src="icons/mascot-mouse.webp" alt=""></span></div>
+        <div class="wb-mascots${(wb.streak || 0) >= 3 ? " proud" : ""}" id="wb-mascots" aria-hidden="true">${wbMcHtml()}</div>
         <div class="wb-cards" id="wb-cards">${wbCardHtml(p.left)}<span class="wb-vs">VS</span>${wbCardHtml(p.right)}</div>
         <div class="wb-diff"><span class="wb-diff-l">DIFFICULTY</span><span class="wb-diff-stamp t${wbDiff.tier}">${wbDiff.label.toUpperCase()}</span></div>
         <button type="button" class="dc-btn" id="wb-lock" disabled>Lock it in</button>`;

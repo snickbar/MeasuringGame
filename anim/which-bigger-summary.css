@@ -310,9 +310,17 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 .wb-mascots[hidden]{display:none}
 /* Each animal sits in a wrapper: the wrapper does the pose-change hop, the picture does the idle motion. */
 .wb-mc-w{display:block;flex:none;transform-origin:50% 100%}
-.wb-mascots img{display:block;width:auto;transform-origin:50% 100%;animation:wbMcIdle var(--spd) ease-in-out infinite;animation-delay:var(--ph,0s);transition:filter .3s,height .32s cubic-bezier(.3,1.3,.5,1)}
+.wb-mc-w:last-child{--ph:.4s;--ta:9deg;--tt:3.1s}
+.wb-mc-w:first-child{--ta:6deg;--tt:3.8s}
+/* The wrapper moves the whole animal (breathing, leaning); the tail picture sits behind the body and swings on its own. */
+.wb-mc-b{display:block;position:relative;transform-origin:50% 100%;animation:wbMcIdle var(--spd) ease-in-out infinite;animation-delay:var(--ph,0s)}
+.wb-mascots img{display:block;width:auto;transition:filter .3s,height .32s cubic-bezier(.3,1.3,.5,1)}
+.wb-mc-e,.wb-mc-m{position:relative;z-index:1}
+.wb-mascots .wb-mc-t{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;transform-origin:var(--tp,20% 80%);animation:wbMcTail var(--tt,3.4s) ease-in-out infinite;animation-delay:var(--ph,0s)}
+@keyframes wbMcTail{0%,100%{transform:rotate(calc(var(--ta,6deg)*-1))}50%{transform:rotate(var(--ta,6deg))}}
+@keyframes wbMcTailFlick{0%{transform:rotate(calc(var(--ta,6deg)*-.7))}100%{transform:rotate(calc(var(--ta,6deg)*.7))}}
 .wb-mc-e{height:calc(112px*var(--wbm,1))}.wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-e{height:calc(164px*var(--wbm,1))}
-.wb-mc-m{height:calc(82px*var(--wbm,1));--ph:.4s}
+.wb-mc-m{height:calc(82px*var(--wbm,1))}
 /* Breathing: a little taller and narrower on the in-breath, feet planted, the mouse a beat behind the elephant. */
 @keyframes wbMcIdle{0%,100%{transform:rotate(var(--lean)) scale(1,1)}50%{transform:translateY(calc(var(--bob)*-.6)) rotate(calc(var(--lean) + .8deg)) scale(.992,1.026)}}
 /* Difficulty mood: easy is relaxed, tight leans in toward the board. */
@@ -321,17 +329,22 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 /* Tapping a card: both lean toward it (the left or right card, whichever it is) and hold their breath until you lock in. */
 .wb-mascots[data-pick=l]{--lean:-3deg}
 .wb-mascots[data-pick=r]{--lean:3deg}
-/* A streak makes them stand tall and proud: a slow chest-puff. */
+/* A streak makes them stand tall and proud: a slow chest-puff, tail held up and steady. */
 @keyframes wbMcProud{0%,100%{transform:rotate(var(--lean)) scale(1,1)}50%{transform:translateY(-3px) rotate(var(--lean)) scale(1.025,1.04)}}
-.wb-mascots[data-pose=proud] img{animation:wbMcProud 2.4s ease-in-out infinite;animation-delay:var(--ph,0s)}
-/* Waiting a long time: the mouse taps its foot twice, then rests; the elephant sways. */
+.wb-mascots[data-pose=proud] .wb-mc-b{animation:wbMcProud 2.4s ease-in-out infinite;animation-delay:var(--ph,0s)}
+.wb-mascots[data-pose=proud] .wb-mc-w{--ta:3deg}
+/* Holding breath while choosing: the tail hardly moves. */
+.wb-mascots[data-pick] .wb-mc-w{--ta:1.5deg}
+/* Waiting a long time: the mouse taps its foot twice, then rests; the elephant sways; tails swing slow and wide. */
 @keyframes wbMcTap{0%,40%,100%{transform:rotate(0)}8%{transform:rotate(-4deg)}16%{transform:rotate(.5deg)}24%{transform:rotate(-4deg)}32%{transform:rotate(.5deg)}}
 @keyframes wbMcSway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
-.wb-mascots.idle .wb-mc-m{animation:wbMcTap 2.4s ease-in-out infinite;animation-delay:0s}
-.wb-mascots.idle .wb-mc-e{animation:wbMcSway 3.2s ease-in-out infinite;animation-delay:0s}
-/* One life left: they stand still, then shiver in a quick burst, then settle. */
+.wb-mascots.idle .wb-mc-w:last-child .wb-mc-b{animation:wbMcTap 2.4s ease-in-out infinite;animation-delay:0s}
+.wb-mascots.idle .wb-mc-w:first-child .wb-mc-b{animation:wbMcSway 3.2s ease-in-out infinite;animation-delay:0s}
+.wb-mascots.idle .wb-mc-w{--tt:4.6s}
+/* One life left: they stand still, then shiver in a quick burst, then settle; the tail flicks fast and small. */
 @keyframes wbMcNerve{0%,46%,84%,100%{transform:translateX(0) rotate(var(--lean)) scale(1,.985)}50%{transform:translateX(-2px) rotate(calc(var(--lean) - 1.4deg)) scale(1,.985)}55%{transform:translateX(2px) rotate(calc(var(--lean) + 1.4deg)) scale(1,.985)}60%{transform:translateX(-1.6px) rotate(calc(var(--lean) - 1.1deg)) scale(1,.985)}66%{transform:translateX(1.6px) rotate(calc(var(--lean) + 1.1deg)) scale(1,.985)}72%{transform:translateX(-1px) rotate(calc(var(--lean) - .6deg)) scale(1,.985)}78%{transform:translateX(.6px) rotate(calc(var(--lean) + .3deg)) scale(1,.985)}}
-.wb-danger .wb-mascots img,.wb-danger .wb-mascots.idle img{animation:wbMcNerve 1.9s ease-in-out infinite;animation-delay:var(--ph,0s)}
-html[data-motion=reduce] .wb-mascots img,html[data-motion=reduce] .wb-mascots.idle .wb-mc-m{animation:none!important}
+.wb-danger .wb-mascots .wb-mc-w .wb-mc-b,.wb-danger .wb-mascots.idle .wb-mc-w .wb-mc-b{animation:wbMcNerve 1.9s ease-in-out infinite;animation-delay:var(--ph,0s)}
+.wb-danger .wb-mascots .wb-mc-t{animation:wbMcTailFlick .42s ease-in-out infinite alternate;animation-delay:0s}
+html[data-motion=reduce] .wb-mc-b,html[data-motion=reduce] .wb-mascots .wb-mc-t{animation:none!important}
 .wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-m{height:calc(124px*var(--wbm,1))}
 .wb-mascots[data-pick]{--spd:1s;--bob:1px}
