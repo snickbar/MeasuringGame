@@ -9,6 +9,9 @@ const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const M = f => `anim/mode-mascots/${f}-tutorial.webp`;
 const MODE_MASCOTS = {
   party: { srcs: [M('party-ant')] },
+  hl: { srcs: [[M('hl-shark'), .66], M('hl-bird')], compact: 1 },
+  survival: { srcs: [M('survival-knight'), M('survival-dragon')] },
+  wb: { srcs: [M('wb-elephant'), M('wb-mouse')] },
   teamvteam: { srcs: [M('team-dog'), M('team-cat')] },
   quick: { srcs: [M('quick-robot')], side: 'right' },
   worlds: { srcs: [M('worlds-fox')] },
@@ -18,20 +21,27 @@ const MODE_MASCOTS = {
   daily: { srcs: [M('daily-rooster')] },
   monthly: { srcs: [M('monthly-squirrel')] },
 };
-const mascotKey = def => def.mascots ? def.mascots.srcs.join('|') : '';
-const mascotHtml = def => def.mascots ? `<span class="mt-mascots" data-side="${def.mascots.side || 'left'}" data-key="${esc(mascotKey(def))}">${def.mascots.srcs.map(src => `<img class="mt-mascot" src="${esc(src)}" alt="" draggable="false">`).join('')}</span>` : '';
+// An entry is a picture, or [picture, size] when it should stand shorter than its partner. 'compact' is which one shows when there is little room.
+const mascotList = def => def.mascots.srcs.map(m => Array.isArray(m) ? m : [m, 1]);
+const mascotKey = def => def.mascots ? mascotList(def).map(m => m[0]).join('|') : '';
+const mascotHtml = def => def.mascots ? `<span class="mt-mascots" data-side="${def.mascots.side || 'left'}" data-key="${esc(mascotKey(def))}">${mascotList(def).map(([src, k], n) => `<img class="mt-mascot${n === (def.mascots.compact || 0) ? ' mt-keep' : ''}" src="${esc(src)}" style="--s:${k}" alt="" draggable="false">`).join('')}</span>` : '';
 function fitMascot(dialog) {
   if (!dialog.querySelector('.mt-mascots') || !dialog.open) return;
   const room = dialog.getBoundingClientRect().top - 8;
   // Too little room above (a tall dialog on a short phone): stand inside the top corner beside the title instead.
   dialog.toggleAttribute('data-compact', room < 46);
   dialog.style.setProperty('--mt-mh', Math.min(96, Math.max(46, room)) + 'px');
+  // In the compact layout the title steps aside by the width of the mascot that is showing.
+  const k = dialog.querySelector('.mt-keep');
+  if (k) dialog.style.setProperty('--mt-mw', Math.max(40, k.naturalWidth ? Math.ceil(46 * (k.naturalWidth / k.naturalHeight)) + 6 : 0) + 'px');
 }
 // Replaces the dialog's content for a new slide but leaves the same mascots standing, so they do not pop in again on every slide.
 function setSlideHtml(dialog, def, html) {
   const keep = def.mascots && [...dialog.children].find(c => c.classList.contains('mt-mascots') && c.dataset.key === mascotKey(def));
   [...dialog.children].forEach(c => { if (c !== keep) c.remove(); });
   dialog.insertAdjacentHTML('beforeend', (def.mascots && !keep ? mascotHtml(def) : '') + html);
+  // The picture's width is only known once it has loaded, and the compact layout needs it to leave the title clear.
+  for (const im of dialog.querySelectorAll('.mt-keep')) if (!im.complete) im.addEventListener('load', () => fitMascot(dialog), { once: true });
 }
 const img = (src, cls = '') => `<img class="${cls}" src="${esc(src)}" alt="" draggable="false">`;
 
