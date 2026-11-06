@@ -353,3 +353,55 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 html[data-motion=reduce] .wb-mc-b,html[data-motion=reduce] .wb-mascots .wb-mc-t,html[data-motion=reduce] .wb-mascots .wb-mc-ear{animation:none!important}
 .wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-m{height:calc(124px*var(--wbm,1))}
 .wb-mascots[data-pick]{--spd:1s;--bob:1px}
+
+/* Survival dragon, fuller performance: idle breathing, a rear-back as it inhales, a recoil when the fire leaves, and a hot glow on the flame.
+   Timings follow the 11s cycle the jaw and flame already use (fire out at 13%, first impact 21.8%, fire gone by 70%). */
+.sv-scene .sv-dragon.sv-rig{transform-origin:42% 96%;animation:svDragonPerform 11s ease-in-out infinite!important}
+@keyframes svDragonPerform{
+  0%{transform:scale(1,1)}
+  3%{transform:scale(1.008,1.018)}
+  6%{transform:scale(1,1)}
+  8.5%{transform:scale(1.02,1.045) rotate(-2.5deg)}
+  12.2%{transform:scale(1.045,1.085) rotate(-4deg)}
+  13.4%{transform:scale(.985,.975) rotate(2.2deg)}
+  15.5%{transform:scale(1.01,.995) rotate(.6deg)}
+  18%,64%{transform:scale(1,1) rotate(0)}
+  22%{transform:scale(1.006,1.004) translateX(-.5px)}
+  27%{transform:scale(1,1) translateX(.5px)}
+  32%{transform:scale(1.006,1.004) translateX(-.5px)}
+  37%{transform:scale(1,1) translateX(.5px)}
+  42%{transform:scale(1.006,1.004) translateX(-.5px)}
+  47%{transform:scale(1,1) translateX(.5px)}
+  52%{transform:scale(1.006,1.004) translateX(-.5px)}
+  57%{transform:scale(1,1) translateX(.5px)}
+  70%{transform:scale(1.012,1.03)}
+  78%{transform:scale(.995,.99)}
+  86%,100%{transform:scale(1,1)}
+}
+.sv-scene .sv-flame{filter:drop-shadow(0 0 7px rgba(255,150,40,.95)) drop-shadow(0 0 14px rgba(255,90,20,.55))}
+html[data-motion=reduce] .sv-scene .sv-dragon.sv-rig{animation:none!important}
+@media(prefers-reduced-motion:reduce){.sv-scene .sv-dragon.sv-rig{animation:none!important}}
+
+/* Survival knight, fuller performance: breathes while he waits, crouches then hops as the sword goes up, lands with a squash, and the shield glints. */
+.sv-scene.safe .sv-knight.sv-rig{transform-origin:46% 96%;animation:svVictoryWeight 7s ease-out infinite,svKnightPerform 7s ease-in-out infinite}
+@keyframes svKnightPerform{
+  0%{transform:scale(1,1)}
+  3%{transform:scale(1.008,1.016)}
+  6%{transform:scale(1,1)}
+  8.5%{transform:scale(1.03,.95)}
+  14%{transform:scale(.985,1.04) translateY(-9px)}
+  19%{transform:scale(1,1) translateY(-11px)}
+  25%{transform:scale(1,1) translateY(-2px)}
+  28%{transform:scale(1.045,.94) translateY(0)}
+  33%{transform:scale(.99,1.02)}
+  38%,60%{transform:scale(1,1)}
+  66%{transform:scale(1.008,1.016)}
+  74%{transform:scale(1,1)}
+  82%{transform:scale(1.008,1.016)}
+  90%,100%{transform:scale(1,1)}
+}
+.sv-scene.safe .sv-knight.sv-rig::after{content:"";position:absolute;left:78%;top:46%;width:22%;height:22%;margin:-11% 0 0 -11%;border-radius:50%;pointer-events:none;z-index:3;opacity:0;
+  background:radial-gradient(circle,#fff 0,rgba(255,255,255,.95) 18%,rgba(190,235,255,.55) 42%,rgba(190,235,255,0) 70%);animation:svShieldGlint 7s ease-out infinite}
+@keyframes svShieldGlint{0%,31%,45%,100%{opacity:0;transform:scale(.2) rotate(0)}36%{opacity:1;transform:scale(1.25) rotate(45deg)}42%{opacity:0;transform:scale(1.7) rotate(90deg)}}
+html[data-motion=reduce] .sv-scene.safe .sv-knight.sv-rig,html[data-motion=reduce] .sv-scene.safe .sv-knight.sv-rig::after{animation:none!important}
+@media(prefers-reduced-motion:reduce){.sv-scene.safe .sv-knight.sv-rig,.sv-scene.safe .sv-knight.sv-rig::after{animation:none!important}}
