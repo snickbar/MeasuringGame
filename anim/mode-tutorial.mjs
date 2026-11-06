@@ -9,7 +9,7 @@ const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const M = f => `anim/mode-mascots/${f}-tutorial.webp`;
 const MODE_MASCOTS = {
   party: { srcs: [M('party-ant')] },
-  hl: { srcs: [[M('hl-shark'), .66], M('hl-bird')], compact: 1 },
+  hl: { srcs: [[M('hl-shark'), .6], [M('hl-bird'), .7]], compact: 1 },
   survival: { srcs: [M('survival-knight'), M('survival-dragon')] },
   wb: { srcs: [M('wb-elephant'), M('wb-mouse')] },
   teamvteam: { srcs: [M('team-dog'), M('team-cat')] },
