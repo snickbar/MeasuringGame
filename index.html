@@ -688,7 +688,9 @@ if (location.protocol === "file:") {
   .cosm-selected-item figcaption { margin-top: 4px; font-size: 11px; line-height: 1.2; overflow-wrap: anywhere; }
   .cosm-empty-selection { padding: 8px 0; font-size: 12px; }
   .cosm-thumbs:focus-visible { outline: 2px solid #266ea8; outline-offset: 2px; }
-  .cosm-now > .cosm-rnd-clear { margin-top: 8px; }
+  .cosm-now-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .cosm-now-actions .cosm-rnd-clear { flex: none; white-space: nowrap; }
+  .cosm-now-actions .cosm-now-cap { flex: 1 1 0; min-width: 0; margin: 0; font-size: 11px; line-height: 1.2; }
   .cosm-thumbs em { font-style: normal; font-size: 12px; color: #7a5c33; }
   .cosm-th { width: 34px; min-width: 24px; height: 46px; flex: 0 1 34px; border-radius: 8px; border: 2px solid #6bb35a; background: #dfe9d2; overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .cosm-th.more { background: #fff3c9; border-color: #d9a93a; font: 700 14px 'Fredoka', sans-serif; color: #7a4a10; }
@@ -5974,14 +5976,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ids=styleEquippedIds(cat);
     const items=cat==='reactions'?ids.map(id=>({id,name:REACTIONS[id].label||EMOJI_NAMES[id]||id,thumb:`<img class="cosm-now-pic" src="${reactionPic(id)}" alt=""${REACTIONS[id].mirror?' style="transform:scaleX(-1)"':''}>`}))
       :cosmCatItems(cat).filter(i=>ids.includes(i.id));
-    pnl.innerHTML=`<h4>Equipped items <small>${items.length} equipped</small></h4><div class="cosm-thumbs" role="region" aria-label="Equipped ${CAT_NOUN[cat]}" tabindex="0">${items.map(i=>`<figure class="cosm-selected-item"><span class="cosm-th" title="${escapeHtml(i.name)}">${i.thumb}</span><figcaption>${escapeHtml(i.name)}</figcaption></figure>`).join('')||'<span class="cosm-empty-selection">No items equipped.</span>'}</div><p class="cosm-now-cap">${cat==='reactions'?`Your reaction bar has ${ownedReactionSlots()} slots. If you equip more, a random selection fills those slots each round.`:'If more than one item is equipped, they will be chosen randomly.'}</p>`;
+    pnl.innerHTML=`<h4>Equipped items <small>${items.length} equipped</small></h4><div class="cosm-thumbs" role="region" aria-label="Equipped ${CAT_NOUN[cat]}" tabindex="0">${items.map(i=>`<figure class="cosm-selected-item"><span class="cosm-th" title="${escapeHtml(i.name)}">${i.thumb}</span><figcaption>${escapeHtml(i.name)}</figcaption></figure>`).join('')||'<span class="cosm-empty-selection">No items equipped.</span>'}</div><div class="cosm-now-actions"><p class="cosm-now-cap">${cat==='reactions'?`Your bar has ${ownedReactionSlots()} slots. Extra equipped reactions rotate in randomly.`:'If more than one item is equipped, they will be chosen randomly.'}</p></div>`;
     if(cat==='reactions'&&ownedReactionSlots()<REACTION_SLOTS_MAX){
       const n=ownedReactionSlots()+1,buy=document.createElement('div');buy.className='cosm-slot-buy';
       buy.innerHTML=`<span>Unlock reaction slot ${n}</span><div class="cosm-actions"><button type="button" class="cosm-buy" aria-label="Unlock slot ${n} for ${REACTION_SLOT_COSTS[n-6]} coins"><img class="cosm-coin" src="icons/coin-v2.png" alt="">${REACTION_SLOT_COSTS[n-6]}</button></div>`;
       buy.querySelector('button').addEventListener('click',()=>buyReactionSlot(n,false));pnl.append(buy);
     }
+    const ownedIds=cat==='reactions'?Object.keys(REACTIONS).filter(ownsEmoji):cosmCatItems(cat).map(i=>i.id);
+    const all=document.createElement('button');all.type='button';all.className='cosm-rnd-clear cosm-equip-all';all.textContent='Equip all';all.disabled=!ownedIds.length||ownedIds.every(id=>ids.includes(id));
+    all.addEventListener('click',async()=>{all.disabled=true;try{await saveStyleSelection(cat,ownedIds);}catch{cosmNote('Could not save your equipped items. Please try again.');all.disabled=false;}});
     const clear=document.createElement('button');clear.type='button';clear.className='cosm-rnd-clear';clear.textContent='Unequip all';clear.disabled=!ids.length;
-    clear.addEventListener('click',async()=>{clear.disabled=true;try{await saveStyleSelection(cat,[]);}catch{cosmNote('Could not save your equipped items. Please try again.');clear.disabled=false;}});pnl.append(clear);
+    clear.addEventListener('click',async()=>{clear.disabled=true;try{await saveStyleSelection(cat,[]);}catch{cosmNote('Could not save your equipped items. Please try again.');clear.disabled=false;}});
+    pnl.querySelector('.cosm-now-actions').prepend(all,clear);
     return pnl;
   }
   let cosmSub = "emojis";
