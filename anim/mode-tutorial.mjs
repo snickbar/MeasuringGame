@@ -4,12 +4,34 @@ import {mountHighLowTutorial} from './high-low-tutorial.mjs';
 import {partyTutorialScene} from './party-tutorial.mjs';
 import {MORE_MODE_TUTORIALS,extraTutorialScene} from './more-tutorials.mjs';
 const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-// A mode's mascot stands on the dialog's top edge and points at the slide. It gets as tall as the room above the dialog allows.
-const mascotHtml = def => def.mascot ? `<img class="mt-mascot" src="${esc(def.mascot)}" alt="" draggable="false">` : '';
+// Each mode's mascot (or pair) stands on the dialog's top edge and points at the slide. It gets as tall as the room above the dialog allows.
+// 'side' is the corner it stands in: the mascots point toward the slide, so a left-pointing one stands on the right.
+const M = f => `anim/mode-mascots/${f}-tutorial.webp`;
+const MODE_MASCOTS = {
+  party: { srcs: [M('party-ant')] },
+  teamvteam: { srcs: [M('team-dog'), M('team-cat')] },
+  quick: { srcs: [M('quick-robot')], side: 'right' },
+  worlds: { srcs: [M('worlds-fox')] },
+  teamworlds: { srcs: [M('teamworlds-boy'), M('teamworlds-girl')] },
+  bluff: { srcs: [M('bluff-raccoon')] },
+  highstakes: { srcs: [M('highstakes-pig')] },
+  daily: { srcs: [M('daily-rooster')] },
+  monthly: { srcs: [M('monthly-squirrel')] },
+};
+const mascotKey = def => def.mascots ? def.mascots.srcs.join('|') : '';
+const mascotHtml = def => def.mascots ? `<span class="mt-mascots" data-side="${def.mascots.side || 'left'}" data-key="${esc(mascotKey(def))}">${def.mascots.srcs.map(src => `<img class="mt-mascot" src="${esc(src)}" alt="" draggable="false">`).join('')}</span>` : '';
 function fitMascot(dialog) {
-  const m = dialog.querySelector('.mt-mascot'); if (!m || !dialog.open) return;
+  if (!dialog.querySelector('.mt-mascots') || !dialog.open) return;
   const room = dialog.getBoundingClientRect().top - 8;
-  dialog.style.setProperty('--mt-mh', Math.max(0, Math.min(96, room)) + 'px');
+  // Too little room above (a tall dialog on a short phone): stand inside the top corner beside the title instead.
+  dialog.toggleAttribute('data-compact', room < 46);
+  dialog.style.setProperty('--mt-mh', Math.min(96, Math.max(46, room)) + 'px');
+}
+// Replaces the dialog's content for a new slide but leaves the same mascots standing, so they do not pop in again on every slide.
+function setSlideHtml(dialog, def, html) {
+  const keep = def.mascots && [...dialog.children].find(c => c.classList.contains('mt-mascots') && c.dataset.key === mascotKey(def));
+  [...dialog.children].forEach(c => { if (c !== keep) c.remove(); });
+  dialog.insertAdjacentHTML('beforeend', (def.mascots && !keep ? mascotHtml(def) : '') + html);
 }
 const img = (src, cls = '') => `<img class="${cls}" src="${esc(src)}" alt="" draggable="false">`;
 
@@ -66,7 +88,7 @@ const SCENES = {
 };
 
 export const MODE_TUTORIALS = {
-  party: { title: 'Classic Party', mascot:'anim/mode-mascots/classic-ant-tutorial.webp', autoplay:true, slideMs:7500, slides: [
+  party: { title: 'Classic Party', autoplay:true, slideMs:7500, slides: [
     { scene:'partyExample',lesson:'players',head:'Same question. Your own guess.',text:'Everyone plays on their own device. Try to be the closest each round.' },
     { scene:'partyExample',lesson:'measure',head:'Think end to end',text:'Imagine lining up the smaller object along the bigger one. Here, two hot dogs fit along the sneaker.' },
     { scene:'partyExample',lesson:'guess',head:'Make your guess, then lock it in',text:'Alex guesses 1.8 before the timer ends. Decimal guesses are allowed.' },
@@ -101,6 +123,7 @@ export const MODE_TUTORIALS = {
   ] },
   ...MORE_MODE_TUTORIALS,
 };
+for (const [k, m] of Object.entries(MODE_MASCOTS)) if (MODE_TUTORIALS[k]) MODE_TUTORIALS[k].mascots = m;
 
 export function createModeTutorial({ owner, sample, storage }) {
   if (!storage) { try { storage = globalThis.localStorage; } catch {} }
@@ -165,12 +188,12 @@ export function createModeTutorial({ owner, sample, storage }) {
       const sl = def.slides[i], last = i === def.slides.length - 1;
       const canSkip = controls !== 'guest';
       dialog.dataset.mode=mode;
-      dialog.toggleAttribute('data-mascot', !!def.mascot);
-      dialog.innerHTML = `${mascotHtml(def)}<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${canSkip ? `<button type="button" class="mt-skip" data-skip>${controls === 'host' ? 'Skip for everyone' : 'Skip'}</button>` : ''}</header>
+      dialog.toggleAttribute('data-mascot', !!def.mascots);
+      setSlideHtml(dialog, def, `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${canSkip ? `<button type="button" class="mt-skip" data-skip>${controls === 'host' ? 'Skip for everyone' : 'Skip'}</button>` : ''}</header>
         <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene]({...s,lesson:sl.lesson,lessonMode:mode})}</div>
         <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
         <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
-        ${controls === 'guest' ? '<p class="mt-wait">The host is showing how to play.</p>' : `<footer>${i > 0 ? '<button type="button" data-back>Back</button>' : ''}<button type="button" data-next class="mt-go">${last ? 'Got it' : 'Next'}</button></footer>`}`;
+        ${controls === 'guest' ? '<p class="mt-wait">The host is showing how to play.</p>' : `<footer>${i > 0 ? '<button type="button" data-back>Back</button>' : ''}<button type="button" data-next class="mt-go">${last ? 'Got it' : 'Next'}</button></footer>`}`);
       fitMascot(dialog);
       dialog.querySelector('[data-skip]')?.addEventListener('click', () => { mark(mode); close('skipped'); });
       dialog.querySelector('[data-back]')?.addEventListener('click', () => { if (performance.now() - lastAutoAt < 800) return; i--; render(); });
@@ -198,12 +221,12 @@ export function createModeTutorial({ owner, sample, storage }) {
     const sl = def.slides[i];
     dialog.dataset.synced = mode;
     dialog.dataset.mode = mode;
-    dialog.toggleAttribute('data-mascot', !!def.mascot);
-    dialog.innerHTML = `${mascotHtml(def)}<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${host ? '<button type="button" class="mt-skip" data-skip>Skip for everyone</button>' : ''}</header>
+    dialog.toggleAttribute('data-mascot', !!def.mascots);
+    setSlideHtml(dialog, def, `<header><span>${esc(def.title)} &middot; ${i + 1} of ${def.slides.length}</span>${host ? '<button type="button" class="mt-skip" data-skip>Skip for everyone</button>' : ''}</header>
       <div class="mt-scene" data-scene="${sl.scene}">${SCENES[sl.scene]({...sample(),lesson:sl.lesson,lessonMode:mode})}</div>
       <h2 id="mt-head">${esc(sl.head)}</h2><p>${esc(sl.text)}</p>
       <div class="mt-dots">${def.slides.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
-      <p class="mt-wait">${host ? 'Everyone is watching this together.' : 'The host is showing how to play.'}</p>`;
+      <p class="mt-wait">${host ? 'Everyone is watching this together.' : 'The host is showing how to play.'}</p>`);
     dialog.querySelector('[data-skip]')?.addEventListener('click', onSkip);
     if (!dialog.open) { dialog.showModal(); dialog.focus({ preventScroll: true }); }
     fitMascot(dialog);
