@@ -19,6 +19,7 @@ export const SCENERY_BY_OBJECT = Object.create(null);
 Object.assign(SCENERY_BY_OBJECT, {
   cherry:'kitchen',mouse:'living','spinning-top':'tabletop','toy-jack':'tabletop',
   seal:'beach',satellite:'space',crab:'beach',tumbleweed:'desert','spaghetti-strainer':'kitchen','soup-ladle':'kitchen',
+  'piggy-bank':'living',cupcake:'kitchen','sushi-piece':'kitchen','red-spotted-mushroom':'forest',fishbowl:'living','diving-helmet':'underwater','tape-measure':'tabletop','paint-palette':'tabletop',snowflake:'snow','water-drop':'kitchen',meteorite:'space',asteroid:'space',
   'tennis-court':'stadium','ice-hockey-rink':'stadium','coast-redwood':'forest',
   submarine:'underwater','cargo-ship':'beach','freight-train':'city','radio-mast':'city',
   'sports-stadium':'stadium','radio-telescope':'desert','water-slide':'beach',

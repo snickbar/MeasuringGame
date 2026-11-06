@@ -154,6 +154,7 @@ const VISUAL = {
 const MOTION = {
   cherry:'slide',mouse:'walk','spinning-top':'slide','toy-jack':'slide',
   seal:'slide',satellite:'fly',crab:'walk',tumbleweed:'slide','spaghetti-strainer':'slide','soup-ladle':'slide',
+  'piggy-bank':'slide',cupcake:'slide','sushi-piece':'slide','red-spotted-mushroom':'slide',fishbowl:'slide','diving-helmet':'slide','tape-measure':'slide','paint-palette':'slide',snowflake:'slide','water-drop':'slide',meteorite:'fly',asteroid:'fly',
   'tennis-court':'slide','ice-hockey-rink':'slide','coast-redwood':'slide',
   submarine:'fly','cargo-ship':'sail','freight-train':'drive','radio-mast':'slide',
   'sports-stadium':'slide','radio-telescope':'slide','water-slide':'slide',
