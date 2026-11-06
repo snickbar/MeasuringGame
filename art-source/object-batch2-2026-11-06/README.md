@@ -10,6 +10,6 @@ The separate orientation picker is `anim/object-review-batch2.html`. It contains
 
 The user's completed November 6 review is saved in `approved-choices.json`. All 105 objects were reviewed; 71 have orientation changes. The picker builder validates and applies these settings after generating its initial defaults, so rebuilding preserves the approved choices. Sizes, measurement dimensions, and travel styles match the supplied batch defaults.
 
-All 105 approved objects are now active in the standard gameplay pool. Production artwork is copied to `items/<id>.png`; measurements, orientations and travel styles are stored in the live catalog and animation mappings. The isolated batch picker remains available for reviewing the source artwork. Existing themed Worlds keep their curated object lists.
+All 105 approved objects are active in the standard gameplay pool with production WebP artwork, scenery and Worlds assignments from the live integration. Measurements, orientations and travel styles match the approved export. Seven picker IDs map to their established live IDs through `anim/object-batch2-ids.mjs`. Run `node scripts/activate-object-batch2.mjs` to reapply the approved settings. The isolated batch picker remains available for reviewing the source artwork.
 
 Review refinements requested during generation: natural closed mouths/beaks on the walrus, toucan and parrot; long loose tools upright rather than diagonally posed. Keep detail levels simple and readable at small sizes.

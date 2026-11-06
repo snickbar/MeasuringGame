@@ -3,10 +3,12 @@ const {runFixture}=require('./browser-fixture.cjs');
 const ids=JSON.parse(fs.readFileSync('art-source/object-batch2-2026-11-06/approved-choices.json')).objects.map(o=>o.id);
 const html=`<!doctype html><base href="/"><div id="stage" style="width:350px;height:400px"></div><script type="module">
 import {createStackAnimation} from '/anim/stack-anim.js';
+import {liveBatch2Id} from '/anim/object-batch2-ids.mjs';
 const data=await(await fetch('/anim/object-review-data.json')).json();
 window.check=async()=>{
  const ctl=createStackAnimation(document.getElementById('stage'),{imageUrl:o=>'/'+o.image,reduceMotion:false});
- for(const id of ${JSON.stringify(ids)}){
+ for(const pickerId of ${JSON.stringify(ids)}){
+  const id=liveBatch2Id(pickerId);
   const o=data.objects.find(o=>o.id===id);const im=new Image();im.src='/'+o.image;await im.decode();
   if(!im.naturalWidth)throw Error('Missing artwork: '+id);
   for(const [small,big]of [[data.objects.find(o=>o.id==='ant'),o],[o,data.objects.find(o=>o.id==='mount-everest')]]){

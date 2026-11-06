@@ -2,14 +2,13 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {currentSettings,validateSettings,validatePicks} from '../anim/object-review-model.mjs';
 import {measurementQuestionPrompt} from '../anim/object-review-prompts.mjs';
+import {liveBatch2Id} from '../anim/object-batch2-ids.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('../anim/object-review-data.json',import.meta.url)));
 const objects=new Map(data.objects.map(o=>[o.id,o]));assert.equal(objects.size,681);
 const approved=JSON.parse(fs.readFileSync(new URL('../art-source/object-batch2-2026-11-06/approved-choices.json',import.meta.url)));
 for(const row of approved.objects){
-  const object=objects.get(row.id);assert(object,'Active batch object: '+row.id);
-  assert.equal(object.group,'Standard');
-  assert(object.image.startsWith('items/'),'Production artwork: '+row.id);
-  assert.deepEqual(validateSettings(currentSettings(object),data.types),validateSettings(row.settings,data.types),'Approved settings: '+row.id);
+ const o=objects.get(liveBatch2Id(row.id));assert(o,row.id);assert.equal(o.group,'Standard');
+ assert.deepEqual(validateSettings(currentSettings(o),data.types),validateSettings(row.settings,data.types),'Approved choice: '+row.id);
 }
 const monthlyArt=JSON.parse(fs.readFileSync(new URL('../art-source/monthly-expansion-55/requested-prompts.json',import.meta.url)));
 assert.equal(data.objects.filter(o=>o.monthlyExpansion).length,55);
@@ -31,4 +30,4 @@ assert.equal(Object.keys(validatePicks({...payload,reviewedIds:['ant']},data)).l
 for(const corrupt of [p=>p.objects.push(p.objects[0]),p=>p.objects[0].id='missing',p=>p.objects[0].settings.mm=0,p=>p.objects[0].settings.measurement.dimension='area',p=>p.objects[0].settings.orientation.rot=13,p=>p.objects[0].settings.orientation.flip='false',p=>p.objects[0].settings.motionBig='teleport',p=>p.objects[0].settings.measurement.qualifier='x'.repeat(201)]){
   const copy=structuredClone(payload);corrupt(copy);assert.throws(()=>validatePicks(copy,data));
 }
-console.log('PASS: all 681 current settings and exact game prompts, including 105 approved active batch objects; full export round-trip and invalid settings rejected.');
+console.log('PASS: all 681 current settings and exact game prompts; full export round-trip; invalid/duplicate IDs, values, dimensions, rotations and motions rejected.');
