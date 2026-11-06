@@ -10466,11 +10466,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!qPromptEl.clientHeight || !questionPromptTextEl.textContent) return;
     const cs = getComputedStyle(qPromptEl), target = parseFloat(cs.minHeight) || 184, pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
     const ans = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML ? questionAnswerLineEl.offsetHeight + 6 : 0;
-    const fits = (fs) => { qPromptEl.style.fontSize = fs + "px"; return questionPromptTextEl.offsetHeight + ans + pad + 12 <= target; }; // +12 keeps the text off the ledge, pencil and eraser
+    const fits = (fs) => { qPromptEl.style.fontSize = fs + "px"; return questionPromptTextEl.offsetHeight + ans + pad + 30 <= target; }; // +30 keeps the text above the pencil and eraser resting on the ledge
     let lo = 11, hi = 48;
-    if (fits(hi)) return;
+    if (fits(hi)) { qEraserEl.style.visibility = ""; return; }
     while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
-    fits(lo);
+    // If even the smallest size cannot clear the ledge (a very long question on a short screen), hide the resting eraser so it never covers the words.
+    qEraserEl.style.visibility = fits(lo) ? "" : "hidden";
   }
   function qbFitParty() {
     if (qSB) return; // scene boards fit themselves (sbFit)
@@ -13436,7 +13437,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     const reward = monthlyLevelReward(mo.key, mo.level);
-    const bgNote = `<div class="dc-card mc-earned"><img src="${reward.art}" alt="" style="width:64px;height:64px;object-fit:contain;float:left;margin-right:12px"><div class="dc-big">${escapeHtml(reward.label)} ${reward.kind}</div><div class="dc-note">${reward.owned ? "Unlocked! Find it in Style." : "Earned! Claim it in Stats, Awards."}</div><button type="button" class="dc-btn dc-alt" id="mo-reward">${reward.owned ? "View in Style" : "Claim in Awards"}</button></div>`;
+    const bgNote = `<div class="dc-card mc-earned"><img src="${reward.art}" alt="" style="width:64px;height:64px;object-fit:contain;float:left;margin-right:12px"><div class="dc-big">${escapeHtml(reward.label)} ${reward.kind}</div><div class="dc-note">${reward.owned ? "Unlocked! Find it in Style." : "Earned! Claim it in Stats, Awards."}</div><button type="button" class="dc-btn dc-alt mo-reward-btn" id="mo-reward">${reward.owned ? "View in Style" : "Claim in Awards"}</button></div>`;
     el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${lvTitle}</h2>${tourBtn('monthly')}
       <div class="dc-card dc-hot"><div class="dc-big"><span class="mo-tot">${total}</span> / ${mo.questions.length * 100}</div><div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>${mo.coins ? `<div class="dc-note">+${mo.coins} coins</div>` : ""}</div>
       <div class="dc-card">${rows}</div>
