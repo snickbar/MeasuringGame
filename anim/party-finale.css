@@ -112,7 +112,7 @@ html[data-motion=reduce] .pd-mascot,.pd-stage.skip:where(.reduce) .pd-mascot{ani
 .pd-robot-confetti i {
   position: absolute; width: 4px; height: 6px; border-radius: 1px;
   opacity: 0; background: var(--color);
-  animation: pdRobotConfetti .7s ease-out calc(var(--pd-at) + .34s) both;
+  animation: pdMascotConfetti .7s ease-out calc(var(--pd-at) + .34s) both;
 }
 .pd-robot-confetti i:nth-child(1) { --x: -23px; --y: -12px; --color: #ff5a93; }
 .pd-robot-confetti i:nth-child(2) { --x: -11px; --y: -24px; --color: #ffb930; }
@@ -132,7 +132,7 @@ html[data-motion=reduce] .pd-mascot,.pd-stage.skip:where(.reduce) .pd-mascot{ani
 @keyframes pdRobotAirPose { 0%, 68%, 100% { opacity: 0; } 24% { opacity: 1; } }
 @keyframes pdRobotRestPose { 0%, 68%, 100% { opacity: 1; } 24% { opacity: 0; } }
 @keyframes pdRobotShadow { 0%, 68%, 100% { transform: scale(1); opacity: 1; } 43% { transform: scale(.68); opacity: .45; } }
-@keyframes pdRobotConfetti {
+@keyframes pdMascotConfetti {
   0% { transform: scale(.3); opacity: 0; }
   16% { opacity: 1; }
   65% { transform: translate(var(--x), var(--y)) rotate(120deg); opacity: .85; }
@@ -144,18 +144,19 @@ html[data-motion=reduce] .pd-m-robot, html[data-motion=reduce] .pd-m-robot * { a
   .pd-mascot.pd-m-robot, .pd-m-robot * { animation: none; }
 }
 
-/* Classic Party: the ant waits beside the podium, then takes two steps and raises the flag. */
+/* Classic Party: wait with the flag up, then take two steps and toss confetti. */
 .pd-mascot.pd-m-ant{
   --ant-march:1.1s;
   left:12%;bottom:0%;width:22%;aspect-ratio:1;
   animation:none;
 }
 .pd-ant-flag{display:block;width:100%;height:auto}
-.pd-ant-step{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
+.pd-ant-step,.pd-ant-toss{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
 .pd-m-ant.pose-ready{animation:pdAntMarch var(--ant-march) ease-in-out var(--pd-at) both}
 .pd-m-ant.pose-ready :where(.pd-ant-step-one){animation:pdAntStepOne var(--ant-march) step-end var(--pd-at) forwards}
 .pd-m-ant.pose-ready :where(.pd-ant-step-two){animation:pdAntStepTwo var(--ant-march) step-end var(--pd-at) forwards}
 .pd-m-ant.pose-ready :where(.pd-ant-flag){animation:pdAntFlag var(--ant-march) step-end var(--pd-at) forwards}
+.pd-m-ant.pose-ready :where(.pd-ant-toss){animation:pdAntToss var(--ant-march) step-end var(--pd-at) forwards}
 @keyframes pdAntMarch{
   0%{transform:translateX(-50%)}
   14%{transform:translate(-46%,-3%)}
@@ -167,11 +168,23 @@ html[data-motion=reduce] .pd-m-robot, html[data-motion=reduce] .pd-m-robot * { a
 }
 @keyframes pdAntStepOne{0%{opacity:1}33%,100%{opacity:0}}
 @keyframes pdAntStepTwo{0%,64%,100%{opacity:0}33%{opacity:1}}
-@keyframes pdAntFlag{0%{opacity:0}64%,100%{opacity:1}}
-.pd-skip-motion :is(.pd-mascot.pd-m-ant,.pd-m-ant img),
-html[data-motion=reduce] :is(.pd-mascot.pd-m-ant,.pd-m-ant img){animation:none}
+@keyframes pdAntFlag{from,to{opacity:0}}
+@keyframes pdAntToss{0%{opacity:0}64%,100%{opacity:1}}
+.pd-ant-confetti{position:absolute;left:22%;top:41%}
+.pd-ant-confetti i{position:absolute;width:4px;height:6px;border-radius:1px;background:var(--color);opacity:0}
+.pd-m-ant.pose-ready :where(.pd-ant-confetti i){
+  animation:pdMascotConfetti .72s ease-out calc(var(--pd-at) + var(--ant-march) * .64) both;
+}
+.pd-ant-confetti i:nth-child(1){--x:-17px;--y:-13px;--color:#ffca33}
+.pd-ant-confetti i:nth-child(2){--x:-10px;--y:-24px;--color:#b466ed}
+.pd-ant-confetti i:nth-child(3){--x:1px;--y:-30px;--color:#ff7da1}
+.pd-ant-confetti i:nth-child(4){--x:13px;--y:-26px;--color:#53c5ff}
+.pd-ant-confetti i:nth-child(5){--x:23px;--y:-17px;--color:#ffe467}
+.pd-ant-confetti i:nth-child(6){--x:26px;--y:-6px;--color:#7bda62}
+.pd-skip-motion :is(.pd-mascot.pd-m-ant,.pd-m-ant img,.pd-ant-confetti i),
+html[data-motion=reduce] :is(.pd-mascot.pd-m-ant,.pd-m-ant img,.pd-ant-confetti i){animation:none}
 @media(prefers-reduced-motion:reduce){
-  :is(.pd-mascot.pd-m-ant,.pd-m-ant img){animation:none}
+  :is(.pd-mascot.pd-m-ant,.pd-m-ant img,.pd-ant-confetti i){animation:none}
 }
 
 /* Team vs Team: the dogs and cats cheer from the two sides of the podium. */

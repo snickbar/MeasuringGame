@@ -132,24 +132,33 @@ server.listen(0,'127.0.0.1',()=>{
      const stage=ant.closest('.pd-stage');
      stage.classList.add('skip');
      const animations=ant.getAnimations({subtree:true});
+     const march=animations.find(animation=>animation.animationName==='pdAntMarch');
+     const start=march.effect.getTiming().delay;
      const sample=time=>{
        for(const animation of animations){
          animation.pause();
-         animation.currentTime=animation.effect.getTiming().delay+time;
+         animation.currentTime=start+time;
        }
        const box=ant.getBoundingClientRect();
        return {pose:frames.map(frame=>getComputedStyle(frame).opacity).join(''),left:box.left,
-         fits:box.left>=0&&box.right<=innerWidth&&box.bottom<=innerHeight};
+         fits:box.left>=0&&box.right<=innerWidth&&box.bottom<=innerHeight,
+         confetti:[...ant.querySelectorAll('.pd-ant-confetti i')].some(piece=>+getComputedStyle(piece).opacity>0)};
      };
-     const first=sample(200),second=sample(500),flag=sample(950);
-     stage.classList.remove('skip');
-     return {first,second,flag,once:animations.find(a=>a.animationName==='pdAntMarch')?.effect.getTiming().iterations===1};
+     const waiting=sample(-50),first=sample(200),second=sample(500),settled=sample(1500),toss=sample(950);
+     return {waiting,first,second,toss,settled,once:march.effect.getTiming().iterations===1};
    })()`);
-   if(!march.once||march.first.pose!=='010'||march.second.pose!=='001'||march.flag.pose!=='100'||
-     ![march.first,march.second,march.flag].every(frame=>frame.fits)||
-     !(march.first.left<march.second.left&&march.second.left<march.flag.left)){
-     throw Error('Ant did not march and raise the flag '+JSON.stringify({width,...march}));
+   if(!march.once||march.waiting.pose!=='1000'||march.first.pose!=='0100'||march.second.pose!=='0010'||
+     march.toss.pose!=='0001'||march.settled.pose!=='0001'||!march.toss.confetti||
+     [march.waiting,march.first,march.second,march.settled].some(frame=>frame.confetti)||
+     ![march.first,march.second,march.toss].every(frame=>frame.fits)||
+     !(march.first.left<march.second.left&&march.second.left<march.toss.left)){
+     throw Error('Ant did not march and toss confetti '+JSON.stringify({width,...march}));
    }
+   if(width===390){
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(previewDir,'classic-ant-confetti-390.png'),Buffer.from(shot.data,'base64'));
+   }
+   await evaluate("document.querySelector('.pd-stage').classList.remove('skip')");
  }
  const after=await evaluate("(()=>{document.querySelectorAll('.pd-who').forEach(e=>e.getAnimations().forEach(a=>a.finish()));document.querySelector('.pd-skip').click();return {opacity:+getComputedStyle(document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who')).opacity,cards:document.querySelectorAll('#final-list>.final-row').length,hidden:[...document.querySelectorAll('#final-list>.final-row')].some(e=>getComputedStyle(e).display==='none'),captionOpacity:+getComputedStyle(document.querySelector('.pd-caption')).opacity,podiumHeight:document.querySelector('.pd-pod').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,tied:[...document.querySelectorAll('.pd-slot')].map(e=>e.dataset.rank)}})()");
  if(after.captionOpacity!==1||after.podiumHeight<200||after.opacity!==1||after.hidden||after.cards!==(mode==='teamvteam'?2:4)||after.overflow)throw Error('Finale did not settle '+JSON.stringify({mode,width,...after}));
@@ -162,7 +171,7 @@ server.listen(0,'127.0.0.1',()=>{
  if(mode==='party'&&!await evaluate(`(() => {
    const ant=document.querySelector('.pd-m-ant');
    return !ant.getAnimations({subtree:true}).length&&getComputedStyle(ant.querySelector('.pd-ant-flag')).opacity==='1'&&
-     [...ant.querySelectorAll('.pd-ant-step')].every(frame=>getComputedStyle(frame).opacity==='0');
+     [...ant.querySelectorAll('.pd-ant-step,.pd-ant-toss,.pd-ant-confetti i')].every(frame=>getComputedStyle(frame).opacity==='0');
  })()`))throw Error('Skip did not show the ant with the flag up');
  await evaluate("Promise.all([...document.querySelectorAll('.pd-stage img')].map(i=>i.decode().catch(()=>{})))");await new Promise(r=>setTimeout(r,550));
  const corner=await evaluate("(()=>{const c=document.querySelector('#final-list>.rank-1'),star=c?.querySelector('.drumroll-stars');if(!star)return true;const a=c.getBoundingClientRect(),b=star.getBoundingClientRect();return b.left>a.left+a.width*.7&&b.top<a.top+30})()");if(!corner)throw Error('Winner star overlaps left-side label');
