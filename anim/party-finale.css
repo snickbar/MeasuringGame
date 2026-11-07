@@ -81,7 +81,7 @@ html[data-motion=reduce] #final-screen .final-row.rank-1>.drumroll-stars span{an
 .pd-mascot{position:absolute;left:37%;bottom:8%;width:14%;height:auto;transform:translateX(-50%);z-index:4;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(40,20,0,.3));transform-origin:50% 100%;animation:pdMascotIn .5s var(--pd-at,0ms) cubic-bezier(.2,.9,.3,1.2) both,pdMascotCheer 2.4s calc(var(--pd-at,0ms) + .5s) ease-in-out infinite}
 @keyframes pdMascotIn{from{opacity:0;transform:translateX(-50%) translateY(40%) scale(.6)}to{opacity:1;transform:translateX(-50%)}}
 @keyframes pdMascotCheer{0%,100%{transform:translateX(-50%)}12%{transform:translateX(-50%) translateY(-7%) scale(.98,1.04)}24%{transform:translateX(-50%) scale(1.03,.96)}36%,100%{transform:translateX(-50%)}}
-.pd-stage.skip .pd-mascot:where(:not(.pd-m-robot, [data-team-reaction])){animation:pdMascotCheer 2.4s ease-in-out infinite}
+.pd-stage.skip .pd-mascot:where(:not(.pd-m-robot, .pd-m-ant, [data-team-reaction])){animation:pdMascotCheer 2.4s ease-in-out infinite}
 html[data-motion=reduce] .pd-mascot,.pd-stage.skip:where(.reduce) .pd-mascot{animation:none}
 @media(prefers-reduced-motion:reduce){.pd-mascot{animation:none}}
 
@@ -144,8 +144,37 @@ html[data-motion=reduce] .pd-m-robot, html[data-motion=reduce] .pd-m-robot * { a
   .pd-mascot.pd-m-robot, .pd-m-robot * { animation: none; }
 }
 
-/* Classic Party: the ant at the left end of the podium. Team vs Team: the dogs bottom-left, the cats bottom-right (up to five teams, so no room on the podium itself). */
-.pd-mascot.pd-m-ant{left:9.5%;bottom:0%;width:19%}
+/* Classic Party: two steps toward the podium, then hold the flag up. */
+.pd-mascot.pd-m-ant{
+  --ant-march:1.1s;
+  left:12%;bottom:0%;width:22%;aspect-ratio:1;
+  animation:pdMascotIn .25s ease-out var(--pd-at) backwards;
+}
+.pd-ant-flag{display:block;width:100%;height:auto}
+.pd-ant-step{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
+.pd-m-ant.pose-ready{animation:pdAntMarch var(--ant-march) ease-in-out var(--pd-at) both}
+.pd-m-ant.pose-ready :where(.pd-ant-step-one){animation:pdAntStepOne var(--ant-march) step-end var(--pd-at) both}
+.pd-m-ant.pose-ready :where(.pd-ant-step-two){animation:pdAntStepTwo var(--ant-march) step-end var(--pd-at) both}
+.pd-m-ant.pose-ready :where(.pd-ant-flag){animation:pdAntFlag var(--ant-march) step-end var(--pd-at) both}
+@keyframes pdAntMarch{
+  0%{opacity:0;transform:translateX(-71%)}
+  14%{opacity:1;transform:translate(-67%,-3%)}
+  33%{transform:translateX(-61%)}
+  49%{transform:translate(-56%,-3%)}
+  64%{transform:translateX(-50%)}
+  79%{transform:translateX(-50%) scale(1.025)}
+  100%{opacity:1;transform:translateX(-50%)}
+}
+@keyframes pdAntStepOne{0%{opacity:1}33%,100%{opacity:0}}
+@keyframes pdAntStepTwo{0%,64%,100%{opacity:0}33%{opacity:1}}
+@keyframes pdAntFlag{0%{opacity:0}64%,100%{opacity:1}}
+.pd-skip-motion :is(.pd-mascot.pd-m-ant,.pd-m-ant img),
+html[data-motion=reduce] :is(.pd-mascot.pd-m-ant,.pd-m-ant img){animation:none}
+@media(prefers-reduced-motion:reduce){
+  :is(.pd-mascot.pd-m-ant,.pd-m-ant img){animation:none}
+}
+
+/* Team vs Team: the dogs and cats cheer from the two sides of the podium. */
 .pd-mascot.pd-m-left{left:14%;bottom:-3%;width:22%}
 .pd-mascot.pd-m-right{left:86%;bottom:-3%;width:23%}
 .pd-mascot[data-team-reaction="cheer"] {

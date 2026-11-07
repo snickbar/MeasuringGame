@@ -96,6 +96,33 @@ server.listen(0,'127.0.0.1',()=>{
      fs.writeFileSync(path.join(previewDir,'quick-jump-390.png'),Buffer.from(shot.data,'base64'));
    }
  }
+ if(mode==='party'){
+   const march=await evaluate(`(async () => {
+     const ant=document.querySelector('.pd-m-ant');
+     const frames=[...ant.querySelectorAll('img')];
+     await Promise.all(frames.map(img=>img.decode()));
+     const stage=ant.closest('.pd-stage');
+     stage.classList.add('skip');
+     const animations=ant.getAnimations({subtree:true});
+     const sample=time=>{
+       for(const animation of animations){
+         animation.pause();
+         animation.currentTime=animation.effect.getTiming().delay+time;
+       }
+       const box=ant.getBoundingClientRect();
+       return {pose:frames.map(frame=>getComputedStyle(frame).opacity).join(''),left:box.left,
+         fits:box.left>=0&&box.right<=innerWidth&&box.bottom<=innerHeight};
+     };
+     const first=sample(200),second=sample(500),flag=sample(950);
+     stage.classList.remove('skip');
+     return {first,second,flag,once:animations.find(a=>a.animationName==='pdAntMarch')?.effect.getTiming().iterations===1};
+   })()`);
+   if(!march.once||march.first.pose!=='010'||march.second.pose!=='001'||march.flag.pose!=='100'||
+     ![march.first,march.second,march.flag].every(frame=>frame.fits)||
+     !(march.first.left<march.second.left&&march.second.left<march.flag.left)){
+     throw Error('Ant did not march and raise the flag '+JSON.stringify({width,...march}));
+   }
+ }
  const after=await evaluate("(()=>{document.querySelectorAll('.pd-who').forEach(e=>e.getAnimations().forEach(a=>a.finish()));document.querySelector('.pd-skip').click();return {opacity:+getComputedStyle(document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who')).opacity,cards:document.querySelectorAll('#final-list>.final-row').length,hidden:[...document.querySelectorAll('#final-list>.final-row')].some(e=>getComputedStyle(e).display==='none'),captionOpacity:+getComputedStyle(document.querySelector('.pd-caption')).opacity,podiumHeight:document.querySelector('.pd-pod').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,tied:[...document.querySelectorAll('.pd-slot')].map(e=>e.dataset.rank)}})()");
  if(after.captionOpacity!==1||after.podiumHeight<200||after.opacity!==1||after.hidden||after.cards!==(mode==='teamvteam'?2:4)||after.overflow)throw Error('Finale did not settle '+JSON.stringify({mode,width,...after}));
  if(mode==='quick'&&!await evaluate(`(() => {
@@ -104,6 +131,11 @@ server.listen(0,'127.0.0.1',()=>{
      getComputedStyle(robot.querySelector('.pd-robot-rest')).opacity==='1' &&
      getComputedStyle(robot.querySelector('.pd-robot-air')).opacity==='0';
  })()`))throw Error('Skip did not land the robot');
+ if(mode==='party'&&!await evaluate(`(() => {
+   const ant=document.querySelector('.pd-m-ant');
+   return !ant.getAnimations({subtree:true}).length&&getComputedStyle(ant.querySelector('.pd-ant-flag')).opacity==='1'&&
+     [...ant.querySelectorAll('.pd-ant-step')].every(frame=>getComputedStyle(frame).opacity==='0');
+ })()`))throw Error('Skip did not show the ant with the flag up');
  await evaluate("Promise.all([...document.querySelectorAll('.pd-stage img')].map(i=>i.decode().catch(()=>{})))");await new Promise(r=>setTimeout(r,550));
  const corner=await evaluate("(()=>{const c=document.querySelector('#final-list>.rank-1'),star=c?.querySelector('.drumroll-stars');if(!star)return true;const a=c.getBoundingClientRect(),b=star.getBoundingClientRect();return b.left>a.left+a.width*.7&&b.top<a.top+30})()");if(!corner)throw Error('Winner star overlaps left-side label');
  const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(previewDir,mode+'-'+width+'.png'),Buffer.from(shot.data,'base64'));console.log(JSON.stringify({mode,width,during,after,pass:true}));
@@ -203,6 +235,11 @@ server.listen(0,'127.0.0.1',()=>{
    return mascots.length===2 && mascots.every(mascot => mascot.matches('img') &&
      getComputedStyle(mascot).opacity==='1' && !mascot.getAnimations().length);
  })()`))throw Error('Team vs Team reactions ignored reduced motion');
+ await evaluate("window.__finalPreview('party')");
+ if(!await evaluate(`(() => {
+   const ant=document.querySelector('img.pd-m-ant');
+   return ant?.src.endsWith('classic-ant-flag.png')&&!ant.getAnimations().length;
+ })()`))throw Error('Ant did not show the static flag pose with reduced motion');
  await evaluate("window.__finalPreview('quick')");
  const reduced=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who');return {opacity:+getComputedStyle(e).opacity,animations:e.getAnimations().length,waiting:document.getElementById('final-list').classList.contains('pd-waiting')}})()");
  if(reduced.opacity!==1||reduced.animations||reduced.waiting)throw Error('Reduced motion failed '+JSON.stringify(reduced));console.log(JSON.stringify({width,reduced,pass:true}));
