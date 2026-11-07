@@ -13,12 +13,12 @@ export const MENU_BANNERS = {
 // Mode mascots that stand on the big mode buttons and on each mode's own header banner (picture aspect ratio = width / height after cropping).
 // Banners are 1000 x 222; the artwork is capped so the title keeps its room. Modes without a mascot keep their own icon.
 export const BANNER_MASCOT = { classic: ['party-ant', .943], teamvteam: ['team', 2.357], teamworlds: ['teamworlds', 1.33], highstakes: ['highstakes', 1.117], bluff: ['bluff', .86],
-  quick: ['quick', .897], daily: ['daily', 1.58], monthly: ['monthly', 1.517], worlds: ['worlds', 1.063], survival: ['survival', .833] };
+  quick: ['quick', .897], daily: ['daily', 1.58], monthly: ['monthly', 1.517], worlds: ['worlds', 1.063], survival: ['survival', .833], hlsurvival: ['hl', 1.713] };
 export const BLANK_BANNER = { quick: 'icons/banner-quick-blank.png', daily: 'icons/banner-daily-blank.png', monthly: 'icons/banner-monthly-blank.png', worlds: 'icons/banner-worlds-blank.png', survival: 'icons/banner-survival-blank.png' };
 export function bannerMascot(mode) {
   const m = BANNER_MASCOT[mode]; if (!m) return null;
-  const h = Math.min(92, 34 / (.222 * m[1])), w = h * .222 * m[1], left = 3.5;
-  return { src: `anim/mode-mascots/${m[0]}-banner.webp`, left, top: (100 - h) / 2, w, h, pad: left + w + 2.5,
+  const h = Math.min(116, 35 / (.222 * m[1])), w = h * .222 * m[1], left = 2.5;   // the art may stand a little taller than the banner, like a sticker, so it reads at phone size
+  return { src: `anim/mode-mascots/${m[0]}-banner.webp`, left, top: (100 - h) / 2, w, h, pad: left + w + 2,
     style: `left:${left}%;top:${((100 - h) / 2).toFixed(2)}%;width:${w.toFixed(2)}%;height:${h.toFixed(2)}%` };
 }
 export function applyMenuBanner(element, mode) {
@@ -37,7 +37,7 @@ export function applyMenuBanner(element, mode) {
     img.className = 'polish-banner-icon polish-banner-mascot'; img.src = mm.src; img.alt = ''; img.draggable = false;
     for (const [k, v] of [['left', mm.left], ['top', mm.top], ['width', mm.w], ['height', mm.h]]) img.style.setProperty(k, v.toFixed(2) + '%', 'important');
     element.prepend(img);
-    element.style.setProperty('padding-left', mm.pad.toFixed(2) + '%', 'important');
+    element.style.setProperty('--bm-pad', mm.pad.toFixed(2) + '%');
     element.classList.add('has-banner-mascot');
   } else if (config[1]) {
     const img = element.ownerDocument.createElement('img');
