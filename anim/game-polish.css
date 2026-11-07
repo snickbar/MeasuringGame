@@ -334,12 +334,42 @@ html[data-motion=reduce] .solo-result-avatar{animation:none}
 @media (prefers-reduced-motion: reduce) { .wl-fox-cheer { animation: none; } }
 html[data-motion=reduce] .wl-fox-cheer { animation: none; }
 
-/* Team Worlds results: the monkey duo cheers under the stars card (where the player list used to be). */
+/* Team Worlds results: one high-five when the last earned star pops. */
 .tw-fin-monkeys { display: flex; justify-content: center; margin-top: 14px; }
-.tw-fin-monkeys img { width: min(62%, 260px); height: auto; pointer-events: none; transform-origin: 50% 100%; animation: twMonkeysIn .6s cubic-bezier(.2,1.4,.4,1) 1.9s both; }
+.tw-fin-monkeys-frame { width: min(62%, 260px); pointer-events: none; animation: twMonkeysIn .6s cubic-bezier(.2,1.4,.4,1) 1.9s both; }
+.tw-fin-monkeys--high-five .tw-fin-monkeys-frame { animation: none; }
+.tw-fin-monkeys-art { position: relative; }
+.tw-fin-monkeys-cheer { display: block; width: 100%; height: auto; }
+.tw-fin-monkeys-contact { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+.tw-fin-monkeys.is-high-fiving.pose-ready { --high-five-time: .88s; }
+.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-art { animation: twMonkeysHighFive var(--high-five-time) ease-in-out; }
+.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-contact { animation: twMonkeysContact var(--high-five-time) step-end; }
+.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-cheer { animation: twMonkeysCheer var(--high-five-time) step-end; }
+.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-art::after {
+  content: ""; position: absolute; left: 50%; top: 31%; width: 17px; height: 17px;
+  background: #ffdc46; clip-path: polygon(50% 0, 62% 37%, 100% 50%, 62% 63%, 50% 100%, 38% 63%, 0 50%, 38% 37%);
+  opacity: 0; animation: twMonkeysSpark .45s ease-out .28s;
+}
 @keyframes twMonkeysIn { from { opacity: 0; transform: translateY(16px) scale(.85); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .tw-fin-monkeys img { animation: none; } }
-html[data-motion=reduce] .tw-fin-monkeys img { animation: none; }
+@keyframes twMonkeysHighFive {
+  0%, 100% { transform: none; }
+  18% { transform: translateY(3px) scale(.99, .98); }
+  40% { transform: translateY(-8px) scale(1.02); }
+  68% { transform: translateY(-3px); }
+  86% { transform: translateY(1px); }
+}
+@keyframes twMonkeysContact { 0%, 72%, 100% { opacity: 0; } 32% { opacity: 1; } }
+@keyframes twMonkeysCheer { 0%, 72%, 100% { opacity: 1; } 32% { opacity: 0; } }
+@keyframes twMonkeysSpark {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(.4); }
+  24% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -14px) rotate(45deg) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tw-fin-monkeys :is(.tw-fin-monkeys-frame, .tw-fin-monkeys-art, img), .tw-fin-monkeys .tw-fin-monkeys-art::after { animation: none !important; }
+}
+html[data-motion=reduce] .tw-fin-monkeys :is(.tw-fin-monkeys-frame, .tw-fin-monkeys-art, img),
+html[data-motion=reduce] .tw-fin-monkeys .tw-fin-monkeys-art::after { animation: none !important; }
 
 /* Worlds round results: the fox's balloon rises when the star meter went up, sinks when it went down, and floats when it stayed about the same.
    The meter starts the reaction. The resting drift and the rise or sink use separate layers. */

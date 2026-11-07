@@ -21244,6 +21244,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const me = currentPlayers[currentPlayerId];
     const avg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : 0;
     const stars = worldStarsFor(avg);
+    const reduced = prefersReducedMotion(), highFive = stars > 0 && !reduced;
     const gain = stars * WORLD_STAR_COINS; // team games pay for every star, every game
     const partnerId = Object.keys(currentPlayers).find((id) => id !== currentPlayerId);
     const partnerName = partnerId ? currentPlayers[partnerId].name : "Partner";
@@ -21281,15 +21282,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     li.style.setProperty("--tc", "#8e7cf2");
     li.innerHTML = `
       <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
-      <div class="dc-card dc-hot tw-fin-card"><div class="tw-fin-stars" data-result-stars="${stars}" data-celebration-key="${roomState.gameId}">${worldStarsHtml(stars)}</div><div class="tw-fin-pct">${prefersReducedMotion() ? Math.round(avg) + "%" : "0%"}</div><div class="tw-fin-label">accurate</div><span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}</div>
-      <div class="tw-fin-monkeys"><img src="anim/mode-mascots/teamworlds-monkeys-cheer.webp" alt="" draggable="false"></div>
+      <div class="dc-card dc-hot tw-fin-card"><div class="tw-fin-stars" data-result-stars="${stars}" data-celebration-key="${roomState.gameId}">${worldStarsHtml(stars)}</div><div class="tw-fin-pct">${reduced ? Math.round(avg) + "%" : "0%"}</div><div class="tw-fin-label">accurate</div><span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}</div>
+      <div class="tw-fin-monkeys${highFive ? " tw-fin-monkeys--high-five" : ""}" aria-hidden="true">
+        <div class="tw-fin-monkeys-frame"><div class="tw-fin-monkeys-art">
+          <img class="tw-fin-monkeys-cheer" src="anim/mode-mascots/teamworlds-monkeys-cheer.webp" alt="" draggable="false">
+          ${highFive ? '<img class="tw-fin-monkeys-contact" src="anim/mode-mascots/teamworlds-monkeys-high-five.png" alt="" draggable="false">' : ""}
+        </div></div>
+      </div>
     `;
     finalListEl.appendChild(li);
+    if (highFive) {
+      const contact = li.querySelector(".tw-fin-monkeys-contact");
+      contact.decode().then(() => contact.closest(".tw-fin-monkeys").classList.add("pose-ready"), () => {});
+    }
     // After the accuracy lands: the two players arrive bottom-up (the MVP last), their % counting up, then the MVP tag pops.
     const memEls = [...li.querySelectorAll(".tw-fin-member")], arrival = [...memEls].sort((x, y) => (x.classList.contains("mvp") ? 1 : 0) - (y.classList.contains("mvp") ? 1 : 0));
     arrival.forEach((m, j) => { const t = 2.0 + j * 0.3; m.classList.add("hl-arr-r"); m.style.setProperty("--a", t.toFixed(2) + "s"); countText(m.querySelector(".member-acc"), 600, t * 1000); const tag = m.querySelector(".tw-mvp"); if (tag) { tag.classList.add("mvp-pop"); tag.style.setProperty("--a", (t + 0.5).toFixed(2) + "s"); } });
     const finPct = li.querySelector(".tw-fin-pct");
-    if (finPct && !prefersReducedMotion()) {
+    if (finPct && !reduced) {
       setTimeout(() => { twCountUp(finPct, Math.round(avg), 1300, "%"); }, 500);
       setTimeout(() => { finPct.classList.add("pop"); }, 1850);
     }
