@@ -66,13 +66,20 @@ window.__polish={
   roomState=(await get(ref(db,'rooms/VIEW'))).val();
   renderHighStakes(roomState);
  },
- hsLastStandings:async ()=>{
+ hsLastStandings:async (due=false)=>{
   window.__polish.hsView(10,'win');
   const hs=roomState.hs;
-  hs.round=10;hs.showStand=true;hs.animAt=nowMs()-500;hs.nextAt=nowMs()+180000;
+  hs.round=10;hs.showStand=true;hs.animAt=nowMs()-500;hs.nextAt=nowMs()+(due?-1:180000);
   hs.chips.me=0;hs.out={me:9};hs.ghost={me:2};
   await set(ref(db,'rooms/VIEW'),roomState);
   renderHighStakes(roomState);
+ },
+ hsResumeMissingTicker:event=>{
+  hsEnsureTicker(false);
+  window.dispatchEvent(new Event(event));
+  const started=!!hsTickHandle;
+  hsEnsureTicker(false);
+  return started;
  },
  hsView:(n,bet)=>{
   ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
@@ -174,6 +181,12 @@ try {
  await new Promise(r=>setTimeout(r,50));
  await window.__polish.hsReadReveal();
  assert(!!select('.hs-end-hero') && select('.hs-reward')?.textContent.includes('Ghost bounty'),'Finish game reaches final results and preserves the ghost bounty with the host ticker stopped');
+ for(const event of ['size-em-up:app-active','pageshow']){
+  await window.__polish.hsLastStandings(true);
+  assert(window.__polish.hsResumeMissingTicker(event),'returning to High Stakes recreates a missing timer on '+event);
+  await window.__polish.hsReadReveal();
+  assert(!!select('.hs-end-hero'),'returning to High Stakes advances an overdue standings screen on '+event);
+ }
  assert(document.documentElement.scrollWidth<=innerWidth+1,'horizontal overflow');
  document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'High Stakes pick, bet, reveal, split, fold, rollover and reduced motion'});
 } catch(e) {

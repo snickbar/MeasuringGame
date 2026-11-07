@@ -12036,7 +12036,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
-  let hsBusy = false, hsTickHandle = null;
+  let hsBusyUntil = 0, hsBusyTok = 0, hsTickHandle = null;
   const hsBotWritten = new Set();
   const hsSavedRounds = new Set();
   const hsLastTick = new Map();
@@ -12046,10 +12046,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (on && !hsTickHandle) hsTickHandle = setInterval(() => { hsRefreshTimers(); if (isHost) hsHostTick(); }, 150);
     if (!on && hsTickHandle) { clearInterval(hsTickHandle); hsTickHandle = null; }
   }
-  // A phone can silently kill a running setInterval while the app is minimized; coming back always restarts the High Stakes loop.
-  function hsResumeTicker() { if (!hsTickHandle) return; clearInterval(hsTickHandle); hsTickHandle = null; hsEnsureTicker(true); }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) hsResumeTicker(); });
+  function hsResumeTicker() {
+    if (document.hidden || !nativeAudioActive || leavingGame || roomState?.phase !== "hs" || !hsScreenEl.classList.contains("active")) return;
+    clearInterval(hsTickHandle);
+    hsTickHandle = null;
+    hsEnsureTicker(true);
+    hsRefreshTimers();
+    hsHostTick();
+  }
+  document.addEventListener("visibilitychange", hsResumeTicker);
   window.addEventListener("size-em-up:app-active", hsResumeTicker);
+  window.addEventListener("pageshow", hsResumeTicker);
   function hsRefreshTimers() {
     // A fake answer typed but never sent goes in just before the fake-answer clock ends, so it still counts.
     if (roomState?.hsPre && hsFakeStr && roomState.hsFakes?.[currentPlayerId] === undefined && nowMs() >= roomState.hsPre.endsAt - 1200 && nowMs() < roomState.hsPre.endsAt) hsSendFake();
@@ -12121,15 +12128,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsHostTick() {
     if (leavingGame) { hsEnsureTicker(false); return; }
     if (roomState.phase !== "hs") { if (!currentRoomCode) hsEnsureTicker(false); return; }
-    if (!isHost || hsBusy || roomState.paused) return;
+    if (!isHost || roomState.paused || Date.now() < hsBusyUntil) return;
     const hs = roomState.hs; if (!hs) return;
     const now = nowMs(), players = roomState.players || {};
-    // A write caught in flight when the phone minimizes the app can never settle; without a deadline hsBusy would stay on and freeze the table.
+    // Check expiry on the next tick even if Android suspended the callback that started the write.
     const run = (p) => {
-      hsBusy = true; const mine = ++hsBusyTok;
-      const release = () => { if (hsBusyTok === mine) hsBusy = false; };
-      const dl = setTimeout(release, 6000);
-      Promise.resolve(p).catch((e) => console.warn("[high-stakes]", e)).finally(() => { clearTimeout(dl); release(); });
+      hsBusyUntil = Date.now() + 6000;
+      const mine = ++hsBusyTok;
+      Promise.resolve(p).catch((e) => console.warn("[high-stakes]", e)).finally(() => {
+        if (hsBusyTok === mine) hsBusyUntil = 0;
+      });
     };
     if (hs.stage === "ready") {
       if (hs.waitHost || now < (hs.nextAt || 0)) return;
@@ -12461,7 +12469,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const list = hsContentEl.querySelector(".hs-stand"), rows = list ? list.children : [];
     if (rows.length > 1) list.style.setProperty("--step", (rows[1].offsetTop - rows[0].offsetTop) + "px");
   }
-  let hsStandSig = "", hsBusyTok = 0;
+  let hsStandSig = "";
   function hsStandingsHtml(hs, data, me) {
     const rows = HS.hsStandings(hs);
     setTimeout(hsSlideStand, 0);
@@ -18369,6 +18377,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hostWatchdog() {
     const d = roomState;
     if (!isHost || !currentRoomCode || !d || d.paused || document.hidden) return;
+    if (d.phase === "hs" && nativeAudioActive && hsScreenEl.classList.contains("active")) { hsHostTick(); return; }
     const due = {
       countdown: [d.countdownEndsAt, checkCountdownAdvance],
       question: [questionClockPending(d) ? d.questionClock.waitUntil : d.graceEndsAt || d.questionEndsAt, checkQuestionAdvance],

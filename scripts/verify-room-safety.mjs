@@ -96,12 +96,12 @@ function actual(name) {
   assert.ok(start >= 0, name);
   return source.slice(start, source.indexOf('\n  }', start) + 4);
 }
-let pending, dbRoom = copy(betRoom);
+let pending, dbRoom = copy(betRoom), clock = 50000, writes = 0;
 const context = vm.createContext({ HS, commitHsState, electedHost, transferHost, console,
   db: {}, ref: (_, path) => path, currentRoomCode: 'TEST', currentPlayerId: 'a', roomState: betRoom,
-  isHost: true, hsBusy: false, hsBusyTok: 0, setTimeout, clearTimeout, leavingGame: false, nowMs: () => hs.bet.turnEndsAt + 1,
-  hsHash: () => 0, hsEnsureTicker: () => {}, hostTransfers: new Set(),
-  runTransaction: (_ref, callback) => { pending = callback; return Promise.resolve({ committed: false }); },
+  isHost: true, hsBusyUntil: 0, hsBusyTok: 0, leavingGame: false, nowMs: () => hs.bet.turnEndsAt + 1,
+  Date: { now: () => clock }, hsHash: () => 0, hsEnsureTicker: () => {}, hostTransfers: new Set(),
+  runTransaction: (_ref, callback) => { pending = callback; writes++; return new Promise(() => {}); },
   update: () => { throw Error('bet state must use a transaction'); }
 });
 dbRoom.players.a.isHost = true;
@@ -110,6 +110,12 @@ assert.equal(typeof pending, 'function');
 assert.equal(pending(dbRoom).hs.bet.folded.b, true, 'timeout works if nobody acted');
 dbRoom = { ...dbRoom, hs: call };
 assert.equal(pending(dbRoom), undefined, 'actual host driver rejects timeout after a human call');
+clock += 5999;
+vm.runInContext('hsHostTick()', context);
+assert.equal(writes, 1, 'a pending host write has time to settle');
+clock++;
+vm.runInContext('hsHostTick()', context);
+assert.equal(writes, 2, 'an overdue host write can be retried even if its original callbacks never ran');
 let armed = [], botGuesses = 0;
 const hostContext = vm.createContext({ console, electedHost, transferHost, db: {}, ref: (_, path) => path,
   nowMs: () => 100000, isHost: false, currentPlayerId: 'guest', hostTransfers: new Set(),
