@@ -24,7 +24,7 @@ export function createUIDelight({screens, reduced, document:doc=document}) {
     setTimeout(()=>layer.remove(),520);
   },{passive:true,capture:true});
   screens.forEach(s=>active.set(s,s.classList.contains('active')));
-  const gameplay=new Set(['hud','hs-screen','final-screen','left-screen','ended-screen']);
+  const gameplay=new Set(['hud','hs-screen','bluff-screen','final-screen','left-screen','ended-screen']);
   function refresh(){
     queued=false;
     doc.querySelectorAll('#settings-screen input[type=range]').forEach(rangeFill);

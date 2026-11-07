@@ -82,7 +82,7 @@ try{
   if(s.maker==='a'){content.querySelector('[data-claim="'+index+'"]').click();assert(content.querySelector('[data-send-claim]').getBoundingClientRect().bottom<=$('bottom-toolbar').getBoundingClientRect().top,'Maker confirm clears bottom toolbar');content.querySelector('[data-send-claim]').click();}else await api.bluffDo(s.maker,'claim',index);
   await until(()=>api.bluffState().stage==='vote','Claim appears');await wait(150);assert(!content.querySelector('[data-claim]'),'Only selected claim visible');assert(content.querySelectorAll('.bl-claim strong').length===1,'Exactly one claim number');fit('Vote');for(const card of content.querySelectorAll('[data-bluff-player]')){const r=card.getBoundingClientRect();assert(r.top>0&&r.bottom<$('bottom-toolbar').getBoundingClientRect().top,'All three player cards visible beside voting');}assert(!content.querySelector('.bl-banner'),'No large mode banner in play');
   assert(!content.textContent.includes('That step has closed')&&![...content.querySelectorAll('.bl-error')].some(e=>e.textContent.trim()),'No red error text after the claim is set');
-  const writing=content.querySelector('.bl-panel .bl-raccoon-write'),ink=writing.querySelector('.bl-raccoon-ink path');
+  const writing=content.querySelector('.bl-scale-dock .bl-raccoon-write'),ink=writing.querySelector('.bl-raccoon-ink path');
   await writing.querySelector('img').decode();
   assert(writing.getAttribute('aria-hidden')==='true'&&ink.getAnimations().some(a=>a.animationName==='bl-raccoon-scribble'),'Raccoon writes during voting');
   await api.bluffPause();await wait(350);assert($('paused-overlay').classList.contains('active'),'Pause overlay');await api.bluffPause();
@@ -137,18 +137,21 @@ try{
  party.gameId='reduced-celebration';quiet=true;celebrations.refresh();assert(!effects.querySelector('.bl-win-dance')&&laughs===2,'Reduced motion skips dance and keeps one laugh');assert(effects.querySelector('.bl-raccoon-reveal:not(.moving) .bl-pad-page'),'Reduced motion shows the raccoon with the page already facing forward');party.phase='final';celebrations.refresh();effects.remove();
  const checkDenseMascot=async stage=>{
    assert(content.querySelectorAll('.bl-table.dense [data-bluff-player]').length===10,'Ten players on the '+stage+' screen');
-   const panel=content.querySelector('.bl-panel'),writing=panel.querySelector('.bl-raccoon-write');
+   const dock=content.querySelector('.bl-scale-dock'),writing=dock.querySelector('.bl-raccoon-write');
    await writing.querySelector('img').decode();
-   const mascot=writing.getBoundingClientRect(),bounds=panel.getBoundingClientRect();
-   const dock=content.querySelector('.bl-scale-dock'),scale=dock.querySelector('.bl-scale');
+   const mascot=writing.getBoundingClientRect(),bounds=content.querySelector('.bl-panel').getBoundingClientRect();
+   const scale=dock.querySelector('.bl-scale');
    const dockBounds=dock.getBoundingClientRect(),scaleBounds=scale.getBoundingClientRect();
    const toolbarTop=$('bottom-toolbar').getBoundingClientRect().top;
    assert(mascot.width>0&&mascot.top>=$('hud-sub-toolbar').getBoundingClientRect().bottom&&mascot.top+20<toolbarTop,'Raccoon visible without scrolling during '+stage);
    assert(mascot.left>=bounds.left-1&&mascot.right<=bounds.right+1,'Raccoon stays between the player columns');
    assert(getComputedStyle(dock).position==='fixed'&&getComputedStyle(scale).width==='178px'&&Math.abs((scaleBounds.left+scaleBounds.right)-(dockBounds.left+dockBounds.right))<2,'Scale stays centered in its original bottom dock');
+   assert(Math.abs((mascot.left+mascot.right)-(scaleBounds.left+scaleBounds.right)-44)<2&&mascot.bottom>=scaleBounds.bottom-1,'Raccoon sits low between the scale cups');
+   return mascot;
  };
- await api.bluffStart(10);await until(()=>api.bluffState()?.stage==='make','Ten-player game starts');await checkDenseMascot('make');
- await api.bluffPreviewVote();await until(()=>api.bluffState()?.stage==='vote','Ten-player vote opens');await checkDenseMascot('vote');
+ await api.bluffStart(10);await until(()=>api.bluffState()?.stage==='make','Ten-player game starts');const beforeClaim=await checkDenseMascot('make');
+ await api.bluffPreviewVote();await until(()=>api.bluffState()?.stage==='vote','Ten-player vote opens');const afterClaim=await checkDenseMascot('vote');
+ assert(Math.abs(beforeClaim.left-afterClaim.left)<1&&Math.abs(beforeClaim.top-afterClaim.top)<1,'Raccoon holds the same position when a claim is made');
  $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Actual app: setup, full 3-player cycle, maker-only three choices, single voter claim, all three claim kinds, one-tap voting/change buffer, Firebase empty-map roundtrip, overlay/skip, summary/rankings, pause, simultaneous scores, progress, final/coins, classification stats and phone fit'});
 }catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack,state:window.__polish?.bluffState(),buttons:[...document.querySelectorAll("#bluff-content button")].map(b=>({text:b.textContent,disabled:b.disabled}))});}
 </script>`;
