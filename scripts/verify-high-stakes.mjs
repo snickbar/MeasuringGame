@@ -14,7 +14,7 @@ function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) 
     assert.equal(options.length, H.HS_OPTION_COUNT);
     assert.equal(new Set(options).size, H.HS_OPTION_COUNT, "options distinct");
     assert.deepEqual([...options].sort((a, b) => a - b), options, "sorted");
-    assert.equal(options[realIdx], H.hsRound3(answer), "real present");
+    assert.equal(options[realIdx], H.hsRoundAnswer(answer), "real present");
     options.forEach((o, k) => { if (k !== realIdx) assert.ok(Math.abs(Math.log(o / options[realIdx])) > 0.1, "fake not too near real " + o + " vs " + options[realIdx]); });
     posCount[realIdx]++;
   }
@@ -23,16 +23,22 @@ function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) 
   // custom fakes from eliminated players replace generated ones
   {
   const r2 = H.hsMakeOptions(1000, seeded(3), [{ id: "bot", v: 2520, bot: true }, { id: "me", v: 2523 }, { id: "joke", v: 9999999 }]);
-  const mine = r2.options.indexOf(2520); assert(mine >= 0 && r2.fakeBy && r2.fakeBy[mine] === "me", "player's fake beats a bot's near-duplicate (2523 shows as 2520)");
+  const mine = r2.options.indexOf(2523); assert(mine >= 0 && r2.fakeBy && r2.fakeBy[mine] === "me" && !r2.options.includes(2520), "player's fake beats a bot's near-duplicate");
   const r3 = H.hsMakeOptions(1000, seeded(4), [{ id: "a", v: 2520 }, { id: "b", v: 2600 }]);
   assert(r3.options.includes(2520) && r3.options.includes(2600), "two close player fakes both stay");
   assert(!r2.options.includes(9999999), "wildly off fakes are dropped"); }
   for (let seed = 0; seed < 64; seed++) {
     const r = H.hsMakeOptions(232, seeded(seed), [{ id: "bot", v: 214, bot: true }, { id: "ghost", v: 213.5 }]);
     assert.equal(r.options[r.realIdx], 232);
-    assert.equal(r.fakeBy?.[r.options.indexOf(214)], "ghost", "213.5 is displayed as 214 and retains its author");
-    assert.equal(r.options.filter(v => v === 214).length, 1, "a generated answer cannot duplicate the player's fake");
+    assert.equal(r.fakeBy?.[r.options.indexOf(213.5)], "ghost", "213.50 keeps its precision and author");
+    assert.ok(!r.options.includes(214), "a bot's nearby fake is skipped");
   }
+  assert.equal(H.hsFormatAnswer(213.5), "213.50");
+  assert.equal(H.hsFormatAnswer(1230), "1,230.00");
+  assert.equal(H.hsFormatAnswer(2.337), "2.34");
+  const precise = H.hsMakeOptions(155.126, seeded(4), [{ id: "a", v: 152.99 }, { id: "b", v: 153 }]);
+  assert.equal(precise.options[precise.realIdx], 155.13);
+  assert.ok(precise.options.includes(152.99) && precise.options.includes(153), "close, distinct fakes stay distinct to two decimals");
   const { options } = H.hsMakeOptions(100, seeded(5), [37, 250, 100, "abc", -4]);
   assert.ok(options.includes(37) && options.includes(250), "custom fakes used");
   assert.equal(options.filter((o) => o === 100).length, 1, "a custom fake equal to the real answer is dropped");
@@ -271,7 +277,7 @@ for (let seed = 1; seed <= 600; seed++) {
   for (const answer of [1, 1.004, 1.1, 1.3, 2, 3.7, 12, 250]) for (let seed = 1; seed <= 400; seed++) {
     const { options, realIdx } = H.hsMakeOptions(answer, seeded(seed));
     assert.equal(options.length, 4, `4 options for ${answer}`); assert.ok(options.every((o) => o >= 1), `no option below 1 for ${answer}: ${options}`);
-    assert.equal(options[realIdx], H.hsRound3(answer)); assert.equal(new Set(options).size, 4);
+    assert.equal(options[realIdx], H.hsRoundAnswer(answer)); assert.equal(new Set(options).size, 4);
   }
 }
 const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;

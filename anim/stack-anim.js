@@ -542,6 +542,7 @@ export function createStackAnimation(container, options = {}) {
   });
   const theme = { ...LIGHT_THEME, ...(options.theme || {}) };
   const imageUrl = options.imageUrl || ((o) => o.image);
+  const formatTally = options.formatTally || formatCount;
   const reduceMotion = options.reduceMotion != null
     ? options.reduceMotion
     : (document.documentElement.dataset.motion==='reduce'||(document.documentElement.dataset.motion!=='full'&&!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)));
@@ -1135,7 +1136,7 @@ export function createStackAnimation(container, options = {}) {
         ctx.restore();
       }
 
-      const description = t >= tEnd ? `${formatCount(R, R)} ${unit.plural} match ${target.name}.` : 'Animated object size comparison';
+      const description = t >= tEnd ? `${formatTally(R, R)} ${unit.plural} match ${target.name}.` : 'Animated object size comparison';
       if (canvas.getAttribute('aria-label') !== description) canvas.setAttribute('aria-label', description);
       // The running count under the floor.
       if (t >= tB0 || !(dt > 0 && dt < 0.25)) {
@@ -1144,7 +1145,7 @@ export function createStackAnimation(container, options = {}) {
         shown += (count - shown) * (1 - Math.exp(-dt / 0.08));
         if (Math.abs(count - shown) < 0.02) shown = count;
       }
-      nEl.textContent = formatCount(shown, R);
+      nEl.textContent = formatTally(shown, R);
       nEl.style.color = t >= tEnd ? (earthyFloor ? '#fff2a9' : theme.warm) : (earthyFloor ? '#fff7e5' : theme.ink);
     }
 

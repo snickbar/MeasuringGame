@@ -23,12 +23,10 @@ export const hsAnteFor = (round) => 5 + 5 * Math.floor((Math.max(1, round) - 1) 
 export const hsRaiseStep = (ante) => ante * 2;
 
 // ---------- answers ----------
-// Every option, real one included, is shown to 3 significant figures so the real one can't be spotted by
-// how many decimals it has.
-export function hsRound3(n) {
-  if (!isFinite(n) || n === 0) return 0;
-  return Number(Number(n).toPrecision(3));
-}
+// Use the same precision for the real answer, generated choices and player fakes.
+export const hsRoundAnswer = n => Number.isFinite(n) ? Number(n.toFixed(2)) : 0;
+const answerFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const hsFormatAnswer = n => answerFormat.format(hsRoundAnswer(n));
 // 1 real + 3 fakes, sorted ascending. Fakes sit between x0.25 and x4 of the real answer on a log scale,
 // no two within ~15% of each other, none within ~15% of the real one, so the real answer lands anywhere
 // in the list (sometimes at an extreme). `custom` = optional fakes written by eliminated players; they
@@ -37,7 +35,7 @@ export function hsRound3(n) {
 // kept (max 3), so with many ghosts writing the game chooses a spread that works. `fakeBy` maps each kept
 // fake's value to the ghost who wrote it (used for the bounty).
 export function hsMakeOptions(answer, rng = Math.random, custom = []) {
-  const real = hsRound3(answer);
+  const real = Math.max(0.01, hsRoundAnswer(answer));
   const MIN_GAP = 0.15;
   const taken = [Math.log(real)];
   const fakes = [];
@@ -48,11 +46,11 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
   // Fakes written by real players come first, so when one is nearly the same as a bot's fake the player's is the one that stays.
   pool.sort((x, y) => (x.bot ? 1 : 0) - (y.bot ? 1 : 0));
   for (const c of pool) {
-    const v = hsRound3(Number(c.v));
+    const v = hsRoundAnswer(Number(c.v));
     if (!(v > 0) || fakes.length >= HS_OPTION_COUNT - 1) continue;
     if (v > real * 5 || v < real / 5) continue; // wildly off (9999999 as a joke) is thrown out; anything plausible is kept
     // Real players' fakes only need to be different numbers (two players can honestly guess very close to each other); bots' and computer fakes keep the spacing rule.
-    if (hsRound3(v) !== real && !fakes.includes(v) && (!c.bot ? true : far(Math.log(v)))) { fakes.push(v); taken.push(Math.log(v)); if (c.id) fakeAuthor[v] = c.id; }
+    if (v !== real && !fakes.includes(v) && (!c.bot ? true : far(Math.log(v)))) { fakes.push(v); taken.push(Math.log(v)); if (c.id) fakeAuthor[v] = c.id; }
   }
   // The real answer's slot is picked first (uniformly), then that many fakes go below it and the rest above, so
   // "the real one is always in the middle" is not a pattern anyone can use.
@@ -69,7 +67,7 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
   let guard = 0, belowMade = 0;
   while (belowMade < want.below && guard++ < 600) {
     const lv = Math.log(real) - (MIN_GAP + rng() * (SPAN - MIN_GAP));
-    const v = hsRound3(Math.exp(lv));
+    const v = hsRoundAnswer(Math.exp(lv));
     if (!(v >= 1) || v === real || fakes.includes(v) || !far(Math.log(v))) continue;
     fakes.push(v); taken.push(Math.log(v)); belowMade++;
   }
@@ -77,13 +75,13 @@ export function hsMakeOptions(answer, rng = Math.random, custom = []) {
   let aboveMade = 0; guard = 0;
   while (aboveMade < aboveWant && guard++ < 2000) {
     const lv = Math.log(real) + (MIN_GAP + rng() * (SPAN - MIN_GAP));
-    const v = hsRound3(Math.exp(lv));
+    const v = hsRoundAnswer(Math.exp(lv));
     if (!(v > 0) || v === real || fakes.includes(v) || !far(Math.log(v))) continue;
     fakes.push(v); taken.push(Math.log(v)); aboveMade++;
   }
   // Pathological answers (tiny or huge) could exhaust the guard: fill with plain multiples so there are always enough.
   for (let k = 2; fakes.length < HS_OPTION_COUNT - 1; k++) {
-    const v = hsRound3(real * k * 1.37);
+    const v = hsRoundAnswer(real * k * 1.37);
     if (!fakes.includes(v) && v !== real) fakes.push(v);
   }
   const options = [...fakes, real].sort((a, b) => a - b);

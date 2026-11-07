@@ -54,6 +54,15 @@ window.__polish={
   roomState.hsPre={endsAt:nowMs()+15000};roomState.hsFakes={me:213.5};
   renderHighStakes(roomState);
  },
+ hsGhostResult:()=>{
+  window.__polish.hsView(4,'split');
+  currentPlayers.me.avatar='av58';
+  currentPlayers.p1.avatar='av09';
+  currentPlayers.ghost={name:'Ghost writer',avatar:'av29'};
+  roomState.hs.options=[213.5,220,232.12,1230];
+  roomState.hs.fakeBy={0:'ghost'};
+  renderHighStakes(roomState);
+ },
  hsAnimated:async (host,paused)=>{
   window.__polish.hsView(4,'win');
   isHost=host;currentPlayers.me.isHost=host;roomState.paused=paused;
@@ -139,6 +148,7 @@ const checks=String.raw`<pre id="polish-result" hidden></pre><script type="modul
 for(let i=0;i<300&&!window.__polish;i++)await new Promise(r=>setTimeout(r,20));
 try {
  if(!window.__polish)throw Error('bootstrap');
+ await document.fonts.ready;
  const select=s=>document.querySelector('#hs-content '+s);
  const assert=(ok,label)=>{if(!ok)throw Error(label);};
  const checkPigLayout=async (pig,label)=>{
@@ -152,17 +162,27 @@ try {
  assert(pig.dataset.mood==='peek' && pig.closest('.hs-table-foot').previousElementSibling===opts,'pig below the question answers');
  assert(parseFloat(getComputedStyle(opts).rowGap)<=5 && opts.querySelectorAll('[data-hs-pick]').length===4,'compact question options');
  assert([...opts.children].every(btn=>btn.offsetHeight>=44),'question tap height');
+ assert([...opts.children].every(btn=>/\.\d{2}$/.test(btn.textContent.trim())),'all choices show two decimals');
  if(innerWidth>=320 && innerHeight>=650)await checkPigLayout(pig,'question');
  window.__polish.hsBet();
  assert(!select('.hs-table-pig') && !!select('.hs-acts button'),'betting controls without the mascot');
  window.__polish.hsDeal();
- await new Promise(requestAnimationFrame);
+ await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  const dealPot=select('.hs-deal-pot'),dealCards=select('.hs-players');
  const potBox=dealPot.getBoundingClientRect(),cardBox=dealCards.getBoundingClientRect();
  assert(potBox.top>=cardBox.bottom && potBox.top-cardBox.bottom<=12,'opening pot tucked under the player cards');
  if(innerWidth>=320 && innerHeight>=650)assert(potBox.bottom<=select('.play-actions').getBoundingClientRect().top+1,'opening pot fits above Deal '+JSON.stringify([potBox.bottom,select('.play-actions').getBoundingClientRect().top]));
  window.__polish.hsFakeReceipt();
- assert(select('.hs-result').textContent.includes('213.5') && select('.hs-result').textContent.includes('214'),'fake receipt explains display rounding');
+ assert(select('.hs-result').textContent.includes('213.50'),'fake receipt keeps two decimals');
+ window.__polish.hsGhostResult();
+ const author=select('.hs-author'),badge=select('.hs-fooled-tag');
+ const facesIn=img=>new DOMMatrix(getComputedStyle(img).transform).a<0;
+ assert(author?.title==='Fake by Ghost writer' && author.offsetTop>badge.offsetTop &&
+   author.offsetLeft>author.parentElement.querySelector('.hs-opt-main').offsetLeft,'ghost author sits on the right below Fooled ya');
+ assert(facesIn(author.querySelector('img')) && [...document.querySelectorAll('.hs-win-who img')].every(facesIn),'directional ghost and winner avatars face inward');
+ assert(select('.hs-opt.fooled .hs-opt-main b').textContent==='213.50' &&
+   select('.hs-round-answer-value b').textContent==='232.12' &&
+   [...document.querySelectorAll('.hs-opt.stat > b')].some(b=>b.textContent==='1,230.00'),'wrong and correct choices preserve decimals');
  let fullSize=0,splitHeight=0;
  for(const [type,note,mood,avatars] of [['win','Won the pot','perk',1],['split','Split the pot','perk',2],['three','Split the pot','perk',3],['all','Split the pot','perk',10],['fold','everyone else folded','perk',1],['roll','Pot rolls over','tilt',0]]){
   window.__polish.hsView(10,type);
@@ -200,6 +220,11 @@ try {
  await window.__polish.hsAnimated(true,false);
  const skip=select('[data-hs-skip-animation]');
  assert(skip && !skip.disabled && !select('#hs-skip'),'host can skip directly from the animation');
+ if(innerWidth===390){
+  const tally=()=>select('#hs-anim > div > span');
+  for(let i=0;i<100&&!tally()?.textContent;i++)await new Promise(r=>setTimeout(r,20));
+  assert(/\.\d{2}$/.test(tally()?.textContent),'High Stakes animation tally shows two decimals');
+ }
  skip.click();
  for(let i=0;i<40&&!select('.hs-round-answer');i++){
   await new Promise(r=>setTimeout(r,20));
