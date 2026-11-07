@@ -9896,10 +9896,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Monthly boards (Level 3 of each Monthly Challenge): the art, text area and colours come from monthly/motion.js.
   const MONTHLY_BOARD_LABELS = ["Skyrockets", "Love letters", "Rainbow sweep", "Spring meadow", "Papel picado", "Pool deck", "Painted fence", "Bubble words", "Pencil notebook", "Lightning window", "Harvest table", "Fireplace"];
   const mbId = (m) => "mb" + String(m).padStart(2, "0");
-  const MONTHLY_BOARD_ITEMS = (window.MM ? MM.boards : []).map((b, i) => ({ id: mbId(i + 1), label: MONTHLY_BOARD_LABELS[i], monthly: i + 1, img: `monthly/art/${b.img}.webp`, color: b.color, css: b.css }));
+  const MONTHLY_BOARD_ITEMS = (window.MM ? MM.boards : []).map((b, i) => ({ id: mbId(i + 1), label: MONTHLY_BOARD_LABELS[i], monthly: i + 1, img: `monthly/art/${b.img.replace(/-board$/, '')}-board-wide.webp`, color: b.color, css: b.css }));
   MONTHLY_BOARD_ITEMS.forEach((b, i) => {
     const r = window.MM.boards[i].rect;
-    SB_DEFS[b.id] = { img: b.img, ar: 640 / 480, box: [r[0] * 100, r[1] * 100, (1 - r[2]) * 100, (1 - r[3]) * 100], fmax: 23, noStretch: true, monthly: b.monthly };
+    SB_DEFS[b.id] = { img: b.img, ar: 2, box: [r[0] * 100, r[1] * 100, (1 - r[2]) * 100, (1 - r[3]) * 100], fmax: 23, noStretch: true, monthly: b.monthly, wideLayer: b.monthly === 10 || b.monthly === 12 }; // wideLayer: the decorations are drawn for the whole 2:1 board instead of two ends
   });
   {
     const st = document.createElement("style"); // text colours for the live board and for the still copy on solo screens (a filter only exists while the animation plays, so it is left out here)
@@ -9984,7 +9984,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!text) {
       if (qSB.mmRun) {
         clearTimeout(qSB.mmLoadT); qSB.mmRun = null; sbReleaseAnswer(qSB);
-        qSB.mmHost?.remove(); qSB.mmHost = null;
+        qSB.mmHost?.remove(); qSB.mmHost = null; qSB.mmHost2?.remove(); qSB.mmHost2 = null;
         qSB.mmOver?.remove(); qSB.mmOver = null;
       }
       return;
@@ -10230,7 +10230,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (questionAnswerLineEl.style.display !== "none" && questionAnswerLineEl.innerHTML) questionAnswerLineEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: "ease-out" });
   }
   const sbHoldLeft = () => (qSB && qSB.holdUntil ? (Number.isFinite(qSB.holdUntil) ? Math.max(0, qSB.holdUntil - performance.now()) : 100) : 0);
-  const mmPlaceOver = (sb) => { if (sb.mmOver) { sb.mmOver.style.left = sb.sx + "px"; sb.mmOver.style.top = sb.sy + "px"; sb.mmOver.style.transform = `scale(${sb.sw / 330})`; } };
+  // The decorations were drawn for a 330 x 248 board. The new boards are 2:1, so the layer is drawn twice at the board's height: its left half stays at the left end, its right half at the right end (the middle belongs to the question).
+  const mmPlaceOver = (sb) => { if (sb.mmOver) { sb.mmOver.style.left = sb.sx + "px"; sb.mmOver.style.top = sb.sy + "px"; sb.mmOver.style.transform = `scale(${sb.sh / 248})`; } };
+  const mmPlace = (sb) => {
+    const k = sb.sh / 248;
+    if (sb.mmHost) { sb.mmHost.style.transform = `scale(${k})`; sb.mmHost.style.left = "0px"; sb.mmHost.style.clipPath = sb.def.wideLayer ? "" : "inset(0 50% 0 0)"; }
+    if (sb.mmHost2) { sb.mmHost2.style.transform = `scale(${k})`; sb.mmHost2.style.left = (sb.sw - 330 * k) + "px"; sb.mmHost2.style.clipPath = "inset(0 0 0 50%)"; }
+    mmPlaceOver(sb);
+  };
   // Monthly boards: monthly/motion.js animates the letters of the real question and a decorative layer over the board picture.
   MONTHLY_BOARD_ITEMS.forEach((b) => {
     SB_KINDS[b.id] = {
@@ -10241,17 +10248,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         sbReleaseAnswer(sb);
         questionPromptTextEl.style.transition = qBodyEl.style.transition = "none";
         if (sb.mmHost) { sb.mmHost.remove(); sb.mmHost = null; }
+        if (sb.mmHost2) { sb.mmHost2.remove(); sb.mmHost2 = null; }
         if (sb.mmOver) { sb.mmOver.remove(); sb.mmOver = null; }
         if (!sb.animated || !window.MM) return;
         sbHoldAnswer(sb, Infinity);
         const host = document.createElement("div");
         host.style.cssText = "position:absolute;left:0;top:0;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:3";
-        host.style.transform = `scale(${sb.sw / 330})`;
-        sb.mmHost = host; sb.stage.appendChild(host); sb.mmScale = sb.sw / 330;
+        const host2 = sb.def.wideLayer ? null : host.cloneNode(false); // right-hand copy of the same layer (see mmPlace)
+        sb.mmHost = host; sb.mmHost2 = host2; sb.stage.append(...(host2 ? [host, host2] : [host])); sb.mmScale = sb.sh / 248;
         if (sb.mmOver) sb.mmOver.remove();
         const over = document.createElement("div"); // pencil and paintbrush: above the question text, same place and scale as the board art
         over.style.cssText = "position:absolute;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:2";
-        qPromptEl.appendChild(over); sb.mmOver = over; mmPlaceOver(sb);
+        qPromptEl.appendChild(over); sb.mmOver = over; mmPlace(sb);
         const chars = sb.chars.slice(), key = "b" + b.monthly;
         const current = () => qSB === sb && sb.mmRun === run && host.isConnected && !sb.exiting;
         const fallback = () => {
@@ -10265,16 +10273,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         MM.ready(key).then(() => {
           if (!current()) return;
           clearTimeout(sb.mmLoadT);
-          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over });
+          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over, wide: !!sb.def.wideLayer });
+          if (host2) try { MM.buildBoard(key, host2, { text: document.createElement("p"), body: document.createElement("div"), letters: [], over: document.createElement("div") }); } catch (e) { host2.remove(); } // same decorations for the right end; the question itself is only animated once
           sbHoldAnswer(sb, MM.boardSettle(b.monthly, chars.length) + 300);
         }).catch(fallback);
       },
-      layout(sb) { if (sb.mmHost) sb.mmHost.style.transform = `scale(${sb.sw / 330})`; mmPlaceOver(sb); },
+      layout(sb) { mmPlace(sb); },
       exit(sb) {
         clearTimeout(sb.mmLoadT); sb.mmRun = null;
         sbReleaseAnswer(sb);
         qBodyEl.style.transition = "opacity .3s"; qBodyEl.style.opacity = "0";
         if (sb.mmHost) sb.mmHost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
+        if (sb.mmHost2) sb.mmHost2.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
         if (sb.mmOver) sb.mmOver.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: "forwards" });
       },
     };

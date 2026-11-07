@@ -383,7 +383,7 @@ def('b9', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '74-clean-notebook-bo
   for (let i = 0; i < 5; i++) sparkle(g, R[R.length - 1].x + (rnd() - .5) * 120, R[R.length - 1].y - 14 - rnd() * 30, 14, D, T0 + N * ST + 700 + i * 260, 500, 7);
 });
 def('b10', 'b', 7800, (s) => { const D = 7800; baseBoard(s, '49-haunted-window-board'); const g = grp(s, D);
-  const W0 = .17 * BW, W1 = .83 * BW, T0 = .3 * BH2, T1 = .85 * BH2;
+  const WD = !!(HOOK && HOOK.wide), BWX = WD ? 496 : BW, W0 = (WD ? .12 : .17) * BWX, W1 = (WD ? .88 : .83) * BWX, T0 = (WD ? .14 : .3) * BH2, T1 = (WD ? .86 : .85) * BH2; /* WD: the game's 2:1 board (496 x 248 units) */
   const q = qtext(g, [.19, .33, .81, .8], { color: '#efeaff', size: 26, css: 'text-shadow:0 0 6px #b9a6ff,0 0 15px rgba(160,130,255,.85);', z: 6 });
   const kk = kOf(s), x0 = (q.letters.reduce((m, l) => Math.min(m, l.getBoundingClientRect().left), 1e9) - s.getBoundingClientRect().left) / kk - 4, x1 = (q.letters.reduce((m, l) => Math.max(m, l.getBoundingClientRect().right), 0) - s.getBoundingClientRect().left) / kk + 4;
   const TS = 1000, TE = 1700; q.t.animate([{ clipPath: 'inset(-10px 100% -10px 0)' }, { clipPath: 'inset(-10px 100% -10px 0)', offset: TS / D, easing: 'cubic-bezier(.6,0,.9,.5)' }, { clipPath: 'inset(-10px -6px -10px 0)', offset: TE / D }, { clipPath: 'inset(-10px -6px -10px 0)' }], { duration: D, fill: 'both' });
@@ -391,8 +391,8 @@ def('b10', 'b', 7800, (s) => { const D = 7800; baseBoard(s, '49-haunted-window-b
   bar.animate([{ transform: `translateX(${x0}px) skewX(-18deg)`, opacity: 0 }, { transform: `translateX(${x0}px) skewX(-18deg)`, opacity: 1, offset: TS / D, easing: 'cubic-bezier(.6,0,.9,.5)' }, { transform: `translateX(${x1}px) skewX(-18deg)`, opacity: 1, offset: TE / D }, { transform: `translateX(${x1}px) skewX(-18deg)`, opacity: 0, offset: (TE + 60) / D }, { opacity: 0 }], { duration: D, fill: 'both' });
   const flashAt = (t, bolt) => { const fl = box(g, `left:${W0}px;top:${T0}px;width:${W1 - W0}px;height:${T1 - T0}px;background:rgba(205,195,255,.55);mix-blend-mode:screen;`, 2);
     fl.animate([{ opacity: 0 }, { opacity: 0, offset: t / D }, { opacity: .95, offset: (t + 40) / D }, { opacity: .15, offset: (t + 120) / D }, { opacity: .8, offset: (t + 200) / D }, { opacity: 0, offset: (t + 420) / D }, { opacity: 0 }], { duration: D, fill: 'both' });
-    if (bolt) { let x = bolt, y = T0, d = `M${x} ${y}`; while (y < T0 + 100) { x += (rnd() - .5) * 26; y += 14 + rnd() * 12; d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; }
-      const b = box(g, 'left:0;top:0;width:330px;height:248px;filter:drop-shadow(0 0 4px #c9b8ff) drop-shadow(0 0 9px #8b6cff);', 3); b.innerHTML = `<svg width="330" height="248"><path d="${d}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="miter"/></svg>`;
+    if (bolt) { let x = bolt * BWX / 330, y = T0, d = `M${x} ${y}`; while (y < T0 + 100) { x += (rnd() - .5) * 26; y += 14 + rnd() * 12; d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; }
+      const b = box(g, `left:0;top:0;width:${BWX}px;height:248px;filter:drop-shadow(0 0 4px #c9b8ff) drop-shadow(0 0 9px #8b6cff);`, 3); b.innerHTML = `<svg width="${BWX}" height="248"><path d="${d}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="miter"/></svg>`;
       b.animate([{ opacity: 0 }, { opacity: 0, offset: t / D }, { opacity: 1, offset: (t + 30) / D }, { opacity: .2, offset: (t + 130) / D }, { opacity: 1, offset: (t + 190) / D }, { opacity: 0, offset: (t + 320) / D }, { opacity: 0 }], { duration: D, fill: 'both' }); } };
   flashAt(TS - 40, 0); flashAt(3300, 140); flashAt(4900, 210); flashAt(6300, 110);
 });
@@ -404,11 +404,11 @@ def('b11', 'b', 7000, (s) => { const D = 7000; baseBoard(s, '54-harvest-table-bo
   q.letters.forEach((l, i) => l.animate([{ opacity: 0, transform: 'translateY(-10px) scale(1.2)' }, { opacity: 1, transform: 'translateY(2px) scale(1)', offset: .65 }, { opacity: 1, transform: 'translateY(0)' }], { duration: 650, delay: 500 + i * 50, fill: 'both', easing: 'ease-out' }));
 });
 def('b12', 'b', 7000, (s) => { const D = 7000; baseBoard(s, '59-fireplace-board'); const g = grp(s, D);
-  const gl = box(g, 'left:70px;top:172px;width:190px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,40,.85),rgba(255,100,0,0) 70%);', 1), rows = [];
+  const WD = !!(HOOK && HOOK.wide), gl = box(g, `left:${WD ? -25 : 70}px;top:${WD ? 135 : 172}px;width:190px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,40,.85),rgba(255,100,0,0) 70%);`, 1), rows = [];
   for (let k = 0; k <= 30; k++) rows.push({ offset: k / 30, opacity: .35 + .5 * Math.abs(Math.sin(k * 1.7)) * (.6 + .4 * Math.sin(k * .5)), transform: `scale(${.92 + .12 * Math.abs(Math.sin(k * 1.1))})` }); gl.animate(rows, { duration: D, fill: 'both', easing: 'linear' });
-  for (let i = 0; i < 10; i++) { const e = dot(g, i % 2 ? '#ffb347' : '#ff7a2b', 3 + rnd() * 2, 0, 0, true, 3), x0 = 140 + rnd() * 50, t0 = i * 520;
-    path(e, D, t0, t0 + 1800, (u) => ({ x: x0 + Math.sin(u * 7 + i) * 12, y: 232 - u * 70, op: fade(u, .05, .45) }), 24); }
-  const gc = ['#ff4b4b', '#5bd66b', '#ffd23f', '#4aa3ff']; for (let i = 0; i < 14; i++) { const x = 18 + i * 23, y = 18 + 7 * Math.sin(i * .9), dd = dot(g, gc[i % 4], 7, x, y, true, 3), r = []; for (let k = 0; k <= 20; k++) r.push({ offset: k / 20, opacity: .3 + .7 * Math.pow(Math.max(0, Math.sin(k / 20 * Math.PI * 5 - i * .6)), 2) }); dd.animate(r, { duration: D, fill: 'both', easing: 'linear' }); }
+  for (let i = 0; i < 10; i++) { const e = dot(g, i % 2 ? '#ffb347' : '#ff7a2b', 3 + rnd() * 2, 0, 0, true, 3), x0 = (WD ? 50 : 140) + rnd() * 50, t0 = i * 520;
+    path(e, D, t0, t0 + 1800, (u) => ({ x: x0 + Math.sin(u * 7 + i) * 12, y: (WD ? 228 : 232) - u * 70, op: fade(u, .05, .45) }), 24); }
+  const gc = ['#ff4b4b', '#5bd66b', '#ffd23f', '#4aa3ff']; for (let i = 0; i < (WD ? 21 : 14); i++) { const x = 18 + i * 23, y = 18 + 7 * Math.sin(i * .9), dd = dot(g, gc[i % 4], 7, x, y, true, 3), r = []; for (let k = 0; k <= 20; k++) r.push({ offset: k / 20, opacity: .3 + .7 * Math.pow(Math.max(0, Math.sin(k / 20 * Math.PI * 5 - i * .6)), 2) }); dd.animate(r, { duration: D, fill: 'both', easing: 'linear' }); }
   const q = qtext(g, [.1, .4, .9, .7], { color: '#7a1c1c', size: 26, css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' }); hideLetters(q.letters); popLetters(q.letters, 500, 45);
 });
 
