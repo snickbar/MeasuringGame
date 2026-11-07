@@ -7,6 +7,7 @@ Saved November 5, 2026. These are follow-ups, not authorization to implement the
 - Completed November 6: all 105 batch 2 objects are active with approved measurements, orientations and travel styles, production artwork, scenery and Worlds assignments. The catalog contains 681 objects; the separate batch picker preserves the approved choices.
 - Completed object gaps: seagull, songbird, puffin, hawk, tropical fish, cheese wedge and whisk are integrated. Cooking turner was declined by the user on November 6; do not add it.
 - Complete phone playtesting mode by mode, including two-device reconnect, pause, sync, reward persistence, and native update installation.
+- Before launch, revisit whether Classic Party should require a second human. During playtesting the host can start with bots as the only opponents.
 - Recheck long-question readability on small phones following the recent larger writing-area changes.
 - Revisit mascots for other modes and further collection/cosmetics presentation experiments only when requested.
 - Published November 6: optional four-step Home menu tour, Skip on every step, remembered completion/dismissal, and Replay menu tour in Settings. The How to Play practice tutorial's fifth slide lists all 12 game modes individually. Browser checks cover three phone widths.

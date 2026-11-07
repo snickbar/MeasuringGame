@@ -38,6 +38,12 @@ window.__monkeyPreview = accuracy => {
  ALL_SCREEN_ELS.forEach(screen => screen.classList.remove('active'));
  finalScreenEl.classList.add('active');renderFinal();
 };
+window.__classicBotLobby = async () => {
+ const settings={...DEFAULT_SETTINGS(),showTutorial:false};
+ const room={phase:'waiting',round:0,settings};
+ await set(ref(db,'rooms/BOTS'),room);
+ await joinRoomAsPlayer('BOTS','Player',true,room);
+};
 `;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');
 fixture=fixture.replace('\n</script>\n</body>',injected+'\n</script><pre id="wb-test-result" hidden></pre>\n</body>');
@@ -243,6 +249,45 @@ server.listen(0,'127.0.0.1',()=>{
  await evaluate("window.__finalPreview('quick')");
  const reduced=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who');return {opacity:+getComputedStyle(e).opacity,animations:e.getAnimations().length,waiting:document.getElementById('final-list').classList.contains('pd-waiting')}})()");
  if(reduced.opacity!==1||reduced.animations||reduced.waiting)throw Error('Reduced motion failed '+JSON.stringify(reduced));console.log(JSON.stringify({width,reduced,pass:true}));
+ if(width===390){
+   const classic=await evaluate(`(async () => {
+     const waitFor=async (condition,message,timeout=12000)=>{
+       const deadline=performance.now()+timeout;
+       while(!condition()&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));
+       if(!condition())throw Error(message);
+     };
+     const room=()=>window.__fakeDB.read('rooms/BOTS');
+     const botIds=()=>Object.keys(room().players).filter(id=>room().players[id].isBot);
+     const start=document.getElementById('host-start-btn');
+     const add=document.getElementById('solo-add-bot-btn');
+     const confirm=document.getElementById('exit-confirm-yes-btn');
+     await window.__classicBotLobby();
+     await waitFor(()=>document.getElementById('lobby-screen').classList.contains('active'),'Classic lobby opened');
+     if(!start.disabled)throw Error('Classic Party started without an opponent');
+     add.click();
+     await waitFor(()=>botIds().length===1&&!start.disabled,'One bot enables Classic Party Start');
+     start.click();
+     document.querySelector('.bot-x-btn').click();
+     await waitFor(()=>botIds().length===0&&start.disabled,'Removing the last bot disables Classic Party Start');
+     confirm.click();
+     await new Promise(resolve=>setTimeout(resolve,100));
+     if(room().phase!=='waiting')throw Error('Stale confirmation started without an opponent');
+     for(let n=1;n<=2;n++){
+       add.click();
+       await waitFor(()=>botIds().length===n,'Added a Classic Party bot');
+     }
+     start.click();
+     confirm.click();
+     await waitFor(()=>room().phase==='countdown','Classic Party with bots enters countdown');
+     await waitFor(()=>room().phase==='question','Classic Party with bots reaches the first question');
+     await waitFor(()=>botIds().every(id=>Number.isFinite(room().guesses?.[id])),'Both bots submit guesses',25000)
+       .catch(error=>{throw Error(error.message+' '+JSON.stringify({clock:room().questionClock,guesses:room().guesses,
+         prompt:room().currentQuestion?.prompt,display:document.getElementById('question-prompt-text').dataset.txt}));});
+     return {bots:botIds().length,solo:!!room().settings.solo,round:room().round};
+   })()`);
+   if(classic.bots!==2||classic.solo||classic.round!==1)throw Error('Classic bot roster failed '+JSON.stringify(classic));
+   console.log(JSON.stringify({width,classic,pass:true}));
+ }
  await call('Target.closeTarget',{targetId});
  }
 

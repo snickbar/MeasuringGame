@@ -17632,7 +17632,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const hlGameOver = () => (roomState.hlLives || 0) <= 0 || (!!(roomState.settings?.cap) && (roomState.hlSurvived || 0) >= roomState.settings.cap);
   let startingGame = false;
   async function startGameNow() {
-    if (startingGame || !isHost || roomState.phase !== 'waiting') return;
+    if (startingGame || !isHost || roomState.phase !== 'waiting' || classicPartyNeedsOpponent(roomState)) return;
     if (roomState.settings?.mode === 'teamworlds' && Object.keys(roomState.players || {}).length !== 2) return;
     if (roomState.settings?.mode === 'bluff' && Object.keys(roomState.players || {}).length < 3) return;
     startingGame = true;
@@ -17673,8 +17673,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       startingGame = false;
     }
   }
+  function classicPartyNeedsOpponent(data) {
+    const { mode, solo } = data.settings || {};
+    return !solo && (!mode || mode === "classic") && Object.keys(data.players || {}).length < 2;
+  }
   async function beginGameNow() {
-    if (!isHost || (roomState.settings?.mode === "teamworlds" && Object.keys(roomState.players || {}).length !== 2)) return;
+    if (!isHost || classicPartyNeedsOpponent(roomState) || (roomState.settings?.mode === "teamworlds" && Object.keys(roomState.players || {}).length !== 2)) return;
     playSound("start");
     if(roomState.settings?.mode==='bluff')return startBluffGame();
     if (isHsSettings(roomState.settings)) { await hsBeginGame(); return true; }
@@ -22156,13 +22160,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // like Team vs Team) - cap joining/adding bots there instead of the usual room-wide FRAME_COUNT.
     addBtn.disabled = Object.keys(data.players || {}).length >= (worldsMode ? 2 : FRAME_COUNT);
     renderTeamPicker(data);
-    const humans = Object.values(data.players || {}).filter((p) => !p.isBot).length;
     // Ready is intentionally absent; the host starts once the mode has enough players.
     let needsFriend, waitingMsg;
     if (teamMode) {
       // Team vs Team needs at least 2 full (2-member) teams before it can start -
-      // an uneven/incomplete team blocks Start same as "needs a friend" does for
-      // Classic Party, but counted by team fullness instead of headcount.
+      // an uneven/incomplete team blocks Start even if the room has four players.
       const teamCounts = {};
       Object.values(data.players || {}).forEach((p) => { if (p.team) teamCounts[p.team] = (teamCounts[p.team] || 0) + 1; });
       const fullTeams = Object.values(teamCounts).filter((n) => n >= 2).length;
@@ -22177,9 +22179,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       needsFriend = Object.keys(data.players || {}).length !== 2;
       waitingMsg = "Need exactly one partner to start — add a friend or a bot.";
     } else {
-      // Host Party needs at least one other real player before it can start.
-      needsFriend = !solo && humans < 2;
-      waitingMsg = "Waiting for at least one friend to join. Share the room code!";
+      needsFriend = classicPartyNeedsOpponent(data);
+      waitingMsg = "Add a bot or invite a friend to start.";
     }
     const rules=document.getElementById('lobby-rules');
     const chip = (icon, text) => `<span class="lr-chip">${icon.startsWith('<') ? icon : `<i>${icon}</i>`}<b>${text}</b></span>`;
