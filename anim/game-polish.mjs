@@ -10,16 +10,36 @@ export const MENU_BANNERS = {
   highstakes: ['icons/banner-blank-purple.png', 'items/poker-chip.webp'],
   bluff: ['icons/banner-blank-pink.png', 'icons/reactions/giggle.png'],
 };
+// Mode mascots that stand on the big mode buttons and on each mode's own header banner (picture aspect ratio = width / height after cropping).
+// Banners are 1000 x 222; the artwork is capped so the title keeps its room. Modes without a mascot keep their own icon.
+export const BANNER_MASCOT = { classic: ['party-ant', .943], teamvteam: ['team', 2.357], teamworlds: ['teamworlds', 1.33], highstakes: ['highstakes', 1.117], bluff: ['bluff', .86],
+  quick: ['quick', .897], daily: ['daily', 1.58], monthly: ['monthly', 1.517], worlds: ['worlds', 1.063], survival: ['survival', .833] };
+const BLANK_BANNER = { quick: 'icons/banner-quick-blank.png', daily: 'icons/banner-daily-blank.png', monthly: 'icons/banner-monthly-blank.png', worlds: 'icons/banner-worlds-blank.png', survival: 'icons/banner-survival-blank.png' };
+export function bannerMascot(mode) {
+  const m = BANNER_MASCOT[mode]; if (!m) return null;
+  const h = Math.min(92, 34 / (.222 * m[1])), w = h * .222 * m[1], left = 3.5;
+  return { src: `anim/mode-mascots/${m[0]}-banner.webp`, left, top: (100 - h) / 2, w, h, pad: left + w + 2.5,
+    style: `left:${left}%;top:${((100 - h) / 2).toFixed(2)}%;width:${w.toFixed(2)}%;height:${h.toFixed(2)}%` };
+}
 export function applyMenuBanner(element, mode) {
   const config = MENU_BANNERS[mode];
   if (!element || !config) return;
   element.classList.add('matching-mode-banner');
   element.dataset.menuBanner = mode;
   element.dataset.fitSingleLine = 'true';
-  const bannerUrl = new URL(config[0], element.ownerDocument.baseURI).href;
+  const mm = bannerMascot(mode);
+  const bannerUrl = new URL(mm && BLANK_BANNER[mode] || config[0], element.ownerDocument.baseURI).href;
   element.style.setProperty('--menu-banner', `url("${bannerUrl}")`);
   element.querySelector('.polish-banner-icon')?.remove();
-  if (config[1]) {
+  if (mm) {
+    // Same mascot, size and text room as the mode's button; the title is centred in the space beside it.
+    const img = element.ownerDocument.createElement('img');
+    img.className = 'polish-banner-icon polish-banner-mascot'; img.src = mm.src; img.alt = ''; img.draggable = false;
+    for (const [k, v] of [['left', mm.left], ['top', mm.top], ['width', mm.w], ['height', mm.h]]) img.style.setProperty(k, v.toFixed(2) + '%', 'important');
+    element.prepend(img);
+    element.style.setProperty('padding-left', mm.pad.toFixed(2) + '%', 'important');
+    element.classList.add('has-banner-mascot');
+  } else if (config[1]) {
     const img = element.ownerDocument.createElement('img');
     img.className = 'polish-banner-icon'; img.src = config[1]; img.alt = '';
     element.prepend(img);
