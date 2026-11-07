@@ -27,6 +27,7 @@ const authStub='export const initializeAuth=()=>({currentUser:null}),indexedDBLo
 const injected=String.raw`
 window.__polish={
  bluffPreviewMaker:async()=>{await window.__polish.bluffStart();await new Promise(r=>setTimeout(r,100));window.__polish.bluffInspect();},
+ bluffPreviewDense:async()=>{await window.__polish.bluffStart(10);await window.__polish.bluffPreviewVote();},
  bluffPreviewVote:async()=>{const state=roomState.bluff;await window.__polish.bluffDo(state.maker,'claim',state.options.findIndex(o=>o.kind==='high'));await new Promise(r=>setTimeout(r,100));const old=currentPlayerId;currentPlayerId=state.order.find(id=>id!==state.maker);bluffUI.refresh();currentPlayerId=old;},
  bluffPreviewAnimation:async()=>{const s=roomState.bluff;await update(ref(db,'rooms/BLUF/bluff'),{stage:'animation',startedAt:nowMs(),endsAt:nowMs()+30000});},
  bluffPreviewSummary:async(kind='low')=>{const s=roomState.bluff,voters=s.order.filter(id=>id!=='b'),claim=s.options.find(o=>o.kind===kind),votes=Object.fromEntries(voters.map((id,i)=>[id,i===0?kind:['low','correct','high'].find(k=>k!==kind)]));await set(ref(db,'rooms/BLUF/bluff'),(await import('/anim/bluff.mjs')).revealBluff({...s,stage:'animation',maker:'b',claim,votes},nowMs()));},
@@ -37,8 +38,9 @@ window.__polish={
  bluffDo:async(actor,action,value)=>runTransaction(ref(db,'rooms/BLUF'),cur=>bluffAction(cur,{gameId:cur.gameId,round:cur.bluff.round,stage:cur.bluff.stage,actor,action,value},nowMs()),{applyLocally:false}),
  bluffInspect:()=>{const old=currentPlayerId;currentPlayerId=roomState.bluff.maker;bluffUI.refresh();currentPlayerId=old;},bluffRestore:()=>bluffUI.refresh(),
  bluffInfo:()=>openBluffInfo(),bluffStats:()=>{statsMode='bluff';showCareerTab('stats');},
- bluffStart:async()=>{currentRoomCode='BLUF';currentPlayerId='a';isHost=true;leavingGame=false;finalRendered=false;
- await set(ref(db,'rooms/BLUF'),{phase:'waiting',round:0,settings:{mode:'bluff',bluffTurns:1,hostTransferMode:'reassign'},players:{a:{name:'Player',avatar:'av07',isHost:true,joinedAt:1,frameIndex:1},b:{name:'Friend',avatar:'av19',joinedAt:2,frameIndex:2},c:{name:'LongPlayerName',avatar:'av06',joinedAt:3,frameIndex:3}}});
+ bluffStart:async(count=3)=>{currentRoomCode='BLUF';currentPlayerId='a';isHost=true;leavingGame=false;finalRendered=false;
+ const extras=Object.fromEntries(Array.from({length:count-3},(_,i)=>['p'+i,{name:'Guest '+(i+1),avatar:'av05',joinedAt:i+4}]));
+ await set(ref(db,'rooms/BLUF'),{phase:'waiting',round:0,settings:{mode:'bluff',bluffTurns:1,hostTransferMode:'reassign'},players:{a:{name:'Player',avatar:'av07',isHost:true,joinedAt:1,frameIndex:1},b:{name:'Friend',avatar:'av19',joinedAt:2,frameIndex:2},c:{name:'LongPlayerName',avatar:'av06',joinedAt:3,frameIndex:3},...extras}});
  watchRoom('BLUF');await new Promise(r=>setTimeout(r,50));await startBluffGame();},
  bluffPause:()=>togglePause(),
 
@@ -80,10 +82,9 @@ try{
   if(s.maker==='a'){content.querySelector('[data-claim="'+index+'"]').click();assert(content.querySelector('[data-send-claim]').getBoundingClientRect().bottom<=$('bottom-toolbar').getBoundingClientRect().top,'Maker confirm clears bottom toolbar');content.querySelector('[data-send-claim]').click();}else await api.bluffDo(s.maker,'claim',index);
   await until(()=>api.bluffState().stage==='vote','Claim appears');await wait(150);assert(!content.querySelector('[data-claim]'),'Only selected claim visible');assert(content.querySelectorAll('.bl-claim strong').length===1,'Exactly one claim number');fit('Vote');for(const card of content.querySelectorAll('[data-bluff-player]')){const r=card.getBoundingClientRect();assert(r.top>0&&r.bottom<$('bottom-toolbar').getBoundingClientRect().top,'All three player cards visible beside voting');}assert(!content.querySelector('.bl-banner'),'No large mode banner in play');
   assert(!content.textContent.includes('That step has closed')&&![...content.querySelectorAll('.bl-error')].some(e=>e.textContent.trim()),'No red error text after the claim is set');
-  const writing=content.querySelector('.bl-raccoon-write'),ink=writing.querySelector('.bl-raccoon-ink path');
+  const writing=content.querySelector('.bl-panel .bl-raccoon-write'),ink=writing.querySelector('.bl-raccoon-ink path');
   await writing.querySelector('img').decode();
   assert(writing.getAttribute('aria-hidden')==='true'&&ink.getAnimations().some(a=>a.animationName==='bl-raccoon-scribble'),'Raccoon writes during voting');
-  assert(writing.getBoundingClientRect().left>=content.querySelector('.bl-scale').getBoundingClientRect().right,'Writing raccoon clears the idle scale');
   await api.bluffPause();await wait(350);assert($('paused-overlay').classList.contains('active'),'Pause overlay');await api.bluffPause();
   const state=api.bluffState(),voters=state.order.filter(id=>id!==state.maker);
   for(const [i,id]of voters.entries()){
@@ -97,6 +98,8 @@ try{
   const revealPad=content.querySelector('.bl-raccoon-reveal .bl-raccoon-pad');
   await content.querySelector('.bl-raccoon-reveal img').decode();
   assert(!content.querySelector('.bl-raccoon-write')&&new DOMMatrix(getComputedStyle(revealPad).transform).m33>0,'Raccoon settles on the open notepad after the answer lands');
+  const mark=revealPad.querySelector('.bl-pad-page'),paths={low:'M12 4v16m-6-6 6 6 6-6',correct:'M5 12l5 5 9-10',high:'M12 20V4m-6 6 6-6 6 6'};
+  assert(mark.dataset.verdict===kind&&mark.querySelector('path').getAttribute('d')===paths[kind],'Notepad symbol matches '+kind+' claim');
   assert(api.bluffState().result.points[state.maker]===1,'Maker gets one fooled voter');
   await api.flush();assert(api.profile().stats.gamesPlayed===oldGames,'Round alone is not finished game');
   const beforeRanks=JSON.stringify(api.bluffState().scores);content.querySelector('[data-next]').click();await until(()=>api.bluffState().showStand,'Rankings page opens');assert(!content.querySelector('.bl-summary')&&!content.querySelector('.bl-question')&&content.querySelectorAll('[data-bluff-rank]').length===3,'Dedicated rankings page with every player');assert(JSON.stringify(api.bluffState().scores)===beforeRanks,'Showing rankings cannot award points again');fit('Rankings');await until(()=>content.querySelector('[data-next]')&&!content.querySelector('[data-next]').disabled,'Next maker available');await new Promise(r=>setTimeout(r,400));assert(content.querySelector('[data-next]').getBoundingClientRect().bottom<=$('bottom-toolbar').getBoundingClientRect().top+1,'Next round is visible without scrolling');content.querySelector('[data-next]').click();
@@ -132,6 +135,20 @@ try{
  celebrations.refresh();assert(!effects.querySelector('.bl-win-dance'),'Nobody dances before the bins are judged');celebrationTime=judgedAt+20;await wait(320);assert(effects.querySelector('.win .bl-win-dance'),'Correct voters dance first');assert(laughs===0&&effects.querySelector('.bl-maker-laugh').hidden,'No laugh while winners dance');celebrationTime=judgedAt+1900;await wait(320);assert(laughs===0,'Dance finishes before laughter');celebrationTime=judgedAt+2001;await wait(320);assert(laughs===1&&!effects.querySelector('.bl-maker-laugh').hidden,'Laugh and reaction follow dance');assert(effects.querySelector('[data-maker-points]').textContent==='+1','Point count-up starts with first fooled player');party.players.a.name='Changed';celebrations.refresh();await wait(320);assert(laughs===1,'Room updates cannot repeat laughter');
  party.bluff.result.points.a=3;celebrationTime=judgedAt+2801;await wait(320);assert(effects.querySelector('[data-maker-points]').textContent==='+3','Point display counts each fooled player without changing stored scores');party.bluff.result.points.a=1;party.gameId='hidden-celebration';celebrations.refresh();shown=false;celebrations.refresh();celebrationTime+=3000;shown=true;celebrations.refresh();await wait(320);assert(laughs===1,'Leaving screen cancels old laughter');
  party.gameId='reduced-celebration';quiet=true;celebrations.refresh();assert(!effects.querySelector('.bl-win-dance')&&laughs===2,'Reduced motion skips dance and keeps one laugh');assert(effects.querySelector('.bl-raccoon-reveal:not(.moving) .bl-pad-page'),'Reduced motion shows the raccoon with the page already facing forward');party.phase='final';celebrations.refresh();effects.remove();
+ const checkDenseMascot=async stage=>{
+   assert(content.querySelectorAll('.bl-table.dense [data-bluff-player]').length===10,'Ten players on the '+stage+' screen');
+   const panel=content.querySelector('.bl-panel'),writing=panel.querySelector('.bl-raccoon-write');
+   await writing.querySelector('img').decode();
+   const mascot=writing.getBoundingClientRect(),bounds=panel.getBoundingClientRect();
+   const dock=content.querySelector('.bl-scale-dock'),scale=dock.querySelector('.bl-scale');
+   const dockBounds=dock.getBoundingClientRect(),scaleBounds=scale.getBoundingClientRect();
+   const toolbarTop=$('bottom-toolbar').getBoundingClientRect().top;
+   assert(mascot.width>0&&mascot.top>=$('hud-sub-toolbar').getBoundingClientRect().bottom&&mascot.top+20<toolbarTop,'Raccoon visible without scrolling during '+stage);
+   assert(mascot.left>=bounds.left-1&&mascot.right<=bounds.right+1,'Raccoon stays between the player columns');
+   assert(getComputedStyle(dock).position==='fixed'&&getComputedStyle(scale).width==='178px'&&Math.abs((scaleBounds.left+scaleBounds.right)-(dockBounds.left+dockBounds.right))<2,'Scale stays centered in its original bottom dock');
+ };
+ await api.bluffStart(10);await until(()=>api.bluffState()?.stage==='make','Ten-player game starts');await checkDenseMascot('make');
+ await api.bluffPreviewVote();await until(()=>api.bluffState()?.stage==='vote','Ten-player vote opens');await checkDenseMascot('vote');
  $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Actual app: setup, full 3-player cycle, maker-only three choices, single voter claim, all three claim kinds, one-tap voting/change buffer, Firebase empty-map roundtrip, overlay/skip, summary/rankings, pause, simultaneous scores, progress, final/coins, classification stats and phone fit'});
 }catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack,state:window.__polish?.bluffState(),buttons:[...document.querySelectorAll("#bluff-content button")].map(b=>({text:b.textContent,disabled:b.disabled}))});}
 </script>`;
@@ -146,7 +163,7 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
  const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});fs.mkdirSync(path.join(root,'output','bluff-tests'),{recursive:true});
  for(const width of (process.env.BLUFF_TEST_WIDTH?[Number(process.env.BLUFF_TEST_WIDTH)]:[320,390,430])){const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Page.enable',{},sessionId);await call('Page.addScriptToEvaluateOnNewDocument',{source:'try{localStorage.clear();}catch{}'},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);let result;
  for(let n=0;n<8000;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}if(!result){const debug=await call('Runtime.evaluate',{expression:'JSON.stringify({state:window.__polish?.bluffState(),text:document.getElementById("bluff-content")?.textContent})',returnByValue:true},sessionId);console.log(debug.result?.value);}console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');
- for(const page of (process.env.UI_DELIGHT_ONLY==='1'?['worldList','settings','lobby','quickLobby','unlockDemo']:['bluffInfo','bluffPreviewMaker','bluffPreviewVote','bluffPreviewAnimation','bluffPreviewSummary','bluffPreviewRankings','bluffPreviewFinal'])){await call('Runtime.evaluate',{expression:page==='lobby'?'window.__polish.lobby()':'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,page==='bluffPreviewFinal'?850:350));const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','bluff-tests',page+'-'+width+'.png'),Buffer.from(shot.data,'base64'));
+ for(const page of (process.env.UI_DELIGHT_ONLY==='1'?['worldList','settings','lobby','quickLobby','unlockDemo']:['bluffInfo','bluffPreviewMaker','bluffPreviewVote','bluffPreviewAnimation','bluffPreviewSummary','bluffPreviewRankings','bluffPreviewFinal','bluffPreviewDense'])){await call('Runtime.evaluate',{expression:page==='lobby'?'window.__polish.lobby()':'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,page==='bluffPreviewFinal'?850:350));const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','bluff-tests',page+'-'+width+'.png'),Buffer.from(shot.data,'base64'));
   if(page==='bluffPreviewSummary'&&width===390){
     await call('Runtime.evaluate',{expression:"Promise.all(document.querySelector('.bl-raccoon-pad').getAnimations().map(a=>a.finished))",awaitPromise:true},sessionId);
     const reveal=await call('Page.captureScreenshot',{format:'png'},sessionId);

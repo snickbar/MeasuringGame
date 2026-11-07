@@ -9,11 +9,12 @@ function countUpEl(el,ms,delay,reduced){
 }
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const bluffNumber=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
-function bluffRaccoonHtml(pose,delay=null){
+const BLUFF_PAD_MARKS={correct:'M5 12l5 5 9-10',low:'M12 4v16m-6-6 6 6 6-6',high:'M12 20V4m-6 6 6-6 6 6'};
+function bluffRaccoonHtml(pose,delay=null,kind){
  const moving=delay!==null,writing=pose==='write';
  const prop=writing
    ? '<svg class="bl-raccoon-ink" viewBox="0 0 32 24"><path pathLength="1" d="M3 8c4-5 7 3 11-1s7 2 12-1M5 17c5-3 7 1 11-1s6 1 10-2"/></svg>'
-   : '<span class="bl-raccoon-pad"><span class="bl-pad-cover"></span><span class="bl-pad-page"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span></span>';
+   : `<span class="bl-raccoon-pad"><span class="bl-pad-cover"></span><span class="bl-pad-page" data-verdict="${esc(kind)}"><svg viewBox="0 0 24 24"><path d="${Object.hasOwn(BLUFF_PAD_MARKS,kind)?BLUFF_PAD_MARKS[kind]:''}"/></svg></span></span>`;
  return `<span class="bl-raccoon bl-raccoon-${pose}${moving?' moving':''}" aria-hidden="true"${moving?` style="--raccoon-delay:${Math.round(delay)}ms"`:''}><img src="anim/mode-mascots/bluff-raccoon-${pose}.png" width="256" height="337" alt="" draggable="false">${prop}</span>`;
 }
 export function bluffPickHtml(s,me){
@@ -86,7 +87,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const scaleArt='<div class="bl-scale" aria-hidden="true"><div class="bl-seesaw bl-static" style="--t1:0deg;--t2:0deg"><div class="bl-ss-beam"><img class="bl-ss-beamimg" src="icons/bluff2-beam.webp" alt="">'+['l:red','r:blue'].map(x=>{const[a,c]=x.split(':');return `<div class="bl-ss-end ${a}"><div class="bl-ss-hang"><img class="bl-ss-rope" src="icons/bluff2-rope.webp" alt=""><div class="bl-ss-cup"><img class="bl-ss-cupimg" src="icons/bluff2-cup-${c}.webp" alt=""></div></div></div>`;}).join('')+'</div><div class="bl-ss-post"><img src="icons/bluff2-stand.webp" alt=""></div></div></div>';
     const voteState=s.stage==='vote'&&member&&!mine?'<div class="bl-vote-state"><p class="bl-locked" data-vote-status role="status"></p><div class="lock-bar" data-lock-bar hidden><i></i></div></div>':'<div class="bl-vote-state ghost"></div>';
     const scribbler=s.stage==='make'||s.stage==='vote'?bluffRaccoonHtml('write',!reduced()&&visible()&&!room.paused?-age:null):'';
-    const idleScale='<div class="bl-scale-dock">'+scaleArt+scribbler+voteState+'</div>';
+    const idleScale='<div class="bl-scale-dock">'+scaleArt+voteState+'</div>';
     let content='';
     if(s.stage==='animation')content='<p class="bl-instruction">Revealing the sizes…</p><p class="bl-note">Votes are locked.</p>';
     if(s.stage==='make')content=mine?`<p class="bl-instruction bl-maker-line"><b>You’re the Maker</b> — pick a number to claim.</p><div class="bl-claims">${Object.keys(BLUFF_LABELS).map(kind=>{const i=s.options.findIndex(o=>o.kind===kind),o=s.options[i];return `<button type="button" class="bl-choice-${kind}${intro&&s.stage==='make'?' bl-flip':''}"${intro?introStyle:''} data-claim="${i}" data-fit-single-line="true" aria-pressed="${selection===i}"${lockedHere?' disabled':''}><strong>${bluffNumber(o.value)}</strong><span>${BLUFF_LABELS[o.kind]}</span></button>`;}).join('')}</div>${lockedHere?finalPill:`<button type="button" class="bl-action" data-send-claim ${selection===null||busy?'disabled':''}>Set as answer</button>`}<p class="bl-note">Others will judge it. +1 per player fooled.</p>`:`<div class="bl-wait">${flank(`<span class="avatar">${avatar(maker?.avatar)}</span>`,'?')}<h3>${esc(maker?.name||s.names?.[s.maker]||'The maker')} is choosing a claim</h3><p>They know the answer. Will you trust them?</p></div>`;
@@ -96,7 +97,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       const ck=room.gameId+':'+s.round,sAge=ck===celebrationKey?(celebrationAbandoned?Infinity:now()-celebrationAt):0;
       const motion=!reduced()&&visible();
       const flip=motion&&Number.isFinite(sAge)&&!room.paused?bluffRevealTimes(s).answerLand-240-sAge:null;
-      revealRaccoon=bluffRaccoonHtml('reveal',flip);
+      revealRaccoon=bluffRaccoonHtml('reveal',flip,s.claim.kind);
       content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,motion);
     }
     const stageChanged=cueKey!==key;
@@ -106,7 +107,7 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const nextLabel=!s.showStand?'Show standings':s.round===s.total?'Finish game':'Start next round';
     const dock=s.stage==='reveal'?`<div class="bl-dock">${host?`<button type="button" class="dc-btn bl-dock-btn" data-next ${busy?'disabled':''}>${nextLabel}</button>`:`<p class="hs-hint">Waiting for the host to ${s.showStand?(s.round===s.total?'finish the game':'start the next round'):'show the standings'}…</p>`}</div>`:'';
     const standings=s.stage==='reveal'&&s.showStand?bluffRankingsHtml(s,room.players||{},avatar,me):'';
-    const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="The claim is"><div class="bl-summary-head"><h2>The claim is…</h2>${revealRaccoon}</div>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}">${idleScale}<div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel${intro&&s.stage==='vote'?' bl-thud':''}"${intro&&s.stage==='vote'?introStyle:''} aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p></section><div class="hs-col r">${right.join('')}</div></div>`;
+    const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="The claim is"><div class="bl-summary-head"><h2>The claim is…</h2>${revealRaccoon}</div>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}">${idleScale}<div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel${intro&&s.stage==='vote'?' bl-thud':''}"${intro&&s.stage==='vote'?introStyle:''} aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p>${scribbler}</section><div class="hs-col r">${right.join('')}</div></div>`;
     const keepView=element.ownerDocument.defaultView,keepY=keepView.scrollY; // a rebuild must not throw the page back to the top
     // Pictures in the rebuilt board load a moment later, so for a beat the page is shorter and the browser clamps the scroll to the top.
     // Hold the old height until they're in, so a scrolled-down player isn't snapped back up.
