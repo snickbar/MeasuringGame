@@ -66,6 +66,14 @@ window.__polish={
   roomState=(await get(ref(db,'rooms/VIEW'))).val();
   renderHighStakes(roomState);
  },
+ hsLastStandings:async ()=>{
+  window.__polish.hsView(10,'win');
+  const hs=roomState.hs;
+  hs.round=10;hs.showStand=true;hs.animAt=nowMs()-500;hs.nextAt=nowMs()+180000;
+  hs.chips.me=0;hs.out={me:9};hs.ghost={me:2};
+  await set(ref(db,'rooms/VIEW'),roomState);
+  renderHighStakes(roomState);
+ },
  hsView:(n,bet)=>{
   ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
   currentRoomCode='VIEW';currentPlayerId='me';isHost=true;
@@ -159,6 +167,13 @@ try {
   await window.__polish.hsReadReveal();
  }
  assert(select('.hs-round-answer') && select('#hs-skip')?.textContent==='Show standings','skip shares the round result without advancing standings');
+ await window.__polish.hsLastStandings();
+ const finish=select('#hs-skip');
+ assert(finish?.textContent==='Finish game','host sees Finish game on the last standings screen');
+ finish.click();
+ await new Promise(r=>setTimeout(r,50));
+ await window.__polish.hsReadReveal();
+ assert(!!select('.hs-end-hero') && select('.hs-reward')?.textContent.includes('Ghost bounty'),'Finish game reaches final results and preserves the ghost bounty with the host ticker stopped');
  assert(document.documentElement.scrollWidth<=innerWidth+1,'horizontal overflow');
  document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'High Stakes pick, bet, reveal, split, fold, rollover and reduced motion'});
 } catch(e) {

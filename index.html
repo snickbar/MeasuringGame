@@ -12111,6 +12111,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const players = roomState.players || {};
     return Object.keys(hs.out || {}).filter((id) => players[id] && !players[id].isBot && !isPlayerAway(players[id]));
   }
+  function hsAdvanceRound(hs, now) {
+    const next = HS.hsFinishRound(hs);
+    next.nextAt = next.stage === "ready" ? now + HS_READY_MS : null;
+    // If nobody is writing fakes, deal the next round without a second summary screen.
+    if (next.stage === "ready" && !hsFakers(next).length && !roomState.hsPre) return hsDealRound(next, now);
+    return hsWrite({ hs: next });
+  }
   function hsHostTick() {
     if (leavingGame) { hsEnsureTicker(false); return; }
     if (roomState.phase !== "hs") { if (!currentRoomCode) hsEnsureTicker(false); return; }
@@ -12173,13 +12180,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (hs.stage === "reveal") {
       if (!hs.animAt) { run(hsStartReveal(hs, now)); return; }
-      if (now >= hs.nextAt) {
-        const next = HS.hsFinishRound(hs);
-        next.nextAt = next.stage === "ready" ? now + HS_READY_MS : null;
-        // No players writing fakes: deal the next round in the same step, so there is no second summary screen in between.
-        if (next.stage === "ready" && !hsFakers(next).length && !roomState.hsPre) run(hsDealRound(next, now));
-        else run(hsWrite({ hs: next }));
-      }
+      if (now >= hs.nextAt) run(hsAdvanceRound(hs, now));
     }
   }
   // Player taps. Everything goes through the host so there is only ever one writer of the game state.
@@ -12685,7 +12686,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   hsContentEl.addEventListener("click", (e) => {
     animAudioInit(); // a tap is what lets the browser start the animation and coin sounds later in the round
-    const pick = e.target.closest("[data-hs-pick]"), act = e.target.closest("[data-hs-act]"), ctl = e.target.closest("[data-hs-ctl]");
+    const pick = e.target.closest("[data-hs-pick]"), act = e.target.closest("[data-hs-act]"), ctl = e.target.closest("[data-hs-ctl]"), advance = e.target.closest("#hs-skip");
     if (ctl) { if (ctl.dataset.hsCtl === "pause") { if (isHost) togglePause(); } else (isHost ? exitBtn : exitBtnGuest).click(); return; } // same pause and leave/end-game handling as the other modes
     if (pick) hsPick(Number(pick.dataset.hsPick));
     else if (act) hsAct(act.dataset.hsAct);
@@ -12698,10 +12699,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const n = nowMs();
       hsWrite({ hs: { ...roomState.hs, animEndsAt: n, nextAt: n + HS_REVEAL_MS } }).catch((e) => console.warn("[high-stakes] skip failed", e));
     }
-    else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
+    else if (advance && isHost && !roomState.paused && roomState.hs?.stage === "reveal") {
       const hs = roomState.hs, n = nowMs();
       if (!hsStandingsNow(hs)) hsWrite({ "hs/showStand": true, "hs/nextAt": n + HS_REVEAL_MS }); // result -> standings
-      else hsWrite({ "hs/nextAt": n }); // standings -> next round
+      else hsAdvanceRound(hs, n).catch((e) => {
+        console.warn("[high-stakes] advance failed", e);
+        if (advance.isConnected) hsTurnToast("Couldn’t advance. Tap again to retry.");
+      });
     }
   });
 
