@@ -1072,11 +1072,19 @@ if (location.protocol === "file:") {
   .hs-round-answer { margin: 0; padding: 4px; min-width: 0; }
   .hs-round-answer-value { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 5px; font: 700 20px/1.1 Fredoka, sans-serif; color: #4a2c12; }
   #hs-screen .hs-round-answer .hs-real-tag { padding-inline: 5px; background: #805011; font-size: 10px; }
-  .hs-win-who { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px; }
-  .hs-win-who .avatar { display: grid; place-items: center; width: 24px; height: 24px; font-size: 21px; }
+  .hs-win-body {
+    --hs-side-size: clamp(26px, 9vw, 48px);
+    --hs-avatar-size: var(--hs-side-size);
+    display: grid; grid-template-columns: min(var(--hs-side-size), 24%) minmax(0, 1fr) min(var(--hs-side-size), 24%);
+    align-items: center; gap: 4px; margin-top: 3px;
+  }
+  .hs-win-body.many { --hs-avatar-size: calc(var(--hs-side-size) / 2); }
+  .hs-win-who { display: grid; justify-items: center; gap: 4px; min-width: 0; }
+  .hs-win-who :is(.avatar, .hs-win-trophy) { width: var(--hs-avatar-size); max-width: 100%; aspect-ratio: 1; }
+  .hs-win-who .avatar { display: grid; place-items: center; font-size: var(--hs-avatar-size); line-height: 1; }
   .hs-win-who .avatar-icon { width: 100%; height: 100%; }
   .hs-win-chip { width: 19px; height: 19px; vertical-align: -3px; -webkit-text-stroke: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
-  .hs-win-trophy { width: 22px; height: 22px; object-fit: contain; animation: hsBob 1s ease-in-out infinite; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+  .hs-win-trophy { object-fit: contain; animation: hsBob 1s ease-in-out infinite; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
   @keyframes hsBob { 50% { transform: translateY(-6px) rotate(6deg); } }
   .hs-win-names { font-size: 13px; line-height: 1.1; color: #3b2718; overflow-wrap: anywhere; }
   .hs-win-amt { font-size: 23px; line-height: 1.1; color: #fff; -webkit-text-stroke: 1.5px #6b3a05; paint-order: stroke fill; text-shadow: 0 2px 0 #6b3a05; }
@@ -12449,13 +12457,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsRoundAnswerHtml(answer, result, players) {
     const winners = result.winners || [];
     const split = winners.length > 1;
-    const avatars = winners.map((id) => `<span class="avatar">${avatarHtml(players?.[id]?.avatar)}</span>`).join("");
+    const sides = ["", ""];
+    winners.forEach((id, i) => { sides[i % 2] += `<span class="avatar">${avatarHtml(players?.[id]?.avatar)}</span>`; });
+    const trophy = '<img class="hs-win-trophy" src="icons/reactions/trophy.png" alt="">';
     const names = winners.map((id) => escapeHtml(players?.[id]?.name || "Gone")).join(" &amp; ");
     const note = result.uncontested ? "Won the pot after everyone else folded" : split ? "Split the pot" : "Won the pot";
     return `<div class="hs-win hs-round-answer"><span class="hs-win-shine" aria-hidden="true"></span>
       <div class="hs-round-answer-value"><b>${hsFmt(answer)}</b><span class="hs-real-tag">Real answer</span></div>
-      ${winners.length ? `<div class="hs-win-who">${avatars}${split ? "" : '<img class="hs-win-trophy" src="icons/reactions/trophy.png" alt="">'}</div>
-        <div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(result.share)} <img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="chips">${split ? " <span>each</span>" : ""}</div><div class="hs-win-sub">${note}</div>`
+      ${winners.length ? `<div class="hs-win-body${winners.length > 2 ? " many" : ""}">
+        <div class="hs-win-who">${sides[0]}</div>
+        <div><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(result.share)} <img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="chips">${split ? " <span>each</span>" : ""}</div><div class="hs-win-sub">${note}</div></div>
+        <div class="hs-win-who">${split ? sides[1] : trophy}</div>
+      </div>`
         : `<div class="hs-win-amt">${hsFmt(result.pot)} <img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="chips"></div><div class="hs-win-sub">Pot rolls over</div>`}
     </div>`;
   }

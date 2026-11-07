@@ -50,7 +50,8 @@ window.__polish={
   currentPlayers=Object.fromEntries(ids.map((id,i)=>[id,{name:i?'Player '+i:'My player',avatar:['av07','av19','av06','av20'][i%4],isHost:i===0,isBot:i>0,connected:true}]));
   const now=nowMs(),q=dailyQuestionFor({unitId:'ant',targetId:'door'});
   let hs=HS.hsStartRound(HS.hsNewGame(ids),{options:[q.answer/2,q.answer/3,q.answer,q.answer*2],realIdx:2,now});
-  const picks=Object.fromEntries(ids.map((id,i)=>[id,(bet==='win'&&i===0)||(bet==='split'&&i<2)?2:0]));
+  const correctPicks={win:1,split:2,three:3,all:n}[bet] || 0;
+  const picks=Object.fromEntries(ids.map((id,i)=>[id,i<correctPicks?2:0]));
   if(bet)hs=HS.hsBeginBetting(hs,picks,now);
   if(typeof bet==='string'){
    if(bet==='fold')hs.bet.folded=Object.fromEntries(ids.slice(1).map(id=>[id,true]));
@@ -84,12 +85,29 @@ try {
  if(innerWidth>=320 && innerHeight>=650)await checkPigLayout(pig,'question');
  window.__polish.hsBet();
  assert(!select('.hs-table-pig') && !!select('.hs-acts button'),'betting controls without the mascot');
- for(const [type,note,mood,avatars] of [['win','Won the pot','perk',1],['split','Split the pot','perk',2],['fold','everyone else folded','perk',1],['roll','Pot rolls over','tilt',0]]){
+ let fullSize=0,splitHeight=0;
+ for(const [type,note,mood,avatars] of [['win','Won the pot','perk',1],['split','Split the pot','perk',2],['three','Split the pot','perk',3],['all','Split the pot','perk',10],['fold','everyone else folded','perk',1],['roll','Pot rolls over','tilt',0]]){
   window.__polish.hsView(10,type);
   const choices=select('.hs-opts'),answer=select('.hs-round-answer'),mascot=select('.hs-table-pig');
   assert(choices.children.length===4 && choices.children[2]===answer && !select('.hs-opt.stat.real'),'gold panel in the original answer slot '+type);
   assert(!!answer.querySelector('.hs-real-tag') && answer.textContent.includes(note),'correct answer and payout wording '+type);
   assert(answer.querySelectorAll('.hs-win-who .avatar').length===avatars,'correct payout recipients '+type);
+  if(avatars){
+   const [left,summary,right]=select('.hs-win-body').children;
+   assert(left.offsetLeft+left.offsetWidth<=summary.offsetLeft &&
+     summary.offsetLeft+summary.offsetWidth<=right.offsetLeft,'winners flank the payout '+type);
+   assert(left.querySelectorAll('.avatar').length===Math.ceil(avatars/2) &&
+     right.querySelectorAll('.avatar').length===Math.floor(avatars/2),'balanced winner columns '+type);
+   assert(!!right.querySelector('.hs-win-trophy')===(avatars===1) && !left.querySelector('.hs-win-trophy'),'trophy only on the right for a single winner '+type);
+   if(type==='win')fullSize=left.firstElementChild.offsetWidth;
+   if(type==='split')splitHeight=answer.offsetHeight;
+   for(const column of [left,right]){
+    const items=[...column.querySelectorAll('.avatar')];
+    assert(items.every(item=>Math.abs(item.offsetWidth-(avatars>2?fullSize/2:fullSize))<=1),'winner avatar size '+type);
+    assert(items.every((item,i)=>!i || items[i-1].offsetTop+items[i-1].offsetHeight<=item.offsetTop),'stacked avatars have room '+type);
+   }
+   if(type==='all')assert(answer.offsetHeight>splitHeight,'the gold panel expands for all winners');
+  }
   if(type==='fold')assert(choices.children[0].querySelector('.hs-who .avatar'),'fold winner can still be shown on their wrong pick');
   assert(mascot.dataset.mood===mood && mascot.parentElement.previousElementSibling===choices && !!select('#hs-skip'),'result mascot and standings action '+type);
   if(type==='win' && innerWidth>=320 && innerHeight>=650)await checkPigLayout(mascot,'result');
