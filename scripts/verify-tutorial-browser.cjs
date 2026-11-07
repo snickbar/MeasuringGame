@@ -56,14 +56,14 @@ try{
  menu.querySelector('[data-skip]').click();await wait(1600);assert(!menu.open&&!dlg.open,'Skip suppresses menu offer and stacked invitations');
  assert(localStorage.getItem('mg_menuTour_v1_'+oldOwner)==='skipped','Menu skip persisted');
  const checkMenuFit=()=>{const r=menu.querySelector('.menu-tour-card').getBoundingClientRect();assert(r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1,'Menu card stays on screen');assert(menu.querySelector('[data-skip]'),'Skip on every step');};
- for(let stop=0;stop<4;stop++){
+ for(let stop=0;stop<5;stop++){
   api.settings();await wait(20);$('settings-menu-tour-btn').click();assert(menu.open,'Settings replays skipped tour');
   assert($('home-screen').classList.contains('active'),'Replay returns Home');
   for(let i=0;i<stop;i++)menu.querySelector('[data-next]').click();await wait(60);checkMenuFit();
-  assert(menu.querySelector('.menu-tour-count').textContent==='Step '+(stop+1)+' of 4','Correct menu step');menu.querySelector('[data-skip]').click();
+  assert(menu.querySelector('.menu-tour-count').textContent==='Step '+(stop+1)+' of 5','Correct menu step');menu.querySelector('[data-skip]').click();
  }
  api.settings();await wait(20);$('settings-menu-tour-btn').click();
- for(let i=0;i<4;i++){await wait(60);checkMenuFit();menu.querySelector('[data-next]').click();}
+ for(let i=0;i<5;i++){await wait(60);checkMenuFit();menu.querySelector('[data-next]').click();}
  assert(!menu.open&&localStorage.getItem('mg_menuTour_v1_'+oldOwner)==='completed','Menu completion remembered');
  api.settings();await wait(20);$('settings-menu-tour-btn').click();menu.dispatchEvent(new Event('cancel',{cancelable:true}));assert(!menu.open,'Escape dismisses replay');
  assert(JSON.stringify(api.profile())===baseline,'Menu tour does not change rewards or profile');

@@ -1,7 +1,12 @@
 /* One reacting animal and its verdict sit together near the center. */
 .wb-verdict .wb-result-stage{display:grid;grid-template-columns:150px 78px;justify-content:center;align-items:center;gap:12px;margin:0 auto;min-height:146px}
 .wb-result-mascot{position:relative;height:146px;width:150px;isolation:isolate}
-.wb-summary-elephant{position:absolute;left:0;top:4px;width:140px;aspect-ratio:1;transform-origin:45% 95%}
+.wb-summary-elephant{position:absolute;left:0;top:4px;width:140px;aspect-ratio:1;transform-origin:45% 95%;animation:wbElPop .85s cubic-bezier(.3,1.2,.5,1) both,wbElBreathe 3.2s ease-in-out .85s infinite}
+/* Right answer: crouch, spring up past standing height, settle, then breathe. The shadow beneath tightens and loosens with it. */
+@keyframes wbElPop{0%{transform:scale(1.04,.84)}30%{transform:scale(.96,1.1) translateY(-7px)}55%{transform:scale(1.02,.97)}78%{transform:scale(.995,1.015)}100%{transform:scale(1,1)}}
+@keyframes wbElBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(.992,1.022)}}
+.wb-result-mascot.celebrate::after{content:'';position:absolute;left:14px;bottom:2px;width:112px;height:10px;border-radius:50%;background:radial-gradient(ellipse,#5b3d1e38,transparent 70%);z-index:-1;animation:wbElShadow .85s cubic-bezier(.3,1.2,.5,1) both}
+@keyframes wbElShadow{0%{transform:scale(1.1);opacity:.9}30%{transform:scale(.72);opacity:.45}55%{transform:scale(1.04);opacity:.9}100%{transform:scale(1);opacity:.8}}
 .wb-summary-mouse{position:absolute;left:22px;top:9px;width:100px;aspect-ratio:1;z-index:2}
 .wb-verdict.bad .wb-result-stage{min-height:122px}
 .wb-verdict.bad .wb-result-mascot{height:122px}
@@ -9,14 +14,14 @@
 .wb-art-piece img{position:absolute;display:block;max-width:none;object-fit:fill;pointer-events:none}
 .wb-elephant-body{position:absolute;width:74%;left:14.3%;bottom:0;z-index:1}
 .wb-elephant-body .wb-closed-eyes{clip-path:polygon(57% 29%,79% 27%,80% 41%,57% 42%);opacity:0;animation:wbCloseEyes 5s steps(1,end) infinite}
-@keyframes wbCloseEyes{0%,23%{opacity:0}24%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes wbCloseEyes{0%,23%{opacity:0}24%,49%{opacity:1}50%,69%{opacity:0}70%,71.5%{opacity:1}73%,76%{opacity:0}77%,78.5%{opacity:1}80%,100%{opacity:0}}
 /* Seat the tail's rounded root inside the rump; the body covers its joint. */
 .wb-tail-rig{position:absolute;left:2%;top:59%;width:23%;transform-origin:93% 8%;animation:wbTailSway 3.4s ease-in-out infinite;z-index:0}
 @keyframes wbTailSway{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(13deg)}}
 .wb-trunk-rig{position:absolute;left:70%;top:8%;width:39%;z-index:2;transform-origin:16% 80%;animation:wbTrunkLift 5s ease-in-out infinite}
 .wb-water-source{position:absolute;left:81%;top:10%;width:0;height:0;pointer-events:none}
 .wb-water-drop{position:absolute;left:-2px;top:-2px;width:var(--drop-size);height:calc(var(--drop-size)*1.35);border-radius:65% 65% 55% 55%;background:#63c7f4;border:1px solid #2c9edb;box-shadow:inset 1px 1px 0 #d9f7ff;opacity:0;animation:wbWaterArc 5s var(--drop-delay) linear infinite}
-@keyframes wbTrunkLift{0%,8%{transform:rotate(38deg)}20%,52%{transform:rotate(0)}66%,100%{transform:rotate(38deg)}}
+@keyframes wbTrunkLift{0%,8%{transform:rotate(38deg)}16%{transform:rotate(-7deg)}22%{transform:rotate(1.5deg)}26%,52%{transform:rotate(0)}60%{transform:rotate(44deg)}66%,100%{transform:rotate(38deg)}}
 @keyframes wbWaterArc{0%,23%{opacity:0;transform:translate(0,0) scale(.6)}25%{opacity:1}32%{opacity:1;transform:translate(calc(var(--flight-x)*.85),calc(var(--flight-y)*-1)) rotate(var(--drop-tilt)) scale(1)}43%{opacity:.95;transform:translate(var(--flight-x),5px) rotate(var(--drop-tilt)) scale(.85)}46%,100%{opacity:0;transform:translate(calc(var(--flight-x)*1.12),19px) scale(.45)}}
 .wb-mouse-body{position:absolute;left:0;bottom:0;width:91%;z-index:1;transform-origin:65% 90%;animation:wbStompBody 4.6s ease-in-out infinite}
 .wb-foot-rig{position:absolute;left:69.5%;bottom:0;width:31%;z-index:0;transform-origin:20% 23%;animation:wbFootStomp 4.6s ease-in-out infinite}
@@ -54,7 +59,7 @@
 #wb-next::after{content:'\2192';display:inline-block;margin-left:12px;font-family:system-ui,sans-serif;font-size:23px;vertical-align:-1px}
 @media(max-width:360px){.wb-verdict .wb-result-stage{grid-template-columns:140px 67px;gap:7px}.wb-result-mascot{width:140px}.wb-result-stamp .wb-burst{width:67px;height:74px}.wb-result-stamp .wb-mark{width:64px;height:64px;font-size:44px}.wb-result-stamp small{font-size:10px}.wb-result-quip .wb-quip{font-size:13px}.wb-verdict .wb-verdict-t{font-size:29px}}
 /* Decorative motion owns no timers or sound sources; leaving the screen removes it. */
-html[data-motion=reduce] .wb-tail-rig,html[data-motion=reduce] .wb-closed-eyes,html[data-motion=reduce] .wb-trunk-rig,html[data-motion=reduce] .wb-water-drop,html[data-motion=reduce] .wb-mouse-body,html[data-motion=reduce] .wb-foot-rig,html[data-motion=reduce] .wb-stomp-impact,html[data-motion=reduce] .wb-angry-sign{animation:none!important;transform:none}
+html[data-motion=reduce] .wb-summary-elephant,html[data-motion=reduce] .wb-result-mascot::after,html[data-motion=reduce] .wb-tail-rig,html[data-motion=reduce] .wb-closed-eyes,html[data-motion=reduce] .wb-trunk-rig,html[data-motion=reduce] .wb-water-drop,html[data-motion=reduce] .wb-mouse-body,html[data-motion=reduce] .wb-foot-rig,html[data-motion=reduce] .wb-stomp-impact,html[data-motion=reduce] .wb-angry-sign{animation:none!important;transform:none}
 html[data-motion=reduce] .wb-water-source,html[data-motion=reduce] .wb-stomp-impact{display:none}
 html[data-motion=reduce] .wb-angry-sign{opacity:1}
 html[data-motion=reduce] .wb-angry-sign svg{animation:none!important}
@@ -299,22 +304,145 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 
 /* Question screen: the elephant and mouse fill the empty space. They only react to things you already know (the difficulty
    stamp, your lives, your streak, what you tapped), never to which object is bigger. */
-.wb-mascots{position:absolute;left:0;right:0;bottom:6px;display:flex;justify-content:center;align-items:flex-end;gap:clamp(18px,8vw,44px);pointer-events:none;z-index:0;--lean:0deg;--bob:3px;--spd:2.6s;--sz:1}
+.wb-mascots{position:absolute;left:0;right:0;bottom:6px;display:flex;justify-content:center;align-items:flex-end;gap:clamp(18px,8vw,44px);pointer-events:none;z-index:0;--lean:0deg;--bob:3px;--spd:2.6s;--sz:1;transition:--lean .45s cubic-bezier(.34,1.56,.64,1)}
+/* --lean can ease between angles, so a tap makes them tilt with a springy overshoot instead of snapping. */
+@property --lean{syntax:'<angle>';inherits:true;initial-value:0deg}
 .wb-mascots[hidden]{display:none}
-.wb-mascots img{display:block;width:auto;transform-origin:50% 100%;animation:wbMcIdle var(--spd) ease-in-out infinite;transition:filter .3s}
+/* Each animal sits in a wrapper: the wrapper does the pose-change hop, the picture does the idle motion. */
+.wb-mc-w{display:block;flex:none;transform-origin:50% 100%}
+.wb-mc-w:last-child{--ph:.4s;--ta:9deg;--tt:3.1s}
+.wb-mc-w:first-child{--ta:6deg;--tt:3.8s}
+/* The wrapper moves the whole animal (breathing, leaning); the tail picture sits behind the body and swings on its own. */
+.wb-mc-b{display:block;position:relative;transform-origin:50% 100%;animation:wbMcIdle var(--spd) ease-in-out infinite;animation-delay:var(--ph,0s)}
+.wb-mascots img{display:block;width:auto;transition:filter .3s,height .32s cubic-bezier(.3,1.3,.5,1)}
+.wb-mc-e,.wb-mc-m{position:relative;z-index:1}
+/* The mouse's far ear: behind the head, it flicks now and then (quick and jittery when nervous). */
+.wb-mascots .wb-mc-ear{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;transform-origin:var(--ep,60% 35%);animation:wbMcEar 4.6s ease-in-out 1.2s infinite}
+@keyframes wbMcEar{0%,78%,100%{transform:rotate(0)}82%{transform:rotate(6deg)}86%{transform:rotate(-3deg)}90%{transform:rotate(4deg)}94%{transform:rotate(0)}}
+@keyframes wbMcEarNerve{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(5deg)}}
+.wb-danger .wb-mascots .wb-mc-ear{animation:wbMcEarNerve .3s ease-in-out infinite}
+.wb-mascots .wb-mc-t{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;transform-origin:var(--tp,20% 80%);animation:wbMcTail var(--tt,3.4s) ease-in-out infinite;animation-delay:var(--ph,0s)}
+@keyframes wbMcTail{0%,100%{transform:rotate(calc(var(--ta,6deg)*-1))}50%{transform:rotate(var(--ta,6deg))}}
+@keyframes wbMcTailFlick{0%{transform:rotate(calc(var(--ta,6deg)*-.7))}100%{transform:rotate(calc(var(--ta,6deg)*.7))}}
 .wb-mc-e{height:calc(112px*var(--wbm,1))}.wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-e{height:calc(164px*var(--wbm,1))}
-.wb-mc-m{height:calc(82px*var(--wbm,1));animation-delay:.4s!important}
-@keyframes wbMcIdle{0%,100%{transform:rotate(var(--lean))}50%{transform:translateY(calc(var(--bob)*-1)) rotate(calc(var(--lean) + 1.5deg))}}
+.wb-mc-m{height:calc(82px*var(--wbm,1))}
+/* Breathing: a little taller and narrower on the in-breath, feet planted, the mouse a beat behind the elephant. */
+@keyframes wbMcIdle{0%,100%{transform:rotate(var(--lean)) scale(1,1)}50%{transform:translateY(calc(var(--bob)*-.6)) rotate(calc(var(--lean) + .8deg)) scale(.992,1.026)}}
 /* Difficulty mood: easy is relaxed, tight leans in toward the board. */
 #wb-screen[data-tier=easy] .wb-mascots{--spd:3.6s;--bob:2px}
 #wb-screen[data-tier=tight] .wb-mascots{--spd:1.5s;--bob:2px}
-/* Tapping a card: both glance toward it (the left or right card, whichever it is) and hold their breath until you lock in. */
-/* A streak makes them stand tall and proud. */
-/* Waiting a long time: the mouse taps its foot, the elephant sways. */
-@keyframes wbMcTap{0%,100%{transform:rotate(0)}20%{transform:rotate(-5deg)}40%{transform:rotate(0)}60%{transform:rotate(-5deg)}80%{transform:rotate(0)}}
-/* One life left: nervous shaking. */
-@keyframes wbMcNerve{0%,100%{transform:translateX(0) rotate(var(--lean))}25%{transform:translateX(-2px) rotate(calc(var(--lean) - 1deg))}75%{transform:translateX(2px) rotate(calc(var(--lean) + 1deg))}}
-.wb-danger .wb-mascots img{animation:wbMcNerve .3s linear infinite}
-html[data-motion=reduce] .wb-mascots img,html[data-motion=reduce] .wb-mascots.idle .wb-mc-m{animation:none!important}
+/* Tapping a card: both lean toward it (the left or right card, whichever it is) and hold their breath until you lock in. */
+.wb-mascots[data-pick=l]{--lean:-3deg}
+.wb-mascots[data-pick=r]{--lean:3deg}
+/* A streak makes them stand tall and proud: a slow chest-puff, tail held up and steady. */
+@keyframes wbMcProud{0%,100%{transform:rotate(var(--lean)) scale(1,1)}50%{transform:translateY(-3px) rotate(var(--lean)) scale(1.025,1.04)}}
+.wb-mascots[data-pose=proud] .wb-mc-b{animation:wbMcProud 2.4s ease-in-out infinite;animation-delay:var(--ph,0s)}
+.wb-mascots[data-pose=proud] .wb-mc-w{--ta:3deg}
+/* Holding breath while choosing: the tail hardly moves. */
+.wb-mascots[data-pick] .wb-mc-w{--ta:1.5deg}
+/* Waiting a long time: the mouse taps its foot twice, then rests; the elephant sways; tails swing slow and wide. */
+@keyframes wbMcTap{0%,40%,100%{transform:rotate(0)}8%{transform:rotate(-4deg)}16%{transform:rotate(.5deg)}24%{transform:rotate(-4deg)}32%{transform:rotate(.5deg)}}
+@keyframes wbMcSway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+.wb-mascots.idle .wb-mc-w:last-child .wb-mc-b{animation:wbMcTap 2.4s ease-in-out infinite;animation-delay:0s}
+.wb-mascots.idle .wb-mc-w:first-child .wb-mc-b{animation:wbMcSway 3.2s ease-in-out infinite;animation-delay:0s}
+.wb-mascots.idle .wb-mc-w{--tt:4.6s}
+/* One life left: they stand still, then shiver in a quick burst, then settle; the tail flicks fast and small. */
+@keyframes wbMcNerve{0%,46%,84%,100%{transform:translateX(0) rotate(var(--lean)) scale(1,.985)}50%{transform:translateX(-2px) rotate(calc(var(--lean) - 1.4deg)) scale(1,.985)}55%{transform:translateX(2px) rotate(calc(var(--lean) + 1.4deg)) scale(1,.985)}60%{transform:translateX(-1.6px) rotate(calc(var(--lean) - 1.1deg)) scale(1,.985)}66%{transform:translateX(1.6px) rotate(calc(var(--lean) + 1.1deg)) scale(1,.985)}72%{transform:translateX(-1px) rotate(calc(var(--lean) - .6deg)) scale(1,.985)}78%{transform:translateX(.6px) rotate(calc(var(--lean) + .3deg)) scale(1,.985)}}
+.wb-danger .wb-mascots .wb-mc-w .wb-mc-b,.wb-danger .wb-mascots.idle .wb-mc-w .wb-mc-b{animation:wbMcNerve 1.9s ease-in-out infinite;animation-delay:var(--ph,0s)}
+.wb-danger .wb-mascots .wb-mc-t{animation:wbMcTailFlick .42s ease-in-out infinite alternate;animation-delay:0s}
+html[data-motion=reduce] .wb-mc-b,html[data-motion=reduce] .wb-mascots .wb-mc-t,html[data-motion=reduce] .wb-mascots .wb-mc-ear{animation:none!important}
 .wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-m{height:calc(124px*var(--wbm,1))}
 .wb-mascots[data-pick]{--spd:1s;--bob:1px}
+
+/* Survival dragon, fuller performance: idle breathing, a rear-back as it inhales, a recoil when the fire leaves, and a hot glow on the flame.
+   Timings follow the 11s cycle the jaw and flame already use (fire out at 13%, first impact 21.8%, fire gone by 70%). */
+.sv-scene .sv-dragon.sv-rig{transform-origin:42% 96%;animation:svDragonPerform 11s ease-in-out infinite!important}
+@keyframes svDragonPerform{
+  0%{transform:scale(1,1)}
+  3%{transform:scale(1.008,1.018)}
+  6%{transform:scale(1,1)}
+  8.5%{transform:scale(1.02,1.045) rotate(-2.5deg)}
+  12.2%{transform:scale(1.045,1.085) rotate(-4deg)}
+  13.4%{transform:scale(.985,.975) rotate(2.2deg)}
+  15.5%{transform:scale(1.01,.995) rotate(.6deg)}
+  18%,64%{transform:scale(1,1) rotate(0)}
+  22%{transform:scale(1.006,1.004) translateX(-.5px)}
+  27%{transform:scale(1,1) translateX(.5px)}
+  32%{transform:scale(1.006,1.004) translateX(-.5px)}
+  37%{transform:scale(1,1) translateX(.5px)}
+  42%{transform:scale(1.006,1.004) translateX(-.5px)}
+  47%{transform:scale(1,1) translateX(.5px)}
+  52%{transform:scale(1.006,1.004) translateX(-.5px)}
+  57%{transform:scale(1,1) translateX(.5px)}
+  70%{transform:scale(1.012,1.03)}
+  78%{transform:scale(.995,.99)}
+  86%,100%{transform:scale(1,1)}
+}
+.sv-scene .sv-flame{filter:drop-shadow(0 0 7px rgba(255,150,40,.95)) drop-shadow(0 0 14px rgba(255,90,20,.55))}
+html[data-motion=reduce] .sv-scene .sv-dragon.sv-rig{animation:none!important}
+@media(prefers-reduced-motion:reduce){.sv-scene .sv-dragon.sv-rig{animation:none!important}}
+
+/* Survival knight, fuller performance: breathes while he waits, crouches then hops as the sword goes up, lands with a squash, and the shield glints. */
+.sv-scene.safe .sv-knight.sv-rig{transform-origin:46% 96%;animation:svVictoryWeight 7s ease-out infinite,svKnightPerform 7s ease-in-out infinite}
+@keyframes svKnightPerform{
+  0%{transform:scale(1,1)}
+  3%{transform:scale(1.008,1.016)}
+  6%{transform:scale(1,1)}
+  8.5%{transform:scale(1.03,.95)}
+  14%{transform:scale(.985,1.04) translateY(-9px)}
+  19%{transform:scale(1,1) translateY(-11px)}
+  25%{transform:scale(1,1) translateY(-2px)}
+  28%{transform:scale(1.045,.94) translateY(0)}
+  33%{transform:scale(.99,1.02)}
+  38%,60%{transform:scale(1,1)}
+  66%{transform:scale(1.008,1.016)}
+  74%{transform:scale(1,1)}
+  82%{transform:scale(1.008,1.016)}
+  90%,100%{transform:scale(1,1)}
+}
+.sv-scene.safe .sv-knight.sv-rig::after{content:"";position:absolute;left:78%;top:46%;width:22%;height:22%;margin:-11% 0 0 -11%;border-radius:50%;pointer-events:none;z-index:3;opacity:0;
+  background:radial-gradient(circle,#fff 0,rgba(255,255,255,.95) 18%,rgba(190,235,255,.55) 42%,rgba(190,235,255,0) 70%);animation:svShieldGlint 7s ease-out infinite}
+@keyframes svShieldGlint{0%,31%,45%,100%{opacity:0;transform:scale(.2) rotate(0)}36%{opacity:1;transform:scale(1.25) rotate(45deg)}42%{opacity:0;transform:scale(1.7) rotate(90deg)}}
+html[data-motion=reduce] .sv-scene.safe .sv-knight.sv-rig,html[data-motion=reduce] .sv-scene.safe .sv-knight.sv-rig::after{animation:none!important}
+@media(prefers-reduced-motion:reduce){.sv-scene.safe .sv-knight.sv-rig,.sv-scene.safe .sv-knight.sv-rig::after{animation:none!important}}
+
+/* Shield-saved scene: the knight braces as the fire builds, is shoved back on impact, strains against it, then rocks forward and relaxes.
+   The shield spark pulses with the flame instead of flashing once. Same 11s cycle: impact at 21.8%, fire gone by 70%. */
+.sv-scene.saved .sv-knight{transform-origin:55% 95%;animation:svBlockPerform 11s ease-out infinite}
+@keyframes svBlockPerform{
+  0%{transform:scale(1,1)}
+  3%{transform:scale(1.008,1.016)}
+  6%{transform:scale(1,1)}
+  12%{transform:scale(1.02,.97) translateX(-2px) rotate(-1.5deg)}
+  18%{transform:scale(1.035,.95) translateX(-4px) rotate(-3deg)}
+  21.8%{transform:scale(1.03,.955) translateX(-4px) rotate(-3deg)}
+  24%{transform:scale(.97,1.02) translateX(8px) rotate(3.5deg)}
+  28%{transform:scale(1.02,.96) translateX(3px) rotate(1deg)}
+  31%{transform:scale(1.015,.965) translateX(4px) rotate(1.5deg)}
+  35%{transform:scale(1.02,.96) translateX(2px) rotate(.5deg)}
+  40%{transform:scale(1.015,.965) translateX(4px) rotate(1.5deg)}
+  46%{transform:scale(1.02,.96) translateX(2px) rotate(.5deg)}
+  52%{transform:scale(1.015,.965) translateX(4px) rotate(1.5deg)}
+  60%{transform:scale(1.02,.96) translateX(2px) rotate(.5deg)}
+  66%{transform:scale(1.02,.96) translateX(1px)}
+  72%{transform:scale(.99,1.03) translateX(-1px) rotate(-1deg)}
+  80%{transform:scale(1.005,1.01)}
+  88%,100%{transform:scale(1,1)}
+}
+.sv-scene.saved .sv-spark{animation:svBlockSparks 11s ease-out infinite}
+@keyframes svBlockSparks{
+  0%,21%,100%{opacity:0;transform:scale(.2)}
+  22.55%{opacity:1;transform:scale(1.7)}
+  26%{opacity:0;transform:scale(2.4)}
+  29%{opacity:.8;transform:scale(1.1)}
+  33%{opacity:.15;transform:scale(1.5)}
+  38%{opacity:.8;transform:scale(1.1)}
+  42%{opacity:.15;transform:scale(1.5)}
+  47%{opacity:.8;transform:scale(1.1)}
+  51%{opacity:.15;transform:scale(1.5)}
+  56%{opacity:.8;transform:scale(1.1)}
+  62%{opacity:.1;transform:scale(1.4)}
+  68%{opacity:0;transform:scale(.6)}
+}
+html[data-motion=reduce] .sv-scene.saved .sv-knight,html[data-motion=reduce] .sv-scene.saved .sv-spark{animation:none!important}
+@media(prefers-reduced-motion:reduce){.sv-scene.saved .sv-knight,.sv-scene.saved .sv-spark{animation:none!important}}

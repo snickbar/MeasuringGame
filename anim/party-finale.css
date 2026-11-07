@@ -76,3 +76,22 @@ html[data-motion=reduce] .pd-landed .pd-art,html[data-motion=reduce] .pd-landed 
 html[data-motion=reduce] #final-screen .final-row.rank-1::after{display:none}
 html[data-motion=reduce] #final-screen .final-row.rank-1>.drumroll-stars span{animation:none}
 @media(prefers-reduced-motion:reduce){#final-screen .final-row.rank-1::after{display:none}#final-screen .final-row.rank-1>.drumroll-stars span{animation:none}.pd-caption{transition:none}}
+
+/* Quick Game: the robot cheers from the front of the podium, between 3rd and 1st, small enough to leave every player visible. */
+.pd-mascot{position:absolute;left:37%;bottom:8%;width:14%;height:auto;transform:translateX(-50%);z-index:4;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(40,20,0,.3));transform-origin:50% 100%;animation:pdMascotIn .5s var(--pd-at,0ms) cubic-bezier(.2,.9,.3,1.2) both,pdMascotCheer 2.4s calc(var(--pd-at,0ms) + .5s) ease-in-out infinite}
+@keyframes pdMascotIn{from{opacity:0;transform:translateX(-50%) translateY(40%) scale(.6)}to{opacity:1;transform:translateX(-50%)}}
+@keyframes pdMascotCheer{0%,100%{transform:translateX(-50%)}12%{transform:translateX(-50%) translateY(-7%) scale(.98,1.04)}24%{transform:translateX(-50%) scale(1.03,.96)}36%,100%{transform:translateX(-50%)}}
+.pd-stage.skip .pd-mascot{animation:pdMascotCheer 2.4s ease-in-out infinite}
+html[data-motion=reduce] .pd-mascot,.pd-stage.skip:where(.reduce) .pd-mascot{animation:none}
+@media(prefers-reduced-motion:reduce){.pd-mascot{animation:none}}
+
+/* Classic Party: the ant at the left end of the podium. Team vs Team: the dogs bottom-left, the cats bottom-right (up to five teams, so no room on the podium itself). */
+.pd-mascot.pd-m-ant{left:9.5%;bottom:0%;width:19%}
+.pd-mascot.pd-m-left{left:14%;bottom:-3%;width:19%}
+.pd-mascot.pd-m-right{left:86%;bottom:-3%;width:20%}
+.pd-confetti{position:absolute;left:50%;top:34%;width:0;height:0;z-index:5;pointer-events:none}
+.pd-confetti i{position:absolute;left:0;top:0;width:8px;height:12px;background:var(--c);border-radius:2px;opacity:0;animation:pdConfetti 1.7s calc(var(--pd-at,0ms) + var(--w,0ms)) cubic-bezier(.15,.7,.3,1) both}
+@keyframes pdConfetti{0%{opacity:0;transform:translate(0,0) rotate(0)}8%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 120px)) rotate(var(--r))}}
+html[data-motion=reduce] .pd-confetti{display:none}
+@media(prefers-reduced-motion:reduce){.pd-confetti{display:none}}
+.pd-pod{z-index:2}

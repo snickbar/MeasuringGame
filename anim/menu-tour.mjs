@@ -1,8 +1,9 @@
 const STEPS=[
- ['home-btn-row','Choose a game','Solo Game is for playing on your own. Party Mode hosts a game with friends; Join Game enters their room.'],
- ['toolbar-awards-btn','Stats & Awards','Open Stats to track your progress and find Awards, where you claim earned rewards.'],
- ['toolbar-cosmetics-btn','Your Style','Open Cosmetics to choose your avatars, reactions, flairs, boards and scenes.'],
- ['toolbar-settings-btn','Settings & help','Open this menu, then choose Settings for sound, your account, app updates and How to Play. Replay this menu tour there any time.'],
+ ['home-btn-row','Pick how to play','Solo to play on your own, Party to host friends, and Join to enter a friend\'s room.'],
+ ['toolbar-awards-btn','Stats and Awards','Track your progress here. A red dot means a reward is waiting for you.'],
+ ['toolbar-shop-btn','Shop','Spend the coins you earn in games on packs and extras.'],
+ ['toolbar-cosmetics-btn','Style','Choose your avatars, reactions, flairs, boards and scenes.'],
+ ['toolbar-settings-btn','Menu','Settings, sound and How to Play live here. Replay this tour from Settings any time.'],
 ];
 
 export function createMenuTour({owner,canOffer,canReplay,goHome,storage}){
@@ -35,7 +36,7 @@ export function createMenuTour({owner,canOffer,canReplay,goHome,storage}){
  }
  function render(){
   const intro=step<0,title=intro?'Want a quick menu tour?':STEPS[step][1];
-  const text=intro?'Find your games, rewards, Style and Settings in four short steps. Skip any time and replay from Settings.':STEPS[step][2];
+  const text=intro?'Find your games, coins, Style and Settings in five short steps. Skip any time and replay from Settings.':STEPS[step][2];
   dialog.innerHTML=`<div class="menu-tour-spot" aria-hidden="true" hidden></div><section class="menu-tour-card"><p class="menu-tour-count">${intro?'Optional · about 20 seconds':`Step ${step+1} of ${STEPS.length}`}</p><h2 id="menu-tour-title" tabindex="-1">${title}</h2><p>${text}</p><footer><button type="button" data-skip>Skip</button>${step>0?'<button type="button" data-back>Back</button>':''}<button type="button" data-next>${intro?'Start tour':step===STEPS.length-1?'Done':'Next'}</button></footer></section>`;
   dialog.querySelector('[data-skip]').onclick=()=>close();
   dialog.querySelector('[data-back]')?.addEventListener('click',()=>{step--;render();});
