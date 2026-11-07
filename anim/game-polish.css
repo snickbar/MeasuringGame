@@ -339,3 +339,31 @@ html[data-motion=reduce] .wl-fox-cheer { animation: none; }
 @keyframes twMonkeysIn { from { opacity: 0; transform: translateY(16px) scale(.85); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .tw-fin-monkeys img { animation: none; } }
 html[data-motion=reduce] .tw-fin-monkeys img { animation: none; }
+
+/* Worlds round results: the fox's balloon rises when the star meter went up, sinks when it went down, and floats when it stayed about the same.
+   It starts moving when the meter starts filling (about 2.3 s in). Clouds drift past the whole time. */
+.wl-rs-scene { position: relative; flex: 1 1 auto; min-height: 150px; max-height: 320px; overflow: hidden; border-radius: 22px; border: 3px solid #8bb7bd; background: linear-gradient(#8fd0f5, #dff3ff); animation: wlSceneIn .45s ease-out 1.3s both; }
+@keyframes wlSceneIn { from { opacity: 0; } to { opacity: 1; } }
+.wl-cl { position: absolute; left: 0; height: 18px; width: 56px; border-radius: 20px; background: rgba(255,255,255,.92); box-shadow: 14px -7px 0 -2px rgba(255,255,255,.92), 30px 2px 0 -3px rgba(255,255,255,.92); animation: wlCloudDrift 16s linear infinite, var(--shift, none); }
+.wl-cl.c1 { top: 16%; animation-delay: -3s, 2.1s; } .wl-cl.c2 { top: 46%; width: 70px; animation-duration: 22s, 1.6s; animation-delay: -12s, 2.1s; } .wl-cl.c3 { top: 74%; width: 44px; animation-duration: 13s, 1.6s; animation-delay: -7s, 2.1s; }
+@keyframes wlCloudDrift { from { left: -30%; } to { left: 110%; } }
+.wl-rs-scene[data-mood=up] .wl-cl { --shift: wlCloudsDown 1.6s ease-in-out both; }
+.wl-rs-scene[data-mood=down] .wl-cl { --shift: wlCloudsUp 1.6s ease-in-out both; }
+@keyframes wlCloudsDown { to { transform: translateY(46px); } }
+@keyframes wlCloudsUp { to { transform: translateY(-46px); } }
+.wl-rs-balloon { position: absolute; left: 50%; bottom: 4%; height: 74%; aspect-ratio: 361 / 565; transform: translate(-50%, var(--end, 0%)); animation: wlBalloonMove 1.7s cubic-bezier(.4,0,.2,1) 2.1s both; }
+.wl-rs-scene[data-mood=up] .wl-rs-balloon { --start: 22%; --end: 0%; }
+.wl-rs-scene[data-mood=same] .wl-rs-balloon { --start: 0%; --end: 0%; animation: none; }
+.wl-rs-scene[data-mood=down] .wl-rs-balloon { --start: -2%; --end: 7%; }
+@keyframes wlBalloonMove { from { transform: translate(-50%, var(--start)); } to { transform: translate(-50%, var(--end)); } }
+.wl-rs-sway { width: 100%; height: 100%; transform-origin: 50% 12%; animation: wlSway 4.2s ease-in-out infinite; }
+.wl-rs-sway img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+@keyframes wlSway { 0%, 100% { transform: rotate(-3deg) translateY(0); } 50% { transform: rotate(3deg) translateY(-5px); } }
+.wl-sp { position: absolute; width: 12px; height: 12px; background: #ffd23c; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: wlSparkle 2.2s ease-out infinite; }
+.wl-sp.s1 { left: -6%; top: 30%; animation-delay: 3.6s; } .wl-sp.s2 { right: -8%; top: 18%; animation-delay: 4s; } .wl-sp.s3 { left: 4%; top: 58%; animation-delay: 4.5s; } .wl-sp.s4 { right: 0; top: 50%; animation-delay: 3.9s; }
+@keyframes wlSparkle { 0% { opacity: 0; transform: translateY(8px) scale(.4); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px) scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .wl-rs-scene, .wl-cl, .wl-rs-balloon, .wl-rs-sway, .wl-sp { animation: none !important; } .wl-sp { display: none; } .wl-rs-balloon { transform: translate(-50%, var(--end, 0%)); } .wl-cl.c1 { left: 12%; } .wl-cl.c2 { left: 60%; } .wl-cl.c3 { left: 30%; } }
+html[data-motion=reduce] .wl-rs-scene, html[data-motion=reduce] .wl-cl, html[data-motion=reduce] .wl-rs-balloon, html[data-motion=reduce] .wl-rs-sway, html[data-motion=reduce] .wl-sp { animation: none !important; }
+html[data-motion=reduce] .wl-sp { display: none; }
+html[data-motion=reduce] .wl-rs-balloon { transform: translate(-50%, var(--end, 0%)); }
+html[data-motion=reduce] .wl-cl.c1 { left: 12%; } html[data-motion=reduce] .wl-cl.c2 { left: 60%; } html[data-motion=reduce] .wl-cl.c3 { left: 30%; }

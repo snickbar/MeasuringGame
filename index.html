@@ -3858,7 +3858,7 @@ if (location.protocol === "file:") {
   .wl-done-split .wl-ad-btn { background-image: url(icons/btn-lock.png) !important; }
   .wl-done-split .wl-ad-btn small { font-size: 12px; font-weight: 600; }
   .world-reward-owned { color: #2d7a14; font-weight: 700; }
-  .wl-rs { display: flex; flex-direction: column; justify-content: space-evenly; gap: 12px; min-height: 100%; box-sizing: border-box; padding: 10px 0; }
+  .wl-rs { display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; min-height: 100%; box-sizing: border-box; padding: 4px 0 10px; }
   .wl-rs .tw-avg { position: relative; margin: 0; }
   .wl-rs-acc .tw-avg-num { font-size: 56px; }
   .wl-rs-verdict { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #000; }
@@ -12872,6 +12872,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const ans = String(Math.round(q.answer * 100) / 100).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       const label = acc >= 100 ? (String(q?.answer || "").length % 2 ? "Perfect!" : "Spot on!") : acc >= 99 ? "The 1%!" : acc >= 90 ? "So close!" : acc >= 70 ? "Nice guess" : acc >= 40 ? "In the neighborhood" : "Way off";
       const boost = bufferResultNote(q, g, deviceId);
+      // The fox's balloon rises when this round lifted the star meter, sinks when it pulled it down. (First round: judged against the first star's line.)
+      const meterMove = k > 0 ? runningAvg - prevAvg : (runningAvg >= 75 ? 5 : runningAvg < 50 ? -5 : 0), mood = meterMove >= 1 ? "up" : meterMove <= -1 ? "down" : "same";
+      const WL_RS_FOX = { up: "anim/mode-mascots/worlds-balloon-fox.webp", same: "anim/mode-mascots/worlds-balloon-fox.webp", down: "anim/mode-mascots/worlds-balloon-fox.webp" }; // one picture per mood: swap in the cheering / calm / worried art when it is ready
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}</div>
         <div class="wl-rs">
           <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="solo-result-line">${soloResultAvatarHtml(acc, 1150)}<div><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div></div></div>
@@ -12879,6 +12882,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
             <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
           <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0), "day")}</div>
+          <div class="wl-rs-scene" data-mood="${mood}"><i class="wl-cl c1"></i><i class="wl-cl c2"></i><i class="wl-cl c3"></i><div class="wl-rs-balloon"><div class="wl-rs-sway"><img src="${WL_RS_FOX[mood]}" alt="" draggable="false"></div>${mood === "up" ? '<i class="wl-sp s1"></i><i class="wl-sp s2"></i><i class="wl-sp s3"></i><i class="wl-sp s4"></i>' : ""}</div></div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-next">${last ? "See my results" : "Next question"}</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
