@@ -9899,7 +9899,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const MONTHLY_BOARD_ITEMS = (window.MM ? MM.boards : []).map((b, i) => ({ id: mbId(i + 1), label: MONTHLY_BOARD_LABELS[i], monthly: i + 1, img: `monthly/art/${b.img.replace(/-board$/, '')}-board-wide.webp`, color: b.color, css: b.css }));
   MONTHLY_BOARD_ITEMS.forEach((b, i) => {
     const r = window.MM.boards[i].rect;
-    SB_DEFS[b.id] = { img: b.img, ar: 2, box: [r[0] * 100, r[1] * 100, (1 - r[2]) * 100, (1 - r[3]) * 100], fmax: 23, noStretch: true, monthly: b.monthly, wideLayer: b.monthly === 10 || b.monthly === 12 }; // wideLayer: the decorations are drawn for the whole 2:1 board instead of two ends
+    // Two pictures per monthly board. The wide 2:1 one is used whenever the card is wide enough (phones, the party screen); the original 4:3 one when the card is squarer, so neither ever gets stretched.
+    // layer: how the animated decorations sit on it. "ends" = drawn at both ends of the wide board, "wide" = laid out for the whole wide board (haunted window, fireplace), "full" = the original 4:3 layout.
+    const box = [r[0] * 100, r[1] * 100, (1 - r[2]) * 100, (1 - r[3]) * 100], common = { box, fmax: 23, noStretch: true, monthly: b.monthly };
+    const wide = { ...common, img: b.img, ar: 2, layer: b.monthly === 10 || b.monthly === 12 ? "wide" : "ends" };
+    const narrow = { ...common, img: `monthly/art/${MM.boards[i].img}.webp`, ar: 640 / 480, layer: "full" };
+    SB_DEFS[b.id] = { ...wide, variants: { wide, narrow } };
   });
   {
     const st = document.createElement("style"); // text colours for the live board and for the still copy on solo screens (a filter only exists while the animation plays, so it is left out here)
@@ -9929,8 +9934,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     qBodyEl.style.removeProperty("--qfs");
     qBodyEl.style.transform = qBodyEl.style.clipPath = qBodyEl.style.opacity = "";
   }
+  // The wide picture wins once the card is wider than about 1.63 x its height (that is where it fills more of the card than the 4:3 one); a little slack stops it flipping back and forth.
+  function sbPickVariant(def0, current) {
+    const pl = hudEl.dataset.playLayout, W = qPromptEl.clientWidth, H = pl === "party" ? qPromptEl.clientHeight : (qCardH || SB_CARD_H);
+    if (!W || !H) return current || "wide";
+    const r = W / H;
+    return current === "narrow" ? (r > 1.7 ? "wide" : "narrow") : current === "wide" ? (r < 1.55 ? "narrow" : "wide") : (r < 1.63 ? "narrow" : "wide");
+  }
+  function sbSwitchVariant(v) {
+    qSB.variant = v; qSB.def = qSB.def0.variants[v]; qSB.base.src = qSB.def.img;
+    const k = SB_KINDS[qSB.id];
+    if (qSB.mmHost && k && k.enter) k.enter(qSB); // decorations are laid out differently on each picture, so they start again on the new one
+  }
   function sbBuild(id) {
-    const def = SB_DEFS[id];
+    const def0 = SB_DEFS[id], variant = def0.variants ? sbPickVariant(def0, null) : null, def = variant ? def0.variants[variant] : def0;
     qPromptEl.dataset.scene = "1";
     const stage = document.createElement("div");
     stage.id = "q-stage";
@@ -9939,13 +9956,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (def.img) base.src = def.img; else base.style.display = "none";
     stage.appendChild(base);
     qPromptEl.insertBefore(stage, qPromptEl.firstChild);
-    qSB = { id, def, stage, base, chars: [], t0: 0, t1: 0, exiting: false, done: null, ansShown: false, sw: 0, sh: 0 };
+    qSB = { id, def, def0, variant, stage, base, chars: [], t0: 0, t1: 0, exiting: false, done: null, ansShown: false, sw: 0, sh: 0 };
     const k = SB_KINDS[id];
     if (k && k.build) k.build(qSB);
     sbLayout();
   }
   function sbLayout() {
     if (!qSB) return;
+    if (qSB.def0.variants) { const v = sbPickVariant(qSB.def0, qSB.variant); if (v !== qSB.variant) sbSwitchVariant(v); }
     const pl = hudEl.dataset.playLayout, W = qPromptEl.clientWidth, H = pl === 'party' ? qPromptEl.clientHeight : (qCardH || SB_CARD_H);
     // Screens that borrow the real card: the board art is stretched wider (about a third) so the text has more room, like the wide chalkboard.
     const ar = pl !== 'party' && !qSB.def.noStretch && qPromptEl.parentNode && qPromptEl.parentNode.classList.contains('dq-board') ? Math.min(qSB.def.ar * 1.35, 1.9) : qSB.def.ar; // every screen that borrows the real card (Daily, Worlds, Monthly, Survival, Team Worlds, High/Low)
@@ -10231,10 +10249,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const sbHoldLeft = () => (qSB && qSB.holdUntil ? (Number.isFinite(qSB.holdUntil) ? Math.max(0, qSB.holdUntil - performance.now()) : 100) : 0);
   // The decorations were drawn for a 330 x 248 board. The new boards are 2:1, so the layer is drawn twice at the board's height: its left half stays at the left end, its right half at the right end (the middle belongs to the question).
-  const mmPlaceOver = (sb) => { if (sb.mmOver) { sb.mmOver.style.left = sb.sx + "px"; sb.mmOver.style.top = sb.sy + "px"; sb.mmOver.style.transform = `scale(${sb.sh / 248})`; } };
+  const mmK = (sb) => (sb.def.layer === "full" ? sb.sw / 330 : sb.sh / 248);
+  const mmPlaceOver = (sb) => { if (sb.mmOver) { sb.mmOver.style.left = sb.sx + "px"; sb.mmOver.style.top = sb.sy + "px"; sb.mmOver.style.transform = `scale(${mmK(sb)})`; } };
   const mmPlace = (sb) => {
-    const k = sb.sh / 248;
-    if (sb.mmHost) { sb.mmHost.style.transform = `scale(${k})`; sb.mmHost.style.left = "0px"; sb.mmHost.style.clipPath = sb.def.wideLayer ? "" : "inset(0 50% 0 0)"; }
+    const k = mmK(sb);
+    if (sb.mmHost) { sb.mmHost.style.transform = `scale(${k})`; sb.mmHost.style.left = "0px"; sb.mmHost.style.clipPath = sb.def.layer === "ends" ? "inset(0 50% 0 0)" : ""; }
     if (sb.mmHost2) { sb.mmHost2.style.transform = `scale(${k})`; sb.mmHost2.style.left = (sb.sw - 330 * k) + "px"; sb.mmHost2.style.clipPath = "inset(0 0 0 50%)"; }
     mmPlaceOver(sb);
   };
@@ -10254,8 +10273,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         sbHoldAnswer(sb, Infinity);
         const host = document.createElement("div");
         host.style.cssText = "position:absolute;left:0;top:0;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:3";
-        const host2 = sb.def.wideLayer ? null : host.cloneNode(false); // right-hand copy of the same layer (see mmPlace)
-        sb.mmHost = host; sb.mmHost2 = host2; sb.stage.append(...(host2 ? [host, host2] : [host])); sb.mmScale = sb.sh / 248;
+        const host2 = sb.def.layer === "ends" ? host.cloneNode(false) : null; // right-hand copy of the same layer (see mmPlace)
+        sb.mmHost = host; sb.mmHost2 = host2; sb.stage.append(...(host2 ? [host, host2] : [host])); sb.mmScale = mmK(sb);
         if (sb.mmOver) sb.mmOver.remove();
         const over = document.createElement("div"); // pencil and paintbrush: above the question text, same place and scale as the board art
         over.style.cssText = "position:absolute;width:330px;height:248px;transform-origin:0 0;pointer-events:none;z-index:2";
@@ -10273,7 +10292,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         MM.ready(key).then(() => {
           if (!current()) return;
           clearTimeout(sb.mmLoadT);
-          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over, wide: !!sb.def.wideLayer });
+          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over, wide: sb.def.layer === "wide" });
           if (host2) try { MM.buildBoard(key, host2, { text: document.createElement("p"), body: document.createElement("div"), letters: [], over: document.createElement("div") }); } catch (e) { host2.remove(); } // same decorations for the right end; the question itself is only animated once
           sbHoldAnswer(sb, MM.boardSettle(b.monthly, chars.length) + 300);
         }).catch(fallback);
