@@ -145,9 +145,13 @@ server.listen(0,'127.0.0.1',()=>{
          confetti:[...ant.querySelectorAll('.pd-ant-confetti i')].some(piece=>+getComputedStyle(piece).opacity>0)};
      };
      const waiting=sample(-50),first=sample(200),second=sample(500),settled=sample(1500),toss=sample(950);
-     return {waiting,first,second,toss,settled,once:march.effect.getTiming().iterations===1};
+     const podium=ant.closest('.pd-pod').getBoundingClientRect();
+     const winnerLeft=stage.querySelector('.pd-seat-1').getBoundingClientRect().left;
+     const antCenter=ant.getBoundingClientRect().left+ant.getBoundingClientRect().width/2;
+     const nearFirst=Math.abs(antCenter-winnerLeft)<podium.width*.05;
+     return {waiting,first,second,toss,settled,nearFirst,once:march.effect.getTiming().iterations===1};
    })()`);
-   if(!march.once||march.waiting.pose!=='1000'||march.first.pose!=='0100'||march.second.pose!=='0010'||
+   if(!march.once||!march.nearFirst||march.waiting.pose!=='1000'||march.first.pose!=='0100'||march.second.pose!=='0010'||
      march.toss.pose!=='0001'||march.settled.pose!=='0001'||!march.toss.confetti||
      [march.waiting,march.first,march.second,march.settled].some(frame=>frame.confetti)||
      ![march.first,march.second,march.toss].every(frame=>frame.fits)||
