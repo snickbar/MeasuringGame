@@ -42,11 +42,67 @@ window.__polish={
  teamLobby:async()=>{await window.__polish.lobby(false,true);roomState.settings={...roomState.settings,solo:false,mode:'teamvteam'};Object.entries(currentPlayers).forEach(([id,p],i)=>p.team=i<2?'red':'blue');applyLobbyMode(roomState);renderPlayerList();},
  refreshLobby:async()=>{roomState=(await get(ref(db,'rooms/TEST'))).val();currentPlayers=roomState.players;applyLobbyMode(roomState);renderPlayerList();},
  hsPick:()=>window.__polish.hsView(10,false),hsBet:()=>window.__polish.hsView(10,true),
- hsView:(n,bet)=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));currentRoomCode='VIEW';currentPlayerId='me';isHost=true;const ids=Array.from({length:n},(_,i)=>i?'p'+i:'me');currentPlayers=Object.fromEntries(ids.map((id,i)=>[id,{name:i?'Player '+i:'My player',avatar:['av07','av19','av06','av20'][i%4],isHost:i===0,isBot:i>0,connected:true}]));let hs=HS.hsNewGame(ids);const q=dailyQuestionFor({unitId:'ant',targetId:'door'}),made=HS.hsMakeOptions(q.answer);hs=HS.hsStartRound(hs,{...made,now:nowMs()});if(bet)hs=HS.hsBeginBetting(hs,Object.fromEntries(ids.map(id=>[id,0])),nowMs());roomState={phase:'hs',gameId:'view',settings:{mode:'highstakes'},players:currentPlayers,hs,hsQ:q,hsPicks:bet?Object.fromEntries(ids.map(id=>[id,0])):{}};hsScreenEl.classList.add('active');document.getElementById('install-banner').classList.remove('active');renderHighStakes(roomState);window.scrollTo(0,0);},
+ hsReveal:()=>window.__polish.hsView(10,'win'),
+ hsView:(n,bet)=>{
+  ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
+  currentRoomCode='VIEW';currentPlayerId='me';isHost=true;
+  const ids=Array.from({length:n},(_,i)=>i?'p'+i:'me');
+  currentPlayers=Object.fromEntries(ids.map((id,i)=>[id,{name:i?'Player '+i:'My player',avatar:['av07','av19','av06','av20'][i%4],isHost:i===0,isBot:i>0,connected:true}]));
+  const now=nowMs(),q=dailyQuestionFor({unitId:'ant',targetId:'door'});
+  let hs=HS.hsStartRound(HS.hsNewGame(ids),{options:[q.answer/2,q.answer/3,q.answer,q.answer*2],realIdx:2,now});
+  const picks=Object.fromEntries(ids.map((id,i)=>[id,(bet==='win'&&i===0)||(bet==='split'&&i<2)?2:0]));
+  if(bet)hs=HS.hsBeginBetting(hs,picks,now);
+  if(typeof bet==='string'){
+   if(bet==='fold')hs.bet.folded=Object.fromEntries(ids.slice(1).map(id=>[id,true]));
+   hs=HS.hsResolve(hs);
+   hs.animEndsAt=now-1;
+  }
+  roomState={phase:'hs',gameId:'view',settings:{mode:'highstakes'},players:currentPlayers,hs,hsQ:q,hsPicks:bet?picks:{}};
+  applyPhase(roomState);hsEnsureTicker(false);
+  renderHighStakes(roomState);window.scrollTo(0,0);
+ },
  shop:()=>openGachaScreen('coins'),party:()=>openPartyHub(),collect:()=>gameRewards.open(),settings:()=>openOverlay(settingsScreen),join:()=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));showJoinScreen();}
 };
 `;
-const checks=String.raw`<pre id="polish-result" hidden></pre><script type="module">for(let i=0;i<300&&!window.__polish;i++)await new Promise(r=>setTimeout(r,20));try{if(!window.__polish)throw Error('bootstrap');for(const mode of ['hsPick','hsBet']){window.__polish[mode]();if(document.documentElement.scrollWidth>innerWidth+1)throw Error('horizontal overflow '+mode);}document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Game loaded; checking button text and icon bounds'});}catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}</script>`;
+const checks=String.raw`<pre id="polish-result" hidden></pre><script type="module">
+for(let i=0;i<300&&!window.__polish;i++)await new Promise(r=>setTimeout(r,20));
+try {
+ if(!window.__polish)throw Error('bootstrap');
+ const select=s=>document.querySelector('#hs-content '+s);
+ const assert=(ok,label)=>{if(!ok)throw Error(label);};
+ const checkPigLayout=async (pig,label)=>{
+  await new Promise(requestAnimationFrame);
+  const area=select('.play-middle').getBoundingClientRect(),art=pig.getBoundingClientRect();
+  assert(art.height>0 && art.top>=area.top && art.bottom<=area.bottom+1,label+' mascot visible '+JSON.stringify([art.bottom,area.bottom]));
+ };
+ window.__polish.hsPick();
+ const pig=select('.hs-table-pig'),opts=select('.hs-opts');
+ await pig.decode();
+ assert(pig.dataset.mood==='peek' && pig.closest('.hs-table-foot').previousElementSibling===opts,'pig below the question answers');
+ assert(parseFloat(getComputedStyle(opts).rowGap)<=5 && opts.querySelectorAll('[data-hs-pick]').length===4,'compact question options');
+ assert([...opts.children].every(btn=>btn.offsetHeight>=44),'question tap height');
+ if(innerWidth>=320 && innerHeight>=650)await checkPigLayout(pig,'question');
+ window.__polish.hsBet();
+ assert(!select('.hs-table-pig') && !!select('.hs-acts button'),'betting controls without the mascot');
+ for(const [type,note,mood,avatars] of [['win','Won the pot','perk',1],['split','Split the pot','perk',2],['fold','everyone else folded','perk',1],['roll','Pot rolls over','tilt',0]]){
+  window.__polish.hsView(10,type);
+  const choices=select('.hs-opts'),answer=select('.hs-round-answer'),mascot=select('.hs-table-pig');
+  assert(choices.children.length===4 && choices.children[2]===answer && !select('.hs-opt.stat.real'),'gold panel in the original answer slot '+type);
+  assert(!!answer.querySelector('.hs-real-tag') && answer.textContent.includes(note),'correct answer and payout wording '+type);
+  assert(answer.querySelectorAll('.hs-win-who .avatar').length===avatars,'correct payout recipients '+type);
+  if(type==='fold')assert(choices.children[0].querySelector('.hs-who .avatar'),'fold winner can still be shown on their wrong pick');
+  assert(mascot.dataset.mood===mood && mascot.parentElement.previousElementSibling===choices && !!select('#hs-skip'),'result mascot and standings action '+type);
+  if(type==='win' && innerWidth>=320 && innerHeight>=650)await checkPigLayout(mascot,'result');
+ }
+ document.documentElement.dataset.motion='reduce';
+ assert([select('.hs-round-answer'),select('.hs-table-pig')].every(el=>getComputedStyle(el).animationName==='none'),'High Stakes reduced motion');
+ delete document.documentElement.dataset.motion;
+ assert(document.documentElement.scrollWidth<=innerWidth+1,'horizontal overflow');
+ document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'High Stakes pick, bet, reveal, split, fold, rollover and reduced motion'});
+} catch(e) {
+ document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});
+}
+</script>`;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');
 fixture=fixture.replace('\n</script>\n</body>',injected+'\n</script>'+checks+'\n</body>');
 const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/test'){res.setHeader('Content-Type','text/html');res.end(fixture);return;}if(url.pathname.startsWith('/__fake/')){res.setHeader('Content-Type','text/javascript');res.end(url.pathname.endsWith('app.mjs')?'export const initializeApp=()=>({});':url.pathname.endsWith('db.mjs')?dbStub:authStub);return;}const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
@@ -57,7 +113,8 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
  const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});fs.mkdirSync(path.join(root,'output','auto-fit-tests'),{recursive:true});
  for(const width of (process.env.AUTOFIT_WIDTHS||'280,320,360,390,430,640').split(',').map(Number)){const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width>=600?360:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);let result;
  for(let n=0;n<800;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');
- for(const page of (process.env.AUTOFIT_PAGES||'hsPick,hsBet,stats,world,quickLobby,settings,join,reward,shop,party').split(',')){await call('Runtime.evaluate',{expression:page==='lobby'?'window.__polish.lobby()':'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,page==='worldResult'?2200:1100));const checks=await call('Runtime.evaluate',{expression: String.raw`(async()=>{
+ const pages=(process.env.AUTOFIT_PAGES??'hsPick,hsBet,stats,world,quickLobby,settings,join,reward,shop,party').split(',').filter(Boolean);
+ for(const page of pages){await call('Runtime.evaluate',{expression:page==='lobby'?'window.__polish.lobby()':'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,page==='worldResult'?2200:1100));const checks=await call('Runtime.evaluate',{expression: String.raw`(async()=>{
  const wait=ms=>new Promise(r=>setTimeout(r,ms));const failures=[];if(!document.getElementById('fit-system-scaling')){const style=document.createElement('style');style.id='fit-system-scaling';style.textContent='html[data-large-text=true] button{font-size:150%!important}';document.head.append(style);}
  for(const large of ['false','true']){
  document.documentElement.dataset.largeText=large;
@@ -90,7 +147,7 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
 })()`,awaitPromise:true,returnByValue:true},sessionId);
 const failures=JSON.parse(checks.result.value);if(failures.length)throw Error(JSON.stringify({width,page,failures},null,2));
 const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','auto-fit-tests',page+'-'+width+'.png'),Buffer.from(shot.data,'base64'));}
- if(errors.length)throw Error(errors.join('\n'));console.log('PASS: '+width+'px, normal/large text, rich labels and icon alignment');await call('Target.closeTarget',{targetId});}
+ if(errors.length)throw Error(errors.join('\n'));if(pages.length)console.log('PASS: '+width+'px, normal/large text, rich labels and icon alignment');await call('Target.closeTarget',{targetId});}
  }catch(e){console.error(e);process.exitCode=1;}finally{clearTimeout(timer);socket?.close();child.kill();server.close();}});
 });
 
