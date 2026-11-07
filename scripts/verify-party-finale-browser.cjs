@@ -28,7 +28,7 @@ window.__foxPreview = async ratio => {
  await Promise.all([...scene.querySelectorAll('img')].map(image => image.decode()));
  return {mood:scene.dataset.mood, reacting:scene.classList.contains('is-reacting')};
 };
-window.__monkeyPreview = accuracy => {
+const setupMonkeyRoom = accuracy => {
  currentRoomCode='MONKEYS';currentPlayerId='me';isHost=true;finalRendered=false;
  currentPlayers={
    me:{name:'DADDIOOO',avatar:'av19',roundsCounted:5,accuracySum:5*accuracy,rewardCollected:true},
@@ -37,7 +37,32 @@ window.__monkeyPreview = accuracy => {
  roomState={phase:'final',gameId:'monkey-preview-'+accuracy,round:5,
    settings:{mode:'teamworlds',worldId:WORLDS[0].id,totalRounds:5},players:currentPlayers};
  ALL_SCREEN_ELS.forEach(screen => screen.classList.remove('active'));
- finalScreenEl.classList.add('active');renderFinal();
+};
+const withoutCareerSave = render => {
+ const save=careerLedger.save;
+ careerLedger.save=()=>{};
+ try { render(); } finally { careerLedger.save=save; }
+};
+window.__monkeyPreview = accuracy => {
+ setupMonkeyRoom(accuracy);
+ withoutCareerSave(()=>{applyPhase(roomState);renderFinal();});
+ const session=gameRewardKey(currentRoomCode,roomState);
+ myProfile.seenObjects={...myProfile.seenObjects,ant:true,door:true};
+ myProfile.objectDiscoveries={...myProfile.objectDiscoveries,ant:{session},door:{session}};
+ window.scrollTo(0,0);discoveryUI.refresh();
+};
+window.__monkeyRoundPreview = accuracy => {
+ setupMonkeyRoom(80);
+ const question=dailyQuestionFor({unitId:'ant',targetId:'door'});
+ for (const player of Object.values(currentPlayers)) {
+   player.roundsCounted=2;
+   player.accuracySum=80+accuracy;
+ }
+ roomState={...roomState,phase:'summary',gameId:'team-round-'+accuracy,round:2,currentQuestion:question,
+   lastRoundAccuracy:accuracy,revealOrder:Object.entries(currentPlayers).map(([playerId,player])=>({
+     playerId,name:player.name,guess:question.answer,accuracyPercent:accuracy
+   }))};
+ withoutCareerSave(()=>{applyPhase(roomState);renderSummary(roomState);});
 };
 window.__classicBotLobby = async () => {
  const settings={...DEFAULT_SETTINGS(),showTutorial:false};
@@ -234,42 +259,78 @@ server.listen(0,'127.0.0.1',()=>{
      fs.writeFileSync(path.join(previewDir,`worlds-fox-${mood}-390.png`),Buffer.from(shot.data,'base64'));
    }
  }
- await evaluate("window.__monkeyPreview(96)");
- const monkeys=await evaluate(`(async () => {
-   const duo=document.querySelector('.tw-fin-monkeys'), contact=duo.querySelector('.tw-fin-monkeys-contact');
-   await contact.decode();
-   const startsEarly=duo.classList.contains('is-high-fiving');
-   const until=performance.now()+2400;
-   while (!duo.classList.contains('is-high-fiving') && performance.now()<until) {
-     await new Promise(resolve => setTimeout(resolve, 20));
+ await call('Emulation.setDeviceMetricsOverride',{width,height:width===320?680:820,deviceScaleFactor:1,mobile:true},sessionId);
+ for(const [accuracy,mood] of [[96,'up'],[80,'same'],[48,'down']]){
+   await evaluate(`window.__monkeyRoundPreview(${accuracy})`);
+   const round=await evaluate(`(async () => {
+     const scene=document.querySelector('#summary-list .tw-space'), flight=scene.querySelector('.tw-space-flight');
+     const initial=scene.classList.contains('is-reacting') || !scene.querySelector('.tw-space-base').src.endsWith('-calm.png');
+     const base=scene.querySelector('.tw-space-base'), pose=scene.querySelector('.tw-space-reaction');
+     await Promise.all([...scene.querySelectorAll('img')].map(img=>img.decode()));
+     const until=performance.now()+2000;
+     while(!scene.classList.contains('is-reacting')&&performance.now()<until) await new Promise(r=>setTimeout(r,20));
+     await new Promise(r=>setTimeout(r,420));
+     const flightMotion=flight.getAnimations().find(a=>a.animationName==='twSpaceTravel');
+     if(flightMotion){flightMotion.pause();flightMotion.currentTime=1050;}
+     const rect=scene.getBoundingClientRect(), next=document.getElementById('next-round-btn').getBoundingClientRect();
+     const y=new DOMMatrix(getComputedStyle(flight).transform).m42;
+     return {mood:scene.dataset.mood, initial, started:scene.classList.contains('is-reacting'), y,
+       pose:pose?.src.split('-').at(-1) || 'calm.png', opacity:+getComputedStyle(pose||base).opacity,
+       twinkle:getComputedStyle(scene.querySelector('.tw-space-stars'),'::before').animationName,
+       fits:rect.left>=0&&rect.right<=innerWidth&&rect.height>=100&&rect.bottom<=next.top+1&&next.bottom<=innerHeight,
+       bounds:[rect.left,rect.right,rect.top,rect.bottom,next.top,next.bottom,innerWidth,innerHeight]};
+   })()`);
+   const expected=mood==='up'?'happy.png':mood==='down'?'sad.png':'calm.png';
+   if(width===390&&mood==='up'){
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(previewDir,'teamworlds-space-round-390.png'),Buffer.from(shot.data,'base64'));
    }
-   const earned=document.querySelectorAll('.tw-fin-stars .polish-star-earned').length;
-   const animations=duo.getAnimations({subtree:true});
-   for (const animation of animations) { animation.pause(); animation.currentTime=380; }
-   const box=contact.getBoundingClientRect();
-   return {startsEarly,earned,contact:+getComputedStyle(contact).opacity,
-     cheer:+getComputedStyle(duo.querySelector('.tw-fin-monkeys-cheer')).opacity,
-     fits:box.left>=0 && box.right<=innerWidth && box.top>=0 && box.bottom<=innerHeight};
- })()`);
- if(monkeys.startsEarly||monkeys.earned!==3||monkeys.contact!==1||monkeys.cheer!==0||!monkeys.fits)throw Error('Team Worlds high-five failed '+JSON.stringify({width,...monkeys}));
- if(width===390){
-   const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
-   fs.writeFileSync(path.join(previewDir,'teamworlds-high-five-390.png'),Buffer.from(shot.data,'base64'));
+   if(round.mood!==mood||round.initial||!round.started||Math.sign(round.y)!==({up:-1,same:0,down:1})[mood]||
+      round.pose!==expected||round.opacity!==1||round.twinkle!=='twSpaceTwinkle'||!round.fits)
+     throw Error('Team Worlds round scene failed '+JSON.stringify({width,...round}));
  }
- if(!await evaluate(`(() => {
-   const duo=document.querySelector('.tw-fin-monkeys');
-   duo.getAnimations({subtree:true}).forEach(animation => animation.finish());
-   return getComputedStyle(duo.querySelector('.tw-fin-monkeys-cheer')).opacity==='1' &&
-     getComputedStyle(duo.querySelector('.tw-fin-monkeys-contact')).opacity==='0';
- })()`))throw Error('Team Worlds monkeys did not settle');
- await evaluate("window.__monkeyPreview(50)");
- if(await evaluate("!!document.querySelector('.tw-fin-monkeys-contact')"))throw Error('Zero stars loaded the high-five');
+ await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:true},sessionId);
+ for(const [accuracy,mood] of [[96,'up'],[50,'down']]){
+   await evaluate(`window.__monkeyPreview(${accuracy})`);
+   const monkeys=await evaluate(`(async () => {
+     const scene=document.querySelector('.tw-space--final'), pose=scene.querySelector('.tw-space-reaction');
+     const startsEarly=scene.classList.contains('is-reacting');
+     await pose.decode();
+     const until=performance.now()+2500;
+     while(!scene.classList.contains('is-reacting')&&performance.now()<until) await new Promise(r=>setTimeout(r,20));
+     await new Promise(r=>setTimeout(r,420));
+     const [left,center,right]=document.querySelector('.tw-fin-accuracy').children;
+     const [l,c,r]=[left,center,right].map(el=>el.getBoundingClientRect());
+     const stars=document.querySelector('.tw-fin-stars').getBoundingClientRect();
+     const box=pose.getBoundingClientRect(), stage=scene.getBoundingClientRect();
+     const discoveries=scene.nextElementSibling;
+     return {startsEarly,mood:scene.dataset.mood,reacting:scene.classList.contains('is-reacting'),
+       score:center.querySelector('.tw-fin-pct').textContent,
+       earned:document.querySelectorAll('.tw-fin-stars .polish-star-earned').length,
+       pose:pose.src.split('-').at(-1),opacity:+getComputedStyle(pose).opacity,
+       layout:!!left.querySelector('.avatar')&&!!right.querySelector('.avatar')&&l.right<=c.left&&c.right<=r.left&&
+         stars.bottom<=c.top&&c.bottom<stage.top&&discoveries?.matches('.session-discoveries')&&
+         discoveries.getBoundingClientRect().top>=stage.bottom&&!!discoveries.querySelector('[data-id=ant]'),
+       fits:box.left>=stage.left&&box.right<=stage.right&&box.top>=stage.top&&box.bottom<=stage.bottom,
+       bounds:[l.right,c.left,c.right,r.left,stars.bottom,c.top,c.bottom,stage.top,stage.bottom,discoveries?.getBoundingClientRect().top],
+       discoveryClass:discoveries?.className};
+   })()`);
+   if(monkeys.startsEarly||!monkeys.reacting||monkeys.mood!==mood||monkeys.score!==accuracy+'%'||
+      monkeys.earned!==(mood==='up'?3:0)||monkeys.pose!==(mood==='up'?'happy.png':'sad.png')||
+      monkeys.opacity!==1||!monkeys.layout||!monkeys.fits)
+     throw Error('Team Worlds final scene failed '+JSON.stringify({width,...monkeys}));
+   if(width===390&&mood==='up'){
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(previewDir,'teamworlds-space-final-390.png'),Buffer.from(shot.data,'base64'));
+   }
+ }
  await evaluate("localStorage.setItem('mg_motion','reduce');document.documentElement.dataset.motion='reduce';window.__monkeyPreview(97)");
  if(!await evaluate(`(() => {
-   const duo=document.querySelector('.tw-fin-monkeys');
-   return !duo.querySelector('.tw-fin-monkeys-contact') && !duo.getAnimations({subtree:true}).length;
- })()`))throw Error('Team Worlds high-five ignored reduced motion');
- console.log(JSON.stringify({width,monkeys,pass:true}));
+   const scene=document.querySelector('.tw-space--final');
+   return scene.querySelector('.tw-space-base').src.endsWith('-happy.png') &&
+     !scene.querySelector('.tw-space-reaction') && !scene.getAnimations({subtree:true}).length;
+ })()`))throw Error('Team Worlds space scene ignored reduced motion');
+ console.log(JSON.stringify({width,teamWorldsSpace:true,pass:true}));
  await evaluate("window.__finalPreview('teamvteam')");
  if(!await evaluate(`(() => {
    const mascots=[...document.querySelectorAll('[data-team-reaction]')];

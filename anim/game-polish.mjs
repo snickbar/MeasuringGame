@@ -117,13 +117,11 @@ export function createPolish({ document: doc = document, reduced = () => false, 
     celebrated.add(key);
     const earned = [...el.querySelectorAll('.wl-stars > span:not(.off)')];
     if (reduced()) return;
-    const monkeys = el.closest('.tw-final-row')?.querySelector('.tw-fin-monkeys--high-five');
     earned.forEach((star, i) => {
       star.classList.add('polish-star-wait');
       setTimeout(() => {
         if (!visible(el)) { star.classList.remove('polish-star-wait'); return; }
         star.classList.remove('polish-star-wait'); star.classList.add('polish-star-earned'); sound('star');
-        if (i === earned.length - 1) monkeys?.classList.add('is-high-fiving');
       }, 350 + i * 580);
     });
   }

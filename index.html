@@ -20785,6 +20785,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = currentPlayers[id] || {};
     return `<div class="dc-card dc-hot tw-sumrow"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name || "Player")}</span><span class="tw-sumrow-said">no answer</span><b class="tw-sumrow-pct">0%</b>${markSvg(0)}</div>`;
   }
+  function twSpaceHtml(mood, reduced, final = false) {
+    const pose = mood === "up" ? "happy" : mood === "down" ? "sad" : "calm";
+    const image = (name, cls) => `<img class="${cls}" src="anim/mode-mascots/teamworlds-monkeys-${name}.png" width="560" height="469" alt="" draggable="false">`;
+    return `<div class="tw-space${final ? " tw-space--final" : ""}" data-mood="${mood}" aria-hidden="true">
+      <div class="tw-space-stars"></div><div class="tw-space-planet"></div>
+      <div class="tw-space-flight"><div class="tw-space-float">
+        ${image(reduced ? pose : "calm", "tw-space-base")}
+        ${!reduced && pose !== "calm" ? image(pose, "tw-space-reaction") : ""}
+        ${!reduced && mood === "up" ? '<i class="tw-space-spark"></i>' : ""}
+      </div></div>
+    </div>`;
+  }
+  function twSpaceScene(row) {
+    const scene = row.querySelector(".tw-space"), pose = scene.querySelector(".tw-space-reaction");
+    if (pose) pose.decode().then(() => scene.classList.add("pose-ready"), () => {});
+    return scene;
+  }
   let twSummarySig = null;
   function renderTeamWorldsSummary(data) {
     recordRoundStats(data);
@@ -20800,9 +20817,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else {
       nextRoundBtn.style.display = "none";
     }
-    // Everything fits on one screen (no scrolling choreography): the question and answer, a compact
-    // row per player, then the team average and the running accuracy meter, which animates from where
-    // it stood before this round up to the new value, popping each star as the fill crosses it.
+    // The meter carries its previous value into the summary so the team can see what the round changed.
     const sig = `${currentRoomCode}:${data.gameId || ""}:${data.round || 1}`;
     if (sig === twSummarySig && summaryListEl.firstChild) return;
     twSummarySig = sig;
@@ -20850,25 +20865,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const n = me?.roundsCounted || 0;
     const runningAvg = n ? me.accuracySum / n : null;
     const prevAvg = n > 1 ? (me.accuracySum - roundAccuracyPct) / (n - 1) : 0;
-    const startAvg = runningAvg == null ? null : (prefersReducedMotion() ? runningAvg : prevAvg);
+    const reduced = prefersReducedMotion();
+    const startAvg = runningAvg == null ? null : (reduced ? runningAvg : prevAvg);
+    const movement = n > 1 ? runningAvg - prevAvg : n === 0 ? 0 : runningAvg >= 75 ? 1 : runningAvg < 50 ? -1 : 0;
+    const mood = movement >= 1 ? "up" : movement <= -1 ? "down" : "same";
     summaryListEl.innerHTML = "";
     const headLi = document.createElement("li");
     headLi.className = "tw-headrow";
     headLi.innerHTML = twHeadHtml("Game Progress");
     summaryListEl.appendChild(headLi);
     const li = document.createElement("li");
-    li.className = "summary-row tw-sum";
+    li.className = "summary-row tw-sum tw-sum-space";
     li.innerHTML = twQTopHtml(q, ans)
       + (twSumSlot(entries, 0, data)) + `<div class="dc-card dc-hot tw-avg"><div class="tw-avg-label">Your average this game</div><div class="tw-avg-num">${formatAccuracy(runningAvg == null ? roundAccuracyPct : (startAvg == null ? runningAvg : startAvg))}%</div>${worldProgressBarHtml(startAvg, true)}</div>`
-      + twSumSlot(entries, 1, data);
+      + twSumSlot(entries, 1, data) + twSpaceHtml(mood, reduced);
     summaryListEl.appendChild(li);
-    if (runningAvg == null || prefersReducedMotion()) return;
+    if (runningAvg == null || reduced) return;
+    const scene = twSpaceScene(li);
+    const alive = () => twSummarySig === sig && li.isConnected && roomState?.phase === "summary";
     const bar = li.querySelector(".wl-progress"), fill = li.querySelector(".wl-progress-fill"), head = li.querySelector(".wl-progress-heading strong");
     const markers = [...li.querySelectorAll(".wl-progress-marker")], num = li.querySelector(".tw-avg-num"), card = li.querySelector(".tw-avg");
     const DELAY = 700, DUR = 1300;
     setTimeout(() => {
-      if (twSummarySig !== sig) return;
+      if (!alive()) return;
       fill.style.setProperty("--accuracy", runningAvg + "%");
+      scene.classList.add("is-reacting");
       twCountUp(head, runningAvg, DUR, "%");
       twCountUpFrom(num, prevAvg, runningAvg, DUR, "%");
       playSound("swipe");
@@ -20877,13 +20898,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!(prevAvg <= at && runningAvg > at)) return;
         // pop the star when the fill actually reaches it
         setTimeout(() => {
-          if (twSummarySig !== sig) return;
+          if (!alive()) return;
           m.classList.add("earned", "pop"); playSound("star");
           celebrate(i === 2 ? "spotOn" : "normal");
         }, DUR * (at - prevAvg) / Math.max(0.01, runningAvg - prevAvg));
       });
       setTimeout(() => {
-        if (twSummarySig !== sig) return;
+        if (!alive()) return;
         card.classList.add("glow");
         if (worldStarsFor(runningAvg) === 3) bar.classList.add("three-stars");
         const earned = new Set(markers.map((m, i) => (runningAvg > WORLD_STAR_AT[i] ? i : -1)));
@@ -21271,7 +21292,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const me = currentPlayers[currentPlayerId];
     const avg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : 0;
     const stars = worldStarsFor(avg);
-    const reduced = prefersReducedMotion(), highFive = stars > 0 && !reduced;
+    const reduced = prefersReducedMotion();
     const gain = stars * WORLD_STAR_COINS; // team games pay for every star, every game
     const partnerId = Object.keys(currentPlayers).find((id) => id !== currentPlayerId);
     const partnerName = partnerId ? currentPlayers[partnerId].name : "Partner";
@@ -21285,56 +21306,41 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     finalListEl.innerHTML = "";
     const previousRecap = document.getElementById("final-session-recap"); if (previousRecap) previousRecap.remove();
-    const avatars = Object.keys(currentPlayers).map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
-    const names = Object.keys(currentPlayers).map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
-    // Each player's own (un-averaged) accuracy, alongside the shared team accuracy above -
-    // distinct numbers, since this is each person's own guess vs the answer.
-    const accOf = (id) => { const p = currentPlayers[id]; return p.individualRoundsCounted ? p.individualAccuracySum / p.individualRoundsCounted : null; };
-    // MVP = the player with the better average; no MVP on a tie (or if either average is unknown).
-    const ids = Object.keys(currentPlayers), ranked = ids.map((id) => ({ id, acc: accOf(id) }));
-    const best = ranked.every((r) => r.acc != null) && ranked.length > 1 ? Math.max(...ranked.map((r) => r.acc)) : null;
-    const tops = best == null ? [] : ranked.filter((r) => Math.abs(r.acc - best) < 0.05);
-    const mvpId = tops.length === 1 ? tops[0].id : null;
-    const memberRows = ids.map((id) => {
-      const p = currentPlayers[id], a = accOf(id);
-      return `<div class="tw-fin-member${id === mvpId ? " mvp" : ""}"><span class="tw-mvp-slot">${id === mvpId ? '<span class="tw-mvp">MVP</span>' : ""}</span><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><span class="member-acc">${a == null ? "" : formatAccuracy(a) + "%"}</span></div>`;
-    }).join("");
+    const playerTile = (p) => `<div class="tw-fin-player">${p ? `<span class="avatar">${avatarHtml(p.avatar)}</span><span>${escapeHtml(p.name || "Player")}</span>` : ""}</div>`;
     const li = document.createElement("li");
-    // No rank-1/medal/pts here - Team Worlds games are always just the one team/one result, not
-    // a ranked list like Team vs Team (which shares these same .team-final-row/.final-row-top
-    // base classes) - tw-final-row centers and enlarges everything instead of the ranked list's
-    // left-aligned, pts-on-the-right layout, which otherwise left a lot of empty space to the
-    // right of a short "Name & Name" line with nothing to balance it.
     li.className = "final-row team-final-row tw-final-row";
     li.style.setProperty("--tc", "#8e7cf2");
     li.innerHTML = `
-      <div class="final-row-top"><div class="team-final-avatars">${avatars}</div><span class="name">${names}</span></div>
-      <div class="dc-card dc-hot tw-fin-card"><div class="tw-fin-stars" data-result-stars="${stars}" data-celebration-key="${roomState.gameId}">${worldStarsHtml(stars)}</div><div class="tw-fin-pct">${reduced ? Math.round(avg) + "%" : "0%"}</div><div class="tw-fin-label">accurate</div><span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}</div>
-      <div class="tw-fin-monkeys${highFive ? " tw-fin-monkeys--high-five" : ""}" aria-hidden="true">
-        <div class="tw-fin-monkeys-frame"><div class="tw-fin-monkeys-art">
-          <img class="tw-fin-monkeys-cheer" src="anim/mode-mascots/teamworlds-monkeys-cheer.webp" alt="" draggable="false">
-          ${highFive ? '<img class="tw-fin-monkeys-contact" src="anim/mode-mascots/teamworlds-monkeys-high-five.png" alt="" draggable="false">' : ""}
-        </div></div>
+      <div class="dc-card dc-hot tw-fin-card">
+        <div class="tw-fin-stars" data-result-stars="${stars}" data-celebration-key="${roomState.gameId}">${worldStarsHtml(stars)}</div>
+        <div class="tw-fin-accuracy">
+          ${playerTile(me)}
+          <div><div class="tw-fin-pct">${reduced ? Math.round(avg) + "%" : "0%"}</div><div class="tw-fin-label">accurate</div></div>
+          ${playerTile(currentPlayers[partnerId])}
+        </div>
+        <span class="tw-fin-world">${escapeHtml(w?.name || "")}</span>
+        ${gain ? `<span class="tw-fin-coins">+${gain} coins</span>` : ""}
       </div>
+      ${twSpaceHtml(stars > 0 ? "up" : "down", reduced, true)}
     `;
     finalListEl.appendChild(li);
-    if (highFive) {
-      const contact = li.querySelector(".tw-fin-monkeys-contact");
-      contact.decode().then(() => contact.closest(".tw-fin-monkeys").classList.add("pose-ready"), () => {});
-    }
-    // After the accuracy lands: the two players arrive bottom-up (the MVP last), their % counting up, then the MVP tag pops.
-    const memEls = [...li.querySelectorAll(".tw-fin-member")], arrival = [...memEls].sort((x, y) => (x.classList.contains("mvp") ? 1 : 0) - (y.classList.contains("mvp") ? 1 : 0));
-    arrival.forEach((m, j) => { const t = 2.0 + j * 0.3; m.classList.add("hl-arr-r"); m.style.setProperty("--a", t.toFixed(2) + "s"); countText(m.querySelector(".member-acc"), 600, t * 1000); const tag = m.querySelector(".tw-mvp"); if (tag) { tag.classList.add("mvp-pop"); tag.style.setProperty("--a", (t + 0.5).toFixed(2) + "s"); } });
+    const scene = twSpaceScene(li);
     const finPct = li.querySelector(".tw-fin-pct");
-    if (finPct && !reduced) {
-      setTimeout(() => { twCountUp(finPct, Math.round(avg), 1300, "%"); }, 500);
-      setTimeout(() => { finPct.classList.add("pop"); }, 1850);
+    const visible = () => li.isConnected && finalScreenEl.classList.contains("active");
+    if (!reduced) {
+      setTimeout(() => { if (visible()) twCountUp(finPct, Math.round(avg), 1300, "%"); }, 500);
+      setTimeout(() => {
+        if (!visible()) return;
+        finPct.classList.add("pop");
+        scene.classList.add("is-reacting");
+      }, 1850);
     }
     setTimeout(() => {
+      if (!stars || !visible()) return;
       celebrate("spotOn");
       spawnStreamerConfetti();
       playSound("win");
-      if (!prefersReducedMotion()) { try { ids.forEach((id) => flairBurst(li, flairIdFor({ flair: currentPlayers[id]?.flair }))); } catch (e) { /* optional */ } }
+      if (!reduced) { try { Object.values(currentPlayers).forEach((p) => flairBurst(li, flairIdFor({ flair: p.flair }))); } catch (e) { /* optional */ } }
     }, 350);
   }
 
@@ -22677,7 +22683,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
   discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),reduced:prefersReducedMotion,context:()=>{
       const active=id=>document.getElementById(id)?.classList.contains('active');
-      if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
+      if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:finalScreenEl.querySelector('.tw-final-row:has(.tw-space--final)') || document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
       if(active('worlds-screen')&&wl?.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};
       if(active('daily-screen')&&daily?.phase==='done')return {session:'daily_'+daily.date,element:document.querySelector('#daily-content .dc-card.dc-hot')};
       if(active('monthly-screen')&&mo?.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};

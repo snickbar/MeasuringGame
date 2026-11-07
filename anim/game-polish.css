@@ -334,42 +334,88 @@ html[data-motion=reduce] .solo-result-avatar{animation:none}
 @media (prefers-reduced-motion: reduce) { .wl-fox-cheer { animation: none; } }
 html[data-motion=reduce] .wl-fox-cheer { animation: none; }
 
-/* Team Worlds results: one high-five when the last earned star pops. */
-.tw-fin-monkeys { display: flex; justify-content: center; margin-top: 14px; }
-.tw-fin-monkeys-frame { width: min(62%, 260px); pointer-events: none; animation: twMonkeysIn .6s cubic-bezier(.2,1.4,.4,1) 1.9s both; }
-.tw-fin-monkeys--high-five .tw-fin-monkeys-frame { animation: none; }
-.tw-fin-monkeys-art { position: relative; }
-.tw-fin-monkeys-cheer { display: block; width: 100%; height: auto; }
-.tw-fin-monkeys-contact { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
-.tw-fin-monkeys.is-high-fiving.pose-ready { --high-five-time: .88s; }
-.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-art { animation: twMonkeysHighFive var(--high-five-time) ease-in-out; }
-.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-contact { animation: twMonkeysContact var(--high-five-time) step-end; }
-.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-cheer { animation: twMonkeysCheer var(--high-five-time) step-end; }
-.tw-fin-monkeys.is-high-fiving.pose-ready .tw-fin-monkeys-art::after {
-  content: ""; position: absolute; left: 50%; top: 31%; width: 17px; height: 17px;
-  background: #ffdc46; clip-path: polygon(50% 0, 62% 37%, 100% 50%, 62% 63%, 50% 100%, 38% 63%, 0 50%, 38% 37%);
-  opacity: 0; animation: twMonkeysSpark .45s ease-out .28s;
+/* Team Worlds results: slow zero-gravity drift and a one-shot reaction timed to the score. */
+.tw-fin-accuracy { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; }
+.tw-fin-accuracy .tw-fin-pct { font-size: clamp(37px, 13vw, 58px); }
+.tw-fin-accuracy .tw-fin-label { font-size: clamp(12px, 3.9vw, 18px); letter-spacing: .09em; }
+.tw-fin-player { display: grid; justify-items: center; gap: 3px; min-width: 0; color: #4d321a; font: 600 13px/1.1 Fredoka, sans-serif; }
+.tw-fin-player > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tw-fin-player .avatar { display: grid; place-items: center; width: clamp(38px, 13vw, 56px); aspect-ratio: 1; font-size: 32px; }
+.tw-fin-player .avatar-icon { width: 100%; height: 100%; object-fit: contain; }
+
+#summary-list:has(.tw-sum-space) { gap: 4px; }
+#summary-list:has(.tw-sum-space) .tw-head { min-height: 30px; }
+.tw-sum-space .tw-qtop { margin: 2px 0; padding: 4px 8px; }
+.tw-sum-space .tw-qtop-a b { font-size: 21px; }
+.tw-sum-space .tw-sumrow { margin: 3px 0; padding: 3px 8px; border-width: 2px; }
+.tw-sum-space .tw-sumrow .avatar { width: 30px; height: 30px; }
+.tw-sum-space .tw-avg { margin: 3px 0; padding: 4px 8px; border-width: 2px; }
+.tw-sum-space .tw-avg-label { display: inline-block; margin-right: 7px; }
+.tw-sum-space .tw-avg-num { font-size: 28px; vertical-align: middle; }
+.tw-sum-space .wl-progress.wl-sky { margin: 3px 0 0; padding: 4px 8px; }
+.tw-sum-space .wl-sky .wl-progress-scale { margin: 25px 0 18px; }
+.tw-sum-space .wl-rocket { top: -16px; }
+.tw-sum-space .wl-rocket img { top: -15px; left: -15px; width: 30px; height: 30px; }
+.tw-sum-space .wl-rocket::after { top: 8px; height: 7px; }
+.tw-sum-space .wl-trail { top: -20px; }
+@media (max-height: 740px) {
+  .tw-sum-space .tw-qtop-a { margin-top: 0; }
+  .tw-sum-space :is(.tw-sumrow, .tw-avg) { margin: 2px 0; }
+  .tw-sum-space .tw-space { margin-top: 3px; }
 }
-@keyframes twMonkeysIn { from { opacity: 0; transform: translateY(16px) scale(.85); } to { opacity: 1; transform: none; } }
-@keyframes twMonkeysHighFive {
-  0%, 100% { transform: none; }
-  18% { transform: translateY(3px) scale(.99, .98); }
-  40% { transform: translateY(-8px) scale(1.02); }
-  68% { transform: translateY(-3px); }
-  86% { transform: translateY(1px); }
+
+.tw-space {
+  --travel: 12px;
+  position: relative; display: grid; place-items: center; overflow: hidden; isolation: isolate;
+  height: clamp(100px, calc(26dvh - 72px), 150px); margin: 5px 0 0; border: 2px solid #7061b7; border-radius: 16px;
+  background: radial-gradient(ellipse at 65% 105%, #514194 0%, transparent 65%),
+    radial-gradient(ellipse at 8% 15%, #273d79 0%, transparent 65%), #161436;
 }
-@keyframes twMonkeysContact { 0%, 72%, 100% { opacity: 0; } 32% { opacity: 1; } }
-@keyframes twMonkeysCheer { 0%, 72%, 100% { opacity: 1; } 32% { opacity: 0; } }
-@keyframes twMonkeysSpark {
-  0% { opacity: 0; transform: translate(-50%, 0) scale(.4); }
-  24% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -14px) rotate(45deg) scale(1.15); }
+.tw-space--final { --travel: 19px; height: clamp(172px, 30dvh, 238px); margin-top: 10px; }
+.tw-space-stars {
+  position: absolute; inset: -16px; opacity: .75;
+  background: radial-gradient(circle, #b8d4ff 1px, transparent 1.8px) 22px 2px / 43px 37px;
+  animation: twSpaceStars 12s ease-in-out infinite alternate;
+}
+.tw-space-stars::before, .tw-space-stars::after { content: ""; position: absolute; inset: 0; animation: twSpaceTwinkle 3.1s ease-in-out infinite; }
+.tw-space-stars::before { background: radial-gradient(circle, #fff7d6 1.4px, #fff3ad55 2px, transparent 4px) 2px 9px / 73px 57px; }
+.tw-space-stars::after { background: radial-gradient(circle, #dceaff 1.2px, #a1c6ff55 2px, transparent 4px) 17px 32px / 87px 49px; animation-duration: 4.3s; animation-delay: -1.7s; }
+.tw-space-planet {
+  position: absolute; right: 9%; top: 20%; width: clamp(16px, 11%, 42px); aspect-ratio: 1; border-radius: 50%; transform: rotate(-22deg);
+  background: radial-gradient(circle at 34% 22%, #efd2fa, #9276cb 57%, #594884 86%); opacity: .8;
+}
+.tw-space-planet::after { content: ""; position: absolute; inset: 40% -28% 35%; border-radius: 50%; border: 2px solid #d6b9ff; border-top-color: transparent; }
+.tw-space-flight { position: relative; height: 73%; max-width: 78%; aspect-ratio: 560 / 469; }
+.tw-space-float { position: relative; width: 100%; height: 100%; animation: twSpaceFloat 5s ease-in-out infinite; }
+.tw-space-float img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity .16s ease-out .18s; }
+.tw-space-reaction { opacity: 0; }
+.tw-space.is-reacting.pose-ready .tw-space-base { opacity: 0; }
+.tw-space.is-reacting.pose-ready .tw-space-reaction { opacity: 1; }
+.tw-space.is-reacting[data-mood=up] .tw-space-flight { --destination: calc(-1 * var(--travel)); animation: twSpaceTravel 1.3s ease-in-out both; }
+.tw-space.is-reacting[data-mood=down] .tw-space-flight { --destination: var(--travel); animation: twSpaceTravel 1.3s ease-in-out both; }
+.tw-space-spark {
+  position: absolute; top: 35%; left: 50%; width: clamp(12px, 12%, 22px); aspect-ratio: 1; opacity: 0;
+  background: #ffe27b; clip-path: polygon(50% 0, 63% 37%, 100% 50%, 63% 63%, 50% 100%, 37% 63%, 0 50%, 37% 37%);
+}
+.tw-space.is-reacting.pose-ready .tw-space-spark { animation: twSpaceSpark .6s ease-out .29s; }
+@keyframes twSpaceStars { to { transform: translate(-12px, 11px); } }
+@keyframes twSpaceTwinkle { 0%, 100% { opacity: .3; } 47% { opacity: 1; } }
+@keyframes twSpaceFloat { 0%, 100% { transform: rotate(-2deg); } 50% { transform: translate(3px, -3px) rotate(2deg); } }
+@keyframes twSpaceTravel {
+  0% { transform: translateY(0); }
+  16% { transform: translateY(calc(-.23 * var(--destination))); }
+  72% { transform: translateY(calc(1.12 * var(--destination))); }
+  100% { transform: translateY(var(--destination)); }
+}
+@keyframes twSpaceSpark {
+  0% { opacity: 0; transform: translateX(-50%) scale(.35); }
+  26% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -11px) rotate(45deg) scale(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tw-fin-monkeys :is(.tw-fin-monkeys-frame, .tw-fin-monkeys-art, img), .tw-fin-monkeys .tw-fin-monkeys-art::after { animation: none !important; }
+  .tw-space *, .tw-space-stars::before, .tw-space-stars::after { animation: none !important; transition: none; }
 }
-html[data-motion=reduce] .tw-fin-monkeys :is(.tw-fin-monkeys-frame, .tw-fin-monkeys-art, img),
-html[data-motion=reduce] .tw-fin-monkeys .tw-fin-monkeys-art::after { animation: none !important; }
+html[data-motion=reduce] .tw-space *, html[data-motion=reduce] .tw-space-stars::before, html[data-motion=reduce] .tw-space-stars::after { animation: none !important; transition: none; }
 
 /* Worlds round results: the fox's balloon rises when the star meter went up, sinks when it went down, and floats when it stayed about the same.
    The meter starts the reaction. The resting drift and the rise or sink use separate layers. */
