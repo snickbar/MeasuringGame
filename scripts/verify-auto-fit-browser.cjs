@@ -43,6 +43,29 @@ window.__polish={
  refreshLobby:async()=>{roomState=(await get(ref(db,'rooms/TEST'))).val();currentPlayers=roomState.players;applyLobbyMode(roomState);renderPlayerList();},
  hsPick:()=>window.__polish.hsView(10,false),hsBet:()=>window.__polish.hsView(10,true),
  hsReveal:()=>window.__polish.hsView(10,'win'),
+ hsDeal:()=>{
+  window.__polish.hsView(10,false);
+  roomState.hs=HS.hsNewGame(Object.keys(currentPlayers));
+  renderHighStakes(roomState);
+ },
+ hsFakeReceipt:()=>{
+  window.__polish.hsView(4,false);
+  roomState.hs.stage='ready';roomState.hs.round=1;roomState.hs.out={me:true};
+  roomState.hsPre={endsAt:nowMs()+15000};roomState.hsFakes={me:213.5};
+  renderHighStakes(roomState);
+ },
+ hsAnimated:async (host,paused)=>{
+  window.__polish.hsView(4,'win');
+  isHost=host;currentPlayers.me.isHost=host;roomState.paused=paused;
+  roomState.hs.animAt=nowMs()-500;roomState.hs.animEndsAt=nowMs()+30000;
+  roomState.hs.nextAt=roomState.hs.animEndsAt+HS_REVEAL_MS;
+  await set(ref(db,'rooms/VIEW'),roomState);
+  renderHighStakes(roomState);
+ },
+ hsReadReveal:async ()=>{
+  roomState=(await get(ref(db,'rooms/VIEW'))).val();
+  renderHighStakes(roomState);
+ },
  hsView:(n,bet)=>{
   ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
   currentRoomCode='VIEW';currentPlayerId='me';isHost=true;
@@ -85,6 +108,14 @@ try {
  if(innerWidth>=320 && innerHeight>=650)await checkPigLayout(pig,'question');
  window.__polish.hsBet();
  assert(!select('.hs-table-pig') && !!select('.hs-acts button'),'betting controls without the mascot');
+ window.__polish.hsDeal();
+ await new Promise(requestAnimationFrame);
+ const dealPot=select('.hs-deal-pot'),dealCards=select('.hs-players');
+ const potBox=dealPot.getBoundingClientRect(),cardBox=dealCards.getBoundingClientRect();
+ assert(potBox.top>=cardBox.bottom && potBox.top-cardBox.bottom<=12,'opening pot tucked under the player cards');
+ if(innerWidth>=320 && innerHeight>=650)assert(potBox.bottom<=select('.play-actions').getBoundingClientRect().top+1,'opening pot fits above Deal '+JSON.stringify([potBox.bottom,select('.play-actions').getBoundingClientRect().top]));
+ window.__polish.hsFakeReceipt();
+ assert(select('.hs-result').textContent.includes('213.5') && select('.hs-result').textContent.includes('214'),'fake receipt explains display rounding');
  let fullSize=0,splitHeight=0;
  for(const [type,note,mood,avatars] of [['win','Won the pot','perk',1],['split','Split the pot','perk',2],['three','Split the pot','perk',3],['all','Split the pot','perk',10],['fold','everyone else folded','perk',1],['roll','Pot rolls over','tilt',0]]){
   window.__polish.hsView(10,type);
@@ -103,7 +134,7 @@ try {
    if(type==='split')splitHeight=answer.offsetHeight;
    for(const column of [left,right]){
     const items=[...column.querySelectorAll('.avatar')];
-    assert(items.every(item=>Math.abs(item.offsetWidth-(avatars>2?fullSize/2:fullSize))<=1),'winner avatar size '+type);
+    assert(items.every(item=>avatars>2?item.offsetWidth>=fullSize*.66-1&&item.offsetWidth<fullSize:item.offsetWidth===fullSize),'winner avatar size '+type);
     assert(items.every((item,i)=>!i || items[i-1].offsetTop+items[i-1].offsetHeight<=item.offsetTop),'stacked avatars have room '+type);
    }
    if(type==='all')assert(answer.offsetHeight>splitHeight,'the gold panel expands for all winners');
@@ -115,6 +146,19 @@ try {
  document.documentElement.dataset.motion='reduce';
  assert([select('.hs-round-answer'),select('.hs-table-pig')].every(el=>getComputedStyle(el).animationName==='none'),'High Stakes reduced motion');
  delete document.documentElement.dataset.motion;
+ await window.__polish.hsAnimated(false,false);
+ assert(!select('[data-hs-skip-animation]'),'guest cannot skip the reveal');
+ await window.__polish.hsAnimated(true,true);
+ assert(select('[data-hs-skip-animation]')?.disabled,'paused reveal cannot be skipped');
+ await window.__polish.hsAnimated(true,false);
+ const skip=select('[data-hs-skip-animation]');
+ assert(skip && !skip.disabled && !select('#hs-skip'),'host can skip directly from the animation');
+ skip.click();
+ for(let i=0;i<40&&!select('.hs-round-answer');i++){
+  await new Promise(r=>setTimeout(r,20));
+  await window.__polish.hsReadReveal();
+ }
+ assert(select('.hs-round-answer') && select('#hs-skip')?.textContent==='Show standings','skip shares the round result without advancing standings');
  assert(document.documentElement.scrollWidth<=innerWidth+1,'horizontal overflow');
  document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'High Stakes pick, bet, reveal, split, fold, rollover and reduced motion'});
 } catch(e) {

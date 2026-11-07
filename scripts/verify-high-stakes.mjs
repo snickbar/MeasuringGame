@@ -26,6 +26,12 @@ function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) 
   const r3 = H.hsMakeOptions(1000, seeded(4), [{ id: "a", v: 2520 }, { id: "b", v: 2600 }]);
   assert(r3.options.includes(2520) && r3.options.includes(2600), "two close player fakes both stay");
   assert(!r2.options.includes(9999999), "wildly off fakes are dropped"); }
+  for (let seed = 0; seed < 64; seed++) {
+    const r = H.hsMakeOptions(232, seeded(seed), [{ id: "bot", v: 214, bot: true }, { id: "ghost", v: 213.5 }]);
+    assert.equal(r.options[r.realIdx], 232);
+    assert.equal(r.fakeBy?.[r.options.indexOf(214)], "ghost", "213.5 is displayed as 214 and retains its author");
+    assert.equal(r.options.filter(v => v === 214).length, 1, "a generated answer cannot duplicate the player's fake");
+  }
   const { options } = H.hsMakeOptions(100, seeded(5), [37, 250, 100, "abc", -4]);
   assert.ok(options.includes(37) && options.includes(250), "custom fakes used");
   assert.equal(options.filter((o) => o === 100).length, 1, "a custom fake equal to the real answer is dropped");

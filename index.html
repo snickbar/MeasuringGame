@@ -1040,12 +1040,22 @@ if (location.protocol === "file:") {
   @keyframes hsPigTilt { 0%, 100% { transform: none; } 38%, 62% { transform: rotate(-12deg); } }
   .hs-coin { position: fixed; z-index: 100000; width: 26px; height: 26px; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
   /* The opening deal: a big pot of chips in the middle that empties into the player cards. */
-  .hs-deal-pot { position: relative; width: 210px; height: 210px; margin: clamp(22px, 7vh, 56px) auto 14px; box-sizing: border-box; border: 4px solid #4a2c12; border-radius: 50%; background: radial-gradient(circle at 32% 24%, #fff3b0, #f7c948 58%, #e0a520); box-shadow: 0 5px 0 rgba(74,44,18,.5), inset 0 0 22px rgba(255,255,255,.6); }
-  .hs-deal-stack { position: absolute; z-index: 2; top: 10px; left: 50%; width: 92px; height: 92px; margin-left: -46px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
-  .hs-pile-chip { position: absolute; z-index: 1; width: 34px; height: 34px; margin: -17px 0 0 -17px; object-fit: contain; transform: rotate(var(--r, 0deg)); filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); transition: opacity .25s ease, transform .3s ease; }
+  .hs-deal-pot { position: relative; width: clamp(142px, 24dvh, 210px); aspect-ratio: 1; margin: 6px auto 8px; box-sizing: border-box; border: 4px solid #4a2c12; border-radius: 50%; background: radial-gradient(circle at 32% 24%, #fff3b0, #f7c948 58%, #e0a520); box-shadow: 0 5px 0 rgba(74,44,18,.5), inset 0 0 22px rgba(255,255,255,.6); }
+  .hs-deal-stack { position: absolute; z-index: 2; top: 5%; left: 50%; width: 46%; height: auto; translate: -50% 0; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+  .hs-pile-chip { position: absolute; z-index: 1; width: 17%; height: auto; translate: -50% -50%; transform: rotate(var(--r, 0deg)); filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); transition: opacity .25s ease, transform .3s ease; }
   .hs-pile-chip.gone { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.2); }
-  .hs-deal-num { position: absolute; z-index: 3; left: 0; right: 0; bottom: 14px; }
-  .hs-deal-num .hs-pot-num { font-size: 44px; }
+  .hs-deal-num { position: absolute; z-index: 3; left: 0; right: 0; bottom: 7%; }
+  .hs-deal-num .hs-pot-num { font-size: clamp(28px, 5dvh, 44px); }
+  @media (max-width: 360px) {
+    .hs-players .hs-pl { width: calc((100% - 18px) / 4); min-width: 0; padding-inline: 3px; }
+    .hs-players .hs-pl-name { max-width: 100%; }
+  }
+  @media (max-height: 720px) {
+    .hs-players .hs-pl { padding-block: 3px; }
+    .hs-players .hs-pl .avatar { font-size: 20px; }
+    .hs-players :is(.hs-pl-name, .hs-pl-coins) { font-size: 11px; }
+    .hs-deal-pot { width: clamp(120px, 21dvh, 152px); }
+  }
   @media (prefers-reduced-motion: reduce) { .hs-pile-chip { transition: none; } }
   /* Betting: whose turn we're waiting on, boxed at the bottom. */
   .hs-think { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: min(100%, 176px); aspect-ratio: 1 / 1; box-sizing: border-box; margin: 10px auto 0; padding: 8px; border: 3px solid #4a2c12; border-radius: 16px; background: linear-gradient(#fffdf6, #f6ead0); box-shadow: 0 3px 0 rgba(74,44,18,.45); font-size: 15px; color: #000; }
@@ -1063,6 +1073,7 @@ if (location.protocol === "file:") {
   .hs-tdots i:nth-child(2) { animation-delay: .2s; } .hs-tdots i:nth-child(3) { animation-delay: .4s; }
   @keyframes hsThinkDot { 0%, 70%, 100% { opacity: .25; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
   @media (prefers-reduced-motion: reduce) { .hs-tdots i { animation: none; } }
+  #hs-anim-slot { position: relative; min-height: 44px; }
   #hs-anim { max-width: 360px; margin: 4px auto 2px; border-radius: 12px; }
   .hs-win { position: relative; overflow: hidden; margin: 8px 0 2px; padding: 8px 10px 8px; border: 4px solid #b8860b; border-radius: 20px; background: linear-gradient(#fff6c8, #ffd23c 55%, #f2a60f); box-shadow: 0 0 0 3px #fff3b0, 0 0 26px rgba(255,200,40,.95), 0 5px 0 rgba(74,44,18,.5); animation: hsWinPop .55s cubic-bezier(.34,1.56,.64,1) both, hsWinGlow 1.4s ease-in-out .55s infinite; }
   @keyframes hsWinPop { 0% { transform: scale(.4) rotate(-4deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
@@ -1073,12 +1084,13 @@ if (location.protocol === "file:") {
   .hs-round-answer-value { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 5px; font: 700 20px/1.1 Fredoka, sans-serif; color: #4a2c12; }
   #hs-screen .hs-round-answer .hs-real-tag { padding-inline: 5px; background: #805011; font-size: 10px; }
   .hs-win-body {
-    --hs-side-size: clamp(26px, 9vw, 48px);
-    --hs-avatar-size: var(--hs-side-size);
-    display: grid; grid-template-columns: min(var(--hs-side-size), 24%) minmax(0, 1fr) min(var(--hs-side-size), 24%);
+    --hs-full-avatar-size: clamp(32px, 12vw, 58px);
+    --hs-avatar-size: var(--hs-full-avatar-size);
+    --hs-side-size: min(var(--hs-avatar-size), 28%);
+    display: grid; grid-template-columns: var(--hs-side-size) minmax(0, 1fr) var(--hs-side-size);
     align-items: center; gap: 4px; margin-top: 3px;
   }
-  .hs-win-body.many { --hs-avatar-size: calc(var(--hs-side-size) / 2); }
+  .hs-win-body.many { --hs-avatar-size: calc(.7 * var(--hs-full-avatar-size)); }
   .hs-win-who { display: grid; justify-items: center; gap: 4px; min-width: 0; }
   .hs-win-who :is(.avatar, .hs-win-trophy) { width: var(--hs-avatar-size); max-width: 100%; aspect-ratio: 1; }
   .hs-win-who .avatar { display: grid; place-items: center; font-size: var(--hs-avatar-size); line-height: 1; }
@@ -1090,6 +1102,12 @@ if (location.protocol === "file:") {
   .hs-win-amt { font-size: 23px; line-height: 1.1; color: #fff; -webkit-text-stroke: 1.5px #6b3a05; paint-order: stroke fill; text-shadow: 0 2px 0 #6b3a05; }
   .hs-win-amt span { font-size: 11px; -webkit-text-stroke: 0; color: #6b3a05; text-shadow: none; }
   .hs-win-sub { font-size: 11px; line-height: 1.15; color: #6b3a05; }
+  @media (max-width: 360px) {
+    .hs-win-body { --hs-side-size: min(var(--hs-avatar-size), 25%); gap: 2px; }
+    .hs-win-names { font-size: 12px; }
+    .hs-win-amt { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 3px; font-size: 21px; }
+    .hs-win-chip { width: 16px; height: 16px; }
+  }
   @media (max-height: 720px) {
     #hs-content .hs-opts--result { gap: 6px; }
     #hs-content .hs-opts--result .hs-opt.stat { min-height: 36px; padding: 3px 4px; }
@@ -12303,7 +12321,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       animAudioInit();
       const scene = await hsAnimCtl.prepare(pair[0], pair[1], { hMax: 190, minStageH: 230 });
       if (hsAnimKey !== key) return;
-      if(isHost&&!hsAnimEl.querySelector('.stack-skip')){const skip=document.createElement('button');skip.type='button';skip.className='stack-skip';skip.textContent='Skip';skip.onclick=()=>{if(isHost&&!roomState.paused&&roomState.hs?.stage==='reveal'&&hsAnimating(roomState.hs))document.getElementById('hs-skip')?.click();};hsAnimEl.append(skip);}
       hsAnimCtl.start(scene, { startAt: hs.animAt, now: animClock, onCue: audioLifecycle.guard(playAnimCue) });
     } catch (e) { console.warn("[high-stakes] animation failed", e); }
   }
@@ -12358,7 +12375,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }));
   }
   // The opening deal: the pot holds every player's starting coins and empties into their cards, chips flying one card at a time.
-  const HS_PILE = [[52, 100, -20], [76, 108, 12], [101, 111, -6], [126, 108, 16], [150, 100, -14], [64, 84, 20], [138, 84, -18], [88, 92, 8], [114, 92, -10], [101, 80, 4]];
+  const HS_PILE = [[26, 50, -20], [38, 54, 12], [50, 55, -6], [62, 54, 16], [74, 50, -14], [32, 42, 20], [68, 42, -18], [44, 46, 8], [56, 46, -10], [50, 40, 4]];
   let hsDealKey = null;
   function hsDealAnim(order, hs, data) {
     const potEl = hsContentEl.querySelector("#hs-pot");
@@ -12535,8 +12552,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       hsContentEl.dataset.sig = sig;
       html += `<h2 class="dc-title">Round ${hs.round + 1} coming up</h2>`;
       html += `<div class="hs-q"><div class="dc-pics">${pair0 ? pair0.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div><div class="hs-qtext">${escapeHtml(q0?.prompt || "")}</div></div>`;
-      if (isOut) html += sent[me] !== undefined
-        ? `<div class="hs-result">Your fake answer <b>${hsFmt(sent[me])}</b> is in the mix. Good luck fooling them!</div>`
+      const myFake = sent[me], roundedFake = HS.hsRound3(myFake);
+      if (isOut) html += myFake !== undefined
+        ? `<div class="hs-result">Fake answer <b>${Number(myFake).toLocaleString("en-US")}</b> submitted.${roundedFake !== myFake ? ` It’ll show as <b>${hsFmt(roundedFake)}</b> if used.` : ""}</div>`
         : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><div id="hs-fake-display" class="hs-fake-display">${escapeHtml(hsFakeStr || "0")}</div></div><div class="hs-pad">${["1","2","3","4","5","6","7","8","9",".","0","back"].map((k) => k === "back" ? `<button type="button" class="hs-key hs-key-back" data-hs-key="back" aria-label="Backspace">&larr;</button>` : `<button type="button" class="hs-key" data-hs-key="${k}">${k}</button>`).join("")}</div><button type="button" class="dc-btn" id="hs-fake-send">Send</button><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
@@ -12555,7 +12573,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const dealTotal = order.reduce((s, id) => s + (hs.chips[id] || 0), 0);
       html += `<h2 class="dc-title">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " coins"}</p>`;
       html += hs.round ? `<p class="hs-hint">Dealing...</p>` : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>
-        <div class="hs-deal-pot" id="hs-pot"><img class="hs-deal-stack" src="icons/poker-chip-stack.webp" alt="" draggable="false">${HS_PILE.map(([x, y, r]) => `<img class="hs-pile-chip" src="icons/poker-chip-blue.webp" alt="" draggable="false" style="left:${x}px;top:${y}px;--r:${r}deg">`).join("")}<div class="hs-deal-num"><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(dealTotal)}</div></div></div>`;
+        <div class="hs-deal-pot" id="hs-pot"><img class="hs-deal-stack" src="icons/poker-chip-stack.webp" alt="" draggable="false">${HS_PILE.map(([x, y, r]) => `<img class="hs-pile-chip" src="icons/poker-chip-blue.webp" alt="" draggable="false" style="left:${x}%;top:${y}%;--r:${r}deg">`).join("")}<div class="hs-deal-num"><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(dealTotal)}</div></div></div>`;
       if (!hs.round) html += isHost ? `<button type="button" class="dc-btn" id="hs-deal">Deal round 1</button>` : `<p class="hs-hint">Waiting for the host to deal the first round...</p>`;
       hsContentEl.innerHTML = html;
       if (!hs.round) hsDealAnim(order, hs, data);
@@ -12589,7 +12607,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
     html += `<div class="hs-top"><div class="hs-rounds"><span class="hs-top-label">Round ${hs.round} of ${HS.HS_MAX_ROUNDS}</span><span class="hs-dots">${Array.from({ length: HS.HS_MAX_ROUNDS }, (_, i) => `<i class="${i + 1 < hs.round ? "done" : i + 1 === hs.round ? "now" : ""}"></i>`).join("")}</span></div><div class="hs-ante"><span class="hs-top-label">Ante</span><span class="hs-ante-val"><img src="icons/poker-chip-blue.webp" alt="">${hs.ante}</span></div><div class="hs-ctl">${isHost ? `<button type="button" class="hs-ctl-btn" data-hs-ctl="pause">${data.paused ? "Resume" : "Pause"}</button>` : ""}<button type="button" class="hs-ctl-btn exit" data-hs-ctl="exit">Exit</button></div>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
     const qText = `<div class="hs-qtext">${escapeHtml(q?.prompt || "")}</div>`;
-    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animStarted ? `<div id="hs-anim-slot"></div>`
+    html += `<div class="hs-q${revealing && !animating ? " slim" : ""}">${animStarted ? `<div id="hs-anim-slot">${isHost ? `<button type="button" class="stack-skip" data-hs-skip-animation${data.paused ? " disabled" : ""}>Skip</button>` : ""}</div>`
       : (revealing && !animating) ? "" : `<div class="dc-pics">${pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : ""}</div>`}${qText}</div>`;
     // players: 1st top-left, 2nd top-right, 3rd under the 1st, and so on
     const cardFor = (id, side) => {
@@ -12676,10 +12694,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (e.target.closest("#hs-exit")) openLeaveGameConfirm();
     else if (e.target.closest("[data-hs-key]")) hsFakeKey(e.target.closest("[data-hs-key]").dataset.hsKey);
     else if (e.target.closest("#hs-fake-send")) hsSendFake();
+    else if (e.target.closest("[data-hs-skip-animation]") && isHost && !roomState.paused && roomState.hs?.stage === "reveal" && hsAnimating(roomState.hs)) {
+      const n = nowMs();
+      hsWrite({ hs: { ...roomState.hs, animEndsAt: n, nextAt: n + HS_REVEAL_MS } }).catch((e) => console.warn("[high-stakes] skip failed", e));
+    }
     else if (e.target.closest("#hs-skip") && isHost && roomState.hs?.stage === "reveal") {
       const hs = roomState.hs, n = nowMs();
-      if (hsAnimating(hs)) hsWrite({ "hs/animEndsAt": n, "hs/nextAt": n + HS_REVEAL_MS });
-      else if (!hsStandingsNow(hs)) hsWrite({ "hs/showStand": true, "hs/nextAt": n + HS_REVEAL_MS }); // result -> standings
+      if (!hsStandingsNow(hs)) hsWrite({ "hs/showStand": true, "hs/nextAt": n + HS_REVEAL_MS }); // result -> standings
       else hsWrite({ "hs/nextAt": n }); // standings -> next round
     }
   });
