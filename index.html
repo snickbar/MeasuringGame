@@ -919,6 +919,10 @@ if (location.protocol === "file:") {
   .hs-pl.folded { opacity: .55; }
   .hs-pl.win { border-color: #4faa38; background: #e8f9df; }
   .hs-tag { margin-top: 3px; padding: 1px 7px; border-radius: 999px; background: #f1e4c8; font-size: 11px; }
+  .hs-tag.all-in { background: #e6d5ff; color: #523579; }
+  .hs-pot-splits { display: grid; gap: 2px; margin: 6px 0 0; padding: 5px; border-radius: 9px; background: #fff8e6; color: #5b391a; font-size: 11px; }
+  .hs-pot-splits div { display: flex; justify-content: space-between; gap: 4px; }
+  .hs-win-payouts { display: grid; gap: 2px; font-size: 12px; overflow-wrap: anywhere; }
   .hs-tag.ok { background: #cfeec2; } .hs-tag.no { background: #f2c4c0; } .hs-tag.turn { background: #ffd36a; } .hs-tag.win { background: #4faa38; color: #fff; }
   .hs-hint { margin: 8px 0 4px; font-size: 13px; }
   .hs-opts { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0; }
@@ -2352,6 +2356,9 @@ if (location.protocol === "file:") {
     border: 2px solid #d9c3a3; border-image: none; border-radius: 11px; background: #fffaf0; box-shadow: 0 2px 0 #d9c3a3; color: inherit;
   }
   button.react-slot img { max-width: 100%; max-height: 100%; display: block; pointer-events: none; }
+  button.react-slot:has(img[src^="monthly/art/poster-r"]) { padding: 2px; }
+  .react-slot img[src^="monthly/art/poster-r"],
+  img:is(.cosm-now-pic,.cosm-reaction-pic)[src^="monthly/art/poster-r"] { scale: 1.16; }
   button.react-slot.empty { background: transparent; border-style: dashed; box-shadow: none; }
   button.react-slot.lock { background: #eadfcb; border-style: dashed; box-shadow: none; cursor: default; }
   button.react-slot.lock img { width: 62%; }
@@ -3383,6 +3390,7 @@ if (location.protocol === "file:") {
   .rx-stage { position: absolute; pointer-events: none; }
   .rx-piv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
   .rx-piv > img { width: 52%; height: 52%; object-fit: contain; display: block; }
+  .rx-piv > img[src^="monthly/art/poster-r"] { width: 69%; height: 69%; }
   .rx-eyes { position: relative; width: 54%; aspect-ratio: 320 / 241; }
   .rx-eyes > img:first-child { position: absolute; inset: 0; width: 100%; height: 100%; }
   .rx-eyes .rx-pupil { position: absolute; width: 21%; top: 58%; transform: translate(-50%, -50%); }
@@ -12035,6 +12043,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 180000 /* AFK fallback only: the host taps through every screen */, HS_READY_MS = 0, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
+  const hsChipsFmt = new Intl.NumberFormat("en-US").format;
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
   let hsBusyUntil = 0, hsBusyTok = 0, hsTickHandle = null;
   const hsBotWritten = new Set();
@@ -12168,7 +12177,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // everyone has picked AND everyone's change window (10s from their first tap, never reset by changing) has closed
       const pickAt = roomState.hsPickAt || {};
       const unlocked = hs.seats.some((id) => picks[id] !== undefined && pickAt[id] && now < pickAt[id] + HS_CHANGE_MS);
-      if ((!waiting.length && !unlocked) || now >= hs.pickEndsAt) run(hsWrite({ hs: HS.hsBeginBetting(hs, picks, now) }));
+      if ((!waiting.length && !unlocked) || now >= hs.pickEndsAt) {
+        // Older guests apply their own actions with a shared cap. Keep the round compatible until they update.
+        const sidePots = hs.seats.every(id => id === currentPlayerId || !players[id] || players[id].isBot || players[id].hsSidePots);
+        run(hsWrite({ hs: HS.hsBeginBetting(hs, picks, now, undefined, sidePots) }));
+      }
       return;
     }
     if (hs.stage === "bet") {
@@ -12301,7 +12314,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // While the animation plays, coin counts still show what they were before the payout, so nobody is spoiled.
   function hsShownChips(hs, animating) {
     const c = { ...hs.chips };
-    if (animating && hs.result?.winners) hs.result.winners.forEach((id) => { c[id] -= hs.result.share; });
+    if (animating && hs.result) hs.seats.forEach((id) => { c[id] -= HS.hsPayout(hs, id) + (hs.result.refunds?.[id] || 0); });
     return c;
   }
   async function hsStartReveal(hs, now) {
@@ -12480,22 +12493,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
-  function hsRoundAnswerHtml(answer, result, players) {
+  function hsRoundAnswerHtml(answer, hs, players) {
+    const result = hs.result;
     const winners = result.winners || [];
     const split = winners.length > 1;
     const sides = ["", ""];
     winners.forEach((id, i) => { sides[i % 2] += `<span class="avatar">${avatarHtml(players?.[id]?.avatar)}</span>`; });
     const trophy = '<img class="hs-win-trophy" src="icons/reactions/trophy.png" alt="">';
     const names = winners.map((id) => escapeHtml(players?.[id]?.name || "Gone")).join(" &amp; ");
-    const note = result.uncontested ? "Won the pot after everyone else folded" : split ? "Split the pot" : "Won the pot";
+    const note = result.pots ? "Pot payouts" : result.uncontested ? "Won the pot after everyone else folded" : split ? "Split the pot" : "Won the pot";
+    const chip = '<img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="chips">';
+    const payout = result.pots
+      ? `<div class="hs-win-payouts">${winners.map(id => `<span>${escapeHtml(players?.[id]?.name || "Gone")} <b>+${hsChipsFmt(HS.hsPayout(hs, id))}</b></span>`).join("")}</div>`
+      : `<div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsChipsFmt(HS.hsPayout(hs, winners[0]))} ${chip}${split ? " <span>each</span>" : ""}</div>`;
     return `<div class="hs-win hs-round-answer"><span class="hs-win-shine" aria-hidden="true"></span>
       <div class="hs-round-answer-value"><b>${hsFmt(answer)}</b><span class="hs-real-tag">Real answer</span></div>
       ${winners.length ? `<div class="hs-win-body${winners.length > 2 ? " many" : ""}">
         <div class="hs-win-who">${sides[0]}</div>
-        <div><div class="hs-win-names">${names}</div><div class="hs-win-amt">+${hsFmt(result.share)} <img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="chips">${split ? " <span>each</span>" : ""}</div><div class="hs-win-sub">${note}</div></div>
+        <div>${payout}<div class="hs-win-sub">${note}</div></div>
         <div class="hs-win-who">${split ? sides[1] : trophy}</div>
       </div>`
-        : `<div class="hs-win-amt">${hsFmt(result.pot)} <img class="hs-win-chip" src="icons/poker-chip-blue.webp" alt="chips"></div><div class="hs-win-sub">Pot rolls over</div>`}
+        : `<div class="hs-win-amt">${hsChipsFmt(result.carryOut ?? result.pot)} ${chip}</div><div class="hs-win-sub">Pot rolls over</div>`}
     </div>`;
   }
   function renderHighStakes(data) {
@@ -12611,7 +12629,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     const shown = hsShownChips(hs, animating);
-    const potShown = revealing ? (!animating && hs.result.winners ? 0 : hs.result.pot) : hs.pot; // paid out: the pot empties once the winners get it
+    const potShown = result ? (result.carryOut ?? (result.winners ? 0 : result.pot)) : revealing ? hs.result.pot : hs.pot;
     const endsAt = stage === "pick" ? hs.pickEndsAt : (stage === "bet" && b.turnEndsAt) ? b.turnEndsAt : 0;
     const secs = endsAt ? Math.max(0, Math.ceil((endsAt - nowMs()) / 1000)) : 0;
     html += `<div class="hs-top"><div class="hs-rounds"><span class="hs-top-label">Round ${hs.round} of ${HS.HS_MAX_ROUNDS}</span><span class="hs-dots">${Array.from({ length: HS.HS_MAX_ROUNDS }, (_, i) => `<i class="${i + 1 < hs.round ? "done" : i + 1 === hs.round ? "now" : ""}"></i>`).join("")}</span></div><div class="hs-ante"><span class="hs-top-label">Ante</span><span class="hs-ante-val"><img src="icons/poker-chip-blue.webp" alt="">${hs.ante}</span></div><div class="hs-ctl">${isHost ? `<button type="button" class="hs-ctl-btn" data-hs-ctl="pause">${data.paused ? "Resume" : "Pause"}</button>` : ""}<button type="button" class="hs-ctl-btn exit" data-hs-ctl="exit">Exit</button></div>${endsAt ? `<span class="hs-clock${secs <= 5 ? " low" : ""}"><b data-hs-ends="${endsAt}">${secs}</b></span>` : `<span class="hs-clock idle"></span>`}</div>`;
@@ -12622,17 +12640,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const cardFor = (id, side) => {
       const p = (data.players || {})[id], out = !!hs.out?.[id], inRound = hs.seats.includes(id);
       let tag = "", tagCls = "", cls = "";
+      const allIn = inRound && b && !b.folded?.[id] && shown[id] === 0;
       if (inRound) {
         if (stage === "pick") { tag = picks[id] !== undefined ? "Picked" : "Thinking..."; tagCls = picks[id] !== undefined ? "ok" : ""; }
         else if (b) {
           if (b.folded?.[id]) { tag = "Folded"; tagCls = "no"; cls = " folded"; }
           else if (b.turn === id && !revealing) { tag = id === me ? "Your turn" : "Betting..."; tagCls = "turn"; cls = id === me ? " turn mine" : " turn"; }
-          else if (b.put?.[id]) tag = "Bet " + b.put[id];
+          else if (b.last?.[id]) {
+            const { kind, amount } = b.last[id];
+            const labels = { check: "Check", call: "Called", bet: "Bet", raise: "Raised to" };
+            tag = labels[kind] + (amount == null ? "" : " " + hsChipsFmt(amount));
+          }
+          else if (b.put?.[id]) tag = "Bet " + hsChipsFmt(b.put[id]);
           else if (b.acted?.[id]) tag = "Check";
         }
-        if (result?.winners?.includes(id)) { tag = "+" + result.share; tagCls = "win"; cls = " win"; }
+        if (result?.winners?.includes(id)) { tag = "+" + hsChipsFmt(HS.hsPayout(hs, id)); tagCls = "win"; cls = " win"; }
       }
-      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
     };
     const colL = [], colR = [];
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
@@ -12641,18 +12665,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let fooledNow = false;
     const optsHtml = hs.options.map((o, i) => {
       if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}"${pickLocked ? " disabled" : ""}>${hsFmt(o)}</button>`;
-      if (result && i === hs.realIdx) return hsRoundAnswerHtml(o, result, data.players);
+      if (result && i === hs.realIdx) return hsRoundAnswerHtml(o, hs, data.players);
       const pickers = result ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
       const who = pickers.filter((id) => !hs.bet.folded?.[id]); // players who folded aren't shown on their answer at all
       const ghostId = result ? hs.fakeBy?.[i] : null, fooled = !!ghostId && pickers.length > 0; // a folded player still got fooled (and still pays the bounty)
       if (fooled) fooledNow = true;
       return `<div class="hs-opt stat${mine === i && !revealing ? " sel" : ""}${result ? " wrong" : ""}${fooled ? " fooled" : ""}${b?.folded?.[me] && !revealing ? " dim" : ""}">${ghostId ? `<span class="hs-author" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span></span>` : ""}<b>${hsFmt(o)}</b>${fooled ? `<span class="hs-fooled-tag">Fooled ya!</span>` : ""}${who.length ? `<span class="hs-who">${who.map((id) => `<span class="avatar" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : ""}</div>`;
     }).join("");
-    const potHtml = `<div class="hs-potbox" id="hs-pot"><img src="icons/poker-chip-stack.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(potShown)}</div></div></div>`;
+    const potHtml = `<div class="hs-potbox" id="hs-pot"><img src="icons/poker-chip-stack.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsChipsFmt(potShown)}</div></div></div>`;
     const pigMood = stage === "pick" ? "peek" : result ? (result.winners ? "perk" : "tilt") : "";
     const tableFoot = pigMood ? `<div class="hs-table-foot"><img class="hs-table-pig" data-mood="${pigMood}" src="anim/mode-mascots/highstakes-pig-tutorial.webp" alt="" draggable="false">${potHtml}</div>` : potHtml;
+    const livePots = stage === "bet" && hs.seats.some(id => !b.folded?.[id] && hs.chips[id] === 0) ? HS.hsPotBreakdown(hs) : null;
+    const pots = result?.pots || livePots?.pots || [];
+    const unmatched = Object.values(livePots?.refunds || {}).reduce((sum, amount) => sum + amount, 0);
+    const potSplits = pots.length > 1 || unmatched ? `<div class="hs-pot-splits">
+      ${pots.map((p, i) => `<div><span>${i ? "Side pot " + i : "Main pot"}</span><b>${hsChipsFmt(p.amount)}</b></div>`).join("")}
+      ${unmatched ? `<div><span>Unmatched</span><b>${hsChipsFmt(unmatched)}</b></div>` : ""}
+    </div>` : "";
     html += `<div class="hs-board${stage === "pick" ? " hs-board--pick" : ""}${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts${result ? " hs-opts--result" : ""}">${optsHtml}</div>
-      ${tableFoot}<!--HSTURN--></div><div class="hs-col r">${colR.join("")}</div></div>`;
+      ${tableFoot}${potSplits}<!--HSTURN--></div><div class="hs-col r">${colR.join("")}</div></div>`;
     let turnHtml = "";
     // under the board: what you can do right now
     if (stage === "pick") {
@@ -12664,10 +12695,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (legal) {
         // Your turn: the same box that says who is thinking, now showing you, big and glowing.
         turnHtml = `<div class="hs-think hs-mine"><span class="avatar">${avatarHtml(data.players?.[me]?.avatar)}</span><span class="hs-turn-txt">YOUR TURN</span></div>`;
-        html += `<div class="pin-bottom"><p class="hs-hint">${legal.toCall ? `${legal.toCall} to call` : "No bet yet"}</p>
+        const callHint = legal.toCall === hs.chips[me] ? " to go all in" : " to call";
+        html += `<div class="pin-bottom"><p class="hs-hint">${legal.toCall ? hsChipsFmt(legal.toCall) + callHint : "Nothing to call"}</p>
           <div class="hs-acts hs-acts-mine"><button type="button" class="dc-btn hs-fold" data-hs-act="fold">Fold</button>
-          ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${legal.toCall}</button>`}
-          ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">Raise to ${legal.raiseTo}</button>` : ""}</div></div>`;
+          ${legal.canCheck ? `<button type="button" class="dc-btn hs-call" data-hs-act="check">Check</button>` : `<button type="button" class="dc-btn hs-call" data-hs-act="call">Call ${hsChipsFmt(legal.toCall)}</button>`}
+          ${legal.canRaise ? `<button type="button" class="dc-btn hs-raise" data-hs-act="raise">${b.cur ? "Raise to" : "Bet"} ${hsChipsFmt(legal.raiseTo)}</button>` : ""}</div></div>`;
       } else {
         // Waiting on someone else: a box at the bottom shows whose turn it is.
         const tp = b.turn && b.turn !== me ? data.players?.[b.turn] : null;
@@ -17240,6 +17272,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const player = staleOwnId
       ? { name, isHost: finalIsHost, flair: lastSyncedFlair, connected: true, disconnectedAt: null }
       : { name, avatar: currentAvatar, flair: lastSyncedFlair, isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
+    if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
     const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
       const latest=joined.snapshot.val()||roomData;
@@ -19739,7 +19772,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const key = "r" + def.monthly;
       if (window.MM && MM.info(key) && !prefersReducedMotion()) {
         mmLife = MM.info(key).D + 600;
-        const host = document.createElement("div"), sc = RXS * 0.85 / 240; // the 240 box is mostly artwork, so it fills the stage like the other reactions (their picture takes 52% of it)
+        const host = document.createElement("div"), sc = RXS * 1.13 / 240;
         host.style.cssText = `position:absolute;left:50%;top:50%;width:240px;height:240px;margin:-120px 0 0 -120px;transform:scale(${sc});transform-origin:50% 50%`;
         monthlyStart = life => {
           life.pause();

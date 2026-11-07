@@ -2,9 +2,9 @@
 // No DOM and no Firebase in here, so scripts/verify-high-stakes.mjs can play whole games through it.
 //
 // A round: everybody antes, sees 4 answers (1 real + 3 fakes), secretly picks the one they think is real,
-// then bets once around the table (fold / check / call / raise, table-stakes cap so there are no side pots).
-// Pot goes to everyone still in who picked the real answer (split). If nobody did, the pot rolls over.
-// If everyone else folds, the last player left takes the pot even if they were wrong (that is the bluff).
+// then bets around the table (fold / check / call / raise). All-ins create side pots for larger wagers.
+// Each pot pays the eligible players who picked the real answer, or rolls over if none did.
+// A pot with just one eligible player pays that player even if they were wrong.
 // Out of coins = out of the game.
 //
 // The state is stored whole at rooms/<code>/hs. Arrays are never empty (Realtime Database drops empty ones).
@@ -132,7 +132,7 @@ export function hsStartRound(hsIn, { options, realIdx, fakeBy = null, now, pickS
 }
 
 // Picks come from outside (each player's own pick under rooms/<code>/hsPicks). Anyone with no pick is folded.
-export function hsBeginBetting(hsIn, picks, now, turnSeconds = HS_TURN_SECONDS) {
+export function hsBeginBetting(hsIn, picks, now, turnSeconds = HS_TURN_SECONDS, sidePots = true) {
   const hs = clone(hsIn);
   const seats = hs.seats;
   const clean = {};
@@ -140,14 +140,15 @@ export function hsBeginBetting(hsIn, picks, now, turnSeconds = HS_TURN_SECONDS) 
   hs.picks = Object.keys(clean).length ? clean : null;
   const folded = {};
   seats.forEach((id) => { if (clean[id] === undefined) folded[id] = true; });
-  const live = seats.filter((id) => !folded[id]);
-  // Table stakes: nobody can bet more than the smallest stack still in, so every bet can always be matched.
-  const cap = live.length ? Math.min(...live.map((id) => hs.chips[id])) : 0;
   // Dealer button moves one seat each round, first to act is the seat after it.
   const start = (hs.round - 1) % seats.length;
   const order = seats.map((_, k) => seats[(start + k) % seats.length]);
   hs.stage = "bet";
-  hs.bet = { order, folded: Object.keys(folded).length ? folded : null, cur: 0, put: null, raises: 0, cap, acted: null, turn: null, turnEndsAt: null, turnAt: null, n: 0 };
+  hs.bet = { order, folded: Object.keys(folded).length ? folded : null, cur: 0, put: null, raises: 0, acted: null, last: null, turn: null, turnEndsAt: null, turnAt: null, n: 0 };
+  if (!sidePots) {
+    const live = nonFolded(hs);
+    hs.bet.cap = live.length ? Math.min(...live.map(id => hs.chips[id])) : 0;
+  }
   return hsAdvanceTurn(hs, -1, now, turnSeconds);
 }
 
@@ -158,11 +159,13 @@ function hsAdvanceTurn(hs, from, now, turnSeconds) {
   const b = hs.bet;
   const live = nonFolded(hs);
   if (live.length <= 1) return hsResolve(hs);
+  const funded = live.filter(id => hs.chips[id] > 0).length;
   const n = b.order.length;
   for (let k = 1; k <= n; k++) {
     const id = b.order[(from + k + n) % n];
-    if (b.folded?.[id]) continue;
+    if (b.folded?.[id] || hs.chips[id] <= 0) continue;
     if (b.acted?.[id]) continue;
+    if (funded < 2 && (b.put?.[id] || 0) >= b.cur) continue;
     b.turn = id;
     b.turnAt = now;
     b.turnEndsAt = now + turnSeconds * 1000;
@@ -175,9 +178,11 @@ export function hsLegalActions(hs, pid) {
   if (hs.stage !== "bet" || hs.bet.turn !== pid) return null;
   const b = hs.bet;
   const put = b.put?.[pid] || 0;
-  const toCall = b.cur - put;
-  const step = hsRaiseStep(hs.ante);
-  const raiseTo = Math.min(b.cur + step, b.cap);
+  const stack = hs.chips[pid];
+  if ((!(stack > 0) && b.cap == null) || b.folded?.[pid]) return null;
+  const toCall = Math.min(stack, Math.max(0, b.cur - put));
+  const matchable = Math.max(0, ...nonFolded(hs).filter(id => id !== pid && hs.chips[id] > 0).map(id => (b.put?.[id] || 0) + hs.chips[id]));
+  const raiseTo = Math.min(b.cur + hsRaiseStep(hs.ante), put + stack, b.cap ?? matchable);
   return {
     toCall,
     canCheck: toCall === 0,
@@ -196,6 +201,7 @@ export function hsApplyAction(hsIn, pid, action, now, turnSeconds = HS_TURN_SECO
   const b = hs.bet;
   b.put = b.put || {};
   b.acted = b.acted || {};
+  b.last = b.last || {};
   const put = b.put[pid] || 0;
   const pay = (amt) => { hs.chips[pid] -= amt; hs.pot += amt; b.put[pid] = put + amt; };
   if (action === "fold") {
@@ -204,13 +210,16 @@ export function hsApplyAction(hsIn, pid, action, now, turnSeconds = HS_TURN_SECO
   } else if (action === "check") {
     if (!legal.canCheck) return hsIn;
     b.acted[pid] = true;
+    b.last[pid] = { kind: "check" };
   } else if (action === "call") {
     if (!legal.canCall) return hsIn;
     pay(legal.toCall);
     b.acted[pid] = true;
+    b.last[pid] = { kind: "call", amount: legal.toCall };
   } else if (action === "raise") {
     if (!legal.canRaise) return hsIn;
     pay(legal.raiseCost);
+    b.last[pid] = { kind: b.cur ? "raise" : "bet", amount: legal.raiseTo };
     b.cur = legal.raiseTo;
     b.raises += 1;
     b.acted = { [pid]: true };
@@ -229,21 +238,63 @@ export function hsTimeoutAction(hs, now, turnSeconds = HS_TURN_SECONDS) {
   return hsApplyAction(hs, hs.bet.turn, legal.canCheck ? "check" : "fold", now, turnSeconds);
 }
 
+// Each contribution tier includes paid antes and folded chips. A lone excess
+// contribution is uncalled, so it goes back to its owner before scoring.
+export function hsPotBreakdown(hs) {
+  const live = nonFolded(hs);
+  if (hs.bet.cap != null || !hs.startChips || !live.length) return { pots: [{ amount: hs.pot, eligible: live }], refunds: {} };
+  const contributions = hs.seats.map(id => ({ id, amount: Math.max(0, (hs.startChips[id] || 0) - (hs.chips[id] || 0)) }));
+  const carryIn = hs.pot - contributions.reduce((sum, entry) => sum + entry.amount, 0);
+  const pots = carryIn > 0 ? [{ amount: carryIn, eligible: live }] : [];
+  const refunds = {};
+  const levels = [...new Set(contributions.map(entry => entry.amount))].sort((a, b) => a - b);
+  let previous = 0;
+  for (const level of levels) {
+    if (!level) continue;
+    const paid = contributions.filter(entry => entry.amount >= level);
+    const amount = (level - previous) * paid.length;
+    previous = level;
+    if (paid.length === 1) {
+      refunds[paid[0].id] = amount;
+      continue;
+    }
+    const eligible = paid.map(entry => entry.id).filter(id => live.includes(id));
+    const last = pots.at(-1);
+    if (last && (!eligible.length || (last.eligible.length === eligible.length && last.eligible.every((id, i) => id === eligible[i])))) last.amount += amount;
+    else pots.push({ amount, eligible });
+  }
+  return { pots, refunds };
+}
+
+export function hsPayout(hs, id) {
+  const result = hs.result;
+  return result?.payouts?.[id] ?? (result?.winners?.includes(id) ? result.share : 0);
+}
+
+export function hsWonByBluff(hs, id) {
+  return hs.picks?.[id] !== hs.realIdx && !!hs.result?.winners?.includes(id) &&
+    (hs.result.uncontested || !!hs.result.pots?.some(pot => pot.uncontested && pot.winners?.includes(id)));
+}
+
 export function hsResolve(hsIn) {
   const hs = hsIn;
   const live = nonFolded(hs);
-  let winners, uncontested = false;
-  if (live.length === 1) { winners = [live[0]]; uncontested = true; }
-  else winners = live.filter((id) => hs.picks?.[id] === hs.realIdx);
   const pot = hs.pot;
-  let share = 0, carryOut = 0;
-  if (winners.length) {
-    share = Math.floor(pot / winners.length);
-    carryOut = pot - share * winners.length;
-    winners.forEach((id) => { hs.chips[id] += share; });
-  } else {
-    carryOut = pot;
-  }
+  const { pots, refunds } = hsPotBreakdown(hs);
+  const payouts = {};
+  let carryOut = 0;
+  const settled = pots.map(({ amount, eligible }) => {
+    const uncontested = eligible.length === 1;
+    const winners = uncontested ? eligible : eligible.filter(id => hs.picks?.[id] === hs.realIdx);
+    const share = winners.length ? Math.floor(amount / winners.length) : 0;
+    const carry = amount - share * winners.length;
+    carryOut += carry;
+    winners.forEach(id => { payouts[id] = (payouts[id] || 0) + share; });
+    return { amount, winners: winners.length ? winners : null, share, carry, uncontested };
+  });
+  const winners = hs.seats.filter(id => Object.hasOwn(payouts, id));
+  const share = winners.every(id => payouts[id] === payouts[winners[0]]) ? payouts[winners[0]] || 0 : 0;
+  hs.seats.forEach(id => { hs.chips[id] += (payouts[id] || 0) + (refunds[id] || 0); });
   hs.carry = carryOut;
   hs.pot = 0;
   // Ghost bounty: every player (folded or not) who picked a ghost's fake pays that ghost.
@@ -260,16 +311,17 @@ export function hsResolve(hsIn) {
   }
   // Per-player tallies for the career stats: rounds won, biggest single payout, bluffs that worked (won by
   // everyone else folding while holding the wrong answer) and the highest stack reached.
+  hs.result = { winners: winners.length ? winners : null, share, pot, uncontested: live.length === 1, carryOut, ghost: ghostNow,
+    payouts: winners.length ? payouts : null, refunds: Object.keys(refunds).length ? refunds : null, pots: settled.length > 1 ? settled : null };
   hs.stats = { ...(hs.stats || {}) };
   winners.forEach((id) => {
     const o = hs.stats[id] || {};
-    hs.stats[id] = { ...o, won: (o.won || 0) + 1, best: Math.max(o.best || 0, share), bluffs: (o.bluffs || 0) + (uncontested && hs.picks?.[id] !== hs.realIdx ? 1 : 0) };
+    hs.stats[id] = { ...o, won: (o.won || 0) + 1, best: Math.max(o.best || 0, payouts[id]), bluffs: (o.bluffs || 0) + (hsWonByBluff(hs, id) ? 1 : 0) };
   });
   hs.seatsAll.forEach((id) => {
     const o = hs.stats[id] || {};
     if ((hs.chips[id] || 0) > (o.peak || 0)) hs.stats[id] = { ...o, peak: hs.chips[id] };
   });
-  hs.result = { winners: winners.length ? winners : null, share, pot, uncontested, carryOut, ghost: ghostNow };
   hs.stage = "reveal";
   hs.bet.turn = null;
   hs.bet.turnEndsAt = null;

@@ -81,6 +81,38 @@ window.__polish={
   hsEnsureTicker(false);
   return started;
  },
+ hsSidePot:phase=>{
+  window.__polish.hsView(4,'win');
+  const now=nowMs();
+  let hs=HS.hsNewGame(Object.keys(currentPlayers));
+  hs.chips.p1=12;
+  hs=HS.hsStartRound(hs,{options:[1,2,3,4],realIdx:2,now});
+  const picks={me:0,p1:2,p2:2,p3:0};
+  hs=HS.hsBeginBetting(hs,picks,now);
+  if(phase==='check')hs=HS.hsApplyAction(hs,'me','check',now);
+  else if(phase!=='opening'){
+   hs=HS.hsApplyAction(hs,'me','raise',now);
+   if(phase!=='bet'){
+    hs=HS.hsApplyAction(hs,'p1','call',now);
+    hs=HS.hsApplyAction(hs,'p2','raise',now);
+    hs=HS.hsApplyAction(hs,'p3','call',now);
+    if(phase==='result'){
+     hs=HS.hsApplyAction(hs,'me','call',now);
+     hs.animEndsAt=now-1;
+    }
+   }
+  }
+  roomState={...roomState,hs,hsPicks:picks};
+  renderHighStakes(roomState);
+ },
+ hsMonthlyReaction:month=>{
+  const monthly='m'+String(month).padStart(2,'0'),normal=START_EMOJIS[0],profile=myProfile;
+  myProfile={...profile,cosmetics:{owned:{monthly:{[monthly]:true}}},randomPool:{reactions:{__equipped:true,[monthly]:true,[normal]:true}}};
+  renderReactionStrip();
+  myProfile=profile;
+  clearReactionBubbles();
+  renderReactionBubble({playerId:'p1',emoji:monthly,previewAt:{x:innerWidth/2,y:200}});
+ },
  hsView:(n,bet)=>{
   ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
   currentRoomCode='VIEW';currentPlayerId='me';isHost=true;
@@ -186,6 +218,35 @@ try {
   assert(window.__polish.hsResumeMissingTicker(event),'returning to High Stakes recreates a missing timer on '+event);
   await window.__polish.hsReadReveal();
   assert(!!select('.hs-end-hero'),'returning to High Stakes advances an overdue standings screen on '+event);
+ }
+ window.__polish.hsSidePot('opening');
+ assert(select('[data-hs-act=raise]')?.textContent==='Bet 10','opening wager is labeled Bet');
+ window.__polish.hsSidePot('check');
+ assert(select('[data-hs-pl=me] .hs-tag')?.textContent==='Check','free check is labeled Check');
+ window.__polish.hsSidePot('bet');
+ assert(select('[data-hs-pl=me] .hs-tag')?.textContent==='Bet 10','opening bettor card');
+ window.__polish.hsSidePot('live');
+ assert(select('[data-hs-pl=p1] .hs-tag.all-in')?.textContent==='All in' &&
+   select('[data-hs-pl=p1] .hs-tag:not(.all-in)')?.textContent==='Called 7','short call shows chips paid and all-in status');
+ assert(select('[data-hs-pl=p2] .hs-tag')?.textContent==='Raised to 20' &&
+   select('[data-hs-pl=p3] .hs-tag')?.textContent==='Called 20','raise and call cards distinguish the actions');
+ assert(select('.hs-pot-splits')?.textContent.includes('Side pot'),'side pot appears during betting');
+ window.__polish.hsSidePot('result');
+ assert(select('.hs-pot-splits')?.textContent.includes('Main pot48') &&
+   select('.hs-pot-splits')?.textContent.includes('Side pot 139'),'main and side pot amounts on results');
+ assert(select('[data-hs-pl=p1] .hs-tag.win')?.textContent==='+24' &&
+   select('[data-hs-pl=p2] .hs-tag.win')?.textContent==='+63','different winners show their actual payouts');
+ if(innerWidth>=320){
+  window.__polish.hsMonthlyReaction(5);
+  const icon=document.querySelector('.react-slot img[src^="monthly/art/poster-r"]');
+  const iconScale=getComputedStyle(icon).scale,padding=getComputedStyle(icon.closest('button')).paddingLeft;
+  assert(parseFloat(iconScale)>1 && padding==='2px','monthly reaction icon scales up '+JSON.stringify([iconScale,padding,icon.getAttribute('src')]));
+  const stage=document.querySelector('.rx-stage');
+  const pop=stage.querySelector('.rx-piv > img');
+  if(pop)assert(parseFloat(getComputedStyle(pop).width)>stage.offsetWidth*.6,'monthly reaction poster scales up');
+  for(let i=0;i<60&&!stage.querySelector('.rx-piv > div');i++)await new Promise(r=>setTimeout(r,20));
+  const animated=stage.querySelector('.rx-piv > div');
+  assert(animated && new DOMMatrix(getComputedStyle(animated).transform).a*animated.offsetWidth>stage.offsetWidth,'monthly reaction animation scales up');
  }
  assert(document.documentElement.scrollWidth<=innerWidth+1,'horizontal overflow');
  document.getElementById('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'High Stakes pick, bet, reveal, split, fold, rollover and reduced motion'});

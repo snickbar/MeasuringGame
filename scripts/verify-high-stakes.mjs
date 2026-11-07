@@ -1,6 +1,7 @@
 // Plays High Stakes through its rules module: option generation, betting, pots, rollover, elimination.
 import assert from "node:assert/strict";
 import * as H from "../anim/high-stakes.mjs";
+import { hsRoundRecord } from "../anim/room-safety.mjs";
 
 function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
@@ -113,11 +114,70 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
   const facing = h.bet.turn; const h2 = H.hsTimeoutAction(h, t + (H.HS_TURN_SECONDS + 1) * 1000);
   assert.ok(h2.stage === "reveal" && h2.bet.folded[facing], "facing a bet, timeout folds");
 }
-// table-stakes cap: a short stack limits the bet size for everyone
+// Heads up, a wager is capped at what the only opponent can match.
 {
   let hs = setup({ a: 100, b: 12 }, { a: 2, b: 2 });
-  assert.equal(hs.bet.cap, 7); // b has 12-5 after ante
+  assert.equal(H.hsLegalActions(hs, "a").raiseTo, 7);
   hs = H.hsApplyAction(hs, hs.bet.turn, "raise", NOW); assert.equal(hs.bet.cur, 7);
+}
+// A short call leaves the other stacks free to raise and each pot pays only its eligible players.
+{
+  let hs = setup({ a: 100, b: 12, c: 100, d: 100 }, { a: 0, b: 2, c: 2, d: 0 });
+  hs = H.hsApplyAction(hs, "a", "raise", NOW);
+  assert.deepEqual(hs.bet.last.a, { kind: "bet", amount: 10 });
+  assert.equal(H.hsLegalActions(hs, "b").toCall, 7);
+  hs = H.hsApplyAction(hs, "b", "call", NOW);
+  assert.equal(hs.chips.b, 0);
+  assert.deepEqual(hs.bet.last.b, { kind: "call", amount: 7 });
+  hs = H.hsApplyAction(hs, "c", "raise", NOW);
+  assert.deepEqual(hs.bet.last.c, { kind: "raise", amount: 20 });
+  hs = H.hsApplyAction(hs, "d", "call", NOW);
+  assert.equal(hs.bet.turn, "a");
+  hs = H.hsApplyAction(hs, "a", "call", NOW);
+  assert.deepEqual(hs.result.pots.map(p => [p.amount, p.winners]), [[48, ["b", "c"]], [39, ["c"]]]);
+  assert.equal(H.hsPayout(hs, "b"), 24);
+  assert.equal(H.hsPayout(hs, "c"), 63);
+  const saved = { hs, q: { answer: 3, unitId: "ant", targetId: "door" } };
+  assert.equal(hsRoundRecord("side-pot", 1, saved, "c", {}, NOW).hsProgress.payout, 63);
+  assert.equal(total(hs), 312);
+}
+// The earlier single-pot rules remain available for a mixed-version table.
+{
+  const started = H.hsStartRound({ ...H.hsNewGame(["a", "b", "c"]), chips: { a: 100, b: 12, c: 100 } },
+    { options: [1, 2, 3, 4], realIdx: 2, now: NOW });
+  let hs = H.hsBeginBetting(started, { a: 2, b: 2, c: 2 }, NOW, undefined, false);
+  assert.equal(H.hsLegalActions(hs, "a").raiseTo, 7);
+  hs = H.hsApplyAction(hs, "a", "raise", NOW);
+  hs = H.hsApplyAction(hs, "b", "call", NOW);
+  assert.equal(H.hsLegalActions(hs, "c").canRaise, false);
+  hs = H.hsApplyAction(hs, "c", "call", NOW);
+  assert.equal(hs.result.pots, null);
+  assert.equal(hs.result.share, 12);
+}
+// Multiple all-ins cap eligibility at different levels. Pots without a correct eligible player roll over.
+{
+  let hs = setup({ a: 10, b: 15, c: 100, d: 100 }, { a: 2, b: 0, c: 0, d: 0 });
+  for (const [id, action] of [["a", "raise"], ["b", "raise"], ["c", "raise"], ["d", "call"]]) {
+    assert.equal(hs.bet.turn, id);
+    hs = H.hsApplyAction(hs, id, action, NOW);
+  }
+  assert.deepEqual(hs.result.pots.map(p => [p.amount, p.carry]), [[40, 0], [15, 15], [20, 20]]);
+  assert.equal(H.hsPayout(hs, "a"), 40);
+  assert.equal(H.hsPayout(hs, "b"), 0);
+  assert.equal(hs.carry, 35);
+  assert.equal(total(hs), 225);
+}
+// An uncalled excess is returned and does not count as a payout.
+{
+  let hs = setup({ a: 100, b: 100, c: 100 }, { a: 0, b: 2, c: 2 });
+  hs = H.hsApplyAction(hs, "a", "check", NOW);
+  assert.deepEqual(hs.bet.last.a, { kind: "check" });
+  hs = H.hsApplyAction(hs, "b", "raise", NOW);
+  hs = H.hsApplyAction(hs, "c", "fold", NOW);
+  hs = H.hsApplyAction(hs, "a", "fold", NOW);
+  assert.equal(hs.result.refunds.b, 10);
+  assert.equal(H.hsPayout(hs, "b"), 15);
+  assert.equal(total(hs), 300);
 }
 // short stack that can't cover the ante antes what it has, is eliminated when it loses
 {

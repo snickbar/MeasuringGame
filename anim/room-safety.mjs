@@ -1,5 +1,6 @@
 // Pure transaction decisions. Re-evaluated against the latest room on every retry.
 import { roundAccuracy } from './accuracy.mjs';
+import { hsPayout, hsWonByBluff } from './high-stakes.mjs';
 
 export const HOST_TRANSFER_GRACE_MS = 60000;
 export function electedHost(room, now = Date.now()) {
@@ -61,12 +62,12 @@ export function hsRoundRecord(match, round, saved, playerId, players, t) {
   const pick = hs.picks?.[playerId], guess = hs.options?.[pick];
   const answered = Number.isInteger(pick) && Number.isFinite(guess) && q.answer > 0;
   const r = answered ? guess / q.answer : null, accuracy = answered ? roundAccuracy(r) : 0;
-  const won = !!hs.result?.winners?.includes(playerId), perfect = answered && Math.abs(guess - q.answer) < .005;
+  const won = !!hs.result?.winners?.includes(playerId), payout = hsPayout(hs, playerId), perfect = answered && Math.abs(guess - q.answer) < .005;
   return { kind: 'round', key: match + '_round_' + round, mode: 'highstakes', playerId,
     players: Object.fromEntries(hs.seats.filter(id => players[id]).map(id => [id, players[id]])),
-    history: { t, u: q.unitId, g: q.targetId, r, rawR: r, answered, p: won ? hs.result.share : 0,
+    history: { t, u: q.unitId, g: q.targetId, r, rawR: r, answered, p: payout,
       f: (accuracy >= 99 ? 1 : 0) | (perfect ? 2 : 0), s: 9, mode: 'highstakes', buffer: false, match, round: Number(round) },
-    hsProgress: { won, bluff: won && hs.result.uncontested && pick !== hs.realIdx,
-      payout: won ? hs.result.share : 0, peak: Math.max(hs.startChips?.[playerId] || 0, hs.chips?.[playerId] || 0) },
+    hsProgress: { won, bluff: hsWonByBluff(hs, playerId),
+      payout, peak: Math.max(hs.startChips?.[playerId] || 0, hs.chips?.[playerId] || 0) },
     inc: { spotOns: accuracy >= 99 ? 1 : 0, perfects: perfect ? 1 : 0, roundWins: won ? 1 : 0 } };
 }
