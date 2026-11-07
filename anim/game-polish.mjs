@@ -14,7 +14,7 @@ export const MENU_BANNERS = {
 // Banners are 1000 x 222; the artwork is capped so the title keeps its room. Modes without a mascot keep their own icon.
 export const BANNER_MASCOT = { classic: ['party-ant', .943], teamvteam: ['team', 2.357], teamworlds: ['teamworlds', 1.33], highstakes: ['highstakes', 1.117], bluff: ['bluff', .86],
   quick: ['quick', .897], daily: ['daily', 1.58], monthly: ['monthly', 1.517], worlds: ['worlds', 1.063], survival: ['survival', .833] };
-const BLANK_BANNER = { quick: 'icons/banner-quick-blank.png', daily: 'icons/banner-daily-blank.png', monthly: 'icons/banner-monthly-blank.png', worlds: 'icons/banner-worlds-blank.png', survival: 'icons/banner-survival-blank.png' };
+export const BLANK_BANNER = { quick: 'icons/banner-quick-blank.png', daily: 'icons/banner-daily-blank.png', monthly: 'icons/banner-monthly-blank.png', worlds: 'icons/banner-worlds-blank.png', survival: 'icons/banner-survival-blank.png' };
 export function bannerMascot(mode) {
   const m = BANNER_MASCOT[mode]; if (!m) return null;
   const h = Math.min(92, 34 / (.222 * m[1])), w = h * .222 * m[1], left = 3.5;

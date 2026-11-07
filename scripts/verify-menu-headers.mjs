@@ -1,31 +1,35 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {MENU_BANNERS, applyMenuBanner, createPolish} from '../anim/game-polish.mjs';
+import {MENU_BANNERS, BLANK_BANNER, bannerMascot, applyMenuBanner, createPolish} from '../anim/game-polish.mjs';
 
 const source = fs.readFileSync('index.html', 'utf8');
 const css = fs.readFileSync('anim/game-polish.css', 'utf8');
 function element(mode, baseURI = 'https://example.test/game/index.html') {
   const children = [], styles = {}, classes = new Set();
-  const doc = {baseURI, createElement: () => ({remove() {children.splice(children.indexOf(this), 1);}})};
+  const doc = {baseURI, createElement: () => ({style: {setProperty() {}}, remove() {children.splice(children.indexOf(this), 1);}})};
   return {ownerDocument: doc, dataset: {}, styles, children, classes,
     classList: {add: cls => classes.add(cls)}, style: {setProperty: (key, value) => {styles[key] = value;}},
-    querySelector: () => children.find(c => c.className === 'polish-banner-icon'), prepend: img => children.unshift(img),
+    querySelector: () => children.find(c => String(c.className).split(' ').includes('polish-banner-icon')), prepend: img => children.unshift(img),
     parentElement: {id: 'teamvteam-content'}, textContent: mode};
 }
 for (const [mode, [banner, icon]] of Object.entries(MENU_BANNERS)) {
   assert(fs.existsSync(banner));
   if (icon) assert(fs.existsSync(icon));
   assert(source.includes(`"${banner}"`), `${mode} header must reuse the menu graphic`);
+  const mascot = bannerMascot(mode), shown = mascot && BLANK_BANNER[mode] || banner;
+  if (mascot) assert(fs.existsSync(mascot.src), `${mode} mascot picture must exist`);
+  if (mascot && BLANK_BANNER[mode]) assert(fs.existsSync(BLANK_BANNER[mode]));
   const header = element(mode);
   applyMenuBanner(header, mode); applyMenuBanner(header, mode);
   assert.equal(header.dataset.menuBanner, mode);
   assert.equal(header.dataset.fitSingleLine, 'true', 'shrink title text rather than wrap or stretch the banner');
-  assert.equal(header.styles['--menu-banner'], `url("https://example.test/game/${banner}")`, 'resolve relative to app, not the CSS folder');
-  assert.equal(header.children.length, icon ? 1 : 0, 'embedded artwork must not receive a duplicate icon');
-  if (icon) assert.equal(header.children[0].src, icon);
+  assert.equal(header.styles['--menu-banner'], `url("https://example.test/game/${shown}")`, 'resolve relative to app, not the CSS folder');
+  assert.equal(header.children.length, mascot || icon ? 1 : 0, 'embedded artwork must not receive a duplicate icon');
+  if (mascot) assert.equal(header.children[0].src, mascot.src, 'header carries the same mascot as the mode button');
+  else if (icon) assert.equal(header.children[0].src, icon);
   const local = element(mode, 'file:///C:/Projects/MeasuringGame/index.html');
   applyMenuBanner(local, mode);
-  assert(local.styles['--menu-banner'].includes(`file:///C:/Projects/MeasuringGame/${banner}`));
+  assert(local.styles['--menu-banner'].includes(`file:///C:/Projects/MeasuringGame/${shown}`));
 }
 
 // Party intro pages share a container; its last-used mode must never leak into the next title.
