@@ -81,7 +81,7 @@ html[data-motion=reduce] #final-screen .final-row.rank-1>.drumroll-stars span{an
 .pd-mascot{position:absolute;left:37%;bottom:8%;width:14%;height:auto;transform:translateX(-50%);z-index:4;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(40,20,0,.3));transform-origin:50% 100%;animation:pdMascotIn .5s var(--pd-at,0ms) cubic-bezier(.2,.9,.3,1.2) both,pdMascotCheer 2.4s calc(var(--pd-at,0ms) + .5s) ease-in-out infinite}
 @keyframes pdMascotIn{from{opacity:0;transform:translateX(-50%) translateY(40%) scale(.6)}to{opacity:1;transform:translateX(-50%)}}
 @keyframes pdMascotCheer{0%,100%{transform:translateX(-50%)}12%{transform:translateX(-50%) translateY(-7%) scale(.98,1.04)}24%{transform:translateX(-50%) scale(1.03,.96)}36%,100%{transform:translateX(-50%)}}
-.pd-stage.skip .pd-mascot:where(:not(.pd-m-robot)){animation:pdMascotCheer 2.4s ease-in-out infinite}
+.pd-stage.skip .pd-mascot:where(:not(.pd-m-robot, [data-team-reaction])){animation:pdMascotCheer 2.4s ease-in-out infinite}
 html[data-motion=reduce] .pd-mascot,.pd-stage.skip:where(.reduce) .pd-mascot{animation:none}
 @media(prefers-reduced-motion:reduce){.pd-mascot{animation:none}}
 
@@ -148,6 +148,36 @@ html[data-motion=reduce] .pd-m-robot, html[data-motion=reduce] .pd-m-robot * { a
 .pd-mascot.pd-m-ant{left:9.5%;bottom:0%;width:19%}
 .pd-mascot.pd-m-left{left:14%;bottom:-3%;width:19%}
 .pd-mascot.pd-m-right{left:86%;bottom:-3%;width:20%}
+.pd-mascot[data-team-reaction="cheer"] {
+  animation: pdMascotIn .25s ease-out var(--pd-at) backwards, pdTeamCheer .8s ease-in-out calc(var(--pd-at) + .25s);
+}
+.pd-mascot[data-team-reaction="clap"] {
+  --pd-clap-at: calc(var(--pd-at) + .42s);
+  --pd-clap-duration: .8s;
+  animation: pdMascotIn .25s ease-out var(--pd-at) backwards, pdTeamClap var(--pd-clap-duration) ease-out var(--pd-clap-at);
+}
+.pd-team-clap-contact { display: block; width: 100%; }
+.pd-team-clap-open { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+[data-team-reaction].pose-ready :where(.pd-team-clap-contact) { animation: pdTeamClapContact var(--pd-clap-duration) step-end var(--pd-clap-at); }
+[data-team-reaction].pose-ready :where(.pd-team-clap-open) { animation: pdTeamClapOpen var(--pd-clap-duration) step-end var(--pd-clap-at); }
+@keyframes pdTeamCheer {
+  0%, 100% { transform: translateX(-50%); }
+  17% { transform: translateX(-50%) scale(1.03, .96); }
+  42% { transform: translate(-50%, -17%) scale(1.02); }
+  69% { transform: translateX(-50%) scale(1.03, .96); }
+  84% { transform: translate(-50%, -3%); }
+}
+@keyframes pdTeamClap {
+  0%, 37%, 76%, 100% { transform: translateX(-50%); }
+  18%, 57% { transform: translate(-50%, -2%) scale(.99, 1.01); }
+}
+@keyframes pdTeamClapContact { 0%, 37%, 76% { opacity: 0; } 18%, 57%, 100% { opacity: 1; } }
+@keyframes pdTeamClapOpen { 0%, 37%, 76% { opacity: 1; } 18%, 57%, 100% { opacity: 0; } }
+.pd-skip-motion :is(.pd-mascot[data-team-reaction], [data-team-reaction] img),
+html[data-motion=reduce] :is(.pd-mascot[data-team-reaction], [data-team-reaction] img) { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.pd-mascot[data-team-reaction], [data-team-reaction] img) { animation: none; }
+}
 .pd-confetti{position:absolute;left:50%;top:34%;width:0;height:0;z-index:5;pointer-events:none}
 .pd-confetti i{position:absolute;left:0;top:0;width:8px;height:12px;background:var(--c);border-radius:2px;opacity:0;animation:pdConfetti 1.7s calc(var(--pd-at,0ms) + var(--w,0ms)) cubic-bezier(.15,.7,.3,1) both}
 @keyframes pdConfetti{0%{opacity:0;transform:translate(0,0) rotate(0)}8%{opacity:1}70%{opacity:1}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 120px)) rotate(var(--r))}}

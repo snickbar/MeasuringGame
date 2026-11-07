@@ -6,12 +6,12 @@ const sandbox={};vm.runInNewContext(existing.slice(existing.indexOf('const dbStu
 const {dbStub,authStub}=sandbox.stubs;
 const injected=String.raw`
 window.__layoutReady=()=>myProfile?.stats?.gamesPlayed===8;
-window.__finalPreview=async mode=>{
+window.__finalPreview=async (mode,teamScores=[24,16])=>{
  gameRewards.prepare=async()=>{};
  currentRoomCode='FINALE';currentPlayerId='me';isHost=true;currentName='Player';finalRendered=false;
  const names=['DADDIOOO','PixiePenny','PollyParrot','PawPatch'],avatars=['av19','av07','av06','av20'];
- currentPlayers=Object.fromEntries(['me','p2','p3','p4'].map((id,i)=>[id,{name:names[i],avatar:avatars[i],score:mode==='tie'?25:mode==='zero'?0:mode==='teamvteam'?(i<2?24:16):[25,18,12,8][i],roundsCounted:3,accuracySum:mode==='tie'||mode==='zero'?0:[252,225,183,156][i],accuracyBonus:i===0?10:0,individualPoints:[15,9,10,6][i],team:i<2?'red':'blue',bestGuess:{guess:352,prompt:'How many playing cards long is a moon rocket?',percent:84}}]));
- roomState={phase:'final',gameId:'preview-'+mode,round:3,settings:{mode:mode==='teamvteam'?'teamvteam':'party',solo:mode==='quick',totalRounds:3},players:currentPlayers};
+ currentPlayers=Object.fromEntries(['me','p2','p3','p4'].map((id,i)=>[id,{name:names[i],avatar:avatars[i],score:mode==='tie'?25:mode==='zero'?0:mode==='teamvteam'?teamScores[i<2?0:1]:[25,18,12,8][i],roundsCounted:3,accuracySum:mode==='tie'||mode==='zero'?0:[252,225,183,156][i],accuracyBonus:i===0?10:0,individualPoints:[15,9,10,6][i],team:i<2?'red':'blue',bestGuess:{guess:352,prompt:'How many playing cards long is a moon rocket?',percent:84}}]));
+ roomState={phase:'final',gameId:'preview-'+mode+'-'+teamScores.join('-'),round:3,settings:{mode:mode==='teamvteam'?'teamvteam':'party',solo:mode==='quick',totalRounds:3},players:currentPlayers};
  ALL_SCREEN_ELS.forEach(e=>e.classList.remove('active'));hudSubToolbarEl.classList.remove('active');bottomToolbarEl.classList.add('active');finalScreenEl.classList.add('active');renderFinal();finalHomeBtn.style.display='flex';window.scrollTo(0,0);
  await new Promise(r=>setTimeout(r,120));document.getElementById('ach-toast')?.remove();
 };
@@ -108,6 +108,33 @@ server.listen(0,'127.0.0.1',()=>{
  const corner=await evaluate("(()=>{const c=document.querySelector('#final-list>.rank-1'),star=c?.querySelector('.drumroll-stars');if(!star)return true;const a=c.getBoundingClientRect(),b=star.getBoundingClientRect();return b.left>a.left+a.width*.7&&b.top<a.top+30})()");if(!corner)throw Error('Winner star overlaps left-side label');
  const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(previewDir,mode+'-'+width+'.png'),Buffer.from(shot.data,'base64'));console.log(JSON.stringify({mode,width,during,after,pass:true}));
  }
+ for(const [scores,expected] of [[[24,16],['cheer','clap']],[[16,24],['clap','cheer']],[[24,24],['cheer','cheer']]]){
+   await evaluate(`window.__finalPreview('teamvteam',${JSON.stringify(scores)})`);
+   const reactions=await evaluate(`(async () => {
+     const mascots=[...document.querySelectorAll('.pd-mascot[data-team-reaction]')];
+     await Promise.all(mascots.flatMap(mascot => mascot.matches('img') ? [mascot] : [...mascot.querySelectorAll('img')]).map(img => img.decode()));
+     const reactions=mascots.map(mascot => ({
+       pose:mascot.dataset.teamReaction, animation:getComputedStyle(mascot).animationName
+     }));
+     const clap=mascots.find(mascot => mascot.dataset.teamReaction==='clap');
+     const frames=clap ? [clap.querySelector('.pd-team-clap-open'),clap.querySelector('.pd-team-clap-contact')] : [];
+     const sampleClap = time => frames.map(frame => {
+       const animation=frame.getAnimations()[0];
+       animation.pause();
+       animation.currentTime=animation.effect.getTiming().delay+time;
+       return getComputedStyle(frame).opacity;
+     }).join('');
+     const clapping=!clap || (sampleClap(60)==='10' && sampleClap(200)==='01');
+     document.querySelector('.pd-skip').click();
+     return {reactions,clapping,settled:mascots.every(mascot =>
+       getComputedStyle(mascot).opacity==='1' && !mascot.getAnimations({subtree:true}).length)};
+   })()`);
+   if(!reactions.clapping||!reactions.settled||reactions.reactions.length!==expected.length||reactions.reactions.some(({pose,animation},i)=>
+     pose!==expected[i]||!animation.includes(pose==='cheer'?'pdTeamCheer':'pdTeamClap'))){
+     throw Error('Wrong Team vs Team mascot reaction '+JSON.stringify({width,scores,...reactions}));
+   }
+   console.log(JSON.stringify({width,scores,mascots:expected,pass:true}));
+ }
  for(const [mood,ratio] of [['up',.99],['same',.75],['down',.4]]){
    const start = await evaluate(`window.__foxPreview(${ratio})`);
    if(start.mood!==mood||start.reacting)throw Error('Fox reacted before the meter '+JSON.stringify(start));
@@ -170,6 +197,12 @@ server.listen(0,'127.0.0.1',()=>{
    return !duo.querySelector('.tw-fin-monkeys-contact') && !duo.getAnimations({subtree:true}).length;
  })()`))throw Error('Team Worlds high-five ignored reduced motion');
  console.log(JSON.stringify({width,monkeys,pass:true}));
+ await evaluate("window.__finalPreview('teamvteam')");
+ if(!await evaluate(`(() => {
+   const mascots=[...document.querySelectorAll('[data-team-reaction]')];
+   return mascots.length===2 && mascots.every(mascot => mascot.matches('img') &&
+     getComputedStyle(mascot).opacity==='1' && !mascot.getAnimations().length);
+ })()`))throw Error('Team vs Team reactions ignored reduced motion');
  await evaluate("window.__finalPreview('quick')");
  const reduced=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who');return {opacity:+getComputedStyle(e).opacity,animations:e.getAnimations().length,waiting:document.getElementById('final-list').classList.contains('pd-waiting')}})()");
  if(reduced.opacity!==1||reduced.animations||reduced.waiting)throw Error('Reduced motion failed '+JSON.stringify(reduced));console.log(JSON.stringify({width,reduced,pass:true}));

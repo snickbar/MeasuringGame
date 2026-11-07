@@ -20985,8 +20985,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Artwork has fixed numbered seats. Correct its badge when places are shared.
     const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
     const mascotDelay = reduce ? 0 : impactAt + 250;
-    const mascotHtml = mascots.map(([src, variant]) => {
-      if (variant !== "pd-m-robot") return `<img class="pd-mascot ${variant}" src="${src}" alt="" draggable="false" style="--pd-at:${mascotDelay}ms">`;
+    const mascotHtml = mascots.map(([src, variant, reaction, openPose]) => {
+      if (openPose && !reduce) return `<span class="pd-mascot ${variant}" data-team-reaction="clap" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
+        <img class="pd-team-clap-contact" src="${src}" alt="" draggable="false">
+        <img class="pd-team-clap-open" src="${openPose}" alt="" draggable="false">
+      </span>`;
+      if (variant !== "pd-m-robot") return `<img class="pd-mascot ${variant}"${reaction ? ` data-team-reaction="${reaction}"` : ""} src="${src}" alt="" draggable="false" style="--pd-at:${mascotDelay}ms">`;
       return `<span class="pd-mascot pd-m-robot" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
         <span class="pd-robot-shadow"></span>
         <span class="pd-robot-body"><img class="pd-robot-rest" src="anim/mode-mascots/quick-robot-landing.png" alt="" draggable="false"><img class="pd-robot-air" src="${src}" alt="" draggable="false"></span>
@@ -20995,6 +20999,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join("");
     const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip pd-skip-motion':'');
     li.innerHTML='<div class="pd-list">'+rows+'</div><div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+mascotHtml+(confetti&&!reduce?'<div class="pd-confetti" aria-hidden="true" style="--pd-at:'+impactAt+'ms">'+Array.from({length:34},(_,i)=>{const a=(i/34)*Math.PI*2+Math.random()*.4,d=70+Math.random()*110;return '<i style="--x:'+Math.round(Math.cos(a)*d)+'px;--y:'+Math.round(Math.sin(a)*d*.8-60)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;--c:'+['#ff5a5a','#ffc828','#50beff','#78dc6e','#ff82dc'][i%5]+';--w:'+(i%3*40)+'ms"></i>';}).join('')+'</div>':'')+'</div><button type="button" class="pd-skip">Skip celebration</button>';
+    li.querySelectorAll('.pd-team-clap-open').forEach(img => {
+      img.decode().then(() => img.parentElement.classList.add('pose-ready'), () => {});
+    });
     const tok=++partyFinaleToken, animations=[];
     const alive=()=>tok===partyFinaleToken&&finalScreenEl.classList.contains('active');
     const reveal=()=>{finalListEl.classList.remove('pd-waiting');document.getElementById('final-session-recap')?.classList.remove('pd-hold');};
@@ -21083,7 +21090,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const teamRanked = computeRanks(Object.keys(teamOf), teamScoreFn, teamAvgFn, false);
       if (teamRanked.length >= 2) {
         const teams = Object.fromEntries(Object.entries(teamOf).map(([team, members]) => [team, {name: `${TEAM_COLOR_NAMES[team]} team`, avatars: members.map(id => currentPlayers[id].avatar)}]));
-        podium = partyPodiumStage(teamRanked, teams, [["anim/mode-mascots/team-dogs-cheer.webp", "pd-m-left"], ["anim/mode-mascots/team-cats-cheer.webp", "pd-m-right"]]); finalListEl.appendChild(podium.el);
+        const winningTeams = new Set(teamRanked.filter(entry => entry.rank === 1 && entry.score > 0).map(entry => entry.id));
+        const mascots = [["red", "dogs", "pd-m-left"], ["blue", "cats", "pd-m-right"]].map(([team, animal, side]) => {
+          const cheers = winningTeams.has(team);
+          const art = `anim/mode-mascots/team-${animal}`;
+          return cheers ? [`${art}-cheer.webp`, side, "cheer"] : [`${art}-clap.png`, side, "clap", `${art}-clap-open.png`];
+        });
+        podium = partyPodiumStage(teamRanked, teams, mascots); finalListEl.appendChild(podium.el);
         if (!podium.el.classList.contains('skip')) { finalListEl.classList.add('pd-waiting'); recap.classList.add('pd-hold'); }
       }
       teamRanked.forEach((entry, idx) => {
