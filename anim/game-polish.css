@@ -373,13 +373,16 @@ html[data-motion=reduce] .wl-fox-cheer { animation: none; }
 }
 .tw-space--final { --travel: 19px; height: clamp(172px, 30dvh, 238px); margin-top: 10px; }
 .tw-space-stars {
-  position: absolute; inset: -16px; opacity: .75;
-  background: radial-gradient(circle, #b8d4ff 1px, transparent 1.8px) 22px 2px / 43px 37px;
+  position: absolute; inset: -16px; pointer-events: none;
   animation: twSpaceStars 12s ease-in-out infinite alternate;
 }
-.tw-space-stars::before, .tw-space-stars::after { content: ""; position: absolute; inset: 0; animation: twSpaceTwinkle 3.1s ease-in-out infinite; }
-.tw-space-stars::before { background: radial-gradient(circle, #fff7d6 1.4px, #fff3ad55 2px, transparent 4px) 2px 9px / 73px 57px; }
-.tw-space-stars::after { background: radial-gradient(circle, #dceaff 1.2px, #a1c6ff55 2px, transparent 4px) 17px 32px / 87px 49px; animation-duration: 4.3s; animation-delay: -1.7s; }
+.tw-space-stars > i {
+  position: absolute; width: var(--star-size); aspect-ratio: 1; border-radius: 50%;
+  color: #dceaff; background: currentColor; opacity: .6;
+  animation: twSpaceTwinkle var(--twinkle-speed) ease-in-out var(--twinkle-offset) infinite;
+}
+.tw-space-stars > i:nth-child(3n) { color: #fff0c4; }
+.tw-space-stars > i:nth-child(-n+4) { box-shadow: 0 0 5px 1px currentColor; }
 .tw-space-planet {
   position: absolute; right: 9%; top: 20%; width: clamp(16px, 11%, 42px); aspect-ratio: 1; border-radius: 50%; transform: rotate(-22deg);
   background: radial-gradient(circle at 34% 22%, #efd2fa, #9276cb 57%, #594884 86%); opacity: .8;
@@ -399,7 +402,7 @@ html[data-motion=reduce] .wl-fox-cheer { animation: none; }
 }
 .tw-space.is-reacting.pose-ready .tw-space-spark { animation: twSpaceSpark .6s ease-out .29s; }
 @keyframes twSpaceStars { to { transform: translate(-12px, 11px); } }
-@keyframes twSpaceTwinkle { 0%, 100% { opacity: .3; } 47% { opacity: 1; } }
+@keyframes twSpaceTwinkle { 0%, 100% { opacity: .15; } 46% { opacity: .95; } }
 @keyframes twSpaceFloat { 0%, 100% { transform: rotate(-2deg); } 50% { transform: translate(3px, -3px) rotate(2deg); } }
 @keyframes twSpaceTravel {
   0% { transform: translateY(0); }
@@ -413,9 +416,9 @@ html[data-motion=reduce] .wl-fox-cheer { animation: none; }
   100% { opacity: 0; transform: translate(-50%, -11px) rotate(45deg) scale(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tw-space *, .tw-space-stars::before, .tw-space-stars::after { animation: none !important; transition: none; }
+  .tw-space * { animation: none !important; transition: none; }
 }
-html[data-motion=reduce] .tw-space *, html[data-motion=reduce] .tw-space-stars::before, html[data-motion=reduce] .tw-space-stars::after { animation: none !important; transition: none; }
+html[data-motion=reduce] .tw-space * { animation: none !important; transition: none; }
 
 /* Worlds round results: the fox's balloon rises when the star meter went up, sinks when it went down, and floats when it stayed about the same.
    The meter starts the reaction. The resting drift and the rise or sink use separate layers. */

@@ -64,6 +64,15 @@ window.__monkeyRoundPreview = accuracy => {
    }))};
  withoutCareerSave(()=>{applyPhase(roomState);renderSummary(roomState);});
 };
+window.__checkSpaceStars = (scene, count) => {
+ const field=scene.querySelector('.tw-space-stars');
+ const stars=[...field.children], styles=stars.map(star=>getComputedStyle(star));
+ return stars.length===count && getComputedStyle(field).backgroundImage==='none' &&
+   new Set(stars.map(star=>star.style.left+','+star.style.top)).size>count-2 &&
+   styles.every(style=>style.animationName==='twSpaceTwinkle'&&style.animationIterationCount==='infinite') &&
+   new Set(styles.map(style=>style.animationDuration)).size>1 &&
+   new Set(styles.map(style=>style.animationDelay)).size>1;
+};
 window.__classicBotLobby = async () => {
  const settings={...DEFAULT_SETTINGS(),showTutorial:false};
  const room={phase:'waiting',round:0,settings};
@@ -276,7 +285,7 @@ server.listen(0,'127.0.0.1',()=>{
      const y=new DOMMatrix(getComputedStyle(flight).transform).m42;
      return {mood:scene.dataset.mood, initial, started:scene.classList.contains('is-reacting'), y,
        pose:pose?.src.split('-').at(-1) || 'calm.png', opacity:+getComputedStyle(pose||base).opacity,
-       twinkle:getComputedStyle(scene.querySelector('.tw-space-stars'),'::before').animationName,
+       twinkle:window.__checkSpaceStars(scene,25),
        fits:rect.left>=0&&rect.right<=innerWidth&&rect.height>=100&&rect.bottom<=next.top+1&&next.bottom<=innerHeight,
        bounds:[rect.left,rect.right,rect.top,rect.bottom,next.top,next.bottom,innerWidth,innerHeight]};
    })()`);
@@ -286,7 +295,7 @@ server.listen(0,'127.0.0.1',()=>{
      fs.writeFileSync(path.join(previewDir,'teamworlds-space-round-390.png'),Buffer.from(shot.data,'base64'));
    }
    if(round.mood!==mood||round.initial||!round.started||Math.sign(round.y)!==({up:-1,same:0,down:1})[mood]||
-      round.pose!==expected||round.opacity!==1||round.twinkle!=='twSpaceTwinkle'||!round.fits)
+      round.pose!==expected||round.opacity!==1||!round.twinkle||!round.fits)
      throw Error('Team Worlds round scene failed '+JSON.stringify({width,...round}));
  }
  await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:true},sessionId);
@@ -307,7 +316,7 @@ server.listen(0,'127.0.0.1',()=>{
      return {startsEarly,mood:scene.dataset.mood,reacting:scene.classList.contains('is-reacting'),
        score:center.querySelector('.tw-fin-pct').textContent,
        earned:document.querySelectorAll('.tw-fin-stars .polish-star-earned').length,
-       pose:pose.src.split('-').at(-1),opacity:+getComputedStyle(pose).opacity,
+       pose:pose.src.split('-').at(-1),opacity:+getComputedStyle(pose).opacity,twinkle:window.__checkSpaceStars(scene,40),
        layout:!!left.querySelector('.avatar')&&!!right.querySelector('.avatar')&&l.right<=c.left&&c.right<=r.left&&
          stars.bottom<=c.top&&c.bottom<stage.top&&discoveries?.matches('.session-discoveries')&&
          discoveries.getBoundingClientRect().top>=stage.bottom&&!!discoveries.querySelector('[data-id=ant]'),
@@ -317,7 +326,7 @@ server.listen(0,'127.0.0.1',()=>{
    })()`);
    if(monkeys.startsEarly||!monkeys.reacting||monkeys.mood!==mood||monkeys.score!==accuracy+'%'||
       monkeys.earned!==(mood==='up'?3:0)||monkeys.pose!==(mood==='up'?'happy.png':'sad.png')||
-      monkeys.opacity!==1||!monkeys.layout||!monkeys.fits)
+      monkeys.opacity!==1||!monkeys.twinkle||!monkeys.layout||!monkeys.fits)
      throw Error('Team Worlds final scene failed '+JSON.stringify({width,...monkeys}));
    if(width===390&&mood==='up'){
      const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
@@ -328,6 +337,7 @@ server.listen(0,'127.0.0.1',()=>{
  if(!await evaluate(`(() => {
    const scene=document.querySelector('.tw-space--final');
    return scene.querySelector('.tw-space-base').src.endsWith('-happy.png') &&
+     +getComputedStyle(scene.querySelector('.tw-space-stars > i')).opacity>0 &&
      !scene.querySelector('.tw-space-reaction') && !scene.getAnimations({subtree:true}).length;
  })()`))throw Error('Team Worlds space scene ignored reduced motion');
  console.log(JSON.stringify({width,teamWorldsSpace:true,pass:true}));
