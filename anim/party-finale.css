@@ -1,11 +1,11 @@
 /* Illustrated party podium. Avatars have no frames or feet; their default state
    remains visible even if entrance animations are cancelled or unavailable. */
 #final-list .pd-stage{display:flex;flex-direction:column;align-items:stretch;gap:0;width:100%;list-style:none;background:none!important;border:0!important;box-shadow:none!important;padding:4px 0 8px;position:relative;overflow:visible}
-.pd-list{display:grid;gap:4px;margin:0 0 3px}
+.pd-list{display:grid;gap:4px;margin:4px 0 0}
 .pd-list:empty{display:none}
 .pd-row{display:flex;gap:7px;align-items:center;border:1px solid #c6d8df;border-radius:12px;background:#f7fbfd;padding:4px 9px;font-size:12px;color:#415b68}
 .pd-rk{width:18px;font-weight:700}.pd-row b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pd-row i{font-style:normal;font-weight:700}.pd-row .avatar-icon{width:24px;height:24px;object-fit:contain}
-.pd-pod{position:relative;width:100%;flex:none;aspect-ratio:1.15;margin-bottom:-25px;isolation:isolate}
+.pd-pod{position:relative;width:100%;flex:none;aspect-ratio:1.15;isolation:isolate}
 .pd-art{position:absolute;width:100%;height:auto;left:0;bottom:0;z-index:1;pointer-events:none}
 .pd-slot{position:absolute;width:26%;z-index:2;text-align:center}
 .pd-seat-0{left:6%;bottom:36.5%}.pd-seat-1{left:37%;bottom:51%}.pd-seat-2{left:69%;bottom:44.5%}
@@ -23,7 +23,7 @@
 .pd-rank-correction{position:absolute;width:21%;aspect-ratio:1;z-index:3;border-radius:50%;background:#c8e8ef;display:grid;place-items:center;border:2px solid #3a6877}
 .pd-rank-correction .medal{width:90%;height:90%;background-size:contain;background-position:center;background-repeat:no-repeat}
 .pd-badge-0{left:9%;bottom:19%}.pd-badge-1{left:39%;bottom:25%}.pd-badge-2{left:73%;bottom:22%}
-button.pd-skip{display:block;width:auto!important;min-height:32px;margin:-12px auto 0;padding:4px 12px!important;background:transparent!important;border:0!important;border-image:none!important;box-shadow:none!important;color:#567d8c;font:500 12px Fredoka,sans-serif;text-shadow:none}
+button.pd-skip{display:block;width:auto!important;min-height:32px;margin:0 auto;padding:4px 12px!important;background:transparent!important;border:0!important;border-image:none!important;box-shadow:none!important;color:#567d8c;font:500 12px Fredoka,sans-serif;text-shadow:none}
 .pd-impact{position:absolute;left:39%;bottom:49%;width:23%;height:12px;border:3px solid #76acbb;border-radius:50%;opacity:0;pointer-events:none;z-index:3}
 .pd-landed .pd-art{animation:podiumImpact .4s ease-out}
 .pd-landed .pd-impact{animation:podiumRing .6s ease-out}
@@ -144,26 +144,26 @@ html[data-motion=reduce] .pd-m-robot, html[data-motion=reduce] .pd-m-robot * { a
   .pd-mascot.pd-m-robot, .pd-m-robot * { animation: none; }
 }
 
-/* Classic Party: two steps toward the podium, then hold the flag up. */
+/* Classic Party: the ant waits beside the podium, then takes two steps and raises the flag. */
 .pd-mascot.pd-m-ant{
   --ant-march:1.1s;
   left:12%;bottom:0%;width:22%;aspect-ratio:1;
-  animation:pdMascotIn .25s ease-out var(--pd-at) backwards;
+  animation:none;
 }
 .pd-ant-flag{display:block;width:100%;height:auto}
 .pd-ant-step{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
 .pd-m-ant.pose-ready{animation:pdAntMarch var(--ant-march) ease-in-out var(--pd-at) both}
-.pd-m-ant.pose-ready :where(.pd-ant-step-one){animation:pdAntStepOne var(--ant-march) step-end var(--pd-at) both}
-.pd-m-ant.pose-ready :where(.pd-ant-step-two){animation:pdAntStepTwo var(--ant-march) step-end var(--pd-at) both}
-.pd-m-ant.pose-ready :where(.pd-ant-flag){animation:pdAntFlag var(--ant-march) step-end var(--pd-at) both}
+.pd-m-ant.pose-ready :where(.pd-ant-step-one){animation:pdAntStepOne var(--ant-march) step-end var(--pd-at) forwards}
+.pd-m-ant.pose-ready :where(.pd-ant-step-two){animation:pdAntStepTwo var(--ant-march) step-end var(--pd-at) forwards}
+.pd-m-ant.pose-ready :where(.pd-ant-flag){animation:pdAntFlag var(--ant-march) step-end var(--pd-at) forwards}
 @keyframes pdAntMarch{
-  0%{opacity:0;transform:translateX(-71%)}
-  14%{opacity:1;transform:translate(-67%,-3%)}
-  33%{transform:translateX(-61%)}
-  49%{transform:translate(-56%,-3%)}
-  64%{transform:translateX(-50%)}
-  79%{transform:translateX(-50%) scale(1.025)}
-  100%{opacity:1;transform:translateX(-50%)}
+  0%{transform:translateX(-50%)}
+  14%{transform:translate(-46%,-3%)}
+  33%{transform:translateX(-40%)}
+  49%{transform:translate(-35%,-3%)}
+  64%{transform:translateX(-29%)}
+  79%{transform:translateX(-29%) scale(1.025)}
+  100%{transform:translateX(-29%)}
 }
 @keyframes pdAntStepOne{0%{opacity:1}33%,100%{opacity:0}}
 @keyframes pdAntStepTwo{0%,64%,100%{opacity:0}33%{opacity:1}}

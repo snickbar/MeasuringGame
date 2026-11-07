@@ -20972,11 +20972,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     const mem = li.querySelector(".team-final-members"); if (mem) { mem.classList.add("hl-arr"); mem.style.setProperty("--a", ((delayMs + 350) / 1000).toFixed(2) + "s"); }
   }
-  // Party finale: places 4+ slide in as a quick list, then the top three rise on a podium (winner last, on the right).
+  // Party finale: the top three arrive on the podium, with the remaining places below it.
   let partyFinaleToken = 0;
   function partyPodiumStage(ranked, contestants = currentPlayers, mascots = [], confetti = false) {
     const reduce = prefersReducedMotion(), top = ranked.slice(0, 3), rest = ranked.slice(3);
-    const base = 200 + rest.length * 250, thirdAt = base + 200, secondAt = thirdAt + 1600, firstAt = secondAt + 1800;
+    const thirdAt = 400, secondAt = thirdAt + 1600, firstAt = secondAt + 1800;
     const impactAt = firstAt + 940, doneMs = reduce ? 0 : firstAt + 1500;
     const portrait = p => (p.avatars || [p.avatar]).map(a => avatarHtml(a)).join('');
     const rows = rest.map(e => '<div class="pd-row"><span class="pd-rk">'+e.rank+'</span>'+portrait(contestants[e.id])+'<b>'+escapeHtml(contestants[e.id].name)+'</b><i>'+e.score+'</i></div>').join('');
@@ -21007,7 +21007,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </span>`;
     }).join("");
     const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip pd-skip-motion':'');
-    li.innerHTML='<div class="pd-list">'+rows+'</div><div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+mascotHtml+(confetti&&!reduce?'<div class="pd-confetti" aria-hidden="true" style="--pd-at:'+impactAt+'ms">'+Array.from({length:34},(_,i)=>{const a=(i/34)*Math.PI*2+Math.random()*.4,d=70+Math.random()*110;return '<i style="--x:'+Math.round(Math.cos(a)*d)+'px;--y:'+Math.round(Math.sin(a)*d*.8-60)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;--c:'+['#ff5a5a','#ffc828','#50beff','#78dc6e','#ff82dc'][i%5]+';--w:'+(i%3*40)+'ms"></i>';}).join('')+'</div>':'')+'</div><button type="button" class="pd-skip">Skip celebration</button>';
+    li.innerHTML='<div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+mascotHtml+(confetti&&!reduce?'<div class="pd-confetti" aria-hidden="true" style="--pd-at:'+impactAt+'ms">'+Array.from({length:34},(_,i)=>{const a=(i/34)*Math.PI*2+Math.random()*.4,d=70+Math.random()*110;return '<i style="--x:'+Math.round(Math.cos(a)*d)+'px;--y:'+Math.round(Math.sin(a)*d*.8-60)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;--c:'+['#ff5a5a','#ffc828','#50beff','#78dc6e','#ff82dc'][i%5]+';--w:'+(i%3*40)+'ms"></i>';}).join('')+'</div>':'')+'</div><button type="button" class="pd-skip">Skip celebration</button><div class="pd-list">'+rows+'</div>';
     li.querySelectorAll('.pd-team-clap-open').forEach(img => {
       img.decode().then(() => img.parentElement.classList.add('pose-ready'), () => {});
     });

@@ -6,11 +6,12 @@ const sandbox={};vm.runInNewContext(existing.slice(existing.indexOf('const dbStu
 const {dbStub,authStub}=sandbox.stubs;
 const injected=String.raw`
 window.__layoutReady=()=>myProfile?.stats?.gamesPlayed===8;
-window.__finalPreview=async (mode,teamScores=[24,16])=>{
+window.__finalPreview=async (mode,teamScores=[24,16],count=4)=>{
  gameRewards.prepare=async()=>{};
  currentRoomCode='FINALE';currentPlayerId='me';isHost=true;currentName='Player';finalRendered=false;
  const names=['DADDIOOO','PixiePenny','PollyParrot','PawPatch'],avatars=['av19','av07','av06','av20'];
  currentPlayers=Object.fromEntries(['me','p2','p3','p4'].map((id,i)=>[id,{name:names[i],avatar:avatars[i],score:mode==='tie'?25:mode==='zero'?0:mode==='teamvteam'?teamScores[i<2?0:1]:[25,18,12,8][i],roundsCounted:3,accuracySum:mode==='tie'||mode==='zero'?0:[252,225,183,156][i],accuracyBonus:i===0?10:0,individualPoints:[15,9,10,6][i],team:i<2?'red':'blue',bestGuess:{guess:352,prompt:'How many playing cards long is a moon rocket?',percent:84}}]));
+ for(let i=5;i<=count;i++)currentPlayers['bot'+i]={name:'Guest '+i,avatar:'av05',score:10-i,isBot:true};
  roomState={phase:'final',gameId:'preview-'+mode+'-'+teamScores.join('-'),round:3,settings:{mode:mode==='teamvteam'?'teamvteam':'party',solo:mode==='quick',totalRounds:3},players:currentPlayers};
  ALL_SCREEN_ELS.forEach(e=>e.classList.remove('active'));hudSubToolbarEl.classList.remove('active');bottomToolbarEl.classList.add('active');finalScreenEl.classList.add('active');renderFinal();finalHomeBtn.style.display='flex';window.scrollTo(0,0);
  await new Promise(r=>setTimeout(r,120));document.getElementById('ach-toast')?.remove();
@@ -74,6 +75,27 @@ server.listen(0,'127.0.0.1',()=>{
  await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);
  for(let i=0;i<250;i++){if(await evaluate('window.__layoutReady?.()'))break;await new Promise(r=>setTimeout(r,30));}
  await evaluate("localStorage.setItem('mg_motion','full');document.documentElement.dataset.motion='full'");
+ await call('Emulation.setDeviceMetricsOverride',{width,height:width===320?650:780,deviceScaleFactor:1,mobile:true},sessionId);
+ await evaluate("window.__finalPreview('party',undefined,10)");
+ const dense=await evaluate(`(async () => {
+   const ant=document.querySelector('.pd-m-ant'),flag=ant.querySelector('.pd-ant-flag');
+   await flag.decode();
+   const early=getComputedStyle(ant).opacity==='1'&&getComputedStyle(flag).opacity==='1';
+   const podium=document.querySelector('.pd-pod'),rankings=document.querySelector('.pd-list');
+   const finish=document.getElementById('final-home-btn');
+   document.querySelector('.pd-skip').click();
+   await new Promise(resolve=>setTimeout(resolve,230));
+   return {early,rows:rankings.children.length,
+     podiumFirst:podium.getBoundingClientRect().bottom<=rankings.getBoundingClientRect().top,
+     antClear:ant.getBoundingClientRect().bottom<finish.getBoundingClientRect().top};
+ })()`);
+ if(!dense.early||dense.rows!==7||!dense.podiumFirst||!dense.antClear)throw Error('Ten-player podium layout failed '+JSON.stringify({width,...dense}));
+ console.log(JSON.stringify({width,dense,pass:true}));
+ if(width===390){
+   const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+   fs.writeFileSync(path.join(previewDir,'classic-party-ten-390.png'),Buffer.from(shot.data,'base64'));
+ }
+ await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:true},sessionId);
  for(const mode of ['quick','party','teamvteam','tie','zero']){
  await evaluate('window.__finalPreview('+JSON.stringify(mode)+')');
  const during=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who'),a=e.getAnimations()[0];if(!a)throw Error('Winner animation absent');a.pause();a.currentTime=a.effect.getTiming().delay+650;const s=getComputedStyle(e),m=new DOMMatrix(s.transform),r=e.getBoundingClientRect();return {visibleInViewport:r.bottom>62&&r.top<innerHeight,opacity:+s.opacity,y:m.m42,captionHidden:+getComputedStyle(e.parentElement.querySelector('.pd-caption')).opacity===0,captionMoves:!!e.querySelector('.pd-caption'),feet:document.querySelectorAll('.pd-stage .feet').length,border:getComputedStyle(e.querySelector('img.avatar-icon')).borderWidth}})()");
