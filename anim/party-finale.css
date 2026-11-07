@@ -81,9 +81,68 @@ html[data-motion=reduce] #final-screen .final-row.rank-1>.drumroll-stars span{an
 .pd-mascot{position:absolute;left:37%;bottom:8%;width:14%;height:auto;transform:translateX(-50%);z-index:4;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(40,20,0,.3));transform-origin:50% 100%;animation:pdMascotIn .5s var(--pd-at,0ms) cubic-bezier(.2,.9,.3,1.2) both,pdMascotCheer 2.4s calc(var(--pd-at,0ms) + .5s) ease-in-out infinite}
 @keyframes pdMascotIn{from{opacity:0;transform:translateX(-50%) translateY(40%) scale(.6)}to{opacity:1;transform:translateX(-50%)}}
 @keyframes pdMascotCheer{0%,100%{transform:translateX(-50%)}12%{transform:translateX(-50%) translateY(-7%) scale(.98,1.04)}24%{transform:translateX(-50%) scale(1.03,.96)}36%,100%{transform:translateX(-50%)}}
-.pd-stage.skip .pd-mascot{animation:pdMascotCheer 2.4s ease-in-out infinite}
+.pd-stage.skip .pd-mascot:where(:not(.pd-m-robot)){animation:pdMascotCheer 2.4s ease-in-out infinite}
 html[data-motion=reduce] .pd-mascot,.pd-stage.skip:where(.reduce) .pd-mascot{animation:none}
 @media(prefers-reduced-motion:reduce){.pd-mascot{animation:none}}
+
+/* The robot crouches, jumps once, and lands on its planted-feet pose. */
+.pd-mascot.pd-m-robot {
+  --robot-jump: 1.15s;
+  width: 18%;
+  aspect-ratio: 1;
+  filter: none;
+  animation: pdRobotAppear .2s ease-out var(--pd-at) both;
+}
+.pd-robot-body {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 92%;
+  animation: pdRobotJump var(--robot-jump) ease-in-out var(--pd-at) both;
+}
+.pd-robot-body img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.pd-robot-rest { animation: pdRobotRestPose var(--robot-jump) steps(1, end) var(--pd-at) both; }
+.pd-robot-air { opacity: 0; animation: pdRobotAirPose var(--robot-jump) steps(1, end) var(--pd-at) both; }
+.pd-robot-shadow {
+  position: absolute;
+  left: 20%; bottom: 7%; width: 60%; height: 8%;
+  border-radius: 50%; background: #48312138;
+  animation: pdRobotShadow var(--robot-jump) ease-in-out var(--pd-at) both;
+}
+.pd-robot-confetti { position: absolute; left: 50%; top: 27%; }
+.pd-robot-confetti i {
+  position: absolute; width: 4px; height: 6px; border-radius: 1px;
+  opacity: 0; background: var(--color);
+  animation: pdRobotConfetti .7s ease-out calc(var(--pd-at) + .34s) both;
+}
+.pd-robot-confetti i:nth-child(1) { --x: -23px; --y: -12px; --color: #ff5a93; }
+.pd-robot-confetti i:nth-child(2) { --x: -11px; --y: -24px; --color: #ffb930; }
+.pd-robot-confetti i:nth-child(3) { --x: 4px; --y: -28px; --color: #6ed765; }
+.pd-robot-confetti i:nth-child(4) { --x: 17px; --y: -22px; --color: #54c7ff; }
+.pd-robot-confetti i:nth-child(5) { --x: 26px; --y: -10px; --color: #b47cff; }
+@keyframes pdRobotAppear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pdRobotJump {
+  0%, 100% { transform: none; }
+  17% { transform: scale(1.02, .95); }
+  24% { transform: translateY(-10%); }
+  43% { transform: translateY(-31%) rotate(-2deg); }
+  59% { transform: translateY(-16%) rotate(1deg); }
+  68% { transform: scale(1.025, .94); }
+  82% { transform: scale(.995, 1.015); }
+}
+@keyframes pdRobotAirPose { 0%, 68%, 100% { opacity: 0; } 24% { opacity: 1; } }
+@keyframes pdRobotRestPose { 0%, 68%, 100% { opacity: 1; } 24% { opacity: 0; } }
+@keyframes pdRobotShadow { 0%, 68%, 100% { transform: scale(1); opacity: 1; } 43% { transform: scale(.68); opacity: .45; } }
+@keyframes pdRobotConfetti {
+  0% { transform: scale(.3); opacity: 0; }
+  16% { opacity: 1; }
+  65% { transform: translate(var(--x), var(--y)) rotate(120deg); opacity: .85; }
+  100% { transform: translate(var(--x), calc(var(--y) + 13px)) rotate(200deg); opacity: 0; }
+}
+.pd-skip-motion .pd-m-robot, .pd-skip-motion .pd-m-robot *,
+html[data-motion=reduce] .pd-m-robot, html[data-motion=reduce] .pd-m-robot * { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pd-mascot.pd-m-robot, .pd-m-robot * { animation: none; }
+}
 
 /* Classic Party: the ant at the left end of the podium. Team vs Team: the dogs bottom-left, the cats bottom-right (up to five teams, so no room on the podium itself). */
 .pd-mascot.pd-m-ant{left:9.5%;bottom:0%;width:19%}

@@ -15,6 +15,18 @@ window.__finalPreview=async mode=>{
  ALL_SCREEN_ELS.forEach(e=>e.classList.remove('active'));hudSubToolbarEl.classList.remove('active');bottomToolbarEl.classList.add('active');finalScreenEl.classList.add('active');renderFinal();finalHomeBtn.style.display='flex';window.scrollTo(0,0);
  await new Promise(r=>setTimeout(r,120));document.getElementById('ach-toast')?.remove();
 };
+window.__foxPreview = async ratio => {
+ currentRoomCode = null;
+ ALL_SCREEN_ELS.forEach(screen => screen.classList.remove('active'));
+ worldsScreenEl.classList.add('active');
+ const question = dailyQuestionFor({unitId:'ant', targetId:'door'});
+ wl = { ...wl, phase:'result', wi:0, level:1, questions:[question, question],
+   guesses:[question.answer * .75, question.answer * ratio], runId:'fox-preview-' + ratio };
+ renderWorlds();
+ const scene = worldsContentEl.querySelector('.wl-rs-scene');
+ await Promise.all([...scene.querySelectorAll('img')].map(image => image.decode()));
+ return {mood:scene.dataset.mood, reacting:scene.classList.contains('is-reacting')};
+};
 `;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');
 fixture=fixture.replace('\n</script>\n</body>',injected+'\n</script><pre id="wb-test-result" hidden></pre>\n</body>');
@@ -49,11 +61,67 @@ server.listen(0,'127.0.0.1',()=>{
  await evaluate('window.__finalPreview('+JSON.stringify(mode)+')');
  const during=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who'),a=e.getAnimations()[0];if(!a)throw Error('Winner animation absent');a.pause();a.currentTime=a.effect.getTiming().delay+650;const s=getComputedStyle(e),m=new DOMMatrix(s.transform),r=e.getBoundingClientRect();return {visibleInViewport:r.bottom>62&&r.top<innerHeight,opacity:+s.opacity,y:m.m42,captionHidden:+getComputedStyle(e.parentElement.querySelector('.pd-caption')).opacity===0,captionMoves:!!e.querySelector('.pd-caption'),feet:document.querySelectorAll('.pd-stage .feet').length,border:getComputedStyle(e.querySelector('img.avatar-icon')).borderWidth}})()");
  if(!during.visibleInViewport||during.opacity<.9||during.y> -20||!during.captionHidden||during.captionMoves||during.feet||during.border!=='0px')throw Error('Winner not visibly dropping '+JSON.stringify({mode,width,...during}));
+ if(mode==='quick'){
+   const jump = await evaluate(`(async () => {
+     const robot = document.querySelector('.pd-m-robot'), stage = robot.closest('.pd-stage');
+     const air = robot.querySelector('.pd-robot-air'), rest = robot.querySelector('.pd-robot-rest');
+     await Promise.all([air.decode(), rest.decode()]);
+     stage.classList.add('skip');
+     const animations = robot.getAnimations({subtree:true});
+     const jump = animations.find(animation => animation.animationName === 'pdRobotJump');
+     for (const animation of animations) {
+       animation.pause();
+       animation.currentTime = animation.effect.getTiming().delay + 500;
+     }
+     const height = new DOMMatrix(getComputedStyle(robot.querySelector('.pd-robot-body')).transform).m42;
+     const result = {oneJump:jump?.effect.getTiming().iterations === 1, height,
+       airborne:getComputedStyle(air).opacity === '1' && getComputedStyle(rest).opacity === '0'};
+     stage.classList.remove('skip');
+     return result;
+   })()`);
+   if(!jump.oneJump||jump.height>=-5||!jump.airborne)throw Error('Robot jump did not play '+JSON.stringify({width,...jump}));
+   if(width===390){
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(previewDir,'quick-jump-390.png'),Buffer.from(shot.data,'base64'));
+   }
+ }
  const after=await evaluate("(()=>{document.querySelectorAll('.pd-who').forEach(e=>e.getAnimations().forEach(a=>a.finish()));document.querySelector('.pd-skip').click();return {opacity:+getComputedStyle(document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who')).opacity,cards:document.querySelectorAll('#final-list>.final-row').length,hidden:[...document.querySelectorAll('#final-list>.final-row')].some(e=>getComputedStyle(e).display==='none'),captionOpacity:+getComputedStyle(document.querySelector('.pd-caption')).opacity,podiumHeight:document.querySelector('.pd-pod').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth-innerWidth,tied:[...document.querySelectorAll('.pd-slot')].map(e=>e.dataset.rank)}})()");
  if(after.captionOpacity!==1||after.podiumHeight<200||after.opacity!==1||after.hidden||after.cards!==(mode==='teamvteam'?2:4)||after.overflow)throw Error('Finale did not settle '+JSON.stringify({mode,width,...after}));
+ if(mode==='quick'&&!await evaluate(`(() => {
+   const robot=document.querySelector('.pd-m-robot');
+   return !robot.getAnimations({subtree:true}).length &&
+     getComputedStyle(robot.querySelector('.pd-robot-rest')).opacity==='1' &&
+     getComputedStyle(robot.querySelector('.pd-robot-air')).opacity==='0';
+ })()`))throw Error('Skip did not land the robot');
  await evaluate("Promise.all([...document.querySelectorAll('.pd-stage img')].map(i=>i.decode().catch(()=>{})))");await new Promise(r=>setTimeout(r,550));
  const corner=await evaluate("(()=>{const c=document.querySelector('#final-list>.rank-1'),star=c?.querySelector('.drumroll-stars');if(!star)return true;const a=c.getBoundingClientRect(),b=star.getBoundingClientRect();return b.left>a.left+a.width*.7&&b.top<a.top+30})()");if(!corner)throw Error('Winner star overlaps left-side label');
  const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(previewDir,mode+'-'+width+'.png'),Buffer.from(shot.data,'base64'));console.log(JSON.stringify({mode,width,during,after,pass:true}));
+ }
+ for(const [mood,ratio] of [['up',.99],['same',.75],['down',.4]]){
+   const start = await evaluate(`window.__foxPreview(${ratio})`);
+   if(start.mood!==mood||start.reacting)throw Error('Fox reacted before the meter '+JSON.stringify(start));
+   const end = await evaluate(`(async () => {
+     const scene = document.querySelector('.wl-rs-scene');
+     const until = performance.now() + 3200;
+     while (!scene.classList.contains('is-reacting') && performance.now() < until) {
+       await new Promise(resolve => setTimeout(resolve, 25));
+     }
+     const balloon = scene.querySelector('.wl-rs-balloon');
+     const movement = balloon.getAnimations().find(animation => animation.animationName === 'wlBalloonMove');
+     if (movement) movement.finish();
+     scene.querySelectorAll('img').forEach(image => image.getAnimations().forEach(animation => animation.finish()));
+     const pose = [...scene.querySelectorAll('img')].find(image => getComputedStyle(image).opacity === '1');
+     const art = pose?.getBoundingClientRect(), bounds = scene.getBoundingClientRect();
+     return {reacting:scene.classList.contains('is-reacting'), file:pose?.src.split('/').pop(),
+       offset:new DOMMatrix(getComputedStyle(balloon).transform).m42,
+       fits:!!art && art.top >= bounds.top && art.bottom <= bounds.bottom};
+   })()`);
+   if(!end.reacting||end.file!==`worlds-balloon-fox-${mood}.webp`||!end.fits||Math.sign(end.offset)!==({up:-1,same:0,down:1}[mood]))throw Error('Fox reaction failed '+JSON.stringify({width,mood,...end}));
+   console.log(JSON.stringify({width,mood,pose:end.file,offset:end.offset,pass:true}));
+   if(width===390){
+     const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
+     fs.writeFileSync(path.join(previewDir,`worlds-fox-${mood}-390.png`),Buffer.from(shot.data,'base64'));
+   }
  }
  await evaluate("localStorage.setItem('mg_motion','reduce');document.documentElement.dataset.motion='reduce'");await evaluate("window.__finalPreview('quick')");
  const reduced=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who');return {opacity:+getComputedStyle(e).opacity,animations:e.getAnimations().length,waiting:document.getElementById('final-list').classList.contains('pd-waiting')}})()");

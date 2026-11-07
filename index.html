@@ -12903,7 +12903,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const boost = bufferResultNote(q, g, deviceId);
       // The fox's balloon rises when this round lifted the star meter, sinks when it pulled it down. (First round: judged against the first star's line.)
       const meterMove = k > 0 ? runningAvg - prevAvg : (runningAvg >= 75 ? 5 : runningAvg < 50 ? -5 : 0), mood = meterMove >= 1 ? "up" : meterMove <= -1 ? "down" : "same";
-      const WL_RS_FOX = { up: "anim/mode-mascots/worlds-balloon-fox-up.webp", same: "anim/mode-mascots/worlds-balloon-fox-same.webp", down: "anim/mode-mascots/worlds-balloon-fox-down.webp" }; // cheering / calm / worried
+      const foxReaction = mood !== "same" ? `worlds-balloon-fox-${mood}.webp` : "";
       el.innerHTML = `<div class="pin-top">${header}${dots(k)}</div>
         <div class="wl-rs">
           <div class="dc-card dc-hot tw-avg wl-rs-acc"><div class="solo-result-line">${soloResultAvatarHtml(acc, 1150)}<div><div class="tw-avg-label">${boost ? "Your buffered guess" : "This question"}</div><div class="tw-avg-num">${reduced ? formatAccuracy(acc) : "0"}%</div></div></div>
@@ -12911,10 +12911,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             ${boost ? `<div class="wl-rs-boost">${boost}</div>` : ""}
             <div class="wl-rs-lines"><span>You said <b>${Number(g).toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></span><span>Answer <b>${ans}</b></span></div></div>
           <div class="dc-card dc-hot tw-avg wl-rs-meter"><div class="tw-avg-label">Your average this level</div><div class="tw-avg-num">${formatAccuracy(reduced ? runningAvg : prevAvg)}%</div>${worldProgressBarHtml(reduced ? runningAvg : (k > 0 ? prevAvg : 0), "day")}</div>
-          <div class="wl-rs-scene" data-mood="${mood}"><i class="wl-cl c1"></i><i class="wl-cl c2"></i><i class="wl-cl c3"></i><div class="wl-rs-balloon"><div class="wl-rs-sway"><img src="${WL_RS_FOX[mood]}" alt="" draggable="false"></div>${mood === "up" ? '<i class="wl-sp s1"></i><i class="wl-sp s2"></i><i class="wl-sp s3"></i><i class="wl-sp s4"></i>' : ""}</div></div>
+          <div class="wl-rs-scene${reduced ? " is-reacting" : ""}" data-mood="${mood}" aria-hidden="true"><i class="wl-cl c1"></i><i class="wl-cl c2"></i><i class="wl-cl c3"></i><div class="wl-rs-balloon"><div class="wl-rs-sway"><img class="wl-rs-calm" src="anim/mode-mascots/worlds-balloon-fox-same.webp" alt="" draggable="false">${foxReaction ? `<img class="wl-rs-reaction" src="anim/mode-mascots/${foxReaction}" alt="" draggable="false">` : ""}</div>${mood === "up" ? '<i class="wl-sp s1"></i><i class="wl-sp s2"></i><i class="wl-sp s3"></i><i class="wl-sp s4"></i>' : ""}</div></div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-next">${last ? "See my results" : "Next question"}</button></div>`;
       getPlayLayout().worlds(worldsScreenEl, el);
+      const foxScene = el.querySelector(".wl-rs-scene"), reactionImage = foxScene.querySelector(".wl-rs-reaction");
+      if (reactionImage) {
+        const markPoseReady = () => {
+          if (reactionImage.naturalWidth) foxScene.classList.add("pose-ready");
+        };
+        if (reactionImage.complete) markPoseReady();
+        else reactionImage.addEventListener("load", markPoseReady, { once: true });
+      }
       vibeAccuracy(acc);
       if (reduced) return;
       const sig = wl.runId + ":" + k;
@@ -12935,6 +12943,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       setTimeout(() => {
         if (!alive()) return;
         fill.style.setProperty("--accuracy", runningAvg + "%");
+        foxScene.classList.add("is-reacting");
         twCountUp(head, runningAvg, DUR, "%");
         twCountUpFrom(mNum, prevAvg, runningAvg, DUR, "%");
         playSound("swipe");
@@ -20975,13 +20984,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join('');
     // Artwork has fixed numbered seats. Correct its badge when places are shared.
     const badges = seats.map((e,seat) => e && e.rank !== [3,1,2][seat] ? '<div class="pd-rank-correction pd-badge-'+seat+'" aria-label="Shared place '+e.rank+'"><span class="medal '+(e.medal||'gold')+'"></span></div>' : '').join('');
-    const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip':'');
-    li.innerHTML='<div class="pd-list">'+rows+'</div><div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+mascots.map(m=>'<img class="pd-mascot '+m[1]+'" src="'+m[0]+'" alt="" draggable="false" style="--pd-at:'+(reduce?0:impactAt+250)+'ms">').join('')+(confetti&&!reduce?'<div class="pd-confetti" aria-hidden="true" style="--pd-at:'+impactAt+'ms">'+Array.from({length:34},(_,i)=>{const a=(i/34)*Math.PI*2+Math.random()*.4,d=70+Math.random()*110;return '<i style="--x:'+Math.round(Math.cos(a)*d)+'px;--y:'+Math.round(Math.sin(a)*d*.8-60)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;--c:'+['#ff5a5a','#ffc828','#50beff','#78dc6e','#ff82dc'][i%5]+';--w:'+(i%3*40)+'ms"></i>';}).join('')+'</div>':'')+'</div><button type="button" class="pd-skip">Skip celebration</button>';
+    const mascotDelay = reduce ? 0 : impactAt + 250;
+    const mascotHtml = mascots.map(([src, variant]) => {
+      if (variant !== "pd-m-robot") return `<img class="pd-mascot ${variant}" src="${src}" alt="" draggable="false" style="--pd-at:${mascotDelay}ms">`;
+      return `<span class="pd-mascot pd-m-robot" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
+        <span class="pd-robot-shadow"></span>
+        <span class="pd-robot-body"><img class="pd-robot-rest" src="anim/mode-mascots/quick-robot-landing.png" alt="" draggable="false"><img class="pd-robot-air" src="${src}" alt="" draggable="false"></span>
+        <span class="pd-robot-confetti"><i></i><i></i><i></i><i></i><i></i></span>
+      </span>`;
+    }).join("");
+    const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip pd-skip-motion':'');
+    li.innerHTML='<div class="pd-list">'+rows+'</div><div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+mascotHtml+(confetti&&!reduce?'<div class="pd-confetti" aria-hidden="true" style="--pd-at:'+impactAt+'ms">'+Array.from({length:34},(_,i)=>{const a=(i/34)*Math.PI*2+Math.random()*.4,d=70+Math.random()*110;return '<i style="--x:'+Math.round(Math.cos(a)*d)+'px;--y:'+Math.round(Math.sin(a)*d*.8-60)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;--c:'+['#ff5a5a','#ffc828','#50beff','#78dc6e','#ff82dc'][i%5]+';--w:'+(i%3*40)+'ms"></i>';}).join('')+'</div>':'')+'</div><button type="button" class="pd-skip">Skip celebration</button>';
     const tok=++partyFinaleToken, animations=[];
     const alive=()=>tok===partyFinaleToken&&finalScreenEl.classList.contains('active');
     const reveal=()=>{finalListEl.classList.remove('pd-waiting');document.getElementById('final-session-recap')?.classList.remove('pd-hold');};
     const finish=()=>{li.classList.add('skip');animations.forEach(a=>a.cancel());li.querySelectorAll('.pd-who').forEach(e=>{e.style.opacity='1';e.style.transform='none';});reveal();};
-    li.querySelector('.pd-skip').onclick=finish;
+    li.querySelector('.pd-skip').onclick=()=>{li.classList.add('pd-skip-motion');finish();};
     // Start on attached nodes. Resting state is VISIBLE, so interruption or a missing
     // animation never leaves the winner stranded at opacity zero.
     if(!reduce) requestAnimationFrame(()=>{
@@ -21107,7 +21125,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return p.roundsCounted ? p.accuracySum / p.roundsCounted : null;
     };
     const ranked = computeRanks(Object.keys(currentPlayers), scoreFn, avgFn, true);
-    if (ranked.length >= 3) { podium = partyPodiumStage(ranked, currentPlayers, mode === "quick" ? [["anim/mode-mascots/quick-robot-cheer.webp", ""]] : mode === "party" ? [["anim/mode-mascots/classic-ant-cheer.webp", "pd-m-ant"]] : [], mode === "party"); finalListEl.appendChild(podium.el); if (!podium.el.classList.contains("skip")) { finalListEl.classList.add("pd-waiting"); const rc = document.getElementById("final-session-recap"); if (rc) rc.classList.add("pd-hold"); } }
+    if (ranked.length >= 3) { podium = partyPodiumStage(ranked, currentPlayers, mode === "quick" ? [["anim/mode-mascots/quick-robot-airborne.png", "pd-m-robot"]] : mode === "party" ? [["anim/mode-mascots/classic-ant-cheer.webp", "pd-m-ant"]] : [], mode === "party"); finalListEl.appendChild(podium.el); if (!podium.el.classList.contains("skip")) { finalListEl.classList.add("pd-waiting"); const rc = document.getElementById("final-session-recap"); if (rc) rc.classList.add("pd-hold"); } }
     ranked.forEach((entry, idx) => {
       const { id, score, rank, medal: medalType, tiebreakUsed } = entry;
       const p = currentPlayers[id];
