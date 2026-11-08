@@ -11477,9 +11477,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function dailyAccuracies(guesses = daily.guesses) { return daily.questions.map((q, i) => (guesses[i] > 0 ? roundAccuracy(guesses[i] / q.answer) : 0)); }
   function dailyTotal(accs = dailyAccuracies()) { return Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10; }
-  function dailyDots(cur, doneN) {
-    const accs = dailyAccuracies();
-    return `<div class="dc-dots">${[0, 1, 2].map((i) => i < doneN ? `<i class="done">${markSvg(accs[i], "dot-mark")}</i>` : `<i class="${i === cur ? "on" : ""}"></i>`).join("")}</div>`;
+  function completedRoundDot(acc) {
+    return `<i class="done" role="img" aria-label="${formatAccuracy(acc)}% accurate">${markSvg(acc, "dot-mark")}</i>`;
+  }
+  function scoredRoundDots(accs, current, done = current) {
+    return `<div class="dc-dots">${accs.map((acc, i) => i < done ? completedRoundDot(acc) : `<i class="${i === current ? "on" : ""}"></i>`).join("")}</div>`;
   }
   // The streak card: a flame that grows with the streak (tiers at 1, 3, 7 and 30 days) and a bar toward the next coin bonus.
   function dailyFlameHtml(streak, pop, note) {
@@ -11595,7 +11597,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyStop();
       const i = daily.guesses.length, q = daily.questions[i];
       const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${i + 1} of 3</h2>${dailyDots(i, i)}</div>
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${i + 1} of 3</h2>${scoredRoundDots(dailyAccuracies(), i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
@@ -11607,7 +11609,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     qBoardHome(el);
     if (daily.phase === "reveal") {
       const i = daily.guesses.length - 1;
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${i + 1} of 3</h2>${dailyDots(i, i)}</div><p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${i + 1} of 3</h2>${scoredRoundDots(dailyAccuracies(), i)}</div><p class="dc-prompt">${escapeHtml(daily.questions[i].prompt)}</p><div id="daily-stage"></div><div id="dc-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="dc-skip">Skip</button></div>`;
       dailyRunReveal();
       return;
     }
@@ -11616,7 +11618,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const r = daily.res, q = daily.questions[r.i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId), last = daily.guesses.length >= 3;
       const card = (o) => `<div class="wb-card"><img src="${o.image}" alt="" draggable="false"><span class="wb-n">${escapeHtml(o.name)}</span></div>`;
       const said = Number(daily.guesses[r.i]).toLocaleString("en-US", { maximumFractionDigits: 2 });
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${r.i + 1} of 3</h2>${dailyDots(r.i, r.i + 1)}</div>
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${r.i + 1} of 3</h2>${scoredRoundDots(dailyAccuracies(), r.i, r.i + 1)}</div>
         <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
           <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), { sunriseStep: r.i })}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
@@ -13603,7 +13605,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!mo) return;
     if (mo.phase === "question") rerollPerRound(mo, mo.guesses.length);
     const el = monthlyContentEl, name = MONTH_NAMES[Number(mo.key.slice(5)) - 1];
-    const dots = (i) => `<div class="dc-dots">${Array.from({ length: mo.questions.length }, (_, k) => `<i class="${k < i ? "done" : (k === i ? "on" : "")}"></i>`).join("")}</div>`;
     // Pictures of a level's pack objects: black silhouettes until you've seen them in a game.
     const thumbs = (idxs, seen) => `<div class="mc-ths">${idxs.map((i) => { const o = monthlyPackObject(mo.combos[i]); return `<img class="mc-th${seen.has(i) ? "" : " sil"}" src="${o.image}" alt="" draggable="false">`; }).join("")}</div>`;
     if (mo.phase === "hub") {
@@ -13646,7 +13647,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mo.phase === "question") {
       monthlyStop();
       const i = mo.guesses.length, q = mo.questions[i], u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div>
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${scoredRoundDots(monthlyAccs(), i)}</div>
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
@@ -13658,7 +13659,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     qBoardHome(el);
     if (mo.phase === "reveal") {
       const i = mo.guesses.length - 1;
-      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${dots(i)}</div><p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button></div>`;
+      el.innerHTML = `<div class="pin-top"><h2 class="dc-title">Question ${i + 1} of ${mo.questions.length}</h2>${scoredRoundDots(monthlyAccs(), i)}</div><p class="dc-prompt">${escapeHtml(mo.questions[i].prompt)}</p><div id="mo-stage"></div><div id="mo-result"></div><div class="pin-bottom"><button type="button" class="dc-btn dc-alt" id="mo-skip">Skip</button></div>`;
       monthlyRunReveal();
       return;
     }
@@ -13703,6 +13704,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     const label = acc >= 100 && String(q.answer).length % 2 === 0 ? "Spot on!" : accLabel(acc);
     vibeAccuracy(acc);
+    const currentDot = monthlyContentEl.querySelector(".dc-dots .on");
+    if (currentDot) currentDot.outerHTML = completedRoundDot(acc);
     document.getElementById("mo-stage").hidden = true;
     host.innerHTML = `<div class="dc-card dc-hot dc-res mo-round-result">
       <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, reaction, { gesture, foreground: monthlyAcornPile(i + 1, arrival) })}
