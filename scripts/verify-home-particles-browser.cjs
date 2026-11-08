@@ -47,19 +47,24 @@ server.listen(0,'127.0.0.1',()=>{
   if(scene==='jungle'){
    const leaves=[...document.querySelectorAll('#home-fx .hf-petal')];
    assert(leaves.length===5&&leaves.every(leaf=>parseInt(leaf.style.getPropertyValue('--dr'),10)!==0),'Five green leaves drift diagonally on a phone');
-   const sloth=art.querySelector('.j-sloth'),paw=sloth.querySelector('.j-sloth-paw');
+   const sloth=art.querySelector('.j-sloth'),arm=sloth.querySelector('.j-sloth-arm');
    sloth.querySelector('button').click();
-   const motion=paw.getAnimations()[0],duration=motion.effect.getTiming().duration;
+   const motion=arm.getAnimations()[0],duration=motion.effect.getTiming().duration;
    motion.pause();
-   let last=0,left=0,right=0;
+   let last=0;
    for(let t=0;t<duration;t+=16){
     motion.currentTime=t;
-    const style=getComputedStyle(paw),m=new DOMMatrix(style.transform),angle=Math.atan2(m.b,m.a);
-    assert(style.opacity==='1'&&Math.abs(angle-last)<.05,'One visible paw moves continuously through the wave');
-    assert(Math.abs(Math.hypot(m.a,m.b)-1)<.001&&Math.abs(Math.hypot(m.c,m.d)-1)<.001,'The paw keeps its size while it rotates');
-    left=Math.min(left,angle);right=Math.max(right,angle);last=angle;
+    const style=getComputedStyle(arm),m=new DOMMatrix(style.transform),angle=Math.atan2(m.b,m.a);
+    assert(style.clipPath==='none'&&style.opacity==='1'&&Math.abs(angle-last)<.05,'The complete arm moves continuously through the wave');
+    assert(Math.abs(Math.hypot(m.a,m.b)-1)<.001&&Math.abs(Math.hypot(m.c,m.d)-1)<.001,'The arm keeps its size while it rotates');
+    last=angle;
    }
-   assert(left<-.15&&right>.15&&Math.abs(last)<.01,'The paw wags both ways and settles back into its original grip');
+   const [raise,dip,wave]=[.28,.46,.63].map(phase=>{
+    motion.currentTime=phase*duration;
+    const m=new DOMMatrix(getComputedStyle(arm).transform);
+    return Math.atan2(m.b,m.a);
+   });
+   assert(raise<-.25&&wave<-.25&&dip>-.15&&Math.abs(last)<.01,'The arm rises, waves, and settles back into its original grip');
    motion.finish();
    const eyelids=sloth.querySelector('.j-sloth-blink'),blink=eyelids.getAnimations()[0],timing=blink.effect.getTiming();
    blink.pause();

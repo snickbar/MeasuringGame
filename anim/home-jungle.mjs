@@ -4,7 +4,7 @@ const OWL = 'items/owl.webp';
 const MONKEYS = ['a', 'b', 'c'];
 
 export async function build(home, load, current) {
-  const sprites = ['tail', 'sloth', 'sloth-blink', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
+  const sprites = ['tail', 'sloth-body', 'sloth-arm', 'sloth-blink', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
   await Promise.all([load(PLATE), load(OWL), ...sprites.map(name => load(ART + name + '.webp'))]);
   if (!current()) return null;
 
@@ -33,7 +33,7 @@ export async function build(home, load, current) {
       </div></div>${hit('monkey', 'Play with monkey ' + (i + 1))}</div>`).join('')}
     </div>
     <div class="j-sloth"><div class="j-sloth-pose">
-      ${sprite('sloth', 'j-sloth-paw')}${sprite('sloth', 'j-art j-sloth-grip')}${sprite('sloth-blink', 'j-sloth-blink')}
+      ${sprite('sloth-arm', 'j-sloth-arm')}${sprite('sloth-body', 'j-art j-sloth-body')}${sprite('sloth-blink', 'j-sloth-blink')}
     </div>${hit('sloth', 'Say hello to the sloth')}</div>
   </div>`;
 
