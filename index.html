@@ -6574,7 +6574,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const cfg = AD_BAR_MODES[mode], o = adOffers[mode];
     const live = o && cfg && adSan(cfg.key()) === adSan(o.key) && Date.now() - o.t < 30 * 60 * 1000;
     if (!live) return `<button type="button" class="dc-btn" id="${finishId}">Finish</button>`;
-    return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>Watch ad: double coins &amp; finish</span><small>+${o.coins} bonus coins</small></button></div>`;
+    const adLabel = mode === "daily" ? "Watch ad to double" : "Watch ad: double coins &amp; finish";
+    return `<div class="wl-done-split"><button type="button" class="dc-btn" id="${finishId}">Finish &amp; collect coins</button><button type="button" class="dc-btn wl-ad-btn" data-ad-finish="${mode}"><span>${adLabel}</span><small>+${o.coins} bonus coins</small></button></div>`;
   }
   const adBarSlot = (mode, finishId) => `<div class="pin-bottom" id="ad-done-bar" data-mode="${mode}" data-finish="${finishId}">${adBarHtml(mode, finishId)}</div>`;
   function adBarRefresh(mode) {
@@ -11453,24 +11454,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { return local; }
   }
 
-  async function openDaily() {
+  async function openDaily(refresh = false) {
     const date = dailyDateStr();
-    if (dailyScreenEl.classList.contains("active")) return;
+    if (!refresh && dailyScreenEl.classList.contains("active")) return;
     dailyStop();
     daily = null;
     delete adOffers.daily;
     for (const pose of Object.values(DAILY_ROOSTER_ART)) new Image().src = `anim/mode-mascots/${pose}`;
     dailyContentEl.innerHTML = '<div class="dc-card">Loading today\'s challenge...</div>';
     const fromHub = soloScreenEl.classList.contains("active");
-    openOverlay(dailyScreenEl);
-    if (fromHub) overlayReturnScreen = soloScreenEl; // Back from the challenge lands on the hub
+    if (!refresh) {
+      openOverlay(dailyScreenEl);
+      if (fromHub) overlayReturnScreen = soloScreenEl; // Back from the challenge lands on the hub
+    }
     const combos = await dailyLoadCombos(date);
     if (!dailyScreenEl.classList.contains("active")) return;
     const saved = (myProfile.daily && myProfile.daily.date === date) ? myProfile.daily : null;
     const guesses = saved ? (Array.isArray(saved.guesses) ? saved.guesses : Object.values(saved.guesses || {})).slice(0, 3) : [];
     daily = { date, questions: combos.map(dailyQuestionFor), guesses, input: "", phase: "intro" };
-    daily.phase = (saved && saved.done) ? "done" : (guesses.length ? "question" : "intro");
-    if (guesses.length >= 3 && !(saved && saved.done)) { await dailyFinish(true); daily.phase = "done"; } // closed right after the last guess (recovery: shows the results, and only celebrates if it never did)
+    daily.phase = saved?.done ? "complete" : (guesses.length ? "question" : "intro");
+    if (guesses.length >= 3 && !saved?.done) {
+      await dailyFinish(true);
+      daily.phase = daily.justFinished && !daily.replay ? "done" : "complete";
+    }
     renderDaily();
   }
   function dailyStop() {
@@ -11479,6 +11485,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     dailyCalendarObserver = null;
   }
   function dailyAccuracies(guesses = daily.guesses) { return daily.questions.map((q, i) => (guesses[i] > 0 ? roundAccuracy(guesses[i] / q.answer) : 0)); }
+  function dailyTotal(accs = dailyAccuracies()) { return Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10; }
   function dailyDots(cur, doneN) {
     const accs = dailyAccuracies();
     return `<div class="dc-dots">${[0, 1, 2].map((i) => i < doneN ? `<i class="done">${markSvg(accs[i], "dot-mark")}</i>` : `<i class="${i === cur ? "on" : ""}"></i>`).join("")}</div>`;
@@ -11496,9 +11503,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // (days before your first Daily stay blank). A gold medal marks a perfect day, a flame + number marks a day that hit a streak bonus.
   function dailyCalendarHtml(ym, stamp = false) {
     const hist = { ...(myProfile.dailyHistory || {}) };
-    if (daily?.phase === "done" && !hist[daily.date]) {
-      const a = dailyAccuracies(daily.officialGuesses || daily.guesses);
-      hist[daily.date] = { s: a.reduce((x, y) => x + y, 0) / 3, p: a.every((x) => x >= 90) ? 1 : 0 };
+    if (daily?.phase === "complete" && !hist[daily.date]) {
+      const a = dailyAccuracies();
+      hist[daily.date] = { s: dailyTotal(a) / 3, p: a.every((x) => x >= 90) ? 1 : 0 };
     }
     const today = dailyDateStr(), keys = Object.keys(hist).sort(), firstKey = keys[0] || today;
     const [Y, M] = ym.split("-").map(Number), pad = (n) => String(n).padStart(2, "0");
@@ -11518,7 +11525,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       else if (key > today) cls += " future";
       else if (key >= firstKey && key < today) inner = cross(d);
       if (key === today) { cls += " today"; inner += ring; }
-      if (daily?.phase === "done" && key === daily.date && h) {
+      if (daily?.phase === "complete" && key === daily.date && h) {
         if (stamp) cls += " dc-cal-stamp";
         const column = (lead + d - 1) % 7;
         const fromLeft = column >= 4;
@@ -11562,21 +11569,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }, { rootMargin: "-154px 0px -76px", threshold: 1 });
     dailyCalendarObserver.observe(cell);
   }
-  function renderDaily() {
+  function renderDaily(stampCalendar = false) {
     if (!daily) return;
     if (daily.phase === "question") rerollPerRound(daily, daily.guesses.length);
     const el = dailyContentEl;
     const streak = dailyStreakNow();
     const roundTitle = daily.replay ? "Practice &middot; Question" : "Question";
-    if (daily.phase === "intro") {
+    if (daily.phase === "intro" || daily.phase === "complete") {
       dailyStop();
+      const complete = daily.phase === "complete";
+      const savedAccuracy = myProfile.dailyHistory?.[daily.date]?.s;
+      const total = complete ? (Number.isFinite(savedAccuracy) ? savedAccuracy * 3 : dailyTotal()) : 0;
+      const canReplay = complete && DAILY_PLAYTEST_REPLAY && daily.date === dailyDateStr();
       el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>${tourBtn('daily')}
-        <div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>
-        ${dailyFlameHtml(streak, false, `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
-        ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7))}
-        <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>
+        ${complete ? `<div class="dc-card dc-rank" aria-label="Today's official result"><span><b class="dc-rank-n">${formatAccuracy(total / 3)}%</b> accuracy</span><span id="dc-rank" hidden></span></div>`
+          : '<div class="dc-card dc-hot"><div class="dc-big">3 questions, one try</div><div class="dc-note">Everyone gets the same 3 today. You can only play once, so make your guesses count.</div></div>'}
+        ${canReplay ? '<button type="button" class="dc-btn dc-alt" id="dc-replay">Replay today’s questions</button><p class="dc-note dc-replay-note">Practice only &middot; Your first score still counts</p>' : ""}
+        ${complete ? dailyCalendarHtml(daily.calYm || daily.date.slice(0, 7), stampCalendar) : ""}
+        ${dailyFlameHtml(streak, stampCalendar, complete ? `<div class="dc-note">Next challenge in ${dailyResetText()}</div>` : `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
+        ${complete ? '<button type="button" class="dc-btn dc-alt" id="dc-share">Share today’s result</button>'
+          : `${dailyCalendarHtml(daily.calYm || daily.date.slice(0, 7))}<div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>`}
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
       dailyLoadBoard();
+      if (complete) dailyShowRank(total);
+      if (stampCalendar) dailyWatchCalendarStamp(el.querySelector(".dc-cal-stamp"));
       return;
     }
     if (daily.phase === "question") {
@@ -11619,33 +11635,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     // done
     dailyStop();
-    const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, b) => a + b, 0) * 10) / 10, perfect = accs.every((x) => x >= 90);
+    const accs = dailyAccuracies(), total = dailyTotal(accs), perfect = accs.every((x) => x >= 90);
     const celebrateFinish = daily.justFinished && !daily.flairShown;
     const rows = daily.questions.map((q, i) => { const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId); return `<div class="dc-row"><span class="dc-em">${markSvg(accs[i])}</span><span class="dc-rt">${escapeHtml(t.name)} in ${escapeHtml(u.plural)}</span><span class="dc-rv">${Math.round(accs[i])}%</span></div>`; }).join("");
-    el.innerHTML = `<h2 class="dc-title">Daily Challenge</h2><p class="dc-sub">${dailyPretty(daily.date)}</p>${tourBtn('daily')}
+    el.innerHTML = `<div class="pin-top dc-results-header"><h2 tabindex="-1">${daily.replay ? "Practice result" : "Daily results"}</h2><p class="dc-sub">${dailyPretty(daily.date)}</p></div>
       <div class="dc-card dc-hot${perfect ? " dc-perfect" : ""}">
         ${perfect && celebrateFinish ? `<div class="dc-pf-burst" aria-hidden="true">${svCoinBurstHtml()}</div>` : ""}
         <div class="dc-finish-hero">
           ${dailyRoosterHtml(perfect ? "crow" : "pleased", 3, celebrateFinish)}
           <div class="dc-finish-copy">
-            ${daily.replay ? '<div class="dc-note"><b>Practice result</b></div>' : ""}
             ${perfect ? '<div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div>' : ""}
             <div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div>
             <div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>
           </div>
         </div>
       </div>
-      ${DAILY_PLAYTEST_REPLAY && daily.date === dailyDateStr() ? '<button type="button" class="dc-btn dc-alt" id="dc-replay">Replay today’s questions</button><p class="dc-note dc-replay-note">Practice only &middot; Your first score still counts</p>' : ""}
-      <div class="dc-card dc-rank" id="dc-rank" hidden></div>
-      ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7), celebrateFinish)}
       <div class="dc-card dc-rounds">${rows}</div>
-      ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.justFinished && !daily.replay ? `<div class="dc-note"><b>+10 coins for today</b></div>` : ""}${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
-      ${daily.replay ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="dc-finish">Finish</button></div>' : `${adBarSlot("daily", "dc-finish")}<button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>`}
-      <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
-    dailyLoadBoard();
-    if (!daily.replay) { dailyShowRank(total); flushAdOffer("daily"); }
+      ${daily.justFinished && !daily.replay ? `<div class="dc-card dc-note"><b>+10 coins for today</b>${daily.bonus ? `<br><b>+${daily.bonus} coins streak bonus!</b>` : ""}</div>` : ""}
+      ${daily.replay ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="dc-finish">Finish</button></div>' : `${adBarSlot("daily", "dc-finish")}<button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>`}`;
+    el.querySelector(".dc-results-header h2").focus({preventScroll:true});
+    if (!daily.replay) flushAdOffer("daily");
     if (celebrateFinish) {
-      dailyWatchCalendarStamp(el.querySelector(".dc-cal-stamp"));
       countText(el.querySelector(".dc-hot .dc-big"), 800, 200);
       arriveMarks(el, 0.5);
       arriveRows(el, ".dc-rounds > .dc-row", 0.9);
@@ -11707,7 +11717,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const dailyMarkCelebrated = (date) => { try { localStorage.setItem("mg_daily_celebrated", date); } catch (e) {} };
   async function dailyFinish(recovery) {
     if (daily.replay) { daily.justFinished = true; return; }
-    const accs=dailyAccuracies(),total=Math.round(accs.reduce((a,b)=>a+b,0)*10)/10,streak=dailyUpdateStreak(daily.date);
+    const accs=dailyAccuracies(),total=dailyTotal(accs),streak=dailyUpdateStreak(daily.date);
     // Replay (debug "play again"): today is already on the board and in history, so don't post, pay or extend anything a second time.
     const replay=!!(myProfile.dailyHistory&&myProfile.dailyHistory[daily.date]);
     daily.bonus=replay?0:(DAILY_STREAK_BONUS[streak.count]||0);daily.justFinished=!(recovery&&dailyCelebrated(daily.date));if(daily.justFinished)dailyMarkCelebrated(daily.date);if(!daily.justFinished)daily.bonus=0;
@@ -11729,25 +11739,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<div class="dc-lb-row me" style="margin-top:8px"><span class="dc-lb-rank">${rank}</span><span class="dc-lb-name">Your rank</span><span class="dc-lb-score">${fmt(mine.s)}</span></div>`;
     } catch (e) { return ""; }
   }
-  // "You're #12 of 87 today": ranks your total against everyone who has posted today (up to 1000 scores).
+  // Rank the official attempt against the top 1000 scores.
   async function dailyShowRank(total) {
     const date = daily && daily.date, CAP = 1000, host = document.getElementById("dc-rank");
     if (!date || !host) return;
-    let rows = [], mineThere = false;
+    const scores = [];
+    let ownScore = total;
     try {
       const snap = await get(query(ref(db, `daily/${date}`), orderByChild("s"), limitToLast(CAP)));
-      snap.forEach((c) => { const v = c.val(); if (v && typeof v.s === "number") { rows.push(v.s); if (c.key === deviceId) mineThere = true; } });
+      snap.forEach((c) => {
+        const score = c.val()?.s;
+        if (!Number.isFinite(score)) return;
+        if (c.key === deviceId) ownScore = score;
+        else scores.push(score);
+      });
     } catch (e) { return; }
     if (!host.isConnected || !daily || daily.date !== date) return;
-    const players = rows.length + (mineThere ? 0 : 1), capped = rows.length >= CAP;
-    const rank = rows.filter((x) => x > total).length + 1;
+    const rank = scores.filter((score) => score > ownScore).length + 1;
+    host.innerHTML = `<b class="dc-rank-n">#${rank}</b> today`;
     host.hidden = false;
-    host.innerHTML = `<span class="dc-rank-l">You're</span><span class="dc-rank-n"><span class="dc-rank-hash">#</span><span id="dc-rank-num">${prefersReducedMotion() ? rank : Math.min(rank + 30, rank * 4)}</span></span><span class="dc-rank-l">${players > 1 && !capped ? `of ${players} today` : "today"}</span>`;
-    if (!prefersReducedMotion()) {
-      const num = document.getElementById("dc-rank-num"), from = Number(num.textContent), t0 = performance.now() + 600, dur = 900;
-      const tick = (t) => { if (!num.isConnected) return; const k = Math.max(0, Math.min(1, (t - t0) / dur)), e = 1 - Math.pow(1 - k, 3); num.textContent = Math.round(from + (rank - from) * e); if (k < 1) requestAnimationFrame(tick); else host.classList.add("landed"); };
-      requestAnimationFrame(tick);
-    } else host.classList.add("landed");
   }
   async function dailyLoadBoard() {
     const host = document.getElementById("dc-board");
@@ -11772,12 +11782,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (mineHtml && again === now && daily && daily.date === date) now.innerHTML = html + mineHtml;
   }
 
+  function dailyReturnToChallenge() {
+    const { date, questions, officialGuesses = daily.guesses, justFinished } = daily;
+    window.scrollTo(0, 0);
+    if (date !== dailyDateStr()) { void openDaily(true); return; }
+    delete adOffers.daily;
+    daily = { date, questions, guesses: officialGuesses, input: "", phase: "complete" };
+    renderDaily(!!justFinished);
+    const title = dailyContentEl.querySelector(".dc-title");
+    title.tabIndex = -1;
+    title.focus({preventScroll:true});
+  }
+
   dailyContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b || !daily) return;
     if (b.id === "dc-start") { daily.phase = "question"; renderDaily(); return; }
-    if (b.id === "dc-replay" && DAILY_PLAYTEST_REPLAY && daily.phase === "done" && daily.date === dailyDateStr()) {
-      const { date, questions, officialGuesses = daily.guesses } = daily;
+    if (b.id === "dc-replay" && DAILY_PLAYTEST_REPLAY && daily.phase === "complete" && daily.date === dailyDateStr()) {
+      const { date, questions, guesses: officialGuesses } = daily;
       daily = { date, questions, officialGuesses, guesses: [], input: "", phase: "question", replay: true };
       renderDaily();
       window.scrollTo(0, 0);
@@ -11806,15 +11828,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     if (b.id === "dc-skip") { if (dailyAnim) { try { dailyAnim.stop(); } catch (err) {} } dailyShowSummary(await loadAnimModule()); return; }
     if (b.id === "dc-next") { daily.phase = daily.guesses.length >= 3 ? "done" : "question"; renderDaily(); return; }
-    if (b.id === "dc-finish") { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); return; }
+    if (b.id === "dc-finish" && daily.phase === "done") { dailyReturnToChallenge(); return; }
     if (b.id === "dc-share") {
-      const accs = dailyAccuracies(), total = Math.round(accs.reduce((a, c) => a + c, 0) * 10) / 10;
+      const accs = dailyAccuracies(), total = dailyTotal(accs);
       const text = `Size Em Up! Daily ${daily.date}\n${accs.map(dailyEmoji).join("")}  ${formatAccuracy(total / 3)}% accurate`;
       const url = "https://size-em-up.web.app/?play=daily";
-      await shareResultCard({ text, url, dialogTitle: "Share your result", btn: b, label: "Share my result", card: { modeLabel: "Daily Challenge", headline: formatAccuracy(total / 3) + "%", headlineLabel: "ACCURATE", dots: accs.map(ACC_DOT) } });
+      await shareResultCard({ text, url, dialogTitle: "Share your result", btn: b, label: b.textContent, card: { modeLabel: "Daily Challenge", headline: formatAccuracy(total / 3) + "%", headlineLabel: "ACCURATE", dots: accs.map(ACC_DOT) } });
     }
   });
-  document.getElementById("daily-close-btn").addEventListener("click", guardGameBack(() => { dailyStop(); closeOverlay(); if (soloScreenEl.classList.contains("active")) renderSoloHub(); }));
+  document.getElementById("daily-close-btn").addEventListener("click", guardGameBack(() => {
+    if (daily?.phase === "done") { dailyReturnToChallenge(); return; }
+    dailyStop();
+    closeOverlay();
+    if (soloScreenEl.classList.contains("active")) renderSoloHub();
+  }));
 
   // ==================== Solo hub: Daily Challenge, Worlds, Quick Game, Survival ====================
   const soloContentEl = document.getElementById("solo-content");
@@ -15288,7 +15315,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const registerCoinHold = (fn, maxMs = 25000) => { coinHolds.push({ fn, maxMs }); };
   const coinResultsShowing = (mode) => {
     const on = (el) => !!el && el.classList.contains("active");
-    if (mode === "daily") return !!daily && daily.phase === "done" && on(dailyScreenEl);
+    if (mode === "daily") return ["done", "complete"].includes(daily?.phase) && on(dailyScreenEl);
     if (mode === "monthly") return !!mo && mo.phase === "done" && on(monthlyScreenEl);
     if (mode === "survival") return !!sv && sv.phase === "over" && on(survivalScreenEl);
     if (mode === "worlds") return wl.phase === "done" && on(worldsScreenEl);
@@ -16850,6 +16877,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (settingsOverGameOpen()) { setSettingsOverGame(false); return; }
     const solo = activeSoloRun();
     if (solo) { solo[0].querySelector('.screen-back-btn').click(); return; }
+    if (dailyScreenEl.classList.contains("active")) { dailyScreenEl.querySelector(".screen-back-btn").click(); return; }
     if (isInActiveGame()) { openLeaveGameConfirm(); return; }
     if (isInLobby()) { lobbyBackBtn.click(); return; }
     if (settingsScreen.classList.contains("active") || howtoScreen.classList.contains("active")) {
