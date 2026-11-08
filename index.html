@@ -1369,9 +1369,14 @@ if (location.protocol === "file:") {
   .mc-node { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
   .mc-dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; color: #fff; background: #9a8d7a; border: 3px solid #f6ead2; z-index: 1; }
   .mc-node.done .mc-dot { background: #2f9a5d; }
-  .mc-node.play .mc-dot { background: #d9811c; animation: mcPulse 1.6s ease-in-out infinite; }
-  @keyframes mcPulse { 50% { box-shadow: 0 0 0 7px rgba(217,129,28,.28); } }
-  :root[data-motion="reduce"] .mc-node.play .mc-dot { animation: none; }
+  .mc-node.play .mc-dot { background: #d9811c; z-index: 2; }
+  /* The ring that pulses round the level you are on is a circle behind the number that grows, not an animated box-shadow:
+     a shadow has to be repainted on every frame, while growing a circle (a transform) runs off the main thread. The circle
+     starts 1px inside the number (hidden behind it) and ends 7px outside it, as the shadow did. Same z-index as the number
+     (and earlier in the page), so it paints behind the number and, like the shadow did, over the squirrel beneath it. */
+  .mc-node.play::before { content: ""; position: absolute; z-index: 2; left: 1px; top: 1px; width: 38px; height: 38px; border-radius: 50%; background: rgba(217,129,28,.28); animation: mcPulse 1.6s ease-in-out infinite; }
+  @keyframes mcPulse { 50% { transform: scale(1.4211); } }
+  :root[data-motion="reduce"] .mc-node.play::before { animation: none; }
   .mc-card { background: #fffdf6; border: 2px solid #ecdcc0; border-radius: 16px; padding: 10px; color: #1a1208; text-align: left; }
   .mc-card[data-mo-level] { cursor: pointer; }
   .mc-node.play .mc-card { border-color: #d9811c; }

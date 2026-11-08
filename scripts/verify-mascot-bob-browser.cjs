@@ -6,6 +6,7 @@
 // was restyled 60 times a second for as long as a how-to-play was open (a lot of work for a slow phone).
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
 const {runFixture}=require('./browser-fixture.cjs');
+const {restyleRates,assertOffMainThread}=require('./restyle-rate.cjs');
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/\r\n/g,'\n');
 const existing=fs.readFileSync(path.join(root,'scripts/verify-game-polish-browser.cjs'),'utf8');
 const sandbox={};vm.runInNewContext(existing.slice(existing.indexOf('const dbStub='),existing.indexOf('let checks='))+';globalThis.parts={dbStub,authStub};',sandbox);
@@ -77,27 +78,12 @@ runFixture({html,widths:[390],height:844,modules:{'/__fake/app.mjs':'export cons
  again.seen.forEach((states,i)=>assert.equal(states[0],'mtMcHop','mascot '+i+' hops in again on the second run: '+JSON.stringify(again)));
  assert.deepEqual(again.bobDelays,[[0],[230]],'The first mascot bobs at once, the second 0.23 s later, so the pair stays out of step: '+JSON.stringify(again));
 
- // 4. With the mascots bobbing, the page is not restyled on every frame. Everything else that animates is paused first, so
- //    the count is about the mascots. Two controls keep the count honest: an animation that can only run on the main thread
- //    must show up in it (the count can see per-frame work), and a plain transform animation must stay out of it (this browser
- //    does run transform animations off the main thread; some builds of Chromium do not, and then the check says so and moves on).
+ // 4. With the mascots bobbing, the page is not restyled on every frame (everything else that animates is paused first, so
+ //    the count is about the mascots; the helper's controls keep the count honest).
  await evaluate("(document.getAnimations().forEach(a=>{if(a.animationName!=='mtMcBob')a.pause();}),0)");
  await wait(500);
- await call('Performance.enable',{},sessionId);
- const recalcs=async()=>(await call('Performance.getMetrics',{},sessionId)).metrics.find(m=>m.name==='RecalcStyleCount').value;
- const rate=async()=>{const a=await recalcs();await wait(1500);return (await recalcs()-a)/1.5;};
- const probe=async keyframes=>{
-  await evaluate(`(window.__probe=document.body.appendChild(document.createElement('div')),window.__probe.style.cssText='position:fixed;left:10px;top:10px;width:40px;height:40px;background:#c00;z-index:99999',window.__probe.animate(${keyframes},{duration:800,iterations:Infinity,direction:'alternate'}),0)`);
-  await wait(300);const r=await rate();
-  await evaluate("(window.__probe.getAnimations().forEach(a=>a.cancel()),window.__probe.remove(),0)");await wait(300);return r;
- };
- const bobbing=await rate();
- const mainThread=await probe("[{outlineOffset:'0px'},{outlineOffset:'3px'}]");
- const plainTransform=await probe("[{transform:'translateY(0)'},{transform:'translateY(10px)'}]");
- assert(mainThread>30,'A main-thread animation does show up in the count (so the check can see it): '+mainThread.toFixed(1)+' a second');
- const offMainThread=plainTransform<12;
- if(offMainThread)assert(bobbing<12,'The page is not restyled on every frame while the mascots bob: '+bobbing.toFixed(1)+' recalculations a second');
- else console.log('Note: this browser restyles the page every frame for any transform animation ('+plainTransform.toFixed(1)+' a second for a plain one), so the per-frame check is skipped here.');
+ const rates=await restyleRates({call,evaluate,sessionId});
+ const perFrameCheck=assertOffMainThread(assert,rates,'the mascots bob');
 
  // 5. Reduce Motion still keeps the mascots still, settled or not.
  await evaluate("(document.documentElement.dataset.motion='reduce',0)");
@@ -110,5 +96,5 @@ runFixture({html,widths:[390],height:844,modules:{'/__fake/app.mjs':'export cons
  const quick=JSON.parse(await evaluate(replay('quick')));
  checkRun('quick',quick);
  assert.equal(quick.shown,1,'Quick has one mascot: '+JSON.stringify(quick));
- console.log({pass:true,width,checks:'how-to-play mascots hop in, then settle into a bob; one animation at a time; hop again on every run; second mascot bobs later; Reduce Motion stills them; no per-frame restyling while they bob',firstRun:again.seen,bobDelays:again.bobDelays,restylesPerSecond:{whileBobbing:+bobbing.toFixed(1),aPlainTransformAnimation:+plainTransform.toFixed(1),aMainThreadAnimation:+mainThread.toFixed(1)},perFrameCheck:offMainThread?'ran':'skipped'});
+ console.log({pass:true,width,checks:'how-to-play mascots hop in, then settle into a bob; one animation at a time; hop again on every run; second mascot bobs later; Reduce Motion stills them; no per-frame restyling while they bob',firstRun:again.seen,bobDelays:again.bobDelays,restylesPerSecond:rates,perFrameCheck:perFrameCheck});
 }}).catch(e=>{console.error(e);process.exitCode=1});
