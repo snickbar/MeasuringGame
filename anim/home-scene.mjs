@@ -61,27 +61,38 @@ export const homeSceneHasArt = (scene) => !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
   return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = async () => { try { await img.decode(); yes(img); } catch (e) { no(e); } }; img.onerror = no; img.src = src; });
 }
-let request = 0, resizeStage = () => {}, disposeScene = () => {};
+let request = 0, pendingScene, resizeStage = () => {}, disposeScene = () => {};
 function stopHomeSound() { for (const node of tapSounds) { try { node.stop(); } catch {} } tapSounds.clear(); }
 document.addEventListener("visibilitychange", () => { if (document.hidden) stopHomeSound(); });
 addEventListener("resize", () => resizeStage());
 export async function installHomeScene() {
   const home = document.getElementById("home-screen"), scene = document.documentElement.dataset.homeScene || "ants";
-  if (!home || document.getElementById("home-art")?.dataset.scene === scene) return;
-  const ticket = ++request, current = () => ticket === request && document.documentElement.dataset.homeScene === scene;
-  try { await buildHomeScene(home, scene, current); }
-  catch (e) {
-    console.warn("Could not build Home scene", scene, e);
-    if (!current()) return;
-    // A failed asset still gets a decoded fallback, rather than a permanently blank Home.
-    const file = window.mgHomeFile?.(scene);
-    if (file) { try { await load(file); } catch {} }
-    if (!current()) return;
-    disposeScene(); document.getElementById("home-art")?.remove(); home.classList.remove("has-art");
-    resizeStage = () => {};
-  } finally {
-    if (current()) delete document.documentElement.dataset.homeLoading;
+  if (!home) return;
+  if (pendingScene?.id === scene) return pendingScene.task;
+  const ticket = ++request, current = () => ticket === request && (document.documentElement.dataset.homeScene || "ants") === scene;
+  if (document.getElementById("home-art")?.dataset.scene === scene) {
+    pendingScene = undefined;
+    delete document.documentElement.dataset.homeLoading;
+    return;
   }
+  const task = (async () => {
+    try { await buildHomeScene(home, scene, current); }
+    catch (e) {
+      console.warn("Could not build Home scene", scene, e);
+      if (!current()) return;
+      // A failed asset still gets a decoded fallback, rather than a permanently blank Home.
+      const file = window.mgHomeFile?.(scene);
+      if (file) { try { await load(file); } catch {} }
+      if (!current()) return;
+      disposeScene(); document.getElementById("home-art")?.remove(); home.classList.remove("has-art");
+      resizeStage = () => {};
+    } finally {
+      if (ticket === request) pendingScene = undefined;
+      if (current()) delete document.documentElement.dataset.homeLoading;
+    }
+  })();
+  pendingScene = { id: scene, task };
+  return task;
 }
 async function buildHomeScene(home, scene, current) {
   if (!homeSceneHasArt(scene)) throw Error("No layered Home scene");
@@ -91,19 +102,17 @@ async function buildHomeScene(home, scene, current) {
   if (rig && (cfg.rig === false || rig.W !== art.hero.sw || rig.H !== art.hero.sh)) rig = null;
   rig = homeRigMotion(scene, rig, art);
   const extraFiles = HOME_EXTRA_ART[scene] || [];
-  const extraImages = await Promise.all(extraFiles.map(file => load(BASE + file)));
-  const extras = new Map(extraFiles.map((file, i) => [file, extraImages[i]]));
   // Optimized builds omit the old whole hero when a rig supplies its base.
-  const images = Promise.all([scene==='house' ? null : art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters].map(l => l ? load(BASE + l.file) : null));
-  images.catch(() => {}); // The rig may still be loading when a required image fails.
-  if (rig) {
-    try {
-      const list = [rig.base, rig.hero2, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap((f) => f.frames), ...(rig.critFrames || []).flatMap((f) => f.frames)].filter(Boolean);
-      const loaded = await Promise.all(list.map((l) => load(BASE + "top/" + l.file)));
-      rigImgs = new Map(list.map((l, i) => [l.file, loaded[i]]));
-    } catch (e) { rig = null; rigImgs = null; }
-  }
-  const [loadedPlate, originalHero, originalHero2, ...crits] = await images;
+  const files = [scene==='house' ? null : art.plate, rig?.base ? null : art.hero, art.hero2, ...art.critters];
+  const rigFiles = rig ? [rig.base, rig.hero2, ...rig.parts, ...rig.patches, ...(rig.fx || []).flatMap(f => f.frames), ...(rig.critFrames || []).flatMap(f => f.frames)].filter(Boolean) : [];
+  const [extraImages, [loadedPlate, originalHero, originalHero2, ...crits], rigImages] = await Promise.all([
+    Promise.all(extraFiles.map(file => load(BASE + file))),
+    Promise.all(files.map(layer => layer ? load(BASE + layer.file) : null)),
+    Promise.all(rigFiles.map(layer => load(BASE + "top/" + layer.file))).catch(() => null),
+  ]);
+  const extras = new Map(extraFiles.map((file, i) => [file, extraImages[i]]));
+  if (rig && rigImages) rigImgs = new Map(rigFiles.map((layer, i) => [layer.file, rigImages[i]]));
+  else rig = null;
   const plate = scene==='house' ? extras.get('idle/kitchen-clean.webp') : loadedPlate;
   if (!home.isConnected || !current()) return;
   let hero = originalHero, hero2 = originalHero2;

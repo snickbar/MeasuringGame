@@ -10,6 +10,7 @@ const ACH_CATS=['Getting started'],ACH_ICON_IDS=new Set(),TROPHY_SVG='',achHideD
 const ACHIEVEMENTS=STARTER_AWARDS.map(a=>({...a,auto:true,target:1,progress:()=>a.id==='welcome-size-em-up'||myProfile.achClaimed?.[a.id]?1:0}));
 function achDone(a){return a.progress()>=a.target}
 function achClaimable(a){return !a.auto&&achDone(a)&&!myProfile.achClaimed?.[a.id]}
+${extract('updateAwardClaimDot')}
 ${extract('renderAchievementsScreen')}
 try{
  const assert=(v,m)=>{if(!v)throw Error(m)};

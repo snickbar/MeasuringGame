@@ -59,7 +59,7 @@ const awards=vm.createContext({myProfile:{achClaimed:{}},ACHIEVEMENTS:[{id:'one'
   ACH_CATS:['Test'],achChainOpen:()=>true,ACH_ICON_IDS:new Set(),TROPHY_SVG:'',achHideDone:false,achJustClaimed:null,achHold:{},escapeHtml:String,
   document:{getElementById:id=>id==='achievements-content'?content:toolbar,querySelectorAll:()=>tabs}});
 for(const name of ['achDone','achClaimable'])vm.runInContext(source.match(new RegExp('  function '+name+'\\([^\\n]+'))[0],awards);
-vm.runInContext(actual('updateCareerDot')+'\n'+actual('renderAchievementsScreen'),awards);
+vm.runInContext(['updateCareerDot','updateAwardClaimDot','renderAchievementsScreen'].map(actual).join('\n'),awards);
 awards.renderAchievementsScreen();assert(tabs.every(tab=>tab.classList.contains('has-dot')));
 awards.myProfile.achClaimed.one=true;awards.renderAchievementsScreen();
 assert(!toolbar.classList.contains('has-claim'));assert(tabs.every(tab=>!tab.classList.contains('has-dot')),'last claim clears every tab dot without navigating');

@@ -88,6 +88,7 @@ export function createPlayLayout(doc = document) {
     clear(owner);
   }
   function highLow(owner, progress, action, mode = 'highlow') {
+    if (borrowed.length && owner.dataset.playLayout === mode) return;
     restoreHighLow();
     const header = doc.createElement('div'), footer = doc.createElement('div');
     header.className = 'play-status'; footer.className = 'play-actions'; header.dataset.playOwned = ''; footer.dataset.playOwned = '';
@@ -97,6 +98,7 @@ export function createPlayLayout(doc = document) {
     owner.prepend(header); owner.append(footer); track(owner, mode);
   }
   function party(owner, question, action) {
+    if (borrowed.length && owner.dataset.playLayout === 'party') return;
     restoreHighLow();
     const body = doc.createElement('div'), footer = doc.createElement('div');
     body.className = 'play-input-body'; footer.className = 'play-actions';

@@ -133,7 +133,9 @@ const ui=vm.createContext({STARTER_AWARDS,myProfile:guest,ACH_CATS:['Getting sta
  document:{getElementById:id=>id==='achievements-content'?content:{classList:{toggle(){}}}}});
 vm.runInContext(source.slice(source.indexOf('  const ACHIEVEMENTS = [];'),source.indexOf('  function achTier(')),ui);
 for(const name of ['achDone','achClaimable'])vm.runInContext(source.match(new RegExp('  function '+name+'\\([^\\n]+'))[0],ui);
-vm.runInContext(source.match(/  function renderAchievementsScreen\(\) \{[\s\S]*?\n  \}/)[0],ui);
+for (const name of ['updateAwardClaimDot', 'renderAchievementsScreen']) {
+  vm.runInContext(source.match(new RegExp('  function '+name+'\\([^\\n]*\\{[\\s\\S]*?\\n  \\}'))[0],ui);
+}
 ui.renderAchievementsScreen();
 assert.match(content.innerHTML,/Welcome to Size Em Up!/);
 assert.match(content.innerHTML,/Account Connected/);
