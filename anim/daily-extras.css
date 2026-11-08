@@ -50,6 +50,26 @@ html[data-motion=reduce] .dc-pf-title{animation:none}
 .dc-cal .dc-cal-d .dc-cal-medal{position:absolute;left:auto;right:2px;top:2px;width:13px;height:16px;z-index:2;display:block}
 .dc-cal-fl{position:absolute;right:2px;bottom:1px;display:flex;align-items:center;z-index:4;color:#B84A06;font:800 12px/1 'Fredoka',sans-serif;text-shadow:0 0 3px #FFFDF6,0 0 3px #FFFDF6,0 0 3px #FFFDF6}
 .dc-cal-fl img{width:15px;height:15px}
+.dc-cal-rooster{
+  --dc-step:-1;position:absolute;z-index:5;bottom:1px;left:50%;width:36px;height:36px;
+  object-fit:contain;transform-origin:50% 90%;opacity:0;pointer-events:none;
+}
+.dc-cal-rooster-from-right{--dc-step:1}
+.dc-cal-stamp-play .dc-cal-rooster{animation:dcCalendarWalk 1.35s ease-in-out both}
+.dc-cal-stamp-play .dc-mk:not(.dc-ring) path{stroke-dasharray:85;animation:dcCalendarCheck .3s .85s ease-out both}
+@keyframes dcCalendarWalk{
+  0%{opacity:0;transform:translateX(calc(-50% + var(--dc-step)*105%))}
+  17%{opacity:1;transform:translate(calc(-50% + var(--dc-step)*77%),-4px) rotate(-8deg)}
+  31%{transform:translateX(calc(-50% + var(--dc-step)*50%)) rotate(5deg)}
+  46%{transform:translate(calc(-50% + var(--dc-step)*25%),-3px) rotate(-6deg)}
+  57%{transform:translateX(-50%)}
+  69%{transform:translateX(-50%) rotate(22deg)}
+  82%{opacity:1;transform:translateX(-50%) rotate(-6deg)}
+  100%{opacity:0;transform:translateX(-50%)}
+}
+@keyframes dcCalendarCheck{from{stroke-dashoffset:85}to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.dc-cal-stamp-play :is(.dc-cal-rooster,.dc-mk path){animation:none}}
+html[data-motion=reduce] .dc-cal-stamp-play :is(.dc-cal-rooster,.dc-mk path){animation:none}
 
 /* "You're #N of M today" */
 .dc-rank{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:10px 12px}
@@ -72,7 +92,7 @@ html[data-motion=reduce] .dc-rank.landed .dc-rank-n{animation:none}
   border-radius:62% 54% 0 0;background:#b9d78f;transform:rotate(-6deg);
 }
 .dc-rooster-sun{
-  position:absolute;z-index:-2;left:12%;bottom:33%;width:30%;aspect-ratio:1;
+  position:absolute;z-index:-2;left:12%;bottom:var(--dc-sun-height);width:30%;aspect-ratio:1;
   border-radius:50%;background:#fff7c3;box-shadow:0 0 16px 7px #fff4c893;
 }
 .dc-rooster-bird{
@@ -82,29 +102,30 @@ html[data-motion=reduce] .dc-rank.landed .dc-rank-n{animation:none}
 .dc-rooster-bird img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
 .dc-rooster-crow .dc-rooster-ready{visibility:hidden}
 .dc-rooster-animate .dc-rooster-sun{animation:dcSunrise .95s ease-out both}
-.dc-rooster-animate.dc-rooster-crow .dc-rooster-ready{animation:dcReadyPose 1.25s steps(1,end) both}
-.dc-rooster-animate .dc-rooster-cheer{animation:dcCrowPose 1.25s steps(1,end) both}
-.dc-rooster-animate.dc-rooster-crow .dc-rooster-bird{animation:dcCrow 1.25s ease-in-out both}
-.dc-rooster-animate.dc-rooster-peck .dc-rooster-bird{animation:dcPeck 1.2s ease-in-out both}
-.dc-rooster-animate.dc-rooster-nod .dc-rooster-bird{animation:dcNod .85s ease-in-out both}
+.dc-rooster-animate.dc-rooster-crow .dc-rooster-ready{animation:dcReadyPose 1.95s steps(1,end) both}
+.dc-rooster-animate .dc-rooster-cheer{animation:dcCrowPose 1.95s steps(1,end) both}
+.dc-rooster-animate.dc-rooster-crow .dc-rooster-bird{animation:dcCrow 1.95s ease-in-out both}
+.dc-rooster-animate.dc-rooster-peck .dc-rooster-bird{animation:dcPeck 1.85s ease-in-out both}
+.dc-rooster-animate.dc-rooster-nod .dc-rooster-bird{animation:dcNod 1.65s ease-in-out both}
 @keyframes dcSunrise{from{transform:translateY(75%);opacity:.65}to{transform:none;opacity:1}}
-@keyframes dcReadyPose{0%,76%{visibility:visible}30%{visibility:hidden}}
-@keyframes dcCrowPose{0%,76%{visibility:hidden}30%{visibility:visible}}
+@keyframes dcReadyPose{0%,83%{visibility:visible}57%{visibility:hidden}}
+@keyframes dcCrowPose{0%,83%{visibility:hidden}57%{visibility:visible}}
 @keyframes dcCrow{
   0%,100%{transform:none}
-  22%{transform:translateY(4%) rotate(7deg)}
-  43%{transform:translateY(-12%) rotate(-8deg)}
-  62%{transform:translateY(-5%) rotate(-3deg)}
-  77%{transform:translateY(2%) rotate(4deg)}
+  34%{transform:rotate(9deg)}
+  53%{transform:translateY(4%) rotate(7deg)}
+  65%{transform:translateY(-12%) rotate(-8deg)}
+  76%{transform:translateY(-5%) rotate(-3deg)}
+  84%{transform:translateY(2%) rotate(4deg)}
 }
 @keyframes dcPeck{
   0%,100%{transform:none}
-  24%{transform:rotate(-9deg)}
-  44%,68%{transform:translateX(5%) rotate(19deg)}
-  55%{transform:translateX(4%) rotate(7deg)}
-  84%{transform:rotate(-5deg)}
+  36%{transform:rotate(9deg)}
+  57%{transform:rotate(-9deg)}
+  72%,87%{transform:translateX(5%) rotate(19deg)}
+  80%{transform:translateX(4%) rotate(7deg)}
 }
-@keyframes dcNod{0%,28%,100%{transform:none}58%{transform:rotate(12deg)}78%{transform:rotate(-4deg)}}
+@keyframes dcNod{0%,100%{transform:none}40%{transform:rotate(9deg)}64%{transform:rotate(2deg)}76%{transform:rotate(14deg)}89%{transform:rotate(-4deg)}}
 @media(prefers-reduced-motion:reduce){.dc-rooster-animate :is(.dc-rooster-sun,.dc-rooster-bird,.dc-rooster-ready,.dc-rooster-cheer){animation:none}}
 html[data-motion=reduce] .dc-rooster-animate :is(.dc-rooster-sun,.dc-rooster-bird,.dc-rooster-ready,.dc-rooster-cheer){animation:none}
 
@@ -113,6 +134,7 @@ html[data-motion=reduce] .dc-rooster-animate :is(.dc-rooster-sun,.dc-rooster-bir
 .dc-finish-copy .dc-pf-title{font-size:clamp(22px,6vw,36px)}
 .dc-finish-copy .dc-marks{gap:6px}
 .dc-finish-copy .dc-marks .res-mark{width:clamp(25px,9vw,38px);height:auto}
+.dc-replay-note{margin:5px 0 10px}
 
 /* Round summary, with the rooster beside the verdict stamp. */
 #daily-content .wb-verdict .wb-result-stage.dc-stage{
