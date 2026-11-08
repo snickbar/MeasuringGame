@@ -4,7 +4,7 @@ const OWL = 'items/owl.webp';
 const MONKEYS = ['a', 'b', 'c'];
 
 export async function build(home, load, current) {
-  const sprites = ['tail', 'sloth', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
+  const sprites = ['tail', 'sloth', 'sloth-wave', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
   await Promise.all([load(PLATE), load(OWL), ...sprites.map(name => load(ART + name + '.webp'))]);
   if (!current()) return null;
 
@@ -33,7 +33,8 @@ export async function build(home, load, current) {
       </div></div>${hit('monkey', 'Play with monkey ' + (i + 1))}</div>`).join('')}
     </div>
     <div class="j-sloth"><div class="j-sloth-pose">
-      ${sprite('sloth', 'j-art')}<i class="j-lid j-lid-left"></i><i class="j-lid j-lid-right"></i>
+      ${sprite('sloth-wave', 'j-sloth-wave')}
+      ${sprite('sloth', 'j-art j-sloth-grip')}<i class="j-lid j-lid-left"></i><i class="j-lid j-lid-right"></i>
     </div>${hit('sloth', 'Say hello to the sloth')}</div>
   </div>`;
 
@@ -41,11 +42,13 @@ export async function build(home, load, current) {
     const events = new AbortController();
     const doc = home.ownerDocument, media = matchMedia('(prefers-reduced-motion: reduce)');
     const vine = root.querySelector('.j-vine'), sloth = root.querySelector('.j-sloth');
+    const slothArm = sloth.querySelector('.j-sloth-wave');
     const monkeys = [...root.querySelectorAll('.j-acting')];
     const reactions = [];
     let active;
     function clearReactions() {
       for (const motion of reactions.splice(0)) motion.cancel();
+      delete sloth.dataset.waving;
     }
     function sync() {
       const mode = doc.documentElement.dataset.motion;
@@ -57,12 +60,13 @@ export async function build(home, load, current) {
         stopSound();
       }
     }
-    function react(el, frames, timing) {
+    function react(el, frames, timing, onFinish) {
       const motion = el.animate(frames, timing);
       reactions.push(motion);
       motion.onfinish = () => {
         const index = reactions.indexOf(motion);
         if (index !== -1) reactions.splice(index, 1);
+        onFinish?.();
       };
     }
     root.addEventListener('click', event => {
@@ -85,10 +89,17 @@ export async function build(home, load, current) {
           ], { duration: 850, delay: i * 150, easing: 'ease-in-out' });
         });
       } else {
-        react(sloth, [
-          { rotate: '0deg' }, { rotate: '-8deg', offset: .38 },
-          { rotate: '-8deg', offset: .68 }, { rotate: '0deg' },
-        ], { duration: 2300, easing: 'ease-in-out' });
+        sloth.dataset.waving = '';
+        const grip = 'translate(-17%, 4%) rotate(27deg)';
+        react(slothArm, [
+          { transform: grip },
+          { transform: 'rotate(-7deg)', offset: .24 },
+          { transform: 'rotate(6deg)', offset: .39 },
+          { transform: 'rotate(-9deg)', offset: .52 },
+          { transform: 'rotate(5deg)', offset: .66 },
+          { transform: 'rotate(-5deg)', offset: .77 },
+          { transform: grip },
+        ], { duration: 2250, easing: 'ease-in-out' }, () => delete sloth.dataset.waving);
       }
     }, { signal: events.signal });
 

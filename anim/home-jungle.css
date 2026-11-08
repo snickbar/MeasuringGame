@@ -6,17 +6,18 @@
 #home-art :is(.j-vine,.j-stem,.j-monkey,.j-tail,.j-limb,.j-sloth,.j-lid,.j-hollow,.j-snake-slot,.j-tongue) { position: absolute; }
 #home-art .j-art { display: block; width: 100%; }
 #home-art .j-vine {
-  top: 17.6%; height: 61%; left: max(21%, calc((100% - 100dvw) / 2 + 42px));
+  top: 17.6%; height: 68%; left: max(21%, calc((100% - 100dvw) / 2 + 42px));
   transform-origin: top center; animation: jVineSway 6.8s ease-in-out infinite;
 }
 #home-art .j-stem { top: 0; left: -11px; width: 22px; height: 100%; }
 #home-art .j-monkey {
-  top: var(--drop); left: 0; height: var(--j-monkey-height); width: max-content;
-  transform: translate(calc(-1 * var(--grip-x)), calc(-1 * var(--grip-y)));
+  top: calc(27.4cqh + var(--row) * (var(--j-monkey-height) + 3px));
+  left: 0; height: var(--j-monkey-height); width: max-content;
+  transform: translateX(calc(-1 * var(--grip-x)));
 }
-#home-art .j-monkey-a { --drop: 22%; --grip-x: 15%; --grip-y: 8%; --tail-x: 39%; --tail-bottom: 32%; --tail-delay: -.7s; }
-#home-art .j-monkey-b { --drop: 45%; --grip-x: 10%; --grip-y: 6%; --tail-x: 39%; --tail-bottom: 26%; --tail-delay: -2.4s; }
-#home-art .j-monkey-c { --drop: 68%; --grip-x: 23%; --grip-y: 7%; --tail-x: 49%; --tail-bottom: 34%; --tail-delay: -3.6s; }
+#home-art .j-monkey-a { --row: 0; --grip-x: 15%; --grip-y: 8%; --tail-x: 39%; --tail-bottom: 32%; --tail-delay: -.7s; }
+#home-art .j-monkey-b { --row: 1; --grip-x: 10%; --grip-y: 6%; --tail-x: 39%; --tail-bottom: 26%; --tail-delay: -2.4s; }
+#home-art .j-monkey-c { --row: 2; --grip-x: 23%; --grip-y: 7%; --tail-x: 49%; --tail-bottom: 34%; --tail-delay: -3.6s; }
 #home-art .j-swing, #home-art .j-acting {
   position: relative; height: 100%; transform-origin: var(--grip-x) var(--grip-y);
 }
@@ -44,11 +45,25 @@
 }
 
 #home-art .j-sloth {
-  top: 45%; right: max(5%, calc((100% - 100dvw) / 2 + 6px));
-  height: calc(3 * var(--j-monkey-height)); width: max-content; transform-origin: 89% 24%;
+  top: 45%; right: max(5%, calc((100% - 100dvw) / 2 + 17px));
+  height: calc(3 * var(--j-monkey-height)); width: max-content;
 }
 #home-art .j-sloth-pose { position: relative; height: 100%; transform-origin: 89% 24%; animation: jSlothBreath 7.8s ease-in-out infinite; }
 #home-art .j-sloth .j-art { height: 100%; width: auto; }
+/* Both sprites share the same registration. The head and front arm sit over the moving rear arm. */
+#home-art .j-sloth-grip { position: relative; }
+#home-art .j-sloth-wave {
+  position: absolute; top: 0; left: 0; height: 100%; width: auto; opacity: 0;
+  transform-origin: 70% 36%;
+  clip-path: polygon(73% 0,100% 0,100% 36%,79% 36%,57% 41%,59.7% 36%,
+    64% 33%,68% 29%,71.4% 25%,72.8% 21%);
+}
+#home-art .j-sloth[data-waving] .j-sloth-wave { opacity: 1; }
+#home-art .j-sloth[data-waving] .j-sloth-grip {
+  clip-path: polygon(0 0,100% 0,100% 14%,74% 14%,77% 18%,77.5% 22%,77% 25%,
+    74.5% 28%,70.5% 31%,66% 34%,63% 36%,64% 39%,80% 37%,89% 34.8%,100% 34.8%,
+    100% 100%,0 100%);
+}
 #home-art .j-lid {
   width: 10%; height: 6.3%; border-radius: 50%; background: #653927;
   box-shadow: inset 0 -2px #301812; opacity: 0;
@@ -116,9 +131,6 @@
 
 @media (max-height: 740px) and (min-aspect-ratio: 4/9) {
   #home-art[data-scene=jungle] .hs-stage { --j-monkey-height: 10.3cqh; }
-  #home-art .j-monkey-a { --drop: 31%; }
-  #home-art .j-monkey-b { --drop: 51%; }
-  #home-art .j-monkey-c { --drop: 71%; }
 }
 @media (prefers-reduced-motion: reduce) {
   html:not([data-motion=full]) #home-art[data-scene=jungle] * { animation: none; }
