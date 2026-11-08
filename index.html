@@ -5183,6 +5183,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
   import { installBottomActions } from "./anim/bottom-actions.mjs";
+  import { pictureSrcAttr, pictureSrc, installLazyPictures } from "./anim/lazy-pictures.mjs";
   import { createPolish, applyMenuBanner, MENU_BANNERS, bannerMascot } from "./anim/game-polish.mjs";
   import { recentDiscoveries, recentlySeen, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
@@ -7620,9 +7621,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   watchMyProfile();
 
-  function avatarHtml(id, extraClass) {
+  // `position` is only given for pictures in a long grid (the avatar collection): the ones past the first screenful wait to load until they scroll near.
+  function avatarHtml(id, extraClass, position) {
     const dir = typeof AVATAR_FACE !== "undefined" && Object.hasOwn(AVATAR_FACE, id) ? AVATAR_FACE[id] : "", face = dir ? ` data-face="${dir}"` : "";
-    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" src="avatars/${id}.png"${face} alt="" draggable="false">` : "";
+    const src = position === undefined ? `src="avatars/${id}.png"` : pictureSrcAttr(`avatars/${id}.png`, position);
+    return id ? `<img class="avatar-icon${extraClass ? " " + extraClass : ""}" ${src}${face} alt="" draggable="false">` : "";
   }
   // Escapes any free-text value (player names, above all) before it's dropped into
   // an innerHTML template — without this, a name like "<img src=x onerror=...>"
@@ -15672,6 +15675,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const GACHA_TIER_DOT_COLORS = { default: "#8a9a6f", common: "#7a8fa6", rare: "#9a6fc1", ultra: "#d9a441" };
   let collectionOwnership="all";
   let collectionHideLocked = false;
+  let stopCollectionLazy = () => {}; // stops waking the previous grid's pictures when the grid is drawn again
   try { collectionHideLocked = localStorage.getItem("mg_coll_hide") === "1"; } catch (e) {}
   function renderCollectionScreen() {
     const byTier = { default: [], common: [], rare: [], ultra: [] };
@@ -15682,13 +15686,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
     </div>`;
+    let position = 0; // across all groups, so only the first screenful of the whole grid loads straight away
     let body = GACHA_TIER_ORDER.map((tier) => {
       const list = byTier[tier];
       if (!list.length) return "";
       const unlockedCount = list.filter(isAvatarUnlocked).length;
       const shown = list.filter(a=>collectionOwnership==="locked"?!isAvatarUnlocked(a):(collectionHideLocked||collectionOwnership==="owned")?isAvatarUnlocked(a):true);
       if (!shown.length) return "";
-      const tiles = shown.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}" role="button" tabindex="0">${avatarHtml(a)}${isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : ""}</div>`).join("");
+      const tiles = shown.map((a) => `<div class="collection-tile${isAvatarUnlocked(a) ? "" : " locked"}" role="button" tabindex="0">${avatarHtml(a, "", position++)}${isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : ""}</div>`).join("");
       return `
         <div class="collection-tier-group">
           <h3 class="collection-tier-title">
@@ -15703,6 +15708,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (favList.length && collectionOwnership !== "locked") body = `<div class="collection-tier-group"><h3 class="collection-tier-title"><span class="fav-title-heart">${FAV_HEART}</span>Favorites<span class="collection-tier-count">(${favList.length})</span></h3><div class="collection-grid">${favList.map((a) => `<div class="collection-tile" role="button" tabindex="0">${avatarHtml(a)}<i class="fav-dot">${FAV_HEART}</i></div>`).join("")}</div></div>` + body;
     if (!body) body = `<div class="ach-empty">${emptyHtml("icons/shop-starter-gift.webp", "No avatars yet", "Give the machine a spin!")}</div>`;
     collectionContentEl.innerHTML = head + body;
+    stopCollectionLazy(); stopCollectionLazy = installLazyPictures(collectionContentEl, { scroller: document.getElementById("shop-tab-avatars") });
   }
 
   // Display names only - deliberately leaves out OBJECTS[].mm (the whole
@@ -16298,7 +16304,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function avatarIdFromTile(tile) {
     const img = tile.querySelector("img.avatar-icon");
-    const m = img && img.src.match(/avatars\/([^/]+)\.png/);
+    const m = img && pictureSrc(img).match(/avatars\/([^/]+)\.png/); // a picture that has not woken up yet only has data-src
     return m ? m[1] : null;
   }
   function openAvatarZoom(tile, id) {
