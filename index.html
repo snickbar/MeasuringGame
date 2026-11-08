@@ -6501,6 +6501,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (row.kind !== "attempt" || !row.key || adOfferShown.has(row.key) || Date.now() - (row.t || 0) > 10 * 60 * 1000) return; // a stuck sync can delay the save, so allow a generous window
       const k = String(row.key).replace(/[.#$\[\]/]/g, "_");
       const prof = (await get(ref(db, `profiles/${id}`))).val() || {};
+      if (row.mode === "daily" && AD_BAR_MODES.daily.key() !== row.key) return;
       const coins = prof.attemptReceipts?.[k]?.base ?? prof.attemptReceipts?.[k]?.coins ?? 0; // the ad bonus matches the normal payout, not the booster-doubled one
       // The receipt can land a moment after the save callback (slow connection, queued sync): look again a few times before giving up.
       if (!prof.attemptReceipts?.[k] && attempt < 5) { setTimeout(() => void offerAdDouble(row, id, attempt + 1), 1500); return; }
@@ -6562,7 +6563,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const adOffers = {};
   const adSan = (key) => String(key || "").replace(/[.#$\[\]/]/g, "_");
   const AD_BAR_MODES = {
-    daily: { key: () => daily && "daily_" + daily.date, done: () => daily.phase === "done" },
+    daily: { key: () => daily?.justFinished && !daily.replay && dailyScreenEl.classList.contains("active") ? "daily_" + daily.date : null, done: () => daily.phase === "done" },
     monthly: { key: () => mo && !mo.practice && "monthly_" + mo.key + "_L" + mo.level + "_v" + MONTHLY_FORMAT, done: () => mo.phase === "done" && !mo.practice },
     practice: { key: () => mo && mo.practice && mo.runId, done: () => mo.phase === "done" && mo.practice },
     survival: { key: () => sv && sv.runId, done: () => sv.phase === "over" },
@@ -6592,8 +6593,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       b.querySelector("span").textContent = res === "paid" ? "Doubled!" : "Already doubled";
       await new Promise((r) => setTimeout(r, 900));
     } catch (err) { b.disabled = false; return; }
-    delete adOffers[mode];
-    document.getElementById(bar.dataset.finish)?.click();
+    if (adOffers[mode] === o) delete adOffers[mode];
+    if (mode === "daily" && !dailyScreenEl.classList.contains("active")) return;
+    bar.querySelector(`#${bar.dataset.finish}`)?.click();
   });
   async function watchAdForCoins() {
     const today = todayDateStr();
@@ -11355,6 +11357,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }));
   // ==================== Daily Challenge: play, results, streak, leaderboard ====================
   const DAILY_PLAYTEST_REPLAY = true; // Turn off after the Daily Challenge playtest.
+  const DAILY_ROOSTER_ART = {
+    ready: "daily-rooster-ready.png",
+    pleased: "daily-rooster-pleased.png",
+    puzzled: "daily-rooster-puzzled.png",
+    deflated: "daily-rooster-deflated.png",
+    crow: "daily-rooster-cheer.png",
+  };
   const dailyContentEl = document.getElementById("daily-content");
   let daily = null;        // today's session: { date, questions, guesses, phase, input }
   let dailyAnim = null;    // the reveal animation's controller
@@ -11447,6 +11456,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function openDaily() {
     const date = dailyDateStr();
     if (dailyScreenEl.classList.contains("active")) return;
+    dailyStop();
+    daily = null;
+    delete adOffers.daily;
+    for (const pose of Object.values(DAILY_ROOSTER_ART)) new Image().src = `anim/mode-mascots/${pose}`;
     dailyContentEl.innerHTML = '<div class="dc-card">Loading today\'s challenge...</div>';
     const fromHub = soloScreenEl.classList.contains("active");
     openOverlay(dailyScreenEl);
@@ -11515,21 +11528,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ymNow = today.slice(0, 7), ymFirst = firstKey.slice(0, 7), name = new Date(Y, M - 1, 1).toLocaleDateString(undefined, { month: "long", year: ym === ymNow ? undefined : "numeric" });
     const shift = (n) => { const dt = new Date(Date.UTC(Y, M - 1 + n, 1)); return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}`; };
     const best = (myProfile.dailyStreak && myProfile.dailyStreak.best) || 0;
-    return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
+    const mascot = daily?.phase === "done" && ym === daily.date.slice(0, 7) ? '<img class="dc-cal-mascot" src="anim/mode-mascots/daily-rooster-tutorial.webp" alt="" draggable="false">' : "";
+    return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span>${mascot}</div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
   }
   function dailyRoosterHtml(reaction, step, animate = true) {
     return `<div class="dc-rooster dc-rooster-${reaction}${animate ? " dc-rooster-animate" : ""}" style="--dc-sun-height:${[24, 34, 44, 55][step]}%" aria-hidden="true">
       <span class="dc-rooster-sun"></span>
-      <span class="dc-rooster-bird"><img class="dc-rooster-ready" src="anim/mode-mascots/daily-rooster-tutorial.webp" alt="" draggable="false">${reaction === "crow" ? '<img class="dc-rooster-cheer" src="anim/mode-mascots/daily-rooster-cheer.png" alt="" draggable="false">' : ""}</span>
+      <span class="dc-rooster-bird">
+        <img class="dc-rooster-ready" src="anim/mode-mascots/${DAILY_ROOSTER_ART.ready}" alt="" draggable="false">
+        <img class="dc-rooster-reaction" src="anim/mode-mascots/${DAILY_ROOSTER_ART[reaction]}" alt="" draggable="false">
+      </span>
     </div>`;
   }
-  function dailyWatchCalendarStamp(cell) {
+  async function dailyWatchCalendarStamp(cell) {
     if (!cell || !window.IntersectionObserver || prefersReducedMotion()) return;
+    const bird = cell.querySelector(".dc-cal-rooster");
+    try { await bird.decode(); } catch { return; }
+    if (!cell.isConnected || !dailyScreenEl.classList.contains("active") || prefersReducedMotion()) return;
     dailyCalendarObserver = new IntersectionObserver(([entry], observer) => {
-      if (entry.intersectionRatio < 0.8) return;
+      if (entry.intersectionRatio < 1) return;
       cell.classList.add("dc-cal-stamp-play");
       observer.disconnect();
-    }, { threshold: 0.8 });
+    }, { rootMargin: "-154px 0px -76px", threshold: 1 });
     dailyCalendarObserver.observe(cell);
   }
   function renderDaily() {
@@ -11577,7 +11597,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${r.i + 1} of 3</h2>${dailyDots(r.i, r.i + 1)}</div>
         <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
-          <div class="wb-result-stage dc-stage">${dailyRoosterHtml(r.acc >= 90 ? "crow" : r.ok ? "nod" : "peck", r.i)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
+          <div class="wb-result-stage dc-stage">${dailyRoosterHtml(r.acc >= 90 ? "crow" : r.ok ? "pleased" : r.acc >= 40 ? "puzzled" : "deflated", r.i)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
           <div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t">${r.label}</div></div>
           <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
           <p class="wb-line sv-arr" style="--a:.5s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
@@ -11596,7 +11616,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot${perfect ? " dc-perfect" : ""}">
         ${perfect && celebrateFinish ? `<div class="dc-pf-burst" aria-hidden="true">${svCoinBurstHtml()}</div>` : ""}
         <div class="dc-finish-hero">
-          ${dailyRoosterHtml(perfect ? "crow" : "nod", 3, celebrateFinish)}
+          ${dailyRoosterHtml(perfect ? "crow" : "pleased", 3, celebrateFinish)}
           <div class="dc-finish-copy">
             ${daily.replay ? '<div class="dc-note"><b>Practice result</b></div>' : ""}
             ${perfect ? '<div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div>' : ""}
@@ -11607,8 +11627,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       ${DAILY_PLAYTEST_REPLAY && daily.date === dailyDateStr() ? '<button type="button" class="dc-btn dc-alt" id="dc-replay">Replay today’s questions</button><p class="dc-note dc-replay-note">Practice only &middot; Your first score still counts</p>' : ""}
       <div class="dc-card dc-rank" id="dc-rank" hidden></div>
-      <div class="dc-card">${rows}</div>
       ${dailyCalendarHtml(daily.calYm || dailyDateStr().slice(0, 7), celebrateFinish)}
+      <div class="dc-card dc-rounds">${rows}</div>
       ${dailyFlameHtml(streak, !!daily.justFinished, `<div class="dc-note">Next challenge in ${dailyResetText()}</div>${daily.justFinished && !daily.replay ? `<div class="dc-note"><b>+10 coins for today</b></div>` : ""}${daily.bonus ? `<div class="dc-note"><b>+${daily.bonus} coins streak bonus!</b></div>` : ""}`)}
       ${daily.replay ? '<div class="pin-bottom"><button type="button" class="dc-btn" id="dc-finish">Finish</button></div>' : `${adBarSlot("daily", "dc-finish")}<button type="button" class="dc-btn dc-alt" id="dc-share">Share my result</button>`}
       <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
@@ -11618,7 +11638,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyWatchCalendarStamp(el.querySelector(".dc-cal-stamp"));
       countText(el.querySelector(".dc-hot .dc-big"), 800, 200);
       arriveMarks(el, 0.5);
-      arriveRows(el, ".dc-card:not(.dc-hot):not(.dc-rank) > .dc-row", 0.9);
+      arriveRows(el, ".dc-rounds > .dc-row", 0.9);
       el.querySelectorAll(".dc-note b").forEach((b) => { if (/^\+\d+ coins/.test(b.textContent.trim())) countText(b, 600, 1700); });
       daily.flairShown = true;
     }
