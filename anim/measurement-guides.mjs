@@ -9,7 +9,14 @@ export function measurementGuideAxis(object,bounds){
   if(dimension==='length')return VERTICAL_LENGTH.has(object.id)||bounds.height>bounds.width*1.2?'vertical':'horizontal';
   return 'horizontal';
 }
-// Use visible artwork bounds, then follow the exact thumbnail rotation/mirror.
+// The reveal's entrance pose uses rot and flip, plus mirR on the right.
+// leanL and leanR belong to the subsequent stack animation.
+export function objectEntrancePose(id, onRight) {
+  const saved = ORIENT[id];
+  return { rotation: saved?.rot || 0, mirrored: !!saved?.flip !== !!(onRight && saved?.mirR) };
+}
+
+// Apply the pose to the artwork. Guides are drawn in the card's coordinates.
 export function installMeasurementGuides({objects,document:doc=document}) {
   const byImage=new Map(objects.filter(o=>o.image).map(o=>[new URL(o.image,doc.baseURI).pathname,o]));
   const painted=new WeakMap(),observed=new Set(),boundsCache=new Map();let frame=0;
@@ -27,28 +34,38 @@ export function installMeasurementGuides({objects,document:doc=document}) {
     boundsCache.set(key,bounds);return bounds;
   }
   function draw(card){
-    const img=card.querySelector('img');if(!img?.complete||!img.naturalWidth)return;
+    const img=card.querySelector(':scope > img');if(!img)return;
     const path=new URL(img.currentSrc||img.src,doc.baseURI).pathname;
     const object=byImage.get(path)||byImage.get(path.replace(/-2\.webp$/,'.webp'));if(!object)return;
-    const b=card.getBoundingClientRect(),r=img.getBoundingClientRect();if(!b.width||!r.height)return;
+    const cards=[...(card.parentElement?.children||[])].filter(el=>el.matches(selectors));
+    const onRight=cards.indexOf(card)>0;
+    const {rotation,mirrored}=objectEntrancePose(object.id,onRight);
+    const quarterTurn=Math.abs(rotation)%180===90;
+    const w=img.clientWidth,h=img.clientHeight;
+    const ready=img.complete&&img.naturalWidth;
+    const scale=ready&&w&&h?Math.min(w/img.naturalWidth,h/img.naturalHeight):0;
+    const iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;
+    const fit=quarterTurn&&scale?Number(Math.min(1,w/ih,h/iw).toFixed(4)):1;
+    const transform=[
+      mirrored&&'scaleX(-1)',rotation&&`rotate(${rotation}deg)`,fit<1&&`scale(${fit})`,
+    ].filter(Boolean).join(' ');
+    if(img.style.transform!==transform)img.style.transform=transform;
+    if(!scale)return;
+    const b=card.getBoundingClientRect();
     if(getComputedStyle(card).position==='static')card.style.position='relative';
-    const style=getComputedStyle(img),w=parseFloat(style.width)||img.clientWidth,h=parseFloat(style.height)||img.clientHeight;
-    const scale=Math.min(w/img.naturalWidth,h/img.naturalHeight),iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;
     const original=artBounds(img),region=REGIONS[object.id]||[0,0,1,1];
     const left=(w-iw)/2+(original.left+(original.right-original.left)*region[0])*iw;
     const top=(h-ih)/2+(original.top+(original.bottom-original.top)*region[1])*ih;
     const right=(w-iw)/2+(original.left+(original.right-original.left)*region[2])*iw;
     const bottom=(h-ih)/2+(original.top+(original.bottom-original.top)*region[3])*ih;
-    const axis=measurementGuideAxis(object,{width:right-left,height:bottom-top});
+    const vertical=(measurementGuideAxis(object,{width:right-left,height:bottom-top})==='vertical')!==quarterTurn;
     // One uniform guide per card, spanning the box rather than tracing the artwork: a left-hand card puts a vertical guide on
     // its right edge, a right-hand card on its left edge; a horizontal guide always runs along the bottom, above the caption.
     const sy=b.height/card.offsetHeight||1;
     const caption=card.querySelector('span:not(.wb-tag),figcaption')?.getBoundingClientRect();
     const yMax=Math.min(card.clientHeight-3,caption?(caption.top-b.top)/sy-card.clientTop-3:card.clientHeight-3);
-    const sibs=[...(card.parentElement?.children||[])].filter(n=>n.matches(selectors));
-    const onRight=sibs.length>1&&sibs.indexOf(card)>0;
     const pad=6,W=card.clientWidth,H=card.clientHeight;
-    const mapped=axis==='vertical'?[[onRight?pad:W-pad,pad],[onRight?pad:W-pad,yMax]]:[[pad,yMax],[W-pad,yMax]];
+    const mapped=vertical?[[onRight?pad:W-pad,pad],[onRight?pad:W-pad,yMax]]:[[pad,yMax],[W-pad,yMax]];
     const signature=JSON.stringify([mapped,W,H]);if(painted.get(card)===signature)return;painted.set(card,signature);
     let svg=card.querySelector(':scope>.measurement-guide');if(!svg){svg=doc.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('measurement-guide');svg.setAttribute('aria-hidden','true');svg.style.cssText='position:absolute;pointer-events:none;left:0;top:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)';card.append(svg);}
     svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
@@ -61,5 +78,5 @@ export function installMeasurementGuides({objects,document:doc=document}) {
   function scan(){frame=0;for(const card of observed)if(!card.isConnected){resize.unobserve(card);observed.delete(card);}for(const card of doc.querySelectorAll(selectors)){if(!observed.has(card)){observed.add(card);resize.observe(card);}draw(card);}}
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(scan);};
   const mutation=new MutationObserver(records=>{if(records.some(r=>r.type==='attributes'?r.target.tagName==='IMG'&&r.target.closest(selectors):[...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&!n.closest?.('.measurement-guide'))))schedule();});
-  mutation.observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src','style']});doc.addEventListener('load',e=>{if(e.target.tagName==='IMG'&&e.target.closest(selectors))schedule();},true);schedule();
+  mutation.observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src']});doc.addEventListener('load',e=>{if(e.target.tagName==='IMG'&&e.target.closest(selectors))schedule();},true);schedule();
 }

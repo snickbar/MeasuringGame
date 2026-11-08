@@ -5223,7 +5223,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createGameRewards, gameRewardKey } from "./anim/game-rewards.mjs";
   import { createModeAwards, MODE_AWARD_CATEGORIES } from "./anim/mode-awards.mjs";
   import { ROMAN_SUFFIX, escalateSteps, makeChainGate } from "./anim/award-tiers.mjs";
-  import { installMeasurementGuides } from "./anim/measurement-guides.mjs";
+  import { installMeasurementGuides, objectEntrancePose } from "./anim/measurement-guides.mjs";
   import { reserveHostStart, finishHostStart, hasHostAdGame, canWatchHostAd, grantHostAdGame } from "./anim/host-allowance.mjs";
   import { isPartyRoomSettings, includesMakeBelieve, partyObjectAllowed, filterPartyObjects } from "./anim/make-believe.mjs";
   import { STARTER_AWARDS, starterAwardProfile, upgradeGuestProfile } from "./anim/starter-awards.mjs";
@@ -15690,19 +15690,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function packMonthName(p) {
     return MONTH_NAMES[p.month === "easter" ? easterMonth(new Date().getFullYear()) : p.month];
   }
-  // Turn the stored picture so it stands the way the Object Orientation page says (degrees clockwise). Pictures
-  // are stored lying down for the game's rulers; the Objects list and its popup show them upright.
-  // How each object stands in the animation (saved from the Object Orientation page): turned, then mirrored, so it
-  // faces right on the left side and, if set, faces the other way on the right side. Loaded once, shared with the animation.
-  let ORIENT_MAP = {};
-  import("./anim/orient-data.js").then((m) => { ORIENT_MAP = m.ORIENT || {}; }).catch(() => {});
-  function poseStyle(id, onRight) {
-    const st = ORIENT_MAP[id];
-    if (!st) return "";
-    const flip = !!st.flip !== !!(onRight && st.mirR), rot = st.rot || 0;
-    return flip || rot ? ` style="transform:${flip ? "scaleX(-1) " : ""}rotate(${rot}deg)"` : "";
+  // The Objects list and its popup use the same pose as a left-hand question card.
+  function itemRotStyle(id) {
+    const { rotation, mirrored } = objectEntrancePose(id, false);
+    return mirrored || rotation ? ` style="transform:${mirrored ? "scaleX(-1) " : ""}rotate(${rotation}deg)"` : "";
   }
-  const itemRotStyle = (id) => poseStyle(id, false);
   function ensureObjectSearch(){
     let panel=document.getElementById('object-search-panel');if(panel)return;
     panel=document.createElement('div');panel.id='object-search-panel';panel.className='search-editor';
@@ -19696,7 +19688,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The two objects of this round, shown where the answer strip used to be.
   function renderQuestionPreview(q) {
     const pair = questionObjects(q);
-    renderQuestionMarkup(qPreviewEl, pair ? pair.map((o, k) => `<div class="qp"><img src="${o.image}" alt="" draggable="false"${poseStyle(o.id, k === 1)}><span>${escapeHtml(o.name)}</span></div>`).join("") : "");
+    renderQuestionMarkup(qPreviewEl, pair ? pair.map(o => `<div class="qp"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "");
   }
   const twQuestionProgressEl = document.getElementById("tw-question-progress");
   const twQuestionPicsEl = document.getElementById("tw-question-pics");
