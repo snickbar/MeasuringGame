@@ -63,24 +63,32 @@
 
 /* title: stays still; a shine sweeps across the letters now and then */
 #home-title-shine { position: absolute; left: 0; right: 0; margin-inline: auto; top: 9%; width: min(96%, 560px); pointer-events: none; aspect-ratio: var(--ta, 3.4);
-  -webkit-mask: var(--tm) center / 100% 100% no-repeat; mask: var(--tm) center / 100% 100% no-repeat;
-  background: linear-gradient(105deg, rgba(255,255,255,0) 40%, rgba(255,244,190,.95) 50%, rgba(255,255,255,0) 60%) 160% 0 / 280% 100% no-repeat;
-  animation: hfShine 12s ease-in-out infinite; }
-@keyframes hfShine { 0%, 80% { background-position: 160% 0; } 94%, 100% { background-position: -60% 0; } }
+  -webkit-mask: var(--tm) center / 100% 100% no-repeat; mask: var(--tm) center / 100% 100% no-repeat; overflow: hidden; }
+/* The light band is a wider strip that slides by transform (runs on the compositor). Animating background-position instead
+   repainted this layer on the main thread every frame, which is what made slower phones sluggish. Same motion as before:
+   the strip is 280% of the title wide and travels from fully left of it (-102.857% of its own width) to fully right (+38.571%). */
+#home-title-shine::before { content: ""; position: absolute; left: 0; top: 0; width: 280%; height: 100%;
+  background: linear-gradient(105deg, rgba(255,255,255,0) 40%, rgba(255,244,190,.95) 50%, rgba(255,255,255,0) 60%);
+  transform: translateX(-102.857%); animation: hfShine 12s ease-in-out infinite; }
+@keyframes hfShine { 0%, 80% { transform: translateX(-102.857%); } 94%, 100% { transform: translateX(38.571%); } }
 /* tiles: the pictures bob and tilt (staggered) and a glint sweeps across each tile every few seconds */
 .home-tile .ht-ic { animation: hfBob 2.6s ease-in-out infinite; transform-origin: 50% 80%; }
 .ht-host .ht-ic { animation-delay: -.9s; }
 .ht-join .ht-ic { animation-delay: -1.7s; }
 @keyframes hfBob { 0%, 100% { transform: translateY(0) rotate(-1deg) scale(1); } 50% { transform: translateY(-3px) rotate(1deg) scale(1.03); } }
-.home-tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(105deg, rgba(255,255,255,0) 42%, rgba(255,255,255,.5) 50%, rgba(255,255,255,0) 58%); background-size: 280% 100%; background-position: 160% 0; animation: hfGlint 6s ease-in-out infinite; }
-.ht-host::after { animation-delay: 1.6s; }
-.ht-join::after { animation-delay: 3.2s; }
-@keyframes hfGlint { 0%, 68% { background-position: 160% 0; } 90%, 100% { background-position: -60% 0; } }
+.home-tile .ht-glint { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.home-tile .ht-glint::before { content: ""; position: absolute; left: 0; top: 0; width: 280%; height: 100%;
+  background: linear-gradient(105deg, rgba(255,255,255,0) 42%, rgba(255,255,255,.5) 50%, rgba(255,255,255,0) 58%);
+  transform: translateX(-102.857%); animation: hfGlint 6s ease-in-out infinite; }
+.ht-host .ht-glint::before { animation-delay: 1.6s; }
+.ht-join .ht-glint::before { animation-delay: 3.2s; }
+@keyframes hfGlint { 0%, 68% { transform: translateX(-102.857%); } 90%, 100% { transform: translateX(38.571%); } }
+/* The to-do dot below used to take over this slot (it is the tile's ::after), so the glint never showed while it was lit. Keep that. */
+#home-solo-btn.has-todo .ht-glint { display: none; }
 .home-lock-badge, .home-free-badge { z-index: 2; }
 
 html[data-motion=reduce] #home-fx { display: none; }
-html[data-motion=reduce] #home-title-shine, html[data-motion=reduce] .home-tile .ht-ic, html[data-motion=reduce] .home-tile::after { animation: none; }
+html[data-motion=reduce] #home-title-shine::before, html[data-motion=reduce] .home-tile .ht-ic, html[data-motion=reduce] .home-tile .ht-glint::before { animation: none; }
 
 /* ---- living scenes (anim/home-scene.mjs) ---- */
 #home-screen.has-art { background-image: none; animation: none; }

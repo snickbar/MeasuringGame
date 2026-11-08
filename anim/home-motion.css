@@ -31,8 +31,12 @@
 #home-art .hs-twistS { animation:hsCubeTurn 11.8s ease-in-out infinite; }
 @keyframes hsCubeTurn { 0%,22%,60%,100% { transform:perspective(600px) rotateY(0) skewY(0); } 34%,43% { transform:perspective(600px) rotateY(-32deg) skewY(-6deg); } 53% { transform:perspective(600px) rotateY(3deg) skewY(.5deg); } }
 /* A shine masked by the existing WebP alpha needs no duplicate bitmap. */
-#home-art .hs-sheen { position:absolute; inset:0; pointer-events:none; mask-image:var(--sprite); mask-size:100% 100%; mask-repeat:no-repeat; background:linear-gradient(108deg,transparent 43%,rgba(255,255,222,.38) 49%,transparent 55%); background-size:350% 100%; opacity:0; animation:hsSheen 14.6s ease-in-out infinite; }
-@keyframes hsSheen { 0%,70% { opacity:0; background-position:100% 0; } 74% { opacity:.7; } 89% { opacity:.7; background-position:0 0; } 94%,100% { opacity:0; background-position:0 0; } }
+/* The band is a strip 350% as wide as the sprite that slides by transform, with its fade on the sprite-shaped parent (both run on the compositor).
+   It used to animate background-position, which repainted on the main thread every frame. Start = -71.4286% of the strip's own width, end = 0. */
+#home-art .hs-sheen { position:absolute; inset:0; pointer-events:none; mask-image:var(--sprite); mask-size:100% 100%; mask-repeat:no-repeat; overflow:hidden; opacity:0; animation:hsSheen 14.6s ease-in-out infinite; }
+#home-art .hs-sheen::before { content:""; position:absolute; left:0; top:0; width:350%; height:100%; background:linear-gradient(108deg,transparent 43%,rgba(255,255,222,.38) 49%,transparent 55%); transform:translateX(-71.4286%); animation:hsSheenSlide 14.6s ease-in-out infinite; }
+@keyframes hsSheen { 0%,70% { opacity:0; } 74%,89% { opacity:.7; } 94%,100% { opacity:0; } }
+@keyframes hsSheenSlide { 0%,70% { transform:translateX(-71.4286%); } 89%,100% { transform:translateX(0); } }
 #home-art[data-scene=snacks] .hs-sway { animation:hsLeafFlick 10.9s ease-in-out infinite; }
 @keyframes hsLeafFlick { 0%,62%,95%,100% { transform:rotate(0); } 70% { transform:rotate(-7deg); } 78% { transform:rotate(5deg); } 86% { transform:rotate(-2deg); } }
 #home-art .hs-cherry { animation:hsCherry 14.3s ease-in-out infinite; }
@@ -114,7 +118,9 @@
 @keyframes hsDragonFire { 0%,57%,74%,100% { opacity:0; transform:scaleX(.25); } 60%,67% { opacity:1; transform:scaleX(1); } 72% { opacity:0; transform:scaleX(.7); } }
 #home-art .hs-waveRest { animation:hsSpaceWave 12.8s ease-in-out infinite; }
 @keyframes hsSpaceWave { 0%,42%,88%,100% { transform:rotate(0); } 53%,73% { transform:rotate(-19deg); } 63%,81% { transform:rotate(8deg); } }
-#home-art .hs-visor-glint { position:absolute; border-radius:50%; pointer-events:none; overflow:hidden; background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.55) 49%,transparent 59%); background-size:360% 100%; animation:hsSheen 17.2s ease-in-out infinite; }
+#home-art .hs-visor-glint { position:absolute; border-radius:50%; pointer-events:none; overflow:hidden; animation:hsSheen 17.2s ease-in-out infinite; }
+#home-art .hs-visor-glint::before { content:""; position:absolute; left:0; top:0; width:360%; height:100%; background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.55) 49%,transparent 59%); transform:translateX(-72.2222%); animation:hsGlintSlide 17.2s ease-in-out infinite; }
+@keyframes hsGlintSlide { 0%,70% { transform:translateX(-72.2222%); } 89%,100% { transform:translateX(0); } }
 
 /* Specific tap responses. No generic squash/stretch animation on the whole object. */
 
@@ -124,7 +130,9 @@
 #home-art[data-reaction~=fridge-glint] .hs-fridge-magnet{animation:hsMagnetShuffle 2.2s ease-in-out var(--magnet-delay) both}
 @keyframes hsMagnetShuffle{0%,100%{transform:translate(0,0) rotate(0)}18%{transform:translate(calc(var(--magnet-x) * .15),calc(var(--magnet-y) * -.2)) rotate(calc(var(--magnet-turn) * -.5))}42%,62%{transform:translate(var(--magnet-x),var(--magnet-y)) rotate(var(--magnet-turn))}82%{transform:translate(calc(var(--magnet-x) * -.08),0) rotate(calc(var(--magnet-turn) * -.2))}}
 #home-art[data-reaction~=melon-shine] .hs-sheen,#home-art[data-reaction~=fridge-glint] .hs-sheen,#home-art[data-reaction~=ice-shimmer] .hs-sheen,#home-art[data-reaction~=coin-shimmer] .hs-sheen { animation:hsTapSheen 1.7s ease-out 1; }
-@keyframes hsTapSheen { 0% { opacity:0; background-position:100% 0; } 15%,80% { opacity:.85; } 100% { opacity:0; background-position:0 0; } }
+#home-art[data-reaction~=melon-shine] .hs-sheen::before,#home-art[data-reaction~=fridge-glint] .hs-sheen::before,#home-art[data-reaction~=ice-shimmer] .hs-sheen::before,#home-art[data-reaction~=coin-shimmer] .hs-sheen::before { animation:hsTapSheenSlide 1.7s ease-out 1; }
+@keyframes hsTapSheen { 0% { opacity:0; } 15%,80% { opacity:.85; } 100% { opacity:0; } }
+@keyframes hsTapSheenSlide { 0% { transform:translateX(-71.4286%); } 100% { transform:translateX(0); } }
 #home-art[data-reaction~=ladybug-flutter] .hs-flapS { animation:hsLadybugFlutter 1.7s ease-in-out 1; }
 #home-art[data-reaction~=flower-nod] .hs-back > .hs-hop { animation:hsNod 1.5s ease-in-out 1; }
 #home-art[data-reaction~=board-rock] .hs-back > .hs-hop,#home-art[data-reaction~=shell-rock] .hs-back > .hs-hop { animation:hsRock 1.5s ease-in-out 1; }
