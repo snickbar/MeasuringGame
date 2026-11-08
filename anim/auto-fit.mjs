@@ -9,8 +9,11 @@
 // afterwards, so a whole screen costs a handful of recalculations instead of dozens.
 export function installAutoFit({ document: doc = document, window: win = window } = {}) {
   const saved = new WeakMap(), pending = new Set(); let queued = false, running = false, fullFit = false;
+  const measured = new WeakMap();
   const properties = ['font-size', 'line-height', 'white-space', 'overflow-wrap', 'word-break', 'hyphens'];
-  const selector = 'button,.polish-banner,.sh-banner .sh-tx';
+  const selector = 'button,[role="button"],.polish-banner,.mode-heading-banner,.sh-banner .sh-tx';
+  const excluded = '[data-no-autofit],.num-btn,.dc-key,.hs-key,#backspace-btn';
+  const caption = box => box.matches('.sh-banner') ? box.querySelector('.sh-tx') || box : box;
   const visible = el => el.clientWidth > 0 && el.clientHeight > 0 && el.getClientRects().length;
   const force = (el, property, value) => el.style.setProperty(property, value, 'important');
   function remember(el) {
@@ -44,16 +47,28 @@ export function installAutoFit({ document: doc = document, window: win = window 
   }
   // Reads only: does this box need fitting, and which elements carry its text?
   function plan(box) {
-    if (box.matches('[data-no-autofit]') || !visible(box)) return null;
-    // Fixed-size numeric keys never need a page-wide text fitting pass.
-    if (box.matches('.num-btn,.dc-key,.hs-key,#backspace-btn')) return null;
-    // Illustrated menu cards have a fixed art box and a separate caption box.
-    // Fit that caption once; fitting both parent and child resets the same labels twice.
-    if (box.matches('.sh-banner') && box.querySelector('.sh-tx')) return null;
+    if (!box.isConnected || box.matches(excluded) || !box.textContent.trim()) return null;
+    trackSize(box);
+    if (!visible(box)) return null;
     const nodes = labelNodes(box); if (!nodes.length) return null;
     const singleLine = box.dataset.fitSingleLine === 'true' || box.matches('.bot-btn,.dc-btn,.coin-pack-buy-btn,.coin-reward-continue,#host-start-btn,#final-home-btn,#play-again-btn');
     const labels = [...new Set([box, ...nodes.map(n => n.parentElement)])];
     return { box, nodes, singleLine, labels, bases: [], sizes: null };
+  }
+  // Some controls get their space after the first pass, for example when their
+  // artwork finishes loading or a neighboring grid item changes width.
+  const resizeBoxes = new win.ResizeObserver(entries => {
+    for (const { target } of entries) {
+      const width = target.clientWidth, height = target.clientHeight;
+      const previous = measured.get(target);
+      if (previous?.[0] === width && previous[1] === height) continue;
+      measured.set(target, [width, height]);
+      if (width && height) queue(target);
+    }
+  });
+  function trackSize(box) {
+    if (!measured.has(box)) resizeBoxes.observe(box, { box: 'border-box' });
+    measured.set(box, [box.clientWidth, box.clientHeight]);
   }
   // Try keeping complete words first, even if an existing anywhere rule
   // has already split "Medium" into two technically-contained lines.
@@ -75,7 +90,7 @@ export function installAutoFit({ document: doc = document, window: win = window 
   // is as small as it is allowed to get, so measuring the same layout again cannot help.
   function shrink(job, step) {
     const scale = Math.max(0, 1 - step * .04);
-    const sizes = job.bases.map(base => Math.max(Math.min(base, 10), base * scale));
+    const sizes = job.bases.map(base => Math.max(Math.min(base, 8), base * scale));
     if (job.sizes && sizes.every((size, i) => size === job.sizes[i])) return false;
     job.sizes = sizes;
     job.labels.forEach((el, i) => { force(el, 'font-size', sizes[i] + 'px'); force(el, 'line-height', '1.15'); });
@@ -101,7 +116,8 @@ export function installAutoFit({ document: doc = document, window: win = window 
   }
   function fitBoxes(boxes) {
     let jobs = [];
-    for (const box of boxes) { const job = plan(box); if (job) jobs.push(job); }
+    const targets = new Set([...boxes].map(caption));
+    for (const box of targets) { const job = plan(box); if (job) jobs.push(job); }
     while (jobs.length) {
       const claimed = new Set(), wave = [], later = [];
       for (const job of jobs) {
@@ -110,6 +126,8 @@ export function installAutoFit({ document: doc = document, window: win = window 
       }
       fitWave(wave); jobs = later;
     }
+    // Store the settled size so changes caused by fitting don't trigger a second pass.
+    for (const box of targets) if (measured.has(box)) trackSize(box);
   }
   function run() {
     queued = false; running = true;
@@ -118,12 +136,24 @@ export function installAutoFit({ document: doc = document, window: win = window 
     try { fitBoxes(boxes); } finally { running = false; }
   }
   function queue(box) {
-    if (box?.nodeType === 1) { if (box.hasAttribute('data-no-autofit')) return; pending.add(box); } else fullFit = true;
+    if (box?.nodeType === 1) {
+      if (box.matches(excluded)) return;
+      pending.add(caption(box));
+    } else fullFit = true;
     if (!queued && !running) { queued = true; win.requestAnimationFrame(run); }
   }
   const fitWithin = el => { if (el?.matches?.(selector)) queue(el); el?.querySelectorAll?.(selector).forEach(queue); };
+  const untrack = box => {
+    if (measured.delete(box)) resizeBoxes.unobserve(box);
+    pending.delete(box);
+  };
   const observer = new MutationObserver(records => {
     for (const r of records) {
+      for (const node of r.removedNodes) {
+        if (node.nodeType !== 1 || node.isConnected) continue;
+        untrack(node);
+        if (node.childElementCount) node.querySelectorAll(selector).forEach(untrack);
+      }
       const el = r.target.nodeType === 1 ? r.target : r.target.parentElement;
       const button = el?.closest(selector);
       if (button) { queue(button); continue; }
@@ -134,10 +164,19 @@ export function installAutoFit({ document: doc = document, window: win = window 
     }
   });
   observer.observe(doc.documentElement, { childList: true, subtree: true, characterData: true, attributes: true,
-    attributeFilter: ['class', 'hidden', 'data-large-text'] });
-  const resize = new ResizeObserver(queue); resize.observe(doc.documentElement);
+    attributeFilter: ['class', 'hidden', 'open', 'data-large-text'] });
+  const imageLoaded = event => {
+    if (event.target.tagName !== 'IMG') return;
+    const box = event.target.closest(selector);
+    if (box) queue(box);
+  };
+  doc.addEventListener('load', imageLoaded, true);
   win.addEventListener('resize', queue); win.visualViewport?.addEventListener('resize', queue);
   doc.fonts?.ready.then(queue); doc.fonts?.addEventListener?.('loadingdone', queue);
   queue();
-  return { fit: box => fitBoxes([box]), refresh: queue, destroy() { observer.disconnect(); resize.disconnect(); win.removeEventListener('resize', queue); win.visualViewport?.removeEventListener('resize', queue); } };
+  return { fit: box => fitBoxes([box]), refresh: queue, destroy() {
+    observer.disconnect(); resizeBoxes.disconnect(); doc.removeEventListener('load', imageLoaded, true);
+    win.removeEventListener('resize', queue); win.visualViewport?.removeEventListener('resize', queue);
+    doc.fonts?.removeEventListener?.('loadingdone', queue);
+  } };
 }

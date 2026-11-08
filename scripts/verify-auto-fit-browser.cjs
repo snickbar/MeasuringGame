@@ -141,7 +141,17 @@ window.__polish={
   applyPhase(roomState);hsEnsureTicker(false);
   renderHighStakes(roomState);window.scrollTo(0,0);
  },
- shop:()=>openGachaScreen('coins'),party:()=>openPartyHub(),collect:()=>gameRewards.open(),settings:()=>openOverlay(settingsScreen),join:()=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));showJoinScreen();}
+ quiet:()=>{
+  localStorage.setItem('mg_menuTour_v1_'+deviceId,'skipped');
+  myProfile={...myProfile,tutorial:{version:1,status:'completed'}};
+  document.getElementById('install-dismiss-btn').click();
+  localStorage.setItem('mg_motion','reduce');
+  document.documentElement.dataset.motion='reduce';
+  clearReactionBubbles();
+ },
+ shop:()=>openGachaScreen('coins'),style:()=>openGachaScreen('cosmetics'),solo:()=>openSolo(),party:()=>openPartyHub(),
+ classic:()=>openClassicInfo(),highLow:()=>openHlInfo(),bluff:()=>openBluffInfo(),daily:()=>openDaily(),monthly:()=>openMonthly(),bigger:()=>openWhichBigger(),
+ collect:()=>gameRewards.open(),settings:()=>openOverlay(settingsScreen),join:()=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));showJoinScreen();}
 };
 `;
 const checks=String.raw`<pre id="polish-result" hidden></pre><script type="module">
@@ -280,35 +290,81 @@ try {
 }
 </script>`;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');
+const fitFixture=fixture.replace('\n</script>\n</body>',injected+'\n</script>\n</body>');
 fixture=fixture.replace('\n</script>\n</body>',injected+'\n</script>'+checks+'\n</body>');
-const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/test'){res.setHeader('Content-Type','text/html');res.end(fixture);return;}if(url.pathname.startsWith('/__fake/')){res.setHeader('Content-Type','text/javascript');res.end(url.pathname.endsWith('app.mjs')?'export const initializeApp=()=>({});':url.pathname.endsWith('db.mjs')?dbStub:authStub);return;}const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
+const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/test'||url.pathname==='/fit-test'){res.setHeader('Content-Type','text/html');res.end(url.pathname==='/test'?fixture:fitFixture);return;}if(url.pathname.startsWith('/__fake/')){res.setHeader('Content-Type','text/javascript');res.end(url.pathname.endsWith('app.mjs')?'export const initializeApp=()=>({});':url.pathname.endsWith('db.mjs')?dbStub:authStub);return;}const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}try{res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
 server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'polish-tests-'+process.pid),'about:blank'],{windowsHide:true});let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},180000);
  child.stderr.on('data',async chunk=>{stderr+=chunk;const match=stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(started||!match)return;started=true;
  try{socket=new WebSocket(match[1]);await new Promise((yes,no)=>{socket.onopen=yes;socket.onerror=no;});let serial=0;const pending=new Map(),errors=[];
  socket.onmessage=e=>{const r=JSON.parse(e.data);if(r.id){const p=pending.get(r.id);if(p){pending.delete(r.id);r.error?p.no(Error(r.error.message)):p.yes(r.result);}}else if(r.method==='Runtime.exceptionThrown')errors.push(r.params.exceptionDetails.exception?.description||r.params.exceptionDetails.text);};
  const call=(method,params={},sessionId)=>new Promise((yes,no)=>{const id=++serial;pending.set(id,{yes,no});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));});fs.mkdirSync(path.join(root,'output','auto-fit-tests'),{recursive:true});
- for(const width of (process.env.AUTOFIT_WIDTHS||'280,320,360,390,430,640').split(',').map(Number)){const {targetId}=await call('Target.createTarget',{url:'about:blank'}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width>=600?360:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);let result;
- for(let n=0;n<800;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');
- const pages=(process.env.AUTOFIT_PAGES??'hsPick,hsBet,stats,world,quickLobby,settings,join,reward,shop,party').split(',').filter(Boolean);
- for(const page of pages){await call('Runtime.evaluate',{expression:page==='lobby'?'window.__polish.lobby()':'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,page==='worldResult'?2200:1100));const checks=await call('Runtime.evaluate',{expression: String.raw`(async()=>{
- const wait=ms=>new Promise(r=>setTimeout(r,ms));const failures=[];if(!document.getElementById('fit-system-scaling')){const style=document.createElement('style');style.id='fit-system-scaling';style.textContent='html[data-large-text=true] button{font-size:150%!important}';document.head.append(style);}
+ for(const width of (process.env.AUTOFIT_WIDTHS||'280,320,360,390,430,640').split(',').map(Number)){
+ const {browserContextId}=await call('Target.createBrowserContext');
+ const {targetId}=await call('Target.createTarget',{url:'about:blank',browserContextId}),{sessionId}=await call('Target.attachToTarget',{targetId,flatten:true});await call('Runtime.enable',{},sessionId);await call('Emulation.setDeviceMetricsOverride',{width,height:width>=600?360:width===320?650:800,deviceScaleFactor:1,mobile:true},sessionId);
+ if(process.env.AUTOFIT_TEXT_ONLY!=='1'){
+  await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/test'},sessionId);
+  let result;
+  for(let n=0;n<800;n++){const r=await call('Runtime.evaluate',{expression:'document.getElementById("polish-result")?.textContent',returnByValue:true},sessionId);if(r.result?.value){result=JSON.parse(r.result.value);break;}await new Promise(r=>setTimeout(r,20));}
+  console.log(result||{error:'No result',exceptions:errors});if(!result?.pass)throw Error(result?.stack||errors.join('\n')||'No browser result');
+ }
+ const pages=(process.env.AUTOFIT_PAGES??'hsPick,hsBet,stats,world,quickLobby,settings,join,shop,style,solo,party,reward').split(',').filter(Boolean);
+ const screenFor={hsPick:'hs-screen',hsBet:'hs-screen',stats:'career-screen',world:'worlds-screen',quickLobby:'lobby-screen',lobby:'lobby-screen',teamLobby:'lobby-screen',settings:'settings-screen',join:'join-screen',shop:'gacha-screen',style:'gacha-screen',solo:'solo-screen',party:'party-screen',classic:'teamvteam-screen',highLow:'teamvteam-screen',bluff:'teamvteam-screen',daily:'daily-screen',monthly:'monthly-screen',survival:'survival-screen',bigger:'wb-screen'};
+ if(pages.length){
+  await call('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/fit-test'},sessionId);
+  let ready=false;
+  for(let i=0;i<300&&!ready;i++){
+    const state=await call('Runtime.evaluate',{expression:`location.pathname==='/fit-test'&&!!window.__polish`,returnByValue:true},sessionId);
+    ready=!!state.result?.value;
+    if(!ready)await new Promise(r=>setTimeout(r,20));
+  }
+  if(!ready)throw Error('Label fixture did not load at '+width+'px');
+  await call('Runtime.evaluate',{expression:'window.__polish.quiet();document.fonts.ready.then(()=>true)',awaitPromise:true},sessionId);
+ }
+ for(const page of pages){await call('Runtime.evaluate',{expression:'window.__polish.'+page+'()',awaitPromise:true},sessionId);await new Promise(r=>setTimeout(r,page==='worldResult'?2200:500));
+ const visibleScreen=await call('Runtime.evaluate',{expression:page==='reward'?'!document.getElementById("coin-reward-screen").hidden':screenFor[page]?`document.getElementById("${screenFor[page]}").classList.contains("active") && document.getElementById("coin-reward-screen").hidden`:'true',returnByValue:true},sessionId);
+ if(!visibleScreen.result.value)throw Error('Expected screen is not visible: '+page+' at '+width+'px');
+ const checks=await call('Runtime.evaluate',{expression: String.raw`(async()=>{
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));const failures=[];
+ const settle=async()=>{for(let i=0;i<4;i++)await new Promise(requestAnimationFrame);};
+ const bounds=node=>{const range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()];};
+ if(!document.getElementById('fit-system-scaling')){
+  const style=document.createElement('style');style.id='fit-system-scaling';
+  style.textContent='html[data-large-text=true] button{font-size:150%!important} html[data-large-text=true] .sh-name{font-size:33px!important} html[data-large-text=true] .sh-sub{font-size:19.5px!important}';
+  document.head.append(style);
+  const delayed=document.createElement('button');
+  delayed.style.cssText='position:fixed;left:4px;top:64px;width:125px;height:0;padding:0;border:0;margin:0;display:flex;align-items:center;justify-content:center;font-size:24px';
+  delayed.innerHTML='<span>Collect bonus coins</span>';
+  document.body.append(delayed);
+  await settle();
+  delayed.style.height='40px';
+  await settle();
+  const label=delayed.firstElementChild, box=delayed.getBoundingClientRect();
+  if(!bounds(label.firstChild).every(r=>r.top>=box.top-1&&r.bottom<=box.bottom+1&&r.left>=box.left-1&&r.right<=box.right+1))failures.push({kind:'late-size button did not refit'});
+  delayed.style.width='245px';
+  await settle();
+  if(parseFloat(getComputedStyle(label).fontSize)!==24)failures.push({kind:'label did not return to its normal size when more space became available'});
+  delayed.remove();
+ }
  for(const large of ['false','true']){
  document.documentElement.dataset.largeText=large;
  document.querySelectorAll('button[data-autofit-stress]').forEach(b=>b.remove());
  const stress=document.createElement('button');stress.dataset.autofitStress='';stress.style.cssText='display:flex;align-items:center;gap:8px;width:130px;height:48px;padding:8px;border:2px solid brown;font:700 24px Fredoka;';stress.innerHTML='<img src="/icons/coin-v2.png" style="width:28px;height:28px"><span>Collect all your bonus coins</span>';document.querySelector('.screen.active')?.append(stress);
- await wait(650);
+ await settle();
  // Measure settled artwork, including a newly appended stress button's entrance.
  document.querySelector('.screen.active')?.getAnimations({subtree:true}).forEach(a=>{if(a.effect.getTiming().iterations!==Infinity)a.finish();});
  if(Math.abs(stress.getBoundingClientRect().height-48)>1)failures.push({kind:'button height changed',height:stress.getBoundingClientRect().height});
- for(const button of document.querySelectorAll('button')){
+ for(const button of document.querySelectorAll('button,[role="button"],.polish-banner,.mode-heading-banner')){
  if(!button.clientWidth||!button.getClientRects().length)continue;
  const b=button.getBoundingClientRect();
  if(b.right>innerWidth+2||b.left< -2)failures.push({kind:'button outside screen',id:button.id,text:button.textContent.slice(0,45)});
  const walk=document.createTreeWalker(button,NodeFilter.SHOW_TEXT);while(walk.nextNode()){
  const node=walk.currentNode;if(!node.nodeValue.trim()||node.parentElement.closest('svg,[hidden]'))continue;
- const range=document.createRange();range.selectNodeContents(node);
- for(const r of range.getClientRects())if(r.width&&(r.left<b.left-2||r.right>b.right+2||r.top<b.top-2||r.bottom>b.bottom+2))failures.push({kind:'text outside button',id:button.id,text:node.nodeValue.trim().slice(0,45),large,button:[b.width,b.height],textBounds:[r.left-b.left,r.right-b.right,r.top-b.top,r.bottom-b.bottom]});}
- for(const image of button.querySelectorAll('img')){const r=image.getBoundingClientRect();if(r.width&&(r.left<b.left-2||r.right>b.right+2||r.top<b.top-2||r.bottom>b.bottom+2))failures.push({kind:'icon outside button',id:button.id,src:image.src});}
+ if(node.parentElement.closest('.home-free-badge,.home-ad-badge,.coin-sparkle'))continue;
+ const caption=node.parentElement.closest('.sh-banner .sh-tx'), fit=caption?.getBoundingClientRect()||b, style=caption&&getComputedStyle(caption);
+ const left=fit.left+(style?parseFloat(style.paddingLeft):0),right=fit.right-(style?parseFloat(style.paddingRight):0);
+ for(const r of bounds(node))if(r.width&&(r.left<left-2||r.right>right+2||r.top<fit.top-2||r.bottom>fit.bottom+2))failures.push({kind:'text outside button label area',id:button.id,text:node.nodeValue.trim().slice(0,45),large,button:[fit.width,fit.height],textBounds:[r.left-left,r.right-right,r.top-fit.top,r.bottom-fit.bottom]});}
+ // Mascot illustrations intentionally protrude beyond the edges of their banner.
+ if(button.matches('button'))for(const image of button.querySelectorAll('img:not(.sh-bmasc,.coin-sparkle img)')){const r=image.getBoundingClientRect();if(r.width&&(r.left<b.left-2||r.right>b.right+2||r.top<b.top-2||r.bottom>b.bottom+2))failures.push({kind:'icon outside button',id:button.id,src:image.src});}
  }
  }
  document.querySelectorAll('button[data-autofit-stress]').forEach(b=>b.remove());
@@ -323,7 +379,7 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
 })()`,awaitPromise:true,returnByValue:true},sessionId);
 const failures=JSON.parse(checks.result.value);if(failures.length)throw Error(JSON.stringify({width,page,failures},null,2));
 const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','auto-fit-tests',page+'-'+width+'.png'),Buffer.from(shot.data,'base64'));}
- if(errors.length)throw Error(errors.join('\n'));if(pages.length)console.log('PASS: '+width+'px, normal/large text, rich labels and icon alignment');await call('Target.closeTarget',{targetId});}
+ if(errors.length)throw Error(errors.join('\n'));if(pages.length)console.log('PASS: '+width+'px, normal/large text, rich labels and icon alignment');await call('Target.disposeBrowserContext',{browserContextId});}
  }catch(e){console.error(e);process.exitCode=1;}finally{clearTimeout(timer);socket?.close();child.kill();server.close();}});
 });
 
