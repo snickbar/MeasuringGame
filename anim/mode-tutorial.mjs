@@ -141,6 +141,11 @@ export function createModeTutorial({ owner, sample, storage }) {
   if (!storage) { try { storage = globalThis.localStorage; } catch {} }
   const sheet = document.createElement('link'); sheet.rel = 'stylesheet'; sheet.href = new URL('./mode-tutorial.css', import.meta.url); document.head.append(sheet);
   const dialog = document.createElement('dialog'); dialog.id = 'mode-tutorial'; dialog.tabIndex = -1; dialog.setAttribute('aria-labelledby', 'mt-head'); document.body.append(dialog);
+  // A mascot hops in, and only once the hop is over does it start its idle bob (the CSS runs one transform animation at a time on
+  // each mascot, which is what lets the browser run the bob off the main thread). The mascots stay in the dialog between runs, so
+  // the marker comes off when the dialog closes and the next run hops in again.
+  dialog.addEventListener('animationend', e => { if (e.animationName === 'mtMcHop' && e.target.classList?.contains('mt-mascot')) e.target.classList.add('mt-settled'); });
+  dialog.addEventListener('close', () => dialog.querySelectorAll('.mt-settled').forEach(m => m.classList.remove('mt-settled')));
   const key = mode => `size-em-up:mode-tutorial:${owner()}:${mode}`;
   const seen = mode => { try { return storage.getItem(key(mode)) === '1'; } catch { return false; } };
   const mark = mode => { try { storage.setItem(key(mode), '1'); } catch {} };

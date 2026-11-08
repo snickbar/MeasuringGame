@@ -52,4 +52,16 @@ assert.match(extraTutorialScene('average'),/85%/);
 assert.match(extraTutorialScene('hsPayout'),/Pot: 60/);
 assert.equal((extraTutorialScene('hsPayout').match(/\+30/g)||[]).length,2);
 assert.match(extraTutorialScene('monthlyLevels'),/All 15 questions/);
-console.log('Mode tutorials: actual High/Low room routing, other party modes, solo exclusion and fixed Daily reward wording passed.');
+
+// The mascots: a hop-in, then an idle bob, never both animating `transform` on one element at once (that keeps the bob on the
+// main thread and the page restyles on every frame). mode-tutorial.mjs swaps the hop for the bob when the hop ends.
+const mascotCss=fs.readFileSync('anim/mode-tutorial.css','utf8'),mascotJs=fs.readFileSync('anim/mode-tutorial.mjs','utf8');
+const mascotAnimation=selector=>{const m=mascotCss.match(new RegExp(selector.replace(/[.#]/g,'\\$&')+'\\{[^}]*?animation:([^;}]*)'));return m&&m[1];};
+assert.match(mascotAnimation('#mode-tutorial .mt-mascot')||'',/^mtMcHop /,'A mascot starts with its hop-in');
+assert.doesNotMatch(mascotAnimation('#mode-tutorial .mt-mascot')||'',/mtMcBob/,'The hop-in and the bob are never on the mascot together');
+assert.match(mascotAnimation('#mode-tutorial .mt-mascot.mt-settled')||'',/^mtMcBob .*infinite$/,'A settled mascot bobs, and only bobs');
+assert.match(mascotCss,/@media\s*\(prefers-reduced-motion:reduce\)\{#mode-tutorial \.mt-mascot,#mode-tutorial \.mt-mascot\.mt-settled\{animation:none\}\}/,'Reduce Motion stills settled mascots too');
+assert.match(mascotCss,/html\[data-motion=reduce\] #mode-tutorial \.mt-mascot\{animation:none\}/,'The Reduce Motion setting stills the mascots');
+assert.match(mascotJs,/addEventListener\('animationend'[^\n]*mtMcHop[^\n]*classList\.add\('mt-settled'\)/,'A mascot settles when its hop ends');
+assert.match(mascotJs,/addEventListener\('close'[^\n]*classList\.remove\('mt-settled'\)/,'The next run hops in again');
+console.log('Mode tutorials: actual High/Low room routing, other party modes, solo exclusion, fixed Daily reward wording and the mascot hop-then-bob wiring passed.');
