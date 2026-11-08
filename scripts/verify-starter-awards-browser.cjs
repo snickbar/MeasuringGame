@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'),{spawn}=require('child_process');
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=source.match(/<style>([\s\S]*?)<\/style>/)[1];
-const extract=name=>source.match(new RegExp('  function '+name+'\\(\\) \\{[\\s\\S]*?\\n  \\}'))[0];
+const extract=name=>source.match(new RegExp('  function '+name+'\\([^\\n]*\\) \\{[\\s\\S]*?\\n  \\}'))[0];
 const tests=`
 import {STARTER_AWARDS,starterAwardProfile} from '/anim/starter-awards.mjs';
 let myProfile={coins:0,achClaimed:{}},achJustClaimed=null;
@@ -10,6 +10,8 @@ const ACH_CATS=['Getting started'],ACH_ICON_IDS=new Set(),TROPHY_SVG='',achHideD
 const ACHIEVEMENTS=STARTER_AWARDS.map(a=>({...a,auto:true,target:1,progress:()=>a.id==='welcome-size-em-up'||myProfile.achClaimed?.[a.id]?1:0}));
 function achDone(a){return a.progress()>=a.target}
 function achClaimable(a){return !a.auto&&achDone(a)&&!myProfile.achClaimed?.[a.id]}
+function achChainOpen(){return true}
+function updateCareerDot(){}
 ${extract('updateAwardClaimDot')}
 ${extract('renderAchievementsScreen')}
 try{
