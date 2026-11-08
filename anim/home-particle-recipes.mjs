@@ -8,6 +8,7 @@ export const HOME_PARTICLES={
   snacks:[['sugar',10],['heart',5]],
   town:[['paper',7],['petal',5,{colors:green}]],
   corgi:[['petal',8,{colors:green}],['pollen',6]],
+  'cat-room':[],
   wheels:[['ember',10],['smoke',5]],
   lighthouse:[['spray',14],['bubble',6]],
   underwater:[['bubble',24],['caustic',6]],

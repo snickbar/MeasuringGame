@@ -57,7 +57,7 @@ function boing(scene, role) {
     o.connect(g); g.connect(actx.destination); tapSounds.add(o); o.onended = () => tapSounds.delete(o); o.start(t); o.stop(t + .28);
   } catch (e) {}
 }
-export const homeSceneHasArt = (scene) => !!(CONFIG[scene] && HOME_ART[scene]);
+export const homeSceneHasArt = (scene) => scene === "cat-room" || !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
   return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = async () => { try { await img.decode(); yes(img); } catch (e) { no(e); } }; img.onerror = no; img.src = src; });
 }
@@ -95,6 +95,15 @@ export async function installHomeScene() {
   return task;
 }
 async function buildHomeScene(home, scene, current) {
+  if (scene === "cat-room") {
+    const { buildCatRoom, CAT_ROOM_SIZE } = await import("./home-cat-room.mjs");
+    const room = await buildCatRoom(home, load, current);
+    if (room && home.isConnected && current()) {
+      mountHomeStage(home, scene, room.root, room.stage, CAT_ROOM_SIZE,
+        () => room.start(role => boing(scene, role), stopHomeSound));
+    }
+    return;
+  }
   if (!homeSceneHasArt(scene)) throw Error("No layered Home scene");
   const art = HOME_ART[scene], motion = HOME_MOTION[scene], cfg = { ...CONFIG[scene], hero: motion.hero, hero2: motion.prop, dropFx: [] };
   // Extra character art (redrawn base without its moving parts, the moving parts themselves, expression patches). All or nothing.
@@ -305,21 +314,26 @@ async function buildHomeScene(home, scene, current) {
     castleTap.style.cssText='inset:0;z-index:4;clip-path:'+castle.style.clipPath;
     castleTap.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();interactions?.react(0);});stage.appendChild(castleTap);
   }
-  const size = () => {
-    const w = home.clientWidth || innerWidth, h = home.clientHeight || innerHeight;
-    const s = Math.max(w / HOME_ART_REF.width, h / HOME_ART_REF.height); // the same "cover, top, centred" fit as the original picture
-    stage.style.width = HOME_ART_REF.width * s + "px"; stage.style.height = HOME_ART_REF.height * s + "px";
-    stage.style.setProperty("--sw", HOME_ART_REF.width * s + "px");
-    stage.style.setProperty("--sh", HOME_ART_REF.height * s + "px");
-  };
   decorateHomeIdle(root,scene,extras,KITCHEN_TOOL_CROPS);
   const disposeStories=decorateHomeStories(root,home,scene,extras);
+  mountHomeStage(home, scene, root, stage, HOME_ART_REF, () => {
+    interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound);
+    return () => { interactions.cleanup(); disposeStories(); };
+  });
+}
+function mountHomeStage(home, scene, root, stage, ref, start) {
+  const size = () => {
+    const w = home.clientWidth || innerWidth, h = home.clientHeight || innerHeight;
+    const s = Math.max(w / ref.width, h / ref.height); // cover, top, centred
+    stage.style.width = ref.width * s + "px"; stage.style.height = ref.height * s + "px";
+    stage.style.setProperty("--sw", stage.style.width);
+    stage.style.setProperty("--sh", stage.style.height);
+  };
   size(); resizeStage = size;
   disposeScene(); stopHomeSound();
-  interactions = installHomeInteractions(root, home, scene, boing, stopHomeSound);
-  disposeScene = () => {interactions.cleanup();disposeStories();};
   const previous = document.getElementById("home-art");
   if (previous) previous.replaceWith(root); else home.prepend(root);
+  disposeScene = start();
   home.classList.add("has-art");
   home.dispatchEvent(new CustomEvent("home-scene-ready", { detail: { scene } }));
 }

@@ -1,0 +1,72 @@
+#home-art[data-scene=cat-room] .hs-stage { max-height: 100%; container-type: size; }
+#home-art .cr-couch,
+#home-art .cr-side-table,
+#home-art .cr-luna,
+#home-art .cr-bobtail,
+#home-art .cr-bowls { position: absolute; }
+#home-art .cr-couch { left: 42%; bottom: 38%; width: 45%; }
+#home-art .cr-side-table { left: 14%; bottom: 40%; width: 25%; }
+#home-art .cr-table,
+#home-art .cr-base,
+#home-art .cr-alt { display: block; width: 100%; }
+#home-art .cr-alt { position: absolute; inset: 0; opacity: 0; }
+#home-art .cr-hamster { position: relative; width: 93%; margin: 0 auto -1%; }
+#home-art .cr-wheel {
+  position: absolute; left: 26%; top: 22%; width: 47%; aspect-ratio: 1;
+  border: 2px solid transparent; border-top-color: #ecffe2b0; border-bottom-color: #ecffe2b0;
+  border-radius: 50%; box-sizing: border-box;
+  animation: crWheel 1.35s linear infinite;
+}
+#home-art .cr-runner { position: absolute; left: 33%; bottom: 24%; width: 32%; }
+#home-art .cr-run-alt { animation: crSecond .21s steps(1, end) infinite; }
+#home-art .cr-runner .cr-base { animation: crFirst .21s steps(1, end) infinite; }
+
+#home-art .cr-bobtail { left: 0; bottom: 34%; width: 19%; transform: translateX(220%); }
+#home-art .cr-facing { position: relative; }
+#home-art .cr-bobtail[data-direction=left] .cr-facing { transform: scaleX(-1); }
+#home-art .cr-bobtail[data-state=walking] .cr-walk { animation: crFirst .44s steps(1, end) infinite; }
+#home-art .cr-bobtail[data-state=walking] .cr-walk-alt { animation: crSecond .44s steps(1, end) infinite; }
+#home-art .cr-bobtail[data-state=grooming] .cr-walk { opacity: 0; }
+#home-art .cr-bobtail[data-state=grooming] .cr-groom { animation: crFirst .65s steps(1, end) infinite; }
+#home-art .cr-bobtail[data-state=grooming] .cr-groom-alt { animation: crSecond .65s steps(1, end) infinite; }
+
+#home-art .cr-luna { left: 15%; bottom: 22.5%; width: min(37%, 17.08cqh); transform-origin: 58% 100%; }
+#home-art .cr-luna-body { position: relative; transform-origin: 61% 100%; animation: crBreathe 4.5s ease-in-out infinite; }
+#home-art .cr-blink { animation: crBlink 6.8s steps(1, end) infinite; }
+#home-art .cr-luna[data-tapped] .cr-luna-body > :not(.cr-paw) { visibility: hidden; }
+#home-art .cr-luna[data-tapped] .cr-paw { opacity: 1; }
+
+#home-art .cr-bowls { left: 60%; bottom: 22%; width: min(25%, 11.54cqh); }
+#home-art .cr-bowl { position: relative; }
+#home-art .cr-bowl + .cr-bowl { margin-top: -3%; }
+#home-art .cr-swimmer {
+  position: absolute; left: 50%; top: 43%; width: 31%;
+  transform: translateX(-55%); animation: crSwim var(--swim-time) linear var(--swim-delay) infinite;
+}
+#home-art .cr-swimmer img { display: block; width: 100%; animation: crFace var(--swim-time) steps(1, end) var(--swim-delay) infinite; }
+#home-art .cr-bubble { position: absolute; left: 62%; top: 53%; width: 6%; aspect-ratio: 1; border: 1px solid #f7ffff; border-radius: 50%; opacity: 0; }
+#home-art .cr-bowl[data-tapped] .cr-bubble { animation: crBubbles .65s ease-out 2; }
+
+#home-art .cr-hit {
+  position: absolute; inset: 5%; z-index: 2; width: 90%; height: 90%; padding: 0;
+  background: transparent; border: 0; box-shadow: none; border-radius: 24%;
+  cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+#home-art .cr-hit:focus-visible { outline: 2px solid #4a2c12; outline-offset: 3px; }
+@keyframes crWheel { to { transform: rotate(360deg); } }
+@keyframes crFirst { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes crSecond { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes crBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.012,1.025); } }
+@keyframes crBlink { 0%,45%,53%,100% { opacity: 0; } 47%,51% { opacity: 1; } }
+@keyframes crSwim {
+  0%,100% { transform: translate(-116%, 4%); }
+  24% { transform: translate(-50%, -9%); }
+  50% { transform: translate(17%, 8%); }
+  76% { transform: translate(-50%, 16%); }
+}
+@keyframes crFace { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+@keyframes crBubbles { from { opacity: .8; } to { transform: translateY(-280%) scale(.65); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion=full]) #home-art[data-scene=cat-room] * { animation: none; }
+}
