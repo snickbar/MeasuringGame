@@ -12241,7 +12241,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const HS_CHANGE_MS = 10000, HS_REVEAL_MS = 180000 /* AFK fallback only: the host taps through every screen */, HS_READY_MS = 0, HS_FAKE_MS = 15000;
   const hsContentEl = document.getElementById("hs-content");
   const hsFmt = (n) => Number(n).toLocaleString("en-US", { maximumSignificantDigits: 3 });
-  const hsChipsFmt = new Intl.NumberFormat("en-US").format;
+  // Built on first use (the first Intl.NumberFormat in a page costs ~50 ms on a slow phone, which Home should not wait for).
+  let hsChipsFormatter;
+  const hsChipsFmt = (n) => (hsChipsFormatter || (hsChipsFormatter = new Intl.NumberFormat("en-US"))).format(n);
   const isHsSettings = (st) => !!(st && st.mode === "highstakes");
   let hsBusyUntil = 0, hsBusyTok = 0, hsTickHandle = null;
   const hsBotWritten = new Set();

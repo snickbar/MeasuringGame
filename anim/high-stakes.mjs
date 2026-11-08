@@ -25,8 +25,10 @@ export const hsRaiseStep = (ante) => ante * 2;
 // ---------- answers ----------
 // Use the same precision for the real answer, generated choices and player fakes.
 export const hsRoundAnswer = n => Number.isFinite(n) ? Number(n.toFixed(2)) : 0;
-const answerFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-export const hsFormatAnswer = n => answerFormat.format(hsRoundAnswer(n));
+// Built on first use, not when this file loads: the first Intl.NumberFormat in a page loads the locale data, which is
+// about 12 ms here and about 50 ms on a slow phone, and every launch paid it before Home could show.
+let answerFormat;
+export const hsFormatAnswer = n => (answerFormat || (answerFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))).format(hsRoundAnswer(n));
 // 1 real + 3 fakes, sorted ascending. Fakes sit between x0.25 and x4 of the real answer on a log scale,
 // no two within ~15% of each other, none within ~15% of the real one, so the real answer lands anywhere
 // in the list (sometimes at an extreme). `custom` = optional fakes written by eliminated players; they
