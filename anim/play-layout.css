@@ -57,7 +57,7 @@ body:has(#hud[data-play-layout=highlow],#hud[data-play-layout=teamworlds]) #bott
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .tw-qs-half .name{font-size:11px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) .hl-chip{font-size:10px;padding:1px 6px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-guess-display{min-height:36px;font-size:26px;padding:2px 8px;margin:4px auto;width:min(100%,220px)}
-#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad{grid-template-columns:repeat(3,72px);justify-content:center;gap:4px 8px}
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad{grid-template-columns:repeat(3,72px);justify-content:center;gap:4px 8px;align-content:start;grid-auto-rows:min-content}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad :is(.num-btn,#backspace-btn){height:48px;padding:0 0 4px;font-size:21px}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #numpad #backspace-btn{font-size:0}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #guess-status:empty{display:none}
@@ -351,9 +351,29 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
   #hud #question-view.tw-mode .tw-qs-half .hl-chip svg{width:12px;height:12px}
   #hud #question-view.tw-mode .tw-qs-half .tw-qs-ask{font-size:9.5px;line-height:1.1}
 }
+
+/* Same slim cards whenever the screen had to shrink to fit (density set), whatever the phone height, so cards never push the keypad under Lock it in. */
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half{display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto auto;align-content:center;justify-items:center;gap:1px 4px;padding:3px 4px}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .avatar{grid-row:1 / 3;grid-column:1;width:34px;height:34px}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .name{grid-column:2;grid-row:1;max-width:100%;text-align:center}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .hl-chip{grid-column:2;grid-row:2}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .tw-qs-ask{grid-column:1 / -1;grid-row:3}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .tw-qs-acc{grid-column:2;grid-row:2}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .name{font-size:12px}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .hl-chip{font-size:14px;padding:1px 9px 1px 7px;gap:4px}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .hl-chip svg{width:12px;height:12px}
+  #hud[data-play-density] #question-view.tw-mode .tw-qs-half .tw-qs-ask{font-size:9.5px;line-height:1.1}
 @media (max-height:700px){
   #hud #question-view.tw-mode > #tw-guess-display{height:30px;min-height:30px;line-height:26px;font-size:21px;margin:2px 0 3px}
 }
+#hud[data-play-density] #question-view.tw-mode > #tw-guess-display{height:30px;min-height:30px;line-height:26px;font-size:21px;margin:2px 0 3px}
+#hud[data-play-density] #tw-question-progress .wl-progress{padding:4px 10px 3px;margin:2px 0 3px}
+#hud[data-play-density] #tw-question-progress .wl-progress-scale{height:10px}
+#hud[data-play-density] #question-view.tw-mode > #numpad{row-gap:1px}
+#hud[data-play-density=tight] #question-view.tw-mode .dc-pic{padding:2px 4px}
+#hud[data-play-density=tight] #question-view.tw-mode .tw-qs-half{padding:2px 4px;gap:0 4px}
+#hud[data-play-density=tight] #question-view.tw-mode .tw-qs-half .avatar{width:30px;height:30px}
+#hud[data-play-density] #question-view.tw-mode > #tw-question-prompt{margin-top:0;margin-bottom:0}
 @media (max-height:700px){
   #hud #tw-question-progress .wl-progress{padding:4px 10px 3px;margin:2px 0 3px}
   #hud #tw-question-progress .wl-progress-scale{height:10px}
@@ -362,3 +382,7 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
   #hud #question-view.tw-mode > #numpad{row-gap:1px}
   #hud #question-view.tw-mode > #tw-question-prompt{margin-top:0;margin-bottom:0}
 }
+
+/* Answer boxes: centre the number with flex instead of line-height maths, with a small lift, so the digits never sit low against the bottom edge (seen on the 0 on shorter phones). */
+#hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) #tw-guess-display:not([hidden]),
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-display:not([hidden]){display:flex;align-items:center;justify-content:center;line-height:1!important;padding-top:0!important;padding-bottom:3px!important;box-sizing:border-box}

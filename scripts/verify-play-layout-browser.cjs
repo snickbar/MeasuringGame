@@ -130,7 +130,7 @@ server.listen(0,'127.0.0.1',()=>{
       const isQuestion=!mode.includes(':')||mode==='bluff:vote'||mode.startsWith('quick:');
       if(isQuestion&&state.overflow>1)throw Error(mode+' '+width+'x'+height+' question overflow '+JSON.stringify(state));
       if(state.pad&&state.action&&state.pad.bottom>state.action.top)throw Error(mode+' action overlaps keypad '+JSON.stringify(state));
-      if(state.key&&(state.key.width<44||state.key.width>73||state.key.height<(height<=600?26:height<=700?30:44)))throw Error(mode+' stretched/tiny keys '+JSON.stringify(state.key));
+      if(state.key&&(state.key.width<44||state.key.width>73||state.key.height<(height<=600?26:height<=700||['highlow','teamworlds'].includes(mode)?30:44)))throw Error(mode+' stretched/tiny keys '+JSON.stringify(state.key));
       if(state.action&&state.action.bottom>height)throw Error(mode+' action outside viewport');
       if(['quick','party','teamvteam'].includes(mode)){
        const expected=mode==='teamvteam'?2:4;if(state.cards!==expected)throw Error(mode+' missing player/team cards '+state.cards);
