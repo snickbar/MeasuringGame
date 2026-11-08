@@ -11536,15 +11536,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
   }
   const soloScoreReaction = (acc) => acc >= 90 ? "cheer" : acc >= 60 ? "pleased" : acc >= 40 ? "puzzled" : "deflated";
-  function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "", sadToss = false } = {}) {
+  function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "", gesture = null } = {}) {
     const sunrise = sunriseStep !== null;
-    return `<div class="solo-score-mascot ${sunrise ? "dc-rooster" : "mo-squirrel"} solo-score-${reaction}${animate ? " solo-score-animate" : ""}${sadToss ? " mo-sad-toss" : ""}" aria-hidden="true">
+    return `<div class="solo-score-mascot ${sunrise ? "dc-rooster" : "mo-squirrel"} solo-score-${reaction}${animate ? " solo-score-animate" : ""}${gesture ? " mo-acorn-gesture" : ""}" aria-hidden="true">
       ${sunrise ? `<span class="dc-rooster-sun" style="--dc-sun-height:${[24, 34, 44, 55][sunriseStep]}%"></span>` : ""}
       <span class="solo-score-pose">
         <img class="solo-score-ready" src="anim/mode-mascots/${art.ready}" alt="" draggable="false">
-        <img class="solo-score-reaction" src="anim/mode-mascots/${sadToss ? art.deflatedHold : art[reaction]}" alt="" draggable="false">
-        ${sadToss ? `<img class="mo-sad-release" src="anim/mode-mascots/${art.deflatedRelease}" alt="" draggable="false">
-        <img class="mo-sad-rest" src="anim/mode-mascots/${art.deflated}" alt="" draggable="false">` : ""}
+        <img class="solo-score-reaction" src="anim/mode-mascots/${gesture?.hold ?? art[reaction]}" alt="" draggable="false">
+        ${gesture ? `<img class="mo-gesture-release" src="anim/mode-mascots/${gesture.release}" alt="" draggable="false">
+        <img class="mo-gesture-rest" src="anim/mode-mascots/${art[reaction]}" alt="" draggable="false">` : ""}
       </span>
       ${foreground}
     </div>`;
@@ -13415,12 +13415,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let monthlyTrailObserver = null;
   const MONTHLY_SQUIRREL_ART = {
     ready: "monthly-squirrel-ready.png",
-    pleased: "monthly-squirrel-pleased.png",
+    pleased: "monthly-squirrel-pleased-rest.png",
     puzzled: "monthly-squirrel-puzzled.png",
     deflated: "monthly-squirrel-deflated-rest.png",
-    deflatedHold: "monthly-squirrel-deflated.png",
-    deflatedRelease: "monthly-squirrel-deflated-release.png",
     cheer: "monthly-squirrel-cheer-v2.png",
+  };
+  const MONTHLY_ACORN_GESTURES = {
+    pleased: { hold: "monthly-squirrel-pleased.png", release: "monthly-squirrel-pleased-release.png", arrival: "thumb-toss" },
+    deflated: { hold: "monthly-squirrel-deflated.png", release: "monthly-squirrel-deflated-release.png", arrival: "low-toss" },
   };
   const monthlyKey = () => dailyDateStr().slice(0, 7); // "YYYY-MM" in US Eastern
   // Items from the month's own pack(s); a month with no pack of its own uses the sampler (like the real game).
@@ -13571,12 +13573,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const newest = i === slots.length - 1 && arrival;
       const rattle = arrival === "toss" && !newest && i >= slots.length - 3;
       let trajectory = "";
-      if (newest === "toss" || newest === "low-toss") {
-        const low = newest === "low-toss";
-        const fromX = Math.round(((low ? 17 : -10) - x) / .39);
-        const fromY = low ? Math.round(-115 + y * 2.7) : -180 + y * 3;
-        const apexY = low ? Math.min(-30, Math.round(-150 + y * 2.7)) : -255 + y * 2;
-        trajectory = `;--acorn-from-x:${fromX}%;--acorn-from-y:${fromY}%;--acorn-apex-y:${apexY}%`;
+      if (newest && newest !== "drop") {
+        let launchX = -10, fromY = -180 + y * 3, apexY = -255 + y * 2;
+        if (newest === "low-toss") {
+          launchX = 17;
+          fromY = Math.round(-115 + y * 2.7);
+          apexY = Math.min(-30, Math.round(-150 + y * 2.7));
+        }
+        if (newest === "thumb-toss") {
+          launchX = -44;
+          fromY = Math.round(-132 + y * 2.7);
+          apexY = Math.min(-36, Math.round(-190 + y * 2.4));
+        }
+        trajectory = `;--acorn-from-x:${Math.round((launchX - x) / .39)}%;--acorn-from-y:${fromY}%;--acorn-apex-y:${apexY}%`;
       }
       return `<img class="mo-acorn${newest ? " mo-acorn-" + newest : rattle ? " mo-acorn-rattle" : ""}" src="items/acorn.webp" alt="" draggable="false" style="--acorn-x:${x}%;--acorn-y:${y}%;--acorn-tilt:${tilt}deg${trajectory}">`;
     }).join("")}</span>`;
@@ -13689,13 +13698,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const i = run.guesses.length - 1, q = run.questions[i], g = run.guesses[i];
     const acc = roundAccuracy(g / q.answer);
     const reaction = soloScoreReaction(acc);
-    const sadToss = reaction === "deflated";
+    const gesture = MONTHLY_ACORN_GESTURES[reaction];
+    const arrival = gesture?.arrival ?? (reaction === "cheer" ? "toss" : "drop");
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     const label = acc >= 100 && String(q.answer).length % 2 === 0 ? "Spot on!" : accLabel(acc);
     vibeAccuracy(acc);
     document.getElementById("mo-stage").hidden = true;
     host.innerHTML = `<div class="dc-card dc-hot dc-res mo-round-result">
-      <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, reaction, { sadToss, foreground: monthlyAcornPile(i + 1, sadToss ? "low-toss" : acc >= 90 ? "toss" : "drop") })}
+      <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, reaction, { gesture, foreground: monthlyAcornPile(i + 1, arrival) })}
         <div>
           <div class="dc-res-head">${markSvg(acc)}<span>${label}</span></div>
           <div class="dc-res-lines"><div>You said <b>${g.toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div><b>${formatAccuracy(acc)}%</b> accurate</div></div>
