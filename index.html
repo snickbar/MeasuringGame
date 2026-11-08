@@ -11536,7 +11536,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
   }
   const soloScoreReaction = (acc) => acc >= 90 ? "cheer" : acc >= 60 ? "pleased" : acc >= 40 ? "puzzled" : "deflated";
-  function soloScoreMascotHtml(art, reaction, animate = true, sunriseStep = null) {
+  function soloScoreMascotHtml(art, reaction, { animate = true, sunriseStep = null, foreground = "" } = {}) {
     const sunrise = sunriseStep !== null;
     return `<div class="solo-score-mascot ${sunrise ? "dc-rooster" : "mo-squirrel"} solo-score-${reaction}${animate ? " solo-score-animate" : ""}" aria-hidden="true">
       ${sunrise ? `<span class="dc-rooster-sun" style="--dc-sun-height:${[24, 34, 44, 55][sunriseStep]}%"></span>` : ""}
@@ -11544,6 +11544,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <img class="solo-score-ready" src="anim/mode-mascots/${art.ready}" alt="" draggable="false">
         <img class="solo-score-reaction" src="anim/mode-mascots/${art[reaction]}" alt="" draggable="false">
       </span>
+      ${foreground}
     </div>`;
   }
   async function dailyWatchCalendarStamp(cell) {
@@ -11616,7 +11617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${r.i + 1} of 3</h2>${dailyDots(r.i, r.i + 1)}</div>
         <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
-          <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), true, r.i)}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
+          <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), { sunriseStep: r.i })}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
           <div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t">${r.label}</div></div>
           <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
           <p class="wb-line sv-arr" style="--a:.5s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
@@ -11635,7 +11636,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot${perfect ? " dc-perfect" : ""}">
         ${perfect && celebrateFinish ? `<div class="dc-pf-burst" aria-hidden="true">${svCoinBurstHtml()}</div>` : ""}
         <div class="dc-finish-hero">
-          ${soloScoreMascotHtml(DAILY_ROOSTER_ART, perfect ? "cheer" : "pleased", celebrateFinish, 3)}
+          ${soloScoreMascotHtml(DAILY_ROOSTER_ART, perfect ? "cheer" : "pleased", { animate: celebrateFinish, sunriseStep: 3 })}
           <div class="dc-finish-copy">
             ${perfect ? '<div class="dc-pf-title">Perfect Day!</div><div class="dc-note">All 3 guesses at 90% or better</div>' : ""}
             <div class="dc-big">${formatAccuracy(total / 3)}% average accuracy</div>
@@ -13415,7 +13416,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pleased: "monthly-squirrel-pleased.png",
     puzzled: "monthly-squirrel-puzzled.png",
     deflated: "monthly-squirrel-deflated.png",
-    cheer: "monthly-squirrel-cheer.png",
+    cheer: "monthly-squirrel-cheer-v2.png",
   };
   const monthlyKey = () => dailyDateStr().slice(0, 7); // "YYYY-MM" in US Eastern
   // Items from the month's own pack(s); a month with no pack of its own uses the sampler (like the real game).
@@ -13553,6 +13554,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     monthlyTrailObserver.observe(bird);
   }
   function monthlyAccs() { return mo.questions.map((q, i) => (mo.guesses[i] > 0 ? roundAccuracy(mo.guesses[i] / q.answer) : 0)); }
+  // Build from the ground up. The five rows hold all fifteen Mega acorns.
+  const MONTHLY_ACORN_SLOTS = [
+    [50,0,-11], [30,0,15], [70,0,11], [10,0,-26], [90,0,23],
+    [61,18,17], [39,18,-13], [80,18,-8], [20,18,12],
+    [50,36,-8], [72,36,13], [28,36,-12],
+    [40,54,14], [62,54,-13], [50,72,9],
+  ];
+  function monthlyAcornPile(count, arrival = "") {
+    const slots = MONTHLY_ACORN_SLOTS.slice(0, count);
+    return `<span class="mo-acorn-pile">${slots.map(([x, y, tilt], i) => {
+      const newest = i === slots.length - 1 && arrival;
+      const rattle = arrival === "toss" && !newest && i >= slots.length - 3;
+      const trajectory = newest === "toss" ? `;--acorn-from-x:${Math.round((-10 - x) / .39)}%;--acorn-from-y:${-180 + y * 3}%;--acorn-apex-y:${-255 + y * 2}%` : "";
+      return `<img class="mo-acorn${newest ? " mo-acorn-" + newest : rattle ? " mo-acorn-rattle" : ""}" src="items/acorn.webp" alt="" draggable="false" style="--acorn-x:${x}%;--acorn-y:${y}%;--acorn-tilt:${tilt}deg${trajectory}">`;
+    }).join("")}</span>`;
+  }
   // The month's picture is the backdrop from the intro until the results; it switches back to the player's own background after.
   function monthlyBgSync() {
     const playing = monthlyScreenEl.classList.contains("active") && mo && mo.key && mo.phase !== "done";
@@ -13634,7 +13651,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rewardCard = reward ? `<div class="dc-card mc-earned"><img src="${reward.art}" alt="" style="width:64px;height:64px;object-fit:contain;float:left;margin-right:12px"><div class="dc-big">${escapeHtml(reward.label)} ${reward.kind}</div><div class="dc-note">${reward.owned ? "Unlocked! Find it in Style." : "Earned! Claim it in Stats, Awards."}</div><button type="button" class="dc-btn dc-alt mo-reward-btn" id="mo-reward">${reward.owned ? "View in Style" : "Claim in Awards"}</button></div>` : "";
     el.innerHTML = `<div class="pin-top mo-results-header"><h2 tabindex="-1">${mo.practice ? "Practice results" : `${lvTitle} results`}</h2><p class="dc-sub">${name} Challenge${mo.practice ? " &middot; " + lvTitle : ""}</p></div>
       <div class="dc-card dc-hot">
-        <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, soloScoreReaction(total / mo.questions.length), animate)}
+        <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, soloScoreReaction(total / mo.questions.length), { animate, foreground: monthlyAcornPile(mo.guesses.length) })}
           <div><div class="dc-big"><span class="mo-tot">${total}</span> / ${mo.questions.length * 100}</div><div class="dc-note">Points${mo.coins ? ` &middot; +${mo.coins} coins` : ""}</div></div>
         </div>
         <div class="dc-marks">${accs.map((a) => markSvg(a)).join("")}</div>
@@ -13665,7 +13682,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     vibeAccuracy(acc);
     document.getElementById("mo-stage").hidden = true;
     host.innerHTML = `<div class="dc-card dc-hot dc-res mo-round-result">
-      <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, soloScoreReaction(acc))}
+      <div class="mo-score-grid">${soloScoreMascotHtml(MONTHLY_SQUIRREL_ART, soloScoreReaction(acc), { foreground: monthlyAcornPile(i + 1, acc >= 90 ? "toss" : "drop") })}
         <div>
           <div class="dc-res-head">${markSvg(acc)}<span>${label}</span></div>
           <div class="dc-res-lines"><div>You said <b>${g.toLocaleString("en-US", { maximumFractionDigits: 2 })}</b></div><div>Answer <b>${ans}</b></div><div><b>${formatAccuracy(acc)}%</b> accurate</div></div>
