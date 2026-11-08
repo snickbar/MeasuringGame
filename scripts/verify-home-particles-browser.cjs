@@ -47,6 +47,16 @@ server.listen(0,'127.0.0.1',()=>{
   if(scene==='jungle'){
    const leaves=[...document.querySelectorAll('#home-fx .hf-petal')];
    assert(leaves.length===5&&leaves.every(leaf=>parseInt(leaf.style.getPropertyValue('--dr'),10)!==0),'Five green leaves drift diagonally on a phone');
+   const owl=art.querySelector('.j-owl'),eyes=art.querySelector('.j-owl-eyes');
+   const owlAnimations=[owl,eyes].map(el=>el.getAnimations()[0]);
+   const cycle=owlAnimations[0].effect.getTiming().duration;
+   assert(owlAnimations[1].effect.getTiming().duration===cycle,'The owl and its eyes share a cycle');
+   owlAnimations.forEach(animation=>animation.pause());
+   for(const [phase,bodyVisible,eyesVisible] of [[.04,0,0],[.14,1,0],[.24,0,0],[.64,0,.9],[1.04,0,0],[1.14,1,0]]){
+    owlAnimations.forEach(animation=>{animation.currentTime=phase*cycle;});
+    assert(Number(getComputedStyle(owl).opacity)===bodyVisible&&Number(getComputedStyle(eyes).opacity)===eyesVisible,'The owl pops up on its own and its eyes glow halfway through the hidden interval');
+   }
+   owlAnimations.forEach(animation=>animation.play());
    const sloth=art.querySelector('.j-sloth'),arm=sloth.querySelector('.j-sloth-arm');
    sloth.querySelector('button').click();
    const motion=arm.getAnimations()[0],duration=motion.effect.getTiming().duration;
