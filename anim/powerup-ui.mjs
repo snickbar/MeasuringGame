@@ -63,22 +63,42 @@ export function createPowerupController(ports) {
     const visible = visibleIds(c);
     return visible.length ? `<div class="pu-row" aria-label="Power-ups">${visible.map(id => button(id, false, c)).join('')}</div>` : '';
   }
+  // What the tray is showing: its markup, the sidebar padding that goes with it, and where every box it is placed from
+  // stood when it was placed. render() also runs from the 200 ms game clock, so most calls find nothing different. Redoing
+  // the whole job each time (hide the tray, reset the sidebar, measure, rebuild the five buttons, show it again) made the
+  // browser lay the page out and the label fitter re-fit every button five times a second. null while the tray is empty.
+  let drawn = null;
+  const hundredth = n => Math.round(n * 100) / 100;
+  function layoutKey(col, main, side, body) {
+    const boxes = [hud, col, main, side, body, document.getElementById('question-prompt')];
+    return boxes.map(el => { const r = el?.getBoundingClientRect(); return r ? `${hundredth(r.left)},${hundredth(r.top)},${hundredth(r.right)},${hundredth(r.bottom)}` : '-'; }).join('|');
+  }
+  function clearTray(side) {
+    if (!drawn && tray.hidden && !tray.firstChild && !side?.style.paddingTop) return; // already empty
+    tray.hidden = true;
+    if (side) side.style.paddingTop = '';
+    tray.innerHTML = '';
+    drawn = null;
+  }
   function render() {
     const c = context(), quick = c?.mode === 'quick';
     if (messagePhase && (messagePhase !== c?.phase || messageQuestion !== c?.q?.powerupKey)) message.hidden = true;
-    tray.hidden = true;
     const side = document.querySelector('.score-sidebar');
-    if (side) side.style.paddingTop = '';
-    if (!quick) { tray.innerHTML = ''; return; }
-    const available = visibleIds(c);
-    if (!available.length) { tray.innerHTML = ''; return; }
+    const available = quick ? visibleIds(c) : [];
+    if (!available.length) { clearTray(side); return; }
     const col = document.querySelector('.hud-timer-col'), main = document.querySelector('.main-col');
     const body = document.querySelector('.game-body');
-    const hudRect = hud.getBoundingClientRect(), colRect = col.getBoundingClientRect();
-    const mainRect = main.getBoundingClientRect(), sideRect = side.getBoundingClientRect();
     const raised = available.includes('buffer') && available.length > 1;
     const lower = ['reveal', 'small', 'big', 'both', 'fifty'].filter(id => available.includes(id));
     const ordered = raised ? ['buffer', ...lower] : available;
+    const content = ordered.map(id => button(id, false, c)).join('');
+    // The same buttons in the same place, with every box they are placed from where it was: nothing to redo.
+    if (drawn && drawn.content === content && !tray.hidden && side?.style.paddingTop === drawn.padding &&
+      layoutKey(col, main, side, body) === drawn.layout) return;
+    tray.hidden = true;
+    if (side) side.style.paddingTop = '';
+    const hudRect = hud.getBoundingClientRect(), colRect = col.getBoundingClientRect();
+    const mainRect = main.getBoundingClientRect(), sideRect = side.getBoundingClientRect();
     const width = sideRect.right - mainRect.right - 6;
     // Keep Small, Big and Both together; wrapping Both added an unwanted row.
     const columns = 3;
@@ -89,8 +109,7 @@ export function createPowerupController(ports) {
     const board = document.getElementById('question-prompt');
     const spacer = raised ? Math.max(0, (board?.getBoundingClientRect().bottom || top) + 4 - (top + 90)) : 0;
     const panelHeight = raised ? 136 + spacer : 48;
-    const content = ordered.map(id => button(id, false, c)).join('');
-    if (tray.innerHTML !== content) tray.innerHTML = content;
+    tray.innerHTML = content;
     tray.classList.toggle('pu-l-shape', raised);
     tray.classList.remove('pu-narrow');
     tray.style.setProperty('--pu-columns', columns);
@@ -104,6 +123,7 @@ export function createPowerupController(ports) {
     tray.style.top = `${top - hudRect.top}px`;
     tray.hidden = false;
     side.style.paddingTop = `${Math.max(0, top + panelHeight - body.getBoundingClientRect().top + 6)}px`;
+    drawn = { content, padding: side.style.paddingTop, layout: layoutKey(col, main, side, body) };
   }
   function same(c) {
     const live = context();
