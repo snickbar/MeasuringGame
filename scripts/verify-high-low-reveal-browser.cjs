@@ -38,9 +38,13 @@ try{
  const bird=root.querySelector('.oc-bird'),hm=root.querySelector('.cw-high');
  for(const t of [.15,.6,.85]){const a=bird.getAnimations()[0];a.pause();a.currentTime=450+1500*t;await wait(45);assert(Math.abs(cy(bird)-cy(hm))<1,'Bird mark follows live motion');a.play();}
  await until(()=>!api.busy(),'HIGH settles');assert(!bird.classList.contains('is-happy'),'No celebration before full result');
+ assert(bird.querySelector('.stroke').getAnimations().length===1,'Bird alternates wing poses while waiting');
  $('reveal-next-btn').click();await api.pump();await wait(100);assert($('show-summary-btn').disabled,'Progress waits for LOW');assert(!$('hud-round-label').querySelector('.hl-flame'),'Streak waits for LOW to settle');
  api.pause(true);const pausedAnimation=root.querySelector('.oc-shark').getAnimations()[0];await pausedAnimation.ready;const paused=pausedAnimation.currentTime;await wait(140);assert(Math.abs(pausedAnimation.currentTime-paused)<3,'Pause freezes entrance');api.pause(false);
  await until(()=>!api.busy(),'LOW settles');assert(root.querySelector('.cw-meter').dataset.result==='won','Win feedback');assert(root.querySelector('.oc-shark').classList.contains('is-happy'),'Shared win pose');assert(!$('show-summary-btn').disabled,'Progress enabled after animation');assert($('hud-round-label').querySelector('.hl-flame'),'Streak updates after LOW settles');
+ const shark=root.querySelector('.oc-shark');
+ for(const animal of [bird,shark])assert(animal.querySelector('.oc-art').getAnimations().length===1,'Fresh result gives each mascot its own motion');
+ assert(Math.abs(cy(shark)-cy(root.querySelector('.cw-low')))<1,'Celebration keeps LOW at its actual pick');
  for(const scenario of ['under','over']){
   window.__waterCues=[];await api.show(scenario,0);await until(()=>!api.busy(),'Bottle for water crossing');
   $('reveal-next-btn').click();await api.pump();await until(()=>!api.busy(),'Bird crossing');
@@ -52,6 +56,10 @@ try{
   await api.show(scenario,2);await until(()=>api.root()?.dataset.busy==='false','Reconnect complete '+scenario);const r=api.root(),d=api.data(),m=d.hlLast;
   assert(r.querySelector('.cw-meter').dataset.result===(m.passed?'won':'lost'),'Authoritative round result '+scenario);
   for(const el of r.querySelectorAll('.oc-animal')){assert(el.classList.contains('is-happy')===!!m.passed,'Happy only for round win '+scenario);assert(el.classList.contains('is-defeated')===!m.passed,'Defeated after team loss '+scenario);}
+  const expected={under:['miss','support'],over:['support','miss'],wide:['gap','gap'],saved:['shield','shield']}[scenario];
+  const animals=[...r.querySelectorAll('.oc-animal')];
+  if(expected)assert(animals.map(el=>el.dataset.outcome).join()===expected.join(),'Role-specific pose '+scenario);
+  assert(animals.every(el=>el.querySelector('.oc-art').getAnimations({subtree:true}).length===0),'Reconnect keeps the result poses still '+scenario);
   if(scenario==='under')assert(r.querySelector('.oc-bird').classList.contains('is-reacting'),'Wet pose retained');if(scenario==='over')assert(r.querySelector('.oc-shark').classList.contains('is-reacting'),'Shocked pose retained');
   assert(r.querySelector('.oc-shark').offsetWidth>=r.querySelector('.oc-bird').offsetWidth*1.25,'Larger shark');
   assert(Math.abs(cy(r.querySelector('.oc-shark'))-cy(r.querySelector('.cw-low')))<1,'Shark aligned at final mark');

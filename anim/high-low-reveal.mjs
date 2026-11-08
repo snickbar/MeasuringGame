@@ -9,6 +9,18 @@ export function highLowRevealModel(data) {
   high:playerFor('high'),low:playerFor('low'),prompt:data.currentQuestion?.prompt||''};
 }
 
+// Each beat uses screen pixels and degrees relative to the bottle. The pick
+// markers stay attached to the outer animal while its artwork reacts inside.
+const LOOK_AT_BOTTLE = [[0,0,0],[6,2,9],[4,1,5]];
+const RESULT_BEATS = {
+ birdWin: [[4,1,5],[6,3,9],[10,-12,-10],[5,-7,5],[0,0,0]],
+ sharkWin: [[4,-1,-5],[-4,3,5],[13,-9,-12],[9,-5,-4],[0,0,0]],
+ miss: [[0,0,0],[-5,5,-13],[1,1,8],[-2,3,-5],[0,0,0]],
+ support: [[0,0,0],[7,1,8],[5,3,2],[0,0,0]],
+ gap: [[0,0,0],[5,4,8],[2,7,5],[0,0,0]],
+ shield: [[0,0,0],[-5,2,-7],[3,-5,5],[0,0,0]],
+};
+
 // One instance per room/game/round. Room updates advance the existing scene;
 // they never replace an animation with an unrelated score/presence update.
 export function mountHighLowReveal(container, data, options={}) {
@@ -19,7 +31,7 @@ export function mountHighLowReveal(container, data, options={}) {
  const fmt=formatOceanNumber,reduced=()=>!!options.reducedMotion?.()||matchMedia('(prefers-reduced-motion: reduce)').matches;
  let step=0,busy=true,animations=[],timers=[],raf=0,token=0,p=null,destroyed=false,ready=false,requested=data.revealIndex||0,paused=!!data.paused,previous=-1,settledResult=false;
  function wait(fn,ms){const job={fn,left:ms,at:performance.now(),id:null};const run=()=>{timers=timers.filter(t=>t!==job);if(!destroyed)fn();};job.run=run;if(!paused&&!document.hidden)job.id=setTimeout(run,ms);timers.push(job);return job;}
- function cancel(){token++;for(const t of timers)clearTimeout(t.id);timers=[];cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];stage.querySelectorAll('.oc-water-fx').forEach(el=>{el.getAnimations({subtree:true}).forEach(a=>a.cancel());el.remove();});root.querySelectorAll('.splashing').forEach(el=>el.classList.remove('splashing'));}
+ function cancel(){token++;for(const t of timers)clearTimeout(t.id);timers=[];cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];stage.querySelectorAll('.oc-water-fx').forEach(el=>{el.getAnimations({subtree:true}).forEach(a=>a.cancel());el.remove();});root.querySelectorAll('.splashing,.is-stroking').forEach(el=>el.classList.remove('splashing','is-stroking'));}
  function number(el,value){el.textContent=fmt(value);}
  function layout(){
   const c=model,w=stage.clientWidth,h=stage.clientHeight,size=bird.offsetWidth,sea=h*.51;
@@ -91,8 +103,33 @@ function settleWater(){
 }
 
 function finishPoses(){
- const c=model,finished=step===3&&!busy,won=finished&&model.passed;
- for(const el of [bird,shark]){el.classList.toggle('is-happy',won);el.classList.toggle('is-defeated',finished&&!won);}
+ const finished=step===3&&!busy,won=finished&&model.passed;
+ const highMiss=model.hi==null||model.hi<answer,lowMiss=model.lo==null||model.lo>answer;
+ for(const [el,miss,otherMiss] of [[bird,highMiss,lowMiss],[shark,lowMiss,highMiss]]){
+  el.classList.toggle('is-happy',won);
+  el.classList.toggle('is-defeated',finished&&!won);
+  if(!finished){delete el.dataset.outcome;continue;}
+  el.dataset.outcome=won?'win':model.saved?'shield':miss?'miss':otherMiss?'support':'gap';
+ }
+}
+function artBeat(el,poses,duration,delay=0,fill='none'){
+ if((el===bird?model.hi:model.lo)==null)return;
+ const direction=el===bird?-1:1;
+ const frames=poses.map(([x,y,turn])=>({translate:`${x*direction}px ${y}px`,rotate:`${turn*direction}deg`}));
+ animations.push(el.querySelector('.oc-art').animate(frames,{duration,delay,fill,easing:'ease-in-out'}));
+}
+function playResultBeat(){
+ for(const el of [bird,shark]){
+  const outcome=el.dataset.outcome;
+  const beat=outcome==='win'?(el===bird?'birdWin':'sharkWin'):outcome;
+  artBeat(el,RESULT_BEATS[beat],outcome==='win'?780:700,el===shark?65:0);
+ }
+ if(model.passed||model.saved){
+  const glow=model.saved?'#c7edff':'#fff1a2';
+  animations.push(boat.querySelector('.oc-boat-float').animate([
+   {filter:'drop-shadow(0 0 0 transparent)'},{filter:`drop-shadow(0 0 9px ${glow})`,offset:.42},{filter:'drop-shadow(0 0 0 transparent)'},
+  ],{duration:800,easing:'ease-in-out'}));
+ }
 }
 function fitValue(el,maximum,minimum=11){
  el.style.transform='none';el.style.fontSize=maximum+'px';
@@ -138,9 +175,10 @@ function formatBottleNumbers(){
    previousWaterSide=side;
   }
   reaction(bird,step>2&&c.hi!=null&&c.hi<answer);reaction(shark,false);
-  function done(){if(current!==token||destroyed)return;cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];busy=false;
+  function done(){if(current!==token||destroyed)return;cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];el.classList.remove('is-stroking');busy=false;
    if(animate&&!reduced()){crossing();settleWater();}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
-   if(step===3)revealGap();syncMeterMarks();
+   if(step===2&&!reduced()&&c.hi>=answer)bird.classList.add('is-stroking');
+   if(step===3){revealGap();if(animate&&!reduced()&&!document.hidden)playResultBeat();}syncMeterMarks();
    if(step===3&&!settledResult){settledResult=true;options.onResult?.({fresh:animate&&!document.hidden,passed:model.passed,saved:model.saved});}
    options.onSettled?.(n-1);
   }
@@ -149,7 +187,16 @@ function formatBottleNumbers(){
   const laneY=n===2?28:p.h-shark.offsetHeight-24,top=n===2?p.by:p.sy;
   const frames=n===1?[{transform:'translate('+dx+'px,0)'},{transform:'translate(0,0)'}]:[{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'translate(0,'+(laneY-top)+'px)',offset:.6},{transform:'translate(0,0)'}];
   const a=el.animate(frames,{duration,delay,fill:'backwards',easing:'cubic-bezier(.22,.6,.24,1)'});animations.push(a);syncMeterMarks();
+  if(n>1)el.classList.add('is-stroking');
   if(n===2)wait(()=>{if(!document.hidden)options.onCue?.('ocean-flutter');},delay);
+  if(n===3)wait(()=>{
+   shark.classList.remove('is-stroking');
+   for(const animal of [bird,shark]){
+    if(animal.classList.contains('is-reacting'))continue;
+    const vertical=animal===bird?1:-1;
+    artBeat(animal,LOOK_AT_BOTTLE.map(([x,y,turn])=>[x,y*vertical,turn*vertical]),430,0,'forwards');
+   }
+  },delay+duration-310);
   function watch(){if(current!==token||!busy)return;if(!paused&&!document.hidden){syncMeterMarks();const sea=stage.getBoundingClientRect().top+p.sea;
    crossing();
    if(n===2&&c.hi!=null&&c.hi<answer&&bird.getBoundingClientRect().top+bird.offsetHeight/2>sea+2)reaction(bird,true);
