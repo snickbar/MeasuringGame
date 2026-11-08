@@ -14022,7 +14022,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const bottle = kind === "bottle" || kind === "empty-bottle";
     const d = document.createElement("div"); d.className = "sv-crack" + (bottle ? " hl-bottle-popup" : kind === "shield" ? " shield" : "");
     const src = (part) => kind === "shield" ? `icons/survival-shield-${part}.webp` : `icons/life-heart-${part}.webp`;
-    const art = bottle ? highLowBottlePieces(kind === "empty-bottle" ? HL_EMPTY_BOTTLE : HL_MESSAGE_BOTTLE, "hl-bottle-splitting")
+    const art = bottle ? highLowBottlePieces({ className: "hl-bottle-splitting", hasNote: kind === "bottle" })
       : `<img class="sv-cr whole" src="${src("full")}" alt=""><img class="sv-cr cracked" src="${src("cracked")}" alt=""><img class="sv-cr half l" src="${src("left")}" alt=""><img class="sv-cr half r" src="${src("right")}" alt="">`;
     d.innerHTML = `<div class="sv-crack-wrap">${art}</div>`;
     document.body.appendChild(d);
@@ -19593,7 +19593,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hlBottlesHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
-    const bottles = Array.from({ length: total }, (_, i) => i < left ? `<img class="hl-bottle-icon" src="${HL_MESSAGE_BOTTLE}" alt="" draggable="false">` : highLowBottlePieces(HL_MESSAGE_BOTTLE, "hl-bottle-spent")).join("");
+    const bottles = Array.from({ length: total }, (_, i) => i < left ? `<img class="hl-bottle-icon" src="${HL_MESSAGE_BOTTLE}" alt="" draggable="false">` : highLowBottlePieces({ className: "hl-bottle-spent", hasNote: i === left })).join("");
     return `<div class="sv-hud"><div class="hl-bottle-row" role="img" aria-label="${left} of ${total} bottles left">${bottles}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hlReserveBottleHtml(room)}${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>${room.currentQuestion?.theme ? `<div class="hl-theme" style="${svThemeVars(room.currentQuestion.theme)}">${svThemeStripHtml(room.currentQuestion.theme)}</div>` : ""}</div>`;
   }
   function hlAnimateBottleSpend(root, saved) {
@@ -19604,7 +19604,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const icon = root.querySelector(".hl-reserve-icon");
     if (!icon) return;
     const intact = icon.firstElementChild;
-    icon.innerHTML = highLowBottlePieces(HL_EMPTY_BOTTLE, "hl-bottle-splitting");
+    icon.innerHTML = highLowBottlePieces({ className: "hl-bottle-splitting" });
     icon.querySelector(".hl-bottle-right").addEventListener("animationend", () => icon.replaceChildren(intact), { once: true });
   }
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
