@@ -26,7 +26,7 @@ class AudioNode{
  pause(){this.paused=true;}
  end(){this.listeners.ended?.();}
 }
-const context=vm.createContext({Audio:AudioNode,audioLifecycle:{canPlay:()=>true,guard:fn=>fn},document:{querySelector:()=>true},localSoundEnabled:true,localStorage:{getItem:()=>35},setTimeout:(fn,ms)=>timers.push({fn,ms})});
+const context=vm.createContext({Audio:AudioNode,audioLifecycle:{canPlay:()=>true,guard:fn=>fn},document:{querySelector:()=>true,getElementById:()=>({classList:{contains:()=>true}})},localSoundEnabled:true,localStorage:{getItem:()=>35},setTimeout:(fn,ms)=>timers.push({fn,ms})});
 const start=source.indexOf('  const SFX_FILES = {'),end=source.indexOf('  // Brightness feedback',start);
 assert(start>=0&&end>start,'Sound module boundaries must exist');
 vm.runInContext(source.slice(start,end),context);

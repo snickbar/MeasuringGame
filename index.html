@@ -9810,16 +9810,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       reactionStripEl.appendChild(b);
     }
+    appliedReactionKey = ""; // new buttons: they have not been given their enabled/disabled state yet
     updateReactionAvailability();
   }
   function reactionState() {
-    return reactionAvailability({room:roomState, connected:!!currentRoomCode && !!roomState?.players?.[currentPlayerId],
-      visible:!document.hidden && gameplayAudioVisible(), now:nowMs(),
-      overlay:OVERLAY_SCREENS.some(el=>el.classList.contains('active')) || !!document.querySelector('dialog[open]')});
+    // Each check can only switch reactions off, and the last two search the whole page, so
+    // stop at the first one that already says no (home screen, menus: no room, nothing to scan).
+    const connected = !!currentRoomCode && !!roomState?.players?.[currentPlayerId];
+    const visible = connected && !document.hidden && gameplayAudioVisible();
+    const overlay = visible && (OVERLAY_SCREENS.some(el=>el.classList.contains('active')) || !!document.querySelector('dialog[open]'));
+    return reactionAvailability({room:roomState, connected, visible, now:nowMs(), overlay});
   }
+  // updateReactionAvailability() also runs on a 250 ms timer, so it only touches the page when the result changed.
+  let appliedReactionKey = "";
   function updateReactionAvailability() {
     const state = reactionState();
     const cooling = Date.now() - lastReactionTapAt < REACTION_COOLDOWN_MS;
+    const key = (state.allowed ? "1" : "0") + (cooling ? "1" : "0") + state.reason;
+    if (key === appliedReactionKey) return;
+    appliedReactionKey = key;
     if (!cooling) reactionStripEl.classList.remove('cooling');
     reactionStripEl.classList.toggle('anim-locked', !state.allowed);
     reactionStripEl.setAttribute('aria-disabled', String(!state.allowed || cooling));
@@ -22496,8 +22505,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try { if (window.confetti && window.confetti.reset) window.confetti.reset(); } catch (e) { /* ignore */ }
   }
 
+  const GAMEPLAY_SCREEN_IDS = ["hud","hs-screen","bluff-screen","final-screen","lobby-screen","daily-screen","monthly-screen","worlds-screen","survival-screen","wb-screen","teamworlds-screen","teamvteam-screen"];
   function gameplayAudioVisible() {
-    return !!document.querySelector("#hud.active,#hs-screen.active,#bluff-screen.active,#final-screen.active,#lobby-screen.active,#daily-screen.active,#monthly-screen.active,#worlds-screen.active,#survival-screen.active,#wb-screen.active,#teamworlds-screen.active,#teamvteam-screen.active");
+    // Looks the screens up by id; a selector search would walk the whole page every time.
+    return GAMEPLAY_SCREEN_IDS.some((id) => document.getElementById(id)?.classList.contains("active"));
   }
 
   // A sound at a different pitch (1 = normal, higher = brighter); used for rising streak chimes.
