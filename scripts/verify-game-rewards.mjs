@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { finishRoomDeparture } from '../anim/room-safety.mjs';
 import vm from 'node:vm';
 import { gameReward, rewardProfile, gameRewardKey, createGameRewards } from '../anim/game-rewards.mjs';
 
@@ -72,23 +73,25 @@ for (const score of [0,2,10]) for (const charges of [0,1,3]) {
 // receipt after the room disappeared or its code was reused for a newer game.
 const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const start=source.indexOf('  async function finishCompletedGame(');
-const finishSource=source.slice(start,source.indexOf('\n  }',start)+4);
-for(const [host,room,expectedEnds,expectedRemoves] of [
-  [true,{phase:'final',gameId:'game',settings:{solo:true}},1,1],
-  [false,{phase:'final',gameId:'game',settings:{solo:true}},0,1],
-  [true,null,0,0],
-  [true,{phase:'question',gameId:'new-game'},0,0],
-  [false,{phase:'waiting'},0,0],
+const finishSource=source.slice(start,source.indexOf('  async function exitCompletedGame(',start));
+for(const [room,expectedPhase,collected,expectedReloads] of [
+  [{phase:'final',gameId:'game',settings:{solo:true}},null,false,1],
+  [{phase:'final',gameId:'game'},'final',true,0],
+  [{phase:'ended',gameId:'game',closedAfterFinish:'final'},null,false,1],
+  [null,null,false,1],
+  [{phase:'question',gameId:'new-game'},'question',false,0],
+  [{phase:'waiting'},'waiting',false,0],
 ]) {
-  let savedRoom=room,ends=0,removes=0,reloads=0;
-  const context=vm.createContext({currentRoomCode:'ABCD',currentPlayers:{me:{}},updateFinalButtons:()=>{},update:async()=>{},gameRewardKey,leavingGame:false,db:{},ref:(_,p)=>p,
-    runTransaction:async(_,fn)=>{const next=fn(savedRoom);if(next){ends++;savedRoom=next}},
-    get:async()=>({val:()=>savedRoom}),onDisconnect:()=>({cancel:async()=>{}}),
-    remove:async()=>{removes++},maybeDeleteEmptyRoom:async()=>{},
+  let savedRoom=room&&{...room,players:{me:{isHost:true}}},reloads=0;
+  const context=vm.createContext({currentRoomCode:'ABCD',currentPlayerId:'me',currentPlayers:{me:{}},updateFinalButtons:()=>{},gameRewardKey,finishRoomDeparture,leavingGame:false,db:{},ref:(_,p)=>p,
+    runTransaction:async(_,fn)=>{const next=fn(savedRoom);if(next!==undefined)savedRoom=next;return {committed:next!==undefined,snapshot:{val:()=>savedRoom}}},
+    get:async()=>({val:()=>savedRoom}),onDisconnect:()=>({cancel:async()=>{}}),cancelRevealEffects:()=>{},removeRecentRoom:()=>{},
     setTimeout:fn=>fn(),location:{reload:()=>{reloads++}},
   });
   vm.runInContext(finishSource,context);
-  await context.finishCompletedGame({roomCode:'ABCD',key:'ABCD_game',playerId:'me',host});
-  assert.equal(ends,expectedEnds);assert.equal(removes,expectedRemoves);assert.equal(reloads,room&&!room.settings?.solo&&room.phase!=='ended'?0:1);
+  await context.finishCompletedGame({roomCode:'ABCD',key:'ABCD_game',playerId:'me'});
+  assert.equal(savedRoom?.phase??null,expectedPhase);
+  assert.equal(!!savedRoom?.players?.me?.rewardCollected,collected);
+  assert.equal(reloads,expectedReloads);
 }
 console.log('Game reward receipts: minimum, breakdown, atomic base/ad credit, retries, completion, independent game IDs passed.');

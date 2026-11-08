@@ -5233,7 +5233,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var debugTools;
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
-  import { electedHost, transferHost, returnHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord } from "./anim/room-safety.mjs";
+  import { electedHost, transferHost, returnHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from "./anim/room-safety.mjs";
   var careerLedger;
   var gameRewards;
   var powerups;
@@ -11093,7 +11093,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function isInLobby() { return lobbyScreenEl.classList.contains("active"); }
   // The game is over once results are showing; leaving then needs no "are you sure".
-  function isGameOver() { return roomState?.phase === "final" || roomState?.hs?.stage === "over"; }
+  function isGameOver() { return roomGameFinished(roomState); }
   function activeSoloRun() {
     const runs = [
       [worldsScreenEl, wl, worldStop], [dailyScreenEl, daily, dailyStop],
@@ -11275,7 +11275,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       exitAppAfterLeave = true; return;
     }
     if (isInActiveGame()) {
-      if (isGameOver()) { if (isHost) hostExit(); else guestExit(); closeAppNow(); return; } // results showing: nothing to confirm
+      if (isGameOver()) { void exitCompletedGame().then(left => { if (left) closeAppNow(); }); return; }
       openLeaveGameConfirm(); exitAppAfterLeave = true; return;
     }
     openExitConfirm("app", "Exit the game?", "Are you sure you want to exit?");
@@ -12691,7 +12691,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
       }
       html += adBarSlot("highstakes", "hs-exit");
-      html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub">Waiting for the host to start another game...</p>`;
+      html += isHost ? `<button type="button" class="dc-btn" id="hs-again">Play again</button>` : `<p class="dc-sub" id="hs-rematch-note">Waiting for the host to start another game...</p>`;
       hsContentEl.innerHTML = html;
       // Arrival (first draw of this game's results only): rows slide in with their chips counting up, then the earnings lines, total last.
       if (hsOverArrKey !== data.gameId) {
@@ -19441,33 +19441,63 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     delete finalDoubleCoinsBtn.dataset.busy; finalDoubleCoinsBtn.disabled = false;
     updateFinalButtons();
   });
-  finalHomeBtn.addEventListener('click',()=>{if(currentPlayers[currentPlayerId]?.rewardCollected&&!roomState.settings?.solo){if(isHost)hostExit();else guestExit();}else gameRewards.open();});
+  finalHomeBtn.addEventListener("click", exitCompletedGame);
   async function finishCompletedGame(reward) {
-    const roomCode=reward.roomCode;
-    const live=(await get(ref(db,'rooms/'+roomCode))).val();
-    if(live&&!live.settings?.solo&&live.phase!=='ended'){
-      let sameGame=false;try{sameGame=gameRewardKey(roomCode,live)===reward.key;}catch{}
-      if(sameGame&&live.players?.[reward.playerId])await update(ref(db,'rooms/'+roomCode+'/players/'+reward.playerId),{rewardCollected:true,ready:false});
-      if(currentRoomCode===roomCode){currentPlayers[reward.playerId]={...currentPlayers[reward.playerId],rewardCollected:true};updateFinalButtons();}
-      return;
+    const { roomCode, playerId, key } = reward;
+    const roomRef = ref(db, `rooms/${roomCode}`);
+    const live = (await get(roomRef)).val();
+    if (live) {
+      // A recovered receipt can outlast a rematch or a reused room code.
+      try { if (gameRewardKey(roomCode, live) !== key) return; } catch { return; }
     }
-    leavingGame = true;
-    try {
-      // Finishing an old receipt must never close a newer game in the room.
-      if (reward.host) await runTransaction(ref(db, `rooms/${roomCode}`), room => {
-        if (!room || room.phase !== "final" || gameRewardKey(roomCode, room) !== reward.key) return;
-        return { ...room, phase: "ended" };
-      });
-      const room = (await get(ref(db, `rooms/${roomCode}`))).val();
-      if (room && (room.gameId || room.currentQuestion?.powerupKey || room.animStartAt || room.countdownEndsAt)
-          && gameRewardKey(roomCode, room) === reward.key) {
-        await onDisconnect(ref(db, `rooms/${roomCode}/players/${reward.playerId}`)).cancel();
-        await remove(ref(db, `rooms/${roomCode}/players/${reward.playerId}`));
-        await maybeDeleteEmptyRoom(roomCode);
+    if (live && !live.settings?.solo && live.phase !== "ended") {
+      const result = await runTransaction(roomRef, room => {
+        if (room?.phase !== "final" || !room.players?.[playerId] || gameRewardKey(roomCode, room) !== key) return;
+        return { ...room, players: { ...room.players, [playerId]: { ...room.players[playerId], rewardCollected: true, ready: false } } };
+      }, { applyLocally: false });
+      if (result.committed && currentRoomCode === roomCode && currentPlayers[playerId]) {
+        currentPlayers[playerId] = { ...currentPlayers[playerId], rewardCollected: true };
+        updateFinalButtons();
       }
+      const latest = result.snapshot.val();
+      if (latest && latest.phase !== "ended") return;
+    }
+    await leaveCompletedRoom(reward);
+  }
+  async function leaveCompletedRoom({ roomCode, playerId, key }) {
+    if (leavingGame) return false;
+    leavingGame = true;
+    cancelRevealEffects();
+    const roomRef = ref(db, `rooms/${roomCode}`);
+    const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+    const presence = onDisconnect(playerRef);
+    try {
+      await presence.cancel();
+      const result = await runTransaction(roomRef, room => finishRoomDeparture(room, roomCode, key, playerId), { applyLocally: false });
+      if (!result.committed && result.snapshot.val()?.players?.[playerId]) {
+        throw Error("The room changed while leaving");
+      }
+      removeRecentRoom(roomCode);
       // Let the controller clear its pending receipt before navigation.
       setTimeout(() => location.reload(), 0);
-    } catch (error) { leavingGame = false; throw error; }
+      return true;
+    } catch (error) {
+      leavingGame = false;
+      if (currentRoomCode === roomCode && currentPlayerId === playerId) {
+        get(playerRef).then(seat => {
+          if (seat.exists()) return presence.update({ connected: false, disconnectedAt: serverTimestamp() });
+        }).catch(() => {});
+      }
+      throw error;
+    }
+  }
+  async function exitCompletedGame() {
+    if (gameRewards.pending) { gameRewards.open(); return; }
+    try {
+      return await leaveCompletedRoom({ roomCode: currentRoomCode, playerId: currentPlayerId, key: gameRewardKey(currentRoomCode, roomState) });
+    } catch (error) {
+      showAchToast("Couldn’t leave the party. Try again.");
+    }
   }
   leftReloadBtn.addEventListener("click", () => location.reload());
 
@@ -19478,7 +19508,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const total = (roomState.settings || currentSettings).totalRounds || 5;
     const round = Math.min(roomState.round || 1, total);
     const tiles = [];
-    const finished = roomState.phase === "final" || roomState.hs?.stage === "over";
+    const finished = isGameOver();
     if (!finished) tiles.push(["Not finished", "Game status"]);
     if (roomState.settings?.mode === "highstakes" && roomState.hs) {
       // Points and accuracy mean nothing here: the recap is about coins and where you finished.
@@ -19486,6 +19516,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       tiles.push([`${Math.round(mine)}`, "Coins left"]);
       if (finished) tiles.push(mine > 0 ? [`${ord(HS.hsPlaceOf(hs, currentPlayerId))} of ${hs.seatsAll.length}`, "Place"] : ["Knocked out", "Result"]);
       tiles.push([`${Math.min(hs.round || 0, HS.HS_MAX_ROUNDS)} of ${HS.HS_MAX_ROUNDS}`, "Round reached"]);
+      return tiles;
+    }
+    if (isHlSettings(roomState.settings)) {
+      tiles.push([`${roomState.hlSurvived || 0}`, "Rounds survived"]);
+      if (roomState.round > 0) tiles.push([`${roomState.round}`, "Round reached"]);
+      if (me.roundsCounted) tiles.push([`${formatAccuracy(me.accuracySum / me.roundsCounted)}%`, "Avg accuracy"]);
       return tiles;
     }
     if (roomState.settings?.mode === "teamworlds") {
@@ -19551,6 +19587,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   async function guestExit() {
+    if (isGameOver()) return exitCompletedGame();
     const tiles = gameRecapTiles();
     leavingGame = true;
     cancelRevealEffects();
@@ -19565,6 +19602,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   async function hostExit() {
+    if (isGameOver()) return exitCompletedGame();
     const tiles = gameRecapTiles();
     leavingGame = true;
     cancelRevealEffects();
@@ -21692,14 +21730,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function updateFinalButtons() {
     let adLive = false;
-    try { adLive = !!finalAdOffer && roomState.phase === "final" && Date.now() - finalAdOffer.t < 30 * 60 * 1000 && String(finalAdOffer.key).replace(/[.#$\[\]/]/g, "_") === gameRewardKey(currentRoomCode, roomState); } catch (e) {}
+    try { adLive = !!finalAdOffer && (roomState.phase === "final" || roomState.closedAfterFinish === "final") && Date.now() - finalAdOffer.t < 30 * 60 * 1000 && String(finalAdOffer.key).replace(/[.#$\[\]/]/g, "_") === gameRewardKey(currentRoomCode, roomState); } catch (e) {}
     if (adLive && !finalDoubleCoinsBtn.dataset.busy) finalDoubleCoinsBtn.innerHTML = `<span>Watch ad: double coins</span><span class="fbtn-sub">+${finalAdOffer.coins} bonus coins</span>`;
     finalDoubleCoinsBtn.style.display = adLive ? 'flex' : 'none';
-    const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo;
-    playAgainBtn.style.display=party&&isHost&&collected?'flex':'none';playAgainBtn.textContent='Play again with this party';
-    finalHomeBtn.textContent=collected&&party?'Leave party':'Finish & collect coins';
+    const collected=!!currentPlayers[currentPlayerId]?.rewardCollected,party=!roomState.settings?.solo,closed=roomState.phase==="ended";
+    playAgainBtn.style.display=party&&isHost&&collected&&!closed?'flex':'none';playAgainBtn.textContent='Play again with this party';
+    finalHomeBtn.textContent=closed&&!gameRewards.pending?'Back to home':collected&&party?'Leave party':'Finish & collect coins';
     let note=document.getElementById('final-party-note');if(!note){note=document.createElement('p');note.id='final-party-note';note.className='cs-note';finalListEl.after(note);}
-    note.textContent=party?(collected?(isHost?'Start a rematch to keep this party together.':'Coins collected. Waiting for the host to start a rematch.'):'Collect your coins, then stay for the next game.'):'Your completed game and coins are saved once.';
+    note.textContent=closed?'The party has closed.':party?(collected?(isHost?'Start a rematch to keep this party together.':'Coins collected. Waiting for the host to start a rematch.'):'Collect your coins, then stay for the next game.'):'Your completed game and coins are saved once.';
   }
 
   // ==================== Sound / confetti ====================
@@ -22558,6 +22596,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (![dailyScreenEl, monthlyScreenEl, worldsScreenEl, survivalScreenEl].some((s) => s.classList.contains("active")) && !(data.phase === "question" && data.settings?.mode === "teamworlds")) qBoardHome(); // the question card may still be borrowed by a Daily/Monthly screen
     focusedPlayLayout?.restoreHighLow();
     if (leftScreenEl.classList.contains("active") || leavingGame) return; // the "you left" page is showing: don't draw a game screen behind it
+    if (data.phase === "ended" && data.closedAfterFinish) {
+      const highStakes = data.closedAfterFinish === "hs";
+      const showingResults = highStakes
+        ? hsScreenEl.classList.contains("active") && hsOverArrKey === data.gameId
+        : finalScreenEl.classList.contains("active");
+      // A reconnect may get the close and final results in the same update.
+      if (!showingResults) {
+        const livePlayers = currentPlayers;
+        currentPlayers = { ...data.finishedPlayers };
+        try {
+          const result = { ...data, phase: data.closedAfterFinish, players: currentPlayers };
+          applyPhase(result);
+          if (highStakes) renderHighStakes(result);
+          else renderFinal();
+        } finally { currentPlayers = livePlayers; }
+      }
+      if (highStakes) {
+        hsContentEl.querySelector("#hs-again")?.remove();
+        const note = hsContentEl.querySelector("#hs-rematch-note");
+        if (note) note.textContent = "The party has closed.";
+      } else updateFinalButtons();
+      return;
+    }
     if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
@@ -22864,7 +22925,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       currentSettings = data.settings || currentSettings;
       // Another player's Finish can close the party room while this player is
       // still reading the results. Their own saved reward remains available.
-      if (gameRewards.pending && (data.phase === "ended" || !data.players)) gameRewards.open();
+      if (gameRewards.pending && ((data.phase === "ended" && !data.closedAfterFinish) || !data.players)) gameRewards.open();
 
       if (currentPlayers[currentPlayerId]) everSeenSelfInPlayers = true;
       if (everSeenSelfInPlayers && !currentPlayers[currentPlayerId] && data.phase !== "ended") {

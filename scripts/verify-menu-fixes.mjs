@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { roomGameFinished } from '../anim/room-safety.mjs';
 const source = fs.readFileSync('index.html', 'utf8');
 const actual = name => source.match(new RegExp('  (?:async )?function ' + name + '\\([^\\n]+\\{[\\s\\S]*?\\n  \\}'))[0];
 
@@ -38,7 +39,8 @@ account.accountUser=null;account.renderAccountUi();assert.equal(account.settings
 
 const recap=vm.createContext({currentPlayers:{me:{score:0,roundsCounted:0},bot:{score:0}},currentPlayerId:'me',currentRoomCode:'TEST',
   roomState:{phase:'question',round:1,settings:{totalRounds:5}},currentSettings:{},
-  computeRanks:()=>[{id:'me',rank:1}],formatAccuracy:String,HS:{HS_MAX_ROUNDS:10,hsPlaceOf:()=>1}});
+  roomGameFinished,computeRanks:()=>[{id:'me',rank:1}],formatAccuracy:String,HS:{HS_MAX_ROUNDS:10,hsPlaceOf:()=>1}});
+vm.runInContext(source.match(/  function isGameOver\(\) [^\n]+/)[0]+'\n'+source.match(/  const isHlSettings = [^\n]+/)[0],recap);
 vm.runInContext(actual('gameRecapTiles'),recap);
 let rows=recap.gameRecapTiles();assert(rows.some(r=>r[0]==='Not finished'));assert(!rows.some(r=>['Rank','Place'].includes(r[1])));
 recap.roomState={phase:'hs',settings:{mode:'highstakes'},hs:{stage:'bet',round:1,chips:{me:100},seatsAll:['me','bot']}};
@@ -46,6 +48,9 @@ rows=recap.gameRecapTiles();assert(!rows.some(r=>r[1]==='Place'));
 recap.roomState.hs.stage='over';assert(recap.gameRecapTiles().some(r=>r[1]==='Place'));
 assert(!recap.gameRecapTiles().some(r=>r[1]==='Room code'),'High Stakes completion has no room code tile');
 for(const mode of ['classic','quick','teamvteam','bluff']){recap.roomState={phase:'final',round:5,settings:{mode,totalRounds:5}};assert(!recap.gameRecapTiles().some(r=>r[1]==='Room code'),'No completed room code in '+mode);}
+recap.roomState={phase:'question',round:8,hlSurvived:5,settings:{mode:'teamworlds',variant:'hl'}};
+rows=Object.fromEntries(recap.gameRecapTiles().map(([value,label])=>[label,value]));
+assert.equal(rows['Rounds survived'],'5');assert.equal(rows['Round reached'],'8');assert.equal(rows.Stars,undefined);
 assert(!actual('hostExit').includes('careerLedger.save'));assert(!actual('guestExit').includes('careerLedger.save'));
 
 const classList=()=>{const values=new Set();return {toggle:(key,on)=>on?values.add(key):values.delete(key),contains:key=>values.has(key)}};

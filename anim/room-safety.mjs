@@ -1,6 +1,22 @@
 // Pure transaction decisions. Re-evaluated against the latest room on every retry.
 import { roundAccuracy } from './accuracy.mjs';
 import { hsPayout, hsWonByBluff } from './high-stakes.mjs';
+import { gameRewardKey } from './game-rewards.mjs';
+
+export function roomGameFinished(room) {
+  return room?.phase === 'final' || (room?.phase === 'hs' && room.hs?.stage === 'over') ||
+    (room?.phase === 'ended' && !!room.closedAfterFinish);
+}
+
+export function finishRoomDeparture(room, roomCode, key, id) {
+  if (!room?.players?.[id] || !(roomGameFinished(room) || room.phase === 'ended')) return;
+  try { if (gameRewardKey(roomCode, room) !== key) return; } catch { return; }
+  const players = { ...room.players };
+  delete players[id];
+  if (!Object.values(players).some(p => !p.isBot)) return null;
+  const closing = room.phase !== 'ended' && room.players[id].isHost;
+  return closing ? { ...room, players, phase: 'ended', closedAfterFinish: room.phase, finishedPlayers: room.players } : { ...room, players };
+}
 
 export const HOST_TRANSFER_GRACE_MS = 60000;
 export function electedHost(room, now = Date.now()) {

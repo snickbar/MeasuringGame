@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { electedHost, transferHost, returnHost, admitPlayer, commitHsState, hsRoundRecord } from '../anim/room-safety.mjs';
+import { electedHost, transferHost, returnHost, admitPlayer, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from '../anim/room-safety.mjs';
 import * as HS from '../anim/high-stakes.mjs';
 import { applyCareerRecord } from '../anim/career-ledger.mjs';
 import { deleteIfStale } from './cleanup-stale-rooms.mjs';
@@ -12,6 +12,21 @@ const party = { phase: 'question', settings: { hostTransferMode: 'reassign' }, p
   guest: { connected: true, joinedAt: 2 }, later: { connected: true, joinedAt: 3 },
   bot: { isBot: true, joinedAt: 0 }
 } };
+const finalRoom = { ...party, phase: 'final', gameId: 'match' };
+const closed = finishRoomDeparture(finalRoom, 'CODE', 'CODE_match', 'old');
+assert.equal(closed.phase, 'ended');
+assert.equal(closed.closedAfterFinish, 'final');
+assert.deepEqual(closed.finishedPlayers, finalRoom.players, 'Late guests can still see the full standings');
+assert.equal(closed.players.old, undefined);
+assert.equal(roomGameFinished(closed), true);
+const guestLeft = finishRoomDeparture(finalRoom, 'CODE', 'CODE_match', 'guest');
+assert.equal(guestLeft.phase, 'final', 'Guest departure leaves the host and rematch in place');
+assert.equal(guestLeft.players.guest, undefined);
+assert.equal(finishRoomDeparture(finalRoom, 'CODE', 'CODE_previous', 'old'), undefined, 'Old receipts cannot leave a new game');
+assert.equal(finishRoomDeparture({ ...finalRoom, phase: 'question' }, 'CODE', 'CODE_match', 'old'), undefined);
+assert.equal(finishRoomDeparture({ ...finalRoom, players: { old: finalRoom.players.old, bot: finalRoom.players.bot } }, 'CODE', 'CODE_match', 'old'), null, 'Clean up bot-only finished rooms');
+assert.equal(finishRoomDeparture({ ...finalRoom, phase: 'hs', hs: { stage: 'over' } }, 'CODE', 'CODE_match', 'old').closedAfterFinish, 'hs');
+assert.equal(roomGameFinished({ ...finalRoom, phase: 'ended' }), false, 'An early end still needs the closure screen');
 assert.equal(electedHost(party), 'guest');
 for(const elapsed of [0,10000,59999]){
  assert.equal(electedHost(party,elapsed),null,'Brief absence keeps host: '+elapsed);
