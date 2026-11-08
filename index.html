@@ -2327,10 +2327,11 @@ if (location.protocol === "file:") {
   #bottom-toolbar.active { display: flex; animation: toolbarFadeIn 200ms ease-out; }
   @keyframes toolbarFadeIn { 0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); } }
   #bottom-actions { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 46px; }
-  #bottom-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))) { display: none; }
+  /* The data-bar-* attributes are kept up to date by anim/bottom-actions.mjs. */
+  #bottom-actions[data-bar-empty] { display: none; }
   #bottom-actions button { width: auto; margin: 0; flex: 1; max-width: 260px; }
-  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) { flex-direction: row; align-items: stretch; gap: 8px; }
-  #bottom-actions:has(#final-home-btn:not([style*="display: none"]):not([style*="display:none"])) button { max-width: none; width: auto; flex: 1 1 0; }
+  #bottom-actions[data-bar-final] { flex-direction: row; align-items: stretch; gap: 8px; }
+  #bottom-actions[data-bar-final] button { max-width: none; width: auto; flex: 1 1 0; }
   /* Final-results trio: three square-ish buttons side by side */
   #bottom-actions button#play-again-btn, #bottom-actions button#final-home-btn, #bottom-actions button#final-double-coins-btn {
     border-image: none !important; border-width: 2px !important; border-style: solid !important; border-radius: 12px !important;
@@ -2695,8 +2696,8 @@ if (location.protocol === "file:") {
   }
   button#reveal-all-btn { border-image-source: url(icons/btn-bot-medium.png); }
   /* Solo reveal row (Auto | Reveal next | Reveal all): Auto stays small so both labels fit on one line */
-  #bottom-actions:has(#reveal-all-btn:not([style*="display: none"]):not([style*="display:none"])) #hud-auto-toggle { flex: 0 0 auto; min-width: 72px; }
-  #bottom-actions:has(#reveal-all-btn:not([style*="display: none"]):not([style*="display:none"])) :is(#reveal-next-btn,#reveal-all-btn) { white-space: nowrap; font-size: 13px; }
+  #bottom-actions[data-bar-reveal] #hud-auto-toggle { flex: 0 0 auto; min-width: 72px; }
+  #bottom-actions[data-bar-reveal] :is(#reveal-next-btn,#reveal-all-btn) { white-space: nowrap; font-size: 13px; }
   button#reveal-next-btn,
   button#show-summary-btn,
   button#next-round-btn,
@@ -4275,7 +4276,7 @@ if (location.protocol === "file:") {
 </div>
 
 <div id="bottom-toolbar">
-  <div id="bottom-actions">
+  <div id="bottom-actions" data-bar-empty>
   <button id="hud-auto-toggle" type="button" style="display:none;">Auto: Off</button>
   <button id="reveal-next-btn" style="display:none;">Reveal next</button>
   <button id="reveal-all-btn" style="display:none;">Reveal all</button>
@@ -5180,6 +5181,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
   import { installAutoFit } from "./anim/auto-fit.mjs";
+  import { installBottomActions } from "./anim/bottom-actions.mjs";
   import { createPolish, applyMenuBanner, MENU_BANNERS, bannerMascot } from "./anim/game-polish.mjs";
   import { recentDiscoveries, recentlySeen, discoveryTiles, createDiscoveryPresentation } from "./anim/discoveries.mjs";
   import { createTutorial } from "./anim/tutorial.mjs";
@@ -12946,6 +12948,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // All button labels, including labels sharing a button with artwork.
   installAutoFit();
+  // Layout switches for the bottom button bar (replaces :has() selectors that slowed every style change).
+  installBottomActions();
 
   // ==================== Worlds: themed levels with stars ====================
   // Questions still get harder overall, but not in a strict climb: sort easiest to hardest, then nudge each one's
