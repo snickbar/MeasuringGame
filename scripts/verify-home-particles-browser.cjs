@@ -47,6 +47,21 @@ server.listen(0,'127.0.0.1',()=>{
   if(scene==='jungle'){
    const leaves=[...document.querySelectorAll('#home-fx .hf-petal')];
    assert(leaves.length===5&&leaves.every(leaf=>parseInt(leaf.style.getPropertyValue('--dr'),10)!==0),'Five green leaves drift diagonally on a phone');
+   const sloth=art.querySelector('.j-sloth'),arm=sloth.querySelector('.j-sloth-arm');
+   sloth.querySelector('button').click();
+   const motion=arm.getAnimations()[0],duration=motion.effect.getTiming().duration;
+   motion.pause();
+   let last=0,lift=0;
+   for(let t=0;t<duration;t+=16){
+    motion.currentTime=t;
+    const style=getComputedStyle(arm),stretch=new DOMMatrix(style.transform).d-1;
+    assert(style.opacity==='1'&&Math.abs(stretch-last)<.04,'One visible paw moves continuously through the wave');
+    lift=Math.max(lift,stretch);last=stretch;
+   }
+   assert(lift>.2&&Math.abs(last)<.01,'Paw lifts and returns to its original grip');
+   motion.finish();
+   await new Promise(r=>setTimeout(r,35));
+   assert(!sloth.hasAttribute('data-waving'),'Wave releases its tap lock');
   }
   for(const route of routes){const moving=route.querySelector('.hs-crit'),sprite=route.querySelector('.hs-crit-img'),anims=route.getAnimations({subtree:true}),seconds=parseFloat(route.style.getPropertyValue('--cs')),delay=parseFloat(route.style.getPropertyValue('--cd'));let visible=false;anims.forEach(a=>a.pause());for(let k=1;k<40;k++){anims.forEach(a=>a.currentTime=(delay+seconds*k/40)*1000);const r=sprite.getBoundingClientRect();if(Number(getComputedStyle(moving).opacity)>.5&&r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight){visible=true;break;}}assert(visible,'Creature crosses the visible stage: '+scene+' '+route.dataset.critterIndex);anims.forEach(a=>{a.currentTime=0;a.play()});}
   if(scene==='corgi'){const leaf=art.querySelector('.hs-fall'),a=leaf.getAnimations()[0],duration=a.effect.getTiming().duration,delay=a.effect.getTiming().delay;a.pause();for(const fraction of [.5,.65,.8,.9]){a.currentTime=delay+duration*fraction;assert(Number(getComputedStyle(leaf).opacity)>.99,'Large leaf does not fade midway');}a.currentTime=delay+duration*.99;assert(leaf.querySelector('.hs-crit-img').getBoundingClientRect().top>innerHeight,'Leaf exits below screen before fading');a.play();}

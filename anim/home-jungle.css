@@ -50,42 +50,21 @@
 }
 #home-art .j-sloth-pose { position: relative; height: 100%; transform-origin: 89% 24%; animation: jSlothBreath 7.8s ease-in-out infinite; }
 #home-art .j-sloth .j-art { height: 100%; width: auto; }
-/* The registered arm poses sit behind the original face and gripping limbs. */
-#home-art .j-sloth-grip { position: relative; }
-#home-art .j-sloth-layer {
-  position: absolute; top: 0; left: 0; height: 100%; width: auto; opacity: 0;
-  transform-origin: 74% 36%;
+/* The same rear paw is drawn at rest and in motion, with its shoulder tucked under the face. */
+#home-art .j-sloth-arm {
+  position: absolute; inset: 0; height: 100%; width: auto;
+  transform-origin: 80% 34.5%;
+  clip-path: polygon(76% 0,100% 0,100% 34%,87% 34%,83% 34.5%,77% 35.4%,
+    71% 36.8%,65% 38%,61% 38.7%,63% 35%,69% 30%,74% 26%,76% 22%);
 }
-#home-art .j-sloth-arm-grip {
-  clip-path: polygon(76% 0,100% 0,100% 36%,84% 36%,62% 41%,63% 35%,69% 30%,74% 26%,76% 22%);
-  --j-sloth-action: jSlothReleaseGrip;
-}
-#home-art .j-sloth-release {
-  clip-path: polygon(73% 0,100% 0,100% 36%,79% 36%,57% 41%,59.7% 36%,64% 33%,68% 29%,71.4% 25%,72.8% 21%);
-  --j-sloth-action: jSlothLift;
-}
-#home-art .j-sloth-wave-arm {
-  clip-path: polygon(73% 19.8%,100% 19.8%,100% 36%,79% 36%,57% 41%,59.7% 36%,64% 33%,68% 29%,71.4% 25%,72.8% 21%);
-  --j-sloth-action: jSlothWaveArm;
-}
-#home-art .j-sloth-wave-paw {
-  clip-path: inset(0 0 77% 73%);
-  transform-origin: 83% 19.8%;
-  --j-sloth-action: jSlothWavePaw;
-}
-#home-art .j-sloth-wink {
-  position: absolute; left: 27.67%; top: 19.48%; width: 16.87%; height: 7.81%; opacity: 0;
-  clip-path: ellipse(49% 49%); --j-sloth-action: jSlothWink;
-}
-#home-art .j-sloth[data-waving] :is(.j-sloth-layer,.j-sloth-wink) {
-  animation: var(--j-sloth-action) 1.95s ease-in-out both;
-}
-#home-art .j-sloth[data-waving] .j-sloth-wink { animation-timing-function: steps(1, end); }
-#home-art .j-sloth[data-waving] .j-sloth-grip {
+#home-art .j-sloth-grip {
+  position: relative;
   clip-path: polygon(0 0,100% 0,100% 14%,74% 14%,77% 18%,77.5% 22%,77% 25%,
-    74.5% 28%,70.5% 31%,66% 34%,63% 36%,64% 39%,80% 37%,89% 34.8%,100% 34.8%,
+    74.5% 28%,70.5% 31%,66% 34%,63% 36%,61% 38.5%,65% 37.8%,71% 36.6%,
+    77% 35.2%,83% 34.3%,87% 33.8%,100% 33.8%,
     100% 100%,0 100%);
 }
+#home-art .j-sloth[data-waving] .j-sloth-arm { animation: jSlothWave 1.95s ease-in-out; }
 
 #home-art .j-hollow {
   left: 74.9%; top: 34.35%; width: 13.5%; height: 10.05%;
@@ -126,30 +105,11 @@
 @keyframes jWave { 0%,35%,75%,100% { transform: rotate(0); } 43%,59% { transform: rotate(-17deg); } 50%,66% { transform: rotate(9deg); } }
 @keyframes jKick { 0%,30%,71%,100% { transform: rotate(0); } 43%,60% { transform: rotate(-13deg); } 52% { transform: rotate(9deg); } }
 @keyframes jSlothBreath { 0%,100% { transform: scale(1); } 50% { transform: scale(1.012,1.014); } }
-@keyframes jSlothReleaseGrip {
-  0%,100% { opacity: 1; transform: rotate(0); }
-  10%,90% { opacity: 1; transform: rotate(-6deg); }
-  12%,88% { opacity: 0; transform: rotate(-8deg); }
-}
-@keyframes jSlothLift {
-  0%,10%,90%,100% { opacity: 0; transform: rotate(9deg); }
-  12%,88% { opacity: 1; transform: rotate(7deg); }
-  25%,75% { opacity: 1; transform: rotate(-8deg); }
-  27%,73% { opacity: 0; transform: rotate(-9deg); }
-}
-@keyframes jSlothWaveArm {
-  0%,25%,75%,100% { opacity: 0; }
-  27%,73% { opacity: 1; }
-}
-@keyframes jSlothWavePaw {
-  0%,25%,75%,100% { opacity: 0; transform: rotate(13deg); }
-  27%,73% { opacity: 1; transform: rotate(8deg); }
-  39%,59% { opacity: 1; transform: rotate(-12deg); }
-  49% { opacity: 1; transform: rotate(10deg); }
-}
-@keyframes jSlothWink {
-  0%,36%,52%,100% { opacity: 0; }
-  39%,47% { opacity: 1; }
+@keyframes jSlothWave {
+  0%,100% { transform: skew(0,0) scaleY(1); }
+  31% { transform: skew(-7deg,-7deg) scaleY(1.28); }
+  47% { transform: skew(5deg,4deg) scaleY(1.19); }
+  64% { transform: skew(-6deg,-6deg) scaleY(1.27); }
 }
 @keyframes jOwlEyes { 0%,56%,67%,100% { opacity: 0; } 58%,61%,63%,65% { opacity: .9; } 62% { opacity: .1; } }
 @keyframes jOwlPeek {

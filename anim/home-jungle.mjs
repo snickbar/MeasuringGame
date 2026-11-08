@@ -4,7 +4,7 @@ const OWL = 'items/owl.webp';
 const MONKEYS = ['a', 'b', 'c'];
 
 export async function build(home, load, current) {
-  const sprites = ['tail', 'sloth', 'sloth-release', 'sloth-wave', 'sloth-wink', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
+  const sprites = ['tail', 'sloth', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
   await Promise.all([load(PLATE), load(OWL), ...sprites.map(name => load(ART + name + '.webp'))]);
   if (!current()) return null;
 
@@ -33,11 +33,7 @@ export async function build(home, load, current) {
       </div></div>${hit('monkey', 'Play with monkey ' + (i + 1))}</div>`).join('')}
     </div>
     <div class="j-sloth"><div class="j-sloth-pose">
-      ${sprite('sloth', 'j-sloth-layer j-sloth-arm-grip')}
-      ${sprite('sloth-release', 'j-sloth-layer j-sloth-release')}
-      ${sprite('sloth-wave', 'j-sloth-layer j-sloth-wave-arm')}
-      ${sprite('sloth-wave', 'j-sloth-layer j-sloth-wave-paw')}
-      ${sprite('sloth', 'j-art j-sloth-grip')}${sprite('sloth-wink', 'j-sloth-wink')}
+      ${sprite('sloth', 'j-sloth-arm')}${sprite('sloth', 'j-art j-sloth-grip')}
     </div>${hit('sloth', 'Say hello to the sloth')}</div>
   </div>`;
 
@@ -94,7 +90,7 @@ export async function build(home, load, current) {
       }
     }, { signal: events.signal });
     sloth.addEventListener('animationend', event => {
-      if (event.animationName === 'jSlothWavePaw') delete sloth.dataset.waving;
+      if (event.animationName === 'jSlothWave') delete sloth.dataset.waving;
     }, { signal: events.signal });
 
     const observer = new MutationObserver(sync);
