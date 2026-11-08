@@ -61,19 +61,72 @@ html[data-motion=reduce] .dc-pf-title{animation:none}
 @keyframes dcRankPop{0%{transform:scale(1)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
 html[data-motion=reduce] .dc-rank.landed .dc-rank-n{animation:none}
 
-/* Daily summary page: the check / X sits alone and centered, plus a four-zone accuracy meter. */
-#daily-content .wb-verdict .wb-result-stage.dc-stage{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(104px*var(--wbf,1))}
-#daily-content .dc-stage .wb-result-stamp .wb-burst{width:130px;height:100px}
-#daily-content .dc-stage .wb-result-stamp .wb-mark{width:80px;height:80px;font-size:54px}
+/* The rooster gets a sunrise and a single reaction as the result lands. */
+.dc-rooster{
+  position:relative;isolation:isolate;aspect-ratio:1.28;min-width:0;
+  border-radius:48% 48% 36% 36%;overflow:hidden;
+  background:linear-gradient(#ffcba8 0%,#fff1b8 69%,#cfe3a3 70%,#b7d891 100%);
+}
+.dc-rooster::after{
+  content:"";position:absolute;inset:67% -8% -12%;z-index:-1;
+  border-radius:62% 54% 0 0;background:#b9d78f;transform:rotate(-6deg);
+}
+.dc-rooster-sun{
+  position:absolute;z-index:-2;left:12%;bottom:33%;width:30%;aspect-ratio:1;
+  border-radius:50%;background:#fff7c3;box-shadow:0 0 16px 7px #fff4c893;
+}
+.dc-rooster-bird{
+  position:absolute;inset:9% 4% 3%;transform-origin:55% 92%;
+  filter:drop-shadow(0 2px 1px #72441f42);
+}
+.dc-rooster-bird img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.dc-rooster-crow .dc-rooster-ready{visibility:hidden}
+.dc-rooster-animate .dc-rooster-sun{animation:dcSunrise .95s ease-out both}
+.dc-rooster-animate.dc-rooster-crow .dc-rooster-ready{animation:dcReadyPose 1.25s steps(1,end) both}
+.dc-rooster-animate .dc-rooster-cheer{animation:dcCrowPose 1.25s steps(1,end) both}
+.dc-rooster-animate.dc-rooster-crow .dc-rooster-bird{animation:dcCrow 1.25s ease-in-out both}
+.dc-rooster-animate.dc-rooster-peck .dc-rooster-bird{animation:dcPeck 1.2s ease-in-out both}
+.dc-rooster-animate.dc-rooster-nod .dc-rooster-bird{animation:dcNod .85s ease-in-out both}
+@keyframes dcSunrise{from{transform:translateY(75%);opacity:.65}to{transform:none;opacity:1}}
+@keyframes dcReadyPose{0%,76%{visibility:visible}30%{visibility:hidden}}
+@keyframes dcCrowPose{0%,76%{visibility:hidden}30%{visibility:visible}}
+@keyframes dcCrow{
+  0%,100%{transform:none}
+  22%{transform:translateY(4%) rotate(7deg)}
+  43%{transform:translateY(-12%) rotate(-8deg)}
+  62%{transform:translateY(-5%) rotate(-3deg)}
+  77%{transform:translateY(2%) rotate(4deg)}
+}
+@keyframes dcPeck{
+  0%,100%{transform:none}
+  24%{transform:rotate(-9deg)}
+  44%,68%{transform:translateX(5%) rotate(19deg)}
+  55%{transform:translateX(4%) rotate(7deg)}
+  84%{transform:rotate(-5deg)}
+}
+@keyframes dcNod{0%,28%,100%{transform:none}58%{transform:rotate(12deg)}78%{transform:rotate(-4deg)}}
+@media(prefers-reduced-motion:reduce){.dc-rooster-animate :is(.dc-rooster-sun,.dc-rooster-bird,.dc-rooster-ready,.dc-rooster-cheer){animation:none}}
+html[data-motion=reduce] .dc-rooster-animate :is(.dc-rooster-sun,.dc-rooster-bird,.dc-rooster-ready,.dc-rooster-cheer){animation:none}
+
+.dc-finish-hero{display:grid;grid-template-columns:minmax(82px,40%) minmax(0,1fr);align-items:center;gap:8px}
+.dc-finish-hero .dc-rooster{width:100%;max-width:180px;justify-self:center}
+.dc-finish-copy .dc-pf-title{font-size:clamp(22px,6vw,36px)}
+.dc-finish-copy .dc-marks{gap:6px}
+.dc-finish-copy .dc-marks .res-mark{width:clamp(25px,9vw,38px);height:auto}
+
+/* Round summary, with the rooster beside the verdict stamp. */
+#daily-content .wb-verdict .wb-result-stage.dc-stage{
+  grid-template-columns:minmax(0,calc(170px * var(--wbf,1))) auto;
+  min-height:0;gap:8px;
+}
+#daily-content .dc-stage .wb-result-stamp .wb-burst{width:clamp(72px,24vw,110px);height:clamp(74px,25vw,114px)}
+#daily-content .dc-stage .wb-result-stamp .wb-mark{width:clamp(58px,19vw,86px);height:clamp(58px,19vw,86px);font-size:clamp(36px,12vw,54px)}
 .dc-gauge{margin:10px 2px 2px}
 .dc-gauge-bar{position:relative;height:14px;border-radius:8px;border:2px solid #4a2c12;box-sizing:border-box;background:linear-gradient(90deg,#d6453b 0 40%,#e8962a 40% 70%,#e8c23a 70% 90%,#4fb444 90% 100%)}
 .dc-gauge-pin{position:absolute;top:-6px;width:8px;height:24px;margin-left:-4px;border-radius:4px;background:#fff;border:2px solid #4a2c12;box-sizing:border-box}
 .dc-gauge-labels{display:flex;justify-content:space-between;margin-top:6px;font:800 11px/1 'Fredoka',sans-serif;color:#6a4a2a}
 /* The summary page has room to breathe: bigger verdict, answer and meter than the Survival version. */
 #daily-content .wb-verdict{padding:10px 16px 18px}
-#daily-content .wb-verdict .wb-result-stage.dc-stage{min-height:150px}
-#daily-content .dc-stage .wb-result-stamp .wb-burst{width:170px;height:140px}
-#daily-content .dc-stage .wb-result-stamp .wb-mark{width:104px;height:104px;font-size:70px}
 #daily-content .wb-verdict-t{font-size:40px;line-height:1.05}
 #daily-content .wb-result-quip{margin-top:6px}
 #daily-content .wb-quip{font-size:18px}
