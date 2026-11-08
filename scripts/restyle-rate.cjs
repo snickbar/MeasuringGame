@@ -31,3 +31,9 @@ exports.assertOffMainThread=function(assert,rates,what){
  console.log('Note: this browser restyles the page every frame for any transform animation ('+rates.plainTransform+' a second for a plain one), so the per-frame check for '+what+' is skipped here.');
  return 'skipped';
 };
+// Restyles a second over `ms` (default 1.5 s) for whatever is on screen now. (restyleRates above also measures the two controls.)
+exports.restyleRate=async function({call,sessionId},ms=1500){
+ await call('Performance.enable',{},sessionId);
+ const count=async()=>(await call('Performance.getMetrics',{},sessionId)).metrics.find(m=>m.name==='RecalcStyleCount').value;
+ const a=await count();await wait(ms);return +((await count()-a)/(ms/1000)).toFixed(1);
+};
