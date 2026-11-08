@@ -2966,11 +2966,11 @@ if (location.protocol === "file:") {
   .question-prompt[data-scene][data-board^="mb"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.25 * var(--ak, 1)); }
   .question-prompt[data-scene][data-board^="mb"] .answer-line-label { font-size: calc(var(--qfs, 16px) * .6 * var(--ak, 1)); }
   /* a monthly board keeps room for the answer line even before it shows, so the question stays exactly where its animation laid it out */
-  .question-prompt[data-scene][data-board^="mb"]:not([data-ans="1"]) #q-body::after { content: ""; display: block; flex: none; height: calc(var(--qfs, 16px) * 1.4 + 3px); }
+  .question-prompt[data-scene][data-board^="mb"]:not([data-ans="1"], .dq-board > .question-prompt) #q-body::after { content: ""; display: block; flex: none; height: calc(var(--qfs, 16px) * 1.4 + 3px); }
   #q-stage { position: absolute; z-index: 0; pointer-events: none; }
   #q-stage > img, #q-stage > canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
   .question-prompt[data-scene] #q-body { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-sizing: border-box; z-index: 1; }
-  .question-prompt[data-scene] #question-prompt-text { display: block; font-size: var(--qfs, 16px); line-height: 1.2; }
+  .question-prompt[data-scene] #question-prompt-text { display: block; max-width: 100%; overflow-wrap: anywhere; font-size: var(--qfs, 16px); line-height: 1.2; }
   .question-prompt[data-scene] .question-answer-line { margin-top: 3px; }
   .question-prompt[data-scene] .answer-line-label { font-size: calc(var(--qfs, 16px) * .6); }
   .question-prompt[data-scene] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.7); line-height: 1.1; }
@@ -2997,7 +2997,7 @@ if (location.protocol === "file:") {
   .question-prompt[data-board="splitflap"] .qch { padding: 0 .06em; margin: 1px; background: linear-gradient(#2c2f36 49%, #111 49% 51%, #2c2f36 51%); border-radius: 3px; backface-visibility: hidden; }
   .question-prompt[data-board="phone"] { font-weight: 600; }
   .question-prompt[data-board="phone"] #q-body { justify-content: flex-start; align-items: stretch; text-align: left; gap: 5px; }
-  .question-prompt[data-board="phone"] #question-prompt-text { background: #e1ddd5; color: #333; border-radius: 12px; padding: .4em .7em; align-self: flex-start; max-width: 88%; }
+  .question-prompt[data-board="phone"] #question-prompt-text { background: #e1ddd5; color: #333; border-radius: 12px; padding: .35em .55em; align-self: flex-start; max-width: 96%; }
   .question-prompt[data-board="phone"] .question-answer-line { align-self: flex-end; background: #3a7bd5; color: #fff; border-radius: 12px; padding: .25em .8em; margin-top: 0; max-width: 88%; text-align: center; }
   .question-prompt[data-board="phone"] .answer-line-label { display: none; }
   .question-prompt[data-board="phone"] .answer-line-value { font-size: calc(var(--qfs, 16px) * 1.15); }
@@ -3014,7 +3014,8 @@ if (location.protocol === "file:") {
   .question-prompt[data-board="whiteboard"] .question-note { color: rgba(29,63,154,.65); }
   .question-prompt[data-board="whiteboard"] .answer-line-label { color: #3b5bb0; }
   .question-prompt[data-board="whiteboard"] .answer-line-value { color: #1d3f9a; }
-  .question-prompt[data-board="curtains"] { background-image: url(icons/board-curtain.webp); padding: 34px 62px 40px; color: #5b3a26; }
+  .question-prompt[data-board="curtains"] { background-image: url(icons/board-curtain.webp); padding-inline: 19%; color: #5b3a26; }
+  .question-prompt[data-board="curtains"] #question-prompt-text { max-width: min(100%, 25ch); text-wrap: balance; overflow-wrap: anywhere; }
   /* Team Worlds: a plain box for the running count during the animation phase, regardless of
      whatever board cosmetic is equipped - !important throughout since the equipped board's own
      attribute-selector rules above (and the profile listener that keeps re-applying it) can't be
@@ -3062,9 +3063,9 @@ if (location.protocol === "file:") {
   :is(#worlds-content, #survival-content) .qbs { margin: 4px 0 6px; }
   .dq-board { margin: 6px 0; }
   .dq-board > .question-prompt { flex: none; width: 100%; }
-  .dq-board > .question-prompt[data-scene] { height: var(--qh, 196px); min-height: var(--qh, 196px); }
+  .dq-board > .question-prompt[data-scene] { height: var(--qh, 196px); min-height: 156px; }
   .dq-board > .question-prompt:not([data-scene]) { min-height: var(--qh, 184px); }
-  .dq-board > .question-prompt:not([data-scene]) { display: flex; flex-direction: column; justify-content: center; }
+  .dq-board > .question-prompt:not([data-scene]) { display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--qh, 184px) * .15) calc(var(--qh, 184px) * .17); }
   .dq-board > .question-prompt:not([data-scene]) #q-body { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .qbs .dc-display { margin: 4px auto 0; width: auto; min-width: 120px; padding: 0 12px; background: none; border: 0; border-bottom: 3px solid rgba(60,40,20,.3); border-radius: 0; box-shadow: none; font-size: 30px; line-height: 1.15; color: inherit; }
   /* Worlds / Survival: keypad on the left, the power-ups in a two-column block on its right. */
@@ -9965,7 +9966,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Two pictures per monthly board. The wide 2:1 one is used whenever the card is wide enough (phones, the party screen); the original 4:3 one when the card is squarer, so neither ever gets stretched.
     // layer: how the animated decorations sit on it. "ends" = drawn at both ends of the wide board, "wide" = laid out for the whole wide board (haunted window, fireplace), "full" = the original 4:3 layout.
     const box = [r[0] * 100, r[1] * 100, (1 - r[2]) * 100, (1 - r[3]) * 100], common = { box, fmax: 23, noStretch: true, monthly: b.monthly };
-    const wide = { ...common, img: b.img, ar: 2, layer: b.monthly === 10 || b.monthly === 12 ? "wide" : "ends" };
+    // The wide fireplace sits on the left. The space to its right stays clear down to the mantel.
+    const wideBox = b.monthly === 12 ? [23, 33, 5, 19] : box;
+    const wide = { ...common, box: wideBox, img: b.img, ar: 2, layer: b.monthly === 10 || b.monthly === 12 ? "wide" : "ends" };
     const narrow = { ...common, img: `monthly/art/${MM.boards[i].img}.webp`, ar: 640 / 480, layer: "full" };
     SB_DEFS[b.id] = { ...wide, variants: { wide, narrow } };
   });
@@ -9999,7 +10002,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // The wide picture wins once the card is wider than about 1.63 x its height (that is where it fills more of the card than the 4:3 one); a little slack stops it flipping back and forth.
   function sbPickVariant(def0, current) {
-    const pl = hudEl.dataset.playLayout, W = qPromptEl.clientWidth, H = pl === "party" ? qPromptEl.clientHeight : (qCardH || SB_CARD_H);
+    const W = qPromptEl.clientWidth, H = qPromptEl.clientHeight;
     if (!W || !H) return current || "wide";
     const r = W / H;
     return current === "narrow" ? (r > 1.7 ? "wide" : "narrow") : current === "wide" ? (r < 1.55 ? "narrow" : "wide") : (r < 1.63 ? "narrow" : "wide");
@@ -10027,11 +10030,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function sbLayout() {
     if (!qSB) return;
     if (qSB.def0.variants) { const v = sbPickVariant(qSB.def0, qSB.variant); if (v !== qSB.variant) sbSwitchVariant(v); }
-    const pl = hudEl.dataset.playLayout, W = qPromptEl.clientWidth, H = pl === 'party' ? qPromptEl.clientHeight : (qCardH || SB_CARD_H);
-    // Screens that borrow the real card: the board art is stretched wider (about a third) so the text has more room, like the wide chalkboard.
-    const ar = pl !== 'party' && !qSB.def.noStretch && qPromptEl.parentNode && qPromptEl.parentNode.classList.contains('dq-board') ? Math.min(qSB.def.ar * 1.35, 1.9) : qSB.def.ar; // every screen that borrows the real card (Daily, Worlds, Monthly, Survival, Team Worlds, High/Low)
+    const W = qPromptEl.clientWidth, H = qPromptEl.clientHeight;
+    const stretch = !qSB.def.noStretch && (qPromptEl.parentElement?.classList.contains("dq-board") || H < 180);
+    const ar = stretch ? Math.min(qSB.def.ar * 1.35, 2) : qSB.def.ar;
     if (!W) return;
-    const sw = Math.min(W, H * ar), sh = sw / ar, sx = (W - sw) / 2, sy = (H - sh) / 2;
+    const sw = Math.min(W, H * ar);
+    const sh = Math.min(H, sw / (stretch ? qSB.def.ar * .85 : ar));
+    const sx = (W - sw) / 2, sy = (H - sh) / 2;
     Object.assign(qSB.stage.style, { left: sx + "px", top: sy + "px", width: sw + "px", height: sh + "px" });
     const b = qSB.def.box;
     Object.assign(qBodyEl.style, { left: sx + b[0] / 100 * sw + "px", top: sy + b[1] / 100 * sh + "px", width: sw * (1 - (b[0] + b[2]) / 100) + "px", height: sh * (1 - (b[1] + b[3]) / 100) + "px" });
@@ -10040,15 +10045,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (k && k.layout) k.layout(qSB);
     sbFit();
   }
-  // largest font size (<=19px) at which the question plus the answer line still fit the text area
+  // Find the largest font that fits inside the illustrated text area.
   function sbFit() {
     if (!qSB || !questionPromptTextEl.dataset.txt) return;
     const bh = qBodyEl.clientHeight;
-    const pl = hudEl.dataset.playLayout, qv = questionViewEl.classList.contains('active'), twq = qv && (pl === 'highlow' || pl === 'teamworlds'); // no answer line on these question screens, so the text may use the whole board
-    const rsv = twq ? [0, 4] : qSB.def.rsv || [0, 4];
-    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML ; // the question uses the whole area; once the answer line shows, it shrinks to leave room for it
+    const ansShown = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML;
+    const borrowed = qPromptEl.parentElement?.classList.contains("dq-board");
+    const rsv = ansShown ? qSB.def.rsv || [0, 4] : [0, 4];
     // As big as will fit: binary-search the largest size at which the question (plus room for the answer line) stays inside the text area.
-    const fits = (fs) => { qBodyEl.style.setProperty("--qfs", fs + "px"); return questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + (qSB.def.monthly ? (twq ? 0 : fs * 1.5 + 7) : ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0) <= bh; }; // the answer line's height follows the font size, so it is measured at each size tried; a monthly board always reserves a fixed room for it, so the question never changes size when the answer arrives (its animation was laid out for that size)
+    const fits = (fs) => {
+      qBodyEl.style.setProperty("--qfs", fs + "px");
+      // Monthly animations reserve a line on screens that reveal the answer inside the board.
+      const reserved = qSB.def.monthly && !borrowed ? fs * 1.4 + 3 : 0;
+      const answerH = Math.max(reserved, ansShown ? questionAnswerLineEl.offsetHeight + 4 : 0);
+      return questionPromptTextEl.scrollWidth <= qBodyEl.clientWidth + 1 && questionPromptTextEl.offsetHeight + fs * rsv[0] + rsv[1] + answerH <= bh;
+    };
     let lo = 8, hi = 40;
     if (fits(hi)) return;
     while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
@@ -10454,24 +10465,36 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // restart or wipe the writing.
   // Party/team question phase: the board is squeezed to make room for the keypad, but the question is still written at the
   // board's normal size (same as the next screen) and only shrinks when a long question would not fit.
-  // Paper / chalkboard / whiteboard / curtains on a solo or team question screen: the question starts big and shrinks only as far as it needs,
-  // keeping a little room for the answer line that appears at the reveal.
-  function qbFitBorrowed() {
+  function qbFitFlat(target) {
     if (!qPromptEl.clientHeight || !questionPromptTextEl.textContent) return;
-    const cs = getComputedStyle(qPromptEl), target = parseFloat(cs.minHeight) || 184, pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-    const ans = questionAnswerLineEl.style.display !== "none" && !!questionAnswerLineEl.innerHTML ? questionAnswerLineEl.offsetHeight + 6 : 0;
-    const fits = (fs) => { qPromptEl.style.fontSize = fs + "px"; return questionPromptTextEl.offsetHeight + ans + pad + 30 <= target; }; // +30 keeps the text above the pencil and eraser resting on the ledge
-    let lo = 11, hi = 48;
-    if (fits(hi)) { qEraserEl.style.visibility = ""; return; }
-    while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
-    // If even the smallest size cannot clear the ledge (a very long question on a short screen), hide the resting eraser so it never covers the words.
-    qEraserEl.style.visibility = fits(lo) ? "" : "hidden";
+    const cs = getComputedStyle(qPromptEl);
+    const available = target - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const fits = (fs) => {
+      qPromptEl.style.fontSize = fs + "px";
+      const answer = questionAnswerLineEl.offsetHeight;
+      const answerSpace = answer ? answer + parseFloat(getComputedStyle(questionAnswerLineEl).marginTop) : 0;
+      return questionPromptTextEl.scrollHeight + answerSpace <= available + 1 && questionPromptTextEl.scrollWidth <= qBodyEl.clientWidth + 1;
+    };
+    let lo = 11, hi = qBoard === "curtains" ? 34 : 48;
+    if (!fits(hi)) {
+      while (hi - lo > 0.5) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+      fits(lo);
+    }
+    // Let the question use the board. Hide the resting eraser if it would cover the text.
+    if (qDef().er) {
+      const last = questionAnswerLineEl.offsetHeight ? questionAnswerLineEl : questionPromptTextEl;
+      const bottom = last.getBoundingClientRect().bottom - qPromptEl.getBoundingClientRect().top;
+      qEraserEl.style.visibility = bottom > qEraserRest().y - 17 ? "hidden" : "";
+    }
   }
   function qbFitParty() {
     if (qSB) return; // scene boards fit themselves (sbFit)
     qPromptEl.style.fontSize = "";
-    if (hudEl.dataset.playLayout !== "party" && qPromptEl.parentNode && qPromptEl.parentNode.classList.contains("dq-board")) { qbFitBorrowed(); return; }
+    qEraserEl.style.visibility = "";
+    if (qPromptEl.classList.contains("tw-plain")) return;
+    if (qPromptEl.parentElement?.classList.contains("dq-board")) { qbFitFlat(parseFloat(getComputedStyle(qPromptEl).minHeight) || 184); return; }
     if (hudEl.dataset.playLayout !== "party" || !qPromptEl.clientHeight) return; // every phase, so the question is the same size before and after the answer shows
+    if (qBoard === "curtains") { qbFitFlat(qPromptEl.clientHeight); return; }
     let fs = parseFloat(getComputedStyle(qPromptEl).fontSize), guard = 30;
     while (fs > 12 && guard-- > 0 && qPromptEl.scrollHeight > qPromptEl.clientHeight + 1) { fs -= 0.5; qPromptEl.style.fontSize = fs + "px"; }
   }
