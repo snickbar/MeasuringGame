@@ -11518,18 +11518,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       else if (key > today) cls += " future";
       else if (key >= firstKey && key < today) inner = cross(d);
       if (key === today) { cls += " today"; inner += ring; }
-      if (stamp && key === daily.date && h) {
-        cls += " dc-cal-stamp";
-        const mascot = daily.bonus ? "daily-rooster-cheer.png" : "daily-rooster-tutorial.webp";
-        inner += `<img class="dc-cal-rooster${(lead + d - 1) % 7 === 0 ? " dc-cal-rooster-from-right" : ""}" src="anim/mode-mascots/${mascot}" alt="" draggable="false">`;
+      if (daily?.phase === "done" && key === daily.date && h) {
+        if (stamp) cls += " dc-cal-stamp";
+        const column = (lead + d - 1) % 7;
+        const fromLeft = column >= 4;
+        const neighbor = fromLeft ? -1 : 1;
+        const travel = (fromLeft ? 0 : 6) - (column + neighbor);
+        inner += `<span class="dc-cal-rooster" style="--dc-neighbor:${neighbor};--dc-travel:${travel};--dc-strides:${Math.abs(travel)}" aria-hidden="true">
+          <img class="dc-cal-point" src="anim/mode-mascots/daily-rooster-tutorial.webp" alt="" draggable="false">
+          ${stamp ? `<img class="dc-cal-step-one" src="anim/mode-mascots/daily-rooster-step-one.png" alt="" draggable="false">
+          <img class="dc-cal-step-two" src="anim/mode-mascots/daily-rooster-step-two.png" alt="" draggable="false">` : ""}
+        </span>`;
       }
       cells += `<div class="${cls}"><span class="dc-cal-n">${d}</span>${inner}</div>`;
     }
     const ymNow = today.slice(0, 7), ymFirst = firstKey.slice(0, 7), name = new Date(Y, M - 1, 1).toLocaleDateString(undefined, { month: "long", year: ym === ymNow ? undefined : "numeric" });
     const shift = (n) => { const dt = new Date(Date.UTC(Y, M - 1 + n, 1)); return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}`; };
     const best = (myProfile.dailyStreak && myProfile.dailyStreak.best) || 0;
-    const mascot = daily?.phase === "done" && ym === daily.date.slice(0, 7) ? '<img class="dc-cal-mascot" src="anim/mode-mascots/daily-rooster-tutorial.webp" alt="" draggable="false">' : "";
-    return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span>${mascot}</div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
+    return `<div class="dc-card dc-cal" id="dc-cal"><div class="dc-cal-hd"><button type="button" class="dc-cal-nav" data-cal="${shift(-1)}" aria-label="Previous month" ${ym <= ymFirst ? "disabled" : ""}>&lsaquo;</button><b>${name}</b><button type="button" class="dc-cal-nav" data-cal="${shift(1)}" aria-label="Next month" ${ym >= ymNow ? "disabled" : ""}>&rsaquo;</button><span class="dc-cal-sub">${played} day${played === 1 ? "" : "s"} played${best > 1 ? ` &middot; best streak ${best}` : ""}</span></div><div class="dc-cal-dow">${["S", "M", "T", "W", "T", "F", "S"].map((x) => `<span>${x}</span>`).join("")}</div><div class="dc-cal-grid">${cells}</div></div>`;
   }
   function dailyRoosterHtml(reaction, step, animate = true) {
     return `<div class="dc-rooster dc-rooster-${reaction}${animate ? " dc-rooster-animate" : ""}" style="--dc-sun-height:${[24, 34, 44, 55][step]}%" aria-hidden="true">
@@ -11542,12 +11548,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   async function dailyWatchCalendarStamp(cell) {
     if (!cell || !window.IntersectionObserver || prefersReducedMotion()) return;
-    const bird = cell.querySelector(".dc-cal-rooster");
-    try { await bird.decode(); } catch { return; }
-    if (!cell.isConnected || !dailyScreenEl.classList.contains("active") || prefersReducedMotion()) return;
+    cell.classList.add("dc-cal-stamp-pending");
+    try { await Promise.all([...cell.querySelectorAll(".dc-cal-rooster img")].map((img) => img.decode())); }
+    catch { cell.classList.remove("dc-cal-stamp-pending"); return; }
+    if (!cell.isConnected || !dailyScreenEl.classList.contains("active") || prefersReducedMotion()) {
+      cell.classList.remove("dc-cal-stamp-pending");
+      return;
+    }
     dailyCalendarObserver = new IntersectionObserver(([entry], observer) => {
       if (entry.intersectionRatio < 1) return;
-      cell.classList.add("dc-cal-stamp-play");
+      cell.classList.replace("dc-cal-stamp-pending", "dc-cal-stamp-play");
       observer.disconnect();
     }, { rootMargin: "-154px 0px -76px", threshold: 1 });
     dailyCalendarObserver.observe(cell);
