@@ -47,19 +47,27 @@ server.listen(0,'127.0.0.1',()=>{
   if(scene==='jungle'){
    const leaves=[...document.querySelectorAll('#home-fx .hf-petal')];
    assert(leaves.length===5&&leaves.every(leaf=>parseInt(leaf.style.getPropertyValue('--dr'),10)!==0),'Five green leaves drift diagonally on a phone');
-   const sloth=art.querySelector('.j-sloth'),arm=sloth.querySelector('.j-sloth-arm');
+   const sloth=art.querySelector('.j-sloth'),paw=sloth.querySelector('.j-sloth-paw');
    sloth.querySelector('button').click();
-   const motion=arm.getAnimations()[0],duration=motion.effect.getTiming().duration;
+   const motion=paw.getAnimations()[0],duration=motion.effect.getTiming().duration;
    motion.pause();
-   let last=0,lift=0;
+   let last=0,left=0,right=0;
    for(let t=0;t<duration;t+=16){
     motion.currentTime=t;
-    const style=getComputedStyle(arm),stretch=new DOMMatrix(style.transform).d-1;
-    assert(style.opacity==='1'&&Math.abs(stretch-last)<.04,'One visible paw moves continuously through the wave');
-    lift=Math.max(lift,stretch);last=stretch;
+    const style=getComputedStyle(paw),m=new DOMMatrix(style.transform),angle=Math.atan2(m.b,m.a);
+    assert(style.opacity==='1'&&Math.abs(angle-last)<.05,'One visible paw moves continuously through the wave');
+    assert(Math.abs(Math.hypot(m.a,m.b)-1)<.001&&Math.abs(Math.hypot(m.c,m.d)-1)<.001,'The paw keeps its size while it rotates');
+    left=Math.min(left,angle);right=Math.max(right,angle);last=angle;
    }
-   assert(lift>.2&&Math.abs(last)<.01,'Paw lifts and returns to its original grip');
+   assert(left<-.15&&right>.15&&Math.abs(last)<.01,'The paw wags both ways and settles back into its original grip');
    motion.finish();
+   const eyelids=sloth.querySelector('.j-sloth-blink'),blink=eyelids.getAnimations()[0],timing=blink.effect.getTiming();
+   blink.pause();
+   for(const [phase,opacity] of [[.46,'0'],[.48,'1'],[.51,'0']]){
+    blink.currentTime=timing.delay+timing.duration*phase;
+    assert(getComputedStyle(eyelids).opacity===opacity,'The sloth briefly closes both eyes during idle');
+   }
+   blink.play();
    await new Promise(r=>setTimeout(r,35));
    assert(!sloth.hasAttribute('data-waving'),'Wave releases its tap lock');
   }
