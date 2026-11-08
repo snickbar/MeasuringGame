@@ -1940,6 +1940,8 @@ if (location.protocol === "file:") {
   #recent-rooms-list { display: flex; flex-direction: column; gap: 8px; }
   .recent-room-row { --rc: #c9822b; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; column-gap: 10px; padding: 8px 10px 8px 8px; text-align: left; background: #fff; border-radius: 14px; border: 2px solid color-mix(in srgb, var(--rc) 35%, #fff); box-shadow: 0 2px 0 color-mix(in srgb, var(--rc) 45%, #fff); }
   .recent-room-row[data-kind="classic"] { --rc: #d9792b; }
+  .recent-room-row[data-kind="quick"] { --rc: #648b32; }
+  .recent-room-row[data-kind="highstakes"] { --rc: #8057a2; }
   .recent-room-row[data-kind="bluff"] { --rc: #8b4fc9; }
   .recent-room-row[data-kind="hl"] { --rc: #d8453a; }
   .recent-room-row[data-kind="worlds"] { --rc: #2f9a5d; }
@@ -16822,12 +16824,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const humans = Object.values(d.players || {}).filter((p) => p && !p.isBot);
           const n = humans.length;
           const where = d.phase === "waiting" ? "In the lobby" : (d.round ? `Round ${d.round}` : "In progress");
-          const mode = d.settings && d.settings.mode;
+          const mode = d.settings?.mode;
           const world = mode === "teamworlds" ? (WORLDS.find((w) => w.id === d.settings.worldId) || {}).name : "";
           const [kk, icon, kind] = isHlSettings(d.settings) ? ["hl", "\u2B06\uFE0F", "High/Low Survival"]
-            : mode === "bluff" ? ["bluff", "\uD83C\uDFAD", "Bluff"]
+            : isHsSettings(d.settings) || d.phase === "hs" ? ["highstakes", "\uD83D\uDCB0", "High Stakes"]
+            : mode === "bluff" || d.phase === "bluff" ? ["bluff", "\uD83C\uDFAD", "Bluff the Room"]
             : mode === "teamworlds" ? ["worlds", "\uD83C\uDF0D", "Team Worlds" + (world ? ": " + world : "")]
             : mode === "teamvteam" ? ["tvt", "\u2694\uFE0F", "Team vs Team"]
+            : d.settings?.solo ? ["quick", "\u26A1", "Quick Game"]
             : ["classic", "\uD83D\uDCCF", "Classic Party"];
           row.dataset.kind = kk;
           // The host can close the game for everyone (tap twice to confirm).

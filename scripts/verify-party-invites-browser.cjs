@@ -26,6 +26,18 @@ const authStub='export const initializeAuth=()=>({currentUser:null}),indexedDBLo
 const injected=String.raw`
 window.__polish={
  inviteLobby:async(mode,unlocked=true,guest=false)=>{await window.__polish.lobby();roomState.settings={...roomState.settings,mode,solo:mode==='solo',...(mode==='hlsurvival'?{mode:'teamworlds',variant:'hl'}:{})};myProfile.hostUnlocked=unlocked;isHost=!guest;applyLobbyMode(roomState);renderHostUnlockUi();},
+ recentGameList:async rooms=>{
+  currentName='Player';
+  const players={me:{name:currentName,avatar:'av07',isHost:true,connected:false,frameIndex:1}};
+  for(const {code,phase,settings} of rooms){
+   const room={phase,settings,players,round:phase==='waiting'?0:7};
+   if(phase==='hs')room.hs={...HS.hsNewGame(['me']),round:7,waitHost:true};
+   if(code.startsWith('0'))localRooms.create(code,room);
+   else await set(ref(db,'rooms/'+code),room);
+  }
+  localStorage.setItem('mg_recentRooms',JSON.stringify(rooms.map(({code})=>({code,playerId:'me',joinedAt:Date.now()}))));
+  showJoinScreen();
+ },
  reactionBluff:()=>{ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));bluffScreenEl.classList.add('active');roomState.phase='bluff';roomState.bluff={stage:'vote'};document.getElementById('bluff-content').innerHTML='<div style="position:fixed;top:200px;left:20px;width:70px;height:200px"><div style="width:70px;height:100px;margin-top:50px" data-bluff-player="friend" data-bluff-side="l">Friend</div></div>';renderReactionBubble({playerId:'friend',name:'Friend',emoji:Object.keys(REACTIONS)[0]});return document.querySelector('.rx-stage')?.getBoundingClientRect().toJSON();},
  owner:()=>deviceId,profile:()=>myProfile,flush:()=>careerLedger.flush(),stats:()=>{statsMode='all';showCareerTab('stats');},objects:()=>showCareerTab('objects'),
  world:()=>{openWorlds();wl.wi=0;wl.phase='world';renderWorlds();},startWorld:()=>{openWorlds();wl.wi=0;worldStartLevel(1);},
@@ -60,7 +72,28 @@ try{
  await api.inviteLobby('bluff');$('qr-room-btn').click();$('lobby-screen').classList.remove('active');await wait(50);assert(!$('party-room-qr'),'Starting or leaving closes QR');
  await api.inviteLobby('solo');assert(!$('qr-room-btn').getClientRects().length,'Solo has no room invite');
  const reaction=api.reactionBluff();assert(reaction&&reaction.left>30&&reaction.top>150&&reaction.bottom<innerHeight,'Reaction emerges inward from visible player card');
- $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Every Party mode, paid/free hosts and guests: visible QR, real SVG, canonical phone invite, Close/navigation cleanup, compact row, Solo hidden, inward Bluff reactions'});
+ const recent=[
+  {code:'HSTK',phase:'hs',settings:{mode:'highstakes'},label:'High Stakes',kind:'highstakes'},
+  {code:'HLOB',phase:'waiting',settings:{mode:'highstakes'},label:'High Stakes',kind:'highstakes'},
+  {code:'CLAS',phase:'waiting',settings:{mode:'classic'},label:'Classic Party',kind:'classic'},
+  {code:'OLDC',phase:'waiting',settings:{},label:'Classic Party',kind:'classic'},
+  {code:'TEAM',phase:'waiting',settings:{mode:'teamvteam'},label:'Team vs Team',kind:'tvt'},
+  {code:'WRLD',phase:'waiting',settings:{mode:'teamworlds',worldId:'tiny'},label:'Team Worlds: Tiny Things',kind:'worlds'},
+  {code:'HIGH',phase:'waiting',settings:{mode:'teamworlds',variant:'hl'},label:'High/Low Survival',kind:'hl'},
+  {code:'BLUF',phase:'waiting',settings:{mode:'bluff'},label:'Bluff the Room',kind:'bluff'},
+  {code:'0QIK',phase:'waiting',settings:{solo:true},label:'Quick Game',kind:'quick'}
+ ];
+ await api.recentGameList(recent);
+ for(let n=0;n<100&&$('recent-rooms-list').querySelectorAll('.rr-code').length<recent.length;n++)await wait(20);
+ const cards=[...$('recent-rooms-list').querySelectorAll('.recent-room-row')];
+ for(const {code,label,kind} of recent){
+  const card=cards.find(row=>row.querySelector('.rr-code')?.textContent===code);
+  assert(card?.getClientRects().length && card.dataset.kind===kind && card.querySelector('.rr-kind').textContent===label,'Recent game label '+code+' should be '+label);
+ }
+ cards[0].querySelector('.rr-btns button').click();
+ for(let n=0;n<100&&!$('hs-screen').classList.contains('active');n++)await wait(20);
+ assert($('hs-screen').classList.contains('active'),'High Stakes rejoin opens High Stakes');
+ $('polish-result').textContent=JSON.stringify({pass:true,width:innerWidth,checks:'Party invites, inward Bluff reactions, all My games labels, and High Stakes rejoin'});
 }catch(e){document.getElementById('polish-result').textContent=JSON.stringify({pass:false,error:String(e),stack:e.stack});}
 </script>`;
 let fixture=source.replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js','/__fake/app.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js','/__fake/db.mjs').replaceAll('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js','/__fake/auth.mjs');
