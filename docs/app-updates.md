@@ -12,6 +12,15 @@ Normally push main and inspect its publishing workflow. With an authenticated Gi
 
 Use `npm run cap:sync` and the existing Android build for native changes. Incrementing the commit count gives the APK a higher version code, clearing old downloaded web bundles on install. Keep using the same signing key when updating an installed sideloaded app. A web update cannot add new native plugins or permissions.
 
+## What ships
+
+The package is the repository's runtime files with one change: the game module that is inline at the end of `index.html` (about 1.2 MB) is moved into `app.mjs` by `scripts/pack-index.cjs`, run from `sync-www.js`. A phone fetches and compiles a separate file away from the main thread, instead of reading it as page text first; with the page loading at 4x CPU slowdown, Home appears about 14% sooner and the main thread is blocked about 25% less. The module's code is not changed by a byte, and `app.mjs` keeps `index.html`'s line numbers, so stack traces still point at the repository file. Edit `index.html` as before.
+
+- `npm test` runs `verify-pack-index.mjs`: the page can still be split (one inline module), splitting is lossless, and `firebase.json` serves `/app.mjs` with `no-cache` (so a new `index.html` never meets an old game module).
+- `npm run test:package` builds `www/` and checks that it is the repository files plus exactly that change.
+- `MG_PACKED=1 node scripts/<name>-browser.cjs` runs any browser check against the packed page.
+- If `index.html` ever has more or fewer than one inline module, the build warns and ships it unchanged: slower to load, but it works.
+
 ## Verification
 
 November 6, 2026: publishing succeeded for the approved-orientation merge `01ab832` and the newer published build `d9a1dc6`. A real public download check passed for `1.0.20261106191634-d9a1dc6`: the 234,699,293-byte ZIP matched its SHA-256, its embedded version matched the manifest, CORS was valid, and the updater adapter queued it successfully. This check does not install or restart the native app. Report: `output/update-delivery/verification.json`. No delivery fault was found.

@@ -2,6 +2,8 @@
 const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'),{spawn}=require('child_process');
 const root=path.resolve(__dirname,'..');
 exports.runFixture=async function({html,modules={},widths=[320,390,430],height=840,out='output/launch-polish',check}){
+ // MG_PACKED=1 runs the check against the page the way it ships: its game module in app.mjs, not inline (scripts/pack-index.cjs).
+ if(process.env.MG_PACKED){const packed=require('./pack-index.cjs').splitIndex(html);if(packed){html=packed.html;modules={...modules,'/app.mjs':packed.appModule}}else console.log('MG_PACKED: this page is not the game page, so it is used as it is')}
  const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/fixture'){res.setHeader('Content-Type','text/html');res.end(html);return}

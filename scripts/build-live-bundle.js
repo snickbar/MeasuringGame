@@ -27,7 +27,8 @@ if(process.platform==='win32'){
   // Windows includes bsdtar. A file list avoids command-length limits and
   // preserves .well-known plus index.html at the exact archive root.
   const entries=path.join(OUT,'zip-entries.txt');
-  const files=require('./production-files.cjs').list().concat('app-version.json');
+  // app.mjs is the page's game module, written by sync-www.js (see pack-index.cjs); it is in www/ but not in the source file list.
+  const files=require('./production-files.cjs').list().concat('app-version.json',fs.existsSync(path.join(WWW,'app.mjs'))?['app.mjs']:[]);
   fs.writeFileSync(entries,files.join('\n')+'\n');
   try{execFileSync('tar.exe',['-a','-cf',path.join(OUT,'bundle.zip'),'-C',WWW,'-T',entries],{stdio:'inherit',windowsHide:true});}
   finally{fs.unlinkSync(entries);}
