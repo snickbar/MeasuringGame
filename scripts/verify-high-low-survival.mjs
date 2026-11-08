@@ -23,7 +23,7 @@ const offContext=vm.createContext({});vm.runInContext(offSource,offContext);
 assert.equal(vm.runInContext('hlOffInfo("high",1.779,1.78).ok',offContext),false,'Rounding to 0% must not make a wrong-side HIGH pick correct');
 assert.equal(vm.runInContext('hlOffInfo("low",1.781,1.78).ok',offContext),false,'Wrong-side LOW stays wrong even below 1% off');
 assert.equal(vm.runInContext('hlOffInfo("low",1.78,1.78).text',offContext),'Spot on');
-assert(source.includes('hlThemeId: hlState.themeId'));assert(source.includes('theme: hlState.themeId'));assert(source.includes('svCrackHeart("shield")'));
+assert(source.includes('hlThemeId: hlState.themeId'));assert(source.includes('theme: hlState.themeId'));
 // Run the actual host round generator with isolated room/network adapters.
 const start=source.slice(source.indexOf('  async function startRound(roomCode, roundNum) {'),source.indexOf('  function checkQuestionAdvance('));
 const captured=[],themes=[],ctx={roomState:{settings:{mode:'teamworlds',variant:'hl'},hlSurvived:4,players:{one:{},two:{}}},currentSettings:{},

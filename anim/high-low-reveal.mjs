@@ -50,15 +50,22 @@ export function mountHighLowReveal(container, data, options={}) {
   gap.querySelector('.cw-meter').setAttribute('aria-label','HIGH '+fmt(c.hi)+', LOW '+fmt(c.lo)+'. Correct answer '+fmt(answer)+'. Maximum gap '+fmt(limit)+' times.');
   formatBottleNumbers();
  }
- function resetGap(){gap.dataset.ready='false';gap.classList.remove('bad','crossed');gap.querySelector('.cw-meter').dataset.result='waiting';root.querySelector('[data-ratio]').textContent='—';root.querySelector('[data-gap-status]').textContent='Both picks needed';verdict.replaceChildren();verdict.className='rs-verdict';}
- function revealGap(){
+ function resetGap(){gap.dataset.ready='false';gap.classList.remove('bad','crossed');gap.querySelector('.cw-meter').dataset.result='waiting';root.querySelector('[data-ratio]').textContent='—';root.querySelector('[data-gap-status]').textContent='Both picks needed';verdict.replaceChildren();verdict.className='rs-verdict';delete boat.dataset.broken;boat.querySelector('.oc-bottle-pieces').classList.remove('hl-bottle-splitting');}
+ function revealGap(animateBreak){
   const c=model,missing=c.hi==null||c.lo==null,crossed=!missing&&c.lo>c.hi,ratio=!missing&&c.lo>0?c.hi/c.lo:Infinity,wide=ratio>limit;
   gap.dataset.ready='true';gap.classList.toggle('bad',!c.passed);gap.classList.toggle('crossed',crossed);gap.querySelector('.cw-meter').dataset.result=c.passed?'won':'lost';
   root.querySelector('[data-ratio]').textContent=missing?'No pick':crossed?'Crossed':Number.isFinite(ratio)?fmt(ratio)+'×':'Too wide';
   root.querySelector('[data-gap-status]').textContent=missing?'Both picks required':crossed?'Picks crossed':wide?'Gap too wide':'Gap fits';
   const meter=gap.querySelector('.cw-meter');meter.setAttribute('aria-valuenow',String(Math.max(1,Math.min(4,ratio))));
   verdict.className='rs-verdict final'+(c.passed||c.saved?'':' bad');
-  if(options.verdictHtml)verdict.innerHTML=options.verdictHtml(data);else verdict.textContent=c.passed?'Survived!':c.saved?'Shield saved you!':'Lost a life';
+  if(options.verdictHtml)verdict.innerHTML=options.verdictHtml(data);else verdict.textContent=c.passed?'Survived!':c.saved?'Empty bottle saved you!':'Lost a bottle';
+  if(!c.passed){
+   boat.dataset.broken='true';
+   if(animateBreak){
+    boat.querySelector('.oc-bottle-pieces').classList.add('hl-bottle-splitting');
+    wait(()=>waterEffects(p.w*.44,p.sea,true),165);
+   }
+  }
  }
 
 function syncMeterMarks(){
@@ -178,7 +185,7 @@ function formatBottleNumbers(){
   function done(){if(current!==token||destroyed)return;cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];el.classList.remove('is-stroking');busy=false;
    if(animate&&!reduced()){crossing();settleWater();}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
    if(step===2&&!reduced()&&c.hi>=answer)bird.classList.add('is-stroking');
-   if(step===3){revealGap();if(animate&&!reduced()&&!document.hidden)playResultBeat();}syncMeterMarks();
+   if(step===3){const fresh=animate&&!reduced()&&!document.hidden;revealGap(fresh);if(fresh)playResultBeat();}syncMeterMarks();
    if(step===3&&!settledResult){settledResult=true;options.onResult?.({fresh:animate&&!document.hidden,passed:model.passed,saved:model.saved});}
    options.onSettled?.(n-1);
   }

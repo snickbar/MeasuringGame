@@ -1,6 +1,7 @@
 // Per-mode animated how-to-play slideshows. Self-contained dialog; the host app only supplies
 // sample objects, and (for party use) a hook that lets the host end the slideshow for everyone.
 import {mountHighLowTutorial} from './high-low-tutorial.mjs';
+import {HL_MESSAGE_BOTTLE} from './high-low-bottles.mjs';
 import {partyTutorialScene} from './party-tutorial.mjs';
 import {MORE_MODE_TUTORIALS,extraTutorialScene} from './more-tutorials.mjs';
 const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,7 +51,7 @@ const bluffNums = s => { const ans = Math.max(2, Math.round(s.answer || 11)); re
 const SCENES = {
   extraExample: s => extraTutorialScene(s.lesson,s),
   partyExample: s => partyTutorialScene(s.lesson,{team:s.lessonMode==='teamvteam',quick:s.lessonMode==='quick'}),
-  hlRoles: () => `<div class="mt-hl-roles"><div><img src="anim/high-low-art/shark.webp" alt="LOW shark"><b>LOW ≤ answer</b><small>Close, without going over</small></div><div><img src="anim/high-low-art/bird.webp" alt="HIGH bird"><b>HIGH ≥ answer</b><small>Close, without going under</small></div></div><div class="mt-hl-lives">${[0,1,2].map(()=>img('icons/life-heart-full.webp','')).join('')}<span>Three shared lives</span></div>`,
+  hlRoles: () => `<div class="mt-hl-roles"><div><img src="anim/high-low-art/shark.webp" alt="LOW shark"><b>LOW ≤ answer</b><small>Close, without going over</small></div><div><img src="anim/high-low-art/bird.webp" alt="HIGH bird"><b>HIGH ≥ answer</b><small>Close, without going under</small></div></div><div class="mt-hl-bottles">${[0,1,2].map(()=>img(HL_MESSAGE_BOTTLE,'')).join('')}<span>Three shared bottles</span></div>`,
   hlOcean: () => '<div class="mt-hl-demo"></div>',
   hearts: () => `<div class="mt-row">${[0, 1, 2].map(i => img('icons/life-heart-full.webp', 'mt-heart mt-bounce d' + i)).join('')}</div>`,
   guess: s => `<div class="mt-row mt-objs"><div class="mt-many">${[0, 1, 2].map(() => img(s.unit.image, 'mt-obj tiny')).join('')}</div><span class="mt-vs">fit along</span>${img(s.target.image, 'mt-obj big')}</div>
@@ -117,10 +118,10 @@ export const MODE_TUTORIALS = {
   hl: { title: 'High / Low Survival', autoplay: true, slideMs: 9500, slides: [
     { scene: 'hlRoles', head: 'Two roles. One team.', text: 'LOW stays at or below the answer. HIGH stays at or above it. Both aim as close as possible.' },
     { scene: 'hlOcean', example: 'safe', head: 'Keep the answer between you', text: 'Answer: 10. LOW picks 8; HIGH picks 12. The 1.5× gap fits the 2.5× limit. You survive!' },
-    { scene: 'hlOcean', example: 'under', head: 'HIGH must not go under', text: 'HIGH picks 9, below the answer of 10. The bird gets wet, and the team loses a life.' },
-    { scene: 'hlOcean', example: 'over', head: 'LOW must not go over', text: 'LOW picks 11, above the answer of 10. The shark leaves the water, and the team loses a life.' },
-    { scene: 'hlOcean', example: 'wide', head: 'Stay close together, too', text: '5 and 20 surround 10, but their 4× gap is wider than 2.5×. You lose a life. The limit tightens as you survive.' },
-    { scene:'extraExample',lesson:'hlShield',head:'Survive together to earn a shield',text:'Three survivals charge one shared shield. It blocks one lost life, then is used up. You can hold only one.' },
+    { scene: 'hlOcean', example: 'under', head: 'HIGH must not go under', text: 'HIGH picks 9, below the answer of 10. The bird gets wet, and the team loses a bottle.' },
+    { scene: 'hlOcean', example: 'over', head: 'LOW must not go over', text: 'LOW picks 11, above the answer of 10. The shark leaves the water, and the team loses a bottle.' },
+    { scene: 'hlOcean', example: 'wide', head: 'Stay close together, too', text: '5 and 20 surround 10, but their 4× gap is wider than 2.5×. You lose a bottle. The limit tightens as you survive.' },
+    { scene:'extraExample',lesson:'hlShield',head:'Earn an empty bottle',text:'Survive three rounds to earn an empty bottle. It breaks in place of a message bottle the next time you miss. You can hold only one.' },
     { scene:'extraExample',lesson:'hlRewards',head:'Themed rounds mix things up',text:'Each player earns 2 coins per normal survival and 4 for a themed survival. Every fifth survival is themed.' },
   ] },
   quick: { title: 'Quick Game', autoplay:true, slideMs:7500, slides: [

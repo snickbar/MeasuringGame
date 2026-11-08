@@ -22,9 +22,9 @@ server.listen(0,'127.0.0.1',()=>{
    const result=await evaluate(`(async()=>{
     const assert=(v,m)=>{if(!v)throw Error(m)},wait=ms=>new Promise(r=>setTimeout(r,ms)),d=document.getElementById('mode-tutorial');
     const fit=()=>{const r=d.getBoundingClientRect();assert(r.left>=0&&r.right<=innerWidth+1,'Dialog fits width');assert(d.scrollWidth<=d.clientWidth+1,'No horizontal overflow');assert(r.top>=0&&r.bottom<=innerHeight+1,'Dialog fits height');assert(!d.querySelector('input,textarea,select,[contenteditable]'),'No gameplay inputs');};
-    await wait(150);fit();assert(d.textContent.includes('Three shared lives'),'Shared lives explained');
+    await wait(150);fit();assert(d.textContent.includes('Three shared bottles'),'Shared bottles explained');
     await Promise.all([...d.querySelectorAll('img')].map(im=>im.decode()));
-    assert([...d.querySelectorAll('img')].every(im=>im.naturalWidth>0),'Role and heart artwork loads from nested preview');
+    assert([...d.querySelectorAll('img')].every(im=>im.naturalWidth>0),'Role and message bottle artwork loads from nested preview');
     assert(new DOMMatrixReadOnly(getComputedStyle(d.querySelector('.mt-hl-roles>div+div img')).transform).a<0,'Role bird faces inward');
     d.querySelector('[data-next]').click();
     for(let n=0;n<450;n++){if(d.querySelector('.hl-ocean-reveal')?.dataset.step==='3'&&d.querySelector('.hl-ocean-reveal')?.dataset.busy==='false')break;await wait(20);}
@@ -41,7 +41,7 @@ server.listen(0,'127.0.0.1',()=>{
    const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(root,'output','high-low-tutorial',`safe-${width}.png`),Buffer.from(shot.data,'base64'));
    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]},sessionId);
    await evaluate(`(async()=>{const d=document.getElementById('mode-tutorial'),wait=ms=>new Promise(r=>setTimeout(r,ms));for(const scenario of ['under','over','wide']){d.querySelector('[data-next]').click();await wait(1000);const r=d.querySelector('.hl-ocean-reveal');if(r.querySelector('.cw-meter').dataset.result!=='lost')throw Error(scenario+' must lose');if(r.querySelector('.is-happy'))throw Error('No happy losing animals');if(scenario==='under'&&!r.querySelector('.oc-bird.is-reacting'))throw Error('Wet bird');if(scenario==='over'&&!r.querySelector('.oc-shark.is-reacting'))throw Error('Shocked shark');}for(const lesson of ['hlShield','hlRewards']){d.querySelector('[data-next]').click();await wait(100);await Promise.all([...d.querySelectorAll('img')].map(im=>im.decode()));if(d.querySelector('[data-extra-lesson]')?.dataset.extraLesson!==lesson)throw Error('Missing shared survival lesson');}window.ui.close();if(d.open)throw Error('Closes');if(d.querySelector('.hl-ocean-reveal'))throw Error('Demo cleanup');})()`);
-   if(width===320){await evaluate(`(async()=>{window.defs.hl.slideMs=150;window.ui.play('hl');await new Promise(r=>setTimeout(r,window.defs.hl.slides.length*150+200));if(document.querySelector('#mode-tutorial[open]'))throw Error('Watch-only autoplay completes without clicks');window.defs.hl.slideMs=9500;window.ui.synced('hl',1,{host:false});if(document.querySelector('#mode-tutorial button,input'))throw Error('Party guest is watch-only');window.ui.endSynced();})()`);}
+   if(width===320){await evaluate(`(async()=>{window.defs.hl.slideMs=150;window.ui.play('hl');const d=document.getElementById('mode-tutorial');for(let n=0;n<150&&d.open;n++)await new Promise(r=>setTimeout(r,20));if(d.open)throw Error('Watch-only autoplay completes without clicks');window.defs.hl.slideMs=9500;window.ui.synced('hl',1,{host:false});if(d.querySelector('button,input'))throw Error('Party guest is watch-only');window.ui.endSynced();})()`);}
    await call('Target.closeTarget',{targetId});
   }
   if(errors.length)throw Error(errors.join('\n'));

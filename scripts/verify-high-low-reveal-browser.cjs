@@ -45,12 +45,21 @@ try{
  const shark=root.querySelector('.oc-shark');
  for(const animal of [bird,shark])assert(animal.querySelector('.oc-art').getAnimations().length===1,'Fresh result gives each mascot its own motion');
  assert(Math.abs(cy(shark)-cy(root.querySelector('.cw-low')))<1,'Celebration keeps LOW at its actual pick');
- for(const scenario of ['under','over']){
+ for(const scenario of ['under','over','saved']){
   window.__waterCues=[];await api.show(scenario,0);await until(()=>!api.busy(),'Bottle for water crossing');
   $('reveal-next-btn').click();await api.pump();await until(()=>!api.busy(),'Bird crossing');
   $('reveal-next-btn').click();await api.pump();await until(()=>!api.busy(),'Shark crossing');
-  assert(window.__waterCues.length===1,'One splash only on actual water crossing '+scenario);
-  assert(Math.abs(window.__waterCues[0].distance)<22,'Splash follows crossing rather than delayed settlement '+JSON.stringify(window.__waterCues));
+  assert(window.__waterCues.length===(scenario==='saved'?0:1),'One splash only on actual water crossing '+scenario);
+  if(window.__waterCues.length)assert(Math.abs(window.__waterCues[0].distance)<22,'Splash follows crossing rather than delayed settlement '+JSON.stringify(window.__waterCues));
+  const result=api.root(),bottles=result.querySelector('.hl-bottle-row');
+  const breaking=result.querySelector('.oc-boat[data-broken=true] .oc-bottle-pieces');
+  assert(breaking?.querySelector('.hl-bottle-left').getAnimations().length===1,'Wrong bracket breaks the bottle in the water');
+  assert(bottles.querySelectorAll('.hl-bottle-icon').length===(scenario==='saved'?3:2),'Empty bottle saves all three message bottles');
+  const spent=result.querySelector(scenario==='saved'?'.hl-reserve-icon .hl-bottle-splitting':'.hl-bottle-spent.hl-bottle-splitting');
+  const popup=document.querySelector('.hl-bottle-popup .hl-bottle-left');
+  assert(spent&&popup?.src.includes(scenario==='saved'?'empty-bottle':'answer-bottle'),'Correct bottle cracks in both places');
+  api.refresh();
+  assert(document.querySelectorAll('.hl-bottle-popup').length===1,'Room refresh does not replay the crack');
  }
  for(const scenario of ['safe','wide','under','over','crossed','missing','zero','saved','million','trillion','close']){
   await api.show(scenario,2);await until(()=>api.root()?.dataset.busy==='false','Reconnect complete '+scenario);const r=api.root(),d=api.data(),m=d.hlLast;
@@ -67,7 +76,10 @@ try{
   assert(document.documentElement.scrollWidth<=innerWidth+1,'Phone width fits '+scenario);
   if(scenario==='million'){const b=r.querySelector('.oc-sail-answer b'),paper=b.parentElement.getBoundingClientRect();assert(b.textContent==='1,234,567.89','Full large answer');assert(b.getBoundingClientRect().width<=paper.width+1,'Answer fits paper');}
   if(scenario==='trillion'){const b=r.querySelector('.oc-sail-answer b');assert(b.textContent.includes('T'),'Extreme answer uses readable compact label');assert(r.querySelector('.hl-exact-answer').textContent.includes('9,876,543,210,123.45'),'Exact extreme answer remains visible');assert(b.getBoundingClientRect().width<=b.parentElement.getBoundingClientRect().width+1,'Extreme answer fits bottle');}
-  if(scenario==='saved')assert(r.querySelector('.rs-verdict').textContent.includes('Shield saved you'),'Shield verdict preserved');
+  assert(!!r.querySelector('.oc-boat[data-broken=true]')===!m.passed,'Reconnect shows the settled bottle state');
+  assert(!r.querySelector('.hl-bottle-splitting'),'Reconnect does not replay the crack');
+  assert(r.querySelector('.oc-sail-answer b').textContent,'Answer stays visible after the bottle breaks');
+  if(scenario==='saved')assert(r.querySelector('.rs-verdict').textContent.includes('Empty bottle saved you'),'Empty bottle save explained');
   for(const img of r.querySelectorAll('img')){await img.decode();assert(img.complete&&img.naturalWidth,'Runtime artwork loads '+img.src);}
  }
  await api.show('wide',2,true);await until(()=>!api.busy(),'Guest restored');assert($('reveal-next-btn').style.display==='none'&&$('show-summary-btn').style.display==='none','Guest has no host controls');

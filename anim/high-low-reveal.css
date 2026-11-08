@@ -265,3 +265,49 @@
 @media(prefers-reduced-motion:reduce){
   .hl-ocean-reveal .oc-water::after,.hl-ocean-reveal .oc-art img{animation:none!important}
 }
+
+/* Filled bottles are the team's remaining chances. The empty one is a spare. */
+.hl-bottle-row{display:flex;justify-content:center;gap:8px}
+.hl-bottle-icon,.hl-bottle-pieces{width:36px;aspect-ratio:5/2;object-fit:contain}
+.hl-bottle-icon,.hl-bottle-pieces,.hl-reserve-icon{display:inline-block;vertical-align:middle}
+.hl-bottle-pieces{position:relative;pointer-events:none}
+.hl-bottle-pieces>img,.hl-bottle-seam{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.hl-bottle-left{clip-path:polygon(0 0,55% 0,53% 10%,47% 34%,54% 46%,46% 65%,51% 87%,53% 100%,0 100%)}
+.hl-bottle-right{clip-path:polygon(55% 0,100% 0,100% 100%,53% 100%,51% 87%,46% 65%,54% 46%,47% 34%,53% 10%)}
+.hl-bottle-seam{opacity:0}
+.hl-bottle-pieces>.hl-bottle-left{transform:translate(var(--hl-left,-7%),var(--hl-fall,8%)) rotate(var(--hl-l-turn,-9deg));opacity:var(--hl-break-opacity,.58)}
+.hl-bottle-pieces>.hl-bottle-right{transform:translate(var(--hl-right,7%),var(--hl-fall,8%)) rotate(var(--hl-r-turn,9deg));opacity:var(--hl-break-opacity,.58)}
+.hl-bottle-spent{filter:saturate(.25)}
+.hl-reserve-icon{width:28px;height:15px;flex:none}
+.hl-reserve-icon .hl-bottle-icon,.hl-reserve-icon .hl-bottle-pieces{width:100%}
+.hl-reserve-icon.waiting .hl-bottle-icon{opacity:.42}
+
+.hl-bottle-splitting>.hl-bottle-left{animation:hlBottleLeft var(--hl-split-time,.36s) calc(var(--hl-split-at,.25s) + var(--hl-break-delay,0s)) ease-in both}
+.hl-bottle-splitting>.hl-bottle-right{animation:hlBottleRight var(--hl-split-time,.36s) calc(var(--hl-split-at,.25s) + var(--hl-break-delay,0s)) ease-in both}
+.hl-bottle-splitting>.hl-bottle-seam{animation:hlBottleCrack var(--hl-split-at,.25s) var(--hl-break-delay,0s) linear both}
+@keyframes hlBottleLeft{from{transform:none;opacity:1}}
+@keyframes hlBottleRight{from{transform:none;opacity:1}}
+@keyframes hlBottleCrack{0%,25%,100%{opacity:0}32%,85%{opacity:1}}
+
+.hl-ocean-reveal .oc-bottle-pieces{
+  position:absolute;inset:50% 0 auto;width:100%;transform:translateY(-50%);
+  --hl-split-at:.16s;--hl-split-time:.56s;--hl-left:-19%;--hl-right:20%;--hl-fall:115%;
+  --hl-l-turn:-20deg;--hl-r-turn:24deg;--hl-break-opacity:.42;
+}
+.hl-ocean-reveal .oc-boat:not([data-broken=true]) .oc-bottle-pieces{display:none}
+.hl-ocean-reveal .oc-boat[data-broken=true] .oc-boat-float>img{visibility:hidden}
+.hl-ocean-reveal .oc-boat[data-broken=true] .oc-sail-answer{
+  z-index:2;min-height:22px;background:#fff0c9;border:1px solid #ac8961;border-radius:5px;
+  box-shadow:0 1px 2px #294b5540;
+}
+.sv-crack.hl-bottle-popup{animation:svDim 1.4s .48s ease-out both}
+.hl-bottle-popup .sv-crack-wrap{
+  animation:svPop .35s .48s cubic-bezier(.2,1.5,.4,1) both,svShake .26s .8s linear;
+}
+.hl-bottle-popup .hl-bottle-pieces{
+  position:absolute;left:0;top:50%;width:100%;transform:translateY(-50%);
+  --hl-break-delay:.48s;--hl-split-at:.50s;--hl-split-time:.78s;--hl-left:-24%;--hl-right:24%;--hl-fall:100%;
+  --hl-l-turn:-24deg;--hl-r-turn:26deg;--hl-break-opacity:0;
+}
+@media(prefers-reduced-motion:reduce){.hl-bottle-splitting>*{animation:none!important}}
+html[data-motion=reduce] .hl-bottle-splitting>*{animation:none!important}
