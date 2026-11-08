@@ -18776,17 +18776,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (roomState.phase === "question") deadline = noTimer && !roomState.graceEndsAt ? null : (roomState.graceEndsAt || roomState.questionEndsAt);
       else if (roomState.phase === "answers") deadline = roomState.answersEndsAt;
       const timerBar = document.getElementById("hud-timer-bar");
-      if (deadline == null) { hudTimerEl.textContent = "--"; hudTimerEl.classList.remove("low"); if (timerBar) timerBar.hidden = true; return; }
+      if (deadline == null) { setText(hudTimerEl, "--"); hudTimerEl.classList.remove("low"); if (timerBar) timerBar.hidden = true; return; }
       powerups?.render();
       syncQuestionClock();
       if (questionClockPending(roomState)) {
-        hudTimerEl.textContent = String(Math.ceil(roomState.questionClock.duration / 1000));
+        setText(hudTimerEl, String(Math.ceil(roomState.questionClock.duration / 1000)));
         hudTimerEl.classList.remove("low");
         if (timerBar) { timerBar.hidden = false; timerBar.firstElementChild.style.transform = "scaleX(1)"; timerBar.classList.remove("low"); }
         return;
       }
       const remaining = Math.max(0, deadline - nowMs());
-      hudTimerEl.textContent = Math.ceil(remaining / 1000).toString();
+      setText(hudTimerEl, Math.ceil(remaining / 1000).toString());
       hudTimerEl.classList.toggle("low", remaining <= 5000);
       // Shrinking bar under the number: the share of this phase's time that is left (same bar as the 10-second change windows).
       if (timerBar) {

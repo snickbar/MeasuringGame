@@ -101,12 +101,17 @@ const wired = [
     'setText(num, Math.round(from + (rank - from) * e))',                        // survival rank
     'setText(numEl, hsFmt(total - given))',                                      // High Stakes pot
     'setText(el, "+" + shown)',                                                  // Which Is Bigger run coins
+    'setText(hudTimerEl, "--")',                                                 // the question clock, written every 200 ms tick
+    'setText(hudTimerEl, String(Math.ceil(roomState.questionClock.duration / 1000)))',
+    'setText(hudTimerEl, Math.ceil(remaining / 1000).toString())',
   ]],
   ['anim/bluff-ui.mjs', modules('anim/bluff-ui.mjs'), ["import {setText} from './set-text.mjs'", 'setText(el,String(Math.round(to*(1-Math.pow(1-k,3)))))']],
   ['anim/mode-tutorial.mjs', modules('anim/mode-tutorial.mjs'), ["import {setText} from './set-text.mjs'", "setText(num, Math.round(to * (1 - Math.pow(1 - k, 3))) + '%')"]],
   ['anim/round-score-reveal.mjs', modules('anim/round-score-reveal.mjs'), ["import { setText } from './set-text.mjs'", 'setText(row.counter, text)']],
   ['anim/game-polish.mjs', modules('anim/game-polish.mjs'), ["import { setText } from './set-text.mjs'", 'setText(el, String(Math.round(from + (to - from) * (1 - (1 - t) ** 3))))']],
 ];
+// The clock is rewritten on every tick, whether or not the digits changed, so none of its writes may replace the text node.
+assert(!/hudTimerEl\.textContent\s*=/.test(html), 'The question clock is never written with textContent');
 for (const [file, text, needles] of wired)
   for (const needle of needles) assert(text.includes(needle), `${file} writes its counting number with setText: ${needle}`);
 

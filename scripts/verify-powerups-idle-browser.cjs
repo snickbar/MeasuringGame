@@ -1,9 +1,11 @@
 // The real app, in a real Quick question: the power-up tray is left alone while nothing about it changes, and still follows
-// every change that matters (the screen resizing, the question board growing, the coins running out).
+// every change that matters (the screen resizing, the question board growing, the coins running out). The question clock's
+// digits are edited in place instead of being thrown away and re-created on every tick.
 //
 // render() also runs from the 200 ms game clock. It used to hide the tray, reset the sidebar, measure, rebuild the five
 // buttons and show the tray again on every one of those runs, and the label fitter then re-fitted every button each time:
-// five times a second of pointless work, which is a lot on a slow phone.
+// five times a second of pointless work, which is a lot on a slow phone. The clock rewrote its number on every tick too, and
+// a new text node makes the browser re-check the page-wide :has() rules (see anim/set-text.mjs).
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
 const {runFixture}=require('./browser-fixture.cjs');
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/\r\n/g,'\n');
@@ -33,17 +35,22 @@ const start=String.raw`(async()=>{
 })()`;
 // Watches the tray and the sidebar padding for a while, and counts how often the page measured the sidebar (each render does).
 const idle=String.raw`(async()=>{
- const tray=document.getElementById('quick-powerups'),side=document.querySelector('.score-sidebar');
+ const tray=document.getElementById('quick-powerups'),side=document.querySelector('.score-sidebar'),clock=document.getElementById('hud-timer');
  const hits=[],inTray=n=>{const el=n.nodeType===1?n:n.parentElement;return !!el&&(el===tray||tray.contains(el));};
- const watcher=new MutationObserver(list=>{for(const r of list)if(inTray(r.target)||(r.target===side&&r.type==='attributes'))hits.push(r.type+' '+(r.attributeName||'')+' on '+(r.target.id||r.target.className||r.target.tagName));});
+ let clockSwaps=0;
+ const note=r=>{
+  if(inTray(r.target)||(r.target===side&&r.type==='attributes'))hits.push(r.type+' '+(r.attributeName||'')+' on '+(r.target.id||r.target.className||r.target.tagName));
+  if(r.target===clock&&r.type==='childList')clockSwaps++;
+ };
+ const watcher=new MutationObserver(list=>list.forEach(note));
  watcher.observe(document.body,{subtree:true,childList:true,attributes:true,characterData:true});
  const real=Element.prototype.getBoundingClientRect;let reads=0;
  Element.prototype.getBoundingClientRect=function(){if(this===side)reads++;return real.call(this);};
  await new Promise(r=>setTimeout(r,1800));
  Element.prototype.getBoundingClientRect=real;
- watcher.takeRecords().forEach(r=>{if(inTray(r.target)||(r.target===side&&r.type==='attributes'))hits.push(r.type+' '+(r.attributeName||'')+' on '+(r.target.id||r.target.className||r.target.tagName));});
+ watcher.takeRecords().forEach(note);
  watcher.disconnect();
- return JSON.stringify({hits:hits.length,sample:hits.slice(0,4),renders:reads});
+ return JSON.stringify({hits:hits.length,sample:hits.slice(0,4),renders:reads,clockSwaps,clock:clock.textContent});
 })()`;
 // Where the tray stands now, against the boxes it is placed from.
 const where=String.raw`(()=>{
@@ -75,6 +82,8 @@ runFixture({html,widths:[390],height:844,modules:{'/__fake/app.mjs':'export cons
  const quiet=JSON.parse(await evaluate(idle));
  assert(quiet.renders>=4,'The game clock keeps calling render() during the quiet stretch: '+JSON.stringify(quiet));
  assert.equal(quiet.hits,0,'A quiet stretch leaves the tray and sidebar padding alone: '+JSON.stringify(quiet));
+ assert(/^\d+$/.test(quiet.clock),'The question clock shows seconds: '+JSON.stringify(quiet));
+ assert.equal(quiet.clockSwaps,0,'The clock edits its digits in place instead of re-creating them on every tick: '+JSON.stringify(quiet));
  const still=await place('after a quiet stretch');
  assert.deepEqual([still.left,still.right,still.bottom,still.padding],[first.left,first.right,first.bottom,first.padding],'The tray did not move while nothing changed');
 
@@ -106,5 +115,6 @@ runFixture({html,widths:[390],height:844,modules:{'/__fake/app.mjs':'export cons
  // 5. After all of that the tray is quiet again.
  const after=JSON.parse(await evaluate(idle));
  assert.equal(after.hits,0,'The tray is quiet again once things settle: '+JSON.stringify(after));
- console.log({pass:true,width,checks:'power-up tray is untouched while nothing changes, and follows resizes, a taller board and the coins running out',quietStretch:{renders:quiet.renders,changes:quiet.hits},afterEverything:{renders:after.renders,changes:after.hits}});
+ assert.equal(after.clockSwaps,0,'The clock is still edited in place: '+JSON.stringify(after));
+ console.log({pass:true,width,checks:'power-up tray is untouched while nothing changes, and follows resizes, a taller board and the coins running out; the clock edits its digits in place',quietStretch:{renders:quiet.renders,changes:quiet.hits,clockTextNodeSwaps:quiet.clockSwaps},afterEverything:{renders:after.renders,changes:after.hits,clockTextNodeSwaps:after.clockSwaps}});
 }}).catch(e=>{console.error(e);process.exitCode=1});
