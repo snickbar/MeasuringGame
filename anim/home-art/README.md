@@ -28,3 +28,12 @@ Generation prompts are preserved per asset in `manifest.json`.
 ## Packaging
 
 The current production file list includes all 83 PNGs under this directory in the APK and live-update bundle. Markdown and JSON documentation are kept in Git for integration and are excluded from runtime packaging by the existing production-file rules. If future game code fetches these JSON files at runtime, explicitly add those files to the production allowlist. No game screen is switched to this artwork yet.
+
+## Wandering creature sizes
+
+The `critter-*.webp` files are stored at the size the game draws them (about 250-350 px wide at most), not at the 1,000-1,500 px they were generated at. The Home scene cannot appear until every picture on it has been downloaded and decoded, so oversized creature pictures made it appear later, most of all on slower phones.
+
+- `python3 scripts/shrink-home-critters.py` shrinks any creature that is larger than its listed size (`--check` only reports). Run it after adding or replacing a creature picture; `scripts/verify-home-art-sizes.mjs` fails until you do.
+- The sizes in `anim/home-art-layout.mjs` and `manifest.json` stay those of the original pictures. The game places a creature, and its wing and leg shapes, by percentages of the original picture, so a smaller file of the same shape lands in the same place. Do not re-measure the layout from the shrunk files.
+- `critter-holiday-mix-a.webp` and `critter-make-believe-a.webp` are sprite sheets cropped by pixel position (`anim/home-new-art.mjs`) and keep their full size.
+- The full-size originals are in Git history, from before the commit that added the shrink script.
