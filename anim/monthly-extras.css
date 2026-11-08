@@ -33,6 +33,24 @@ html[data-motion=reduce] :is(.mc-squirrel-walk,.mc-squirrel-walk img){animation:
     linear-gradient(#eaf5c9 0 69%,#c3dc91 70%,#a8cb77 100%);
 }
 .mo-squirrel .solo-score-pose{left:3%;right:31%}
+.mo-sad-toss{
+  --mo-sad-hold-at:1.08s;--mo-sad-release-at:1.54s;--mo-sad-flight:.44s;
+  --mo-sad-settle-at:calc(var(--mo-sad-release-at) + var(--mo-sad-flight));
+}
+.mo-sad-toss .solo-score-reaction,.mo-sad-release{visibility:hidden}
+.mo-sad-toss.solo-score-animate .solo-score-pose{animation:none}
+.mo-sad-toss.solo-score-animate .solo-score-reaction{
+  animation:moSadPose calc(var(--mo-sad-release-at) - var(--mo-sad-hold-at)) step-end var(--mo-sad-hold-at) forwards;
+}
+.mo-sad-toss.solo-score-animate .mo-sad-release{
+  animation:moSadPose var(--mo-sad-flight) step-end var(--mo-sad-release-at) forwards;
+}
+.mo-sad-toss.solo-score-animate .mo-sad-rest{
+  animation:moSadRest var(--mo-sad-settle-at) step-end both;
+}
+@keyframes moSadPose{from{visibility:visible}to{visibility:hidden}}
+@keyframes moSadRest{from{visibility:hidden}to{visibility:visible}}
+
 .mo-acorn-pile{
   position:absolute;right:4%;bottom:5%;width:39%;height:62%;pointer-events:none;
 }
@@ -43,6 +61,7 @@ html[data-motion=reduce] :is(.mc-squirrel-walk,.mc-squirrel-walk img){animation:
 }
 .mo-acorn-drop{animation:moAcornDrop .34s 1.04s ease-out both}
 .mo-acorn-toss{animation:moAcornToss .68s 1.08s ease-out both}
+.mo-acorn-low-toss{animation:moAcornLowToss var(--mo-sad-flight) var(--mo-sad-release-at) ease-out both}
 .mo-acorn-rattle{animation:moAcornRattle .36s 1.68s ease-out both}
 .mo-acorn-rattle:nth-last-child(3){animation-delay:1.72s}
 @keyframes moAcornDrop{
@@ -56,12 +75,20 @@ html[data-motion=reduce] :is(.mc-squirrel-walk,.mc-squirrel-walk img){animation:
   88%{transform:translate(-50%,3%) rotate(calc(var(--acorn-tilt) - 11deg))}
   100%{opacity:1;transform:translateX(-50%) rotate(var(--acorn-tilt))}
 }
+@keyframes moAcornLowToss{
+  0%{opacity:0;transform:translate(calc(-50% + var(--acorn-from-x)),var(--acorn-from-y)) rotate(-22deg)}
+  8%{opacity:1}
+  42%{transform:translate(calc(-50% + var(--acorn-from-x)*.45),var(--acorn-apex-y)) rotate(32deg)}
+  100%{opacity:1;transform:translateX(-50%) rotate(var(--acorn-tilt))}
+}
 @keyframes moAcornRattle{
   28%{transform:translate(-50%,-12%) rotate(calc(var(--acorn-tilt) + 12deg))}
   66%{transform:translateX(-50%) rotate(calc(var(--acorn-tilt) - 6deg))}
 }
-@media(prefers-reduced-motion:reduce){.mo-acorn{animation:none}}
-html[data-motion=reduce] .mo-acorn{animation:none}
+@media(prefers-reduced-motion:reduce){
+  .mo-acorn,.mo-sad-toss.solo-score-animate :is(.solo-score-reaction,.mo-sad-release,.mo-sad-rest){animation:none}
+}
+html[data-motion=reduce] :is(.mo-acorn,.mo-sad-toss.solo-score-animate :is(.solo-score-reaction,.mo-sad-release,.mo-sad-rest)){animation:none}
 
 .mo-score-grid{
   display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);align-items:center;gap:8px;
