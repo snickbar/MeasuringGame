@@ -1,10 +1,11 @@
 import {BLUFF_LABELS,bluffVoteDeadline,dealBluff,chooseBluff,revealBluff,bluffStandings,bluffStandingsBefore,bluffNewLeaders,botMakerChoice,botVoteChoice} from './bluff.mjs';
+import {setText} from './set-text.mjs';
 
 // Counts a number up from 0 (presentation only; skipped when motion is reduced).
 function countUpEl(el,ms,delay,reduced){
   if(!el||reduced)return;const to=parseInt(el.textContent,10);if(!(to>0))return;
   const t0=performance.now()+delay;el.textContent='0';
-  const step=now=>{if(!el.isConnected)return;const k=Math.max(0,Math.min(1,(now-t0)/ms));el.textContent=String(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(step);};
+  const step=now=>{if(!el.isConnected)return;const k=Math.max(0,Math.min(1,(now-t0)/ms));setText(el,String(Math.round(to*(1-Math.pow(1-k,3)))));if(k<1)requestAnimationFrame(step);};
   requestAnimationFrame(step);
 }
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -12607,7 +12607,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const paint = (vals) => {
       const given = vals.reduce((s, v) => s + v, 0);
       cards.forEach((c, i) => { c.node.nodeValue = hsFmt(vals[i]) + " "; });
-      numEl.textContent = hsFmt(total - given);
+      setText(numEl, hsFmt(total - given));
       const keep = total ? Math.ceil(pile.length * (total - given) / total) : 0; // the heap thins out as the pot empties
       pile.forEach((p, i) => p.classList.toggle("gone", i >= keep));
     };
@@ -13963,7 +13963,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const dec = (m[2].split(".")[1] || "").length, comma = m[2].includes(",");
     const fmt = (v) => m[1] + (comma ? v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) : v.toFixed(dec)) + m[3];
     const t0 = performance.now() + delay; el.textContent = fmt(0);
-    const step = (now) => { if (!el.isConnected) return; const k = Math.max(0, Math.min(1, (now - t0) / ms)); el.textContent = fmt(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+    const step = (now) => { if (!el.isConnected) return; const k = Math.max(0, Math.min(1, (now - t0) / ms)); setText(el, fmt(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
   // Result lists: each matching row slides in one after another; marks pop in one at a time. CSS only, skipped with Reduce Motion.
@@ -14193,7 +14193,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const tick = (t) => {
         if (!num.isConnected) return;
         const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-        num.textContent = Math.round(from + (rank - from) * e);
+        setText(num, Math.round(from + (rank - from) * e));
         if (k < 1) requestAnimationFrame(tick); else host.classList.add("landed");
       };
       requestAnimationFrame(tick);
@@ -14796,7 +14796,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const el = document.getElementById("wb-coin-n");
         if (!el || !wb || wb.phase !== "over") { clearInterval(wbCoinTimer); return; }
         shown = Math.min(total, shown + per); i++;
-        el.textContent = "+" + shown;
+        setText(el, "+" + shown);
         try { playSoundAt("tap", Math.min(2, 1 + i * 0.06)); } catch (e) {}
         if (shown >= total) clearInterval(wbCoinTimer); // the coin sound plays when the coins land in the toolbar
       }, 95);
@@ -15514,7 +15514,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     let target = 0;            // the real balance
     let phase = "idle";        // idle | waiting | flying | counting
     let gainPending = 0, waitSince = 0, rafId = 0, waitTimer = 0;
-    const show = (n) => { shown = n; toolbarCoinCountEl.textContent = formatCoinDisplay(n); };
+    const show = (n) => { shown = n; setText(toolbarCoinCountEl, formatCoinDisplay(n)); };
     const settleNow = () => { phase = "idle"; gainPending = 0; clearTimeout(waitTimer); cancelAnimationFrame(rafId); show(target); };
     const lvlOpen = () => { try { return levelUpOpen; } catch (e) { return false; } };
     function held() { const waited = performance.now() - waitSince; try { return coinHolds.some((h) => waited < h.maxMs && h.fn()); } catch (e) { return false; } }
@@ -16195,7 +16195,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const step = (t) => {
       if (!n.isConnected) return;
       const k = dur ? Math.min(1, (t - t0) / dur) : 1, v = Math.round(total * (1 - Math.pow(1 - k, 3)));
-      n.textContent = "+" + v;
+      setText(n, "+" + v);
       const bucket = Math.floor(v / Math.max(1, Math.ceil(total / 14)));
       if (bucket !== lastTick) { lastTick = bucket; if (k < 1) playSound("tick"); }
       if (k < 1) requestAnimationFrame(step); else playSound("coins");
@@ -20562,7 +20562,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     (function step(now) {
       if (!el.isConnected) return;
       const t = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - t, 3);
-      el.textContent = formatAccuracy(to * e) + suffix;
+      setText(el, formatAccuracy(to * e) + suffix);
       if (t < 1) requestAnimationFrame(step);
     })(t0);
   }
@@ -20600,7 +20600,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     (function step(now) {
       if (!el.isConnected) return;
       const t = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - t, 3);
-      el.textContent = formatAccuracy(from + (to - from) * e) + suffix;
+      setText(el, formatAccuracy(from + (to - from) * e) + suffix);
       if (t < 1) requestAnimationFrame(step);
     })(t0);
   }

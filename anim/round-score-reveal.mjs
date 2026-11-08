@@ -1,3 +1,5 @@
+import { setText } from './set-text.mjs';
+
 const LEAD = 300, STEP = 480, COUNT = 200, HOLD = 100;
 
 // Presentation only. The server's awarded total remains authoritative, including team ties.
@@ -34,7 +36,7 @@ export function createRoundScoreReveal({now = () => performance.now(), request =
         step.classList.toggle('score-current', !instant && state.steps[j].current);
       });
       const text = '+' + state.value;
-      if (row.counter.textContent !== text) row.counter.textContent = text;
+      if (row.counter.textContent !== text) setText(row.counter, text);
       const pulse = !instant && row.total > 0 && state.complete && age < state.finishAt + 500;
       if (pulse && !row.counter.classList.contains('score-total-land')) row.counter.style.setProperty('--score-final-age', `${-(age - state.finishAt)}ms`);
       row.counter.classList.toggle('score-total-land', pulse);

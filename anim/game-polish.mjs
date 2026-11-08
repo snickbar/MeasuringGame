@@ -1,3 +1,5 @@
+import { setText } from './set-text.mjs';
+
 // Use the actual menu artwork, including its embedded illustration, for the destination header.
 export const MENU_BANNERS = {
   quick: ['icons/banner-quick.png'], daily: ['icons/banner-daily.png'],
@@ -84,7 +86,7 @@ export function createPolish({ document: doc = document, reduced = () => false, 
     function frame(now) {
       if (receiptTargets.get(el) !== ticket || !visible(el)) { el.textContent = String(to); return; }
       const t = Math.min(1, (now - start) / duration);
-      el.textContent = String(Math.round(from + (to - from) * (1 - (1 - t) ** 3)));
+      setText(el, String(Math.round(from + (to - from) * (1 - (1 - t) ** 3))));
       if (t < 1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);

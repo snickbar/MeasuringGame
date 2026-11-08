@@ -1,6 +1,7 @@
 // Per-mode animated how-to-play slideshows. Self-contained dialog; the host app only supplies
 // sample objects, and (for party use) a hook that lets the host end the slideshow for everyone.
 import {mountHighLowTutorial} from './high-low-tutorial.mjs';
+import {setText} from './set-text.mjs';
 import {HL_MESSAGE_BOTTLE} from './high-low-bottles.mjs';
 import {partyTutorialScene} from './party-tutorial.mjs';
 import {MORE_MODE_TUTORIALS,extraTutorialScene} from './more-tutorials.mjs';
@@ -170,7 +171,7 @@ export function createModeTutorial({ owner, sample, storage }) {
     timers.push(setTimeout(() => {
       fill.style.setProperty('--accuracy', to + '%');
       const t0 = performance.now();
-      const tick = now => { const k = Math.min(1, (now - t0) / DUR); num.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + '%'; if (k < 1) raf = requestAnimationFrame(tick); };
+      const tick = now => { const k = Math.min(1, (now - t0) / DUR); setText(num, Math.round(to * (1 - Math.pow(1 - k, 3))) + '%'); if (k < 1) raf = requestAnimationFrame(tick); };
       raf = requestAnimationFrame(tick);
       marks.forEach((m, i) => { if (to > AT[i]) timers.push(setTimeout(() => m.classList.add('earned'), DUR * Math.pow(AT[i] / to, 0.8))); });
     }, 700));

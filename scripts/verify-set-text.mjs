@@ -89,4 +89,25 @@ const step = motion.slice(motion.indexOf('const step = '), motion.indexOf('reque
 assert(/setText\(el,/.test(step), 'The count-up writes each frame with setText');
 assert(!/textContent\s*=/.test(step), 'The count-up frame does not replace the text node');
 
-console.log('setText: in-place edits, textContent-equivalent fallbacks and the Awards count-up wiring passed.');
+// Every other number that counts up (or ticks) frame by frame is written the same way. A new count-up should be added here too.
+const modules = file => fs.readFileSync(file, 'utf8');
+const wired = [
+  ['index.html', html, [
+    'setText(el, fmt(to * (1 - Math.pow(1 - k, 3))))',                         // result numbers (+23 coins, ...)
+    'shown = n; setText(toolbarCoinCountEl, formatCoinDisplay(n))',              // the toolbar coin counter, on every screen
+    'setText(n, "+" + v)',                                                       // level-up coins
+    'setText(el, formatAccuracy(to * e) + suffix)',                              // team average
+    'setText(el, formatAccuracy(from + (to - from) * e) + suffix)',              // game average
+    'setText(num, Math.round(from + (rank - from) * e))',                        // survival rank
+    'setText(numEl, hsFmt(total - given))',                                      // High Stakes pot
+    'setText(el, "+" + shown)',                                                  // Which Is Bigger run coins
+  ]],
+  ['anim/bluff-ui.mjs', modules('anim/bluff-ui.mjs'), ["import {setText} from './set-text.mjs'", 'setText(el,String(Math.round(to*(1-Math.pow(1-k,3)))))']],
+  ['anim/mode-tutorial.mjs', modules('anim/mode-tutorial.mjs'), ["import {setText} from './set-text.mjs'", "setText(num, Math.round(to * (1 - Math.pow(1 - k, 3))) + '%')"]],
+  ['anim/round-score-reveal.mjs', modules('anim/round-score-reveal.mjs'), ["import { setText } from './set-text.mjs'", 'setText(row.counter, text)']],
+  ['anim/game-polish.mjs', modules('anim/game-polish.mjs'), ["import { setText } from './set-text.mjs'", 'setText(el, String(Math.round(from + (to - from) * (1 - (1 - t) ** 3))))']],
+];
+for (const [file, text, needles] of wired)
+  for (const needle of needles) assert(text.includes(needle), `${file} writes its counting number with setText: ${needle}`);
+
+console.log('setText: in-place edits, textContent-equivalent fallbacks and the count-up wiring passed.');
