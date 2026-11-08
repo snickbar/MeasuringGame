@@ -6020,7 +6020,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const activeReactions = () => rndGet("reactions");
   // Team Worlds / High-Low use a plain question box: no equipped skin is built at all in those rooms.
   function plainBoardMode() { try { return !!(roomState && roomState.settings && roomState.settings.mode === "teamworlds") && !twQuestionPromptEl.contains(qPromptEl); } catch (e) { return false; } } // plain, except while the real card is on the Team Worlds question screen
-  const activeBoard = () => plainBoardMode() ? "plain" : rndGet("boards");
+  // In a party room the host picks each round's board (from the boards the host has equipped) and writes it to the room, so every
+  // phone shows the same one. With no room, or a host on an older version that writes none, a phone uses its own pick.
+  const roomBoard = () => { try { const id = roomState && roomState.board; return typeof id === "string" && id ? id : null; } catch (e) { return null; } };
+  const activeBoard = () => plainBoardMode() ? "plain" : (roomBoard() || rndGet("boards"));
+  // The host's pick for a new round: one of the boards the host has equipped (or owns, when none are chosen), not the one just shown.
+  function pickRoomBoard() { const id = rndOfNew("boards", styleEquippedIds("boards")) || styleFallback("boards"); rndLast.boards = id; return id; }
   let monthlyPlayBg = null; // while a Monthly Challenge is being played, that month's own background is shown
   const activeBackground = () => rndGet("backgrounds");
   function rollRandomEquips() {
@@ -18854,9 +18859,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ids.forEach((id) => { hlRoles[id] = id === highId ? "high" : "low"; });
     }
     console.log("[measuring-game] starting round", roundNum, q);
+    // The host's own boards decide the room's board for this round (never the one just shown, when there is a choice).
+    const roundBoard = pickRoomBoard();
     await update(ref(db, `rooms/${roomCode}`), {
       ...(hl ? { hlRoles, hlAsked: hlState.asked + 1, hlRecent: hlState.recent, hlThemeId: hlState.themeId, hlLast: null } : {}),
       currentQuestion: q,
+      board: roundBoard,
       guesses: null,
       answers: null,
       picks: null,
