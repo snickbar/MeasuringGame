@@ -57,13 +57,17 @@ function make(kind, opts = {}) {
   el._homeParticleOptions=opts;
   const rising = RISING_PARTICLES.has(kind), falling = FALLING_PARTICLES.has(kind);
   el.style.setProperty("--x", rnd(2, 98).toFixed(1) + "%");
+  if (kind === "mote") {
+    el.style.setProperty("--x", rnd(15, 48).toFixed(1) + "%");
+    el.style.setProperty("--y", rnd(35, 47).toFixed(1) + "%");
+  }
   if(SIDEWAYS_PARTICLES.has(kind)){
     el.style.setProperty('--x',kind==='mist'?'-60%':'-8%');
     el.style.setProperty('--y',rnd(kind==='mist'?34:15,kind==='mist'?68:94).toFixed(1)+'%');
     el.style.setProperty('--wind-bob',rnd(-14,14).toFixed(1)+'px');
   }
   if (kind === "star" || kind === "sparkle" || kind === "shoot") el.style.setProperty("--y", rnd(4, kind === "shoot" ? 30 : 78).toFixed(1) + "%");
-  const size = kind === "bubble" ? rnd(12, 36) : kind === "snow" ? rnd(5, 11) : kind === "ember" ? rnd(7, 14) : kind === "star" ? rnd(5, 12) : kind === "sparkle" ? rnd(10, 20) : kind === "petal" ? rnd(11, 18) : kind === "confetti" ? rnd(8, 13) : rnd(7, 13);
+  const size = kind === "mote" ? rnd(5, 9) : kind === "bubble" ? rnd(12, 36) : kind === "snow" ? rnd(5, 11) : kind === "ember" ? rnd(7, 14) : kind === "star" ? rnd(5, 12) : kind === "sparkle" ? rnd(10, 20) : kind === "petal" ? rnd(11, 18) : kind === "confetti" ? rnd(8, 13) : rnd(7, 13);
   el.style.setProperty("--s", size.toFixed(1) + "px");
   if(kind==='mist')el.style.setProperty('--s',rnd(320,470).toFixed(0)+'px');
   const dur = kind==='mist'?rnd(25,36):kind==='sand'?rnd(7,12):kind==='puff'?rnd(18,27):rising ? rnd(9, 17) : falling ? rnd(8, 15) : kind === "shoot" ? 11 : rnd(2.2, 5);
@@ -73,7 +77,7 @@ function make(kind, opts = {}) {
   const drift = (opts.dr || 26) * (Math.random() < .5 ? -1 : 1) * rnd(.4, 1);
   el.style.setProperty("--dr", drift.toFixed(0) + "px");
   // Every particle gets its own see-through level, so the layer reads soft rather than busy.
-  el.style.setProperty("--o", (kind === "shoot" ? 1 : rnd(.35, .85)).toFixed(2));
+  el.style.setProperty("--o", (kind === "shoot" ? 1 : kind === "mote" ? rnd(.66, .94) : rnd(.35, .85)).toFixed(2));
   if (opts.colors) el.style.setProperty("--c", pick(opts.colors));
   return el;
 }
