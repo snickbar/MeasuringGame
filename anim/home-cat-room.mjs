@@ -34,7 +34,7 @@ export async function buildCatRoom(home, load, current) {
       ${sprite('walk-a', 'cr-base cr-walk')}${sprite('walk-b', 'cr-alt cr-walk-alt')}
       ${sprite('groom-a', 'cr-alt cr-groom')}${sprite('groom-b', 'cr-alt cr-groom-alt')}
     </div></div>
-    <div class="cr-luna"><div class="cr-luna-body">${sprite('luna', 'cr-base')}
+    <div class="cr-luna"><div class="cr-luna-body">${sprite('luna', 'cr-alt cr-tail')}${sprite('luna', 'cr-base')}
       ${sprite('blink', 'cr-alt cr-blink')}${sprite('paw', 'cr-alt cr-paw')}
     </div>${tap('luna', 'Pet Luna')}</div>
     <div class="cr-bowls">${FISH.map((name, index) => `<div class="cr-bowl" style="--swim-time:${[5.2, 4.3, 6][index]}s;--swim-delay:${[-.5, -2, -4][index]}s">

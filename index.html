@@ -6907,6 +6907,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // scene is an achievement reward (world scenes: earn a star on the last level of that world; the others have their own award). ----
   // KEEP IN SYNC with the file map in the small script at the top of this page (it picks the picture before the app loads).
   const HOME_DEFAULT = "ants";
+  const PET_PARADE_TARGET = 10;
+  const PET_PARADE_OBJECTS = [
+    "domestic-cat", "corgi", "dachshund", "hamster", "guinea-pig", "ferret", "rabbit",
+    "parrot", "turtle", "tortoise", "goldfish", "clownfish", "tropical-fish", "koi-fish",
+  ];
   const HOME_SCREENS = [
     { id: "ants", file: "home-watermelon.jpg", name: "Backyard", how: "Free from the start" },
     { id: "sunflower", file: "home-sunflower.jpg", name: "Garden", world: "tiny" },
@@ -6915,7 +6920,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "snacks", file: "home-snacks.jpg", name: "Picnic", world: "food" },
     { id: "town", file: "home-town.jpg", name: "Town", world: "town" },
     { id: "corgi", file: "home-corgi.jpg", name: "Dog Park", world: "critters" },
-    { id: "cat-room", file: "home-cat-room.webp", name: "Cat Room", free: true },
+    { id: "cat-room", file: "home-cat-room.webp", name: "Cat Room", how: "Claim Pet Parade in Awards" },
     { id: "wheels", file: "home-wheels.jpg", name: "Launch Pad", world: "wheels" },
     { id: "lighthouse", file: "home-lighthouse.jpg", name: "Seaside", world: "landmarks" },
     { id: "underwater", file: "home-underwater.jpg", name: "Underwater", world: "under-the-sea" },
@@ -6929,7 +6934,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "space", file: "home-space.jpg", name: "Space", how: "Earn a star on the last level of every world" },
   ];
   const homeScreenOf = (id) => HOME_SCREENS.find((h) => h.id === id);
-  const ownsHomeScreen = (id) => id === HOME_DEFAULT || !!homeScreenOf(id)?.free || !!(myProfile.cosmetics && myProfile.cosmetics.owned && (myProfile.cosmetics.owned.homeScreens || {})[id]);
+  const ownsHomeScreen = (id) => id === HOME_DEFAULT || !!myProfile.cosmetics?.owned?.homeScreens?.[id];
   function equippedHomeScreen() {
     const id = myProfile.cosmetics && myProfile.cosmetics.equipped && myProfile.cosmetics.equipped.homeScreen;
     return id && homeScreenOf(id) && ownsHomeScreen(id) ? id : HOME_DEFAULT;
@@ -15842,6 +15847,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // tier (3,000) should stay well under the number of possible pairs (about 4,500 for normal objects alone, about 20,000 with every seasonal pack).
   achTier("Collector", "Object spotter", (n) => `See ${n} different objects in rounds`, () => OBJECTS.filter((o) => ((myProfile.seenObjects) || {})[o.id]).length, [[25, 20], [75, 60], [125, 100], [175, 130], [225, 160], [275, 180], [325, 200], [Math.max(OBJECTS.length, 326), 200]]); // the top tier keeps its original id (it carries the total), so claims already made stay claimed
   achTier("Collector", "Combo hunter", (n) => `See ${n} different item combinations`, () => Object.keys((myProfile.seenCombos) || {}).length, [[50, 20], [250, 60], [1000, 200], [1500, 200], [2000, 200], [2500, 200], [3000, 200]]);
+  ACHIEVEMENTS.push({ id: "pet-parade", cat: "Collector", name: "Pet Parade",
+    desc: `Discover ${PET_PARADE_TARGET} of ${PET_PARADE_OBJECTS.length} pets and aquarium fish`,
+    target: PET_PARADE_TARGET, reward: 0, home: "cat-room", homeLabel: "Cat Room", icon: "icons/flair/paw-cat.png",
+    progress: () => PET_PARADE_OBJECTS.filter((id) => myProfile.seenObjects?.[id]).length });
   achTier("Accuracy", "Spot on", (n) => `Land ${n} guess${n > 1 ? "es" : ""} within 1%`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]], { total: 10, ratio: 1.6 });
   achTier("Accuracy", "Perfect", (n) => `Guess exactly right ${n} time${n > 1 ? "s" : ""}`, ACH_STAT("perfects"), [[1, 75], [5, 250]], { total: 10, ratio: 1.8 });
   achTier("Winning", "Round winner", (n) => `Win ${n} round${n > 1 ? "s" : ""}`, ACH_STAT("roundWins"), [[1, 10], [10, 40], [50, 150]], { total: 10 });

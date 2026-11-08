@@ -5,7 +5,7 @@
 #home-art .cr-bobtail,
 #home-art .cr-bowls { position: absolute; }
 #home-art .cr-couch { left: 42%; bottom: 38%; width: 45%; }
-#home-art .cr-side-table { left: 14%; bottom: 40%; width: 25%; }
+#home-art .cr-side-table { left: max(11%, calc((100% - 100dvw) / 2 + 8px)); bottom: 40%; width: 25%; }
 #home-art .cr-table,
 #home-art .cr-base,
 #home-art .cr-alt { display: block; width: 100%; }
@@ -30,10 +30,19 @@
 #home-art .cr-bobtail[data-state=grooming] .cr-groom { animation: crFirst .65s steps(1, end) infinite; }
 #home-art .cr-bobtail[data-state=grooming] .cr-groom-alt { animation: crSecond .65s steps(1, end) infinite; }
 
-#home-art .cr-luna { left: 15%; bottom: 22.5%; width: min(37%, 17.08cqh); transform-origin: 58% 100%; }
+#home-art .cr-luna { left: max(12%, calc((100% - 100dvw) / 2 + 7px)); bottom: 22.5%; width: min(43%, 19.85cqh); transform-origin: 58% 100%; }
 #home-art .cr-luna-body { position: relative; transform-origin: 61% 100%; animation: crBreathe 4.5s ease-in-out infinite; }
+/* Leave the root of the tail on the body so the swaying layer overlaps its join. */
+#home-art .cr-luna-body > :not(.cr-tail) {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 84.8%, 22.7% 84.8%,
+    25% 75%, 31% 65%, 36% 58%, 36% 31%, 0 31%);
+}
+#home-art .cr-tail {
+  opacity: 1; transform-origin: 15% 85%; animation: crTailSway 4s ease-in-out infinite;
+  clip-path: polygon(0 31%, 36% 31%, 36% 58%, 31% 65%, 25% 75%, 22.7% 84.8%, 23.5% 90%, 0 90%);
+}
 #home-art .cr-blink { animation: crBlink 6.8s steps(1, end) infinite; }
-#home-art .cr-luna[data-tapped] .cr-luna-body > :not(.cr-paw) { visibility: hidden; }
+#home-art .cr-luna[data-tapped] .cr-luna-body > :is(.cr-base, .cr-blink) { visibility: hidden; }
 #home-art .cr-luna[data-tapped] .cr-paw { opacity: 1; }
 
 #home-art .cr-bowls { left: 60%; bottom: 22%; width: min(25%, 11.54cqh); }
@@ -57,6 +66,7 @@
 @keyframes crFirst { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes crSecond { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
 @keyframes crBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.012,1.025); } }
+@keyframes crTailSway { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
 @keyframes crBlink { 0%,45%,53%,100% { opacity: 0; } 47%,51% { opacity: 1; } }
 @keyframes crSwim {
   0%,100% { transform: translate(-116%, 4%); }
