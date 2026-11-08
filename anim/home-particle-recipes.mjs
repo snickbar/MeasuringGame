@@ -9,6 +9,7 @@ export const HOME_PARTICLES={
   town:[['paper',7],['petal',5,{colors:green}]],
   corgi:[['petal',8,{colors:green}],['pollen',6]],
   'cat-room':[['mote',10]],
+  jungle:[['petal',9,{colors:['#7ca841','#9fbd4d','#4c953f'],dr:135}]],
   wheels:[['ember',10],['smoke',5]],
   lighthouse:[['spray',14],['bubble',6]],
   underwater:[['bubble',24],['caustic',6]],

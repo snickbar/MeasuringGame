@@ -10,6 +10,11 @@ import { decorateHomeIdle } from './home-idle.mjs';
 import { KITCHEN_TOOL_CROPS } from './home-idle-art.mjs';
 import { decorateHomeStories } from './home-stories.mjs';
 const BASE = "anim/home-art/";
+const CUSTOM_HOME_SIZE = { width: 900, height: 1950 };
+const CUSTOM_HOME = {
+  "cat-room": () => import("./home-cat-room.mjs"),
+  jungle: () => import("./home-jungle.mjs"),
+};
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
 // -1 = right to left), kind (glide / flutter) and faces (1 if the artwork looks right, -1 if it looks left) so it is mirrored to face where it flies.
@@ -57,7 +62,7 @@ function boing(scene, role) {
     o.connect(g); g.connect(actx.destination); tapSounds.add(o); o.onended = () => tapSounds.delete(o); o.start(t); o.stop(t + .28);
   } catch (e) {}
 }
-export const homeSceneHasArt = (scene) => scene === "cat-room" || !!(CONFIG[scene] && HOME_ART[scene]);
+export const homeSceneHasArt = (scene) => Object.hasOwn(CUSTOM_HOME, scene) || !!(CONFIG[scene] && HOME_ART[scene]);
 function load(src) {
   return new Promise((yes, no) => { const img = new Image(); img.decoding = "async"; img.onload = async () => { try { await img.decode(); yes(img); } catch (e) { no(e); } }; img.onerror = no; img.src = src; });
 }
@@ -95,11 +100,11 @@ export async function installHomeScene() {
   return task;
 }
 async function buildHomeScene(home, scene, current) {
-  if (scene === "cat-room") {
-    const { buildCatRoom, CAT_ROOM_SIZE } = await import("./home-cat-room.mjs");
-    const room = await buildCatRoom(home, load, current);
+  if (Object.hasOwn(CUSTOM_HOME, scene)) {
+    const { build } = await CUSTOM_HOME[scene]();
+    const room = await build(home, load, current);
     if (room && home.isConnected && current()) {
-      mountHomeStage(home, scene, room.root, room.stage, CAT_ROOM_SIZE,
+      mountHomeStage(home, scene, room.root, room.stage, CUSTOM_HOME_SIZE,
         () => room.start(role => boing(scene, role), stopHomeSound));
     }
     return;

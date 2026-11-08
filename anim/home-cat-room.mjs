@@ -1,10 +1,9 @@
 const ART = 'anim/home-art/cat-room/';
-export const CAT_ROOM_SIZE = { width: 900, height: 1950 };
 const FISH = ['tropical-fish', 'clownfish', 'goldfish'];
 const WALK_EDGE = { left: -110, right: 545 };
 const WALK_START = 220;
 
-export async function buildCatRoom(home, load, current) {
+export async function build(home, load, current) {
   const sprites = ['luna', 'blink', 'paw', 'bowl', 'couch', 'table', 'cage',
     'walk-a', 'walk-b', 'groom-a', 'groom-b', 'run-a', 'run-b'];
   await Promise.all([

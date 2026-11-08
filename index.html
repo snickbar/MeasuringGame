@@ -32,7 +32,7 @@ if (location.protocol === "file:") {
 /* Home screen picture: the one you equipped, or with Random on, a different owned one each time Home loads
    (never the same twice in a row). The ants are the default. KEEP F IN SYNC with HOME_SCREENS in the app below. */
 (function () {
-  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", "cat-room": "home-cat-room.webp", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg", underwater: "home-underwater.jpg", "toy-box": "home-toy-box.jpg", "make-believe": "home-make-believe.webp", "holiday-mix": "home-holiday-mix.webp" }, id = "ants";
+  var F = { ants: "home-watermelon.jpg", sunflower: "home-sunflower.jpg", games: "home-games.jpg", house: "home-house.jpg", corgi: "home-corgi.jpg", "cat-room": "home-cat-room.webp", jungle: "home-jungle.webp", wheels: "home-wheels.jpg", lighthouse: "home-lighthouse.jpg", penguin: "home-penguin.jpg", cactus: "home-cactus.jpg", giraffe: "home-giraffe.jpg", dragon: "home-dragon.jpg", space: "home-space.jpg", snacks: "home-snacks.jpg", town: "home-town.jpg", underwater: "home-underwater.jpg", "toy-box": "home-toy-box.jpg", "make-believe": "home-make-believe.webp", "holiday-mix": "home-holiday-mix.webp" }, id = "ants";
   // Random picks any owned scene; it avoids repeating the last one only when there are 3 or more to choose from
   // (with just two, "never the same twice" would make them strictly alternate). window.mgPickHome is also used by the Home button.
   var G = typeof window !== "undefined" ? window : globalThis;
@@ -4199,6 +4199,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/home-motion.css">
 <link rel="stylesheet" href="anim/home-new-scenes.css">
 <link rel="stylesheet" href="anim/home-cat-room.css">
+<link rel="stylesheet" href="anim/home-jungle.css">
 <link rel="stylesheet" href="anim/home-idle.css">
 <link rel="stylesheet" href="anim/home-stories.css">
 <link rel="stylesheet" href="anim/ui-delight.css">
@@ -6914,6 +6915,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     "domestic-cat", "corgi", "dachshund", "hamster", "guinea-pig", "ferret", "rabbit",
     "parrot", "turtle", "tortoise", "goldfish", "clownfish", "tropical-fish", "koi-fish",
   ];
+  const CANOPY_CREW_OBJECTS = ["monkey", "sloth", "owl", "cobra"];
   const HOME_SCREENS = [
     { id: "ants", file: "home-watermelon.jpg", name: "Backyard", how: "Free from the start" },
     { id: "sunflower", file: "home-sunflower.jpg", name: "Garden", world: "tiny" },
@@ -6923,6 +6925,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     { id: "town", file: "home-town.jpg", name: "Town", world: "town" },
     { id: "corgi", file: "home-corgi.jpg", name: "Dog Park", world: "critters" },
     { id: "cat-room", file: "home-cat-room.webp", name: "Cat Room", how: "Claim Pet Parade in Awards" },
+    { id: "jungle", file: "home-jungle.webp", name: "Jungle", how: "Claim Canopy Crew in Awards" },
     { id: "wheels", file: "home-wheels.jpg", name: "Launch Pad", world: "wheels" },
     { id: "lighthouse", file: "home-lighthouse.jpg", name: "Seaside", world: "landmarks" },
     { id: "underwater", file: "home-underwater.jpg", name: "Underwater", world: "under-the-sea" },
@@ -15864,6 +15867,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     desc: `Discover ${PET_PARADE_TARGET} of ${PET_PARADE_OBJECTS.length} pets and aquarium fish`,
     target: PET_PARADE_TARGET, reward: 0, home: "cat-room", homeLabel: "Cat Room", icon: "icons/flair/paw-cat.png",
     progress: () => PET_PARADE_OBJECTS.filter((id) => myProfile.seenObjects?.[id]).length });
+  ACHIEVEMENTS.push({ id: "canopy-crew", cat: "Collector", name: "Canopy Crew",
+    desc: "Discover the monkey, sloth, owl, and cobra",
+    target: CANOPY_CREW_OBJECTS.length, reward: 0, home: "jungle", homeLabel: "Jungle", icon: "items/monkey.webp",
+    progress: () => CANOPY_CREW_OBJECTS.filter((id) => myProfile.seenObjects?.[id]).length });
   achTier("Accuracy", "Spot on", (n) => `Land ${n} guess${n > 1 ? "es" : ""} within 1%`, ACH_STAT("spotOns"), [[1, 20], [10, 75], [50, 250]], { total: 10, ratio: 1.6 });
   achTier("Accuracy", "Perfect", (n) => `Guess exactly right ${n} time${n > 1 ? "s" : ""}`, ACH_STAT("perfects"), [[1, 75], [5, 250]], { total: 10, ratio: 1.8 });
   achTier("Winning", "Round winner", (n) => `Win ${n} round${n > 1 ? "s" : ""}`, ACH_STAT("roundWins"), [[1, 10], [10, 40], [50, 150]], { total: 10 });
