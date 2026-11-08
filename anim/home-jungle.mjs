@@ -4,7 +4,7 @@ const OWL = 'items/owl.webp';
 const MONKEYS = ['a', 'b', 'c'];
 
 export async function build(home, load, current) {
-  const sprites = ['tail', 'sloth', 'sloth-wave', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
+  const sprites = ['tail', 'sloth', 'sloth-release', 'sloth-wave', 'sloth-wink', 'snake', ...MONKEYS.map(id => 'monkey-' + id)];
   await Promise.all([load(PLATE), load(OWL), ...sprites.map(name => load(ART + name + '.webp'))]);
   if (!current()) return null;
 
@@ -33,8 +33,11 @@ export async function build(home, load, current) {
       </div></div>${hit('monkey', 'Play with monkey ' + (i + 1))}</div>`).join('')}
     </div>
     <div class="j-sloth"><div class="j-sloth-pose">
-      ${sprite('sloth-wave', 'j-sloth-wave')}
-      ${sprite('sloth', 'j-art j-sloth-grip')}<i class="j-lid j-lid-left"></i><i class="j-lid j-lid-right"></i>
+      ${sprite('sloth', 'j-sloth-layer j-sloth-arm-grip')}
+      ${sprite('sloth-release', 'j-sloth-layer j-sloth-release')}
+      ${sprite('sloth-wave', 'j-sloth-layer j-sloth-wave-arm')}
+      ${sprite('sloth-wave', 'j-sloth-layer j-sloth-wave-paw')}
+      ${sprite('sloth', 'j-art j-sloth-grip')}${sprite('sloth-wink', 'j-sloth-wink')}
     </div>${hit('sloth', 'Say hello to the sloth')}</div>
   </div>`;
 
@@ -42,7 +45,6 @@ export async function build(home, load, current) {
     const events = new AbortController();
     const doc = home.ownerDocument, media = matchMedia('(prefers-reduced-motion: reduce)');
     const vine = root.querySelector('.j-vine'), sloth = root.querySelector('.j-sloth');
-    const slothArm = sloth.querySelector('.j-sloth-wave');
     const monkeys = [...root.querySelectorAll('.j-acting')];
     const reactions = [];
     let active;
@@ -60,18 +62,17 @@ export async function build(home, load, current) {
         stopSound();
       }
     }
-    function react(el, frames, timing, onFinish) {
+    function react(el, frames, timing) {
       const motion = el.animate(frames, timing);
       reactions.push(motion);
       motion.onfinish = () => {
         const index = reactions.indexOf(motion);
         if (index !== -1) reactions.splice(index, 1);
-        onFinish?.();
       };
     }
     root.addEventListener('click', event => {
       const pet = event.target.closest('[data-j-pet]')?.dataset.jPet;
-      if (!active || !pet || reactions.length) return;
+      if (!active || !pet || reactions.length || sloth.hasAttribute('data-waving')) return;
       play(pet === 'monkey' ? 0 : 1);
       if (pet === 'monkey') {
         react(vine, [
@@ -90,17 +91,10 @@ export async function build(home, load, current) {
         });
       } else {
         sloth.dataset.waving = '';
-        const grip = 'translate(-17%, 4%) rotate(27deg)';
-        react(slothArm, [
-          { transform: grip },
-          { transform: 'rotate(-7deg)', offset: .24 },
-          { transform: 'rotate(6deg)', offset: .39 },
-          { transform: 'rotate(-9deg)', offset: .52 },
-          { transform: 'rotate(5deg)', offset: .66 },
-          { transform: 'rotate(-5deg)', offset: .77 },
-          { transform: grip },
-        ], { duration: 2250, easing: 'ease-in-out' }, () => delete sloth.dataset.waving);
       }
+    }, { signal: events.signal });
+    sloth.addEventListener('animationend', event => {
+      if (event.animationName === 'jSlothWavePaw') delete sloth.dataset.waving;
     }, { signal: events.signal });
 
     const observer = new MutationObserver(sync);
