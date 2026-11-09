@@ -25,6 +25,7 @@ window.showPigRound = (scenario, stage = 'reveal') => {
   if (scenario === 'slip') game.chips.me = HS.hsAnteFor(1);
   let hs = stage === 'ready' ? game : HS.hsStartRound(game, { options: [12, 18, q.answer, 81], realIdx: 2, now });
   const picks = Object.fromEntries(ids.map((id, i) => [id, (scenario === 'salute' ? i < 3 : scenario !== 'shrug' && i === 1) ? 2 : 0]));
+  if (scenario === 'incoming-picks') { delete picks.p1; delete picks.p2; }
   if (stage !== 'pick' && stage !== 'ready') hs = HS.hsBeginBetting(hs, picks, now);
   if (stage === 'reveal' || stage === 'standings') {
     hs = HS.hsResolve(hs);
@@ -40,6 +41,10 @@ window.showPigRound = (scenario, stage = 'reveal') => {
   window.scrollTo(0, 0);
 };
 window.redrawPigRound = () => renderHighStakes(roomState);
+window.receivePigRoundPick = id => {
+  roomState = {...roomState, hsPicks: {...roomState.hsPicks, [id]: 0}};
+  renderHighStakes(roomState);
+};
 window.refreshPigTimers = () => hsRefreshTimers();
 window.pigFrame = sprite => Math.round(-4 * new DOMMatrix(getComputedStyle(sprite).transform).m41 / sprite.getBoundingClientRect().width);
 window.pigSequence = (sprite, times = [100, 700, 850, 1050, 1450, 1630, 1900, 6150, 7450]) => {
@@ -135,6 +140,27 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
     return {resumes, reduced: getComputedStyle(sprite).animationName === 'none' && pigFrame(sprite) === 0};
   })()`);
   assert.deepEqual(reducedPick, {resumes: true, reduced: true});
+  const incomingPicks = await evaluate(`(async()=>{
+    document.documentElement.dataset.motion = 'full';
+    showPigRound('incoming-picks', 'pick');
+    const getSprite = () => document.querySelector('.hs-pig-fidget .hs-pig-frames img');
+    const initial = getSprite();
+    await initial.decode();
+    for (let i = 0; i < 120 && pigFrame(initial) !== 3; i++) {
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    const airborne = pigFrame(initial) === 3;
+    const updates = ['p1', 'p2'].map(id => {
+      const before = document.querySelector('[data-hs-pl="' + id + '"] .hs-tag').textContent;
+      receivePigRoundPick(id);
+      const after = document.querySelector('[data-hs-pl="' + id + '"] .hs-tag').textContent;
+      const sprite = getSprite();
+      return {updatedCard: before === 'Thinking...' && after === 'Picked',
+        visible: getComputedStyle(sprite).visibility === 'visible', frame: pigFrame(sprite)};
+    });
+    return {airborne, updates};
+  })()`);
+  assert.deepEqual(incomingPicks, {airborne: true, updates: Array.from({length: 2}, () => ({updatedCard: true, visible: true, frame: 3}))});
   assert.equal(await evaluate(`showPigRound('locked', 'pick'); document.querySelector('.hs-mid .hs-pick-status').textContent.includes('Locked in!') && !document.querySelector('[data-hs-bar]')`), true);
   if (width === 320) await call('Emulation.setDeviceMetricsOverride', {width, height: 840, deviceScaleFactor: 1, mobile: true}, sessionId);
   await evaluate("localStorage.setItem('mg_motion', 'full')");

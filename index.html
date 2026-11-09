@@ -12555,16 +12555,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     </span>`;
   }
   function hsStartTablePig(pig, gameId, round) {
-    const sprite = pig.querySelector('.hs-pig-frames img');
-    sprite.decode().then(() => {
+    const key = `${gameId}:${round}:${pig.dataset.mood}`;
+    const show = () => {
       if (!pig.isConnected) return;
-      const key = `${gameId}:${round}:${pig.dataset.mood}`;
       const now = performance.now();
       if (hsPigRoundKey !== key) { hsPigRoundKey = key; hsPigStartedAt = now; }
-      // Keep the loop in sync when another room update rebuilds the table.
       pig.style.setProperty('--hs-pig-offset', `${hsPigStartedAt - now}ms`);
       pig.classList.add('hs-pig-loaded');
-    }, () => {});
+    };
+    // The same sprite has already decoded this round. Resume before the redraw can show its idle fallback.
+    if (hsPigRoundKey === key) show();
+    else pig.querySelector('.hs-pig-frames img').decode().then(show, () => {});
   }
   let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.showStand; // the host taps "Show standings" once the winner box has had its moment
