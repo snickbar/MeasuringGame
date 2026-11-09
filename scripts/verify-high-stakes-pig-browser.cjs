@@ -23,9 +23,9 @@ window.showPigRound = (scenario, stage = 'reveal') => {
   const now = nowMs(), q = dailyQuestionFor({unitId: 'ant', targetId: 'door'});
   const game = HS.hsNewGame(ids);
   if (scenario === 'slip') game.chips.me = HS.hsAnteFor(1);
-  let hs = HS.hsStartRound(game, { options: [12, 18, q.answer, 81], realIdx: 2, now });
+  let hs = stage === 'ready' ? game : HS.hsStartRound(game, { options: [12, 18, q.answer, 81], realIdx: 2, now });
   const picks = Object.fromEntries(ids.map((id, i) => [id, (scenario === 'salute' ? i < 3 : scenario !== 'shrug' && i === 1) ? 2 : 0]));
-  if (stage !== 'pick') hs = HS.hsBeginBetting(hs, picks, now);
+  if (stage !== 'pick' && stage !== 'ready') hs = HS.hsBeginBetting(hs, picks, now);
   if (stage === 'reveal' || stage === 'standings') {
     hs = HS.hsResolve(hs);
     hs.animEndsAt = now - 1;
@@ -53,6 +53,39 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
     }
     document.getElementById('install-dismiss-btn').click();
   })()`);
+  const deal = await evaluate(`(async()=>{
+    localStorage.setItem('mg_motion', 'full');
+    showPigRound('deal', 'ready');
+    const heading = document.querySelector('[data-hs-dealer]');
+    const tip = heading.querySelector('.hs-dealer-tip');
+    const button = document.getElementById('hs-deal');
+    await tip.decode();
+    const whileDealing = heading.dataset.hsDealer === 'dealing' && !button.disabled;
+    const original = heading.querySelector('.polish-banner-mascot');
+    const watchesDeal = original.getAnimations().some(animation => animation.animationName === 'hsDealerWatch');
+    redrawPigRound();
+    const keptHeading = heading.isConnected;
+    for (let i = 0; i < 180 && heading.dataset.hsDealer !== 'ready'; i++) {
+      await new Promise(r => setTimeout(r, 40));
+    }
+    for (const node of [original, tip]) for (const animation of node.getAnimations()) {
+      animation.pause(); animation.currentTime = 450;
+    }
+    const pot = document.querySelector('.hs-pot-num').textContent.trim();
+    const playerStacks = [...document.querySelectorAll('.hs-pl-coins')].map(el => el.textContent.trim());
+    const onlyTipVisible = getComputedStyle(tip).opacity === '1' && getComputedStyle(original).opacity === '0';
+    return {whileDealing, watchesDeal, keptHeading, onlyTipVisible, pot, funded: playerStacks.every(s => s === '100')};
+  })()`);
+  assert.deepEqual(deal, {whileDealing: true, watchesDeal: true, keptHeading: true, onlyTipVisible: true, pot: '0', funded: true});
+  await screenshot(`dealer-tip-${width}.png`);
+  const reducedDeal = await evaluate(`(() => {
+    localStorage.setItem('mg_motion', 'reduce');
+    document.documentElement.dataset.motion = 'reduce';
+    showPigRound('reduced-deal', 'ready');
+    return {state: document.querySelector('[data-hs-dealer]').dataset.hsDealer, pot: document.querySelector('.hs-pot-num').textContent.trim()};
+  })()`);
+  assert.deepEqual(reducedDeal, {state: 'idle', pot: '0'});
+  await evaluate("localStorage.setItem('mg_motion', 'full')");
   for (const pose of ['salute', 'tip', 'slip', 'shrug']) {
     const state = await evaluate(`(async()=>{
       document.documentElement.dataset.motion = 'full';
@@ -84,5 +117,5 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
   assert.equal(await evaluate(`showPigRound('salute', 'standings'); !!document.querySelector('.hs-stand') && !document.querySelector('.hs-table-pig')`), true);
   assert.equal(await evaluate(`showPigRound('salute', 'pick'); document.querySelector('.hs-table-pig')?.dataset.mood`), 'peek');
   assert.equal(await evaluate(`showPigRound('salute', 'bet'); !document.querySelector('.hs-table-pig')`), true);
-  console.log(`High Stakes piggy at ${width}px: all four poses, motion, redraw, layout and stage scope passed.`);
+  console.log(`High Stakes piggy at ${width}px: opening deal, four results poses, motion, redraw, layout and stage scope passed.`);
 }}).catch(error => { console.error(error); process.exitCode = 1; });
