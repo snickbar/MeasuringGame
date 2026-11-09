@@ -1450,12 +1450,6 @@ if (location.protocol === "file:") {
   @keyframes svHeartDrop { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .sv-acc { font-size: 14px; color: #000; }
   .sv-acc b { font-size: 16px; }
-  .sv-gauge { margin: 12px 4px 4px; }
-  .sv-gauge-bar { position: relative; height: 16px; border-radius: 9px; border: 2px solid #4a2c12; background: linear-gradient(90deg, #e0463c 0 60%, #f3c13a 60% 80%, #4fb85a 80% 100%); }
-  .sv-gauge-line { position: absolute; top: -5px; bottom: -5px; width: 0; border-left: 2px dashed #4a2c12; }
-  .sv-gauge-pin { position: absolute; top: -8px; width: 8px; height: 32px; margin-left: -4px; border-radius: 4px; background: #000; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
-  .sv-gauge-labels { position: relative; height: 16px; margin-top: 4px; font-size: 11px; color: #000; }
-  .sv-gauge-labels span { position: absolute; white-space: nowrap; transform: translateX(-50%); }
   .sv-crack { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(40,20,10,.22); animation: svDim 1.9s ease-out forwards; }
   @keyframes svDim { 0% { opacity: 0; } 12% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
   .sv-crack-wrap { position: relative; width: 190px; height: 175px; animation: svPop .5s cubic-bezier(.2,1.5,.4,1) both, svShake .4s .55s linear; }
@@ -4175,7 +4169,6 @@ if (location.protocol === "file:") {
   .pu-boost-card .dc-res-lines { font-size:16px; margin-top:8px; }
   .pu-boost-verdict { display:flex; gap:6px; justify-content:center; align-items:center; font-size:16px; font-weight:600; margin-top:6px; }
   .pu-boost-verdict .res-mark { width:26px; height:26px; }
-  .pu-boost-card .sv-gauge { margin-top:10px; }
   .reveal-card:has(.pu-result-note) .rv-paper { z-index:1; }
   .reveal-card > .pu-result-note { position:relative; z-index:0; margin-top:-8px; padding-top:12px; border-radius:0 0 10px 10px; }
   .reveal-card > .pu-result-note { display:grid; grid-template-columns:minmax(24px,20%) minmax(0,1fr); column-gap:5px; align-items:center; container-type:inline-size; }
@@ -4320,6 +4313,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/mode-identity.css">
 <link rel="stylesheet" href="anim/illustrated-details.css" />
 <link rel="stylesheet" href="anim/which-bigger-summary.css" />
+<link rel="stylesheet" href="anim/survival-results.css" />
 <link rel="stylesheet" href="anim/daily-extras.css" />
 <link rel="stylesheet" href="anim/monthly-extras.css" />
 <link rel="stylesheet" href="anim/party-finale.css" />
@@ -5314,7 +5308,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createRoundScoreReveal } from "./anim/round-score-reveal.mjs";
   import { reactionAvailability } from "./anim/reaction-availability.mjs";
   import { createWorldProgressPolish } from "./anim/world-progress-polish.mjs";
-  import { survivalKnightRig, survivalDragonRig, preloadSurvivalRigArt, installSurvivalReplay, SURVIVAL_IMPACT_MS } from "./anim/survival-rigs.mjs";
+  import { survivalBattleHtml, mountSurvivalBattle, preloadSurvivalRigArt, SURVIVAL_IMPACT_MS } from "./anim/survival-rigs.mjs";
   import { reactionEntrance } from "./anim/reaction-entrance.mjs";
   import { createBotReactions } from "./anim/bot-reactions.mjs";
   import { createUIDelight } from "./anim/ui-delight.mjs";
@@ -14218,7 +14212,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   const survivalContentEl = document.getElementById("survival-content");
   popChangedNumbers(survivalContentEl);
-  let sv = null, svAnim = null, svPairs = null, svRevealToken = 0;
+  let sv = null, svAnim = null, svBattleStop = null, svPairs = null, svRevealToken = 0;
   function survivalPairs() {
     if (svPairs) return svPairs;
     svPairs = [];
@@ -14348,17 +14342,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   // How safe was that guess? A bar from 0 to 100 % with the line you have to clear and a pin where you landed.
   function svGaugeHtml(acc) {
-    // Same rule the game uses to take a life: at or above SURVIVAL_PASS is safe, anything under is not, even by 0.1.
-    const a = Math.max(0, Math.min(100, acc)), safe = a >= SURVIVAL_PASS, gap = Math.abs(a - SURVIVAL_PASS);
-    const pts = gap >= 1 ? String(Math.round(gap)) : (Math.round(gap * 10) / 10).toFixed(1).replace(/\.0$/, ""), plural = pts === "1" ? "" : "s";
-    const m = safe ? gap : -gap;
-    const msg = safe ? `Safe by ${pts} point${plural}` : `${pts} point${plural} short`;
-    // Close calls get a plain callout (no screen effects): barely safe, so close, or a great guess.
-    const call = safe && gap < 5 ? "Phew, barely safe!" : !safe && gap <= 5 ? "So close!" : a >= 90 ? "Great guess!" : "";
-    const near = gap < 5;
-    return `<div class="sv-gauge"><div class="sv-gauge-bar"><span class="sv-gauge-line" style="left:${SURVIVAL_PASS}%"></span><span class="sv-gauge-pin${near ? " near" : ""}" style="left:${a}%"></span></div>
-      <div class="sv-gauge-labels"><span style="left:${SURVIVAL_PASS / 2}%">Lose a life</span><span style="left:${(SURVIVAL_PASS + 80) / 2}%">Safe</span><span style="left:90%">Great</span></div>
-      <div class="sv-gauge-foot">${call ? `<span class="sv-callout ${m >= 0 ? "ok" : "bad"}">${call}</span>` : ""}<span class="dc-note"><b>${msg}</b></span></div></div>`;
+    const accuracy = Math.max(0, Math.min(100, acc)), safe = accuracy >= SURVIVAL_PASS;
+    const gap = formatAccuracy(Math.abs(accuracy - SURVIVAL_PASS));
+    const margin = gap === "0"
+      ? (safe ? "Right at the safe cutoff" : "Just short of safety")
+      : `${gap} point${gap === "1" ? "" : "s"} ${safe ? "above the safe cutoff" : "short of safety"}`;
+    const zone = accuracy >= 80 ? "great" : safe ? "safe" : "lost";
+    return `<div class="sv-meter${prefersReducedMotion() ? "" : " revealing"}" data-zone="${zone}" role="meter" aria-label="Survival accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}" aria-valuetext="${svAccuracyLabel(accuracy)} accurate. ${SURVIVAL_PASS}% needed to stay safe." style="--accuracy:${accuracy}%;--safe-cutoff:${SURVIVAL_PASS}%">
+      <div class="sv-meter-track" aria-hidden="true">
+        <span class="sv-meter-fill"></span><span class="sv-meter-cutoff">${SURVIVAL_PASS}% needed</span>
+        <span class="sv-meter-marker"><span class="sv-meter-ring"></span><span class="sv-meter-pin"></span><span class="sv-meter-sparks"><i></i><i></i><i></i><i></i><i></i></span></span>
+      </div>
+      <div class="sv-meter-zones" aria-hidden="true"><span>Lose a life</span><span>Safe</span><span>Great</span></div>
+    </div><p class="sv-meter-gap">${margin}</p>`;
+  }
+  function svAccuracyLabel(accuracy) {
+    const shown = formatAccuracy(accuracy);
+    return accuracy < SURVIVAL_PASS && Number(shown) === SURVIVAL_PASS ? "&lt;" + SURVIVAL_PASS + "%" : shown + "%";
   }
   // Show the result of the round: the card with the gauge, then (if it cost a life) the cracking heart and the hearts update.
   function svShowResult(m) {
@@ -14367,7 +14367,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     void preloadWbReactionArt();
-    sv.res = { acc, ok, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId), side: wbSidePick(ok || sv.shieldEvent === "saved", acc >= 90 ? 2 : 20, "", false), quip: sv.shieldEvent === "saved" ? "You keep your heart, but this round doesn't count." : svQuip(ok, acc) };
+    sv.res = { acc, ok, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId) };
     sv.phase = "result";
     renderSurvival();
   }
@@ -14434,15 +14434,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   window.addEventListener("resize", () => { if (sv && (sv.phase === "question" || sv.phase === "result")) svFit(); });
   // Checkpoint (every 5th round survived): gold coins pop out of the check mark.
   const svCoinBurstHtml = () => prefersReducedMotion() ? "" : Array.from({ length: 12 }, (_, i) => { const a = (i / 12) * Math.PI * 2 + Math.random() * 0.4, d = 70 + Math.random() * 40; return `<img class="sv-coin" src="icons/coin-v2.png" alt="" style="--dx:${Math.round(Math.cos(a) * d)}px;--dy:${Math.round(Math.sin(a) * d - 20)}px;--w:${(i * 0.03).toFixed(2)}s">`; }).join("");
-  // Survival's mascots (only one scene at a time): knight cheers when safe, dragon breathes fire on a lost life,
-  // and when the shield saves you the dragon's fire hits the knight's raised shield.
-  function svSceneHtml(r, ok) {
-    if (r.saved) return `<div class="sv-scene saved">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false"><img class="sv-knight" src="icons/survival-knight-block.webp" alt="" draggable="false" role="button" tabindex="0" aria-label="Replay shield block"><span class="sv-spark" aria-hidden="true"></span></div>`;
-    const burningX = ok ? "" : '<span class="sv-x-fire" aria-hidden="true"><i></i><i></i><i></i></span>';
-    const mark = `<div class="sv-markpos">${burningX}<div class="wb-burst">${r.checkpoint ? svCoinBurstHtml() : ""}<div class="wb-mark ${ok ? "ok" : "bad"}" aria-label="${ok ? "Safe" : "Lost a life"}">${ok ? "&#10004;" : "&#10006;"}</div></div></div>`;
-    if (ok) return `<div class="sv-scene safe">${survivalKnightRig()}${mark}</div>`;
-    return `<div class="sv-scene lost">${survivalDragonRig()}<img class="sv-flame" src="icons/survival-dragon-flame.webp" alt="" draggable="false">${mark}</div>`;
-  }
   function svResultHtml() {
     const r = sv.res, q = sv.q, ok = r.ok, over = sv.lives <= 0 && !ok && !r.saved;
     const u = OBJECT_BY_ID.get(q.unitId), t = OBJECT_BY_ID.get(q.targetId);
@@ -14452,14 +14443,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `<div class="pin-top">${svHudHtml(sv.lives + (sv.lossPending ? 1 : 0), sv.asked, svRunAcc(sv.accs.length), !!sv.prevShield, sv.prevChain || 0)}${r.themed ? svThemeStripHtml(r.themed) : ""}</div>
       <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
       <div class="wb-verdict ${r.saved ? "saved" : ok ? "ok" : "bad"}">
-        <div class="wb-result-stage sv-scene-wrap">${svSceneHtml(r, ok)}</div>
-        <div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div></div>
+        ${survivalBattleHtml(r.saved ? "saved" : ok ? "safe" : "miss", prefersReducedMotion())}
+        <div class="sv-result-heading"><div class="wb-verdict-t${r.checkpoint ? " mile" : ""}">${r.checkpoint ? "Checkpoint!" : title}</div>${r.checkpoint ? `<span class="sv-checkpoint-coins" aria-hidden="true">${svCoinBurstHtml()}</span>` : ""}</div>
         ${r.themed && ok ? `<div class="sv-callout bonus sv-arr" style="--a:.55s"><b>Bonus!</b> Themed round won &middot; +${SURVIVAL_THEME_COINS} coins instead of +${SURVIVAL_COINS_PER}</div>` : ""}
-        <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
-        ${r.boost ? `<div class="sv-arr" style="--a:.75s">${r.boost}</div>` : ""}
+        <div class="sv-answer">
+          <span class="sv-answer-label">Correct answer</span><strong>${escapeHtml(String(r.ans))}</strong>
+          <dl class="sv-answer-stats"><div><dt>Your guess</dt><dd>${said}</dd></div><div><dt>Accuracy</dt><dd class="sv-answer-accuracy">${svAccuracyLabel(r.acc)}</dd></div></dl>
+          ${svGaugeHtml(r.acc)}
+        </div>
+        ${r.boost || ""}
         ${r.earned ? `<div class="sv-callout earn sv-arr" style="--a:.85s"><span class="sv-earn-shield"><img src="icons/survival-shield-full.webp" alt="" draggable="false"></span>Shield earned! It will save you from one lost life.</div>` : ""}
-        <p class="wb-line sv-arr" style="--a:1s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
-        <div class="sv-arr sv-arr-gauge" style="--a:1.3s">${svGaugeHtml(r.acc)}</div>
       </div>
       <div class="wb-diff wb-diff-res">${svStampHtml(q.answer)}</div>
       <div class="pin-bottom">${over && !sv.revived ? `<div class="wl-done-split"><button type="button" class="dc-btn" id="sv-next">See my score</button><button type="button" class="dc-btn wl-ad-btn" id="sv-revive"><span>Watch ad: revive</span><small>+1 life, once per run</small></button></div>` : `<button type="button" class="dc-btn" id="sv-next">${over ? "See my score" : "Next round"}</button>`}</div>`;
@@ -14473,7 +14466,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (fromHub) overlayReturnScreen = soloScreenEl;
     modeTutorialUI?.auto('survival');
   }
-  function survivalStop() { svRevealToken++; if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; } }
+  function survivalStop() {
+    svRevealToken++;
+    svBattleStop?.();
+    svBattleStop = null;
+    if (svAnim) { try { svAnim.destroy(); } catch (e) {} svAnim = null; }
+  }
   function renderSurvival() {
     if (!sv) return;
     if (sv.phase === "question") rerollPerRound(sv, sv.asked);
@@ -14522,7 +14520,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "result") {
       survivalStop();
       el.innerHTML = svResultHtml();
-      const result = sv.res, impactDelay = prefersReducedMotion() ? 0 : SURVIVAL_IMPACT_MS;
+      const battle = el.querySelector(".sv-battle");
+      svBattleStop = mountSurvivalBattle(battle, survivalScreenEl, prefersReducedMotion);
+      const result = sv.res, impactDelay = prefersReducedMotion() ? 0 : SURVIVAL_IMPACT_MS[battle.dataset.scene] || 0;
       requestAnimationFrame(() => requestAnimationFrame(svFit));
       // Shield moments: it breaks like a heart when it saves you; earning one pops it into the header; chain pips tick up.
       if (sv.res.checkpoint) { try { playSound("coins"); } catch (e) {} vibrate([30, 40, 30, 40, 60]); }
@@ -14550,13 +14550,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     survivalStop();
     const best = survivalBest();
     el.innerHTML = `<h2 class="dc-title">Game over</h2>
-      <div class="dc-card dc-hot sv-arr" style="--a:.05s"><div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div>${svBestLine()}${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
+      <div class="dc-card dc-hot sv-arr" style="--a:.05s">${sv.newBest ? survivalBattleHtml("record", prefersReducedMotion()) : ""}<div class="wl-big">${sv.survived}</div><div class="dc-big">round${sv.survived === 1 ? "" : "s"} survived</div>${svBestLine()}${sv.gain ? `<div class="dc-note">+${sv.gain} coins</div>` : ""}</div>
       ${svRecapHtml()}
       <div class="dc-card sv-rank" id="sv-rank" hidden></div>
       ${adBarSlot("survival", "sv-finish")}
       <button type="button" class="dc-btn" id="sv-again">Play again</button>
       <button type="button" class="dc-btn dc-alt" id="sv-share">Share my score</button>
       <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
+    const battle = el.querySelector(".sv-battle");
+    if (battle) svBattleStop = mountSurvivalBattle(battle, survivalScreenEl, prefersReducedMotion);
     svShowRank();
     if (sv.survived > 0 && !sv.flairShown) { sv.flairShown = true; soloFlair(el.querySelector(".dc-hot"), 900); }
     countText(el.querySelector(".wl-big"), 700, 250);
@@ -23405,7 +23407,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   gamePolish = createPolish({ reduced: prefersReducedMotion, sound: playSound });
   new MutationObserver(records => { if (records.some(r => ALL_SCREEN_ELS.includes(r.target))) applyBackground(); }).observe(document.body, {attributes:true, attributeFilter:['class'], subtree:true});
   applyBackground();
-  installSurvivalReplay();
   uiDelight = createUIDelight({ screens: ALL_SCREEN_ELS, reduced: prefersReducedMotion });
   discoveryUI = createDiscoveryPresentation({profile:()=>({owner:deviceId,data:myProfile}),object:id=>OBJECT_BY_ID.get(id),reduced:prefersReducedMotion,context:()=>{
       const active=id=>document.getElementById(id)?.classList.contains('active');

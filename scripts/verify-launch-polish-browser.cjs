@@ -41,17 +41,25 @@ window.__launch={
   dialog.innerHTML='<div class="mt-scene">'+partyTutorialScene('guess')+'</div><div class="mt-scene">'+extraTutorialScene('hsActions')+'</div><div class="mt-scene">'+extraTutorialScene('bluffVote')+'</div>';
   dialog.showModal();
  },
- survival:kind=>{
+ survival:(kind, accuracy=kind==='safe'?92.3:34.6)=>{
   modeTutorialUI.close();for(const d of document.querySelectorAll('dialog[open]'))d.close();
   ALL_SCREEN_ELS.forEach(e=>e.classList.remove('active'));survivalScreenEl.classList.add('active');
-  survivalContentEl.innerHTML='<section class="wb-verdict"><div class="wb-result-stage sv-scene-wrap">'+svSceneHtml({saved:kind==='saved'},kind==='safe')+'</div></section>';
+  bottomToolbarEl.classList.remove('active');
+  const q=dailyQuestionFor({unitId:'ant',targetId:'door'});
+  sv={runId:'sv-result-test',phase:kind==='record'?'over':'result',lives:kind==='miss'?2:3,prevShield:kind==='saved',
+    lossPending:kind==='miss',shield:false,survived:21,asked:23,accs:[{r:accuracy/100}],gain:63,
+    prevBest:19,newBest:kind==='record',q,g:kind==='safe'?8:3,
+    res:{ok:kind==='safe',saved:kind==='saved',acc:accuracy,ans:'8.67'}};
+  renderSurvival();
  },
  survivalPose:async(kind,time)=>{
-  window.__launch.survival(kind);const scene=document.querySelector('.sv-scene');
+  window.__launch.survival(kind);const scene=document.querySelector('.sv-battle');
   await Promise.all([...scene.querySelectorAll('img')].map(img=>img.decode()));
-  scene.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=time});
-  const css=selector=>{const node=scene.querySelector(selector);return node?getComputedStyle(node):null};
-  return {jaw:css('.sv-dragon-jaw')?.transform,body:css('.sv-dragon-body')?.transform,flame:Number(css('.sv-flame')?.opacity),arm:css('.sv-sword-arm')?.transform};
+  survivalContentEl.querySelectorAll('.sv-battle,.sv-meter').forEach(node=>node.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=time}));
+  const css=selector=>{const node=survivalContentEl.querySelector(selector);return node?getComputedStyle(node):null};
+  return {jaw:css('.sv-dragon-jaw').transform,flame:Number(css('.sv-battle-fire')?.opacity),burn:Number(css('.sv-battle-burn i')?.opacity),
+    reflection:Number(css('.sv-battle-deflected-fire i')?.opacity),strike:Number(css('.sv-battle-strike-pose')?.opacity),
+    ring:Number(css('.sv-meter-ring')?.opacity),fill:css('.sv-meter-fill')?.clipPath};
  },
  survivalQuestion:()=>{
   modeTutorialUI.mark('survival');modeTutorialUI.close();
@@ -85,33 +93,49 @@ runFixture({html,modules:{'/__fake/app.mjs':'export const initializeApp=()=>({})
  const world=await evaluate(`({stars:document.querySelectorAll('#wl-level-1 .world-star-land').length,next:document.getElementById('wl-level-2').classList.contains('world-level-open'),best:!!document.querySelector('#wl-level-1 .world-best-updated')})`);
  assert.equal(world.stars,2);assert(world.next&&world.best);await screenshot('world-progress-'+width+'.png');
  await evaluate('window.__launch.tutorial()');await wait(100);
- const tutorial=await evaluate(`({backs:document.querySelectorAll('.pt-key-back').length,objects:document.querySelectorAll('.pt-object-card').length,actions:document.querySelectorAll('[data-hs-action]').length,choices:document.querySelectorAll('[data-choice]').length,inputs:document.querySelectorAll('#mode-tutorial input').length})`);
+ const tutorial=await evaluate(`({backs:document.querySelectorAll('.pt-key-back').length,objects:document.querySelectorAll('.pt-object-card').length,actions:document.querySelectorAll('[data-hs-action]').length,choices:document.querySelectorAll('.xb-votes > span').length,inputs:document.querySelectorAll('#mode-tutorial input').length})`);
  assert.deepEqual(tutorial,{backs:1,objects:2,actions:4,choices:3,inputs:0});await screenshot('tutorial-controls-'+width+'.png');
- for(const kind of ['safe','lost','saved']){
-  await evaluate('window.__launch.survival('+JSON.stringify(kind)+')');await wait(850);
-  const survival=await evaluate(`(()=>{const scene=document.querySelector('.sv-scene'),r=scene.getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,rigs:scene.querySelectorAll('.sv-rig').length,jaw:!!scene.querySelector('.sv-dragon-jaw'),arm:!!scene.querySelector('.sv-sword-arm'),animation:String(scene.querySelector('.sv-sword-arm,.sv-dragon-jaw')?.getAnimations()[0]?.effect.getTiming().iterations)}})()`);
-  assert(!survival.overflow&&survival.rigs===1,'Survival fits narrow phones');assert(survival.arm||survival.jaw);assert.equal(survival.animation,'Infinity','actions repeat with a quiet rest');
+ for(const [kind,time] of [['safe',1350],['miss',3000],['saved',1560],['record',1700]]){
+  await evaluate(`window.__launch.survivalPose('${kind}',${time})`);
+  if(kind==='record') await wait(750);
+  const survival=await evaluate(`(()=>{const scene=document.querySelector('.sv-battle'),r=scene.getBoundingClientRect(),meter=document.querySelector('.sv-meter');return {fits:r.left>=0&&r.right<=innerWidth+1&&document.documentElement.scrollWidth<=innerWidth,rigs:scene.querySelectorAll('.sv-rig').length,accuracy:meter?.getAttribute('aria-valuenow')??null,answer:document.querySelector('.sv-answer strong')?.textContent??null}})()`);
+  assert.deepEqual(survival,{fits:true,rigs:2,accuracy:kind==='record'?null:kind==='safe'?'92.3':'34.6',answer:kind==='record'?null:'8.67'});
   await screenshot('survival-'+kind+'-'+width+'.png');
  }
- const shut=await evaluate("window.__launch.survivalPose('lost',0)"),open=await evaluate("window.__launch.survivalPose('lost',2600)"),end=await evaluate("window.__launch.survivalPose('lost',9500)");
- assert.equal(shut.flame,0);assert(open.flame>.9);assert.equal(end.flame,0);assert.notEqual(shut.jaw,open.jaw);assert.equal(shut.jaw,end.jaw);assert.equal(shut.body,'none');assert.equal(open.body,'none');
- assert.equal(await evaluate("Number(getComputedStyle(document.querySelector('.sv-x-fire')).opacity)"),0,'the X finishes burning before the rest');
- const sustained=await evaluate("window.__launch.survivalPose('lost',6500)");assert(sustained.flame>.9,'fire keeps streaming more than six seconds into the action');
- assert(await evaluate("Number(getComputedStyle(document.querySelector('.sv-x-fire')).opacity)>.9"),'the red X burns while the stream hits it');
- await screenshot('survival-burning-X-'+width+'.png');
- const swordReady=await evaluate("window.__launch.survivalPose('safe',0)"),victory=await evaluate("window.__launch.survivalPose('safe',2000)");assert.notEqual(swordReady.arm,victory.arm);
- await evaluate("window.__launch.survivalPose('safe',5000)");await screenshot('survival-straight-sword-'+width+'.png');
- for(const [kind,active,idle] of [['safe',1800,5000],['lost',6500,9500],['saved',6500,9500]]){
-  await evaluate(`window.__launch.survivalPose('${kind}',${active})`);
-  const busy=await evaluate(`(()=>{const rig=document.querySelector('.sv-rig'),clock=document.querySelector('.sv-sword-arm,.sv-dragon-jaw').getAnimations()[0];rig.click();return clock.currentTime})()`);
-  assert.equal(busy,active,'taps during an action neither interrupt nor queue it');
-  await evaluate(`window.__launch.survivalPose('${kind}',${idle})`);
-  const replay=await evaluate(`(()=>{const rig=document.querySelector('${kind==='saved'?'.sv-scene.saved .sv-knight':'.sv-rig'}'),clock=document.querySelector('.sv-sword-arm,.sv-dragon-jaw').getAnimations()[0];rig.click();const reset=clock.currentTime;clock.currentTime=1200;rig.click();return {reset,busy:clock.currentTime,fire:document.querySelector('.sv-flame')?.getAnimations()[0]?.currentTime}})()`);
-  assert.equal(replay.reset,0,'tapping a resting character replays it');assert.equal(replay.busy,1200,'second tap never restarts an active replay');if(kind!=='safe')assert.equal(replay.fire,0,'fire restarts with its dragon');
+ const windup=await evaluate("window.__launch.survivalPose('miss',1100)"),fire=await evaluate("window.__launch.survivalPose('miss',2250)"),burn=await evaluate("window.__launch.survivalPose('miss',4100)");
+ assert.equal(windup.flame,0);assert(fire.flame>.8&&windup.jaw!==fire.jaw);assert(burn.burn>.8&&burn.flame===0);
+ const strike=await evaluate("window.__launch.survivalPose('safe',1350)");assert.equal(strike.strike,1);assert(strike.ring>.1&&strike.fill.includes('7.7%'));
+ const block=await evaluate("window.__launch.survivalPose('saved',1560)");assert(block.reflection>.8);
+ const rest=await evaluate(`(async()=>{await window.__launch.survivalPose('safe',1900);const battle=document.querySelector('.sv-battle'),meter=document.querySelector('.sv-meter-fill').getAnimations()[0];battle.click();const busy=battle.classList.contains('returning');battle.getAnimations({subtree:true}).forEach(a=>a.currentTime=5000);battle.click();return {busy,returns:battle.classList.contains('returning'),sameMeter:meter===document.querySelector('.sv-meter-fill').getAnimations()[0]}})()`);
+ assert.deepEqual(rest,{busy:false,returns:true,sameMeter:true});
+ if(width===390){
+  await evaluate("window.__launch.survival('miss')");
+  await wait(120);
+  await evaluate(`window.survivalLoop=(()=>{
+    const battle=document.querySelector('.sv-battle'),blade=battle.querySelector('.sv-battle-blade'),meter=document.querySelector('.sv-meter-fill').getAnimations()[0];
+    const first=battle.getAnimations({subtree:true}).find(a=>a.animationName==='svBattleDodge');
+    const state={battle,blade,meter,first,cracks:0};
+    const watch=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.classList?.contains('sv-crack'))state.cracks++;});
+    watch.observe(document.body,{childList:true});state.watch=watch;return state;
+  })();true`);
+  let released=false,returned=false,looped=false;
+  for(let i=0;i<105;i++){
+   const pose=await evaluate(`(()=>{const {battle,blade,first}=window.survivalLoop;return {released:blade.classList.contains('released'),returning:battle.classList.contains('returning'),restarted:!battle.getAnimations({subtree:true}).includes(first),held:blade.parentElement.classList.contains('sv-battle-sword-dock')}})()`);
+   released ||= pose.released;
+   returned ||= released&&pose.returning&&pose.held;
+   if(returned&&pose.restarted){looped=true;break}
+   await wait(100);
+  }
+  const loop=await evaluate(`(()=>{const {blade,meter,cracks,watch}=window.survivalLoop;watch.disconnect();return {cracks,blade:document.querySelector('.sv-battle-blade')===blade,meter:document.querySelector('.sv-meter-fill').getAnimations()[0]===meter}})()`);
+  assert.deepEqual({released,returned,looped},{released:true,returned:true,looped:true},'one sword drops, is retrieved, and stays with the knight on the next loop');
+  assert.deepEqual(loop,{cracks:1,blade:true,meter:true});
  }
- await evaluate("document.documentElement.dataset.motion='reduce'");
- const reduced=await evaluate("window.__launch.survivalPose('lost',1000)");assert.equal(reduced.body,'none');assert.equal(await evaluate("document.querySelector('.sv-scene').getAnimations({subtree:true}).length"),0);
- await evaluate("document.documentElement.dataset.motion='full'");
+ await evaluate("window.__launch.survival('miss',59.98)");
+ assert.equal(await evaluate("document.querySelector('.sv-answer-accuracy').textContent"),'<60%');
+ await evaluate("localStorage.setItem('mg_motion','reduce');document.documentElement.dataset.motion='reduce'");
+ await evaluate("window.__launch.survivalPose('miss',1000)");
+ assert.equal(await evaluate("document.querySelector('.sv-battle').getAnimations({subtree:true}).length+document.querySelector('.sv-meter').getAnimations({subtree:true}).length"),0);
+ await evaluate("localStorage.setItem('mg_motion','full');document.documentElement.dataset.motion='full'");
  await evaluate('window.__launch.survivalQuestion()');await wait(150);
  const header=await evaluate(`(()=>{const h=document.querySelector('#survival-content .sv-top'),r=h.getBoundingClientRect();return {coins:document.getElementById('sv-coins').textContent,overflow:h.scrollWidth>h.clientWidth+1,children:[...h.children].every(e=>e.getBoundingClientRect().right<=r.right-35),page:document.documentElement.scrollWidth>innerWidth}})()`);
  assert.equal(header.coins,'371');assert(!header.overflow&&!header.page&&header.children,'merged four-status Survival header fits with a larger round/coin count');await screenshot('survival-header-'+width+'.png');
