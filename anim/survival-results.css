@@ -48,8 +48,8 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-battle-dragon-sweat { left:55%; top:26%; width:5.4%; height:8%; border:1px solid #2a709a; border-radius:4% 60% 60% 60%; background:linear-gradient(125deg,#e9ffff,#50b9e4 73%); transform:rotate(-22deg); }
 .sv-battle-swipe {
   position:absolute; left:-9%; top:6%; width:101%; aspect-ratio:1; z-index:1; border-radius:50%; opacity:0;
-  background:conic-gradient(from 325deg,transparent 7deg,#c0eaff8c 37deg,#edfaff 84deg,#fff9db 116deg,transparent 126deg);
-  mask-image:radial-gradient(circle,transparent 53%,#000 63%,#000 66%,transparent 71%);
+  background:conic-gradient(from 318deg,transparent 0 16deg,#9fdcff 46deg,#fff 78deg,#fffbe6 96deg,transparent 104deg);
+  mask-image:radial-gradient(circle,transparent 58%,#000 62%,#000 65%,transparent 68%);
 }
 .sv-battle-strike-pose { position:absolute; z-index:3; left:20%; bottom:13%; width:auto; height:34.5cqw; opacity:0; transform-origin:45% 99%; }
 .sv-battle-stage > .sv-battle-blade { position:absolute; z-index:4; visibility:hidden; }
@@ -104,8 +104,8 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-battle.playing[data-scene="safe"] .sv-battle-strike-pose { animation:svBattleShowStrike 1.2s steps(1,end) both,svBattleStrikeDrive .57s 1.2s ease-out both; }
 .sv-battle.playing[data-scene="safe"] .sv-sword-arm { animation:svBattleReadySword 1.2s both; }
 .sv-battle.playing[data-scene="safe"] .sv-battle-sword-dock { animation:svBattleGuideBlade 1.2s both; }
-.sv-battle.playing[data-scene="safe"] .sv-battle-swipe { animation:svBattleSwipe .29s .91s both; }
-.sv-battle.playing[data-scene="miss"] .sv-battle-swipe { animation:svBattleSwipe .28s .99s both; }
+.sv-battle.playing[data-scene="safe"] .sv-battle-swipe { animation:svBattleSwipe .21s .94s both; }
+.sv-battle.playing[data-scene="miss"] .sv-battle-swipe { animation:svBattleSwipe .21s 1.02s both; }
 .sv-battle.playing:is([data-scene="safe"],[data-scene="miss"]) .sv-battle-dust i { animation:svBattleDust .66s calc(1.12s + var(--delay,0s)) both; }
 .sv-battle.playing[data-scene="safe"] .sv-battle-dragon { animation:svBattleRetreat 4s both; }
 .sv-battle.playing[data-scene="safe"] .sv-battle-dragon-head { animation:svBattleFlinch 4s both; }
@@ -237,7 +237,7 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   73% { transform:rotate(122deg); }
   87% { transform:rotate(27deg); }
 }
-@keyframes svBattleSwipe { 0%{opacity:0;transform:rotate(-24deg) scale(.92)} 30%{opacity:.95} 100%{opacity:0;transform:rotate(50deg) scale(1.09)} }
+@keyframes svBattleSwipe { 0%{opacity:0;transform:rotate(-28deg) scale(.94)} 22%{opacity:1} 55%{opacity:.55} 100%{opacity:0;transform:rotate(46deg) scale(1.07)} }
 @keyframes svBattleRetreat {
   0%,23% { transform:none; }
   28% { transform:translateX(1cqw) rotate(7deg) scale(.96,1.04); }
@@ -426,3 +426,15 @@ html[data-motion=reduce] .sv-battle[data-scene="saved"] .sv-battle-block { opaci
 @keyframes svStrikeSettle { 0% { translate:0 0; rotate:0deg; } 20% { translate:1.3cqw .3cqw; rotate:-1.8deg; } 48% { translate:-.5cqw 0; rotate:.7deg; } 75% { translate:.2cqw 0; rotate:-.2deg; } 100% { translate:0 0; rotate:0deg; } }
 @keyframes svDragonTremble { from { translate:-.4cqw 0; } to { translate:.4cqw -.2cqw; } }
 @media (prefers-reduced-motion:reduce) { .sv-battle .sv-idle, .sv-battle-stage, .sv-battle-strike-pose { animation:none !important; } }
+
+/* Anticipation and a different reaction for each outcome. */
+.sv-battle.playing[data-scene="miss"] .sv-battle-dragon-torso { transform-origin:50% 88%; animation:svDragonInhale .5s 1.45s ease-in-out both; }
+.sv-battle.playing[data-scene="saved"] .sv-battle-dragon-torso { transform-origin:50% 88%; animation:svDragonInhale .5s .55s ease-in-out both; }
+.sv-battle.playing[data-scene="miss"] .sv-idle-dragon { animation:svIdleDragon 4.4s ease-in-out infinite,svDragonHaHa .16s 2.7s 8 alternate ease-in-out; }
+.sv-battle.playing[data-scene="saved"] .sv-idle-knight { animation:svIdleKnight 3.3s ease-in-out infinite,svKnightHop .55s 1.95s ease-out; }
+.sv-battle[data-scene="safe"] .sv-battle-impact { left:61%; top:38%; }
+.sv-battle.playing[data-scene="safe"] .sv-battle-impact { animation:svBattleImpact .55s 1.2s both; }
+.sv-battle.playing[data-scene="safe"] .sv-battle-impact i { animation:svBattleRicochet .5s 1.25s both; }
+@keyframes svDragonInhale { 0%,100% { scale:1 1; translate:0 0; } 55% { scale:1.045 1.07; translate:-.4cqw -.6cqw; } }
+@keyframes svDragonHaHa { from { translate:0 0; } to { translate:.3cqw -.7cqw; } }
+@keyframes svKnightHop { 0%,100% { translate:0 0; } 40% { translate:0 -2.4cqw; } 70% { translate:0 .2cqw; } }

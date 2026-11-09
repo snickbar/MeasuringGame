@@ -45,7 +45,7 @@ export function survivalBattleHtml(mood, reduced = false) {
       ${layer('dragon', `<span class="sv-idle sv-idle-dragon"><span class="sv-dragon sv-rig">${dragon}</span></span>`)}
       ${mood === 'safe' ? art(strike, 'sv-battle-strike-pose') : ''}
       ${mood === 'miss' || mood === 'saved' ? fire : ''}
-      ${mood === 'saved' ? shield : ''}
+      ${mood === 'saved' ? shield : mood === 'safe' ? layer('impact', '&#10022;<i></i><i></i><i></i>') : ''}
       ${split ? layer('dust', '<i></i><i></i><i></i>') : ''}
       ${mood === 'record' ? stars : ''}
     </span>
