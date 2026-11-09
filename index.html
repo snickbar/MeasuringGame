@@ -1029,11 +1029,17 @@ if (location.protocol === "file:") {
   .hs-pot-num { font-size: 40px; line-height: 1; color: #000; text-shadow: 0 2px 0 rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
   #hs-content .hs-board--pick .hs-opts { gap: 5px; }
   #hs-content .hs-board--pick button.hs-opt { min-height: 44px; margin: 0; }
-  .hs-table-foot { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; }
-  #hs-content .hs-table-foot > #hs-pot { flex: 1; margin: 0; padding: 3px 2px; min-height: 42px; border-width: 6px; border-image-width: 9px 12px; gap: 3px; }
-  #hs-content .hs-table-foot > #hs-pot img { width: clamp(17px, 6vw, 29px); height: auto; }
-  .hs-table-foot .hs-pot-num { font-size: clamp(14px, 4.6vw, 22px); }
-  .hs-table-pig { display: block; width: clamp(38px, 15vw, 70px); height: auto; transform-origin: 50% 87%; filter: drop-shadow(0 2px 2px #69452445); pointer-events: none; }
+  .hs-table-foot { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); align-items: center; gap: 4px; margin-top: 6px; container-type: inline-size; }
+  #hs-content .hs-table-foot > #hs-pot { display: flex; flex-direction: column; justify-content: flex-start; margin: 0; padding: 5px 2px 7px; min-height: clamp(62px, 46cqw, 106px); border-width: 7px; border-image-width: 10px 12px; gap: 0; }
+  .hs-pot-total { display: flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; gap: clamp(2px, 2cqw, 6px); flex: 1; }
+  #hs-content .hs-pot-total img { width: clamp(17px, 18cqw, 42px); height: auto; flex: none; }
+  .hs-table-foot .hs-pot-num { font-size: clamp(15px, 15cqw, 34px); }
+  .hs-table-foot .hs-pot-num.many-digits { font-size: clamp(11px, 11cqw, 26px); }
+  .hs-table-pig { display: block; width: 100%; height: auto; transform-origin: 50% 87%; filter: drop-shadow(0 2px 2px #69452445); pointer-events: none; }
+  .hs-board--pick .hs-mid { display: flex; flex-direction: column; }
+  .hs-pick-status { order: 1; margin-top: 3px; }
+  .hs-pick-status .lock-bar { margin-top: 2px; }
+  @media (max-height: 720px) { .hs-pick-status { order: 0; } }
   .hs-table-pig[data-mood=peek] { animation: hsPigPeek 4.8s ease-in-out infinite; }
   .hs-pig-result { position: relative; flex: none; aspect-ratio: 373 / 420; }
   .hs-pig-idle { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -12929,10 +12935,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${author}${fooled ? '<span class="hs-fooled-tag">Fooled ya!</span>' : ""}
       </div>`;
     }).join("");
-    const potHtml = `<div class="hs-potbox" id="hs-pot"><img src="icons/poker-chip-stack.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsChipsFmt(potShown)}</div></div></div>`;
+    const chipStack = '<img src="icons/poker-chip-stack.webp" alt="" draggable="false">';
+    const potLabel = '<div class="hs-pot-lab">POT</div>';
+    const potNumber = `<div class="hs-pot-num${potShown >= 1000 ? " many-digits" : ""}">${hsChipsFmt(potShown)}</div>`;
     const pig = stage === "pick" ? `<img class="hs-table-pig" data-mood="peek" src="${HS_PIG_IDLE}" alt="" draggable="false">`
       : result ? hsResultPig(hs, me) : "";
+    const potBody = pig ? `${potLabel}<div class="hs-pot-total">${chipStack}${potNumber}</div>` : `${chipStack}<div>${potLabel}${potNumber}</div>`;
+    const potHtml = `<div class="hs-potbox" id="hs-pot">${potBody}</div>`;
     const tableFoot = pig ? `<div class="hs-table-foot">${pig}${potHtml}</div>` : potHtml;
+    const pickStatus = stage === "pick" && seated && mine !== undefined && myAt
+      ? `<div class="hs-pick-status">${pickLocked ? '<p class="hs-hint"><b>Locked in!</b> Waiting for the others...</p>'
+        : `<p class="hs-hint">Picked! Locks in <b class="hs-timer" data-hs-ends="${myAt + HS_CHANGE_MS}">${Math.max(0, Math.ceil((myAt + HS_CHANGE_MS - nowMs()) / 1000))}</b>s</p><div class="lock-bar" data-hs-bar="${myAt + HS_CHANGE_MS}"><i></i></div>`}</div>` : "";
     const livePots = stage === "bet" && hs.seats.some(id => !b.folded?.[id] && hs.chips[id] === 0) ? HS.hsPotBreakdown(hs) : null;
     const pots = result?.pots || livePots?.pots || [];
     const unmatched = Object.values(livePots?.refunds || {}).reduce((sum, amount) => sum + amount, 0);
@@ -12941,13 +12954,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ${unmatched ? `<div><span>Unmatched</span><b>${hsChipsFmt(unmatched)}</b></div>` : ""}
     </div>` : "";
     html += `<div class="hs-board${stage === "pick" ? " hs-board--pick" : ""}${hs.seatsAll.length > 6 ? " dense" : ""}"><div class="hs-col l">${colL.join("")}</div><div class="hs-mid"><div class="hs-opts${result ? " hs-opts--result" : ""}">${optsHtml}</div>
-      ${tableFoot}${potSplits}<!--HSTURN--></div><div class="hs-col r">${colR.join("")}</div></div>`;
+      ${pickStatus}${tableFoot}${potSplits}<!--HSTURN--></div><div class="hs-col r">${colR.join("")}</div></div>`;
     let turnHtml = "";
     // under the board: what you can do right now
     if (stage === "pick") {
-      html += seated ? (picks[me] === undefined ? `<p class="hs-hint">Which one is the real answer? Pick secretly.</p>`
-        : pickLocked ? `<p class="hs-hint"><b>Locked in!</b> Waiting for the others...</p>`
-        : `<p class="hs-hint">Picked! You can still change it &mdash; locks in <b class="hs-timer" data-hs-ends="${myAt + HS_CHANGE_MS}">${Math.max(0, Math.ceil((myAt + HS_CHANGE_MS - nowMs()) / 1000))}</b>s</p><div class="lock-bar" data-hs-bar="${myAt + HS_CHANGE_MS}"><i></i></div>`) : `<p class="hs-hint">${isOut ? "You're out of coins" : "Watching this round"} &mdash; cheer the others on!</p>`;
+      if (!seated) html += `<p class="hs-hint">${isOut ? "You're out of coins" : "Watching this round"} &mdash; cheer the others on!</p>`;
+      else if (mine === undefined) html += '<p class="hs-hint">Which one is the real answer? Pick secretly.</p>';
     } else if (stage === "bet") {
       const folded = !!b.folded?.[me], legal = HS.hsLegalActions(hs, me);
       if (legal) {
