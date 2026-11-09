@@ -8,9 +8,12 @@ export const SURVIVAL_IMPACT_MS = Object.freeze({ miss: 2240, saved: 1450 });
 
 let preloaded;
 export function preloadSurvivalRigArt() {
-  return preloaded ||= Promise.all([knightBody, knightArm, dragonParts, strike, bladeArt, block, 'survival-dragon-flame.webp'].map(file => {
+  const files = [knightBody, knightArm, dragonParts, strike, bladeArt, block, 'survival-dragon-flame.webp']
+    .map(file => `../icons/${file}`);
+  files.push('../backgrounds/survival-dungeon.webp');
+  return preloaded ||= Promise.all(files.map(file => {
     const image = new Image();
-    image.src = new URL(`../icons/${file}`, import.meta.url).href;
+    image.src = new URL(file, import.meta.url).href;
     return image.decode().catch(() => {});
   }));
 }
@@ -38,7 +41,6 @@ export function survivalBattleHtml(mood, reduced = false) {
   const labels = {safe:'Replay the knight’s swing', miss:'Replay the dragon’s fire', saved:'Replay the shield block', record:'Replay the personal best celebration'};
   return `<button type="button" class="sv-battle" data-scene="${mood}" aria-label="${labels[mood]}"${reduced ? ' disabled' : ''}>
     <span class="sv-battle-stage" aria-hidden="true">
-      ${layer('glow')}${layer('wall')}${layer('ground')}
       ${layer('knight', `<span class="sv-knight sv-rig">${knight}</span>` + (mood === 'saved' ? art(block, 'sv-battle-block') : '') + (mood === 'miss' ? layer('burn','<i></i><i></i><i></i>') : ''))}
       ${layer('dragon', `<span class="sv-dragon sv-rig">${dragon}</span>`)}
       ${mood === 'safe' ? art(strike, 'sv-battle-strike-pose') : ''}
