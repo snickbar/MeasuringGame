@@ -42,10 +42,10 @@ window.showPigRound = (scenario, stage = 'reveal') => {
 window.redrawPigRound = () => renderHighStakes(roomState);
 window.refreshPigTimers = () => hsRefreshTimers();
 window.pigFrame = sprite => Math.round(-4 * new DOMMatrix(getComputedStyle(sprite).transform).m41 / sprite.getBoundingClientRect().width);
-window.pigSequence = sprite => {
-  const animation = sprite.getAnimations().find(a => a.animationName === 'hsPigFrames');
+window.pigSequence = (sprite, times = [100, 700, 850, 1050, 1450, 1630, 1900, 6150, 7450]) => {
+  const animation = sprite.getAnimations().find(a => a.animationName === getComputedStyle(sprite).animationName);
   animation.pause();
-  return [100, 700, 850, 1050, 1450, 1630, 1900, 6150, 7450].map(time => {
+  return times.map(time => {
     animation.currentTime = time;
     return window.pigFrame(sprite);
   });
@@ -102,7 +102,11 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
   await screenshot(`dealer-idle-${width}.png`);
   if (width === 320) await call('Emulation.setDeviceMetricsOverride', {width, height: 650, deviceScaleFactor: 1, mobile: true}, sessionId);
   const pick = await evaluate(`(async()=>{
+    document.documentElement.dataset.motion = 'full';
     showPigRound('large-pot', 'pick');
+    const sprite = document.querySelector('.hs-pig-fidget .hs-pig-frames img');
+    await sprite.decode();
+    const frames = pigSequence(sprite, [100, 700, 880, 1020, 1130, 1270, 1500, 6200, 7420]);
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     refreshPigTimers();
@@ -112,15 +116,25 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
     const number = box('.hs-pot-total .hs-pot-num'), label = box('.hs-table-foot .hs-pot-lab');
     const stack = box('.hs-pot-total img'), pig = box('.hs-table-pig');
     const bar = document.querySelector('.hs-pick-status .lock-bar');
-    return {timerFits: timer.left >= left.right && timer.right <= right.left && timer.bottom <= bottom.top,
+    return {frames, timerFits: timer.left >= left.right && timer.right <= right.left && timer.bottom <= bottom.top,
       timerBeforePot: timer.bottom <= pot.top, tallPot: pot.height >= 62,
       largePig: pig.width > innerWidth * .15, number: document.querySelector('.hs-pot-num').textContent,
       potFits: label.bottom <= stack.top && stack.right <= number.left && number.right <= pot.right,
       countdownActive: bar.classList.contains('low') && parseFloat(bar.firstElementChild.style.transform.slice(7)) < 0.3};
   })()`);
-  assert.deepEqual(pick, {timerFits: true, timerBeforePot: width === 320, tallPot: true, largePig: true,
+  assert.deepEqual(pick, {frames: [0, 1, 2, 3, 2, 1, 0, 0, 3], timerFits: true, timerBeforePot: width === 320, tallPot: true, largePig: true,
     number: '1,000', potFits: true, countdownActive: true});
   await screenshot(`pick-pot-countdown-${width}.png`);
+  const reducedPick = await evaluate(`(async()=>{
+    await new Promise(r => setTimeout(r, 70));
+    redrawPigRound();
+    const pig = document.querySelector('.hs-pig-fidget'), sprite = pig.querySelector('.hs-pig-frames img');
+    await sprite.decode();
+    const resumes = parseFloat(pig.style.getPropertyValue('--hs-pig-offset')) < -60;
+    document.documentElement.dataset.motion = 'reduce';
+    return {resumes, reduced: getComputedStyle(sprite).animationName === 'none' && pigFrame(sprite) === 0};
+  })()`);
+  assert.deepEqual(reducedPick, {resumes: true, reduced: true});
   assert.equal(await evaluate(`showPigRound('locked', 'pick'); document.querySelector('.hs-mid .hs-pick-status').textContent.includes('Locked in!') && !document.querySelector('[data-hs-bar]')`), true);
   if (width === 320) await call('Emulation.setDeviceMetricsOverride', {width, height: 840, deviceScaleFactor: 1, mobile: true}, sessionId);
   await evaluate("localStorage.setItem('mg_motion', 'full')");
@@ -152,5 +166,5 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
   assert.equal(await evaluate(`showPigRound('salute', 'standings'); !!document.querySelector('.hs-stand') && !document.querySelector('.hs-table-pig')`), true);
   assert.equal(await evaluate(`showPigRound('salute', 'pick'); document.querySelector('.hs-table-pig')?.dataset.mood`), 'peek');
   assert.equal(await evaluate(`showPigRound('salute', 'bet'); !document.querySelector('.hs-table-pig, .hs-pot-total, .hs-pick-status')`), true);
-  console.log(`High Stakes at ${width}px: piggy reactions, enlarged pot, and visible pick countdown passed.`);
+  console.log(`High Stakes at ${width}px: chip fidget, reactions, pot, and visible pick countdown passed.`);
 }}).catch(error => { console.error(error); process.exitCode = 1; });
