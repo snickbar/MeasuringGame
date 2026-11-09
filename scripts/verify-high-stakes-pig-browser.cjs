@@ -221,19 +221,25 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
     const pig = hero.querySelector('.hs-finale-pig'), sprite = pig.querySelector('img');
     await sprite.decode();
     const motion = sprite.getAnimations()[0], hop = pig.getAnimations()[0];
-    motion.pause(); motion.currentTime = 910;
-    hop.pause(); hop.currentTime = 910;
-    const frame = pigFrame(sprite), jump = new DOMMatrix(getComputedStyle(pig).transform).m42;
+    motion.pause(); hop.pause();
+    const sample = time => {
+      motion.currentTime = hop.currentTime = time;
+      return {frame:pigFrame(sprite), airborne:new DOMMatrix(getComputedStyle(pig).transform).m42 < -12};
+    };
+    const poses = [900, 1690, 3400, 4700 + 1690].map(sample);
     const stack = hero.querySelector('.hs-finale-stack');
-    const chipDrops = [...stack.children].every(chip=>chip.getAnimations().length === 1);
+    const chipDrops = [...stack.children].every(chip=>{
+      const animations = chip.getAnimations();
+      return animations.length === 1 && animations[0].effect.getTiming().iterations === 1;
+    });
     const readyButtons = ['hs-exit','hs-again'].every(id => !document.getElementById(id).disabled);
     redrawPigRound();
     const keptHero = document.querySelector('.hs-end-hero') === hero;
     const keptMotion = sprite.getAnimations()[0] === motion;
     await new Promise(r=>setTimeout(r,1020));
-    return {frame,airborne:jump < -12,chipDrops,readyButtons,keptHero,keptMotion,count:hero.querySelector('.hs-finale-amount span').textContent};
+    return {poses,chipDrops,readyButtons,keptHero,keptMotion,count:hero.querySelector('.hs-finale-amount span').textContent};
   })()`);
-  assert.deepEqual(finale,{frame:3,airborne:true,chipDrops:true,readyButtons:true,keptHero:true,keptMotion:true,count:'274'});
+  assert.deepEqual(finale,{poses:[0,3,0,3].map(frame=>({frame,airborne:frame===3})),chipDrops:true,readyButtons:true,keptHero:true,keptMotion:true,count:'274'});
   await screenshot('final-win-'+width+'.png');
   const tie = await evaluate(`(async()=>{
     showHighStakesFinal('tie');
@@ -241,11 +247,14 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
     await sprite.decode();
     const motion = sprite.getAnimations()[0];
     motion.pause();
-    const claps = [470,670,870,1130,1650,1130].map(time=>{motion.currentTime=time;return pigFrame(sprite);});
+    const claps = [1200, 1460, 1690, 1920, 3000, 4700 + 1460, 4700 + 1920].map(time=>{
+      motion.currentTime=time;
+      return pigFrame(sprite);
+    });
     const widths = [...document.querySelectorAll('.hs-finale-winner')].map(el=>el.getBoundingClientRect().width);
     return {claps,equal:widths.length===2 && Math.abs(widths[0]-widths[1])<1,gesture:sprite.parentElement.dataset.gesture};
   })()`);
-  assert.deepEqual(tie,{claps:[1,3,1,3,0,3],equal:true,gesture:'clap'});
+  assert.deepEqual(tie,{claps:[1,3,1,3,0,3,3],equal:true,gesture:'clap'});
   await new Promise(r=>setTimeout(r,970));
   await screenshot('final-tie-'+width+'.png');
   const cases = await evaluate(`(async()=>{

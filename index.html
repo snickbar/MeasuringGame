@@ -1181,7 +1181,37 @@ if (location.protocol === "file:") {
   #hs-content .hs-end-hero .dc-sub { margin: 4px 0 0; font-size: 13px; }
   .hs-finale-stage { display: grid; grid-template-columns: minmax(54px,.64fr) minmax(0,1.55fr); gap: 6px; align-items: end; margin-top: 8px; min-height: 100px; }
   .hs-finale-pig { justify-self: center; width: min(110%,119px); aspect-ratio: 272 / 244; overflow: hidden; scale: -1 1; transform-origin: center bottom; filter: drop-shadow(0 2px 2px #77402548); }
-  .hs-finale-pig img { display: block; width: 400%; max-width: none; height: 100%; transform: translateX(-75%); }
+  .hs-finale-pig img { display: block; width: 400%; max-width: none; height: 100%; }
+  html[data-motion=reduce] .hs-finale-pig img { transform: translateX(-75%); }
+  html:not([data-motion=reduce]) #hs-screen.active .hs-finale-pig.loaded > img { animation: var(--hs-finale-gesture,hsFinaleCalm) 4.7s steps(1,end) infinite; }
+  .hs-finale-pig[data-gesture=hop] { --hs-finale-gesture: hsFinalePump; }
+  .hs-finale-pig[data-gesture=clap] { --hs-finale-gesture: hsFinaleClap; }
+  html:not([data-motion=reduce]) #hs-screen.active .hs-finale-pig.loaded[data-gesture=hop] { animation: hsFinaleHop 4.7s infinite; }
+  /* Each reaction starts from idle, then holds at rest for the rest of the cycle. */
+  @keyframes hsFinalePump {
+    0%, 51%, 100% { transform: translateX(0); }
+    25%, 47% { transform: translateX(-25%); }
+    29%, 43% { transform: translateX(-50%); }
+    33% { transform: translateX(-75%); }
+  }
+  @keyframes hsFinaleHop {
+    0%, 24%, 49%, 100% { transform: none; }
+    29% { transform: translateY(2px) scaleY(.95); animation-timing-function: ease-out; }
+    36% { transform: translateY(-15px); animation-timing-function: ease-in; }
+    45% { transform: translateY(2px) scaleY(.95); }
+  }
+  @keyframes hsFinaleClap {
+    0%, 51%, 100% { transform: translateX(0); }
+    24%, 35%, 47% { transform: translateX(-25%); }
+    27%, 33%, 38%, 44% { transform: translateX(-50%); }
+    30%, 40% { transform: translateX(-75%); }
+  }
+  @keyframes hsFinaleCalm {
+    0%, 55%, 100% { transform: translateX(0); }
+    25%, 50% { transform: translateX(-25%); }
+    28%, 45% { transform: translateX(-50%); }
+    32% { transform: translateX(-75%); }
+  }
   .hs-finale-winners { display: grid; grid-template-columns: minmax(0,1fr); align-items: end; gap: 7px 4px; }
   .hs-finale-winners.split { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .hs-finale-winner { display: grid; justify-items: center; gap: 2px; min-width: 0; }
@@ -12836,24 +12866,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : `<div class="hs-win-amt">${hsChipsFmt(result.carryOut ?? result.pot)} ${chip}</div><div class="hs-win-sub">Pot rolls over</div>`}
     </div>`;
   }
-  function hsAnimateFinal(hero, mood, winner) {
+  function hsAnimateFinalArrival(hero, mood, winner) {
     if (prefersReducedMotion()) return;
-    const sprite = hero.querySelector('.hs-finale-pig img');
-    const poses = {
-      hop: [[0,0],[.25,1],[.36,2],[.44,3],[.71,2],[.8,1],[.91,0],[1,0]],
-      clap: [[0,0],[.22,1],[.31,2],[.37,3],[.45,2],[.5,1],[.57,2],[.63,3],[.73,2],[.79,1],[.89,0],[1,0]],
-      calm: [[0,0],[.24,1],[.33,2],[.43,3],[.76,2],[.88,1],[1,0]]
-    };
-    sprite.decode().then(() => {
-      if (!hero.isConnected || !hsScreenEl.classList.contains('active') || prefersReducedMotion()) return;
-      sprite.animate((poses[mood] || poses.calm).map(([offset, pose]) => ({transform:`translateX(${-25 * pose}%)`, offset, easing:'steps(1,end)'})), {duration:1720, fill:'both'});
-      if (mood === 'hop') sprite.parentElement.animate([
-        {transform:'none',offset:0}, {transform:'none',offset:.24},
-        {transform:'translateY(2px) scaleY(.95)',offset:.36,easing:'ease-out'},
-        {transform:'translateY(-15px)',offset:.53,easing:'ease-in'},
-        {transform:'translateY(2px) scaleY(.95)',offset:.74}, {transform:'none',offset:.85}, {transform:'none',offset:1}
-      ], {duration:1720});
-    }, () => {});
     hero.querySelectorAll('.hs-finale-stack').forEach((stack, column) => [...stack.children].forEach((chip, i) => {
       chip.animate([{transform:'translateY(-24px) rotate(-12deg) scale(.83)',opacity:0},
         {transform:'translateY(2px) rotate(2deg)',opacity:1,offset:.8}, {transform:'none',opacity:1}],
@@ -12937,9 +12951,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ? '<button type="button" class="dc-btn dc-alt" id="hs-again">Play again</button>'
       : '<p class="dc-sub" id="hs-rematch-note">Waiting for the host to start another game...</p>'}</div>`;
     hsContentEl.innerHTML = html;
+    const hero = hsContentEl.querySelector('.hs-end-hero');
+    const pigSprite = hero.querySelector('.hs-finale-pig img');
+    pigSprite.decode().then(() => pigSprite.parentElement.classList.add('loaded'), () => {});
     if (hsOverArrKey !== data.gameId) {
       hsOverArrKey = data.gameId;
-      hsAnimateFinal(hsContentEl.querySelector('.hs-end-hero'), mood, winners.length === 1 ? players[winners[0]] : null);
+      hsAnimateFinalArrival(hero, mood, winners.length === 1 ? players[winners[0]] : null);
     }
   }
   function renderHighStakes(data) {
