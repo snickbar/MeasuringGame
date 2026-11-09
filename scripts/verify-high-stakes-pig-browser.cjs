@@ -41,6 +41,22 @@ window.showPigRound = (scenario, stage = 'reveal') => {
   window.scrollTo(0, 0);
 };
 window.redrawPigRound = () => renderHighStakes(roomState);
+window.showHighStakesFinal = (outcome, host = true) => {
+  showPigRound('final-seed', 'pick');
+  const hs = roomState.hs;
+  const totals = {
+    win:[274,126,64,36], tie:[202,202,96], out:[0,312,143,45],
+    empty:[], many:Array(10).fill(100), other:[126,274,64,36]
+  }[outcome];
+  hs.chips = Object.fromEntries(hs.seatsAll.map((id,i) => [id,totals[i] || 0]));
+  hs.round = HS.HS_MAX_ROUNDS;
+  hs.ghost = outcome === 'out' ? {me:4} : null;
+  currentPlayers.me.avatar = 'av337';
+  currentPlayers.p1.avatar = 'av30';
+  isHost = host;
+  roomState = {...roomState, gameId:'final-' + outcome, hs:HS.hsFinishRound(hs)};
+  renderHighStakes(roomState);
+};
 window.receivePigRoundPick = id => {
   roomState = {...roomState, hsPicks: {...roomState.hsPicks, [id]: 0}};
   renderHighStakes(roomState);
@@ -72,6 +88,7 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
   })()`);
   const deal = await evaluate(`(async()=>{
     localStorage.setItem('mg_motion', 'full');
+    document.documentElement.dataset.motion = 'full';
     showPigRound('deal', 'ready');
     const heading = document.querySelector('.hs-dealer-heading');
     const sprite = heading.querySelector('.hs-dealer img');
@@ -192,5 +209,64 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
   assert.equal(await evaluate(`showPigRound('salute', 'standings'); !!document.querySelector('.hs-stand') && !document.querySelector('.hs-table-pig')`), true);
   assert.equal(await evaluate(`showPigRound('salute', 'pick'); document.querySelector('.hs-table-pig')?.dataset.mood`), 'peek');
   assert.equal(await evaluate(`showPigRound('salute', 'bet'); !document.querySelector('.hs-table-pig, .hs-pot-total, .hs-pick-status')`), true);
+  const finale = await evaluate(`(async()=>{
+    document.documentElement.dataset.motion = 'full';
+    window.confetti?.reset?.();
+    window.confetti = () => {};
+    const hideFixtureOverlays = document.createElement('style');
+    hideFixtureOverlays.textContent = '.flair-layer, #ach-toast { visibility:hidden!important; }';
+    document.head.append(hideFixtureOverlays);
+    showHighStakesFinal('win');
+    const hero = document.querySelector('.hs-end-hero');
+    const pig = hero.querySelector('.hs-finale-pig'), sprite = pig.querySelector('img');
+    await sprite.decode();
+    const motion = sprite.getAnimations()[0], hop = pig.getAnimations()[0];
+    motion.pause(); motion.currentTime = 910;
+    hop.pause(); hop.currentTime = 910;
+    const frame = pigFrame(sprite), jump = new DOMMatrix(getComputedStyle(pig).transform).m42;
+    const stack = hero.querySelector('.hs-finale-stack');
+    const chipDrops = [...stack.children].every(chip=>chip.getAnimations().length === 1);
+    const readyButtons = ['hs-exit','hs-again'].every(id => !document.getElementById(id).disabled);
+    redrawPigRound();
+    const keptHero = document.querySelector('.hs-end-hero') === hero;
+    const keptMotion = sprite.getAnimations()[0] === motion;
+    await new Promise(r=>setTimeout(r,1020));
+    return {frame,airborne:jump < -12,chipDrops,readyButtons,keptHero,keptMotion,count:hero.querySelector('.hs-finale-amount span').textContent};
+  })()`);
+  assert.deepEqual(finale,{frame:3,airborne:true,chipDrops:true,readyButtons:true,keptHero:true,keptMotion:true,count:'274'});
+  await screenshot('final-win-'+width+'.png');
+  const tie = await evaluate(`(async()=>{
+    showHighStakesFinal('tie');
+    const sprite = document.querySelector('.hs-finale-pig img');
+    await sprite.decode();
+    const motion = sprite.getAnimations()[0];
+    motion.pause();
+    const claps = [470,670,870,1130,1650,1130].map(time=>{motion.currentTime=time;return pigFrame(sprite);});
+    const widths = [...document.querySelectorAll('.hs-finale-winner')].map(el=>el.getBoundingClientRect().width);
+    return {claps,equal:widths.length===2 && Math.abs(widths[0]-widths[1])<1,gesture:sprite.parentElement.dataset.gesture};
+  })()`);
+  assert.deepEqual(tie,{claps:[1,3,1,3,0,3],equal:true,gesture:'clap'});
+  await new Promise(r=>setTimeout(r,970));
+  await screenshot('final-tie-'+width+'.png');
+  const cases = await evaluate(`(async()=>{
+    localStorage.setItem('mg_motion','reduce');
+    document.documentElement.dataset.motion='reduce';
+    const results = [];
+    for(const outcome of ['out','empty','many','other']) {
+      showHighStakesFinal(outcome,false);
+      const sprite = document.querySelector('.hs-finale-pig img');
+      await sprite.decode();
+      const standings = document.querySelector('.hs-finale-standings');
+      const players = [...document.querySelectorAll('.hs-finale-winner')];
+      const visible = [...document.querySelectorAll('.hs-finale-winner, .hs-finale-amount, .hs-final-row, .hs-finale-wallet, .hs-finale-actions')].every(node=>{
+        const {left,right}=node.getBoundingClientRect(); return left>=-1 && right<=innerWidth+1;
+      });
+      results.push({mood:sprite.parentElement.dataset.gesture,winners:players.length,rows:standings.querySelectorAll('.hs-final-row').length,
+        payout:document.querySelector('.hs-finale-wallet > b').textContent,still:sprite.getAnimations().length===0 && pigFrame(sprite)===3,
+        guest:!document.getElementById('hs-again') && !!document.getElementById('hs-exit') && !!document.getElementById('hs-rematch-note'),visible});
+    }
+    return results;
+  })()`);
+  assert.deepEqual(cases,[['slip',1,'+6'],['shrug',0,'+2'],['clap',10,'+15'],['clap',1,'+8']].map(([mood,winners,payout])=>({mood,winners,rows:10,payout,still:true,guest:true,visible:true})));
   console.log(`High Stakes at ${width}px: chip fidget, reactions, pot, and visible pick countdown passed.`);
 }}).catch(error => { console.error(error); process.exitCode = 1; });
