@@ -1035,21 +1035,15 @@ if (location.protocol === "file:") {
   .hs-table-foot .hs-pot-num { font-size: clamp(14px, 4.6vw, 22px); }
   .hs-table-pig { display: block; width: clamp(38px, 15vw, 70px); height: auto; transform-origin: 50% 87%; filter: drop-shadow(0 2px 2px #69452445); pointer-events: none; }
   .hs-table-pig[data-mood=peek] { animation: hsPigPeek 4.8s ease-in-out infinite; }
-  .hs-pig-result { position: relative; flex: none; aspect-ratio: 373 / 420; animation: var(--hs-pig-motion) 1.05s ease-in-out var(--hs-pig-offset) both; }
-  .hs-pig-result img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-  .hs-pig-result .hs-pig-idle { opacity: 0; animation: hsPigIdle 1.05s linear var(--hs-pig-offset) both; }
-  .hs-pig-result .hs-pig-pose { animation: hsPigPose 1.05s linear var(--hs-pig-offset) both; }
-  .hs-pig-result[data-mood=salute] { --hs-pig-motion: hsPigSalute; }
-  .hs-pig-result[data-mood=tip] { --hs-pig-motion: hsPigTip; }
-  .hs-pig-result[data-mood=slip] { --hs-pig-motion: hsPigSlip; }
-  .hs-pig-result[data-mood=shrug] { --hs-pig-motion: hsPigShrug; }
+  .hs-pig-result { position: relative; flex: none; aspect-ratio: 373 / 420; }
+  .hs-pig-idle { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .hs-pig-result .hs-pig-frames { position: absolute; left: -6%; bottom: 0; width: 112%; aspect-ratio: 272 / 244; scale: -1 1; }
+  .hs-pig-loaded > .hs-pig-idle { visibility: hidden; }
+  .hs-pig-frames { overflow: hidden; visibility: hidden; }
+  .hs-pig-loaded > .hs-pig-frames, .hs-dealer-loaded > .hs-pig-frames { visibility: visible; }
+  .hs-pig-frames > img { display: block; width: 400%; max-width: none; height: 100%; }
+  #hs-screen.active :is(.hs-pig-loaded,.hs-dealer-loaded) > .hs-pig-frames > img { animation: hsPigFrames 6.4s steps(1,end) var(--hs-pig-offset,0ms) infinite; }
   @keyframes hsPigPeek { 0%, 48%, 100% { transform: none; } 58%, 67% { transform: translate(-2px, -3px) rotate(-7deg); } 76% { transform: rotate(2deg); } }
-  @keyframes hsPigIdle { 0%, 23% { opacity: 1; } 34%, 100% { opacity: 0; } }
-  @keyframes hsPigPose { 0%, 23% { opacity: 0; } 34%, 100% { opacity: 1; } }
-  @keyframes hsPigSalute { 0%, 100% { transform: none; } 21% { transform: translateY(2px) scaleY(.94); } 42% { transform: translateY(-6px) rotate(5deg); } 68% { transform: rotate(-3deg); } }
-  @keyframes hsPigTip { 0%, 100% { transform: none; } 45% { transform: translateY(2px) rotate(7deg); } 72% { transform: rotate(-2deg); } }
-  @keyframes hsPigSlip { 0%, 100% { transform: none; } 35% { transform: rotate(-8deg); } 58% { transform: rotate(4deg); } 76% { transform: rotate(-2deg); } }
-  @keyframes hsPigShrug { 0%, 100% { transform: none; } 16% { transform: rotate(-4deg); } 43% { transform: translateY(-3px) rotate(3deg); } 70% { transform: rotate(-2deg); } }
   .hs-coin { position: fixed; z-index: 100000; width: 26px; height: 26px; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
   /* The opening deal: a big pot of chips in the middle that empties into the player cards. */
   .hs-deal-pot { position: relative; width: clamp(142px, 24dvh, 210px); aspect-ratio: 1; margin: 6px auto 8px; box-sizing: border-box; border: 4px solid #4a2c12; border-radius: 50%; background: radial-gradient(circle at 32% 24%, #fff3b0, #f7c948 58%, #e0a520); box-shadow: 0 5px 0 rgba(74,44,18,.5), inset 0 0 22px rgba(255,255,255,.6); }
@@ -1059,17 +1053,15 @@ if (location.protocol === "file:") {
   .hs-deal-num { position: absolute; z-index: 3; left: 0; right: 0; bottom: 7%; }
   .hs-deal-num .hs-pot-num { font-size: clamp(28px, 5dvh, 44px); }
   .hs-dealer-loaded > .polish-banner-mascot { visibility: hidden; }
-  .hs-dealer { position: absolute; z-index: 1; overflow: hidden; pointer-events: none; visibility: hidden; }
-  .hs-dealer-loaded > .hs-dealer { visibility: visible; }
-  .hs-dealer > img { display: block; width: 400%; max-width: none; height: 100%; }
-  #hs-screen.active .hs-dealer-loaded .hs-dealer > img { animation: hsDealerFrames 6.4s steps(1,end) infinite; }
-  @keyframes hsDealerFrames {
+  .hs-dealer { position: absolute; z-index: 1; pointer-events: none; }
+  @keyframes hsPigFrames {
     0%, 27%, 100% { transform: translateX(0); }
     10%, 24.5% { transform: translateX(-25%); }
     12.5%, 22% { transform: translateX(-50%); }
     15% { transform: translateX(-75%); }
   }
-  html[data-motion=reduce] #hs-screen.active .hs-dealer-loaded .hs-dealer > img { animation: none; }
+  html[data-motion=reduce] #hs-screen.active :is(.hs-pig-loaded,.hs-dealer-loaded) > .hs-pig-frames > img { animation: none; }
+  html[data-motion=reduce] .hs-pig-result .hs-pig-frames > img { transform: translateX(-75%); }
   @media (max-width: 360px) {
     .hs-players .hs-pl { width: calc((100% - 18px) / 4); min-width: 0; padding-inline: 3px; }
     .hs-players .hs-pl-name { max-width: 100%; }
@@ -1139,7 +1131,7 @@ if (location.protocol === "file:") {
     .hs-opts--result .hs-who .avatar-icon { width: 20px; height: 20px; }
   }
   @media (prefers-reduced-motion: reduce) { #hs-content :is(.hs-table-pig, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; } }
-  html[data-motion=reduce] #hs-content :is(.hs-table-pig, .hs-pig-result img, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; }
+  html[data-motion=reduce] #hs-content :is(.hs-table-pig, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; }
   .hs-pl .avatar.hs-dance { display: inline-block; transform-origin: 50% 100%; animation: hsDance 1.9s ease-in-out .1s both; }
   @keyframes hsDance {
     0% { transform: translateY(0) rotate(0) scale(1); } 12% { transform: translateY(-12px) scale(1.1); }
@@ -12537,19 +12529,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let hsOverArrKey = null, hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFlairOverKey = null, hsFooledKey = null, hsActSent = null;
   let hsPigRoundKey = null, hsPigStartedAt = 0;
   const HS_PIG_IDLE = 'anim/mode-mascots/highstakes-pig-tutorial.webp';
-  function hsResultPig(hs, gameId, me) {
-    const key = `${gameId}:${hs.round}`;
-    const now = performance.now();
-    if (hsPigRoundKey !== key) { hsPigRoundKey = key; hsPigStartedAt = now; }
+  function hsResultPig(hs, me) {
     let mood = 'tip';
     if (HS.hsPayout(hs, me) > 0) mood = 'salute';
     else if (hs.seats.includes(me) && !hs.out?.[me] && hs.chips[me] === 0) mood = 'slip';
     else if (!hs.result.winners?.length) mood = 'shrug';
-    // Continue from the same point if a room update redraws this answer screen.
-    return `<span class="hs-table-pig hs-pig-result" data-mood="${mood}" aria-hidden="true" style="--hs-pig-offset:${hsPigStartedAt - now}ms">
+    const frames = mood === 'tip' ? 'highstakes-dealer-tip.webp' : `highstakes-result-${mood}.webp`;
+    return `<span class="hs-table-pig hs-pig-result" data-mood="${mood}" aria-hidden="true">
       <img class="hs-pig-idle" src="${HS_PIG_IDLE}" alt="" draggable="false">
-      <img class="hs-pig-pose" src="anim/mode-mascots/highstakes-pig-${mood}.webp" alt="" draggable="false">
+      <span class="hs-pig-frames"><img src="anim/mode-mascots/${frames}" alt="" draggable="false"></span>
     </span>`;
+  }
+  function hsStartResultPig(pig, gameId, round) {
+    const sprite = pig.querySelector('.hs-pig-frames img');
+    sprite.decode().then(() => {
+      if (!pig.isConnected) return;
+      const key = `${gameId}:${round}:${pig.dataset.mood}`;
+      const now = performance.now();
+      if (hsPigRoundKey !== key) { hsPigRoundKey = key; hsPigStartedAt = now; }
+      // Keep the loop in sync when another room update rebuilds the result.
+      pig.style.setProperty('--hs-pig-offset', `${hsPigStartedAt - now}ms`);
+      pig.classList.add('hs-pig-loaded');
+    }, () => {});
   }
   let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.showStand; // the host taps "Show standings" once the winner box has had its moment
@@ -12675,6 +12676,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hsRenderInto(html, hs, data, animating, started = animating) {
     hsContentEl.innerHTML = html;
+    const pig = hsContentEl.querySelector('.hs-pig-result');
+    if (pig) hsStartResultPig(pig, data.gameId, hs.round);
     hsRenderedAnimating = started;
     if (started) hsMountAnim(hs, data);
     else if (hsAnimCtl && hsAnimKey) { try { hsAnimCtl.stop(); } catch (e) { /* already stopped */ } hsAnimKey = null; }
@@ -12841,7 +12844,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         hsContentEl.dataset.sig = sig;
       }
       const dealTotal = order.reduce((s, id) => s + (hs.chips[id] || 0), 0);
-      const dealer = hs.round ? "" : `<span class="hs-dealer" style="${bannerMascot('highstakes').style}" aria-hidden="true"><img src="anim/mode-mascots/highstakes-dealer-tip.webp" alt="" draggable="false"></span>`;
+      const dealer = hs.round ? "" : `<span class="hs-dealer hs-pig-frames" style="${bannerMascot('highstakes').style}" aria-hidden="true"><img src="anim/mode-mascots/highstakes-dealer-tip.webp" alt="" draggable="false"></span>`;
       html += `<h2 class="dc-title${dealer ? " hs-dealer-heading" : ""}">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}${dealer}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " chips"}</p>`;
       html += hs.round ? `<p class="hs-hint">Dealing...</p>` : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>
         <div class="hs-deal-pot" id="hs-pot"><img class="hs-deal-stack" src="icons/poker-chip-stack.webp" alt="" draggable="false">${HS_PILE.map(([x, y, r]) => `<img class="hs-pile-chip" src="icons/poker-chip-blue.webp" alt="" draggable="false" style="left:${x}%;top:${y}%;--r:${r}deg">`).join("")}<div class="hs-deal-num"><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(dealTotal)}</div></div></div>`;
@@ -12928,7 +12931,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join("");
     const potHtml = `<div class="hs-potbox" id="hs-pot"><img src="icons/poker-chip-stack.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsChipsFmt(potShown)}</div></div></div>`;
     const pig = stage === "pick" ? `<img class="hs-table-pig" data-mood="peek" src="${HS_PIG_IDLE}" alt="" draggable="false">`
-      : result ? hsResultPig(hs, data.gameId, me) : "";
+      : result ? hsResultPig(hs, me) : "";
     const tableFoot = pig ? `<div class="hs-table-foot">${pig}${potHtml}</div>` : potHtml;
     const livePots = stage === "bet" && hs.seats.some(id => !b.folded?.[id] && hs.chips[id] === 0) ? HS.hsPotBreakdown(hs) : null;
     const pots = result?.pots || livePots?.pots || [];
