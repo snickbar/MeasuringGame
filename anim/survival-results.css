@@ -407,3 +407,22 @@ html[data-motion=reduce] .sv-battle[data-scene="saved"] .sv-battle-block { opaci
 
 #survival-screen:not(.active) .sv-battle * { animation-play-state:paused!important; }
 .sv-checkpoint-coins { position:absolute; left:50%; top:50%; pointer-events:none; }
+
+/* Always-on life: the knight breathes and shifts his weight, the dragon's body rocks slowly. They sit on their own wrappers so they never fight the scripted moves above. Compositor-only (scale / translate / rotate). */
+.sv-battle .sv-idle { position:absolute; display:block; inset:0; }
+.sv-battle:not(:disabled) .sv-idle-knight { transform-origin:48% 94%; animation:svIdleKnight 3.3s ease-in-out infinite; }
+.sv-battle:not(:disabled) .sv-idle-dragon { transform-origin:58% 92%; animation:svIdleDragon 4.4s ease-in-out infinite; }
+@keyframes svIdleKnight { 0%,100% { scale:1 1; translate:0 0; } 45% { scale:1.006 1.02; translate:0 -.3%; } 75% { scale:1 1.008; translate:.2% 0; } }
+@keyframes svIdleDragon { 0%,100% { scale:1 1; rotate:0deg; } 40% { scale:1.004 1.018; rotate:-.7deg; } 80% { scale:1 1.006; rotate:.5deg; } }
+
+/* Weight on the big moments: the lunge overshoots and settles, the dragon trembles after a hit, and the whole frame gives a quick punch-in when a blow or flame lands. */
+.sv-battle-stage { transform-origin:50% 62%; }
+.sv-battle.playing[data-scene="safe"] .sv-battle-stage { animation:svHitPunch .34s 1.2s ease-out both; }
+.sv-battle.playing[data-scene="miss"] .sv-battle-stage { animation:svHitPunch .34s 1.96s ease-out both; }
+.sv-battle.playing[data-scene="saved"] .sv-battle-stage { animation:svHitPunch .3s 1.39s ease-out both; }
+.sv-battle.playing[data-scene="safe"] .sv-battle-strike-pose { animation:svBattleShowStrike 1.2s steps(1,end) both,svBattleStrikeDrive .57s 1.2s ease-out both,svStrikeSettle 1.5s 1.77s ease-out both; }
+.sv-battle.playing[data-scene="safe"] .sv-idle-dragon { animation:svIdleDragon 4.4s ease-in-out infinite,svDragonTremble .085s 1.3s 18 alternate ease-in-out; }
+@keyframes svHitPunch { 0% { scale:1; } 30% { scale:1.03; } 100% { scale:1; } }
+@keyframes svStrikeSettle { 0% { translate:0 0; rotate:0deg; } 20% { translate:1.3cqw .3cqw; rotate:-1.8deg; } 48% { translate:-.5cqw 0; rotate:.7deg; } 75% { translate:.2cqw 0; rotate:-.2deg; } 100% { translate:0 0; rotate:0deg; } }
+@keyframes svDragonTremble { from { translate:-.4cqw 0; } to { translate:.4cqw -.2cqw; } }
+@media (prefers-reduced-motion:reduce) { .sv-battle .sv-idle, .sv-battle-stage, .sv-battle-strike-pose { animation:none !important; } }

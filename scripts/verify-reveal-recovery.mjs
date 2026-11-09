@@ -5,7 +5,7 @@ const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const extract=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)));
 const run=extract('  async function survivalRunReveal() {','  // Run over: save the best');
 const result=extract('  function svShowResult(m) {','  // Game over: how this run compares');
-const stop=html.match(/  function survivalStop\(\) \{[^\n]+/)[0];
+const stop=html.match(/  function survivalStop\(\) \{[\s\S]*?\n  \}\n/)[0];
 const skip=extract('    if (b.id === "sv-skip") {','    if (b.id === "sv-finish")');
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return{promise,resolve,reject}};
 const state=()=>({phase:'reveal',q:{answer:100},g:100,survived:0,resultShown:false});
@@ -13,7 +13,7 @@ function fixture(){
  const module=deferred(),picture=deferred(),preparing=deferred();let renders=0,starts=0,shown=true,done;
  const ctl={prepare:()=>{preparing.resolve();return picture.promise},destroy(){},start:(scene,options)=>{starts++;done=options.onDone}};
  const mod={createStackAnimation:()=>ctl,LIGHT_THEME:{},formatCount:String};
- const c={sv:state(),svAnim:null,svRevealToken:0,console:{warn(){}},Date,
+ const c={sv:state(),svAnim:null,svBattleStop:null,svRevealToken:0,console:{warn(){}},Date,
   loadAnimModule:()=>module.promise,questionObjects:()=>[{},{}],survivalScreenEl:{classList:{contains:()=>shown}},
   document:{getElementById:()=>({})},dockRevealSkip(){},fitRevealStage:()=>({}),animAudioInit(){},audioLifecycle:{guard:fn=>fn},playAnimCue(){},
   deviceId:'me',SURVIVAL_PASS:60,effectiveGuess:(q,g)=>g,roundAccuracy:r=>r*100,vibrate(){},

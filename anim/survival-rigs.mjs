@@ -41,8 +41,8 @@ export function survivalBattleHtml(mood, reduced = false) {
   const labels = {safe:'Replay the knight’s swing', miss:'Replay the dragon’s fire', saved:'Replay the shield block', record:'Replay the personal best celebration'};
   return `<button type="button" class="sv-battle" data-scene="${mood}" aria-label="${labels[mood]}"${reduced ? ' disabled' : ''}>
     <span class="sv-battle-stage" aria-hidden="true">
-      ${layer('knight', `<span class="sv-knight sv-rig">${knight}</span>` + (mood === 'saved' ? art(block, 'sv-battle-block') : '') + (mood === 'miss' ? layer('burn','<i></i><i></i><i></i>') : ''))}
-      ${layer('dragon', `<span class="sv-dragon sv-rig">${dragon}</span>`)}
+      ${layer('knight', `<span class="sv-idle sv-idle-knight"><span class="sv-knight sv-rig">${knight}</span></span>` + (mood === 'saved' ? art(block, 'sv-battle-block') : '') + (mood === 'miss' ? layer('burn','<i></i><i></i><i></i>') : ''))}
+      ${layer('dragon', `<span class="sv-idle sv-idle-dragon"><span class="sv-dragon sv-rig">${dragon}</span></span>`)}
       ${mood === 'safe' ? art(strike, 'sv-battle-strike-pose') : ''}
       ${mood === 'miss' || mood === 'saved' ? fire : ''}
       ${mood === 'saved' ? shield : ''}
@@ -116,7 +116,9 @@ export function mountSurvivalBattle(scene, screen, reducedMotion) {
   const doc = scene.ownerDocument;
   let timer;
   const active = () => scene.isConnected && screen.classList.contains('active') && !doc.hidden;
+  // Endless idle loops (breathing, tail sway) never finish, so they don't count towards how long the scene still has to play.
   const remaining = () => Math.max(0, ...scene.getAnimations({subtree:true})
+    .filter(animation => animation.effect.getComputedTiming().iterations !== Infinity)
     .map(animation => animation.effect.getComputedTiming().endTime - (animation.currentTime || 0)));
   function schedule() {
     clearTimeout(timer);
