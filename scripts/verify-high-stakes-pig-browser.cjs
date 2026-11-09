@@ -56,35 +56,45 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
   const deal = await evaluate(`(async()=>{
     localStorage.setItem('mg_motion', 'full');
     showPigRound('deal', 'ready');
-    const heading = document.querySelector('[data-hs-dealer]');
-    const tip = heading.querySelector('.hs-dealer-tip');
+    const heading = document.querySelector('.hs-dealer-heading');
+    const sprite = heading.querySelector('.hs-dealer img');
     const button = document.getElementById('hs-deal');
-    await tip.decode();
-    const whileDealing = heading.dataset.hsDealer === 'dealing' && !button.disabled;
-    const original = heading.querySelector('.polish-banner-mascot');
-    const watchesDeal = original.getAnimations().some(animation => animation.animationName === 'hsDealerWatch');
+    const startsAfterDecode = !heading.classList.contains('hs-dealer-loaded');
+    await sprite.decode();
+    const available = !button.disabled;
+    const animation = sprite.getAnimations().find(animation => animation.animationName === 'hsDealerFrames');
+    animation.pause();
+    const frame = time => {
+      animation.currentTime = time;
+      return Math.round(-4 * new DOMMatrix(getComputedStyle(sprite).transform).m41 / sprite.getBoundingClientRect().width);
+    };
+    const frames = [100, 700, 850, 1050, 1450, 1630, 1900, 6150, 7450].map(frame);
     redrawPigRound();
     const keptHeading = heading.isConnected;
-    for (let i = 0; i < 180 && heading.dataset.hsDealer !== 'ready'; i++) {
+    const potLabel = document.querySelector('.hs-pot-num');
+    for (let i = 0; i < 180 && potLabel.textContent.trim() !== '0'; i++) {
       await new Promise(r => setTimeout(r, 40));
     }
-    for (const node of [original, tip]) for (const animation of node.getAnimations()) {
-      animation.pause(); animation.currentTime = 450;
-    }
-    const pot = document.querySelector('.hs-pot-num').textContent.trim();
+    frame(1050);
+    const pot = potLabel.textContent.trim();
     const playerStacks = [...document.querySelectorAll('.hs-pl-coins')].map(el => el.textContent.trim());
-    const onlyTipVisible = getComputedStyle(tip).opacity === '1' && getComputedStyle(original).opacity === '0';
-    return {whileDealing, watchesDeal, keptHeading, onlyTipVisible, pot, funded: playerStacks.every(s => s === '100')};
+    const onlyDealerVisible = getComputedStyle(sprite).visibility === 'visible' &&
+      getComputedStyle(heading.querySelector('.polish-banner-mascot')).visibility === 'hidden';
+    return {startsAfterDecode, available, frames, keptHeading, onlyDealerVisible, pot, funded: playerStacks.every(s => s === '100')};
   })()`);
-  assert.deepEqual(deal, {whileDealing: true, watchesDeal: true, keptHeading: true, onlyTipVisible: true, pot: '0', funded: true});
+  assert.deepEqual(deal, {startsAfterDecode: true, available: true, frames: [0, 1, 2, 3, 2, 1, 0, 0, 3], keptHeading: true, onlyDealerVisible: true, pot: '0', funded: true});
   await screenshot(`dealer-tip-${width}.png`);
-  const reducedDeal = await evaluate(`(() => {
+  const reducedDeal = await evaluate(`(async() => {
     localStorage.setItem('mg_motion', 'reduce');
     document.documentElement.dataset.motion = 'reduce';
     showPigRound('reduced-deal', 'ready');
-    return {state: document.querySelector('[data-hs-dealer]').dataset.hsDealer, pot: document.querySelector('.hs-pot-num').textContent.trim()};
+    const sprite = document.querySelector('.hs-dealer img');
+    await sprite.decode();
+    return {animation: getComputedStyle(sprite).animationName, pose: getComputedStyle(sprite).transform,
+      pot: document.querySelector('.hs-pot-num').textContent.trim()};
   })()`);
-  assert.deepEqual(reducedDeal, {state: 'idle', pot: '0'});
+  assert.deepEqual(reducedDeal, {animation: 'none', pose: 'none', pot: '0'});
+  await screenshot(`dealer-idle-${width}.png`);
   await evaluate("localStorage.setItem('mg_motion', 'full')");
   for (const pose of ['salute', 'tip', 'slip', 'shrug']) {
     const state = await evaluate(`(async()=>{

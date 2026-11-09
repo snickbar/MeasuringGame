@@ -1058,15 +1058,18 @@ if (location.protocol === "file:") {
   .hs-pile-chip.gone { opacity: 0; transform: rotate(var(--r, 0deg)) scale(.2); }
   .hs-deal-num { position: absolute; z-index: 3; left: 0; right: 0; bottom: 7%; }
   .hs-deal-num .hs-pot-num { font-size: clamp(28px, 5dvh, 44px); }
-  .hs-dealer-tip { position: absolute; z-index: 1; object-fit: contain; pointer-events: none; opacity: 0; translate: 12% 0; }
-  [data-hs-dealer=dealing] > .polish-banner-mascot { transform-origin: 65% 88%; animation: hsDealerWatch var(--hs-deal-time) ease-in-out both; }
-  [data-hs-dealer=ready] > .polish-banner-mascot { animation: hsDealerRest 1.15s steps(1,end) both; }
-  [data-hs-dealer=ready] > .hs-dealer-tip { transform-origin: 52% 88%; animation: hsDealerShowTip 1.15s steps(1,end) both, hsDealerTip 1.15s ease-in-out both; }
-  @keyframes hsDealerWatch { 0%, 100% { transform: none; } 21%, 74% { transform: translate(2px, 2px) rotate(7deg); } 46% { transform: translate(2px, 1px) rotate(3deg); } }
-  @keyframes hsDealerRest { 0%, 86%, 100% { opacity: 1; } 12% { opacity: 0; } }
-  @keyframes hsDealerShowTip { 0%, 86%, 100% { opacity: 0; } 12% { opacity: 1; } }
-  @keyframes hsDealerTip { 0%, 100% { transform: none; } 42% { transform: translateY(2px) rotate(8deg); } }
-  html[data-motion=reduce] [data-hs-dealer] > :is(.polish-banner-mascot,.hs-dealer-tip) { animation: none; }
+  .hs-dealer-loaded > .polish-banner-mascot { visibility: hidden; }
+  .hs-dealer { position: absolute; z-index: 1; overflow: hidden; pointer-events: none; visibility: hidden; }
+  .hs-dealer-loaded > .hs-dealer { visibility: visible; }
+  .hs-dealer > img { display: block; width: 400%; max-width: none; height: 100%; }
+  #hs-screen.active .hs-dealer-loaded .hs-dealer > img { animation: hsDealerFrames 6.4s steps(1,end) infinite; }
+  @keyframes hsDealerFrames {
+    0%, 27%, 100% { transform: translateX(0); }
+    10%, 24.5% { transform: translateX(-25%); }
+    12.5%, 22% { transform: translateX(-50%); }
+    15% { transform: translateX(-75%); }
+  }
+  html[data-motion=reduce] #hs-screen.active .hs-dealer-loaded .hs-dealer > img { animation: none; }
   @media (max-width: 360px) {
     .hs-players .hs-pl { width: calc((100% - 18px) / 4); min-width: 0; padding-inline: 3px; }
     .hs-players .hs-pl-name { max-width: 100%; }
@@ -12642,7 +12645,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function hsDealAnim(order, hs, data) {
     const potEl = hsContentEl.querySelector("#hs-pot");
     if (!potEl) return;
-    const dealer = hsContentEl.querySelector("[data-hs-dealer]");
     const numEl = potEl.querySelector(".hs-pot-num"), pile = [...potEl.querySelectorAll(".hs-pile-chip")];
     const cards = order.map((id) => { const el = hsContentEl.querySelector(`[data-hs-pl="${id}"]`), node = el?.querySelector(".hs-pl-coins")?.firstChild; return { el, node, amt: hs.chips[id] || 0 }; })
       .filter((c) => c.el && c.node && c.node.nodeType === 3);
@@ -12663,19 +12665,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       setTimeout(() => { if (c.el.isConnected) c.el.animate([{ transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }], { duration: 320, easing: "ease-out" }); }, hold + i * gap + 900);
     });
     const end = (cards.length - 1) * gap + 1050;
-    if (dealer) {
-      dealer.style.setProperty("--hs-deal-time", `${hold + end}ms`);
-      dealer.dataset.hsDealer = "dealing";
-    }
     const step = (now) => {
       if (!potEl.isConnected) return;
       const el = now - t0;
       paint(cards.map((c, i) => { const k = Math.max(0, Math.min(1, (el - i * gap - 250) / 800)); return Math.round(c.amt * (1 - Math.pow(1 - k, 2))); }));
-      if (el < end) requestAnimationFrame(step);
-      else {
-        paint(cards.map((c) => c.amt));
-        if (dealer) dealer.dataset.hsDealer = "ready";
-      }
+      if (el < end) requestAnimationFrame(step); else paint(cards.map((c) => c.amt));
     };
     requestAnimationFrame(step);
   }
@@ -12847,13 +12841,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         hsContentEl.dataset.sig = sig;
       }
       const dealTotal = order.reduce((s, id) => s + (hs.chips[id] || 0), 0);
-      const dealer = hs.round ? "" : `<img class="hs-dealer-tip" src="anim/mode-mascots/highstakes-pig-tip.webp" style="${bannerMascot('highstakes').style}" alt="" draggable="false">`;
-      html += `<h2 class="dc-title"${dealer ? ' data-hs-dealer="idle"' : ""}>${hs.round ? "Round " + hs.round + " done" : "High Stakes"}${dealer}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " chips"}</p>`;
+      const dealer = hs.round ? "" : `<span class="hs-dealer" style="${bannerMascot('highstakes').style}" aria-hidden="true"><img src="anim/mode-mascots/highstakes-dealer-tip.webp" alt="" draggable="false"></span>`;
+      html += `<h2 class="dc-title${dealer ? " hs-dealer-heading" : ""}">${hs.round ? "Round " + hs.round + " done" : "High Stakes"}${dealer}</h2><p class="dc-sub">${hs.round ? "Next up: round " + (hs.round + 1) + ", ante " + HS.hsAnteFor(hs.round + 1) + (hs.carry ? ` &middot; ${hs.carry} rolled over` : "") : "Everyone starts with " + hsFmt(Object.values(hs.chips)[0] || 0) + " chips"}</p>`;
       html += hs.round ? `<p class="hs-hint">Dealing...</p>` : `<div class="hs-players">${order.map((id) => hsPlayerChip(id, hs, {})).join("")}</div>
         <div class="hs-deal-pot" id="hs-pot"><img class="hs-deal-stack" src="icons/poker-chip-stack.webp" alt="" draggable="false">${HS_PILE.map(([x, y, r]) => `<img class="hs-pile-chip" src="icons/poker-chip-blue.webp" alt="" draggable="false" style="left:${x}%;top:${y}%;--r:${r}deg">`).join("")}<div class="hs-deal-num"><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsFmt(dealTotal)}</div></div></div>`;
       if (!hs.round) html += isHost ? `<button type="button" class="dc-btn" id="hs-deal">Deal round 1</button>` : `<p class="hs-hint">Waiting for the host to deal the first round...</p>`;
       hsContentEl.innerHTML = html;
-      if (!hs.round) hsDealAnim(order, hs, data);
+      if (!hs.round) {
+        const sprite = hsContentEl.querySelector(".hs-dealer img");
+        sprite.decode().then(() => sprite.closest(".hs-dealer-heading")?.classList.add("hs-dealer-loaded"), () => {});
+        hsDealAnim(order, hs, data);
+      }
       return;
     }
     // pick / bet / reveal: question on top, players down both sides, the 4 answers and a big pot in the middle.
