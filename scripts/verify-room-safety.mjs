@@ -82,6 +82,12 @@ assert.equal(commitHsState(accepted, 'game', hs, { hs: timeout }), undefined, 's
 assert.equal(commitHsState({ ...betRoom, gameId: 'rematch' }, 'game', hs, { hs: timeout }), undefined);
 const timedOut = commitHsState(betRoom, 'game', hs, { hs: timeout });
 assert.equal(commitHsState(timedOut, 'game', hs, { hs: call }), undefined, 'late call cannot undo a committed timeout');
+const reorderFields = value => value && typeof value === 'object' && !Array.isArray(value)
+  ? Object.fromEntries(Object.entries(value).reverse().map(([key, child]) => [key, reorderFields(child)])) : value;
+assert.deepEqual(commitHsState({...betRoom, hs: reorderFields(hs)}, 'game', hs, { hs: timeout })?.hs, timeout,
+  'a transaction snapshot with the same state in a different field order still advances');
+assert.equal(commitHsState({...betRoom, hs: {...hs, bet: {...hs.bet, turnEndsAt: hs.bet.turnEndsAt + 5000}}}, 'game', hs, { hs: timeout }), undefined,
+  'a timeout calculated before a pause cannot override an extended deadline');
 const resolved = HS.hsApplyAction(call, 'c', 'call', 3);
 assert.equal(resolved.stage, 'reveal');
 const revealed = commitHsState(accepted, 'game', call, { hs: resolved });
@@ -131,6 +137,21 @@ assert.equal(writes, 1, 'a pending host write has time to settle');
 clock++;
 vm.runInContext('hsHostTick()', context);
 assert.equal(writes, 2, 'an overdue host write can be retried even if its original callbacks never ran');
+context.roomState = {...betRoom, hsActs: {b: {k: `${hs.round}:${hs.bet.n}`, a: 'check'}}};
+context.hsBusyUntil = 0;
+dbRoom = {...context.roomState, players: {...betRoom.players, a: {isHost: true}}, hs: reorderFields(hs)};
+vm.runInContext('hsHostTick()', context);
+assert.equal(writes, 3, 'an illegal queued check cannot block an expired turn facing a bet');
+assert.equal(pending(dbRoom)?.hs.bet.folded.b, true, 'the actual host driver advances from the reordered snapshot');
+const spectatorState = {...hs, out: {host: 1}, chips: {...hs.chips, host: 0}, seatsAll: [...hs.seatsAll, 'host']};
+const spectatorRoom = {...betRoom, hs: spectatorState, players: {...betRoom.players, b: {isBot: true}, host: {isHost: true}}};
+Object.assign(context, {roomState: spectatorRoom, currentPlayerId: 'host', hsBusyUntil: 0,
+  document: {hidden: false}, nativeAudioActive: true, hsScreenEl: {classList: {contains: () => true}},
+  clearInterval: () => {}, hsTickHandle: 1, hsRefreshTimers: () => {}});
+dbRoom = {...spectatorRoom, hs: reorderFields(spectatorState)};
+vm.runInContext(actual('hsResumeTicker') + '\nhsResumeTicker();', context);
+assert.equal(writes, 4, 'a returning host still advances an expired bot turn while spectating');
+assert.equal(pending(dbRoom)?.hs.bet.n, hs.bet.n + 1, 'the bot action commits once after returning');
 let armed = [], botGuesses = 0;
 const hostContext = vm.createContext({ console, electedHost, transferHost, db: {}, ref: (_, path) => path,
   nowMs: () => 100000, isHost: false, currentPlayerId: 'guest', hostTransfers: new Set(),

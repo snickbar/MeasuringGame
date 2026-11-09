@@ -12425,7 +12425,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       else if (players[actor].isBot && now >= b.turnAt + 2000 + (hsHash(key + actor) % 2200)) {
         const act = HS.hsBotDecide(hs, actor, Number(roomState.hsConf?.[actor] ?? 0.3), Math.random, players[actor].botDifficulty || "medium");
         next = HS.hsApplyAction(hs, actor, act, now);
-      } else next = HS.hsTimeoutAction(hs, now);
+      }
+      if (next === hs) next = HS.hsTimeoutAction(hs, now);
       if (next !== hs) run(hsWrite({ hs: next }));
       return;
     }

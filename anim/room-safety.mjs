@@ -61,9 +61,17 @@ export function admitPlayer(room, id, player, reclaim = false) {
   return { ...room, players: { ...players, [id]: { ...old, ...player, frameIndex, isHost: !!player.isHost && !otherHost } } };
 }
 
+// A room listener and a transaction can present the same tree with different key order.
+function sameHsState(a, b) {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every(key => Object.hasOwn(b, key) && sameHsState(a[key], b[key]));
+}
+
 export function commitHsState(room, gameId, expected, fields) {
   if (room === null) return null;
-  if (!room || room.phase !== 'hs' || room.gameId !== gameId || JSON.stringify(room.hs) !== JSON.stringify(expected)) return undefined;
+  if (!room || room.phase !== 'hs' || room.gameId !== gameId || !sameHsState(room.hs, expected)) return undefined;
   const next = { ...room, ...fields }, hs = fields.hs;
   if (hs?.stage === 'reveal' && hs.result && room.hsQ) {
     // Prefix numeric keys so Firebase does not deserialize this map as an array.

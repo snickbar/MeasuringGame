@@ -120,6 +120,16 @@ const total = (hs) => Object.values(hs.chips).reduce((a, b) => a + b, 0) + hs.po
   const facing = h.bet.turn; const h2 = H.hsTimeoutAction(h, t + (H.HS_TURN_SECONDS + 1) * 1000);
   assert.ok(h2.stage === "reveal" && h2.bet.folded[facing], "facing a bet, timeout folds");
 }
+// A stale active seat must not keep the table stuck after the timer runs out.
+{
+  const hs = setup({ a: 5, b: 100, c: 100 }, { a: 2, b: 2, c: 2 });
+  const stuck = { ...hs, bet: { ...hs.bet, turn: 'a' } };
+  assert.equal(H.hsTimeoutAction(stuck, stuck.bet.turnEndsAt - 1), stuck);
+  const next = H.hsTimeoutAction(stuck, stuck.bet.turnEndsAt);
+  assert.equal(next.bet.turn, 'b', 'an expired turn recovers if an older room points to an all-in player');
+  assert.equal(next.bet.folded?.a, undefined, 'an all-in player stays eligible to win the pot');
+  assert.equal(next.pot, stuck.pot);
+}
 // Heads up, a wager is capped at what the only opponent can match.
 {
   let hs = setup({ a: 100, b: 12 }, { a: 2, b: 2 });

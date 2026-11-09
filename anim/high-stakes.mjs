@@ -163,7 +163,7 @@ function hsAdvanceTurn(hs, from, now, turnSeconds) {
   const n = b.order.length;
   for (let k = 1; k <= n; k++) {
     const id = b.order[(from + k + n) % n];
-    if (b.folded?.[id] || hs.chips[id] <= 0) continue;
+    if (b.folded?.[id] || !(hs.chips[id] > 0)) continue;
     if (b.acted?.[id]) continue;
     if (funded < 2 && (b.put?.[id] || 0) >= b.cur) continue;
     b.turn = id;
@@ -235,7 +235,11 @@ export function hsApplyAction(hsIn, pid, action, now, turnSeconds = HS_TURN_SECO
 export function hsTimeoutAction(hs, now, turnSeconds = HS_TURN_SECONDS) {
   if (hs.stage !== "bet" || !hs.bet.turn || now < hs.bet.turnEndsAt) return hs;
   const legal = hsLegalActions(hs, hs.bet.turn);
-  return hsApplyAction(hs, hs.bet.turn, legal.canCheck ? "check" : "fold", now, turnSeconds);
+  if (legal) return hsApplyAction(hs, hs.bet.turn, legal.canCheck ? "check" : "fold", now, turnSeconds);
+  // A stale turn can point to a player who is already folded or all in.
+  const next = clone(hs);
+  next.bet.n = (next.bet.n || 0) + 1;
+  return hsAdvanceTurn(next, next.bet.order.indexOf(next.bet.turn), now, turnSeconds);
 }
 
 // Each contribution tier includes paid antes and folded chips. A lone excess
