@@ -111,7 +111,7 @@ runFixture({html, widths: [320, 390], out: 'output/high-stakes-pig', modules: {
     showPigRound('large-pot', 'pick');
     const sprite = document.querySelector('.hs-pig-fidget .hs-pig-frames img');
     await sprite.decode();
-    const frames = pigSequence(sprite, [100, 700, 880, 1020, 1130, 1270, 1500, 6200, 7420]);
+    const frames = pigSequence(sprite, [100, 700, 880, 1020, 1130, 1270, 1500, 3800, 5020]);
     await document.fonts.ready;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     refreshPigTimers();
