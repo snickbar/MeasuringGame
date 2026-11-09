@@ -1035,11 +1035,21 @@ if (location.protocol === "file:") {
   .hs-table-foot .hs-pot-num { font-size: clamp(14px, 4.6vw, 22px); }
   .hs-table-pig { display: block; width: clamp(38px, 15vw, 70px); height: auto; transform-origin: 50% 87%; filter: drop-shadow(0 2px 2px #69452445); pointer-events: none; }
   .hs-table-pig[data-mood=peek] { animation: hsPigPeek 4.8s ease-in-out infinite; }
-  .hs-table-pig[data-mood=perk] { animation: hsPigPerk .85s ease-in-out .28s both; }
-  .hs-table-pig[data-mood=tilt] { animation: hsPigTilt 1.1s ease-in-out .28s both; }
+  .hs-pig-result { position: relative; flex: none; aspect-ratio: 373 / 420; animation: var(--hs-pig-motion) 1.05s ease-in-out var(--hs-pig-offset) both; }
+  .hs-pig-result img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .hs-pig-result .hs-pig-idle { opacity: 0; animation: hsPigIdle 1.05s linear var(--hs-pig-offset) both; }
+  .hs-pig-result .hs-pig-pose { animation: hsPigPose 1.05s linear var(--hs-pig-offset) both; }
+  .hs-pig-result[data-mood=salute] { --hs-pig-motion: hsPigSalute; }
+  .hs-pig-result[data-mood=tip] { --hs-pig-motion: hsPigTip; }
+  .hs-pig-result[data-mood=slip] { --hs-pig-motion: hsPigSlip; }
+  .hs-pig-result[data-mood=shrug] { --hs-pig-motion: hsPigShrug; }
   @keyframes hsPigPeek { 0%, 48%, 100% { transform: none; } 58%, 67% { transform: translate(-2px, -3px) rotate(-7deg); } 76% { transform: rotate(2deg); } }
-  @keyframes hsPigPerk { 0%, 100% { transform: none; } 18% { transform: translateY(2px) scaleY(.94); } 47% { transform: translateY(-6px) rotate(-8deg); } 72% { transform: rotate(4deg); } }
-  @keyframes hsPigTilt { 0%, 100% { transform: none; } 38%, 62% { transform: rotate(-12deg); } }
+  @keyframes hsPigIdle { 0%, 23% { opacity: 1; } 34%, 100% { opacity: 0; } }
+  @keyframes hsPigPose { 0%, 23% { opacity: 0; } 34%, 100% { opacity: 1; } }
+  @keyframes hsPigSalute { 0%, 100% { transform: none; } 21% { transform: translateY(2px) scaleY(.94); } 42% { transform: translateY(-6px) rotate(5deg); } 68% { transform: rotate(-3deg); } }
+  @keyframes hsPigTip { 0%, 100% { transform: none; } 45% { transform: translateY(2px) rotate(7deg); } 72% { transform: rotate(-2deg); } }
+  @keyframes hsPigSlip { 0%, 100% { transform: none; } 35% { transform: rotate(-8deg); } 58% { transform: rotate(4deg); } 76% { transform: rotate(-2deg); } }
+  @keyframes hsPigShrug { 0%, 100% { transform: none; } 16% { transform: rotate(-4deg); } 43% { transform: translateY(-3px) rotate(3deg); } 70% { transform: rotate(-2deg); } }
   .hs-coin { position: fixed; z-index: 100000; width: 26px; height: 26px; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
   /* The opening deal: a big pot of chips in the middle that empties into the player cards. */
   .hs-deal-pot { position: relative; width: clamp(142px, 24dvh, 210px); aspect-ratio: 1; margin: 6px auto 8px; box-sizing: border-box; border: 4px solid #4a2c12; border-radius: 50%; background: radial-gradient(circle at 32% 24%, #fff3b0, #f7c948 58%, #e0a520); box-shadow: 0 5px 0 rgba(74,44,18,.5), inset 0 0 22px rgba(255,255,255,.6); }
@@ -1117,7 +1127,7 @@ if (location.protocol === "file:") {
     .hs-opts--result .hs-who .avatar-icon { width: 20px; height: 20px; }
   }
   @media (prefers-reduced-motion: reduce) { #hs-content :is(.hs-table-pig, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; } }
-  html[data-motion=reduce] #hs-content :is(.hs-table-pig, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; }
+  html[data-motion=reduce] #hs-content :is(.hs-table-pig, .hs-pig-result img, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; }
   .hs-pl .avatar.hs-dance { display: inline-block; transform-origin: 50% 100%; animation: hsDance 1.9s ease-in-out .1s both; }
   @keyframes hsDance {
     0% { transform: translateY(0) rotate(0) scale(1); } 12% { transform: translateY(-12px) scale(1.1); }
@@ -12513,6 +12523,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const HS_ANIM_HOLD_MS = 4000, HS_COIN_HOLD_MS = 2200;
   let hsRenderedAnimating = false, hsAnimEl = null, hsAnimCtl = null, hsAnimKey = null;
   let hsOverArrKey = null, hsPrevShown = null, hsPrevGame = null, hsCelebrated = null, hsRecorded = null, hsTurnAlerted = null, hsBetsToastKey = null, hsFlairOverKey = null, hsFooledKey = null, hsActSent = null;
+  let hsPigRoundKey = null, hsPigStartedAt = 0;
+  const HS_PIG_IDLE = 'anim/mode-mascots/highstakes-pig-tutorial.webp';
+  function hsResultPig(hs, gameId, me) {
+    const key = `${gameId}:${hs.round}`;
+    const now = performance.now();
+    if (hsPigRoundKey !== key) { hsPigRoundKey = key; hsPigStartedAt = now; }
+    let mood = 'tip';
+    if (HS.hsPayout(hs, me) > 0) mood = 'salute';
+    else if (hs.seats.includes(me) && !hs.out?.[me] && hs.chips[me] === 0) mood = 'slip';
+    else if (!hs.result.winners?.length) mood = 'shrug';
+    // Continue from the same point if a room update redraws this answer screen.
+    return `<span class="hs-table-pig hs-pig-result" data-mood="${mood}" aria-hidden="true" style="--hs-pig-offset:${hsPigStartedAt - now}ms">
+      <img class="hs-pig-idle" src="${HS_PIG_IDLE}" alt="" draggable="false">
+      <img class="hs-pig-pose" src="anim/mode-mascots/highstakes-pig-${mood}.webp" alt="" draggable="false">
+    </span>`;
+  }
   let hsRenderedStandings = false, hsRenderedLocked = false;
   const hsStandingsNow = (hs) => hs.stage === "reveal" && !!hs.showStand; // the host taps "Show standings" once the winner box has had its moment
   const hsAnimating = (hs) => hs.stage === "reveal" && (!hs.animEndsAt || nowMs() < hs.animEndsAt);
@@ -12884,8 +12910,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>`;
     }).join("");
     const potHtml = `<div class="hs-potbox" id="hs-pot"><img src="icons/poker-chip-stack.webp" alt="" draggable="false"><div><div class="hs-pot-lab">POT</div><div class="hs-pot-num">${hsChipsFmt(potShown)}</div></div></div>`;
-    const pigMood = stage === "pick" ? "peek" : result ? (result.winners ? "perk" : "tilt") : "";
-    const tableFoot = pigMood ? `<div class="hs-table-foot"><img class="hs-table-pig" data-mood="${pigMood}" src="anim/mode-mascots/highstakes-pig-tutorial.webp" alt="" draggable="false">${potHtml}</div>` : potHtml;
+    const pig = stage === "pick" ? `<img class="hs-table-pig" data-mood="peek" src="${HS_PIG_IDLE}" alt="" draggable="false">`
+      : result ? hsResultPig(hs, data.gameId, me) : "";
+    const tableFoot = pig ? `<div class="hs-table-foot">${pig}${potHtml}</div>` : potHtml;
     const livePots = stage === "bet" && hs.seats.some(id => !b.folded?.[id] && hs.chips[id] === 0) ? HS.hsPotBreakdown(hs) : null;
     const pots = result?.pots || livePots?.pots || [];
     const unmatched = Object.values(livePots?.refunds || {}).reduce((sum, amount) => sum + amount, 0);
