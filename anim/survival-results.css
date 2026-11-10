@@ -361,19 +361,25 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   -webkit-mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat; mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat;
   mix-blend-mode:multiply;
 }
-.sv-meter-wash { background:linear-gradient(to right,#f3cfc3 0 var(--safe-cutoff),#f6e6b0 var(--safe-cutoff) var(--great-cutoff),#cfe5bd var(--great-cutoff) 100%); }
+.sv-meter-wash { filter:brightness(.94) saturate(.8); background:linear-gradient(to right,#f3cfc3 0 var(--safe-cutoff),#f6e6b0 var(--safe-cutoff) var(--great-cutoff),#cfe5bd var(--great-cutoff) 100%); }
 .sv-meter-fill {
   background:linear-gradient(to right,#ec6a58 0 var(--safe-cutoff),#f2c230 var(--safe-cutoff) var(--great-cutoff),#5dbb62 var(--great-cutoff) 100%);
   clip-path:inset(0 calc(100% - var(--accuracy)) 0 0);
 }
+.sv-meter-glow {
+  position:absolute; inset:0; overflow:hidden; opacity:0; mix-blend-mode:screen;
+  -webkit-mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat; mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat;
+}
+.sv-meter-glow i { position:absolute; inset:0; translate:-100% 0; background:linear-gradient(to right,transparent 80%,color-mix(in srgb,var(--ember) 55%,#fff6d0) 97%,transparent 100%); }
 .sv-meter-flag {
+  translate:0 26%; clip-path:inset(0 0 26% 0);
   position:absolute; z-index:-1; bottom:34%; height:175%; aspect-ratio:203/380; background:center/100% 100% no-repeat;
   transform:translateX(-14%); transform-origin:14% 100%;
 }
 .sv-flag-safe { left:var(--safe-cutoff); background-image:url("../icons/survival-flag-gold.webp"); }
 .sv-flag-great { left:var(--great-cutoff); background-image:url("../icons/survival-flag-green.webp"); }
 .sv-meter .sv-meter-flag { filter:grayscale(.85) brightness(.88); }
-.sv-meter[data-zone="safe"] .sv-flag-safe, .sv-meter[data-zone="great"] .sv-meter-flag { filter:none; }
+.sv-meter[data-zone="safe"] .sv-flag-safe, .sv-meter[data-zone="great"] .sv-meter-flag { filter:none; translate:0 0; }
 .sv-meter-marker { position:absolute; z-index:2; inset-block:0; left:clamp(4px,var(--accuracy),calc(100% - 4px)); width:0; }
 .sv-meter-pin {
   position:absolute; left:0; top:56%; width:17px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
@@ -385,14 +391,20 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   position:absolute; left:0; top:56%; width:5px; height:9px; border-radius:3px;
   background:var(--flourish); opacity:0; --x:-14px; --y:-10px; --angle:-50deg;
 }
+.sv-meter[data-zone="safe"] .sv-meter-sparks i { background:#f2b722; }
+.sv-meter[data-zone="great"] .sv-meter-sparks i { width:8px; height:10px; border-radius:0 90% 0 90%; background:#43b04f; }
 .sv-meter-sparks i:nth-child(2) { --x:-8px; --y:-18px; --angle:-24deg; }
 .sv-meter-sparks i:nth-child(3) { --x:1px; --y:-21px; --angle:10deg; }
 .sv-meter-sparks i:nth-child(4) { --x:11px; --y:-14px; --angle:48deg; }
 .sv-meter-sparks i:nth-child(5) { --x:16px; --y:4px; --angle:96deg; }
-.sv-meter.revealing .sv-meter-fill { animation:svMeterFill var(--meter-travel) var(--meter-delay) var(--meter-ease) both; }
+.sv-meter.revealing .sv-meter-fill { animation:svMeterFill var(--meter-travel) var(--meter-delay) var(--fill-ease,var(--meter-ease)) both; }
+.sv-meter.revealing .sv-meter-glow { animation:svGlowOn .01s var(--meter-delay) both,svGlowOff .35s var(--meter-land) forwards; }
+.sv-meter.revealing .sv-meter-glow i { animation:svGlowSweep var(--meter-travel) var(--meter-delay) var(--meter-ease) both; }
+.sv-meter.revealing .sv-meter-track { animation:svWallShake .32s var(--meter-land) ease-out; }
 .sv-meter.revealing .sv-meter-marker { animation:svMeterSlide var(--meter-travel) var(--meter-delay) var(--meter-ease) both; }
 .sv-meter.revealing .sv-meter-pin { animation:svMeterLand .38s var(--meter-land) ease-out both; }
-.sv-meter[data-zone="safe"].revealing .sv-flag-safe, .sv-meter[data-zone="great"].revealing .sv-meter-flag { animation:svFlagLight .55s var(--meter-land) ease-out both; }
+.sv-meter:not([data-zone="lost"]).revealing .sv-flag-safe { animation:svFlagRise .6s var(--pass-safe) ease-out both; }
+.sv-meter[data-zone="great"].revealing .sv-flag-great { animation:svFlagRise .6s var(--pass-great) ease-out both; }
 .sv-meter.revealing .sv-meter-ring { animation:svMeterRing .45s var(--meter-land) ease-out both; }
 .sv-meter.revealing .sv-meter-sparks i { animation:svMeterSparks .49s var(--meter-land) ease-out both; }
 @keyframes svMeterFill { from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 calc(100% - var(--accuracy)) 0 0)} }
@@ -402,12 +414,16 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   30% { transform:translate(-50%,-50%) scale(1.7); }
   62% { transform:translate(-50%,-50%) scale(.92); }
 }
-@keyframes svFlagLight {
-  0% { transform:translateX(-14%); filter:grayscale(.85) brightness(.88); }
-  35% { transform:translateX(-14%) scale(1.16) rotate(-6deg); filter:none; }
-  68% { transform:translateX(-14%) scale(.97) rotate(2deg); }
-  100% { transform:translateX(-14%); filter:none; }
+@keyframes svFlagRise {
+  0% { translate:0 26%; rotate:0deg; filter:grayscale(.85) brightness(.88); }
+  55% { translate:0 -7%; rotate:-5deg; filter:none; }
+  80% { translate:0 1.5%; rotate:2deg; }
+  100% { translate:0 0; rotate:0deg; filter:none; }
 }
+@keyframes svGlowOn { from{opacity:0} to{opacity:1} }
+@keyframes svGlowOff { from{opacity:1} to{opacity:0} }
+@keyframes svGlowSweep { from{translate:-100% 0} to{translate:calc(var(--accuracy) - 100%) 0} }
+@keyframes svWallShake { 0%,100%{translate:0 0} 28%{translate:0 1.6px} 60%{translate:0 -.8px} }
 @keyframes svMeterRing {
   0% { opacity:0; transform:translate(-50%,-50%) scale(.45); }
   25% { opacity:.75; }

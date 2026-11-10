@@ -14340,6 +14340,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.addEventListener('visibilitychange',check);
     setTimeout(cleanup, 1950);
   }
+  // Timing for the castle-wall meter. The ember eases along (same curve as --meter-ease in survival-results.css), so work out when it
+  // reaches each stone and each flag: stones light one at a time (a stepped easing) and flags rise just as the ember passes them.
+  function svMeterTiming(accuracy) {
+    const bez = (s, a, b) => 3 * (1 - s) * (1 - s) * s * a + 3 * (1 - s) * s * s * b + s * s * s;
+    const timeAt = (progress) => { // fraction of the travel time at which the ember has covered this fraction of its way
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (bez(mid, .65, 1) < progress) lo = mid; else hi = mid; }
+      return bez((lo + hi) / 2, .24, .32);
+    };
+    const DELAY = .24, TRAVEL = .96, STONES = 12, slice = 100 / STONES;
+    let style = "";
+    if (accuracy > 0) {
+      const k = Math.max(1, Math.ceil(accuracy / slice - 1e-6));
+      const stops = ["0 0%"];
+      for (let i = 1; i <= k; i++) {
+        const from = (i - 1) * slice, to = Math.min(accuracy, i * slice);
+        const t = Math.max(0, Math.min(1, timeAt((from + to) / 2 / accuracy)));
+        stops.push(`${((i - 1) * slice / accuracy).toFixed(4)} ${(t * 100).toFixed(2)}%`, `${(to / accuracy).toFixed(4)} ${(t * 100).toFixed(2)}%`);
+      }
+      stops.push("1 100%");
+      style += `--fill-ease:linear(${stops.join(",")});`;
+    }
+    const pass = (cutoff) => accuracy >= cutoff ? (DELAY + TRAVEL * timeAt(cutoff / accuracy)).toFixed(3) + "s" : "0s";
+    return style + `--pass-safe:${pass(SURVIVAL_PASS)};--pass-great:${pass(80)};`;
+  }
   // How safe was that guess? A bar from 0 to 100 % with the line you have to clear and a pin where you landed.
   function svGaugeHtml(acc) {
     const accuracy = Math.max(0, Math.min(100, acc)), safe = accuracy >= SURVIVAL_PASS;
@@ -14348,9 +14373,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ? (safe ? "Right at the safe cutoff" : "Just short of safety")
       : `${gap} point${gap === "1" ? "" : "s"} ${safe ? "above the safe cutoff" : "short of safety"}`;
     const zone = accuracy >= 80 ? "great" : safe ? "safe" : "lost";
-    return `<div class="sv-meter${prefersReducedMotion() ? "" : " revealing"}" data-zone="${zone}" role="meter" aria-label="Survival accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}" aria-valuetext="${svAccuracyLabel(accuracy)} accurate. ${SURVIVAL_PASS}% needed to stay safe." style="--accuracy:${accuracy}%;--safe-cutoff:${SURVIVAL_PASS}%">
+    return `<div class="sv-meter${prefersReducedMotion() ? "" : " revealing"}" data-zone="${zone}" role="meter" aria-label="Survival accuracy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}" aria-valuetext="${svAccuracyLabel(accuracy)} accurate. ${SURVIVAL_PASS}% needed to stay safe." style="--accuracy:${accuracy}%;--safe-cutoff:${SURVIVAL_PASS}%;${svMeterTiming(accuracy)}">
       <div class="sv-meter-track" aria-hidden="true">
-        <span class="sv-meter-wall"></span><span class="sv-meter-wash"></span><span class="sv-meter-fill"></span>
+        <span class="sv-meter-wall"></span><span class="sv-meter-wash"></span><span class="sv-meter-fill"></span><span class="sv-meter-glow"><i></i></span>
         <span class="sv-meter-flag sv-flag-safe"></span><span class="sv-meter-flag sv-flag-great"></span>
         <span class="sv-meter-marker"><span class="sv-meter-ring"></span><span class="sv-meter-pin"></span><span class="sv-meter-sparks"><i></i><i></i><i></i><i></i><i></i></span></span>
       </div>
