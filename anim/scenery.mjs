@@ -54,7 +54,7 @@ export const SETTINGS = {
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
   desert: { backdrop: 'desert-dunes', movers: ['tumbleweed'], floaters: ['cloud-set-sunset'], floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
   underwater: { movers: ['fish'], floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
-  space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
+  space: { movers: ['twinkle', 'comet', 'asteroid'], floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field' },
   enchanted: { sky: ['#c8badf', '#efe2f2'], layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' , tall: ['enchanted-tall-low', 'enchanted-tall-mid', 'enchanted-tall-high']},
   mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'], flyers: 'hawks' },
   jungle: { movers: ['butterflies'], floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'], fireflies: true },
@@ -341,11 +341,11 @@ function drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark,
 
 // Each scene has its own kind of bird, so the sky does not look the same everywhere.
 const BIRD_STYLES = {
-  gulls: { groups: 1, n: [2, 3], size: [16, 22], speed: [14, 24], flap: 2.2, color: '#f6f3ec', edge: '#8a93a6', arc: .38, formation: 'loose' },
-  geese: { groups: 1, n: [5, 7], size: [9, 12], speed: [26, 36], flap: 1.7, color: '#566178', arc: .55, formation: 'v' },
-  swallows: { groups: 1, n: [3, 4], size: [7, 9], speed: [48, 70], flap: 5, color: '#3d465c', arc: .6, formation: 'scatter' },
-  hawks: { groups: 1, n: [1, 1], size: [22, 28], speed: [10, 16], flap: 0, color: '#5b4a43', arc: .22, formation: 'single' },
-  doves: { groups: 1, n: [2, 2], size: [12, 15], speed: [18, 28], flap: 2.6, color: '#f8f3ef', edge: '#a79fb0', arc: .5, formation: 'loose' },
+  gulls: { density: 0.45, groups: 1, n: [2, 3], size: [16, 22], speed: [14, 24], flap: 2.2, color: '#f6f3ec', edge: '#8a93a6', arc: .38, formation: 'loose' },
+  geese: { density: 0.4, groups: 1, n: [5, 7], size: [9, 12], speed: [26, 36], flap: 1.7, color: '#566178', arc: .55, formation: 'v' },
+  swallows: { density: 0.5, groups: 1, n: [3, 4], size: [7, 9], speed: [48, 70], flap: 5, color: '#3d465c', arc: .6, formation: 'scatter' },
+  hawks: { density: 0.4, groups: 1, n: [1, 1], size: [22, 28], speed: [10, 16], flap: 0, color: '#5b4a43', arc: .22, formation: 'single' },
+  doves: { density: 0.45, groups: 1, n: [2, 2], size: [12, 15], speed: [18, 28], flap: 2.6, color: '#f8f3ef', edge: '#a79fb0', arc: .5, formation: 'loose' },
 };
 // Moving background life, drawn in code: flocks of far-off birds by day, fireflies at night.
 // Both drift past on their own and slide away slowly as the stack climbs.
@@ -357,11 +357,12 @@ function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
   if (style && !dark) {
     // Stadiums keep their birds high above the roof, not inside the stands.
     const clear = (kit.config.birdClear ? (width + 100) * groundScale * 2 * kit.config.birdClear : 340 * groundScale);
-    for (let g = 0; g < style.groups; g++) {
+    for (const g of worldCells(groundTop, height, groundScale, 700)) {
+      if (unitRandom(`${seed}${kind}p`, g, 0) > style.density) continue;
       const r = j => unitRandom(`${seed}${kind}`, g, j);
       const dir = r(1) > .5 ? 1 : -1, speed = (style.speed[0] + (style.speed[1] - style.speed[0]) * r(2)) * groundScale;
       const n = style.n[0] + Math.floor(r(3) * (style.n[1] - style.n[0] + 1));
-      const gy = yOf(r(4) * .65, .3), cycle = width + 260 * groundScale;
+      const gy = groundTop - (g * 700 + 700 * r(4)) * groundScale, cycle = width + 260 * groundScale;
       const gx = ((((r(5) * cycle + dir * t * speed - shiftX * .1) % cycle) + cycle) % cycle) - 130 * groundScale;
       const sky = Math.max(0, Math.min(1, (groundTop - clear - gy) / (90 * groundScale)));
       if (!sky) continue;
@@ -389,10 +390,10 @@ function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
     }
   }
   if (glow && (dark || glow === 'always')) {
-    for (let i = 0; i < 16; i++) {
-      const r = j => unitRandom(`${seed}fire`, i, j);
+    for (const cellK of worldCells(groundTop, height, groundScale, 260)) for (let m = 0; m < 3; m++) {
+      const i = cellK * 3 + m, r = j => unitRandom(`${seed}fire`, i, j);
       const x = ((r(1) * width + Math.sin(t * .5 + r(2) * 6.28) * 18 * groundScale - shiftX * .2) % width + width) % width;
-      const y = yOf(r(3), .5) + Math.cos(t * .4 + r(4) * 6.28) * 12 * groundScale;
+      const y = groundTop - (cellK * 260 + r(3) * 260) * groundScale + Math.cos(t * .4 + r(4) * 6.28) * 12 * groundScale;
       if (y > groundTop - 12 * groundScale || y < -10) continue;
       const blink = Math.pow(Math.sin(t * 1.3 + r(5) * 6.28) * .5 + .5, 2), rad = (5 + 3 * r(6)) * groundScale;
       const g = ctx.createRadialGradient(x, y, 0, x, y, rad * 2.4);
@@ -403,6 +404,12 @@ function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
 }
 
 
+// Moving life is placed per slice of the climb (world-fixed), so nothing repeats at the same spot as you go up.
+function worldCells(groundTop, height, gs, cell) {
+  const lo = Math.max(0, Math.floor((groundTop - height) / gs / cell) - 1), hi = Math.ceil(groundTop / gs / cell) + 1, out = [];
+  for (let k = lo; k <= hi; k++) out.push(k);
+  return out;
+}
 // Other moving life, drawn in code. Each scene lists its own `movers`, so no two scenes share the same traffic.
 function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
   const kinds = kit.config.movers; if (!kinds) return;
@@ -414,17 +421,18 @@ function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     if (kind === 'fish') {
       const cols = [['#f08a4b', '#fbd0a0'], ['#4f86c6', '#bcd8f2'], ['#e5c24b', '#fbefb0']];
-      for (let g = 0; g < 3; g++) {
-        const r = j => unitRandom(`${seed}fish`, g, j), dir = r(1) > .5 ? 1 : -1, n = g === 2 ? 1 : 6, sz = (g === 2 ? 26 : 9) * gs;
-        const gx = lane(r(2), dir, (g === 2 ? 14 : 30) * gs, 120 * gs), gy = yOf(.12 + r(3) * .5, .25);
+      for (const cellK of worldCells(groundTop, height, gs, 170)) {
+        const g = cellK, r = j => unitRandom(`${seed}fish`, g, j); if (r(0) > .5) continue;
+        const big = r(9) > .75, ci = Math.floor(r(8) * 2), dir = r(1) > .5 ? 1 : -1, n = big ? 1 : 6, sz = (big ? 26 : 9) * gs;
+        const gx = lane(r(2), dir, (big ? 14 : 30) * gs, 120 * gs), gy = groundTop - (cellK * 170 + r(3) * 170) * gs;
         if (gy > groundTop - 40 * gs) continue;
         for (let b = 0; b < n; b++) {
           const q = j => unitRandom(`${seed}fish${g}`, b, j);
           const x = gx - dir * q(1) * 70 * gs, y = gy + (q(2) - .5) * 60 * gs + Math.sin(t * 1.6 + q(3) * 6.28) * 6 * gs, wag = Math.sin(t * 7 + b) * .35 * sz;
-          ctx.globalAlpha = .85; ctx.fillStyle = cols[g][0];
+          ctx.globalAlpha = .85; ctx.fillStyle = cols[big ? 2 : ci][0];
           ctx.beginPath(); ctx.ellipse(x, y, sz, sz * .5, 0, 0, 6.283); ctx.fill();
           ctx.beginPath(); ctx.moveTo(x - dir * sz * .8, y); ctx.lineTo(x - dir * sz * 1.6, y - sz * .55 + wag); ctx.lineTo(x - dir * sz * 1.6, y + sz * .55 + wag); ctx.closePath(); ctx.fill();
-          ctx.fillStyle = cols[g][1]; ctx.beginPath(); ctx.ellipse(x + dir * sz * .1, y + sz * .15, sz * .6, sz * .22, 0, 0, 6.283); ctx.fill();
+          ctx.fillStyle = cols[big ? 2 : ci][1]; ctx.beginPath(); ctx.ellipse(x + dir * sz * .1, y + sz * .15, sz * .6, sz * .22, 0, 0, 6.283); ctx.fill();
           ctx.fillStyle = '#2b3a4a'; ctx.beginPath(); ctx.arc(x + dir * sz * .6, y - sz * .1, Math.max(1.2, sz * .1), 0, 6.283); ctx.fill();
         }
       }
@@ -440,14 +448,16 @@ function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
         ctx.strokeStyle = '#5a4a40'; ctx.lineWidth = Math.max(1.4, 1.6 * gs); ctx.beginPath(); ctx.moveTo(x, y - w * .6); ctx.lineTo(x, y + w * .7); ctx.stroke();
       }
     } else if (kind === 'balloon' && !dark) {
-      const r = j => unitRandom(`${seed}bal`, 0, j), s = 26 * gs, dir = r(1) > .5 ? 1 : -1;
-      const x = lane(r(2), dir, 7 * gs, 90 * gs, .05), y = yOf(.1 + r(3) * .25, .25) + Math.sin(t * .4) * 6 * gs;
+      for (const cellK of worldCells(groundTop, height, gs, 1500)) {
+      const r = j => unitRandom(`${seed}bal`, cellK, j), s = 26 * gs, dir = r(1) > .5 ? 1 : -1; if (r(0) > .6) continue;
+      const x = lane(r(2), dir, 7 * gs, 90 * gs, .05), y = groundTop - (cellK * 1500 + r(3) * 1500) * gs + Math.sin(t * .4) * 6 * gs;
       if (y < groundTop - 300 * gs) {
         ctx.globalAlpha = .92;
         const cols = ['#e86f5c', '#f6d36a', '#e86f5c', '#f6d36a'];
         for (let k = 0; k < 4; k++) { ctx.fillStyle = cols[k]; ctx.beginPath(); ctx.ellipse(x + (k - 1.5) * s * .33, y, s * .24 * (k === 1 || k === 2 ? 1.1 : .8), s * .62, 0, 0, 6.283); ctx.fill(); }
         ctx.strokeStyle = '#5a4a40'; ctx.lineWidth = Math.max(1, gs); ctx.beginPath(); ctx.moveTo(x - s * .4, y + s * .6); ctx.lineTo(x - s * .15, y + s * 1.05); ctx.moveTo(x + s * .4, y + s * .6); ctx.lineTo(x + s * .15, y + s * 1.05); ctx.stroke();
         ctx.fillStyle = '#8a5a3a'; ctx.fillRect(x - s * .17, y + s * 1.05, s * .34, s * .24);
+      }
       }
     } else if (kind === 'plane' && !dark) {
       const r = j => unitRandom(`${seed}plane`, 0, j), dir = r(1) > .5 ? 1 : -1, s = 14 * gs;
@@ -456,6 +466,33 @@ function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
         ctx.globalAlpha = .9; ctx.fillStyle = '#f4f1ea'; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = Math.max(2, 2.4 * gs);
         ctx.beginPath(); ctx.ellipse(x, y, s * 1.2, s * .4, 0, 0, 6.283); ctx.fill();
         ctx.fillStyle = '#d9604f'; ctx.beginPath(); ctx.moveTo(x - dir * s * .2, y); ctx.lineTo(x - dir * s * .9, y - s * .15); ctx.lineTo(x - dir * s * .6, y + s * .8); ctx.closePath(); ctx.fill();
+      }
+    } else if (kind === 'twinkle') {
+      for (const cellK of worldCells(groundTop, height, gs, 200)) for (let m = 0; m < 3; m++) {
+        const q = j => unitRandom(`${seed}tw`, cellK * 3 + m, j);
+        const x = q(1) * width, y = groundTop - (cellK * 200 + q(2) * 200) * gs, a = .25 + .75 * Math.pow(Math.sin(t * (1 + q(3) * 1.6) + q(4) * 6.28) * .5 + .5, 2), z = (3 + 4 * q(5)) * gs;
+        ctx.globalAlpha = a; ctx.fillStyle = q(6) > .7 ? '#ffe9a8' : '#ffffff';
+        ctx.beginPath(); ctx.moveTo(x, y - z * 1.6); ctx.quadraticCurveTo(x, y, x + z * 1.6, y); ctx.quadraticCurveTo(x, y, x, y + z * 1.6); ctx.quadraticCurveTo(x, y, x - z * 1.6, y); ctx.quadraticCurveTo(x, y, x, y - z * 1.6); ctx.fill();
+      }
+    } else if (kind === 'comet') {
+      for (const cellK of worldCells(groundTop, height, gs, 900)) {
+        const q = j => unitRandom(`${seed}comet`, cellK, j); if (q(0) > .6) continue;
+        const ph = (((t / (11 + 5 * q(1))) + q(2)) % 1 + 1) % 1; if (ph > .3) continue; const p = ph / .3, dir = q(3) > .5 ? 1 : -1;
+        const x = (dir > 0 ? -.1 + 1.2 * p : 1.1 - 1.2 * p) * width, y = groundTop - (cellK * 900 + 120 + q(4) * 600) * gs + p * width * .3 * gs, L = 130 * gs;
+        const tx = x - dir * L, ty = y - L * .3, g = ctx.createLinearGradient(x, y, tx, ty);
+        g.addColorStop(0, 'rgba(210,235,255,.9)'); g.addColorStop(1, 'rgba(210,235,255,0)');
+        ctx.globalAlpha = Math.min(1, p * 6, (1 - p) * 6); ctx.strokeStyle = g; ctx.lineWidth = 5 * gs; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 4 * gs, 0, 6.283); ctx.fill();
+      }
+    } else if (kind === 'asteroid') {
+      for (const cellK of worldCells(groundTop, height, gs, 1100)) {
+        const q = j => unitRandom(`${seed}ast`, cellK, j); if (q(0) > .65) continue;
+        const rad = (16 + 18 * q(1)) * gs, x = lane(q(2), q(3) > .5 ? 1 : -1, 5 * gs, 80 * gs, .05), y = groundTop - (cellK * 1100 + 100 + q(4) * 900) * gs, rot = t * (.25 + .3 * q(5)) * (q(3) > .5 ? 1 : -1);
+        ctx.save(); ctx.globalAlpha = .95; ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = '#8c7f86'; ctx.strokeStyle = '#5d5360'; ctx.lineWidth = Math.max(1.5, 2 * gs);
+        ctx.beginPath(); for (let v = 0; v < 9; v++) { const a = v / 9 * 6.283, rr = rad * (.78 + .3 * unitRandom(`${seed}astv${cellK}`, v, 1)); v ? ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#6c616c'; for (const [cx, cy, cr] of [[-.25, -.1, .22], [.2, .25, .16], [.15, -.3, .12]]) { ctx.beginPath(); ctx.arc(cx * rad, cy * rad, cr * rad, 0, 6.283); ctx.fill(); }
+        ctx.restore();
       }
     } else if (kind === 'tumbleweed' && !dark) {
       const r = j => unitRandom(`${seed}tumble`, 0, j), rad = 13 * gs, x = lane(r(1), 1, 38 * gs, 80 * gs, .5), y = groundTop - rad - 6 * gs;
