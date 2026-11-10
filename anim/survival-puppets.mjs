@@ -8,18 +8,24 @@ const DRAGON = { w: 1536, h: 1024 };
 
 // [file number, centre x, centre y, scale, rotation, native width]
 const kp = {
-  plume: [12, 293, 305, 1.9, 0, 246],
-  farShin: [11, 680, 1150, 1.0, 0, 187], farThigh: [10, 610, 1070, 1.1, 20, 156],
-  nearShin: [9, 275, 1170, 1.1, 20, 168], nearThigh: [8, 330, 1060, 1.1, -30, 177],
-  torso: [1, 470, 810, 1.45, -10, 271], shieldArm: [6, 650, 735, 1.2, 0, 207],
-  upperArm: [4, 355, 711, 1.25, -10, 182], fist: [5, 245, 915, 1.1, 70, 234],
-  sword: [3, 464, 952, 2.1, 7, 338], helmet: [0, 393, 385, 2.46, -14, 306], shield: [2, 837, 783, 1.45, 4, 205]
+  plume: [12, 290, 282, 2.095, 2.0, 246],
+  farShin: [11, 683, 1142, 1.17, -1.5, 187],
+  farThigh: [10, 595, 1069, 0.99, 15.5, 156],
+  nearShin: [9, 267, 1142, 1.045, 14, 168],
+  nearThigh: [8, 354, 1092, 0.94, -56.5, 177],
+  torso: [1, 478, 809, 1.455, 5, 271],
+  shieldArm: [6, 666, 748, 1.18, 2, 207],
+  upperArm: [4, 352, 713, 1.29, 8.5, 182],
+  fist: [5, 262, 913, 0.98, 83, 234],
+  sword: [3, 461, 933, 2.075, 7, 338],
+  helmet: [0, 426, 377, 2.285, -2, 306],
+  shield: [2, 839, 785, 1.455, -2, 205]
 };
 const dbox = {
   base: ['pz-db', 124, 331, 985, 1016], farWing: ['pz-dfw', 545, 290, 748, 503],
   wing: ['pz-dnw', 598, 21, 1334, 581], tail: ['pz-dt', 868, 379, 1405, 827]
 };
-const FACE = [367, 180, 0.82, 449];
+const FACE = [390, 214, 0.98, 449];
 
 const pct = (n, total) => +(n / total * 100).toFixed(3);
 function img(file, [, x, y, s, r, w], frame, cls = '') {
@@ -32,12 +38,13 @@ const d = (name, cls = '') => { const [file, x0, y0, x1, y1] = dbox[name]; retur
 
 function knightHtml() {
   const f = KNIGHT;
-  const sarm = group('k-sarm', [335, 650], f, k('upperArm') + group('k-fore', [262, 880], f, k('sword') + k('fist')));
+  const fore = group('k-fore', [262, 900], f, k('sword') + k('fist'));
+  const sarm = group('k-sarm', [335, 650], f, k('upperArm') + fore);
   const head = group('k-head', [460, 560], f, group('k-plume', [420, 360], f, k('plume')) + k('helmet'));
-  const shield = group('k-shield', [610, 650], f, k('shieldArm') + k('shield'));
-  const torso = group('k-torso', [480, 960], f, k('torso') + sarm + head + shield);
+  const upper = group('k-shieldarm', [610, 650], f, k('shieldArm')) + k('torso') + head + group('k-shield', [610, 650], f, k('shield')) + sarm;
   return `<span class="pz-char pz-knight" style="aspect-ratio:${f.w}/${f.h}">${group('k-body', [480, 1230], f,
-    group('k-farleg', [610, 1000], f, k('farThigh') + k('farShin')) + group('k-nearleg', [330, 1000], f, k('nearThigh') + k('nearShin')) + torso)}</span>`;
+    group('k-farleg', [610, 1000], f, k('farThigh') + k('farShin')) + group('k-nearleg', [330, 1000], f, k('nearThigh') + k('nearShin')) +
+    group('k-torso', [480, 960], f, upper))}</span>`;
 }
 
 function dragonHtml() {
