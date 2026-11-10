@@ -2113,7 +2113,7 @@ if (location.protocol === "file:") {
   #settings-screen .google-account-row, #settings-screen input, #settings-screen .settings-footer-link a { color: #000; }
   /* In-app updates: settings row, status line and the Play update dialog. */
   #settings-update-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-  #settings-update-row[hidden], #settings-version[hidden] { display: none; }
+  #settings-update-row[hidden], #settings-version[hidden], #settings-update-net[hidden] { display: none; }
   #app-update-dialog { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.55); }
   #app-update-dialog[hidden] { display: none; }
   #app-update-dialog .aud-card { width: min(100%, 340px); padding: 22px 20px 18px; border-radius: 22px; background: #fff7e0; color: #1a1208; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
@@ -4765,6 +4765,9 @@ if (location.protocol === "file:") {
     <button id="settings-privacy-btn" type="button">Privacy Policy</button></div>
     <p class="settings-profile-hint settings-preset-hint">Size Em Up!</p>
     <p id="settings-version" class="settings-profile-hint settings-preset-hint" hidden></p>
+    <div class="comfort-block" id="settings-update-net" hidden><div class="comfort-head">Download updates</div>
+      <div class="seg" id="update-net-seg" role="radiogroup" aria-label="Download updates"><button type="button" role="radio" data-v="wifi">Wi-Fi only</button><button type="button" role="radio" data-v="any">Wi-Fi or mobile data</button></div>
+      <p class="seg-hint" id="update-net-hint"></p></div>
     <div id="settings-update-row" hidden>
       <button id="settings-update-btn" type="button" class="settings-cream-btn">Check for updates</button>
       <span id="settings-update-status" class="settings-profile-hint" role="status"></span>
@@ -23521,6 +23524,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
     };
     const liveUpdater = updater ? createLiveUpdater({ updater }) : null;
+    // "Download updates" setting: Wi-Fi only (the default) or any connection. Stored on this phone.
+    const wifiOnly = () => store.get("seu_updateNet") !== "any";
     let runningVersion = "";
     let liveError = "";
     let readyBundleId = ""; // id of a downloaded update that is waiting to be switched to
@@ -23578,8 +23583,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!updater) return "error";
       try {
         const conn = navigator.connection;
-        // Bundles are ~100 MB: wait for Wi-Fi rather than burn mobile data.
-        if (!manual && conn && (conn.type === "cellular" || conn.saveData)) return "cellular";
+        // Automatic checks wait for Wi-Fi (unless the player chose "Wi-Fi or mobile data" in Settings); a tap on Check for updates always downloads.
+        if (!manual && wifiOnly() && conn && (conn.type === "cellular" || conn.saveData)) return "cellular";
         liveError = "";
         const result = await liveUpdater.check(runningVersion,onFound);
         liveError = result.error || '';
@@ -23650,6 +23655,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     })();
 
     // ---- Settings > About > Check for updates ----
+    const netBlock = $("settings-update-net");
+    function renderNet() {
+      const wifi = wifiOnly();
+      document.querySelectorAll("#update-net-seg button").forEach((b) => { const on = (b.dataset.v === "wifi") === wifi; b.classList.toggle("on", on); b.setAttribute("aria-checked", String(on)); });
+      const hint = $("update-net-hint");
+      if (hint) hint.textContent = wifi ? "New versions download in the background on Wi-Fi. Tap Check for updates to get one right now on any connection." : "New versions download in the background on any connection, including mobile data.";
+    }
+    if (netBlock) {
+      netBlock.hidden = false; renderNet();
+      $("update-net-seg").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; store.set("seu_updateNet", b.dataset.v); renderNet(); });
+    }
     const row = $("settings-update-row"), btn = $("settings-update-btn");
     if (row && btn) {
       row.hidden = false;
