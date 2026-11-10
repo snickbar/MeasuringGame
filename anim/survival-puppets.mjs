@@ -16,7 +16,7 @@ const kp = {
   torso: [1, 478, 809, 1.455, 5, 271],
   shieldArm: [6, 666, 748, 1.18, 2, 207],
   upperArm: [4, 352, 713, 1.29, 8.5, 182],
-  fist: [5, 262, 913, 0.98, 83, 234],
+  fist: [5, 262, 893, 0.98, 83, 234],
   sword: [3, 461, 933, 2.075, 7, 338],
   helmet: [0, 426, 377, 2.285, -2, 306],
   shield: [2, 839, 785, 1.455, -2, 205]
@@ -43,6 +43,7 @@ function knightHtml() {
   const head = group('k-head', [460, 560], f, group('k-plume', [420, 360], f, k('plume')) + k('helmet'));
   const upper = group('k-shieldarm', [610, 650], f, k('shieldArm')) + k('torso') + head + group('k-shield', [610, 650], f, k('shield')) + sarm;
   return `<span class="pz-char pz-knight" style="aspect-ratio:${f.w}/${f.h}">${group('k-body', [480, 1230], f,
+    `<img class="pz-i" src="icons/pz-khip.webp" alt="" draggable="false" style="left:${pct(215, f.w)}%;top:${pct(1015, f.h)}%;width:${pct(515, f.w)}%">` +
     group('k-farleg', [555, 985], f, k('farThigh') + k('farShin')) + group('k-nearleg', [395, 985], f, k('nearThigh') + k('nearShin')) +
     group('k-torso', [480, 960], f, upper))}</span>`;
 }
@@ -65,7 +66,7 @@ export function puppetBattleHtml(mood) {
 export function puppetArtFiles() {
   const files = [];
   for (const [n] of Object.values(kp)) files.push(`pz-k${String(n).padStart(2, '0')}.webp`);
-  files.push('pz-db.webp', 'pz-dnw.webp', 'pz-dfw.webp', 'pz-dt.webp');
+  files.push('pz-khip.webp', 'pz-db.webp', 'pz-dnw.webp', 'pz-dfw.webp', 'pz-dt.webp');
   for (let i = 0; i < 5; i++) files.push(`pz-f${i}.webp`);
   files.push('pz-d13.webp', 'pz-fx-burst.webp', 'pz-fx-swipe.webp');
   return files;
