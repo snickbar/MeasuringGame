@@ -29,7 +29,7 @@ function part(file, className, [x,y,w,h], [left,top,width], pivot, wrap = img =>
 
 export function survivalBattleHtml(mood, reduced = false) {
   if (PUPPET_SCENES.has(mood)) {
-    const labels = {safe:'Replay the knight’s swing'};
+    const labels = {safe:'Replay the knight’s swing', miss:'Replay the dragon’s fire'};
     return `<button type="button" class="sv-battle" data-scene="${mood}" aria-label="${labels[mood]}"${reduced ? ' disabled' : ''}>
       <span class="sv-battle-stage" aria-hidden="true">${puppetBattleHtml(mood)}</span>
     </button>`;
@@ -119,7 +119,7 @@ function swordMotion(scene) {
 export function mountSurvivalBattle(scene, screen, reducedMotion) {
   const mood = scene.dataset.scene;
   const hasReturn = (mood === 'safe' || mood === 'miss') && !PUPPET_SCENES.has(mood);
-  const sword = mood === 'miss' ? swordMotion(scene) : null;
+  const sword = mood === 'miss' && !PUPPET_SCENES.has(mood) ? swordMotion(scene) : null;
   const doc = scene.ownerDocument;
   let timer;
   const active = () => scene.isConnected && screen.classList.contains('active') && !doc.hidden;

@@ -1,7 +1,7 @@
 // Puppet rigs for the Survival result scene. Each character is a stack of separate
 // pictures (limbs, head, wings, tail) nested in groups, so every joint can turn
 // around its own pivot instead of the whole picture being pushed around.
-export const PUPPET_SCENES = new Set(['safe']);
+export const PUPPET_SCENES = new Set(['safe', 'miss']);
 
 const KNIGHT = { w: 1217, h: 1292 };
 const DRAGON = { w: 1536, h: 1024 };
@@ -60,7 +60,7 @@ function knightHtml() {
 
 function dragonHtml() {
   const f = DRAGON;
-  const faces = [0, 1, 2, 3, 4].map(i => img(`pz-f${i}.webp`, [0, FACE[0], FACE[1], FACE[2], 0, FACE[3]], f, `pz-face pz-face-${i}`)).join('');
+  const faces = [0, 1, 2, 3, 4, 5].map(i => img(`pz-f${i}.webp`, [0, FACE[0], FACE[1], FACE[2], 0, FACE[3]], f, `pz-face pz-face-${i}`)).join('');
   const head = group('d-head', [450, 400], f, faces + img('pz-d13.webp', [13, 330, 160, 1.3, 0, 85], f, 'pz-sweat'));
   return `<span class="pz-char pz-dragon" style="aspect-ratio:${f.w}/${f.h}">${group('d-body', [600, 980], f,
     group('d-farwing', [610, 340], f, d('farWing')) + group('d-torso', [600, 650], f, d('base')) +
@@ -69,6 +69,7 @@ function dragonHtml() {
 
 export function puppetBattleHtml(mood) {
   return `<span class="pz-scene" data-puppet="${mood}">${knightHtml()}${dragonHtml()}` +
+    (mood === 'miss' ? `<img class="pz-flame" src="icons/pz-fx-flame.webp" alt="" draggable="false">` : '') +
     `<img class="pz-burst" src="icons/pz-fx-burst.webp" alt="" draggable="false"></span>`;
 }
 
@@ -77,7 +78,8 @@ export function puppetArtFiles() {
   for (const [n] of Object.values(kp)) files.push(`pz-k${String(n).padStart(2, '0')}.webp`);
   for (const [file] of Object.values(knightCrops)) files.push(`${file}.webp`);
   files.push('pz-db.webp', 'pz-dnw.webp', 'pz-dfw.webp', 'pz-dt.webp');
-  for (let i = 0; i < 5; i++) files.push(`pz-f${i}.webp`);
+  for (let i = 0; i < 6; i++) files.push(`pz-f${i}.webp`);
+  files.push('pz-fx-flame.webp');
   files.push('pz-d13.webp', 'pz-fx-burst.webp', 'pz-fx-swipe.webp');
   return files;
 }
