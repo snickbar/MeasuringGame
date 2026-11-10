@@ -43,28 +43,28 @@ const INDOOR = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'])
 const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
 
 export const SETTINGS = {
-  grass: { clouds: true, flyers: 'birds', fireflies: true },
-  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'birds' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid', 'living-tall-mid2', 'living-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid', 'kitchen-tall-mid2', 'kitchen-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid', 'tabletop-tall-mid2', 'tabletop-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'birds' },
+  grass: { clouds: true, flyers: 'geese', fireflies: true },
+  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid', 'living-tall-mid2', 'living-tall-mid3'], tallScale: 1.5, tallMeet: .2 },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid', 'kitchen-tall-mid2', 'kitchen-tall-mid3'], tallScale: 1.5, tallMeet: .2 },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid', 'tabletop-tall-mid2', 'tabletop-tall-mid3'], tallScale: 1.5, tallMeet: .2 },
+  city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
-  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'birds', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
+  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
-  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'birds' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
+  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' , tall: ['enchanted-tall-low', 'enchanted-tall-mid', 'enchanted-tall-high']},
-  mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'], flyers: 'birds' },
+  mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'], flyers: 'hawks' },
   jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'], fireflies: true },
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
-  blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'birds', fireflies: true },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid', 'library-tall-mid2', 'library-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid', 'workshop-tall-mid2', 'workshop-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'birds' },
-  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'birds' },
+  blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'doves', fireflies: true },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid', 'library-tall-mid2', 'library-tall-mid3'], tallScale: 1.5, tallMeet: .2 },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid', 'workshop-tall-mid2', 'workshop-tall-mid3'], tallScale: 1.5, tallMeet: .2 },
+  rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'swallows' },
+  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'geese', birdClear: .9 },
 };
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
@@ -300,31 +300,51 @@ function drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark,
   }
 }
 
+// Each scene has its own kind of bird, so the sky does not look the same everywhere.
+const BIRD_STYLES = {
+  gulls: { groups: 2, n: [2, 3], size: [16, 22], speed: [14, 24], flap: 2.2, color: '#f6f3ec', edge: '#8a93a6', arc: .38, formation: 'loose' },
+  geese: { groups: 1, n: [5, 7], size: [9, 12], speed: [26, 36], flap: 1.7, color: '#566178', arc: .55, formation: 'v' },
+  swallows: { groups: 2, n: [3, 5], size: [7, 9], speed: [48, 70], flap: 5, color: '#3d465c', arc: .6, formation: 'scatter' },
+  hawks: { groups: 1, n: [1, 1], size: [22, 28], speed: [10, 16], flap: 0, color: '#5b4a43', arc: .22, formation: 'single' },
+  doves: { groups: 2, n: [2, 3], size: [12, 15], speed: [18, 28], flap: 2.6, color: '#f8f3ef', edge: '#a79fb0', arc: .5, formation: 'loose' },
+};
 // Moving background life, drawn in code: flocks of far-off birds by day, fireflies at night.
 // Both drift past on their own and slide away slowly as the stack climbs.
 function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
   const kind = kit.config.flyers, glow = kit.config.fireflies;
   const t = reduced ? 0 : time, span = height * 2.4, groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const yOf = (r, par) => ((((r * span + shiftY * par) % span) + span) % span) - span * .3;
-  if (kind && !dark) {
-    const groups = 2;
-    for (let g = 0; g < groups; g++) {
-      const r = j => unitRandom(`${seed}birds`, g, j);
-      const dir = r(1) > .5 ? 1 : -1, speed = (16 + 22 * r(2)) * groundScale, n = 2 + Math.floor(r(3) * 2);
-      const gy = yOf(r(4) * .65, .3), cycle = width + 240 * groundScale;
-      const gx = ((((r(5) * cycle + dir * t * speed - shiftX * .1) % cycle) + cycle) % cycle) - 120 * groundScale;
-      const sky = Math.max(0, Math.min(1, (groundTop - 340 * groundScale - gy) / (90 * groundScale)));
+  const style = BIRD_STYLES[kind];
+  if (style && !dark) {
+    // Stadiums keep their birds high above the roof, not inside the stands.
+    const clear = (kit.config.birdClear ? (width + 100) * groundScale * 2 * kit.config.birdClear : 340 * groundScale);
+    for (let g = 0; g < style.groups; g++) {
+      const r = j => unitRandom(`${seed}${kind}`, g, j);
+      const dir = r(1) > .5 ? 1 : -1, speed = (style.speed[0] + (style.speed[1] - style.speed[0]) * r(2)) * groundScale;
+      const n = style.n[0] + Math.floor(r(3) * (style.n[1] - style.n[0] + 1));
+      const gy = yOf(r(4) * .65, .3), cycle = width + 260 * groundScale;
+      const gx = ((((r(5) * cycle + dir * t * speed - shiftX * .1) % cycle) + cycle) % cycle) - 130 * groundScale;
+      const sky = Math.max(0, Math.min(1, (groundTop - clear - gy) / (90 * groundScale)));
       if (!sky) continue;
-      ctx.save(); ctx.globalAlpha = .75 * sky; ctx.strokeStyle = '#4f5a70'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.save(); ctx.globalAlpha = .8 * sky; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (let b = 0; b < n; b++) {
-        const s = (11 + 6 * unitRandom(`${seed}b${g}`, b, 1)) * groundScale, flap = Math.sin(t * 6.5 + b * 1.7 + g * 2.3);
-        const x = gx - dir * b * 30 * groundScale, y = gy + (b % 2 ? 1 : -1) * Math.ceil(b / 2) * 16 * groundScale;
-        const tip = -s * .55 * flap;
-        ctx.lineWidth = Math.max(1.4, 2.4 * groundScale);
-        ctx.beginPath();
-        ctx.moveTo(x - s, y + tip); ctx.quadraticCurveTo(x - s * .45, y - s * .55 + tip * .35, x, y);
-        ctx.quadraticCurveTo(x + s * .45, y - s * .55 + tip * .35, x + s, y + tip);
-        ctx.stroke();
+        const q = j => unitRandom(`${seed}${kind}b${g}`, b, j);
+        const s = (style.size[0] + (style.size[1] - style.size[0]) * q(1)) * groundScale;
+        const flap = style.flap ? Math.sin(t * style.flap * 2 + b * 1.7 + g * 2.3) : 0;
+        let x, y;
+        if (style.formation === 'v') { const rank = Math.ceil(b / 2); x = gx - dir * rank * s * 1.7; y = gy + (b % 2 ? 1 : -1) * rank * s * 1.1; }
+        else if (style.formation === 'scatter') { x = gx - dir * q(2) * 90 * groundScale; y = gy + (q(3) - .5) * 70 * groundScale + Math.sin(t * 1.8 + q(4) * 6.28) * 14 * groundScale; }
+        else if (style.formation === 'single') { x = gx + Math.sin(t * .35) * 40 * groundScale; y = gy + Math.sin(t * .5 + 1) * 10 * groundScale; }
+        else { x = gx - dir * b * 32 * groundScale; y = gy + (b % 2 ? 1 : -1) * Math.ceil(b / 2) * 16 * groundScale; }
+        const tip = style.flap ? -s * .55 * flap : -s * .1, lift = s * style.arc;
+        const wing = () => {
+          ctx.beginPath();
+          ctx.moveTo(x - s, y + tip); ctx.quadraticCurveTo(x - s * .45, y - lift + tip * .35, x, y);
+          ctx.quadraticCurveTo(x + s * .45, y - lift + tip * .35, x + s, y + tip);
+          ctx.stroke();
+        };
+        if (style.edge) { ctx.strokeStyle = style.edge; ctx.lineWidth = Math.max(2.4, 3.8 * groundScale); wing(); }
+        ctx.strokeStyle = style.color; ctx.lineWidth = Math.max(1.4, (style.edge ? 2 : 2.4) * groundScale); wing();
       }
       ctx.restore();
     }
