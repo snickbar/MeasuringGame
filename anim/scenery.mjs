@@ -45,9 +45,9 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], clouds: true, flyers: 'geese', fireflies: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decor: 'living-wall-decor' },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decor: 'kitchen-wall-decor' },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decorSkip: [0, 1], decor: 'tabletop-wall-decor' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decorSizes: [130, 130, 45, 80, 100], decor: 'living-wall-decor' },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decorSizes: [150, 120, 70, 110, 90], decor: 'kitchen-wall-decor' },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decorSkip: [0, 1], decorSizes: [100, 100, 100, 110, 90], decor: 'tabletop-wall-decor' },
   city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
@@ -61,8 +61,8 @@ export const SETTINGS = {
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { movers: ['butterflies'], floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'doves', fireflies: true },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], wallpaper: 'wood', decor: 'library-wall-decor' },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], wallpaper: 'brick', decor: 'workshop-wall-decor' },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], wallpaper: 'wood', decorSizes: [90, 120, 50, 70, 100], decor: 'library-wall-decor' },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], wallpaper: 'brick', decorSizes: [120, 110, 100, 70, 70], decor: 'workshop-wall-decor' },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'swallows' },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'geese', birdClear: .9 },
 };
@@ -310,10 +310,11 @@ function drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScal
   const image = kit.images[kit.config.decor]; if (!image) return;
   const groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY, gs = groundScale;
   for (const sl of decorSlots(seed, kit.config.decorSkip)) {
-    const box = columnBounds(image, sl.col), k = .5 * sl.scale * gs, w = box[2] * k, h = box[3] * k, cy = groundTop - sl.y * gs;
+    const box = columnBounds(image, sl.col), k = (kit.config.decorSizes[sl.col] / box[2]) * sl.scale * gs, w = box[2] * k, h = box[3] * k, cy = groundTop - sl.y * gs;
     if (cy + h / 2 < 0 || cy - h / 2 > height) continue;
     const wx = width * ([.2, .5, .8][sl.side] + sl.jitter), cx = anchorX + (wx - anchorX) * gs - shiftX;
     ctx.save(); ctx.translate(cx, cy); if (sl.flip) ctx.scale(-1, 1);
+    ctx.shadowColor = 'rgba(40,25,10,.28)'; ctx.shadowBlur = 5 * gs; ctx.shadowOffsetY = 3 * gs; // mounted on the wall, not floating
     ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h); ctx.restore();
   }
 }
