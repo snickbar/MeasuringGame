@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {createLiveUpdater,validateUpdate,UPDATE_SOURCES} from '../anim/live-updates.mjs';
+import {createLiveUpdater,validateUpdate,validateManifest,UPDATE_SOURCES} from '../anim/live-updates.mjs';
 const old='1.0.20261025000000-aaaaaaa',version='1.0.20261025000001-bbbbbbb';
 const manifest={version,url:'https://github.com/snickbar/MeasuringGame/releases/download/test/bundle.zip',checksum:'a'.repeat(64)};
 const response=v=>({ok:true,json:async()=>v});
@@ -46,4 +46,24 @@ for(const bad of [{...manifest,checksum:''},{...manifest,version:undefined},{...
 {
  const {client,calls}=setup(async()=>response(manifest));const a=client.check(old),b=client.check(old);assert.equal(a,b);await Promise.all([a,b]);assert.equal(calls.filter(c=>c[0]==='download').length,1);
 }
-console.log('PASS: GitHub primary, host/download fallback, manifest validation, checksum forwarding, pending/rejected bundles, timeout, and concurrent checks.');
+{
+ // Partial updates: file list is used when valid, and any problem falls back to the full ZIP.
+ const H='https://github.com/snickbar/MeasuringGame/releases/download/blobs-x-1/',h=c=>c.repeat(64);
+ const list={version,files:[{file_name:'index.html',file_hash:h('a'),download_url:H+h('a')},{file_name:'icons/a.webp',file_hash:h('B'),download_url:H+h('B')}]};
+ const withList={...manifest,manifestUrl:'https://raw.githubusercontent.com/snickbar/MeasuringGame/app-updates/manifest.json'};
+ const route=async url=>response(url.includes('manifest.json')?list:withList);
+ const {client,calls}=setup(route);
+ assert.equal((await client.check(old)).state,'downloaded');
+ const sent=calls[0][1];assert.equal(sent.manifest.length,2);assert.equal(sent.manifest[1].file_hash,h('b'));assert.equal(sent.checksum,manifest.checksum);assert.equal(calls.filter(c=>c[0]==='download').length,1);
+ const {client:c2,calls:k2}=setup(async url=>url.includes('manifest.json')?{ok:false,status:404}:response(withList));
+ assert.equal((await c2.check(old)).state,'downloaded');assert.equal(k2[0][1].manifest,undefined,'missing file list falls back to ZIP');
+ const {client:c3,calls:k3}=setup(route,{download:async v=>{k3.push(['download',v]);if(v.manifest)throw Error('plugin rejected list');return {id:'zip'};}});
+ assert.equal((await c3.check(old)).id,'zip');assert.equal(k3.filter(c=>c[0]==='download').length,2);assert.equal(k3[1][1].manifest,undefined);
+ const {client:c4,calls:k4}=setup(async url=>response(url.includes('manifest.json')?{...list,version:old}:withList));
+ assert.equal((await c4.check(old)).state,'downloaded');assert.equal(k4[0][1].manifest,undefined,'list for another version is ignored');
+ assert.throws(()=>validateUpdate({...withList,manifestUrl:'https://untrusted.example/m.json'}));
+ const bad=f=>validateManifest({version,files:[list.files[0],f]},version);
+ for(const f of [{...list.files[1],file_name:'../x'},{...list.files[1],file_name:'/x'},{...list.files[1],file_name:'a\\b'},{...list.files[1],file_name:'index.html'},{...list.files[1],file_name:'a.js.br'},{...list.files[1],file_hash:'zz'},{...list.files[1],download_url:'https://untrusted.example/x'}])assert.throws(()=>bad(f),undefined,JSON.stringify(f));
+ assert.throws(()=>validateManifest({version,files:[list.files[1]]},version),/index/);
+}
+console.log('PASS: GitHub primary, host/download fallback, manifest validation, checksum forwarding, pending/rejected bundles, timeout, and concurrent checks, and partial-update file lists with ZIP fallback.');

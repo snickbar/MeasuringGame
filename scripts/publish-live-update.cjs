@@ -30,6 +30,9 @@ function publish(){
  catch{gh(['api',`repos/${repo}/git/refs`,'--input','-'],{ref:'refs/heads/app-updates',sha});}
  let previous;try{previous=JSON.parse(gh(['api',`repos/${repo}/contents/version.json?ref=app-updates`]));}catch{}
  if(previous){const current=JSON.parse(Buffer.from(previous.content,'base64').toString());if(current.version>manifest.version){console.log('A newer update is already published; leaving its pointer in place.');return;}}
+ // Partial-update files go up before the pointer moves. If that fails the pointer still goes out without manifestUrl (ZIP only).
+ try{manifest={...manifest,...require('./publish-live-blobs.cjs').publishBlobs({root,repo,sha,version:manifest.version,gh})};}
+ catch(error){console.warn('Partial update files were not published ('+error.message+'); phones will use the full ZIP.');}
  const pointer={message:'Publish '+manifest.version,branch:'app-updates',content:Buffer.from(JSON.stringify(manifest,null,2)+'\n').toString('base64'),...(previous?{sha:previous.sha}:{})};
  gh(['api',`repos/${repo}/contents/version.json`,'--method','PUT','--input','-'],pointer);
  console.log('Published '+manifest.version+' via GitHub; Firebase is not required.');

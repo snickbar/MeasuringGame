@@ -40,6 +40,8 @@ if(process.platform==='win32'){
 const checksum = require("crypto").createHash("sha256").update(fs.readFileSync(path.join(OUT, "bundle.zip"))).digest("hex");
 
 const manifest = { version, url: BASE_URL + "/bundle.zip", checksum, builtAt: new Date().toISOString() };
+// Per-file hashes for partial updates (publish-live-update.cjs uploads only the files phones do not have yet).
+fs.writeFileSync(path.join(OUT, "files.json"), JSON.stringify({ version, files: require("./live-manifest.cjs").buildFileList(WWW) }) + "\n");
 fs.writeFileSync(path.join(OUT, "version.json"), JSON.stringify(manifest, null, 2) + "\n");
 
 // Hosting gets the same lean files as the APK, plus the update archive. Keep
