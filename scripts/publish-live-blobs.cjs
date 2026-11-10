@@ -17,7 +17,7 @@ function previousUrls(gh,repo){
 function ensureReleaseDraft(gh,repo,tag,sha,title){
  let release;
  try{release=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));}catch{
-  release=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`])).find(r=>r.tag_name===tag);
+  release=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`,'--jq',`[.[]|select(.tag_name=="${tag}")|{id,tag_name,draft,assets:[.assets[]|{name}]}]`]))[0];
  }
  if(!release)release=JSON.parse(gh(['api',`repos/${repo}/releases`,'--method','POST','--input','-'],{tag_name:tag,target_commitish:sha,name:title,body:'Files for partial app updates. Safe to leave; phones download only what they are missing.',draft:true,prerelease:false}));
  return release;

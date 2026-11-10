@@ -2,7 +2,7 @@
 // Uses gh's existing credentials locally or GH_TOKEN in GitHub Actions.
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),repo='snickbar/MeasuringGame';
-function gh(args,input){return execFileSync('gh',args,{cwd:root,encoding:'utf8',...(input?{input:JSON.stringify(input)}:{})}).trim();}
+function gh(args,input){return execFileSync('gh',args,{cwd:root,encoding:'utf8',maxBuffer:512*1024*1024,...(input?{input:JSON.stringify(input)}:{})}).trim();}
 function publish(){
  const sha=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),tag='web-'+sha;
  const base=`https://github.com/${repo}/releases/download/${tag}`;
@@ -10,7 +10,7 @@ function publish(){
  if(manifest.url!==base+'/bundle.zip')throw Error('Build with LIVE_BUNDLE_BASE_URL='+base+' before publishing');
  let release;try{release=JSON.parse(gh(['api',`repos/${repo}/releases/tags/${tag}`]));}catch{
   // Draft releases have no published tag yet; the tag endpoint returns 404.
-  release=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`])).find(r=>r.tag_name===tag);
+  release=JSON.parse(gh(['api',`repos/${repo}/releases?per_page=100`,'--jq',`[.[]|select(.tag_name=="${tag}")|{id,tag_name,draft,assets:[.assets[]|{name,digest}]}]`]))[0];
  }
  if(!release){
   release=JSON.parse(gh(['api',`repos/${repo}/releases`,'--method','POST','--input','-'],{tag_name:tag,target_commitish:sha,name:'Web update '+manifest.version,body:'Verified web update for Size Em Up. Downloaded automatically by supported app builds.',draft:true,prerelease:true}));
