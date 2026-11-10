@@ -61,7 +61,7 @@ function knightHtml() {
 function dragonHtml() {
   const f = DRAGON;
   const faces = [0, 1, 2, 3, 4, 5].map(i => img(`pz-f${i}.webp`, [0, FACE[0], FACE[1], FACE[2], 0, FACE[3]], f, `pz-face pz-face-${i}`)).join('');
-  const head = group('d-head', [450, 400], f, faces + img('pz-d13.webp', [13, 330, 160, 0.5, 0, 85], f, 'pz-sweat'));
+  const head = group('d-head', [450, 400], f, faces + img('pz-d13.webp', [13, 392, 262, 0.5, 0, 85], f, 'pz-sweat'));
   return `<span class="pz-char pz-dragon" style="aspect-ratio:${f.w}/${f.h}">${group('d-body', [600, 980], f,
     group('d-farwing', [610, 340], f, d('farWing')) + group('d-torso', [600, 650], f, d('base')) +
     group('d-tail', [880, 690], f, d('tail')) + group('d-wing', [715, 150], f, d('wing')) + head)}</span>`;
