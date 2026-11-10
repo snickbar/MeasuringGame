@@ -276,10 +276,13 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
       const y = (((yRaw % span) + span) % span) - span * .25;
       // Clouds belong in the sky: they fade out well before they get near the ground.
       const clear = kit.config.tall ? (width + 100) * groundScale * .95 : 90 * groundScale;
-      const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (y + h)) / (60 * groundScale))) : 1;
-      if (!sky) continue;
+      const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (y + h)) / (160 * groundScale))) : 1;
+      // Ease each piece's visibility so it can never pop in or out when the camera zooms or climbs fast.
+      const fades = kit.floatFades || (kit.floatFades = new Map()), fk = `${name}${i}`, prev = fades.get(fk);
+      const vis = prev === undefined ? sky : prev + (sky - prev) * .06; fades.set(fk, vis);
+      if (vis < .01) continue;
       ctx.save();
-      ctx.globalAlpha = style.alpha * (dark ? .6 : 1) * sky;
+      ctx.globalAlpha = style.alpha * (dark ? .6 : 1) * vis;
       ctx.translate(x + w / 2, y + h / 2);
       if (r(8) > .5) ctx.scale(-1, 1);
       ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h);
