@@ -103,12 +103,12 @@ try{
   assert(scene.getFraming(scene.duration).groundScale===1,'final ground size restored '+id);
   const startDraws=[];watched.set(ctl.canvas.getContext('2d'),startDraws);scene.render(0);
   if(expected==='farm'||expected==='city'){
-   const cloudIndex=startDraws.findIndex(d=>d.image==='cloud.png');
+   const cloudIndex=startDraws.findIndex(d=>d.image==='cloud.webp');
    const backdropIndex=startDraws.findIndex(d=>d.image===SETTINGS[expected].backdrop+'.webp');
    assert(cloudIndex>=0&&backdropIndex>cloudIndex,'clouds behind rooted scenery '+id);
    if(expected==='farm')assert(startDraws[backdropIndex].alpha===1,'hay bales opaque over background clouds');
    assert(startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.webp').length===(expected==='farm'?2:1),'backdrop drawn only once per placement '+id);
-   if(expected==='city')assert(startDraws.findIndex(d=>d.image==='star-field.png')<cloudIndex,'stars behind clouds');
+   if(expected==='city')assert(startDraws.findIndex(d=>d.image==='star-field.webp')<cloudIndex,'stars behind clouds');
   }
   if(SETTINGS[expected].backdrop){
    const backdrop=startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.webp');
@@ -168,7 +168,7 @@ try{
    const currentBg=[],priorBg=[];watched.set(ctl.canvas.getContext('2d'),currentBg);watched.set(old.canvas.getContext('2d'),priorBg);
    scene.render(t);oldScene.render(t/1.2);
    if(scene.scenery==='grass'){
-    const f=scene.getFraming(t),end=scene.getFraming(scene.duration),cloud=currentBg.find(d=>d.image==='cloud.png'),grass=currentBg.find(d=>d.image==='grass.png');
+    const f=scene.getFraming(t),end=scene.getFraming(scene.duration),cloud=currentBg.find(d=>d.image==='cloud.webp'),grass=currentBg.find(d=>d.image==='grass.webp');
     assert(cloud,'original cloud artwork');const span=scene.stageH+160,raw=.1*scene.stageH+(f.floorY-end.floorY)*.18,cy=((raw%span)+span)%span-80;
     assert(Math.abs(cloud.args[1]+cloud.args[3]/2-cy)<1e-6,'original downward cloud parallax');
     if(grass)assert(Math.abs(grass.args[1]-(f.floorY-grass.args[3]*127/145-6*f.groundScale))<1e-6,'grass remains attached to ground');

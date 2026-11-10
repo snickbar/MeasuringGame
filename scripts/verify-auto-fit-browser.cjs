@@ -168,7 +168,7 @@ try {
  };
  window.__polish.hsPick();
  const pig=select('.hs-table-pig'),opts=select('.hs-opts');
- await pig.decode();
+ await Promise.all([...pig.querySelectorAll('img')].map(img=>img.decode().catch(()=>{})));
  assert(pig.dataset.mood==='peek' && pig.closest('.hs-table-foot').previousElementSibling===opts,'pig below the question answers');
  assert(parseFloat(getComputedStyle(opts).rowGap)<=5 && opts.querySelectorAll('[data-hs-pick]').length===4,'compact question options');
  assert([...opts.children].every(btn=>btn.offsetHeight>=44),'question tap height');
@@ -194,7 +194,7 @@ try {
    select('.hs-round-answer-value b').textContent==='232.12' &&
    [...document.querySelectorAll('.hs-opt.stat > b')].some(b=>b.textContent==='1,230.00'),'wrong and correct choices preserve decimals');
  let fullSize=0,splitHeight=0;
- for(const [type,note,mood,avatars] of [['win','Won the pot','perk',1],['split','Split the pot','perk',2],['three','Split the pot','perk',3],['all','Split the pot','perk',10],['fold','everyone else folded','perk',1],['roll','Pot rolls over','tilt',0]]){
+ for(const [type,note,mood,avatars] of [['win','Won the pot','salute',1],['split','Split the pot','salute',2],['three','Split the pot','salute',3],['all','Split the pot','salute',10],['fold','everyone else folded','salute',1],['roll','Pot rolls over','shrug',0]]){
   window.__polish.hsView(10,type);
   const choices=select('.hs-opts'),answer=select('.hs-round-answer'),mascot=select('.hs-table-pig');
   assert(choices.children.length===4 && choices.children[2]===answer && !select('.hs-opt.stat.real'),'gold panel in the original answer slot '+type);
@@ -247,7 +247,7 @@ try {
  finish.click();
  await new Promise(r=>setTimeout(r,50));
  await window.__polish.hsReadReveal();
- assert(!!select('.hs-end-hero') && select('.hs-reward')?.textContent.includes('Ghost bounty'),'Finish game reaches final results and preserves the ghost bounty with the host ticker stopped');
+ assert(!!select('.hs-end-hero') && select('.hs-finale-wallet')?.textContent.includes('ghost bounty'),'Finish game reaches final results and preserves the ghost bounty with the host ticker stopped');
  for(const event of ['size-em-up:app-active','pageshow']){
   await window.__polish.hsLastStandings(true);
   assert(window.__polish.hsResumeMissingTicker(event),'returning to High Stakes recreates a missing timer on '+event);

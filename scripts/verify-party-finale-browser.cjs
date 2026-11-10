@@ -350,7 +350,7 @@ server.listen(0,'127.0.0.1',()=>{
  await evaluate("window.__finalPreview('party')");
  if(!await evaluate(`(() => {
    const ant=document.querySelector('img.pd-m-ant');
-   return ant?.src.endsWith('classic-ant-flag.png')&&!ant.getAnimations().length;
+   return ant?.src.endsWith('classic-ant-flag.webp')&&!ant.getAnimations().length;
  })()`))throw Error('Ant did not show the static flag pose with reduced motion');
  await evaluate("window.__finalPreview('quick')");
  const reduced=await evaluate("(()=>{const e=document.querySelector('.pd-slot[data-rank=\"1\"] .pd-who');return {opacity:+getComputedStyle(e).opacity,animations:e.getAnimations().length,waiting:document.getElementById('final-list').classList.contains('pd-waiting')}})()");

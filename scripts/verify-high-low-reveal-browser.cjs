@@ -54,14 +54,14 @@ try{
   const result=api.root(),bottles=result.querySelector('.hl-bottle-row');
   const breaking=result.querySelector('.oc-boat[data-broken=true] .oc-bottle-pieces');
   assert(breaking?.querySelector('.hl-bottle-left').getAnimations().length===1,'Wrong bracket breaks the bottle in the water');
-  assert([...breaking.querySelectorAll('img')].every(img=>img.src.endsWith('/empty-bottle.png')),'Ocean fragments are empty glass');
+  assert([...breaking.querySelectorAll('img')].every(img=>img.src.endsWith('/empty-bottle.webp')),'Ocean fragments are empty glass');
   assert(bottles.querySelectorAll('.hl-bottle-icon').length===(scenario==='saved'?3:2),'Empty bottle saves all three message bottles');
   const filled=bottles.querySelector('.hl-bottle-icon');
-  assert(filled.src.endsWith('/message-bottle-upright.png')&&filled.offsetHeight>filled.offsetWidth,'Lives use upright message bottles');
+  assert(filled.src.endsWith('/message-bottle-upright.webp')&&filled.offsetHeight>filled.offsetWidth,'Lives use upright message bottles');
   const spent=result.querySelector(scenario==='saved'?'.hl-reserve-icon .hl-bottle-splitting':'.hl-bottle-spent.hl-bottle-splitting');
   const popup=document.querySelector('.hl-bottle-popup .hl-bottle-pieces');
   for(const pieces of [spent,popup]){
-   assert(pieces&&[...pieces.querySelectorAll('.hl-bottle-left,.hl-bottle-right')].every(img=>img.src.endsWith('/empty-bottle-upright.png')),'Both counter fragments use the upright empty glass');
+   assert(pieces&&[...pieces.querySelectorAll('.hl-bottle-left,.hl-bottle-right')].every(img=>img.src.endsWith('/empty-bottle-upright.webp')),'Both counter fragments use the upright empty glass');
    const note=pieces.querySelector('.hl-bottle-intact');
    assert(!!note===(scenario!=='saved'),'Only the intact message bottle has a note');
    if(note){assert(getComputedStyle(note).visibility==='visible','Note stays inside until the bottle splits');note.getAnimations()[0].finish();assert(getComputedStyle(note).visibility==='hidden','Note is gone when the glass separates');}
