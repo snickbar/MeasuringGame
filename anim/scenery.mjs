@@ -38,6 +38,8 @@ export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'gra
 export const isNight = (config, dark) => config.night === 'dark' ? !!dark : !!config.night;
 
 // Rooms, caves and the sea have no open sky, so they never get stars.
+// Rooms get a lamp-lit night look instead of stars.
+const INDOOR = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop']);
 const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
 
 export const SETTINGS = {
@@ -211,7 +213,7 @@ function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groun
     const image = kit.images[list[i]], top = tops[i]; if (!image || top == null) continue;
     if (top + h < 0 || top > height) continue;
     ctx.save();
-    ctx.globalAlpha = dark ? .55 : 1;
+    ctx.globalAlpha = dark && !INDOOR.has(kit.id) ? .55 : 1;
     ctx.translate(center, 0);
     if (seededFlip(seed, i)) ctx.scale(-1, 1);
     ctx.drawImage(image, -w / 2, top, w, h);
@@ -341,6 +343,26 @@ function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
   }
 }
 
+// Indoor night: cool blue tint, warm lamp glows fixed to the wall (they scroll with the climb), and soft dark corners.
+function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale = 1, seed = kit.id }) {
+  ctx.save(); ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#6a6291'; ctx.fillRect(0, 0, width, height);
+  const groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY, step = 330;
+  const kMin = Math.max(0, Math.floor((groundTop - height) / groundScale / step) - 1), kMax = Math.ceil(groundTop / groundScale / step) + 1;
+  ctx.globalCompositeOperation = 'screen';
+  for (let k = kMin; k <= kMax; k++) {
+    const x = width * (.15 + .7 * unitRandom(`${seed}lamp`, k, 1)), y = groundTop - (150 + k * step + 60 * unitRandom(`${seed}lamp`, k, 2)) * groundScale;
+    const r = (150 + 60 * unitRandom(`${seed}lamp`, k, 3)) * groundScale, g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(255,196,120,.34)'); g.addColorStop(.5, 'rgba(255,170,90,.12)'); g.addColorStop(1, 'rgba(255,170,90,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  const v = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * .3, width / 2, height / 2, Math.max(width, height) * .75);
+  v.addColorStop(0, 'rgba(12,8,30,0)'); v.addColorStop(1, 'rgba(12,8,30,.5)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all' }) {
   const { config, images } = kit;
   ctx.save();
@@ -382,6 +404,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
       ctx.drawImage(image, x - size / 2, y, size, size * aspect);
     }
   }
+  if (dark && INDOOR.has(kit.id)) drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale });
   ctx.restore();
 }
 
@@ -396,7 +419,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const phase = shiftX + anchorX * (1 - groundScale);
   const offset = ((phase % tile) + tile) % tile - tile;
   ctx.save();
-  if (isNight(kit.config, dark)) ctx.filter = 'brightness(65%)';
+  if (isNight(kit.config, dark) || (dark && INDOOR.has(kit.id))) ctx.filter = 'brightness(60%)';
   for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
   ctx.restore();
 }
