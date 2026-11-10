@@ -22,10 +22,11 @@
 // module loads. Native loads have no query string and retain bundled paths.
 const moduleRetry = new URL(import.meta.url).search;
 const [{ ORIENT }, { landingStyleFor, landingPose }, { landingSurfaceFor, drawLandingEffect },
-  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor }, { FLOOR_DATA }, { entryPose, entryKindFor }] = await Promise.all([
+  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor }, { FLOOR_DATA }, { entryPose, entryKindFor, landingEffectFor }, { drawStackEffect, drawSettleEffect }] = await Promise.all([
   import('./orient-data.js' + moduleRetry), import('./reveal-style.mjs' + moduleRetry),
   import('./landing-effects.mjs' + moduleRetry), import('./scenery.mjs' + moduleRetry),
   import('./scenery-data.mjs' + moduleRetry), import('./entry-styles.mjs' + moduleRetry),
+  import('./entry-effects.mjs' + moduleRetry),
 ]);
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
@@ -1119,7 +1120,18 @@ export function createStackAnimation(container, options = {}) {
       // Objects hopping in.
       const dHop = sx0 + wcol / 2 + 24;
       const landed = landedAt(t);
-      if (!reduceMotion) for (let i = 0; i < nHop; i++) dust(sx0, sy0 - i * Ls, t - starts[i] - durs[i], wcol, unit.mm, i > 0);
+      // The first object settles with a small effect that suits the floor; the second and third landings get a
+      // burst picked for the object. Later ones (and the stream) get none, so a long stack never slows down.
+      if (!reduceMotion) {
+        const fxSc = clamp(Math.max(wcol, Ls) / 66, 0.9, 1.2);
+        const floorKind = landingSurfaceFor(scenery);
+        for (let i = 0; i < Math.min(nHop, 3); i++) {
+          const age = t - starts[i] - durs[i];
+          if (!(age > 0 && age < 0.9)) continue;
+          if (i === 0) drawSettleEffect(ctx, { surface: floorKind === 'dust' ? 'hard' : floorKind, x: sx0, y: sy0 - 2, age, sc: fxSc * 1.4 });
+          else drawStackEffect(ctx, { kind: landingEffectFor(unit, smKind), x: sx0, y: sy0 - i * Ls - 3, age, sc: fxSc });
+        }
+      }
       for (let i = landed; i < nHop && starts[i] <= t; i++) {
         if (t >= starts[i] + durs[i]) continue;
         if (i === 0 && smLean) {
@@ -1138,6 +1150,13 @@ export function createStackAnimation(container, options = {}) {
           if (!cw) {
             const reach = Ls * Math.cos((Math.PI / 2) * smooth(u));
             off = Math.max(4 - pvx, Math.min(0, bx - 4 - (pvx + reach)));
+          }
+          // The shadow follows the footprint: under the whole lying body on the way in, then easing across to the
+          // column as it swings upright (no jump when the turn starts).
+          {
+            const a = (Math.PI / 2) * smooth(u), ext = Ls * Math.cos(a), th = wcol * Math.sin(a);
+            const cx = pvx + d + off + (cw ? (th - ext) / 2 : (ext - th) / 2);
+            shadow(cx, sy0 + 2, (ext + th) * (1 + 0.2 * smooth(u)), clamp(wcol * .09, 2, 6), .30 / (1 + lift / 12));
           }
           ctx.save();
           ctx.translate(pvx + d + off, sy0 - lift);
@@ -1234,7 +1253,8 @@ export function createStackAnimation(container, options = {}) {
     const aBig = aspectFor(big, !flipFacing), aSm = aspectFor(small, flipFacing);
     const bigSprite = spriteFor(big, !flipFacing), smallSprite = spriteFor(small, flipFacing);
     const bigLanding = landingStyleFor(big), smallLanding = landingStyleFor(small);
-    const bigKind = motionFor(big, !flipFacing), smKind = motionFor(small, flipFacing);
+    const bigKind = motionFor(big, !flipFacing, firstIsBig ? false : leanFor(big, !flipFacing)),
+      smKind = motionFor(small, flipFacing, firstIsBig ? leanFor(small, flipFacing) : false);
     const dark = !!theme.dark, scenery = kit.id;
     const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
     const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
@@ -1391,28 +1411,35 @@ export function createStackAnimation(container, options = {}) {
           let off = 0;
           if (secondOnRight) off = cw ? Math.max(0, pickedR + 4 - (pvx0 - reach)) : Math.min(0, W - 4 - (pvx0 + reach));
           else off = cw ? Math.max(0, 4 - (pvx0 - reach)) : Math.min(0, pickedL - 4 - (pvx0 + reach));
-          const d = dir * (dist + L) * (1 - wu) * (1 - wu);
-          const lift = travelLift(sKind, wu, T, dist);
+          const ep = entryPose(sKind, wu, { thick: T, dist, dir: -dir });
+          const d = dir * (dist + L) * (1 - ep.p);
+          const lift = ep.lift;
           const pvx = pvx0 + off + d;
           const sCx = pvx + (cw ? -1 : 1) * (L / 2) * Math.cos(ang) + (cw ? 1 : -1) * (T / 2) * Math.sin(ang);
           shadow(sCx, floorY + 1, L * Math.cos(ang) * .85 + T * Math.sin(ang), clamp(T * .07, 2, 8), .26 / (1 + lift / 10));
           ctx.save();
           ctx.translate(pvx, floorY - lift);
-          ctx.rotate((cw ? 1 : -1) * ang);
+          ctx.rotate((cw ? 1 : -1) * ang + ep.rot);
+          ctx.scale(ep.sx, ep.sy);
           ctx.drawImage(sLying, cw ? -L : 0, -T, L, T);
           ctx.restore();
           return;
         }
         const hop = hopAt(f);
-        let lift = -hop.y;
-        if (sKind !== 'slide') lift = travelLift(sKind, f, w, dist);
-        const offset = (secondOnRight ? 1 : -1) * dist * hop.x;
+        let lift = -hop.y, rot = 0, hsx = hop.sx, hsy = hop.sy, hx = hop.x;
+        if (sKind !== 'slide') {
+          const ep = entryPose(sKind, f, { thick: w, dist, dir: secondOnRight ? -1 : 1 });
+          lift = ep.lift; rot = ep.rot; hsx = ep.sx; hsy = ep.sy;
+          if (!['walk', 'drive', 'fly', 'sail'].includes(sKind)) hx = 1 - ep.p;
+        }
+        const offset = (secondOnRight ? 1 : -1) * dist * hx;
         const cxNow = finalSx + offset;
         if (f < 1) {
           shadow(cxNow, floorY + 1, w * .85, clamp(w * .07, 2, 8), .26 / (1 + Math.abs(lift) / 10));
           ctx.save();
           ctx.translate(cxNow, floorY - lift);
-          ctx.scale(hop.sx, hop.sy);
+          if (rot) { const cy = spins(sKind) ? -h / 2 : 0; ctx.translate(0, cy); ctx.rotate(rot); ctx.translate(0, -cy); }
+          ctx.scale(hsx, hsy);
           ctx.drawImage(sSprite, -w / 2, -h, w, h);
           ctx.restore();
         } else {
