@@ -1,7 +1,7 @@
 // Puppet rigs for the Survival result scene. Each character is a stack of separate
 // pictures (limbs, head, wings, tail) nested in groups, so every joint can turn
 // around its own pivot instead of the whole picture being pushed around.
-export const PUPPET_SCENES = new Set(['safe', 'miss']);
+export const PUPPET_SCENES = new Set(['safe', 'miss', 'saved']);
 
 const KNIGHT = { w: 1217, h: 1292 };
 const DRAGON = { w: 1536, h: 1024 };
@@ -69,7 +69,7 @@ function dragonHtml() {
 
 export function puppetBattleHtml(mood) {
   return `<span class="pz-scene" data-puppet="${mood}">${knightHtml()}${dragonHtml()}` +
-    (mood === 'miss' ? `<img class="pz-flame" src="icons/pz-fx-flame.webp" alt="" draggable="false">` : '') +
+    (mood === 'miss' || mood === 'saved' ? `<img class="pz-flame" src="icons/pz-fx-flame.webp" alt="" draggable="false">` : '') +
     `<img class="pz-burst" src="icons/pz-fx-burst.webp" alt="" draggable="false"></span>`;
 }
 
