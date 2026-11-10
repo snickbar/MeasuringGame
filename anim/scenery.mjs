@@ -47,7 +47,7 @@ export const SETTINGS = {
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decor: 'living-wall-decor' },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decor: 'kitchen-wall-decor' },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decor: 'tabletop-wall-decor' },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decorSkip: [0, 1], decor: 'tabletop-wall-decor' },
   city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
@@ -293,12 +293,12 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
 // Pieces never repeat back to back and the spacing, side and size change from one to the next.
 const DECOR_TOP = 120000; // wall pieces keep coming this far up
 const decorCache = new Map();
-function decorSlots(seed) {
+function decorSlots(seed, skip = []) {
   if (decorCache.has(seed)) return decorCache.get(seed);
   const slots = []; let y = 330 + 200 * unitRandom(seed, 0, 1), last = [-1, -1], lastSide = -1, k = 0;
   while (y < DECOR_TOP) {
     const r = j => unitRandom(`${seed}decor`, k, j);
-    let col = Math.floor(r(1) * 5); while (last.includes(col)) col = (col + 1) % 5;
+    let col = Math.floor(r(1) * 5); while (last.includes(col) || skip.includes(col)) col = (col + 1) % 5;
     let side = r(2) < .4 ? 0 : r(2) < .8 ? 2 : 1; if (side === lastSide && r(6) < .75) side = side === 1 ? (r(7) < .5 ? 0 : 2) : 2 - side;
     slots.push({ col, side, y, flip: r(3) > .5, scale: .85 + .3 * r(4), jitter: (r(5) - .5) * .1 });
     last = [last[1], col]; lastSide = side; k++;
@@ -309,7 +309,7 @@ function decorSlots(seed) {
 function drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
   const image = kit.images[kit.config.decor]; if (!image) return;
   const groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY, gs = groundScale;
-  for (const sl of decorSlots(seed)) {
+  for (const sl of decorSlots(seed, kit.config.decorSkip)) {
     const box = columnBounds(image, sl.col), k = .5 * sl.scale * gs, w = box[2] * k, h = box[3] * k, cy = groundTop - sl.y * gs;
     if (cy + h / 2 < 0 || cy - h / 2 > height) continue;
     const wx = width * ([.2, .5, .8][sl.side] + sl.jitter), cx = anchorX + (wx - anchorX) * gs - shiftX;
