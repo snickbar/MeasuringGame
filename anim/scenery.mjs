@@ -56,8 +56,8 @@ export const SETTINGS = {
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], backdrop: 'volcano-ridge', glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'] },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], backdrop: 'library-wall', wallpaper: 'plaid' },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], backdrop: 'workshop-wall' },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], backdrop: 'library-wall', wallpaper: 'plaid', wall: 'library-pass' },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], backdrop: 'workshop-wall', wallpaper: 'tiles', wall: 'workshop-pass' },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'] },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands' },
 };
@@ -76,7 +76,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, ...(config.tall || []), ...(config.floaters || [])].filter(Boolean);
+  const names = [config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -273,6 +273,26 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
   }
 }
 
+// Wall decor for indoor scenes: windows, shelves, pipes and so on, fixed to the wall at set heights up the climb.
+function drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
+  const image = kit.images[kit.config.wall]; if (!image) return;
+  const groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY, first = 250, step = 150;
+  const kMin = Math.max(0, Math.floor(((groundTop - height) / groundScale - first) / step) - 1);
+  const kMax = Math.ceil((groundTop / groundScale - first) / step) + 1;
+  for (let k = kMin; k <= kMax; k++) {
+    const r = j => unitRandom(`${seed}wall`, k, j);
+    const col = Math.floor(r(1) * 5), box = columnBounds(image, col);
+    const w = (84 + 56 * r(2)) * groundScale, h = w * box[3] / box[2];
+    const cx = anchorX + (width * (.1 + .8 * r(3)) - anchorX) * groundScale - shiftX;
+    const bottom = groundTop - (first + k * step + 30 * r(4)) * groundScale;
+    if (bottom < 0 || bottom - h > height) continue;
+    ctx.save(); ctx.globalAlpha = dark ? .6 : .92;
+    ctx.translate(cx, 0); if (r(5) > .5) ctx.scale(-1, 1);
+    ctx.drawImage(image, ...box, -w / 2, bottom - h, w, h);
+    ctx.restore();
+  }
+}
+
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all' }) {
   const { config, images } = kit;
   ctx.save();
@@ -287,6 +307,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   }
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
+  drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
