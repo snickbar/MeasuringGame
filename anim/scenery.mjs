@@ -45,9 +45,9 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], clouds: true, flyers: 'geese', fireflies: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decor: 'living-wall-decor', ceiling: 'living-ceiling' },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decor: 'kitchen-wall-decor', ceiling: 'kitchen-ceiling' },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decor: 'tabletop-wall-decor', ceiling: 'tabletop-ceiling' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decor: 'living-wall-decor' },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decor: 'kitchen-wall-decor' },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decor: 'tabletop-wall-decor' },
   city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
@@ -61,8 +61,8 @@ export const SETTINGS = {
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { movers: ['butterflies'], floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'doves', fireflies: true },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], wallpaper: 'wood', decor: 'library-wall-decor', ceiling: 'library-ceiling' },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], wallpaper: 'brick', decor: 'workshop-wall-decor', ceiling: 'workshop-ceiling' },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], wallpaper: 'wood', decor: 'library-wall-decor' },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], wallpaper: 'brick', decor: 'workshop-wall-decor' },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'swallows' },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'geese', birdClear: .9 },
 };
@@ -81,7 +81,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, config.ceiling, ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -289,14 +289,14 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
 }
 
 
-// Indoor climb: wall pieces (windows, shelves, clocks...) scattered up the wall at random, then a ceiling.
+// Indoor climb: wall pieces (windows, shelves, clocks...) scattered up the wall at random.
 // Pieces never repeat back to back and the spacing, side and size change from one to the next.
-const CEILING_AT = 3600; // world units above the floor
+const DECOR_TOP = 120000; // wall pieces keep coming this far up
 const decorCache = new Map();
 function decorSlots(seed) {
   if (decorCache.has(seed)) return decorCache.get(seed);
   const slots = []; let y = 330 + 200 * unitRandom(seed, 0, 1), last = [-1, -1], lastSide = -1, k = 0;
-  while (y < CEILING_AT - 520) {
+  while (y < DECOR_TOP) {
     const r = j => unitRandom(`${seed}decor`, k, j);
     let col = Math.floor(r(1) * 5); while (last.includes(col)) col = (col + 1) % 5;
     let side = r(2) < .4 ? 0 : r(2) < .8 ? 2 : 1; if (side === lastSide && r(6) < .75) side = side === 1 ? (r(7) < .5 ? 0 : 2) : 2 - side;
@@ -305,17 +305,6 @@ function decorSlots(seed) {
     y += 360 + 520 * r(8) + (r(9) < .2 ? 700 : 0); // now and then a long bare stretch
   }
   decorCache.set(seed, slots); return slots;
-}
-const bandCache = new WeakMap();
-function ceilingBand(image) {
-  if (bandCache.has(image)) return bandCache.get(image);
-  const w = 64, h = 70, canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
-  const c = canvas.getContext('2d'); c.drawImage(image, 0, 0, w, h);
-  const d = c.getImageData(0, 0, w, h).data; let bottom = 0;
-  for (let y = 0; y < h; y++) { let solid = 0; for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 200) solid++; if (solid >= w * .9) bottom = y + 1; }
-  let rs = 0, gs = 0, bs = 0, n = 0; for (let y = 0; y < Math.max(1, bottom * .6); y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4; if (d[i + 3] > 200) { rs += d[i]; gs += d[i + 1]; bs += d[i + 2]; n++; } }
-  const top = n ? [Math.round(rs / n), Math.round(gs / n), Math.round(bs / n)] : [d[0], d[1], d[2]];
-  const out = { bottom: bottom / h, color: `rgb(${top[0]},${top[1]},${top[2]})` }; bandCache.set(image, out); return out;
 }
 function drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
   const image = kit.images[kit.config.decor]; if (!image) return;
@@ -327,18 +316,6 @@ function drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScal
     ctx.save(); ctx.translate(cx, cy); if (sl.flip) ctx.scale(-1, 1);
     ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h); ctx.restore();
   }
-}
-function drawCeiling(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale = 1 }) {
-  const image = kit.images[kit.config.ceiling]; if (!image) return;
-  const gs = groundScale, groundTop = (floorY ?? height - 40) - 4 * gs + shiftY, edge = groundTop - CEILING_AT * gs;
-  if (edge < -image.naturalHeight) return;
-  const band = ceilingBand(image), s = .6 * gs, tw = image.naturalWidth * s, th = image.naturalHeight * s, top = edge - band.bottom * th;
-  ctx.save(); ctx.fillStyle = band.color; ctx.fillRect(0, -1e5, width, 1e5 + top + 4);
-  if (top < height) {
-    const ox = ((-shiftX % tw) + tw) % tw;
-    for (let x = ox - tw; x < width; x += tw) ctx.drawImage(image, x, top, tw + 1, th);
-  }
-  ctx.restore();
 }
 
 // Old wall decor for indoor scenes: windows, shelves, pipes and so on, fixed to the wall at set heights up the climb.
@@ -531,7 +508,6 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   }
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
-  drawCeiling(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
