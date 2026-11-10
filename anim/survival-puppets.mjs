@@ -43,7 +43,12 @@ function knightCrop(name) {
 }
 const d = (name, cls = '') => { const [file, x0, y0, x1, y1] = dbox[name]; return `<img class="pz-i ${cls}" src="icons/${file}.webp" alt="" draggable="false" style="left:${pct(x0, DRAGON.w)}%;top:${pct(y0, DRAGON.h)}%;width:${pct(x1 - x0, DRAGON.w)}%">`; };
 
-function knightHtml() {
+// Flames that keep burning on the knight after the fire breath hits him (Miss only).
+const burnSpots = [[455, 345, 430], [330, 690, 380], [585, 880, 330], [200, 600, 300]];
+const burnHtml = () => burnSpots.map(([x, y, w], i) =>
+  `<img class="pz-burn pz-burn-${i}" src="icons/pz-fx-flame.webp" alt="" draggable="false" style="left:${pct(x, KNIGHT.w)}%;top:${pct(y, KNIGHT.h)}%;width:${pct(w, KNIGHT.w)}%">`).join('');
+
+function knightHtml(mood) {
   const f = KNIGHT;
   const wrist = group('k-wrist', [256, 862], f,
     '<img class="pz-swipe" src="icons/pz-fx-swipe.webp" alt="" draggable="false">' + knightCrop('grip'));
@@ -55,7 +60,7 @@ function knightHtml() {
   const legs = knightCrop('hips') + group('k-farleg', [588, 988], f, knightCrop('farLeg')) +
     group('k-nearleg', [389, 992], f, knightCrop('nearLeg'));
   return `<span class="pz-char pz-knight" style="aspect-ratio:${f.w}/${f.h}">${group('k-body', [480, 1230], f,
-    legs + group('k-torso', [480, 960], f, upper))}</span>`;
+    legs + group('k-torso', [480, 960], f, upper) + (mood === 'miss' ? burnHtml() : ''))}</span>`;
 }
 
 function dragonHtml() {
@@ -68,7 +73,7 @@ function dragonHtml() {
 }
 
 export function puppetBattleHtml(mood) {
-  return `<span class="pz-scene" data-puppet="${mood}">${knightHtml()}${dragonHtml()}` +
+  return `<span class="pz-scene" data-puppet="${mood}">${knightHtml(mood)}${dragonHtml()}` +
     (mood === 'miss' || mood === 'saved' ? `<img class="pz-flame" src="icons/pz-fx-flame.webp" alt="" draggable="false">` : '') +
     `<img class="pz-burst" src="icons/pz-fx-burst.webp" alt="" draggable="false"></span>`;
 }
