@@ -1,5 +1,5 @@
 /* Puppet scenes: nested parts, each turning around its own joint. Timelines are 4s so the
-   hit lands at 1.45s (36.25%), matching SURVIVAL_IMPACT_MS.safe. Idle motion uses the separate
+   hit lands at 1.45s (36.25%). Idle motion uses the separate
    translate / scale / rotate properties so it layers on top of the scene's transform keyframes. */
 .pz-scene { position:absolute; inset:0; display:block; }
 .pz-char { position:absolute; display:block; bottom:3%; }
@@ -7,13 +7,16 @@
 .pz-dragon { right:-1%; width:54%; z-index:1; }
 .pz-char .pg { position:absolute; inset:0; display:block; }
 .pz-char .pz-i { position:absolute; max-width:none; pointer-events:none; }
+/* Hide the baked-in near shoulder and knees. Those plates move on their own layers. */
+.k-chest { clip-path:polygon(36% 0,100% 0,100% 100%,0 100%,0 57%,30% 57%,30% 45%,40% 41%,50% 36%,53% 27%,51% 20%,46% 14%,37% 10%); }
+.k-hips { clip-path:inset(0 0 50%); }
 .pz-face { opacity:0; }
 .pz-face-0 { opacity:1; }
 .pz-sweat { opacity:0; }
 .pz-burst,.pz-swipe { position:absolute; z-index:5; opacity:0; pointer-events:none; max-width:none; }
-.pz-burst { left:53%; top:22%; width:19%; transform-origin:50% 50%; }
-/* the slash streak follows the sword tip across the top, from behind the knight to the front (1.1s to 1.4s) */
-.pz-swipe { left:10cqw; top:6cqw; width:38cqw; transform-origin:0% 60%; transform:rotate(14deg) scaleX(.2); }
+.pz-burst { left:46%; top:39%; width:14%; transform-origin:50% 50%; }
+/* The streak is mounted with the sword so it follows the wrist through the swing. */
+.pz-swipe { left:27%; top:60%; width:45%; transform:rotate(7deg); }
 
 /* Idle */
 .pz-char .k-torso { animation:pzBreathe 2.6s ease-in-out infinite alternate; }
@@ -31,6 +34,7 @@
 .sv-battle.playing[data-scene="safe"] .k-body { animation:pzKBody 4s both; }
 .sv-battle.playing[data-scene="safe"] .k-sarm { animation:pzSarm 4s both; }
 .sv-battle.playing[data-scene="safe"] .k-fore { animation:pzFore 4s both; }
+.sv-battle.playing[data-scene="safe"] .k-wrist { animation:pzWrist 4s both; }
 .sv-battle.playing[data-scene="safe"] .k-head { animation:pzKHead 4s both; }
 .sv-battle.playing[data-scene="safe"] :is(.k-shield,.k-shieldarm) { animation:pzKShield 4s both; }
 .sv-battle.playing[data-scene="safe"] .k-nearleg { animation:pzNearLeg 4s both; }
@@ -51,12 +55,30 @@
 
 @keyframes pzKnightMove { 0%{transform:none} 11%{transform:translateX(-1cqw);animation-timing-function:cubic-bezier(.4,0,.2,1)} 24%{transform:translateX(0)} 36.25%{transform:translateX(14cqw);animation-timing-function:ease-out} 40%{transform:translateX(13cqw)} 62%{transform:translateX(13cqw);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
 @keyframes pzKBody { 0%{transform:none} 11%{transform:rotate(-3deg);animation-timing-function:ease-in-out} 24%{transform:rotate(-3deg);animation-timing-function:cubic-bezier(.5,0,.8,.4)} 36.25%{transform:rotate(5deg);animation-timing-function:ease-out} 62%{transform:rotate(4deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
-@keyframes pzSarm { 0%{transform:none} 11%{transform:rotate(48deg);animation-timing-function:ease-in-out} 25%{transform:rotate(56deg);animation-timing-function:cubic-bezier(.45,0,.9,.5)} 33%{transform:rotate(-45deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)} 36.25%{transform:rotate(-118deg)} 62%{transform:rotate(-115deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
-@keyframes pzFore { 0%{transform:none} 11%{transform:rotate(-150deg);animation-timing-function:ease-in-out} 25%{transform:rotate(-165deg);animation-timing-function:cubic-bezier(.45,0,.9,.5)} 33%{transform:rotate(-35deg);animation-timing-function:cubic-bezier(.2,.6,.4,1)} 36.25%{transform:rotate(96deg)} 62%{transform:rotate(93deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
+@keyframes pzSarm {
+  0% { transform:rotate(0); animation-timing-function:ease-in-out; }
+  19%,26% { transform:rotate(-154deg); animation-timing-function:cubic-bezier(.45,0,.45,1); }
+  36.25% { transform:rotate(-119deg); animation-timing-function:ease-out; }
+  62% { transform:rotate(-114deg); animation-timing-function:ease-in-out; }
+  90%,100% { transform:rotate(0); }
+}
+@keyframes pzFore {
+  0% { transform:rotate(0); animation-timing-function:ease-in-out; }
+  19%,26% { transform:rotate(-58deg); animation-timing-function:cubic-bezier(.45,0,.45,1); }
+  36.25%,62% { transform:rotate(-10deg); animation-timing-function:ease-in-out; }
+  90%,100% { transform:rotate(0); }
+}
+@keyframes pzWrist {
+  0% { transform:rotate(0); animation-timing-function:ease-in-out; }
+  19%,26% { transform:rotate(86deg); animation-timing-function:cubic-bezier(.45,0,.45,1); }
+  36.25% { transform:rotate(103deg); animation-timing-function:ease-out; }
+  62% { transform:rotate(98deg); animation-timing-function:ease-in-out; }
+  90%,100% { transform:rotate(0); }
+}
 @keyframes pzKHead { 0%{transform:none} 11%{transform:rotate(-5deg);animation-timing-function:ease-in-out} 25%{transform:rotate(-6deg)} 36.25%{transform:rotate(7deg);animation-timing-function:ease-out} 62%{transform:rotate(4deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
 @keyframes pzKShield { 0%{transform:none} 11%{transform:rotate(-6deg);animation-timing-function:ease-in-out} 25%{transform:rotate(-8deg);animation-timing-function:ease-in} 33%{transform:rotate(10deg)} 36.25%{transform:rotate(34deg);animation-timing-function:ease-out} 62%{transform:rotate(30deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
-@keyframes pzNearLeg { 0%{transform:none} 11%{transform:rotate(4deg);animation-timing-function:ease-in-out} 25%{transform:rotate(-5deg)} 36.25%{transform:rotate(-8deg);animation-timing-function:ease-out} 62%{transform:rotate(-7deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
-@keyframes pzFarLeg { 0%{transform:none} 11%{transform:rotate(-3deg);animation-timing-function:ease-in-out} 25%{transform:rotate(5deg)} 36.25%{transform:rotate(8deg);animation-timing-function:ease-out} 62%{transform:rotate(7deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
+@keyframes pzNearLeg { 0%{transform:none} 11%,25%{transform:rotate(-5deg)} 36.25%{transform:rotate(12deg);animation-timing-function:ease-out} 62%{transform:rotate(10deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
+@keyframes pzFarLeg { 0%{transform:none} 11%,25%{transform:rotate(4deg)} 36.25%{transform:rotate(-12deg);animation-timing-function:ease-out} 62%{transform:rotate(-10deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
 
 @keyframes pzDragonMove { 0%,36.25%{transform:none;animation-timing-function:cubic-bezier(.1,.7,.3,1)} 41%{transform:translateX(4cqw)} 62%{transform:translateX(3cqw);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
 @keyframes pzDBody { 0%{transform:rotate(-.8deg)} 36.25%{transform:rotate(-1.5deg);animation-timing-function:cubic-bezier(.1,.7,.3,1)} 41%{transform:rotate(4deg)} 62%{transform:rotate(2.5deg);animation-timing-function:ease-in-out} 90%,100%{transform:none} }
@@ -69,7 +91,7 @@
 @keyframes pzFace4 { 0%,72%{opacity:0} 72.01%{opacity:1} 90%{opacity:0} }
 @keyframes pzSweat { 0%,45%{opacity:0;transform:translateY(0)} 50%{opacity:1;transform:translateY(0)} 72%{opacity:1;transform:translateY(8%)} 78%,100%{opacity:0;transform:translateY(12%)} }
 @keyframes pzBurst { 0%,36%{opacity:0;transform:scale(.2) rotate(-12deg)} 38%{opacity:1;transform:scale(1.05) rotate(0)} 47%{opacity:0;transform:scale(1.25) rotate(8deg)} 100%{opacity:0} }
-@keyframes pzSwipe { 0%,27%{opacity:0;transform:rotate(14deg) scaleX(.15)} 28.5%{opacity:.8;transform:rotate(14deg) scaleX(.32);animation-timing-function:ease-in} 31%{transform:rotate(14deg) scaleX(.62)} 33.5%{opacity:.8;transform:rotate(14deg) scaleX(.92)} 35.5%{opacity:.75;transform:rotate(14deg) scaleX(1)} 38%,100%{opacity:0;transform:rotate(14deg) scaleX(1.04)} }
+@keyframes pzSwipe { 0%,28%{opacity:0} 32%{opacity:.6} 36.25%{opacity:.45} 40%,100%{opacity:0} }
 
 @media (prefers-reduced-motion:reduce) {
   .pz-char .pg { animation:none !important; }
