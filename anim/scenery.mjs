@@ -232,8 +232,8 @@ function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groun
 // Floating pieces: each variety set is five different silhouettes in five equal columns.
 // Every piece picks its own column, mirror, size and starting spot, so no two look alike.
 const FLOATER_STYLE = {
-  'cloud-set-day': { count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
-  'cloud-set-sunset': { count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
+  'cloud-set-day': { skip: [3], count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
+  'cloud-set-sunset': { skip: [0, 4], count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
   'mist-set': { count: 3, size: [240, 340], alpha: .38, vx: 2, vy: 0, par: .6 },
   'ember-set': { count: 11, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
   'petal-leaf-set': { skip: [4], count: 7, size: [44, 78], alpha: .9, vx: 5, vy: 12, par: .5 },
@@ -476,7 +476,6 @@ function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
       const x = lane(r(2), dir, 34 * gs, 200 * gs, .08), y = yOf(.05 + r(3) * .2, .2);
       if (y < groundTop - 320 * gs) {
         ctx.globalAlpha = .9; ctx.fillStyle = '#f4f1ea'; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = Math.max(2, 2.4 * gs);
-        ctx.beginPath(); ctx.moveTo(x - dir * s * 1.3, y); ctx.lineTo(x - dir * s * 8, y); ctx.stroke();
         ctx.beginPath(); ctx.ellipse(x, y, s * 1.2, s * .4, 0, 0, 6.283); ctx.fill();
         ctx.fillStyle = '#d9604f'; ctx.beginPath(); ctx.moveTo(x - dir * s * .2, y); ctx.lineTo(x - dir * s * .9, y - s * .15); ctx.lineTo(x - dir * s * .6, y + s * .8); ctx.closePath(); ctx.fill();
       }
