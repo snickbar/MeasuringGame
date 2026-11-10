@@ -52,7 +52,7 @@ window.showHighStakesFinal = (outcome, host = true) => {
   hs.round = HS.HS_MAX_ROUNDS;
   hs.ghost = outcome === 'out' ? {me:4} : null;
   currentPlayers.me.avatar = 'av337';
-  currentPlayers.p1.avatar = 'av30';
+  currentPlayers.p1.avatar = 'av31';
   isHost = host;
   roomState = {...roomState, gameId:'final-' + outcome, hs:HS.hsFinishRound(hs)};
   renderHighStakes(roomState);
