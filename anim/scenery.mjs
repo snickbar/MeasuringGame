@@ -156,28 +156,50 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
 }
 
 // Atmospheric layers follow the climb with the original cloud parallax.
-// Tall climb backdrops: three overlapping 887x1774 panels (low, mid, high) that the stack climbs past.
-// The low panel is rooted like the floor; higher panels move slower, so the view feels deeper.
-const TALL_PARALLAX = [1, 1, 1];
+const tallSolid = new WeakMap();
+// Where each panel is solid: first and last rows that are mostly opaque (as fractions of its height).
+function solidRows(image) {
+  if (tallSolid.has(image)) return tallSolid.get(image);
+  const cw = 111, ch = 222, canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch;
+  const c = canvas.getContext('2d'); c.drawImage(image, 0, 0, cw, ch);
+  const data = c.getImageData(0, 0, cw, ch).data;
+  let top = -1, bottom = -1;
+  for (let y = 0; y < ch; y++) {
+    let n = 0; for (let x = 0; x < cw; x++) if (data[(y * cw + x) * 4 + 3] > 200) n++;
+    if (n >= cw * .4) { if (top < 0) top = y; bottom = y; }
+  }
+  const rows = top < 0 ? [0, 1] : [top / ch, (bottom + 1) / ch];
+  tallSolid.set(image, rows); return rows;
+}
 function seededFlip(seed, i) {
   let h = 2166136261;
   for (const c of `${seed}:${i}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
   return (h >>> 0) % 2 === 1;
 }
+// Tall climb backdrops: panels (low, mid, high) rooted to the ground. Each panel's faded lower edge sits
+// behind the solid part of the panel in front of it, so land never starts in the middle of open sky.
 function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
   const names = kit.config.tall; if (!names) return;
   const w = (width + 100) * groundScale, h = w * 2;
   const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
-  const base0 = (floorY ?? height - 40) - 4 * groundScale;
+  const bottom0 = (floorY ?? height - 40) - 4 * groundScale + shiftY;
+  const tops = [];
+  for (let i = 0; i < names.length; i++) {
+    const image = kit.images[names[i]]; if (!image) { tops.push(null); continue; }
+    if (i === 0) { tops.push(bottom0 - h); continue; }
+    const front = tops[i - 1]; if (front == null) { tops.push(null); continue; }
+    const [ft, fb] = solidRows(kit.images[names[i - 1]]), [, mb] = solidRows(image);
+    const meet = front + (ft + (fb - ft) * .5) * h;
+    tops.push(meet - mb * h);
+  }
   for (let i = names.length - 1; i >= 0; i--) {
-    const image = kit.images[names[i]]; if (!image) continue;
-    const bottom = base0 - i * h * .5 + shiftY * TALL_PARALLAX[i] + (i ? 0 : 0);
-    if (bottom < 0 || bottom - h > height) continue;
+    const image = kit.images[names[i]], top = tops[i]; if (!image || top == null) continue;
+    if (top + h < 0 || top > height) continue;
     ctx.save();
-    ctx.globalAlpha = (dark ? .55 : 1) * (i === 0 ? 1 : .96);
+    ctx.globalAlpha = dark ? .55 : 1;
     ctx.translate(center, 0);
     if (seededFlip(seed, i)) ctx.scale(-1, 1);
-    ctx.drawImage(image, -w / 2, bottom - h, w, h);
+    ctx.drawImage(image, -w / 2, top, w, h);
     ctx.restore();
   }
 }
