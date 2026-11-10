@@ -432,7 +432,7 @@ function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
       for (let i = 0; i < 3; i++) {
         const r = j => unitRandom(`${seed}bf`, i, j);
         const x = lane(r(1), r(2) > .5 ? 1 : -1, 12 * gs, 60 * gs) + Math.sin(t * .9 + r(3) * 6.28) * 30 * gs;
-        const y = yOf(r(4) * .5, .45) + Math.sin(t * 1.3 + r(5) * 6.28) * 22 * gs;
+        const y = groundTop - (50 + 170 * r(4)) * gs + Math.sin(t * 1.3 + r(5) * 6.28) * 22 * gs; // low, just above the grass
         const sky = Math.max(0, Math.min(1, (groundTop - 20 * gs - y) / (60 * gs))); if (!sky) continue;
         const flap = Math.abs(Math.sin(t * 9 + i * 2)) * .8 + .2, w = 7 * gs, col = ['#f2a65a', '#e58fb7', '#f6dc6a'][i % 3];
         ctx.globalAlpha = .9 * sky; ctx.fillStyle = col;
