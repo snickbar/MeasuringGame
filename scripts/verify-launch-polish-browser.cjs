@@ -57,8 +57,8 @@ window.__launch={
   await Promise.all([...scene.querySelectorAll('img')].map(img=>img.decode()));
   survivalContentEl.querySelectorAll('.sv-battle,.sv-meter').forEach(node=>node.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=time}));
   const css=selector=>{const node=survivalContentEl.querySelector(selector);return node?getComputedStyle(node):null};
-  return {jaw:css('.sv-dragon-jaw').transform,flame:Number(css('.sv-battle-fire')?.opacity),burn:Number(css('.sv-battle-burn i')?.opacity),
-    reflection:Number(css('.sv-battle-deflected-fire i')?.opacity),strike:Number(css('.sv-battle-strike-pose')?.opacity),
+  return {head:css('.d-head').transform,flame:Number(css('.pz-flame')?.opacity),burn:Number(css('.pz-burn')?.opacity),
+    burst:Number(css('.pz-burst')?.opacity),
     ring:Number(css('.sv-meter-ring')?.opacity),fill:css('.sv-meter-fill')?.clipPath};
  },
  survivalQuestion:()=>{
@@ -95,40 +95,38 @@ runFixture({html,modules:{'/__fake/app.mjs':'export const initializeApp=()=>({})
  await evaluate('window.__launch.tutorial()');await wait(100);
  const tutorial=await evaluate(`({backs:document.querySelectorAll('.pt-key-back').length,objects:document.querySelectorAll('.pt-object-card').length,actions:document.querySelectorAll('[data-hs-action]').length,choices:document.querySelectorAll('.xb-votes > span').length,inputs:document.querySelectorAll('#mode-tutorial input').length})`);
  assert.deepEqual(tutorial,{backs:1,objects:2,actions:4,choices:3,inputs:0});await screenshot('tutorial-controls-'+width+'.png');
- for(const [kind,time] of [['safe',1350],['miss',3000],['saved',1560],['record',1700]]){
+ for(const [kind,time] of [['safe',1550],['miss',3000],['saved',1560],['record',1700]]){
   await evaluate(`window.__launch.survivalPose('${kind}',${time})`);
   if(kind==='record') await wait(750);
-  const survival=await evaluate(`(()=>{const scene=document.querySelector('.sv-battle'),r=scene.getBoundingClientRect(),meter=document.querySelector('.sv-meter');return {fits:r.left>=0&&r.right<=innerWidth+1&&document.documentElement.scrollWidth<=innerWidth,rigs:scene.querySelectorAll('.sv-rig').length,accuracy:meter?.getAttribute('aria-valuenow')??null,answer:document.querySelector('.sv-answer strong')?.textContent??null}})()`);
+  const survival=await evaluate(`(()=>{const scene=document.querySelector('.sv-battle'),r=scene.getBoundingClientRect(),meter=document.querySelector('.sv-meter');return {fits:r.left>=0&&r.right<=innerWidth+1&&document.documentElement.scrollWidth<=innerWidth,rigs:scene.querySelectorAll('.pz-char').length,accuracy:meter?.getAttribute('aria-valuenow')??null,answer:document.querySelector('.sv-answer strong')?.textContent??null}})()`);
   assert.deepEqual(survival,{fits:true,rigs:2,accuracy:kind==='record'?null:kind==='safe'?'92.3':'34.6',answer:kind==='record'?null:'8.67'});
   await screenshot('survival-'+kind+'-'+width+'.png');
  }
- const windup=await evaluate("window.__launch.survivalPose('miss',1100)"),fire=await evaluate("window.__launch.survivalPose('miss',2250)"),burn=await evaluate("window.__launch.survivalPose('miss',4100)");
- assert.equal(windup.flame,0);assert(fire.flame>.8&&windup.jaw!==fire.jaw);assert(burn.burn>.8&&burn.flame===0);
- const strike=await evaluate("window.__launch.survivalPose('safe',1350)");assert.equal(strike.strike,1);assert(strike.ring>.1&&strike.fill.includes('7.7%'));
- const block=await evaluate("window.__launch.survivalPose('saved',1560)");assert(block.reflection>.8);
- const rest=await evaluate(`(async()=>{await window.__launch.survivalPose('safe',1900);const battle=document.querySelector('.sv-battle'),meter=document.querySelector('.sv-meter-fill').getAnimations()[0];battle.click();const busy=battle.classList.contains('returning');battle.getAnimations({subtree:true}).forEach(a=>a.currentTime=5000);battle.click();return {busy,returns:battle.classList.contains('returning'),sameMeter:meter===document.querySelector('.sv-meter-fill').getAnimations()[0]}})()`);
- assert.deepEqual(rest,{busy:false,returns:true,sameMeter:true});
+ const windup=await evaluate("window.__launch.survivalPose('miss',1100)"),fire=await evaluate("window.__launch.survivalPose('miss',2250)"),burn=await evaluate("window.__launch.survivalPose('miss',3000)");
+ assert.equal(windup.flame,0);assert(fire.flame>.8&&windup.head!==fire.head);assert(burn.burn>.8&&burn.flame===0);
+ const strike=await evaluate("window.__launch.survivalPose('safe',1900)");assert(strike.ring>.1&&strike.fill.includes('7.7%'));assert((await evaluate("window.__launch.survivalPose('safe',1550)")).burst>.8);
+ const block=await evaluate("window.__launch.survivalPose('saved',1560)");assert(block.burst>.8);
+  const rest=await evaluate(`(async()=>{await window.__launch.survivalPose('safe',1900);const battle=document.querySelector('.sv-battle'),meter=document.querySelector('.sv-meter-fill').getAnimations()[0],lead=()=>battle.getAnimations({subtree:true}).find(a=>a.animationName==='pzSarm'),first=lead();battle.click();const busy=lead()!==first;battle.getAnimations({subtree:true}).forEach(a=>a.currentTime=5000);battle.click();return {busy,replays:lead()!==first,sameMeter:meter===document.querySelector('.sv-meter-fill').getAnimations()[0]}})()`);
+ assert.deepEqual(rest,{busy:false,replays:true,sameMeter:true});
  if(width===390){
   await evaluate("window.__launch.survival('miss')");
   await wait(120);
   await evaluate(`window.survivalLoop=(()=>{
-    const battle=document.querySelector('.sv-battle'),blade=battle.querySelector('.sv-battle-blade'),meter=document.querySelector('.sv-meter-fill').getAnimations()[0];
-    const first=battle.getAnimations({subtree:true}).find(a=>a.animationName==='svBattleDodge');
-    const state={battle,blade,meter,first,cracks:0};
+    const battle=document.querySelector('.sv-battle'),meter=document.querySelector('.sv-meter-fill').getAnimations()[0];
+    const first=battle.getAnimations({subtree:true}).find(a=>a.animationName==='pzMDHead');
+    const state={battle,meter,first,cracks:0};
     const watch=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.classList?.contains('sv-crack'))state.cracks++;});
     watch.observe(document.body,{childList:true});state.watch=watch;return state;
   })();true`);
-  let released=false,returned=false,looped=false;
+  let looped=false;
   for(let i=0;i<105;i++){
-   const pose=await evaluate(`(()=>{const {battle,blade,first}=window.survivalLoop;return {released:blade.classList.contains('released'),returning:battle.classList.contains('returning'),restarted:!battle.getAnimations({subtree:true}).includes(first),held:blade.parentElement.classList.contains('sv-battle-sword-dock')}})()`);
-   released ||= pose.released;
-   returned ||= released&&pose.returning&&pose.held;
-   if(returned&&pose.restarted){looped=true;break}
+   looped=await evaluate(`(()=>{const {battle,first}=window.survivalLoop;return !battle.getAnimations({subtree:true}).includes(first)})()`);
+   if(looped)break;
    await wait(100);
   }
-  const loop=await evaluate(`(()=>{const {blade,meter,cracks,watch}=window.survivalLoop;watch.disconnect();return {cracks,blade:document.querySelector('.sv-battle-blade')===blade,meter:document.querySelector('.sv-meter-fill').getAnimations()[0]===meter}})()`);
-  assert.deepEqual({released,returned,looped},{released:true,returned:true,looped:true},'one sword drops, is retrieved, and stays with the knight on the next loop');
-  assert.deepEqual(loop,{cracks:1,blade:true,meter:true});
+  const loop=await evaluate(`(()=>{const {meter,cracks,watch}=window.survivalLoop;watch.disconnect();return {cracks,meter:document.querySelector('.sv-meter-fill').getAnimations()[0]===meter}})()`);
+  assert.equal(looped,true,'the battle scene plays again on its own after it finishes');
+  assert.deepEqual(loop,{cracks:1,meter:true});
  }
  await evaluate("window.__launch.survival('miss',59.98)");
  assert.equal(await evaluate("document.querySelector('.sv-answer-accuracy').textContent"),'<60%');
