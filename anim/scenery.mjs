@@ -44,7 +44,7 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 
 export const SETTINGS = {
   grass: { movers: ['butterflies'], clouds: true, flyers: 'geese', fireflies: true },
-  beach: { movers: ['plane'], floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
+  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decor: 'living-wall-decor', ceiling: 'living-ceiling' },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decor: 'kitchen-wall-decor', ceiling: 'kitchen-ceiling' },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decor: 'tabletop-wall-decor', ceiling: 'tabletop-ceiling' },
@@ -63,7 +63,7 @@ export const SETTINGS = {
   blossom: { movers: ['butterflies'], floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'doves', fireflies: true },
   library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], wallpaper: 'wood', decor: 'library-wall-decor', ceiling: 'library-ceiling' },
   workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], wallpaper: 'brick', decor: 'workshop-wall-decor', ceiling: 'workshop-ceiling' },
-  rooftop: { movers: ['plane'], floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'swallows' },
+  rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'swallows' },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'geese', birdClear: .9 },
 };
 const imageCache = new Map();
