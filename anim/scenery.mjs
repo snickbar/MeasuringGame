@@ -53,8 +53,8 @@ export const SETTINGS = {
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
   mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'] },
   jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'] },
-  cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid', 'cave-tall-high'], floaters: ['mist-set'] },
-  volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], backdrop: 'volcano-ridge', floaters: ['ember-set'] },
+  cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
+  volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], backdrop: 'volcano-ridge', glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'] },
   library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], backdrop: 'library-wall', wallpaper: 'plaid' },
   workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], backdrop: 'workshop-wall' },
@@ -136,6 +136,12 @@ function visibleBounds(image) {
 function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2 }) {
   const name = dark && kit.config.nightBackdrop ? kit.config.nightBackdrop : kit.config.backdrop, image = kit.images[name]; if (!image) return;
   const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 * groundScale + shiftY;
+  if (kit.config.glow) {
+    // Heat glow rising from the horizon, so the volcano feels lit from below.
+    const g = ctx.createLinearGradient(0, base, 0, base - 260 * groundScale);
+    g.addColorStop(0, kit.config.glow + (dark ? 'aa' : '70')); g.addColorStop(1, kit.config.glow + '00');
+    ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, base - 260 * groundScale, width, 260 * groundScale); ctx.restore();
+  }
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
     'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75,
     'volcano-ridge': .9, 'blossom-trees': .85, 'library-wall': .95, 'workshop-wall': .95, 'snow-aurora': .9 }[name] ?? .8;
@@ -186,17 +192,18 @@ function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groun
   const w = (width + 100) * groundScale, h = w * 2;
   const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
   const bottom0 = (floorY ?? height - 40) - 4 * groundScale + shiftY;
+  const list = kit.config.tallRepeat ? [...names, ...Array(12).fill(names[names.length - 1])] : names;
   const tops = [];
-  for (let i = 0; i < names.length; i++) {
-    const image = kit.images[names[i]]; if (!image) { tops.push(null); continue; }
+  for (let i = 0; i < list.length; i++) {
+    const image = kit.images[list[i]]; if (!image) { tops.push(null); continue; }
     if (i === 0) { tops.push(bottom0 - h); continue; }
     const front = tops[i - 1]; if (front == null) { tops.push(null); continue; }
-    const [ft, fb] = solidRows(kit.images[names[i - 1]]), [, mb] = solidRows(image);
+    const [ft, fb] = solidRows(kit.images[list[i - 1]]), [, mb] = solidRows(image);
     const meet = front + (ft + (fb - ft) * .5) * h;
     tops.push(meet - mb * h);
   }
-  for (let i = names.length - 1; i >= 0; i--) {
-    const image = kit.images[names[i]], top = tops[i]; if (!image || top == null) continue;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const image = kit.images[list[i]], top = tops[i]; if (!image || top == null) continue;
     if (top + h < 0 || top > height) continue;
     ctx.save();
     ctx.globalAlpha = dark ? .55 : 1;
@@ -213,8 +220,8 @@ const FLOATER_STYLE = {
   'cloud-set-day': { count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
   'cloud-set-sunset': { count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
   'mist-set': { count: 3, size: [240, 340], alpha: .38, vx: 2, vy: 0, par: .6 },
-  'ember-set': { count: 7, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
-  'petal-leaf-set': { count: 7, size: [44, 78], alpha: .9, vx: 5, vy: 12, par: .5 },
+  'ember-set': { count: 11, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
+  'petal-leaf-set': { skip: [4], count: 7, size: [44, 78], alpha: .9, vx: 5, vy: 12, par: .5 },
 };
 const columnBoundsCache = new WeakMap();
 function columnBounds(image, col, cols = 5) {
@@ -244,7 +251,8 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
     const span = height * 2;
     for (let i = 0; i < style.count; i++) {
       const r = k => unitRandom(`${seed}${name}`, i, k);
-      const col = Math.floor(r(1) * 5), box = columnBounds(image, col);
+      const cols = [0, 1, 2, 3, 4].filter(c => !(style.skip || []).includes(c)); // a twig floating alone would look wrong
+      const col = cols[Math.floor(r(1) * cols.length)], box = columnBounds(image, col);
       const w = style.size[0] + (style.size[1] - style.size[0]) * r(2), h = w * box[3] / box[2];
       const t = reduced ? 0 : time;
       const x0 = r(3) * (width + w) - w / 2 + (r(4) - .5) * 40;
