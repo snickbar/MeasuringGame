@@ -11817,14 +11817,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<div class="pin-top"><h2 class="dc-title">${roundTitle} ${r.i + 1} of 3</h2>${scoredRoundDots(dailyAccuracies(), r.i, r.i + 1)}</div>
         <div class="wb-cards sv-rcards">${card(u)}${card(t)}</div>
         <div class="wb-verdict ${r.ok ? "ok" : "bad"}">
-          <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), { sunriseStep: r.i })}<div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div></div>
-          <div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t">${r.label}</div></div>
-          <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div>
+          <div class="wb-result-stage dc-stage">${soloScoreMascotHtml(DAILY_ROOSTER_ART, soloScoreReaction(r.acc), { sunriseStep: r.i })}</div>
+          <div class="dc-verdict-row">
+            <div class="dc-verdict-copy"><div class="sv-arr" style="--a:.35s"><div class="wb-verdict-t">${r.label}</div></div>
+            <div class="wb-result-quip sv-arr" style="--a:.6s">${wbSideHtml(r.side)}<div class="wb-quip">${escapeHtml(r.quip)}</div></div></div>
+            <div class="wb-result-stamp"><div class="wb-burst"><div class="wb-mark ${r.ok ? "ok" : "bad"}" aria-label="${r.ok ? "Right" : "Off"}">${r.ok ? "&#10004;" : "&#10006;"}</div></div></div>
+          </div>
           <p class="wb-line sv-arr" style="--a:.5s"><span class="wb-line-label">The answer</span><b>${r.ans}</b><span>You said ${said} &middot; ${formatAccuracy(r.acc)}% accurate</span></p>
           <div class="sv-arr sv-arr-gauge" style="--a:.5s">${dcGaugeHtml(r.acc)}</div>
         </div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-next">${last ? "See my results" : "Next question"}</button></div>`;
-      requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(dailyContentEl.querySelector(".play-middle"), 0.5)));
+      requestAnimationFrame(() => requestAnimationFrame(() => fitPlayScroll(dailyContentEl.querySelector(".play-middle"), 0.5, true)));
       return;
     }
     // done
@@ -14838,12 +14841,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   wbMeasureToolbar();
   // Shrinks the cards and verdict step by step until everything fits without scrolling.
   function wbFit() { fitPlayScroll(wbContentEl.querySelector(".wb-play-scroll")); }
-  function fitPlayScroll(scroll, floor = 0.55) {
+  function fitPlayScroll(scroll, floor = 0.55, accurate = false) {
     if (!scroll) return;
     let f = 1;
     scroll.style.setProperty("--wbf", f);
     // Measured from layout positions (not scrollHeight) so the stamp's slam-in scaling doesn't count.
-    const used = () => { const last = scroll.lastElementChild; return last ? last.offsetTop + last.offsetHeight + 10 : 0; };
+    // "accurate" measures the last block's real on-screen box instead, which stays correct when that block is zoomed (Daily Challenge result).
+    const used = () => {
+      const last = scroll.lastElementChild;
+      if (!last) return 0;
+      if (accurate) return scroll.scrollTop + last.getBoundingClientRect().bottom - scroll.getBoundingClientRect().top + 10;
+      return last.offsetTop + last.offsetHeight + 10;
+    };
     while (f > floor && used() > scroll.clientHeight) { f = Math.round((f - 0.04) * 100) / 100; scroll.style.setProperty("--wbf", f); }
   }
   window.addEventListener("resize", () => { if (wb && (wb.phase === "question" || wb.phase === "result")) { wbFit(); wbFitMascots(); } });
