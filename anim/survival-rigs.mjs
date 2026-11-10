@@ -1,3 +1,4 @@
+import { PUPPET_SCENES, puppetBattleHtml, puppetArtFiles } from './survival-puppets.mjs';
 const knightBody = 'survival-knight-parts-v2.webp';
 const knightArm = 'survival-knight-parts-v3.webp';
 const dragonParts = 'survival-dragon-parts-v2.webp';
@@ -8,7 +9,7 @@ export const SURVIVAL_IMPACT_MS = Object.freeze({ miss: 2240, saved: 1450 });
 
 let preloaded;
 export function preloadSurvivalRigArt() {
-  const files = [knightBody, knightArm, dragonParts, strike, bladeArt, block, 'survival-dragon-flame.webp']
+  const files = [knightBody, knightArm, dragonParts, strike, bladeArt, block, 'survival-dragon-flame.webp', ...puppetArtFiles()]
     .map(file => `../icons/${file}`);
   files.push('../backgrounds/survival-dungeon.webp');
   return preloaded ||= Promise.all(files.map(file => {
@@ -27,6 +28,12 @@ function part(file, className, [x,y,w,h], [left,top,width], pivot, wrap = img =>
 }
 
 export function survivalBattleHtml(mood, reduced = false) {
+  if (PUPPET_SCENES.has(mood)) {
+    const labels = {safe:'Replay the knight’s swing'};
+    return `<button type="button" class="sv-battle" data-scene="${mood}" aria-label="${labels[mood]}"${reduced ? ' disabled' : ''}>
+      <span class="sv-battle-stage" aria-hidden="true">${puppetBattleHtml(mood)}</span>
+    </button>`;
+  }
   const split = mood === 'safe' || mood === 'miss';
   const arm = part(knightArm, 'sv-sword-arm', [1143,80,530,655], [-1.5,12.864,239.14], [1605,650],
     img => split ? layer('sword-dock', art(bladeArt, 'sv-battle-blade')) + layer('gauntlet', img) : img);
@@ -111,7 +118,7 @@ function swordMotion(scene) {
 
 export function mountSurvivalBattle(scene, screen, reducedMotion) {
   const mood = scene.dataset.scene;
-  const hasReturn = mood === 'safe' || mood === 'miss';
+  const hasReturn = (mood === 'safe' || mood === 'miss') && !PUPPET_SCENES.has(mood);
   const sword = mood === 'miss' ? swordMotion(scene) : null;
   const doc = scene.ownerDocument;
   let timer;
