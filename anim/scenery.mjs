@@ -158,7 +158,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
 // Atmospheric layers follow the climb with the original cloud parallax.
 // Tall climb backdrops: three overlapping 887x1774 panels (low, mid, high) that the stack climbs past.
 // The low panel is rooted like the floor; higher panels move slower, so the view feels deeper.
-const TALL_PARALLAX = [1, .55, .3];
+const TALL_PARALLAX = [1, 1, 1];
 function seededFlip(seed, i) {
   let h = 2166136261;
   for (const c of `${seed}:${i}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
