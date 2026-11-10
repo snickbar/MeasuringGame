@@ -50,7 +50,7 @@ function knightHtml() {
   const fore = group('k-fore', [269, 759], f, knightCrop('forearm') + wrist);
   const sarm = group('k-sarm', [354, 665], f, fore + knightCrop('shoulder'));
   const head = group('k-head', [460, 560], f, group('k-plume', [420, 360], f, k('plume')) + k('helmet'));
-  const upper = group('k-shieldarm', [610, 650], f, k('shieldArm')) + k('torso', 'k-chest') + head + group('k-shield', [610, 650], f, k('shield')) + sarm;
+  const upper = group('k-shieldarm', [610, 650], f, k('shieldArm')) + img('pz-kfill.webp', kp.torso, KNIGHT) + k('torso', 'k-chest') + head + group('k-shield', [610, 650], f, k('shield')) + sarm;
   // The cloth under the waist plates covers the hip joints throughout the lunge.
   const legs = knightCrop('hips') + group('k-farleg', [588, 988], f, knightCrop('farLeg')) +
     group('k-nearleg', [389, 992], f, knightCrop('nearLeg'));
@@ -77,6 +77,7 @@ export function puppetArtFiles() {
   const files = [];
   for (const [n] of Object.values(kp)) files.push(`pz-k${String(n).padStart(2, '0')}.webp`);
   for (const [file] of Object.values(knightCrops)) files.push(`${file}.webp`);
+  files.push('pz-kfill.webp');
   files.push('pz-db.webp', 'pz-dnw.webp', 'pz-dfw.webp', 'pz-dt.webp');
   for (let i = 0; i < 6; i++) files.push(`pz-f${i}.webp`);
   files.push('pz-fx-flame.webp');
