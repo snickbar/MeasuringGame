@@ -235,7 +235,7 @@ const FLOATER_STYLE = {
   'cloud-set-day': { skip: [3], count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
   'cloud-set-sunset': { skip: [0, 4], count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
   'mist-set': { count: 3, size: [240, 340], alpha: .38, vx: 2, vy: 0, par: .6 },
-  'ember-set': { count: 11, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
+  'ember-set': { skip: [4], count: 11, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
   'petal-leaf-set': { skip: [4], count: 7, size: [44, 78], alpha: .9, vx: 5, vy: 12, par: .5 },
 };
 const columnBoundsCache = new WeakMap();
