@@ -72,7 +72,7 @@ function loadImage(url) {
 }
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
-  const id = sceneryFor(object), config = SETTINGS[id];
+  const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
   const names = [config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, ...(config.tall || []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
