@@ -346,6 +346,10 @@ const ZOOM_S = 2.4;        // seconds for the final zoom out
 const HOLD_S = 0.35;       // pause on the finished stack before zooming out
 const FAST_TICK_MIN = 50;   // fast ticking only for answers over this many copies
 const FAST_TICK_AT = 0.25;  // ...and only once this share of the stack-up has gone by
+const GROUND_N = 4;        // the first few objects after the first come in along the ground, then jump up onto the stack
+const FIRST_ENTRY = 1.6;   // seconds for an upright first object to travel in with its own style
+// Extra seconds the second to fourth objects spend travelling along the ground before they jump up.
+const approachOf = (i) => (i >= 1 && i < GROUND_N ? 0.65 - 0.12 * (i - 1) : 0);
 const K_MAX = 18;          // objects that hop in one by one before the stack starts to stream
 const PEAK_RATE = 1500;    // fastest the stream normally goes, in objects per second
 const PAN_PX = 450;        // fastest the stack may rise on screen (pixels per second) before the camera backs off
@@ -447,7 +451,7 @@ function poseOf(img, st, mirrorExtra) {
 // The timeline (in seconds) depends only on the two objects and how many times the small one fits,
 // never on the screen size. So the host can work out how long the animation lasts, and every
 // player's screen plays it on the same clock.
-function timelineFor(R, bigLean, smLean) {
+function timelineFor(R, bigLean, smLean, styledFirst = false) {
     const starts = [];
     const tLeanStart = bigLean ? BIG_WALK : BIG_S;
     const tLeanEnd = bigLean ? BIG_WALK + BIG_LEAN : BIG_S;
@@ -466,9 +470,13 @@ function timelineFor(R, bigLean, smLean) {
         tt += SM_WALK + SM_LEAN - 0.3;
         continue;
       }
-      durs.push(Math.max(0.45, HOP_S * Math.pow(0.93, i)));
+      const prevLand = i > 0 ? starts[i - 1] + durs[i - 1] : 0;
+      let dur = i === 0 && styledFirst ? FIRST_ENTRY : Math.max(0.45, HOP_S * Math.pow(0.93, i)) + approachOf(i);
+      dur = Math.max(dur, prevLand + 0.05 - tt);   // objects always land in order
+      durs.push(dur);
       gapLast = Math.max(0.07, 0.36 * Math.pow(0.86, i));
-      tt += gapLast;
+      // While the first few come along the ground the next one waits until this one starts to jump.
+      tt += i < GROUND_N ? (i === 0 ? dur * 0.8 : approachOf(i) * 0.85 + 0.12) : gapLast;
     }
     const lastLand = starts[nHop - 1] + durs[nHop - 1];
 
@@ -529,7 +537,9 @@ export function animationDuration(unitIn, targetIn) {
   if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
   const bigLean = leanOf(target, true);
   const smLean = leanOf(unit, false);
-  return timelineFor(target.mm / unit.mm, bigLean, smLean).tEnd * PLAYBACK_TIME_SCALE;
+  const saved = MOTION[unit.id];
+  const kind = entryKindFor(unit, typeof saved === 'string' ? saved : saved?.small || 'slide', !!smLean);
+  return timelineFor(target.mm / unit.mm, bigLean, smLean, kind !== 'slide').tEnd * PLAYBACK_TIME_SCALE;
 }
 
 export function createStackAnimation(container, options = {}) {
@@ -758,7 +768,7 @@ export function createStackAnimation(container, options = {}) {
     const stripMin = fast ? stripW : 0;
 
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
-      timelineFor(R, bigLean, smLean);
+      timelineFor(R, bigLean, smLean, smKind !== 'slide');
 
     const streamG = (x) => {
       const pos = clamp(x, 0, 1) * (G_TABLE.length - 1);
@@ -1146,10 +1156,31 @@ export function createStackAnimation(container, options = {}) {
           h.y = -ep.lift;
           if (!['walk', 'drive', 'fly', 'sail'].includes(smKind)) { h.x = 1 - ep.p; h.sx = ep.sx; h.sy = ep.sy; }
         }
-        const bottom = sy0 - i * Ls;
-        shadow(sx0 - dHop * h.x, bottom + 1, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + Math.abs(h.y) / 10));
+        let bottom = sy0 - i * Ls;
+        let px = sx0 - dHop * h.x, shadowY = bottom + 1, shadowLift = Math.abs(h.y);
+        // While the ground is on screen the second to fourth objects come in along it in their own style,
+        // wait beside the stack, then jump up to their place on it.
+        if (i >= 1 && i < GROUND_N && sy0 < stageH - 4 && !reduceMotion) {
+          const f = clamp((t - starts[i]) / durs[i], 0, 1), fa = approachOf(i) / durs[i];
+          const standX = wcol * 0.95;
+          shadowY = sy0 + 1;
+          if (f < fa) {
+            ep = entryPose(smKind, f / fa, { thick: wcol, dist: dHop, dir: 1 });
+            px = sx0 - standX - (dHop - standX) * (1 - ep.p);
+            bottom = sy0; h.y = -ep.lift; h.sx = ep.sx; h.sy = ep.sy;
+          } else {
+            ep = null;
+            const f2 = (f - fa) / (1 - fa);
+            const rise = i * Ls, arc = Math.max(Ls * 0.55, 14);
+            px = sx0 - standX * (1 - f2 * f2 * (3 - 2 * f2));
+            bottom = sy0; h.y = -rise * smooth(f2) - arc * Math.sin(Math.PI * f2);
+            h.sx = 1; h.sy = 1;
+          }
+          shadowLift = Math.abs(h.y);
+        }
+        shadow(px, shadowY, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + shadowLift / 10));
         ctx.save();
-        ctx.translate(sx0 - dHop * h.x, bottom + h.y);
+        ctx.translate(px, bottom + h.y);
         if (ep && ep.rot) { const cy = spins(smKind) ? -Ls / 2 : 0; ctx.translate(0, cy); ctx.rotate(ep.rot); ctx.translate(0, -cy); }
         ctx.scale(h.sx, h.sy);
         ctx.drawImage(smallSprite, -wcol / 2, -Ls, wcol, Ls);
