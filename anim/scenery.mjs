@@ -41,28 +41,28 @@ export const isNight = (config, dark) => config.night === 'dark' ? !!dark : !!co
 const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
 
 export const SETTINGS = {
-  grass: { clouds: true },
-  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'] },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid'], tallRepeat: true },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid'], tallRepeat: true },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid'], tallRepeat: true },
-  city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
-  forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'] },
-  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
+  grass: { clouds: true, flyers: 'birds', fireflies: true },
+  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'birds' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'birds' },
+  forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
+  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay', flyers: 'birds', fireflies: true },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' },
-  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], backdrop: 'desert-dunes' },
+  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], backdrop: 'desert-dunes', flyers: 'birds' },
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
-  enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
-  mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'] },
-  jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'] },
+  enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' },
+  mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'], flyers: 'birds' },
+  jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'], fireflies: true },
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
-  blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'] },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid'], tallRepeat: true },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid'], tallRepeat: true },
-  rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'] },
-  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'] },
+  blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'birds', fireflies: true },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'birds' },
+  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'birds' },
 };
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
@@ -192,17 +192,18 @@ function seededFlip(seed, i) {
 // behind the solid part of the panel in front of it, so land never starts in the middle of open sky.
 function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
   const names = kit.config.tall; if (!names) return;
-  const w = (width + 100) * groundScale, h = w * 2;
+  // tallScale makes every panel bigger (fewer windows per climb); tallMeet is how far into the panel in front the next one tucks in.
+  const w = (width + 100) * groundScale * (kit.config.tallScale || 1), h = w * 2, meetAt = kit.config.tallMeet ?? .5;
   const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
   const bottom0 = (floorY ?? height - 40) - 4 * groundScale + shiftY;
-  const list = kit.config.tallRepeat ? [...names, ...Array(12).fill(names[names.length - 1])] : names;
+  const loop = names.slice(1), list = kit.config.tallRepeat ? [...names, ...Array.from({ length: 14 }, (_, k) => loop[k % loop.length])] : names;
   const tops = [];
   for (let i = 0; i < list.length; i++) {
     const image = kit.images[list[i]]; if (!image) { tops.push(null); continue; }
     if (i === 0) { tops.push(bottom0 - h); continue; }
     const front = tops[i - 1]; if (front == null) { tops.push(null); continue; }
     const [ft, fb] = solidRows(kit.images[list[i - 1]]), [, mb] = solidRows(image);
-    const meet = front + (ft + (fb - ft) * .5) * h;
+    const meet = front + (ft + (fb - ft) * meetAt) * h;
     tops.push(meet - mb * h);
   }
   for (let i = list.length - 1; i >= 0; i--) {
@@ -296,6 +297,49 @@ function drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark,
   }
 }
 
+// Moving background life, drawn in code: flocks of far-off birds by day, fireflies at night.
+// Both drift past on their own and slide away slowly as the stack climbs.
+function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
+  const kind = kit.config.flyers, glow = kit.config.fireflies;
+  const t = reduced ? 0 : time, span = height * 2.4, groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY;
+  const yOf = (r, par) => ((((r * span + shiftY * par) % span) + span) % span) - span * .3;
+  if (kind && !dark) {
+    const groups = 4;
+    for (let g = 0; g < groups; g++) {
+      const r = j => unitRandom(`${seed}birds`, g, j);
+      const dir = r(1) > .5 ? 1 : -1, speed = (16 + 22 * r(2)) * groundScale, n = 3 + Math.floor(r(3) * 3);
+      const gy = yOf(r(4) * .65, .3), cycle = width + 240 * groundScale;
+      const gx = ((((r(5) * cycle + dir * t * speed - shiftX * .1) % cycle) + cycle) % cycle) - 120 * groundScale;
+      const sky = Math.max(0, Math.min(1, (groundTop - 140 * groundScale - gy) / (60 * groundScale)));
+      if (!sky) continue;
+      ctx.save(); ctx.globalAlpha = .75 * sky; ctx.strokeStyle = '#4f5a70'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let b = 0; b < n; b++) {
+        const s = (11 + 6 * unitRandom(`${seed}b${g}`, b, 1)) * groundScale, flap = Math.sin(t * 6.5 + b * 1.7 + g * 2.3);
+        const x = gx - dir * b * 30 * groundScale, y = gy + (b % 2 ? 1 : -1) * Math.ceil(b / 2) * 16 * groundScale;
+        const tip = -s * .55 * flap;
+        ctx.lineWidth = Math.max(1.4, 2.4 * groundScale);
+        ctx.beginPath();
+        ctx.moveTo(x - s, y + tip); ctx.quadraticCurveTo(x - s * .45, y - s * .55 + tip * .35, x, y);
+        ctx.quadraticCurveTo(x + s * .45, y - s * .55 + tip * .35, x + s, y + tip);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  if (glow && (dark || glow === 'always')) {
+    for (let i = 0; i < 16; i++) {
+      const r = j => unitRandom(`${seed}fire`, i, j);
+      const x = ((r(1) * width + Math.sin(t * .5 + r(2) * 6.28) * 18 * groundScale - shiftX * .2) % width + width) % width;
+      const y = yOf(r(3), .5) + Math.cos(t * .4 + r(4) * 6.28) * 12 * groundScale;
+      if (y > groundTop - 12 * groundScale || y < -10) continue;
+      const blink = Math.pow(Math.sin(t * 1.3 + r(5) * 6.28) * .5 + .5, 2), rad = (5 + 3 * r(6)) * groundScale;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad * 2.4);
+      g.addColorStop(0, 'rgba(255,240,150,' + (.9 * blink) + ')'); g.addColorStop(1, 'rgba(255,240,150,0)');
+      ctx.save(); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rad * 2.4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+  }
+}
+
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all' }) {
   const { config, images } = kit;
   ctx.save();
@@ -319,6 +363,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
