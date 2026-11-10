@@ -42,12 +42,12 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 
 export const SETTINGS = {
   grass: { clouds: true },
-  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'] },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'] },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid' },
+  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'] },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid'], tallRepeat: true },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid'], tallRepeat: true },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid'], tallRepeat: true },
   city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
-  forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
+  forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'] },
   farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' },
   desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], backdrop: 'desert-dunes' },
@@ -57,12 +57,12 @@ export const SETTINGS = {
   mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'] },
   jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'] },
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
-  volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], backdrop: 'volcano-ridge', glow: '#ff7a3c', floaters: ['ember-set'] },
+  volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'] },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], backdrop: 'library-wall', wallpaper: 'plaid', wall: 'library-pass' },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], backdrop: 'workshop-wall', wallpaper: 'tiles', wall: 'workshop-pass' },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid'], tallRepeat: true },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid'], tallRepeat: true },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'] },
-  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands', floaters: ['cloud-set-day'] },
+  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'] },
 };
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
