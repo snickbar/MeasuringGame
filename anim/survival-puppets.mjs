@@ -43,7 +43,7 @@ function knightHtml() {
   const head = group('k-head', [460, 560], f, group('k-plume', [420, 360], f, k('plume')) + k('helmet'));
   const upper = group('k-shieldarm', [610, 650], f, k('shieldArm')) + k('torso') + head + group('k-shield', [610, 650], f, k('shield')) + sarm;
   return `<span class="pz-char pz-knight" style="aspect-ratio:${f.w}/${f.h}">${group('k-body', [480, 1230], f,
-    group('k-farleg', [610, 1000], f, k('farThigh') + k('farShin')) + group('k-nearleg', [330, 1000], f, k('nearThigh') + k('nearShin')) +
+    group('k-farleg', [555, 985], f, k('farThigh') + k('farShin')) + group('k-nearleg', [395, 985], f, k('nearThigh') + k('nearShin')) +
     group('k-torso', [480, 960], f, upper))}</span>`;
 }
 
