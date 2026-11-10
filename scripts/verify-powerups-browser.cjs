@@ -28,7 +28,7 @@ document.getElementById('hud').classList.add('active');document.getElementById('
 document.getElementById('question-prompt-text').textContent='How many ants long is the length of a canoe?';
 document.getElementById('hud-timer').textContent='30';
 document.getElementById('question-note').style.display='block';document.getElementById('question-note').textContent='Tip: Best average accuracy: +10, +6, +3';
-document.getElementById('score-col').innerHTML=['You','Milo','Luna','Pip'].map((n,i)=>'<div class="score-card"><img style="width:40px" src="/avatars/'+['av01','av02','av03','av04'][i]+'.png"><b>'+n+'</b><span>'+i+' pts · 95%</span></div>').join('');
+document.getElementById('score-col').innerHTML=['You','Milo','Luna','Pip'].map((n,i)=>'<div class="score-card"><img style="width:40px" src="/avatars/'+['av01','av02','av03','av04'][i]+'.webp"><b>'+n+'</b><span>'+i+' pts · 95%</span></div>').join('');
 document.getElementById('q-preview').innerHTML=objects.filter(o=>['ant','canoe'].includes(o.id)).map(o=>'<div class="qp"><img src="'+o.image+'"><span>'+o.id+'</span></div>').join('');
 const context=()=>mode==='excluded'?null:({mode,q:room.currentQuestion,playerId:owner,phase:room.phase,roomCode:mode==='quick'?'TEST':null,deadline:mode==='quick'?(room.phase==='answers'?room.answersEndsAt:room.questionEndsAt):null,submitted:!!room.guesses?.me,answers:room.answers||[],objects,apply:q=>{room.currentQuestion=q}});
 const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,owner:()=>owner,

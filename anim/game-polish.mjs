@@ -2,21 +2,21 @@ import { setText } from './set-text.mjs';
 
 // Use the actual menu artwork, including its embedded illustration, for the destination header.
 export const MENU_BANNERS = {
-  quick: ['icons/banner-quick.png'], daily: ['icons/banner-daily.png'],
-  monthly: ['icons/banner-monthly.png'], worlds: ['icons/banner-worlds.png'],
-  survival: ['icons/banner-survival.png'], whichbigger: ['icons/banner-which-bigger.png'],
-  classic: ['icons/banner-blank-orange.png', 'icons/home-host.png'],
-  teamvteam: ['icons/banner-blank-green.png', 'items/soccer-ball.webp'],
-  teamworlds: ['icons/banner-blank-blue.png', 'icons/mode-team-worlds.webp'],
-  hlsurvival: ['icons/banner-blank-red.png', 'icons/mode-high-low.webp'],
-  highstakes: ['icons/banner-blank-purple.png', 'items/poker-chip.webp'],
-  bluff: ['icons/banner-blank-pink.png', 'icons/reactions/giggle.png'],
+  quick: ['icons/banner-quick.webp'], daily: ['icons/banner-daily.webp'],
+  monthly: ['icons/banner-monthly.webp'], worlds: ['icons/banner-worlds.webp'],
+  survival: ['icons/banner-survival.webp'], whichbigger: ['icons/banner-which-bigger.webp'],
+  classic: ['icons/banner-blank-orange.webp', 'icons/home-host.webp'],
+  teamvteam: ['icons/banner-blank-green.webp', 'items/soccer-ball.webp'],
+  teamworlds: ['icons/banner-blank-blue.webp', 'icons/mode-team-worlds.webp'],
+  hlsurvival: ['icons/banner-blank-red.webp', 'icons/mode-high-low.webp'],
+  highstakes: ['icons/banner-blank-purple.webp', 'items/poker-chip.webp'],
+  bluff: ['icons/banner-blank-pink.webp', 'icons/reactions/giggle.webp'],
 };
 // Mode mascots that stand on the big mode buttons and on each mode's own header banner (picture aspect ratio = width / height after cropping).
 // Banners are 1000 x 222; the artwork is capped so the title keeps its room. Modes without a mascot keep their own icon.
 export const BANNER_MASCOT = { classic: ['party-ant', .943], teamvteam: ['team', 2.357], teamworlds: ['teamworlds', 1.33], highstakes: ['highstakes', 1.117], bluff: ['bluff', .86],
   quick: ['quick', .897], daily: ['daily', 1.58], monthly: ['monthly', 1.517], worlds: ['worlds', 1.063], survival: ['survival', .833], hlsurvival: ['hl', 1.713] };
-export const BLANK_BANNER = { quick: 'icons/banner-quick-blank.png', daily: 'icons/banner-daily-blank.png', monthly: 'icons/banner-monthly-blank.png', worlds: 'icons/banner-worlds-blank.png', survival: 'icons/banner-survival-blank.png' };
+export const BLANK_BANNER = { quick: 'icons/banner-quick-blank.webp', daily: 'icons/banner-daily-blank.webp', monthly: 'icons/banner-monthly-blank.webp', worlds: 'icons/banner-worlds-blank.webp', survival: 'icons/banner-survival-blank.webp' };
 // A screen can swap the banner's art for a different picture (data-banner-art on the title), e.g. the Worlds results page shows the balloon because the fox cheers inside the card.
 export const BANNER_ART_OVERRIDE = { balloon: ['items/hot-air-balloon.webp', .705, 100] };
 export function bannerMascot(mode, art) {
@@ -55,16 +55,16 @@ export function applyMenuBanner(element, mode) {
 // Small information markers only; never decorate menu art, award shields or game objects.
 export const INFO_MEDALLIONS = {
   'Worlds': 'items/hot-air-balloon.webp', 'Survival': 'items/t-rex.webp',
-  'Daily Challenge': 'icons/toolbar-daily.png', 'Monthly Challenge': 'icons/flair/star.png',
+  'Daily Challenge': 'icons/toolbar-daily.webp', 'Monthly Challenge': 'icons/flair/star.webp',
   'High Stakes': 'items/poker-chip.webp', 'Your collection': 'icons/shop-starter-gift.webp',
-  'Your personal best': 'icons/reactions/trophy.png', 'Your best teams': 'icons/reactions/trophy.png',
-  'Your best team games': 'icons/reactions/trophy.png', 'Your best runs': 'icons/reactions/trophy.png',
-  'By bot accuracy': 'icons/flair/bolt.png',
-  'Earn coins': 'icons/coin-v2.png', 'Scoring': 'icons/reactions/trophy.png',
-  'Closest guess wins': 'icons/reactions/trophy.png', 'Play as a team': 'items/soccer-ball.webp',
-  'Survive together': 'icons/mode-high-low.webp', "Don't run out of lives": 'icons/flair/heart.png',
-  'Find the real answer': 'icons/powerups/item-reveal.png', 'Bet like poker': 'items/poker-chip.webp',
-  'Outlast everyone': 'icons/reactions/trophy.png',
+  'Your personal best': 'icons/reactions/trophy.webp', 'Your best teams': 'icons/reactions/trophy.webp',
+  'Your best team games': 'icons/reactions/trophy.webp', 'Your best runs': 'icons/reactions/trophy.webp',
+  'By bot accuracy': 'icons/flair/bolt.webp',
+  'Earn coins': 'icons/coin-v2.webp', 'Scoring': 'icons/reactions/trophy.webp',
+  'Closest guess wins': 'icons/reactions/trophy.webp', 'Play as a team': 'items/soccer-ball.webp',
+  'Survive together': 'icons/mode-high-low.webp', "Don't run out of lives": 'icons/flair/heart.webp',
+  'Find the real answer': 'icons/powerups/item-reveal.webp', 'Bet like poker': 'items/poker-chip.webp',
+  'Outlast everyone': 'icons/reactions/trophy.webp',
 };
 
 export function addInfoMedallion(heading, src) {
@@ -95,7 +95,7 @@ export function createPolish({ document: doc = document, reduced = () => false, 
     if (!visible(from) || !visible(to) || reduced()) return;
     const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
     for (let i = 0; i < 6; i++) {
-      const coin = doc.createElement('img'); coin.src = 'icons/coin-v2.png'; coin.alt = ''; coin.className = 'polish-coin';
+      const coin = doc.createElement('img'); coin.src = 'icons/coin-v2.webp'; coin.alt = ''; coin.className = 'polish-coin';
       coin.style.left = a.left + a.width / 2 - 13 + 'px'; coin.style.top = a.top + a.height / 2 - 13 + 'px';
       doc.body.appendChild(coin);
       const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
@@ -132,15 +132,15 @@ export function createPolish({ document: doc = document, reduced = () => false, 
     'survival-content': 'survival', 'wb-content': 'whichbigger', 'teamworlds-content': 'teamworlds',
     'teamvteam-content': 'teamvteam', 'hs-content': 'highstakes',
   };
-  const icons = { '🪙': ['icons/coin-v2.png', 'coins'], '💰': ['icons/coin-v2.png', 'coins'],
-    '🏆': ['icons/reactions/trophy.png', 'trophy'], '⭐': ['icons/flair/star.png', 'star'],
-    '★': ['icons/flair/star.png', 'star'], '☆': ['icons/flair/star.png', 'star'],
-    '🔥': ['icons/reactions/fire.png', 'streak'], '🎉': ['icons/reactions/popper.png', 'celebration'],
-    '❤️': ['icons/flair/heart.png', 'heart'], '♥': ['icons/flair/heart.png', 'heart'],
-    '🎬': ['icons/btn-watch-ad.png', 'watch ad'], '🔒': ['icons/reactions/padlock.png', 'locked'],
-    '⚡': ['icons/flair/bolt.png', 'quick'], '✨': ['icons/flair/star.png', 'sparkle'],
+  const icons = { '🪙': ['icons/coin-v2.webp', 'coins'], '💰': ['icons/coin-v2.webp', 'coins'],
+    '🏆': ['icons/reactions/trophy.webp', 'trophy'], '⭐': ['icons/flair/star.webp', 'star'],
+    '★': ['icons/flair/star.webp', 'star'], '☆': ['icons/flair/star.webp', 'star'],
+    '🔥': ['icons/reactions/fire.webp', 'streak'], '🎉': ['icons/reactions/popper.webp', 'celebration'],
+    '❤️': ['icons/flair/heart.webp', 'heart'], '♥': ['icons/flair/heart.webp', 'heart'],
+    '🎬': ['icons/btn-watch-ad.webp', 'watch ad'], '🔒': ['icons/reactions/padlock.webp', 'locked'],
+    '⚡': ['icons/flair/bolt.webp', 'quick'], '✨': ['icons/flair/star.webp', 'sparkle'],
     '🎁': ['icons/shop-starter-gift.webp', 'gift'],
-    '🎯': ['icons/reactions/trophy.png', 'accuracy'], '👑': ['icons/reactions/crown.png', 'winner'] };
+    '🎯': ['icons/reactions/trophy.webp', 'accuracy'], '👑': ['icons/reactions/crown.webp', 'winner'] };
   const symbolPattern = new RegExp(Object.keys(icons).join('|'), 'gu');
   function artwork(root) {
     const walker = doc.createTreeWalker(root, 4); const texts = [];

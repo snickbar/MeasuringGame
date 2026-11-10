@@ -92,7 +92,7 @@ Object.assign(sandbox,{myProfile:worldProfile,wl:world,deviceId:'me',WORLDS:[{id
 });
 vm.runInContext(getFunction('worldFinish')+';globalThis.worldFinish=worldFinish;',sandbox);
 await sandbox.worldFinish();assert.equal(world.stars,3);assert.equal(sandbox.worldCoins,15);assert(history.every(h=>h.r===1));assert(world.guesses.every(g=>g===95));
-for(const p of Object.values(POWERUPS))assert(fs.existsSync(new URL('../icons/powerups/'+p.icon+'.png',import.meta.url)));
+for(const p of Object.values(POWERUPS))assert(fs.existsSync(new URL('../icons/powerups/'+p.icon+'.webp',import.meta.url)));
 // Reconnect recovery uses atomic cancellation markers, so a late room write
 // cannot give away an effect after another tab refunded its receipt.
 globalThis.document={getElementById:()=>({append:()=>{}}),createElement:()=>({setAttribute:()=>{}}),body:{append:()=>{}},addEventListener:()=>{}};

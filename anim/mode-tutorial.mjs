@@ -59,7 +59,7 @@ const SCENES = {
     <div class="mt-input"><span class="mt-type t1">1</span><span class="mt-type t2">2</span><span class="mt-type t3">0</span></div>`,
   gauge: () => `<div class="mt-gauge"><i class="mt-fill"></i><b class="mt-mark"><em>60%</em></b></div>
     <div class="mt-row mt-heartswap">${img('icons/life-heart-full.webp', 'mt-heart mt-h-full')}${img('icons/life-heart-cracked.webp', 'mt-heart mt-h-crack')}</div>`,
-  stars: () => `<div class="mt-row mt-stars">${[60, 75, 90].map((n, i) => `<div class="mt-star s${i}">${img('icons/flair/star.png', 'mt-starimg')}<b>${n}%</b></div>`).join('')}</div><div class="mt-tag">Average of 5 questions</div>`,
+  stars: () => `<div class="mt-row mt-stars">${[60, 75, 90].map((n, i) => `<div class="mt-star s${i}">${img('icons/flair/star.webp', 'mt-starimg')}<b>${n}%</b></div>`).join('')}</div><div class="mt-tag">Average of 5 questions</div>`,
   daily: () => `<div class="mt-row">${[1, 2, 3].map(n => `<span class="mt-check q c${n - 1}">${n}</span>`).join('')}</div><div class="mt-tag mt-once">One try</div>`,
   month: s => `<div class="mt-grid">${(s.items || []).slice(0, 6).map((it, i) => `<span class="mt-cell" style="animation-delay:${(i * .35).toFixed(2)}s">${img(it.image, 'mt-cellimg')}</span>`).join('')}</div><div class="mt-tag">Each one shows up once</div>`,
   pick: s => `<div class="mt-row mt-objs"><div class="mt-cand">${img(s.unit.image, 'mt-obj')}</div><span class="mt-vs">or</span><div class="mt-cand win">${img(s.target.image, 'mt-obj big')}<i class="mt-ring"></i><b class="mt-tick">✓</b></div></div>`,
@@ -68,10 +68,10 @@ const SCENES = {
   botsBase: s => `<div class="mt-row mt-bots">${(s.avatars || []).slice(0, 3).map((a, i) => `<div class="mt-bot b${i}">${img(a, 'mt-av')}<span>${[80, 130, 120][i]}</span></div>`).join('')}</div>${s.sc ? '<div class="mt-tag mt-sc">Second Chance</div>' : ''}`,
   wins: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}</div>`,
   coins: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}</div>
-    <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
+    <div class="mt-row">${img('icons/coin.webp', 'mt-coin k0')}${img('icons/coin.webp', 'mt-coin k1')}${img('icons/coin.webp', 'mt-coin k2')}</div>`,
   teams: s => `<div class="mt-row mt-teams">${[0, 1].map(t => `<div class="mt-team t${t}">${(s.avatars || []).slice(t * 2, t * 2 + 2).map(a => img(a, 'mt-av sm')).join('')}<b>${t ? 'Blue' : 'Red'}</b></div>`).join('<span class="mt-vs">vs</span>')}</div><div class="mt-tag">Closest guess scores for the whole team</div>`,
   bracket: () => `<div class="mt-bar"><i class="mt-lo">LOW</i><i class="mt-ans">answer</i><i class="mt-hi">HIGH</i></div><div class="mt-tag">Answer sits between your picks</div>`,
-  pot: () => `<div class="mt-row mt-chips">${[0, 1, 2, 3].map(i => img('icons/coin.png', 'mt-coin big k' + i)).join('')}</div><div class="mt-row"><span class="mt-btn">Bet</span><span class="mt-btn fold">Fold</span></div>`,
+  pot: () => `<div class="mt-row mt-chips">${[0, 1, 2, 3].map(i => img('icons/coin.webp', 'mt-coin big k' + i)).join('')}</div><div class="mt-row"><span class="mt-btn">Bet</span><span class="mt-btn fold">Fold</span></div>`,
   bluff1: s => { const n = bluffNums(s); return `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div>
     <div class="mt-row mt-opts">${[['Too Low', n.low], ['Correct', n.ans], ['Too High', n.high]].map(([l, v], i) => `<div class="mt-opt${i === 2 ? ' pick' : ''}"><small>${l}</small><b>${v}</b>${i === 2 ? '<i class="mt-circle"></i>' : ''}</div>`).join('')}</div>
     <div class="mt-tag mt-late">You have to claim one</div>`; },
@@ -83,20 +83,20 @@ const SCENES = {
   hs1: s => { const n = bluffNums(s), o = [Math.max(1, Math.round(n.ans / 2)), Math.round(n.ans * .75), n.ans, n.ans * 2]; return `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div>
     <div class="mt-row mt-opts four">${o.map((v, i) => `<div class="mt-opt${i === 2 ? ' pick' : ''}"><b>${v}</b>${i === 2 ? '<i class="mt-circle"></i>' : ''}</div>`).join('')}</div>
     <div class="mt-tag mt-late">Secretly pick the real one</div>`; },
-  hs2: s => `<div class="mt-table"><div class="mt-pot">${img('icons/coin.png', 'mt-potcoin')}<span>Pot</span></div>
-    ${[0, 1, 2].map(i => `<div class="mt-seat s${i}">${img((s.avatars || [])[i] || '', 'mt-av sm')}${[0, 1].map(k => img('icons/coin.png', `mt-fly up f${i} k${k}`)).join('')}</div>`).join('')}</div>
+  hs2: s => `<div class="mt-table"><div class="mt-pot">${img('icons/coin.webp', 'mt-potcoin')}<span>Pot</span></div>
+    ${[0, 1, 2].map(i => `<div class="mt-seat s${i}">${img((s.avatars || [])[i] || '', 'mt-av sm')}${[0, 1].map(k => img('icons/coin.webp', `mt-fly up f${i} k${k}`)).join('')}</div>`).join('')}</div>
     <div class="mt-row mt-acts"><span>Fold</span><span>Check</span><span>Call</span><span>Raise</span></div>`,
   hs3: s => { const n = bluffNums(s), o = [Math.max(1, Math.round(n.ans / 2)), Math.round(n.ans * .75), n.ans, n.ans * 2]; return `<div class="mt-row mt-opts four small">${o.map((v, i) => `<div class="mt-opt${i === 2 ? ' real' : ' dim'}"><b>${v}</b>${i === 2 ? '<em>✓ real</em>' : ''}</div>`).join('')}</div>
-    <div class="mt-table short"><div class="mt-pot">${img('icons/coin.png', 'mt-potcoin')}<span>Pot</span></div>
-    ${[0, 1, 2].map(i => `<div class="mt-seat s${i}${i === 2 ? ' win' : ''}">${img((s.avatars || [])[i] || '', 'mt-av sm')}${i === 2 ? [0, 1, 2].map(k => img('icons/coin.png', `mt-fly down k${k}`)).join('') : ''}</div>`).join('')}</div>`; },
+    <div class="mt-table short"><div class="mt-pot">${img('icons/coin.webp', 'mt-potcoin')}<span>Pot</span></div>
+    ${[0, 1, 2].map(i => `<div class="mt-seat s${i}${i === 2 ? ' win' : ''}">${img((s.avatars || [])[i] || '', 'mt-av sm')}${i === 2 ? [0, 1, 2].map(k => img('icons/coin.webp', `mt-fly down k${k}`)).join('') : ''}</div>`).join('')}</div>`; },
   partners: s => `<div class="mt-row mt-partners"><div class="mt-team t0">${(s.avatars || []).slice(0, 2).map(a => img(a, 'mt-av sm')).join('')}<b>Your team</b></div></div><div class="mt-tag">Always you and one partner</div>`,
-  starmeter: () => `<div class="mt-sm"><div class="mt-sm-stars">${[60, 75, 90].map((n, i) => `<div class="mt-sm-star st${i}" style="left:${n}%">${img('icons/flair/star.png', 'mt-sm-img')}<small>${n}%</small></div>`).join('')}</div>
+  starmeter: () => `<div class="mt-sm"><div class="mt-sm-stars">${[60, 75, 90].map((n, i) => `<div class="mt-sm-star st${i}" style="left:${n}%">${img('icons/flair/star.webp', 'mt-sm-img')}<small>${n}%</small></div>`).join('')}</div>
     <div class="mt-sm-bar"><i class="mt-sm-fill"></i></div><div class="mt-sm-label">Team accuracy <b>82%</b></div></div>`,
   hlLow: s => `<div class="mt-q">${esc(s.prompt || 'How many pencils fit along the door?')}</div><div class="mt-role">You are the <b>LOW</b>!</div><div class="mt-tag mt-late">Pick as close as you can without going over</div>`,
   hlReveal: s => { const n = bluffNums(s), lo = Math.round(n.ans * .8), hi = Math.round(n.ans * 1.3), g = (hi / lo).toFixed(1); return `<div class="mt-line"><span class="mt-pt lo" style="left:12%"><small>LOW</small><b>${lo}</b></span><span class="mt-pt ans" style="left:50%"><small>Answer</small><b>${n.ans}</b></span><span class="mt-pt hi" style="left:88%"><small>HIGH</small><b>${hi}</b></span><i class="mt-span"></i></div>
     <div class="mt-tag mt-late">Gap ${g}× &middot; limit 2.5× &middot; Survived!</div>`; },
   streak: () => `<div class="mt-row mt-streak">${[0, 1, 2].map(i => `<span class="mt-check c${i}">✓</span>`).join('')}${img('icons/survival-shield-full.webp', 'mt-shield')}</div>
-    <div class="mt-row">${img('icons/coin.png', 'mt-coin k0')}${img('icons/coin.png', 'mt-coin k1')}${img('icons/coin.png', 'mt-coin k2')}</div>`,
+    <div class="mt-row">${img('icons/coin.webp', 'mt-coin k0')}${img('icons/coin.webp', 'mt-coin k1')}${img('icons/coin.webp', 'mt-coin k2')}</div>`,
 };
 
 export const MODE_TUTORIALS = {

@@ -64,9 +64,9 @@ assert.equal(left.classList.contains('active'), true);
 assert.equal(stopped, 42);
 assert.equal(context.hsTickHandle, null);
 assert.equal(docElement('hs-turn-toast').removed, true);
-assert.match(docElement('left-icon').innerHTML, /avatars\/av07\.png/);
-assert.match(docElement('left-icon').innerHTML, /icons\/reactions\/wave\.png/);
-assert.match(context.gameOutcomeArt('icons/reactions/trophy.png', 'av19'), /avatars\/av19\.png/);
+assert.match(docElement('left-icon').innerHTML, /avatars\/av07\.webp/);
+assert.match(docElement('left-icon').innerHTML, /icons\/reactions\/wave\.webp/);
+assert.match(context.gameOutcomeArt('icons/reactions/trophy.webp', 'av19'), /avatars\/av19\.webp/);
 assert.deepEqual(scroll, [0, 0]);
 // Late callbacks after leaving must not access room state or redraw the board.
 context.hsHostTick();

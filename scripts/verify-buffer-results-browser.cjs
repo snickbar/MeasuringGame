@@ -16,7 +16,7 @@ const accLabel=a=>a>=99?'Spot on!':a>=90?'So close!':a>=70?'Nice guess':a>=40?'I
 const assert=(v,m)=>{if(!v)throw Error(m)},q={answer:45,powerups:{owner:'me',used:{buffer:true}}};
 const SURVIVAL_PASS=60,deviceId='me';let sv,roomState={currentQuestion:q};
 const svGaugeHtml=acc=>'<div class="dc-note">'+formatAccuracy(acc)+'% accurate · safe at 60%</div>';
- const svRunAcc=()=>null,svAccHtml=()=>'',avatarHtml=()=>'<img class="avatar-icon" src="/avatars/av01.png" alt="Player">';
+ const svRunAcc=()=>null,svAccHtml=()=>'',avatarHtml=()=>'<img class="avatar-icon" src="/avatars/av01.webp" alt="Player">';
 try{
  assert(!bufferResultNote(q,35,'other'),'not another player’s buffer');
  assert(!bufferResultNote({answer:45},35,'me'),'no boost when unused');

@@ -581,9 +581,9 @@ export function createStackAnimation(container, options = {}) {
 
   const sceneryBase = options.sceneryBase || new URL('.', import.meta.url).href;
   const grassImg = new Image();
-  grassImg.src = sceneryBase + 'grass.png';
+  grassImg.src = sceneryBase + 'grass.webp';
   const cloudImg = new Image();
-  cloudImg.src = sceneryBase + 'cloud.png';
+  cloudImg.src = sceneryBase + 'cloud.webp';
   const originalSceneryReady = Promise.all([grassImg, cloudImg].map(image =>
     image.complete ? Promise.resolve() : new Promise(resolve => {
       image.addEventListener('load', resolve, { once: true });

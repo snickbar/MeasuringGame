@@ -68,7 +68,7 @@ try{
  assert(watch.textContent.replace(/\\s+/g,' ').includes('Watch Ad forDouble Coins'),'full phrase in button');
  assert(next.getBoundingClientRect().height>=44,'continue touch target');
  assert(watch.getBoundingClientRect().bottom<=next.getBoundingClientRect().top,'buttons do not overlap');
- assert(getComputedStyle(watch).borderImageSource.includes('btn-watch-ad.png'),'actual purple ad button asset');
+ assert(getComputedStyle(watch).borderImageSource.includes('btn-watch-ad.webp'),'actual purple ad button asset');
  document.getElementById('result').textContent=JSON.stringify({pass:true,width:innerWidth,height:innerHeight,receiptHeight:panel.scrollHeight,ads,finishes});
 }catch(e){document.getElementById('result').textContent=JSON.stringify({pass:false,error:e.stack})}
 `;

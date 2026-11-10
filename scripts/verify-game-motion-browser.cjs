@@ -3,8 +3,8 @@ const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=source.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/url\((['"]?)(icons|avatars|backgrounds)\//g,'url($1/$2/');
 const markup=`<div class="demo"><h2>Game animation preview</h2><p>Try the effects below. Object entrances and the winner dance stay as they are.</p>
-<button id="toolbar-coin-balance"><img id="toolbar-coin-icon" src="/icons/toolbar-coin.png"><span id="toolbar-coin-box"><span id="toolbar-coin-count">100</span></span></button>
-<div id="hud-timer" class="hud-timer">5</div><div class="score-col">${['You','Bot 1','Bot 2','Bot 3'].map((name,i)=>`<div class="score-card frame-1"><span class="avatar"><img class="avatar-icon" src="/avatars/av0${i+1}.png"></span><div class="sc-top"><span class="name">${name}</span></div><div class="sc-bot"><span class="medal gold"></span><span class="pts">${12-i*3}</span></div></div>`).join('')}</div>
+<button id="toolbar-coin-balance"><img id="toolbar-coin-icon" src="/icons/toolbar-coin.webp"><span id="toolbar-coin-box"><span id="toolbar-coin-count">100</span></span></button>
+<div id="hud-timer" class="hud-timer">5</div><div class="score-col">${['You','Bot 1','Bot 2','Bot 3'].map((name,i)=>`<div class="score-card frame-1"><span class="avatar"><img class="avatar-icon" src="/avatars/av0${i+1}.webp"></span><div class="sc-top"><span class="name">${name}</span></div><div class="sc-bot"><span class="medal gold"></span><span class="pts">${12-i*3}</span></div></div>`).join('')}</div>
 <div class="controls"><button class="demo-btn" id="submit-demo">Submit guess</button><button class="demo-btn" id="lead-demo">Take first</button><button class="demo-btn" id="coin-demo">Earn coins</button><button class="demo-btn" id="timer-demo">Low timer</button></div></div><pre id="result" hidden></pre>`;
 const tests=`
 import {playSubmissionBounce,celebrateLead,sparkleCoins} from '/anim/game-motion.mjs';

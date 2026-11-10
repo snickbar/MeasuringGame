@@ -16,7 +16,7 @@ function bluffRaccoonHtml(pose,delay=null,kind){
  const prop=writing
    ? '<svg class="bl-raccoon-ink" viewBox="0 0 32 24"><path pathLength="1" d="M3 8c4-5 7 3 11-1s7 2 12-1M5 17c5-3 7 1 11-1s6 1 10-2"/></svg>'
    : `<span class="bl-raccoon-pad"><span class="bl-pad-cover"></span><span class="bl-pad-page" data-verdict="${esc(kind)}"><svg viewBox="0 0 24 24"><path d="${Object.hasOwn(BLUFF_PAD_MARKS,kind)?BLUFF_PAD_MARKS[kind]:''}"/></svg></span></span>`;
- return `<span class="bl-raccoon bl-raccoon-${pose}${moving?' moving':''}" aria-hidden="true"${moving?` style="--raccoon-delay:${Math.round(delay)}ms"`:''}><img src="anim/mode-mascots/bluff-raccoon-${pose}.png" width="256" height="337" alt="" draggable="false">${prop}</span>`;
+ return `<span class="bl-raccoon bl-raccoon-${pose}${moving?' moving':''}" aria-hidden="true"${moving?` style="--raccoon-delay:${Math.round(delay)}ms"`:''}><img src="anim/mode-mascots/bluff-raccoon-${pose}.webp" width="256" height="337" alt="" draggable="false">${prop}</span>`;
 }
 export function bluffPickHtml(s,me){
  const mine=me===s.maker,kind=mine?s.claim.kind:s.votes?.[me],label=BLUFF_LABELS[kind]||'No vote',value=bluffNumber(s.claim.value);
@@ -53,7 +53,7 @@ export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const box=kind=>{const win=kind===s.claim.kind,ids=voters.filter(id=>s.votes?.[id]===kind);return `<section class="bl-result-choice ${win?'win':'wrong'}" data-result-choice="${kind}" aria-label="${BLUFF_LABELS[kind]}: ${win?'winning':'wrong'} choice"><h3>${BLUFF_LABELS[kind]}</h3><div class="bl-result-people">${ids.length?ids.map(id=>person(id)).join(''):'<span class="bl-empty-votes">No votes</span>'}</div></section>`;};
   const missed=voters.filter(id=>!Object.hasOwn(BLUFF_LABELS,s.votes?.[id]));
   const seesaw=bluffScaleHtml(s,T,age,motion);
-  return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.png" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><b class="bl-maker-name">${esc(name(s.maker))}</b><span class="bl-pill faker">Faker</span><span class="bl-pill fooled">${s.autoClaim?'Auto claim':`${s.result.wrong} fooled`}</span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
+  return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.webp" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><b class="bl-maker-name">${esc(name(s.maker))}</b><span class="bl-pill faker">Faker</span><span class="bl-pill fooled">${s.autoClaim?'Auto claim':`${s.result.wrong} fooled`}</span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
 }
 export function bluffRankingsHtml(s,players,avatar,me){
   const newLeaders=bluffNewLeaders(s),rows=bluffStandings(s),before=bluffStandingsBefore(s);

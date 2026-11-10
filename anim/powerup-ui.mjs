@@ -9,7 +9,7 @@ export function createPowerupController(ports) {
   const hud = document.getElementById('hud');
   if (hud && tray.parentElement !== hud) hud.append(tray);
   const help = document.getElementById('howto-powerup-list');
-  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p class="pu-help-item"><img src="icons/powerups/${p.icon}.png" alt=""><span><b>${p.name} · ${p.cost} <img class="pu-coin" src="icons/coin-v2.png" alt="coins">:</b> ${p.description}</span></p>`).join('');
+  if (help) help.innerHTML = Object.values(POWERUPS).map(p => `<p class="pu-help-item"><img src="icons/powerups/${p.icon}.webp" alt=""><span><b>${p.name} · ${p.cost} <img class="pu-coin" src="icons/coin-v2.webp" alt="coins">:</b> ${p.description}</span></p>`).join('');
   const message = document.createElement('div');
   message.className = 'pu-feedback'; message.setAttribute('role', 'status'); document.body.append(message);
   const say = (text, origin, id) => {
@@ -17,7 +17,7 @@ export function createPowerupController(ports) {
     clearTimeout(messageTimer); message.getAnimations?.().forEach(a => a.cancel());
     message.textContent = '';
     if (POWERUPS[id]) {
-      const icon = document.createElement('img'); icon.src = `icons/powerups/${POWERUPS[id].icon}.png`; icon.alt = ''; message.append(icon);
+      const icon = document.createElement('img'); icon.src = `icons/powerups/${POWERUPS[id].icon}.webp`; icon.alt = ''; message.append(icon);
     }
     const copy = document.createElement('span'); copy.textContent = text; message.append(copy); message.hidden = false;
     const rect = message.getBoundingClientRect();
@@ -55,9 +55,9 @@ export function createPowerupController(ports) {
   function button(id, compact, c) {
     const p = POWERUPS[id];
     const used = !!c.q.powerups?.used?.[id], rerollLocked = REROLLS.includes(id) && c.q.powerups?.used?.reroll;
-    const status = busy && pendingId === id ? 'Using…' : used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.png" alt="coins">`;
+    const status = busy && pendingId === id ? 'Using…' : used ? 'Used' : rerollLocked ? 'Reroll used' : `${p.cost} <img class="pu-coin" src="icons/coin-v2.webp" alt="coins">`;
     const disabled = busy || !ids(c).includes(id) || ports.coins() < p.cost;
-    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}${busy && pendingId === id ? ' pu-pending' : ''}" data-powerup="${id}" aria-busy="${busy && pendingId === id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : p.cost + ' coins'}" title="${p.description}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.png" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
+    return `<button type="button" class="pu-button${compact ? ' pu-inline' : ''}${used ? ' pu-used' : ''}${busy && pendingId === id ? ' pu-pending' : ''}" data-powerup="${id}" aria-busy="${busy && pendingId === id}" aria-label="${p.name}, ${used ? 'already used' : rerollLocked ? 'reroll already used' : p.cost + ' coins'}" title="${p.description}" ${disabled ? 'disabled' : ''}><img src="icons/powerups/${p.icon}.webp" alt=""><span>${compact ? (id === 'buffer' ? 'Add 10% buffer' : p.label) : p.label}</span><small>${status}</small></button>`;
   }
   function html(c) {
     const visible = visibleIds(c);
@@ -260,7 +260,7 @@ export function createPowerupController(ports) {
     const [u, t] = images.map(x => x.object);
     const layer = document.createElement('div'); layer.className = 'pu-preview';
     layer.setAttribute('role', 'status'); layer.setAttribute('aria-label', 'Four-second relative size preview');
-    layer.innerHTML = '<p class="pu-preview-title"><img src="icons/powerups/item-reveal.png" alt="">Look closely!</p><canvas class="pu-stage" width="1200" height="620"></canvas>';
+    layer.innerHTML = '<p class="pu-preview-title"><img src="icons/powerups/item-reveal.webp" alt="">Look closely!</p><canvas class="pu-stage" width="1200" height="620"></canvas>';
     document.body.append(layer);
     // The shared stage uses measured edges, not arbitrary equal-size thumbnails.
     // Log interpolation gives extreme ratios time to zoom without extending the view.

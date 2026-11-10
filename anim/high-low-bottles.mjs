@@ -1,10 +1,10 @@
-export const HL_MESSAGE_BOTTLE = 'anim/high-low-art/message-bottle-upright.png';
-export const HL_EMPTY_BOTTLE = 'anim/high-low-art/empty-bottle-upright.png';
+export const HL_MESSAGE_BOTTLE = 'anim/high-low-art/message-bottle-upright.webp';
+export const HL_EMPTY_BOTTLE = 'anim/high-low-art/empty-bottle-upright.webp';
 export const HL_ANSWER_BOTTLE = 'anim/high-low-art/answer-bottle-v11.webp';
 
 // The intact note can show during the wind-up. Both fragments always use empty glass.
 export function highLowBottlePieces({ className = '', hasNote = false, ocean = false } = {}) {
-  const glass = ocean ? 'anim/high-low-art/empty-bottle.png' : HL_EMPTY_BOTTLE;
+  const glass = ocean ? 'anim/high-low-art/empty-bottle.webp' : HL_EMPTY_BOTTLE;
   const seam = ocean ? 'M53 10 L47 34 L54 46 L46 65 L51 87' : 'M9 46 L30 57 L49 53 L59 67 L73 64 L95 73';
   return `<span class="hl-bottle-pieces ${className}" aria-hidden="true">
     <img class="hl-bottle-left" src="${glass}" alt="" draggable="false">

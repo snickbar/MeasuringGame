@@ -39,9 +39,9 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
   el.setAttribute('aria-label', 'Game coin reward');
   el.innerHTML = `
     <div class="coin-reward-content">
-      <header><span class="coin-reward-eyebrow">GAME COMPLETE</span><h1 class="polish-banner" style="--banner:url(icons/banner-blank-blue.png)"><img src="icons/coin-v2.png" alt="">Your rewards</h1><p>Here’s what you earned.</p></header>
+      <header><span class="coin-reward-eyebrow">GAME COMPLETE</span><h1 class="polish-banner" style="--banner:url(icons/banner-blank-blue.webp)"><img src="icons/coin-v2.webp" alt="">Your rewards</h1><p>Here’s what you earned.</p></header>
       <div class="coin-reward-ticket">
-        <div class="coin-reward-hero"><img src="icons/coin-v2.png" alt=""><div><strong data-total>5</strong><span data-earned>coins earned</span></div></div>
+        <div class="coin-reward-hero"><img src="icons/coin-v2.webp" alt=""><div><strong data-total>5</strong><span data-earned>coins earned</span></div></div>
         <div class="coin-reward-divider"></div>
         <div class="coin-reward-row"><span>From your score</span><b data-score>0 coins</b></div>
         <div class="coin-reward-row" data-minimum-row><span>Minimum reward bonus</span><b data-minimum>+5 coins</b></div>

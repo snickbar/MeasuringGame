@@ -5,7 +5,7 @@ function fn(name){const i=source.indexOf('  function '+name+'(');return source.s
 const css=[...source.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m=>m[1]).join('\n');
 const toolbar=source.slice(source.indexOf('<div id="app-toolbar">'),source.indexOf('<div id="toolbar-menu"'));
 let page=source.slice(source.indexOf('<div id="settings-screen"'),source.indexOf('<div id="howto-screen"')).replace('id="settings-screen" class="screen"','id="settings-screen" class="screen active"');
-page=page.replace('aria-expanded="false"></button>','aria-expanded="false"><img src="avatars/av99.png" alt=""></button>');
+page=page.replace('aria-expanded="false"></button>','aria-expanded="false"><img src="avatars/av99.webp" alt=""></button>');
 const screening=source.slice(source.indexOf('  const _rot ='),source.indexOf('  // For showing names that arrived'));
 const fixture=`<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet"><style>${css}</style><link rel="stylesheet" href="anim/settings-page.css"><link rel="stylesheet" href="anim/cozy-system.css"><link rel="stylesheet" href="anim/fonts/fredoka.css"><body>${toolbar}${page}<pre id="result" hidden></pre><script type="module">
 import {mountSettingsNameEditor} from './anim/settings-name-editor.mjs';

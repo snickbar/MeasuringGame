@@ -14,7 +14,7 @@ addInfoMedallion(heading, INFO_MEDALLIONS['Earn coins']);
 addInfoMedallion(heading, INFO_MEDALLIONS['Earn coins']);
 assert.equal(decorations.length, 1, 'repeated refresh must never nest or duplicate medallions');
 assert.equal(heading.textContent, 'Earn coins');
-assert.equal(decorations[0].child.src, 'icons/coin-v2.png');
+assert.equal(decorations[0].child.src, 'icons/coin-v2.webp');
 
 const timers = [], sounds = [], classes = () => {
   const values = new Set();
@@ -60,7 +60,7 @@ assert(source.includes('data-celebration-key="${wl.runId}"'));
 assert(source.includes('flairIdFor({ flair: p.flair })'));
 assert(source.includes('playSound("lead")'));
 assert(!source.includes('"icons/coin.png"'));
-assert(fs.existsSync(new URL('../icons/coin-v2.png', import.meta.url)));
+assert(fs.existsSync(new URL('../icons/coin-v2.webp', import.meta.url)));
 const fitting = fs.readFileSync(new URL('../anim/auto-fit.mjs', import.meta.url), 'utf8');
 assert(!/setProperty\(['"](?:height|min-height|max-height)['"]/.test(fitting), 'label fitting must never resize illustrated button heights');
 assert(!fitting.includes("'anywhere'"), 'label fitting must not split words into fragments');

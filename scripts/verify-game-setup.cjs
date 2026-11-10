@@ -11,7 +11,7 @@ const declarations=Object.entries(names).map(([k,v])=>'const '+k+'=document.getE
 const local=source.slice(source.indexOf('  function renderLocalSettingsPanel()'),source.indexOf('  editPresetSettingsBtn.addEventListener'));
 const presets=source.slice(source.indexOf('  function renderPresetSlotButtons()'),source.indexOf('  function armHostReclaimMarker('));
 const host=source.slice(source.indexOf('  hostModeControlsEl.addEventListener'),source.indexOf('  createRoomBtn.addEventListener'));
-const fixture=`<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap"><style>${css}</style><link rel="stylesheet" href="anim/game-setup.css"><link rel="stylesheet" href="anim/cozy-system.css"><link rel="stylesheet" href="anim/fonts/fredoka.css"><body>${toolbar}<div id="home-screen"></div>${screens}${joinScreens}<div id="solo-screen" class="screen"><button id="solo-close-btn" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.png" alt=""></button><div id="solo-content"></div></div><pre id="result" hidden></pre><script>
+const fixture=`<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="/"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap"><style>${css}</style><link rel="stylesheet" href="anim/game-setup.css"><link rel="stylesheet" href="anim/cozy-system.css"><link rel="stylesheet" href="anim/fonts/fredoka.css"><body>${toolbar}<div id="home-screen"></div>${screens}${joinScreens}<div id="solo-screen" class="screen"><button id="solo-close-btn" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button><div id="solo-content"></div></div><pre id="result" hidden></pre><script>
 ${declarations}
 ${fn('DEFAULT_SETTINGS')}
 let currentSettings=DEFAULT_SETTINGS(),createMode='party',hostTransferModeChoice='reassign';
@@ -21,7 +21,7 @@ ${local}
 ${presets}
 ${host}
 ${fn('showCreateScreen')}
-const soloContentEl=document.getElementById('solo-content'),dailyPlayedToday=()=>false,dailyStreakNow=()=>0,monthlyIcon=()=>"icons/toolbar-daily.png",monthlySub=()=>"October",monthlyPlayed=()=>false,worldTotalStars=()=>7,WORLDS=Array(11),WORLD_LEVELS=5,survivalSub=()=>"Your best: 4 rounds";
+const soloContentEl=document.getElementById('solo-content'),dailyPlayedToday=()=>false,dailyStreakNow=()=>0,monthlyIcon=()=>"icons/toolbar-daily.webp",monthlySub=()=>"October",monthlyPlayed=()=>false,worldTotalStars=()=>7,WORLDS=Array(11),WORLD_LEVELS=5,survivalSub=()=>"Your best: 4 rounds";
 const nextWorldGoalHtml=()=>'';
 ${fn('renderSoloHub')}
 function show(mode){document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));if(mode==='join'||mode==='name-avatar'){document.getElementById(mode+'-screen').classList.add('active')}else if(mode==='solo-hub'){document.getElementById('solo-screen').classList.add('active');renderSoloHub()}else if(mode==='preset'){document.getElementById('preset-settings-screen').classList.add('active');renderPresetEditPanel()}else showCreateScreen(mode==='quick'?'solo':'party');renderPresetSlotButtons();window.scrollTo(0,0)}

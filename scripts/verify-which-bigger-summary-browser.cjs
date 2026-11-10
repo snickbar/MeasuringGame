@@ -14,7 +14,7 @@ window.__wbSummary={
   ALL_SCREEN_ELS.forEach(e=>e.classList.remove('active'));wbScreenEl.classList.add('active');
   const small=OBJECT_BY_ID.get('apple'),big=OBJECT_BY_ID.get('elephant');
   wb={...wbNewRun(),phase:'result',score:7,round:9,streak:ok?3:0,lives:ok?3:2,lossShown:true,buzzed:true,ok,picked:ok?big.id:small.id,
-   pair:{left:small,right:big,smaller:small,bigger:big,ratio:big.mm/small.mm},side:{img:'icons/reactions/'+(ok?'thumbsup':'facepalm')+'.png',kind:ok?'bob':'sad'},quip:ok?'You’ve got a feel for this.':'A fresh pair is up next.'};
+   pair:{left:small,right:big,smaller:small,bigger:big,ratio:big.mm/small.mm},side:{img:'icons/reactions/'+(ok?'thumbsup':'facepalm')+'.webp',kind:ok?'bob':'sad'},quip:ok?'You’ve got a feel for this.':'A fresh pair is up next.'};
   myProfile.cosmetics.equipped.effects="hearts";renderWhichBigger();document.querySelectorAll("#ach-toast").forEach(e=>e.remove());window.scrollTo(0,0);
  },close:()=>{wbStop();wbScreenEl.classList.remove('active');document.getElementById('home-screen').classList.add('active');}
 };

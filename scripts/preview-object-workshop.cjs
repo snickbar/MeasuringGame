@@ -7,7 +7,7 @@ const files=new Set([
  '/anim/object-review-prompts.mjs','/anim/object-review-data.json',
  '/anim/object-review-batch2.html','/anim/object-review-batch2-data.json',
  '/anim/stack-anim.js','/anim/orient-data.js','/anim/reveal-style.mjs','/anim/landing-effects.mjs',
- '/anim/scenery.mjs','/anim/scenery-data.mjs','/anim/grass.png','/anim/cloud.png',
+ '/anim/scenery.mjs','/anim/scenery-data.mjs','/anim/grass.webp','/anim/cloud.webp',
  '/anim/scenery-objects.html','/anim/scenery-objects.mjs','/anim/scenery-object-data.json',
  '/anim/scenery-gallery.html','/anim/stadium-preview.html',
  '/anim/cutout-review.html','/anim/cutout-review.mjs','/anim/cutout-review-data.json'

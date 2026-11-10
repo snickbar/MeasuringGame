@@ -8,7 +8,7 @@ const oldIds=id=>+id.slice(2)<=325;
 for(const [id,tier]of Object.entries(previous))if(!['default','common'].includes(tier))assert.equal(tiers[id],tier,'Protected tier unchanged: '+id);
 assert.deepEqual(Object.entries(tiers).filter(([id])=>oldIds(id)).filter(([,t])=>['default','common'].includes(t)).map(([id,tier])=>({id,tier})),approved.items,'Exact approved order and tiers');
 assert.deepEqual(Object.keys(tiers).filter(oldIds).filter(id=>!['default','common'].includes(tiers[id])),Object.keys(previous).filter(id=>!['default','common'].includes(previous[id])),'Protected order unchanged');
-for(let n=314;n<=325;n++){assert(tiers['av'+n]);assert(names['av'+n]);assert(fs.statSync('avatars/av'+n+'.png').size>1000);}
+for(let n=314;n<=325;n++){assert(tiers['av'+n]);assert(names['av'+n]);assert(fs.statSync('avatars/av'+n+'.webp').size>1000);}
 assert.equal(new Set(Object.values(names)).size,Object.keys(names).length,'Distinct bot names');
 const data=JSON.parse(fs.readFileSync('anim/avatar-tier-review-data.json'));assert.equal(data.items.filter(r=>r.tier==='default').length,approved.items.filter(r=>r.tier==='default').length);assert.equal(data.items.filter(r=>r.new).length,12);assert(data.items.every(r=>['default','common'].includes(r.tier)));
 const items=initialChoices(data),a=items.find(r=>r.tier==='default'),b=items.find(r=>r.tier==='common'),swapped=swapAvatars(items,a.id,b.id);

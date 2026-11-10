@@ -44,7 +44,7 @@ try{
  prototype.drawImage=function(image,...args){if((image.src||'').includes('stadium-'))draws.push({file:image.src.split('/').pop(),args,alpha:this.globalAlpha});return originalDraw.call(this,image,...args)};
  for(const t of [stadium.scene.duration,stadium.scene.duration*.45,stadium.scene.duration*.65]){
   draws.length=0;stadium.scene.render(t);
-  const stands=draws.find(d=>d.file==='stadium-stands.png'),turf=draws.find(d=>d.file==='stadium-turf.png');
+  const stands=draws.find(d=>d.file==='stadium-stands.webp'),turf=draws.find(d=>d.file==='stadium-turf.webp');
   assert(stands,'stadium stands are drawn');
   if(!turf){assert(stands.args[5]+stands.args[7]-10*(stands.args[7]/300)>=sw.document.querySelector('canvas').height,'turf is outside the frame during the climb');continue;}
   const scale=turf.args[2]/760,standsBase=stands.args[5]+stands.args[7],turfSurface=turf.args[1]+turf.args[3]*.4695767195767196;

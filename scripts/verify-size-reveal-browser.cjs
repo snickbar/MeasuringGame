@@ -31,7 +31,7 @@ try{
  };
  const gradients=new WeakMap(),radial=CanvasRenderingContext2D.prototype.createRadialGradient;
  CanvasRenderingContext2D.prototype.createRadialGradient=function(...args){gradients.get(this)?.push(this.getTransform());return radial.apply(this,args)};
- await Promise.all(['/anim/cloud.png','/anim/grass.png'].map(src=>new Promise((yes,no)=>{const i=new Image();i.onload=yes;i.onerror=no;i.src=src})));
+ await Promise.all(['/anim/cloud.webp','/anim/grass.webp'].map(src=>new Promise((yes,no)=>{const i=new Image();i.onload=yes;i.onerror=no;i.src=src})));
  assert(objects.every(o=>SCENERY_BY_OBJECT[o.id]),'every game object has an explicit setting');
  assert(['great-white-shark','hammerhead-shark','whale-shark'].every(id=>sceneryFor({id})==='underwater'),'sharks use underwater scenery');
  assert(SETTINGS.city.night===true&&SETTINGS.city.sky[0]==='#111d36','city is always nighttime');
@@ -60,7 +60,7 @@ try{
   const positions=(time,reduced=false,shiftY=0)=>{
    const draws=[];watched.set(wallCtx,draws);
    drawSceneryLayers(wallCtx,kit,{width:390,height:330,floorY:290,shiftY,shiftX:0,dark:false,time,reduced});
-   return draws.filter(d=>d.image===name+'.png').map(d=>d.args[1]);
+   return draws.filter(d=>d.image===name+'.webp').map(d=>d.args[1]);
   };
   const a=positions(3),b=positions(4);
   assert(a.length===(name==='bubbles'?4:5)&&b.some((y,i)=>Math.abs(y-a[i]-dy)<.01),name+' drift direction and speed');
@@ -69,9 +69,9 @@ try{
  for(const [id,name,minAlpha] of [['deer','mist',.3],['polar-bear','snowflakes',.65],['great-white-shark','bubbles',.65]]){
   const kit=await loadScenery({id},'/anim/scenery/'),draws=[];watched.set(wallCtx,draws);
   drawSceneryLayers(wallCtx,kit,{width:390,height:330,floorY:290,shiftY:0,shiftX:0,dark:false,time:3,reduced:false});
-  assert(draws.some(d=>d.image===name+'.png'&&d.alpha>=minAlpha),name+' readable atmospheric opacity');
+  assert(draws.some(d=>d.image===name+'.webp'&&d.alpha>=minAlpha),name+' readable atmospheric opacity');
   if(kit.config.backdrop){
-   const first=draws.find(d=>d.image===kit.config.backdrop+'.png'),moved=[];watched.set(wallCtx,moved);
+   const first=draws.find(d=>d.image===kit.config.backdrop+'.webp'),moved=[];watched.set(wallCtx,moved);
    drawSceneryLayers(wallCtx,kit,{width:390,height:330,floorY:290,shiftY:100,shiftX:40,dark:false,time:3,reduced:false});
    const next=moved.find(d=>d.image===first.image);
    assert(Math.abs(next.args[5]-first.args[5]-100)<.001&&Math.abs(next.args[4]-first.args[4]+40)<.001,'rooted scenery follows floor translation '+id);
@@ -82,7 +82,7 @@ try{
  for(const id of ['deer','great-white-shark','taxi']){
   const kit=await loadScenery({id},'/anim/scenery/');
   const capture=groundScale=>{const draws=[];watched.set(wallCtx,draws);const view={width:390,height:330,floorY:290,shiftY:0,shiftX:0,groundScale,dark:false,time:0,reduced:true};drawSceneryLayers(wallCtx,kit,view);drawSceneryFloor(wallCtx,kit,FLOOR_DATA[kit.config.floor],view);return draws};
-  const a=capture(1),b=capture(1.3),floor=kit.config.floor+'.png',back=kit.config.backdrop+'.png';
+  const a=capture(1),b=capture(1.3),floor=kit.config.floor+'.webp',back=kit.config.backdrop+'.webp';
   assert(Math.abs(b.find(d=>d.image===floor).args[3]/a.find(d=>d.image===floor).args[3]-1.3)<.001,'floor artwork zooms '+id);
   const first=a.find(d=>d.image===back),next=b.find(d=>d.image===back);
   assert(Math.abs(next.args[7]/first.args[7]-1.3)<.001,'rooted backdrop scales with floor '+id);
@@ -104,14 +104,14 @@ try{
   const startDraws=[];watched.set(ctl.canvas.getContext('2d'),startDraws);scene.render(0);
   if(expected==='farm'||expected==='city'){
    const cloudIndex=startDraws.findIndex(d=>d.image==='cloud.png');
-   const backdropIndex=startDraws.findIndex(d=>d.image===SETTINGS[expected].backdrop+'.png');
+   const backdropIndex=startDraws.findIndex(d=>d.image===SETTINGS[expected].backdrop+'.webp');
    assert(cloudIndex>=0&&backdropIndex>cloudIndex,'clouds behind rooted scenery '+id);
    if(expected==='farm')assert(startDraws[backdropIndex].alpha===1,'hay bales opaque over background clouds');
-   assert(startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.png').length===(expected==='farm'?2:1),'backdrop drawn only once per placement '+id);
+   assert(startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.webp').length===(expected==='farm'?2:1),'backdrop drawn only once per placement '+id);
    if(expected==='city')assert(startDraws.findIndex(d=>d.image==='star-field.png')<cloudIndex,'stars behind clouds');
   }
   if(SETTINGS[expected].backdrop){
-   const backdrop=startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.png');
+   const backdrop=startDraws.filter(d=>d.image===SETTINGS[expected].backdrop+'.webp');
    assert(backdrop.length>0,'background scenery ready on first frame '+id);
    const initial=backdrop[0],later=[];watched.set(ctl.canvas.getContext('2d'),later);
    scene.render(scene.cues.find(c=>c.name==='tap').t);
@@ -127,7 +127,7 @@ try{
   }
   const floorName=SETTINGS[expected].floor;
   if(floorName){
-   const floor=startDraws.find(d=>d.image===floorName+'.png');assert(floor,'floor is ready on first frame '+id);
+   const floor=startDraws.find(d=>d.image===floorName+'.webp');assert(floor,'floor is ready on first frame '+id);
    if(expected==='city')assert(floor.alpha===1&&floor.filter==='brightness(65%)','night pavement stays opaque while darkened');
    const f=scene.getFraming(0),surface=floor.args[1]+floor.args[3]*FLOOR_DATA[floorName].surface;
    assert(surface<=f.floorY-13,'object baseline is inside solid ground '+id);

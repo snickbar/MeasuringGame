@@ -64,7 +64,7 @@ function loadImage(url) {
 export async function loadScenery(object, base) {
   const id = sceneryFor(object), config = SETTINGS[id];
   const names = [config.floor, config.texture, config.backdrop, ...(config.layers || [])].filter(Boolean);
-  const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.png')])));
+  const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
 }

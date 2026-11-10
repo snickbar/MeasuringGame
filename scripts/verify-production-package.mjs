@@ -9,7 +9,7 @@ for(const file of files){assert(fs.existsSync(path.join('www',file)),'Packaged f
 if(packedPage){assert(fs.existsSync(path.join('www',APP_FILE)),'Packaged '+APP_FILE);assertPacked(sourcePage,fs.readFileSync('www/index.html','latin1'),fs.readFileSync(path.join('www',APP_FILE),'latin1'));}
 assert(!files.some(p=>p.startsWith('anim/')&&/sound-options|sound-suspense|artwork-candidates|review|mockups|\.md$/.test(p)),'Development material excluded');
 for(const sound of SOUNDS)assert(pack.has(sound),'All runtime sounds included '+sound);
-for(const config of Object.values(SETTINGS))for(const name of [config.floor,config.texture,config.backdrop,...config.layers||[]].filter(Boolean))assert(pack.has('anim/scenery/'+name+'.png'),'Current scene included '+name);
+for(const config of Object.values(SETTINGS))for(const name of [config.floor,config.texture,config.backdrop,...config.layers||[]].filter(Boolean))assert(pack.has('anim/scenery/'+name+'.webp'),'Current scene included '+name);
 assert(pack.has('.well-known/assetlinks.json'),'Android app links retained');assert(pack.has('og-image.jpg'),'Share artwork retained');
 for(const file of files.filter(f=>/\.(?:html|mjs|js|css)$/.test(f))){
  const source=fs.readFileSync(file,'utf8');
