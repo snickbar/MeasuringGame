@@ -59,7 +59,7 @@ export const SETTINGS = {
   library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], backdrop: 'library-wall', wallpaper: 'plaid', wall: 'library-pass' },
   workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], backdrop: 'workshop-wall', wallpaper: 'tiles', wall: 'workshop-pass' },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'] },
-  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands' },
+  stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands', floaters: ['cloud-set-day'] },
 };
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
