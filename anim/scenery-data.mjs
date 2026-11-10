@@ -91,5 +91,33 @@ export const FLOOR_DATA = {
   "kitchen-bw": {
     "surface": 0.494475138121547,
     "color": "#80796f"
+  },
+  "blossom-floor": {
+    "surface": 0.6312154696132597,
+    "color": "#afbd85"
+  },
+  "cave-floor": {
+    "surface": 0.664364640883978,
+    "color": "#423556"
+  },
+  "jungle-floor": {
+    "surface": 0.6671270718232044,
+    "color": "#3c3216"
+  },
+  "mountain-floor": {
+    "surface": 0.6629834254143646,
+    "color": "#c5b2a8"
+  },
+  "rooftop-floor": {
+    "surface": 0.600828729281768,
+    "color": "#d5714c"
+  },
+  "volcano-floor": {
+    "surface": 0.7541436464088398,
+    "color": "#44383b"
+  },
+  "workshop-floor": {
+    "surface": 0.6933701657458563,
+    "color": "#adacb1"
   }
 };

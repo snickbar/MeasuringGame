@@ -15,6 +15,7 @@ export const OBJECT_GROUPS = {
   enchanted: `baby-dragon castle cauldron centaur cyclops fairy goblin leprechaun magic-wand minotaur pegasus phoenix pot-of-gold rainbow shillelagh troll unicorn western-dragon`,
   stadium: `baseball baseball-bat baseball-cap baseball-glove basketball basketball-backboard basketball-court blimp foam-finger football football-field football-helmet golf-ball golf-club hockey-puck hockey-stick jumbotron shuttlecock soccer-ball soccer-goal tennis-ball tennis-racket volleyball whistle`,
 };
+import { SCENE_MOVES } from './scenery-moves.mjs';
 export const SCENERY_BY_OBJECT = Object.create(null);
 Object.assign(SCENERY_BY_OBJECT, {
   cherry:'kitchen',mouse:'living','spinning-top':'tabletop','toy-jack':'tabletop',
@@ -30,6 +31,7 @@ for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of wor
   if (SCENERY_BY_OBJECT[id]) throw new Error('Duplicate scenery assignment: ' + id);
   SCENERY_BY_OBJECT[id] = scene;
 }
+for (const [id, scene] of Object.entries(SCENE_MOVES)) SCENERY_BY_OBJECT[id] = scene;
 export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'grass'; }
 
 export const SETTINGS = {
@@ -41,11 +43,19 @@ export const SETTINGS = {
   city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
   farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
-  snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'] },
+  snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' },
   desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], backdrop: 'desert-dunes' },
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'] },
+  mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'] },
+  jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'] },
+  cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid', 'cave-tall-high'], floaters: ['mist-set'] },
+  volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], backdrop: 'volcano-ridge', floaters: ['ember-set'] },
+  blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'] },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], backdrop: 'library-wall', wallpaper: 'plaid' },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], backdrop: 'workshop-wall' },
+  rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'] },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], backdrop:'stadium-stands' },
 };
 const imageCache = new Map();
@@ -63,7 +73,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = sceneryFor(object), config = SETTINGS[id];
-  const names = [config.floor, config.texture, config.backdrop, ...(config.layers || [])].filter(Boolean);
+  const names = [config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, ...(config.tall || []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -121,11 +131,12 @@ function visibleBounds(image) {
 // Rooted scenery shares the floor's exact camera translation on both axes.
 // Atmospheric particles alone use slower parallax; vegetation must never leave its ground.
 function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2 }) {
-  const name = kit.config.backdrop, image = kit.images[name]; if (!image) return;
+  const name = dark && kit.config.nightBackdrop ? kit.config.nightBackdrop : kit.config.backdrop, image = kit.images[name]; if (!image) return;
   const bounds = visibleBounds(image), base = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
-    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75 }[name];
-  ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' ? .45 : 1);
+    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75,
+    'volcano-ridge': .9, 'blossom-trees': .85, 'library-wall': .95, 'workshop-wall': .95, 'snow-aurora': .9 }[name] ?? .8;
+  ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' && name !== 'snow-aurora' ? .45 : 1);
   if (dark && name === 'farm-hay') ctx.filter = 'brightness(55%)';
   if (name === 'farm-hay' || name === 'underwater-seaweed') {
     const h = (name === 'farm-hay' ? 58 : 95) * groundScale;
@@ -135,7 +146,8 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300 }[name];
+    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
+      'volcano-ridge': 190, 'blossom-trees': 200, 'library-wall': 230, 'workshop-wall': 230, 'snow-aurora': 200 }[name] ?? 160;
     const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
     const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
     ctx.drawImage(image, ...bounds, center - w / 2, base - h, w, h);
@@ -144,6 +156,85 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
 }
 
 // Atmospheric layers follow the climb with the original cloud parallax.
+// Tall climb backdrops: three overlapping 887x1774 panels (low, mid, high) that the stack climbs past.
+// The low panel is rooted like the floor; higher panels move slower, so the view feels deeper.
+const TALL_PARALLAX = [1, .55, .3];
+function seededFlip(seed, i) {
+  let h = 2166136261;
+  for (const c of `${seed}:${i}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return (h >>> 0) % 2 === 1;
+}
+function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
+  const names = kit.config.tall; if (!names) return;
+  const w = (width + 100) * groundScale, h = w * 2;
+  const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
+  const base0 = (floorY ?? height - 40) - 4 * groundScale;
+  for (let i = names.length - 1; i >= 0; i--) {
+    const image = kit.images[names[i]]; if (!image) continue;
+    const bottom = base0 - i * h * .5 + shiftY * TALL_PARALLAX[i] + (i ? 0 : 0);
+    if (bottom < 0 || bottom - h > height) continue;
+    ctx.save();
+    ctx.globalAlpha = (dark ? .55 : 1) * (i === 0 ? 1 : .96);
+    ctx.translate(center, 0);
+    if (seededFlip(seed, i)) ctx.scale(-1, 1);
+    ctx.drawImage(image, -w / 2, bottom - h, w, h);
+    ctx.restore();
+  }
+}
+
+// Floating pieces: each variety set is five different silhouettes in five equal columns.
+// Every piece picks its own column, mirror, size and starting spot, so no two look alike.
+const FLOATER_STYLE = {
+  'cloud-set-day': { count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
+  'cloud-set-sunset': { count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
+  'mist-set': { count: 3, size: [240, 340], alpha: .38, vx: 2, vy: 0, par: .6 },
+  'ember-set': { count: 7, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
+  'petal-leaf-set': { count: 7, size: [44, 78], alpha: .9, vx: 5, vy: 12, par: .5 },
+};
+const columnBoundsCache = new WeakMap();
+function columnBounds(image, col, cols = 5) {
+  let list = columnBoundsCache.get(image); if (!list) columnBoundsCache.set(image, list = []);
+  if (list[col]) return list[col];
+  const cw = Math.floor(image.naturalWidth / cols), ch = image.naturalHeight;
+  const canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch;
+  const c = canvas.getContext('2d'); c.drawImage(image, col * cw, 0, cw, ch, 0, 0, cw, ch);
+  const data = c.getImageData(0, 0, cw, ch).data;
+  let left = cw, top = ch, right = -1, bottom = -1;
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    if (data[(y * cw + x) * 4 + 3] < 12) continue;
+    left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+  }
+  return list[col] = right < left ? [col * cw, 0, cw, ch] : [col * cw + left, top, right - left + 1, bottom - top + 1];
+}
+function unitRandom(seed, i, k) {
+  let h = 2166136261;
+  for (const c of `${seed}:${i}:${k}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, dark, time = 0, reduced, seed = kit.id }) {
+  for (const [setIndex, name] of (kit.config.floaters || []).entries()) {
+    const image = kit.images[name], style = FLOATER_STYLE[name]; if (!image || !style) continue;
+    const span = height * 2;
+    for (let i = 0; i < style.count; i++) {
+      const r = k => unitRandom(`${seed}${name}`, i, k);
+      const col = Math.floor(r(1) * 5), box = columnBounds(image, col);
+      const w = style.size[0] + (style.size[1] - style.size[0]) * r(2), h = w * box[3] / box[2];
+      const t = reduced ? 0 : time;
+      const x0 = r(3) * (width + w) - w / 2 + (r(4) - .5) * 40;
+      const x = (((x0 + t * style.vx * (.6 + r(5)) - shiftX * style.par * .3) % (width + w)) + width + w) % (width + w) - w / 2;
+      const yRaw = r(6) * span + shiftY * style.par + t * style.vy * (.6 + r(7)) + (setIndex * 53);
+      const y = (((yRaw % span) + span) % span) - span * .25;
+      ctx.save();
+      ctx.globalAlpha = style.alpha * (dark ? .6 : 1);
+      ctx.translate(x + w / 2, y + h / 2);
+      if (r(8) > .5) ctx.scale(-1, 1);
+      ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+  }
+}
+
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all' }) {
   const { config, images } = kit;
   ctx.save();
@@ -158,6 +249,8 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   }
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
+  drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
+  drawFloaters(ctx, kit, { width, height, shiftY, shiftX, dark, time, reduced });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;

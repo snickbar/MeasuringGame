@@ -18,7 +18,7 @@ for(const row of picks.objects)if(resolutions[row.id]){
 assert.deepEqual(validatePicks(picks,catalog),{},'All phone-exported choices are applied');
 assert.equal(manifest.objects.length,12);
 assert.equal(catalog.objects.filter(o=>o.group!=='Seasonal').length,501);
-const scenes=['stadium','stadium','forest','underwater','beach','city','city','stadium','desert','beach','city','city'];
+const scenes=['stadium','stadium','forest','underwater','beach','city','rooftop','stadium','desert','beach','city','city'];
 for(const [i,row]of manifest.objects.entries()){
   const object=catalog.objects.find(o=>o.id===row.id);
   assert(object,row.id);assert.equal(object.mm,row.mm);assert.equal(object.measurement.dimension,row.dimension);
