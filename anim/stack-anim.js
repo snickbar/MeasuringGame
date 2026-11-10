@@ -22,10 +22,10 @@
 // module loads. Native loads have no query string and retain bundled paths.
 const moduleRetry = new URL(import.meta.url).search;
 const [{ ORIENT }, { landingStyleFor, landingPose }, { landingSurfaceFor, drawLandingEffect },
-  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor }, { FLOOR_DATA }] = await Promise.all([
+  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor }, { FLOOR_DATA }, { entryPose, entryKindFor }] = await Promise.all([
   import('./orient-data.js' + moduleRetry), import('./reveal-style.mjs' + moduleRetry),
   import('./landing-effects.mjs' + moduleRetry), import('./scenery.mjs' + moduleRetry),
-  import('./scenery-data.mjs' + moduleRetry),
+  import('./scenery-data.mjs' + moduleRetry), import('./entry-styles.mjs' + moduleRetry),
 ]);
 
 // The old hand-set list below is no longer used: the pictures are now turned from ORIENT (saved with the
@@ -536,10 +536,15 @@ export function createStackAnimation(container, options = {}) {
   // Review tools may supply isolated draft settings; normal game callers use saved data.
   const orientationFor = options.orientationFor || orientOf;
   const leanFor = (o, right) => leanOf(o, right, orientationFor(o));
-  const motionFor = options.motionFor || ((o, right) => {
+  // A review tool can still supply its own styles; otherwise the saved style is kept where it was picked by
+  // hand and every other object gets one chosen for it (see entry-styles.mjs). lean is true for an object that
+  // arrives lying down, which then never spins or tips over.
+  const motionFor = options.motionFor || ((o, right, lean = false) => {
     const saved = MOTION[o.id];
-    return typeof saved === 'string' ? saved : saved?.[right ? 'big' : 'small'] || 'slide';
+    return entryKindFor(o, typeof saved === 'string' ? saved : saved?.[right ? 'big' : 'small'] || 'slide', !!lean);
   });
+  // Where the entry pose turns: a rolling or tumbling one about its middle, the others about their feet.
+  const spins = (kind) => kind === 'roll' || kind === 'tumble';
   const theme = { ...LIGHT_THEME, ...(options.theme || {}) };
   const imageUrl = options.imageUrl || ((o) => o.image);
   const formatTally = options.formatTally || formatCount;
@@ -701,8 +706,8 @@ export function createStackAnimation(container, options = {}) {
     const smLean = leanFor(unit, flipFacing);
     const bigLying = bigLean ? lyingSprite(target, !flipFacing, bigLean) : null;
     const smLying = smLean ? lyingSprite(unit, flipFacing, smLean) : null;
-    const bigKind = motionFor(target, !flipFacing);
-    const smKind = motionFor(unit, flipFacing);
+    const bigKind = motionFor(target, !flipFacing, bigLean);
+    const smKind = motionFor(unit, flipFacing, smLean);
     const dark = !!theme.dark;
     const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
     const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
@@ -1041,8 +1046,9 @@ export function createStackAnimation(container, options = {}) {
         const restLeft = cw ? p0 - sc * L : p0;
         const d0 = (W - restLeft) / zl + 2;
         const wu = clamp(t / BIG_WALK, 0, 1);
-        const d = d0 * (1 - wu) * (1 - wu);
-        const lift = travelLift(bigKind, wu, T, d0);
+        const ep = entryPose(bigKind, wu, { thick: T, dist: d0, dir: -1 });
+        const d = d0 * (1 - ep.p);
+        const lift = ep.lift;
         const footprint = sc * (L * Math.cos(ang) + T * Math.sin(ang));
         const shadowX = px + sc * d + (cw ? -1 : 1) * sc * (L * Math.cos(ang) - T * Math.sin(ang)) / 2;
         shadow(shadowX, pvy + 2, footprint * .8, clamp(T * sc * .06, 3, 9), .30);
@@ -1051,17 +1057,25 @@ export function createStackAnimation(container, options = {}) {
         ctx.scale(sc, sc);
         ctx.translate(-pvx, -pvy);
         ctx.translate(pvx + d, pvy - lift);
-        ctx.rotate((cw ? 1 : -1) * ang);
+        ctx.rotate((cw ? 1 : -1) * ang + ep.rot);
+        ctx.scale(ep.sx, ep.sy);
         ctx.drawImage(bigLying, cw ? -L : 0, -T, L, T);
         ctx.restore();
       } else {
         // Objects that already stand upright just hop in from the right.
         const hu = bigLean ? 1 : clamp(t / BIG_S, 0, 1);
-        const slide = (1 - hu) * (1 - hu) * (W - bigX + 30);
-        const hop = bigLean ? 0 : travelLift(bigKind, hu, bw, 0);
+        const ep = bigLean ? null : entryPose(bigKind, hu, { thick: bw, dist: 0, dir: -1 });
+        const slide = ep ? (1 - ep.p) * (W - bigX + 30) : 0;
+        const hop = ep ? ep.lift : 0;
         shadow(bx + slide + bw / 2, sy0 + 2, bw * .95, clamp(bw * .07, 3, 10), .36 / (1 + hop / 12));
         if (bx + slide < W && bx + bw > 0 && by < stageH && by + bh > 0) {
-          drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
+          if (ep && (ep.rot || ep.sx !== 1 || ep.sy !== 1)) {
+            const pcx = bx + slide + bw / 2, pcy = sy0 - hop - (spins(bigKind) ? bh / 2 : 0);
+            ctx.save();
+            ctx.translate(pcx, pcy); ctx.rotate(ep.rot); ctx.scale(ep.sx, ep.sy); ctx.translate(-pcx, -pcy);
+            drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
+            ctx.restore();
+          } else drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
         }
       }
       if (bigKind !== 'fly') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm, false, bigKind === 'sail' ? 'water' : landingSurfaceFor(scenery));
@@ -1105,8 +1119,9 @@ export function createStackAnimation(container, options = {}) {
           const wu = clamp(local / SM_WALK, 0, 1);
           const u = clamp((local - SM_WALK) / SM_LEAN, 0, 1);
           const d0 = -(cw ? pvx : pvx + Ls) - 2;
-          const d = d0 * (1 - wu) * (1 - wu);
-          const lift = travelLift(smKind, wu, wcol, Math.abs(d0));
+          const ep = entryPose(smKind, wu, { thick: wcol, dist: Math.abs(d0), dir: 1 });
+          const d = d0 * (1 - ep.p);
+          const lift = ep.lift;
           // One that lies to the right of its pivot would sprawl over the big object: slide it
           // left just enough to stay clear (never off the stage), easing back as it stands.
           let off = 0;
@@ -1116,7 +1131,8 @@ export function createStackAnimation(container, options = {}) {
           }
           ctx.save();
           ctx.translate(pvx + d + off, sy0 - lift);
-          ctx.rotate((cw ? 1 : -1) * (Math.PI / 2) * smooth(u));
+          ctx.rotate((cw ? 1 : -1) * (Math.PI / 2) * smooth(u) + ep.rot);
+          ctx.scale(ep.sx, ep.sy);
           ctx.drawImage(smLying, cw ? -Ls : 0, -wcol, Ls, wcol);
           ctx.restore();
           continue;
@@ -1124,13 +1140,17 @@ export function createStackAnimation(container, options = {}) {
         const h = hopAt((t - starts[i]) / durs[i]);
         // An upright first arrival still honors its selected walking/flying style.
         // Later copies keep the established stacking hops and landing times.
+        let ep = null;
         if (i === 0 && !smLean && smKind !== 'slide') {
-          h.y = -travelLift(smKind, clamp((t - starts[i]) / durs[i], 0, 1), wcol, dHop);
+          ep = entryPose(smKind, clamp((t - starts[i]) / durs[i], 0, 1), { thick: wcol, dist: dHop, dir: 1 });
+          h.y = -ep.lift;
+          if (!['walk', 'drive', 'fly', 'sail'].includes(smKind)) { h.x = 1 - ep.p; h.sx = ep.sx; h.sy = ep.sy; }
         }
         const bottom = sy0 - i * Ls;
         shadow(sx0 - dHop * h.x, bottom + 1, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + Math.abs(h.y) / 10));
         ctx.save();
         ctx.translate(sx0 - dHop * h.x, bottom + h.y);
+        if (ep && ep.rot) { const cy = spins(smKind) ? -Ls / 2 : 0; ctx.translate(0, cy); ctx.rotate(ep.rot); ctx.translate(0, -cy); }
         ctx.scale(h.sx, h.sy);
         ctx.drawImage(smallSprite, -wcol / 2, -Ls, wcol, Ls);
         ctx.restore();

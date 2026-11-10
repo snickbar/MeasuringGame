@@ -49,6 +49,7 @@ const context = vm.createContext({
   hsTickHandle: 42, clearInterval: handle => {stopped = handle;},
   leavingGame: true,
   cancelRevealEffects: () => {revealCancelled++;},
+  AVATARS: ['av01', 'av07', 'av19'], AVATAR_TIERS: {av01: 'default', av07: 'default', av19: 'common'},
   currentPlayers: {me: {avatar: 'av07'}}, currentPlayerId: 'me', currentAvatar: 'av01',
 });
 for (const name of ['avatarHtml', 'gameOutcomeArt', 'hsEnsureTicker', 'showLeftScreen', 'hsHostTick', 'renderHighStakes']) {
