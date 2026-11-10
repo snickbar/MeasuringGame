@@ -43,24 +43,24 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { clouds: true, flyers: 'birds', fireflies: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'birds' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], tall: ['living-tall-low', 'living-tall-mid', 'living-tall-mid2', 'living-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], tall: ['kitchen-tall-low', 'kitchen-tall-mid', 'kitchen-tall-mid2', 'kitchen-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', tall: ['tabletop-tall-low', 'tabletop-tall-mid', 'tabletop-tall-mid2', 'tabletop-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
   city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'birds' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
-  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay', flyers: 'birds', fireflies: true },
-  snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' },
-  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], backdrop: 'desert-dunes', flyers: 'birds' },
+  farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'birds', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
+  snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
+  desert: { floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'birds' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
   underwater: { floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
-  enchanted: { sky: ['#c8badf', '#efe2f2'], backdrop: 'enchanted-grove', layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' },
+  enchanted: { sky: ['#c8badf', '#efe2f2'], layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' , tall: ['enchanted-tall-low', 'enchanted-tall-mid', 'enchanted-tall-high']},
   mountain: { floor: 'mountain-floor', sky: ['#7fb0e6', '#d3e5f4'], clouds: true, tall: ['mountain-tall-low', 'mountain-tall-mid', 'mountain-tall-high'], floaters: ['cloud-set-day'], flyers: 'birds' },
   jungle: { floor: 'jungle-floor', sky: ['#4f9b7c', '#b6dcc0'], tall: ['jungle-tall-low', 'jungle-tall-mid', 'jungle-tall-high'], floaters: ['mist-set', 'petal-leaf-set'], fireflies: true },
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'birds', fireflies: true },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], tall: ['library-tall-low', 'library-tall-mid', 'library-tall-mid2', 'library-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], tall: ['workshop-tall-low', 'workshop-tall-mid', 'workshop-tall-mid2', 'workshop-tall-mid3'], tallRepeat: true, tallScale: 1.5, tallMeet: .2 },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'birds' },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'birds' },
 };
@@ -193,8 +193,9 @@ function seededFlip(seed, i) {
 function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
   const names = kit.config.tall; if (!names) return;
   // tallScale makes every panel bigger (fewer windows per climb); tallMeet is how far into the panel in front the next one tucks in.
-  const w = (width + 100) * groundScale * (kit.config.tallScale || 1), h = w * 2, meetAt = kit.config.tallMeet ?? .5;
-  const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
+  // Never narrower than the screen, even when the camera has zoomed out.
+  const w = Math.max((width + 100) * groundScale, width + 60) * (kit.config.tallScale || 1), h = w * 2, meetAt = kit.config.tallMeet ?? .5;
+  const center = Math.min(w / 2, Math.max(width - w / 2, anchorX + (width / 2 - anchorX) * groundScale - shiftX));
   const bottom0 = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const loop = names.slice(1), list = kit.config.tallRepeat ? [...names, ...Array.from({ length: 14 }, (_, k) => loop[k % loop.length])] : names;
   const tops = [];
