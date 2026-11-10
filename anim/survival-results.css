@@ -348,7 +348,7 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-answer-accuracy, .sv-meter-gap { color:var(--outcome); }
 .sv-meter {
   --safe-cutoff:60%; --great-cutoff:80%; --flourish:#a83e32; --ember:#ff8a6b;
-  --meter-delay:.24s; --meter-travel:.96s; --meter-land:calc(var(--meter-delay) + var(--meter-travel));
+  --meter-delay:.3s; --meter-travel:1.5s; --meter-land:calc(var(--meter-delay) + var(--meter-travel));
   --meter-ease:cubic-bezier(.24,.65,.32,1);
   margin-top:46px;
 }
@@ -371,9 +371,15 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   -webkit-mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat; mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat;
 }
 .sv-meter-glow i { position:absolute; inset:0; translate:-100% 0; background:linear-gradient(to right,transparent 80%,color-mix(in srgb,var(--ember) 55%,#fff6d0) 97%,transparent 100%); }
+.sv-meter-flags { position:absolute; inset:0; z-index:-1; clip-path:inset(-300% 0 0 0); pointer-events:none; }
+.sv-meter-shine {
+  position:absolute; inset:0; overflow:hidden; mix-blend-mode:screen; clip-path:inset(0 calc(100% - var(--accuracy)) 0 0);
+  -webkit-mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat; mask:url("../icons/survival-wall.webp") center/100% 100% no-repeat;
+}
+.sv-meter-shine i { position:absolute; inset:0; translate:-100% 0; background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.9) 50%,transparent 62%); }
 .sv-meter-flag {
-  translate:0 26%; clip-path:inset(0 0 26% 0);
-  position:absolute; z-index:-1; bottom:34%; height:175%; aspect-ratio:203/380; background:center/100% 100% no-repeat;
+  translate:0 26%;
+  position:absolute; bottom:34%; height:175%; aspect-ratio:203/380; background:center/100% 100% no-repeat;
   transform:translateX(-14%); transform-origin:14% 100%;
 }
 .sv-flag-safe { left:var(--safe-cutoff); background-image:url("../icons/survival-flag-gold.webp"); }
@@ -382,9 +388,12 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-meter[data-zone="safe"] .sv-flag-safe, .sv-meter[data-zone="great"] .sv-meter-flag { filter:none; translate:0 0; }
 .sv-meter-marker { position:absolute; z-index:2; inset-block:0; left:clamp(4px,var(--accuracy),calc(100% - 4px)); width:0; }
 .sv-meter-pin {
-  position:absolute; left:0; top:56%; width:17px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
-  background:radial-gradient(circle,#fff 0 22%,var(--ember) 52%,transparent 72%);
-  box-shadow:0 0 9px 4px color-mix(in srgb,var(--ember) 75%,transparent);
+  position:absolute; left:0; top:56%; width:34px; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--ember) 80%,transparent) 0,color-mix(in srgb,var(--ember) 30%,transparent) 42%,transparent 70%);
+}
+.sv-meter-pin::before {
+  content:""; position:absolute; inset:24%; background:radial-gradient(circle,#fff 0 28%,#fff1b8 55%,#ffc83d 100%);
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);
 }
 .sv-meter-ring { position:absolute; left:0; top:56%; width:27px; aspect-ratio:1; border:2px solid var(--flourish); border-radius:50%; opacity:0; }
 .sv-meter-sparks i {
@@ -402,6 +411,8 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
 .sv-meter.revealing .sv-meter-glow i { animation:svGlowSweep var(--meter-travel) var(--meter-delay) var(--meter-ease) both; }
 .sv-meter.revealing .sv-meter-track { animation:svWallShake .32s var(--meter-land) ease-out; }
 .sv-meter.revealing .sv-meter-marker { animation:svMeterSlide var(--meter-travel) var(--meter-delay) var(--meter-ease) both; }
+.sv-meter.revealing .sv-meter-pin::before { animation:svStarSpin var(--meter-travel) var(--meter-delay) var(--meter-ease) both; }
+.sv-meter.revealing .sv-meter-shine i { animation:svShineSweep .9s var(--meter-land) ease-in-out both; }
 .sv-meter.revealing .sv-meter-pin { animation:svMeterLand .38s var(--meter-land) ease-out both; }
 .sv-meter:not([data-zone="lost"]).revealing .sv-flag-safe { animation:svFlagRise .6s var(--pass-safe) ease-out both; }
 .sv-meter[data-zone="great"].revealing .sv-flag-great { animation:svFlagRise .6s var(--pass-great) ease-out both; }
@@ -420,6 +431,8 @@ button.sv-battle:focus-visible { outline:2px solid #37679f; outline-offset:2px; 
   80% { translate:0 1.5%; rotate:2deg; }
   100% { translate:0 0; rotate:0deg; filter:none; }
 }
+@keyframes svStarSpin { from{rotate:0deg} to{rotate:200deg} }
+@keyframes svShineSweep { from{translate:-100% 0} to{translate:100% 0} }
 @keyframes svGlowOn { from{opacity:0} to{opacity:1} }
 @keyframes svGlowOff { from{opacity:1} to{opacity:0} }
 @keyframes svGlowSweep { from{translate:-100% 0} to{translate:calc(var(--accuracy) - 100%) 0} }
