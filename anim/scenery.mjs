@@ -52,7 +52,7 @@ export const SETTINGS = {
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
-  desert: { backdrop: 'desert-dunes', movers: ['tumbleweed'], floaters: ['cloud-set-sunset'], floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
+  desert: { backdrop: 'desert-skyline', movers: ['tumbleweed'], floaters: ['cloud-set-sunset'], floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
   underwater: { movers: ['fish'], floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { movers: ['twinkle', 'comet', 'asteroid'], floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field' },
   enchanted: { sky: ['#c8badf', '#efe2f2'], layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' , tall: ['enchanted-tall-low', 'enchanted-tall-mid', 'enchanted-tall-high']},
@@ -156,7 +156,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
     ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, base - 260 * groundScale, width, 260 * groundScale); ctx.restore();
   }
   const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
-    'desert-dunes': .72, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75,
+    'desert-dunes': .72, 'desert-skyline': .95, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75,
     'volcano-ridge': .9, 'blossom-trees': .85, 'library-wall': .95, 'workshop-wall': .95, 'snow-aurora': .9 }[name] ?? .8;
   ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' && name !== 'snow-aurora' ? .45 : 1);
   if (dark && name === 'farm-hay') ctx.filter = 'brightness(55%)';
@@ -168,7 +168,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
+    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'desert-skyline': 190, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
       'volcano-ridge': 190, 'blossom-trees': 200, 'library-wall': 230, 'workshop-wall': 230, 'snow-aurora': 200 }[name] ?? 160;
     const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
     const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
