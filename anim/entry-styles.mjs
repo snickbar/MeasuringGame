@@ -113,7 +113,16 @@ const FILL = ['bounce', 'waddle', 'scoot', 'slide'];
 function hash(text) { let h = 0; for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0; return h; }
 
 // saved is the style the page already chose by hand, if any (its table). Returns one of ENTRY_KINDS.
-export function entryKindFor(object, saved) {
+// lean is true for an object that comes in lying down and swings up to stand: it cannot also spin or tip over, so
+// those two styles give way to ones that keep it flat.
+export function entryKindFor(object, saved, lean = false) {
+  const kind = pickKind(object, saved);
+  if (lean && kind === 'roll') return 'scoot';
+  if (lean && kind === 'tumble') return 'skid';
+  return kind;
+}
+
+function pickKind(object, saved) {
   const id = object?.id || '';
   const mm = Number(object?.mm) || 0;
   if (REPLACES[id]) return REPLACES[id];
@@ -122,4 +131,24 @@ export function entryKindFor(object, saved) {
   for (const [kind, re] of RULES) if (re.test(id)) return kind;
   if (mm >= STRUCTURE_MM) return 'slide';
   return FILL[hash(id) % FILL.length];
+}
+
+// ---- Landing effects: what puffs out when an object lands on the stack (only the first few landings get one) ----
+export const LANDING_EFFECTS = ['stars', 'dust', 'sparkle', 'confetti', 'splash', 'hearts'];
+
+const SHINY = /^(gold-bar|penny|quarter|poker-chip|whiskey-glass|wine-glass|wristwatch|light-bulb|key|trophy|diving-helmet|beaker|fishbowl|snowflake|ice-cube|marble|vinyl-record|dvd|handcuffs|tuba|trumpet|saxophone|flute|stethoscope)$/;
+const TREAT = /^(cupcake|donut|ice-cream-cone|pizza-slice|pizza-pie|cotton-candy|gummy-bear|chocolate-drop|cream-pie|pancakes|bagel|cherry|strawberry|jack-in-the-box|whoopee-cushion|clown-nose|fake-mustache|hot-dog|french-fry|soft-pretzel|chicken-nugget|sushi-piece|cheerio|dinner-roll|birthday-cake|party-hat|balloon)$/;
+const CUTE = /^(hamster|rabbit|panda|penguin|domestic-cat|corgi|dachshund|duck|rubber-duck|koala|sloth|capybara|pig|hedgehog|guinea-pig|otter|red-panda|puffin|owl|kangaroo|llama|sheep|goat|pony|meerkat|squirrel|ferret|raccoon|mouse|frog|ladybug|honeybee|songbird|piggy-bank|lawn-flamingo)$/;
+const WET = /^(water-drop|boba-tea|baby-bottle|teacup|soda-can|beer-bottle|wine-bottle|toothpaste|oyster|sand-dollar|crab|lobster)$/;
+const HEAVY = /^(anvil|bathtub|couch|refrigerator|queen-size-bed|grand-piano|gold-bar-stack|boulder|manhole-cover|car-tire|shipping-container|dumpster|vending-machine|barrel|cheese-wheel|bowling-ball)$/;
+
+export function landingEffectFor(object, kind) {
+  const id = object?.id || '';
+  const mm = Number(object?.mm) || 0;
+  if (SHINY.test(id)) return 'sparkle';
+  if (TREAT.test(id)) return 'confetti';
+  if (kind === 'swim' || WET.test(id)) return 'splash';
+  if (CUTE.test(id)) return 'hearts';
+  if (HEAVY.test(id) || mm >= 1500 && !['walk', 'flap'].includes(kind)) return 'dust';
+  return 'stars';
 }
