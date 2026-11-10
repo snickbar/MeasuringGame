@@ -37,6 +37,9 @@ export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'gra
 // A scene flagged night:true is always night; night:'dark' is night only when the app is in dark mode.
 export const isNight = (config, dark) => config.night === 'dark' ? !!dark : !!config.night;
 
+// Rooms, caves and the sea have no open sky, so they never get stars.
+const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
+
 export const SETTINGS = {
   grass: { clouds: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
@@ -76,7 +79,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -305,6 +308,12 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     ctx.globalAlpha = (config.texture === 'star-field' ? (isNight(config, dark) ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images[config.texture], x, y, tile, tile);
   }
+  // Night sky: stars behind everything else in every outdoor scene (space and the old city sky already have their own).
+  if (pass !== 'foreground' && images['star-field'] && config.texture !== 'star-field' && !NO_STARS.has(kit.id) && (dark || config.night === true)) {
+    const tile = 300, offsetY = ((shiftY * .06) % tile + tile) % tile, offsetX = ((shiftX * .04) % tile + tile) % tile;
+    ctx.globalAlpha = .7;
+    for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images['star-field'], x, y, tile, tile);
+  }
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
   drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
@@ -314,9 +323,9 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
-    const size = wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 110 : name === 'snowflakes' ? 170 : 140;
+    const size = name === 'nebula' ? Math.min(460, width * 1.15) : wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 110 : name === 'snowflakes' ? 170 : 140;
     const aspect = image.naturalHeight / image.naturalWidth;
-    ctx.globalAlpha = (name === 'mist' ? .45 : name === 'enchanted-mist' ? .38 : wisp ? .12 :
+    ctx.globalAlpha = (name === 'mist' ? .45 : name === 'enchanted-mist' ? .38 : name === 'nebula' ? .6 : wisp ? .12 :
       name === 'bubbles' ? .72 : name === 'snowflakes' ? 1 : .22) * (dark ? .8 : 1);
     const span = height + size * aspect + 60;
     const copies = name === 'snowflakes' ? 5 : name === 'bubbles' ? 4 : 3;
