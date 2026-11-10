@@ -22,7 +22,7 @@
 // module loads. Native loads have no query string and retain bundled paths.
 const moduleRetry = new URL(import.meta.url).search;
 const [{ ORIENT }, { landingStyleFor, landingPose }, { landingSurfaceFor, drawLandingEffect },
-  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor }, { FLOOR_DATA }, { entryPose, entryKindFor, landingEffectFor }, { drawStackEffect, drawSettleEffect }] = await Promise.all([
+  { loadScenery, drawSceneryLayers, drawSceneryFloor, groundScaleFor, isNight }, { FLOOR_DATA }, { entryPose, entryKindFor, landingEffectFor }, { drawStackEffect, drawSettleEffect }] = await Promise.all([
   import('./orient-data.js' + moduleRetry), import('./reveal-style.mjs' + moduleRetry),
   import('./landing-effects.mjs' + moduleRetry), import('./scenery.mjs' + moduleRetry),
   import('./scenery-data.mjs' + moduleRetry), import('./entry-styles.mjs' + moduleRetry),
@@ -720,11 +720,11 @@ export function createStackAnimation(container, options = {}) {
     const bigKind = motionFor(target, !flipFacing, bigLean);
     const smKind = motionFor(unit, flipFacing, smLean);
     const dark = !!theme.dark;
-    const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
-    const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
-    const groundCol = kit.config.night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
+    const night = isNight(kit.config, dark), earthyFloor = scenery === 'forest' || scenery === 'farm' || night;
+    const skyColors = night ? (kit.config.nightSky || kit.config.sky) : (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const groundCol = night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
     const { cloudAlpha } = theme;
-    const guide = scenery === 'space' || kit.config.night ? '#adafd4' : theme.guide;
+    const guide = scenery === 'space' || night ? '#adafd4' : theme.guide;
 
     // ---- Final view: the big object at most H_MAX tall, the stack beside it ----
     const W = container.clientWidth || 360;
@@ -976,7 +976,7 @@ export function createStackAnimation(container, options = {}) {
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
-        ctx.globalAlpha = kit.config.night ? cloudAlpha * .28 : cloudAlpha;
+        ctx.globalAlpha = isNight(kit.config, dark) ? cloudAlpha * .28 : cloudAlpha;
         for (const cl of CLOUDS) {
           const raw = cl.y * stageH + (sy0 - floorY) * 0.18;
           const cy = ((raw % span) + span) % span - 80;
@@ -1007,7 +1007,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX, dark,
       });
 
       // The dashed line at the big object's height.
@@ -1256,9 +1256,9 @@ export function createStackAnimation(container, options = {}) {
     const bigKind = motionFor(big, !flipFacing, firstIsBig ? false : leanFor(big, !flipFacing)),
       smKind = motionFor(small, flipFacing, firstIsBig ? leanFor(small, flipFacing) : false);
     const dark = !!theme.dark, scenery = kit.id;
-    const earthyFloor = scenery === 'forest' || scenery === 'farm' || kit.config.night;
-    const skyColors = kit.config.night || (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
-    const groundCol = kit.config.night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
+    const night = isNight(kit.config, dark), earthyFloor = scenery === 'forest' || scenery === 'farm' || night;
+    const skyColors = night ? (kit.config.nightSky || kit.config.sky) : (!dark && kit.config.sky) ? kit.config.sky : [theme.skyTop, theme.skyBottom];
+    const groundCol = night ? '#51576b' : kit.config.floor && !dark ? FLOOR_DATA[kit.config.floor].color : theme.ground;
     const { cloudAlpha } = theme;
     const W = container.clientWidth || 360;
 
@@ -1366,7 +1366,7 @@ export function createStackAnimation(container, options = {}) {
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: 0, shiftX: -pan * 0.3,
         dark, time: t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'background' });
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
-        ctx.globalAlpha = kit.config.night ? cloudAlpha * .28 : cloudAlpha;
+        ctx.globalAlpha = isNight(kit.config, dark) ? cloudAlpha * .28 : cloudAlpha;
         const span = stageH + 160;
         for (const cl of CLOUDS) {
           const cy = ((cl.y * stageH % span) + span) % span - 80;
@@ -1389,7 +1389,7 @@ export function createStackAnimation(container, options = {}) {
         for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2,
+        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2, dark,
       });
 
       // The second object (behind the first in draw order only when it is the bigger one, so it never hides the pick).

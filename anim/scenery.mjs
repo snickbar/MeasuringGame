@@ -34,13 +34,16 @@ for (const [scene, words] of Object.entries(OBJECT_GROUPS)) for (const id of wor
 for (const [id, scene] of Object.entries(SCENE_MOVES)) SCENERY_BY_OBJECT[id] = scene;
 export function sceneryFor(object) { return SCENERY_BY_OBJECT[object.id] || 'grass'; }
 
+// A scene flagged night:true is always night; night:'dark' is night only when the app is in dark mode.
+export const isNight = (config, dark) => config.night === 'dark' ? !!dark : !!config.night;
+
 export const SETTINGS = {
   grass: { clouds: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], backdrop: 'beach-sunset' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'] },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'] },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid' },
-  city: { floor: 'pavement', sky: ['#111d36', '#354265'], night: true, clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
+  city: { floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], backdrop: 'forest-greenery', layers: ['mist'] },
   farm: { floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, backdrop: 'farm-hay' },
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' },
@@ -263,10 +266,10 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (pass !== 'foreground' && config.wallpaper) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
   }
-  if (pass !== 'foreground' && images[config.texture]) {
+  if (pass !== 'foreground' && images[config.texture] && !(config.texture === 'star-field' && config.night === 'dark' && !dark)) {
     const tile = 360, offsetY = ((shiftY * .12) % tile + tile) % tile;
     const offsetX = ((shiftX * .08) % tile + tile) % tile;
-    ctx.globalAlpha = (config.texture === 'star-field' ? (config.night ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
+    ctx.globalAlpha = (config.texture === 'star-field' ? (isNight(config, dark) ? .32 : .85) : .14) * (dark && kit.id !== 'space' ? .5 : 1);
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images[config.texture], x, y, tile, tile);
   }
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
@@ -293,7 +296,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   ctx.restore();
 }
 
-export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2 }) {
+export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
   const tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
@@ -304,7 +307,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const phase = shiftX + anchorX * (1 - groundScale);
   const offset = ((phase % tile) + tile) % tile - tile;
   ctx.save();
-  if (kit.config.night) ctx.filter = 'brightness(65%)';
+  if (isNight(kit.config, dark)) ctx.filter = 'brightness(65%)';
   for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
   ctx.restore();
 }
