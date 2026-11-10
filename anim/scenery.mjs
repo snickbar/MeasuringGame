@@ -237,7 +237,8 @@ function unitRandom(seed, i, k) {
   h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13;
   return (h >>> 0) / 4294967296;
 }
-function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, dark, time = 0, reduced, seed = kit.id }) {
+function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
+  const groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   for (const [setIndex, name] of (kit.config.floaters || []).entries()) {
     const image = kit.images[name], style = FLOATER_STYLE[name]; if (!image || !style) continue;
     const span = height * 2;
@@ -250,8 +251,12 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, dark, time = 0,
       const x = (((x0 + t * style.vx * (.6 + r(5)) - shiftX * style.par * .3) % (width + w)) + width + w) % (width + w) - w / 2;
       const yRaw = r(6) * span + shiftY * style.par + t * style.vy * (.6 + r(7)) + (setIndex * 53);
       const y = (((yRaw % span) + span) % span) - span * .25;
+      // Clouds belong in the sky: they fade out well before they get near the ground.
+      const clear = kit.config.tall ? (width + 100) * groundScale * .95 : 90 * groundScale;
+      const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (y + h)) / (60 * groundScale))) : 1;
+      if (!sky) continue;
       ctx.save();
-      ctx.globalAlpha = style.alpha * (dark ? .6 : 1);
+      ctx.globalAlpha = style.alpha * (dark ? .6 : 1) * sky;
       ctx.translate(x + w / 2, y + h / 2);
       if (r(8) > .5) ctx.scale(-1, 1);
       ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h);
@@ -275,7 +280,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
-  drawFloaters(ctx, kit, { width, height, shiftY, shiftX, dark, time, reduced });
+  drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
