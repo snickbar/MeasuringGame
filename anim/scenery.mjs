@@ -52,7 +52,7 @@ export const SETTINGS = {
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
-  desert: { movers: ['tumbleweed'], floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
+  desert: { backdrop: 'desert-dunes', movers: ['tumbleweed'], floaters: ['cloud-set-sunset'], floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
   underwater: { movers: ['fish'], floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field', layers: ['nebula'] },
   enchanted: { sky: ['#c8badf', '#efe2f2'], layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' , tall: ['enchanted-tall-low', 'enchanted-tall-mid', 'enchanted-tall-high']},
