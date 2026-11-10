@@ -307,13 +307,13 @@ function drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, tim
   const t = reduced ? 0 : time, span = height * 2.4, groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY;
   const yOf = (r, par) => ((((r * span + shiftY * par) % span) + span) % span) - span * .3;
   if (kind && !dark) {
-    const groups = 4;
+    const groups = 2;
     for (let g = 0; g < groups; g++) {
       const r = j => unitRandom(`${seed}birds`, g, j);
-      const dir = r(1) > .5 ? 1 : -1, speed = (16 + 22 * r(2)) * groundScale, n = 3 + Math.floor(r(3) * 3);
+      const dir = r(1) > .5 ? 1 : -1, speed = (16 + 22 * r(2)) * groundScale, n = 2 + Math.floor(r(3) * 2);
       const gy = yOf(r(4) * .65, .3), cycle = width + 240 * groundScale;
       const gx = ((((r(5) * cycle + dir * t * speed - shiftX * .1) % cycle) + cycle) % cycle) - 120 * groundScale;
-      const sky = Math.max(0, Math.min(1, (groundTop - 140 * groundScale - gy) / (60 * groundScale)));
+      const sky = Math.max(0, Math.min(1, (groundTop - 340 * groundScale - gy) / (90 * groundScale)));
       if (!sky) continue;
       ctx.save(); ctx.globalAlpha = .75 * sky; ctx.strokeStyle = '#4f5a70'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       for (let b = 0; b < n; b++) {
