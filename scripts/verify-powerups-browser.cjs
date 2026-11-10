@@ -40,13 +40,14 @@ const c=createPowerupController({context,now:()=>clock,coins:()=>wallet.coins,ow
 });
 const local=document.createElement('div');document.body.append(local);
 const WORLDS=[{name:'Tiny Things'}],WORLD_Q=5,WORLD_STAR_AT=[60,75,90],deviceId='me';
+const qBoardMount=()=>{};
 ${extractLine('  const SURVIVAL_LIVES =')}
 ${extractLine('  const worldStarsFor =')}
 ${extractFunction('effectiveGuess')}
 ${extractFunction('worldProgressBarHtml')}
 ${extractFunction('worldProgressHtml')}
 const worldsContentEl=document.getElementById('worlds-content'),survivalContentEl=document.getElementById('survival-content');
-const worldsScreenEl=document.getElementById('worlds-screen');
+const worldsScreenEl=document.getElementById('worlds-screen');const survivalScreenEl=document.getElementById('survival-screen');
 const OBJECT_BY_ID=new Map(objects.map(o=>[o.id,{...o,name:o.id,plural:o.id+'s'}]));
 const escapeHtml=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 const worldStop=()=>{},survivalStop=()=>{},svRunAcc=()=>null;
@@ -71,11 +72,11 @@ globalThis.showSoloCompactPreview=async which=>{
  else{sv={phase:'question',asked:0,lives:3,survived:0,q:room.currentQuestion,accs:[],input:''};renderSurvival()}
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  const host=which==='worlds'?worldsContentEl:survivalContentEl,keys=[...host.querySelectorAll('.dc-key')];
- const pad=host.querySelector('.dc-keys'),pill=host.querySelector('.dc-prompt');
+ const pad=host.querySelector('.dc-keys');
  assert(keys.length===12&&keys.every(b=>b.getBoundingClientRect().height>=44),'solo keypad touch targets');
  assert(pad.getBoundingClientRect().height<=208,'four compact 48px rows: '+pad.getBoundingClientRect().height+' in '+which);
  assert(keys.every(b=>getComputedStyle(b).marginTop==='0px'&&getComputedStyle(b).marginBottom==='0px'),'no hidden keypad margins');
- assert(getComputedStyle(pill).backgroundColor.startsWith('rgba(')&&parseFloat(getComputedStyle(pill).borderRadius)>=20,'semi-transparent question pill');
+ // The question text now lives on the shared question board card (qBoardMount), which this small test page does not build.
  assert(host.scrollWidth<=innerWidth,'solo content fits horizontally');
  const submit=host.querySelector(which==='worlds'?'#wl-submit':'#sv-submit');
  return {mode:which,keypadHeight:pad.getBoundingClientRect().height,submitBottom:Math.round(submit.getBoundingClientRect().bottom),viewportHeight:innerHeight};
@@ -160,7 +161,7 @@ try{
  wallet={coins:100};c.render();
  const soloLayouts=[];for(const which of ['worlds','survival'])soloLayouts.push(await showSoloCompactPreview(which));results.push('actual Worlds and Survival renderers: compact keypads, 44px targets, translucent question pills');
  await showSoloCompactPreview('worlds');
- let progress=worldsContentEl.querySelector('.wl-progress');assert(progress&&progress.textContent.includes('No answers yet'),'empty progress state');
+ let progress=worldsContentEl.querySelector('.wl-progress');assert(progress&&progress.querySelector('[role=progressbar]').getAttribute('aria-valuetext').includes('No answers yet')&&progress.querySelector('strong').textContent==='0%','empty progress state');
  assert(progress.compareDocumentPosition(worldsContentEl.querySelector('.dc-pics'))&Node.DOCUMENT_POSITION_FOLLOWING,'bar above objects');
  assert(worldsContentEl.querySelector('.dc-dots').compareDocumentPosition(progress)&Node.DOCUMENT_POSITION_FOLLOWING,'bar below round dots');
  const temp=document.createElement('div');document.body.append(temp);

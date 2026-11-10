@@ -273,7 +273,7 @@ server.listen(0,'127.0.0.1',()=>{
    await evaluate(`window.__monkeyRoundPreview(${accuracy})`);
    const round=await evaluate(`(async () => {
      const scene=document.querySelector('#summary-list .tw-space'), flight=scene.querySelector('.tw-space-flight');
-     const initial=scene.classList.contains('is-reacting') || !scene.querySelector('.tw-space-base').src.endsWith('-calm.png');
+     const initial=scene.classList.contains('is-reacting') || !scene.querySelector('.tw-space-base').src.endsWith('-calm.webp');
      const base=scene.querySelector('.tw-space-base'), pose=scene.querySelector('.tw-space-reaction');
      await Promise.all([...scene.querySelectorAll('img')].map(img=>img.decode()));
      const until=performance.now()+2000;
@@ -284,12 +284,12 @@ server.listen(0,'127.0.0.1',()=>{
      const rect=scene.getBoundingClientRect(), next=document.getElementById('next-round-btn').getBoundingClientRect();
      const y=new DOMMatrix(getComputedStyle(flight).transform).m42;
      return {mood:scene.dataset.mood, initial, started:scene.classList.contains('is-reacting'), y,
-       pose:pose?.src.split('-').at(-1) || 'calm.png', opacity:+getComputedStyle(pose||base).opacity,
+       pose:pose?.src.split('-').at(-1) || 'calm.webp', opacity:+getComputedStyle(pose||base).opacity,
        twinkle:window.__checkSpaceStars(scene,25),
        fits:rect.left>=0&&rect.right<=innerWidth&&rect.height>=100&&rect.bottom<=next.top+1&&next.bottom<=innerHeight,
        bounds:[rect.left,rect.right,rect.top,rect.bottom,next.top,next.bottom,innerWidth,innerHeight]};
    })()`);
-   const expected=mood==='up'?'happy.png':mood==='down'?'sad.png':'calm.png';
+   const expected=mood==='up'?'happy.webp':mood==='down'?'sad.webp':'calm.webp';
    if(width===390&&mood==='up'){
      const shot=await call('Page.captureScreenshot',{format:'png'},sessionId);
      fs.writeFileSync(path.join(previewDir,'teamworlds-space-round-390.png'),Buffer.from(shot.data,'base64'));
@@ -325,7 +325,7 @@ server.listen(0,'127.0.0.1',()=>{
        discoveryClass:discoveries?.className};
    })()`);
    if(monkeys.startsEarly||!monkeys.reacting||monkeys.mood!==mood||monkeys.score!==accuracy+'%'||
-      monkeys.earned!==(mood==='up'?3:0)||monkeys.pose!==(mood==='up'?'happy.png':'sad.png')||
+      monkeys.earned!==(mood==='up'?3:0)||monkeys.pose!==(mood==='up'?'happy.webp':'sad.webp')||
       monkeys.opacity!==1||!monkeys.twinkle||!monkeys.layout||!monkeys.fits)
      throw Error('Team Worlds final scene failed '+JSON.stringify({width,...monkeys}));
    if(width===390&&mood==='up'){
@@ -336,7 +336,7 @@ server.listen(0,'127.0.0.1',()=>{
  await evaluate("localStorage.setItem('mg_motion','reduce');document.documentElement.dataset.motion='reduce';window.__monkeyPreview(97)");
  if(!await evaluate(`(() => {
    const scene=document.querySelector('.tw-space--final');
-   return scene.querySelector('.tw-space-base').src.endsWith('-happy.png') &&
+   return scene.querySelector('.tw-space-base').src.endsWith('-happy.webp') &&
      +getComputedStyle(scene.querySelector('.tw-space-stars > i')).opacity>0 &&
      !scene.querySelector('.tw-space-reaction') && !scene.getAnimations({subtree:true}).length;
  })()`))throw Error('Team Worlds space scene ignored reduced motion');

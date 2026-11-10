@@ -26,7 +26,7 @@ globalThis.preview=async(kind='worlds')=>{
 try{
  const watched=new WeakMap(),drawImage=CanvasRenderingContext2D.prototype.drawImage;
  CanvasRenderingContext2D.prototype.drawImage=function(image,...args){
-  if(/(?:grass|cloud)\\.png$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image,alpha:this.globalAlpha,filter:this.filter});
+  if(/(?:grass|cloud)\\.webp$/.test(image.src||'')||(image.src||'').includes('/scenery/'))watched.get(this)?.push({image:image.src.split('/').pop(),args,source:image,alpha:this.globalAlpha,filter:this.filter});
   return drawImage.call(this,image,...args);
  };
  const gradients=new WeakMap(),radial=CanvasRenderingContext2D.prototype.createRadialGradient;

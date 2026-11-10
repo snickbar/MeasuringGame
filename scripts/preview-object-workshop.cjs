@@ -12,7 +12,7 @@ const files=new Set([
  '/anim/scenery-gallery.html','/anim/stadium-preview.html',
  '/anim/cutout-review.html','/anim/cutout-review.mjs','/anim/cutout-review-data.json'
 ]);
-const allowed=p=>files.has(p)||/^\/items\/[a-z0-9-]+\.webp$/.test(p)||/^\/anim\/scenery\/[a-z0-9-]+\.png$/.test(p)||/^\/art-source\/object-batch2-2026-11-06\/preview\/[a-z0-9-]+\.png$/.test(p);
+const allowed=p=>files.has(p)||/^\/items\/[a-z0-9-]+\.webp$/.test(p)||/^\/anim\/scenery\/[a-z0-9-]+\.(?:png|webp)$/.test(p)||/^\/art-source\/object-batch2-2026-11-06\/preview\/[a-z0-9-]+\.png$/.test(p);
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webp':'image/webp','.png':'image/png'};
 const server=http.createServer((req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Cache-Control','no-store');
