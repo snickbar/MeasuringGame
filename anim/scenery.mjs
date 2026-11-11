@@ -51,7 +51,7 @@ export const SETTINGS = {
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
-    parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.2, fill: '#17b5e9' } },
+    parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.4, fill: '#98b628' } },
       { img: 'beach-lighthouse', par: .12, lift: 238, single: { x: .2, w: .2, sy: 1 } },
       { img: 'beach-headland', par: .12, lift: 170, scatter: { imgs: ['beach-plant-2', 'beach-plant-3', 'beach-plant-4', 'beach-plant-6', 'beach-plant-8'], n: 9, rows: [455, 525], w: [.026, .045], seed: 'b' } },
       { img: 'beach-islands', par: .22, lift: 120 },
