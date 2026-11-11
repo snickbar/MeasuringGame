@@ -45,7 +45,7 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], floor: 'meadow-lane', floorTileWidth: 600, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'geese', fireflies: true,
     // Layered scenery, back to front. `par` is how much of the climb each layer follows (1 = like the ground); `lift` is how far its skyline sits above the ground at the start.
-    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250, props: [{ img: 'meadow-pines', x: .33, row: 900, w: .12 }] }, { img: 'meadow-hills', par: .28, lift: 175, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
+    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250, scatter: { imgs: ['meadow-pine-group'], n: 9, rows: [440, 690], w: [.05, .1], seed: 'm' } }, { img: 'meadow-hills', par: .28, lift: 175, scatter: { imgs: ['meadow-pine-group'], n: 12, rows: [380, 690], w: [.06, .12], seed: 'h' }, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
     pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
@@ -86,7 +86,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img)]), ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -337,9 +337,9 @@ function layerStats(image) {
   const w = image.naturalWidth, h = image.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d'); g.drawImage(image, 0, 0); const d = g.getImageData(0, 0, w, h).data, tops = [];
   for (let x = 0; x < w; x += 8) { let y = 0; while (y < h && d[(y * w + x) * 4 + 3] < 128) y++; tops.push(y); }
-  tops.sort((a, b) => a - b);
+  const colTops = tops.slice(); tops.sort((a, b) => a - b);
   let r = 0, gr = 0, b = 0; for (let x = 0; x < w; x += 4) { const i = ((h - 1) * w + x) * 4; r += d[i]; gr += d[i + 1]; b += d[i + 2]; }
-  const n = Math.ceil(w / 4), stats = { sky: tops[tops.length >> 1], fill: `rgb(${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)})` };
+  const n = Math.ceil(w / 4), stats = { colTops, sky: tops[tops.length >> 1], fill: `rgb(${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)})` };
   layerInfo.set(image, stats); return stats;
 }
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
@@ -353,6 +353,21 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
     for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
       ctx.drawImage(image, x, top, tw + 1, th);
+      if (layer.scatter) { // loose trees (no ground of their own) planted all over this layer, bottoms resting on the hill body
+        const sc = layer.scatter, list = sc.imgs.map(n => kit.images[n]).filter(Boolean), spots = [];
+        for (let i = 0; i < sc.n; i++) {
+          const q = j => unitRandom(`${sc.seed}${layer.img}`, i, j);
+          const fx = ((i * .618034 + q(2) * .25) % 1 + 1) % 1, edge = st.colTops[Math.min(st.colTops.length - 1, Math.floor(fx * st.colTops.length))] + 14; // never above the hill's own skyline
+          const row = Math.max(edge, sc.rows[0] + (sc.rows[1] - sc.rows[0]) * q(1)), depth = Math.min(1, Math.max(0, (row - sc.rows[0]) / (sc.rows[1] - sc.rows[0])));
+          spots.push({ fx, row, w: (sc.w[0] + (sc.w[1] - sc.w[0]) * depth) * (.85 + .3 * q(3)), flip: q(4) > .5, pic: list[Math.floor(q(5) * list.length)] });
+        }
+        spots.sort((a, b) => a.row - b.row);
+        for (const t of spots) {
+          if (!t.pic) continue;
+          const pw = t.w * tw, ph = pw * t.pic.naturalHeight / t.pic.naturalWidth, cx = x + t.fx * tw, cy = top + t.row * k;
+          ctx.save(); ctx.translate(cx, cy - ph / 2); if (t.flip) ctx.scale(-1, 1); ctx.drawImage(t.pic, -pw / 2, -ph / 2, pw, ph); ctx.restore();
+        }
+      }
       for (const q of layer.props || []) { // things on a far hill: hidden behind the nearer layer at first, revealed as it slides down
         const pic = kit.images[q.img]; if (!pic) continue;
         const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth;
