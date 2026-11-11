@@ -744,9 +744,9 @@ function drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dar
   const gs = groundScale, t = reduced ? 0 : time, groundTop = (floorY ?? height - 40) - 4 * gs + shiftY;
   for (const p0 of kit.config.pieces || []) {
     const image = kit.images[p0.img]; if (!image) continue;
-    const p = { ...p0, cell: p0.cell * .5, w: p0.w * 1.45 }; // bigger and twice as frequent, so flyers are actually seen
+    const p = p0;
     for (const cellK of worldCells(groundTop, height, gs, p.cell)) {
-      const r = j => unitRandom(`${seed}${p.img}`, cellK, j); if (r(0) > Math.min(1, p.prob + .15)) continue;
+      const r = j => unitRandom(`${seed}${p.img}`, cellK, j); if (r(0) > p.prob) continue;
       const dir = r(1) > .5 ? 1 : -1, margin = p.w * gs * 1.5, c = width + margin * 2;
       const yWorld = cellK * p.cell + (.15 + .7 * r(3)) * p.cell, vis = Math.max(0, Math.min(1, (yWorld - p.minH) / 160)); if (vis < .01) continue;
       const x = ((((r(2) * c + dir * t * p.speed * gs - shiftX * .05) % c) + c) % c) - margin;
