@@ -4,6 +4,10 @@ export const FLOOR_DATA = {
     "surface": 0.5732044198895028,
     "color": "#ad7c60"
   },
+  "boardwalk-floor": {
+    "surface": 0.718,
+    "color": "#642202"
+  },
   "ts-street": {
     "surface": 0.66,
     "color": "#424155"

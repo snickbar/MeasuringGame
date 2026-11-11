@@ -1,5 +1,9 @@
 // Objects that moved to the newer scenes (sorted by what each object is). Applied on top of OBJECT_GROUPS in scenery.mjs.
 export const SCENE_MOVES = {
+  "carousel": "boardwalk",
+  "cotton-candy": "boardwalk",
+  "roller-coaster": "boardwalk",
+  "water-slide": "boardwalk",
   "accordion": "library",
   "acoustic-guitar": "library",
   "airliner": "rooftop",
