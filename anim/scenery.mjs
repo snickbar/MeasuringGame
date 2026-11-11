@@ -45,7 +45,8 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], floor: 'meadow-lane', floorTileWidth: 600, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'geese', fireflies: true,
     // Layered scenery, back to front. `par` is how much of the climb each layer follows (1 = like the ground); `lift` is how far its skyline sits above the ground at the start.
-    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250 }, { img: 'meadow-hills', par: .28, lift: 175 }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 } }, { img: 'meadow-near', par: .78, lift: 42 }],
+    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250, props: [{ img: 'meadow-pines', x: .33, row: 900, w: .12 }] }, { img: 'meadow-hills', par: .28, lift: 175, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
+    pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   resort: { floor: 'resort-sand', floorTileWidth: 640, backdrop: 'resort-sea', sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark', skyPieces: [{ img: 'resort-sun', y: 2300, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 2300, x: .72, w: 120, night: true }, { img: 'resort-rainbow', y: 9500, x: .5, wFrac: 3.3, day: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
@@ -85,7 +86,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => l.spin ? [l.img, l.spin.img] : [l.img]), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img)]), ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -352,6 +353,11 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
     for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
       ctx.drawImage(image, x, top, tw + 1, th);
+      for (const q of layer.props || []) { // things on a far hill: hidden behind the nearer layer at first, revealed as it slides down
+        const pic = kit.images[q.img]; if (!pic) continue;
+        const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth;
+        ctx.drawImage(pic, x + q.x * tw - pw / 2, top + q.row * k - ph, pw, ph);
+      }
       const sp = layer.spin, blades = sp && kit.images[sp.img];
       if (blades) { // a turning piece (windmill blades) sitting on this layer
         const px = x + sp.x * k, py = top + sp.y * k, size = sp.size * k;
@@ -527,6 +533,25 @@ function worldCells(groundTop, height, gs, cell) {
   for (let k = lo; k <= hi; k++) out.push(k);
   return out;
 }
+// Drifting art pieces (balloon, kite): placed per slice of the climb so they never repeat in the same spot,
+// each drifting one way at its own pace, bobbing and swaying a little.
+function drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
+  const gs = groundScale, t = reduced ? 0 : time, groundTop = (floorY ?? height - 40) - 4 * gs + shiftY;
+  for (const p of kit.config.pieces || []) {
+    const image = kit.images[p.img]; if (!image) continue;
+    for (const cellK of worldCells(groundTop, height, gs, p.cell)) {
+      const r = j => unitRandom(`${seed}${p.img}`, cellK, j); if (r(0) > p.prob) continue;
+      const dir = r(1) > .5 ? 1 : -1, margin = p.w * gs * 1.5, c = width + margin * 2;
+      const yWorld = cellK * p.cell + (.15 + .7 * r(3)) * p.cell, vis = Math.max(0, Math.min(1, (yWorld - p.minH) / 160)); if (vis < .01) continue;
+      const x = ((((r(2) * c + dir * t * p.speed * gs - shiftX * .05) % c) + c) % c) - margin;
+      const y = groundTop - yWorld * gs + Math.sin(t * .5 + r(4) * 6.28) * p.bob * gs, w = p.w * gs, h = w * image.naturalHeight / image.naturalWidth;
+      if (y + h < 0 || y - h > height) continue;
+      ctx.save(); ctx.globalAlpha = vis * (dark ? .7 : 1); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.3 + r(5) * 6.28) * p.sway);
+      ctx.drawImage(image, -w / 2, -h / 2, w, h); ctx.restore();
+    }
+  }
+}
+
 // Other moving life, drawn in code. Each scene lists its own `movers`, so no two scenes share the same traffic.
 function drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
   const kinds = kit.config.movers; if (!kinds) return;
@@ -670,6 +695,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
   for (const [index, name] of (config.layers || []).entries()) {
