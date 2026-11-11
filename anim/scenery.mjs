@@ -77,11 +77,11 @@ export const SETTINGS = {
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
-  city: { floor: 'ts-street', floorTileWidth: 640, sky: ['#1b2557', '#4a5ba3'], texture: 'star-field',
+  city: { floor: 'ts-street', floorTileWidth: 640, floorDrifters: [{ img: 'ts-cab', lane: .52, w: .1, speed: 48, start: .2, bob: .3 }, { img: 'ts-bus', lane: .52, w: .13, speed: 30, start: .7 }, { img: 'ts-pedicab', lane: .52, w: .085, speed: 17, start: .45, bob: .4 }], sky: ['#1b2557', '#4a5ba3'], texture: 'star-field',
     parallax: [{ img: 'ts-farthest', par: .09, lift: 400, scale: .8, beams: [{ x: .18, swing: .55, speed: .45, rgb: '255,250,225' }, { x: .5, swing: .5, speed: .6, rgb: '190,235,255', len: 620 }, { x: .84, swing: .55, speed: .38, rgb: '255,215,240' }], props: [{ img: 'ts-ball', x: .55, row: 2200, w: .2 }] },
       { img: 'ts-far', par: .16, lift: 295, glow: ['ts-far-glow0', 'ts-far-glow1'], props: [{ img: 'ts-flatiron', x: .56, row: 700, w: .12 }] },
       { img: 'ts-mid', par: .34, lift: 262, glow: ['ts-mid-glow0', 'ts-mid-glow1'], props: [{ img: 'ts-theater', x: .3, row: 700, w: .22 }, { img: 'ts-stairs', x: .78, row: 700, w: .2 }] },
-      { img: 'ts-near', par: .6, lift: 220, glow: ['ts-near-glow0', 'ts-near-glow1'], drifters: [{ img: 'ts-cab', x: .2, row: 688, w: .1, speed: 48, bob: .3 }, { img: 'ts-bus', x: .62, row: 688, w: .13, speed: 30 }, { img: 'ts-pedicab', x: .9, row: 688, w: .085, speed: 17, bob: .4 }] }],
+      { img: 'ts-near', par: .6, lift: 220, glow: ['ts-near-glow0', 'ts-near-glow1'] }],
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
     skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
@@ -425,7 +425,8 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const pic = kit.images[q.img]; if (!pic) continue;
         const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth, travel = reduced ? 0 : time * (q.speed || 0) * gs * (kit.driftDir || 1);
         const bob = reduced ? 0 : Math.sin(time * (q.rate || 1.2) + q.x * 9) * (q.bob || 0) * gs, px = ((q.x * tw + travel) % tw + tw) % tw;
-        for (const dx of [px - tw, px]) ctx.drawImage(pic, x + dx - pw / 2, top + q.row * k - ph + bob, pw, ph);
+        const back = q.speed && (kit.driftDir || 1) < 0; // pictures face right, so flip them whenever the piece is travelling left
+        for (const dx of [px - tw, px]) { if (back) { ctx.save(); ctx.translate(x + dx, 0); ctx.scale(-1, 1); ctx.drawImage(pic, -pw / 2, top + q.row * k - ph + bob, pw, ph); ctx.restore(); } else ctx.drawImage(pic, x + dx - pw / 2, top + q.row * k - ph + bob, pw, ph); }
       }
       for (const q of layer.props || []) { // things on a far hill: hidden behind the nearer layer at first, revealed as it slides down
         const pic = kit.images[q.img]; if (!pic) continue;
@@ -813,13 +814,14 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const offset = ((phase % tile) + tile) % tile - tile;
   ctx.save();
   if (isNight(kit.config, dark) || (dark && INDOOR.has(kit.id))) ctx.filter = 'brightness(60%)';
-  for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches, clock = reducedMotion ? 0 : performance.now() / 1000;
-  for (const q of kit.config.floorDrifters || []) { // cars and bikes rolling along the street, wrapping around the screen (all drawn facing right)
+  for (const q of kit.config.floorDrifters || []) { // cars and bikes on the far street, just behind the sidewalk: they drive the way they face
     const pic = kit.images[q.img]; if (!pic) continue;
-    const vw = q.w * tile, vh = vw * pic.naturalHeight / pic.naturalWidth, span = width + vw * 2 + (q.gap || 0) * groundScale, x = ((clock * q.speed * groundScale + (q.start || 0) * span) % span + span) % span - vw;
-    ctx.drawImage(pic, x, top + q.lane * tileH - vh + Math.sin(clock * 9 + (q.start || 0) * 40) * (q.bob || 0) * groundScale, vw, vh);
+    const dir = kit.driftDir || 1, vw = q.w * tile, vh = vw * pic.naturalHeight / pic.naturalWidth, span = width + vw * 2 + (q.gap || 0) * groundScale;
+    const x = ((dir * clock * q.speed * groundScale + (q.start || 0) * span) % span + span) % span - vw, y = top + q.lane * tileH - vh + Math.sin(clock * 9 + (q.start || 0) * 40) * (q.bob || 0) * groundScale;
+    if (dir < 0) { ctx.save(); ctx.translate(x + vw, 0); ctx.scale(-1, 1); ctx.drawImage(pic, 0, y, vw, vh); ctx.restore(); } else ctx.drawImage(pic, x, y, vw, vh);
   }
+  for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
   const wash = kit.config.wash && kit.images[kit.config.wash.img];
   if (wash) { // a wave that rolls up the sand, then slides back out leaving a line of foam
     const t = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : performance.now() / 1000, ph = (Math.sin(t * .6) + 1) / 2, wh = tile * wash.naturalHeight / wash.naturalWidth * kit.config.wash.scale;
