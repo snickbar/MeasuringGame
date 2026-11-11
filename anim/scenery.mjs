@@ -70,7 +70,7 @@ export const SETTINGS = {
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
   city: { floor: 'ts-street', floorTileWidth: 640, sky: ['#1b2557', '#4a5ba3'], texture: 'star-field',
-    parallax: [{ img: 'ts-farthest', par: .09, lift: 400, scale: .8, props: [{ img: 'ts-ball', x: .55, row: 1086, w: .2 }] },
+    parallax: [{ img: 'ts-farthest', par: .09, lift: 400, scale: .8, props: [{ img: 'ts-ball', x: .55, row: 2200, w: .2 }] },
       { img: 'ts-far', par: .16, lift: 295, props: [{ img: 'ts-flatiron', x: .56, row: 700, w: .12 }] },
       { img: 'ts-mid', par: .34, lift: 262, props: [{ img: 'ts-theater', x: .3, row: 700, w: .22 }, { img: 'ts-stairs', x: .78, row: 700, w: .2 }] },
       { img: 'ts-near', par: .6, lift: 220 }],
