@@ -52,7 +52,8 @@ export const SETTINGS = {
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
     parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.2, fill: '#17b5e9' } },
-      { img: 'beach-headland', par: .12, lift: 170, props: [{ img: 'beach-lighthouse', x: .6, snap: 34, w: .11 }], scatter: { imgs: ['beach-plant-2', 'beach-plant-3', 'beach-plant-4', 'beach-plant-6', 'beach-plant-8'], n: 9, rows: [455, 525], w: [.026, .045], seed: 'b' } },
+      { img: 'beach-lighthouse', par: .12, lift: 222, single: { x: .2, w: .2, sy: 1 } },
+      { img: 'beach-headland', par: .12, lift: 170, scatter: { imgs: ['beach-plant-2', 'beach-plant-3', 'beach-plant-4', 'beach-plant-6', 'beach-plant-8'], n: 9, rows: [455, 525], w: [.026, .045], seed: 'b' } },
       { img: 'beach-islands', par: .22, lift: 120 },
       { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .2, row: 535, w: .27, foam: 'beach-wave-foam' }], drifters: [{ img: 'beach-boat', x: .2, row: 470, w: .06, speed: 5, bob: 2 }, { img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
       { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .7, row: 508, w: .27 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
@@ -380,6 +381,12 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           ctx.save(); ctx.translate(cx, cy - ph / 2); if (t.flip) ctx.scale(-1, 1); ctx.drawImage(t.pic, -pw / 2, -ph / 2, pw, ph); ctx.restore();
         }
       }
+      for (const q of layer.drifters || []) { // boats and waves sliding along this layer, wrapping around its width
+        const pic = kit.images[q.img]; if (!pic) continue;
+        const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth, travel = reduced ? 0 : time * (q.speed || 0) * gs * (kit.driftDir || 1);
+        const bob = reduced ? 0 : Math.sin(time * (q.rate || 1.2) + q.x * 9) * (q.bob || 0) * gs, px = ((q.x * tw + travel) % tw + tw) % tw;
+        for (const dx of [px - tw, px]) ctx.drawImage(pic, x + dx - pw / 2, top + q.row * k - ph + bob, pw, ph);
+      }
       for (const q of layer.props || []) { // things on a far hill: hidden behind the nearer layer at first, revealed as it slides down
         const pic = kit.images[q.img]; if (!pic) continue;
         const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth;
@@ -387,12 +394,6 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const ring = q.foam && kit.images[q.foam]; // a ripple of foam around a piece standing in the water
         if (ring) { const fw = pw * 1.3, fh = fw * ring.naturalHeight / ring.naturalWidth; ctx.globalAlpha = .9; ctx.drawImage(ring, x + q.x * tw - fw / 2, top + row * k - fh * .75, fw, fh); ctx.globalAlpha = 1; }
         ctx.drawImage(pic, x + q.x * tw - pw / 2, top + row * k - ph, pw, ph);
-      }
-      for (const q of layer.drifters || []) { // boats and waves sliding along this layer, wrapping around its width
-        const pic = kit.images[q.img]; if (!pic) continue;
-        const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth, travel = reduced ? 0 : time * (q.speed || 0) * gs * (kit.driftDir || 1);
-        const bob = reduced ? 0 : Math.sin(time * (q.rate || 1.2) + q.x * 9) * (q.bob || 0) * gs, px = ((q.x * tw + travel) % tw + tw) % tw;
-        for (const dx of [px - tw, px]) ctx.drawImage(pic, x + dx - pw / 2, top + q.row * k - ph + bob, pw, ph);
       }
       const sp = layer.spin, blades = sp && kit.images[sp.img];
       if (blades) { // a turning piece (windmill blades) sitting on this layer
