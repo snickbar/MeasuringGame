@@ -48,12 +48,13 @@ export const SETTINGS = {
     parallax: [{ img: 'meadow-peak', par: .07, lift: 350, single: { x: .38, w: 1.6, sy: 1.25 } }, { img: 'meadow-mountain', par: .12, lift: 250, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-8'], n: 12, rows: [440, 690], w: [.028, .055], seed: 'm' } }, { img: 'meadow-hills', par: .28, lift: 175, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-4', 'meadow-tree-5', 'meadow-tree-6', 'meadow-tree-7', 'meadow-tree-8', 'meadow-tree-9'].filter((_, i) => i !== 7), n: 16, rows: [380, 690], w: [.05, .095], seed: 'h' }, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
     pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
-  town: { movers: ['plane'], floor: 'town-street', floorTileWidth: 640, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
+  town: { floor: 'town-street', floorTileWidth: 640, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
     parallax: [{ img: 'town-far', par: .09, lift: 215, scale: .62 },
       { img: 'town-hills', par: .16, lift: 255, props: [{ img: 'town-clock', x: .42, row: 690, w: .07 }], drifters: [{ img: 'town-train', x: .8, row: 694, w: .14, speed: 14, bob: 0 }] },
       { img: 'town-mid', par: .34, lift: 195, props: [{ img: 'town-hall', x: .66, row: 690, w: .2 }] },
       { img: 'town-near', par: .6, lift: 160 }],
-    pieces: [{ img: 'town-blimp', cell: 2200, prob: .7, w: 96, speed: 10, bob: 4, sway: .05, minH: 380 }, { img: 'town-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400 }],
+    pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'air-banner', cell: 2000, prob: .6, w: 124, speed: 18, bob: 3, sway: .02, minH: 460, face: 1 }, { img: 'air-prop', cell: 1700, prob: .55, w: 72, speed: 28, bob: 3, sway: .02, minH: 420, face: 1 }, { img: 'air-jet', cell: 3200, prob: .5, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 },
+      { img: 'town-blimp', cell: 2200, prob: .6, w: 96, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'town-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
@@ -590,7 +591,7 @@ function drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dar
       const x = ((((r(2) * c + dir * t * p.speed * gs - shiftX * .05) % c) + c) % c) - margin;
       const y = groundTop - yWorld * gs + Math.sin(t * .5 + r(4) * 6.28) * p.bob * gs, w = p.w * gs, h = w * image.naturalHeight / image.naturalWidth;
       if (y + h < 0 || y - h > height) continue;
-      ctx.save(); ctx.globalAlpha = vis * (dark ? .7 : 1); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.3 + r(5) * 6.28) * p.sway);
+      ctx.save(); ctx.globalAlpha = vis * (dark ? .7 : 1); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.3 + r(5) * 6.28) * p.sway); if (p.face && dir !== p.face) ctx.scale(-1, 1); // `face`: which way the picture points (1 = right), so it never flies backwards
       ctx.drawImage(image, -w / 2, -h / 2, w, h); ctx.restore();
     }
   }
