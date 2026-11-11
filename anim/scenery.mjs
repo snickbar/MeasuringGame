@@ -78,10 +78,10 @@ export const SETTINGS = {
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
   city: { floor: 'ts-street', floorTileWidth: 640, floorDrifters: [{ img: 'ts-cab', lane: .93, w: .2, speed: 70, start: .2, bob: .4 }, { img: 'ts-bus', lane: .9, w: .26, speed: 45, start: .7 }, { img: 'ts-pedicab', lane: .97, w: .17, speed: 22, start: .45, bob: .6 }], sky: ['#1b2557', '#4a5ba3'], texture: 'star-field',
-    parallax: [{ img: 'ts-farthest', par: .09, lift: 400, scale: .8, props: [{ img: 'ts-ball', x: .55, row: 2200, w: .2 }] },
-      { img: 'ts-far', par: .16, lift: 295, props: [{ img: 'ts-flatiron', x: .56, row: 700, w: .12 }] },
-      { img: 'ts-mid', par: .34, lift: 262, props: [{ img: 'ts-theater', x: .3, row: 700, w: .22 }, { img: 'ts-stairs', x: .78, row: 700, w: .2 }] },
-      { img: 'ts-near', par: .6, lift: 220 }],
+    parallax: [{ img: 'ts-farthest', par: .09, lift: 400, scale: .8, beams: [{ x: .18, swing: .55, speed: .45, rgb: '255,250,225' }, { x: .5, swing: .5, speed: .6, rgb: '190,235,255', len: 620 }, { x: .84, swing: .55, speed: .38, rgb: '255,215,240' }], props: [{ img: 'ts-ball', x: .55, row: 2200, w: .2 }] },
+      { img: 'ts-far', par: .16, lift: 295, glow: ['ts-far-glow0', 'ts-far-glow1'], props: [{ img: 'ts-flatiron', x: .56, row: 700, w: .12 }] },
+      { img: 'ts-mid', par: .34, lift: 262, glow: ['ts-mid-glow0', 'ts-mid-glow1'], props: [{ img: 'ts-theater', x: .3, row: 700, w: .22 }, { img: 'ts-stairs', x: .78, row: 700, w: .2 }] },
+      { img: 'ts-near', par: .6, lift: 220, glow: ['ts-near-glow0', 'ts-near-glow1'] }],
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
     skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
@@ -116,7 +116,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -388,8 +388,24 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     if (reach > height) continue;
     ctx.save(); if (dark) ctx.filter = 'brightness(58%)';
     ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
+    for (const [bi, b] of (layer.beams || []).entries()) { // searchlights sweeping the sky from behind this skyline
+      const px = width * b.x, py = top + st.sky * k + (b.drop || 30) * gs, len = (b.len || 560) * gs, ang = -Math.PI / 2 + (reduced ? 0 : Math.sin(time * (b.speed || .5) + bi * 2.1) * (b.swing || .5)) + (b.tilt || 0), spread = (b.spread || .042);
+      const grad = ctx.createLinearGradient(px, py, px + Math.cos(ang) * len, py + Math.sin(ang) * len);
+      grad.addColorStop(0, `rgba(${b.rgb || '255,250,225'},.5)`); grad.addColorStop(.7, `rgba(${b.rgb || '255,250,225'},.22)`); grad.addColorStop(1, `rgba(${b.rgb || '255,250,225'},0)`);
+      ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(ang - spread) * len, py + Math.sin(ang - spread) * len); ctx.lineTo(px + Math.cos(ang + spread) * len, py + Math.sin(ang + spread) * len); ctx.closePath(); ctx.fill();
+    }
     for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
       ctx.drawImage(image, x, top, tw + 1, th);
+      if (layer.glow && !reduced) { // neon signs that pulse and flicker: a copy of just the neon, added on top
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        layer.glow.forEach((gn, gi) => {
+          const gp = kit.images[gn]; if (!gp) return;
+          const ph = gi * 2.4 + (layer.par || 0) * 9, flick = Math.sin(time * 6.3 + ph * 3) > .94 || Math.sin(time * 2.1 + ph) > .985;
+          ctx.globalAlpha = flick ? 0 : .12 + .4 * (.5 + .5 * Math.sin(time * 1.9 + ph));
+          ctx.drawImage(gp, x, top, tw + 1, th);
+        });
+        ctx.restore();
+      }
       if (layer.scatter) { // loose trees (no ground of their own) planted all over this layer, bottoms resting on the hill body
         const sc = layer.scatter, list = sc.imgs.map(n => kit.images[n]).filter(Boolean), spots = [];
         for (let i = 0; i < sc.n; i++) {
