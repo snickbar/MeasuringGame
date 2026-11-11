@@ -49,11 +49,10 @@ export const SETTINGS = {
     pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   town: { movers: ['plane'], floor: 'town-street', floorTileWidth: 640, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
-    parallax: [{ img: 'town-far', par: .025, lift: 560, alpha: .6, shiftX: .5, haze: { solid: 40, fade: 320 } },
-      { img: 'town-far', par: .05, lift: 365, haze: { solid: 220, fade: 380 } },
-      { img: 'town-hills', par: .16, lift: 240, props: [{ img: 'town-clock', x: .42, row: 690, w: .07 }], drifters: [{ img: 'town-train', x: .8, row: 694, w: .14, speed: 14, bob: 0 }] },
-      { img: 'town-mid', par: .34, lift: 160, props: [{ img: 'town-hall', x: .66, row: 690, w: .2 }] },
-      { img: 'town-near', par: .6, lift: 90 }],
+    parallax: [{ img: 'town-far', par: .09, lift: 300, scale: .62 },
+      { img: 'town-hills', par: .16, lift: 255, props: [{ img: 'town-clock', x: .42, row: 690, w: .07 }], drifters: [{ img: 'town-train', x: .8, row: 694, w: .14, speed: 14, bob: 0 }] },
+      { img: 'town-mid', par: .34, lift: 195, props: [{ img: 'town-hall', x: .66, row: 690, w: .2 }] },
+      { img: 'town-near', par: .6, lift: 160 }],
     pieces: [{ img: 'town-blimp', cell: 2200, prob: .7, w: 96, speed: 10, bob: 4, sway: .05, minH: 380 }, { img: 'town-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
@@ -367,17 +366,12 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
-    const st = layerStats(image), tw = width * 1.8 * gs, k = tw / image.naturalWidth, th = image.naturalHeight * k;
+    const st = layerStats(image), tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
     const top = base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
     if (top > height) continue;
     ctx.save(); if (dark) ctx.filter = 'brightness(58%)';
-    if (layer.haze) { // the mass under a far skyline thins out into the sky instead of ending as a flat block
-      const len = (layer.haze.solid + layer.haze.fade) * gs, g = ctx.createLinearGradient(0, bottom, 0, bottom + len);
-      g.addColorStop(0, st.fill); g.addColorStop(layer.haze.solid / (layer.haze.solid + layer.haze.fade), st.fill); g.addColorStop(1, st.fill.replace('rgb(', 'rgba(').replace(')', ',0)'));
-      ctx.fillStyle = g; ctx.fillRect(0, bottom - 1, width, len + 1);
-    } else { ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2); }
-    if (layer.alpha != null) ctx.globalAlpha = layer.alpha;
-    for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw - tw + (layer.shiftX || 0) * tw; x < width; x += tw) {
+    ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
+    for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
       ctx.drawImage(image, x, top, tw + 1, th);
       if (layer.scatter) { // loose trees (no ground of their own) planted all over this layer, bottoms resting on the hill body
         const sc = layer.scatter, list = sc.imgs.map(n => kit.images[n]).filter(Boolean), spots = [];
