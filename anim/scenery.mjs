@@ -75,7 +75,7 @@ export const SETTINGS = {
       { img: 'ts-mid', par: .34, lift: 262, props: [{ img: 'ts-theater', x: .3, row: 700, w: .22 }, { img: 'ts-stairs', x: .78, row: 700, w: .2 }] },
       { img: 'ts-near', par: .6, lift: 220 }],
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
-    skyPieces: [{ img: 'resort-moon', y: 3100, x: .74, w: 120 }, { img: 'resort-moon', y: 21000, x: .3, w: 100 }] },
+    skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
   snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
