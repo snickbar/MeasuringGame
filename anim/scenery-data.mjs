@@ -4,6 +4,10 @@ export const FLOOR_DATA = {
     "surface": 0.5732044198895028,
     "color": "#ad7c60"
   },
+  "town-street": {
+    "surface": 0.66,
+    "color": "#46424c"
+  },
   "resort-sand": {
     "surface": 0.5759668508287292,
     "color": "#efc687"
