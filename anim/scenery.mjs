@@ -346,9 +346,9 @@ function panelPlan(seed, mids, count) {
 function drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale = 1, anchorX = width / 2, climbPx = 0, seed = kit.id }) {
   const cfg = kit.config.panels, gs = groundScale, base = kit.images[cfg.base], top = kit.images[cfg.top];
   if (!base || !top) return;
-  const groundTop = (floorY ?? height - 40) - 4 * gs + shiftY, hMin = 2 * (width + 60);
+  const groundTop = (floorY ?? height - 40) - 4 * gs + shiftY, hMin = 2 * (width + 8);
   const total = Math.max(climbPx > 0 ? climbPx : height * 3, hMin * 1.2);
-  let n = Math.max(2, Math.round(total / (2 * (width + 100)) + CEIL_FRAC)); // independent of the camera's terrain zoom, so panels never jump
+  let n = Math.max(2, Math.round(total / (2 * (width + 10)) + CEIL_FRAC)); // independent of the camera's terrain zoom, so panels never jump
   let h = total / (n - CEIL_FRAC);
   while (h < hMin && n > 2) { n--; h = total / (n - CEIL_FRAC); }
   h = Math.max(h, hMin); const w = h / 2;
@@ -360,7 +360,7 @@ function drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundSca
   for (let i = 0; i < n; i++) {
     const y = groundTop - (i + 1) * h; if (y + h < 0 || y > height) continue;
     const image = i === 0 ? base : i === n - 1 ? top : kit.images[cfg.mids[plan[i - 1]]]; if (!image) continue;
-    ctx.save(); ctx.translate(center, 0); if (i > 0 && i < n - 1 && seededFlip(seed, i)) ctx.scale(-1, 1);
+    ctx.save(); ctx.translate(center, 0); // no mirroring: the stripes are asymmetric, so flipping a panel would shift the pattern by one stripe
     ctx.drawImage(image, -w / 2, y, w, h + 1); ctx.restore();
   }
   ctx.restore();
