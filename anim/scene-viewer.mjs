@@ -20,6 +20,13 @@ export function buildSceneViewer({ loadAnim, objects }) {
   const note = el("p", "dbg-note", "Pick a scene and press Play. Leave the count on auto to use the real size ratio, or type a number of small objects to make the stack taller.");
   const buttons = el("div", "dbg-row");
   const mkBtn = (label, fn) => { const b = el("button", "dbg-btn", label); b.type = "button"; b.addEventListener("click", fn); buttons.appendChild(b); return b; };
+  // Pause and scrub: the reveal runs on this clock instead of the real one, so it can be frozen or dragged to any moment for screenshots.
+  const timeline = el("input", "dbg-input"); timeline.type = "range"; timeline.min = "0"; timeline.max = "20"; timeline.step = "0.01"; timeline.value = "0"; timeline.setAttribute("aria-label", "Timeline");
+  timeline.style.width = "100%";
+  const timeLabel = el("span", "dbg-label", "0.00 s");
+  let pos = 0, playing = true, lastReal = 0, running = false, curScene = null, startOpts = null, pauseBtn = null;
+  const clock = () => { const r = performance.now(); if (playing) pos += (r - lastReal) / 1000; lastReal = r; return pos * 1000; };
+  const setPaused = (p) => { playing = !p; lastReal = performance.now(); if (pauseBtn) pauseBtn.textContent = p ? "▶ Resume" : "⏸ Pause"; };
   let ids = [], mod = null, ctl = null, ctlLook = null, token = 0, tour = false;
 
   async function setup() {
@@ -49,7 +56,12 @@ export function buildSceneViewer({ loadAnim, objects }) {
       const sc = await ctl.prepare(unit, target, { hMax: 300, minStageH: 360 });
       if (my !== token) return;
       note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value || "auto"} · ${look.value}`;
-      ctl.start(sc, { onDone: () => { if (tour && my === token) setTimeout(() => nextScene(true), 1500); } });
+      curScene = sc; pos = 0; lastReal = performance.now(); setPaused(false);
+      timeline.max = String(sc.duration || 20); timeline.value = "0"; timeLabel.textContent = "0.00 s";
+      startOpts = { startAt: 0, now: clock,
+        onFrame: (t) => { running = true; if (document.activeElement !== timeline) timeline.value = String(t); timeLabel.textContent = t.toFixed(2) + " s"; },
+        onDone: () => { running = false; if (tour && my === token) setTimeout(() => nextScene(true), 1500); } };
+      running = true; ctl.start(sc, startOpts);
     } catch (e) { note.textContent = "That didn't play: " + String((e && e.message) || e).slice(0, 80); }
   }
   async function nextScene(auto) {
@@ -65,12 +77,17 @@ export function buildSceneViewer({ loadAnim, objects }) {
     if (tour) { scene.value = ids[0]; play(); } else token++;
   });
   mkBtn("▶ Play", () => { tour = false; tourBtn.textContent = "Play every scene"; play(); });
+  pauseBtn = mkBtn("⏸ Pause", () => setPaused(playing));
+  timeline.addEventListener("input", () => { // dragging the slider pauses and shows that moment
+    pos = +timeline.value; setPaused(true); timeLabel.textContent = pos.toFixed(2) + " s";
+    if (curScene && ctl && !running) { running = true; ctl.start(curScene, startOpts); }
+  });
   mkBtn("◀ Prev scene", () => { tour = false; prevScene(); });
   mkBtn("Next scene ▶", () => { tour = false; nextScene(false); });
   buttons.appendChild(tourBtn);
   [scene, look].forEach((s) => s.addEventListener("change", () => { tour = false; play(); }));
   setup();
   [field("Scene", scene), field("Small object", small), field("Big object", big), field("Count", count), field("Look", look)].forEach((f) => wrap.appendChild(f));
-  wrap.appendChild(buttons); wrap.appendChild(note); wrap.appendChild(stage);
+  wrap.appendChild(buttons); wrap.appendChild(field("Timeline", timeline)); wrap.appendChild(timeLabel); wrap.appendChild(note); wrap.appendChild(stage);
   return wrap;
 }

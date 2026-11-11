@@ -52,7 +52,7 @@ export const SETTINGS = {
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
     parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.2, fill: '#17b5e9' } },
-      { img: 'beach-lighthouse', par: .12, lift: 222, single: { x: .2, w: .2, sy: 1 } },
+      { img: 'beach-lighthouse', par: .12, lift: 238, single: { x: .2, w: .2, sy: 1 } },
       { img: 'beach-headland', par: .12, lift: 170, scatter: { imgs: ['beach-plant-2', 'beach-plant-3', 'beach-plant-4', 'beach-plant-6', 'beach-plant-8'], n: 9, rows: [455, 525], w: [.026, .045], seed: 'b' } },
       { img: 'beach-islands', par: .22, lift: 120 },
       { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .2, row: 535, w: .27, foam: 'beach-wave-foam' }], drifters: [{ img: 'beach-boat', x: .2, row: 470, w: .06, speed: 5, bob: 2 }, { img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
