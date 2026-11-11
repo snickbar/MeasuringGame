@@ -48,7 +48,7 @@ export const SETTINGS = {
     parallax: [{ img: 'meadow-peak', par: .07, lift: 350, single: { x: .38, w: 1.6, sy: 1.25 } }, { img: 'meadow-mountain', par: .12, lift: 250, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-8'], n: 12, rows: [440, 690], w: [.028, .055], seed: 'm' } }, { img: 'meadow-hills', par: .28, lift: 175, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-4', 'meadow-tree-5', 'meadow-tree-6', 'meadow-tree-7', 'meadow-tree-8', 'meadow-tree-9'].filter((_, i) => i !== 7), n: 16, rows: [380, 690], w: [.05, .095], seed: 'h' }, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
     pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
-  town: { floor: 'town-street', floorTileWidth: 640, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
+  town: { floor: 'town-street', floorTileWidth: 640, floorDrifters: [{ img: 'town-taxi', lane: .93, w: .2, speed: 65, start: .3, bob: .4 }, { img: 'town-dbus', lane: .9, w: .24, speed: 40, start: .8 }], sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
     parallax: [{ img: 'town-far', par: .09, lift: 215, scale: .62 },
       { img: 'town-hills', par: .16, lift: 255, props: [{ img: 'town-clock', x: .42, row: 690, w: .07 }], drifters: [{ img: 'town-train', x: .8, row: 694, w: .14, speed: 14, bob: 0 }] },
       { img: 'town-mid', par: .34, lift: 195, props: [{ img: 'town-hall', x: .66, row: 690, w: .2 }] },
@@ -77,7 +77,7 @@ export const SETTINGS = {
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
-  city: { floor: 'ts-street', floorTileWidth: 640, sky: ['#1b2557', '#4a5ba3'], texture: 'star-field',
+  city: { floor: 'ts-street', floorTileWidth: 640, floorDrifters: [{ img: 'ts-cab', lane: .93, w: .2, speed: 70, start: .2, bob: .4 }, { img: 'ts-bus', lane: .9, w: .26, speed: 45, start: .7 }, { img: 'ts-pedicab', lane: .97, w: .17, speed: 22, start: .45, bob: .6 }], sky: ['#1b2557', '#4a5ba3'], texture: 'star-field',
     parallax: [{ img: 'ts-farthest', par: .09, lift: 400, scale: .8, props: [{ img: 'ts-ball', x: .55, row: 2200, w: .2 }] },
       { img: 'ts-far', par: .16, lift: 295, props: [{ img: 'ts-flatiron', x: .56, row: 700, w: .12 }] },
       { img: 'ts-mid', par: .34, lift: 262, props: [{ img: 'ts-theater', x: .3, row: 700, w: .22 }, { img: 'ts-stairs', x: .78, row: 700, w: .2 }] },
@@ -116,7 +116,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -792,6 +792,12 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   ctx.save();
   if (isNight(kit.config, dark) || (dark && INDOOR.has(kit.id))) ctx.filter = 'brightness(60%)';
   for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches, clock = reducedMotion ? 0 : performance.now() / 1000;
+  for (const q of kit.config.floorDrifters || []) { // cars and bikes rolling along the street, wrapping around the screen (all drawn facing right)
+    const pic = kit.images[q.img]; if (!pic) continue;
+    const vw = q.w * tile, vh = vw * pic.naturalHeight / pic.naturalWidth, span = width + vw * 2 + (q.gap || 0) * groundScale, x = ((clock * q.speed * groundScale + (q.start || 0) * span) % span + span) % span - vw;
+    ctx.drawImage(pic, x, top + q.lane * tileH - vh + Math.sin(clock * 9 + (q.start || 0) * 40) * (q.bob || 0) * groundScale, vw, vh);
+  }
   const wash = kit.config.wash && kit.images[kit.config.wash.img];
   if (wash) { // a wave that rolls up the sand, then slides back out leaving a line of foam
     const t = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : performance.now() / 1000, ph = (Math.sin(t * .6) + 1) / 2, wh = tile * wash.naturalHeight / wash.naturalWidth * kit.config.wash.scale;
