@@ -437,7 +437,8 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const turner = q.spin && kit.images[q.spin.img]; // a part of this prop that turns (blades, a wheel, a clock hand), pivoting where the picture says
         if (turner) {
           const sz = q.spin.size * pw, cx = x + q.x * tw - pw / 2 + q.spin.fx * pw, cy = top + row * k - ph + q.spin.fy * ph;
-          ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (q.spin.speed || .5)); ctx.drawImage(turner, -sz / 2, -sz * turner.naturalHeight / turner.naturalWidth / 2, sz, sz * turner.naturalHeight / turner.naturalWidth); ctx.restore();
+          const sh = sz * turner.naturalHeight / turner.naturalWidth, spd = q.spin.speed || .5; // swing: rocks back and forth by that many radians (a pendulum, a hanging sign, kelp); otherwise it turns all the way round
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : q.spin.swing ? Math.sin(time * spd) * q.spin.swing : time * spd); ctx.drawImage(turner, -(q.spin.px ?? .5) * sz, -(q.spin.py ?? .5) * sh, sz, sh); ctx.restore();
         }
       }
       const sp = layer.spin, blades = sp && kit.images[sp.img];
