@@ -43,15 +43,15 @@ const INDOOR = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'])
 const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
 
 export const SETTINGS = {
-  grass: { movers: ['butterflies'], clouds: true, flyers: 'geese', fireflies: true },
+  grass: { movers: ['butterflies'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
-  city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
+  city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', floaters: ['cloud-set-day'], texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
-  farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
-  snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], clouds: true, layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
+  farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
+  snow: { floor: 'snow-floor', sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora' , tall: ['snow-tall-low', 'snow-tall-mid', 'snow-tall-high']},
   desert: { backdrop: 'desert-skyline', movers: ['tumbleweed'], floaters: ['cloud-set-sunset'], floor: 'desert-floor', sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], flyers: 'hawks' , tall: ['desert-tall-low', 'desert-tall-mid', 'desert-tall-high']},
   underwater: { movers: ['fish'], floor: 'seabed', sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', backdrop: 'underwater-seaweed', layers: ['bubbles'] },
   space: { movers: ['twinkle', 'comet', 'asteroid'], floor: 'moon-floor', sky: ['#242341', '#383453'], texture: 'star-field' },
@@ -232,11 +232,12 @@ function drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groun
 // Floating pieces: each variety set is five different silhouettes in five equal columns.
 // Every piece picks its own column, mirror, size and starting spot, so no two look alike.
 const FLOATER_STYLE = {
-  'cloud-set-day': { skip: [3], count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
-  'cloud-set-sunset': { skip: [0, 4], count: 4, size: [150, 250], alpha: .9, vx: 3, vy: 0, par: .25 },
-  'mist-set': { count: 3, size: [240, 340], alpha: .38, vx: 2, vy: 0, par: .6 },
-  'ember-set': { skip: [4], count: 11, size: [46, 84], alpha: .85, vx: 1.5, vy: -14, par: .5 },
-  'petal-leaf-set': { skip: [4], count: 7, size: [44, 78], alpha: .9, vx: 5, vy: 12, par: .5 },
+  // cell = typical gap between pieces on screen (px), prob = chance each slot holds one, size = min/max width
+  'cloud-set-day': { skip: [3], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
+  'cloud-set-sunset': { skip: [0, 4], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
+  'mist-set': { cell: 420, prob: .7, size: [200, 360], alpha: .38, vx: 2, vy: 0, par: .6 },
+  'ember-set': { skip: [4], cell: 110, prob: .85, size: [40, 90], alpha: .85, vx: 1.5, vy: -14, par: .5 },
+  'petal-leaf-set': { skip: [4], cell: 170, prob: .8, size: [36, 82], alpha: .9, vx: 5, vy: 12, par: .5 },
 };
 const columnBoundsCache = new WeakMap();
 function columnBounds(image, col, cols = 5) {
@@ -260,33 +261,35 @@ function unitRandom(seed, i, k) {
   return (h >>> 0) / 4294967296;
 }
 function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
-  const groundTop = (floorY ?? height - 40) - 4 * groundScale + shiftY;
+  const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs, groundTop = base + shiftY, t = reduced ? 0 : time;
+  const fades = kit.floatFades || (kit.floatFades = new Map()); if (fades.size > 3000) fades.clear();
   for (const [setIndex, name] of (kit.config.floaters || []).entries()) {
     const image = kit.images[name], style = FLOATER_STYLE[name]; if (!image || !style) continue;
-    const span = height * 2;
-    for (let i = 0; i < style.count; i++) {
-      const r = k => unitRandom(`${seed}${name}`, i, k);
-      const cols = [0, 1, 2, 3, 4].filter(c => !(style.skip || []).includes(c)); // a twig floating alone would look wrong
+    const cols = [0, 1, 2, 3, 4].filter(c => !(style.skip || []).includes(c)); // a twig floating alone would look wrong
+    // Pieces live at fixed heights up the climb (their own scrolling speed `par`), each with its own hashed
+    // position, size and drift, so no spot repeats and the same shapes never line up as you climb.
+    const cell = style.cell / style.par, margin = style.size[1] * 1.2;
+    const lo = Math.max(0, Math.floor((base + style.par * shiftY - height - margin) / (style.par * gs) / cell) - 1);
+    const hi = Math.ceil((base + style.par * shiftY + margin) / (style.par * gs) / cell) + 1;
+    for (let k = lo; k <= hi; k++) for (let m = 0; m < 2; m++) {
+      const r = j => unitRandom(`${seed}${name}`, k * 2 + m, j);
+      if (r(0) > (m ? style.prob * .3 : style.prob)) continue;
       const col = cols[Math.floor(r(1) * cols.length)], box = columnBounds(image, col);
-      const w = style.size[0] + (style.size[1] - style.size[0]) * r(2), h = w * box[3] / box[2];
-      const t = reduced ? 0 : time;
-      const x0 = r(3) * (width + w) - w / 2 + (r(4) - .5) * 40;
-      const x = (((x0 + t * style.vx * (.6 + r(5)) - shiftX * style.par * .3) % (width + w)) + width + w) % (width + w) - w / 2;
-      const yRaw = r(6) * span + shiftY * style.par + t * style.vy * (.6 + r(7)) + (setIndex * 53);
-      const y = (((yRaw % span) + span) % span) - span * .25;
-      // Clouds belong in the sky: they fade out well before they get near the ground.
-      const clear = kit.config.tall ? (width + 100) * groundScale * .95 : 90 * groundScale;
-      const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (y + h)) / (160 * groundScale))) : 1;
+      const size = style.size[0] * Math.pow(style.size[1] / style.size[0], Math.pow(r(2), 1.3)); // mostly small and medium, some large
+      const w = size, h = w * box[3] / box[2];
+      const yWorld = (k + r(6)) * cell, y = base + style.par * (shiftY - yWorld * gs) - h / 2;
+      if (y > height + margin || y + h < -margin) continue;
+      const span = width + w, frac = (((k * .618034 + setIndex * .37 + m * .5 + r(3) * .3) % 1) + 1) % 1; // evenly scattered across the width
+      const x0 = frac * span - w / 2, x = (((x0 + t * style.vx * (.6 + r(5)) - shiftX * style.par * .3) % span) + span) % span - w / 2;
+      const yy = y + t * style.vy * (.6 + r(7));
+      const clear = kit.config.tall ? (width + 100) * gs * .95 : 90 * gs;
+      const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (yy + h)) / (160 * gs))) : 1;
       // Ease each piece's visibility so it can never pop in or out when the camera zooms or climbs fast.
-      const fades = kit.floatFades || (kit.floatFades = new Map()), fk = `${name}${i}`, prev = fades.get(fk);
-      const vis = prev === undefined ? sky : prev + (sky - prev) * .06; fades.set(fk, vis);
+      const fk = `${name}${k}.${m}`, prev = fades.get(fk), vis = prev === undefined ? sky : prev + (sky - prev) * .06; fades.set(fk, vis);
       if (vis < .01) continue;
-      ctx.save();
-      ctx.globalAlpha = style.alpha * (dark ? .6 : 1) * vis;
-      ctx.translate(x + w / 2, y + h / 2);
-      if (r(8) > .5) ctx.scale(-1, 1);
-      ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h);
-      ctx.restore();
+      ctx.save(); ctx.globalAlpha = style.alpha * (dark ? .6 : 1) * vis * (.75 + .25 * r(4));
+      ctx.translate(x + w / 2, yy + h / 2); if (r(8) > .5) ctx.scale(-1, 1);
+      ctx.drawImage(image, ...box, -w / 2, -h / 2, w, h); ctx.restore();
     }
   }
 }
