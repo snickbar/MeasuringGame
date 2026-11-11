@@ -375,7 +375,9 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     }
     const st = layerStats(image), tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
     const top = base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
-    if (top > height) continue;
+    let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
+    for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
+    if (reach > height) continue;
     ctx.save(); if (dark) ctx.filter = 'brightness(58%)';
     ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
     for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
