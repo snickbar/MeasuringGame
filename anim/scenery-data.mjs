@@ -1,5 +1,81 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  "workshop-n-floor": {
+    "surface": 0.45,
+    "color": "#522809"
+  },
+  "library-n-floor": {
+    "surface": 0.455,
+    "color": "#a7622b"
+  },
+  "tabletop-n-floor": {
+    "surface": 0.436,
+    "color": "#dd7312"
+  },
+  "kitchen-n-floor": {
+    "surface": 0.502,
+    "color": "#3c2716"
+  },
+  "living-n-floor": {
+    "surface": 0.458,
+    "color": "#985024"
+  },
+  "fair-n-floor": {
+    "surface": 0.574,
+    "color": "#9b6847"
+  },
+  "cave-n-floor": {
+    "surface": 0.7230000000000001,
+    "color": "#241f4f"
+  },
+  "volcano-n-floor": {
+    "surface": 0.546,
+    "color": "#34262b"
+  },
+  "stadium-n-floor": {
+    "surface": 0.509,
+    "color": "#589a2b"
+  },
+  "rooftop-n-floor": {
+    "surface": 0.47,
+    "color": "#70617c"
+  },
+  "blossom-n-floor": {
+    "surface": 0.545,
+    "color": "#e1a468"
+  },
+  "space-n-floor": {
+    "surface": 0.537,
+    "color": "#9eaac5"
+  },
+  "jungle-n-floor": {
+    "surface": 0.585,
+    "color": "#662f19"
+  },
+  "mountain-n-floor": {
+    "surface": 0.542,
+    "color": "#65606b"
+  },
+  "desert-n-floor": {
+    "surface": 0.545,
+    "color": "#fab048"
+  },
+  "underwater-n-floor": {
+    "surface": 0.564,
+    "color": "#fbcd6c"
+  },
+  "snow-n-floor": {
+    "surface": 0.367,
+    "color": "#c0ddfb"
+  },
+  "farm-n-floor": {
+    "surface": 0.433,
+    "color": "#9b4c26"
+  },
+  "forest-n-floor": {
+    "surface": 0.475,
+    "color": "#944c1b"
+  },
   "meadow-lane": {
     "surface": 0.5732044198895028,
     "color": "#ad7c60"
