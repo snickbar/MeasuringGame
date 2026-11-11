@@ -45,6 +45,7 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true, tall: ['grass-tall-low', 'grass-tall-mid', 'grass-tall-high'] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
+  resort: { floor: 'resort-sand', backdrop: 'resort-sea', sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', skyPieces: [{ img: 'resort-sun', y: 2300, x: .74, w: 150, day: true }, { img: 'resort-rainbow', y: 9500, x: .3, w: 300 }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }] },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
@@ -81,7 +82,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -155,7 +156,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
     g.addColorStop(0, kit.config.glow + (dark ? 'aa' : '70')); g.addColorStop(1, kit.config.glow + '00');
     ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, base - 260 * groundScale, width, 260 * groundScale); ctx.restore();
   }
-  const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'farm-hay': 1,
+  const alpha = { 'forest-greenery': .64, 'beach-sunset': .72, 'resort-sea': 1, 'farm-hay': 1,
     'desert-dunes': .72, 'desert-skyline': .95, 'enchanted-grove': .65, 'underwater-seaweed': .44, 'city-skyline': .85, 'stadium-stands': .75,
     'volcano-ridge': .9, 'blossom-trees': .85, 'library-wall': .95, 'workshop-wall': .95, 'snow-aurora': .9 }[name] ?? .8;
   ctx.save(); ctx.globalAlpha = alpha * (dark && name !== 'farm-hay' && name !== 'snow-aurora' ? .45 : 1);
@@ -168,7 +169,7 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
       ctx.drawImage(image, ...bounds, x - w * scale / 2, base - h * scale, w * scale, h * scale);
     }
   } else {
-    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'desert-skyline': 190, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
+    const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'resort-sea': 150, 'desert-dunes': 155, 'desert-skyline': 190, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
       'volcano-ridge': 190, 'blossom-trees': 200, 'library-wall': 230, 'workshop-wall': 230, 'snow-aurora': 200 }[name] ?? 160;
     const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
     const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
@@ -235,6 +236,7 @@ const FLOATER_STYLE = {
   // cell = typical gap between pieces on screen (px), prob = chance each slot holds one, size = min/max width
   'cloud-set-day': { skip: [3], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
   'cloud-set-sunset': { skip: [0, 4], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
+  'cloud-set-resort': { cell: 150, prob: .85, size: [130, 330], alpha: 1, vx: 4, vy: 0, par: .25 },
   'mist-set': { cell: 420, prob: .7, size: [200, 360], alpha: .38, vx: 2, vy: 0, par: .6 },
   'ember-set': { skip: [4], cell: 110, prob: .85, size: [40, 90], alpha: .85, vx: 1.5, vy: -14, par: .5 },
   'petal-leaf-set': { skip: [4], cell: 170, prob: .8, size: [36, 82], alpha: .9, vx: 5, vy: 12, par: .5 },
@@ -282,7 +284,7 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
       const span = width + w, frac = (((k * .618034 + setIndex * .37 + m * .5 + r(3) * .3) % 1) + 1) % 1; // evenly scattered across the width
       const x0 = frac * span - w / 2, x = (((x0 + t * style.vx * (.6 + r(5)) - shiftX * style.par * .3) % span) + span) % span - w / 2;
       const yy = y + t * style.vy * (.6 + r(7));
-      const clear = kit.config.tall ? (width + 100) * gs * .95 : 90 * gs;
+      const clear = kit.config.tall ? (width + 100) * gs * .95 : (kit.config.cloudClear ?? 90) * gs;
       const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (yy + h)) / (160 * gs))) : 1;
       // Ease each piece's visibility so it can never pop in or out when the camera zooms or climbs fast.
       const fk = `${name}${k}.${m}`, prev = fades.get(fk), vis = prev === undefined ? sky : prev + (sky - prev) * .06; fades.set(fk, vis);
@@ -294,6 +296,22 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
   }
 }
 
+
+// Big far-away sky pieces (sun, rainbow) at fixed heights up the climb. They drift down slowly (par) like
+// the clouds, and fade in only well above the horizon so nothing ever sits on the sea or ground.
+function drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1 }) {
+  const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs, par = .15;
+  for (const p of kit.config.skyPieces || []) {
+    const image = kit.images[p.img]; if (!image || (p.day && dark)) continue;
+    const w = p.w * gs, h = w * image.naturalHeight / image.naturalWidth;
+    const yc = base + par * (shiftY - p.y * gs);
+    if (yc + h / 2 < 0 || yc - h / 2 > height) continue;
+    const vis = Math.max(0, Math.min(1, (base + shiftY - (kit.config.cloudClear ?? 90) * gs * .9 - (yc + h / 2)) / (120 * gs)));
+    if (vis < .01) continue;
+    const x = width * p.x - shiftX * par * .3;
+    ctx.save(); ctx.globalAlpha = vis * (dark ? .6 : 1); ctx.drawImage(image, x - w / 2, yc - h / 2, w, h); ctx.restore();
+  }
+}
 
 // Indoor climb: wall pieces (windows, shelves, clocks...) scattered up the wall at random.
 // Pieces never repeat back to back and the spacing, side and size change from one to the next.
@@ -599,6 +617,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
+  drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale });
   drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
