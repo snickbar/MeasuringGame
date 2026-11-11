@@ -116,7 +116,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -434,6 +434,11 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const ring = q.foam && kit.images[q.foam]; // a ripple of foam around a piece standing in the water
         if (ring) { const fw = pw * 1.3, fh = fw * ring.naturalHeight / ring.naturalWidth; ctx.globalAlpha = .9; ctx.drawImage(ring, x + q.x * tw - fw / 2, top + row * k - fh * .75, fw, fh); ctx.globalAlpha = 1; }
         ctx.drawImage(pic, x + q.x * tw - pw / 2, top + row * k - ph, pw, ph);
+        const turner = q.spin && kit.images[q.spin.img]; // a part of this prop that turns (blades, a wheel, a clock hand), pivoting where the picture says
+        if (turner) {
+          const sz = q.spin.size * pw, cx = x + q.x * tw - pw / 2 + q.spin.fx * pw, cy = top + row * k - ph + q.spin.fy * ph;
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (q.spin.speed || .5)); ctx.drawImage(turner, -sz / 2, -sz * turner.naturalHeight / turner.naturalWidth / 2, sz, sz * turner.naturalHeight / turner.naturalWidth); ctx.restore();
+        }
       }
       const sp = layer.spin, blades = sp && kit.images[sp.img];
       if (blades) { // a turning piece (windmill blades) sitting on this layer
