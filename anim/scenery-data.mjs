@@ -1,5 +1,9 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  "meadow-lane": {
+    "surface": 0.5732044198895028,
+    "color": "#ad7c60"
+  },
   "resort-sand": {
     "surface": 0.5759668508287292,
     "color": "#efc687"

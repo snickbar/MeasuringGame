@@ -43,7 +43,10 @@ const INDOOR = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'])
 const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
 
 export const SETTINGS = {
-  grass: { movers: ['butterflies'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true, tall: ['grass-tall-low', 'grass-tall-mid', 'grass-tall-high'] },
+  grass: { movers: ['butterflies'], floor: 'meadow-lane', floorTileWidth: 600, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'geese', fireflies: true,
+    // Layered scenery, back to front. `par` is how much of the climb each layer follows (1 = like the ground); `lift` is how far its skyline sits above the ground at the start.
+    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250 }, { img: 'meadow-hills', par: .28, lift: 175 }, { img: 'meadow-village', par: .5, lift: 100 }, { img: 'meadow-near', par: .78, lift: 42 }],
+    skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-rainbow', y: 9500, x: .5, wFrac: 1.1, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   resort: { floor: 'resort-sand', floorTileWidth: 640, backdrop: 'resort-sea', sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark', skyPieces: [{ img: 'resort-sun', y: 2300, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 2300, x: .72, w: 120, night: true }, { img: 'resort-rainbow', y: 9500, x: .5, wFrac: 3.3, day: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
@@ -82,7 +85,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).map(l => l.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -246,6 +249,7 @@ const FLOATER_STYLE = {
   'cloud-set-day': { skip: [3], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
   'cloud-set-sunset': { skip: [0, 4], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
   'cloud-set-resort': { cell: 150, prob: .85, size: [130, 330], alpha: 1, vx: 4, vy: 0, par: .25 },
+  'cloud-set-meadow': { cell: 150, prob: .85, size: [130, 330], alpha: 1, vx: 4, vy: 0, par: .25 },
   'mist-set': { cell: 420, prob: .7, size: [200, 360], alpha: .38, vx: 2, vy: 0, par: .6 },
   'ember-set': { skip: [4], cell: 110, prob: .85, size: [40, 90], alpha: .85, vx: 1.5, vy: -14, par: .5 },
   'petal-leaf-set': { skip: [4], cell: 170, prob: .8, size: [36, 82], alpha: .9, vx: 5, vy: 12, par: .5 },
@@ -319,6 +323,33 @@ function drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, 
     if (vis < .01) continue;
     const x = width * p.x - shiftX * par * .3;
     ctx.save(); ctx.globalAlpha = vis * (dark ? .6 : 1); ctx.drawImage(image, x - w / 2, yc - h / 2, w, h); ctx.restore();
+  }
+}
+
+// Layered scenery: wide strips drawn back to front, each following the climb at its own fraction (par), so the
+// near layers slide away fast and the far ones slowly. Each layer is filled solid below its picture, so a gap can never open.
+const layerInfo = new WeakMap();
+function layerStats(image) {
+  if (layerInfo.has(image)) return layerInfo.get(image);
+  const w = image.naturalWidth, h = image.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.drawImage(image, 0, 0); const d = g.getImageData(0, 0, w, h).data, tops = [];
+  for (let x = 0; x < w; x += 8) { let y = 0; while (y < h && d[(y * w + x) * 4 + 3] < 128) y++; tops.push(y); }
+  tops.sort((a, b) => a - b);
+  let r = 0, gr = 0, b = 0; for (let x = 0; x < w; x += 4) { const i = ((h - 1) * w + x) * 4; r += d[i]; gr += d[i + 1]; b += d[i + 2]; }
+  const n = Math.ceil(w / 4), stats = { sky: tops[tops.length >> 1], fill: `rgb(${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)})` };
+  layerInfo.set(image, stats); return stats;
+}
+function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1 }) {
+  const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
+  for (const layer of kit.config.parallax || []) {
+    const image = kit.images[layer.img]; if (!image) continue;
+    const st = layerStats(image), tw = width * 1.8 * gs, k = tw / image.naturalWidth, th = image.naturalHeight * k;
+    const top = base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
+    if (top > height) continue;
+    ctx.save(); if (dark) ctx.filter = 'brightness(58%)';
+    ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
+    for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) ctx.drawImage(image, x, top, tw + 1, th);
+    ctx.restore();
   }
 }
 
@@ -631,6 +662,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
+  drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
