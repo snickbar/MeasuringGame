@@ -45,7 +45,7 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true, tall: ['grass-tall-low', 'grass-tall-mid', 'grass-tall-high'] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
-  resort: { floor: 'resort-sand', backdrop: 'resort-sea', sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark', skyPieces: [{ img: 'resort-sun', y: 2300, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 2300, x: .72, w: 120, night: true }, { img: 'resort-rainbow', y: 9500, x: .5, wFrac: 2.1, day: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
+  resort: { floor: 'resort-sand', floorTileWidth: 640, backdrop: 'resort-sea', sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark', skyPieces: [{ img: 'resort-sun', y: 2300, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 2300, x: .72, w: 120, night: true }, { img: 'resort-rainbow', y: 9500, x: .5, wFrac: 3.3, day: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
@@ -171,9 +171,18 @@ function drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, g
   } else {
     const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'resort-sea': 150, 'desert-dunes': 155, 'desert-skyline': 190, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
       'volcano-ridge': 190, 'blossom-trees': 200, 'library-wall': 230, 'workshop-wall': 230, 'snow-aurora': 200 }[name] ?? 160;
-    const wide = name === 'resort-sea', h = (wide ? width * 1.3 * bounds[3] / bounds[2] / groundScale : baseH) * groundScale, w = (wide ? width * 1.3 : Math.max(width + 100, baseH * bounds[2] / bounds[3])) * groundScale;
-    const center = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
-    ctx.drawImage(image, ...bounds, center - w / 2, base - h, w, h);
+    const center0 = anchorX + (width / 2 - anchorX) * groundScale - shiftX;
+    if (name === 'resort-sea') {
+      // Whole strip across the screen; only the water part is stretched taller so the boats and island keep their shape.
+      const w = width * 1.3 * groundScale, k = w / bounds[2], split = 399 - bounds[1], waterH = (bounds[3] - split) * k * 2.1, objH = split * k;
+      ctx.drawImage(image, bounds[0], bounds[1], bounds[2], split, center0 - w / 2, base - waterH - objH, w, objH);
+      ctx.drawImage(image, bounds[0], bounds[1] + split, bounds[2], bounds[3] - split, center0 - w / 2, base - waterH, w, waterH);
+    } else {
+      const baseH = { 'forest-greenery': 170, 'beach-sunset': 125, 'desert-dunes': 155, 'desert-skyline': 190, 'enchanted-grove': 180, 'city-skyline': 160, 'stadium-stands':300,
+        'volcano-ridge': 190, 'blossom-trees': 200, 'library-wall': 230, 'workshop-wall': 230, 'snow-aurora': 200 }[name] ?? 160;
+      const h = baseH * groundScale, w = Math.max(width + 100, baseH * bounds[2] / bounds[3]) * groundScale;
+      ctx.drawImage(image, ...bounds, center0 - w / 2, base - h, w, h);
+    }
   }
   ctx.restore();
 }
