@@ -960,6 +960,7 @@ export function createStackAnimation(container, options = {}) {
       const groundScale = groundScaleFor(c, cEnd);
       const sx0 = cam.sx0;
       const sy0 = cam.sy0;
+      const climbPx = Math.max(0, cameraAt(tHoldEnd).sy0 - floorY); // how far the scene scrolls, so indoor walls end at the top
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
       const eOut = t < tHoldEnd ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * clamp((t - tHoldEnd) / ZOOM_S, 0, 1));
       const wcol = Math.max(tw * c, stripMin * eOut);
@@ -972,7 +973,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background' });
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background', climbPx });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
@@ -988,7 +989,7 @@ export function createStackAnimation(container, options = {}) {
         ctx.globalAlpha = 1;
       }
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground' });
+        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground', climbPx });
       const sceneryFloorY = sy0;
       if (sceneryFloorY < stageH) {
         const gy = Math.max(0, sceneryFloorY);

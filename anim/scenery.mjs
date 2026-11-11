@@ -46,7 +46,7 @@ export const SETTINGS = {
   grass: { movers: ['butterflies'], clouds: true, flyers: 'geese', fireflies: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decorSizes: [130, 130, 45, 80, 100], decor: 'living-wall-decor' },
-  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], wallpaper: 'tiles', layers: ['dust-motes'], decorSizes: [150, 120, 70, 110, 90], decor: 'kitchen-wall-decor' },
+  kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
   tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decorSkip: [0, 1], decorSizes: [100, 100, 100, 110, 90], decor: 'tabletop-wall-decor' },
   city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
@@ -81,7 +81,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -322,6 +322,50 @@ function drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScal
   }
 }
 
+
+// Climb-aware indoor wall: a detailed base, a run of different middle panels, then the ceiling,
+// stretched so the ceiling sits exactly at the top of the climb. Panels are plain-edged, so they join without seams.
+const CEIL_FRAC = .125; // how much of the top panel is ceiling
+const topColorCache = new WeakMap();
+function topColor(image) {
+  if (topColorCache.has(image)) return topColorCache.get(image);
+  const c = document.createElement('canvas'); c.width = 1; c.height = 1; const g = c.getContext('2d'); g.drawImage(image, 0, 0, 8, 8, 0, 0, 1, 1);
+  const d = g.getImageData(0, 0, 1, 1).data, col = `rgb(${d[0]},${d[1]},${d[2]})`; topColorCache.set(image, col); return col;
+}
+const panelPlans = new Map();
+function panelPlan(seed, mids, count) {
+  const key = `${seed}:${count}`; if (panelPlans.has(key)) return panelPlans.get(key);
+  const out = []; let last = -1;
+  for (let i = 0; i < count; i++) {
+    let k = i === 0 ? 0 : i === 1 ? 1 : Math.floor(unitRandom(`${seed}panel`, i, 1) * mids.length);
+    if (k === last) k = (k + 1) % mids.length;
+    out.push(k); last = k;
+  }
+  panelPlans.set(key, out); return out;
+}
+function drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale = 1, anchorX = width / 2, climbPx = 0, seed = kit.id }) {
+  const cfg = kit.config.panels, gs = groundScale, base = kit.images[cfg.base], top = kit.images[cfg.top];
+  if (!base || !top) return;
+  const groundTop = (floorY ?? height - 40) - 4 * gs + shiftY, hMin = 2 * (width + 60);
+  const total = Math.max(climbPx > 0 ? climbPx : height * 3, hMin * 1.2);
+  let n = Math.max(2, Math.round(total / (2 * (width + 100)) + CEIL_FRAC)); // independent of the camera's terrain zoom, so panels never jump
+  let h = total / (n - CEIL_FRAC);
+  while (h < hMin && n > 2) { n--; h = total / (n - CEIL_FRAC); }
+  h = Math.max(h, hMin); const w = h / 2;
+  const center = Math.min(w / 2, Math.max(width - w / 2, anchorX + (width / 2 - anchorX) * gs - shiftX));
+  const topY = groundTop - n * h;
+  ctx.save();
+  ctx.fillStyle = topColor(top); ctx.fillRect(0, -1e5, width, 1e5 + topY + 2);
+  const plan = panelPlan(seed, cfg.mids, Math.max(0, n - 2));
+  for (let i = 0; i < n; i++) {
+    const y = groundTop - (i + 1) * h; if (y + h < 0 || y > height) continue;
+    const image = i === 0 ? base : i === n - 1 ? top : kit.images[cfg.mids[plan[i - 1]]]; if (!image) continue;
+    ctx.save(); ctx.translate(center, 0); if (i > 0 && i < n - 1 && seededFlip(seed, i)) ctx.scale(-1, 1);
+    ctx.drawImage(image, -w / 2, y, w, h + 1); ctx.restore();
+  }
+  ctx.restore();
+}
+
 // Old wall decor for indoor scenes: windows, shelves, pipes and so on, fixed to the wall at set heights up the climb.
 function drawWallPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale = 1, anchorX = width / 2, seed = kit.id }) {
   const image = kit.images[kit.config.wall]; if (!image) return;
@@ -529,7 +573,7 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
   ctx.restore();
 }
 
-export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all' }) {
+export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0 }) {
   const { config, images } = kit;
   ctx.save();
   if (pass !== 'foreground' && config.wallpaper) {
@@ -549,6 +593,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   }
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
+  if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
