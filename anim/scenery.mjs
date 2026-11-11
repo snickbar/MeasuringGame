@@ -50,12 +50,12 @@ export const SETTINGS = {
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
-    wash: { img: 'beach-wave-wash', foam: 'beach-wave-foam', scale: 1.15, start: 6, amp: 24 },
-    parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.2 } },
-      { img: 'beach-headland', par: .12, lift: 170, scatter: { imgs: ['beach-plant-2', 'beach-plant-3', 'beach-plant-4', 'beach-plant-6', 'beach-plant-8'], n: 9, rows: [455, 525], w: [.026, .045], seed: 'b' } },
-      { img: 'beach-islands', par: .22, lift: 120, props: [{ img: 'beach-lighthouse', x: .62, row: 560, w: .075 }] },
-      { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .3, row: 520, w: .09 }], drifters: [{ img: 'beach-boat', x: .2, row: 470, w: .06, speed: 5, bob: 2 }, { img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
-      { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .62, row: 548, w: .15 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
+    wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
+    parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.2, fill: '#17b5e9' } },
+      { img: 'beach-headland', par: .12, lift: 170, props: [{ img: 'beach-lighthouse', x: .6, snap: 34, w: .11 }], scatter: { imgs: ['beach-plant-2', 'beach-plant-3', 'beach-plant-4', 'beach-plant-6', 'beach-plant-8'], n: 9, rows: [455, 525], w: [.026, .045], seed: 'b' } },
+      { img: 'beach-islands', par: .22, lift: 120 },
+      { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .2, row: 535, w: .27, foam: 'beach-wave-foam' }], drifters: [{ img: 'beach-boat', x: .2, row: 470, w: .06, speed: 5, bob: 2 }, { img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
+      { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .7, row: 508, w: .27 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
     skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
@@ -93,7 +93,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...((l.scatter && l.scatter.imgs) || [])]), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.drifters || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -256,7 +256,7 @@ const FLOATER_STYLE = {
   // cell = typical gap between pieces on screen (px), prob = chance each slot holds one, size = min/max width
   'cloud-set-day': { skip: [3], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
   'cloud-set-sunset': { skip: [0, 4], cell: 210, prob: .85, size: [110, 300], alpha: .9, vx: 4, vy: 0, par: .25 },
-  'cloud-set-resort': { cell: 150, prob: .85, size: [130, 330], alpha: 1, vx: 4, vy: 0, par: .25 },
+  'cloud-set-resort': { cell: 150, prob: .85, size: [60, 150], alpha: 1, vx: 4, vy: 0, par: .25 },
   'cloud-set-meadow': { cell: 150, prob: .85, size: [130, 330], alpha: 1, vx: 4, vy: 0, par: .25 },
   'mist-set': { cell: 420, prob: .7, size: [200, 360], alpha: .38, vx: 2, vy: 0, par: .6 },
   'ember-set': { skip: [4], cell: 110, prob: .85, size: [40, 90], alpha: .85, vx: 1.5, vy: -14, par: .5 },
@@ -355,7 +355,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st = layerStats(image), tw = width * 1.8 * gs, k = tw / image.naturalWidth, th = image.naturalHeight * k;
@@ -383,7 +383,10 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       for (const q of layer.props || []) { // things on a far hill: hidden behind the nearer layer at first, revealed as it slides down
         const pic = kit.images[q.img]; if (!pic) continue;
         const pw = q.w * tw, ph = pw * pic.naturalHeight / pic.naturalWidth;
-        ctx.drawImage(pic, x + q.x * tw - pw / 2, top + q.row * k - ph, pw, ph);
+        const row = q.snap !== undefined ? st.colTops[Math.min(st.colTops.length - 1, Math.floor(((q.x % 1) + 1) % 1 * st.colTops.length))] + q.snap : q.row; // snap: stand on this layer's own skyline
+        const ring = q.foam && kit.images[q.foam]; // a ripple of foam around a piece standing in the water
+        if (ring) { const fw = pw * 1.3, fh = fw * ring.naturalHeight / ring.naturalWidth; ctx.globalAlpha = .9; ctx.drawImage(ring, x + q.x * tw - fw / 2, top + row * k - fh * .75, fw, fh); ctx.globalAlpha = 1; }
+        ctx.drawImage(pic, x + q.x * tw - pw / 2, top + row * k - ph, pw, ph);
       }
       for (const q of layer.drifters || []) { // boats and waves sliding along this layer, wrapping around its width
         const pic = kit.images[q.img]; if (!pic) continue;
