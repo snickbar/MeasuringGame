@@ -45,8 +45,8 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], floor: 'meadow-lane', floorTileWidth: 600, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'geese', fireflies: true,
     // Layered scenery, back to front. `par` is how much of the climb each layer follows (1 = like the ground); `lift` is how far its skyline sits above the ground at the start.
-    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250 }, { img: 'meadow-hills', par: .28, lift: 175 }, { img: 'meadow-village', par: .5, lift: 100 }, { img: 'meadow-near', par: .78, lift: 42 }],
-    skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-rainbow', y: 9500, x: .5, wFrac: 1.1, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
+    parallax: [{ img: 'meadow-mountain', par: .12, lift: 250 }, { img: 'meadow-hills', par: .28, lift: 175 }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 } }, { img: 'meadow-near', par: .78, lift: 42 }],
+    skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
   resort: { floor: 'resort-sand', floorTileWidth: 640, backdrop: 'resort-sea', sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark', skyPieces: [{ img: 'resort-sun', y: 2300, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 2300, x: .72, w: 120, night: true }, { img: 'resort-rainbow', y: 9500, x: .5, wFrac: 3.3, day: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
   living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
@@ -85,7 +85,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).map(l => l.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => l.spin ? [l.img, l.spin.img] : [l.img]), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -277,6 +277,8 @@ function unitRandom(seed, i, k) {
 }
 function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs, groundTop = base + shiftY, t = reduced ? 0 : time;
+  // Clouds all drift the same way; a new round (time restarting) picks the direction again at random.
+  if (kit.driftDir === undefined || time < (kit.lastTime ?? 0) - 1) kit.driftDir = Math.random() < .5 ? -1 : 1; kit.lastTime = time;
   const fades = kit.floatFades || (kit.floatFades = new Map()); if (fades.size > 3000) fades.clear();
   for (const [setIndex, name] of (kit.config.floaters || []).entries()) {
     const image = kit.images[name], style = FLOATER_STYLE[name]; if (!image || !style) continue;
@@ -295,7 +297,7 @@ function drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, t
       const yWorld = (k + r(6)) * cell, y = base + style.par * (shiftY - yWorld * gs) - h / 2;
       if (y > height + margin || y + h < -margin) continue;
       const span = width + w, frac = (((k * .618034 + setIndex * .37 + m * .5 + r(3) * .3) % 1) + 1) % 1; // evenly scattered across the width
-      const x0 = frac * span - w / 2, x = (((x0 + t * style.vx * (.6 + r(5)) - shiftX * style.par * .3) % span) + span) % span - w / 2;
+      const x0 = frac * span - w / 2, x = (((x0 + t * style.vx * (name.startsWith('cloud') ? kit.driftDir : 1) * (.6 + r(5)) - shiftX * style.par * .3) % span) + span) % span - w / 2;
       const yy = y + t * style.vy * (.6 + r(7));
       const clear = kit.config.tall ? (width + 100) * gs * .95 : (kit.config.cloudClear ?? 90) * gs;
       const sky = name.startsWith('cloud') ? Math.max(0, Math.min(1, (groundTop - clear - (yy + h)) / (160 * gs))) : 1;
@@ -339,7 +341,7 @@ function layerStats(image) {
   const n = Math.ceil(w / 4), stats = { sky: tops[tops.length >> 1], fill: `rgb(${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)})` };
   layerInfo.set(image, stats); return stats;
 }
-function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1 }) {
+function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
   for (const layer of kit.config.parallax || []) {
     const image = kit.images[layer.img]; if (!image) continue;
@@ -348,7 +350,14 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     if (top > height) continue;
     ctx.save(); if (dark) ctx.filter = 'brightness(58%)';
     ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
-    for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) ctx.drawImage(image, x, top, tw + 1, th);
+    for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
+      ctx.drawImage(image, x, top, tw + 1, th);
+      const sp = layer.spin, blades = sp && kit.images[sp.img];
+      if (blades) { // a turning piece (windmill blades) sitting on this layer
+        const px = x + sp.x * k, py = top + sp.y * k, size = sp.size * k;
+        ctx.save(); ctx.translate(px, py); ctx.rotate(reduced ? 0 : time * sp.speed); ctx.drawImage(blades, -size / 2, -size / 2, size, size); ctx.restore();
+      }
+    }
     ctx.restore();
   }
 }
@@ -662,7 +671,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
-  drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale });
+  drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
