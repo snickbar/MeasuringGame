@@ -45,9 +45,9 @@ const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop'
 export const SETTINGS = {
   grass: { movers: ['butterflies'], clouds: true, flyers: 'geese', fireflies: true },
   beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
-  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], wallpaper: 'lattice', layers: ['dust-motes'], decorSizes: [130, 130, 45, 80, 100], decor: 'living-wall-decor' },
+  living: { floor: 'hardwood', sky: ['#f2e6d4', '#fff8e9'], layers: ['dust-motes'], panels: { base: 'living-panel-base', mids: ['living-panel-mid1', 'living-panel-mid2', 'living-panel-repeat'], top: 'living-panel-top', ceilFrac: 0.183 } },
   kitchen: { floor: 'kitchen-bw', floorTileWidth: 760, sky: ['#f1ebdf', '#fff9ed'], layers: ['dust-motes'], panels: { base: 'kitchen-panel-base', mids: ['kitchen-panel-mid1', 'kitchen-panel-mid2', 'kitchen-panel-repeat'], top: 'kitchen-panel-top' } },
-  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], wallpaper: 'plaid', decorSkip: [0, 1], decorSizes: [100, 100, 100, 110, 90], decor: 'tabletop-wall-decor' },
+  tabletop: { floor: 'tabletop', sky: ['#e7dfce', '#fff8e9'], panels: { base: 'tabletop-panel-base', mids: ['tabletop-panel-mid1', 'tabletop-panel-mid2', 'tabletop-panel-repeat'], top: 'tabletop-panel-top', ceilFrac: 0.121 } },
   city: { movers: ['balloon'], floor: 'pavement', sky: ['#a9d0ee', '#e8f3fb'], nightSky: ['#111d36', '#354265'], night: 'dark', clouds: true, texture: 'star-field', backdrop: 'city-skyline', flyers: 'swallows' },
   forest: { floor: 'forest-floor', sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], tall: ['forest-tall-low', 'forest-tall-mid', 'forest-tall-high'], fireflies: true },
   farm: { movers: ['butterflies'], floor: 'farm-floor', sky: ['#c0dbe1', '#edf3e1'], clouds: true, flyers: 'geese', fireflies: true , tall: ['farm-tall-low', 'farm-tall-mid', 'farm-tall-high']},
@@ -61,8 +61,8 @@ export const SETTINGS = {
   cave: { floor: 'cave-floor', sky: ['#1f1936', '#4a3c66'], night: true, tall: ['cave-tall-low', 'cave-tall-mid'], tallRepeat: true, floaters: ['mist-set'] },
   volcano: { floor: 'volcano-floor', sky: ['#3d2433', '#7c4a48'], tall: ['volcano-tall-low', 'volcano-tall-mid', 'volcano-tall-high'], glow: '#ff7a3c', floaters: ['ember-set'] },
   blossom: { movers: ['butterflies'], floor: 'blossom-floor', sky: ['#f4d6e4', '#fcf0f2'], backdrop: 'blossom-trees', floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'doves', fireflies: true },
-  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], wallpaper: 'wood', decorSizes: [90, 120, 50, 70, 100], decor: 'library-wall-decor' },
-  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], wallpaper: 'brick', decorSizes: [120, 110, 100, 70, 70], decor: 'workshop-wall-decor' },
+  library: { floor: 'hardwood', sky: ['#ecd6b2', '#f6e8cb'], panels: { base: 'library-panel-base', mids: ['library-panel-mid1', 'library-panel-mid2', 'library-panel-repeat'], top: 'library-panel-top', ceilFrac: 0.144 } },
+  workshop: { floor: 'workshop-floor', sky: ['#d6dbe0', '#eef0f2'], panels: { base: 'workshop-panel-base', mids: ['workshop-panel-mid1', 'workshop-panel-mid2', 'workshop-panel-repeat'], top: 'workshop-panel-top', ceilFrac: 0.122 } },
   rooftop: { floor: 'rooftop-floor', sky: ['#eb8c7e', '#facdaa'], tall: ['rooftop-tall-low', 'rooftop-tall-mid', 'rooftop-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'swallows' },
   stadium: { floor: 'stadium-turf', floorTileWidth:760, sky:['#b9d9e8','#e9f2ec'], tall: ['stadium-tall-low', 'stadium-tall-mid', 'stadium-tall-high'], floaters: ['cloud-set-day'], flyers: 'geese', birdClear: .9 },
 };
@@ -325,7 +325,7 @@ function drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScal
 
 // Climb-aware indoor wall: a detailed base, a run of different middle panels, then the ceiling,
 // stretched so the ceiling sits exactly at the top of the climb. Panels are plain-edged, so they join without seams.
-const CEIL_FRAC = .125; // how much of the top panel is ceiling
+const CEIL_FRAC = .125; // default share of the top panel that is ceiling (each room sets its own ceilFrac)
 const topColorCache = new WeakMap();
 function topColor(image) {
   if (topColorCache.has(image)) return topColorCache.get(image);
@@ -344,7 +344,7 @@ function panelPlan(seed, mids, count) {
   panelPlans.set(key, out); return out;
 }
 function drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale = 1, anchorX = width / 2, climbPx = 0, seed = kit.id }) {
-  const cfg = kit.config.panels, gs = groundScale, base = kit.images[cfg.base], top = kit.images[cfg.top];
+  const cfg = kit.config.panels, gs = groundScale, CEIL_FRAC = cfg.ceilFrac ?? .125, base = kit.images[cfg.base], top = kit.images[cfg.top];
   if (!base || !top) return;
   const groundTop = (floorY ?? height - 40) - 4 * gs + shiftY, hMin = 2 * (width + 8);
   const total = Math.max(climbPx > 0 ? climbPx : height * 3, hMin * 1.2);
