@@ -102,12 +102,11 @@ export const SETTINGS = {
       { img: 'ts-near', par: .6, lift: 220, glow: ['ts-near-glow0', 'ts-near-glow1'] }],
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
     skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
-  forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], fireflies: true,
+  forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#b9d2c7', '#e3ede0'], fireflies: true,
     parallax: [{ img: 'forest-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
       { img: 'forest-n-big-0', par: .25, lift: 800, single: { x: 0.5, w: 1.15, sy: 1 } },
-      { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520, wave: { amp: 1.7, speed: 1.2, freq: .03 },
-        beams: [{ x: .22, drop: -150, len: 440, tilt: Math.PI, spread: .1, speed: .22, swing: .09, a: .4, rgb: '255,246,190' }, { x: .58, drop: -150, len: 480, tilt: Math.PI, spread: .08, speed: .17, swing: .1, a: .4, rgb: '255,246,190' }, { x: .86, drop: -150, len: 420, tilt: Math.PI, spread: .09, speed: .26, swing: .08, a: .4, rgb: '255,246,190' }] },
-      { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, wave: { amp: 1.3, speed: 1.5, freq: .035 }, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 150, streaks: 10 }] },
+      { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520, wave: { amp: 1.7, speed: 1.2, freq: .03 } },
+      { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, wave: { amp: 1.3, speed: 1.5, freq: .035 }, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }] },
       { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, wave: { amp: 1.4, speed: 1.7, freq: .04 } }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
   farm: { floor: 'farm-n-floor', floorTileWidth: 640,  movers: ['butterflies'], sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true,
@@ -515,10 +514,10 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         let oc = FLOW_CANVAS.get(fl); if (!oc) { oc = document.createElement('canvas'); oc.width = mask.naturalWidth; oc.height = mask.naturalHeight; FLOW_CANVAS.set(fl, oc); }
         const g = oc.getContext('2d'), W = oc.width, H = oc.height, n = fl.streaks || 9;
         g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
-        g.fillStyle = 'rgba(40,150,200,.28)'; g.fillRect(0, 0, W, H);
+        g.fillStyle = 'rgba(40,150,200,.4)'; g.fillRect(0, 0, W, H);
         for (let i = 0; i < n; i++) for (let r = 0; r < 2; r++) {
           const px = (i + .5) / n * W + Math.sin(i * 12.9) * 4, len = 26 + (i * 7) % 22, yy = (((reduced ? 0 : time) * fl.speed + i * 41 + r * (H + 30) / 2) % (H + 60)) - 40;
-          g.fillStyle = r ? 'rgba(255,255,255,.55)' : 'rgba(210,245,255,.7)'; g.fillRect(px - 2, yy, 4, len);
+          g.fillStyle = r ? 'rgba(255,255,255,.85)' : 'rgba(210,245,255,.9)'; g.fillRect(px - 3, yy, 6, len * 1.4);
         }
         g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0);
         ctx.drawImage(oc, x + fl.x * k, top + fl.y * k, W * k, H * k);
