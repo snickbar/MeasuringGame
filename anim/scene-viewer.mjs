@@ -11,11 +11,16 @@ export function buildSceneViewer({ loadAnim, objects }) {
     if (byId.has(value)) s.value = value; return s;
   };
   const field = (label, control) => { const r = el("label", "dbg-row"); r.appendChild(el("span", "dbg-label", label)); r.appendChild(control); return r; };
-  const small = pick("Small object", "soccer-ball"), big = pick("Big object", "empire-state-building");
+  const KEY = "scene-viewer-last";
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { saved = {}; }
+  const small = pick("Small object", saved.small || "soccer-ball"), big = pick("Big object", saved.big || "empire-state-building");
   const scene = el("select", "dbg-input"); scene.style.width = "100%"; scene.setAttribute("aria-label", "Scene");
   const look = el("select", "dbg-input"); look.style.width = "100%"; look.setAttribute("aria-label", "Day or night");
   [["day", "Day"], ["night", "Night"]].forEach(([v, t]) => { const o = el("option", "", t); o.value = v; look.appendChild(o); });
   const count = el("input", "dbg-input"); count.type = "number"; count.min = "1"; count.max = "5000"; count.placeholder = "auto"; count.inputMode = "numeric";
+  look.value = saved.look === "night" ? "night" : "day"; if (saved.count) count.value = saved.count;
+  const remember = () => { try { localStorage.setItem(KEY, JSON.stringify({ scene: scene.value, small: small.value, big: big.value, look: look.value, count: count.value })); } catch (e) { /* storage unavailable */ } };
+  [small, big, scene, look, count].forEach((c) => c.addEventListener("change", remember));
   const stage = el("div", "scene-viewer-stage"); stage.style.cssText = "width:100%;min-height:80px;border-radius:10px;overflow:hidden;background:#fff8ec";
   const note = el("p", "dbg-note", "Pick a scene and press Play. Leave the count on auto to use the real size ratio, or type a number of small objects to make the stack taller.");
   const buttons = el("div", "dbg-row");
@@ -35,10 +40,10 @@ export function buildSceneViewer({ loadAnim, objects }) {
     ids = Object.keys(m.SETTINGS);
     const auto = el("option", "", "Auto (follows the big object)"); auto.value = ""; scene.appendChild(auto);
     ids.forEach((id) => { const o = el("option", "", id); o.value = id; scene.appendChild(o); });
-    scene.value = "rooftop";
+    scene.value = saved.scene !== undefined && (saved.scene === "" || ids.includes(saved.scene)) ? saved.scene : "rooftop";
   }
   async function play() {
-    const my = ++token;
+    const my = ++token; remember();
     note.textContent = "Loading…";
     try {
       await setup();
