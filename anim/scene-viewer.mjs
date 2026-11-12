@@ -53,7 +53,7 @@ export function buildSceneViewer({ loadAnim, objects }) {
       const n = Math.max(1, Math.min(5000, Math.round(+count.value || (b.mm / u.mm))));
       const unit = { ...u }, target = { ...b, mm: u.mm * n, sceneryOverride: scene.value || undefined };
       stage.style.width = "100%";
-      const sc = await ctl.prepare(unit, target, { hMax: 300, minStageH: 360 });
+      const sc = await ctl.prepare(unit, target, { hMax: 330, minStageH: 700 });
       if (my !== token) return;
       note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value || "auto"} · ${look.value}`;
       curScene = sc; pos = 0; lastReal = performance.now(); setPaused(false);

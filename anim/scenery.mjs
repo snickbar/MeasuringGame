@@ -107,7 +107,7 @@ export const SETTINGS = {
       { img: 'forest-n-big-0', par: .25, lift: 800, single: { x: 0.5, w: 1.15, sy: 1 } },
       { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520, wave: { amp: 1.7, speed: 1.2, freq: .03 },
         beams: [{ x: .22, drop: -150, len: 440, tilt: Math.PI, spread: .1, speed: .22, swing: .09, a: .4, rgb: '255,246,190' }, { x: .58, drop: -150, len: 480, tilt: Math.PI, spread: .08, speed: .17, swing: .1, a: .4, rgb: '255,246,190' }, { x: .86, drop: -150, len: 420, tilt: Math.PI, spread: .09, speed: .26, swing: .08, a: .4, rgb: '255,246,190' }] },
-      { img: 'forest-n-mid', par: 0.34, lift: 290, scale: .36, mirror: 520, wave: { amp: 1.3, speed: 1.5, freq: .035 }, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 150, streaks: 10 }] },
+      { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, wave: { amp: 1.3, speed: 1.5, freq: .035 }, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 150, streaks: 10 }] },
       { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, wave: { amp: 1.4, speed: 1.7, freq: .04 } }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
   farm: { floor: 'farm-n-floor', floorTileWidth: 640,  movers: ['butterflies'], sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true,
