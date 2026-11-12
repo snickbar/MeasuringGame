@@ -251,6 +251,8 @@ const BOARD_META = [
   { img: '54-harvest-table-board', rect: [.15, .2, .85, .72], color: '#6b3410', css: 'text-shadow:0 1px 0 rgba(255,246,222,.9),0 0 6px rgba(255,246,222,.7);' , settle: 3300, per: 40 },
   { img: '59-fireplace-board', rect: [.1, .35, .9, .72], color: '#7a1c1c', css: 'text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.6);' , settle: 2900, per: 45 },
 ];
+/* In the game a wide board's ends layer is clipped to the two ends, so anything tied to the real question text (sparkles, bubbles, sweeping light) goes in the unclipped layer; SPAN is how wide the board is in design units (330 for the 4:3 board, 496 for the 2:1 one). */
+const SPAN = () => (HOOK && HOOK.span) || BW;
 let HOOK = null; // in the game: {text, body, letters} = the real question text elements, whose letters the board animations drive
 const penHost = (g) => (HOOK && HOOK.over) || g; // in the game the pen/brush lives in a layer above the question text
 const baseBoard = (s, name) => (HOOK ? null : mk(s, name, BW / 2, BH2 / 2, BW, { z: 0 }));
@@ -283,7 +285,7 @@ def('b1', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '03-midnight-sky-boar
   q.letters.forEach((l, i) => { let bi = 0, bd = 1e9; P.forEach((p, k) => { const d = Math.hypot(R[i].x - p[0], R[i].y - p[1]); if (d < bd) { bd = d; bi = k; } });
     const dl = arr[bi] + 40 + bd * 2.4; l.animate([{ opacity: 0, transform: 'scale(.2)' }, { opacity: 1, transform: 'scale(1.35)', offset: .55 }, { opacity: 1, transform: 'scale(1)' }], { duration: 420, delay: dl, fill: 'both', easing: 'ease-out' });
     for (let k = 0; k < 2; k++) l.animate([{ textShadow: '0 0 0 rgba(255,255,255,0)', transform: 'scale(1)' }, { textShadow: '0 0 6px #fff,0 0 16px #ffd34d', transform: 'scale(1.14)', offset: .5 }, { textShadow: '0 0 0 rgba(255,255,255,0)', transform: 'scale(1)' }], { duration: 700, delay: 2900 + rnd() * (D - 4600) + k * 1200, fill: 'none', easing: 'ease-in-out', composite: 'replace' }); });
-  for (let i = 0; i < 12; i++) { const r = R[Math.floor(rnd() * R.length)]; sparkle(g, r.x + (rnd() - .5) * 14, r.y - 8 - rnd() * 8, 13 + rnd() * 6, D, 2800 + i * 330, 500, 7); }
+  for (let i = 0; i < 12; i++) { const r = R[Math.floor(rnd() * R.length)]; sparkle(penHost(g), r.x + (rnd() - .5) * 14, r.y - 8 - rnd() * 8, 13 + rnd() * 6, D, 2800 + i * 330, 500, 7); }
 });
 def('b2', 'b', 6400, (s) => { const D = 6400; baseBoard(s, '08-love-letter-board'); const g = grp(s, D);
   for (let i = 0; i < 16; i++) { const e = mk(g, '07-heart-eye', 0, 0, 12 + rnd() * 12, { z: 3 }), x0 = 40 + rnd() * 250, t0 = i * 330, sw = 6 + rnd() * 10;
@@ -298,7 +300,7 @@ def('b3', 'b', 7000, (s) => { const D = 7000; baseBoard(s, '11-green-hills-board
   q.letters.forEach((l) => { const r = l.getBoundingClientRect(), f = Math.max(0, Math.min(1, ((r.left + r.width / 2) - x0) / (x1 - x0))) * 5, i = Math.min(4, Math.floor(f)), u = f - i, c = cols[i].map((v, k) => Math.round(v + (cols[i + 1][k] - v) * u)); l.style.color = `rgb(${c})`; });
   const TS = 400, TE = 2100, ex0 = (x0 - st.left) / kk - 6, ex1 = (x1 - st.left) / kk + 6;
   q.t.animate([{ clipPath: 'inset(-10px 100% -10px 0)' }, { clipPath: 'inset(-10px 100% -10px 0)', offset: TS / D, easing: 'ease-in-out' }, { clipPath: 'inset(-10px -6px -10px 0)', offset: TE / D }, { clipPath: 'inset(-10px -6px -10px 0)' }], { duration: D, fill: 'both' });
-  const bar = box(g, `left:0;top:${(eb.top - st.top) / kk}px;width:3px;height:${eb.height / kk}px;background:linear-gradient(to bottom,transparent,#fff,transparent);box-shadow:0 0 10px #fff,0 0 20px #ffe27a;`, 8);
+  const bar = box(penHost(g), `left:0;top:${(eb.top - st.top) / kk}px;width:3px;height:${eb.height / kk}px;background:linear-gradient(to bottom,transparent,#fff,transparent);box-shadow:0 0 10px #fff,0 0 20px #ffe27a;`, 8);
   bar.animate([{ transform: `translateX(${ex0}px)`, opacity: 0 }, { transform: `translateX(${ex0}px)`, opacity: 1, offset: TS / D, easing: 'ease-in-out' }, { transform: `translateX(${ex1}px)`, opacity: 1, offset: TE / D }, { transform: `translateX(${ex1}px)`, opacity: 0, offset: (TE + 80) / D }, { opacity: 0 }], { duration: D, fill: 'both' });
   q.letters.forEach((l, i) => l.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-2.5px)' }, { transform: 'translateY(0)' }], { duration: 1300, delay: TE + 200 + i * 70, iterations: 3, easing: 'ease-in-out' }));
   for (let i = 0; i < 9; i++) sparkle(g, 262 + rnd() * 50, 156 + rnd() * 30, 11 + rnd() * 10, D, 300 + i * 520, 600, 3);
@@ -311,7 +313,7 @@ def('b4', 'b', 7000, (s) => { const D = 7000; baseBoard(s, '17-spring-meadow-boa
     e.style.filter = 'hue-rotate(-20deg) saturate(.6) brightness(1.5)'; path(e, D, t0, t0 + 3400, (u) => ({ x: x0 + Math.sin(u * 5 + i) * sw, y: -10 + u * 256, r: u * 300, sx: .5 + .5 * Math.abs(Math.cos(u * 6 + i)), op: fade(u, .06, .1) * .9 }), 30); }
   const q = qtext(g, [.1, .14, .9, .62], { color: '#5a2d8c', size: 27, css: '-webkit-text-stroke:3px #fff7c9;paint-order:stroke fill;text-shadow:0 2px 4px rgba(60,20,110,.25);' }); hideLetters(q.letters);
   q.letters.forEach((l, i) => { l.style.transformOrigin = '50% 100%'; l.animate([{ opacity: 0, transform: 'scaleY(.05) scaleX(.8)' }, { opacity: 1, transform: 'scaleY(1.2) scaleX(1)', offset: .65 }, { opacity: 1, transform: 'scaleY(1)' }], { duration: 560, delay: 600 + i * 52, fill: 'both', easing: 'ease-out' }); });
-  const R = q.letters.map((l) => lrect(q, l)); for (let i = 0; i < 10; i++) { const r = R[Math.floor(rnd() * R.length)]; sparkle(g, r.x, r.y - 10, 14, D, 1200 + i * 450, 500, 7); }
+  const R = q.letters.map((l) => lrect(q, l)); for (let i = 0; i < 10; i++) { const r = R[Math.floor(rnd() * R.length)]; sparkle(penHost(g), r.x, r.y - 10, 14, D, 1200 + i * 450, 500, 7); }
 });
 def('b5', 'b', 6400, (s) => { const D = 6400; baseBoard(s, '25-papel-picado-board'); const g = grp(s, D);
   const top = mk(g, '25-papel-picado-board', BW / 2, BH2 / 2, BW, { z: 1, clip: 'inset(0 0 72% 0)', origin: '50% 0' });
@@ -352,7 +354,7 @@ def('b7', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '34-backyard-dusk-boa
   const lastBt = Math.max(...R.map((r) => r.bt)); let dk = 0;
   q.letters.forEach((l, i) => { const r = R[i]; if (r.bt < lastBt - 3 || /[?.,!]/.test(l.textContent) || (i * 7 + 3) % 3) return;
     const h = 7 + (dk % 3) * 4 + (i % 2) * 2, ts = (T0 + i * ST + 350 + dk * 40) / D, te = Math.min(.999, ts + (900 + (dk % 3) * 250) / D); dk++;
-    const d = box(g, `left:${(r.x - 1.6).toFixed(1)}px;top:${(r.bt - 5).toFixed(1)}px;width:3.2px;height:0;background:#fff3d6;border-radius:0 0 2px 2px;box-shadow:0 1px 0 rgba(90,35,5,.5);`, 6);
+    const d = box(penHost(g), `left:${(r.x - 1.6).toFixed(1)}px;top:${(r.bt - 5).toFixed(1)}px;width:3.2px;height:0;background:#fff3d6;border-radius:0 0 2px 2px;box-shadow:0 1px 0 rgba(90,35,5,.5);`, 6);
     d.insertAdjacentHTML('beforeend', '<i style="position:absolute;left:-.9px;bottom:-3px;width:5px;height:5px;border-radius:50%;background:#fff3d6;box-shadow:0 1px 0 rgba(90,35,5,.5)"></i>');
     d.animate([{ height: '0px', opacity: 0, offset: 0 }, { height: '0px', opacity: 0, offset: ts }, { height: h + 'px', opacity: 1, offset: te, easing: 'ease-in' }, { height: h + 'px', opacity: 1, offset: 1 }], { duration: D, fill: 'both' }); });
 });
@@ -360,14 +362,14 @@ def('b8', 'b', 8200, (s) => { const D = 8200; baseBoard(s, '39-underwater-board'
   for (let i = 0; i < 3; i++) { const r = box(g, `left:${60 + i * 95}px;top:-10px;width:46px;height:260px;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0));transform-origin:50% 0;`, 1);
     r.animate([{ transform: 'rotate(-8deg)', opacity: .2 }, { transform: 'rotate(8deg)', opacity: .5 }, { transform: 'rotate(-8deg)', opacity: .2 }], { duration: 3200 + i * 500, iterations: 3, easing: 'ease-in-out', delay: i * 300 }); }
   const q = qtext(g, [.14, .2, .86, .74], { color: '#fff', size: 28, css: 'text-shadow:0 2px 6px rgba(0,70,140,.65),0 0 12px rgba(180,235,255,.7);' });
-  const cv = document.createElement('canvas'); cv.width = BW; cv.height = BH2; const cx = cv.getContext('2d'); cx.font = `700 28px 'Fredoka',system-ui,sans-serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = '#000';
+  const cv = document.createElement('canvas'); const SW = SPAN(); cv.width = SW; cv.height = BH2; const cx = cv.getContext('2d'); cx.font = `700 28px 'Fredoka',system-ui,sans-serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = '#000';
   q.letters.forEach((l) => { const r = lrect(q, l); cx.fillText(l.textContent, r.x, r.y + 1); });
-  const data = cx.getImageData(0, 0, BW, BH2).data, pts = []; for (let y = 0; y < BH2; y += 4) for (let x = 0; x < BW; x += 4) if (data[(y * BW + x) * 4 + 3] > 140) pts.push([x, y]);
+  const data = cx.getImageData(0, 0, SW, BH2).data, pts = []; for (let y = 0; y < BH2; y += 4) for (let x = 0; x < SW; x += 4) if (data[(y * SW + x) * 4 + 3] > 140) pts.push([x, y]);
   const TF = 3700; q.el.animate([{ opacity: 0 }, { opacity: 0, offset: (TF - 100) / D }, { opacity: 1, offset: (TF + 600) / D }, { opacity: 1 }], { duration: D, fill: 'both' });
-  pts.forEach((p, i) => { const sz = 8, e = box(g, `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;border:1.2px solid rgba(255,255,255,.95);background:rgba(255,255,255,.3);box-sizing:border-box;`, 4);
-    const t0 = rnd() * 1500, arr = 1500 + rnd() * 1500, t1 = TF + 500, sx = Math.max(10, Math.min(320, p[0] + (rnd() - .5) * 90)), ph = rnd() * 6, af = (arr - t0) / (t1 - t0);
+  pts.forEach((p, i) => { const sz = 8, e = box(penHost(g), `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;border:1.2px solid rgba(255,255,255,.95);background:rgba(255,255,255,.3);box-sizing:border-box;`, 4);
+    const t0 = rnd() * 1500, arr = 1500 + rnd() * 1500, t1 = TF + 500, sx = Math.max(10, Math.min(SW - 10, p[0] + (rnd() - .5) * 90)), ph = rnd() * 6, af = (arr - t0) / (t1 - t0);
     path(e, D, t0, t1, (u) => { if (u < af) { const v = u / af, e2 = 1 - Math.pow(1 - v, 2); return { x: lerp(sx, p[0], e2) + Math.sin(v * 7 + ph) * 9 * (1 - v), y: lerp(262, p[1], e2), sx: lerp(1.1 + rnd() * 0, .42, v), op: Math.min(1, v * 6) }; } return { x: p[0], y: p[1], sx: .42, op: u > .93 ? (1 - u) / .07 : 1 }; }, 40); });
-  for (let i = 0; i < 16; i++) { const sz = 3 + rnd() * 4, e = box(g, `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.25);box-sizing:border-box;`, 3), x0 = 25 + rnd() * 280, t0 = TF + 200 + i * 250;
+  for (let i = 0; i < 16; i++) { const sz = 3 + rnd() * 4, e = box(penHost(g), `left:${-sz / 2}px;top:${-sz / 2}px;width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.25);box-sizing:border-box;`, 3), x0 = 25 + rnd() * (SW - 50), t0 = TF + 200 + i * 250;
     path(e, D, t0, t0 + 2600, (u) => ({ x: x0 + Math.sin(u * 8 + i) * 7, y: 258 - u * 270, op: fade(u, .06, .2) }), 26); }
 });
 def('b9', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '74-clean-notebook-board'); const g = grp(s, D);
@@ -380,7 +382,7 @@ def('b9', 'b', 7600, (s) => { const D = 7600; baseBoard(s, '74-clean-notebook-bo
   R.forEach((r, i) => { const t = T0 + i * ST + 110; rows.push({ offset: t / D, transform: `translate(${(r.x - tx).toFixed(1)}px,${(r.bt - 3 - ty + (i % 2 ? 2 : -1)).toFixed(1)}px) rotate(${i % 2 ? 3 : -2}deg)`, opacity: 1 }); });
   rows.push({ offset: (T0 + N * ST + 500) / D, transform: 'translate(380px,20px) rotate(0deg)', opacity: 1 }, { offset: (T0 + N * ST + 570) / D, transform: 'translate(380px,20px) rotate(0deg)', opacity: 0 }, { offset: 1, opacity: 0, transform: 'translate(380px,20px)' });
   pc.animate(rows, { duration: D, fill: 'both', easing: 'linear' });
-  for (let i = 0; i < 5; i++) sparkle(g, R[R.length - 1].x + (rnd() - .5) * 120, R[R.length - 1].y - 14 - rnd() * 30, 14, D, T0 + N * ST + 700 + i * 260, 500, 7);
+  for (let i = 0; i < 5; i++) sparkle(penHost(g), R[R.length - 1].x + (rnd() - .5) * 120, R[R.length - 1].y - 14 - rnd() * 30, 14, D, T0 + N * ST + 700 + i * 260, 500, 7);
 });
 def('b10', 'b', 7800, (s) => { const D = 7800; baseBoard(s, '49-haunted-window-board'); const g = grp(s, D);
   const WD = !!(HOOK && HOOK.wide), BWX = WD ? 496 : BW, W0 = (WD ? .12 : .17) * BWX, W1 = (WD ? .88 : .83) * BWX, T0 = (WD ? .14 : .3) * BH2, T1 = (WD ? .86 : .85) * BH2; /* WD: the game's 2:1 board (496 x 248 units) */

@@ -10521,8 +10521,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         MM.ready(key).then(() => {
           if (!current()) return;
           clearTimeout(sb.mmLoadT);
-          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over, wide: sb.def.layer === "wide" });
-          if (host2) try { MM.buildBoard(key, host2, { text: document.createElement("p"), body: document.createElement("div"), letters: [], over: document.createElement("div") }); } catch (e) { host2.remove(); } // same decorations for the right end; the question itself is only animated once
+          MM.buildBoard(key, host, { text: questionPromptTextEl, body: qBodyEl, letters: chars, over, wide: sb.def.layer === "wide", span: sb.def.layer === "full" ? 330 : 496 });
+          if (host2) try { // same decoration at the right end. It needs one stand-in letter: several boards read the first letter's place, and without it they threw and the whole right end went missing.
+            const dummyText = document.createElement("p"), dummyLetter = document.createElement("span"); dummyLetter.textContent = "x"; dummyText.append(dummyLetter);
+            MM.buildBoard(key, host2, { text: dummyText, body: document.createElement("div"), letters: [dummyLetter], over: document.createElement("div"), span: sb.def.layer === "full" ? 330 : 496 });
+          } catch (e) { console.warn("[board decoration]", e); host2.remove(); } // same decoration for the right end; the question itself is only animated once
           sbHoldAnswer(sb, MM.boardSettle(b.monthly, chars.length) + 300);
         }).catch(fallback);
       },
@@ -20379,6 +20382,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // below), so a quick second tap doesn't look like a jarring swap.
     const lingering = rxShowing[r.playerId];
     let monthlyStart = null;
+    let runEntranceLater = () => {}; // set below; plays the card slide once a monthly animation is ready
     let mmLife = 0; // a monthly reaction plays its whole animation (ms), others use the usual 2 s
     const stage = document.createElement("div");
     stage.className = "rx-stage";
@@ -20430,6 +20434,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               life.effect.updateTiming({ duration: 2000 });
             }
             life.currentTime = 0; life.play();
+            stage.style.visibility = ""; delete stage.dataset.rxWait; runEntranceLater();
           };
           const timeout = setTimeout(() => finishLoad(true), 4000);
           MM.ready(key).then(() => {
@@ -20462,12 +20467,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { opacity: 1, transform: "translateX(0)", offset: .62 },
       { opacity: 0, transform: `translateX(${reactionSide === "l" ? 28 : -34}px)`, offset: 1 },
     ], { duration: 2000, easing: "ease-in", fill: "forwards" });
-    if (card && !r.previewAt && !prefersReducedMotion()) {
+    // Slide out from behind the sender's card. A monthly reaction first has to load its animation, so its
+    // slide waits until the animation actually starts (the stage stays hidden until then); the others slide at once.
+    const runEntrance = () => {
+      if (!(card && !r.previewAt && !prefersReducedMotion())) return;
       const rect = card.getBoundingClientRect();
       const outward = reactionSide === 'l' ? 1 : -1;
       stage.animate(reactionEntrance({left:Math.max(0,left),size:RXS,cardLeft:rect.left,cardRight:rect.right,outward}),
         {duration:380,easing:'cubic-bezier(.2,.7,.3,1)'});
-    }
+    };
+    if (monthlyStart) {
+      stage.style.visibility = "hidden";
+      const begin = monthlyStart;
+      monthlyStart = life => { begin(life); };
+      stage.dataset.rxWait = "1";
+      runEntranceLater = runEntrance;
+    } else runEntrance();
     if (monthlyStart) monthlyStart(life);
     life.onfinish = () => { stage.remove(); if (rxShowing[r.playerId] === stage) delete rxShowing[r.playerId]; };
   }
