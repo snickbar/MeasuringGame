@@ -109,13 +109,12 @@ export const SETTINGS = {
       { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, wave: { amp: 1.3, speed: 1.5, freq: .035 }, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }] },
       { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, wave: { amp: 1.4, speed: 1.7, freq: .04 } }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
-  farm: { floor: 'farm-n-floor', floorTileWidth: 640,  movers: ['butterflies'], sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true,
-    parallax: [{ img: 'farm-n-farthest', par: 0.09, lift: 375, scale: 2.21 },
-      { img: 'farm-n-big-0', par: .06, lift: 297, single: { x: 0.5, w: .78, sy: 1 } },
-      { img: 'farm-n-far', par: 0.16, lift: 335, scale: 1.96, props: [{ img: 'farm-n-movers-3', x: 0.7, row: 591, w: 0.035, move: { type: 'bob', amp: 1.5, speed: 0.6 }, flip: true }], drifters: [{ img: 'farm-n-movers-1', x: 0.6, row: 591, w: 0.036, speed: 12, bob: 0 }] },
-      { img: 'farm-n-mid', par: 0.34, lift: 300, scale: 1.54, props: [{ img: 'farm-n-reveals-0', x: 0.14, row: 591, w: 0.079 }, { img: 'farm-n-reveals-1', x: 0.5, row: 591, w: 0.152 }, { img: 'farm-n-reveals-2', x: 0.84, row: 591, w: 0.205 }, { img: 'farm-n-anim-0', x: 0.72, row: 591, w: 0.062, spin:  { img: 'farm-n-anim-1', fx: .5, fy: .1, size: 1.5, speed: .7 } }, { img: 'farm-n-movers-5', x: 0.3, row: 591, w: 0.025, move: { type: 'hop', amp: 4, speed: 1, phase: 2 } }], drifters: [{ img: 'farm-n-movers-0', x: 0.3, row: 591, w: 0.053, speed: 8, bob: 0 }] },
-      { img: 'farm-n-near', par: 0.6, lift: 135, scale: 1.15, props: [{ img: 'farm-n-loose-0', x: 0.06, row: 473, w: 0.037 }, { img: 'farm-n-loose-1', x: 0.24, row: 473, w: 0.058 }, { img: 'farm-n-loose-4', x: 0.42, row: 473, w: 0.050 }, { img: 'farm-n-loose-5', x: 0.6, row: 473, w: 0.106 }, { img: 'farm-n-loose-6', x: 0.78, row: 473, w: 0.080 }, { img: 'farm-n-loose-8', x: 0.93, row: 473, w: 0.076 }, { img: 'farm-n-movers-3', x: 0.15, row: 473, w: 0.099, move: { type: 'bob', amp: 1.5, speed: 0.8 } }, { img: 'farm-n-movers-4', x: 0.5, row: 473, w: 0.084, move: { type: 'bob', amp: 1.5, speed: 0.7, phase: 1 }, flip: true }, { img: 'farm-n-movers-5', x: 0.86, row: 473, w: 0.045, move: { type: 'hop', amp: 5, speed: 1.2 } }] }],
-    pieces: [{ img: 'farm-n-movers-2', cell: 2200, prob: 0.6, w: 84, speed: 34, bob: 3, sway: 0.02, minH: 480, face: 1 }] },
+  farm: { floor: 'farm-n-floor', floorTileWidth: 640, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
+    parallax: [{ img: 'farm-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
+      { img: 'farm-n-big-0', par: .25, lift: 580, single: { x: 0.5, w: .8, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: .85, speed: .6 } } },
+      { img: 'farm-n-far', par: 0.25, lift: 340, scale: .36, mirror: 520 },
+      { img: 'farm-n-mid', par: 0.34, lift: 300, scale: .36, mirror: 520 },
+      { img: 'farm-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520 }] },
   snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [{ img: 'snow-n-farthest', par: 0.09, lift: 375, scale: 2.32 },
       { img: 'snow-n-big-0', par: .06, lift: 369, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -219,7 +218,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -485,7 +484,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st = layerStats(image), tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
