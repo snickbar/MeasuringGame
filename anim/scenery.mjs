@@ -114,7 +114,7 @@ export const SETTINGS = {
       { img: 'farm-n-big-0', par: .25, lift: 610, single: { x: 0.5, w: .95, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: .85, speed: .6 } } },
       { img: 'farm-n-far', par: 0.25, lift: 340, scale: .72, mirror: 520 },
       { img: 'farm-n-tree', par: 0.34, lift: 300, scale: .598, skyRow: 641, noFill: true },
-      { img: 'farm-n-mid', par: 0.34, lift: 300, scale: .36, mirror: 520 }] },
+      { img: 'farm-n-mid', par: 0.34, lift: 300, scale: .36, mirror: 520, props: [{ img: 'farm-n-line', x: 0.5, row: 1215, w: 0.82 }, { img: 'farm-n-laundry-0', x: 0.2250, row: 1207, w: 0.1228, move: { type: 'dangle', amp: 6, speed: 1.10, phase: 0.0 } }, { img: 'farm-n-laundry-1', x: 0.3380, row: 1229, w: 0.1015, move: { type: 'dangle', amp: 6, speed: 1.23, phase: 1.3 } }, { img: 'farm-n-laundry-2', x: 0.4493, row: 1218, w: 0.0982, move: { type: 'dangle', amp: 6, speed: 1.36, phase: 2.6 } }, { img: 'farm-n-laundry-3', x: 0.5667, row: 1230, w: 0.1105, move: { type: 'dangle', amp: 6, speed: 1.49, phase: 3.9 } }, { img: 'farm-n-laundry-4', x: 0.6788, row: 1224, w: 0.0859, move: { type: 'dangle', amp: 6, speed: 1.62, phase: 5.2 } }, { img: 'farm-n-laundry-5', x: 0.7856, row: 1227, w: 0.1097, move: { type: 'dangle', amp: 6, speed: 1.75, phase: 6.5 } }, { img: 'farm-n-crop-0', x: 0.07, row: 1170, w: 0.17, move: { type: 'rustle', amp: 3.5, speed: 1.2, phase: 0 } }, { img: 'farm-n-crop-6', x: 0.93, row: 1170, w: 0.2, move: { type: 'rustle', amp: 3.5, speed: 1.8, phase: 6 } }], vanes: [{ img: 'farm-n-vane', x: 235, y: 660, size: 110, pole: 36, speed: .45 }] }] },
   snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [{ img: 'snow-n-farthest', par: 0.09, lift: 375, scale: 2.32 },
       { img: 'snow-n-big-0', par: .06, lift: 369, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -218,7 +218,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -578,11 +578,12 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const ring = q.foam && kit.images[q.foam]; // a ripple of foam around a piece standing in the water
         if (ring) { const fw = pw * 1.3, fh = fw * ring.naturalHeight / ring.naturalWidth; ctx.globalAlpha = .9; ctx.drawImage(ring, x + q.x * tw - fw / 2, top + row * k - fh * .75, fw, fh); ctx.globalAlpha = 1; }
         const mv = q.move, mt = reduced ? 0 : time, mph = q.x * 17 + (mv && mv.phase || 0), msp = mv && mv.speed || 1, baseY = top + row * k, cxp = x + q.x * tw;
-        let mAng = 0, mSy = 1, mDy = 0, mDx = 0, mAlpha = 1, mClip = false; // still animals: nod, breathe, hop, peek out of the ground, or fade in and out
+        let mTop = false, mAng = 0, mSy = 1, mDy = 0, mDx = 0, mAlpha = 1, mClip = false; // still animals: nod, breathe, hop, peek out of the ground, or fade in and out
         if (mv) {
           if (mv.type === 'nod') mAng = Math.sin(mt * msp + mph) * Math.min(mv.amp ?? 2, 4) * Math.PI / 180; // amp = degrees of head tilt
           else if (mv.type === 'sway') { mDx = Math.sin(mt * msp + mph) * (mv.amp ?? 6) * gs; mAng = Math.sin(mt * msp + mph + 1.2) * .035; mDy = Math.abs(Math.sin(mt * msp * 2 + mph)) * -1.5 * gs; } // a boat rocking from side to side
           else if (mv.type === 'rustle') mAng = (Math.sin(mt * msp + mph) + .45 * Math.sin(mt * msp * 2.7 + mph * 2)) * (mv.amp ?? 3) * Math.PI / 180; // leaves shivering in the breeze, pivoting at the stem
+          else if (mv.type === 'dangle') { mAng = (Math.sin(mt * msp + mph) + .5 * Math.sin(mt * msp * 2.3 + mph * 1.7)) * (mv.amp ?? 5) * Math.PI / 180; mTop = true; } // hangs from its top edge and swings
           else if (mv.type === 'bob') mSy = 1 + Math.sin(mt * msp + mph) * Math.min(mv.amp ?? 2, 3) * .01; // amp = percent of breathing
           else if (mv.type === 'hop') { const c = (mt * msp + mph) % 4; mDy = c < .7 ? -Math.abs(Math.sin(c / .7 * Math.PI)) * (mv.amp ?? 9) * gs : 0; }
           else if (mv.type === 'peek') { const u = .5 + .5 * Math.sin(mt * msp + mph); mDy = (1 - Math.pow(u, .6)) * ph * Math.min(mv.amp > 1 ? .8 : (mv.amp ?? .6), .85); mClip = true; }
@@ -591,8 +592,8 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         if (mAlpha > .01) {
           ctx.save(); if (mAlpha < 1) ctx.globalAlpha = mAlpha;
           if (mClip) { ctx.beginPath(); ctx.rect(cxp - pw, baseY - ph - 4, pw * 2, ph + 4 + 2); ctx.clip(); }
-          ctx.translate(cxp + mDx, baseY + mDy); if (mAng) ctx.rotate(mAng); if (mSy !== 1) ctx.scale(1, mSy); if (q.flip) ctx.scale(-1, 1);
-          ctx.drawImage(pic, -pw / 2, -ph, pw, ph); ctx.restore();
+          ctx.translate(cxp + mDx, baseY + mDy - (mTop ? ph : 0)); if (mAng) ctx.rotate(mAng); if (mSy !== 1) ctx.scale(1, mSy); if (q.flip) ctx.scale(-1, 1);
+          ctx.drawImage(pic, -pw / 2, mTop ? 0 : -ph, pw, ph); ctx.restore();
         }
         const turner = q.spin && kit.images[q.spin.img]; // a part of this prop that turns (blades, a wheel, a clock hand), pivoting where the picture says
         if (turner) {
@@ -600,6 +601,12 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           const sh = sz * turner.naturalHeight / turner.naturalWidth, spd = q.spin.speed || .5; // swing: rocks back and forth by that many radians (a pendulum, a hanging sign, kelp); otherwise it turns all the way round
           ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : q.spin.swing ? Math.sin(time * spd) * q.spin.swing : time * spd); ctx.drawImage(turner, -(q.spin.px ?? .5) * sz, -(q.spin.py ?? .5) * sh, sz, sh); ctx.restore();
         }
+      }
+      for (const vn of layer.vanes || []) { // a weather vane that turns round on its pole as the wind changes
+        const vp = kit.images[vn.img]; if (!vp) continue;
+        const vw = vn.size * k, vh = vw * vp.naturalHeight / vp.naturalWidth, vx = x + vn.x * k, vy = top + vn.y * k, tt = reduced ? 0 : time;
+        ctx.save(); ctx.strokeStyle = '#6b4a2b'; ctx.lineWidth = Math.max(1.5, 5 * k); ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(vx, vy - (vn.pole || 40) * k); ctx.stroke();
+        ctx.translate(vx, vy - (vn.pole || 40) * k); ctx.scale(reduced ? 1 : Math.cos(tt * (vn.speed || .5) + vn.x), 1); ctx.rotate(Math.sin(tt * 1.7) * .05); ctx.drawImage(vp, -vw / 2, -vh / 2, vw, vh); ctx.restore();
       }
       const sp = layer.spin, blades = sp && kit.images[sp.img];
       if (blades) { // a turning piece (windmill blades) sitting on this layer
