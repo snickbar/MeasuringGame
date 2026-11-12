@@ -69,7 +69,7 @@ export const FLOOR_DATA = {
     "color": "#c0ddfb"
   },
   "farm-n-floor": {
-    "surface": 0.433,
+    "surface": 0.687,
     "color": "#82c02c"
   },
   "forest-n-floor": {
