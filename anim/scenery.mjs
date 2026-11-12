@@ -105,9 +105,9 @@ export const SETTINGS = {
   forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#9fc4b0', '#cfe3cf'],
     parallax: [{ img: 'forest-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
       { img: 'forest-n-big-0', par: .25, lift: 800, single: { x: 0.5, w: 1.15, sy: 1, hang: [{ img: 'forest-n-vine-4', fx: .1, fy: .37, w: .075, speed: .9, swing: .08 }, { img: 'forest-n-vine-3', fx: .27, fy: .38, w: .07, speed: .75, swing: .09 }, { img: 'forest-n-vine-2', fx: .72, fy: .38, w: .07, speed: .85, swing: .09 }, { img: 'forest-n-vine-1', fx: .9, fy: .37, w: .06, speed: .7, swing: .08 }] } },
-      { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520, wave: { amp: 1.7, speed: 1.2, freq: .03 } },
-      { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, wave: { amp: 1.3, speed: 1.5, freq: .035 }, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }] },
-      { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, wave: { amp: 1.4, speed: 1.7, freq: .04 }, props: [{ img: 'forest-n-bush-0', x: .12, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.6 } }, { img: 'forest-n-bush-3', x: .5, row: 330, w: .22, move: { type: 'rustle', amp: 4, speed: 1.9, phase: 2 } }, { img: 'forest-n-bush-4', x: .86, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.7, phase: 4 } }] }],
+      { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520 },
+      { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }, { img: 'forest-n-water', x: 365, y: 1121, ripple: { rows: 8, speed: .5 } }] },
+      { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, props: [{ img: 'forest-n-bush-0', x: .12, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.6 } }, { img: 'forest-n-bush-3', x: .5, row: 330, w: .22, move: { type: 'rustle', amp: 4, speed: 1.9, phase: 2 } }, { img: 'forest-n-bush-4', x: .86, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.7, phase: 4 } }] }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
   farm: { floor: 'farm-n-floor', floorTileWidth: 640, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
     parallax: [{ img: 'farm-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
@@ -218,7 +218,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -513,6 +513,15 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         let oc = FLOW_CANVAS.get(fl); if (!oc) { oc = document.createElement('canvas'); oc.width = mask.naturalWidth; oc.height = mask.naturalHeight; FLOW_CANVAS.set(fl, oc); }
         const g = oc.getContext('2d'), W = oc.width, H = oc.height, n = fl.streaks || 9;
         g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+        if (fl.ripple) { // the creek: pale wavy lines drifting along the water, sliding slowly toward the viewer
+          const rows = fl.ripple.rows || 9, tt = reduced ? 0 : time; g.fillStyle = 'rgba(30,140,190,.2)'; g.fillRect(0, 0, W, H);
+          for (let r = 0; r < rows; r++) {
+            const yy = ((r + (tt * (fl.ripple.speed || .25)) % 1) / rows) * H, amp = 2 + 5 * (yy / H), wl = 46 + 40 * (yy / H);
+            g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + r * 1.9) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
+            g.strokeStyle = r % 2 ? 'rgba(255,255,255,.85)' : 'rgba(20,110,170,.45)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
+          }
+          g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.drawImage(oc, x + fl.x * k, top + fl.y * k, W * k, H * k); continue;
+        }
         g.fillStyle = 'rgba(40,150,200,.4)'; g.fillRect(0, 0, W, H);
         for (let i = 0; i < n; i++) for (let r = 0; r < 2; r++) {
           const px = (i + .5) / n * W + Math.sin(i * 12.9) * 4, len = 26 + (i * 7) % 22, yy = (((reduced ? 0 : time) * fl.speed + i * 41 + r * (H + 30) / 2) % (H + 60)) - 40;
