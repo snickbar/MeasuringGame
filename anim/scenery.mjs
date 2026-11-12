@@ -102,7 +102,7 @@ export const SETTINGS = {
       { img: 'ts-near', par: .6, lift: 220, glow: ['ts-near-glow0', 'ts-near-glow1'] }],
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
     skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
-  forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#b9d2c7', '#e3ede0'], fireflies: true,
+  forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#9fc4b0', '#cfe3cf'],
     parallax: [{ img: 'forest-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
       { img: 'forest-n-big-0', par: .25, lift: 800, single: { x: 0.5, w: 1.15, sy: 1 } },
       { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520, wave: { amp: 1.7, speed: 1.2, freq: .03 } },
@@ -492,7 +492,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
     for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
     if (reach > height) continue;
-    ctx.save(); if (dark) ctx.filter = 'brightness(58%)';
+    ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; else if (layer.filter) ctx.filter = layer.filter;
     ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
     for (const [bi, b] of (layer.beams || []).entries()) { // searchlights sweeping the sky from behind this skyline
       const px = width * b.x, py = top + st.sky * k + (b.drop || 30) * gs, len = (b.len || 560) * gs, ang = -Math.PI / 2 + (reduced ? 0 : Math.sin(time * (b.speed || .5) + bi * 2.1) * (b.swing || .5)) + (b.tilt || 0), spread = (b.spread || .042);
