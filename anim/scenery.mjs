@@ -111,10 +111,11 @@ export const SETTINGS = {
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
   farm: { floor: 'farm-n-floor', floorTileWidth: 640, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
     parallax: [{ img: 'farm-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
-      { img: 'farm-n-big-0', par: .25, lift: 580, single: { x: 0.5, w: .8, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: .85, speed: .6 } } },
+      { img: 'farm-n-big-0', par: .25, lift: 610, single: { x: 0.5, w: .95, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: .85, speed: .6 } } },
       { img: 'farm-n-far', par: 0.25, lift: 340, scale: .72, mirror: 520 },
+      { img: 'farm-n-tree', par: 0.34, lift: 300, scale: .598, skyRow: 641, noFill: true },
       { img: 'farm-n-mid', par: 0.34, lift: 300, scale: .36, mirror: 520 },
-      { img: 'farm-n-near', par: 0.6, lift: 170, scale: .72, mirror: 520 }] },
+      { img: 'farm-n-near', par: 1, lift: 600, single: { x: 0.5, w: 1.1, sy: 1 } }] },
   snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [{ img: 'snow-n-farthest', par: 0.09, lift: 375, scale: 2.32 },
       { img: 'snow-n-big-0', par: .06, lift: 369, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -487,13 +488,13 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
-    const st = layerStats(image), tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
+    const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
     const top = base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
     let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
     for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
     if (reach > height) continue;
     ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; else if (layer.filter) ctx.filter = layer.filter;
-    ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2);
+    if (!layer.noFill) { ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2); }
     for (const [bi, b] of (layer.beams || []).entries()) { // searchlights sweeping the sky from behind this skyline
       const px = width * b.x, py = top + st.sky * k + (b.drop || 30) * gs, len = (b.len || 560) * gs, ang = -Math.PI / 2 + (reduced ? 0 : Math.sin(time * (b.speed || .5) + bi * 2.1) * (b.swing || .5)) + (b.tilt || 0), spread = (b.spread || .042);
       const grad = ctx.createLinearGradient(px, py, px + Math.cos(ang) * len, py + Math.sin(ang) * len);
