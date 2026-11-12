@@ -103,12 +103,12 @@ export const SETTINGS = {
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
     skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
   forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#b9d2c7', '#e3ede0'], layers: ['mist'], fireflies: true,
-    parallax: [{ img: 'forest-n-farthest', par: 0.07, lift: 520, scale: .36 },
-      { img: 'forest-n-big-1', par: .1, lift: 626, single: { x: 0.2, w: .42, sy: 1 } },
-      { img: 'forest-n-big-0', par: .12, lift: 684, single: { x: 0.76, w: .5, sy: 1 } },
-      { img: 'forest-n-far', par: 0.16, lift: 450, scale: .36 },
-      { img: 'forest-n-mid', par: 0.34, lift: 360, scale: .36 },
-      { img: 'forest-n-near', par: 0.6, lift: 120, scale: .36 }],
+    parallax: [{ img: 'forest-n-farthest', par: 0.07, lift: 520, scale: .36, mirror: 520 },
+      { img: 'forest-n-big-1', par: .16, lift: 626, single: { x: 0.2, w: .42, sy: 1 } },
+      { img: 'forest-n-big-0', par: .16, lift: 684, single: { x: 0.76, w: .5, sy: 1 } },
+      { img: 'forest-n-far', par: 0.16, lift: 450, scale: .36, mirror: 520 },
+      { img: 'forest-n-mid', par: 0.34, lift: 360, scale: .36, mirror: 520 },
+      { img: 'forest-n-near', par: 0.6, lift: 120, scale: .36, mirror: 520 }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
   farm: { floor: 'farm-n-floor', floorTileWidth: 640,  movers: ['butterflies'], sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'], flyers: 'geese', fireflies: true,
     parallax: [{ img: 'farm-n-farthest', par: 0.09, lift: 375, scale: 2.21 },
@@ -503,6 +503,15 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     }
     for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
       ctx.drawImage(image, x, top, tw + 1, th);
+      if (layer.mirror) { // keep painting below the picture with its own lower rows, flipped back and forth, so no flat band or edge ever shows
+        const m = Math.min(layer.mirror, image.naturalHeight - st.sky - 20), mh = m * k;
+        for (let j = 0; bottom + j * mh < height && j < 8; j++) {
+          const y0 = bottom + j * mh;
+          ctx.save(); ctx.beginPath(); ctx.rect(x, y0, tw + 1, mh + 1); ctx.clip();
+          if (j % 2 === 0) { ctx.translate(x, y0 + th); ctx.scale(1, -1); } else ctx.translate(x, y0 - (image.naturalHeight - m) * k);
+          ctx.drawImage(image, 0, 0, tw + 1, th); ctx.restore();
+        }
+      }
       if (layer.glow && !reduced) { // neon signs that pulse and flicker: a copy of just the neon, added on top
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         layer.glow.forEach((gn, gi) => {
