@@ -61,7 +61,7 @@ export const SETTINGS = {
   beach: { sky: ['#72c9f4', '#e2f6ff'], nightSky: ['#17294f', '#526b91'], night: 'dark',
     floaters: ['cloud-set-day'], cloudClear: 210, flyers: 'gulls',
     coast: { sand: 'beach-coast-sand', sea: 'beach-coast-sea', point: 'beach-coast-point',
-      foam: 'beach-coast-foam', wet: 'beach-coast-wet', fronds: 'beach-coast-fronds',
+      foam: 'beach-coast-foam', wash: 'beach-coast-wash', wet: 'beach-coast-wet', fronds: 'beach-coast-fronds',
       boat: 'bw-sailboat', beam: 'beach-coast-beam' } },
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
@@ -1279,9 +1279,9 @@ function drawBeachCoast(ctx, kit, options) {
   const seaY = floorY - width * .98 + climb * .17;
   const sandY = floorY - width * .37 + climb * .60 + Math.min(0, shiftY) * .45;
   const sandHeight = width * sand.naturalHeight / sand.naturalWidth;
-  const pointWidth = width * .75;
+  const pointWidth = width * .95;
   const pointHeight = pointWidth * point.naturalHeight / point.naturalWidth;
-  const pointX = width - pointWidth + 1;
+  const pointX = width * .16;
   const pointY = seaY + width * .17 - pointHeight;
   const pointScale = pointWidth / point.naturalWidth;
   const wet = kit.images[coast.wet];
@@ -1291,12 +1291,28 @@ function drawBeachCoast(ctx, kit, options) {
   const foamWidth = width * 1.05;
   const foamHeight = foamWidth * foam.naturalHeight / foam.naturalWidth;
 
+  const foamX = (width - foamWidth) / 2;
+  const foamY = wetY - width * .022 + tide * width * .032;
+  const wash = kit.images[coast.wash];
+  const washDepth = (wash.naturalHeight - foam.naturalHeight) * foamWidth / foam.naturalWidth;
+
   drawFloaters(ctx, kit, options);
   ctx.save();
   if (dark) ctx.filter = 'brightness(62%) saturate(80%)';
-  if (seaY < height) {
+  if (wetY < height) {
+    drawTerrainImage(ctx, wet, 0, wetY, width, width * wet.naturalHeight / wet.naturalWidth,
+      Math.min(height, sandY + width * .18), .75);
+    ctx.drawImage(wash, foamX, foamY - washDepth, foamWidth, foamHeight + washDepth);
+  }
+  const seaBottom = Math.min(height, wetY + width * .012);
+  if (seaY < seaBottom) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, seaY, width, seaBottom - seaY);
+    ctx.clip();
     drawTerrainImage(ctx, sea, 0, seaY, width, width * sea.naturalHeight / sea.naturalWidth,
-      height, .82);
+      seaBottom, .82);
+    ctx.restore();
   }
   const boat = kit.images[coast.boat];
   const boatWidth = width * .10;
@@ -1316,12 +1332,9 @@ function drawBeachCoast(ctx, kit, options) {
     ctx.restore();
   }
   if (wetY < height) {
-    drawTerrainImage(ctx, wet, 0, wetY, width, width * wet.naturalHeight / wet.naturalWidth,
-      Math.min(height, sandY + width * .18), .75);
     ctx.save();
     ctx.globalAlpha = .83 + tide * .09;
-    ctx.drawImage(foam, (width - foamWidth) / 2, wetY - width * .022 + tide * width * .032,
-      foamWidth, foamHeight);
+    ctx.drawImage(foam, foamX, foamY, foamWidth, foamHeight);
     ctx.restore();
   }
   if (sandY < height) drawTerrainImage(ctx, sand, 0, sandY, width, sandHeight, height, .73);
