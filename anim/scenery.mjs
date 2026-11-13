@@ -182,14 +182,14 @@ export const SETTINGS = {
   mountain: { floor: 'mountain-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#7fb0e6', '#d3e5f4'], floaters: ['cloud-set-day'],
     parallax: [
-      { img: 'mountain-climb-backdrop', par: .10, lift: 553, scale: .65 },
-      { img: 'mountain-climb-peak', par: .15, lift: 553, single: { x: .55, w: .97, sy: 1 } },
-      { img: 'mountain-climb-distant', par: .28, lift: 422, scale: .59 },
-      { img: 'mountain-climb-middle', par: .56, lift: 349, scale: .58, overlapFrom: .95, props: [
+      { img: 'mountain-climb-backdrop', par: .10, lift: 577, scale: .65 },
+      { img: 'mountain-climb-peak', par: .15, lift: 577, single: { x: .55, w: .97, sy: 1 } },
+      { img: 'mountain-climb-distant', par: .28, lift: 446, scale: .59 },
+      { img: 'mountain-climb-middle', par: .56, lift: 373, scale: .58, overlapFrom: .95, props: [
         { img: 'mountain-climb-gondola', x: .88, row: 741, w: .072, move: { type: 'dangle', amp: 5, speed: 1.15 } },
         { img: 'mountain-climb-flags', x: .53, row: 1115, w: .09, move: { type: 'rustle', amp: 4, speed: 1.6 } },
       ] },
-      { img: 'mountain-climb-foreground', par: 1, lift: 28, scale: .58, grounded: true, overlapFrom: .95 },
+      { img: 'mountain-climb-foreground', par: 1, lift: 52, scale: .58, grounded: true, overlapFrom: .95 },
     ] },
   jungle: { floor: 'jungle-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#80bddc', '#d1e9c7'], floaters: ['cloud-set-day'],
@@ -202,7 +202,7 @@ export const SETTINGS = {
       ] } },
       { img: 'jungle-climb-bank', par: .23, lift: 217, scale: .67, overlapFrom: .95 },
       { img: 'jungle-climb-middle', par: .56, lift: 387, scale: .59, overlapFrom: .95 },
-      { img: 'jungle-climb-foreground', par: 1, lift: 48, scale: .58, grounded: true, overlapFrom: .95, props: [
+      { img: 'jungle-climb-foreground', par: 1, lift: 0, scale: .58, grounded: true, overlapFrom: .95, props: [
         { img: 'jungle-n-loose-1', x: .23, row: 1155, w: .12, move: { type: 'rustle', amp: 4, speed: 1.05 } },
         { img: 'jungle-n-loose-0', x: .77, row: 1225, w: .10, move: { type: 'rustle', amp: 3, speed: .86 } },
       ] },
