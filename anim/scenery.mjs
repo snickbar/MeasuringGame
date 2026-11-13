@@ -1272,7 +1272,7 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   const left = (width - 1024 * scale) / 2;
   const climb = Math.max(0, shiftY);
   const streetY = floorY - 560 * scale + shiftY;
-  const skyY = floorY - 2140 * scale + climb * .075;
+  const skyY = floorY - 2180 * scale + climb * .075;
   const towerY = streetY - 890 * scale;
   const clock = reduced ? 0 : time;
   const image = name => kit.images[square[name]];
@@ -1281,7 +1281,7 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   if (skyY > 0) ctx.drawImage(image('sky'), 512, 0, 1, 1, 0, 0, width, Math.min(height, skyY + 1));
   drawTerrainImage(ctx, image('sky'), left, skyY, 1024 * scale, 1536 * scale, height, .86);
   const skyscrapers = image('skyscrapers');
-  const skyscraperY = height - 1736 * scale + climb * .23;
+  const skyscraperY = height - 1820 * scale + climb * .23;
   if (skyscraperY < height) {
     paint('skyscrapers', left, skyscraperY, 1024 * scale,
       skyscrapers.naturalHeight * 1024 / skyscrapers.naturalWidth * scale);
