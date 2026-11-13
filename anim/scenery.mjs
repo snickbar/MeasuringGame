@@ -184,10 +184,10 @@ export const SETTINGS = {
     parallax: [
       { img: 'mountain-climb-backdrop', par: .10, lift: 577, scale: .65 },
       { img: 'mountain-climb-peak', par: .15, lift: 577, single: { x: .55, w: .97, sy: 1 } },
-      { img: 'mountain-climb-distant', par: .28, lift: 446, scale: .59 },
-      { img: 'mountain-climb-middle', par: .56, lift: 373, scale: .58, overlapFrom: .95, props: [
+      { img: 'mountain-climb-distant', par: .28, lift: 446, scale: .59, flows: [{ img: 'mountain-flow-distant', x: 0, y: 0, ripple: { rows: 48, speed: 1.6 } }] },
+      { img: 'mountain-climb-middle', par: .56, lift: 373, scale: .58, overlapFrom: .95, flows: [{ img: 'mountain-flow-middle', x: 0, y: 0, ripple: { rows: 46, speed: 1.25 } }], props: [
         { img: 'mountain-climb-gondola', x: .88, row: 741, w: .072, move: { type: 'dangle', amp: 5, speed: 1.15 } },
-        { img: 'mountain-climb-flags', x: .53, row: 1115, w: .09, move: { type: 'rustle', amp: 4, speed: 1.6 } },
+        { img: 'mountain-climb-flags', x: .24, row: 1010, w: .085, move: { type: 'rustle', amp: 4, speed: 1.6 } },
       ] },
       { img: 'mountain-climb-foreground', par: 1, lift: 0, scale: .58, grounded: true, overlapFrom: .95 },
     ] },
@@ -280,7 +280,7 @@ const layeredReveals = {
     { img: 'fair-reveal-zoo', par: .15, lift: 284, scale: .56, overlapFrom: .95 },
     {"img":"fair-reveal-far","par":0.27,"lift":309,"scale":0.63,"overlapFrom":0.95},
     {"img":"fair-reveal-mid","par":0.55,"lift":342,"scale":0.58,"overlapFrom":0.95,"props":[]},
-    {"img":"fair-reveal-front","par":1,"lift":52,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+    {"img":"fair-reveal-front","par":1,"lift":5,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   cave: { roomBack: 'cave-reveal-wall', parallax: [
     {"img":"cave-reveal-landmark","par":0.15,"lift":572,"single":{"x":0.54,"w":0.89,"sy":1}},
@@ -309,10 +309,10 @@ const layeredReveals = {
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
     {"img":"grass-reveal-far","par":0.12,"lift":445,"scale":0.63,"overlapFrom":0.95},
-    {"img":"grass-reveal-landmark","par":0.15,"lift":550,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"grass-reveal-wheel","fx":0.72,"fy":0.73,"size":0.51,"speed":0.45}}},
-    { img: 'meadow-hills', par: .15, lift: 167, scale: .66 },
-    {"img":"grass-reveal-mid","par":0.55,"lift":311,"scale":0.58,"overlapFrom":0.95,"props":[]},
-    {"img":"grass-reveal-front","par":1,"lift":48,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+    {"img":"grass-reveal-landmark","par":0.15,"lift":570,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"grass-reveal-wheel","fx":0.72,"fy":0.73,"size":0.51,"speed":0.45}}},
+    { img: 'meadow-hills', par: .15, lift: 177, scale: .66 },
+    {"img":"grass-reveal-mid","par":0.55,"lift":168,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"grass-reveal-front","par":1,"lift":-28,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   space: { movers: ['twinkle', 'comet'], skyPieces: [{ img: 'space-reveal-planet', screenY: .145, par: .045, x: .5, wFrac: .65 }], parallax: [
     {"img":"space-reveal-landmark","par":0.15,"lift":568,"single":{"x":0.54,"w":0.89,"sy":1}},
@@ -340,8 +340,8 @@ const layeredReveals = {
     {"img":"tabletop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   volcano: { parallax: [
-    {"img":"volcano-reveal-back","par":0.09,"lift":586,"scale":0.65,"flows":[{"img":"volcano-flow-back","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
-    {"img":"volcano-reveal-landmark","par":0.15,"lift":510,"single":{"x":0.54,"w":0.89,"sy":1,"smoke":"mist"},"flows":[{"img":"volcano-flow-landmark","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
+    {"img":"volcano-reveal-back","par":0.09,"lift":625,"scale":0.65,"flows":[{"img":"volcano-flow-back","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
+    {"img":"volcano-reveal-landmark","par":0.15,"lift":549,"single":{"x":0.54,"w":0.89,"sy":1,"smoke":"mist"},"flows":[{"img":"volcano-flow-landmark","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-far","par":0.27,"lift":415,"scale":0.63,"overlapFrom":0.95,"flows":[{"img":"volcano-flow-far","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-mid","par":0.55,"lift":345,"scale":0.58,"overlapFrom":0.95,"flows":[{"img":"volcano-reveal-flow","x":0,"y":0,"ripple":{"rows":34,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-front","par":1,"lift":-30.72,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}],"flows":[{"img":"volcano-flow-front","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]}
@@ -727,11 +727,14 @@ function drawLiftChairs(ctx, chair, x, y, width, height, time) {
 }
 
 function drawTempleTorches(ctx, stand, flame, x, y, width, height, time, reduced) {
-  const standH = width * .16, standW = standH * stand.naturalWidth / stand.naturalHeight;
+  const standH = width * .115, standW = standH * stand.naturalWidth / stand.naturalHeight;
   const flameH = width * .079, flameW = flameH * flame.naturalWidth / flame.naturalHeight;
-  for (const [index, side] of [.325, .675].entries()) {
-    const baseX = x + width * side, bowlY = y + height * .39 - standH;
-    ctx.drawImage(stand, baseX - standW / 2, bowlY, standW, standH);
+  for (const [index, side] of [.38, .62].entries()) {
+    const baseX = x + width * side, bowlY = y + height * .325 - standH;
+    // The ledge occludes the foot of each stand.
+    const exposed = .70;
+    ctx.drawImage(stand, 0, 0, stand.naturalWidth, stand.naturalHeight * exposed,
+      baseX - standW / 2, bowlY, standW, standH * exposed);
     const flicker = reduced ? 0 : Math.sin(time * 13 + index * 2) * .65 + Math.sin(time * 21 + index) * .35;
     ctx.save();
     ctx.translate(baseX, bowlY + standH * .035);
