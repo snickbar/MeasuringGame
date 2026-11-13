@@ -282,10 +282,10 @@ const layeredReveals = {
     {"img":"fair-reveal-mid","par":0.55,"lift":342,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"fair-reveal-front","par":1,"lift":5,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  cave: { roomBack: 'cave-reveal-wall', parallax: [
-    {"img":"cave-reveal-landmark","par":0.15,"lift":572,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"cave-reveal-far","par":0.27,"lift":420,"scale":0.63,"overlapFrom":0.95},
-    {"img":"cave-reveal-mid","par":0.55,"lift":340,"scale":0.58,"overlapFrom":0.95,"props":[]},
+  cave: { roomBack: 'cave-reveal-wall', roomBackParallax: .12, floorInset: 0, parallax: [
+    {"img":"cave-reveal-landmark","par":0.15,"lift":597,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"cave-reveal-far","par":0.27,"lift":402,"scale":0.63,"overlapFrom":0.95},
+    {"img":"cave-reveal-mid","par":0.55,"lift":318,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"cave-reveal-front","par":1,"lift":49,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"cave-reveal-mushroom","x":0.72,"row":990,"w":0.085,"move":{"type":"pulse","amp":4,"speed":5}}]}
   ] },
   kitchen: { roomBack: 'kitchen-reveal-back', parallax: [
@@ -1245,7 +1245,20 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (pass !== 'foreground' && roomBack) {
     const scale = Math.max(width / roomBack.naturalWidth, height / roomBack.naturalHeight);
     const w = roomBack.naturalWidth * scale, h = roomBack.naturalHeight * scale;
-    ctx.drawImage(roomBack, (width - w) / 2, (height - h) / 2, w, h);
+    const x = (width - w) / 2;
+    if (config.roomBackParallax) {
+      const offset = ((shiftY * config.roomBackParallax % (2 * h)) + 2 * h) % (2 * h);
+      for (let y = offset - 2 * h, row = 0; y < height; y += h, row++) {
+        if (y + h <= 0) continue;
+        ctx.save();
+        ctx.translate(x, y + (row % 2 ? h : 0));
+        if (row % 2) ctx.scale(1, -1);
+        ctx.drawImage(roomBack, 0, 0, w, h + .5);
+        ctx.restore();
+      }
+    } else {
+      ctx.drawImage(roomBack, x, (height - h) / 2, w, h);
+    }
   }
   if (pass !== 'foreground' && config.wallpaper && !roomBack) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
@@ -1295,7 +1308,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   ctx.restore();
 }
 
-function floorInset(kit) { return kit.config.floor === 'forest-floor' ? 20 : 14; }
+function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor === 'forest-floor' ? 20 : 14); }
 
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
   const image = kit.images[kit.config.floor]; if (!image) return;

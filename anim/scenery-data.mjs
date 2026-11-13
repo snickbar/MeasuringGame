@@ -25,7 +25,7 @@ export const FLOOR_DATA = {
     "color": "#9b6847"
   },
   "cave-n-floor": {
-    "surface": 0.7230000000000001,
+    "surface": 0.52,
     "color": "#241f4f"
   },
   "volcano-n-floor": {
