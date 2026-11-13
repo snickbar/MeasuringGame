@@ -3,7 +3,7 @@
 // Move a scene to the front when its artwork or layout changes. Scenes without
 // a recent revision appear alphabetically after this list.
 const recentScenes = [
-  "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm", "stadium",
+  "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
   "city", "volcano", "rooftop", "beach",
   "living", "kitchen", "tabletop", "library", "workshop", "desert",
   "underwater", "snow", "forest",

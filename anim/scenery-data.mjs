@@ -33,7 +33,7 @@ export const FLOOR_DATA = {
     "color": "#34262b"
   },
   "stadium-n-floor": {
-    "surface": 0.509,
+    "surface": 0.60,
     "color": "#589a2b"
   },
   "rooftop-n-floor": {

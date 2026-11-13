@@ -319,8 +319,8 @@ const layeredReveals = {
     {"img":"rooftop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   stadium: { parallax: [
-    { img: 'stadium-reveal-back', par: .09, lift: 595, scale: .65 },
-    { img: 'stadium-reveal-far', par: .24, lift: 365, scale: .75, overlapFrom: .97, props: [
+    { img: 'stadium-reveal-back', par: .09, lift: 700, single: { x: .5, w: 1.25, sy: 1, overlapFrom: .88 } },
+    { img: 'stadium-reveal-far', par: .24, lift: 530, scale: .65, overlapFrom: .97, props: [
       { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
     ] },
   ] },
