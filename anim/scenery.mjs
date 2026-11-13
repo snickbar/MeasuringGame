@@ -1277,7 +1277,7 @@ function drawSunsetRooftops(ctx, kit, options) {
   const left = (width - 1024 * scale) / 2;
   const climb = Math.max(0, shiftY);
   const separation = 100 * (1 - Math.exp(-climb / 350));
-  const cityY = floorY - 1790 * scale + climb * .16;
+  const cityY = floorY - 1890 * scale + climb * .16;
   const farY = floorY - 1160 * scale + climb * .16 + separation * .26;
   const gardenY = floorY - 830 * scale + climb * .16 + separation * .61;
   const deckY = floorY - 285 * scale + climb * .16 + separation + Math.min(0, shiftY);
