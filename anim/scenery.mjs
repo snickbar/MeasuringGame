@@ -236,7 +236,7 @@ export const SETTINGS = {
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
       { img: 'workshop-n-near', par: .6, lift: 154, scale: 0.7, props: [{ img: 'workshop-n-loose-0', x: 0.08, row: 704, w: 0.046 }, { img: 'workshop-n-loose-2', x: 0.3, row: 704, w: 0.081 }, { img: 'workshop-n-loose-3', x: 0.55, row: 704, w: 0.130 }, { img: 'workshop-n-loose-6', x: 0.8, row: 704, w: 0.117 }] }],
     pieces: [{ img: 'workshop-n-movers-2', cell: 1700, prob: 0.6, w: 62, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }] },
-  rooftop: { sky: ['#8c76c7', '#f49b80'], nightSky: ['#262953', '#61547d'], night: 'dark',
+  rooftop: { sky: ['#8c76c7', '#f49b80'], nightSky: ['#262953', '#61547d'], night: 'dark', floaters: ['cloud-set-sunset'], cloudClear: 220,
     rooftop: { city: 'rooftop-sunset-city',
       far: 'rooftop-sunset-near', garden: 'rooftop-sunset-garden', deck: 'rooftop-sunset-deck',
       tower: 'rooftop-sunset-tower', hour: 'rooftop-sunset-hour', minute: 'rooftop-sunset-minute',
@@ -1299,6 +1299,8 @@ function drawSunsetRooftops(ctx, kit, options) {
   }
   draw('city', cityY);
   ctx.restore();
+
+  drawFloaters(ctx, kit, { ...options, dark: night });
 
   const celestial = kit.images[night ? art.moon : art.sun];
   const size = (night ? 100 : 116) * scale;
