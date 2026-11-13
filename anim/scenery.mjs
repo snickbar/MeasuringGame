@@ -121,14 +121,14 @@ export const SETTINGS = {
     sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [
       { img: 'snow-climb-backdrop', par: .10, lift: 525, scale: .65 },
-      { img: 'snow-climb-mountain', par: .16, lift: 625, single: { x: .5, w: 1.05, sy: 1, skiLift: true } },
+      { img: 'snow-n-big-0', par: .16, lift: 460, single: { x: .5, w: 1.23, sy: 1 } },
       { img: 'snow-climb-distant', par: .26, lift: 380, scale: .60 },
       { img: 'snow-climb-huge-tree', par: .36, lift: 488, single: { x: .62, w: .70, sy: 1 } },
       { img: 'snow-climb-middle', par: .57, lift: 265, scale: .56, props: [
         { img: 'snow-climb-ice-left', x: .355, row: 955, w: .032, move: { type: 'dangle', amp: 3, speed: 1.2 } },
         { img: 'snow-climb-ice-right', x: .825, row: 952, w: .029, move: { type: 'dangle', amp: 3, speed: .9 } },
       ] },
-      { img: 'snow-climb-foreground', par: .86, lift: 105, scale: .57, props: [
+      { img: 'snow-climb-foreground', par: 1, lift: 0, scale: .57, grounded: true, props: [
         { img: 'snow-climb-pine-left', x: .12, row: 1085, w: .13, move: { type: 'rustle', amp: 2, speed: .9 } },
         { img: 'snow-climb-pine-right', x: .84, row: 1125, w: .16, move: { type: 'rustle', amp: 2, speed: 1.1 } },
       ] },
@@ -527,7 +527,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
     const single = layer.single;
     const k = width * gs * (single ? single.w : 1.8 * (layer.scale || 1)) / image.naturalWidth;
     const drawHeight = image.naturalHeight * k * (single?.sy ?? 1);
-    const grounded = single && layer.par === 1;
+    const grounded = layer.grounded || (single && layer.par === 1);
     const top = grounded ? floorCover + 5 * gs - drawHeight
       : base - layer.lift * gs + layer.par * shiftY - (single ? 0 : layerStats(image).sky * k);
     // Extend only the lower terrain. Camera bounds never change the speed of
@@ -558,52 +558,6 @@ function drawTerrainImage(ctx, image, x, y, width, height, bottom) {
     x, y + upper, width, bottom - y - upper);
 }
 
-function drawSkiLift(ctx, x, y, width, height, time) {
-  ctx.save();
-  ctx.translate(x, y);
-  const unit = width / 400;
-  const left = { x: .10 * width, y: .61 * height };
-  const right = { x: .84 * width, y: .29 * height };
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#344f68';
-  ctx.lineWidth = 2.5 * unit;
-  for (const tower of [left, right]) {
-    ctx.beginPath();
-    ctx.moveTo(tower.x, tower.y);
-    ctx.lineTo(tower.x, tower.y + 31 * unit);
-    ctx.moveTo(tower.x - 5 * unit, tower.y);
-    ctx.lineTo(tower.x + 5 * unit, tower.y);
-    ctx.stroke();
-  }
-  ctx.lineWidth = 1.4 * unit;
-  for (const offset of [0, 4 * unit]) {
-    ctx.beginPath();
-    ctx.moveTo(left.x, left.y + offset);
-    ctx.lineTo(right.x, right.y + offset);
-    ctx.stroke();
-  }
-  for (const [index, phase] of [.22, .72].entries()) {
-    const travel = (phase + time * .11) % 1;
-    const t = index ? 1 - travel : travel;
-    ctx.save();
-    ctx.globalAlpha *= Math.min(1, travel * 14, (1 - travel) * 14);
-    ctx.translate(left.x + (right.x - left.x) * t, left.y + (right.y - left.y) * t + index * 4 * unit);
-    ctx.scale(unit, unit);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, 11);
-    ctx.stroke();
-    ctx.fillStyle = index ? '#d49146' : '#a75755';
-    ctx.beginPath();
-    ctx.roundRect(-7, 10, 14, 9, 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-  }
-  ctx.restore();
-}
-
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
   const terrain = kit.config.overlapTerrain ? terrainLayout(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
@@ -611,7 +565,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2); if (sg.skiLift) drawSkiLift(ctx, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
