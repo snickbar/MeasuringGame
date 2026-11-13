@@ -221,7 +221,7 @@ export const SETTINGS = {
       { img: 'volcano-n-mid', par: 0.34, lift: 300, scale: 1.51, props: [{ img: 'volcano-n-reveals-0', x: 0.14, row: 591, w: 0.124 }, { img: 'volcano-n-reveals-1', x: 0.5, row: 591, w: 0.150 }, { img: 'volcano-n-reveals-2', x: 0.84, row: 591, w: 0.088 }, { img: 'volcano-n-anim-0', x: 0.72, row: 591, w: 0.144, spin:  { img: 'volcano-n-anim-1', fx: .5, fy: .1, size: .45, speed: .7 } }], drifters: [{ img: 'volcano-n-movers-3', x: 0.5, row: 591, w: 0.042, speed: 14, bob: 0 }] },
       { img: 'volcano-n-near', par: 0.6, lift: 135, scale: 2.03, props: [{ img: 'volcano-n-loose-0', x: 0.06, row: 577, w: 0.024 }, { img: 'volcano-n-loose-1', x: 0.24, row: 577, w: 0.031 }, { img: 'volcano-n-loose-2', x: 0.42, row: 577, w: 0.036 }, { img: 'volcano-n-loose-5', x: 0.6, row: 577, w: 0.011 }, { img: 'volcano-n-loose-6', x: 0.78, row: 577, w: 0.026 }, { img: 'volcano-n-loose-8', x: 0.93, row: 577, w: 0.056 }, { img: 'volcano-n-movers-4', x: 0.3, row: 577, w: 0.034, move: { type: 'hop', amp: 5, speed: 1 } }] }],
     pieces: [{ img: 'volcano-n-movers-0', cell: 1700, prob: 0.6, w: 72, speed: 26, bob: 3, sway: 0.02, minH: 400, face: 1 }, { img: 'volcano-n-movers-1', cell: 2400, prob: 0.6, w: 100, speed: 18, bob: 3, sway: 0.02, minH: 520, face: 1 }, { img: 'volcano-n-movers-2', cell: 2800, prob: 0.6, w: 90, speed: 22, bob: 3, sway: 0.02, minH: 560, face: 1 }, { img: 'volcano-n-movers-5', cell: 3000, prob: 0.6, w: 96, speed: 24, bob: 3, sway: 0.02, minH: 600, face: 1 }] },
-  blossom: { floor: 'blossom-n-floor', floorTileWidth: 640,  sky: ['#f4d6e4', '#fcf0f2'], floaters: ['petal-leaf-set', 'cloud-set-day'], flyers: 'doves', fireflies: true,
+  blossom: { floor: 'blossom-n-floor', floorTileWidth: 640,  sky: ['#f4d6e4', '#fcf0f2'], floaters: ['cloud-set-day'], flyers: 'doves', fireflies: true,
     parallax: [{ img: 'blossom-n-farthest', par: 0.09, lift: 375, scale: 2.32 },
       { img: 'blossom-n-big-0', par: .06, lift: 506, single: { x: 0.5, w: 1.25, sy: 1 } },
       { img: 'blossom-n-far', par: 0.16, lift: 335, scale: 1.95, drifters: [{ img: 'blossom-n-movers-0', x: 0.3, row: 591, w: 0.039, speed: 6, bob: 0 }, { img: 'blossom-n-movers-1', x: 0.7, row: 591, w: 0.064, speed: 14, bob: 0 }] },
@@ -267,12 +267,12 @@ const layeredReveals = {
     {"img":"boardwalk-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"boardwalk-reveal-pinwheel","x":0.79,"row":848,"w":0.075,"move":{"type":"spin","amp":4,"speed":1.1}}]},
     {"img":"boardwalk-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  blossom: { parallax: [
-    {"img":"blossom-reveal-back","par":0.09,"lift":592,"scale":0.65},
-    {"img":"blossom-reveal-landmark","par":0.15,"lift":575,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"blossom-reveal-far","par":0.27,"lift":412,"scale":0.63,"overlapFrom":0.95},
-    {"img":"blossom-reveal-mid","par":0.55,"lift":337,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-lantern","x":0.57,"row":773,"w":0.043,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"blossom-reveal-front","par":1,"lift":48,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-bamboo","x":0.15,"row":938,"w":0.11,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  blossom: { fallingPetals: 'petal-leaf-set', parallax: [
+    {"img":"blossom-reveal-back","par":0.09,"lift":622,"scale":0.65},
+    {"img":"blossom-reveal-landmark","par":0.15,"lift":615,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"blossom-reveal-far","par":0.27,"lift":442,"scale":0.63,"overlapFrom":0.95},
+    {"img":"blossom-reveal-mid","par":0.55,"lift":367,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-lantern","glow":true,"x":0.57,"row":557,"w":0.043,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"blossom-reveal-front","par":1,"lift":78,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-bamboo","x":0.15,"row":938,"w":0.11,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
   ] },
   fair: { parallax: [
     {"img":"fair-reveal-back","par":0.09,"lift":588,"scale":0.65},
@@ -377,7 +377,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -922,6 +922,10 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           ctx.save(); if (mAlpha < 1) ctx.globalAlpha = mAlpha;
           if (mClip) { ctx.beginPath(); ctx.rect(cxp - pw, baseY - ph - 4, pw * 2, ph + 4 + 2); ctx.clip(); }
           ctx.translate(cxp + mDx, baseY + mDy - (mTop ? ph : 0)); if (mAng) ctx.rotate(mAng); if (mSy !== 1) ctx.scale(1, mSy); if (q.flip) ctx.scale(-1, 1);
+          if (q.glow) {
+            ctx.shadowColor = '#ffb54c';
+            ctx.shadowBlur = pw * (reduced ? .65 : .65 + .38 * Math.sin(time * 2.4));
+          }
           if (mv?.type === 'scan') ctx.scale(.76 + .24 * Math.cos(mt * msp), 1);
           if (mv?.type === 'spin') {
             ctx.rotate(-mAng);
@@ -1255,6 +1259,22 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
   ctx.restore();
 }
 
+function drawFallingPetals(ctx, image, width, height, time, shiftY) {
+  const box = columnBounds(image, 0);
+  const travel = height + 40;
+  for (let i = 0; i < 12; i++) {
+    const y = ((i * travel / 12 + time * (30 + i % 4 * 7) + shiftY * .12) % travel + travel) % travel - 20;
+    const x = width * (.07 + (i * .618 % 1) * .86) + Math.sin(time * 1.3 + i * 2) * 16;
+    const size = 12 + i % 4 * 3;
+    ctx.save();
+    ctx.globalAlpha = .84;
+    ctx.translate(x, y);
+    ctx.rotate(Math.sin(time * 1.6 + i) * .7);
+    ctx.drawImage(image, ...box, -size / 2, -size / 2, size, size * box[3] / box[2]);
+    ctx.restore();
+  }
+}
+
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0 }) {
   const { config, images } = kit;
   ctx.save();
@@ -1304,6 +1324,8 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
+  const petals = images[config.fallingPetals];
+  if (petals && !reduced) drawFallingPetals(ctx, petals, width, height, time, shiftY);
   drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale }); // in front of the far layers, so nothing flies behind a hill and vanishes
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
