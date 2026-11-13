@@ -320,7 +320,13 @@ const layeredReveals = {
   ] },
   stadium: { parallax: [
     { img: 'stadium-reveal-back', par: .09, lift: 700, single: { x: .5, w: 1.25, sy: 1, overlapFrom: .88 } },
-    { img: 'stadium-reveal-far', par: .24, lift: 530, scale: .65, overlapFrom: .97, props: [
+    { img: 'stadium-reveal-far', par: .24, lift: 530, scale: .65, overlapFrom: .97,
+      crowd: { img: 'stadium-reveal-fans', seats: [
+        [113, 331], [278, 350], [541, 331], [650, 373],
+        [119, 547], [235, 582], [453, 545], [628, 605],
+        [111, 761], [272, 793], [568, 759], [624, 842],
+        [124, 977], [327, 997], [481, 976], [661, 998],
+      ] }, props: [
       { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
     ] },
   ] },
@@ -368,7 +374,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -813,6 +819,26 @@ function drawCrystalGlints(ctx, sprite, points, x, y, width, height, time) {
   }
 }
 
+function drawSeatedFans(ctx, atlas, seats, left, top, scale, time, reduced) {
+  for (const [i, [x, y]] of seats.entries()) {
+    const cycle = (time + 1.37 * i) % (4.6 + .38 * (i % 5));
+    const lift = reduced ? 0 : Math.max(0, Math.min(1, (cycle - .45) / .28, (1.77 - cycle) / .4));
+    const rise = lift * lift * (3 - 2 * lift);
+    const pose = rise > .55 ? 64 : 0;
+    const width = 25 * scale;
+    const seatY = top + y * scale;
+    const center = left + x * scale;
+    // The painted seat back hides the waist throughout the entire cheer.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(center - width / 2, seatY - width, width, width);
+    ctx.clip();
+    ctx.drawImage(atlas, (i % 4) * 64, pose, 64, 64,
+      center - width / 2, seatY - (15 + 8 * rise) * scale, width, width);
+    ctx.restore();
+  }
+}
+
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
   const terrain = kit.config.overlapTerrain ? terrainLayout(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
@@ -844,6 +870,8 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           ctx.drawImage(image, 0, sy, image.naturalWidth, Math.min(bs / k + 1, image.naturalHeight - sy), x + dx, top + y, tw + 1, bs + .6);
         }
       } else drawTerrainImage(ctx, image, x, top, tw + 1, th, terrain?.get(layer)?.bottom ?? bottom, layer.overlapFrom);
+      const fans = kit.images[layer.crowd?.img];
+      if (fans) drawSeatedFans(ctx, fans, layer.crowd.seats, x, top, k, time, reduced);
       const glint = kit.images[layer.glint?.img];
       if (glint && !reduced) drawCrystalGlints(ctx, glint, layer.glint.points, x, top, tw, th, time);
       for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, x, top, k, k, time, reduced);
