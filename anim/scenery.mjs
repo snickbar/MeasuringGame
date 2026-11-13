@@ -61,7 +61,8 @@ export const SETTINGS = {
   beach: { sky: ['#72c9f4', '#e2f6ff'], nightSky: ['#17294f', '#526b91'], night: 'dark',
     floaters: ['cloud-set-day'], cloudClear: 210, flyers: 'gulls',
     coast: { sand: 'beach-coast-sand', sea: 'beach-coast-sea', point: 'beach-coast-point',
-      foam: 'beach-coast-foam' } },
+      foam: 'beach-coast-foam', wet: 'beach-coast-wet', fronds: 'beach-coast-fronds',
+      boat: 'bw-sailboat', beam: 'beach-coast-beam' } },
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
     parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.4, fill: '#98b628' } },
@@ -1278,9 +1279,14 @@ function drawBeachCoast(ctx, kit, options) {
   const seaY = floorY - width * .98 + climb * .17;
   const sandY = floorY - width * .37 + climb * .60 + Math.min(0, shiftY) * .45;
   const sandHeight = width * sand.naturalHeight / sand.naturalWidth;
-  const pointWidth = width * .58;
+  const pointWidth = width * .75;
   const pointHeight = pointWidth * point.naturalHeight / point.naturalWidth;
-  const pointY = seaY + width * .19 - pointHeight;
+  const pointX = width - pointWidth + 1;
+  const pointY = seaY + width * .17 - pointHeight;
+  const pointScale = pointWidth / point.naturalWidth;
+  const wet = kit.images[coast.wet];
+  const wetY = floorY - width * .50 + climb * .37 + Math.min(0, shiftY) * .25;
+  const clock = reduced ? 0 : time;
   const tide = reduced ? 0 : Math.sin(time * 1.65);
   const foamWidth = width * 1.05;
   const foamHeight = foamWidth * foam.naturalHeight / foam.naturalWidth;
@@ -1290,17 +1296,46 @@ function drawBeachCoast(ctx, kit, options) {
   if (dark) ctx.filter = 'brightness(62%) saturate(80%)';
   if (seaY < height) {
     drawTerrainImage(ctx, sea, 0, seaY, width, width * sea.naturalHeight / sea.naturalWidth,
-      Math.min(height, sandY + width * .22), .82);
+      height, .82);
   }
-  if (pointY < height) ctx.drawImage(point, width - pointWidth + 1, pointY, pointWidth, pointHeight);
-  if (sandY < height) {
+  const boat = kit.images[coast.boat];
+  const boatWidth = width * .10;
+  const boatHeight = boatWidth * boat.naturalHeight / boat.naturalWidth;
+  const boatX = width * .19 + Math.sin(clock * .30) * width * .115;
+  const boatY = seaY + width * .27 + Math.sin(clock * 2) * 2;
+  if (boatY < height) ctx.drawImage(boat, boatX - boatWidth / 2, boatY - boatHeight, boatWidth, boatHeight);
+
+  if (pointY < height) {
+    ctx.drawImage(point, pointX, pointY, pointWidth, pointHeight);
+    const fronds = kit.images[coast.fronds];
+    ctx.save();
+    ctx.translate(pointX + 451 * pointScale, pointY + 408 * pointScale);
+    ctx.rotate(Math.sin(clock * 1.5) * .075);
+    ctx.drawImage(fronds, -75 * pointScale, -82 * pointScale,
+      fronds.naturalWidth * pointScale, fronds.naturalHeight * pointScale);
+    ctx.restore();
+  }
+  if (wetY < height) {
+    drawTerrainImage(ctx, wet, 0, wetY, width, width * wet.naturalHeight / wet.naturalWidth,
+      Math.min(height, sandY + width * .18), .75);
     ctx.save();
     ctx.globalAlpha = .83 + tide * .09;
-    ctx.drawImage(foam, (width - foamWidth) / 2, sandY + width * .025 + tide * width * .032,
+    ctx.drawImage(foam, (width - foamWidth) / 2, wetY - width * .022 + tide * width * .032,
       foamWidth, foamHeight);
     ctx.restore();
-    // Keep the water behind the sandcastle and carry the sand through the opening dip.
-    drawTerrainImage(ctx, sand, 0, sandY, width, sandHeight, height, .73);
+  }
+  if (sandY < height) drawTerrainImage(ctx, sand, 0, sandY, width, sandHeight, height, .73);
+  if (isNight(kit.config, dark) && !reduced && pointY < height) {
+    const sweep = time % 9;
+    const beam = kit.images[coast.beam];
+    const beamHeight = width * .15;
+    ctx.save();
+    ctx.filter = 'none';
+    ctx.globalAlpha = .38 * Math.max(0, Math.sin(Math.PI * Math.min(1, sweep / 4.2)));
+    ctx.translate(pointX + 295 * pointScale, pointY + 122 * pointScale);
+    ctx.rotate(Math.PI - .04 - sweep * .075);
+    ctx.drawImage(beam, 0, -beamHeight / 2, width * .68, beamHeight);
+    ctx.restore();
   }
   ctx.restore();
 }
