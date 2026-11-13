@@ -1343,14 +1343,20 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   billboard('circles', 797, 370, 74, 102, -.24, .70, clock * 46 % 360, .90 + .10 * Math.sin(clock * 2.3));
   billboard('star', 717, 548, 52, 71, -.23, .79 + .20 * Math.sin(clock * 2.0), 0, .88 + .12 * Math.sin(clock * 2.0));
 
-  paint('grate', left + 880 * scale, sidesY + 1018 * scale, 62 * scale, 14 * scale);
+  const grateX = left + 911 * scale;
+  const grateY = sidesY + 1024 * scale;
+  paint('grate', grateX - 40 * scale, grateY - 9 * scale, 80 * scale, 18 * scale);
   if (!reduced) {
-    const phase = (clock % 5.4) / 5.4;
-    ctx.save();
-    ctx.globalAlpha = Math.sin(Math.PI * phase) ** 2 * .55;
-    paint('steam', left + (890 + phase * 13) * scale, sidesY + (936 - phase * 126) * scale,
-      42 * scale, 90 * scale);
-    ctx.restore();
+    for (let i = 0; i < 2; i++) {
+      const phase = (clock / 3.4 + .18 + i / 2) % 1;
+      const w = (53 + 28 * phase) * scale;
+      const h = (112 + 42 * phase) * scale;
+      ctx.save();
+      ctx.globalAlpha = Math.sin(Math.PI * phase) * .82;
+      paint('steam', grateX - w / 2 - phase * 36 * scale,
+        grateY - h - phase * 150 * scale, w, h);
+      ctx.restore();
+    }
   }
 }
 
