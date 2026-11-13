@@ -36,3 +36,5 @@ Kitchen floor tile pitch is doubled (760-pixel repeat before gentle camera zoom)
 At phone width, start the scenery high enough that the foreground and middle-layer features are readable during roll-in. Leave extra painted terrain below each layer so it can sit higher and still overlap the layer in front throughout the climb. Keep the roll-in surface aligned with the objects, and check the opening, mid-climb, and late-climb views for buried landmarks and exposed bottom edges.
 
 Check the largest rear landmark separately. Place it high enough that its defining features clear the nearer layers early in the climb, and check that its base stays buried as the layers separate.
+
+When a landmark looks like it floats, place a shallow piece of matching terrain directly in front of its base. Give it the same parallax speed as the landmark so it covers the bottom edge throughout the climb. Reuse existing terrain art when it fits, and keep the patch low enough to leave the landmark's defining features visible. See the Meadow mill for an example.
