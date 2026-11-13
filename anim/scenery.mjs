@@ -193,15 +193,15 @@ export const SETTINGS = {
   jungle: { floor: 'jungle-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#80bddc', '#d1e9c7'], floaters: ['cloud-set-day'],
     parallax: [
-      { img: 'jungle-n-farthest', par: .10, lift: 505, scale: 1.25 },
-      { img: 'jungle-climb-distant', par: .16, lift: 383, scale: .60, overlapFrom: .95 },
-      { img: 'jungle-climb-temple', par: .23, lift: 545, single: { x: .55, w: .91, sy: 1, hang: [
+      { img: 'jungle-n-farthest', par: .10, lift: 539, scale: 1.25, filter: 'brightness(.74) saturate(.82)' },
+      { img: 'jungle-climb-distant', par: .16, lift: 420, scale: .60, overlapFrom: .95 },
+      { img: 'jungle-climb-temple', par: .23, lift: 554, single: { x: .55, w: .91, sy: 1, hang: [
         { img: 'forest-n-vine-2', fx: .34, fy: .40, w: .031, speed: .77, swing: .045 },
         { img: 'forest-n-vine-3', fx: .70, fy: .48, w: .035, speed: .92, swing: .05 },
       ] } },
-      { img: 'jungle-climb-bank', par: .23, lift: 194, scale: .67, overlapFrom: .95 },
-      { img: 'jungle-climb-middle', par: .56, lift: 300, scale: .59, overlapFrom: .95 },
-      { img: 'jungle-climb-foreground', par: 1, lift: 26, scale: .58, grounded: true, overlapFrom: .95, props: [
+      { img: 'jungle-climb-bank', par: .23, lift: 217, scale: .67, overlapFrom: .95 },
+      { img: 'jungle-climb-middle', par: .56, lift: 339, scale: .59, overlapFrom: .95 },
+      { img: 'jungle-climb-foreground', par: 1, lift: 48, scale: .58, grounded: true, overlapFrom: .95, props: [
         { img: 'jungle-n-loose-1', x: .23, row: 1155, w: .12, move: { type: 'rustle', amp: 4, speed: 1.05 } },
         { img: 'jungle-n-loose-0', x: .77, row: 1225, w: .10, move: { type: 'rustle', amp: 3, speed: .86 } },
       ] },
