@@ -144,16 +144,26 @@ export const SETTINGS = {
     sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'],
     parallax: [
       { img: 'underwater-climb-backdrop', par: .10, lift: 545, scale: .65 },
-      { img: 'underwater-climb-ship', par: .17, lift: 588, single: { x: .59, w: .87, sy: 1,
+      { img: 'underwater-climb-ship', par: .11, lift: 570, single: { x: .59, w: .87, sy: 1,
         spin: { img: 'underwater-climb-wheel', fx: .79, fy: .615, size: .10, speed: .36 } } },
-      { img: 'underwater-climb-distant', par: .29, lift: 411, scale: .58, filter: 'saturate(.67)' },
+      { img: 'underwater-climb-distant', par: .29, lift: 385, scale: .58, filter: 'saturate(.67)' },
       { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .60, overlapFrom: .95 },
       { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, overlapFrom: .95, props: [
         { img: 'underwater-climb-coral-0', x: .30, row: 1160, w: .10 },
         { img: 'underwater-climb-coral-1', x: .70, row: 1240, w: .09 },
+        { img: 'underwater-n-loose-2', x: .45, row: 1340, w: .075 },
+        { img: 'underwater-n-loose-4', x: .58, row: 1425, w: .09 },
         { img: 'underwater-climb-kelp-0', x: .15, row: 1080, w: .13, move: { type: 'rustle', amp: 4, speed: .78 } },
         { img: 'underwater-climb-kelp-1', x: .82, row: 1120, w: .15, move: { type: 'rustle', amp: 5, speed: .95 } },
-      ] },
+      ],
+    pieces: [
+      { img: 'underwater-n-movers-0', cell: 330, prob: .85, w: 53, speed: 42, bob: 4, sway: .025, minH: 60, face: 1 },
+      { img: 'underwater-n-movers-1', cell: 720, prob: .60, w: 67, speed: 29, bob: 5, sway: .04, minH: 170, face: 1 },
+    ] },
+    ],
+    pieces: [
+      { img: 'underwater-n-movers-0', cell: 330, prob: .85, w: 53, speed: 42, bob: 4, sway: .025, minH: 60, face: 1 },
+      { img: 'underwater-n-movers-1', cell: 720, prob: .60, w: 67, speed: 29, bob: 5, sway: .04, minH: 170, face: 1 },
     ] },
   space: { floor: 'space-n-floor', floorTileWidth: 640,  sky: ['#242341', '#383453'], texture: 'star-field', movers: ['twinkle'],
     parallax: [{ img: 'space-n-farthest', par: 0.09, lift: 375, scale: 2.3 },
@@ -1062,7 +1072,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
-    const size = name === 'nebula' ? Math.min(460, width * 1.15) : wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 110 : name === 'snowflakes' ? 170 : 140;
+    const size = name === 'nebula' ? Math.min(460, width * 1.15) : wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 68 : name === 'snowflakes' ? 170 : 140;
     const aspect = image.naturalHeight / image.naturalWidth;
     ctx.globalAlpha = (name === 'mist' ? .45 : name === 'enchanted-mist' ? .38 : name === 'nebula' ? .6 : wisp ? .12 :
       name === 'bubbles' ? .72 : name === 'snowflakes' ? 1 : .22) * (dark ? .8 : 1);
