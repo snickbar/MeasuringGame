@@ -1,3 +1,5 @@
+import { FLOOR_DATA } from './scenery-data.mjs';
+
 // Scenery follows the larger object's identity. Measurements never select a biome.
 export const OBJECT_GROUPS = {
   grass: `adult-human ant backpack balloon barbecue-grill blade-of-grass bowling-ball bowling-pin bunny-ears capybara chocolate-bunny cockroach coffin confetti conversation-heart cupid cupids-arrow daisy duck easter-basket easter-egg egg-basket firecracker flamingo four-leaf-clover frisbee garden-gnome giant-anthill globe grill-spatula hamster heart hedgehog honeybee hot-air-balloon jelly-bean kangaroo ladybug lawn-flamingo locker long-stem-rose maraca marshmallow-chick mount-kilimanjaro noisemaker park-bench picnic-table pigeon pilgrim-hat pinata plastic-egg pogo-stick porta-potty rabbit school-bell shamrock skeleton snail sparkler stork suitcase sunflower teddy-bear tombstone tulip turtle uncle-sam-hat wind-turbine windmill`,
@@ -109,13 +111,13 @@ export const SETTINGS = {
       { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }, { img: 'forest-n-water', x: 365, y: 1121, ripple: { rows: 8, speed: .5 } }] },
       { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, props: [{ img: 'forest-n-bush-0', x: .12, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.6 } }, { img: 'forest-n-bush-3', x: .5, row: 330, w: .22, move: { type: 'rustle', amp: 4, speed: 1.9, phase: 2 } }, { img: 'forest-n-bush-4', x: .86, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.7, phase: 4 } }] }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
-  farm: { floor: 'farm-n-floor', floorTileWidth: 640, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
-    parallax: [{ img: 'farm-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
-      { img: 'farm-n-big-0', par: .25, lift: 520, single: { x: 0.5, w: .62, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: 1.1, speed: .6 } } },
-      { img: 'farm-n-far', par: 0.25, lift: 340, scale: .72, mirror: 520 },
-      { img: 'farm-n-tree', par: 0.34, lift: 340, scale: .598, skyRow: 641, noFill: true },
-      { img: 'farm-n-mid', par: 0.34, lift: 340, scale: .36, mirror: 520, props: [{ img: 'farm-n-line', x: 0.5, row: 1215, w: 0.82 }, { img: 'farm-n-laundry-0', x: 0.2250, row: 1207, w: 0.1228, move: { type: 'dangle', amp: 6, speed: 1.10, phase: 0.0 } }, { img: 'farm-n-laundry-1', x: 0.3380, row: 1229, w: 0.1015, move: { type: 'dangle', amp: 6, speed: 1.23, phase: 1.3 } }, { img: 'farm-n-laundry-2', x: 0.4493, row: 1218, w: 0.0982, move: { type: 'dangle', amp: 6, speed: 1.36, phase: 2.6 } }, { img: 'farm-n-laundry-3', x: 0.5667, row: 1230, w: 0.1105, move: { type: 'dangle', amp: 6, speed: 1.49, phase: 3.9 } }, { img: 'farm-n-laundry-4', x: 0.6788, row: 1224, w: 0.0859, move: { type: 'dangle', amp: 6, speed: 1.62, phase: 5.2 } }, { img: 'farm-n-laundry-5', x: 0.7856, row: 1227, w: 0.1097, move: { type: 'dangle', amp: 6, speed: 1.75, phase: 6.5 } }, { img: 'farm-n-crop-0', x: 0.07, row: 1170, w: 0.17, move: { type: 'rustle', amp: 3.5, speed: 1.2, phase: 0 } }, { img: 'farm-n-crop-6', x: 0.93, row: 1170, w: 0.2, move: { type: 'rustle', amp: 3.5, speed: 1.8, phase: 6 } }], vanes: [{ img: 'farm-n-vane', x: 235, y: 660, size: 110, pole: 36, speed: .45 }] },
-      { img: 'farm-n-near', par: 1, lift: 720, single: { x: 0.5, w: 1.2, sy: 1 } }] },
+  farm: { floor: 'farm-n-floor', floorTileWidth: 640, overlapTerrain: true, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
+    parallax: [{ img: 'farm-n-farthest', par: 0.07, lift: 480, scale: .66 },
+      { img: 'farm-n-far', par: 0.25, lift: 375, scale: .77 },
+      { img: 'farm-n-big-0', par: .25, lift: 455, single: { x: 0.63, w: .55, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: 1.1, speed: .6 } } },
+      { img: 'farm-n-tree', par: 0.34, lift: 295, scale: .82, skyRow: 641, noFill: true },
+      { img: 'farm-n-mid', par: 0.34, lift: 295, scale: .5, props: [{ img: 'farm-n-line', x: 0.5, row: 1215, w: 0.82 }, { img: 'farm-n-laundry-0', x: 0.2250, row: 1147, w: 0.1228, move: { type: 'dangle', amp: 6, speed: 1.10, phase: 0.0 } }, { img: 'farm-n-laundry-1', x: 0.3380, row: 1169, w: 0.1015, move: { type: 'dangle', amp: 6, speed: 1.23, phase: 1.3 } }, { img: 'farm-n-laundry-2', x: 0.4493, row: 1158, w: 0.0982, move: { type: 'dangle', amp: 6, speed: 1.36, phase: 2.6 } }, { img: 'farm-n-laundry-3', x: 0.5667, row: 1170, w: 0.1105, move: { type: 'dangle', amp: 6, speed: 1.49, phase: 3.9 } }, { img: 'farm-n-laundry-4', x: 0.6788, row: 1164, w: 0.0859, move: { type: 'dangle', amp: 6, speed: 1.62, phase: 5.2 } }, { img: 'farm-n-laundry-5', x: 0.7856, row: 1167, w: 0.1097, move: { type: 'dangle', amp: 6, speed: 1.75, phase: 6.5 } }, { img: 'farm-n-crop-0', x: 0.07, row: 1170, w: 0.17, move: { type: 'rustle', amp: 3.5, speed: 1.2, phase: 0 } }, { img: 'farm-n-crop-6', x: 0.93, row: 1170, w: 0.2, move: { type: 'rustle', amp: 3.5, speed: 1.8, phase: 6 } }], vanes: [{ img: 'farm-n-vane', x: 235, y: 660, size: 110, pole: 36, speed: .45 }] },
+      { img: 'farm-n-near', par: 1, lift: 720, single: { x: 0.5, w: 1.08, sy: 1 } }] },
   snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [{ img: 'snow-n-farthest', par: 0.09, lift: 375, scale: 2.32 },
       { img: 'snow-n-big-0', par: .06, lift: 369, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -479,22 +481,78 @@ function layerStats(image) {
   layerInfo.set(image, stats); return stats;
 }
 const FLOW_CANVAS = new WeakMap();
+// Only a continuous opaque region can cover the bottom of the panel behind it.
+const terrainRows = new WeakMap();
+function solidBottomRow(image, inset = 0) {
+  let rows = terrainRows.get(image);
+  if (!rows) terrainRows.set(image, rows = new Map());
+  if (rows.has(inset)) return rows.get(inset);
+  const { naturalWidth: w, naturalHeight: h } = image;
+  const canvas = document.createElement('canvas');
+  canvas.width = w - inset * 2; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, -inset, 0);
+  const stride = canvas.width * 4;
+  const pixels = ctx.getImageData(0, 0, canvas.width, h).data;
+  let y = h - 1;
+  for (; y >= 0; y--) {
+    let opaque = true;
+    for (let p = y * stride + 3; p < (y + 1) * stride; p += 4) {
+      if (pixels[p] < 250) { opaque = false; break; }
+    }
+    if (!opaque) break;
+  }
+  rows.set(inset, y + 1);
+  return y + 1;
+}
+
+function terrainOffsets(kit, width, height, base, shiftY, gs, floorY) {
+  const offsets = new Map();
+  const floor = kit.images[kit.config.floor];
+  const floorScale = kit.config.floorTileWidth * gs / floor.naturalWidth;
+  const floorTop = floorY + shiftY - 14 * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
+  const floorCover = floorTop + solidBottomRow(floor) * floorScale;
+  let cover = Math.min(height, floorCover);
+  for (const layer of [...kit.config.parallax].reverse()) {
+    const image = kit.images[layer.img];
+    if (!image) continue;
+    const single = layer.single;
+    const k = width * gs * (single ? single.w : 1.8 * (layer.scale || 1)) / image.naturalWidth;
+    const drawHeight = image.naturalHeight * k * (single?.sy ?? 1);
+    // Keep depth motion readable on short reveals without letting long climbs pull panels miles apart.
+    const climb = Math.max(0, shiftY);
+    const easedClimb = height * 1.35 * -Math.expm1(-climb / (height * 1.35)) + Math.min(0, shiftY);
+    const natural = base - layer.lift * gs + layer.par * easedClimb
+      - (single ? 0 : (layer.skyRow ?? layerStats(image).sky) * k);
+    const grounded = single && layer.par === 1;
+    const top = grounded ? floorCover + 5 * gs - drawHeight
+      : Math.max(natural, cover + 8 * gs - drawHeight);
+    offsets.set(layer, top);
+    if (layer.noFill || (single && !grounded)) continue;
+    const inset = single ? Math.floor((single.w * gs - 1) * image.naturalWidth / (2 * single.w * gs)) : 0;
+    const opaqueTop = top + solidBottomRow(image, Math.max(0, inset)) * k * (single?.sy ?? 1);
+    if (opaqueTop < top + drawHeight) cover = Math.min(cover, opaqueTop);
+  }
+  return offsets;
+}
+
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
+  const terrain = kit.config.overlapTerrain ? terrainOffsets(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
   for (const layer of kit.config.parallax || []) {
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
-      const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = base - layer.lift * gs + layer.par * shiftY;
+      const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer) ?? base - layer.lift * gs + layer.par * shiftY;
       if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
-    const top = base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
+    const top = terrain?.get(layer) ?? base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
     let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
     for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
     if (reach > height) continue;
     ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; else if (layer.filter) ctx.filter = layer.filter;
-    if (!layer.noFill) { ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2); }
+    if (!terrain && !layer.noFill) { ctx.fillStyle = st.fill; ctx.fillRect(0, bottom - 1, width, height - bottom + 2); }
     for (const [bi, b] of (layer.beams || []).entries()) { // searchlights sweeping the sky from behind this skyline
       const px = width * b.x, py = top + st.sky * k + (b.drop || 30) * gs, len = (b.len || 560) * gs, ang = -Math.PI / 2 + (reduced ? 0 : Math.sin(time * (b.speed || .5) + bi * 2.1) * (b.swing || .5)) + (b.tilt || 0), spread = (b.spread || .042);
       const grad = ctx.createLinearGradient(px, py, px + Math.cos(ang) * len, py + Math.sin(ang) * len);
