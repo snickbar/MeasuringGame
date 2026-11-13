@@ -38,3 +38,5 @@ At phone width, start the scenery high enough that the foreground and middle-lay
 Check the largest rear landmark separately. Place it high enough that its defining features clear the nearer layers early in the climb, and check that its base stays buried as the layers separate.
 
 When a landmark looks like it floats, place a shallow piece of matching terrain directly in front of its base. Give it the same parallax speed as the landmark so it covers the bottom edge throughout the climb. Reuse existing terrain art when it fits, and keep the patch low enough to leave the landmark's defining features visible. See the Meadow mill for an example.
+
+If a foreground panel hides a feature and the deeper layers already line up well, lower the foreground panel first. Check the opening at phone width and confirm the panel still overlaps the roll-in ground during the climb. Mountain's grassy foreground is the reference. Lowering it revealed the bridge and stream.
