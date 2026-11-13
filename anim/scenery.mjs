@@ -104,12 +104,12 @@ export const SETTINGS = {
       { img: 'ts-near', par: .6, lift: 220, glow: ['ts-near-glow0', 'ts-near-glow1'] }],
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'ts-blimp', cell: 2200, prob: .65, w: 100, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'ts-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }, { img: 'air-jet', cell: 3200, prob: .45, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 }],
     skyPieces: [{ img: 'resort-moon', y: 6000, x: .18, w: 130 }, { img: 'resort-moon', y: 21000, x: .3, w: 110 }] },
-  forest: { floor: 'forest-n-floor', floorTileWidth: 640, sky: ['#9fc4b0', '#cfe3cf'],
-    parallax: [{ img: 'forest-n-farthest', par: 0.07, lift: 470, scale: .36, mirror: 520 },
-      { img: 'forest-n-big-0', par: .25, lift: 800, single: { x: 0.5, w: 1.15, sy: 1, hang: [{ img: 'forest-n-vine-4', fx: .1, fy: .37, w: .075, speed: .9, swing: .08 }, { img: 'forest-n-vine-3', fx: .27, fy: .38, w: .07, speed: .75, swing: .09 }, { img: 'forest-n-vine-2', fx: .72, fy: .38, w: .07, speed: .85, swing: .09 }, { img: 'forest-n-vine-1', fx: .9, fy: .37, w: .06, speed: .7, swing: .08 }] } },
-      { img: 'forest-n-far2', par: 0.25, lift: 340, scale: .36, mirror: 520 },
-      { img: 'forest-n-mid', par: 0.34, lift: 350, scale: .36, mirror: 520, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }, { img: 'forest-n-water', x: 365, y: 1121, ripple: { rows: 8, speed: .5 } }] },
-      { img: 'forest-n-near', par: 0.6, lift: 100, scale: .36, mirror: 520, props: [{ img: 'forest-n-bush-0', x: .12, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.6 } }, { img: 'forest-n-bush-3', x: .5, row: 330, w: .22, move: { type: 'rustle', amp: 4, speed: 1.9, phase: 2 } }, { img: 'forest-n-bush-4', x: .86, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.7, phase: 4 } }] }],
+  forest: { floor: 'forest-n-floor', floorTileWidth: 640, overlapTerrain: true, sky: ['#9fc4b0', '#cfe3cf'],
+    parallax: [{ img: 'forest-n-farthest', par: .10, lift: 490, scale: .60 },
+      { img: 'forest-n-big-0', par: .20, lift: 530, single: { x: .53, w: .90, sy: 1, hang: [{ img: 'forest-n-vine-4', fx: .1, fy: .37, w: .075, speed: .9, swing: .08 }, { img: 'forest-n-vine-3', fx: .27, fy: .38, w: .07, speed: .75, swing: .09 }, { img: 'forest-n-vine-2', fx: .72, fy: .38, w: .07, speed: .85, swing: .09 }, { img: 'forest-n-vine-1', fx: .9, fy: .37, w: .06, speed: .7, swing: .08 }] } },
+      { img: 'forest-n-far2', par: .30, lift: 385, scale: .55 },
+      { img: 'forest-n-mid', par: .51, lift: 320, scale: .55, flows: [{ img: 'forest-n-fall', x: 470, y: 930, speed: 300, streaks: 16 }, { img: 'forest-n-water', x: 365, y: 1121, ripple: { rows: 8, speed: .5 } }] },
+      { img: 'forest-n-near', par: .84, lift: 95, scale: .57, props: [{ img: 'forest-n-bush-0', x: .12, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.6 } }, { img: 'forest-n-bush-3', x: .5, row: 330, w: .22, move: { type: 'rustle', amp: 4, speed: 1.9, phase: 2 } }, { img: 'forest-n-bush-4', x: .86, row: 330, w: .24, move: { type: 'rustle', amp: 3.5, speed: 1.7, phase: 4 } }] }],
     pieces: [{ img: 'forest-n-fly-0', cell: 1900, prob: 0.6, w: 64, speed: 26, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'forest-n-fly-1', cell: 2600, prob: 0.6, w: 46, speed: 18, bob: 5, sway: 0.03, minH: 520, face: 1 }] },
   farm: { floor: 'farm-n-floor', floorTileWidth: 640, overlapTerrain: true, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
     parallax: [{ img: 'farm-n-farthest', par: .11, lift: 505, scale: .71 },
@@ -509,7 +509,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
   const layout = new Map();
   const floor = kit.images[kit.config.floor];
   const floorScale = kit.config.floorTileWidth * gs / floor.naturalWidth;
-  const floorTop = floorY + shiftY - 14 * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
+  const floorTop = floorY + shiftY - floorInset(kit) * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
   const floorCover = floorTop + solidBottomRow(floor) * floorScale;
   let cover = Math.min(height, floorCover);
   for (const layer of [...kit.config.parallax].reverse()) {
@@ -1041,12 +1041,14 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   ctx.restore();
 }
 
+function floorInset(kit) { return kit.config.floor === 'forest-floor' ? 20 : 14; }
+
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
   const tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
-  const inset = (kit.config.floor === 'forest-floor' ? 20 : 14) * groundScale;
+  const inset = floorInset(kit) * groundScale;
   const top = floorY - tileH * meta.surface - inset;
   if (top >= height || top + tileH <= 0) return;
   const phase = shiftX + anchorX * (1 - groundScale);
