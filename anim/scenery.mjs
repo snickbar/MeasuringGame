@@ -144,7 +144,7 @@ export const SETTINGS = {
     sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'],
     parallax: [
       { img: 'underwater-climb-backdrop', par: .10, lift: 545, scale: .65 },
-      { img: 'underwater-climb-ship', par: .17, lift: 550, single: { x: .59, w: .87, sy: 1,
+      { img: 'underwater-climb-ship', par: .17, lift: 588, single: { x: .59, w: .87, sy: 1,
         spin: { img: 'underwater-climb-wheel', fx: .79, fy: .615, size: .10, speed: .36 } } },
       { img: 'underwater-climb-distant', par: .29, lift: 411, scale: .58, filter: 'saturate(.67)' },
       { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .60, overlapFrom: .95 },
