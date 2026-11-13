@@ -93,6 +93,11 @@ export function buildSceneViewer({ loadAnim, objects }) {
   [scene, look].forEach((s) => s.addEventListener("change", () => { tour = false; play(); }));
   setup();
   [field("Scene", scene), field("Small object", small), field("Big object", big), field("Count", count), field("Look", look)].forEach((f) => wrap.appendChild(f));
-  wrap.appendChild(buttons); wrap.appendChild(field("Timeline", timeline)); wrap.appendChild(timeLabel); wrap.appendChild(note); wrap.appendChild(stage);
+  const scrubber = el("div", "dbg-row");
+  scrubber.style.cssText = "display:grid;grid-template-columns:minmax(0,1fr) 7ch;align-items:center;gap:8px";
+  timeline.style.minWidth = "0";
+  timeLabel.style.cssText = "white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums";
+  scrubber.append(timeline, timeLabel);
+  wrap.append(buttons, note, stage, scrubber);
   return wrap;
 }
