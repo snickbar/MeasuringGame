@@ -115,7 +115,6 @@ export const SETTINGS = {
     parallax: [{ img: 'farm-n-farthest', par: .11, lift: 505, scale: .71 },
       { img: 'farm-n-far', par: .28, lift: 410, scale: .82 },
       { img: 'farm-n-big-0', par: .28, lift: 525, single: { x: 0.63, w: .55, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: 1.1, speed: .6 } } },
-      { img: 'farm-n-tree', par: .56, lift: 335, scale: .82, skyRow: 641, noFill: true, follow: 'farm-n-mid' },
       { img: 'farm-n-mid', par: .56, lift: 335, scale: .55, props: [{ img: 'farm-n-line', x: 0.5, row: 1215, w: 0.82 }, { img: 'farm-n-laundry-0', x: 0.2250, row: 1147, w: 0.1228, move: { type: 'dangle', amp: 6, speed: 1.10, phase: 0.0 } }, { img: 'farm-n-laundry-1', x: 0.3380, row: 1169, w: 0.1015, move: { type: 'dangle', amp: 6, speed: 1.23, phase: 1.3 } }, { img: 'farm-n-laundry-2', x: 0.4493, row: 1158, w: 0.0982, move: { type: 'dangle', amp: 6, speed: 1.36, phase: 2.6 } }, { img: 'farm-n-laundry-3', x: 0.5667, row: 1170, w: 0.1105, move: { type: 'dangle', amp: 6, speed: 1.49, phase: 3.9 } }, { img: 'farm-n-laundry-4', x: 0.6788, row: 1164, w: 0.0859, move: { type: 'dangle', amp: 6, speed: 1.62, phase: 5.2 } }, { img: 'farm-n-laundry-5', x: 0.7856, row: 1167, w: 0.1097, move: { type: 'dangle', amp: 6, speed: 1.75, phase: 6.5 } }, { img: 'farm-n-crop-0', x: 0.07, row: 1170, w: 0.17, move: { type: 'rustle', amp: 3.5, speed: 1.2, phase: 0 } }, { img: 'farm-n-crop-6', x: 0.93, row: 1170, w: 0.2, move: { type: 'rustle', amp: 3.5, speed: 1.8, phase: 6 } }], vanes: [{ img: 'farm-n-vane', x: 235, y: 660, size: 110, pole: 36, speed: .45 }] },
       { img: 'farm-n-near', par: 1, lift: 720, single: { x: 0.5, w: 1.08, sy: 1 } }] },
   snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
@@ -506,59 +505,59 @@ function solidBottomRow(image, inset = 0) {
   return y + 1;
 }
 
-// Round off changes in speed as a panel enters or leaves the overlap constraint.
-function smoothMaximum(a, b, radius) {
-  const blend = Math.max(0, radius - Math.abs(a - b));
-  return Math.max(a, b) + blend * blend / (4 * radius);
-}
-
-function terrainOffsets(kit, width, height, base, shiftY, gs, floorY) {
-  const offsets = new Map();
-  const overlapShifts = new Map();
+function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
+  const layout = new Map();
   const floor = kit.images[kit.config.floor];
   const floorScale = kit.config.floorTileWidth * gs / floor.naturalWidth;
   const floorTop = floorY + shiftY - 14 * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
   const floorCover = floorTop + solidBottomRow(floor) * floorScale;
-  const transition = 48 * gs;
-  const coverMinimum = (a, b) => transition / 4 - smoothMaximum(-a, -b, transition);
-  // Let the off-screen overlap boundary keep drifting too, so it cannot pin a panel in place.
-  let cover = coverMinimum(height + .07 * Math.max(0, shiftY), floorCover);
+  let cover = Math.min(height, floorCover);
   for (const layer of [...kit.config.parallax].reverse()) {
     const image = kit.images[layer.img];
     if (!image) continue;
     const single = layer.single;
     const k = width * gs * (single ? single.w : 1.8 * (layer.scale || 1)) / image.naturalWidth;
     const drawHeight = image.naturalHeight * k * (single?.sy ?? 1);
-    // Use a fixed fraction of camera travel for each depth. Only the overlap can
-    // add travel when a nearer opaque panel would expose this one's lower edge.
-    const natural = base - layer.lift * gs + layer.par * shiftY
-      - (single ? 0 : (layer.skyRow ?? layerStats(image).sky) * k);
     const grounded = single && layer.par === 1;
-    const top = layer.follow ? natural + (overlapShifts.get(layer.follow) ?? 0)
-      : grounded ? floorCover + 5 * gs - drawHeight
-      : smoothMaximum(natural, cover + 8 * gs - drawHeight, transition);
-    offsets.set(layer, top);
-    overlapShifts.set(layer.img, top - natural);
-    if (layer.noFill || (single && !grounded)) continue;
+    const top = grounded ? floorCover + 5 * gs - drawHeight
+      : base - layer.lift * gs + layer.par * shiftY - (single ? 0 : layerStats(image).sky * k);
+    // Extend only the lower terrain. Camera bounds never change the speed of
+    // the artwork, its skyline, or the props attached to it.
+    layout.set(layer, { top, bottom: Math.max(top + drawHeight, cover + 2 * gs) });
+    if (single && !grounded) continue;
     const inset = single ? Math.floor((single.w * gs - 1) * image.naturalWidth / (2 * single.w * gs)) : 0;
     const opaqueTop = top + solidBottomRow(image, Math.max(0, inset)) * k * (single?.sy ?? 1);
-    if (opaqueTop < top + drawHeight) cover = coverMinimum(cover, opaqueTop);
+    if (opaqueTop < top + drawHeight) cover = Math.min(cover, opaqueTop);
   }
-  return offsets;
+  return layout;
+}
+
+function drawTerrainImage(ctx, image, x, y, width, height, bottom) {
+  if (bottom <= y + height) {
+    ctx.drawImage(image, x, y, width, height);
+    return;
+  }
+  // Stretch the lowest painted section into the overlap, keeping the props
+  // and upper silhouette at their original scale and position.
+  const split = Math.floor(image.naturalHeight * .88);
+  const upper = height * split / image.naturalHeight;
+  ctx.drawImage(image, 0, 0, image.naturalWidth, split, x, y, width, upper);
+  ctx.drawImage(image, 0, split, image.naturalWidth, image.naturalHeight - split,
+    x, y + upper, width, bottom - y - upper);
 }
 
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
-  const terrain = kit.config.overlapTerrain ? terrainOffsets(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
+  const terrain = kit.config.overlapTerrain ? terrainLayout(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
   for (const layer of kit.config.parallax || []) {
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
-      const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer) ?? base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; ctx.drawImage(image, width * sg.x - w2 / 2, y2, w2, h2); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY;
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
-    const top = terrain?.get(layer) ?? base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
+    const top = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
     let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
     for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
     if (reach > height) continue;
@@ -577,7 +576,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           const sy = y / k, f = .35 + .65 * (1 - y / th), dx = Math.sin(time * w.speed + y * w.freq + x * .013) * w.amp * gs * f;
           ctx.drawImage(image, 0, sy, image.naturalWidth, Math.min(bs / k + 1, image.naturalHeight - sy), x + dx, top + y, tw + 1, bs + .6);
         }
-      } else ctx.drawImage(image, x, top, tw + 1, th);
+      } else drawTerrainImage(ctx, image, x, top, tw + 1, th, terrain?.get(layer)?.bottom ?? bottom);
       for (const fl of layer.flows || []) { // water pouring down: bright and dark streaks sliding down, shown only where the water is
         const mask = kit.images[fl.img]; if (!mask) continue;
         let oc = FLOW_CANVAS.get(fl); if (!oc) { oc = document.createElement('canvas'); oc.width = mask.naturalWidth; oc.height = mask.naturalHeight; FLOW_CANVAS.set(fl, oc); }
