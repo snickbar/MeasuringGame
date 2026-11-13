@@ -69,7 +69,7 @@ export const SETTINGS = {
       { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .7, row: 508, w: .27 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
     skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
   boardwalk: { sky: ['#32a8eb', '#b9e7fa'], nightSky: ['#0e1a38', '#33456b'], night: 'dark',
-    avenue: { shops: 'boardwalk-avenue', pier: 'boardwalk-pier', stand: 'fair-reveal-stand',
+    avenue: { shops: 'boardwalk-avenue', pier: 'boardwalk-pier', beach: 'boardwalk-beach', ocean: 'boardwalk-ocean', stand: 'fair-reveal-stand',
       wheel: 'fair-reveal-wheel', carriage: 'fair-reveal-carriage' },
     floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls',
     skyPieces: [{ img: 'resort-sun', y: 5500, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 5500, x: .2, w: 120, night: true }] },
@@ -370,7 +370,7 @@ export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
   const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
-  if ((config.floor && !images[config.floor]) || (config.avenue && !images[config.avenue.pier])) return { id: 'grass', config: SETTINGS.grass, images: {} };
+  if ((config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
 }
 
@@ -1254,6 +1254,8 @@ function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, 
   const { avenue } = kit.config;
   const pier = kit.images[avenue.pier];
   const shops = kit.images[avenue.shops];
+  const beach = kit.images[avenue.beach];
+  const ocean = kit.images[avenue.ocean];
   const stand = kit.images[avenue.stand];
   const wheel = kit.images[avenue.wheel];
   const cabin = kit.images[avenue.carriage];
@@ -1263,22 +1265,30 @@ function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, 
   // frame during the camera's opening dip, then scroll the whole path together.
   const artHeight = Math.min(height, pier.naturalHeight * width / pier.naturalWidth);
   const scaleY = artHeight / pier.naturalHeight;
-  const pierY = height - artHeight + Math.max(0, shiftY) * .26;
+  const baseY = height - artHeight;
+  const climb = Math.max(0, shiftY);
+  const pierY = baseY + climb * .26;
+  const oceanY = baseY + climb * .13;
+  const beachY = baseY + 628 * scaleY + climb * .20;
+  const oceanHeight = ocean.naturalHeight * scaleY;
   const shopsY = pierY + 595 * scaleY;
 
   ctx.save();
   if (dark) ctx.filter = 'brightness(58%)';
-  if (pierY > 0) {
+  if (oceanY > 0) {
     // Extend the sky at its painted top edge while the horizon scrolls down.
-    ctx.drawImage(pier, pier.naturalWidth / 2, 0, 1, 1, 0, 0, width, Math.min(height, pierY + 1));
+    ctx.drawImage(ocean, ocean.naturalWidth / 2, 0, 1, 1, 0, 0, width, Math.min(height, oceanY + 1));
   }
-  if (pierY < height) ctx.drawImage(pier, 0, pierY, width, artHeight);
+  // Extend water behind the independently scrolling shoreline.
+  const beachHeight = beach.naturalHeight * scaleY;
+  if (oceanY < height) drawTerrainImage(ctx, ocean, 0, oceanY, width, oceanHeight, Math.min(height, beachY + 40 * scaleY), .84);
+  if (beachY < height) drawTerrainImage(ctx, beach, 0, beachY, width, beachHeight, height, .75);
   ctx.restore();
 
   // Keep drifting clouds in the sky and behind the wheel.
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, 0, width, Math.max(0, pierY + 463 * scaleY));
+  ctx.rect(0, 0, width, Math.max(0, oceanY + 463 * scaleY));
   ctx.clip();
   ctx.globalAlpha = Math.max(0, Math.min(1, (shiftY - 100) / 380));
   drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale });
@@ -1287,6 +1297,7 @@ function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, 
 
   ctx.save();
   if (dark) ctx.filter = 'brightness(58%)';
+  if (pierY < height) ctx.drawImage(pier, 0, pierY, width, artHeight);
   if (wheel && stand && pierY < height) {
     const cx = width / 2;
     const cy = pierY + 336 * scaleY;
