@@ -295,7 +295,7 @@ const layeredReveals = {
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
     {"img":"grass-reveal-far","par":0.12,"lift":445,"scale":0.63,"overlapFrom":0.95},
     {"img":"grass-reveal-landmark","par":0.15,"lift":570,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"grass-reveal-wheel","fx":0.72,"fy":0.73,"size":0.51,"speed":0.45}}},
-    { img: 'meadow-hills', par: .15, lift: 147, scale: .66 },
+    { img: 'grass-reveal-flowered-hills', par: .15, lift: 147, scale: .66 },
     {"img":"grass-reveal-mid","par":0.55,"lift":168,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"grass-reveal-front","par":1,"lift":-28,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
