@@ -58,7 +58,10 @@ export const SETTINGS = {
     pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'air-banner', cell: 2000, prob: .6, w: 124, speed: 18, bob: 3, sway: .02, minH: 460, face: 1 }, { img: 'air-prop', cell: 1700, prob: .55, w: 72, speed: 28, bob: 3, sway: .02, minH: 420, face: 1 }, { img: 'air-jet', cell: 3200, prob: .5, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 },
       { img: 'town-blimp', cell: 2200, prob: .6, w: 96, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'town-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
-  beach: { floor: 'beach', sky: ['#e3c4cf', '#fae4c4'], tall: ['beach-tall-low', 'beach-tall-mid', 'beach-tall-high'], floaters: ['cloud-set-sunset'], flyers: 'gulls' },
+  beach: { sky: ['#72c9f4', '#e2f6ff'], nightSky: ['#17294f', '#526b91'], night: 'dark',
+    floaters: ['cloud-set-day'], cloudClear: 210, flyers: 'gulls',
+    coast: { sand: 'beach-coast-sand', sea: 'beach-coast-sea', point: 'beach-coast-point',
+      foam: 'beach-coast-foam' } },
   resort: { floor: 'resort-sand', floorTileWidth: 640, sky: ['#4fa8e8', '#bfe3f8'], floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls', nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     wash: { img: 'beach-wave-wash', scale: 1.15, start: 6, amp: 24 },
     parallax: [{ img: 'beach-peak', par: .07, lift: 330, single: { x: .45, w: 1.9, sy: 1.4, fill: '#98b628' } },
@@ -249,13 +252,7 @@ export const SETTINGS = {
       { img: 'stadium-n-near', par: 0.6, lift: 135, scale: 1.37, props: [{ img: 'stadium-n-loose-0', x: 0.06, row: 559, w: 0.060 }, { img: 'stadium-n-loose-2', x: 0.24, row: 559, w: 0.073 }, { img: 'stadium-n-loose-3', x: 0.42, row: 559, w: 0.025 }, { img: 'stadium-n-loose-5', x: 0.6, row: 559, w: 0.068 }, { img: 'stadium-n-loose-6', x: 0.78, row: 559, w: 0.031 }, { img: 'stadium-n-loose-7', x: 0.93, row: 559, w: 0.081 }], drifters: [{ img: 'stadium-n-movers-3', x: 0.5, row: 559, w: 0.042, speed: 24, bob: 0 }] }] },
 };
 const layeredReveals = {
-  beach: { parallax: [
-    {"img":"beach-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"beach-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"beach-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"beach-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[]},
-    {"img":"beach-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"beach-reveal-palm","x":0.15,"row":908,"w":0.16,"move":{"type":"rustle","amp":4,"speed":1.1}},{"img":"beach-reveal-lantern","x":0.78,"row":998,"w":0.05,"move":{"type":"dangle","amp":4,"speed":1.1}}]}
-  ] },
+
   blossom: { fallingPetals: 'petal-leaf-set', parallax: [
     {"img":"blossom-reveal-back","par":0.09,"lift":622,"scale":0.65},
     {"img":"blossom-reveal-landmark","par":0.15,"lift":615,"single":{"x":0.54,"w":0.89,"sy":1}},
@@ -366,9 +363,9 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
-  if ((config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
+  if ((config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
 }
 
@@ -1270,6 +1267,44 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
   ctx.restore();
 }
 
+function drawBeachCoast(ctx, kit, options) {
+  const { width, height, floorY, shiftY, time, reduced, dark } = options;
+  const { coast } = kit.config;
+  const sand = kit.images[coast.sand];
+  const sea = kit.images[coast.sea];
+  const point = kit.images[coast.point];
+  const foam = kit.images[coast.foam];
+  const climb = Math.max(0, shiftY);
+  const seaY = floorY - width * .98 + climb * .17;
+  const sandY = floorY - width * .37 + climb * .60 + Math.min(0, shiftY) * .45;
+  const sandHeight = width * sand.naturalHeight / sand.naturalWidth;
+  const pointWidth = width * .58;
+  const pointHeight = pointWidth * point.naturalHeight / point.naturalWidth;
+  const pointY = seaY + width * .19 - pointHeight;
+  const tide = reduced ? 0 : Math.sin(time * 1.65);
+  const foamWidth = width * 1.05;
+  const foamHeight = foamWidth * foam.naturalHeight / foam.naturalWidth;
+
+  drawFloaters(ctx, kit, options);
+  ctx.save();
+  if (dark) ctx.filter = 'brightness(62%) saturate(80%)';
+  if (seaY < height) {
+    drawTerrainImage(ctx, sea, 0, seaY, width, width * sea.naturalHeight / sea.naturalWidth,
+      Math.min(height, sandY + width * .22), .82);
+  }
+  if (pointY < height) ctx.drawImage(point, width - pointWidth + 1, pointY, pointWidth, pointHeight);
+  if (sandY < height) {
+    ctx.save();
+    ctx.globalAlpha = .83 + tide * .09;
+    ctx.drawImage(foam, (width - foamWidth) / 2, sandY + width * .025 + tide * width * .032,
+      foamWidth, foamHeight);
+    ctx.restore();
+    // Keep the water behind the sandcastle and carry the sand through the opening dip.
+    drawTerrainImage(ctx, sand, 0, sandY, width, sandHeight, height, .73);
+  }
+  ctx.restore();
+}
+
 function drawSunsetRooftops(ctx, kit, options) {
   const { width, height, floorY, shiftY, dark, time, reduced } = options;
   const art = kit.config.rooftop;
@@ -1455,7 +1490,9 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
-  if (config.rooftop) {
+  if (config.coast) {
+    drawBeachCoast(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  } else if (config.rooftop) {
     drawSunsetRooftops(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   } else if (config.avenue) {
     drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
