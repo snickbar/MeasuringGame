@@ -1258,14 +1258,13 @@ function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, 
   const wheel = kit.images[avenue.wheel];
   const cabin = kit.images[avenue.carriage];
 
-  // The artwork is registered to one canvas. Move the connected shops together
-  // so their rooflines and storefronts never split as the camera passes them.
-  const scaleX = width / pier.naturalWidth;
-  const artHeight = Math.min(height, pier.naturalHeight * scaleX);
+  // The shop artwork contains the front planks, so it must keep the same
+  // position relative to the pier. Keep the deck covering the bottom of the
+  // frame during the camera's opening dip, then scroll the whole path together.
+  const artHeight = Math.min(height, pier.naturalHeight * width / pier.naturalWidth);
   const scaleY = artHeight / pier.naturalHeight;
-  const base = height - artHeight;
-  const pierY = base + shiftY * .26;
-  const shopsY = base + 595 * scaleY + shiftY * .83;
+  const pierY = height - artHeight + Math.max(0, shiftY) * .26;
+  const shopsY = pierY + 595 * scaleY;
 
   ctx.save();
   if (dark) ctx.filter = 'brightness(58%)';
