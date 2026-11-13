@@ -121,7 +121,7 @@ export const SETTINGS = {
     sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [
       { img: 'snow-climb-backdrop', par: .10, lift: 580, scale: .65 },
-      { img: 'snow-climb-lift', par: .16, lift: 554, single: { x: .55, w: 1.23, sy: 1, liftChair: 'snow-climb-chair' } },
+      { img: 'snow-climb-lift', par: .16, lift: 554, single: { x: .55, w: 1.23, sy: 1, liftChair: 'snow-climb-chair', overlapFrom: .95 } },
       { img: 'snow-climb-distant', par: .26, lift: 414, scale: .60 },
       { img: 'snow-climb-huge-tree', par: .36, lift: 520, single: { x: .62, w: .70, sy: 1 } },
       { img: 'snow-climb-middle', par: .57, lift: 307, scale: .56, props: [
@@ -534,7 +534,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
     // the artwork, its skyline, or the props attached to it.
     const artBottom = top + drawHeight;
     // Standalone landmarks keep their proportions. Only terrain fills the overlap.
-    const bottom = single && !grounded ? artBottom : Math.max(artBottom, cover + 2 * gs);
+    const bottom = single && !grounded && !single.overlapFrom ? artBottom : Math.max(artBottom, cover + 2 * gs);
     layout.set(layer, { top, bottom });
     if (single && !grounded) continue;
     const inset = single ? Math.floor((single.w * gs - 1) * image.naturalWidth / (2 * single.w * gs)) : 0;
@@ -544,14 +544,14 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
   return layout;
 }
 
-function drawTerrainImage(ctx, image, x, y, width, height, bottom) {
+function drawTerrainImage(ctx, image, x, y, width, height, bottom, splitRatio = .88) {
   if (bottom <= y + height) {
     ctx.drawImage(image, x, y, width, height);
     return;
   }
   // Stretch the lowest painted section into the overlap, keeping the props
   // and upper silhouette at their original scale and position.
-  const split = Math.floor(image.naturalHeight * .88);
+  const split = Math.floor(image.naturalHeight * splitRatio);
   const upper = height * split / image.naturalHeight;
   ctx.drawImage(image, 0, 0, image.naturalWidth, split, x, y, width, upper);
   ctx.drawImage(image, 0, split, image.naturalWidth, image.naturalHeight - split,
@@ -585,7 +585,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2, sg.overlapFrom); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
