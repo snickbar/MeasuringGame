@@ -114,7 +114,7 @@ export const SETTINGS = {
   farm: { floor: 'farm-n-floor', floorTileWidth: 640, overlapTerrain: true, sky: ['#c0dbe1', '#edf3e1'], floaters: ['cloud-set-day'],
     parallax: [{ img: 'farm-n-farthest', par: .11, lift: 505, scale: .71 },
       { img: 'farm-n-far', par: .28, lift: 410, scale: .82 },
-      { img: 'farm-n-big-0', par: .28, lift: 525, single: { x: 0.63, w: .55, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: 1.1, speed: .6 } } },
+      { img: 'farm-n-big-0', par: .28, lift: 506, single: { x: 0.63, w: .62, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: 1.1, speed: .6 } } },
       { img: 'farm-n-mid', par: .56, lift: 335, scale: .55, props: [{ img: 'farm-n-line', x: 0.5, row: 1215, w: 0.82 }, { img: 'farm-n-laundry-0', x: 0.2250, row: 1147, w: 0.1228, move: { type: 'dangle', amp: 6, speed: 1.10, phase: 0.0 } }, { img: 'farm-n-laundry-1', x: 0.3380, row: 1169, w: 0.1015, move: { type: 'dangle', amp: 6, speed: 1.23, phase: 1.3 } }, { img: 'farm-n-laundry-2', x: 0.4493, row: 1158, w: 0.0982, move: { type: 'dangle', amp: 6, speed: 1.36, phase: 2.6 } }, { img: 'farm-n-laundry-3', x: 0.5667, row: 1170, w: 0.1105, move: { type: 'dangle', amp: 6, speed: 1.49, phase: 3.9 } }, { img: 'farm-n-laundry-4', x: 0.6788, row: 1164, w: 0.0859, move: { type: 'dangle', amp: 6, speed: 1.62, phase: 5.2 } }, { img: 'farm-n-laundry-5', x: 0.7856, row: 1167, w: 0.1097, move: { type: 'dangle', amp: 6, speed: 1.75, phase: 6.5 } }, { img: 'farm-n-crop-0', x: 0.07, row: 1170, w: 0.17, move: { type: 'rustle', amp: 3.5, speed: 1.2, phase: 0 } }, { img: 'farm-n-crop-6', x: 0.93, row: 1170, w: 0.2, move: { type: 'rustle', amp: 3.5, speed: 1.8, phase: 6 } }], vanes: [{ img: 'farm-n-vane', x: 235, y: 660, size: 110, pole: 36, speed: .45 }] },
       { img: 'farm-n-near', par: 1, lift: 720, single: { x: 0.5, w: 1.08, sy: 1 } }] },
   snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
@@ -523,7 +523,10 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
       : base - layer.lift * gs + layer.par * shiftY - (single ? 0 : layerStats(image).sky * k);
     // Extend only the lower terrain. Camera bounds never change the speed of
     // the artwork, its skyline, or the props attached to it.
-    layout.set(layer, { top, bottom: Math.max(top + drawHeight, cover + 2 * gs) });
+    const artBottom = top + drawHeight;
+    // Standalone landmarks keep their proportions. Only terrain fills the overlap.
+    const bottom = single && !grounded ? artBottom : Math.max(artBottom, cover + 2 * gs);
+    layout.set(layer, { top, bottom });
     if (single && !grounded) continue;
     const inset = single ? Math.floor((single.w * gs - 1) * image.naturalWidth / (2 * single.w * gs)) : 0;
     const opaqueTop = top + solidBottomRow(image, Math.max(0, inset)) * k * (single?.sy ?? 1);
