@@ -117,13 +117,22 @@ export const SETTINGS = {
       { img: 'farm-n-big-0', par: .28, lift: 506, single: { x: 0.63, w: .62, sy: 1, spin: { img: 'farm-n-rotor', fx: .5, fy: .347, size: 1.1, speed: .6 } } },
       { img: 'farm-n-mid', par: .56, lift: 335, scale: .55, props: [{ img: 'farm-n-line', x: 0.5, row: 1215, w: 0.82 }, { img: 'farm-n-laundry-0', x: 0.2250, row: 1147, w: 0.1228, move: { type: 'dangle', amp: 6, speed: 1.10, phase: 0.0 } }, { img: 'farm-n-laundry-1', x: 0.3380, row: 1169, w: 0.1015, move: { type: 'dangle', amp: 6, speed: 1.23, phase: 1.3 } }, { img: 'farm-n-laundry-2', x: 0.4493, row: 1158, w: 0.0982, move: { type: 'dangle', amp: 6, speed: 1.36, phase: 2.6 } }, { img: 'farm-n-laundry-3', x: 0.5667, row: 1170, w: 0.1105, move: { type: 'dangle', amp: 6, speed: 1.49, phase: 3.9 } }, { img: 'farm-n-laundry-4', x: 0.6788, row: 1164, w: 0.0859, move: { type: 'dangle', amp: 6, speed: 1.62, phase: 5.2 } }, { img: 'farm-n-laundry-5', x: 0.7856, row: 1167, w: 0.1097, move: { type: 'dangle', amp: 6, speed: 1.75, phase: 6.5 } }, { img: 'farm-n-crop-0', x: 0.07, row: 1170, w: 0.17, move: { type: 'rustle', amp: 3.5, speed: 1.2, phase: 0 } }, { img: 'farm-n-crop-6', x: 0.93, row: 1170, w: 0.2, move: { type: 'rustle', amp: 3.5, speed: 1.8, phase: 6 } }], vanes: [{ img: 'farm-n-vane', x: 235, y: 660, size: 110, pole: 36, speed: .45 }] },
       { img: 'farm-n-near', par: 1, lift: 720, single: { x: 0.5, w: 1.08, sy: 1 } }] },
-  snow: { floor: 'snow-n-floor', floorTileWidth: 640,  sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
-    parallax: [{ img: 'snow-n-farthest', par: 0.09, lift: 375, scale: 2.32 },
-      { img: 'snow-n-big-0', par: .06, lift: 369, single: { x: 0.5, w: 1.25, sy: 1 } },
-      { img: 'snow-n-far', par: 0.16, lift: 335, scale: 1.98, props: [{ img: 'snow-n-movers-4', x: 0.85, row: 591, w: 0.038, move: { type: 'peek', amp: 10, speed: 0.5 } }], drifters: [{ img: 'snow-n-movers-2', x: 0.2, row: 591, w: 0.041, speed: 14, bob: 0 }] },
-      { img: 'snow-n-mid', par: 0.34, lift: 300, scale: 1.55, props: [{ img: 'snow-n-reveals-0', x: 0.14, row: 591, w: 0.170 }, { img: 'snow-n-reveals-1', x: 0.5, row: 591, w: 0.141 }, { img: 'snow-n-reveals-2', x: 0.84, row: 591, w: 0.155 }, { img: 'snow-n-anim-0', x: 0.7, row: 591, w: 0.085, spin:  { img: 'snow-n-anim-1', fx: .86, fy: .3, size: .5, speed: 1.1, swing: .18, px: .5, py: 0 } }, { img: 'snow-n-movers-4', x: 0.55, row: 591, w: 0.060, move: { type: 'bob', amp: 1.5, speed: 0.8 }, flip: true }], drifters: [{ img: 'snow-n-movers-3', x: 0.5, row: 591, w: 0.109, speed: 10, bob: 0 }, { img: 'snow-n-movers-5', x: 0.8, row: 591, w: 0.058, speed: 6, bob: 0 }] },
-      { img: 'snow-n-near', par: 0.6, lift: 135, scale: 1.31, props: [{ img: 'snow-n-loose-0', x: 0.06, row: 575, w: 0.032 }, { img: 'snow-n-loose-1', x: 0.24, row: 575, w: 0.020 }, { img: 'snow-n-loose-3', x: 0.42, row: 575, w: 0.065 }, { img: 'snow-n-loose-5', x: 0.6, row: 575, w: 0.052 }, { img: 'snow-n-loose-7', x: 0.78, row: 575, w: 0.041 }, { img: 'snow-n-loose-2', x: 0.93, row: 575, w: 0.080 }, { img: 'snow-n-movers-4', x: 0.2, row: 575, w: 0.100, move: { type: 'hop', amp: 4, speed: 1 } }] }],
-    pieces: [{ img: 'snow-n-movers-0', cell: 2400, prob: 0.6, w: 110, speed: 22, bob: 3, sway: 0.02, minH: 520, face: 1 }, { img: 'snow-n-movers-1', cell: 2000, prob: 0.6, w: 70, speed: 14, bob: 3, sway: 0.02, minH: 420, face: 1 }] },
+  snow: { floor: 'snow-n-floor', floorTileWidth: 640, overlapTerrain: true,
+    sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
+    parallax: [
+      { img: 'snow-climb-backdrop', par: .10, lift: 525, scale: .65 },
+      { img: 'snow-climb-mountain', par: .16, lift: 625, single: { x: .5, w: 1.05, sy: 1, skiLift: true } },
+      { img: 'snow-climb-distant', par: .26, lift: 380, scale: .60 },
+      { img: 'snow-climb-huge-tree', par: .36, lift: 488, single: { x: .62, w: .70, sy: 1 } },
+      { img: 'snow-climb-middle', par: .57, lift: 265, scale: .56, props: [
+        { img: 'snow-climb-ice-left', x: .355, row: 955, w: .032, move: { type: 'dangle', amp: 3, speed: 1.2 } },
+        { img: 'snow-climb-ice-right', x: .825, row: 952, w: .029, move: { type: 'dangle', amp: 3, speed: .9 } },
+      ] },
+      { img: 'snow-climb-foreground', par: .86, lift: 105, scale: .57, props: [
+        { img: 'snow-climb-pine-left', x: .12, row: 1085, w: .13, move: { type: 'rustle', amp: 2, speed: .9 } },
+        { img: 'snow-climb-pine-right', x: .84, row: 1125, w: .16, move: { type: 'rustle', amp: 2, speed: 1.1 } },
+      ] },
+    ] },
   desert: { floor: 'desert-n-floor', floorTileWidth: 640,  sky: ['#b8a1c9', '#d9b1c8', '#efbea9', '#f8dfb7'], floaters: ['cloud-set-sunset'], flyers: 'hawks',
     parallax: [{ img: 'desert-n-farthest', par: 0.09, lift: 375, scale: 2.18 },
       { img: 'desert-n-big-0', par: .06, lift: 369, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -549,6 +558,52 @@ function drawTerrainImage(ctx, image, x, y, width, height, bottom) {
     x, y + upper, width, bottom - y - upper);
 }
 
+function drawSkiLift(ctx, x, y, width, height, time) {
+  ctx.save();
+  ctx.translate(x, y);
+  const unit = width / 400;
+  const left = { x: .10 * width, y: .61 * height };
+  const right = { x: .84 * width, y: .29 * height };
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#344f68';
+  ctx.lineWidth = 2.5 * unit;
+  for (const tower of [left, right]) {
+    ctx.beginPath();
+    ctx.moveTo(tower.x, tower.y);
+    ctx.lineTo(tower.x, tower.y + 31 * unit);
+    ctx.moveTo(tower.x - 5 * unit, tower.y);
+    ctx.lineTo(tower.x + 5 * unit, tower.y);
+    ctx.stroke();
+  }
+  ctx.lineWidth = 1.4 * unit;
+  for (const offset of [0, 4 * unit]) {
+    ctx.beginPath();
+    ctx.moveTo(left.x, left.y + offset);
+    ctx.lineTo(right.x, right.y + offset);
+    ctx.stroke();
+  }
+  for (const [index, phase] of [.22, .72].entries()) {
+    const travel = (phase + time * .11) % 1;
+    const t = index ? 1 - travel : travel;
+    ctx.save();
+    ctx.globalAlpha *= Math.min(1, travel * 14, (1 - travel) * 14);
+    ctx.translate(left.x + (right.x - left.x) * t, left.y + (right.y - left.y) * t + index * 4 * unit);
+    ctx.scale(unit, unit);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 11);
+    ctx.stroke();
+    ctx.fillStyle = index ? '#d49146' : '#a75755';
+    ctx.beginPath();
+    ctx.roundRect(-7, 10, 14, 9, 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
   const terrain = kit.config.overlapTerrain ? terrainLayout(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
@@ -556,7 +611,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2); if (sg.skiLift) drawSkiLift(ctx, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
