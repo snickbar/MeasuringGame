@@ -29,7 +29,7 @@ export const FLOOR_DATA = {
     "color": "#241f4f"
   },
   "volcano-n-floor": {
-    "surface": 0.546,
+    "surface": 0.69,
     "color": "#34262b"
   },
   "stadium-n-floor": {

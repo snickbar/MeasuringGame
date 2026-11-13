@@ -344,7 +344,7 @@ const layeredReveals = {
     {"img":"volcano-reveal-landmark","par":0.15,"lift":510,"single":{"x":0.54,"w":0.89,"sy":1,"smoke":"mist"},"flows":[{"img":"volcano-flow-landmark","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-far","par":0.27,"lift":415,"scale":0.63,"overlapFrom":0.95,"flows":[{"img":"volcano-flow-far","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-mid","par":0.55,"lift":345,"scale":0.58,"overlapFrom":0.95,"flows":[{"img":"volcano-reveal-flow","x":0,"y":0,"ripple":{"rows":34,"speed":2.1,"warm":true}}]},
-    {"img":"volcano-reveal-front","par":1,"lift":0,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}],"flows":[{"img":"volcano-flow-front","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]}
+    {"img":"volcano-reveal-front","par":1,"lift":-30.72,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}],"flows":[{"img":"volcano-flow-front","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]}
   ] },
   workshop: { roomBack: 'workshop-reveal-back', parallax: [
     {"img":"workshop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"workshop-reveal-gear","fx":0.5,"fy":0.49,"size":0.77,"speed":0.45}}},
