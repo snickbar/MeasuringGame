@@ -149,6 +149,8 @@ export const SETTINGS = {
       { img: 'underwater-climb-distant', par: .29, lift: 411, scale: .58, filter: 'saturate(.67)' },
       { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .60, overlapFrom: .95 },
       { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, overlapFrom: .95, props: [
+        { img: 'underwater-climb-coral-0', x: .30, row: 1160, w: .10 },
+        { img: 'underwater-climb-coral-1', x: .70, row: 1240, w: .09 },
         { img: 'underwater-climb-kelp-0', x: .15, row: 1080, w: .13, move: { type: 'rustle', amp: 4, speed: .78 } },
         { img: 'underwater-climb-kelp-1', x: .82, row: 1120, w: .15, move: { type: 'rustle', amp: 5, speed: .95 } },
       ] },
