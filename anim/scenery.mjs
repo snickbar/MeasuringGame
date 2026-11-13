@@ -140,13 +140,19 @@ export const SETTINGS = {
       { img: 'desert-n-mid', par: 0.34, lift: 300, scale: 1.49, props: [{ img: 'desert-n-reveals-0', x: 0.14, row: 591, w: 0.163 }, { img: 'desert-n-reveals-1', x: 0.5, row: 591, w: 0.145 }, { img: 'desert-n-reveals-2', x: 0.84, row: 591, w: 0.169 }, { img: 'desert-n-anim-0', x: 0.72, row: 591, w: 0.077, spin:  { img: 'desert-n-anim-1', fx: .6, fy: .08, size: 1.5, speed: .9 } }], drifters: [{ img: 'desert-n-movers-1', x: 0.5, row: 591, w: 0.066, speed: 14, bob: 0 }, { img: 'desert-n-movers-3', x: 0.8, row: 591, w: 0.040, speed: 20, bob: 0 }] },
       { img: 'desert-n-near', par: 0.6, lift: 135, scale: 1.53, props: [{ img: 'desert-n-loose-0', x: 0.06, row: 494, w: 0.027 }, { img: 'desert-n-loose-1', x: 0.24, row: 494, w: 0.039 }, { img: 'desert-n-loose-3', x: 0.42, row: 494, w: 0.030 }, { img: 'desert-n-loose-4', x: 0.6, row: 494, w: 0.033 }, { img: 'desert-n-loose-6', x: 0.78, row: 494, w: 0.033 }, { img: 'desert-n-loose-7', x: 0.93, row: 494, w: 0.036 }, { img: 'desert-n-movers-4', x: 0.3, row: 494, w: 0.059, move: { type: 'nod', amp: 3, speed: 0.9 } }] }],
     pieces: [{ img: 'desert-n-movers-2', cell: 2100, prob: 0.6, w: 90, speed: 14, bob: 3, sway: 0.02, minH: 480, face: 1 }] },
-  underwater: { floor: 'underwater-n-floor', floorTileWidth: 640,  sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'],
-    parallax: [{ img: 'underwater-n-farthest', par: 0.09, lift: 375, scale: 2.23 },
-      { img: 'underwater-n-big-0', par: .06, lift: 376, single: { x: 0.5, w: 1.25, sy: 1 } },
-      { img: 'underwater-n-far', par: 0.16, lift: 335, scale: 1.92, drifters: [{ img: 'underwater-n-movers-5', x: 0.4, row: 591, w: 0.039, speed: 10, bob: 0 }] },
-      { img: 'underwater-n-mid', par: 0.34, lift: 300, scale: 1.57, props: [{ img: 'underwater-n-reveals-0', x: 0.14, row: 591, w: 0.097 }, { img: 'underwater-n-reveals-1', x: 0.5, row: 591, w: 0.157 }, { img: 'underwater-n-reveals-2', x: 0.84, row: 591, w: 0.137 }, { img: 'underwater-n-anim-0', x: 0.7, row: 591, w: 0.128, spin:  { img: 'underwater-n-anim-1', fx: .55, fy: .3, size: .35, speed: 1.0, swing: .22, px: .5, py: 1 } }, { img: 'underwater-n-movers-4', x: 0.6, row: 591, w: 0.046, move: { type: 'bob', amp: 6, speed: 0.5 } }] },
-      { img: 'underwater-n-near', par: 0.6, lift: 135, scale: 1.3, props: [{ img: 'underwater-n-loose-0', x: 0.06, row: 602, w: 0.036 }, { img: 'underwater-n-loose-1', x: 0.24, row: 602, w: 0.044 }, { img: 'underwater-n-loose-2', x: 0.42, row: 602, w: 0.049 }, { img: 'underwater-n-loose-3', x: 0.6, row: 602, w: 0.028 }, { img: 'underwater-n-loose-4', x: 0.78, row: 602, w: 0.043 }, { img: 'underwater-n-loose-8', x: 0.93, row: 602, w: 0.049 }, { img: 'underwater-n-movers-0', x: 0.2, row: 602, w: 0.062, move: { type: 'bob', amp: 4, speed: 0.8 } }, { img: 'underwater-n-movers-1', x: 0.7, row: 602, w: 0.080, move: { type: 'nod', amp: 3, speed: 0.6 } }] }],
-    pieces: [{ img: 'underwater-n-movers-0', cell: 1700, prob: 0.7, w: 66, speed: 18, bob: 3, sway: 0.02, minH: 360, face: 1 }, { img: 'underwater-n-movers-1', cell: 2100, prob: 0.6, w: 80, speed: 12, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'underwater-n-movers-2', cell: 3000, prob: 0.6, w: 130, speed: 9, bob: 3, sway: 0.02, minH: 520, face: 1 }, { img: 'underwater-n-movers-3', cell: 2500, prob: 0.6, w: 90, speed: 13, bob: 3, sway: 0.02, minH: 460, face: 1 }, { img: 'underwater-n-movers-4', cell: 1800, prob: 0.6, w: 54, speed: 6, bob: 8, sway: 0.04, minH: 380, face: 1 }, { img: 'underwater-n-movers-5', cell: 3200, prob: 0.6, w: 90, speed: 16, bob: 3, sway: 0.02, minH: 560, face: 1 }] },
+  underwater: { floor: 'underwater-n-floor', floorTileWidth: 640, overlapTerrain: true,
+    sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'],
+    parallax: [
+      { img: 'underwater-climb-backdrop', par: .10, lift: 545, scale: .65 },
+      { img: 'underwater-climb-distant', par: .23, lift: 420, scale: .58 },
+      { img: 'underwater-climb-ship', par: .35, lift: 470, single: { x: .59, w: .87, sy: 1,
+        spin: { img: 'underwater-climb-wheel', fx: .79, fy: .615, size: .10, speed: .36 } } },
+      { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .57 },
+      { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, props: [
+        { img: 'underwater-climb-kelp-0', x: .15, row: 1080, w: .13, move: { type: 'rustle', amp: 4, speed: .78 } },
+        { img: 'underwater-climb-kelp-1', x: .82, row: 1120, w: .15, move: { type: 'rustle', amp: 5, speed: .95 } },
+      ] },
+    ] },
   space: { floor: 'space-n-floor', floorTileWidth: 640,  sky: ['#242341', '#383453'], texture: 'star-field', movers: ['twinkle'],
     parallax: [{ img: 'space-n-farthest', par: 0.09, lift: 375, scale: 2.3 },
       { img: 'space-n-far', par: 0.16, lift: 335, scale: 2.1 },
@@ -1038,6 +1044,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     ctx.globalAlpha = .7;
     for (let y = offsetY - tile; y < height; y += tile) for (let x = offsetX - tile; x < width; x += tile) ctx.drawImage(images['star-field'], x, y, tile, tile);
   }
+  ctx.globalAlpha = 1;
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
