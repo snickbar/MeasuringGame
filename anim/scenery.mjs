@@ -318,7 +318,7 @@ const layeredReveals = {
     {"img":"space-reveal-landmark","par":0.15,"lift":568,"single":{"x":0.54,"w":0.89,"sy":1}},
     {"img":"space-reveal-back","par":0.22,"lift":340,"scale":0.63,"overlapFrom":0.95},
     {"img":"space-reveal-mid","par":0.55,"lift":309,"scale":0.58,"overlapFrom":0.95,"props":[]},
-    {"img":"space-reveal-front","par":1,"lift":35,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"space-reveal-flag","x":0.18,"row":893,"w":0.057,"move":{"type":"flag","speed":5}}]}
+    {"img":"space-reveal-front","par":1,"lift":35,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"space-reveal-flag","x":0.18,"row":893,"w":0.057},{"img":"space-reveal-rover","x":0.64,"row":988,"w":0.155,"spin":{"img":"space-reveal-arm","fx":0.56,"fy":0.12,"size":0.40,"speed":1.1,"swing":0.20,"px":0.21,"py":0.96}}]}
   ] },
   rooftop: { parallax: [
     {"img":"rooftop-reveal-back","par":0.09,"lift":500,"scale":0.65},
@@ -742,20 +742,6 @@ function drawTempleTorches(ctx, stand, flame, x, y, width, height, time, reduced
   }
 }
 
-function drawWavingFlag(ctx, image, width, height, phase) {
-  const sw = image.naturalWidth, sh = image.naturalHeight;
-  const pole = Math.round(sw * .41);
-  ctx.drawImage(image, 0, 0, pole, sh, -width / 2, -height, width * pole / sw, height);
-  const cloth = sw - pole;
-  for (let x = pole; x < sw; x += 2) {
-    const fraction = (x - pole) / cloth;
-    const dy = Math.sin(phase - fraction * 7) * fraction * height * .045;
-    const strip = Math.min(2, sw - x);
-    ctx.drawImage(image, x, 0, strip, sh, -width / 2 + x * width / sw,
-      -height + dy, (strip + (x + strip < sw ? .2 : 0)) * width / sw, height);
-  }
-}
-
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
   const terrain = kit.config.overlapTerrain ? terrainLayout(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
@@ -881,8 +867,6 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
             ctx.translate(0, -ph / 2);
             ctx.rotate(mAng);
             ctx.drawImage(pic, -pw / 2, -ph / 2, pw, ph);
-          } else if (mv?.type === 'flag' && !reduced) {
-            drawWavingFlag(ctx, pic, pw, ph, mt * msp);
           } else ctx.drawImage(pic, -pw / 2, mTop ? 0 : -ph, pw, ph);
           ctx.restore();
         }
