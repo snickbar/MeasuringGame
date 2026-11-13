@@ -68,13 +68,11 @@ export const SETTINGS = {
       { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .2, row: 535, w: .27, foam: 'beach-wave-foam' }], drifters: [{ img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
       { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .7, row: 508, w: .27 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
     skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
-  boardwalk: { floor: 'boardwalk-floor', floorTileWidth: 640, sky: ['#6cc4f0', '#e0f2fb'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls',
-    parallax: [{ img: 'bw-farthest', par: .09, lift: 255, props: [{ img: 'bw-coaster', x: .2, row: 410, w: .3 }, { img: 'fair-n-anim-0', x: .7, row: 430, w: 0.239, spin: { img: 'fair-n-anim-1', fx: .5, fy: .1, size: 1.1, speed: .5 } }] },
-      { img: 'bw-far', par: .16, lift: 225, props: [{ img: 'bw-lighthouse', x: .8, row: 405, w: .06 }, { img: 'bw-sailboat', x: .152, row: 356, w: .105, move: { type: 'sway', amp: 7, speed: .8 } }, { img: 'bw-sailboat', x: .552, row: 356, w: .105, move: { type: 'sway', amp: 6, speed: .65, phase: 2 }, flip: true }, { img: 'bw-sailboat', x: .854, row: 356, w: .105, move: { type: 'sway', amp: 7, speed: .9, phase: 4 } }] },
-      { img: 'bw-mid', par: .34, lift: 185, props: [{ img: 'bw-carousel', x: .5, row: 700, w: .13 }] },
-      { img: 'bw-near', par: .6, lift: 112, drifters: [{ img: 'bw-train', x: .3, row: 770, w: .12, speed: 14, bob: 0 }] }],
-    pieces: [{ img: 'bw-banner', cell: 2000, prob: .7, w: 130, speed: 18, bob: 3, sway: .02, minH: 460, face: 1 }, { img: 'bw-parasail', cell: 2600, prob: .6, w: 64, speed: 10, bob: 4, sway: .03, minH: 420, face: 1 }, { img: 'air-prop', cell: 1700, prob: .5, w: 72, speed: 28, bob: 3, sway: .02, minH: 420, face: 1 }],
-    skyPieces: [{ img: 'resort-sun', y: 5500, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 5500, x: .2, w: 120, night: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
+  boardwalk: { sky: ['#32a8eb', '#b9e7fa'], nightSky: ['#0e1a38', '#33456b'], night: 'dark',
+    avenue: { shops: 'boardwalk-avenue', pier: 'boardwalk-pier', stand: 'fair-reveal-stand',
+      wheel: 'fair-reveal-wheel', carriage: 'fair-reveal-carriage' },
+    floaters: ['cloud-set-resort'], cloudClear: 190, flyers: 'gulls',
+    skyPieces: [{ img: 'resort-sun', y: 5500, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 5500, x: .2, w: 120, night: true }] },
   fair: { floor: 'fair-n-floor', floorTileWidth: 640,  sky: ['#7fc6f2', '#f1f8fc'], floaters: ['cloud-set-day'], flyers: 'swallows',
     parallax: [{ img: 'fair-n-farthest', par: 0.09, lift: 375, scale: 2.27 },
       { img: 'fair-n-big-0', par: .06, lift: 697, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -260,13 +258,6 @@ const layeredReveals = {
     {"img":"beach-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"beach-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"beach-reveal-palm","x":0.15,"row":908,"w":0.16,"move":{"type":"rustle","amp":4,"speed":1.1}},{"img":"beach-reveal-lantern","x":0.78,"row":998,"w":0.05,"move":{"type":"dangle","amp":4,"speed":1.1}}]}
   ] },
-  boardwalk: { parallax: [
-    {"img":"boardwalk-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"fair-n-anim-0","par":0.15,"lift":415,"single":{"x":0.54,"w":0.56,"sy":1,"spin":{"img":"boardwalk-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
-    {"img":"boardwalk-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"boardwalk-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"boardwalk-reveal-pinwheel","x":0.79,"row":848,"w":0.075,"move":{"type":"spin","amp":4,"speed":1.1}}]},
-    {"img":"boardwalk-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
   blossom: { fallingPetals: 'petal-leaf-set', parallax: [
     {"img":"blossom-reveal-back","par":0.09,"lift":622,"scale":0.65},
     {"img":"blossom-reveal-landmark","par":0.15,"lift":615,"single":{"x":0.54,"w":0.89,"sy":1}},
@@ -377,9 +368,9 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
-  if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
+  if ((config.floor && !images[config.floor]) || (config.avenue && !images[config.avenue.pier])) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
 }
 
@@ -1259,6 +1250,63 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
   ctx.restore();
 }
 
+function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale }) {
+  const { avenue } = kit.config;
+  const pier = kit.images[avenue.pier];
+  const shops = kit.images[avenue.shops];
+  const stand = kit.images[avenue.stand];
+  const wheel = kit.images[avenue.wheel];
+  const cabin = kit.images[avenue.carriage];
+
+  // The artwork is registered to one canvas. Move the connected shops together
+  // so their rooflines and storefronts never split as the camera passes them.
+  const scaleX = width / pier.naturalWidth;
+  const artHeight = Math.min(height, pier.naturalHeight * scaleX);
+  const scaleY = artHeight / pier.naturalHeight;
+  const base = height - artHeight;
+  const pierY = base + shiftY * .26;
+  const shopsY = base + 595 * scaleY + shiftY * .83;
+
+  ctx.save();
+  if (dark) ctx.filter = 'brightness(58%)';
+  if (pierY > 0) {
+    // Extend the sky at its painted top edge while the horizon scrolls down.
+    ctx.drawImage(pier, pier.naturalWidth / 2, 0, 1, 1, 0, 0, width, Math.min(height, pierY + 1));
+  }
+  if (pierY < height) ctx.drawImage(pier, 0, pierY, width, artHeight);
+  ctx.restore();
+
+  // Keep drifting clouds in the sky and behind the wheel.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, width, Math.max(0, pierY + 463 * scaleY));
+  ctx.clip();
+  ctx.globalAlpha = Math.max(0, Math.min(1, (shiftY - 100) / 380));
+  drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale });
+  drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  ctx.restore();
+
+  ctx.save();
+  if (dark) ctx.filter = 'brightness(58%)';
+  if (wheel && stand && pierY < height) {
+    const cx = width / 2;
+    const cy = pierY + 336 * scaleY;
+    const size = 317 * scaleY;
+    const angle = reduced ? 0 : time * .27;
+    const standHeight = 310 * scaleY;
+    const standWidth = standHeight * stand.naturalWidth / stand.naturalHeight;
+    ctx.drawImage(stand, cx - standWidth / 2, cy - standHeight * .14, standWidth, standHeight);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.drawImage(wheel, -size / 2, -size / 2, size, size);
+    ctx.restore();
+    if (cabin) drawWheelCarriages(ctx, cabin, cx, cy, size, size, angle, time, reduced);
+  }
+  if (shops && shopsY < height) ctx.drawImage(shops, 0, shopsY, width, shops.naturalHeight * scaleY);
+  ctx.restore();
+}
+
 function drawFallingPetals(ctx, image, width, height, time, shiftY) {
   const box = columnBounds(image, 0);
   const travel = height + 40;
@@ -1318,8 +1366,12 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
-  drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale });
-  drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  if (config.avenue) {
+    drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  } else {
+    drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale });
+    drawFloaters(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  }
   drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
