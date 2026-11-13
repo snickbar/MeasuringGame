@@ -1,5 +1,21 @@
 // Scene viewer (Settings > Debug / Admin tools): pick any reveal scene, a small object and a big object, then watch the real reveal.
 // Plays the same engine the game uses, so what you see here is what players get. Shown only where the debug tools are.
+// Move a scene to the front when its artwork or layout changes. Scenes without
+// a recent revision appear alphabetically after this list.
+const recentScenes = [
+  "space", "fair", "mountain", "jungle", "grass", "farm", "stadium",
+  "city", "volcano", "cave", "blossom", "rooftop", "boardwalk", "beach",
+  "living", "kitchen", "tabletop", "library", "workshop", "desert",
+  "underwater", "snow", "forest",
+];
+const sceneLabels = {
+  space: "Moon", jungle: "Temple", grass: "Meadow", fair: "County Fair",
+  city: "Times Square at Night", cave: "Crystal Cave", blossom: "Cherry Blossom",
+  rooftop: "Rooftops at Sunset", living: "Living Room", resort: "Beach Resort",
+  tabletop: "Tabletop",
+};
+const sceneLabel = (id) => sceneLabels[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
+
 export function buildSceneViewer({ loadAnim, objects }) {
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const wrap = el("div", "dbg-body scene-viewer");
@@ -37,9 +53,14 @@ export function buildSceneViewer({ loadAnim, objects }) {
   async function setup() {
     if (ids.length) return;
     const m = await import("./scenery.mjs");
-    ids = Object.keys(m.SETTINGS);
+    const available = Object.keys(m.SETTINGS);
+    ids = [
+      ...recentScenes.filter((id) => Object.hasOwn(m.SETTINGS, id)),
+      ...available.filter((id) => !recentScenes.includes(id))
+        .sort((a, b) => sceneLabel(a).localeCompare(sceneLabel(b))),
+    ];
     const auto = el("option", "", "Auto (follows the big object)"); auto.value = ""; scene.appendChild(auto);
-    ids.forEach((id) => { const o = el("option", "", id); o.value = id; scene.appendChild(o); });
+    ids.forEach((id) => { const o = el("option", "", sceneLabel(id)); o.value = id; scene.appendChild(o); });
     scene.value = saved.scene !== undefined && (saved.scene === "" || ids.includes(saved.scene)) ? saved.scene : "rooftop";
   }
   async function play() {
@@ -60,7 +81,7 @@ export function buildSceneViewer({ loadAnim, objects }) {
       stage.style.width = "100%";
       const sc = await ctl.prepare(unit, target, { hMax: 330, minStageH: 700 });
       if (my !== token) return;
-      note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value || "auto"} · ${look.value}`;
+      note.textContent = `${u.plural || u.name} vs ${b.name}: ${n.toLocaleString()} stacked · scene ${scene.value ? sceneLabel(scene.value) : "Auto"} · ${look.value}`;
       curScene = sc; pos = 0; lastReal = performance.now(); setPaused(false);
       timeline.max = String(sc.duration || 20); timeline.value = "0"; timeLabel.textContent = "0.00 s";
       startOpts = { startAt: 0, now: clock,
