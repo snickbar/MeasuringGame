@@ -120,8 +120,8 @@ export const SETTINGS = {
   snow: { floor: 'snow-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [
-      { img: 'snow-climb-backdrop', par: .10, lift: 549, scale: .65 },
-      { img: 'snow-climb-lift', par: .16, lift: 502, single: { x: .5, w: 1.23, sy: 1, liftChair: 'snow-climb-chair' } },
+      { img: 'snow-climb-backdrop', par: .10, lift: 580, scale: .65 },
+      { img: 'snow-climb-lift', par: .16, lift: 554, single: { x: .55, w: 1.23, sy: 1, liftChair: 'snow-climb-chair' } },
       { img: 'snow-climb-distant', par: .26, lift: 414, scale: .60 },
       { img: 'snow-climb-huge-tree', par: .36, lift: 520, single: { x: .62, w: .70, sy: 1 } },
       { img: 'snow-climb-middle', par: .57, lift: 307, scale: .56, props: [
