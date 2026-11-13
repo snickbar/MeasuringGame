@@ -200,7 +200,7 @@ export const SETTINGS = {
         { img: 'forest-n-vine-3', fx: .70, fy: .48, w: .035, speed: .92, swing: .05 },
       ] } },
       { img: 'jungle-climb-bank', par: .23, lift: 217, scale: .67, overlapFrom: .95 },
-      { img: 'jungle-climb-middle', par: .56, lift: 339, scale: .59, overlapFrom: .95 },
+      { img: 'jungle-climb-middle', par: .56, lift: 387, scale: .59, overlapFrom: .95 },
       { img: 'jungle-climb-foreground', par: 1, lift: 48, scale: .58, grounded: true, overlapFrom: .95, props: [
         { img: 'jungle-n-loose-1', x: .23, row: 1155, w: .12, move: { type: 'rustle', amp: 4, speed: 1.05 } },
         { img: 'jungle-n-loose-0', x: .77, row: 1225, w: .10, move: { type: 'rustle', amp: 3, speed: .86 } },
