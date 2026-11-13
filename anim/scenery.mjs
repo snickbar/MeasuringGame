@@ -181,10 +181,10 @@ export const SETTINGS = {
   mountain: { floor: 'mountain-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#7fb0e6', '#d3e5f4'], floaters: ['cloud-set-day'],
     parallax: [
-      { img: 'mountain-climb-backdrop', par: .10, lift: 530, scale: .65 },
-      { img: 'mountain-climb-peak', par: .15, lift: 540, single: { x: .55, w: .97, sy: 1 } },
-      { img: 'mountain-climb-distant', par: .28, lift: 380, scale: .59 },
-      { img: 'mountain-climb-middle', par: .56, lift: 300, scale: .58, overlapFrom: .95, props: [
+      { img: 'mountain-climb-backdrop', par: .10, lift: 553, scale: .65 },
+      { img: 'mountain-climb-peak', par: .15, lift: 553, single: { x: .55, w: .97, sy: 1 } },
+      { img: 'mountain-climb-distant', par: .28, lift: 422, scale: .59 },
+      { img: 'mountain-climb-middle', par: .56, lift: 349, scale: .58, overlapFrom: .95, props: [
         { img: 'mountain-climb-gondola', x: .88, row: 741, w: .072, move: { type: 'dangle', amp: 5, speed: 1.15 } },
         { img: 'mountain-climb-flags', x: .53, row: 1115, w: .09, move: { type: 'rustle', amp: 4, speed: 1.6 } },
       ] },
@@ -193,7 +193,7 @@ export const SETTINGS = {
   jungle: { floor: 'jungle-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#80bddc', '#d1e9c7'], floaters: ['cloud-set-day'],
     parallax: [
-      { img: 'jungle-n-farthest', par: .10, lift: 539, scale: 1.25, filter: 'brightness(.74) saturate(.82)' },
+      { img: 'jungle-n-far', par: .10, lift: 539, scale: 1.25, filter: 'brightness(.84)' },
       { img: 'jungle-climb-distant', par: .16, lift: 420, scale: .60, overlapFrom: .95 },
       { img: 'jungle-climb-temple', par: .23, lift: 554, single: { x: .55, w: .91, sy: 1, torches: { stand: 'jungle-climb-torch', flame: 'jungle-climb-flame' }, hang: [
         { img: 'forest-n-vine-2', fx: .34, fy: .40, w: .031, speed: .77, swing: .045 },
@@ -267,32 +267,24 @@ const layeredReveals = {
     {"img":"boardwalk-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   blossom: { parallax: [
-    {"img":"blossom-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"blossom-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"blossom-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"blossom-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-lantern","x":0.57,"row":773,"w":0.043,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"blossom-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-bamboo","x":0.15,"row":938,"w":0.11,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
-  ] },
-  city: { parallax: [
-    {"img":"city-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"city-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"city-reveal-globe","fx":0.72,"fy":0.11,"size":0.2,"speed":0.45,"mode":"yaw"}}},
-    {"img":"city-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"city-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"city-reveal-neon","x":0.25,"row":765,"w":0.09,"move":{"type":"glow","amp":4,"speed":1.1}}]},
-    {"img":"city-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+    {"img":"blossom-reveal-back","par":0.09,"lift":592,"scale":0.65},
+    {"img":"blossom-reveal-landmark","par":0.15,"lift":575,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"blossom-reveal-far","par":0.27,"lift":412,"scale":0.63,"overlapFrom":0.95},
+    {"img":"blossom-reveal-mid","par":0.55,"lift":337,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-lantern","x":0.57,"row":773,"w":0.043,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"blossom-reveal-front","par":1,"lift":48,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-bamboo","x":0.15,"row":938,"w":0.11,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
   ] },
   fair: { parallax: [
-    {"img":"fair-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"fair-n-anim-0","par":0.15,"lift":440,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
-    {"img":"fair-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"fair-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"fair-reveal-bunting","x":0.78,"row":810,"w":0.048,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"fair-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+    {"img":"fair-reveal-back","par":0.09,"lift":588,"scale":0.65},
+    {"img":"fair-n-anim-0","par":0.15,"lift":525,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
+    {"img":"fair-reveal-far","par":0.27,"lift":416,"scale":0.63,"overlapFrom":0.95},
+    {"img":"fair-reveal-mid","par":0.55,"lift":342,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"fair-reveal-front","par":1,"lift":52,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  cave: { parallax: [
-    {"img":"cave-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"cave-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"cave-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"cave-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"cave-reveal-crystal","x":0.61,"row":788,"w":0.052,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"cave-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"cave-reveal-mushroom","x":0.72,"row":990,"w":0.085,"move":{"type":"pulse","amp":4,"speed":5}}]}
+  cave: { roomBack: 'cave-reveal-wall', parallax: [
+    {"img":"cave-reveal-landmark","par":0.15,"lift":572,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"cave-reveal-far","par":0.27,"lift":420,"scale":0.63,"overlapFrom":0.95},
+    {"img":"cave-reveal-mid","par":0.55,"lift":340,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"cave-reveal-front","par":1,"lift":49,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"cave-reveal-mushroom","x":0.72,"row":990,"w":0.085,"move":{"type":"pulse","amp":4,"speed":5}}]}
   ] },
   kitchen: { roomBack: 'kitchen-reveal-back', parallax: [
     {"img":"kitchen-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
@@ -312,19 +304,18 @@ const layeredReveals = {
     {"img":"living-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"living-reveal-curtain","x":0.14,"row":810,"w":0.072,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
     {"img":"living-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  grass: { parallax: [
-    {"img":"grass-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"grass-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"grass-reveal-wheel","fx":0.72,"fy":0.73,"size":0.51,"speed":0.45}}},
-    {"img":"grass-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"grass-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[]},
-    {"img":"grass-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"grass-reveal-flowers","x":0.24,"row":930,"w":0.075,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
+    {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
+    {"img":"grass-reveal-landmark","par":0.15,"lift":568,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"grass-reveal-wheel","fx":0.72,"fy":0.73,"size":0.51,"speed":0.45}}},
+    {"img":"grass-reveal-far","par":0.27,"lift":409,"scale":0.63,"overlapFrom":0.95},
+    {"img":"grass-reveal-mid","par":0.55,"lift":335,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"grass-reveal-front","par":1,"lift":48,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  space: { parallax: [
-    {"img":"space-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"space-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"space-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"space-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"space-reveal-radar","x":0.73,"row":818,"w":0.17,"move":{"type":"scan","amp":4,"speed":1.1}}]},
-    {"img":"space-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"space-reveal-flag","x":0.18,"row":893,"w":0.057,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  space: { movers: ['twinkle', 'comet'], skyPieces: [{ img: 'space-n-big-0', screenY: .23, par: .07, x: .5, wFrac: .82 }], parallax: [
+    {"img":"space-reveal-landmark","par":0.15,"lift":568,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"space-reveal-back","par":0.22,"lift":340,"scale":0.63,"overlapFrom":0.95},
+    {"img":"space-reveal-mid","par":0.55,"lift":309,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"space-reveal-front","par":1,"lift":35,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"space-reveal-flag","x":0.18,"row":893,"w":0.057,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
   ] },
   rooftop: { parallax: [
     {"img":"rooftop-reveal-back","par":0.09,"lift":500,"scale":0.65},
@@ -334,11 +325,10 @@ const layeredReveals = {
     {"img":"rooftop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   stadium: { parallax: [
-    {"img":"stadium-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"stadium-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"stadium-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"stadium-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"stadium-reveal-pennant","x":0.63,"row":803,"w":0.052,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"stadium-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"stadium-reveal-banner","x":0.17,"row":915,"w":0.075,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+    { img: 'stadium-reveal-back', par: .09, lift: 595, scale: .65 },
+    { img: 'stadium-reveal-far', par: .24, lift: 365, scale: .75, overlapFrom: .97, props: [
+      { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
+    ] },
   ] },
   tabletop: { roomBack: 'tabletop-reveal-back', parallax: [
     {"img":"tabletop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
@@ -347,11 +337,11 @@ const layeredReveals = {
     {"img":"tabletop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   volcano: { parallax: [
-    {"img":"volcano-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"volcano-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"volcano-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"volcano-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-disc","x":0.26,"row":840,"w":0.12,"move":{"type":"spin","amp":4,"speed":1.1}}]},
-    {"img":"volcano-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}]}
+    {"img":"volcano-reveal-back","par":0.09,"lift":586,"scale":0.65},
+    {"img":"volcano-reveal-landmark","par":0.15,"lift":560,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"volcano-reveal-far","par":0.27,"lift":415,"scale":0.63,"overlapFrom":0.95},
+    {"img":"volcano-reveal-mid","par":0.55,"lift":345,"scale":0.58,"overlapFrom":0.95,"flows":[{"img":"volcano-reveal-flow","x":0,"y":0,"ripple":{"rows":34,"speed":0.9,"warm":true}}]},
+    {"img":"volcano-reveal-front","par":1,"lift":46,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}]}
   ] },
   workshop: { roomBack: 'workshop-reveal-back', parallax: [
     {"img":"workshop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"workshop-reveal-gear","fx":0.5,"fy":0.49,"size":0.77,"speed":0.45}}},
@@ -360,11 +350,13 @@ const layeredReveals = {
     {"img":"workshop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
 };
+Object.assign(SETTINGS.city, { floorDrifters: undefined, skyPieces: SETTINGS.city.skyPieces.slice(0, 1) });
+
 for (const [id, scene] of Object.entries(layeredReveals)) {
-  Object.assign(SETTINGS[id], scene, {
+  Object.assign(SETTINGS[id], {
     overlapTerrain: true, tall: undefined, pieces: undefined,
     floorDrifters: undefined, panels: undefined, decor: undefined, movers: undefined,
-  });
+  }, scene);
 }
 
 const imageCache = new Map();
@@ -619,7 +611,7 @@ function drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, 
   for (const p of kit.config.skyPieces || []) {
     const image = kit.images[p.img]; if (!image || (p.day && dark) || (p.night && !dark)) continue;
     const w = p.wFrac ? width * p.wFrac : p.w * gs, h = w * image.naturalHeight / image.naturalWidth;
-    const yc = base + par * (shiftY - p.y * gs);
+    const yc = p.screenY === undefined ? base + par * (shiftY - p.y * gs) : height * p.screenY + shiftY * p.par;
     if (yc + h / 2 < 0 || yc - h / 2 > height) continue;
     const vis = Math.max(0, Math.min(1, (base + shiftY - (kit.config.cloudClear ?? 90) * gs * .9 - (yc + h / 2)) / (120 * gs)));
     if (vis < .01) continue;
@@ -735,7 +727,7 @@ function drawTempleTorches(ctx, stand, flame, x, y, width, height, time, reduced
   const standH = width * .16, standW = standH * stand.naturalWidth / stand.naturalHeight;
   const flameH = width * .079, flameW = flameH * flame.naturalWidth / flame.naturalHeight;
   for (const [index, side] of [.325, .675].entries()) {
-    const baseX = x + width * side, bowlY = y + height * .51 - standH;
+    const baseX = x + width * side, bowlY = y + height * .39 - standH;
     ctx.drawImage(stand, baseX - standW / 2, bowlY, standW, standH);
     const flicker = reduced ? 0 : Math.sin(time * 13 + index * 2) * .65 + Math.sin(time * 21 + index) * .35;
     ctx.save();
@@ -784,11 +776,11 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const g = oc.getContext('2d'), W = oc.width, H = oc.height, n = fl.streaks || 9;
         g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
         if (fl.ripple) { // the creek: pale wavy lines drifting along the water, sliding slowly toward the viewer
-          const rows = fl.ripple.rows || 9, tt = reduced ? 0 : time; g.fillStyle = 'rgba(30,140,190,.2)'; g.fillRect(0, 0, W, H);
+          const rows = fl.ripple.rows || 9, tt = reduced ? 0 : time; if (!fl.ripple.warm) { g.fillStyle = 'rgba(30,140,190,.2)'; g.fillRect(0, 0, W, H); }
           for (let r = 0; r < rows; r++) {
             const yy = ((r + (tt * (fl.ripple.speed || .25)) % 1) / rows) * H, amp = 2 + 5 * (yy / H), wl = 46 + 40 * (yy / H);
             g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + r * 1.9) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
-            g.strokeStyle = r % 2 ? 'rgba(255,255,255,.85)' : 'rgba(20,110,170,.45)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
+            g.strokeStyle = fl.ripple.warm ? 'rgba(255,217,84,.32)' : r % 2 ? 'rgba(255,255,255,.85)' : 'rgba(20,110,170,.45)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
           }
           g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.drawImage(oc, x + fl.x * k, top + fl.y * k, W * k, H * k); continue;
         }
