@@ -276,7 +276,8 @@ const layeredReveals = {
   ] },
   fair: { parallax: [
     {"img":"fair-reveal-back","par":0.09,"lift":588,"scale":0.65},
-    {"img":"fair-n-anim-0","par":0.15,"lift":525,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
+    {"img":"fair-n-anim-0","par":0.15,"lift":509,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
+    { img: 'fair-reveal-zoo', par: .15, lift: 284, scale: .56, overlapFrom: .95 },
     {"img":"fair-reveal-far","par":0.27,"lift":416,"scale":0.63,"overlapFrom":0.95},
     {"img":"fair-reveal-mid","par":0.55,"lift":342,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"fair-reveal-front","par":1,"lift":52,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
@@ -313,7 +314,7 @@ const layeredReveals = {
     {"img":"grass-reveal-mid","par":0.55,"lift":311,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"grass-reveal-front","par":1,"lift":48,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  space: { movers: ['twinkle', 'comet'], skyPieces: [{ img: 'space-n-big-0', screenY: .23, par: .07, x: .5, wFrac: .82 }], parallax: [
+  space: { movers: ['twinkle', 'comet'], skyPieces: [{ img: 'space-n-big-0', screenY: .135, par: .045, x: .5, wFrac: .65 }], parallax: [
     {"img":"space-reveal-landmark","par":0.15,"lift":568,"single":{"x":0.54,"w":0.89,"sy":1}},
     {"img":"space-reveal-back","par":0.22,"lift":340,"scale":0.63,"overlapFrom":0.95},
     {"img":"space-reveal-mid","par":0.55,"lift":309,"scale":0.58,"overlapFrom":0.95,"props":[]},
