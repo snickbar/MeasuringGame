@@ -1277,11 +1277,11 @@ function drawSunsetRooftops(ctx, kit, options) {
   const left = (width - 1024 * scale) / 2;
   const climb = Math.max(0, shiftY);
   const separation = 100 * (1 - Math.exp(-climb / 350));
-  const cityY = floorY - 1390 * scale + climb * .16;
-  const farY = floorY - 835 * scale + climb * .16 + separation * .26;
-  const gardenY = floorY - 655 * scale + climb * .16 + separation * .61;
-  const deckY = floorY - 380 * scale + climb * .16 + separation + Math.min(0, shiftY);
-  const towerY = farY - 225 * scale;
+  const cityY = floorY - 1650 * scale + climb * .16;
+  const farY = floorY - 1050 * scale + climb * .16 + separation * .26;
+  const gardenY = floorY - 780 * scale + climb * .16 + separation * .61;
+  const deckY = floorY - 380 * scale + climb * .16 + separation + Math.min(0, shiftY) * .35;
+  const towerY = farY - 195 * scale;
   const night = isNight(kit.config, dark);
   const city = kit.images[art.city];
 
@@ -1302,7 +1302,7 @@ function drawSunsetRooftops(ctx, kit, options) {
 
   const celestial = kit.images[night ? art.moon : art.sun];
   const size = (night ? 100 : 116) * scale;
-  const celestialY = cityY + (night ? 300 : 515) * scale;
+  const celestialY = cityY + (night ? 395 : 575) * scale;
   if (celestialY < height && celestialY + size > 0) {
     ctx.drawImage(celestial, width * .23 - size / 2, celestialY,
       size, size * celestial.naturalHeight / celestial.naturalWidth);
@@ -1326,10 +1326,17 @@ function drawSunsetRooftops(ctx, kit, options) {
   draw('deck', deckY);
   // At ground level the ledge follows the measurement baseline and covers the deck join.
   const ledge = kit.images[art.ledge];
-  const ledgeScale = Math.max(scale, (height - floorY + 14) / ledge.naturalHeight);
   const ledgeY = floorY + shiftY - 12;
-  if (ledgeY < height) ctx.drawImage(ledge, (width - ledge.naturalWidth * ledgeScale) / 2,
-    ledgeY, ledge.naturalWidth * ledgeScale, ledge.naturalHeight * ledgeScale);
+  if (ledgeY < height) {
+    const ledgeHeight = ledge.naturalHeight * scale;
+    const bottom = ledgeY + ledgeHeight;
+    if (bottom < height) {
+      // Continue only the solid edge below the tiles during the opening camera dip.
+      ctx.drawImage(ledge, ledge.naturalWidth / 2, ledge.naturalHeight - 1, 1, 1,
+        left, bottom - .5, ledge.naturalWidth * scale, height - bottom + 1);
+    }
+    ctx.drawImage(ledge, left, ledgeY, ledge.naturalWidth * scale, ledgeHeight);
+  }
   ctx.restore();
 }
 
