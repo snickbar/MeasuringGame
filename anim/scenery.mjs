@@ -276,8 +276,8 @@ const layeredReveals = {
   ] },
   fair: { parallax: [
     {"img":"fair-reveal-back","par":0.09,"lift":588,"scale":0.65},
-    {"img":"fair-n-anim-0","par":0.15,"lift":509,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
-    { img: 'fair-reveal-zoo', par: .15, lift: 284, scale: .56, overlapFrom: .95 },
+    {"img":"fair-reveal-stand","par":0.15,"lift":509,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.145,"size":0.98,"speed":0.45}}},
+    { img: 'fair-reveal-zoo', par: .15, lift: 305, scale: .56, overlapFrom: .95 },
     {"img":"fair-reveal-far","par":0.27,"lift":309,"scale":0.63,"overlapFrom":0.95},
     {"img":"fair-reveal-mid","par":0.55,"lift":342,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"fair-reveal-front","par":1,"lift":5,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
@@ -697,13 +697,24 @@ function drawTerrainImage(ctx, image, x, y, width, height, bottom, splitRatio = 
     ctx.drawImage(image, x, y, width, height);
     return;
   }
-  // Stretch the lowest painted section into the overlap, keeping the props
-  // and upper silhouette at their original scale and position.
-  const split = Math.floor(image.naturalHeight * splitRatio);
-  const upper = height * split / image.naturalHeight;
-  ctx.drawImage(image, 0, 0, image.naturalWidth, split, x, y, width, upper);
-  ctx.drawImage(image, 0, split, image.naturalWidth, image.naturalHeight - split,
-    x, y + upper, width, bottom - y - upper);
+  // Repeat the bottom artwork at its original scale. Mirroring alternate
+  // sections keeps the shared edges aligned without stretching the scenery.
+  ctx.drawImage(image, x, y, width, height);
+  const sourceHeight = image.naturalHeight - Math.floor(image.naturalHeight * splitRatio);
+  const stripHeight = height * sourceHeight / image.naturalHeight;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y + height, width, bottom - y - height);
+  ctx.clip();
+  for (let top = y + height, i = 0; top < bottom; top += stripHeight, i++) {
+    ctx.save();
+    ctx.translate(x, top + (i % 2 === 0 ? stripHeight : 0));
+    if (i % 2 === 0) ctx.scale(1, -1);
+    ctx.drawImage(image, 0, image.naturalHeight - sourceHeight, image.naturalWidth, sourceHeight,
+      0, 0, width, stripHeight + .35);
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawLiftChairs(ctx, chair, x, y, width, height, time) {
@@ -752,10 +763,11 @@ function drawFlow(ctx, kit, fl, x, top, k, ky, time, reduced) {
   g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
   if (fl.ripple) { // the creek: pale wavy lines drifting along the water, sliding slowly toward the viewer
     const rows = fl.ripple.rows || 9, tt = reduced ? 0 : time; if (!fl.ripple.warm) { g.fillStyle = 'rgba(30,140,190,.2)'; g.fillRect(0, 0, W, H); }
-    for (let r = 0; r < rows; r++) {
-      const yy = ((r + (tt * (fl.ripple.speed || .25)) % 1) / rows) * H, amp = 2 + 5 * (yy / H), wl = 46 + 40 * (yy / H);
-      g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + r * 1.9) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
-      g.strokeStyle = fl.ripple.warm ? 'rgba(255,175,48,.60)' : r % 2 ? 'rgba(255,255,255,.85)' : 'rgba(20,110,170,.45)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
+    const travel = tt * (fl.ripple.speed || .25);
+    for (let r = -1; r <= rows; r++) {
+      const yy = ((r + travel % 1) / rows) * H, amp = 2 + 5 * (yy / H), wl = 46 + 40 * (yy / H);
+      g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + yy / H * 18) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
+      g.strokeStyle = fl.ripple.warm ? 'rgba(255,175,48,.60)' : 'rgba(231,249,255,.65)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
     }
     g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.drawImage(oc, x + fl.x * k, top + fl.y * ky, W * k, H * ky); return;
   }
