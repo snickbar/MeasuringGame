@@ -189,7 +189,7 @@ export const SETTINGS = {
         { img: 'mountain-climb-gondola', x: .88, row: 741, w: .072, move: { type: 'dangle', amp: 5, speed: 1.15 } },
         { img: 'mountain-climb-flags', x: .53, row: 1115, w: .09, move: { type: 'rustle', amp: 4, speed: 1.6 } },
       ] },
-      { img: 'mountain-climb-foreground', par: 1, lift: 52, scale: .58, grounded: true, overlapFrom: .95 },
+      { img: 'mountain-climb-foreground', par: 1, lift: 0, scale: .58, grounded: true, overlapFrom: .95 },
     ] },
   jungle: { floor: 'jungle-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#80bddc', '#d1e9c7'], floaters: ['cloud-set-day'],
