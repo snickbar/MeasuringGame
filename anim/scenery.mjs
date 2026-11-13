@@ -191,14 +191,15 @@ export const SETTINGS = {
       { img: 'mountain-climb-foreground', par: 1, lift: 28, scale: .58, grounded: true, overlapFrom: .95 },
     ] },
   jungle: { floor: 'jungle-n-floor', floorTileWidth: 640, overlapTerrain: true,
-    sky: ['#4f9b7c', '#b6dcc0'],
+    sky: ['#80bddc', '#d1e9c7'], floaters: ['cloud-set-day'],
     parallax: [
-      { img: 'jungle-climb-backdrop', par: .10, lift: 545, scale: .66 },
+      { img: 'jungle-n-farthest', par: .10, lift: 505, scale: 1.25 },
       { img: 'jungle-climb-distant', par: .16, lift: 383, scale: .60, overlapFrom: .95 },
       { img: 'jungle-climb-temple', par: .23, lift: 545, single: { x: .55, w: .91, sy: 1, hang: [
         { img: 'forest-n-vine-2', fx: .34, fy: .40, w: .031, speed: .77, swing: .045 },
         { img: 'forest-n-vine-3', fx: .70, fy: .48, w: .035, speed: .92, swing: .05 },
       ] } },
+      { img: 'jungle-climb-bank', par: .23, lift: 194, scale: .67, overlapFrom: .95 },
       { img: 'jungle-climb-middle', par: .56, lift: 300, scale: .59, overlapFrom: .95 },
       { img: 'jungle-climb-foreground', par: 1, lift: 26, scale: .58, grounded: true, overlapFrom: .95, props: [
         { img: 'jungle-n-loose-1', x: .23, row: 1155, w: .12, move: { type: 'rustle', amp: 4, speed: 1.05 } },
