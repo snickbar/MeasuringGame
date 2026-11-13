@@ -101,7 +101,7 @@ export const SETTINGS = {
     pieces: [{ img: 'tabletop-n-movers-5', cell: 1700, prob: 0.6, w: 58, speed: 24, bob: 3, sway: 0.02, minH: 380, face: 1 }] },
   city: { sky: ['#111d36', '#263675'], night: true,
     square: { street: 'times-square-street', sides: 'times-square-sides', tower: 'times-square-tower',
-      sky: 'times-square-sky', cup: 'times-square-cup', circles: 'times-square-circles',
+      sky: 'times-square-sky', skyscrapers: 'times-square-skyscrapers', cup: 'times-square-cup', circles: 'times-square-circles',
       star: 'times-square-star', ribbon: 'times-square-ribbon', steam: 'times-square-steam',
       spark: 'times-square-spark', grate: 'times-square-grate' } },
   forest: { floor: 'forest-n-floor', floorTileWidth: 640, overlapTerrain: true, sky: ['#9fc4b0', '#cfe3cf'],
@@ -1280,6 +1280,13 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
 
   if (skyY > 0) ctx.drawImage(image('sky'), 512, 0, 1, 1, 0, 0, width, Math.min(height, skyY + 1));
   drawTerrainImage(ctx, image('sky'), left, skyY, 1024 * scale, 1536 * scale, height, .86);
+  const skyscrapers = image('skyscrapers');
+  const skyscraperY = height - 1536 * scale + climb * .23;
+  if (skyscraperY < height) {
+    paint('skyscrapers', left, skyscraperY, 1024 * scale,
+      skyscrapers.naturalHeight * 1024 / skyscrapers.naturalWidth * scale);
+  }
+
   if (streetY < height) paint('street', left, streetY, 1024 * scale, 1536 * scale);
   const towerScale = scale * .60;
   paint('tower', width / 2 - 234 * towerScale, towerY, 468 * towerScale, 1536 * towerScale);
@@ -1301,8 +1308,8 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   ctx.restore();
 
   // The sidewalks, shops and street share a single perspective and camera position.
-  if (streetY >= height) return;
   const sidesY = streetY - 765 * scale;
+  if (sidesY >= height) return;
   paint('sides', left, sidesY, 1024 * scale, 1135 * scale);
 
   const billboard = (name, x, y, w, h, angle, zoom, hue, pulse) => {
