@@ -1280,7 +1280,7 @@ function drawSunsetRooftops(ctx, kit, options) {
   const cityY = floorY - 1650 * scale + climb * .16;
   const farY = floorY - 1050 * scale + climb * .16 + separation * .26;
   const gardenY = floorY - 780 * scale + climb * .16 + separation * .61;
-  const deckY = floorY - 380 * scale + climb * .16 + separation + Math.min(0, shiftY) * .35;
+  const deckY = floorY - 285 * scale + climb * .16 + separation + Math.min(0, shiftY) * .35;
   const towerY = farY - 195 * scale;
   const night = isNight(kit.config, dark);
   const city = kit.images[art.city];
