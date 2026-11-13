@@ -340,11 +340,11 @@ const layeredReveals = {
     {"img":"tabletop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   volcano: { parallax: [
-    {"img":"volcano-reveal-back","par":0.09,"lift":586,"scale":0.65},
-    {"img":"volcano-reveal-landmark","par":0.15,"lift":560,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"volcano-reveal-far","par":0.27,"lift":415,"scale":0.63,"overlapFrom":0.95},
-    {"img":"volcano-reveal-mid","par":0.55,"lift":345,"scale":0.58,"overlapFrom":0.95,"flows":[{"img":"volcano-reveal-flow","x":0,"y":0,"ripple":{"rows":34,"speed":0.9,"warm":true}}]},
-    {"img":"volcano-reveal-front","par":1,"lift":46,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}]}
+    {"img":"volcano-reveal-back","par":0.09,"lift":586,"scale":0.65,"flows":[{"img":"volcano-flow-back","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
+    {"img":"volcano-reveal-landmark","par":0.15,"lift":510,"single":{"x":0.54,"w":0.89,"sy":1,"smoke":"mist"},"flows":[{"img":"volcano-flow-landmark","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
+    {"img":"volcano-reveal-far","par":0.27,"lift":415,"scale":0.63,"overlapFrom":0.95,"flows":[{"img":"volcano-flow-far","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
+    {"img":"volcano-reveal-mid","par":0.55,"lift":345,"scale":0.58,"overlapFrom":0.95,"flows":[{"img":"volcano-reveal-flow","x":0,"y":0,"ripple":{"rows":34,"speed":2.1,"warm":true}}]},
+    {"img":"volcano-reveal-front","par":1,"lift":0,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}],"flows":[{"img":"volcano-flow-front","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]}
   ] },
   workshop: { roomBack: 'workshop-reveal-back', parallax: [
     {"img":"workshop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"workshop-reveal-gear","fx":0.5,"fy":0.49,"size":0.77,"speed":0.45}}},
@@ -377,7 +377,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -742,6 +742,43 @@ function drawTempleTorches(ctx, stand, flame, x, y, width, height, time, reduced
   }
 }
 
+function drawFlow(ctx, kit, fl, x, top, k, ky, time, reduced) {
+  const mask = kit.images[fl.img]; if (!mask) return;
+  let oc = FLOW_CANVAS.get(fl); if (!oc) { oc = document.createElement('canvas'); oc.width = mask.naturalWidth; oc.height = mask.naturalHeight; FLOW_CANVAS.set(fl, oc); }
+  const g = oc.getContext('2d'), W = oc.width, H = oc.height, n = fl.streaks || 9;
+  g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+  if (fl.ripple) { // the creek: pale wavy lines drifting along the water, sliding slowly toward the viewer
+    const rows = fl.ripple.rows || 9, tt = reduced ? 0 : time; if (!fl.ripple.warm) { g.fillStyle = 'rgba(30,140,190,.2)'; g.fillRect(0, 0, W, H); }
+    for (let r = 0; r < rows; r++) {
+      const yy = ((r + (tt * (fl.ripple.speed || .25)) % 1) / rows) * H, amp = 2 + 5 * (yy / H), wl = 46 + 40 * (yy / H);
+      g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + r * 1.9) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
+      g.strokeStyle = fl.ripple.warm ? 'rgba(255,175,48,.60)' : r % 2 ? 'rgba(255,255,255,.85)' : 'rgba(20,110,170,.45)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
+    }
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.drawImage(oc, x + fl.x * k, top + fl.y * ky, W * k, H * ky); return;
+  }
+  g.fillStyle = 'rgba(40,150,200,.4)'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < n; i++) for (let r = 0; r < 2; r++) {
+    const px = (i + .5) / n * W + Math.sin(i * 12.9) * 4, len = 26 + (i * 7) % 22, yy = (((reduced ? 0 : time) * fl.speed + i * 41 + r * (H + 30) / 2) % (H + 60)) - 40;
+    g.fillStyle = r ? 'rgba(255,255,255,.85)' : 'rgba(210,245,255,.9)'; g.fillRect(px - 3, yy, 6, len * 1.4);
+  }
+  g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0);
+  ctx.drawImage(oc, x + fl.x * k, top + fl.y * ky, W * k, H * ky);
+}
+
+function drawVolcanoSmoke(ctx, image, x, y, width, time, reduced) {
+  if (!image) return;
+  ctx.save();
+  for (let i = 0; i < 4; i++) {
+    const age = ((reduced ? 0 : time * .38) + i / 4) % 1;
+    const size = width * (.09 + age * .27);
+    const h = size * image.naturalHeight / image.naturalWidth;
+    ctx.globalAlpha = Math.sin(Math.PI * age) * .48;
+    ctx.drawImage(image, x + width * age * .14 - size / 2,
+      y - width * age * .45 - h / 2, size, h);
+  }
+  ctx.restore();
+}
+
 function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale = 1, time = 0, reduced }) {
   const terrain = kit.config.overlapTerrain ? terrainLayout(kit, width, height, (floorY ?? height - 40) - 4 * groundScale, shiftY, groundScale, floorY ?? height - 40) : null;
   const gs = groundScale, base = (floorY ?? height - 40) - 4 * gs;
@@ -749,7 +786,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2, sg.overlapFrom); const stand = kit.images[sg.torches?.stand], flame = kit.images[sg.torches?.flame]; if (stand && flame) drawTempleTorches(ctx, stand, flame, width * sg.x - w2 / 2, y2, w2, h2, time, reduced); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); const angle = reduced ? 0 : time * (sg.spin.speed || .5); if (sg.spin.mode === 'yaw') ctx.scale(.72 + .28 * Math.cos(angle), 1); else ctx.rotate(angle); const rh = rs * sp2.naturalHeight / sp2.naturalWidth; ctx.drawImage(sp2, -rs / 2, -(sg.spin.py ?? .5) * rh, rs, rh); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2, sg.overlapFrom); for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, width * sg.x - w2 / 2, y2, w2 / image.naturalWidth, h2 / image.naturalHeight, time, reduced); if (sg.smoke) drawVolcanoSmoke(ctx, kit.images[sg.smoke], width * sg.x, y2 + h2 * .085, w2, time, reduced); const stand = kit.images[sg.torches?.stand], flame = kit.images[sg.torches?.flame]; if (stand && flame) drawTempleTorches(ctx, stand, flame, width * sg.x - w2 / 2, y2, w2, h2, time, reduced); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); const angle = reduced ? 0 : time * (sg.spin.speed || .5); if (sg.spin.mode === 'yaw') ctx.scale(.72 + .28 * Math.cos(angle), 1); else ctx.rotate(angle); const rh = rs * sp2.naturalHeight / sp2.naturalWidth; ctx.drawImage(sp2, -rs / 2, -(sg.spin.py ?? .5) * rh, rs, rh); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
@@ -773,28 +810,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           ctx.drawImage(image, 0, sy, image.naturalWidth, Math.min(bs / k + 1, image.naturalHeight - sy), x + dx, top + y, tw + 1, bs + .6);
         }
       } else drawTerrainImage(ctx, image, x, top, tw + 1, th, terrain?.get(layer)?.bottom ?? bottom, layer.overlapFrom);
-      for (const fl of layer.flows || []) { // water pouring down: bright and dark streaks sliding down, shown only where the water is
-        const mask = kit.images[fl.img]; if (!mask) continue;
-        let oc = FLOW_CANVAS.get(fl); if (!oc) { oc = document.createElement('canvas'); oc.width = mask.naturalWidth; oc.height = mask.naturalHeight; FLOW_CANVAS.set(fl, oc); }
-        const g = oc.getContext('2d'), W = oc.width, H = oc.height, n = fl.streaks || 9;
-        g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
-        if (fl.ripple) { // the creek: pale wavy lines drifting along the water, sliding slowly toward the viewer
-          const rows = fl.ripple.rows || 9, tt = reduced ? 0 : time; if (!fl.ripple.warm) { g.fillStyle = 'rgba(30,140,190,.2)'; g.fillRect(0, 0, W, H); }
-          for (let r = 0; r < rows; r++) {
-            const yy = ((r + (tt * (fl.ripple.speed || .25)) % 1) / rows) * H, amp = 2 + 5 * (yy / H), wl = 46 + 40 * (yy / H);
-            g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + r * 1.9) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
-            g.strokeStyle = fl.ripple.warm ? 'rgba(255,217,84,.32)' : r % 2 ? 'rgba(255,255,255,.85)' : 'rgba(20,110,170,.45)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
-          }
-          g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.drawImage(oc, x + fl.x * k, top + fl.y * k, W * k, H * k); continue;
-        }
-        g.fillStyle = 'rgba(40,150,200,.4)'; g.fillRect(0, 0, W, H);
-        for (let i = 0; i < n; i++) for (let r = 0; r < 2; r++) {
-          const px = (i + .5) / n * W + Math.sin(i * 12.9) * 4, len = 26 + (i * 7) % 22, yy = (((reduced ? 0 : time) * fl.speed + i * 41 + r * (H + 30) / 2) % (H + 60)) - 40;
-          g.fillStyle = r ? 'rgba(255,255,255,.85)' : 'rgba(210,245,255,.9)'; g.fillRect(px - 3, yy, 6, len * 1.4);
-        }
-        g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0);
-        ctx.drawImage(oc, x + fl.x * k, top + fl.y * k, W * k, H * k);
-      }
+      for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, x, top, k, k, time, reduced);
       if (layer.mirror) { // keep painting below the picture with its own lower rows, flipped back and forth, so no flat band or edge ever shows
         const m = Math.min(layer.mirror, image.naturalHeight - st.sky - 20), mh = m * k;
         for (let j = 0; bottom + j * mh < height && j < 8; j++) {
