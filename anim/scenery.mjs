@@ -236,10 +236,11 @@ export const SETTINGS = {
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
       { img: 'workshop-n-near', par: .6, lift: 154, scale: 0.7, props: [{ img: 'workshop-n-loose-0', x: 0.08, row: 704, w: 0.046 }, { img: 'workshop-n-loose-2', x: 0.3, row: 704, w: 0.081 }, { img: 'workshop-n-loose-3', x: 0.55, row: 704, w: 0.130 }, { img: 'workshop-n-loose-6', x: 0.8, row: 704, w: 0.117 }] }],
     pieces: [{ img: 'workshop-n-movers-2', cell: 1700, prob: 0.6, w: 62, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }] },
-  rooftop: { sky: ['#8c76c7', '#f49b80'], floaters: ['cloud-set-sunset'],
-    rooftop: { city: 'rooftop-sunset-city', distant: 'rooftop-sunset-distant',
-      near: 'rooftop-sunset-near', garden: 'rooftop-sunset-garden', deck: 'rooftop-sunset-deck',
-      tower: 'rooftop-sunset-tower', hour: 'rooftop-sunset-hour', minute: 'rooftop-sunset-minute' } },
+  rooftop: { sky: ['#8c76c7', '#f49b80'], nightSky: ['#262953', '#61547d'], night: 'dark',
+    rooftop: { city: 'rooftop-sunset-city', ledge: 'rooftop-sunset-ledge',
+      far: 'rooftop-sunset-near', garden: 'rooftop-sunset-garden', deck: 'rooftop-sunset-deck',
+      tower: 'rooftop-sunset-tower', hour: 'rooftop-sunset-hour', minute: 'rooftop-sunset-minute',
+      sun: 'resort-sun', moon: 'resort-moon' } },
   stadium: { floor: 'stadium-n-floor', floorTileWidth: 640,  sky: ['#b9d9e8', '#e9f2ec'], floaters: ['cloud-set-day'],
     parallax: [{ img: 'stadium-n-farthest', par: 0.09, lift: 375, scale: 2.33 },
       { img: 'stadium-n-big-0', par: .06, lift: 463, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -1270,59 +1271,66 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
 }
 
 function drawSunsetRooftops(ctx, kit, options) {
-  const { width, height, shiftY, time, reduced } = options;
-  const { city, distant, near, garden, deck, tower, hour, minute } = Object.fromEntries(
-    Object.entries(kit.config.rooftop).map(([key, name]) => [key, kit.images[name]]));
-  const scale = Math.min(width / 1024, height / 1400);
-  const base = height - 1536 * scale;
+  const { width, height, floorY, shiftY, dark, time, reduced } = options;
+  const art = kit.config.rooftop;
+  const scale = Math.max(width / 1024, .29);
+  const left = (width - 1024 * scale) / 2;
   const climb = Math.max(0, shiftY);
-  const separation = 64 * (1 - Math.exp(-climb / 260));
-  const skylineY = base + climb * .20 - separation * .35;
-  const distantY = base + 540 * scale + climb * .20;
-  const nearY = base + 610 * scale + climb * .20 + separation * .34;
-  const gardenY = base + 704 * scale + climb * .20 + separation * .72;
-  const deckY = base + 990 * scale + climb * .20 + separation * 1.45 + Math.min(0, shiftY);
-  const towerY = base + 250 * scale + climb * .20;
+  const separation = 100 * (1 - Math.exp(-climb / 350));
+  const cityY = floorY - 1390 * scale + climb * .16;
+  const farY = floorY - 835 * scale + climb * .16 + separation * .26;
+  const gardenY = floorY - 655 * scale + climb * .16 + separation * .61;
+  const deckY = floorY - 380 * scale + climb * .16 + separation + Math.min(0, shiftY);
+  const towerY = farY - 225 * scale;
+  const night = isNight(kit.config, dark);
+  const city = kit.images[art.city];
 
-  const drawBuildingRow = (image, y, cover) => {
-    if (y >= height) return;
-    const bottom = y + image.naturalHeight * scale;
-    const overlap = Math.min(height, cover) - bottom;
-    if (overlap > 0) {
-      ctx.drawImage(image, 0, image.naturalHeight - 1, image.naturalWidth, 1,
-        0, bottom - .5, width, overlap + 1);
-    }
-    ctx.drawImage(image, 0, y, width, bottom - y);
+  // Every illustrated panel is drawn once, at its native aspect ratio.
+  const draw = (name, y, x = left) => {
+    const image = kit.images[art[name]];
+    const h = image.naturalHeight * scale;
+    if (y < height && y + h > 0) ctx.drawImage(image, x, y, image.naturalWidth * scale, h);
   };
 
-  if (skylineY > 0) {
-    ctx.drawImage(city, 512, 0, 1, 1, 0, 0, width, Math.min(height, skylineY + 1));
+  ctx.save();
+  if (night) ctx.filter = 'brightness(68%) saturate(70%) hue-rotate(22deg)';
+  if (cityY > 0) {
+    ctx.drawImage(city, 512, 0, 1, 1, 0, 0, width, Math.min(height, cityY + 1));
   }
-  drawBuildingRow(city, skylineY, height);
-  drawBuildingRow(distant, distantY, nearY + 150 * scale);
+  draw('city', cityY);
+  ctx.restore();
+
+  const celestial = kit.images[night ? art.moon : art.sun];
+  const size = (night ? 100 : 116) * scale;
+  const celestialY = cityY + (night ? 300 : 515) * scale;
+  if (celestialY < height && celestialY + size > 0) {
+    ctx.drawImage(celestial, width * .23 - size / 2, celestialY,
+      size, size * celestial.naturalHeight / celestial.naturalWidth);
+  }
+  ctx.save();
+  if (night) ctx.filter = 'brightness(72%) saturate(82%)';
+  draw('far', farY);
+  const towerX = left + 762 * scale;
+  draw('tower', towerY, towerX);
   if (towerY < height) {
-    const xScale = width / 1024;
-    ctx.drawImage(tower, 780 * xScale, towerY, tower.naturalWidth * xScale, tower.naturalHeight * scale);
-    const size = 96 * scale;
-    for (const [hand, speed] of [[hour, .04], [minute, .48]]) {
+    const handSize = 96 * scale;
+    for (const [hand, speed] of [[art.hour, .04], [art.minute, .48]]) {
       ctx.save();
-      ctx.translate(859 * xScale, towerY + 206 * scale);
+      ctx.translate(towerX + 79 * scale, towerY + 206 * scale);
       ctx.rotate(reduced ? 0 : time * speed);
-      ctx.drawImage(hand, -size / 2, -size / 2, size, size);
+      ctx.drawImage(kit.images[hand], -handSize / 2, -handSize / 2, handSize, handSize);
       ctx.restore();
     }
   }
-  drawBuildingRow(near, nearY, gardenY + 285 * scale);
-  drawBuildingRow(garden, gardenY, deckY + 55 * scale);
-  if (deckY < height) drawTerrainImage(ctx, deck, 0, deckY, width, deck.naturalHeight * scale, height, .83);
-  if (climb > 350) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, width, Math.max(0, skylineY + 230 * scale));
-    ctx.clip();
-    drawFloaters(ctx, kit, options);
-    ctx.restore();
-  }
+  draw('garden', gardenY);
+  draw('deck', deckY);
+  // At ground level the ledge follows the measurement baseline and covers the deck join.
+  const ledge = kit.images[art.ledge];
+  const ledgeScale = Math.max(scale, (height - floorY + 14) / ledge.naturalHeight);
+  const ledgeY = floorY + shiftY - 12;
+  if (ledgeY < height) ctx.drawImage(ledge, (width - ledge.naturalWidth * ledgeScale) / 2,
+    ledgeY, ledge.naturalWidth * ledgeScale, ledge.naturalHeight * ledgeScale);
+  ctx.restore();
 }
 
 function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale }) {
