@@ -120,11 +120,11 @@ export const SETTINGS = {
   snow: { floor: 'snow-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#c2dcea', '#f0f6fb'], floaters: ['cloud-set-day'], layers: ['snowflakes'], nightBackdrop: 'snow-aurora',
     parallax: [
-      { img: 'snow-climb-backdrop', par: .10, lift: 525, scale: .65 },
-      { img: 'snow-n-big-0', par: .16, lift: 460, single: { x: .5, w: 1.23, sy: 1 } },
-      { img: 'snow-climb-distant', par: .26, lift: 380, scale: .60 },
-      { img: 'snow-climb-huge-tree', par: .36, lift: 488, single: { x: .62, w: .70, sy: 1 } },
-      { img: 'snow-climb-middle', par: .57, lift: 265, scale: .56, props: [
+      { img: 'snow-climb-backdrop', par: .10, lift: 549, scale: .65 },
+      { img: 'snow-n-big-0', par: .16, lift: 502, single: { x: .5, w: 1.23, sy: 1 } },
+      { img: 'snow-climb-distant', par: .26, lift: 414, scale: .60 },
+      { img: 'snow-climb-huge-tree', par: .36, lift: 520, single: { x: .62, w: .70, sy: 1 } },
+      { img: 'snow-climb-middle', par: .57, lift: 307, scale: .56, props: [
         { img: 'snow-climb-ice-left', x: .355, row: 955, w: .032, move: { type: 'dangle', amp: 3, speed: 1.2 } },
         { img: 'snow-climb-ice-right', x: .825, row: 952, w: .029, move: { type: 'dangle', amp: 3, speed: .9 } },
       ] },
@@ -528,7 +528,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
     const k = width * gs * (single ? single.w : 1.8 * (layer.scale || 1)) / image.naturalWidth;
     const drawHeight = image.naturalHeight * k * (single?.sy ?? 1);
     const grounded = layer.grounded || (single && layer.par === 1);
-    const top = grounded ? floorCover + 5 * gs - drawHeight
+    const top = grounded ? floorCover + (5 - (layer.grounded ? layer.lift : 0)) * gs - drawHeight
       : base - layer.lift * gs + layer.par * shiftY - (single ? 0 : layerStats(image).sky * k);
     // Extend only the lower terrain. Camera bounds never change the speed of
     // the artwork, its skyline, or the props attached to it.
