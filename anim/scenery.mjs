@@ -144,11 +144,11 @@ export const SETTINGS = {
     sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'],
     parallax: [
       { img: 'underwater-climb-backdrop', par: .10, lift: 545, scale: .65 },
-      { img: 'underwater-climb-distant', par: .23, lift: 420, scale: .58 },
-      { img: 'underwater-climb-ship', par: .35, lift: 470, single: { x: .59, w: .87, sy: 1,
+      { img: 'underwater-climb-distant', par: .23, lift: 420, scale: .58, filter: 'saturate(.67)' },
+      { img: 'underwater-climb-ship', par: .35, lift: 502, single: { x: .59, w: .87, sy: 1,
         spin: { img: 'underwater-climb-wheel', fx: .79, fy: .615, size: .10, speed: .36 } } },
-      { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .57 },
-      { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, props: [
+      { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .60, overlapFrom: .95 },
+      { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, overlapFrom: .95, props: [
         { img: 'underwater-climb-kelp-0', x: .15, row: 1080, w: .13, move: { type: 'rustle', amp: 4, speed: .78 } },
         { img: 'underwater-climb-kelp-1', x: .82, row: 1120, w: .15, move: { type: 'rustle', amp: 5, speed: .95 } },
       ] },
@@ -614,7 +614,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           const sy = y / k, f = .35 + .65 * (1 - y / th), dx = Math.sin(time * w.speed + y * w.freq + x * .013) * w.amp * gs * f;
           ctx.drawImage(image, 0, sy, image.naturalWidth, Math.min(bs / k + 1, image.naturalHeight - sy), x + dx, top + y, tw + 1, bs + .6);
         }
-      } else drawTerrainImage(ctx, image, x, top, tw + 1, th, terrain?.get(layer)?.bottom ?? bottom);
+      } else drawTerrainImage(ctx, image, x, top, tw + 1, th, terrain?.get(layer)?.bottom ?? bottom, layer.overlapFrom);
       for (const fl of layer.flows || []) { // water pouring down: bright and dark streaks sliding down, shown only where the water is
         const mask = kit.images[fl.img]; if (!mask) continue;
         let oc = FLOW_CANVAS.get(fl); if (!oc) { oc = document.createElement('canvas'); oc.width = mask.naturalWidth; oc.height = mask.naturalHeight; FLOW_CANVAS.set(fl, oc); }
