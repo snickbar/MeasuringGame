@@ -1363,9 +1363,9 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   billboard('circles', 797, 370, 74, 102, -.24, .70, clock * 46 % 360, .90 + .10 * Math.sin(clock * 2.3));
   billboard('star', 717, 548, 52, 71, -.23, .79 + .20 * Math.sin(clock * 2.0), 0, .88 + .12 * Math.sin(clock * 2.0));
 
-  const grateX = left + 911 * scale;
+  const grateX = left + 964 * scale;
   const grateY = sidesY + 1024 * scale;
-  paint('grate', grateX - 40 * scale, grateY - 9 * scale, 80 * scale, 18 * scale);
+  paint('grate', grateX - 32 * scale, grateY - 8 * scale, 64 * scale, 16 * scale);
   if (!reduced) {
     for (let i = 0; i < 2; i++) {
       const phase = (clock / 3.4 + .18 + i / 2) % 1;
