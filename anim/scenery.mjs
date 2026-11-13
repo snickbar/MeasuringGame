@@ -237,7 +237,7 @@ export const SETTINGS = {
       { img: 'workshop-n-near', par: .6, lift: 154, scale: 0.7, props: [{ img: 'workshop-n-loose-0', x: 0.08, row: 704, w: 0.046 }, { img: 'workshop-n-loose-2', x: 0.3, row: 704, w: 0.081 }, { img: 'workshop-n-loose-3', x: 0.55, row: 704, w: 0.130 }, { img: 'workshop-n-loose-6', x: 0.8, row: 704, w: 0.117 }] }],
     pieces: [{ img: 'workshop-n-movers-2', cell: 1700, prob: 0.6, w: 62, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }] },
   rooftop: { sky: ['#8c76c7', '#f49b80'], nightSky: ['#262953', '#61547d'], night: 'dark',
-    rooftop: { city: 'rooftop-sunset-city', ledge: 'rooftop-sunset-ledge',
+    rooftop: { city: 'rooftop-sunset-city',
       far: 'rooftop-sunset-near', garden: 'rooftop-sunset-garden', deck: 'rooftop-sunset-deck',
       tower: 'rooftop-sunset-tower', hour: 'rooftop-sunset-hour', minute: 'rooftop-sunset-minute',
       sun: 'resort-sun', moon: 'resort-moon' } },
@@ -1277,10 +1277,10 @@ function drawSunsetRooftops(ctx, kit, options) {
   const left = (width - 1024 * scale) / 2;
   const climb = Math.max(0, shiftY);
   const separation = 100 * (1 - Math.exp(-climb / 350));
-  const cityY = floorY - 1650 * scale + climb * .16;
-  const farY = floorY - 1050 * scale + climb * .16 + separation * .26;
-  const gardenY = floorY - 780 * scale + climb * .16 + separation * .61;
-  const deckY = floorY - 285 * scale + climb * .16 + separation + Math.min(0, shiftY) * .35;
+  const cityY = floorY - 1790 * scale + climb * .16;
+  const farY = floorY - 1160 * scale + climb * .16 + separation * .26;
+  const gardenY = floorY - 830 * scale + climb * .16 + separation * .61;
+  const deckY = floorY - 285 * scale + climb * .16 + separation + Math.min(0, shiftY);
   const towerY = farY - 195 * scale;
   const night = isNight(kit.config, dark);
   const city = kit.images[art.city];
@@ -1324,16 +1324,6 @@ function drawSunsetRooftops(ctx, kit, options) {
   }
   draw('garden', gardenY);
   draw('deck', deckY);
-  // At ground level the ledge follows the measurement baseline and covers the deck join.
-  const ledge = kit.images[art.ledge];
-  const ledgeY = floorY + shiftY - 12;
-  if (ledgeY < height) {
-    // Size for the opening dip once, so the tile pattern stays fixed as the camera moves.
-    const ledgeScale = Math.max(scale, (height * .20 + 13) / ledge.naturalHeight);
-    const ledgeWidth = ledge.naturalWidth * ledgeScale;
-    ctx.drawImage(ledge, (width - ledgeWidth) / 2, ledgeY, ledgeWidth,
-      ledge.naturalHeight * ledgeScale);
-  }
   ctx.restore();
 }
 
