@@ -251,6 +251,122 @@ export const SETTINGS = {
       { img: 'stadium-n-mid', par: 0.34, lift: 300, scale: 1.56, props: [{ img: 'stadium-n-reveals-0', x: 0.14, row: 591, w: 0.055 }, { img: 'stadium-n-reveals-1', x: 0.5, row: 591, w: 0.046 }, { img: 'stadium-n-reveals-2', x: 0.84, row: 591, w: 0.108 }, { img: 'stadium-n-anim-0', x: 0.72, row: 591, w: 0.042, spin:  { img: 'stadium-n-anim-1', fx: .5, fy: .31, size: .85, speed: .5, px: .14, py: .89 } }], drifters: [{ img: 'stadium-n-movers-2', x: 0.3, row: 591, w: 0.044, speed: 10, bob: 0 }] },
       { img: 'stadium-n-near', par: 0.6, lift: 135, scale: 1.37, props: [{ img: 'stadium-n-loose-0', x: 0.06, row: 559, w: 0.060 }, { img: 'stadium-n-loose-2', x: 0.24, row: 559, w: 0.073 }, { img: 'stadium-n-loose-3', x: 0.42, row: 559, w: 0.025 }, { img: 'stadium-n-loose-5', x: 0.6, row: 559, w: 0.068 }, { img: 'stadium-n-loose-6', x: 0.78, row: 559, w: 0.031 }, { img: 'stadium-n-loose-7', x: 0.93, row: 559, w: 0.081 }], drifters: [{ img: 'stadium-n-movers-3', x: 0.5, row: 559, w: 0.042, speed: 24, bob: 0 }] }] },
 };
+const layeredReveals = {
+  beach: { parallax: [
+    {"img":"beach-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"beach-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"beach-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"beach-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"beach-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"beach-reveal-palm","x":0.15,"row":908,"w":0.16,"move":{"type":"rustle","amp":4,"speed":1.1}},{"img":"beach-reveal-lantern","x":0.78,"row":998,"w":0.05,"move":{"type":"dangle","amp":4,"speed":1.1}}]}
+  ] },
+  boardwalk: { parallax: [
+    {"img":"boardwalk-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"fair-n-anim-0","par":0.15,"lift":415,"single":{"x":0.54,"w":0.56,"sy":1,"spin":{"img":"boardwalk-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
+    {"img":"boardwalk-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"boardwalk-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"boardwalk-reveal-pinwheel","x":0.79,"row":848,"w":0.075,"move":{"type":"spin","amp":4,"speed":1.1}}]},
+    {"img":"boardwalk-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  blossom: { parallax: [
+    {"img":"blossom-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"blossom-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"blossom-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"blossom-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-lantern","x":0.57,"row":773,"w":0.043,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"blossom-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"blossom-reveal-bamboo","x":0.15,"row":938,"w":0.11,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  ] },
+  city: { parallax: [
+    {"img":"city-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"city-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"city-reveal-globe","fx":0.72,"fy":0.11,"size":0.2,"speed":0.45,"mode":"yaw"}}},
+    {"img":"city-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"city-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"city-reveal-neon","x":0.25,"row":765,"w":0.09,"move":{"type":"glow","amp":4,"speed":1.1}}]},
+    {"img":"city-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  fair: { parallax: [
+    {"img":"fair-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"fair-n-anim-0","par":0.15,"lift":440,"single":{"x":0.54,"w":0.69,"sy":1,"spin":{"img":"fair-reveal-wheel","fx":0.5,"fy":0.13,"size":0.98,"speed":0.45}}},
+    {"img":"fair-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"fair-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"fair-reveal-bunting","x":0.78,"row":810,"w":0.048,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"fair-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  cave: { parallax: [
+    {"img":"cave-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"cave-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"cave-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"cave-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"cave-reveal-crystal","x":0.61,"row":788,"w":0.052,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"cave-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"cave-reveal-mushroom","x":0.72,"row":990,"w":0.085,"move":{"type":"pulse","amp":4,"speed":5}}]}
+  ] },
+  kitchen: { roomBack: 'kitchen-reveal-back', parallax: [
+    {"img":"kitchen-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"kitchen-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"kitchen-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"kitchen-reveal-pan","x":0.6,"row":810,"w":0.055,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"kitchen-reveal-fan","x":0.23,"row":608,"w":0.12,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"kitchen-reveal-curtain","x":0.13,"row":803,"w":0.075,"move":{"type":"rustle","amp":4,"speed":1.1}}]},
+    {"img":"kitchen-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  library: { roomBack: 'library-reveal-back', parallax: [
+    {"img":"library-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"library-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"library-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"library-reveal-chandelier","x":0.49,"row":694,"w":0.15,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"library-reveal-armillary","x":0.7,"row":855,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"library-reveal-curtain","x":0.2,"row":803,"w":0.07,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  living: { roomBack: 'living-reveal-back', parallax: [
+    {"img":"living-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"hang":[{"img":"living-reveal-pendulum","fx":0.5,"fy":0.68,"w":0.16,"speed":1.1,"swing":0.08}],"spin":{"img":"living-reveal-hands","fx":0.5,"fy":0.4,"size":0.26,"speed":0.45,"py":0.9}}},
+    {"img":"living-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"living-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"living-reveal-curtain","x":0.14,"row":810,"w":0.072,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"living-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  grass: { parallax: [
+    {"img":"grass-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"grass-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"grass-reveal-wheel","fx":0.72,"fy":0.73,"size":0.51,"speed":0.45}}},
+    {"img":"grass-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"grass-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[]},
+    {"img":"grass-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"grass-reveal-flowers","x":0.24,"row":930,"w":0.075,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  ] },
+  space: { parallax: [
+    {"img":"space-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"space-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"space-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"space-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"space-reveal-radar","x":0.73,"row":818,"w":0.17,"move":{"type":"scan","amp":4,"speed":1.1}}]},
+    {"img":"space-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"space-reveal-flag","x":0.18,"row":893,"w":0.057,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  ] },
+  rooftop: { parallax: [
+    {"img":"rooftop-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"rooftop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"rooftop-reveal-hands","fx":0.5,"fy":0.425,"size":0.27,"speed":0.45,"py":0.9}}},
+    {"img":"rooftop-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"rooftop-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"rooftop-reveal-vent","x":0.68,"row":825,"w":0.095,"move":{"type":"scan","amp":4,"speed":1.1}},{"img":"rooftop-reveal-lights","x":0.28,"row":810,"w":0.058,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"rooftop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  stadium: { parallax: [
+    {"img":"stadium-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"stadium-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"stadium-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"stadium-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"stadium-reveal-pennant","x":0.63,"row":803,"w":0.052,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"stadium-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"stadium-reveal-banner","x":0.17,"row":915,"w":0.075,"move":{"type":"rustle","amp":4,"speed":1.1}}]}
+  ] },
+  tabletop: { roomBack: 'tabletop-reveal-back', parallax: [
+    {"img":"tabletop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"tabletop-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"tabletop-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"tabletop-reveal-fan","x":0.73,"row":825,"w":0.12,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"tabletop-reveal-mobile","x":0.2,"row":746,"w":0.085,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"tabletop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+  volcano: { parallax: [
+    {"img":"volcano-reveal-back","par":0.09,"lift":500,"scale":0.65},
+    {"img":"volcano-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
+    {"img":"volcano-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"volcano-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-disc","x":0.26,"row":840,"w":0.12,"move":{"type":"spin","amp":4,"speed":1.1}}]},
+    {"img":"volcano-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}]}
+  ] },
+  workshop: { roomBack: 'workshop-reveal-back', parallax: [
+    {"img":"workshop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"workshop-reveal-gear","fx":0.5,"fy":0.49,"size":0.77,"speed":0.45}}},
+    {"img":"workshop-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
+    {"img":"workshop-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"workshop-reveal-cog","x":0.64,"row":825,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"workshop-reveal-tool","x":0.21,"row":810,"w":0.045,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
+    {"img":"workshop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
+  ] },
+};
+for (const [id, scene] of Object.entries(layeredReveals)) {
+  Object.assign(SETTINGS[id], scene, {
+    overlapTerrain: true, tall: undefined, pieces: undefined,
+    floorDrifters: undefined, panels: undefined, decor: undefined, movers: undefined,
+  });
+}
+
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
 export function groundScaleFor(cameraScale, finalScale) {
@@ -266,7 +382,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if (config.floor && !images[config.floor]) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -638,7 +754,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const image = kit.images[layer.img]; if (!image) continue;
     if (layer.single) { // one big piece (the mountain) with its feet off-screen, not a tiling strip
       const sg = layer.single, w2 = width * sg.w * gs, h2 = w2 * image.naturalHeight / image.naturalWidth * sg.sy, y2 = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY;
-      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2, sg.overlapFrom); const stand = kit.images[sg.torches?.stand], flame = kit.images[sg.torches?.flame]; if (stand && flame) drawTempleTorches(ctx, stand, flame, width * sg.x - w2 / 2, y2, w2, h2, time, reduced); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); ctx.rotate(reduced ? 0 : time * (sg.spin.speed || .5)); ctx.drawImage(sp2, -rs / 2, -rs / 2, rs, rs); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
+      if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2, sg.overlapFrom); const stand = kit.images[sg.torches?.stand], flame = kit.images[sg.torches?.flame]; if (stand && flame) drawTempleTorches(ctx, stand, flame, width * sg.x - w2 / 2, y2, w2, h2, time, reduced); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); const angle = reduced ? 0 : time * (sg.spin.speed || .5); if (sg.spin.mode === 'yaw') ctx.scale(.72 + .28 * Math.cos(angle), 1); else ctx.rotate(angle); const rh = rs * sp2.naturalHeight / sp2.naturalWidth; ctx.drawImage(sp2, -rs / 2, -(sg.spin.py ?? .5) * rh, rs, rh); ctx.restore(); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
     const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
@@ -734,7 +850,10 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         const mv = q.move, mt = reduced ? 0 : time, mph = q.x * 17 + (mv && mv.phase || 0), msp = mv && mv.speed || 1, baseY = top + row * k, cxp = x + q.x * tw;
         let mTop = false, mAng = 0, mSy = 1, mDy = 0, mDx = 0, mAlpha = 1, mClip = false; // still animals: nod, breathe, hop, peek out of the ground, or fade in and out
         if (mv) {
-          if (mv.type === 'nod') mAng = Math.sin(mt * msp + mph) * Math.min(mv.amp ?? 2, 4) * Math.PI / 180; // amp = degrees of head tilt
+          if (mv.type === 'spin') mAng = mt * msp;
+          else if (mv.type === 'pulse') mSy = 1 + Math.sin(mt * msp + mph) * .09;
+          else if (mv.type === 'glow') mAlpha = .82 + Math.sin(mt * msp + mph) * .17;
+          else if (mv.type === 'nod') mAng = Math.sin(mt * msp + mph) * Math.min(mv.amp ?? 2, 4) * Math.PI / 180; // amp = degrees of head tilt
           else if (mv.type === 'sway') { mDx = Math.sin(mt * msp + mph) * (mv.amp ?? 6) * gs; mAng = Math.sin(mt * msp + mph + 1.2) * .035; mDy = Math.abs(Math.sin(mt * msp * 2 + mph)) * -1.5 * gs; } // a boat rocking from side to side
           else if (mv.type === 'rustle') mAng = (Math.sin(mt * msp + mph) + .45 * Math.sin(mt * msp * 2.7 + mph * 2)) * (mv.amp ?? 3) * Math.PI / 180; // leaves shivering in the breeze, pivoting at the stem
           else if (mv.type === 'dangle') { mAng = (Math.sin(mt * msp + mph) + .5 * Math.sin(mt * msp * 2.3 + mph * 1.7)) * (mv.amp ?? 5) * Math.PI / 180; mTop = true; } // hangs from its top edge and swings
@@ -747,7 +866,14 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
           ctx.save(); if (mAlpha < 1) ctx.globalAlpha = mAlpha;
           if (mClip) { ctx.beginPath(); ctx.rect(cxp - pw, baseY - ph - 4, pw * 2, ph + 4 + 2); ctx.clip(); }
           ctx.translate(cxp + mDx, baseY + mDy - (mTop ? ph : 0)); if (mAng) ctx.rotate(mAng); if (mSy !== 1) ctx.scale(1, mSy); if (q.flip) ctx.scale(-1, 1);
-          ctx.drawImage(pic, -pw / 2, mTop ? 0 : -ph, pw, ph); ctx.restore();
+          if (mv?.type === 'scan') ctx.scale(.76 + .24 * Math.cos(mt * msp), 1);
+          if (mv?.type === 'spin') {
+            ctx.rotate(-mAng);
+            ctx.translate(0, -ph / 2);
+            ctx.rotate(mAng);
+            ctx.drawImage(pic, -pw / 2, -ph / 2, pw, ph);
+          } else ctx.drawImage(pic, -pw / 2, mTop ? 0 : -ph, pw, ph);
+          ctx.restore();
         }
         const turner = q.spin && kit.images[q.spin.img]; // a part of this prop that turns (blades, a wheel, a clock hand), pivoting where the picture says
         if (turner) {
@@ -1076,7 +1202,13 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
 export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0 }) {
   const { config, images } = kit;
   ctx.save();
-  if (pass !== 'foreground' && config.wallpaper) {
+  const roomBack = images[config.roomBack];
+  if (pass !== 'foreground' && roomBack) {
+    const scale = Math.max(width / roomBack.naturalWidth, height / roomBack.naturalHeight);
+    const w = roomBack.naturalWidth * scale, h = roomBack.naturalHeight * scale;
+    ctx.drawImage(roomBack, (width - w) / 2, (height - h) / 2, w, h);
+  }
+  if (pass !== 'foreground' && config.wallpaper && !roomBack) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
   }
   if (pass !== 'foreground' && images[config.texture] && !(config.texture === 'star-field' && config.night === 'dark' && !dark)) {
