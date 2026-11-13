@@ -236,13 +236,10 @@ export const SETTINGS = {
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
       { img: 'workshop-n-near', par: .6, lift: 154, scale: 0.7, props: [{ img: 'workshop-n-loose-0', x: 0.08, row: 704, w: 0.046 }, { img: 'workshop-n-loose-2', x: 0.3, row: 704, w: 0.081 }, { img: 'workshop-n-loose-3', x: 0.55, row: 704, w: 0.130 }, { img: 'workshop-n-loose-6', x: 0.8, row: 704, w: 0.117 }] }],
     pieces: [{ img: 'workshop-n-movers-2', cell: 1700, prob: 0.6, w: 62, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }] },
-  rooftop: { floor: 'rooftop-n-floor', floorTileWidth: 640,  sky: ['#eb8c7e', '#facdaa'], floaters: ['cloud-set-sunset'],
-    parallax: [{ img: 'rooftop-n-farthest', par: 0.09, lift: 375, scale: 2.4 },
-      { img: 'rooftop-n-big-0', par: .06, lift: 986, single: { x: 0.5, w: 1.25, sy: 1 } },
-      { img: 'rooftop-n-far', par: 0.16, lift: 335, scale: 1.99, drifters: [{ img: 'rooftop-n-movers-7', x: 0.4, row: 591, w: 0.050, speed: 16, bob: 0 }] },
-      { img: 'rooftop-n-mid', par: 0.34, lift: 300, scale: 1.55, props: [{ img: 'rooftop-n-reveals-0', x: 0.14, row: 591, w: 0.046 }, { img: 'rooftop-n-reveals-1', x: 0.5, row: 591, w: 0.128 }, { img: 'rooftop-n-reveals-2', x: 0.84, row: 591, w: 0.095 }, { img: 'rooftop-n-anim-0', x: 0.72, row: 591, w: 0.030, spin:  { img: 'rooftop-n-anim-1', fx: .5, fy: .07, size: 3.5, speed: 1.6, swing: .14, px: 0, py: .5 } }, { img: 'rooftop-n-movers-3', x: 0.45, row: 591, w: 0.034, move: { type: 'hop', amp: 3, speed: 1 } }] },
-      { img: 'rooftop-n-near', par: 0.6, lift: 135, scale: 1.22, props: [{ img: 'rooftop-n-loose-0', x: 0.06, row: 597, w: 0.023 }, { img: 'rooftop-n-loose-2', x: 0.24, row: 597, w: 0.110 }, { img: 'rooftop-n-loose-3', x: 0.42, row: 597, w: 0.025 }, { img: 'rooftop-n-loose-4', x: 0.6, row: 597, w: 0.076 }, { img: 'rooftop-n-loose-5', x: 0.78, row: 597, w: 0.083 }, { img: 'rooftop-n-loose-8', x: 0.93, row: 597, w: 0.085 }, { img: 'rooftop-n-movers-0', x: 0.2, row: 597, w: 0.048, move: { type: 'nod', amp: 3, speed: 1 } }, { img: 'rooftop-n-movers-1', x: 0.7, row: 597, w: 0.043, move: { type: 'nod', amp: 3, speed: 1.2, phase: 1 }, flip: true }] }],
-    pieces: [{ img: 'rooftop-n-movers-0', cell: 1500, prob: 0.6, w: 34, speed: 32, bob: 3, sway: 0.02, minH: 380, face: 1 }, { img: 'rooftop-n-movers-1', cell: 1700, prob: 0.6, w: 34, speed: 28, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'rooftop-n-movers-2', cell: 2600, prob: 0.6, w: 108, speed: 40, bob: 3, sway: 0.02, minH: 600, face: 1 }, { img: 'rooftop-n-movers-4', cell: 1600, prob: 0.6, w: 66, speed: 22, bob: 3, sway: 0.02, minH: 420, face: 1 }, { img: 'rooftop-n-movers-5', cell: 2200, prob: 0.6, w: 96, speed: 10, bob: 3, sway: 0.02, minH: 380, face: 1 }, { img: 'rooftop-n-movers-6', cell: 1900, prob: 0.6, w: 74, speed: 28, bob: 3, sway: 0.02, minH: 440, face: 1 }] },
+  rooftop: { sky: ['#8c76c7', '#f49b80'], floaters: ['cloud-set-sunset'],
+    rooftop: { city: 'rooftop-sunset-city', distant: 'rooftop-sunset-distant',
+      near: 'rooftop-sunset-near', garden: 'rooftop-sunset-garden', deck: 'rooftop-sunset-deck',
+      tower: 'rooftop-sunset-tower', hour: 'rooftop-sunset-hour', minute: 'rooftop-sunset-minute' } },
   stadium: { floor: 'stadium-n-floor', floorTileWidth: 640,  sky: ['#b9d9e8', '#e9f2ec'], floaters: ['cloud-set-day'],
     parallax: [{ img: 'stadium-n-farthest', par: 0.09, lift: 375, scale: 2.33 },
       { img: 'stadium-n-big-0', par: .06, lift: 463, single: { x: 0.5, w: 1.25, sy: 1 } },
@@ -311,13 +308,7 @@ const layeredReveals = {
     {"img":"space-reveal-mid","par":0.55,"lift":309,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"space-reveal-front","par":1,"lift":35,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"space-reveal-flag","x":0.18,"row":893,"w":0.057},{"img":"space-reveal-rover","x":0.64,"row":988,"w":0.155,"spin":{"img":"space-reveal-arm","fx":0.56,"fy":0.12,"size":0.40,"speed":1.1,"swing":0.20,"px":0.21,"py":0.96}}]}
   ] },
-  rooftop: { parallax: [
-    {"img":"rooftop-reveal-back","par":0.09,"lift":500,"scale":0.65},
-    {"img":"rooftop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"rooftop-reveal-hands","fx":0.5,"fy":0.425,"size":0.27,"speed":0.45,"py":0.9}}},
-    {"img":"rooftop-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"rooftop-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"rooftop-reveal-vent","x":0.68,"row":825,"w":0.095,"move":{"type":"scan","amp":4,"speed":1.1}},{"img":"rooftop-reveal-lights","x":0.28,"row":810,"w":0.058,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"rooftop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
+
   stadium: { parallax: [
     { img: 'stadium-reveal-back', par: .09, lift: 700, single: { x: .5, w: 1.25, sy: 1, overlapFrom: .88 } },
     { img: 'stadium-reveal-far', par: .24, lift: 530, scale: .65, overlapFrom: .97,
@@ -374,9 +365,9 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
-  if ((config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
+  if ((config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
 }
 
@@ -1278,6 +1269,62 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
   ctx.restore();
 }
 
+function drawSunsetRooftops(ctx, kit, options) {
+  const { width, height, shiftY, time, reduced } = options;
+  const { city, distant, near, garden, deck, tower, hour, minute } = Object.fromEntries(
+    Object.entries(kit.config.rooftop).map(([key, name]) => [key, kit.images[name]]));
+  const scale = Math.min(width / 1024, height / 1400);
+  const base = height - 1536 * scale;
+  const climb = Math.max(0, shiftY);
+  const separation = 64 * (1 - Math.exp(-climb / 260));
+  const skylineY = base + climb * .20 - separation * .35;
+  const distantY = base + 540 * scale + climb * .20;
+  const nearY = base + 610 * scale + climb * .20 + separation * .34;
+  const gardenY = base + 704 * scale + climb * .20 + separation * .72;
+  const deckY = base + 990 * scale + climb * .20 + separation * 1.45 + Math.min(0, shiftY);
+  const towerY = base + 250 * scale + climb * .20;
+
+  const drawBuildingRow = (image, y, cover) => {
+    if (y >= height) return;
+    const bottom = y + image.naturalHeight * scale;
+    const overlap = Math.min(height, cover) - bottom;
+    if (overlap > 0) {
+      ctx.drawImage(image, 0, image.naturalHeight - 1, image.naturalWidth, 1,
+        0, bottom - .5, width, overlap + 1);
+    }
+    ctx.drawImage(image, 0, y, width, bottom - y);
+  };
+
+  if (skylineY > 0) {
+    ctx.drawImage(city, 512, 0, 1, 1, 0, 0, width, Math.min(height, skylineY + 1));
+  }
+  drawBuildingRow(city, skylineY, height);
+  drawBuildingRow(distant, distantY, nearY + 150 * scale);
+  if (towerY < height) {
+    const xScale = width / 1024;
+    ctx.drawImage(tower, 780 * xScale, towerY, tower.naturalWidth * xScale, tower.naturalHeight * scale);
+    const size = 96 * scale;
+    for (const [hand, speed] of [[hour, .04], [minute, .48]]) {
+      ctx.save();
+      ctx.translate(859 * xScale, towerY + 206 * scale);
+      ctx.rotate(reduced ? 0 : time * speed);
+      ctx.drawImage(hand, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    }
+  }
+  drawBuildingRow(near, nearY, gardenY + 285 * scale);
+  drawBuildingRow(garden, gardenY, deckY + 55 * scale);
+  if (deckY < height) drawTerrainImage(ctx, deck, 0, deckY, width, deck.naturalHeight * scale, height, .83);
+  if (climb > 350) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, width, Math.max(0, skylineY + 230 * scale));
+    ctx.clip();
+    drawFloaters(ctx, kit, options);
+    ctx.restore();
+  }
+}
+
 function drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale }) {
   const { avenue } = kit.config;
   const pier = kit.images[avenue.pier];
@@ -1404,7 +1451,9 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
-  if (config.avenue) {
+  if (config.rooftop) {
+    drawSunsetRooftops(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  } else if (config.avenue) {
     drawBoardwalkAvenue(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   } else {
     drawSkyPieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale });
