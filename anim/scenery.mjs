@@ -1328,14 +1328,11 @@ function drawSunsetRooftops(ctx, kit, options) {
   const ledge = kit.images[art.ledge];
   const ledgeY = floorY + shiftY - 12;
   if (ledgeY < height) {
-    const ledgeHeight = ledge.naturalHeight * scale;
-    const bottom = ledgeY + ledgeHeight;
-    if (bottom < height) {
-      // Continue only the solid edge below the tiles during the opening camera dip.
-      ctx.drawImage(ledge, ledge.naturalWidth / 2, ledge.naturalHeight - 1, 1, 1,
-        left, bottom - .5, ledge.naturalWidth * scale, height - bottom + 1);
-    }
-    ctx.drawImage(ledge, left, ledgeY, ledge.naturalWidth * scale, ledgeHeight);
+    // Size for the opening dip once, so the tile pattern stays fixed as the camera moves.
+    const ledgeScale = Math.max(scale, (height * .20 + 13) / ledge.naturalHeight);
+    const ledgeWidth = ledge.naturalWidth * ledgeScale;
+    ctx.drawImage(ledge, (width - ledgeWidth) / 2, ledgeY, ledgeWidth,
+      ledge.naturalHeight * ledgeScale);
   }
   ctx.restore();
 }
