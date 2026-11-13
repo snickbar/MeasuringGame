@@ -144,9 +144,9 @@ export const SETTINGS = {
     sky: ['#9ecfd3', '#c7e3df'], texture: 'water-light', layers: ['bubbles'],
     parallax: [
       { img: 'underwater-climb-backdrop', par: .10, lift: 545, scale: .65 },
-      { img: 'underwater-climb-distant', par: .23, lift: 420, scale: .58, filter: 'saturate(.67)' },
-      { img: 'underwater-climb-ship', par: .35, lift: 502, single: { x: .59, w: .87, sy: 1,
+      { img: 'underwater-climb-ship', par: .17, lift: 550, single: { x: .59, w: .87, sy: 1,
         spin: { img: 'underwater-climb-wheel', fx: .79, fy: .615, size: .10, speed: .36 } } },
+      { img: 'underwater-climb-distant', par: .29, lift: 411, scale: .58, filter: 'saturate(.67)' },
       { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .60, overlapFrom: .95 },
       { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, overlapFrom: .95, props: [
         { img: 'underwater-climb-kelp-0', x: .15, row: 1080, w: .13, move: { type: 'rustle', amp: 4, speed: .78 } },
