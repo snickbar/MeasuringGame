@@ -103,7 +103,7 @@ export const SETTINGS = {
     square: { street: 'times-square-street', sides: 'times-square-sides', tower: 'times-square-tower',
       sky: 'times-square-sky', skyscrapers: 'times-square-skyscrapers', cup: 'times-square-cup', circles: 'times-square-circles',
       star: 'times-square-star', ribbon: 'times-square-ribbon', steam: 'times-square-steam',
-      spark: 'times-square-spark', grate: 'times-square-grate' } },
+      spark: 'times-square-spark', grate: 'times-square-grate', marquee: 'times-square-marquee' } },
   forest: { floor: 'forest-n-floor', floorTileWidth: 640, overlapTerrain: true, sky: ['#9fc4b0', '#cfe3cf'],
     parallax: [{ img: 'forest-n-farthest', par: .10, lift: 555, scale: .60 },
       { img: 'forest-n-far2', par: .19, lift: 455, scale: .55 },
@@ -1311,6 +1311,26 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   const sidesY = streetY - 765 * scale;
   if (sidesY >= height) return;
   paint('sides', left, sidesY, 1024 * scale, 1135 * scale);
+
+  if (!reduced) {
+    const marquee = image('marquee');
+    const frameWidth = marquee.naturalWidth / 2;
+    const phase = Math.floor(clock / .72) % 2;
+    ctx.drawImage(marquee, phase * frameWidth, 0, frameWidth, marquee.naturalHeight,
+      left + 187 * scale, sidesY + 542 * scale, frameWidth * scale, marquee.naturalHeight * scale);
+
+    // Repaint the existing lamp glass and theater posters with staggered dips.
+    const lights = [[337, 671, 26, 26], [703, 649, 33, 30], [644, 690, 23, 24],
+      [207, 751, 25, 69], [288, 744, 24, 65]];
+    for (const [i, [x, y, w, h]] of lights.entries()) {
+      const dim = Math.max(0, Math.sin(clock * (1.7 + i * .17) + i * 2.2)) ** 5;
+      ctx.save();
+      ctx.filter = `brightness(${1 - .40 * dim})`;
+      ctx.drawImage(image('sides'), x, y, w, h, left + x * scale, sidesY + y * scale, w * scale, h * scale);
+      ctx.restore();
+    }
+  }
+
 
   const billboard = (name, x, y, w, h, angle, zoom, hue, pulse) => {
     ctx.save();
