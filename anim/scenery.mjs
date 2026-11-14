@@ -293,7 +293,7 @@ const layeredReveals = {
           { img: 'kitchen-climb-ladle', fx: .68, fy: .66, w: .16, speed: .88, swing: .13 },
         ] } },
     ] },
-  library: { floor: 'library-climb-floor', fittedFloor: true, floorInset: 0,
+  library: { floor: 'library-climb-reading-nook', fittedFloor: true, floorInset: 0,
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
     bookcase: { shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
