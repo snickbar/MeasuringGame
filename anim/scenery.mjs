@@ -303,8 +303,7 @@ const layeredReveals = {
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-bookcase', par: .74, lift: 234, liftWidth: .63, single: { x: .255, w: .437, sy: 1 } },
-      { img: 'living-climb-couch', par: .74, lift: 134, liftWidth: .51, scale: .70, overlapFrom: .94 },
+      { img: 'living-climb-furniture', par: .74, lift: 134, liftWidth: .51, scale: .56, fitted: true, overlapFrom: .94 },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
@@ -665,7 +664,7 @@ function solidBottomRow(image, inset = 0) {
 function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
   const layout = new Map();
   const floor = kit.images[kit.config.floor];
-  const floorScale = (kit.config.fittedFloor ? width : kit.config.floorTileWidth) * gs / floor.naturalWidth;
+  const floorScale = (kit.config.fittedFloor ? width : kit.config.floorTileWidth * gs) / floor.naturalWidth;
   const floorTop = floorY + shiftY - floorInset(kit) * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
   const floorCover = floorTop + solidBottomRow(floor) * floorScale;
   let cover = Math.min(height, floorCover);
@@ -673,7 +672,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
     const image = kit.images[layer.img];
     if (!image) continue;
     const single = layer.single;
-    const k = width * gs * (single ? single.w : 1.8 * (layer.scale || 1)) / image.naturalWidth;
+    const k = width * (layer.fitted ? 1 : gs) * (single ? single.w : 1.8 * (layer.scale || 1)) / image.naturalWidth;
     const drawHeight = image.naturalHeight * k * (single?.sy ?? 1);
     const grounded = layer.grounded || (single && layer.par === 1);
     const top = grounded ? floorCover + (5 - (layer.grounded ? layer.lift : 0)) * gs - drawHeight
@@ -852,7 +851,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       if (y2 < height) { ctx.save(); if (dark) ctx.filter = 'brightness(58%)'; drawTerrainImage(ctx, image, width * sg.x - w2 / 2, y2, w2, h2, terrain?.get(layer)?.bottom ?? y2 + h2, sg.overlapFrom); const glint = kit.images[layer.glint?.img]; if (glint && !reduced) drawCrystalGlints(ctx, glint, layer.glint.points, width * sg.x - w2 / 2, y2, w2, h2, time); for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, width * sg.x - w2 / 2, y2, w2 / image.naturalWidth, h2 / image.naturalHeight, time, reduced); if (sg.smoke) drawVolcanoSmoke(ctx, kit.images[sg.smoke], width * sg.x, y2 + h2 * .085, w2, time, reduced); const stand = kit.images[sg.torches?.stand], flame = kit.images[sg.torches?.flame]; if (stand && flame) drawTempleTorches(ctx, stand, flame, width * sg.x - w2 / 2, y2, w2, h2, time, reduced); const chair = kit.images[sg.liftChair]; if (chair) drawLiftChairs(ctx, chair, width * sg.x - w2 / 2, y2, w2, h2, reduced ? 0 : time); for (const [hi, hg] of (sg.hang || []).entries()) { const hp = kit.images[hg.img]; if (!hp) continue; const hw = hg.w * w2, hh = hw * hp.naturalHeight / hp.naturalWidth; ctx.save(); ctx.translate(width * sg.x - w2 / 2 + hg.fx * w2, y2 + hg.fy * h2); ctx.rotate(reduced ? 0 : Math.sin(time * (hg.speed || .8) + hi * 1.9) * (hg.swing || .07) + Math.sin(time * (hg.speed || .8) * 2.3 + hi) * .015); ctx.drawImage(hp, -hw / 2, 0, hw, hh); ctx.restore(); } const sp2 = sg.spin && kit.images[sg.spin.img]; if (sp2) { const rs = sg.spin.size * w2, cx = width * sg.x - w2 / 2 + sg.spin.fx * w2, cy = y2 + sg.spin.fy * h2; ctx.save(); ctx.translate(cx, cy); const angle = reduced ? 0 : time * (sg.spin.speed || .5); if (sg.spin.mode === 'yaw') ctx.scale(.72 + .28 * Math.cos(angle), 1); else ctx.rotate(angle); const rh = rs * sp2.naturalHeight / sp2.naturalWidth; ctx.drawImage(sp2, -rs / 2, -(sg.spin.py ?? .5) * rh, rs, rh); ctx.restore(); const cabin = kit.images[sg.spin.carriage]; if (cabin) drawWheelCarriages(ctx, cabin, cx, cy, rs, rh, angle, time, reduced); } if (sg.fill && y2 + h2 < height) { ctx.fillStyle = sg.fill; ctx.fillRect(0, y2 + h2 - 1, width, height - y2 - h2 + 2); } ctx.restore(); }
       continue;
     }
-    const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * gs * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
+    const st0 = layerStats(image), st = layer.skyRow !== undefined ? { ...st0, sky: layer.skyRow } : st0, tw = width * 1.8 * (layer.fitted ? 1 : gs) * (layer.scale || 1), k = tw / image.naturalWidth, th = image.naturalHeight * k;
     const top = terrain?.get(layer)?.top ?? base - layer.lift * gs + layer.par * shiftY - st.sky * k, bottom = top + th;
     let reach = top; // props can stand much taller than the layer picture, so keep drawing while any of them is on screen
     for (const q of layer.props || []) { const pic = kit.images[q.img]; if (pic && q.snap === undefined) reach = Math.min(reach, top + q.row * k - q.w * tw * pic.naturalHeight / pic.naturalWidth); }
@@ -1778,7 +1777,7 @@ function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor ===
 
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
-  const tile = (kit.config.fittedFloor ? width : kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
+  const tile = kit.config.fittedFloor ? width : (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
   const inset = floorInset(kit) * groundScale;
