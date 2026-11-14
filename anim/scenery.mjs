@@ -295,17 +295,16 @@ const layeredReveals = {
     {"img":"library-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"library-reveal-chandelier","x":0.49,"row":694,"w":0.15,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"library-reveal-armillary","x":0.7,"row":855,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"library-reveal-curtain","x":0.2,"row":803,"w":0.07,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
     {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  living: { roomBack: 'living-climb-wall', roomBackParallax: .27,
+  living: { floor: 'living-climb-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling',
     parallax: [
-      { img: 'living-climb-curtained', par: .37, lift: 215, liftWidth: .66,
+      { img: 'living-climb-curtained', par: .37, lift: 257, liftWidth: .66,
         single: { x: .72, w: .513, sy: 1, hang: [
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-bookcase', par: .50, lift: 184, liftWidth: .55, single: { x: .255, w: .437, sy: 1 } },
-      { img: 'living-climb-couch', par: .74, lift: 100, liftWidth: .51, scale: .70, overlapFrom: .94 },
-      { img: 'living-climb-floor', par: 1, lift: -64, scale: .81, grounded: true, overlapFrom: .95 },
+      { img: 'living-climb-bookcase', par: .74, lift: 234, liftWidth: .63, single: { x: .255, w: .437, sy: 1 } },
+      { img: 'living-climb-couch', par: .74, lift: 134, liftWidth: .51, scale: .70, overlapFrom: .94 },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
@@ -666,7 +665,7 @@ function solidBottomRow(image, inset = 0) {
 function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
   const layout = new Map();
   const floor = kit.images[kit.config.floor];
-  const floorScale = kit.config.floorTileWidth * gs / floor.naturalWidth;
+  const floorScale = (kit.config.fittedFloor ? width : kit.config.floorTileWidth) * gs / floor.naturalWidth;
   const floorTop = floorY + shiftY - floorInset(kit) * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
   const floorCover = floorTop + solidBottomRow(floor) * floorScale;
   let cover = Math.min(height, floorCover);
@@ -1779,12 +1778,19 @@ function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor ===
 
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
-  const tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
+  const tile = (kit.config.fittedFloor ? width : kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
   const inset = floorInset(kit) * groundScale;
   const top = floorY - tileH * meta.surface - inset;
   if (top >= height || top + tileH <= 0) return;
+  if (kit.config.fittedFloor) {
+    ctx.save();
+    if (dark) ctx.filter = 'brightness(60%)';
+    drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .97);
+    ctx.restore();
+    return;
+  }
   const phase = shiftX + anchorX * (1 - groundScale);
   const offset = ((phase % tile) + tile) % tile - tile;
   ctx.save();
