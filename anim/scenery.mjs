@@ -303,7 +303,7 @@ const layeredReveals = {
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-tall-furniture', par: .74, lift: 87, liftWidth: .596, scale: .574, fitted: true, overlapFrom: .899, sleepingCat: true, paneling: 'living-climb-paneling', lampGlow: true },
+      { img: 'living-climb-tall-furniture', par: .74, lift: 87, liftWidth: .596, scale: .574, fitted: true, overlapFrom: .925, sleepingCat: true, paneling: 'living-climb-paneling', lampGlow: true },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
