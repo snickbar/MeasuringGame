@@ -1739,10 +1739,10 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     const { board, fan, rotor } = config.workshop;
     const wallTravel = shiftY * config.roomBackParallax;
     const climb = climbPx * config.roomBackParallax;
-    const boardY = height * .62 + wallTravel - Math.max(climb * .71, height * .38);
-    const fanY = height * .36 + wallTravel - Math.max(climb * .90, height * .46);
+    const boardY = height * .76 + wallTravel - Math.max(climb * .71, height * .38);
+    const fanY = height * .51 + wallTravel - Math.max(climb * .90, height * .46);
     if (dark) ctx.filter = 'brightness(62%)';
-    drawWorkshopPiece(ctx, images[board], width * .73, boardY, width * .32);
+    drawWorkshopPiece(ctx, images[board], width * .86, boardY, width * .27);
     const fanWidth = width * .29;
     drawWorkshopPiece(ctx, images[fan], width * .29, fanY, fanWidth);
     const blades = images[rotor];
