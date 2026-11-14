@@ -811,7 +811,7 @@ export function createStackAnimation(container, options = {}) {
     // Camera anchors for the climb.
     const axClimb = W * 0.42;
     const ay = stageH * 0.34;
-    const floorStartY = stageH * 0.80;
+    const floorStartY = stageH * (kit.config.workshop ? .88 : .80);
 
     function climbTop(t) {
       // Follow the stack as it lands: average the landed count over a short window centred on t,

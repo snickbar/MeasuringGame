@@ -1913,8 +1913,9 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const image = kit.images[kit.config.floor]; if (!image) return;
   const workshop = kit.config.workshop;
   if (workshop) {
-    const storageBase = floorY - shiftY * .26 - width * .43;
-    const doorBase = floorY - shiftY * .40 - width * .65;
+    const propFloorY = floorY - width * .31;
+    const storageBase = propFloorY - shiftY * .26 - width * .43;
+    const doorBase = propFloorY - shiftY * .40 - width * .65;
     const floorHeight = Math.max(width * image.naturalHeight / image.naturalWidth, height - doorBase);
     ctx.save();
     if (dark) ctx.filter = 'brightness(62%)';
@@ -1924,13 +1925,13 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     ctx.save();
     ctx.translate(width * .21, 0);
     ctx.scale(-1, 1);
-    drawWorkshopPiece(ctx, kit.images[workshop.offcuts], 0, floorY + width * .14, width * .37, 1);
+    drawWorkshopPiece(ctx, kit.images[workshop.offcuts], 0, propFloorY + width * .14, width * .37, 1);
     ctx.restore();
     const bench = kit.images[workshop.bench];
     if (bench) {
       const benchWidth = width * 1.06;
       const benchHeight = benchWidth * bench.naturalHeight / bench.naturalWidth;
-      const benchBase = floorY + width * .045;
+      const benchBase = propFloorY + width * .045;
       drawWorkshopPiece(ctx, bench, width * .65, benchBase, benchWidth, 1);
       const worktop = benchBase - benchHeight * .94;
       drawWorkshopPiece(ctx, kit.images[workshop.vise], width * .43, worktop, width * .25, 1);
