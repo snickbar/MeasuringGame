@@ -1800,6 +1800,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawFlyers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
+  if (config.bookcase) drawLibraryShelfRows(ctx, kit, { width, height, floorY, shiftY, dark });
   drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
   const petals = images[config.fallingPetals];
   if (petals && !reduced) drawFallingPetals(ctx, petals, width, height, time, shiftY);
@@ -1826,28 +1827,38 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
 
 function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor === 'forest-floor' ? 20 : 14); }
 
-function drawLibraryShelfRows(ctx, kit, width, floor, height, dark) {
-  const { lowCase, wideCase } = kit.config.bookcase;
-  const low = kit.images[lowCase], tall = kit.images[wideCase];
-  if (!low || !tall) return;
+function drawLibraryShelfRows(ctx, kit, { width, height, floorY, shiftY, dark }) {
+  const tall = kit.images[kit.config.bookcase.wideCase];
+  const floor = kit.images[kit.config.floor];
+  if (!tall || !floor) return;
+  const tileH = width * 1.10 * floor.naturalHeight / floor.naturalWidth;
+  const frontEdge = (floorY ?? height - 40) + tileH * (.425 - FLOOR_DATA[kit.config.floor].surface);
+  const rows = [
+    { depth: .43, inset: .47, shade: .66, cases: [[.05, .39], [.53, .43]] },
+    { depth: .64, inset: .30, shade: .78, cases: [[.24, .46], [.77, .40]] },
+    { depth: .82, inset: .14, shade: .90, cases: [[-.03, .46], [.49, .47]] },
+  ];
+  const edges = rows.map(row => frontEdge + shiftY * row.depth - width * row.inset);
+  edges.push(frontEdge + shiftY);
 
-  const tallW = width * .44, tallH = tallW * tall.naturalHeight / tall.naturalWidth;
-  // Stagger the back rows so the tall cases emerge one after the other.
   ctx.save();
-  for (const { x, sections, shade } of [
-    { x: .395, sections: 3, shade: .64 },
-    { x: .025, sections: 2, shade: .82 },
-  ]) {
-    ctx.filter = `brightness(${shade * (dark ? .6 : 1)}) saturate(.8)`;
-    for (let i = sections - 1; i >= 0; i--) {
-      const y = floor - tallH * (1 + i * .96);
-      if (y < height && y + tallH > 0) ctx.drawImage(tall, width * x, y, tallW, tallH);
+  for (const [i, row] of rows.entries()) {
+    const edge = edges[i];
+    ctx.filter = `brightness(${row.shade * (dark ? .6 : 1)}) saturate(.85)`;
+    // Use the clean lower planks of the front floor, with the next row hiding the join.
+    const plankStart = Math.floor(floor.naturalHeight * .67);
+    const plankHeight = floor.naturalHeight - plankStart;
+    const stripHeight = width * plankHeight / floor.naturalWidth;
+    for (let y = Math.max(0, Math.floor(-edge / stripHeight)) * stripHeight + edge;
+      y < Math.min(height, edges[i + 1] + 2); y += stripHeight) {
+      ctx.drawImage(floor, 0, plankStart, floor.naturalWidth, plankHeight, 0, y, width, stripHeight + 1);
+    }
+    for (const [x, size] of row.cases) {
+      const w = width * size, h = w * tall.naturalHeight / tall.naturalWidth;
+      if (edge - h < height && edge > 0) ctx.drawImage(tall, width * x, edge - h + 2, w, h);
     }
   }
   ctx.restore();
-
-  const lowW = width * .42, lowH = lowW * low.naturalHeight / low.naturalWidth;
-  if (floor - lowH < height && floor > 0) ctx.drawImage(low, width * .035, floor - lowH, lowW, lowH);
 }
 
 function drawLibraryBookcase(ctx, kit, width, floor, height, time, reduced) {
@@ -1885,7 +1896,13 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
     const libraryFloor = top + tileH * .425;
-    if (kit.config.bookcase) drawLibraryShelfRows(ctx, kit, width, libraryFloor, height, dark);
+    const lowCase = kit.images[kit.config.bookcase?.lowCase];
+    if (lowCase) {
+      const w = width * .42, h = w * lowCase.naturalHeight / lowCase.naturalWidth;
+      if (libraryFloor - h < height && libraryFloor > 0) {
+        ctx.drawImage(lowCase, width * .035, libraryFloor - h, w, h);
+      }
+    }
     if (top < height) drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, arm ? .91 : .75);
     if (arm && shade) {
       const armW = width * .49, armH = armW * arm.naturalHeight / arm.naturalWidth;
