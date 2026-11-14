@@ -179,6 +179,7 @@ export const SETTINGS = {
     parallax: [
       { img: 'enchanted-reveal-woods', par: .10, lift: 365, scale: .72, overlapFrom: .94 },
       { img: 'enchanted-reveal-tree', par: .24, lift: 790, single: { x: .65, w: 1.16, sy: 1 } },
+      { img: 'enchanted-reveal-bank', par: .24, lift: 790, liftWidth: -1.67, scale: .76, overlapFrom: .94 },
       { img: 'enchanted-reveal-bridge', par: .61, lift: 180, scale: .63, overlapFrom: .94,
         flows: [{ img: 'enchanted-reveal-stream', x: 0, y: 0, ripple: { rows: 13, speed: .75, opacity: .42 } }],
         props: [
@@ -671,7 +672,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
     const drawHeight = image.naturalHeight * k * (single?.sy ?? 1);
     const grounded = layer.grounded || (single && layer.par === 1);
     const top = grounded ? floorCover + (5 - (layer.grounded ? layer.lift : 0)) * gs - drawHeight
-      : base - layer.lift * gs + layer.par * shiftY - (single ? 0 : layerStats(image).sky * k);
+      : base - (layer.lift + (layer.liftWidth ?? 0) * width) * gs + layer.par * shiftY - (single ? 0 : layerStats(image).sky * k);
     // Extend only the lower terrain. Camera bounds never change the speed of
     // the artwork, its skyline, or the props attached to it.
     const artBottom = top + drawHeight;
