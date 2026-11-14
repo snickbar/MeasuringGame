@@ -49,7 +49,7 @@ export const SETTINGS = {
     // Layered scenery, back to front. `par` is how much of the climb each layer follows (1 = like the ground); `lift` is how far its skyline sits above the ground at the start.
     parallax: [{ img: 'meadow-peak', par: .07, lift: 350, single: { x: .38, w: 1.6, sy: 1.25 } }, { img: 'meadow-mountain', par: .12, lift: 250, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-8'], n: 12, rows: [440, 690], w: [.028, .055], seed: 'm' } }, { img: 'meadow-hills', par: .28, lift: 175, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-4', 'meadow-tree-5', 'meadow-tree-6', 'meadow-tree-7', 'meadow-tree-8', 'meadow-tree-9'].filter((_, i) => i !== 7), n: 16, rows: [380, 690], w: [.05, .095], seed: 'h' }, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
     pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
-    skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
+    skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }] },
   town: { sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
     town: { street: 'town-reveal-street', walk: 'town-reveal-walk', shops: 'town-reveal-shops',
@@ -68,7 +68,7 @@ export const SETTINGS = {
       { img: 'beach-islands', par: .22, lift: 120, drifters: [{ img: 'beach-boat', x: .3, row: 488, w: .05, speed: 4, bob: 1.5 }] },
       { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .2, row: 535, w: .27, foam: 'beach-wave-foam' }], drifters: [{ img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
       { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .7, row: 508, w: .27 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
-    skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
+    skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }] },
   boardwalk: { sky: ['#32a8eb', '#b9e7fa'], nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     avenue: { shops: 'boardwalk-avenue', pier: 'boardwalk-pier', beach: 'boardwalk-beach', ocean: 'boardwalk-ocean', stand: 'fair-reveal-stand',
       wheel: 'fair-reveal-wheel', carriage: 'fair-reveal-carriage' },
