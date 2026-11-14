@@ -1834,9 +1834,9 @@ function drawLibraryShelfRows(ctx, kit, { width, height, floorY, shiftY, dark })
   const tileH = width * 1.10 * floor.naturalHeight / floor.naturalWidth;
   const frontEdge = (floorY ?? height - 40) + tileH * (.425 - FLOOR_DATA[kit.config.floor].surface);
   const rows = [
-    { depth: .43, inset: .47, shade: .66, cases: [[.05, .39], [.53, .43]] },
-    { depth: .64, inset: .30, shade: .78, cases: [[.24, .46], [.77, .40]] },
-    { depth: .82, inset: .14, shade: .90, cases: [[-.03, .46], [.49, .47]] },
+    { depth: .39, inset: 1.02, shade: .66, cases: [[.14, .39], [.59, .40]] },
+    { depth: .59, inset: .65, shade: .78, cases: [[.02, .43], [.52, .45]] },
+    { depth: .79, inset: .29, shade: .90, cases: [[.10, .43], [.58, .41]] },
   ];
   const edges = rows.map(row => frontEdge + shiftY * row.depth - width * row.inset);
   edges.push(frontEdge + shiftY);
