@@ -174,7 +174,18 @@ export const SETTINGS = {
       { img: 'space-n-near', par: 0.6, lift: 135, scale: 1.75, props: [{ img: 'space-n-loose-0', x: 0.06, row: 389, w: 0.020 }, { img: 'space-n-loose-1', x: 0.24, row: 389, w: 0.019 }, { img: 'space-n-loose-2', x: 0.42, row: 389, w: 0.034 }, { img: 'space-n-loose-3', x: 0.6, row: 389, w: 0.033 }, { img: 'space-n-loose-6', x: 0.78, row: 389, w: 0.035 }, { img: 'space-n-loose-8', x: 0.93, row: 389, w: 0.028 }] }],
     pieces: [{ img: 'space-n-movers-0', cell: 2200, prob: 0.6, w: 110, speed: 40, bob: 3, sway: 0.02, minH: 520, face: 1 }, { img: 'space-n-movers-1', cell: 2600, prob: 0.6, w: 84, speed: 22, bob: 3, sway: 0.02, minH: 560, face: 1 }, { img: 'space-n-movers-2', cell: 2000, prob: 0.6, w: 80, speed: 10, bob: 3, sway: 0.02, minH: 460, face: 1 }, { img: 'space-n-movers-4', cell: 2400, prob: 0.6, w: 62, speed: 8, bob: 2, sway: 0.02, minH: 500, face: 1 }, { img: 'space-n-movers-5', cell: 3200, prob: 0.6, w: 100, speed: 52, bob: 3, sway: 0.02, minH: 620, face: 1 }],
     skyPieces: [{ img: 'space-n-big-0', y: 3600, x: .66, w: 190 }, { img: 'space-n-big-0', y: 15000, x: .25, w: 150 }] },
-  enchanted: { sky: ['#c8badf', '#efe2f2'], layers: ['enchanted-mist', 'magic-motes'], fireflies: 'always' , tall: ['enchanted-tall-low', 'enchanted-tall-mid', 'enchanted-tall-high']},
+  enchanted: { floor: 'enchanted-reveal-ground', floorTileWidth: 520, floorInset: 5,
+    overlapTerrain: true, sky: ['#6652a3', '#8f91c1'], nightSky: ['#221c4f', '#595385'], night: 'dark', fireflies: 'always',
+    parallax: [
+      { img: 'enchanted-reveal-woods', par: .10, lift: 365, scale: .72, overlapFrom: .94 },
+      { img: 'enchanted-reveal-tree', par: .24, lift: 790, single: { x: .65, w: 1.16, sy: 1 } },
+      { img: 'enchanted-reveal-bridge', par: .61, lift: 180, scale: .63, overlapFrom: .94,
+        flows: [{ img: 'enchanted-reveal-stream', x: 0, y: 0, ripple: { rows: 13, speed: .75, opacity: .42 } }],
+        props: [
+          { img: 'enchanted-reveal-lantern', x: .224, row: 365, w: .042, glow: true, move: { type: 'dangle', amp: 5, speed: 1.05 } },
+          { img: 'enchanted-reveal-lantern', x: .770, row: 365, w: .042, glow: true, move: { type: 'dangle', amp: 4, speed: .88, phase: 1.7 } },
+        ] },
+    ] },
   mountain: { floor: 'mountain-n-floor', floorTileWidth: 640, overlapTerrain: true,
     sky: ['#7fb0e6', '#d3e5f4'], floaters: ['cloud-set-day'],
     parallax: [
@@ -752,7 +763,7 @@ function drawFlow(ctx, kit, fl, x, top, k, ky, time, reduced) {
       g.beginPath(); for (let xx = -10; xx <= W + 10; xx += 8) { const y2 = yy + Math.sin(xx / wl * 6.283 + tt * 1.6 + yy / H * 18) * amp; xx < 0 ? g.moveTo(xx, y2) : g.lineTo(xx, y2); }
       g.strokeStyle = fl.ripple.warm ? 'rgba(255,175,48,.60)' : 'rgba(231,249,255,.65)'; g.lineWidth = 4 + 6 * (yy / H); g.stroke();
     }
-    g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.drawImage(oc, x + fl.x * k, top + fl.y * ky, W * k, H * ky); return;
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0); ctx.save(); ctx.globalAlpha *= fl.ripple.opacity ?? 1; ctx.drawImage(oc, x + fl.x * k, top + fl.y * ky, W * k, H * ky); ctx.restore(); return;
   }
   g.fillStyle = 'rgba(40,150,200,.4)'; g.fillRect(0, 0, W, H);
   for (let i = 0; i < n; i++) for (let r = 0; r < 2; r++) {

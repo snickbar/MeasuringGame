@@ -1,5 +1,6 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  "enchanted-reveal-ground": { "surface": 0.635, "color": "#867245" },
   "workshop-n-floor": {
     "surface": 0.45,
     "color": "#522809"
