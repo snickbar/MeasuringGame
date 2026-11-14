@@ -283,7 +283,8 @@ const layeredReveals = {
     {"img":"cave-reveal-mid","par":0.55,"lift":318,"scale":0.58,"overlapFrom":0.95,"props":[],"glint":{"img":"cave-reveal-glint","points":[[0.8,0.54],[0.9,0.65],[0.59,0.66],[0.54,0.76],[0.17,0.76],[0.39,0.78],[0.98,0.71]]}},
     {"img":"cave-reveal-front","par":1,"lift":49,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"cave-reveal-mushroom","x":0.72,"row":990,"w":0.085,"move":{"type":"pulse","amp":4,"speed":5}}],"glint":{"img":"cave-reveal-glint","points":[[0.31,0.79],[0.38,0.84],[0.91,0.84],[0.96,0.86]]}}
   ] },
-  kitchen: { floor: 'kitchen-climb-room', fittedFloor: true, floorInset: 0,
+  kitchen: { floor: 'kitchen-climb-ground', fittedFloor: true, floorInset: 0,
+    floorProp: { img: 'kitchen-climb-island', x: .73, width: .49, row: .577 },
     roomBack: 'kitchen-climb-tile', roomBackParallax: .29, roomCeiling: 'kitchen-climb-ceiling',
     parallax: [
       { img: 'kitchen-climb-rack', par: .29, lift: 615, liftWidth: .48,
@@ -379,7 +380,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1837,6 +1838,13 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
     drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .75);
+    const placement = kit.config.floorProp;
+    const prop = kit.images[placement?.img];
+    if (prop) {
+      const propW = width * placement.width;
+      const propH = propW * prop.naturalHeight / prop.naturalWidth;
+      ctx.drawImage(prop, width * placement.x - propW / 2, top + tileH * placement.row - propH, propW, propH);
+    }
     ctx.restore();
     return;
   }
