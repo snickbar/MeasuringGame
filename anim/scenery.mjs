@@ -295,7 +295,7 @@ const layeredReveals = {
     ] },
   library: { floor: 'library-climb-reading-nook', fittedFloor: true, floorInset: 0,
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
-    bookcase: { lowCase: 'library-climb-low-case', wideCase: 'library-climb-eight-shelf', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
+    bookcase: { chairCase: 'library-climb-wide-case', wideCase: 'library-climb-eight-shelf', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
   living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
@@ -1896,11 +1896,11 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
     const libraryFloor = top + tileH * .425;
-    const lowCase = kit.images[kit.config.bookcase?.lowCase];
-    if (lowCase) {
-      const w = width * .42, h = w * lowCase.naturalHeight / lowCase.naturalWidth;
+    const chairCase = kit.images[kit.config.bookcase?.chairCase];
+    if (chairCase) {
+      const w = width * .42, h = w * chairCase.naturalHeight / chairCase.naturalWidth;
       if (libraryFloor - h < height && libraryFloor > 0) {
-        ctx.drawImage(lowCase, width * .035, libraryFloor - h, w, h);
+        ctx.drawImage(chairCase, width * .035, libraryFloor - h, w, h);
       }
     }
     if (top < height) drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, arm ? .91 : .75);
