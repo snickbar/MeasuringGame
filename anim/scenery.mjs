@@ -336,7 +336,7 @@ const layeredReveals = {
       { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
     ] },
   ] },
-  tabletop: { floor: 'tabletop-climb-organized-desk', fittedFloor: true, floorInset: 0,
+  tabletop: { floor: 'tabletop-climb-upright-desk', fittedFloor: true, floorInset: 0,
     roomBack: 'tabletop-climb-wall', roomBackParallax: .27, roomCeiling: 'living-climb-ceiling',
     deskLamp: { arm: 'tabletop-climb-arm', shade: 'tabletop-climb-shade' },
     parallax: [
