@@ -1911,13 +1911,14 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const image = kit.images[kit.config.floor]; if (!image) return;
   const workshop = kit.config.workshop;
   if (workshop) {
-    const rearEdge = floorY - shiftY * .26 - width * .49;
-    const floorHeight = Math.max(width * image.naturalHeight / image.naturalWidth, height - rearEdge);
+    const storageBase = floorY - shiftY * .26 - width * .43;
+    const doorBase = floorY - shiftY * .40 - width * .65;
+    const floorHeight = Math.max(width * image.naturalHeight / image.naturalWidth, height - doorBase);
     ctx.save();
     if (dark) ctx.filter = 'brightness(62%)';
-    if (rearEdge < height) ctx.drawImage(image, 0, rearEdge, width, floorHeight);
-    drawWorkshopPiece(ctx, kit.images[workshop.door], width * .30, rearEdge + 1, width * .87, 1);
-    drawWorkshopPiece(ctx, kit.images[workshop.storage], width * .65, rearEdge + width * .06, width * .66, 1);
+    if (doorBase < height) ctx.drawImage(image, 0, doorBase, width, floorHeight);
+    drawWorkshopPiece(ctx, kit.images[workshop.door], width * .30, doorBase + 1, width * .87, 1);
+    drawWorkshopPiece(ctx, kit.images[workshop.storage], width * .65, storageBase, width * .66, 1);
     drawWorkshopPiece(ctx, kit.images[workshop.bench], width * .94, floorY + width * .045, width * .83, 1);
     ctx.restore();
     return;
