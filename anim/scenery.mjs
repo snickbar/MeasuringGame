@@ -293,12 +293,10 @@ const layeredReveals = {
           { img: 'kitchen-climb-ladle', fx: .68, fy: .66, w: .16, speed: .88, swing: .13 },
         ] } },
     ] },
-  library: { roomBack: 'library-reveal-back', parallax: [
-    {"img":"library-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"library-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"library-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"library-reveal-chandelier","x":0.49,"row":694,"w":0.15,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"library-reveal-armillary","x":0.7,"row":855,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"library-reveal-curtain","x":0.2,"row":803,"w":0.07,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
+  library: { floor: 'library-climb-floor', fittedFloor: true, floorInset: 0,
+    parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
+    bookcase: { shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
+  },
   living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
     parallax: [
@@ -382,7 +380,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1828,6 +1826,26 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
 
 function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor === 'forest-floor' ? 20 : 14); }
 
+function drawLibraryBookcase(ctx, kit, width, floor, height, time, reduced) {
+  const { shelf, ladder, rail } = kit.config.bookcase;
+  const caseImage = kit.images[shelf], ladderImage = kit.images[ladder], railImage = kit.images[rail];
+  if (!caseImage || !ladderImage || !railImage) return;
+  const caseW = width * .52, caseH = caseW * caseImage.naturalHeight / caseImage.naturalWidth;
+  const x = width * .475, y = floor - caseH;
+  if (y + caseH <= 0 || y - caseH >= height) return;
+
+  // A second shelf section continues directly above the lower case.
+  ctx.drawImage(caseImage, x, y - caseH * .96, caseW, caseH);
+  ctx.drawImage(caseImage, x, y, caseW, caseH);
+
+  const ladderH = caseH * .75, ladderW = ladderH * ladderImage.naturalWidth / ladderImage.naturalHeight;
+  const ladderY = floor - ladderH;
+  const railW = caseW * .93, railH = railW * railImage.naturalHeight / railImage.naturalWidth;
+  const travel = reduced ? 0 : Math.sin(time * .83) * caseW * .19;
+  ctx.drawImage(railImage, x + (caseW - railW) / 2, ladderY - railH / 2 + ladderH * .018, railW, railH);
+  ctx.drawImage(ladderImage, x + (caseW - ladderW) / 2 + travel, ladderY, ladderW, ladderH);
+}
+
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
   const tile = kit.config.fittedFloor ? width * 1.10 : (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
@@ -1837,7 +1855,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const top = floorY - tileH * meta.surface - inset;
   const arm = kit.images[kit.config.deskLamp?.arm];
   const shade = kit.images[kit.config.deskLamp?.shade];
-  if (top >= height && !(arm && shade)) return;
+  if (top >= height && !(arm && shade) && !kit.config.bookcase) return;
   if (top + tileH <= 0) return;
   if (kit.config.fittedFloor) {
     ctx.save();
@@ -1868,6 +1886,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
       ctx.drawImage(shade, -shadeW * .88, -shadeH * .34, shadeW, shadeH);
       ctx.restore();
     }
+    if (kit.config.bookcase) drawLibraryBookcase(ctx, kit, width, top + tileH * .425, height, time, reduced);
     const placement = kit.config.floorProp;
     const prop = kit.images[placement?.img];
     if (prop) {
