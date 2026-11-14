@@ -295,7 +295,7 @@ const layeredReveals = {
     ] },
   library: { floor: 'library-climb-reading-nook', fittedFloor: true, floorInset: 0,
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
-    bookcase: { shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
+    bookcase: { lowCase: 'library-climb-low-case', wideCase: 'library-climb-wide-case', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
   living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
@@ -1826,30 +1826,28 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
 
 function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor === 'forest-floor' ? 20 : 14); }
 
-function drawLibraryShelfRows(ctx, image, width, floor, height, dark) {
-  // Smaller cases share the rear floor edge. Offset their tops to reveal
-  // the rows in depth as the camera follows the stack.
-  const rows = [
-    { x: .04, size: .21 },
-    { x: .29, size: .23 },
-    { x: .64, size: .24 },
-    { x: .81, size: .18 },
-  ];
+function drawLibraryShelfRows(ctx, kit, width, floor, height, dark) {
+  const { lowCase, wideCase } = kit.config.bookcase;
+  const low = kit.images[lowCase], tall = kit.images[wideCase];
+  if (!low || !tall) return;
+
+  const tallW = width * .44, tallH = tallW * tall.naturalHeight / tall.naturalWidth;
+  // Stagger the back rows so the tall cases emerge one after the other.
   ctx.save();
-  ctx.filter = dark ? 'brightness(46%) saturate(.65)' : 'brightness(82%) saturate(.72)';
-  for (const { x, size } of rows) {
-    const w = width * size, h = w * image.naturalHeight / image.naturalWidth;
-    const y = floor - h;
-    if (y < height) ctx.drawImage(image, width * x, y, w, h);
+  for (const { x, sections, shade } of [
+    { x: .395, sections: 3, shade: .64 },
+    { x: .025, sections: 2, shade: .82 },
+  ]) {
+    ctx.filter = `brightness(${shade * (dark ? .6 : 1)}) saturate(.8)`;
+    for (let i = sections - 1; i >= 0; i--) {
+      const y = floor - tallH * (1 + i * .96);
+      if (y < height && y + tallH > 0) ctx.drawImage(tall, width * x, y, tallW, tallH);
+    }
   }
   ctx.restore();
 
-  const towerW = width * .30, towerH = towerW * image.naturalHeight / image.naturalWidth;
-  const towerX = width * .095, towerY = floor - towerH;
-  if (towerY - towerH * .96 < height) {
-    ctx.drawImage(image, towerX, towerY - towerH * .96, towerW, towerH);
-    ctx.drawImage(image, towerX, towerY, towerW, towerH);
-  }
+  const lowW = width * .42, lowH = lowW * low.naturalHeight / low.naturalWidth;
+  if (floor - lowH < height && floor > 0) ctx.drawImage(low, width * .035, floor - lowH, lowW, lowH);
 }
 
 function drawLibraryBookcase(ctx, kit, width, floor, height, time, reduced) {
@@ -1887,8 +1885,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
     const libraryFloor = top + tileH * .425;
-    const libraryShelf = kit.images[kit.config.bookcase?.shelf];
-    if (libraryShelf) drawLibraryShelfRows(ctx, libraryShelf, width, libraryFloor, height, dark);
+    if (kit.config.bookcase) drawLibraryShelfRows(ctx, kit, width, libraryFloor, height, dark);
     if (top < height) drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, arm ? .91 : .75);
     if (arm && shade) {
       const armW = width * .49, armH = armW * arm.naturalHeight / arm.naturalWidth;
