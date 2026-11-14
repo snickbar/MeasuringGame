@@ -50,14 +50,11 @@ export const SETTINGS = {
     parallax: [{ img: 'meadow-peak', par: .07, lift: 350, single: { x: .38, w: 1.6, sy: 1.25 } }, { img: 'meadow-mountain', par: .12, lift: 250, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-8'], n: 12, rows: [440, 690], w: [.028, .055], seed: 'm' } }, { img: 'meadow-hills', par: .28, lift: 175, scatter: { imgs: ['meadow-tree-1', 'meadow-tree-2', 'meadow-tree-3', 'meadow-tree-4', 'meadow-tree-5', 'meadow-tree-6', 'meadow-tree-7', 'meadow-tree-8', 'meadow-tree-9'].filter((_, i) => i !== 7), n: 16, rows: [380, 690], w: [.05, .095], seed: 'h' }, props: [{ img: 'meadow-barn', x: .3, row: 700, w: .15 }] }, { img: 'meadow-village', par: .5, lift: 100, spin: { img: 'meadow-blades', x: 1445, y: 437, size: 197, speed: .55 }, props: [{ img: 'meadow-cabin', x: .7, row: 900, w: .13 }] }, { img: 'meadow-near', par: .78, lift: 42 }],
     pieces: [{ img: 'meadow-balloon', cell: 1800, prob: .75, w: 58, speed: 6, bob: 5, sway: .04, minH: 420 }, { img: 'meadow-kite', cell: 1300, prob: .6, w: 62, speed: 9, bob: 12, sway: .16, minH: 380 }],
     skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
-  town: { floor: 'town-street', floorTileWidth: 640, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
-    parallax: [{ img: 'town-far', par: .09, lift: 215, scale: .62 },
-      { img: 'town-hills', par: .16, lift: 255, props: [{ img: 'town-clock', x: .42, row: 690, w: .07 }], drifters: [{ img: 'town-train', x: .8, row: 694, w: .14, speed: 14, bob: 0 }] },
-      { img: 'town-mid', par: .34, lift: 195, props: [{ img: 'town-hall', x: .66, row: 690, w: .2 }] },
-      { img: 'town-near', par: .6, lift: 160 }],
-    pieces: [{ img: 'air-airliner', cell: 2600, prob: .7, w: 112, speed: 40, bob: 2, sway: .01, minH: 600, face: 1 }, { img: 'air-banner', cell: 2000, prob: .6, w: 124, speed: 18, bob: 3, sway: .02, minH: 460, face: 1 }, { img: 'air-prop', cell: 1700, prob: .55, w: 72, speed: 28, bob: 3, sway: .02, minH: 420, face: 1 }, { img: 'air-jet', cell: 3200, prob: .5, w: 84, speed: 70, bob: 1, sway: .005, minH: 700, face: 1 },
-      { img: 'town-blimp', cell: 2200, prob: .6, w: 96, speed: 10, bob: 4, sway: .05, minH: 380, face: 1 }, { img: 'town-heli', cell: 1500, prob: .5, w: 64, speed: 22, bob: 3, sway: .02, minH: 400, face: 1 }],
-    skyPieces: [{ img: 'meadow-sun', y: 3100, x: .74, w: 130, day: true }, { img: 'meadow-sun', y: 21000, x: .3, w: 110, day: true }] },
+  town: { sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark',
+    floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'swallows',
+    town: { street: 'town-reveal-street', walk: 'town-reveal-walk', shops: 'town-reveal-shops',
+      hall: 'town-reveal-hall', rail: 'town-reveal-rail', meadow: 'town-reveal-meadow',
+      city: 'town-reveal-city', train: 'town-train', sun: 'meadow-sun' } },
   beach: { sky: ['#72c9f4', '#e2f6ff'], nightSky: ['#17294f', '#526b91'], night: 'dark',
     floaters: ['cloud-set-day'], cloudClear: 210, flyers: 'gulls',
     coast: { sand: 'beach-coast-sand', sea: 'beach-coast-sea', point: 'beach-coast-point',
@@ -362,9 +359,9 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
-  if ((config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
+  if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
 }
 
@@ -1266,6 +1263,62 @@ function drawIndoorNight(ctx, kit, { width, height, shiftY, floorY, groundScale 
   ctx.restore();
 }
 
+function drawTown(ctx, kit, options) {
+  const { width, height, floorY, shiftY, time, reduced, dark } = options;
+  const { town } = kit.config;
+  const climb = Math.max(0, shiftY);
+  const opening = Math.min(0, shiftY);
+  const streetY = floorY + shiftY - width * .145;
+  const walkY = floorY + shiftY - width * .32;
+  const separation = width * .16 * (1 - Math.exp(-climb / width));
+  const shopsY = floorY - width * .57 + climb * .78 + opening * .72;
+  const hallY = floorY - width * .89 + climb * .51 + opening * .40;
+  const railY = floorY - width * .99 + climb * .45 + opening * .25;
+  const meadowY = floorY - width * 1.21 + climb * .45 - separation;
+  const cityY = floorY - width * 1.45 + climb * .40 - separation;
+  const picture = name => kit.images[town[name]];
+  const terrain = (name, y, cover, artWidth = width) => {
+    if (y >= height) return;
+    const art = picture(name);
+    const artHeight = artWidth * art.naturalHeight / art.naturalWidth;
+    if (name === 'street') {
+      drawTerrainImage(ctx, art, 0, y, width, artHeight, height, .85);
+      return;
+    }
+    const bottom = y + artHeight;
+    if (bottom < Math.min(height, cover)) {
+      // Only extend the earth or foundation below the artwork; keep the illustrated details intact.
+      ctx.drawImage(art, art.naturalWidth / 2, art.naturalHeight - 1, 1, 1,
+        0, bottom - .5, width, Math.min(height, cover) - bottom + 1);
+    }
+    ctx.drawImage(art, (width - artWidth) / 2, y, artWidth, artHeight);
+  };
+
+  drawFloaters(ctx, kit, options);
+  if (!dark) {
+    const size = width * .14;
+    ctx.drawImage(picture('sun'), width * .19, Math.max(width * .09, cityY - width * .17), size, size);
+  }
+  ctx.save();
+  if (dark) ctx.filter = 'brightness(63%) saturate(78%)';
+  terrain('city', cityY, meadowY + width * .20);
+  terrain('meadow', meadowY, railY + width * .01, width * 1.5);
+  // Use a larger illustrated embankment to keep its base behind the town hall.
+  const railWidth = width * 3.65;
+  terrain('rail', railY, shopsY + width * .29, railWidth);
+  const train = picture('train');
+  const trainW = width * .48;
+  const trainH = trainW * train.naturalHeight / train.naturalWidth;
+  const travel = width + trainW + 30;
+  const trainX = reduced ? width * .22 : ((width * .64 + time * width * .12) % travel) - trainW;
+  if (railY < height) ctx.drawImage(train, trainX, railY + width * .006 - trainH, trainW, trainH);
+  terrain('hall', hallY, shopsY + width * .30);
+  terrain('shops', shopsY, walkY + width * .10);
+  terrain('walk', walkY, streetY + 1);
+  terrain('street', streetY, height);
+  ctx.restore();
+}
+
 function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduced }) {
   const { square } = kit.config;
   const scale = Math.max(width / 1024, (height * .2 + 52) / 680);
@@ -1650,7 +1703,9 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
-  if (config.square) {
+  if (config.town) {
+    drawTown(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
+  } else if (config.square) {
     drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduced });
   } else if (config.coast) {
     drawBeachCoast(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
