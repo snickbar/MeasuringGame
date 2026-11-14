@@ -1268,14 +1268,17 @@ function drawTown(ctx, kit, options) {
   const { town } = kit.config;
   const climb = Math.max(0, shiftY);
   const opening = Math.min(0, shiftY);
-  const streetY = floorY + shiftY - width * .145;
-  const walkY = floorY + shiftY - width * .32;
+  // Keep the curb and road together, with a shallower dip than the measured objects.
+  const groundShift = climb + opening * .55;
+  const streetY = Math.min(floorY + groundShift - width * .105, floorY + shiftY - 3);
+  const walkY = floorY + groundShift - width * .315;
   const separation = width * .16 * (1 - Math.exp(-climb / width));
   const shopsY = floorY - width * .57 + climb * .78 + opening * .72;
-  const hallY = floorY - width * .89 + climb * .51 + opening * .40;
-  const railY = floorY - width * .99 + climb * .45 + opening * .25;
-  const meadowY = floorY - width * 1.21 + climb * .45 - separation;
-  const cityY = floorY - width * 1.45 + climb * .40 - separation;
+  const rearBase = floorY - width * .14;
+  const hallY = rearBase - width * .89 + climb * .51 + opening * .40;
+  const railY = rearBase - width * .99 + climb * .45 + opening * .25;
+  const meadowY = rearBase - width * 1.21 + climb * .45 - separation;
+  const cityY = rearBase - width * 1.45 + climb * .40 - separation;
   const picture = name => kit.images[town[name]];
   const terrain = (name, y, cover, artWidth = width) => {
     if (y >= height) return;
@@ -1302,9 +1305,9 @@ function drawTown(ctx, kit, options) {
   ctx.save();
   if (dark) ctx.filter = 'brightness(63%) saturate(78%)';
   terrain('city', cityY, meadowY + width * .20);
-  terrain('meadow', meadowY, railY + width * .01, width * 1.5);
+  terrain('meadow', meadowY, railY + width * .01, width * 1.15);
   // Use a larger illustrated embankment to keep its base behind the town hall.
-  const railWidth = width * 3.65;
+  const railWidth = width * 1.5;
   terrain('rail', railY, shopsY + width * .29, railWidth);
   const train = picture('train');
   const trainW = width * .48;
