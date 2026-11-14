@@ -1826,6 +1826,32 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
 
 function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor === 'forest-floor' ? 20 : 14); }
 
+function drawLibraryShelfRows(ctx, image, width, floor, height, dark) {
+  // Smaller cases share the rear floor edge. Offset their tops to reveal
+  // the rows in depth as the camera follows the stack.
+  const rows = [
+    { x: .04, size: .21 },
+    { x: .29, size: .23 },
+    { x: .64, size: .24 },
+    { x: .81, size: .18 },
+  ];
+  ctx.save();
+  ctx.filter = dark ? 'brightness(46%) saturate(.65)' : 'brightness(82%) saturate(.72)';
+  for (const { x, size } of rows) {
+    const w = width * size, h = w * image.naturalHeight / image.naturalWidth;
+    const y = floor - h;
+    if (y < height) ctx.drawImage(image, width * x, y, w, h);
+  }
+  ctx.restore();
+
+  const towerW = width * .30, towerH = towerW * image.naturalHeight / image.naturalWidth;
+  const towerX = width * .095, towerY = floor - towerH;
+  if (towerY - towerH * .96 < height) {
+    ctx.drawImage(image, towerX, towerY - towerH * .96, towerW, towerH);
+    ctx.drawImage(image, towerX, towerY, towerW, towerH);
+  }
+}
+
 function drawLibraryBookcase(ctx, kit, width, floor, height, time, reduced) {
   const { shelf, ladder, rail } = kit.config.bookcase;
   const caseImage = kit.images[shelf], ladderImage = kit.images[ladder], railImage = kit.images[rail];
@@ -1860,6 +1886,9 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   if (kit.config.fittedFloor) {
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
+    const libraryFloor = top + tileH * .425;
+    const libraryShelf = kit.images[kit.config.bookcase?.shelf];
+    if (libraryShelf) drawLibraryShelfRows(ctx, libraryShelf, width, libraryFloor, height, dark);
     if (top < height) drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, arm ? .91 : .75);
     if (arm && shade) {
       const armW = width * .49, armH = armW * arm.naturalHeight / arm.naturalWidth;
@@ -1886,7 +1915,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
       ctx.drawImage(shade, -shadeW * .88, -shadeH * .34, shadeW, shadeH);
       ctx.restore();
     }
-    if (kit.config.bookcase) drawLibraryBookcase(ctx, kit, width, top + tileH * .425, height, time, reduced);
+    if (kit.config.bookcase) drawLibraryBookcase(ctx, kit, width, libraryFloor, height, time, reduced);
     const placement = kit.config.floorProp;
     const prop = kit.images[placement?.img];
     if (prop) {
