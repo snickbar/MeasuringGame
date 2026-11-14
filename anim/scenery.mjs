@@ -336,11 +336,11 @@ const layeredReveals = {
       { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
     ] },
   ] },
-  tabletop: { floor: 'tabletop-climb-desk', fittedFloor: true, floorInset: 0,
+  tabletop: { floor: 'tabletop-climb-rocket-desk', fittedFloor: true, floorInset: 0,
     roomBack: 'tabletop-climb-wall', roomBackParallax: .27, roomCeiling: 'living-climb-ceiling',
     deskLamp: { arm: 'tabletop-climb-arm', shade: 'tabletop-climb-shade' },
     parallax: [
-      { img: 'tabletop-climb-board', par: .27, lift: 100, liftWidth: 1.74,
+      { img: 'tabletop-climb-rocket-board', par: .27, lift: 100, liftWidth: 1.74,
         single: { x: .36, w: .64, sy: 1 } },
     ] },
   volcano: { parallax: [
