@@ -298,12 +298,12 @@ const layeredReveals = {
   living: { floor: 'living-climb-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling',
     parallax: [
-      { img: 'living-climb-curtained', par: .37, lift: 257, liftWidth: .66,
+      { img: 'living-climb-curtained', par: .37, lift: 285, liftWidth: .66,
         single: { x: .72, w: .513, sy: 1, hang: [
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-furniture', par: .74, lift: 134, liftWidth: .51, scale: .56, fitted: true, overlapFrom: .94 },
+      { img: 'living-climb-furniture', par: .74, lift: 95, liftWidth: .51, scale: .556, fitted: true, overlapFrom: .985 },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
