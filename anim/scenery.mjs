@@ -295,12 +295,17 @@ const layeredReveals = {
     {"img":"library-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"library-reveal-chandelier","x":0.49,"row":694,"w":0.15,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"library-reveal-armillary","x":0.7,"row":855,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"library-reveal-curtain","x":0.2,"row":803,"w":0.07,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
     {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  living: { roomBack: 'living-reveal-back', parallax: [
-    {"img":"living-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"hang":[{"img":"living-reveal-pendulum","fx":0.5,"fy":0.68,"w":0.16,"speed":1.1,"swing":0.08}],"spin":{"img":"living-reveal-hands","fx":0.5,"fy":0.4,"size":0.26,"speed":0.45,"py":0.9}}},
-    {"img":"living-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"living-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"living-reveal-curtain","x":0.14,"row":810,"w":0.072,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"living-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
+  living: { roomBack: 'living-climb-wall', roomBackParallax: .27,
+    roomCeiling: 'living-climb-ceiling',
+    parallax: [
+      { img: 'living-climb-window', par: .51, lift: 155, liftWidth: .55,
+        single: { x: .50, w: .95, sy: 1, hang: [
+          { img: 'living-reveal-curtain', fx: .52, fy: .09, w: .078, speed: 1.15, swing: .055 },
+          { img: 'living-reveal-curtain', fx: .89, fy: .09, w: .078, speed: .91, swing: .07 },
+        ] } },
+      { img: 'living-climb-couch', par: .81, lift: 53, liftWidth: .51, scale: .70, overlapFrom: .94 },
+      { img: 'living-reveal-front', par: 1, lift: 4, scale: .59, grounded: true, overlapFrom: .95 },
+    ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
     {"img":"grass-reveal-far","par":0.12,"lift":445,"scale":0.63,"overlapFrom":0.95},
@@ -372,7 +377,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1697,6 +1702,15 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     } else {
       ctx.drawImage(roomBack, x, (height - h) / 2, w, h);
     }
+  }
+  const ceiling = images[config.roomCeiling];
+  if (pass !== 'foreground' && ceiling && climbPx > 0) {
+    // Start the ceiling above the frame and land the molding near the top at the reveal.
+    const progress = Math.max(0, Math.min(1, shiftY / climbPx));
+    const entry = Math.max(0, (progress - .74) / .26);
+    const bottom = height * .23 * entry * entry;
+    const ceilingHeight = width * ceiling.naturalHeight / ceiling.naturalWidth;
+    if (bottom > 0) ctx.drawImage(ceiling, 0, bottom - ceilingHeight, width, ceilingHeight);
   }
   if (pass !== 'foreground' && config.wallpaper && !roomBack) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
