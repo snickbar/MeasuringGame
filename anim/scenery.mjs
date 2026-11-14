@@ -153,9 +153,9 @@ export const SETTINGS = {
       { img: 'underwater-climb-backdrop', par: .10, lift: 545, scale: .65 },
       { img: 'underwater-climb-ship', par: .11, lift: 570, single: { x: .59, w: .87, sy: 1,
         spin: { img: 'underwater-climb-wheel', fx: .79, fy: .615, size: .10, speed: .36 } } },
-      { img: 'underwater-climb-distant', par: .29, lift: 385, scale: .58, filter: 'saturate(.67)' },
-      { img: 'underwater-climb-middle', par: .58, lift: 302, scale: .60, overlapFrom: .95 },
-      { img: 'underwater-climb-foreground', par: 1, lift: 26, scale: .57, grounded: true, overlapFrom: .95, props: [
+      { img: 'underwater-climb-distant', par: .29, lift: 328, scale: .58, filter: 'saturate(.67)' },
+      { img: 'underwater-climb-middle', par: .58, lift: 322, scale: .60, overlapFrom: .95 },
+      { img: 'underwater-climb-foreground', par: 1, lift: 0, scale: .57, grounded: true, overlapFrom: .95, props: [
         { img: 'underwater-climb-kelp-0', x: .22, row: 1180, w: .10, move: { type: 'rustle', amp: 4, speed: .78 } },
         { img: 'underwater-climb-kelp-1', x: .75, row: 1185, w: .11, move: { type: 'rustle', amp: 5, speed: .95 } },
       ],
