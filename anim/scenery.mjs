@@ -295,7 +295,7 @@ const layeredReveals = {
     {"img":"library-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"library-reveal-chandelier","x":0.49,"row":694,"w":0.15,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"library-reveal-armillary","x":0.7,"row":855,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"library-reveal-curtain","x":0.2,"row":803,"w":0.07,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
     {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  living: { floor: 'living-climb-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
+  living: { floor: 'living-climb-fringed-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
     parallax: [
       { img: 'living-climb-curtained', par: .37, lift: 285, liftWidth: .66,
@@ -303,7 +303,7 @@ const layeredReveals = {
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-furniture', par: .74, lift: 87, liftWidth: .51, scale: .574, fitted: true, overlapFrom: .899, sleepingCat: true, paneling: 'living-climb-paneling', lampGlow: true },
+      { img: 'living-climb-tall-furniture', par: .74, lift: 87, liftWidth: .596, scale: .574, fitted: true, overlapFrom: .899, sleepingCat: true, paneling: 'living-climb-paneling', lampGlow: true },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
@@ -667,7 +667,7 @@ function terrainLayout(kit, width, height, base, shiftY, gs, floorY) {
   const floorScale = (kit.config.fittedFloor ? width : kit.config.floorTileWidth * gs) / floor.naturalWidth;
   const floorTop = floorY + shiftY - floorInset(kit) * gs - FLOOR_DATA[kit.config.floor].surface * floor.naturalHeight * floorScale;
   const floorCover = floorTop + solidBottomRow(floor) * floorScale;
-  let cover = Math.min(height, floorCover);
+  let cover = kit.config.fittedFloor ? height : Math.min(height, floorCover);
   for (const layer of [...kit.config.parallax].reverse()) {
     const image = kit.images[layer.img];
     if (!image) continue;
@@ -867,7 +867,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
     const paneling = kit.images[layer.paneling];
     if (paneling) {
       const panelHeight = Math.min(115, width * .27);
-      const floorEdge = top + th * .66;
+      const floorEdge = top + th * .698;
       ctx.drawImage(paneling, 0, floorEdge - panelHeight, width, panelHeight + 3);
     }
     for (let x = (width - tw) / 2 - Math.ceil((width - tw) / 2 / tw) * tw; x < width; x += tw) {
@@ -883,11 +883,11 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       const glint = kit.images[layer.glint?.img];
       if (glint && !reduced) drawCrystalGlints(ctx, glint, layer.glint.points, x, top, tw, th, time);
       if (layer.lampGlow) {
-        const lampX = x + tw * .895, lampY = top + th * .165;
-        const radius = tw * .17;
+        const lampX = x + tw * .895, lampY = top + th * .258;
+        const radius = tw * .22;
         const glow = ctx.createRadialGradient(lampX, lampY, 0, lampX, lampY, radius);
-        glow.addColorStop(0, dark ? 'rgba(255,208,112,.48)' : 'rgba(255,211,118,.28)');
-        glow.addColorStop(1, 'rgba(255,211,118,0)');
+        glow.addColorStop(0, dark ? 'rgba(255,201,88,.78)' : 'rgba(255,193,70,.57)');
+        glow.addColorStop(.45, 'rgba(255,189,70,.28)'); glow.addColorStop(1, 'rgba(255,211,118,0)');
         ctx.save();
         ctx.filter = 'none';
         ctx.fillStyle = glow;
@@ -896,7 +896,7 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       }
       if (layer.sleepingCat && !reduced) {
         // Lift only the cat's flank. The head and woven bed remain anchored.
-        const cx = x + tw * .704, cy = top + th * .727;
+        const cx = x + tw * .704, cy = top + th * .757;
         const rise = (.5 - .5 * Math.cos(time * 2.05)) * th * .018;
         ctx.save();
         ctx.beginPath();
@@ -1833,7 +1833,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   if (kit.config.fittedFloor) {
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
-    drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .90);
+    ctx.drawImage(image, (width - tile) / 2, top, tile, tileH);
     ctx.restore();
     return;
   }

@@ -991,7 +991,7 @@ export function createStackAnimation(container, options = {}) {
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
         shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground', climbPx });
       const sceneryFloorY = sy0;
-      if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town && sceneryFloorY < stageH) {
+      if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town && !kit.config.fittedFloor && sceneryFloorY < stageH) {
         const gy = Math.max(0, sceneryFloorY);
         ctx.fillStyle = groundCol;
         ctx.fillRect(0, gy, W, stageH - gy);
@@ -1379,7 +1379,7 @@ export function createStackAnimation(container, options = {}) {
       }
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: 0, shiftX: -pan * 0.3,
         dark, time: t, reduced: reduceMotion, groundScale, anchorX: W / 2, pass: 'foreground' });
-      if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town) {
+      if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town && !kit.config.fittedFloor) {
         ctx.fillStyle = groundCol;
         ctx.fillRect(0, floorY, W, stageH - floorY);
       }
