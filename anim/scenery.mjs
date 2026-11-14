@@ -296,14 +296,14 @@ const layeredReveals = {
     {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
   living: { floor: 'living-climb-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
-    roomCeiling: 'living-climb-ceiling',
+    roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
     parallax: [
       { img: 'living-climb-curtained', par: .37, lift: 285, liftWidth: .66,
         single: { x: .72, w: .513, sy: 1, hang: [
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-furniture', par: .74, lift: 87, liftWidth: .51, scale: .574, fitted: true, overlapFrom: .899 },
+      { img: 'living-climb-furniture', par: .74, lift: 87, liftWidth: .51, scale: .574, fitted: true, overlapFrom: .899, sleepingCat: true },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
@@ -376,7 +376,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -876,6 +876,17 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
       if (fans) drawSeatedFans(ctx, fans, layer.crowd.seats, x, top, k, time, reduced);
       const glint = kit.images[layer.glint?.img];
       if (glint && !reduced) drawCrystalGlints(ctx, glint, layer.glint.points, x, top, tw, th, time);
+      if (layer.sleepingCat && !reduced) {
+        // Lift only the cat's flank. The head and woven bed remain anchored.
+        const cx = x + tw * .704, cy = top + th * .727;
+        const rise = (.5 - .5 * Math.cos(time * 2.05)) * th * .018;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, tw * .048, th * .055, -.18, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(image, x, top - rise, tw, th);
+        ctx.restore();
+      }
       for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, x, top, k, k, time, reduced);
       if (layer.mirror) { // keep painting below the picture with its own lower rows, flipped back and forth, so no flat band or edge ever shows
         const m = Math.min(layer.mirror, image.naturalHeight - st.sky - 20), mh = m * k;
@@ -1729,6 +1740,22 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   ctx.globalAlpha = 1;
   // Sky textures stay behind clouds; rooted scenery and atmosphere are painted after them.
   if (pass === 'background') { ctx.restore(); return; }
+  const plant = images[config.roomPlant];
+  if (plant) {
+    const w = width * .34, h = w * plant.naturalHeight / plant.naturalWidth;
+    const x = width * .24, y = (floorY ?? height - 40) - height * 1.15 + shiftY * .27;
+    const cut = Math.round(plant.naturalHeight * .098);
+    const joint = h * cut / plant.naturalHeight;
+    if (y + h > 0 && y < height) {
+      ctx.save();
+      if (dark) ctx.filter = 'brightness(62%)';
+      ctx.drawImage(plant, 0, 0, plant.naturalWidth, cut + 1, x - w / 2, y, w, joint + h / plant.naturalHeight);
+      ctx.translate(x, y + joint);
+      if (!reduced) ctx.rotate(Math.sin(time * 1.8) * .065);
+      ctx.drawImage(plant, 0, cut, plant.naturalWidth, plant.naturalHeight - cut, -w / 2, 0, w, h - joint);
+      ctx.restore();
+    }
+  }
   if (config.panels) drawPanels(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX, climbPx });
   drawDecor(ctx, kit, { width, height, shiftY, shiftX, floorY, groundScale, anchorX });
   drawTall(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
