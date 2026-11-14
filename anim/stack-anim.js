@@ -972,7 +972,7 @@ export function createStackAnimation(container, options = {}) {
       const climbBoost = readable ? smooth(clamp((count - nHop) / 20, 0, 1)) * (1 - eOut) : 0;
       const pitch = Ls + Math.max(0, Math.min(24, Ls * 2.4) - Ls) * climbBoost;
       const stackBase = sy0 + count * (pitch - Ls);
-      const stackWidth = pitch * aSm + (readable ? Math.min(baseWidth * .4, GAP) * eOut : 0);
+      const stackWidth = pitch * aSm;
 
       // Background: sky, clouds that drift down gently as the camera climbs, and the ground.
       const sky = ctx.createLinearGradient(0, 0, 0, stageH);
