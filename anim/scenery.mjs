@@ -283,12 +283,15 @@ const layeredReveals = {
     {"img":"cave-reveal-mid","par":0.55,"lift":318,"scale":0.58,"overlapFrom":0.95,"props":[],"glint":{"img":"cave-reveal-glint","points":[[0.8,0.54],[0.9,0.65],[0.59,0.66],[0.54,0.76],[0.17,0.76],[0.39,0.78],[0.98,0.71]]}},
     {"img":"cave-reveal-front","par":1,"lift":49,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"cave-reveal-mushroom","x":0.72,"row":990,"w":0.085,"move":{"type":"pulse","amp":4,"speed":5}}],"glint":{"img":"cave-reveal-glint","points":[[0.31,0.79],[0.38,0.84],[0.91,0.84],[0.96,0.86]]}}
   ] },
-  kitchen: { roomBack: 'kitchen-reveal-back', parallax: [
-    {"img":"kitchen-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"kitchen-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"kitchen-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"kitchen-reveal-pan","x":0.6,"row":810,"w":0.055,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"kitchen-reveal-fan","x":0.23,"row":608,"w":0.12,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"kitchen-reveal-curtain","x":0.13,"row":803,"w":0.075,"move":{"type":"rustle","amp":4,"speed":1.1}}]},
-    {"img":"kitchen-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
+  kitchen: { floor: 'kitchen-climb-room', fittedFloor: true, floorInset: 0,
+    roomBack: 'kitchen-climb-tile', roomBackParallax: .29, roomCeiling: 'kitchen-climb-ceiling',
+    parallax: [
+      { img: 'kitchen-climb-rack', par: .29, lift: 615, liftWidth: .48,
+        single: { x: .75, w: .40, sy: 1, hang: [
+          { img: 'kitchen-climb-pan', fx: .34, fy: .66, w: .36, speed: 1.32, swing: .105 },
+          { img: 'kitchen-climb-ladle', fx: .68, fy: .66, w: .16, speed: .88, swing: .13 },
+        ] } },
+    ] },
   library: { roomBack: 'library-reveal-back', parallax: [
     {"img":"library-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
     {"img":"library-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},

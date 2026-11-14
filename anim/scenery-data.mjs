@@ -1,5 +1,6 @@
 // Measured alpha-surface positions and lower-edge colors from the approved PNGs.
 export const FLOOR_DATA = {
+  "kitchen-climb-room": { "surface": 0.4071, "color": "#504b46" },
   "living-climb-blue-rug": { "surface": 0.68, "color": "#718292" },
   "enchanted-reveal-ground": { "surface": 0.635, "color": "#867245" },
   "workshop-n-floor": {
