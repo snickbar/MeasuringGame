@@ -295,7 +295,7 @@ const layeredReveals = {
     {"img":"library-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"library-reveal-chandelier","x":0.49,"row":694,"w":0.15,"move":{"type":"dangle","amp":4,"speed":1.1}},{"img":"library-reveal-armillary","x":0.7,"row":855,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"library-reveal-curtain","x":0.2,"row":803,"w":0.07,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
     {"img":"library-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  living: { floor: 'living-climb-fringed-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
+  living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
     parallax: [
       { img: 'living-climb-curtained', par: .37, lift: 285, liftWidth: .66,
@@ -1824,7 +1824,7 @@ function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor ===
 
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
-  const tile = kit.config.fittedFloor ? width : (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
+  const tile = kit.config.fittedFloor ? width * 1.10 : (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
   const inset = floorInset(kit) * groundScale;
@@ -1833,7 +1833,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   if (kit.config.fittedFloor) {
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
-    ctx.drawImage(image, (width - tile) / 2, top, tile, tileH);
+    drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .75);
     ctx.restore();
     return;
   }
