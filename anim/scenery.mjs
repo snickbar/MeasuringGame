@@ -158,15 +158,14 @@ export const SETTINGS = {
       { img: 'underwater-climb-foreground', par: 1, lift: 0, scale: .57, grounded: true, overlapFrom: .95, props: [
         { img: 'underwater-climb-kelp-0', x: .22, row: 1180, w: .10, move: { type: 'rustle', amp: 4, speed: .78 } },
         { img: 'underwater-climb-kelp-1', x: .75, row: 1185, w: .11, move: { type: 'rustle', amp: 5, speed: .95 } },
-      ],
-    pieces: [
-      { img: 'underwater-n-movers-0', cell: 330, prob: .85, w: 53, speed: 42, bob: 4, sway: .025, minH: 60, face: 1 },
-      { img: 'underwater-n-movers-1', cell: 720, prob: .60, w: 67, speed: 29, bob: 5, sway: .04, minH: 170, face: 1 },
-    ] },
+      ] },
     ],
     pieces: [
-      { img: 'underwater-n-movers-0', cell: 330, prob: .85, w: 53, speed: 42, bob: 4, sway: .025, minH: 60, face: 1 },
-      { img: 'underwater-n-movers-1', cell: 720, prob: .60, w: 67, speed: 29, bob: 5, sway: .04, minH: 170, face: 1 },
+      { img: 'underwater-n-movers-0', cell: 520, prob: .50, w: 53, speed: 42, bob: 4, sway: .025, minH: 60, face: 1 },
+      { img: 'underwater-solo-clownfish', cell: 400, prob: .80, w: 28, speed: 35, bob: 5, sway: .04, minH: 60, face: 1 },
+      { img: 'underwater-solo-goldfish', cell: 465, prob: .75, w: 24, speed: 28, bob: 7, sway: .05, minH: 80, face: 1 },
+      { img: 'underwater-solo-tropical-fish', cell: 365, prob: .75, w: 25, speed: 48, bob: 3, sway: .035, minH: 100, face: 1 },
+      { img: 'underwater-n-movers-1', cell: 1100, prob: .35, w: 67, speed: 29, bob: 5, sway: .04, minH: 170, face: 1 },
     ] },
   space: { floor: 'space-n-floor', floorTileWidth: 640,  sky: ['#242341', '#383453'], texture: 'star-field', movers: ['twinkle'],
     parallax: [{ img: 'space-n-farthest', par: 0.09, lift: 375, scale: 2.3 },
@@ -1730,7 +1729,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   for (const [index, name] of (config.layers || []).entries()) {
     const image = images[name]; if (!image) continue;
     const wisp = ['mist', 'enchanted-mist', 'nebula'].includes(name);
-    const size = name === 'nebula' ? Math.min(460, width * 1.15) : wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 68 : name === 'snowflakes' ? 170 : 140;
+    const size = name === 'nebula' ? Math.min(460, width * 1.15) : wisp ? Math.min(340, width * .9) : name === 'bubbles' ? 56 : name === 'snowflakes' ? 170 : 140;
     const aspect = image.naturalHeight / image.naturalWidth;
     ctx.globalAlpha = (name === 'mist' ? .45 : name === 'enchanted-mist' ? .38 : name === 'nebula' ? .6 : wisp ? .12 :
       name === 'bubbles' ? .72 : name === 'snowflakes' ? 1 : .22) * (dark ? .8 : 1);
