@@ -303,7 +303,7 @@ const layeredReveals = {
           { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
           { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-furniture', par: .74, lift: 95, liftWidth: .51, scale: .556, fitted: true, overlapFrom: .985 },
+      { img: 'living-climb-furniture', par: .74, lift: 87, liftWidth: .51, scale: .574, fitted: true, overlapFrom: .899 },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
@@ -1786,7 +1786,7 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   if (kit.config.fittedFloor) {
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
-    drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .97);
+    drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .90);
     ctx.restore();
     return;
   }
