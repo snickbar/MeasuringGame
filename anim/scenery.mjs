@@ -353,6 +353,7 @@ const layeredReveals = {
     parallax: [], roomBack: 'workshop-climb-bricks', roomBackParallax: .36,
     roomCeiling: 'workshop-climb-rafters',
     workshop: { door: 'workshop-climb-garage-door', storage: 'workshop-climb-storage', bench: 'workshop-climb-bench',
+      offcuts: 'workshop-climb-offcuts', saw: 'workshop-climb-saw', blade: 'workshop-climb-blade',
       board: 'workshop-climb-board', fan: 'workshop-climb-fan', rotor: 'workshop-climb-rotor' },
   },
 };
@@ -1919,7 +1920,31 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     if (doorBase < height) ctx.drawImage(image, 0, doorBase, width, floorHeight);
     drawWorkshopPiece(ctx, kit.images[workshop.door], width * .30, doorBase + 1, width * .87, 1);
     drawWorkshopPiece(ctx, kit.images[workshop.storage], width * .65, storageBase, width * .66, 1);
-    drawWorkshopPiece(ctx, kit.images[workshop.bench], width * .94, floorY + width * .045, width * .83, 1);
+    drawWorkshopPiece(ctx, kit.images[workshop.offcuts], width * .20, floorY + width * .10, width * .29, 1);
+    const bench = kit.images[workshop.bench];
+    if (bench) {
+      const benchWidth = width * 1.01;
+      const benchHeight = benchWidth * bench.naturalHeight / bench.naturalWidth;
+      const benchBase = floorY + width * .045;
+      drawWorkshopPiece(ctx, bench, width * .93, benchBase, benchWidth, 1);
+      const saw = kit.images[workshop.saw];
+      if (saw) {
+        const sawWidth = width * .26;
+        const sawHeight = sawWidth * saw.naturalHeight / saw.naturalWidth;
+        const sawX = width * .865;
+        const sawBase = benchBase - benchHeight * .735;
+        drawWorkshopPiece(ctx, saw, sawX, sawBase, sawWidth, 1);
+        ctx.save();
+        ctx.translate(sawX + sawWidth * .008, sawBase - sawHeight * .71);
+        // The tabletop slot hides the lower teeth.
+        ctx.beginPath();
+        ctx.rect(-sawWidth * .11, -sawWidth * .11, sawWidth * .22, sawHeight * .032 + sawWidth * .11);
+        ctx.clip();
+        ctx.rotate(reduced ? 0 : time * 24);
+        drawWorkshopPiece(ctx, kit.images[workshop.blade], 0, 0, sawWidth * .19);
+        ctx.restore();
+      }
+    }
     ctx.restore();
     return;
   }
