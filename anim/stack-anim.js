@@ -767,6 +767,8 @@ export function createStackAnimation(container, options = {}) {
     const colCenterX = bigX - GAP - colWFinal / 2;
     const bigLeftWorld = (colWFinal / 2 + GAP) / cEnd;
     const stripMin = fast ? stripW : 0;
+    // Use spare stage height while keeping both sides of the comparison visible.
+    const finaleScale = clamp((floorY - stageH * .10) / H, 1, (W - 2 * G) / pairW);
 
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
       timelineFor(R, bigLean, smLean, smKind !== 'slide');
@@ -958,13 +960,14 @@ export function createStackAnimation(container, options = {}) {
       const cam = cameraAt(t);
       const c = cam.c;
       const groundScale = groundScaleFor(c, cEnd);
-      const sx0 = cam.sx0;
       const sy0 = cam.sy0;
+      const eOut = t < tHoldEnd ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * clamp((t - tHoldEnd) / ZOOM_S, 0, 1));
+      const objectZoom = 1 + (finaleScale - 1) * eOut;
+      const sx0 = W / 2 + (cam.sx0 - W / 2) * objectZoom;
       const climbPx = Math.max(0, cameraAt(tHoldEnd).sy0 - floorY); // how far the scene scrolls, so indoor walls end at the top
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
-      const eOut = t < tHoldEnd ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * clamp((t - tHoldEnd) / ZOOM_S, 0, 1));
       const count = stackCount(t);
-      const baseWidth = Math.max(tw * c, stripMin * eOut);
+      const baseWidth = Math.max(tw * c, stripMin * eOut) * objectZoom;
       const Ls = baseWidth / aSm;
       // Keep the stack readable independently of the scenery camera. Space the
       // larger sprites from the visible tip, easing back to the full-height layout.
@@ -980,7 +983,7 @@ export function createStackAnimation(container, options = {}) {
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, stageH);
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background', climbPx });
+        shiftX: cam.sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'background', climbPx });
       const span = stageH + 160;
       const cloudScale = clamp(Math.pow(c, 0.12), 0.7, 1);
       if (kit.config.clouds && cloudImg.complete && cloudImg.naturalWidth) {
@@ -988,7 +991,7 @@ export function createStackAnimation(container, options = {}) {
         for (const cl of CLOUDS) {
           const raw = cl.y * stageH + (sy0 - floorY) * 0.18;
           const cy = ((raw % span) + span) % span - 80;
-          const cx = cl.x * W + (sx0 - colCenterX) * 0.1;
+          const cx = cl.x * W + (cam.sx0 - colCenterX) * 0.1;
           const cw = 78 * cl.s * cloudScale;
           const ch = cw * cloudImg.naturalHeight / cloudImg.naturalWidth;
           ctx.drawImage(cloudImg, cx - cw / 2, cy - ch / 2, cw, ch);
@@ -996,7 +999,7 @@ export function createStackAnimation(container, options = {}) {
         ctx.globalAlpha = 1;
       }
       drawSceneryLayers(ctx, kit, { width: W, height: stageH, floorY, shiftY: sy0 - floorY,
-        shiftX: sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground', climbPx });
+        shiftX: cam.sx0 - colCenterX, dark, time: t, reduced: reduceMotion, groundScale, anchorX: colCenterX, pass: 'foreground', climbPx });
       const sceneryFloorY = sy0;
       if (!kit.config.avenue && !kit.config.rooftop && !kit.config.coast && !kit.config.square && !kit.config.town && !kit.config.fittedFloor && sceneryFloorY < stageH) {
         const gy = Math.max(0, sceneryFloorY);
@@ -1009,17 +1012,17 @@ export function createStackAnimation(container, options = {}) {
         const gh = grassW * grassImg.naturalHeight / grassImg.naturalWidth;
         const gTop = sy0 - gh * GRASS_DIRT - 6 * groundScale;
         if (gTop < stageH && gTop + gh > 0) {
-          const phase = colCenterX - sx0 + colCenterX * (1 - groundScale);
+          const phase = colCenterX - cam.sx0 + colCenterX * (1 - groundScale);
           const x0 = ((phase % grassW) + grassW) % grassW - grassW;
           for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
         }
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX, dark, time: t, reduced: reduceMotion,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - cam.sx0, groundScale, anchorX: colCenterX, dark, time: t, reduced: reduceMotion,
       });
 
       // The dashed line at the big object's height.
-      const topLineY = sy0 - Hw * c;
+      const topLineY = sy0 - Hw * c * objectZoom;
       ctx.strokeStyle = guide;
       if (topLineY > -4 && topLineY < stageH + 4) {
         ctx.globalAlpha = clamp((t - tLeanStart) / (tLeanEnd - tLeanStart + 0.3), 0, 1);
@@ -1034,9 +1037,9 @@ export function createStackAnimation(container, options = {}) {
       }
 
       // The big object.
-      const bw = Tw * c;
-      const bh = Hw * c;
-      const frame = targetFrame(t, cam);
+      const frame = targetFrame(t, { ...cam, sx0, c: c * objectZoom });
+      const bw = frame.width;
+      const bh = frame.height;
       const bx = frame.x;
       const by = frame.y;
       const targetAge = t - tLeanEnd;
@@ -1230,7 +1233,11 @@ export function createStackAnimation(container, options = {}) {
 
     return {
       unit, target, R, fast, stageH, width: W, scenery,
-      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd), cam = cameraAt(t); return { ...targetFrame(t, cam), stackX: cam.sx0, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
+      getFraming(seconds) { const t = clamp(seconds / PLAYBACK_TIME_SCALE, 0, tEnd), cam = cameraAt(t);
+        const progress = clamp((t - tHoldEnd) / ZOOM_S, 0, 1);
+        const zoom = 1 + (finaleScale - 1) * (0.5 - 0.5 * Math.cos(Math.PI * progress));
+        const stackX = W / 2 + (cam.sx0 - W / 2) * zoom;
+        return { ...targetFrame(t, { ...cam, sx0: stackX, c: cam.c * zoom }), stackX, floorY: cam.sy0, groundScale: groundScaleFor(cam.c, cEnd) }; },
       duration: tEnd * PLAYBACK_TIME_SCALE,
       cues: cues.map(cue => ({ ...cue, t: cue.t * PLAYBACK_TIME_SCALE })),
       render,
