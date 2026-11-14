@@ -768,6 +768,13 @@ export function createStackAnimation(container, options = {}) {
     const bigLeftWorld = (colWFinal / 2 + GAP) / cEnd;
     const stripMin = fast ? stripW : 0;
 
+    // Very tall stacks can use the spare space above the full comparison.
+    const finalZoom = fast && R >= 100
+      ? Math.max(1, Math.min(1.4, (floorY - PAD_TOP) / H, (W - 2 * G) / pairW))
+      : 1;
+    const finalTop = floorY - H * finalZoom;
+    const finalStackX = W / 2 + (colCenterX - W / 2) * finalZoom;
+
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
       timelineFor(R, bigLean, smLean, smKind !== 'slide');
 
@@ -902,9 +909,9 @@ export function createStackAnimation(container, options = {}) {
       const u = clamp((t - tHoldEnd) / ZOOM_S, 0, 1);
       const e = 0.5 - 0.5 * Math.cos(Math.PI * u);
       const c0 = climbScale(tHoldEnd);
-      const c = Math.exp(Math.log(c0) + (Math.log(cEnd) - Math.log(c0)) * e);
-      const topY = ay + (padTop - ay) * e;
-      return { c, sx0: axClimb + (colCenterX - axClimb) * e, sy0: topY + Hw * c };
+      const c = Math.exp(Math.log(c0) + (Math.log(cEnd * finalZoom) - Math.log(c0)) * e);
+      const topY = ay + (finalTop - ay) * e;
+      return { c, sx0: axClimb + (finalStackX - axClimb) * e, sy0: topY + Hw * c };
     }
 
     function targetFrame(t, cam) {
@@ -963,7 +970,7 @@ export function createStackAnimation(container, options = {}) {
       const climbPx = Math.max(0, cameraAt(tHoldEnd).sy0 - floorY); // how far the scene scrolls, so indoor walls end at the top
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
       const eOut = t < tHoldEnd ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * clamp((t - tHoldEnd) / ZOOM_S, 0, 1));
-      const wcol = Math.max(tw * c, stripMin * eOut);
+      const wcol = Math.max(tw * c, stripMin * (1 + (finalZoom - 1) * eOut) * eOut);
       const Ls = wcol / aSm;
       const count = stackCount(t);
 
