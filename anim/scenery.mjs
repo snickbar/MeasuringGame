@@ -336,12 +336,13 @@ const layeredReveals = {
       { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
     ] },
   ] },
-  tabletop: { roomBack: 'tabletop-reveal-back', parallax: [
-    {"img":"tabletop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1}},
-    {"img":"tabletop-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"tabletop-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"tabletop-reveal-fan","x":0.73,"row":825,"w":0.12,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"tabletop-reveal-mobile","x":0.2,"row":746,"w":0.085,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"tabletop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
+  tabletop: { floor: 'tabletop-climb-desk', fittedFloor: true, floorInset: 0,
+    roomBack: 'tabletop-climb-wall', roomBackParallax: .27, roomCeiling: 'living-climb-ceiling',
+    deskLamp: { arm: 'tabletop-climb-arm', shade: 'tabletop-climb-shade' },
+    parallax: [
+      { img: 'tabletop-climb-board', par: .27, lift: 100, liftWidth: 1.74,
+        single: { x: .36, w: .64, sy: 1 } },
+    ] },
   volcano: { parallax: [
     {"img":"volcano-reveal-back","par":0.09,"lift":625,"scale":0.65,"flows":[{"img":"volcano-flow-back","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-landmark","par":0.15,"lift":549,"single":{"x":0.54,"w":0.89,"sy":1,"smoke":"mist"},"flows":[{"img":"volcano-flow-landmark","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]},
@@ -380,7 +381,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1826,18 +1827,46 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
 
 function floorInset(kit) { return kit.config.floorInset ?? (kit.config.floor === 'forest-floor' ? 20 : 14); }
 
-export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark }) {
+export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
   const tile = kit.config.fittedFloor ? width * 1.10 : (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
   const inset = floorInset(kit) * groundScale;
   const top = floorY - tileH * meta.surface - inset;
-  if (top >= height || top + tileH <= 0) return;
+  const arm = kit.images[kit.config.deskLamp?.arm];
+  const shade = kit.images[kit.config.deskLamp?.shade];
+  if (top >= height && !(arm && shade)) return;
+  if (top + tileH <= 0) return;
   if (kit.config.fittedFloor) {
     ctx.save();
     if (dark) ctx.filter = 'brightness(60%)';
-    drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, .75);
+    if (top < height) drawTerrainImage(ctx, image, (width - tile) / 2, top, tile, tileH, height, arm ? .91 : .75);
+    if (arm && shade) {
+      const armW = width * .49, armH = armW * arm.naturalHeight / arm.naturalWidth;
+      const armX = width * .525, armY = top + tileH * .52 - armH;
+      const jointX = armX + armW * .727, jointY = armY + armH * .052;
+      const shadeW = width * .39, shadeH = shadeW * shade.naturalHeight / shade.naturalWidth;
+      const tilt = reduced ? 0 : Math.sin(time * 1.15) * .14;
+      ctx.save();
+      ctx.translate(jointX, jointY);
+      ctx.rotate(tilt);
+      ctx.translate(-shadeW * .68, shadeH * .76);
+      ctx.scale(1, 1.65);
+      const radius = width * .44;
+      const light = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      light.addColorStop(0, 'rgba(255,221,110,.64)');
+      light.addColorStop(1, 'rgba(255,214,97,0)');
+      ctx.fillStyle = light;
+      ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+      ctx.restore();
+      ctx.drawImage(arm, armX, armY, armW, armH);
+      ctx.save();
+      ctx.translate(jointX, jointY);
+      ctx.rotate(tilt);
+      ctx.drawImage(shade, -shadeW * .88, -shadeH * .34, shadeW, shadeH);
+      ctx.restore();
+    }
     const placement = kit.config.floorProp;
     const prop = kit.images[placement?.img];
     if (prop) {

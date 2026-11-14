@@ -1008,7 +1008,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX, dark,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - sx0, groundScale, anchorX: colCenterX, dark, time: t, reduced: reduceMotion,
       });
 
       // The dashed line at the big object's height.
@@ -1392,7 +1392,7 @@ export function createStackAnimation(container, options = {}) {
         for (let gx = x0; gx < W; gx += grassW) ctx.drawImage(grassImg, gx, gTop, grassW + 1, gh);
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2, dark,
+        width: W, height: stageH, floorY, shiftX: pan, groundScale, anchorX: W / 2, dark, time: t, reduced: reduceMotion,
       });
 
       // The second object (behind the first in draw order only when it is the bigger one, so it never hides the pick).
