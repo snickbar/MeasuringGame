@@ -1018,7 +1018,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (kit.config.floor) drawSceneryFloor(ctx, kit, FLOOR_DATA[kit.config.floor], {
-        width: W, height: stageH, floorY: sceneryFloorY, shiftX: colCenterX - cam.sx0, groundScale, anchorX: colCenterX, dark, time: t, reduced: reduceMotion,
+        width: W, height: stageH, floorY: sceneryFloorY, shiftY: sy0 - floorY, shiftX: colCenterX - cam.sx0, groundScale, anchorX: colCenterX, dark, time: t, reduced: reduceMotion,
       });
 
       // The dashed line at the big object's height.

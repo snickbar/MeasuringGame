@@ -349,12 +349,12 @@ const layeredReveals = {
     {"img":"volcano-reveal-mid","par":0.55,"lift":345,"scale":0.58,"overlapFrom":0.95,"flows":[{"img":"volcano-reveal-flow","x":0,"y":0,"ripple":{"rows":34,"speed":2.1,"warm":true}}]},
     {"img":"volcano-reveal-front","par":1,"lift":-30.72,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[{"img":"volcano-reveal-flame","x":0.8,"row":945,"w":0.065,"move":{"type":"pulse","amp":4,"speed":5}}],"flows":[{"img":"volcano-flow-front","x":0,"y":0,"ripple":{"rows":30,"speed":2.1,"warm":true}}]}
   ] },
-  workshop: { roomBack: 'workshop-reveal-back', parallax: [
-    {"img":"workshop-reveal-landmark","par":0.15,"lift":460,"single":{"x":0.54,"w":0.89,"sy":1,"spin":{"img":"workshop-reveal-gear","fx":0.5,"fy":0.49,"size":0.77,"speed":0.45}}},
-    {"img":"workshop-reveal-far","par":0.27,"lift":350,"scale":0.63,"overlapFrom":0.95},
-    {"img":"workshop-reveal-mid","par":0.55,"lift":290,"scale":0.58,"overlapFrom":0.95,"props":[{"img":"workshop-reveal-cog","x":0.64,"row":825,"w":0.11,"move":{"type":"spin","amp":4,"speed":1.1}},{"img":"workshop-reveal-tool","x":0.21,"row":810,"w":0.045,"move":{"type":"dangle","amp":4,"speed":1.1}}]},
-    {"img":"workshop-reveal-front","par":1,"lift":26,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
-  ] },
+  workshop: { floor: 'workshop-climb-concrete', fittedFloor: true, floorInset: 0,
+    parallax: [], roomBack: 'workshop-climb-bricks', roomBackParallax: .36,
+    roomCeiling: 'workshop-climb-rafters',
+    workshop: { storage: 'workshop-climb-storage', bench: 'workshop-climb-bench',
+      board: 'workshop-climb-board', fan: 'workshop-climb-fan', rotor: 'workshop-climb-rotor' },
+  },
 };
 
 
@@ -380,7 +380,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1735,6 +1735,26 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
       ctx.drawImage(roomBack, x, (height - h) / 2, w, h);
     }
   }
+  if (pass !== 'foreground' && config.workshop) {
+    const { board, fan, rotor } = config.workshop;
+    const wallTravel = shiftY * config.roomBackParallax;
+    const climb = climbPx * config.roomBackParallax;
+    const boardY = height * .59 + wallTravel - Math.max(climb * .98, height * .42);
+    const fanY = height * .25 + wallTravel - Math.max(climb, height * .54);
+    if (dark) ctx.filter = 'brightness(62%)';
+    drawWorkshopPiece(ctx, images[board], width * .28, boardY, width * .35);
+    const fanWidth = width * .29;
+    drawWorkshopPiece(ctx, images[fan], width * .76, fanY, fanWidth);
+    const blades = images[rotor];
+    if (blades) {
+      ctx.save();
+      ctx.translate(width * .76, fanY);
+      ctx.rotate(reduced ? 0 : time * 8);
+      drawWorkshopPiece(ctx, blades, 0, 0, fanWidth * .72);
+      ctx.restore();
+    }
+    ctx.filter = 'none';
+  }
   const ceiling = images[config.roomCeiling];
   if (pass !== 'foreground' && ceiling && climbPx > 0) {
     // Start the ceiling above the frame and land the molding near the top at the reveal.
@@ -1742,7 +1762,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     const entry = Math.max(0, (progress - .74) / .26);
     const bottom = height * .23 * entry * entry;
     const ceilingHeight = width * ceiling.naturalHeight / ceiling.naturalWidth;
-    if (bottom > 0) ctx.drawImage(ceiling, 0, bottom - ceilingHeight, width, ceilingHeight);
+    if (bottom > 0) ctx.drawImage(ceiling, 0, config.workshop ? Math.min(0, bottom - ceilingHeight) : bottom - ceilingHeight, width, ceilingHeight);
   }
   if (pass !== 'foreground' && config.wallpaper && !roomBack) {
     drawWallpaper(ctx, config.wallpaper, { width, height, shiftY, shiftX, dark });
@@ -1881,8 +1901,26 @@ function drawLibraryBookcase(ctx, kit, width, floor, height, time, reduced) {
   ctx.drawImage(ladderImage, x + (caseW - ladderW) / 2 + travel, ladderY, ladderW, ladderH);
 }
 
-export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
+function drawWorkshopPiece(ctx, image, x, y, width, anchorY = .5) {
+  if (!image) return;
+  const height = width * image.naturalHeight / image.naturalWidth;
+  ctx.drawImage(image, x - width / 2, y - height * anchorY, width, height);
+}
+
+export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, shiftY = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
+  const workshop = kit.config.workshop;
+  if (workshop) {
+    const rearEdge = floorY - shiftY * .26 - width * .49;
+    const floorHeight = Math.max(width * image.naturalHeight / image.naturalWidth, height - rearEdge);
+    ctx.save();
+    if (dark) ctx.filter = 'brightness(62%)';
+    if (rearEdge < height) ctx.drawImage(image, 0, rearEdge, width, floorHeight);
+    drawWorkshopPiece(ctx, kit.images[workshop.storage], width * .47, rearEdge + width * .035, width * .84, 1);
+    drawWorkshopPiece(ctx, kit.images[workshop.bench], width * .94, floorY + width * .045, width * .83, 1);
+    ctx.restore();
+    return;
+  }
   const tile = kit.config.fittedFloor ? width * 1.10 : (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
   // The measured baseline is inside the solid surface, not perched on its upper edge.
   // Moss needs more depth so feet meet brown soil rather than the green rim.
