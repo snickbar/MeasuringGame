@@ -263,7 +263,9 @@ const layeredReveals = {
     {"img":"fair-reveal-mid","par":0.55,"lift":342,"scale":0.58,"overlapFrom":0.95,"props":[]},
     {"img":"fair-reveal-front","par":1,"lift":5,"scale":0.58,"grounded":true,"overlapFrom":0.95,"props":[]}
   ] },
-  cave: { roomBack: 'cave-reveal-wall', roomBackParallax: .12, floorInset: 0, parallax: [
+  cave: { roomBack: 'cave-climb-wall', roomBackParallax: .12, floorInset: 0,
+    roomBackGlint: { img: 'cave-reveal-glint', points: [[.113, .193], [.927, .185], [.096, .451], [.908, .558], [.078, .758], [.882, .826]] },
+    parallax: [
     {"img":"cave-reveal-landmark","par":0.15,"lift":597,"single":{"x":0.54,"w":0.89,"sy":1},"glint":{"img":"cave-reveal-glint","points":[[0.37,0.33],[0.59,0.46],[0.71,0.61],[0.36,0.6],[0.18,0.51],[0.25,0.73],[0.54,0.83],[0.73,0.76]]}},
     {"img":"cave-reveal-far","par":0.27,"lift":402,"scale":0.63,"overlapFrom":0.95,"glint":{"img":"cave-reveal-glint","points":[[0.14,0.3],[0.22,0.35],[0.5,0.35],[0.57,0.45],[0.84,0.5],[0.08,0.86],[0.91,0.9]]}},
     {"img":"cave-reveal-mid","par":0.55,"lift":318,"scale":0.58,"overlapFrom":0.95,"props":[],"glint":{"img":"cave-reveal-glint","points":[[0.8,0.54],[0.9,0.65],[0.59,0.66],[0.54,0.76],[0.17,0.76],[0.39,0.78],[0.98,0.71]]}},
@@ -358,7 +360,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -788,12 +790,12 @@ function drawWheelCarriages(ctx, image, x, y, width, height, angle, time, reduce
   }
 }
 
-function drawCrystalGlints(ctx, sprite, points, x, y, width, height, time) {
+function drawCrystalGlints(ctx, sprite, points, x, y, width, height, time, sizeScale = 1) {
   for (const [i, [fx, fy]] of points.entries()) {
     const phase = (time * .54 + i * .37 + fx) % 1;
     if (phase > .52) continue;
     const strength = Math.sin(Math.PI * phase / .52);
-    const w = width * (.045 + .085 * strength);
+    const w = width * (.045 + .085 * strength) * sizeScale;
     const h = w * sprite.naturalHeight / sprite.naturalWidth;
     ctx.save();
     ctx.globalAlpha *= strength;
@@ -1667,18 +1669,18 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   ctx.save();
   const roomBack = images[config.roomBack];
   if (pass !== 'foreground' && roomBack) {
-    const scale = Math.max(width / roomBack.naturalWidth, height / roomBack.naturalHeight);
+    const scale = config.roomBackParallax ? width / roomBack.naturalWidth
+      : Math.max(width / roomBack.naturalWidth, height / roomBack.naturalHeight);
     const w = roomBack.naturalWidth * scale, h = roomBack.naturalHeight * scale;
     const x = (width - w) / 2;
     if (config.roomBackParallax) {
-      const offset = ((shiftY * config.roomBackParallax % (2 * h)) + 2 * h) % (2 * h);
-      for (let y = offset - 2 * h, row = 0; y < height; y += h, row++) {
-        if (y + h <= 0) continue;
-        ctx.save();
-        ctx.translate(x, y + (row % 2 ? h : 0));
-        if (row % 2) ctx.scale(1, -1);
-        ctx.drawImage(roomBack, 0, 0, w, h + .5);
-        ctx.restore();
+      const offset = ((shiftY * config.roomBackParallax % h) + h) % h;
+      const glint = images[config.roomBackGlint?.img];
+      for (let y = offset - h; y < height; y += h) {
+        ctx.drawImage(roomBack, x, y, w, h + .5);
+        if (glint && !reduced) {
+          drawCrystalGlints(ctx, glint, config.roomBackGlint.points, x, y, w, h, time, .45);
+        }
       }
     } else {
       ctx.drawImage(roomBack, x, (height - h) / 2, w, h);
