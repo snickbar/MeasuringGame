@@ -768,13 +768,6 @@ export function createStackAnimation(container, options = {}) {
     const bigLeftWorld = (colWFinal / 2 + GAP) / cEnd;
     const stripMin = fast ? stripW : 0;
 
-    // Very tall stacks can use the spare space above the full comparison.
-    const finalZoom = fast && R >= 100
-      ? Math.max(1, Math.min(1.4, (floorY - PAD_TOP) / H, (W - 2 * G) / pairW))
-      : 1;
-    const finalTop = floorY - H * finalZoom;
-    const finalStackX = W / 2 + (colCenterX - W / 2) * finalZoom;
-
     const { starts, durs, nHop, gapLast, tLeanStart, tLeanEnd, tZ0, tZ1, tB0, tB1, tHoldEnd, tEnd, TB, M, G_TABLE } =
       timelineFor(R, bigLean, smLean, smKind !== 'slide');
 
@@ -909,9 +902,9 @@ export function createStackAnimation(container, options = {}) {
       const u = clamp((t - tHoldEnd) / ZOOM_S, 0, 1);
       const e = 0.5 - 0.5 * Math.cos(Math.PI * u);
       const c0 = climbScale(tHoldEnd);
-      const c = Math.exp(Math.log(c0) + (Math.log(cEnd * finalZoom) - Math.log(c0)) * e);
-      const topY = ay + (finalTop - ay) * e;
-      return { c, sx0: axClimb + (finalStackX - axClimb) * e, sy0: topY + Hw * c };
+      const c = Math.exp(Math.log(c0) + (Math.log(cEnd) - Math.log(c0)) * e);
+      const topY = ay + (padTop - ay) * e;
+      return { c, sx0: axClimb + (colCenterX - axClimb) * e, sy0: topY + Hw * c };
     }
 
     function targetFrame(t, cam) {
@@ -970,9 +963,16 @@ export function createStackAnimation(container, options = {}) {
       const climbPx = Math.max(0, cameraAt(tHoldEnd).sy0 - floorY); // how far the scene scrolls, so indoor walls end at the top
       // A stack too thin to see is drawn wider, but only as the final zoom out settles.
       const eOut = t < tHoldEnd ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * clamp((t - tHoldEnd) / ZOOM_S, 0, 1));
-      const wcol = Math.max(tw * c, stripMin * (1 + (finalZoom - 1) * eOut) * eOut);
-      const Ls = wcol / aSm;
       const count = stackCount(t);
+      const baseWidth = Math.max(tw * c, stripMin * eOut);
+      const Ls = baseWidth / aSm;
+      // Keep the stack readable independently of the scenery camera. Space the
+      // larger sprites from the visible tip, easing back to the full-height layout.
+      const readable = fast && R >= 100;
+      const climbBoost = readable ? smooth(clamp((count - nHop) / 20, 0, 1)) * (1 - eOut) : 0;
+      const pitch = Ls + Math.max(0, Math.min(24, Ls * 2.4) - Ls) * climbBoost;
+      const stackBase = sy0 + count * (pitch - Ls);
+      const stackWidth = pitch * aSm + (readable ? Math.min(baseWidth * .4, GAP) * eOut : 0);
 
       // Background: sky, clouds that drift down gently as the camera climbs, and the ground.
       const sky = ctx.createLinearGradient(0, 0, 0, stageH);
@@ -1098,7 +1098,7 @@ export function createStackAnimation(container, options = {}) {
         }
       }
       if (bigKind !== 'fly') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm, false, bigKind === 'sail' ? 'water' : landingSurfaceFor(scenery));
-      if (count >= 1) shadow(sx0, sy0 + 2, Math.max(8, wcol * 1.1), clamp(wcol * .09, 2, 6), .30);
+      if (count >= 1) shadow(sx0, sy0 + 2, Math.max(8, baseWidth * 1.1), clamp(baseWidth * .09, 2, 6), .30);
 
       // Anything of the stack above the big object's height line is cut off.
       ctx.save();
@@ -1108,23 +1108,24 @@ export function createStackAnimation(container, options = {}) {
       // The stack: whole objects, then the growing or cut-off one on top.
       const full = Math.floor(count + 1e-9);
       const frac = count - full;
-      const iStart = Math.max(0, Math.floor((sy0 - stageH) / Ls) - 1);
-      const iEnd = Math.min(full - 1, Math.ceil(sy0 / Ls));
+      const iStart = Math.max(0, Math.floor((stackBase - stageH) / pitch) - 1);
+      const iEnd = Math.min(full - 1, Math.ceil(stackBase / pitch));
       for (let i = iStart; i <= iEnd; i++) {
         if (i < nHop && t < starts[i] + durs[i]) continue;   // still hopping in
-        const bottom = sy0 - i * Ls;
-        drawLanded(smallSprite, sx0 - wcol / 2, bottom, wcol, Ls + .5, smallLanding, i < nHop ? t - starts[i] - durs[i] : 100);
+        const bottom = stackBase - i * pitch;
+        drawLanded(smallSprite, sx0 - stackWidth / 2, bottom, stackWidth, pitch + .5, smallLanding, i < nHop ? t - starts[i] - durs[i] : 100);
       }
       if (frac > 1e-6) {
-        const bottom = sy0 - full * Ls;
-        const hv = frac * Ls;
+        const bottom = stackBase - full * pitch;
+        const hv = frac * pitch;
         if (bottom > 0 && bottom - hv < stageH) {
           ctx.drawImage(smallSprite, 0, smallSprite.height * (1 - frac), smallSprite.width, smallSprite.height * frac,
-            sx0 - wcol / 2, bottom - hv, wcol, hv);
+            sx0 - stackWidth / 2, bottom - hv, stackWidth, hv);
         }
       }
       ctx.restore();
 
+      const wcol = baseWidth;
       // Objects hopping in.
       const dHop = sx0 + wcol / 2 + 24;
       const landed = landedAt(t);
