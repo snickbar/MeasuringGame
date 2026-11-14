@@ -68,7 +68,7 @@ export const SETTINGS = {
       { img: 'beach-islands', par: .22, lift: 120, drifters: [{ img: 'beach-boat', x: .3, row: 488, w: .05, speed: 4, bob: 1.5 }] },
       { img: 'beach-sea', par: .36, lift: 88, props: [{ img: 'beach-arch', x: .2, row: 535, w: .27, foam: 'beach-wave-foam' }], drifters: [{ img: 'beach-canoe', x: .72, row: 560, w: .075, speed: 8, bob: 2.5 }, { img: 'beach-buoy', x: .5, row: 600, w: .026, speed: 0, bob: 3, rate: 1.7 }] },
       { img: 'beach-shallow', par: .6, lift: 50, props: [{ img: 'beach-pier', x: .7, row: 508, w: .27 }], drifters: [{ img: 'beach-curl', x: .35, row: 600, w: .05, speed: 14, bob: 2 }] }],
-    skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }, { img: 'resort-sun', y: 21000, x: .3, w: 120, day: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
+    skyPieces: [{ img: 'resort-sun', y: 3100, x: .74, w: 150, day: true }, { img: 'resort-moon', y: 3100, x: .72, w: 120, night: true }, { img: 'resort-moon', y: 21000, x: .3, w: 100, night: true }] },
   boardwalk: { sky: ['#32a8eb', '#b9e7fa'], nightSky: ['#0e1a38', '#33456b'], night: 'dark',
     avenue: { shops: 'boardwalk-avenue', pier: 'boardwalk-pier', beach: 'boardwalk-beach', ocean: 'boardwalk-ocean', stand: 'fair-reveal-stand',
       wheel: 'fair-reveal-wheel', carriage: 'fair-reveal-carriage' },
