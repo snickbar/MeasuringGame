@@ -295,7 +295,7 @@ const layeredReveals = {
     ] },
   library: { floor: 'library-climb-reading-nook', fittedFloor: true, floorInset: 0,
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
-    bookcase: { lowCase: 'library-climb-low-case', wideCase: 'library-climb-wide-case', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
+    bookcase: { lowCase: 'library-climb-low-case', wideCase: 'library-climb-eight-shelf', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
   living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
@@ -1834,9 +1834,9 @@ function drawLibraryShelfRows(ctx, kit, { width, height, floorY, shiftY, dark })
   const tileH = width * 1.10 * floor.naturalHeight / floor.naturalWidth;
   const frontEdge = (floorY ?? height - 40) + tileH * (.425 - FLOOR_DATA[kit.config.floor].surface);
   const rows = [
-    { depth: .39, inset: 1.02, shade: .66, cases: [[.14, .39], [.59, .40]] },
-    { depth: .59, inset: .65, shade: .78, cases: [[.02, .43], [.52, .45]] },
-    { depth: .79, inset: .29, shade: .90, cases: [[.10, .43], [.58, .41]] },
+    { depth: .39, inset: 1.02, shade: .66, cases: [[.09, .46], [.58, .49]] },
+    { depth: .59, inset: .65, shade: .78, cases: [[.00, .49], [.54, .50]] },
+    { depth: .79, inset: .29, shade: .90, cases: [[.07, .49], [.60, .47]] },
   ];
   const edges = rows.map(row => frontEdge + shiftY * row.depth - width * row.inset);
   edges.push(frontEdge + shiftY);
