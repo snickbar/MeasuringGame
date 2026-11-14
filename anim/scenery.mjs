@@ -352,7 +352,7 @@ const layeredReveals = {
   workshop: { floor: 'workshop-climb-concrete', fittedFloor: true, floorInset: 0,
     parallax: [], roomBack: 'workshop-climb-bricks', roomBackParallax: .36,
     roomCeiling: 'workshop-climb-rafters',
-    workshop: { storage: 'workshop-climb-storage', bench: 'workshop-climb-bench',
+    workshop: { door: 'workshop-climb-garage-door', storage: 'workshop-climb-storage', bench: 'workshop-climb-bench',
       board: 'workshop-climb-board', fan: 'workshop-climb-fan', rotor: 'workshop-climb-rotor' },
   },
 };
@@ -1739,16 +1739,16 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     const { board, fan, rotor } = config.workshop;
     const wallTravel = shiftY * config.roomBackParallax;
     const climb = climbPx * config.roomBackParallax;
-    const boardY = height * .59 + wallTravel - Math.max(climb * .98, height * .42);
-    const fanY = height * .25 + wallTravel - Math.max(climb, height * .54);
+    const boardY = height * .62 + wallTravel - Math.max(climb * .71, height * .38);
+    const fanY = height * .36 + wallTravel - Math.max(climb * .90, height * .46);
     if (dark) ctx.filter = 'brightness(62%)';
-    drawWorkshopPiece(ctx, images[board], width * .28, boardY, width * .35);
+    drawWorkshopPiece(ctx, images[board], width * .73, boardY, width * .32);
     const fanWidth = width * .29;
-    drawWorkshopPiece(ctx, images[fan], width * .76, fanY, fanWidth);
+    drawWorkshopPiece(ctx, images[fan], width * .29, fanY, fanWidth);
     const blades = images[rotor];
     if (blades) {
       ctx.save();
-      ctx.translate(width * .76, fanY);
+      ctx.translate(width * .29, fanY);
       ctx.rotate(reduced ? 0 : time * 8);
       drawWorkshopPiece(ctx, blades, 0, 0, fanWidth * .72);
       ctx.restore();
@@ -1916,7 +1916,8 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     ctx.save();
     if (dark) ctx.filter = 'brightness(62%)';
     if (rearEdge < height) ctx.drawImage(image, 0, rearEdge, width, floorHeight);
-    drawWorkshopPiece(ctx, kit.images[workshop.storage], width * .47, rearEdge + width * .035, width * .84, 1);
+    drawWorkshopPiece(ctx, kit.images[workshop.door], width * .30, rearEdge + 1, width * .87, 1);
+    drawWorkshopPiece(ctx, kit.images[workshop.storage], width * .65, rearEdge + width * .06, width * .66, 1);
     drawWorkshopPiece(ctx, kit.images[workshop.bench], width * .94, floorY + width * .045, width * .83, 1);
     ctx.restore();
     return;
