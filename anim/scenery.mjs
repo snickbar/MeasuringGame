@@ -336,8 +336,8 @@ const layeredReveals = {
       { img: 'stadium-reveal-landmark', x: .78, snap: 14, w: .14 },
     ] },
   ] },
-  tabletop: { floor: 'tabletop-climb-spaced-desk', fittedFloor: true, floorInset: 0,
-    roomBack: 'tabletop-climb-woven-wall', roomBackParallax: .43, roomCeiling: 'living-climb-ceiling',
+  tabletop: { floor: 'tabletop-climb-large-cup-desk', fittedFloor: true, floorInset: 0,
+    roomBack: 'tabletop-climb-trellis-wall', roomBackParallax: .43, roomCeiling: 'living-climb-ceiling',
     deskLamp: { arm: 'tabletop-climb-arm', shade: 'tabletop-climb-shade' },
     parallax: [
       { img: 'tabletop-climb-rocket-board', par: .43, lift: 100, liftWidth: 1.74,
