@@ -298,13 +298,14 @@ const layeredReveals = {
   living: { roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling',
     parallax: [
-      { img: 'living-climb-window', par: .51, lift: 155, liftWidth: .55,
-        single: { x: .50, w: .95, sy: 1, hang: [
-          { img: 'living-reveal-curtain', fx: .52, fy: .09, w: .078, speed: 1.15, swing: .055 },
-          { img: 'living-reveal-curtain', fx: .89, fy: .09, w: .078, speed: .91, swing: .07 },
+      { img: 'living-climb-curtained', par: .37, lift: 215, liftWidth: .66,
+        single: { x: .72, w: .513, sy: 1, hang: [
+          { img: 'living-reveal-curtain', fx: .111, fy: .09, w: .144, speed: 1.15, swing: .055 },
+          { img: 'living-reveal-curtain', fx: .796, fy: .09, w: .144, speed: .91, swing: .07 },
         ] } },
-      { img: 'living-climb-couch', par: .81, lift: 53, liftWidth: .51, scale: .70, overlapFrom: .94 },
-      { img: 'living-reveal-front', par: 1, lift: 4, scale: .59, grounded: true, overlapFrom: .95 },
+      { img: 'living-climb-bookcase', par: .50, lift: 184, liftWidth: .55, single: { x: .255, w: .437, sy: 1 } },
+      { img: 'living-climb-couch', par: .74, lift: 100, liftWidth: .51, scale: .70, overlapFrom: .94 },
+      { img: 'living-climb-floor', par: 1, lift: -64, scale: .81, grounded: true, overlapFrom: .95 },
     ] },
   grass: { skyPieces: [{ img: 'meadow-sun', y: 3000, x: .74, w: 130, day: true }], parallax: [
     {"img":"grass-reveal-back","par":0.09,"lift":578,"scale":0.65},
