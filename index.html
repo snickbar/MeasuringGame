@@ -21518,6 +21518,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const n = (p.roundsCounted || 0) - (entry ? 1 : 0);
     return n > 0 ? ((p.accuracySum || 0) - (entry ? entry.accuracyPercent : 0)) / n : null;
   }
+  // Has this player already locked in their answer for the question on screen?
+  function lockedIn(id) { return roomState.phase === "question" && !!roomState.guesses && roomState.guesses[id] !== undefined; }
+  // Counts a score up to its new value so a gain is easy to notice.
+  function tickScore(el, from, to) {
+    if (prefersReducedMotion() || !(to > from)) return;
+    const t0 = performance.now(), dur = Math.min(900, 300 + (to - from) * 12);
+    const step = (now) => { const k = Math.min(1, (now - t0) / dur); el.textContent = String(Math.round(from + (to - from) * k)); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
+    el.textContent = String(from); requestAnimationFrame(step);
+  }
   function renderScoreColumn(overrideScores) {
     // No score column at all in this mode (see the .tw-no-score layout toggle) - nothing to render.
     if (roomState.settings?.mode === "teamworlds") { return; }
@@ -21526,7 +21535,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signature = gameMotionKey + Object.keys(currentPlayers).map((id) => {
       const p = currentPlayers[id];
       const score = overrideScores ? (overrideScores[id] || 0) : (p.score || 0);
-      return `${id}:${score}:${scoreColumnAverage(id, !!overrideScores)}:${p.avatar || ""}:${p.name}`;
+      return `${id}:${score}:${scoreColumnAverage(id, !!overrideScores)}:${p.avatar || ""}:${p.name}:${lockedIn(id) ? 1 : 0}`;
     }).sort().join("|");
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
@@ -21557,8 +21566,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         box.className = "score-card frame-" + frameIndex + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
         box.dataset.id = id;
         if (id === roundWinnerId) box.classList.add("round-winner");
+        const crown = (rank === 1 && score > 0 && roomState.phase !== "waiting") ? '<span class="sc-crown" aria-label="Leading"></span>' : "";
+        const lock = lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : "";
         box.innerHTML = `
-          <span class="avatar">${avatarHtml(p.avatar)}</span>
+          <span class="avatar">${avatarHtml(p.avatar)}${crown}${lock}</span>
           <div class="sc-top"><span class="name">${escapeHtml(p.name)}</span></div>
           <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
         `;
@@ -21575,6 +21586,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ptsEl.classList.remove("score-pop");
           void ptsEl.offsetWidth;
           ptsEl.classList.add("score-pop");
+          tickScore(ptsEl, prevScore, score);
         }
         previousDisplayedScores[id] = score;
       });
