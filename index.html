@@ -21611,7 +21611,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const signature = gameMotionKey + teams.map((team) => {
       const members = teamOf[team];
       const score = overrideScores ? (overrideScores[members[0]] || 0) : (currentPlayers[members[0]].score || 0);
-      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + scoreColumnAverage(id, !!overrideScores)).join(",")}`;
+      return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + scoreColumnAverage(id, !!overrideScores) + ":" + (lockedIn(id) ? 1 : 0)).join(",")}`;
     }).sort().join("|");
     if (signature === lastScoreColumnSignature) return;
     lastScoreColumnSignature = signature;
@@ -21651,9 +21651,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         box.dataset.members = members.join(" ");
         if (members.includes(roundWinnerId)) box.classList.add("round-winner");
         const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
-        const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
+        const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}${lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : ""}</span>`).join("");
+        const crown = (rank === 1 && score > 0 && roomState.phase !== "waiting") ? '<span class="sc-crown" aria-label="Leading"></span>' : "";
         box.innerHTML = `
-          <div class="team-card-avatars">${avatars}</div>
+          <div class="team-card-avatars">${avatars}</div>${crown}
           <div class="sc-top"><span class="name">${names}</span></div>
           <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
         `;
@@ -21670,6 +21671,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ptsEl.classList.remove("score-pop");
           void ptsEl.offsetWidth;
           ptsEl.classList.add("score-pop");
+          tickScore(ptsEl, prevScore, score);
         }
         previousDisplayedScores[team] = score;
       });
