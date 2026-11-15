@@ -156,7 +156,7 @@ const MOTION = {
   "hen": "walk",
   "horned-bull": "walk",
   "praying-mantis": "walk",
-  "caterpillar": "walk",
+  "caterpillar": "skitter",
   "stilt-walker": "walk",
   "firefly": "fly",
   "boxy-suv": "drive",
@@ -321,7 +321,21 @@ const MOTION = {
   "blimp": "fly",
   "honeybee": "fly",
   "seahorse": "fly",
-  "stingray": "fly"
+  "stingray": "fly",
+  "birthday-cake": "scoot",
+  "property-trading-board-game": "tumble",
+  "chicken-noodle-soup-can": "skid",
+  "candy-coated-chocolate": "fly",
+  "chainsaw": "drive",
+  "chandelier": "walk",
+  "chessboard": "skitter",
+  "chocolate-chip-cookie": "roll",
+  "churro": "scoot",
+  "claw-machine": "drive",
+  "floss-container": "walk",
+  "funhouse-mirror": "waddle",
+  "greenhouse": "waddle",
+  "hawaiian-shirt": "fly"
 };
 
 export const LIGHT_THEME = {

@@ -7,6 +7,7 @@ const archiveDir=process.argv[3]||'art-source/object-review';
 if(!/^art-source\/[a-zA-Z0-9/-]+$/.test(archiveDir))throw Error('Archive must be a project art-source folder.');
 const root=new URL('../',import.meta.url),read=p=>fs.readFileSync(new URL(p,root),'utf8');
 const source=fs.readFileSync(inputPath,'utf8'),picks=JSON.parse(source),catalog=JSON.parse(read('anim/object-review-data.json'));
+if(picks.partial){const have=new Set(picks.objects.map(o=>o.id));for(const o of catalog.objects)if(!have.has(o.id))picks.objects.push({id:o.id,name:o.name,current:currentSettings(o),settings:currentSettings(o)});picks.objects.sort((x,y)=>catalog.objects.findIndex(o=>o.id===x.id)-catalog.objects.findIndex(o=>o.id===y.id));delete picks.partial;}
 validatePicks(picks,catalog);if(picks.objects.length!==catalog.objects.length)throw Error('A complete export is required.');
 const resolutions=JSON.parse(read('art-source/object-review/measurement-resolutions.json'));
 const applied=structuredClone(picks);

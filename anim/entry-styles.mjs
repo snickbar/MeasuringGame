@@ -143,7 +143,7 @@ const WET = /^(water-drop|boba-tea|baby-bottle|teacup|soda-can|beer-bottle|wine-
 const HEAVY = /^(anvil|bathtub|couch|refrigerator|queen-size-bed|grand-piano|gold-bar-stack|boulder|manhole-cover|car-tire|shipping-container|dumpster|vending-machine|barrel|cheese-wheel|bowling-ball)$/;
 
 // Effects chosen by hand in the Object workshop (id -> effect); anything not listed follows the rules below.
-export const EFFECT_OVERRIDE = {};
+export const EFFECT_OVERRIDE = {"birthday-cake":"confetti","chainsaw":"dust","enclosed-lifeboat":"splash","firefly":"sparkle","funhouse-mirror":"confetti"};
 
 export function landingEffectFor(object, kind) {
   const id = object?.id || '';
