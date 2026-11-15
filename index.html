@@ -2637,12 +2637,13 @@ if (location.protocol === "file:") {
   :root[data-motion="reduce"] #toolbar-settings-btn.hint-pulse::before { animation: none; display: none; }
   #toolbar-menu {
     position: fixed; top: 66px; right: 8px; z-index: 560; width: min(280px, calc(100vw - 16px)); display: flex; flex-direction: column; gap: 8px;
-    padding: 12px; background: #fff8e6; border: 0; border-radius: 22px; box-shadow: 0 0 0 2px rgba(255,255,255,.7), 0 14px 30px rgba(60,30,5,.35);
-    transform-origin: var(--menu-ox, 90%) 0; animation: menu-drop .18s cubic-bezier(.2,.9,.3,1.2);
+    padding: 12px; background: #fff8e6; border: 3px solid #4a2c12; border-radius: 20px 0 20px 20px; box-shadow: 0 12px 26px rgba(60,30,5,.35);
+    transform-origin: var(--menu-ox, 90%) 0; animation: menu-drop .18s cubic-bezier(.2,.9,.3,1.1);
   }
-  #toolbar-menu::before { content: ""; position: absolute; top: -9px; left: calc(var(--menu-ox, 90%) - 12px); width: 24px; height: 24px; background: #fff8e6; border-radius: 5px 0 0 0; transform: rotate(45deg); }
-  #toolbar-menu > * { position: relative; }
-  @keyframes menu-drop { from { opacity: 0; transform: translateY(-10px) scale(.6); } to { opacity: 1; transform: none; } }
+  /* The Menu button is redrawn inside the panel (#menu-tab) so its outline and the panel's are one continuous box. */
+  #toolbar-menu > #menu-tab { position: absolute; z-index: 2; margin: 0; padding: 0; background: #fff8e6; border: 3px solid #4a2c12; border-bottom: 0; border-radius: 16px 16px 0 0; box-shadow: none; }
+  #toolbar-menu > #menu-tab img { position: absolute; display: block; object-fit: contain; pointer-events: none; }
+  @keyframes menu-drop { from { opacity: 0; transform: translateY(-6px) scale(.7); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { #toolbar-menu { animation: none; } }
   :root[data-motion="reduce"] #toolbar-menu { animation: none; }
   #toolbar-menu[hidden] { display: none; }
@@ -2651,11 +2652,10 @@ if (location.protocol === "file:") {
   .menu-profile-text { display: flex; flex-direction: column; min-width: 0; }
   #menu-profile-name { font-size: 18px; color: #4a2c12; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #menu-profile-rank { font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #a05a1c; }
-  #toolbar-menu .menu-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; margin: 0; padding: 6px 12px; border: 2px solid #e0a13a; border-image: none; border-radius: 14px; background: linear-gradient(#ffb84d, #f58a1f); box-shadow: 0 3px 0 #b5600f; color: #fff; font-size: 19px; font-weight: 700; text-align: left; text-shadow: 0 2px 0 #9a4f0c; }
+  #toolbar-menu .menu-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; margin: 0; padding: 6px 12px; border: 2px solid #e3cfa0; border-image: none; border-radius: 14px; background: #fffdf6; box-shadow: none; color: #4a2c12; font-size: 19px; font-weight: 700; text-align: left; text-shadow: none; }
   #toolbar-menu .menu-row img { width: 34px; height: 34px; object-fit: contain; flex: 0 0 auto; pointer-events: none; }
-  #toolbar-menu .menu-row:active { transform: translateY(2px); box-shadow: 0 1px 0 #b5600f; }
-  #toolbar-menu .menu-row-exit { background: linear-gradient(#f4695a, #d63d2e); border-color: #c0392b; box-shadow: 0 3px 0 #8f241a; text-shadow: 0 2px 0 #8f241a; }
-  #toolbar-menu .menu-row-exit:active { box-shadow: 0 1px 0 #8f241a; }
+  #toolbar-menu .menu-row:active { filter: brightness(.94); }
+  #toolbar-menu .menu-row-exit { background: linear-gradient(#f4695a, #d63d2e); border-color: #c0392b; box-shadow: 0 3px 0 #8f241a; color: #fff; text-shadow: 0 2px 0 #8f241a; }
   #menu-version { text-align: center; font-size: 11px; color: #8b6f4e; padding-top: 2px; }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
@@ -4411,6 +4411,7 @@ if (location.protocol === "file:") {
   </div>
 </div>
 <div id="toolbar-menu" hidden role="menu">
+  <button id="menu-tab" type="button" aria-label="Close menu"><img src="icons/toolbar-menu.webp" alt=""></button>
   <div id="menu-profile"><span id="menu-profile-avatar"></span><span class="menu-profile-text"><b id="menu-profile-name">Player</b><small id="menu-profile-rank"></small></span></div>
   <button id="menu-settings-btn" class="menu-row" type="button" role="menuitem"><img src="icons/toolbar-settings.webp" alt=""><span>Settings</span></button>
   <button id="menu-howto-btn" class="menu-row" type="button" role="menuitem"><img src="icons/watch-play.webp" alt=""><span>How to play</span></button>
@@ -4850,6 +4851,8 @@ if (location.protocol === "file:") {
     <p>A hands-on practice round, followed by a quick guide to the game modes. No coins or stats affected.</p>
     <button id="play-tutorial-btn" type="button">Play tutorial</button>
   </section>
+
+  <section class="tutorial-modes" aria-label="Game mode tutorials"><h2>Watch a mode tutorial</h2><div id="tutorial-mode-list"></div></section>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
     <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Low, Medium or High bot accuracy in the lobby before you begin. Solo games are always free, even before Party Mode is unlocked.</p>
@@ -11653,12 +11656,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } catch (e) {}
     }
     if (open) {
-      const r = toolbarSettingsBtn.getBoundingClientRect();
-      toolbarMenuEl.style.top = (r.bottom + 10) + "px";
+      const r = toolbarSettingsBtn.getBoundingClientRect(), gap = 6;
+      toolbarMenuEl.style.top = (r.bottom + gap) + "px";
+      toolbarMenuEl.style.right = Math.max(0, innerWidth - (r.right + 5)) + "px";
       toolbarMenuEl.hidden = false;
-      const mLeft = toolbarMenuEl.offsetLeft, mW = toolbarMenuEl.offsetWidth;
-      toolbarMenuEl.style.setProperty("--menu-ox", Math.max(24, Math.min(mW - 24, r.left + r.width / 2 - mLeft)) + "px");
+      const mL = toolbarMenuEl.offsetLeft, mT = toolbarMenuEl.offsetTop, tab = document.getElementById("menu-tab"), ti = tab.firstElementChild;
+      tab.style.left = (r.left - 5 - mL - 3) + "px"; tab.style.top = (r.top - 4 - mT - 3) + "px";
+      tab.style.width = (r.width + 10) + "px"; tab.style.height = (mT + 3 - (r.top - 4)) + "px";
+      ti.style.left = "2px"; ti.style.top = "1px"; ti.style.width = r.width + "px"; ti.style.height = r.height + "px";
+      toolbarMenuEl.style.setProperty("--menu-ox", (toolbarMenuEl.offsetWidth - (r.width / 2 + 5)) + "px");
     }
+    document.body.classList.toggle("menu-open", open);
     toolbarMenuEl.hidden = !open;
     toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -11690,6 +11698,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (canPeekSettings()) { setSettingsOverGame(true); return; }
     guardToolbarNav(() => openOverlay(settingsScreen))();
   });
+  document.getElementById("menu-tab").addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(false); });
   document.getElementById("menu-howto-btn").addEventListener("click", () => {
     setToolbarMenu(false);
     if (!localStorage.getItem("mg_seenHowTo")) { localStorage.setItem("mg_seenHowTo", "1"); toolbarSettingsBtn.classList.remove("hint-pulse"); }
@@ -23863,6 +23872,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       items:(()=>{try{return monthlyObjects(monthlyKey()).slice(0,6);}catch(e){return [];}})(),
       avatars:AVATARS.filter(a=>AVATAR_TIERS[a]==='default').slice(0,4).map(a=>`avatars/${a}.webp`)})
   });
+  (function(){const names=[['quick','Quick Game'],['party','Classic Party'],['teamvteam','Team vs Team'],['hl','High / Low Survival'],['highstakes','High Stakes'],['bluff','Bluff the Room'],['daily','Daily Challenge'],['monthly','Monthly Challenge'],['worlds','Worlds'],['teamworlds','Team Worlds'],['survival','Survival'],['wb','Which Is Bigger']];
+    const el=document.getElementById('tutorial-mode-list');if(el)el.innerHTML=names.filter(([k])=>modeTutorialUI.has(k)).map(([k,n])=>`<button type="button" class="tutorial-mode-btn" data-tour="${k}"><img src="icons/watch-play.webp" alt=""><span>${n}</span></button>`).join('');})();
   document.addEventListener('click',e=>{const t=e.target.closest('[data-tour]');if(t)modeTutorialUI.play(t.dataset.tour);});
 
   // ==================== In-app updates (native app only) ====================
