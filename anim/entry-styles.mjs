@@ -142,8 +142,12 @@ const CUTE = /^(hamster|rabbit|panda|penguin|domestic-cat|corgi|dachshund|duck|r
 const WET = /^(water-drop|boba-tea|baby-bottle|teacup|soda-can|beer-bottle|wine-bottle|toothpaste|oyster|sand-dollar|crab|lobster)$/;
 const HEAVY = /^(anvil|bathtub|couch|refrigerator|queen-size-bed|grand-piano|gold-bar-stack|boulder|manhole-cover|car-tire|shipping-container|dumpster|vending-machine|barrel|cheese-wheel|bowling-ball)$/;
 
+// Effects chosen by hand in the Object workshop (id -> effect); anything not listed follows the rules below.
+export const EFFECT_OVERRIDE = {};
+
 export function landingEffectFor(object, kind) {
   const id = object?.id || '';
+  if (EFFECT_OVERRIDE[id]) return EFFECT_OVERRIDE[id];
   const mm = Number(object?.mm) || 0;
   if (SHINY.test(id)) return 'sparkle';
   if (TREAT.test(id)) return 'confetti';

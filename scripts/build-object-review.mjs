@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { sceneryFor } from '../anim/scenery.mjs';
+import {EFFECT_OVERRIDE} from '../anim/entry-styles.mjs';
 import {liveBatch2Id} from '../anim/object-batch2-ids.mjs';
 
 const root = new URL('../', import.meta.url);
@@ -30,7 +31,7 @@ const NEW_MONTHLY=new Set(fs.readdirSync(new URL('art-source/monthly-expansion-5
 const NEW_NOVEMBER=new Set(['cherry','mouse','spinning-top','toy-jack','seal','satellite','crab','tumbleweed','spaghetti-strainer','soup-ladle']);
 const LATEST_OBJECTS=new Set(JSON.parse(fs.readFileSync(new URL('art-source/new-object-set-2026-11-05/manifest.json',root))).items.map(o=>o.slug));
 const BATCH2_OBJECTS=new Set(JSON.parse(fs.readFileSync(new URL('art-source/object-batch2-2026-11-06/approved-choices.json',root))).objects.map(o=>liveBatch2Id(o.id)));
-const objects = sandbox.result.objects.map(o=>({id:o.id,name:o.name,plural:o.plural,mm:o.mm,image:o.image||`items/${o.id}.webp`,group:o.group,collection:NEW_NOVEMBER.has(o.id)?"new-2026-11":(NEW_MONTHLY.has(o.id)||["tennis-court","ice-hockey-rink","coast-redwood","submarine","cargo-ship","freight-train","radio-mast","sports-stadium","radio-telescope","water-slide","roller-coaster","airport-runway"].includes(o.id))?'new-2026-10':'',monthlyExpansion:NEW_MONTHLY.has(o.id),pack:o.pack||'',properNoun:!!o.properNoun,measurement:o.measurement,orientation:o.orientation,motionSmall:o.motionSmall,motionBig:o.motionBig,scenery:sceneryFor(o),questionAsBig:o.questionAsBig,questionAsSmall:o.questionAsSmall,alternateImage:o.id==='donut'?'items/donut-2.webp':null})).sort((a,b)=>a.name.localeCompare(b.name));
+const objects = sandbox.result.objects.map(o=>({id:o.id,name:o.name,plural:o.plural,mm:o.mm,image:o.image||`items/${o.id}.webp`,group:o.group,collection:NEW_NOVEMBER.has(o.id)?"new-2026-11":(NEW_MONTHLY.has(o.id)||["tennis-court","ice-hockey-rink","coast-redwood","submarine","cargo-ship","freight-train","radio-mast","sports-stadium","radio-telescope","water-slide","roller-coaster","airport-runway"].includes(o.id))?'new-2026-10':'',monthlyExpansion:NEW_MONTHLY.has(o.id),pack:o.pack||'',properNoun:!!o.properNoun,measurement:o.measurement,orientation:o.orientation,motionSmall:o.motionSmall,motionBig:o.motionBig,effect:EFFECT_OVERRIDE[o.id]||'auto',scenery:sceneryFor(o),questionAsBig:o.questionAsBig,questionAsSmall:o.questionAsSmall,alternateImage:o.id==='donut'?'items/donut-2.webp':null})).sort((a,b)=>a.name.localeCompare(b.name));
 if(!objects.length||objects.length!==sandbox.result.objects.length||new Set(objects.map(o=>o.id)).size!==objects.length)throw Error('Incomplete object catalog');
 const PASS_1114=new Set(JSON.parse(fs.readFileSync(new URL('art-source/new-object-pass-2026-11-14/objects.json',root))).map(r=>r[0]));
 for(const o of objects){

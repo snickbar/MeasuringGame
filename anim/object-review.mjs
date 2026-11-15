@@ -1,6 +1,7 @@
 import {createStackAnimation} from './stack-anim.js';
 import {measurementQuestionPrompt} from './object-review-prompts.mjs';
-import {MOTIONS,currentSettings,validateSettings,validatePicks,sameSettings} from './object-review-model.mjs';
+import {EFFECT_OVERRIDE} from './entry-styles.mjs';
+import {MOTIONS,EFFECTS,currentSettings,validateSettings,validatePicks,sameSettings} from './object-review-model.mjs';
 
 const batch=document.documentElement.dataset.reviewBatch==='batch2-2026-11-06'?'batch2-2026-11-06':'';
 const $=id=>document.getElementById(id),key=batch?'size-em-up-object-draft-'+batch:'size-em-up-object-draft-v1',pageSize=30;
@@ -62,14 +63,14 @@ const leanName=value=>({none:'no turn',cw:'clockwise turn',ccw:'counterclockwise
 function fillControls(){
   const s=chosen(selected),c=currentSettings(selected),r=s.orientation;
   $('rot').value=r.rot;$('mirror-small').checked=r.flip;$('mirror-big').checked=r.flip!==r.mirR;
-  $('lean-small').value=r.leanL;$('lean-big').value=r.leanR;$('motion-small').value=s.motionSmall;$('motion-big').value=s.motionBig;
+  $('lean-small').value=r.leanL;$('lean-big').value=r.leanR;$('effect').value=s.effect||'auto';$('motion-small').value=s.motionSmall;$('motion-big').value=s.motionBig;
   $('dimension').value=s.measurement.dimension;
   $('units').value=s.mm>=1000?'1000':s.mm>=10?'10':'1';displayUnit=Number($('units').value);$('size').value=Number((s.mm/displayUnit).toPrecision(12));
   $('qualifier').value=s.measurement.qualifier||'';$('subject').value=s.measurement.subject||'';
   $('current-rot').textContent=`Current: ${c.orientation.rot}° starting rotation.`;
   for(const role of ['small','big']){
     const right=role==='big',mirrored=right?c.orientation.flip!==c.orientation.mirR:c.orientation.flip;
-    $('current-'+role).textContent=`Current: ${mirrored?'mirrored':'not mirrored'} · ${leanName(right?c.orientation.leanR:c.orientation.leanL)} · ${MOTIONS[right?c.motionBig:c.motionSmall]}.`;
+    $('current-'+role).textContent=`Current: ${mirrored?'mirrored':'not mirrored'} · ${leanName(right?c.orientation.leanR:c.orientation.leanL)} · ${MOTIONS[right?c.motionBig:c.motionSmall]}${right?'':' · landing: '+EFFECTS[c.effect||'auto'].toLowerCase()}.`;
   }
   $('current-measurement').textContent=`Current: ${data.types[c.measurement.dimension].noun} · ${c.mm.toLocaleString('en-US')} mm${c.measurement.qualifier?' · '+c.measurement.qualifier:''}${c.measurement.subject?' · '+c.measurement.subject:''}.`;
   $('reset-object').disabled=$('reset-inline').disabled=!draft[selected.id];$('measurement-error').textContent='';invalid=false;$('export').disabled=false;summaries();
@@ -91,12 +92,12 @@ function selectObject(o,scroll=false){
 }
 function edit(event){
   const mirroredLeft=$('mirror-small').checked,mirroredRight=$('mirror-big').checked;
-  const value={mm:Number($('size').value)*Number($('units').value),measurement:{dimension:$('dimension').value,qualifier:$('qualifier').value,subject:$('subject').value},orientation:{rot:Number($('rot').value),flip:mirroredLeft,mirR:mirroredLeft!==mirroredRight,leanL:$('lean-small').value,leanR:$('lean-big').value},motionSmall:$('motion-small').value,motionBig:$('motion-big').value};
+  const value={mm:Number($('size').value)*Number($('units').value),measurement:{dimension:$('dimension').value,qualifier:$('qualifier').value,subject:$('subject').value},orientation:{rot:Number($('rot').value),flip:mirroredLeft,mirR:mirroredLeft!==mirroredRight,leanL:$('lean-small').value,leanR:$('lean-big').value},motionSmall:$('motion-small').value,motionBig:$('motion-big').value,effect:$('effect').value};
   try{
     const valid=validateSettings(value,data.types),settingsChanged=!sameSettings(valid,validateSettings(chosen(selected),data.types));invalid=false;$('measurement-error').textContent='';$('export').disabled=false;
     // Editing always previews the draft, even after comparing the saved game settings.
     $('use-current').checked=false;
-    const control=event?.target?.id||'',behaviorEdit=/^(rot$|mirror-|lean-|motion-)/.test(control),role=control.match(/-(small|big)$/)?.[1];
+    const control=event?.target?.id||'',behaviorEdit=/^(rot$|mirror-|lean-|motion-|effect$)/.test(control),role=control.match(/-(small|big)$/)?.[1];
     if(role)chooseRole(role);
     if(sameSettings(valid,validateSettings(currentSettings(selected),data.types)))delete draft[selected.id];else draft[selected.id]=valid;
     if(settingsChanged)reviewed.delete(selected.id);$('reset-object').disabled=$('reset-inline').disabled=!draft[selected.id];persist();renderList();summaries();
@@ -127,6 +128,7 @@ async function refresh(autoplay=false){
     $(role+'-behavior').textContent=`${$('use-current').checked?'Original':'Draft'} · ${leanName(right?r.leanR:r.leanL)} · ${mirrored?'mirrored':'not mirrored'}`;
   }
   $('raw').src='../'+object.image;
+  if(object.effect&&object.effect!=='auto')EFFECT_OVERRIDE[object.id]=object.effect;else delete EFFECT_OVERRIDE[object.id];
   const pairs={small:comparison('small',object),big:comparison('big',object)};
   $('wording-small').textContent=measurementQuestionPrompt(...pairs.small);$('wording-big').textContent=measurementQuestionPrompt(...pairs.big);
   const results=await Promise.allSettled(['small','big'].map(async role=>{
@@ -159,7 +161,7 @@ $('reset-inline').onclick=()=>$('reset-object').click();
 $('previous-object').onclick=()=>moveObject(-1);$('next-object').onclick=()=>moveObject(1);$('approve-next').onclick=approveNext;
 for(const role of ['small','big'])$('tab-'+role).onclick=()=>chooseRole(role);
 document.querySelector('.role-tabs').onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();chooseRole(activeRole==='small'?'big':'small');$('tab-'+activeRole).focus();}};
-for(const id of ['rot','mirror-small','mirror-big','lean-small','lean-big','motion-small','motion-big','dimension','units'])$(id).onchange=edit;
+for(const id of ['rot','effect','mirror-small','mirror-big','lean-small','lean-big','motion-small','motion-big','dimension','units'])$(id).onchange=edit;
 $('units').onchange=()=>{const nextUnit=Number($('units').value);$('size').value=Number((Number($('size').value)*displayUnit/nextUnit).toPrecision(12));displayUnit=nextUnit;edit();};
 for(const id of ['size','qualifier','subject'])$(id).oninput=edit;
 for(const id of ['search','group','dimension-filter','changed','unreviewed','new-objects','latest-objects','monthly-objects'])$(id).addEventListener(id==='search'?'input':'change',()=>{if(['new-objects','latest-objects','monthly-objects'].includes(id)&&$(id).checked)for(const other of ['new-objects','latest-objects','monthly-objects'])if(other!==id)$(other).checked=false;page=0;renderList();});
@@ -173,6 +175,7 @@ try{
   $('latest-count').textContent=data.objects.filter(o=>o.collection===latestCollection).length;
   $('new-count').textContent=data.objects.filter(o=>o.collection?.startsWith('new-')).length;
   for(const [id,type]of Object.entries(data.types)){ $('dimension').add(new Option(type.noun,id));$('dimension-filter').add(new Option(type.noun,id)); }
+  for(const [id,name]of Object.entries(EFFECTS))$('effect').add(new Option(name,id));
   for(const role of ['small','big'])for(const [id,name]of Object.entries(MOTIONS))$('motion-'+role).add(new Option(name,id));
   let restoreError='';try{const saved=localStorage.getItem(key);if(saved){const input=JSON.parse(saved);draft=validateReviewPicks(input);reviewed=new Set((input.reviewedIds||[]).filter(id=>data.objects.some(o=>o.id===id)));}}catch{restoreError='Saved draft could not be restored. Import your last export to recover it.';}
   $('new-objects').checked=new URLSearchParams(location.search).get('collection')==='new';

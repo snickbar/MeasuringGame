@@ -15,7 +15,10 @@ for(const [id,resolution]of Object.entries(resolutions)){
   row.settings={...row.settings,mm:resolution.mm,measurement:resolution.measurement};
 }
 const edits=validatePicks(applied,catalog),objects=new Map(catalog.objects.map(o=>[o.id,o]));
-let html=read('index.html'),engine=read('anim/stack-anim.js'),orientSource=read('anim/orient-data.js');
+let html=read('index.html'),engine=read('anim/stack-anim.js'),orientSource=read('anim/orient-data.js'),entrySource=read('anim/entry-styles.mjs');
+const effectMatch=entrySource.match(/export const EFFECT_OVERRIDE = (\{[^\n]*\});/);
+if(!effectMatch)throw Error('Landing effect mapping missing');
+const effects=vm.runInNewContext('('+effectMatch[1]+')');
 const orientMatch=orientSource.match(/export const ORIENT = (\{[^\n]*\});/);
 if(!orientMatch)throw Error('Orientation mapping missing');
 const orient=vm.runInNewContext('('+orientMatch[1]+')');
@@ -29,6 +32,7 @@ for(const [id,settings]of Object.entries(edits)){
   for(const field of Object.keys(settings))if(!sameSettings(old[field],settings[field]))fields[field]={before:old[field],after:settings[field]};
   if(fields.orientation)orient[id]=settings.orientation;
   if(fields.measurement)details[id]=settings.measurement;
+  if(fields.effect){if(settings.effect==='auto')delete effects[id];else effects[id]=settings.effect;}
   if(fields.motionSmall||fields.motionBig)motions[id]=settings.motionSmall===settings.motionBig?settings.motionSmall:{small:settings.motionSmall,big:settings.motionBig};
   if(fields.mm){
     const escaped=id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),pattern=new RegExp('(\\{ id: "'+escaped+'"[^\\n]*?mm: )[-\\d.]+');
@@ -39,10 +43,11 @@ for(const [id,settings]of Object.entries(edits)){
 }
 html=html.replace(detailMatch[0],'  const MEASUREMENT_DETAILS = '+JSON.stringify(details,null,2).replaceAll('\n','\n  ')+';');
 orientSource=orientSource.replace(orientMatch[0],'export const ORIENT = '+JSON.stringify(orient)+';');
+entrySource=entrySource.replace(effectMatch[0],'export const EFFECT_OVERRIDE = '+JSON.stringify(effects)+';');
 engine=engine.replace(motionMatch[0],'const MOTION = '+JSON.stringify(motions,null,2)+';');
 // Validate everything before replacing any source files.
 fs.mkdirSync(new URL(archiveDir+'/',root),{recursive:true});
-for(const [file,value]of [['index.html',html],['anim/stack-anim.js',engine],['anim/orient-data.js',orientSource]])fs.writeFileSync(new URL(file,root),value);
+for(const [file,value]of [['index.html',html],['anim/stack-anim.js',engine],['anim/orient-data.js',orientSource],['anim/entry-styles.mjs',entrySource]])fs.writeFileSync(new URL(file,root),value);
 fs.writeFileSync(new URL(archiveDir+'/original-choices.json',root),source);
 fs.writeFileSync(new URL(archiveDir+'/applied-choices.json',root),JSON.stringify(applied,null,2)+'\n');
 fs.writeFileSync(new URL(archiveDir+'/change-report.json',root),JSON.stringify(report,null,2)+'\n');
