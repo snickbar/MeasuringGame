@@ -6153,7 +6153,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function plainBoardMode() { try { return !!(roomState && roomState.settings && roomState.settings.mode === "teamworlds") && !twQuestionPromptEl.contains(qPromptEl); } catch (e) { return false; } } // plain, except while the real card is on the Team Worlds question screen
   // In a party room the host picks each round's board (from the boards the host has equipped) and writes it to the room, so every
   // phone shows the same one. With no room, or a host on an older version that writes none, a phone uses its own pick.
-  const roomBoard = () => { try { const id = roomState && roomState.board; return typeof id === "string" && id ? id : null; } catch (e) { return null; } };
+  const roomBoard = () => { try {
+    const id = roomState?.phase === "countdown" ? roomState.countdownBoard || roomState.board : roomState?.board;
+    return typeof id === "string" && id ? id : null;
+  } catch (e) { return null; } };
   const activeBoard = () => plainBoardMode() ? "plain" : (roomBoard() || rndGet("boards"));
   // The host's pick for a new round: one of the boards the host has equipped (or owns, when none are chosen), not the one just shown.
   function pickRoomBoard() { const id = rndOfNew("boards", styleEquippedIds("boards")) || styleFallback("boards"); rndLast.boards = id; return id; }
@@ -18569,7 +18572,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // The room's object pool is fixed now, from the host's date and owned packs; a later host change doesn't alter it.
     const now = new Date();
     const updates = {
-      phase: "countdown", countdownRound: 1, countdownEndsAt,
+      phase: "countdown", countdownRound: 1, countdownEndsAt, countdownBoard: pickRoomBoard(),
       gameId: crypto.randomUUID(),
       activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
     };
@@ -19324,12 +19327,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ids.forEach((id) => { hlRoles[id] = id === highId ? "high" : "low"; });
     }
     console.log("[measuring-game] starting round", roundNum, q);
-    // The host's own boards decide the room's board for this round (never the one just shown, when there is a choice).
-    const roundBoard = pickRoomBoard();
+    // Keep the board previewed during the countdown. Older rooms may have no preview pick.
+    const previewBoard = roomState.phase === "countdown" && roomState.countdownRound === roundNum ? roomState.countdownBoard : null;
+    const roundBoard = previewBoard || pickRoomBoard();
+    rndLast.boards = roundBoard;
     await update(ref(db, `rooms/${roomCode}`), {
       ...(hl ? { hlRoles, hlAsked: hlState.asked + 1, hlRecent: hlState.recent, hlThemeId: hlState.themeId, hlLast: null } : {}),
       currentQuestion: q,
       board: roundBoard,
+      countdownBoard: null,
       guesses: null,
       answers: null,
       picks: null,
@@ -19886,7 +19892,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       await update(ref(db, `rooms/${roomCode}`), updates);
     } else {
       const countdownEndsAt = nowMs() + COUNTDOWN_SECONDS * 1000;
-      await update(ref(db, `rooms/${roomCode}`), { phase: "countdown", countdownRound: nextRound, countdownEndsAt });
+      await update(ref(db, `rooms/${roomCode}`), { phase: "countdown", countdownRound: nextRound, countdownEndsAt, countdownBoard: pickRoomBoard() });
       scheduleHostDeadline(countdownEndsAt, () => checkCountdownAdvance(roomCode));
     }
   }
