@@ -631,15 +631,27 @@ export function createStackAnimation(container, options = {}) {
   // names the unit once, right above, as one of the two compared objects - repeating it here
   // read as redundant, per the user's own request).
   const hideUnit = !!options.hideUnit;
+  const tallyRowStyle = 'display:flex;align-items:baseline;gap:6px;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:inherit;';
+  const tallyNumberStyle = 'flex:none;font-weight:700;font-size:26px;line-height:1;';
+  const tallyLabelStyle = 'font-weight:700;overflow:hidden;text-overflow:ellipsis;';
   const tally = document.createElement('div');
-  tally.style.cssText = 'position:absolute;display:flex;align-items:baseline;gap:6px;white-space:nowrap;font-variant-numeric:tabular-nums;';
+  tally.style.cssText = 'position:absolute;' + tallyRowStyle;
   const nEl = document.createElement('span');
-  nEl.style.cssText = 'font-weight:700;font-size:26px;line-height:1;';
+  nEl.style.cssText = tallyNumberStyle;
   const uEl = document.createElement('span');
-  uEl.style.cssText = 'font-weight:700;overflow:hidden;text-overflow:ellipsis;';
+  uEl.style.cssText = tallyLabelStyle;
   const guessEl = document.createElement('div');
   guessEl.className = 'stack-your-guess';
-  guessEl.style.cssText = 'position:absolute;max-width:42%;text-align:right;font-size:13px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;pointer-events:none;';
+  guessEl.style.cssText = 'position:absolute;max-width:calc(50% - 20px);text-align:right;pointer-events:none;';
+  const guessRow = document.createElement('div');
+  guessRow.style.cssText = tallyRowStyle + 'justify-content:flex-end;';
+  const guessLabel = document.createElement('span');
+  guessLabel.style.cssText = tallyLabelStyle;
+  guessLabel.textContent = 'Your guess:';
+  const guessNumber = document.createElement('span');
+  guessNumber.style.cssText = tallyNumberStyle + 'flex-shrink:1;overflow:hidden;text-overflow:ellipsis;';
+  guessRow.append(guessLabel, guessNumber);
+  guessEl.append(guessRow);
   guessEl.hidden = true;
   tally.append(nEl);
   if (!hideUnit) tally.append(uEl);
@@ -977,15 +989,15 @@ export function createStackAnimation(container, options = {}) {
     canvas.height = Math.round(stageH * dpr);
     tally.style.left = G + 'px';
     tally.style.top = (floorY + 10) + 'px';
-    tally.style.fontFamily = 'inherit';
     const hasGuess = Number.isFinite(guess) && guess > 0;
-    tally.style.maxWidth = hasGuess ? '50%' : '';
+    tally.style.maxWidth = hasGuess ? 'calc(50% - 20px)' : '';
     guessEl.hidden = !hasGuess;
     guessEl.style.right = G + 'px';
     guessEl.style.top = (floorY + 10) + 'px';
     guessEl.style.color = earthyFloor ? '#fff7e5' : theme.ink;
-    guessEl.textContent = hasGuess
-      ? 'Your guess: ' + guess.toLocaleString('en-US', { maximumFractionDigits: 20 })
+    guessLabel.style.color = earthyFloor ? '#fff7e5' : theme.muted;
+    guessNumber.textContent = hasGuess
+      ? guess.toLocaleString('en-US', { maximumFractionDigits: 20 })
       : '';
     nEl.style.color = theme.ink;
     uEl.style.color = earthyFloor ? '#fff7e5' : theme.muted;
