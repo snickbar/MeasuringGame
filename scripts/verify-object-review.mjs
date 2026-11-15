@@ -4,7 +4,7 @@ import {currentSettings,validateSettings,validatePicks} from '../anim/object-rev
 import {measurementQuestionPrompt} from '../anim/object-review-prompts.mjs';
 import {liveBatch2Id} from '../anim/object-batch2-ids.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('../anim/object-review-data.json',import.meta.url)));
-const objects=new Map(data.objects.map(o=>[o.id,o]));assert.equal(objects.size,681);
+const objects=new Map(data.objects.map(o=>[o.id,o]));assert.equal(objects.size,744);
 const approved=JSON.parse(fs.readFileSync(new URL('../art-source/object-batch2-2026-11-06/approved-choices.json',import.meta.url)));
 for(const row of approved.objects){
  const o=objects.get(liveBatch2Id(row.id));assert(o,row.id);assert.equal(o.group,'Standard');
@@ -30,4 +30,4 @@ assert.equal(Object.keys(validatePicks({...payload,reviewedIds:['ant']},data)).l
 for(const corrupt of [p=>p.objects.push(p.objects[0]),p=>p.objects[0].id='missing',p=>p.objects[0].settings.mm=0,p=>p.objects[0].settings.measurement.dimension='area',p=>p.objects[0].settings.orientation.rot=13,p=>p.objects[0].settings.orientation.flip='false',p=>p.objects[0].settings.motionBig='teleport',p=>p.objects[0].settings.measurement.qualifier='x'.repeat(201)]){
   const copy=structuredClone(payload);corrupt(copy);assert.throws(()=>validatePicks(copy,data));
 }
-console.log('PASS: all 681 current settings and exact game prompts; full export round-trip; invalid/duplicate IDs, values, dimensions, rotations and motions rejected.');
+console.log('PASS: all 744 current settings and exact game prompts; full export round-trip; invalid/duplicate IDs, values, dimensions, rotations and motions rejected.');

@@ -153,6 +153,16 @@ const VISUAL = {
 // How each object travels in: 'walk' bounces along, 'drive' rattles along, 'fly' lifts off and
 // lands, 'sail' rocks gently, and anything else gives a few hops.
 const MOTION = {
+  "hen": "walk",
+  "horned-bull": "walk",
+  "praying-mantis": "walk",
+  "caterpillar": "walk",
+  "stilt-walker": "walk",
+  "firefly": "fly",
+  "boxy-suv": "drive",
+  "go-kart": "drive",
+  "sit-on-top-kayak": "sail",
+  "enclosed-lifeboat": "sail",
   "cherry": "slide",
   "mouse": "walk",
   "spinning-top": "slide",

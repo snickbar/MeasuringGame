@@ -32,7 +32,9 @@ const LATEST_OBJECTS=new Set(JSON.parse(fs.readFileSync(new URL('art-source/new-
 const BATCH2_OBJECTS=new Set(JSON.parse(fs.readFileSync(new URL('art-source/object-batch2-2026-11-06/approved-choices.json',root))).objects.map(o=>liveBatch2Id(o.id)));
 const objects = sandbox.result.objects.map(o=>({id:o.id,name:o.name,plural:o.plural,mm:o.mm,image:o.image||`items/${o.id}.webp`,group:o.group,collection:NEW_NOVEMBER.has(o.id)?"new-2026-11":(NEW_MONTHLY.has(o.id)||["tennis-court","ice-hockey-rink","coast-redwood","submarine","cargo-ship","freight-train","radio-mast","sports-stadium","radio-telescope","water-slide","roller-coaster","airport-runway"].includes(o.id))?'new-2026-10':'',monthlyExpansion:NEW_MONTHLY.has(o.id),pack:o.pack||'',properNoun:!!o.properNoun,measurement:o.measurement,orientation:o.orientation,motionSmall:o.motionSmall,motionBig:o.motionBig,scenery:sceneryFor(o),questionAsBig:o.questionAsBig,questionAsSmall:o.questionAsSmall,alternateImage:o.id==='donut'?'items/donut-2.webp':null})).sort((a,b)=>a.name.localeCompare(b.name));
 if(!objects.length||objects.length!==sandbox.result.objects.length||new Set(objects.map(o=>o.id)).size!==objects.length)throw Error('Incomplete object catalog');
+const PASS_1114=new Set(JSON.parse(fs.readFileSync(new URL('art-source/new-object-pass-2026-11-14/objects.json',root))).map(r=>r[0]));
 for(const o of objects){
+  if(PASS_1114.has(o.id))o.collection='new-2026-11-14';
   if(LATEST_OBJECTS.has(o.id))o.collection='new-2026-11-05';
   if(BATCH2_OBJECTS.has(o.id))o.collection='new-2026-11-06-batch2';
   if(!fs.existsSync(new URL(o.image,root)))throw Error('Missing object artwork: '+o.id);
