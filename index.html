@@ -5186,7 +5186,7 @@ if (location.protocol === "file:") {
       <button type="button" id="solo-add-bot-btn" class="bot-btn" data-difficulty="easy">+ Add bot</button>
     </div>
     <div id="bot-all-row" style="display:none;">
-      <span class="bot-acc-label">Bot accuracy</span>
+      <span class="bot-acc-label">All bots &middot; accuracy</span>
       <button type="button" class="bot-btn bot-all-btn" data-difficulty="easy">All Low</button>
       <button type="button" class="bot-btn bot-all-btn" data-difficulty="medium">All Med</button>
       <button type="button" class="bot-btn bot-all-btn" data-difficulty="hard">All High</button>
@@ -6386,6 +6386,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // already caused two separate bugs this session from one spot getting
   // updated without the other.
   // The winner's flair plays for everyone, so each player's equipped flair lives on their room entry.
+  // Index into CAREER_RANKS for the player's own level; shared in the room so lobbies can show rank badges.
+  function myRankIdx() {
+    try {
+      const st = myProfile.stats || {}, lv = careerLevel(careerXp({ ...st, rounds: Math.max(st.rounds || 0, careerHistory().length) }));
+      let idx = 0; CAREER_RANKS.forEach(([minLvl], i) => { if (lv.lvl >= minLvl) idx = i; });
+      return idx;
+    } catch (e) { return 0; }
+  }
   function myEquippedFlair() {
     const id = rndGet("flairs");
     return FLAIRS[id] ? id : "classic";
@@ -17789,7 +17797,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     lobbyOrder.forEach(([id, p]) => {
       newIds.add(id);
       const li = document.createElement("li");
-      if (!isFirstRender && !renderedPlayerListIds.has(id)) {
+      if (isFirstRender) {
+        if (!prefersReducedMotion()) li.animate([{opacity:0,translate:"0 14px",scale:".94"},{opacity:1,translate:"0 0",scale:"1.02",offset:.65},{opacity:1,translate:"0 0",scale:"1"}],{duration:380,delay:Math.min(newIds.size - 1, 9) * 60,easing:"cubic-bezier(.25,.8,.35,1)",fill:"backwards"});
+      } else if (!renderedPlayerListIds.has(id)) {
         if (!prefersReducedMotion()) li.animate([{opacity:0,translate:"-14px 0",scale:".7"},{opacity:1,translate:"0 0",scale:"1.07",offset:.6},{opacity:1,translate:"0 0",scale:"1"}],{duration:420,easing:"cubic-bezier(.25,.8,.35,1)"});
         if (roomState.phase === "waiting") playSound("join");
       }
@@ -17800,11 +17810,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!party || !roomState.settings?.mode || roomState.settings.mode === "classic") {
         li.classList.add("lobby-player-card");
         if (id === currentPlayerId) li.classList.add("lobby-player-self");
-        else if (p.isHost) li.classList.add("lobby-player-host");
+        if (p.isHost) li.classList.add("lobby-player-host");
       }
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}${(!p.isBot && Number.isInteger(p.rank) && BADGE_RANK_ICONS[p.rank]) ? `<span class="lobby-rank" title="${escapeHtml(CAREER_RANKS[p.rank][1])}"><img src="${BADGE_RANK_ICONS[p.rank]}" alt="" draggable="false"></span>` : ""}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       if (botRowsOn) {
         li.classList.add("bot-row");
@@ -17845,10 +17855,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       playerList.appendChild(li);
     });
     const playerCount = Object.keys(currentPlayers).length;
-    lobbyPlayerCountEl.textContent = (roomState.settings && roomState.settings.solo
-      ? (playerCount <= 1 ? "Just you" : `You + ${playerCount - 1} ${playerCount === 2 ? "bot" : "bots"}`)
-      : `${playerCount} ${playerCount === 1 ? "Player" : "Players"} Here`) + (playerCount >= FRAME_COUNT ? ` \u2022 Room full (${FRAME_COUNT} max)` : "");
-    fitTextToBox(lobbyPlayerCountEl);
+    lobbyPlayerCountEl.innerHTML = `<span class="seat-label">Seats</span><b class="seat-num">${playerCount} / ${FRAME_COUNT}</b><span class="seat-dots" aria-hidden="true">${Array.from({ length: FRAME_COUNT }, (_, i) => `<i class="${i < playerCount ? "on" : ""}"></i>`).join("")}</span>${playerCount >= FRAME_COUNT ? '<span class="seat-full">Full</span>' : ""}`;
+    lobbyPlayerCountEl.setAttribute("aria-label", `${playerCount} of ${FRAME_COUNT} seats taken`);
     if (!isFirstRender && roomState.phase === "waiting") {
       for (const id of renderedPlayerListIds) {
         if (!newIds.has(id)) { playSound("leave"); break; }
@@ -18146,8 +18154,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = staleOwnId || makePlayerId();
     lastSyncedFlair = myEquippedFlair();
     const player = staleOwnId
-      ? { name, isHost: finalIsHost, flair: lastSyncedFlair, connected: true, disconnectedAt: null }
-      : { name, avatar: currentAvatar, flair: lastSyncedFlair, isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
+      ? { name, isHost: finalIsHost, flair: lastSyncedFlair, rank: myRankIdx(), connected: true, disconnectedAt: null }
+      : { name, avatar: currentAvatar, flair: lastSyncedFlair, rank: myRankIdx(), isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
     if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
     const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
