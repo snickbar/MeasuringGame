@@ -13109,11 +13109,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   // ---- screen ----
+  const HS_NEON = ["#ff6b4a", "#7a8cff", "#b86bff", "#19c3ff", "#12d6b0", "#8ee03a", "#ff4fa0", "#4cd98a", "#ff5a66", "#ffa23a"];
+  function hsNeonStyle(id) { const ids = Object.keys(roomState.players || {}), fi = Number((roomState.players || {})[id]?.frameIndex) || (Math.max(0, ids.indexOf(id)) + 1); return ` style="--pc:${HS_NEON[(fi - 1 + 10) % 10]}"`; }
   function hsPlayerChip(id, hs, extra) {
     const p = (roomState.players || {})[id];
     const out = !!hs.out?.[id];
     const coins = hs.chips[id] ?? 0;
-    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}" data-hs-pl="${id}"><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
+    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
   }
   // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
   function hsSlideStand() {
@@ -13359,7 +13361,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }
         }
       }
-      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
     };
     const colL = [], colR = [];
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
