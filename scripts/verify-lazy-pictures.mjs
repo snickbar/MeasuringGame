@@ -60,7 +60,7 @@ assert.equal(awake.getAttribute('src'), 'avatars/z.png');
 const html = fs.readFileSync('index.html', 'utf8');
 assert(html.includes('import { pictureSrcAttr, pictureSrc, installLazyPictures } from "./anim/lazy-pictures.mjs";'), 'The page loads the helper');
 assert(html.includes('avatarHtml(a, "", position++)'), 'The collection tiles count their position across all groups');
-assert(html.includes('installLazyPictures(collectionContentEl, { scroller: document.getElementById("shop-tab-avatars") })'), 'The grid wakes pictures relative to its own scroll panel');
+assert(html.includes('installLazyPictures(collectionContentEl)'), 'The grid wakes pictures relative to the viewport');
 assert(html.includes('pictureSrc(img).match(/avatars'), 'Tapping a picture that is still asleep still finds its avatar');
 assert(html.indexOf('let stopCollectionLazy') > 0 && html.indexOf('let stopCollectionLazy') < html.indexOf('function renderCollectionScreen'), 'The stop handle is declared before the grid can be drawn');
 

@@ -25,7 +25,8 @@ const script=String.raw`(async()=>{
  $('avatar-zoom-overlay')?.click();
  // Scrolling to the end wakes the pictures down there.
  const panel=$('shop-tab-avatars');out.scroller=getComputedStyle(panel).overflowY;
- panel.scrollTop=panel.scrollHeight;
+ window.scrollTo(0,document.scrollingElement.scrollHeight);
+ out.documentScroll=window.scrollY;
  for(let n=0;n<60;n++){await wait(50);const last=imgs().at(-1);if(last&&last.getAttribute('src')&&last.complete&&last.naturalWidth)break;}
  const last=imgs().at(-1);
  out.after=count();out.lastAwake=!!last.getAttribute('src');out.lastDrawn=last.complete&&last.naturalWidth>0;
@@ -42,7 +43,8 @@ runFixture({html,widths:[390],modules:{'/__fake/app.mjs':'export const initializ
  assert(out.first.awake>=36&&out.first.awake<=130,'Only the first screenful and a little more is requested: '+out.first.awake);
  assert(out.first.asleep>=out.first.total-130&&out.first.awake+out.first.asleep===out.first.total,'The rest waits: '+JSON.stringify(out.first));
  assert(out.zoomOpened&&out.zoomSrc===out.sleeperId,'Tapping a picture that has not loaded yet still opens its zoom: '+out.sleeperId+' -> '+out.zoomSrc);
- assert.equal(out.scroller,'auto','The grid scrolls inside its panel, which is what the wake margin is measured from');
+ assert.equal(out.scroller,'visible','The avatar panel does not clip the grid');
+ assert(out.documentScroll>0,'The page scrolls the avatar grid');
  assert(out.lastAwake&&out.lastDrawn,'Scrolling to the end wakes the last picture and it draws');
  assert(out.after.awake>out.first.awake&&out.after.awake+out.after.asleep===out.after.total,'More pictures woke as the grid scrolled: '+JSON.stringify(out.after));
  assert(out.filtered.total>0&&out.filtered.total<out.first.total&&out.filtered.awake+out.filtered.asleep===out.filtered.total,'A redrawn grid is watched afresh: '+JSON.stringify(out.filtered));

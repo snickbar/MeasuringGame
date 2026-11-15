@@ -598,27 +598,10 @@ if (location.protocol === "file:") {
   }
   .shop-tab-panel { display: none; }
   .shop-tab-panel.active { display: block; }
-  /* The shop screen used to sit in normal body flow, which on a tall tab
-     (Coins, with its stacked pack cards) let the whole page be dragged up
-     and down like a scroll - pinning it as its own fixed panel below the
-     toolbar stops that drag entirely and keeps "Shop" fixed at the top;
-     only the active tab's own content scrolls, if it's taller than the
-     available space. Same pattern as #hud.active. */
-  #gacha-screen.active {
-    display: flex; flex-direction: column;
-    position: fixed; top: 62px; left: 0; right: 0; bottom: 0;
-    max-width: 520px; margin: 0 auto;
-    padding: 12px 12px 0;
-  }
-  #gacha-screen.active .screen-header { flex-shrink: 0; }
-  #gacha-screen.active .shop-tab-panel.active { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
-  /* ---- Cosmetics: Emojis / Flairs mini menu, one item per row: picture left, Equip middle, coin price right ---- */
-  /* Pinned to the top of the (scrollable) shop-tab-panel - the tab buttons
-     and the active tab's description stay visible while the list scrolls. */
-  .cosm-sticky-header { position: sticky; top: 0; z-index: 5; background: transparent; padding-top: 2px; }
+  #gacha-screen { padding-top: 12px; }
+  .cosm-header { padding-top: 2px; }
   .cosm-tabs { display: flex; gap: 8px; margin: 4px 0 8px; }
-  /* Stats: the level card scrolls away, then the mode tabs pin just under the Stats/Objects/Awards strip */
-  #career-content .cosm-tabs.stats-views { position: sticky; top: 112px; z-index: 6; margin: 0 -6px 4px; padding: 4px 6px 14px; background: none; }
+  #career-content .cosm-tabs.stats-views { margin: 0 -6px 4px; padding: 4px 6px 14px; background: none; }
   .cosm-pane[hidden] { display: none; }
   .cosm-note:empty { display: none; }
   .cosm-note { margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 700; color: #c9542f; }
@@ -818,15 +801,11 @@ if (location.protocol === "file:") {
     content: "\1F512"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px;
   }
   .collection-tile .avatar-icon { width: 100%; height: 100%; }
-  /* Same pinned-header treatment as Objects/Awards: the discovered-count box
-     and the Hide Undiscovered toggle stay put while the tier groups scroll
-     underneath, with the back button riding fixed in that same strip
-     instead of the (now-removed) "All Avatars" title row. */
-  #collection-content .collection-sticky-head { position: sticky; top: 0; z-index: 6; display: flex; align-items: stretch; gap: 6px; margin: 0 0 10px; padding: 8px 0 6px; background: none; }
-  #collection-content .collection-sticky-head .items-stat-box { flex: 0 0 auto; padding: 5px 9px; }
-  #collection-content .collection-sticky-head .items-stat-value { font-size: 16px; }
-  #collection-content .collection-sticky-head .items-stat-label { font-size: 10px; margin-top: 1px; }
-  #collection-content .collection-sticky-head button.items-stat-box.ach-hide-box { flex: 1 1 auto; min-width: 0; }
+  #collection-content .collection-head { display: flex; align-items: stretch; gap: 6px; margin: 0 0 10px; padding: 8px 0 6px; background: none; }
+  #collection-content .collection-head .items-stat-box { flex: 0 0 auto; padding: 5px 9px; }
+  #collection-content .collection-head .items-stat-value { font-size: 16px; }
+  #collection-content .collection-head .items-stat-label { font-size: 10px; margin-top: 1px; }
+  #collection-content .collection-head button.items-stat-box.ach-hide-box { flex: 1 1 auto; min-width: 0; }
   /* Owned / Locked are filters: pale tan when off, bright yellow with a little x when on (tap again, or tap the other one, to clear). */
   .coll-chip { position: relative; flex: 0 0 auto; margin: 0; width: auto; padding: 0 13px; border: 2px solid #c9b088; border-radius: 12px; background: #ead9b8; color: #7a6342; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
   .coll-chip:active { filter: brightness(.93); }
@@ -834,11 +813,8 @@ if (location.protocol === "file:") {
   .coll-chip.on::after { content: "\00d7"; position: absolute; top: -7px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #e0a100; color: #8a5a00; font-size: 14px; font-weight: 700; line-height: 13px; text-align: center; box-sizing: border-box; }
   .items-stats { display: flex; gap: 10px; margin: 0 0 14px; }
   .items-stat-box { flex: 1; background: linear-gradient(180deg, #fff3c9, #ffe08a); border: 2px solid #f0b32e; border-radius: 12px; padding: 8px 8px 7px; text-align: center; box-shadow: 0 2px 0 rgba(200,140,20,.35); }
-  /* Tab toggle and stat boxes are pinned together as ONE sticky unit (not two separately-offset
-     sticky rows) so their stuck positions can never drift apart and overlap while scrolling. */
-  #items-content .items-sticky-head { position: sticky; top: 112px; z-index: 6; margin: 0 -6px; padding: 4px 60px 0 6px; }
-  #items-content .items-sticky-head .items-stats { margin: 0 0 12px; padding: 6px 0 8px; }
-  /* Back button rides in the pinned header, right of the Combinations box */
+  #items-content .items-head { margin: 0 -6px; padding: 4px 60px 0 6px; }
+  #items-content .items-head .items-stats { margin: 0 0 12px; padding: 6px 0 8px; }
   #items-screen.active #items-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   .items-tabs { display: flex; gap: 6px; margin: 0 0 6px; }
   .items-pack-away { font-size: 11px; font-weight: 700; color: #9a5d0a; background: #ffe9a8; border-radius: 8px; padding: 1px 7px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
@@ -851,7 +827,7 @@ if (location.protocol === "file:") {
   .items-stat-value { font-size: 20px; font-weight: 700; color: #6b3a05; line-height: 1.1; }
   .items-stat-label { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #9a5d0a; margin-top: 2px; }
   /* ---- Career: one screen, three tabs (Stats / Awards / Objects) ---- */
-  .career-tabs { position: sticky; top: 62px; z-index: 8; display: flex; gap: 6px; margin: 0 -6px; padding: 6px 6px; }
+  .career-tabs { display: flex; gap: 6px; margin: 0 -6px; padding: 6px 6px; }
   button:is(.cosm-tab-btn, .career-tab, .items-tab) {
     position: relative; display: flex; align-items: center; justify-content: center;
     flex: 1 1 0; box-sizing: border-box; min-width: 0; height: 40px; margin: 0; padding: 0;
@@ -1586,12 +1562,8 @@ if (location.protocol === "file:") {
   /* ---- Achievements ---- */
   #toolbar-awards-btn { position: relative; }
   #toolbar-awards-btn.has-claim::after { content: ""; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid #fff; }
-  /* Same pinned-header treatment as the Objects screen: stat boxes + the
-     Hide Completed toggle stay put while the award list scrolls underneath,
-     and the back button rides fixed in that same strip instead of its own
-     (now-removed) title row. */
-  #achievements-content .ach-sticky-head { position: sticky; top: 112px; z-index: 6; margin: 0 -6px 12px; padding: 6px 6px 8px; background: transparent; }
-  body.overlay-has-return #achievements-content .ach-sticky-head .items-stats { padding-right: 54px; }
+  #achievements-content .ach-head { margin: 0 -6px 12px; padding: 6px 6px 8px; background: transparent; }
+  body.overlay-has-return #achievements-content .ach-head .items-stats { padding-right: 54px; }
   #achievements-screen.active #achievements-close-btn { position: fixed; top: 64px; right: max(8px, calc((100vw - 520px) / 2 + 8px)); z-index: 9; }
   .ach-filter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; padding: 8px 12px; background: rgba(90,74,58,.07); border-radius: 10px; font-weight: 700; font-size: 14px; }
   .ach-switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; border: 2px solid #8a6a3a; border-radius: 14px; background: #d9cdb8; padding: 0; margin: 0; cursor: pointer; transition: background 160ms; }
@@ -4655,7 +4627,7 @@ if (location.protocol === "file:") {
   </div>
 
   <div id="shop-tab-cosmetics" class="shop-tab-panel">
-    <div class="cosm-sticky-header">
+    <div class="cosm-header">
       <p id="cosm-note" class="cosm-note" role="status"></p>
       <div class="cosm-sub cosm-sub-desc cosm-equip-bar" data-sub="emojis"><span id="cosm-emoji-status" class="cosm-equip-count"></span><button type="button" id="cosm-unequip-all-btn" class="cosm-unequip-all">Unequip all</button></div>
       <div id="cosm-random-slot"></div>
@@ -11833,6 +11805,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     target.classList.add("active");
     overlayReturnScreen = null;
     syncOverlayReturnFlag();
+    window.scrollTo(0, 0);
     careerLastTab = tab; try { localStorage.setItem("mg_lastStatsTab", tab); } catch (e) {}
     document.querySelectorAll(".career-tabs .career-tab").forEach((b) => {
       const active = b.dataset.tab === tab;
@@ -16003,6 +15976,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll(".shop-tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === panelId));
     if (isCosm && tab !== "avatars") setCosmSub(tab);
     renderShopTab(tab);
+    window.scrollTo(0, 0);
     fitGachaScene();
     fitAllButtonText();
   }
@@ -16010,7 +15984,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const GACHA_SCENE_MIN_HEIGHT = 300;
   // The machine graphic + its overlaid globe/capsule/knob are positioned
   // with pixel offsets calibrated to a 450px-tall scene, so on a short phone
-  // screen where the full Avatars tab content doesn't fit, shrink the WHOLE
+  // screen where the capsule machine doesn't fit, shrink the whole
   // scene proportionally (transform, not a resize - that would misalign the
   // overlays) by exactly however much it's overflowing, so nothing needs to
   // scroll and the full machine is always visible.
@@ -16019,7 +15993,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!panel.classList.contains("active") || !gachaScreen.classList.contains("active")) return;
     gachaSceneWrapEl.style.height = `${GACHA_SCENE_NATURAL_HEIGHT}px`;
     gachaSceneEl.style.transform = "none";
-    const overflow = panel.scrollHeight - panel.clientHeight;
+    const panelBottom = panel.getBoundingClientRect().top + window.scrollY + panel.offsetHeight;
+    const overflow = panelBottom - window.innerHeight;
     if (overflow <= 0) return;
     const targetHeight = Math.max(GACHA_SCENE_MIN_HEIGHT, GACHA_SCENE_NATURAL_HEIGHT - overflow);
     gachaSceneWrapEl.style.height = `${targetHeight}px`;
@@ -16274,7 +16249,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     AVATARS.forEach((a) => byTier[AVATAR_TIERS[a]].push(a));
     const totalUnlocked = AVATARS.filter(isAvatarUnlocked).length;
     const chip = (id, label) => `<button type="button" class="coll-chip${collectionOwnership === id ? " on" : ""}" data-avatar-filter="${id}" aria-pressed="${collectionOwnership === id}">${label}</button>`;
-    const head = `<div class="collection-sticky-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
+    const head = `<div class="collection-head">${chip("owned", "Owned")}${chip("locked", "Locked")}
       <div class="items-stat-box"><div class="items-stat-value">${totalUnlocked} / ${AVATARS.length}</div><div class="items-stat-label">Discovered</div></div>
       <button type="button" id="collection-hide-switch" class="items-stat-box ach-hide-box${collectionHideLocked ? " on" : ""}" role="switch" aria-checked="${collectionHideLocked}" aria-label="Hide undiscovered"><span class="items-stat-label">Hide undiscovered</span><span class="ach-switch-mini"></span></button>
     </div>`;
@@ -16300,7 +16275,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (favList.length && collectionOwnership !== "locked") body = `<div class="collection-tier-group"><h3 class="collection-tier-title"><span class="fav-title-heart">${FAV_HEART}</span>Favorites<span class="collection-tier-count">(${favList.length})</span></h3><div class="collection-grid">${favList.map((a) => `<div class="collection-tile" role="button" tabindex="0">${avatarHtml(a)}<i class="fav-dot">${FAV_HEART}</i></div>`).join("")}</div></div>` + body;
     if (!body) body = `<div class="ach-empty">${emptyHtml("icons/shop-starter-gift.webp", "No avatars yet", "Give the machine a spin!")}</div>`;
     collectionContentEl.innerHTML = head + body;
-    stopCollectionLazy(); stopCollectionLazy = installLazyPictures(collectionContentEl, { scroller: document.getElementById("shop-tab-avatars") });
+    stopCollectionLazy(); stopCollectionLazy = installLazyPictures(collectionContentEl);
   }
 
   // Display names only - deliberately leaves out OBJECTS[].mm (the whole
@@ -16394,7 +16369,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }).join("");
     }
     itemsContentEl.innerHTML =
-      `<div class="items-sticky-head">
+      `<div class="items-head">
         <div class="items-tabs">
           <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal" aria-pressed="${!isHoliday}">Main</button>
           <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday" aria-pressed="${isHoliday}">Monthly</button>
@@ -16428,15 +16403,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   if (itemsContentEl) {
     itemsContentEl.addEventListener("click", (e) => {
       if (e.target.closest("#items-jump-btn")) {
-        const g = itemsContentEl.querySelector(".items-pack-live"), head = itemsContentEl.querySelector(".items-sticky-head");
+        const g = itemsContentEl.querySelector(".items-pack-live");
         if (g) {
-          g.style.scrollMarginTop = (62 + (head ? head.offsetHeight : 0) + 6) + "px";
+          g.style.scrollMarginTop = "68px";
           g.scrollIntoView({ behavior: "smooth", block: "start" });
         }
         return;
       }
       const t = e.target.closest(".items-tab[data-tab]");
-      if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); itemsContentEl.scrollTop = 0; }
+      if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); window.scrollTo(0, 0); }
     });
   }
 
@@ -16610,7 +16585,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     if (!body) body = `<div class="ach-empty">Everything is claimed. Nice work!</div>`;
     el.innerHTML =
-      `<div class="ach-sticky-head">
+      `<div class="ach-head">
         <div class="items-stats">
           <div class="items-stat-box"><div class="items-stat-value">${doneCount}</div><div class="items-stat-label">Awards claimed</div></div>
           <div class="items-stat-box"><div class="items-stat-value">${waiting}</div><div class="items-stat-label">Rewards ready to claim</div></div>
