@@ -5155,7 +5155,6 @@ if (location.protocol === "file:") {
   <div class="lobby-room-box">
     <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
-    <button id="qr-room-btn" type="button" aria-label="Show room QR code">Show QR</button>
   </div>
 
   <div id="host-unlock-banner">
@@ -17244,24 +17243,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return `https://size-em-up.web.app/?join=${roomCode}`;
   }
 
-  // One shared invite control for every Party lobby, including free hosted games.
-  let partyQrDialog=null;
-  document.getElementById('qr-room-btn').addEventListener('click',()=>{
-    if(!currentRoomCode||roomState.settings?.solo||!lobbyScreenEl.classList.contains('active')||!window.qrcode)return;
-    partyQrDialog?.close();
-    const code=currentRoomCode,qr=window.qrcode(0,'M');qr.addData(joinLinkFor(code));qr.make();
-    const dialog=document.createElement('dialog');partyQrDialog=dialog;dialog.id='party-room-qr';dialog.setAttribute('aria-labelledby','party-qr-title');
-    dialog.innerHTML=`<div id="qr-card"><div id="party-qr-title" class="qr-title">Scan to join!</div><div class="qr-img">${qr.createSvgTag({cellSize:4,margin:4,scalable:true})}</div><div class="qr-code">${escapeHtml(code)}</div><div class="qr-sub">Or enter this code in Join Game</div><button type="button" class="qr-close">Close</button></div>`;
-    const observer=new MutationObserver(()=>{if(!lobbyScreenEl.classList.contains('active')||currentRoomCode!==code)dialog.close();});
-    observer.observe(lobbyScreenEl,{attributes:true,attributeFilter:['class']});
-    dialog.addEventListener('close',()=>{observer.disconnect();dialog.remove();if(partyQrDialog===dialog)partyQrDialog=null;});
-    dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
-    document.body.append(dialog);dialog.showModal();
-  });
-
   const shareRoomReset = { timer: null };
-  shareRoomBtn.addEventListener("click", async () => {
-    if (!currentRoomCode) return;
+  // Share room opens one invite card: QR code, the room code, and buttons to send the link or copy it.
+  async function sendRoomInvite() {
+    if (!currentRoomCode) return false;
     const joinUrl = joinLinkFor(currentRoomCode);
     const shareText = `Join my Size Em Up! game - room code ${currentRoomCode}. Guess how many of one thing fit inside another!`;
     // The Android app's web view has no navigator.share, so it uses the native share plugin instead.
@@ -17269,21 +17254,37 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (nativeShare) {
       try {
         await nativeShare.share({ title: "Size Em Up!", text: shareText, url: joinUrl, dialogTitle: "Invite friends" });
-        return;
+        return true;
       } catch (err) {
-        if (err && /cancel/i.test(String(err.message || err))) return;
+        if (err && /cancel/i.test(String(err.message || err))) return true;
       }
     } else if (navigator.share) {
       try {
         await navigator.share({ title: "Size Em Up!", text: shareText, url: joinUrl });
-        return;
+        return true;
       } catch (err) {
-        if (err && err.name === "AbortError") return;
+        if (err && err.name === "AbortError") return true;
       }
     }
-    const copied = await copyTextToClipboard(joinUrl);
-    if (!copied) return;
-    flashButtonConfirm(shareRoomBtn, shareRoomReset, "Link copied!", "Share room");
+    return false;
+  }
+  let partyQrDialog = null;
+  shareRoomBtn.addEventListener("click", () => {
+    if (!currentRoomCode) return;
+    if (!window.qrcode) { void sendRoomInvite().then((ok) => { if (!ok) void copyTextToClipboard(joinLinkFor(currentRoomCode)); }); return; }
+    partyQrDialog?.close();
+    const code = currentRoomCode, qr = window.qrcode(0, "M"); qr.addData(joinLinkFor(code)); qr.make();
+    const dialog = document.createElement("dialog"); partyQrDialog = dialog; dialog.id = "party-room-qr"; dialog.setAttribute("aria-labelledby", "party-qr-title");
+    dialog.innerHTML = `<div id="qr-card"><div id="party-qr-title" class="qr-title">Invite friends</div><div class="qr-img">${qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true })}</div><div class="qr-code">${escapeHtml(code)}</div><div class="qr-sub">Scan the code, or enter it in Join Game</div><button type="button" class="qr-send">Send invite</button><button type="button" class="qr-copy">Copy link</button><button type="button" class="qr-close">Close</button></div>`;
+    const observer = new MutationObserver(() => { if (!lobbyScreenEl.classList.contains("active") || currentRoomCode !== code) dialog.close(); });
+    observer.observe(lobbyScreenEl, { attributes: true, attributeFilter: ["class"] });
+    dialog.addEventListener("close", () => { observer.disconnect(); dialog.remove(); if (partyQrDialog === dialog) partyQrDialog = null; });
+    dialog.querySelector(".qr-close").onclick = () => dialog.close();
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    const copyBtn = dialog.querySelector(".qr-copy");
+    dialog.querySelector(".qr-send").onclick = async () => { if (!(await sendRoomInvite())) { copyBtn.click(); } };
+    copyBtn.onclick = async () => { const ok = await copyTextToClipboard(joinLinkFor(code)); copyBtn.textContent = ok ? "Link copied!" : "Copy failed"; setTimeout(() => { copyBtn.textContent = "Copy link"; }, 1600); };
+    document.body.append(dialog); dialog.showModal();
   });
 
   // ---- Room-code paywall: only the host's own view is ever gated - a guest

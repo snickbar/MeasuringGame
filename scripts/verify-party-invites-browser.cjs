@@ -64,13 +64,13 @@ try{
  for(let n=0;n<300&&!window.__polish?.profile()?.stats?.gamesPlayed;n++)await wait(20);const api=window.__polish,$=id=>document.getElementById(id);
  const original=window.qrcode;window.qrcode=(...args)=>{const qr=original(...args),add=qr.addData;qr.addData=value=>{window.__invite=value;add(value);};return qr;};
  for(const mode of ['classic','teamvteam','teamworlds','hlsurvival','highstakes','bluff'])for(const [unlocked,guest]of [[true,false],[false,false],[false,true]]){
-  await api.inviteLobby(mode,unlocked,guest);await wait(80);const button=$('qr-room-btn'),box=button.getBoundingClientRect();
+  await api.inviteLobby(mode,unlocked,guest);await wait(80);const button=$('share-room-btn'),box=button.getBoundingClientRect();
   assert(box.width>0&&getComputedStyle(button).display!=='none','Show QR visible '+mode+' '+unlocked+' '+guest);assert(!$('room-code-display').classList.contains('code-locked'),'Valid party invite not blurred');
   assert(document.documentElement.scrollWidth<=innerWidth+1,'Invite row fits phone');const code=$('room-code-display');code.textContent='MWMW';assert(parseFloat(getComputedStyle(code).fontSize)>=26,'Large readable lobby code');assert(code.scrollWidth<=code.clientWidth+1,'Wide room letters fit without clipping');assert($('lobby-title-room').textContent.includes('Room code'),'Explicit room code label');code.textContent='TEST';button.click();const modal=$('party-room-qr');assert(modal?.open,'Modal opens '+mode);assert(modal.querySelector('svg'),'Local QR artwork');assert(modal.textContent.includes('TEST'),'Correct room code');assert(window.__invite==='https://size-em-up.web.app/?join=TEST','Phone-accessible invite, not computer localhost');
-  assert(modal.getBoundingClientRect().width<=innerWidth,'QR popup fits');modal.querySelector('button').click();await wait(20);assert(!$('party-room-qr'),'Close removes popup');
+  assert(modal.getBoundingClientRect().width<=innerWidth,'QR popup fits');modal.querySelector('.qr-close').click();await wait(20);assert(!$('party-room-qr'),'Close removes popup');
  }
- await api.inviteLobby('bluff');$('qr-room-btn').click();$('lobby-screen').classList.remove('active');await wait(50);assert(!$('party-room-qr'),'Starting or leaving closes QR');
- await api.inviteLobby('solo');assert(!$('qr-room-btn').getClientRects().length,'Solo has no room invite');
+ await api.inviteLobby('bluff');$('share-room-btn').click();$('lobby-screen').classList.remove('active');await wait(50);assert(!$('party-room-qr'),'Starting or leaving closes QR');
+ await api.inviteLobby('solo');assert(!$('share-room-btn').getClientRects().length,'Solo has no room invite');
  const reaction=api.reactionBluff();assert(reaction&&reaction.left>30&&reaction.top>150&&reaction.bottom<innerHeight,'Reaction emerges inward from visible player card');
  const recent=[
   {code:'HSTK',phase:'hs',settings:{mode:'highstakes'},label:'High Stakes',kind:'highstakes'},
