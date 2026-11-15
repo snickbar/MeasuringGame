@@ -863,8 +863,10 @@ if (location.protocol === "file:") {
     background: none; box-shadow: none; color: #493224; text-shadow: none;
     font: 700 clamp(12px, 3.5vw, 15px)/1 Fredoka, sans-serif; white-space: nowrap;
   }
-  button:is(.cosm-tab-btn, .career-tab, .items-tab[data-tab]):not(.active) {
-    filter: saturate(.35) brightness(.87);
+  button:is(.cosm-tab-btn, .career-tab, .items-tab).active {
+    border-image-source: url(icons/lobby-difficulty-medium.webp);
+    border-image-slice: 28% 25% 29% fill;
+    color: #503600;
   }
   button:is(.cosm-tab-btn, .career-tab, .items-tab):focus-visible {
     outline: 2px solid #287cb8; outline-offset: 1px;
@@ -2560,10 +2562,11 @@ if (location.protocol === "file:") {
   button.lobby-opt:disabled { opacity: .7; }
   /* Stats: recent games / attempts */
   /* Badges tab */
-  .bd-head { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 2px 8px; font-family: 'Fredoka', sans-serif; }
+  .bd-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 10px; font-family: 'Fredoka', sans-serif; }
   .bd-head h3 { margin: 0; font-size: 18px; }
-  .bd-head span { font-size: 13px; font-weight: 600; color: #9a7a4f; }
+  .bd-head span { font-size: 13px; font-weight: 600; color: #70502d; text-align: right; }
   .bd-card { background: #fffdf6; border: 2.5px solid #d9bf90; border-radius: 20px; padding: 12px; }
+  .bd-card + .bd-card { margin-top: 10px; }
   .bd-ranks { display: flex; justify-content: space-between; gap: 4px; }
   .bd-rank { flex: 1; min-width: 0; text-align: center; font: 700 11px/1.1 'Fredoka', sans-serif; color: #5a3a1a; background: none; border: 0; padding: 0; }
   .bd-rank.off { opacity: .5; }
@@ -2575,6 +2578,10 @@ if (location.protocol === "file:") {
   .bd-item .bd-name { display: block; overflow-wrap: anywhere; }
   .bd-medal { position: relative; width: 58px; height: 58px; margin: 0 auto 4px; border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle at 35% 28%, rgba(255,255,255,.55), transparent 45%), var(--rim); border: 3px solid var(--edge); box-shadow: 0 3px 0 var(--edge), 0 6px 8px rgba(0,0,0,.2); }
+  .bd-rank { white-space: normal; overflow-wrap: anywhere; }
+  @media (max-width: 350px) { .bd-ranks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 10px; } }
+  .bd-card .bd-medal { width: min(64px, 100%); height: auto; box-sizing: border-box; aspect-ratio: 1; }
+  .bd-card .bd-medal img { width: min(34px, 67%); height: auto; aspect-ratio: 1; }
   .bd-medal::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: #fffaf0; border: 2px solid var(--edge); }
   .bd-medal img { position: relative; width: 34px; height: 34px; object-fit: contain; }
   .bd-medal.bronze { --rim: #d99a5b; --edge: #8a5628; } .bd-medal.silver { --rim: #cfd6df; --edge: #7a8798; } .bd-medal.gold { --rim: #f6cf54; --edge: #a8741a; } .bd-medal.rank { --rim: #7fc3e8; --edge: #2f6f96; }
@@ -2584,7 +2591,6 @@ if (location.protocol === "file:") {
   .bd-new { position: absolute; top: -5px; right: 0; z-index: 2; background: #e0482f; color: #fff; border-radius: 999px; font: 700 9px/1.3 'Fredoka', sans-serif; padding: 1px 5px; border: 2px solid #fff; }
   .bd-bar { height: 5px; border-radius: 3px; background: #e8dcc5; margin: 3px 6px 0; overflow: hidden; }
   .bd-bar i { display: block; height: 100%; background: #4caf50; }
-  .bd-cat { font: 700 12px 'Fredoka', sans-serif; color: #9a7a4f; letter-spacing: .05em; text-transform: uppercase; margin: 14px 2px 8px; }
   .bd-pop-ov { position: fixed; inset: 0; z-index: 9000; background: rgba(40,25,10,.5); display: grid; place-items: center; padding: 20px; }
   .bd-pop { width: min(300px, 100%); background: #fffdf6; border: 3px solid #c9a26d; border-radius: 22px; padding: 18px 16px; text-align: center; font-family: 'Fredoka', sans-serif; color: #5a3a1a; }
   .bd-pop .bd-medal { width: 84px; height: 84px; margin: 0 auto 8px; } .bd-pop .bd-medal img { width: 44px; height: 44px; }
@@ -15542,13 +15548,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `<button type="button" class="bd-rank${on ? "" : " off"}" data-badge-rank="${i}"><span class="bd-medal rank"><img src="${BADGE_RANK_ICONS[i] || "icons/flair/star.webp"}" alt="" draggable="false"></span>${name}</button>`;
     }).join("");
     const nextRank = CAREER_RANKS.find(([minLvl]) => minLvl > lv.lvl);
-    let html = `<div class="bd-head"><h3>Badges</h3><span>${earned.length} of ${all.length}</span></div>
-      <div class="bd-card"><div class="cs-lab">RANKS</div><div class="bd-ranks">${ranks}</div><div class="bd-sub">${nextRank ? `Next rank: ${nextRank[1]} at Level ${nextRank[0]}` : "You reached the top rank!"}</div></div>`;
+    let html = `<div class="bd-card"><div class="bd-head"><h3>Badges</h3><span>${earned.length} of ${all.length}</span></div><div class="cs-lab">RANKS</div><div class="bd-ranks">${ranks}</div><div class="bd-sub">${nextRank ? `Next rank: ${nextRank[1]} at Level ${nextRank[0]}` : "You reached the top rank!"}</div></div>`;
     const upNext = all.filter((x) => !x.st.earned && x.st.prog > 0 && x.a.target > 1).sort((p, q) => q.st.prog / q.a.target - p.st.prog / p.a.target).slice(0, 4);
-    if (upNext.length) html += `<div class="bd-head"><h3>Up next</h3><span>closest first</span></div><div class="bd-card"><div class="bd-grid">${upNext.map(item).join("")}</div></div>`;
+    if (upNext.length) html += `<div class="bd-card"><div class="bd-head"><h3>Up next</h3><span>closest first</span></div><div class="bd-grid">${upNext.map(item).join("")}</div></div>`;
     ACH_CATS.forEach((cat) => {
       const list = all.filter((x) => x.a.cat === cat);
-      if (list.length) html += `<div class="bd-cat">${cat} · ${list.filter((x) => x.st.earned).length}/${list.length}</div><div class="bd-card"><div class="bd-grid">${list.map(item).join("")}</div></div>`;
+      if (list.length) html += `<div class="bd-card"><div class="bd-head"><h3>${escapeHtml(cat)}</h3><span>${list.filter((x) => x.st.earned).length}/${list.length}</span></div><div class="bd-grid">${list.map(item).join("")}</div></div>`;
     });
     return html;
   }
@@ -16324,7 +16329,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     itemsContentEl.innerHTML =
       `<div class="items-sticky-head">
         <div class="items-tabs">
-          <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal" aria-pressed="${!isHoliday}">Objects</button>
+          <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal" aria-pressed="${!isHoliday}">Main</button>
           <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday" aria-pressed="${isHoliday}">Monthly</button>
           <button type="button" id="object-search-toggle" class="items-tab items-search-toggle" aria-expanded="${!searchPanel.hidden}" aria-controls="object-search-panel">Search</button>
         </div>
