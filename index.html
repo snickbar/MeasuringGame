@@ -5089,7 +5089,11 @@ if (location.protocol === "file:") {
   </div>
 
   <div class="join-code-row">
-    <input id="code-input" aria-label="Room code" placeholder="Room code" style="text-transform: uppercase;" readonly inputmode="none" />
+    <label class="join-code-entry" for="code-input">
+      <span class="join-code-label">Room code</span>
+      <span class="join-code-slots" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      <input id="code-input" aria-label="Room code" readonly inputmode="none" />
+    </label>
     <button id="scan-room-qr-btn" type="button"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2h7v7H2zM15 2h7v7h-7zM2 15h7v7H2z"/><path d="M15 13v4h-3v5h5v-3h5v-6h-3M19 22h3M12 2v8M2 12h8"/></g></svg><span>Scan QR</span></button>
   </div>
   <div id="code-keyboard" class="custom-kbd"></div>
@@ -9611,6 +9615,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const joinContinueBtn = document.getElementById("join-game-title");
   const joinStatusEl = document.getElementById("join-status");
   const codeInput = document.getElementById("code-input");
+  const joinCodeSlots = [...document.querySelectorAll(".join-code-slots > span")];
+  function setJoinCode(value) {
+    codeInput.value = value;
+    const code = value.trim().toUpperCase();
+    joinCodeSlots.forEach((slot, i) => { slot.textContent = code[i] || ""; });
+  }
   const codeKeyboardEl = document.getElementById("code-keyboard");
   const nameAvatarScreenEl = document.getElementById("name-avatar-screen");
   const nameAvatarBackBtn = document.getElementById("name-avatar-back-btn");
@@ -11265,6 +11275,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   codeInput.addEventListener("input", () => {
+    setJoinCode(codeInput.value);
     const code = codeInput.value.trim().toUpperCase();
     clearTimeout(codeInputDebounce);
     codeInputDebounce = setTimeout(() => watchTakenAvatarsForCode(code), 300);
@@ -14722,7 +14733,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (sv.phase === "intro") {
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>${tourBtn('survival')}
-        <div class="dc-card dc-hot"><div class="dc-big">Don't run out of lives</div><div class="dc-note">You have ${SURVIVAL_LIVES} lives. A guess that's less than ${SURVIVAL_PASS}% accurate costs one. Questions keep getting trickier. Get 3 rounds at 75% or better to earn a shield that saves you from one lost life. Your score is how many rounds you survive.</div></div>
+        <div class="dc-card dc-hot sv-rules">
+          <div class="sv-rule-grid">
+            <div class="sv-rule"><img src="icons/life-heart-full.webp" alt=""><strong>${SURVIVAL_LIVES} lives</strong><span>Lose one for a guess below ${SURVIVAL_PASS}%</span></div>
+            <div class="sv-rule"><span class="icon-target-inline" aria-hidden="true"></span><strong>${SURVIVAL_PASS}% to survive</strong><span>Every round you survive adds to your score</span></div>
+            <div class="sv-rule"><img src="icons/survival-shield-full.webp" alt=""><strong>Earn a shield</strong><span>${SURVIVAL_SHIELD_CHAIN} guesses at ${SURVIVAL_SHIELD_ACC}%+ earn protection from one miss</span></div>
+          </div>
+          <p class="dc-note">Questions get trickier as you go.</p>
+        </div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
         ${soloResumeHtml("survival")}${survivalRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
@@ -16202,14 +16220,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return mirrored || rotation ? ` style="transform:${mirrored ? "scaleX(-1) " : ""}rotate(${rotation}deg)"` : "";
   }
   function ensureObjectSearch(){
-    let panel=document.getElementById('object-search-panel');if(panel)return;
-    panel=document.createElement('div');panel.id='object-search-panel';panel.className='search-editor';
+    let panel=document.getElementById('object-search-panel');if(panel)return panel;
+    panel=document.createElement('div');panel.id='object-search-panel';panel.className='search-editor';panel.hidden=true;
     panel.innerHTML='<div class="search-line"><input id="object-search" readonly inputmode="none" aria-label="Search discovered objects" placeholder="Search discovered objects"><button id="object-search-edit">Search</button><button id="object-search-clear">Clear</button></div><div id="object-search-keys" class="custom-kbd" hidden></div><p id="object-search-count" class="search-count" role="status"></p>';
-    itemsContentEl.before(panel);const input=panel.querySelector('input'),keys=panel.querySelector('.custom-kbd');
+    const input=panel.querySelector('input'),keys=panel.querySelector('.custom-kbd');
     for(const type of ['keydown','paste','drop','beforeinput'])input.addEventListener(type,e=>{if(type==='keydown'&&e.key==='Tab')return;e.preventDefault();});input.onfocus=()=>input.blur();
     renderCustomKeyboard(keys,input,{maxLength:40,onDone:()=>{keys.hidden=true;panel.querySelector('#object-search-edit').focus();}});
     const space=document.createElement('button');space.type='button';space.textContent='Space';space.className='kbd-key';space.onclick=()=>{if(input.value.length<40){input.value+=' ';applyObjectSearch();}};keys.append(space);
     input.addEventListener('input',applyObjectSearch);panel.querySelector('#object-search-edit').onclick=()=>{keys.hidden=!keys.hidden;};panel.querySelector('#object-search-clear').onclick=()=>{input.value='';applyObjectSearch();};
+    return panel;
   }
   function applyObjectSearch(){
     const input=document.getElementById('object-search');if(!input)return;const query=input.value.trim().toLowerCase();let matches=0;
@@ -16220,7 +16239,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderItemsScreen() {
     if (!itemsContentEl) return;
-    ensureObjectSearch();
+    const searchPanel = ensureObjectSearch();
     const seenSet = myProfile.seenObjects || {};
     const holidayIds = new Set(HOLIDAY_OBJECT_DEFS.map((d) => d[1]));
     const isHoliday = itemsTab === "holiday";
@@ -16281,6 +16300,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="items-tabs">
           <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal">Objects</button>
           <button type="button" class="items-tab${isHoliday ? " active" : ""}" data-tab="holiday">Monthly</button>
+          <button type="button" id="object-search-toggle" class="items-tab items-search-toggle" aria-expanded="${!searchPanel.hidden}" aria-controls="object-search-panel">Search</button>
         </div>
         <div class="items-stats">
           <div class="items-stat-box">
@@ -16294,6 +16314,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ${isHoliday ? `<button type="button" class="items-stat-box items-jump" id="items-jump-btn">Jump to current month</button>` : ""}
         </div>
       </div>` + recentHtml + listHtml;
+    itemsContentEl.querySelector(".items-tabs").after(searchPanel);
+    document.getElementById("object-search-toggle").onclick = (event) => {
+      searchPanel.hidden = !searchPanel.hidden;
+      event.currentTarget.setAttribute("aria-expanded", String(!searchPanel.hidden));
+      searchPanel.querySelector("#object-search-keys").hidden = searchPanel.hidden;
+      if (searchPanel.hidden) {
+        searchPanel.querySelector("input").value = "";
+        applyObjectSearch();
+      }
+    };
     applyObjectSearch();
   }
   if (itemsContentEl) {
@@ -16747,7 +16777,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     ov.id = "item-popup";
     ov.innerHTML = `<div class="item-popup-card"><div class="item-popup-mat"><img alt="" src="${obj.image}"${itemRotStyle(id)}></div><div class="item-popup-name"></div><button type="button" class="item-popup-x" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/></svg></button></div>`;
     ov.querySelector(".item-popup-name").textContent = obj.name;
-    const times=objectFrequency(myProfile)[id]||0,hint=document.createElement('p');hint.className='item-popup-hint';hint.textContent=times?`Seen ${times} ${times===1?'time':'times'}`:'Previously discovered';ov.querySelector('.item-popup-card').append(hint);
+    const times = objectFrequency(myProfile)[id] || 0;
+    const history = careerHistory().filter(h => !["bluff", "whichbigger", "highstakes"].includes(h.mode)
+      && ![MODE_CODE.bluff, MODE_CODE.whichbigger, MODE_CODE.highstakes].includes(h.s));
+    const accuracyTile = (label, side) => {
+      const rounds = history.filter(h => h[side] === id);
+      const avg = rounds.length ? rounds.reduce((sum, h) => sum + roundAccuracy(h.r), 0) / rounds.length : null;
+      return `<div class="item-popup-stat"><span>${label}</span><strong>${avg === null ? "—" : formatAccuracy(avg) + "%"}</strong><small>${rounds.length ? rounds.length + (rounds.length === 1 ? " guess" : " guesses") : "No guesses yet"}</small></div>`;
+    };
+    ov.querySelector(".item-popup-card").insertAdjacentHTML("beforeend",
+      `<div class="item-popup-times"><strong>${times || "—"}</strong><span>${times ? (times === 1 ? "Time seen" : "Times seen") : "Previously discovered"}</span></div>
+      <div class="item-popup-stats">${accuracyTile("As the small object", "u")}${accuracyTile("As the big object", "g")}</div>
+      <p class="item-popup-hint">Accuracy from your recent guesses</p>`);
     ov.addEventListener("click", () => { playSound("popup-close"); ov.remove(); });
     document.body.appendChild(ov);
   }
@@ -17662,7 +17703,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const play = q.get("play");
     if (deepLinkCode) {
       showJoinScreen();
-      codeInput.value = deepLinkCode.trim().toUpperCase();
+      setJoinCode(deepLinkCode.trim().toUpperCase());
       // A shared link (or scanned QR code) skips the extra tap: go straight on to name and avatar once the page has finished setting up.
       if (/^[A-Za-z0-9]{4}$/.test(codeInput.value)) setTimeout(() => joinContinueBtn.click(), 50);
       return true;
@@ -17709,6 +17750,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const botRowsOn = isHost && p.isBot && roomState && roomState.phase === "waiting";
       nameSpan.className='lobby-player-identity';
       const party=!roomState.settings?.solo;
+      if (!party || !roomState.settings?.mode || roomState.settings.mode === "classic") {
+        li.classList.add("lobby-player-card");
+        if (id === currentPlayerId) li.classList.add("lobby-player-self");
+        else if (p.isHost) li.classList.add("lobby-player-host");
+      }
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
       nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? " (host)" : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
@@ -17725,6 +17771,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           b.dataset.fitSingleLine = "true";
           b.title = botLevelLabel(d) + " accuracy";
           b.setAttribute("aria-label", botLevelLabel(d) + " bot accuracy");
+          b.setAttribute("aria-pressed", String(p.botDifficulty === d));
           b.dataset.difficulty = d;
           b.addEventListener("click", () => update(ref(db, `rooms/${currentRoomCode}/players/${id}`), { botDifficulty: d }));
           ctl.appendChild(b);
@@ -18170,7 +18217,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   function showJoinScreen() {
-    codeInput.value = "";
+    setJoinCode("");
     renderRecentRooms();
     joinStatusEl.textContent = "";
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
@@ -18392,7 +18439,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       await waitForQrResume();
       if(!homeScreen.classList.contains('active')&&!joinScreen.classList.contains('active'))return;
       if(invite.stage==='scanning'){pendingQrInvite.clear();showJoinScreen();joinStatusEl.textContent='The scan was interrupted. Scan again or enter the room code.';return;}
-      qrScanGuardUntil=Date.now()+2500;showJoinScreen();codeInput.value=invite.code;await continueRoomJoin(invite.code);
+      qrScanGuardUntil=Date.now()+2500;showJoinScreen();setJoinCode(invite.code);await continueRoomJoin(invite.code);
     }finally{qrRecoveryBusy=false;}
   }
   try{roomQrPlugin?.addListener('scanResult',()=>{setTimeout(()=>void recoverQrInvite(),0);});}catch{}
@@ -20148,7 +20195,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!code) return;
     leftScreenEl.classList.remove("active");
     showJoinScreen();
-    codeInput.value = code;
+    setJoinCode(code);
     rejoinRoom(code);
   });
 
