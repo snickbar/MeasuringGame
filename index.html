@@ -12447,10 +12447,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen = partyScreenEl;
   }
   function openHsInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High Stakes</h2><p class="dc-sub">2 to 10 players &mdash; bots can fill in</p>${tourBtn('highstakes')}
-      <div class="dc-card dc-hot"><div class="dc-big">Find the real answer</div><div class="dc-note">Everyone antes some coins and sees the question with 4 possible answers: 1 real and 3 fakes. Secretly pick the one you think is real.</div></div>
-      <div class="dc-card"><div class="dc-big">Bet like poker</div><div class="dc-note">Then it goes around the table: fold, check, call or raise. Everyone still in who picked the real answer splits the pot. If nobody did, the pot rolls over to the next round. If everyone else folds, you take the pot even if you were wrong &mdash; so bluffing works.</div></div>
-      <div class="dc-card"><div class="dc-big">Outlast everyone</div><div class="dc-note">You start with ${HS.HS_START_COINS} table chips and the ante goes up by 5 every 2 rounds. Run out of coins and you're out. Last player standing, or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds, wins.</div></div>
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title mode-intro-title">High Stakes</h2><p class="dc-sub">2–10 players · friends and bots</p>${tourBtn('highstakes')}
+      <div class="dc-card mode-intro-rules mode-intro-stakes">
+        <div class="mode-rule-grid">
+          <div class="mode-rule"><img src="items/playing-card.webp" alt=""><strong>Pick an answer</strong><span>Choose secretly from four answers.</span></div>
+          <div class="mode-rule"><img src="icons/poker-chip-stack.webp" alt=""><strong>Bet or fold</strong><span>Check, call, raise, or fold.</span></div>
+          <div class="mode-rule"><img src="icons/shop-coin-pile-1200.webp" alt=""><strong>Win the pot</strong><span>Stay in with the right answer to share the pot.</span></div>
+        </div>
+      </div>
+      <div class="dc-card"><div class="dc-big">Bluffs can win</div><div class="dc-note">If everyone else folds, the pot is yours. If nobody still in picked correctly, the pot rolls over.</div></div>
+      <div class="dc-card"><div class="dc-big">Outlast the table</div><div class="dc-note">Start with ${HS.HS_START_COINS} chips. The ante rises by 5 every 2 rounds. Run out of chips and you’re out. The last player standing or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds wins.</div></div>
       <div class="pin-bottom"><button type="button" class="dc-btn" id="hs-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
@@ -12472,11 +12478,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let bluffTurnsChoice='auto';
   function openBluffInfo(){
-    teamvteamContentEl.innerHTML=`<h2 class="dc-title">Bluff the Room</h2><p class="dc-sub">3–10 players · friends and bots</p>${tourBtn('bluff')}
-      <div class="dc-card dc-hot"><div class="dc-big">One claim. Is it believable?</div><div class="dc-note">Take turns being the maker. Only the maker sees three numbers labeled Correct, Too Low, and Too High. They choose one number to show everyone else.</div></div>
-      <div class="dc-card"><div class="dc-big">Call the bluff</div><div class="dc-note">Everyone else sees just that one claim and votes Too Low, Correct, or Too High. +2 for a correct vote. The maker gets +1 for each submitted vote they fool. Unanswered votes earn nobody points.</div></div>
-      <div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Points rank first; vote accuracy breaks ties. A complete tie shares the win.</div>
-        <p class="dc-note">25 seconds to choose a claim, then 30 seconds to vote. Tap to submit; you have up to 10 seconds to change your vote before time runs out. No Second Chance or power-ups. See the round summary and rankings after every reveal.</p></div>
+    teamvteamContentEl.innerHTML=`<h2 class="dc-title mode-intro-title">Bluff the Room</h2><p class="dc-sub">3–10 players · friends and bots</p>${tourBtn('bluff')}
+      <div class="dc-card mode-intro-rules mode-intro-bluff">
+        <div class="mode-rule-grid">
+          <div class="mode-rule"><img src="items/pencil.webp" alt=""><strong>Make a claim</strong><span>Show the room one number. It can be correct, too low, or too high.</span><b>+1 per voter fooled</b></div>
+          <div class="mode-rule"><img src="icons/reactions/giggle.webp" alt=""><strong>Call the bluff</strong><span>Vote too low, correct, or too high.</span><b>+2 for a correct vote</b></div>
+        </div>
+      </div>
+      <div class="dc-card"><div class="dc-big">Everyone takes a turn</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Highest score wins. Vote accuracy breaks ties, and a complete tie shares the win.</div></div>
+      <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">25 seconds to make a claim, then 30 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
       <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
@@ -14734,10 +14744,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       survivalStop();
       el.innerHTML = `<h2 class="dc-title">Survival</h2><p class="dc-sub">${survivalSub()}</p>${tourBtn('survival')}
         <div class="dc-card dc-hot sv-rules">
-          <div class="sv-rule-grid">
-            <div class="sv-rule"><img src="icons/life-heart-full.webp" alt=""><strong>${SURVIVAL_LIVES} lives</strong><span>Lose one for a guess below ${SURVIVAL_PASS}%</span></div>
-            <div class="sv-rule"><span class="icon-target-inline" aria-hidden="true"></span><strong>${SURVIVAL_PASS}% to survive</strong><span>Every round you survive adds to your score</span></div>
-            <div class="sv-rule"><img src="icons/survival-shield-full.webp" alt=""><strong>Earn a shield</strong><span>${SURVIVAL_SHIELD_CHAIN} guesses at ${SURVIVAL_SHIELD_ACC}%+ earn protection from one miss</span></div>
+          <div class="mode-rule-grid">
+            <div class="mode-rule"><img src="icons/life-heart-full.webp" alt=""><strong>${SURVIVAL_LIVES} lives</strong><span>Lose one for a guess below ${SURVIVAL_PASS}%</span></div>
+            <div class="mode-rule"><span class="icon-target-inline" aria-hidden="true"></span><strong>${SURVIVAL_PASS}% to survive</strong><span>Every round you survive adds to your score</span></div>
+            <div class="mode-rule"><img src="icons/survival-shield-full.webp" alt=""><strong>Earn a shield</strong><span>${SURVIVAL_SHIELD_CHAIN} guesses at ${SURVIVAL_SHIELD_ACC}%+ earn protection from one miss</span></div>
           </div>
           <p class="dc-note">Questions get trickier as you go.</p>
         </div>
