@@ -636,11 +636,16 @@ export function createStackAnimation(container, options = {}) {
   const nEl = document.createElement('span');
   nEl.style.cssText = 'font-weight:700;font-size:26px;line-height:1;';
   const uEl = document.createElement('span');
-  uEl.style.cssText = 'font-weight:700;';
+  uEl.style.cssText = 'font-weight:700;overflow:hidden;text-overflow:ellipsis;';
+  const guessEl = document.createElement('div');
+  guessEl.className = 'stack-your-guess';
+  guessEl.style.cssText = 'position:absolute;max-width:42%;text-align:right;font-size:13px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;pointer-events:none;';
+  guessEl.hidden = true;
   tally.append(nEl);
   if (!hideUnit) tally.append(uEl);
   container.append(canvas);
   if (!hideTally) container.append(tally);
+  container.append(guessEl);
 
   let raf = 0;
   let runId = 0;
@@ -752,10 +757,10 @@ export function createStackAnimation(container, options = {}) {
     let target = targetIn;
     if (unit.mm > target.mm) { [unit, target] = [target, unit]; }
     const [kit] = await Promise.all([loadScenery(target, sceneryBase + 'scenery/'), loadPicture(unit), loadPicture(target), originalSceneryReady]);
-    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, kit);
+    return buildScene(unit, target, sizing.hMax || H_MAX, sizing.minStageH || 0, kit, sizing.guess);
   }
 
-  function buildScene(unit, target, hMax, minStageH, kit) {
+  function buildScene(unit, target, hMax, minStageH, kit, guess) {
     const R = target.mm / unit.mm;
     const aBig = aspectFor(target, !flipFacing);
     const aSm = aspectFor(unit, flipFacing);
@@ -973,6 +978,15 @@ export function createStackAnimation(container, options = {}) {
     tally.style.left = G + 'px';
     tally.style.top = (floorY + 10) + 'px';
     tally.style.fontFamily = 'inherit';
+    const hasGuess = Number.isFinite(guess) && guess > 0;
+    tally.style.maxWidth = hasGuess ? '50%' : '';
+    guessEl.hidden = !hasGuess;
+    guessEl.style.right = G + 'px';
+    guessEl.style.top = (floorY + 10) + 'px';
+    guessEl.style.color = earthyFloor ? '#fff7e5' : theme.ink;
+    guessEl.textContent = hasGuess
+      ? 'Your guess: ' + guess.toLocaleString('en-US', { maximumFractionDigits: 20 })
+      : '';
     nEl.style.color = theme.ink;
     uEl.style.color = earthyFloor ? '#fff7e5' : theme.muted;
     uEl.textContent = unit.plural;
@@ -1308,6 +1322,7 @@ export function createStackAnimation(container, options = {}) {
   const CMP_END = 0.5;       // pause on the finished picture
   const CMP_MIN_VIS = 10;    // the smaller object is never drawn thinner than this in the final view
   async function prepareCompare(firstIn, secondIn, sizing = {}) {
+    guessEl.hidden = true;
     const big = firstIn.mm >= secondIn.mm ? firstIn : secondIn;
     const [kit] = await Promise.all([loadScenery(big, sceneryBase + 'scenery/'), loadPicture(firstIn), loadPicture(secondIn), originalSceneryReady]);
     return buildCompareScene(firstIn, secondIn, sizing.hMax || H_MAX, sizing.minStageH || 0, kit);
@@ -1596,6 +1611,7 @@ export function createStackAnimation(container, options = {}) {
     stop();
     canvas.remove();
     tally.remove();
+    guessEl.remove();
   }
 
   // Loads the pictures ahead of time (no stage needed), so the animation can start the moment it is wanted.

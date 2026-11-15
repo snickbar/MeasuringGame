@@ -12080,7 +12080,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       dailyAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = dailyAnim;
       dockRevealSkip(stage,"dc-skip");
-      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
+      const scene = await ctl.prepare(pair[0], pair[1], { ...fitRevealStage(stage), guess: g });
       if (dailyAnim !== ctl || daily.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (dailyAnim === ctl) showResult(mod); } });
@@ -12874,7 +12874,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!pair || !mod) return;
       if (!hsAnimCtl) hsAnimCtl = mod.createStackAnimation(hsAnimEl, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image, formatTally: HS.hsFormatAnswer });
       animAudioInit();
-      const scene = await hsAnimCtl.prepare(pair[0], pair[1], { hMax: 190, minStageH: 230 });
+      const guess = hs.options?.[hs.picks?.[currentPlayerId]];
+      const scene = await hsAnimCtl.prepare(pair[0], pair[1], { hMax: 190, minStageH: 230, guess });
       if (hsAnimKey !== key) return;
       hsAnimCtl.start(scene, { startAt: hs.animAt, now: animClock, onCue: audioLifecycle.guard(playAnimCue) });
     } catch (e) { console.warn("[high-stakes] animation failed", e); }
@@ -13714,7 +13715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       wlAnim = mod.createStackAnimation(stage, { theme: mod.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = wlAnim;
       dockRevealSkip(stage,"wl-skip");
-      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
+      const scene = await ctl.prepare(pair[0], pair[1], { ...fitRevealStage(stage), guess: g });
       if (wlAnim !== ctl || wl.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (wlAnim === ctl) showResult(mod); } });
@@ -14231,7 +14232,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       moAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = moAnim;
       dockRevealSkip(stage,"mo-skip");
-      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
+      const scene = await ctl.prepare(pair[0], pair[1], { ...fitRevealStage(stage), guess: run.guesses.at(-1) });
       if (moAnim !== ctl || mo.phase !== "reveal") return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (moAnim === ctl) showResult(m); } });
@@ -14798,7 +14799,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       svAnim = m.createStackAnimation(stage, { theme: m.LIGHT_THEME, imageUrl: (o) => o.image });
       const ctl = svAnim;
       dockRevealSkip(stage,"sv-skip");
-      const scene = await ctl.prepare(pair[0], pair[1], fitRevealStage(stage));
+      const scene = await ctl.prepare(pair[0], pair[1], { ...fitRevealStage(stage), guess: run.g });
       if (!current() || svAnim !== ctl) return;
       animAudioInit();
       ctl.start(scene, { startAt: Date.now() + 250, now: () => Date.now(), onCue: audioLifecycle.guard(playAnimCue), onFrame: () => {}, onDone: () => { if (svAnim === ctl) showResult(m); } });
@@ -19068,7 +19069,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (!skip) {skip=document.createElement('button');skip.id='party-animation-skip';skip.type='button';skip.className='stack-skip';skip.textContent='Skip';skip.onclick=()=>{if(isHost&&!roomState.paused&&roomState.phase==='animation')goToReveal(currentRoomCode);};animStageEl.append(skip);}
         skip.hidden=!isHost;
         // Reserve the measured pinned controls, then fill the remaining reveal area.
-        animScene = await ctl.prepare(pair[0], pair[1], sizing);
+        animScene = await ctl.prepare(pair[0], pair[1], { ...sizing, guess: data.guesses?.[currentPlayerId] });
         animSceneRound = data.round;
       }
       if (token !== animToken) return;   // the phase moved on while the pictures loaded
