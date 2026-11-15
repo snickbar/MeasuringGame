@@ -2,7 +2,7 @@
 // on this computer, with fresh source files and the correct module MIME types.
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'),PORT=4180;
-const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.mp3':'audio/mpeg','.wav':'audio/wav','.ogg':'audio/ogg','.woff2':'font/woff2','.ttf':'font/ttf'};
+const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.mp3':'audio/mpeg','.wav':'audio/wav','.flac':'audio/flac','.ogg':'audio/ogg','.woff2':'font/woff2','.ttf':'font/ttf'};
 const ROOT_FILES=new Set(['index.html','manifest.json','sw.js','privacy.html','icon-192.png','icon-512.png','og-image.jpg']);
 function createBrowserGameServer(){return http.createServer((req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');

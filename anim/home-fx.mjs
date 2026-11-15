@@ -12,7 +12,7 @@ export function particleBloop(){
     // The app handles this through its preloaded, lifecycle-aware sound pool.
     // A standalone Home preview falls back to the exact same audible clip.
     if(!document.dispatchEvent(new CustomEvent('home-particle-pop',{cancelable:true})))return;
-    if(!popAudio){popAudio=new Audio(new URL('../sfx/particle-pop.wav',import.meta.url).href);popAudio.preload='auto';}
+    if(!popAudio){popAudio=new Audio(new URL('../sfx/particle-pop.flac',import.meta.url).href);popAudio.preload='auto';}
     const source=popAudio.cloneNode(true);source.volume=.85;activePops.add(source);
     const done=()=>activePops.delete(source);source.addEventListener('ended',done,{once:true});source.addEventListener('error',done,{once:true});source.play().catch(done);
   }catch{}

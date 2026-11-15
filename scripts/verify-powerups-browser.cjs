@@ -187,7 +187,7 @@ const server=http.createServer((req,res)=>{
  if(req.url.startsWith('/__powerup-test')){res.setHeader('Content-Type','text/html');res.end(fixture);return}
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
  if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
- const type={'.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.wav':'audio/wav'}[path.extname(file)]||'application/octet-stream';
+ const type={'.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.ttf':'font/ttf','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.wav':'audio/wav','.flac':'audio/flac'}[path.extname(file)]||'application/octet-stream';
  try{res.setHeader('Content-Type',type);res.end(fs.readFileSync(file))}catch{res.writeHead(404);res.end()}
 });
 server.listen(0,'127.0.0.1',()=>{

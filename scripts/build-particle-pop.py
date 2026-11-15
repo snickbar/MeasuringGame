@@ -1,4 +1,4 @@
-# Builds sfx/particle-pop.wav: a tight cork "pop" (short falling thock plus a bright click), driven with tanh so it stays loud on phone speakers.
+# Builds sfx/particle-pop.flac (lossless): a tight cork "pop" (short falling thock plus a bright click), driven with tanh so it stays loud on phone speakers.
 import numpy as np, wave
 R = 44100
 rng = np.random.default_rng(5)
@@ -12,3 +12,6 @@ n = int(R * .015); sig[-n:] *= np.linspace(1, 0, n)
 w = wave.open('sfx/particle-pop.wav', 'wb')
 w.setnchannels(1); w.setsampwidth(2); w.setframerate(R)
 w.writeframes((sig * 32767).astype('<i2').tobytes()); w.close()
+import subprocess, os
+subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', 'sfx/particle-pop.wav', '-c:a', 'flac', '-compression_level', '12', 'sfx/particle-pop.flac'], check=True)
+os.remove('sfx/particle-pop.wav')

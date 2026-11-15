@@ -6,6 +6,10 @@ const original=JSON.parse(fs.readFileSync('art-source/sound-review-2026-10-22/ro
 const picks=JSON.parse(fs.readFileSync('art-source/sound-review-2026-10-22/round-2.json','utf8'));
 const current=JSON.parse(fs.readFileSync('anim/sound-review-data.json','utf8'));
 const suspense=JSON.parse(fs.readFileSync('art-source/sound-review-2026-10-22/suspense-approved.json','utf8'));
+// Approved WAVs were later converted losslessly to FLAC; follow each approved fingerprint to its shipped FLAC.
+const flac=JSON.parse(fs.readFileSync('art-source/sound-flac-conversion-2026-11-15.json','utf8')).files;
+const shipped=(file,sha)=>{const c=flac.find(r=>r.wav===file);if(!c)return {file,sha};assert.equal(c.wavSha256,sha,'Converted from the approved audio: '+file);return {file:c.flac,sha:c.flacSha256};};
+for(const r of [...applied,suspense.build,suspense.ending])Object.assign(r,shipped(r.file,r.sha256),{sha256:shipped(r.file,r.sha256).sha});
 assert.equal(applied.length,8);assert.equal(current.rows.length,42);assert.equal(new Set(current.rows.map(r=>r.id)).size,42);
 const approved=new Set(applied.map(r=>r.id));
 approved.add('drumroll');
@@ -33,15 +37,15 @@ vm.runInContext(source.slice(start,end),context);
 function play(kind){played.length=0;vm.runInContext(`playSound(${JSON.stringify(kind)})`,context);return played;}
 for(const row of applied){const nodes=play(row.id);assert.equal(nodes.length,1,'One selected cue: '+row.id);assert.equal(nodes[0].file,row.file);assert(Math.abs(nodes[0].volume-row.gain)<1e-9,'Reviewed cue plays at its own gain: '+row.id);}
 assert.equal(timers.length,0,'Coin reward plays the selected jingle once, without leftover countdown beats');
-assert.equal(play('star')[0].file,'sfx/crisp/roundwin.wav','Star keeps old sound despite changed roundwin');
+assert.equal(play('star')[0].file,'sfx/crisp/roundwin.flac','Star keeps old sound despite changed roundwin');
 assert.equal(played[0].volume,.6,'Star keeps old mix');
 assert(source.includes('m.classList.add("earned", "pop"); playSound("star");'),'Team Worlds stars use the kept star role too');
-assert.equal(play('count')[0].file,'sfx/crisp/count.wav','Countdown beat unchanged');
-assert.equal(play('particle-pop')[0].file,'sfx/particle-pop.wav','Particle pop uses the normal preloaded sound pool');
+assert.equal(play('count')[0].file,'sfx/crisp/count.flac','Countdown beat unchanged');
+assert.equal(play('particle-pop')[0].file,'sfx/particle-pop.flac','Particle pop uses the normal preloaded sound pool');
 assert.equal(played[0].volume,.85,'Particle bloop is mixed for phone speakers');
-assert.equal(play('lead')[0].file,'sfx/crisp/perfect.wav');assert.equal(play('best')[0].file,'sfx/crisp/perfect.wav');
-play('submit');assert.equal(played[0].file,'sfx/select.mp3');played[0].end();assert.equal(played[1].file,'sfx/crisp/count.wav');
-play('drumroll');assert.equal(played[0].file,suspense.build.file);assert.equal(played[0].volume,suspense.build.gain);played[0].end();assert.equal(played[1].file,'sfx/crisp/drumroll-end.wav','Approved existing ending remains original');assert.equal(played[1].volume,.6,'Ending mix unchanged');
+assert.equal(play('lead')[0].file,'sfx/crisp/perfect.flac');assert.equal(play('best')[0].file,'sfx/crisp/perfect.flac');
+play('submit');assert.equal(played[0].file,'sfx/select.mp3');played[0].end();assert.equal(played[1].file,'sfx/crisp/count.flac');
+play('drumroll');assert.equal(played[0].file,suspense.build.file);assert.equal(played[0].volume,suspense.build.gain);played[0].end();assert.equal(played[1].file,'sfx/crisp/drumroll-end.flac','Approved existing ending remains original');assert.equal(played[1].volume,.6,'Ending mix unchanged');
 play('drumroll');vm.runInContext('stopAllSfx()',context);played[0].end();assert.equal(played.length,1,'Stopping the reveal cancels the follow-up');
 vm.runInContext('localSoundEnabled=false',context);assert.equal(play('coins').length,0,'Mute still applies');
 console.log('Reviewed sounds: nine selected clips/gains, 33 unchanged roles, original ending, shared-role isolation, routing, volume, mute and suspense cancellation passed.');
