@@ -2637,10 +2637,12 @@ if (location.protocol === "file:") {
   :root[data-motion="reduce"] #toolbar-settings-btn.hint-pulse::before { animation: none; display: none; }
   #toolbar-menu {
     position: fixed; top: 66px; right: 8px; z-index: 560; width: min(280px, calc(100vw - 16px)); display: flex; flex-direction: column; gap: 8px;
-    padding: 10px; background: linear-gradient(#fff8e6, #ffecc2); border: 3px solid #4a2c12; border-radius: 20px; box-shadow: 0 12px 28px rgba(0,0,0,.38);
-    transform-origin: top right; animation: menu-drop .18s cubic-bezier(.2,.9,.3,1.2);
+    padding: 12px; background: #fff8e6; border: 0; border-radius: 22px; box-shadow: 0 0 0 2px rgba(255,255,255,.7), 0 14px 30px rgba(60,30,5,.35);
+    transform-origin: var(--menu-ox, 90%) 0; animation: menu-drop .18s cubic-bezier(.2,.9,.3,1.2);
   }
-  @keyframes menu-drop { from { opacity: 0; transform: translateY(-8px) scale(.94); } to { opacity: 1; transform: none; } }
+  #toolbar-menu::before { content: ""; position: absolute; top: -9px; left: calc(var(--menu-ox, 90%) - 12px); width: 24px; height: 24px; background: #fff8e6; border-radius: 5px 0 0 0; transform: rotate(45deg); }
+  #toolbar-menu > * { position: relative; }
+  @keyframes menu-drop { from { opacity: 0; transform: translateY(-10px) scale(.6); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { #toolbar-menu { animation: none; } }
   :root[data-motion="reduce"] #toolbar-menu { animation: none; }
   #toolbar-menu[hidden] { display: none; }
@@ -11649,6 +11651,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         document.getElementById("menu-profile-rank").textContent = CAREER_RANKS[myRankIdx()][1];
         const v = document.getElementById("settings-version"); document.getElementById("menu-version").textContent = v ? v.textContent : "";
       } catch (e) {}
+    }
+    if (open) {
+      const r = toolbarSettingsBtn.getBoundingClientRect();
+      toolbarMenuEl.style.top = (r.bottom + 10) + "px";
+      toolbarMenuEl.hidden = false;
+      const mLeft = toolbarMenuEl.offsetLeft, mW = toolbarMenuEl.offsetWidth;
+      toolbarMenuEl.style.setProperty("--menu-ox", Math.max(24, Math.min(mW - 24, r.left + r.width / 2 - mLeft)) + "px");
     }
     toolbarMenuEl.hidden = !open;
     toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
