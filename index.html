@@ -4410,7 +4410,6 @@ if (location.protocol === "file:") {
   <div id="menu-profile"><span id="menu-profile-avatar"></span><span class="menu-profile-text"><b id="menu-profile-name">Player</b><small id="menu-profile-rank"></small></span></div>
   <button id="menu-settings-btn" class="menu-row" type="button" role="menuitem"><img src="icons/toolbar-settings.webp" alt=""><span>Settings</span></button>
   <button id="menu-howto-btn" class="menu-row" type="button" role="menuitem"><img src="icons/watch-play.webp" alt=""><span>How to play</span></button>
-  <button id="menu-tour-btn" class="menu-row" type="button" role="menuitem"><img src="icons/toolbar-menu.webp" alt=""><span>Replay tour</span></button>
   <button id="toolbar-exit-btn" class="menu-row menu-row-exit" type="button" role="menuitem"><img src="icons/toolbar-exit.webp" alt=""><span>Exit</span></button>
   <div id="menu-version"></div>
 </div>
@@ -4847,7 +4846,7 @@ if (location.protocol === "file:") {
     <button id="play-tutorial-btn" type="button">Play tutorial</button>
   </section>
 
-  <section class="tutorial-modes" aria-label="Game mode tutorials"><h2>Watch a mode tutorial</h2><div id="tutorial-mode-list"></div></section>
+  <section class="tutorial-modes" aria-label="Game mode tutorials"><h2>Mode tutorials</h2><div id="tutorial-mode-list"></div><button id="howto-replay-tour-btn" type="button" class="tutorial-replay">Replay menu tour</button></section>
 
   <details class="howto-section"><summary>Solo Game</summary><div class="howto-body">
     <p>Tap <b>Solo Game</b> from Home to choose Daily Challenge, Monthly Challenge, Worlds, Quick Game or Survival. <b>Quick Game</b> starts with 3 Medium bots, with no room code or waiting on other people. You can add more bots, remove extras, or choose Low, Medium or High bot accuracy in the lobby before you begin. Solo games are always free, even before Party Mode is unlocked.</p>
@@ -6407,6 +6406,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       let idx = 0; CAREER_RANKS.forEach(([minLvl], i) => { if (lv.lvl >= minLvl) idx = i; });
       return idx;
     } catch (e) { return 0; }
+  }
+  function myLevelNum() {
+    try { const st = myProfile.stats || {}; return careerLevel(careerXp({ ...st, rounds: Math.max(st.rounds || 0, careerHistory().length) })).lvl | 0; } catch (e) { return 0; }
   }
   function myEquippedFlair() {
     const id = rndGet("flairs");
@@ -11694,12 +11696,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     guardToolbarNav(() => openOverlay(settingsScreen))();
   });
   document.getElementById("menu-tab").addEventListener("click", (e) => { e.stopPropagation(); setToolbarMenu(false); });
+  document.getElementById("howto-replay-tour-btn").addEventListener("click", () => document.getElementById("settings-menu-tour-btn").click());
   document.getElementById("menu-howto-btn").addEventListener("click", () => {
     setToolbarMenu(false);
     if (!localStorage.getItem("mg_seenHowTo")) { localStorage.setItem("mg_seenHowTo", "1"); toolbarSettingsBtn.classList.remove("hint-pulse"); }
     guardToolbarNav(() => { howtoReturnEl = null; openOverlay(howtoScreen); howtoScreen.scrollTop = 0; window.scrollTo(0, 0); })();
   });
-  document.getElementById("menu-tour-btn").addEventListener("click", () => { setToolbarMenu(false); document.getElementById("settings-menu-tour-btn").click(); });
   // How to Play moved into Settings - the first-open nudge (a pulsing ring) now
   // lives on the Settings icon itself instead, since that's the toolbar button
   // that actually gets you there now.
@@ -17856,7 +17858,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const teamDot = (roomState.settings?.mode === "teamvteam" && p.team) ? `<span class="team-dot" style="--tc:${TEAM_COLOR_HEX[p.team]}"></span>` : "";
       const dragOn = canMoveToTeam(id);
-      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}${(!p.isBot && Number.isInteger(p.rank) && BADGE_RANK_ICONS[p.rank]) ? `<span class="lobby-rank" title="${escapeHtml(CAREER_RANKS[p.rank][1])}"><img src="${BADGE_RANK_ICONS[p.rank]}" alt="" draggable="false"></span>` : ""}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
+      nameSpan.innerHTML = `<span class="player-avatar${dragOn ? " lobby-drag" : ""}"${dragOn ? ` data-drag-pid="${id}"` : ""}>${avatarHtml(p.avatar)}${(!p.isBot && Number.isInteger(p.lvl) && p.lvl > 0) ? `<span class="lobby-rank" title="${Number.isInteger(p.rank) && CAREER_RANKS[p.rank] ? escapeHtml(CAREER_RANKS[p.rank][1]) : ""}">Lv ${p.lvl}</span>` : ""}</span><span class="lobby-player-name">${teamDot}${escapeHtml(p.name)}${p.isHost ? ' <span class="lobby-host-tag">Host</span>' : ""}${!p.isBot&&p.connected===false?`<span class="connection-badge">${isPlayerAway(p)?'Away':'Reconnecting'}</span>`:''}${p.isBot && !botRowsOn ? `<span class="bot-tag"><span class="bot-tag-icon"></span>${escapeHtml(p.botDifficulty || "")}</span>` : ""}</span>`;
       li.appendChild(nameSpan);
       if (botRowsOn) {
         li.classList.add("bot-row");
@@ -18196,8 +18198,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = staleOwnId || makePlayerId();
     lastSyncedFlair = myEquippedFlair();
     const player = staleOwnId
-      ? { name, isHost: finalIsHost, flair: lastSyncedFlair, rank: myRankIdx(), connected: true, disconnectedAt: null }
-      : { name, avatar: currentAvatar, flair: lastSyncedFlair, rank: myRankIdx(), isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
+      ? { name, isHost: finalIsHost, flair: lastSyncedFlair, rank: myRankIdx(), lvl: myLevelNum(), connected: true, disconnectedAt: null }
+      : { name, avatar: currentAvatar, flair: lastSyncedFlair, rank: myRankIdx(), lvl: myLevelNum(), isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
     if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
     const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
@@ -23867,8 +23869,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       items:(()=>{try{return monthlyObjects(monthlyKey()).slice(0,6);}catch(e){return [];}})(),
       avatars:AVATARS.filter(a=>AVATAR_TIERS[a]==='default').slice(0,4).map(a=>`avatars/${a}.webp`)})
   });
-  (function(){const names=[['quick','Quick Game'],['party','Classic Party'],['teamvteam','Team vs Team'],['hl','High / Low Survival'],['highstakes','High Stakes'],['bluff','Bluff the Room'],['daily','Daily Challenge'],['monthly','Monthly Challenge'],['worlds','Worlds'],['teamworlds','Team Worlds'],['survival','Survival'],['wb','Which Is Bigger']];
-    const el=document.getElementById('tutorial-mode-list');if(el)el.innerHTML=names.filter(([k])=>modeTutorialUI.has(k)).map(([k,n])=>`<button type="button" class="tutorial-mode-btn" data-tour="${k}"><img src="icons/watch-play.webp" alt=""><span>${n}</span></button>`).join('');})();
+  (function(){let mIcon='items/ant.webp';try{mIcon=monthlyIcon();}catch(e){}
+    const names=[['quick','Quick Game','items/ant.webp'],['party','Classic Party','icons/shop-host-crown.webp'],['teamvteam','Team vs Team','items/soccer-ball.webp'],['hl','High / Low','icons/mode-high-low.webp'],['highstakes','High Stakes','items/poker-chip.webp'],['bluff','Bluff the Room','icons/bluff2-cup-red.webp'],['daily','Daily','icons/toolbar-daily.webp'],['monthly','Monthly',mIcon],['worlds','Worlds','items/hot-air-balloon.webp'],['teamworlds','Team Worlds','icons/mode-team-worlds.webp'],['survival','Survival','items/t-rex.webp'],['wb','Which Is Bigger','items/elephant.webp']];
+    const el=document.getElementById('tutorial-mode-list');if(el)el.innerHTML=names.filter(([k])=>modeTutorialUI.has(k)).map(([k,n,i])=>`<button type="button" class="tutorial-mode-btn" data-tour="${k}"><img src="${i}" alt=""><span>${n}</span></button>`).join('');})();
   document.addEventListener('click',e=>{const t=e.target.closest('[data-tour]');if(t)modeTutorialUI.play(t.dataset.tour);});
 
   // ==================== In-app updates (native app only) ====================
