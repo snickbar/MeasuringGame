@@ -2636,15 +2636,25 @@ if (location.protocol === "file:") {
   }
   :root[data-motion="reduce"] #toolbar-settings-btn.hint-pulse::before { animation: none; display: none; }
   #toolbar-menu {
-    position: fixed; top: 64px; right: 8px; z-index: 560; width: max-content; max-width: calc(100vw - 16px); display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px;
-    padding: 8px; background: #fffaf0; border: 3px solid #4a2c12; border-radius: 16px; box-shadow: 0 10px 26px rgba(0,0,0,.35);
+    position: fixed; top: 66px; right: 8px; z-index: 560; width: min(280px, calc(100vw - 16px)); display: flex; flex-direction: column; gap: 8px;
+    padding: 10px; background: linear-gradient(#fff8e6, #ffecc2); border: 3px solid #4a2c12; border-radius: 20px; box-shadow: 0 12px 28px rgba(0,0,0,.38);
+    transform-origin: top right; animation: menu-drop .18s cubic-bezier(.2,.9,.3,1.2);
   }
+  @keyframes menu-drop { from { opacity: 0; transform: translateY(-8px) scale(.94); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { #toolbar-menu { animation: none; } }
+  :root[data-motion="reduce"] #toolbar-menu { animation: none; }
   #toolbar-menu[hidden] { display: none; }
-  /* Menu items are picture tiles like Home/Shop (icon only, the name is baked into the picture). To add one,
-     drop another <button class="menu-tile"><img src="icons/toolbar-xxx.png"></button> into #toolbar-menu. */
-  #toolbar-menu .menu-tile { width: 64px; height: 64px; margin: 0; padding: 0; border: none; border-image: none; border-radius: 0; background: none; box-shadow: none; flex: 0 0 auto; }
-  #toolbar-menu .menu-tile img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-  #toolbar-menu .menu-tile:active { transform: translateY(2px); }
+  #menu-profile { display: flex; align-items: center; gap: 10px; padding: 4px 6px 10px; border-bottom: 2px dashed #d9b87a; }
+  #menu-profile-avatar .avatar-icon { width: 48px; height: 48px; display: block; }
+  .menu-profile-text { display: flex; flex-direction: column; min-width: 0; }
+  #menu-profile-name { font-size: 18px; color: #4a2c12; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #menu-profile-rank { font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #a05a1c; }
+  #toolbar-menu .menu-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; margin: 0; padding: 6px 12px; border: 2px solid #e0a13a; border-image: none; border-radius: 14px; background: linear-gradient(#ffb84d, #f58a1f); box-shadow: 0 3px 0 #b5600f; color: #fff; font-size: 19px; font-weight: 700; text-align: left; text-shadow: 0 2px 0 #9a4f0c; }
+  #toolbar-menu .menu-row img { width: 34px; height: 34px; object-fit: contain; flex: 0 0 auto; pointer-events: none; }
+  #toolbar-menu .menu-row:active { transform: translateY(2px); box-shadow: 0 1px 0 #b5600f; }
+  #toolbar-menu .menu-row-exit { background: linear-gradient(#f4695a, #d63d2e); border-color: #c0392b; box-shadow: 0 3px 0 #8f241a; text-shadow: 0 2px 0 #8f241a; }
+  #toolbar-menu .menu-row-exit:active { box-shadow: 0 1px 0 #8f241a; }
+  #menu-version { text-align: center; font-size: 11px; color: #8b6f4e; padding-top: 2px; }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
@@ -4399,8 +4409,12 @@ if (location.protocol === "file:") {
   </div>
 </div>
 <div id="toolbar-menu" hidden role="menu">
-  <button id="menu-settings-btn" class="menu-tile" type="button" role="menuitem" aria-label="Settings"><img src="icons/toolbar-settings.webp" alt=""></button>
-  <button id="toolbar-exit-btn" class="menu-tile" type="button" role="menuitem" aria-label="Exit"><img src="icons/toolbar-exit.webp" alt=""></button>
+  <div id="menu-profile"><span id="menu-profile-avatar"></span><span class="menu-profile-text"><b id="menu-profile-name">Player</b><small id="menu-profile-rank"></small></span></div>
+  <button id="menu-settings-btn" class="menu-row" type="button" role="menuitem"><img src="icons/toolbar-settings.webp" alt=""><span>Settings</span></button>
+  <button id="menu-howto-btn" class="menu-row" type="button" role="menuitem"><img src="icons/watch-play.webp" alt=""><span>How to play</span></button>
+  <button id="menu-tour-btn" class="menu-row" type="button" role="menuitem"><img src="icons/toolbar-menu.webp" alt=""><span>Replay tour</span></button>
+  <button id="toolbar-exit-btn" class="menu-row menu-row-exit" type="button" role="menuitem"><img src="icons/toolbar-exit.webp" alt=""><span>Exit</span></button>
+  <div id="menu-version"></div>
 </div>
 
 <div id="exit-confirm-overlay">
@@ -11627,6 +11641,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const toolbarMenuEl = document.getElementById("toolbar-menu");
   function setToolbarMenu(open) {
     if (open && finalScreenEl.classList.contains("active") && gameRewards?.pending) { gameRewards.open(); return; }
+    if (open) {
+      try {
+        document.getElementById("menu-profile-avatar").innerHTML = avatarHtml(currentAvatar);
+        document.getElementById("menu-profile-name").textContent = currentName || "Player";
+        document.getElementById("menu-profile-rank").textContent = CAREER_RANKS[myRankIdx()][1];
+        const v = document.getElementById("settings-version"); document.getElementById("menu-version").textContent = v ? v.textContent : "";
+      } catch (e) {}
+    }
     toolbarMenuEl.hidden = !open;
     toolbarSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
   }
@@ -11658,6 +11680,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (canPeekSettings()) { setSettingsOverGame(true); return; }
     guardToolbarNav(() => openOverlay(settingsScreen))();
   });
+  document.getElementById("menu-howto-btn").addEventListener("click", () => {
+    setToolbarMenu(false);
+    if (!localStorage.getItem("mg_seenHowTo")) { localStorage.setItem("mg_seenHowTo", "1"); toolbarSettingsBtn.classList.remove("hint-pulse"); }
+    guardToolbarNav(() => { howtoReturnEl = null; openOverlay(howtoScreen); howtoScreen.scrollTop = 0; window.scrollTo(0, 0); })();
+  });
+  document.getElementById("menu-tour-btn").addEventListener("click", () => { setToolbarMenu(false); document.getElementById("settings-menu-tour-btn").click(); });
   // How to Play moved into Settings - the first-open nudge (a pulsing ring) now
   // lives on the Settings icon itself instead, since that's the toolbar button
   // that actually gets you there now.
