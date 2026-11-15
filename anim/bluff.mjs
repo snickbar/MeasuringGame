@@ -1,5 +1,6 @@
 export const BLUFF_LABELS={high:'Too High',correct:'Correct',low:'Too Low'};
 export const bluffVoteDeadline=(s,id)=>Math.min(s.endsAt,(s.voteAt?.[id]??s.startedAt)+10000);
+const BLUFF_ACTION_MS=60000;
 const validVote=choice=>typeof choice==='string'&&Object.hasOwn(BLUFF_LABELS,choice);
 export const bluffTurns=(value,count)=>value===1||value===2?value:count<=3?2:1;
 const shuffle=(values,rng)=>{const a=[...values];for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -19,12 +20,12 @@ export function dealBluff(previous,q,now,rng=Math.random){
   if(!previous||!['ready','reveal'].includes(previous.stage)||previous.round>=previous.total)return null;
   const round=previous.round+1,options=bluffOptions(q.answer,rng);
   return {...previous,round,stage:'make',maker:previous.order[(round-1)%previous.order.length],q,
-    options,claim:null,votes:{},result:null,showStand:false,autoClaim:false,startedAt:now,endsAt:now+25000,
+    options,claim:null,votes:{},result:null,showStand:false,autoClaim:false,startedAt:now,endsAt:now+BLUFF_ACTION_MS,
     fallback:Math.floor(rng()*3)};
 }
 export function chooseBluff(s,id,index,now,automatic=false){
   if(!s||s.stage!=='make'||(!automatic&&id!==s.maker)||!Number.isInteger(index)||!s.options[index]||(!automatic&&now>=s.endsAt))return null;
-  return {...s,stage:'vote',claim:s.options[index],autoClaim:automatic,votes:{},voteAt:{},startedAt:now,endsAt:now+30000};
+  return {...s,stage:'vote',claim:s.options[index],autoClaim:automatic,votes:{},voteAt:{},startedAt:now,endsAt:now+BLUFF_ACTION_MS};
 }
 export function voteBluff(s,id,choice,now){
   if(!s||s.stage!=='vote'||!s.order.includes(id)||id===s.maker||!validVote(choice)||now>=s.endsAt||

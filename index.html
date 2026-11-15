@@ -2565,7 +2565,7 @@ if (location.protocol === "file:") {
   .bd-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 10px; font-family: 'Fredoka', sans-serif; }
   .bd-head h3 { margin: 0; font-size: 18px; }
   .bd-head span { font-size: 13px; font-weight: 600; color: #70502d; text-align: right; }
-  .bd-card { background: #fffdf6; border: 2.5px solid #d9bf90; border-radius: 20px; padding: 12px; }
+  .bd-card { background: rgb(255 253 246 / 72%); border: 2.5px solid #d9bf90; border-radius: 20px; padding: 12px; }
   .bd-card + .bd-card { margin-top: 10px; }
   .bd-ranks { display: flex; justify-content: space-between; gap: 4px; }
   .bd-rank { flex: 1; min-width: 0; text-align: center; font: 700 11px/1.1 'Fredoka', sans-serif; color: #5a3a1a; background: none; border: 0; padding: 0; }
@@ -4891,7 +4891,7 @@ if (location.protocol === "file:") {
     <p>Worlds and Survival stay untimed and have no Second Chance. A reroll does not add a timer. Power-ups are unavailable in Party, Daily, and Monthly challenges, including practice.</p>
   </div></details>
 
-  <details class="howto-section"><summary>Bluff the Room</summary><div class="howto-body"><p>Party Mode for 3–10 players. Everyone takes equal turns as the maker. The maker privately sees three numbers labeled Too Low, Correct, and Too High, then chooses one number to claim. Other players see only that claim and lock a vote: Too Low, Correct, or Too High.</p><p>Correct votes earn +2. The maker earns +1 for each submitted vote they fool. Missing votes earn nobody points. Maker timeouts create an automatic claim with no maker points. Points rank first, then correct votes divided by voting opportunities; full ties share the win. There is no Second Chance or power-up.</p><p>Auto gives everyone two maker turns with 3 players, or one with 4 or more; the host can choose one or two each. The maker gets 25 seconds; voters get 30 seconds. The host continues after the reveal.</p></div></details>
+  <details class="howto-section"><summary>Bluff the Room</summary><div class="howto-body"><p>Party Mode for 3–10 players. Everyone takes equal turns as the maker. The maker privately sees three numbers labeled Too Low, Correct, and Too High, then chooses one number to claim. Other players see only that claim and lock a vote: Too Low, Correct, or Too High.</p><p>Correct votes earn +2. The maker earns +1 for each submitted vote they fool. Missing votes earn nobody points. Maker timeouts create an automatic claim with no maker points. Points rank first, then correct votes divided by voting opportunities; full ties share the win. There is no Second Chance or power-up.</p><p>Auto gives everyone two maker turns with 3 players, or one with 4 or more; the host can choose one or two each. The maker and voters each get 60 seconds. The host continues after the reveal.</p></div></details>
 
   <details class="howto-section"><summary>Second chances</summary><div class="howto-body">
     <p>Every round, after guesses lock, everyone gets a few seconds to either <b>pick another answer</b> (if you think it's right) - one of the answers on the table is secretly the <b>real answer</b>, and picking it earns a bonus point, or <b>double down</b> on your own guess. Doubling down adds a bonus to your own points if your guess turns out to be the closest.</p>
@@ -11160,7 +11160,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let isHost = false;
   let currentPlayers = {};
   let renderedPlayerListIds = new Set();
-  let currentSettings = { timerSeconds: 60, totalRounds: 5, itemSelectionMode: "anything" };
+  const DEFAULT_ROUND_SECONDS = 60;
+  let currentSettings = { timerSeconds: DEFAULT_ROUND_SECONDS, totalRounds: 5, itemSelectionMode: "anything" };
   let roomState = {};
   // Set right before any of the "we're leaving/ending this room for good"
   // sequences (finalHomeBtn, guestExit, hostExit) start their own awaited
@@ -11270,7 +11271,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let wasDoubleDownPicked = false;
 
   function DEFAULT_SETTINGS() {
-    return { timerSeconds: 60, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true, includeMakeBelieve: true };
+    return { timerSeconds: DEFAULT_ROUND_SECONDS, totalRounds: 5, itemSelectionMode: "anything", autoAdvanceEnabled: false, autoAdvanceSeconds: 5, animationReveal: true, includeMakeBelieve: true };
   }
 
   // ==================== Home screen ====================
@@ -12554,7 +12555,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
       </div>
       <div class="dc-card"><div class="dc-big">Everyone takes a turn</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Highest score wins. Vote accuracy breaks ties, and a complete tie shares the win.</div></div>
-      <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">25 seconds to make a claim, then 30 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
+      <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">60 seconds to make a claim, then 60 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
       <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Create Room</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
@@ -16419,7 +16420,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         return;
       }
-      const t = e.target.closest(".items-tab");
+      const t = e.target.closest(".items-tab[data-tab]");
       if (t && t.dataset.tab !== itemsTab) { itemsTab = t.dataset.tab; renderItemsScreen(); itemsContentEl.scrollTop = 0; }
     });
   }
@@ -17936,7 +17937,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   });
 
   settingTimerInput.addEventListener("change", () => {
-    currentSettings.timerSeconds = Math.max(10, Math.min(120, parseInt(settingTimerInput.value, 10) || 60));
+    currentSettings.timerSeconds = Math.max(10, Math.min(120, parseInt(settingTimerInput.value, 10) || DEFAULT_ROUND_SECONDS));
     renderLocalSettingsPanel();
   });
   settingRoundsInput.addEventListener("change", () => {
@@ -17995,7 +17996,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     input.dispatchEvent(new Event("change", { bubbles: true }));
   });
   presetSettingTimerInput.addEventListener("change", () => {
-    presetEditSettings.timerSeconds = Math.max(10, Math.min(120, parseInt(presetSettingTimerInput.value, 10) || 60));
+    presetEditSettings.timerSeconds = Math.max(10, Math.min(120, parseInt(presetSettingTimerInput.value, 10) || DEFAULT_ROUND_SECONDS));
     renderPresetEditPanel();
   });
   presetSettingRoundsInput.addEventListener("change", () => {
@@ -18856,7 +18857,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const players = roomState.players || {};
     // A brand-new round: roomState may still hold last round's guesses for a moment.
     const existingGuesses = freshRound ? {} : (roomState.guesses || {});
-    const timerMs = (currentSettings.timerSeconds || 60) * 1000;
+    const timerMs = (currentSettings.timerSeconds || DEFAULT_ROUND_SECONDS) * 1000;
     Object.keys(players).forEach((id) => {
       const p = players[id];
       if (!p || !p.isBot) return;
@@ -19445,7 +19446,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Team modes (Worlds and High/Low) have no countdown on screen: the deadline is a 24-hour cap, so a teammate who
     // walks away eventually counts as 0% instead of stalling the room forever.
     const untimed = hl || (roomState.settings || currentSettings).mode === "teamworlds";
-    const duration = untimed ? TEAM_ROUND_CAP_MS : (currentSettings.timerSeconds || 60) * 1000;
+    const duration = untimed ? TEAM_ROUND_CAP_MS : (currentSettings.timerSeconds || DEFAULT_ROUND_SECONDS) * 1000;
     const waitUntil = nowMs() + Math.max(15000, q.prompt.length * 60 + 6000);
     const endsAt = (untimed ? nowMs() : waitUntil) + duration;
     let hlRoles = null;
@@ -23292,7 +23293,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (hsMode) { lrKey='highstakes'; lrTitle='High Stakes'; lrChips=[chip(img('icons/coin.webp'), `${data.settings?.startCoins || HS.HS_START_COINS} coins each`), chip('🏁', `Up to ${HS.HS_MAX_ROUNDS} rounds`)]; }
     else if (hlMode) { lrKey='hlsurvival'; lrTitle='High/Low Survival'; lrChips=[chip(img(HL_MESSAGE_BOTTLE), `${data.settings?.lives || HL_LIVES} bottles`), chip(data.settings?.cap ? '🏁' : '♾️', data.settings?.cap ? `Up to ${data.settings.cap} rounds` : 'Endless')]; }
     else if (worldsMode) { lrKey='teamworlds'; lrTitle='Team Worlds'; lrChips=[chip('🌍', escapeHtml(WORLDS.find((w) => w.id === data.settings?.worldId)?.name || 'World')), chip('❓','5 questions')]; }
-    else { lrKey = solo ? 'quick' : 'classic'; lrTitle = solo ? 'Quick Game' : 'Classic Party'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), chip(img('icons/ui-stopwatch.webp'), `${data.settings?.timerSeconds||30} seconds`), chip('🎯', data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'), chip(img('icons/flair/bolt.webp'), `Power-ups ${solo?'on':'off'}`)]; }
+    else { lrKey = solo ? 'quick' : 'classic'; lrTitle = solo ? 'Quick Game' : 'Classic Party'; lrChips=[chip('🏁', `${data.settings?.totalRounds||5} rounds`), chip(img('icons/ui-stopwatch.webp'), `${data.settings?.timerSeconds || DEFAULT_ROUND_SECONDS} seconds`), chip('🎯', data.settings?.itemSelectionMode==='relative'?'Keep it relative':'Anything goes'), chip(img('icons/flair/bolt.webp'), `Power-ups ${solo?'on':'off'}`)]; }
     const lrIcon = MENU_BANNERS[lrKey]?.[1];
     rules.dataset.mode = lrKey;
     rules.innerHTML = `<div class="lr-head">${lrIcon ? img(lrIcon) : ''}<h2>${lrTitle}</h2></div><div class="lr-chips">${lrChips.join('')}</div>`;
