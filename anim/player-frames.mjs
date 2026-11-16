@@ -7,22 +7,27 @@ const styles = [
 
 const shinyFrames = new Set([4, 5, 6, 7, 9, 10, 11, 13, 19, 20]);
 const colors = [
-  ["Gold", "#bb9651"], ["Green", "#67874f"], ["Blue", "#5281a9"],
-  ["Purple", "#866da5"], ["Red", "#a95357"], ["Brown", "#986b4d"],
+  ["Gold", "#c49538"], ["Green", "#5b903b"], ["Blue", "#397eb6"],
+  ["Purple", "#8861ad"], ["Red", "#b14752"], ["Brown", "#986b4d"],
 ];
 
 function shadedPalette(tint, shiny) {
   const brightness = ([r, g, b]) => r * 0.2126 + g * 0.7152 + b * 0.0722;
   const average = brightness(tint);
   const middle = Math.max(100, Math.min(151, average));
+  const chroma = tint.map((channel) => channel - average);
+  const darkest = -Math.min(...chroma);
+  const brightest = Math.max(...chroma);
   return Array.from({ length: 256 }, (_, light) => {
     const level = light < 128
       ? 24 + (middle - 24) * light / 128
       : middle + (213 - middle) * (light - 128) / 127;
-    const colorStrength = light < 128 ? 0.18 + light / 320 : 0.58 - (light - 128) / 420;
+    const strength = light < 128 ? 0.24 + light / 210 : 0.85 - (light - 128) / 420;
+    const colorStrength = Math.min(strength, darkest ? level / darkest : 1,
+      brightest ? (255 - level) / brightest : 1);
     const glint = shiny ? Math.max(0, (light - 244) / 11) * 0.65 : 0;
-    return tint.map((channel) => {
-      const shade = Math.max(0, Math.min(255, level + (channel - average) * colorStrength));
+    return chroma.map((channel) => {
+      const shade = level + channel * colorStrength;
       return shade + (255 - shade) * glint;
     });
   });
@@ -39,8 +44,10 @@ export function buildPlayerFramePreview(getPlayer) {
       .frame-preview-control { display:grid; gap:4px; max-width:100%; }
       .frame-preview-stepper { display:flex; align-items:center; gap:4px; }
       .frame-preview-stepper select { min-width:0; }
-      .frame-preview-stepper button { flex:none; min-width:30px; min-height:32px;
-        border:1px solid #c7aa83; border-radius:7px; background:#fff8e6; color:#3b2b1e; font:inherit; }
+      .dbg-body .frame-preview-stepper button { box-sizing:border-box; flex:0 0 24px;
+        display:grid; place-items:center; width:24px; height:26px; min-width:0; min-height:0;
+        margin:0; padding:0; border:1px solid #c7aa83; border-image:none; border-radius:6px;
+        background:#fff8e6; color:#3b2b1e; box-shadow:none; text-shadow:none; font:600 17px/1 system-ui; }
       .frame-preview-grid { display:grid; gap:12px; }
       .frame-preview-grid figure { margin:0; }
       .frame-preview-grid figcaption { margin-bottom:4px; font-size:.8rem; font-weight:700; }
@@ -72,7 +79,7 @@ export function buildPlayerFramePreview(getPlayer) {
           <button type="button" data-step-color="-1" aria-label="Previous color">‹</button>
           <select data-palette aria-label="Preset color"></select>
           <button type="button" data-step-color="1" aria-label="Next color">›</button>
-          <input type="color" value="#bb9651" data-color aria-label="Custom color">
+          <input type="color" data-color aria-label="Custom color">
         </div>
       </div>
       <label>Tint <select data-tint><option value="shaded">Shaded</option><option value="original">Original</option><option value="none">Grayscale</option></select></label>
@@ -89,7 +96,7 @@ export function buildPlayerFramePreview(getPlayer) {
   select.append(...styles.map((style, index) => new Option(style, String(index))));
   select.value = "1";
   paletteSelect.append(...colors.map(([label, hex]) => new Option(label, hex)), new Option("Custom", ""));
-  paletteSelect.value = color.value;
+  color.value = paletteSelect.value = colors[0][1];
   paletteSelect.lastElementChild.disabled = true;
   const cards = [
     ["Lobby", "", "Ready"],
