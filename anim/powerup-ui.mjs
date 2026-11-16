@@ -2,7 +2,7 @@ import { POWERUPS, REROLLS, availablePowerups, quickEligible, replacementPairsRe
 
 // The controller owns immediate purchases and the reveal; the game owns scoring.
 export function createPowerupController(ports) {
-  let busy = false, pendingId = null, messageTimer, messagePhase = null, messageQuestion = null;
+  let busy = false, busyAt = 0, pendingId = null, messageTimer, messagePhase = null, messageQuestion = null;
   const active = new Set(), recovering = new Set();
   const reducedMotion = () => document.documentElement?.dataset.motion === 'reduce' || !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const tray = document.getElementById('quick-powerups');
@@ -161,7 +161,7 @@ export function createPowerupController(ports) {
     const owner = ports.owner(), operation = crypto.randomUUID();
     let charged = false, applied = false, sounded = false;
     const successSound = () => { if (!sounded) { sounded = true; ports.onUsed?.(id); } };
-    busy = true; pendingId = id; active.add(operation); render();
+    busy = true; busyAt = Date.now(); pendingId = id; active.add(operation); render();
     for (const b of document.querySelectorAll('[data-powerup]')) {
       b.disabled = true;
       const pending = b.dataset.powerup === id;
@@ -324,5 +324,5 @@ export function createPowerupController(ports) {
     const observer = new ResizeObserver(() => render());
     for (const el of [document.querySelector('.hud-timer-row'), document.querySelector('.hud-timer-col'), document.querySelector('.game-body')]) if (el) observer.observe(el);
   }
-  return { get busy() { return busy; }, html, render, recover };
+  return { get busy() { return busy; }, get busyAt() { return busyAt; }, html, render, recover };
 }

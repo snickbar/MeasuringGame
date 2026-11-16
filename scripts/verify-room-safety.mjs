@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { electedHost, transferHost, returnHost, admitPlayer, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from '../anim/room-safety.mjs';
+import { electedHost, transferHost, returnHost, admitPlayer, soloRepair, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from '../anim/room-safety.mjs';
 import * as HS from '../anim/high-stakes.mjs';
 import { applyCareerRecord } from '../anim/career-ledger.mjs';
 import { deleteIfStale } from './cleanup-stale-rooms.mjs';
@@ -165,7 +165,7 @@ const hostContext = vm.createContext({ console, electedHost, transferHost, db: {
   checkAnimationAdvance: () => {}, checkRevealAdvance: () => {}, checkSummaryAdvance: () => {},
   scheduleBotGuesses: () => { botGuesses++; }, scheduleBotPicks: () => {}, hsEnsureTicker: () => {}
 });
-vm.runInContext(actual('maybeReassignHost'), hostContext);
+vm.runInContext(actual('rearmHostDuties') + '\n' + actual('maybeReassignHost'), hostContext);
 hostContext.room = party;
 vm.runInContext('maybeReassignHost(room, "TEST")', hostContext);
 assert.equal(hostContext.isHost, false, 'wait for a confirmed host election before driving the game');
@@ -181,7 +181,18 @@ assert.equal(armed.at(-1)[0], 300, 'countdown also resumes after a transfer');
 const human = actual('hsAct');
 assert.ok(human.includes('commitHsState(cur, gameId, state, { hs: next })'));
 assert.ok(human.includes('applyLocally: false'));
-assert.ok(source.includes('cur => admitPlayer(cur, id, player, !!staleOwnId)'));
+assert.ok(source.includes('cur => admitPlayer(cur, id, player, ownSeat ? "own" : !!staleOwnId)'));
+// A phone takes back its own seat by id even while the room still shows it connected (no duplicate player).
+assert.equal(admitPlayer(joined, 'friend', { ...friend, connected: true }, 'own').players.friend.frameIndex, 2);
+assert.equal(admitPlayer(joined, 'nobody', friend, 'own'), undefined, 'own reclaim needs the seat to exist');
+// A Quick Game left with a second copy of you (holding the host seat) is repaired.
+const ghosted = { phase: 'question', settings: { solo: true }, players: { ghost: { name: 'Dad', isHost: true, connected: true }, me: { name: 'Dad' }, bot: { name: 'B', isBot: true } }, guesses: { ghost: 1, me: 3 } };
+const repaired = soloRepair(ghosted, 'me');
+assert.deepEqual(Object.keys(repaired.players).sort(), ['bot', 'me']);
+assert.equal(repaired.players.me.isHost, true);
+assert.deepEqual(repaired.guesses, { me: 3 });
+assert.equal(soloRepair(repaired, 'me'), undefined, 'nothing to repair twice');
+assert.equal(soloRepair({ ...ghosted, settings: {} }, 'me'), undefined, 'party rooms are never touched');
 assert.ok(source.includes('return admitPlayer(cur, botId, newPlayer)'));
 assert.ok(source.includes('hsRounds: null'), 'rematches clear old round archives');
 

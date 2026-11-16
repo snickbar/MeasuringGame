@@ -44,13 +44,33 @@ export function returnHost(room, id) {
   if (!room || room.phase === 'ended' || room.hostOriginal !== id || !me || me.isBot || me.connected === false || me.isHost) return undefined;
   return { ...room, hostOriginal: null, players: Object.fromEntries(Object.entries(room.players).map(([pid, p]) => [pid, { ...p, isHost: pid === id }])) };
 }
+// A Quick Game (solo vs bots) has exactly one person in it. If an older resume left a second copy of that
+// person behind (a "ghost" holding the host seat, so nobody ran the clock or the bots), drop the copy and
+// hand the host seat to whoever is actually playing.
+export function soloRepair(room, id) {
+  if (room === null) return null;
+  const players = room?.players || {}, me = players[id];
+  if (!room?.settings?.solo || room.phase === 'ended' || !me || me.isBot) return undefined;
+  const ghosts = Object.keys(players).filter(pid => pid !== id && !players[pid]?.isBot);
+  if (!ghosts.length && me.isHost && me.connected !== false) return undefined;
+  const next = { ...room, players: {} };
+  for (const [pid, p] of Object.entries(players)) if (!ghosts.includes(pid)) next.players[pid] = pid === id ? { ...p, isHost: true, connected: true, disconnectedAt: null } : { ...p, isHost: false };
+  for (const field of ['guesses', 'picks', 'hsPicks']) if (room[field]) { const kept = { ...room[field] }; ghosts.forEach(g => delete kept[g]); next[field] = kept; }
+  if (room.answers && typeof room.answers === 'object') next.answers = Object.values(room.answers).filter(a => a && !ghosts.includes(a.playerId));
+  if (ghosts.includes(room.hostOriginal)) next.hostOriginal = null;
+  return next;
+}
 export const roomCapacity = room => room?.settings?.mode === 'teamworlds' ? 2 : 10;
 export function admitPlayer(room, id, player, reclaim = false) {
   if (room === null) return null;
   if (!room || room.phase === 'ended') return undefined;
   const players = room.players || {}, old = players[id];
   if(room.settings?.mode==='bluff'&&room.phase!=='waiting'&&!old)return undefined;
-  if (reclaim) {
+  if (reclaim === 'own') {
+    // This phone's own seat (its id is saved on the phone): take it back even if the room still thinks it is
+    // connected - after a crash or a quick reopen the server may not have noticed the old connection dropped yet.
+    if (!old || old.isBot) return undefined;
+  } else if (reclaim) {
     if (!old || old.isBot || old.connected !== false || old.name?.trim().toLowerCase() !== player.name?.trim().toLowerCase()) return undefined;
   } else if (old || Object.keys(players).length >= roomCapacity(room)) return undefined;
   const frames = new Set(Object.values(players).map(p => p.frameIndex));

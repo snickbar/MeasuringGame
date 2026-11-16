@@ -5417,7 +5417,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var debugTools;
   import { enforceSingleScreen } from "./anim/screen-visibility.mjs";
   import * as HS from "./anim/high-stakes.mjs";
-  import { electedHost, transferHost, returnHost, admitPlayer, roomCapacity, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from "./anim/room-safety.mjs";
+  import { electedHost, transferHost, returnHost, admitPlayer, soloRepair, roomCapacity, commitHsState, hsRoundRecord, roomGameFinished, finishRoomDeparture } from "./anim/room-safety.mjs";
   var careerLedger;
   var gameRewards;
   var powerups;
@@ -11185,6 +11185,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let transitionFlag = 0;
   const TRANSITION_MAX_MS = 8000;
   const transitionBusy = () => transitionFlag > 0 && Date.now() - transitionFlag < TRANSITION_MAX_MS;
+  // The host's own power-up purchase briefly holds the round, but one stuck mid-way (app minimized, connection lost) must not hold it for good.
+  const powerupHold = () => !!powerups?.busy && Date.now() - (powerups.busyAt || 0) < 15000;
   let previousDisplayedScores = {};
   let previousScoreColumnRanks = {};
 
@@ -11729,16 +11731,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } catch (e) { return null; }
   }
   const QUICK_LEAVE_TEXT = ["Leave for now?", "Your progress is saved, so you can pick this up again later. Are you sure you want to leave?"];
+  // What the Resume card needs. The player id is the important part: resuming takes back exactly this seat
+  // (and the host role with it). Matching by name alone used to fail and add a second copy of you, which froze the game.
+  function quickSaveInfo() {
+    const id = currentPlayerId;
+    return { code: currentRoomCode, id, name: roomState.players?.[id]?.name || currentName || "Player", round: (roomState.phase === "countdown" ? roomState.countdownRound : roomState.round) || 1, total: roomState.settings?.totalRounds || 5, t: nowMs() };
+  }
+  // Stop being "in" a room on this phone: no listeners, and nothing (presence, host timers, the watchdog) keeps
+  // writing to it. Leaving without this kept the old room attached in the background, and the next reconnect
+  // marked the seat you had just left as "here" again.
+  function detachRoom() {
+    if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+    if (reactionsUnsub) { reactionsUnsub(); reactionsUnsub = null; }
+    currentRoomCode = null; currentPlayerId = null; isHost = false;
+    roomState = {}; currentPlayers = {}; renderedPlayerListIds = new Set();
+    questionBotsKey = null; quickAutoPausedAt = 0;
+  }
   async function quickSaveAndLeave() {
     const code = currentRoomCode, id = currentPlayerId, t = nowMs();
-    const info = { code, name: roomState.players?.[id]?.name || currentName || "Player", round: (roomState.phase === "countdown" ? roomState.countdownRound : roomState.round) || 1, total: roomState.settings?.totalRounds || 5, t };
+    const info = quickSaveInfo();
+    try { localStorage.setItem(quickKey(), JSON.stringify(info)); } catch (e) {} // first, so the Resume card exists even if the app closes mid-way
     cancelRevealEffects();
     leavingGame = true; // first: silence the room listener, or the seat change below would look like a host dropping out
     // Paused (every deadline is shifted when it resumes) with your seat held open, exactly like a dropped connection.
-    await update(ref(db, `rooms/${code}`), { paused: true, pausedAt: t, [`players/${id}/connected`]: false, [`players/${id}/disconnectedAt`]: t });
+    const pause = roomState.paused ? {} : { paused: true, pausedAt: t };
+    await update(ref(db, `rooms/${code}`), { ...pause, [`players/${id}/connected`]: false, [`players/${id}/disconnectedAt`]: t });
     onDisconnect(ref(db, `rooms/${code}/players/${id}`)).cancel();
-    try { localStorage.setItem(quickKey(), JSON.stringify(info)); } catch (e) {}
     localRooms.flush();
+    detachRoom();
     showLeftScreen("", {});
     leftScreenEl.classList.remove("active");
     homeScreen.classList.add("active");
@@ -11752,10 +11772,36 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     try { localStorage.removeItem(quickKey()); } catch (e) {}
     leavingGame = false;
     ALL_SCREEN_ELS.forEach((el) => el.classList.remove("active"));
-    await joinRoomAsPlayer(s.code, s.name, false, data); // reclaims the held seat (and host role)
-    for (let i = 0; i < 60 && !(currentRoomCode === s.code && roomState?.paused); i++) await new Promise((r) => setTimeout(r, 50));
+    await joinRoomAsPlayer(s.code, s.name, false, data, s.id); // reclaims the held seat (and host role)
+    for (let i = 0; i < 60 && !(currentRoomCode === s.code && roomState?.phase && isHost); i++) await new Promise((r) => setTimeout(r, 50));
     if (currentRoomCode === s.code && roomState?.paused && isHost) await togglePause(); // carries on exactly where it stopped
   }
+  // A Quick Game is just you and bots, so it stands still while the app is in the background (minimized, phone
+  // locked, or closed from the recent-apps list) instead of running its clock out. Back in the app it carries on by itself;
+  // if the app was closed meanwhile, the Solo hub offers Resume.
+  let quickAutoPausedAt = 0;
+  function quickAutoPause() {
+    if (!quickCanSave() || leavingGame) return;
+    try { localStorage.setItem(quickKey(), JSON.stringify(quickSaveInfo())); } catch (e) {} // the Resume card, in case the app gets closed now
+    if (roomState.paused) { localRooms.flush(); return; } // already paused with the Pause button: leave it that way
+    const t = nowMs();
+    quickAutoPausedAt = t;
+    update(ref(db, `rooms/${currentRoomCode}`), { paused: true, pausedAt: t }).then(() => localRooms.flush()).catch(() => {});
+  }
+  function quickAutoResume() {
+    if (document.hidden) return;
+    if (quickCanSave() && !leavingGame) { try { const s = readQuickSaved(); if (s && s.code === currentRoomCode) localStorage.removeItem(quickKey()); } catch (e) {} } // back in the game: no Resume card needed
+    if (!quickAutoPausedAt) return;
+    const at = quickAutoPausedAt;
+    if (!currentRoomCode || !isHost || !roomState?.settings?.solo) { quickAutoPausedAt = 0; return; }
+    if (!roomState.paused) return; // the pause write has not landed in roomState yet: try again shortly
+    quickAutoPausedAt = 0;
+    if (roomState.pausedAt === at) togglePause().catch(() => {}); // only undo our own pause, never one you made with the Pause button
+  }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) quickAutoPause(); else setTimeout(quickAutoResume, 60); });
+  window.addEventListener("pagehide", quickAutoPause);
+  window.addEventListener("size-em-up:app-active", () => setTimeout(quickAutoResume, 60));
+  setInterval(() => { if (quickAutoPausedAt) quickAutoResume(); }, 500);
   function quickDiscard() {
     const s = (() => { try { return JSON.parse(localStorage.getItem(quickKey()) || "null"); } catch (e) { return null; } })();
     try { localStorage.removeItem(quickKey()); } catch (e) {}
@@ -11907,6 +11953,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     openExitConfirm("app", "Exit game?", "Close the app.", "Exit game", "Stay here");
   });
+  // Closing the app straight away used to cut off the "I left / game paused" write, leaving a room with nobody running it.
+  function closeAfter(leaving, thenExit) {
+    const done = Promise.race([Promise.resolve(leaving).catch(() => {}), new Promise((r) => setTimeout(r, 2500))]);
+    if (thenExit) done.then(closeAppNow);
+  }
   function closeAppNow() {
     const appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
     if (appPlugin && appPlugin.exitApp) appPlugin.exitApp();
@@ -11933,11 +11984,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (action && action.startsWith("unlockSlot")) { buyReactionSlot(Number(action.slice(10))); return; }
     if (action === "navFromLobby" || action === "navFromSolo") { if (nav) nav(); if (thenExit) closeAppNow(); return; }
     if (action === "closeCreatedRoom") { closeCreatedRoom(); return; }
-    if (action === "quickSave") { quickSaveAndLeave(); if (thenExit) closeAppNow(); return; }
+    if (action === "quickSave") { closeAfter(quickSaveAndLeave(), thenExit); return; }
     if (action === "quickResume") { quickResume(); return; }
     if (action === "hostGame" || action === "leaveGame") {
-      if (isHost) hostExit(); else guestExit();
-      if (thenExit) closeAppNow();
+      closeAfter(isHost ? hostExit() : guestExit(), thenExit);
       return;
     }
     // Capacitor auto-registers installed native plugins as globals - no
@@ -13809,7 +13859,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function readSoloSession(mode){
     try{const state=JSON.parse(localStorage.getItem('mg_resume_'+deviceId+'_'+mode));
       if(mode==='wb')return state?.runId&&state.lives>0&&state.round>0?state:null;
-      if(!state?.runId||!['question','reveal'].includes(state.phase))return null;
+      // Worlds also saves on its result screen (between questions); that is a fine place to pick back up too.
+      if(!state?.runId||!['question','reveal'].concat(mode==='worlds'?['result']:[]).includes(state.phase))return null;
       const qs=mode==='worlds'?state.questions:[state.q].filter(Boolean);if(!qs?.length||qs.some(q=>!OBJECT_BY_ID.has(q.unitId)||!OBJECT_BY_ID.has(q.targetId)))return null;
       if(mode==='worlds'&&!WORLDS[state.wi])return null;return state;
     }catch{return null;}
@@ -18439,13 +18490,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // connection, when nothing seems to happen) used to run the whole join again, minting a second
   // and third copy of the same player in the room. One join at a time.
   let joinInFlight = false;
-  async function joinRoomAsPlayer(roomCode, name, asHost, roomData) {
+  async function joinRoomAsPlayer(roomCode, name, asHost, roomData, ownId) {
     if (joinInFlight) return;
     joinInFlight = true;
-    try { return await joinRoomAsPlayerOnce(roomCode, name, asHost, roomData); }
+    try { return await joinRoomAsPlayerOnce(roomCode, name, asHost, roomData, ownId); }
     finally { joinInFlight = false; }
   }
-  async function joinRoomAsPlayerOnce(roomCode, name, asHost, roomData) {
+  // The seat this phone last had in a room (saved when it joined), if that seat is still there.
+  function ownSeatIn(roomCode, players, ownId, solo) {
+    const id = ownId || loadRecentRooms().find((r) => r.code === roomCode)?.playerId;
+    if (id && players?.[id] && !players[id].isBot && players[id].name) return id;
+    // A Quick Game lives only on this phone, so its one person is always you (covers saves made before ids were kept).
+    if (solo) return Object.keys(players || {}).find((pid) => !players[pid].isBot && players[pid].name) || null;
+    return null;
+  }
+  async function joinRoomAsPlayerOnce(roomCode, name, asHost, roomData, ownId) {
     if (takenAvatarsUnsub) { takenAvatarsUnsub(); takenAvatarsUnsub = null; }
     // Read possible rejoin slots; the room transaction below makes the final
     // capacity and frame decision against the latest players and game mode.
@@ -18463,7 +18522,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // a guess from the orphaned one. Only matches a DISCONNECTED entry so a
     // live, actively-connected player can never get hijacked by someone else
     // typing the same name.
-    const staleOwnId = Object.keys(existingPlayers).find((id) => {
+    // First choice: this phone's own seat, by id. The room can still show it as connected (the app was closed a
+    // moment ago, or an old bug marked it back) - the name match below then failed and you came back as a second player.
+    const ownSeat = asHost ? null : ownSeatIn(roomCode, existingPlayers, ownId, !!roomData?.settings?.solo && localRooms.owns("rooms/" + roomCode));
+    const staleOwnId = ownSeat || Object.keys(existingPlayers).find((id) => {
       const p = existingPlayers[id];
       return !p.isBot && p.connected === false && p.name && p.name.trim().toLowerCase() === name.trim().toLowerCase();
     });
@@ -18496,7 +18558,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : { name, avatar: currentAvatar, flair: lastSyncedFlair, rank: myRankIdx(), lvl: myLevelNum(), isHost: finalIsHost, score: 0, frameIndex, joinedAt: serverTimestamp(), connected: true };
     player.playerFrame = equippedPlayerFrame();
     if (isHsSettings(roomData?.settings)) player.hsSidePots = true;
-    const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, !!staleOwnId));
+    const joined = await runTransaction(ref(db, `rooms/${roomCode}`), cur => admitPlayer(cur, id, player, ownSeat ? "own" : !!staleOwnId));
     if (!joined.committed || !joined.snapshot.val()?.players?.[id]) {
       const latest=joined.snapshot.val()||roomData;
       nameAvatarStatusEl.textContent=latest?.settings?.mode==='bluff'&&latest.phase!=='waiting'?'This Bluff game has already started. Ask the host to start another game so everyone gets equal maker turns.':`Room is full (${roomCapacity(latest)} players max) or no longer available.`;
@@ -18511,14 +18573,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (canReclaim) await remove(ref(db, `rooms/${roomCode}/pendingHostReclaim`));
     const effectiveMode = roomData && roomData.settings && roomData.settings.hostTransferMode;
     if (finalIsHost && effectiveMode === "reclaim") armHostReclaimMarker(roomCode, name);
-    if (canReclaim && roomData) {
-      // Pick back up whichever deadline was pending when the original host dropped.
-      if (roomData.phase === "question") {
-        const dl = roomData.graceEndsAt || roomData.questionEndsAt;
-        if (dl) scheduleHostDeadline(dl, () => checkQuestionAdvance(roomCode));
-      } else if (roomData.phase === "answers" && roomData.answersEndsAt) {
-        scheduleHostDeadline(roomData.answersEndsAt, () => checkAnswersAdvance(roomCode));
-      }
+    // Back as host (reclaimed, or your own seat): this phone's timers for the round died with the old session,
+    // so pick back up whichever deadline and bot answers are pending.
+    if (isHost) {
+      questionBotsKey = null;
+      const latest = joined.snapshot.val();
+      if (latest && latest.phase && latest.phase !== "waiting") rearmHostDuties(latest, roomCode);
     }
 
     addRecentRoom(roomCode, id);
@@ -18924,7 +18984,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Only counts currently-connected players - a disconnected same-named
     // slot is about to be reclaimed (see joinRoomAsPlayer), not collided
     // with, so it shouldn't force you onto a different avatar than your own.
-    const existingAvatars = new Set(Object.values(data.players || {}).filter((p) => p.connected !== false).map((p) => p.avatar).filter(Boolean));
+    const existingAvatars = new Set(Object.entries(data.players || {}).filter(([id, p]) => p.connected !== false && id !== ownSeatIn(pendingRoomCode, data.players)).map(([, p]) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { nameAvatarStatusEl.textContent = "Every avatar is taken in that room."; return; }
@@ -18956,7 +19016,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Same exclusion as the manual-join path above - a disconnected
     // same-named slot (almost always this exact rejoin's own stale entry)
     // is about to be reclaimed, not collided with.
-    const existingAvatars = new Set(Object.values(data.players || {}).filter((p) => p.connected !== false).map((p) => p.avatar).filter(Boolean));
+    const existingAvatars = new Set(Object.entries(data.players || {}).filter(([id, p]) => p.connected !== false && id !== ownSeatIn(code, data.players)).map(([, p]) => p.avatar).filter(Boolean));
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { joinStatusEl.textContent = "Every avatar is taken in that room."; return; }
@@ -19056,36 +19116,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     openExitConfirm("startGame", "Start game?", "Everyone in the room will join the game.", "Start game", "Back to lobby");
   });
 
+  // A phone that has just become host (took over, came back, or reopened the app) has none of the old host's
+  // one-shot timers, so arm whichever deadline is pending and queue any bot that still owes an answer.
+  function rearmHostDuties(data, roomCode) {
+    // Re-arm whichever one is currently pending so the round doesn't stall.
+    // Bot guesses/picks are also setTimeout's scheduled on whoever was
+    // hosting at the time - any bot whose timeout hadn't fired yet when
+    // that host's tab died would otherwise never guess/pick at all (this
+    // is what "only one of the bots' answers were there" turned out to
+    // be). Both schedule functions skip any bot that already has an
+    // entry, so this can't double-submit for ones that already fired.
+    if (data.phase === "question") {
+      const dl = data.graceEndsAt || data.questionEndsAt;
+      if (dl) scheduleHostDeadline(dl, () => checkQuestionAdvance(roomCode));
+      if (data.currentQuestion) scheduleBotGuesses(roomCode, data.currentQuestion);
+    } else if (data.phase === "answers") {
+      if (data.answersEndsAt) scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
+      if (data.answers) scheduleBotPicks(roomCode, data.answers);
+    }
+    const pending = {
+      countdown: [data.countdownEndsAt, checkCountdownAdvance],
+      animation: [data.animEndsAt, checkAnimationAdvance],
+      reveal: [data.revealAdvanceAt, checkRevealAdvance],
+      summary: [data.summaryAdvanceAt, checkSummaryAdvance],
+    }[data.phase];
+    if (pending?.[0]) scheduleHostDeadline(pending[0], () => pending[1](roomCode));
+    if (data.phase === "hs") hsEnsureTicker(true);
+  }
   const hostTransfers = new Set();
   function maybeReassignHost(data, roomCode) {
     const wasHost = isHost;
     isHost = !!data.players?.[currentPlayerId]?.isHost && data.players[currentPlayerId].connected !== false;
-    if (isHost && !wasHost) {
-      // The old host's locally-scheduled deadline timer died with their tab —
-      // re-arm whichever one is currently pending so the round doesn't stall.
-      // Bot guesses/picks are also setTimeout's scheduled on whoever was
-      // hosting at the time - any bot whose timeout hadn't fired yet when
-      // that host's tab died would otherwise never guess/pick at all (this
-      // is what "only one of the bots' answers were there" turned out to
-      // be). Both schedule functions skip any bot that already has an
-      // entry, so this can't double-submit for ones that already fired.
-      if (data.phase === "question") {
-        const dl = data.graceEndsAt || data.questionEndsAt;
-        if (dl) scheduleHostDeadline(dl, () => checkQuestionAdvance(roomCode));
-        if (data.currentQuestion) scheduleBotGuesses(roomCode, data.currentQuestion);
-      } else if (data.phase === "answers") {
-        if (data.answersEndsAt) scheduleHostDeadline(data.answersEndsAt, () => checkAnswersAdvance(roomCode));
-        if (data.answers) scheduleBotPicks(roomCode, data.answers);
-      }
-      const pending = {
-        countdown: [data.countdownEndsAt, checkCountdownAdvance],
-        animation: [data.animEndsAt, checkAnimationAdvance],
-        reveal: [data.revealAdvanceAt, checkRevealAdvance],
-        summary: [data.summaryAdvanceAt, checkSummaryAdvance],
-      }[data.phase];
-      if (pending?.[0]) scheduleHostDeadline(pending[0], () => pending[1](roomCode));
-      if (data.phase === "hs") hsEnsureTicker(true);
-    }
+    if (isHost && !wasHost) rearmHostDuties(data, roomCode);
     if (data.hostOriginal === currentPlayerId && !hostTransfers.has(roomCode)) {
       // The real host is back: take the host seat back from whoever covered for them.
       const me = data.players?.[currentPlayerId];
@@ -19663,7 +19725,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Safety net for the host: each phase normally advances from a one-shot timer set at its deadline. If that timer was lost
   // (app minimized, phone asleep, a write that never finished), the round would sit frozen on 0s. So every couple of seconds,
   // and the moment the app comes back to the front, the host checks whether the current phase is overdue and moves it along.
+  // When the current question opened for answers. Team Worlds and High/Low have no clock, only a 24-hour cap, so
+  // working it back from the timer setting put it a day in the future and a bot that missed its turn never got another.
+  function questionOpenedAt(d) {
+    if (d.questionClock?.startedAt) return d.questionClock.startedAt;
+    if (!d.questionClock && (d.settings?.mode === "teamworlds" || isHlSettings(d.settings))) return d.questionEndsAt - TEAM_ROUND_CAP_MS;
+    return d.questionEndsAt - ((d.settings || currentSettings).timerSeconds || DEFAULT_ROUND_SECONDS) * 1000;
+  }
+  // A Quick Game only ever has you in it. If you are not its host (an older resume left a second copy of you holding
+  // the host seat, so nobody ran the clock or the bots), take the seat back and drop the copy.
+  let soloRepairAt = 0;
+  function repairSoloRoom() {
+    const d = roomState, me = d?.players?.[currentPlayerId];
+    if (!currentRoomCode || leavingGame || !d?.settings?.solo || d.phase === "ended" || !me || me.isBot) return;
+    const ghost = Object.keys(d.players).some((id) => id !== currentPlayerId && !d.players[id]?.isBot);
+    if (!ghost && me.isHost && me.connected !== false) return;
+    if (Date.now() - soloRepairAt < 3000) return;
+    soloRepairAt = Date.now();
+    const code = currentRoomCode, id = currentPlayerId;
+    runTransaction(ref(db, `rooms/${code}`), (cur) => soloRepair(cur, id), { applyLocally: false }).catch((e) => console.warn("[solo repair]", e));
+  }
   function hostWatchdog() {
+    repairSoloRoom();
     const d = roomState;
     if (!isHost || !currentRoomCode || !d || d.paused || document.hidden) return;
     if (d.phase === "hs" && nativeAudioActive && hsScreenEl.classList.contains("active")) { hsHostTick(); return; }
@@ -19673,7 +19756,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (nowMs() - botRescueAt > 3000) {
       const bots = Object.keys(d.players || {}).filter((id) => d.players[id]?.isBot);
       if (bots.length) {
-        if (d.phase === "question" && d.currentQuestion && !questionClockPending(d) && d.questionClock?.startedAt !== 0 && nowMs() > (d.questionClock?.startedAt || d.questionEndsAt - (currentSettings.timerSeconds || DEFAULT_ROUND_SECONDS) * 1000) + 6500 && bots.some((id) => d.guesses?.[id] === undefined)) {
+        if (d.phase === "question" && d.currentQuestion && !questionClockPending(d) && d.questionClock?.startedAt !== 0 && nowMs() > questionOpenedAt(d) + 6500 && bots.some((id) => d.guesses?.[id] === undefined)) {
           botRescueAt = nowMs(); scheduleBotGuesses(currentRoomCode, d.currentQuestion, false, d.round, true);
         } else if (d.phase === "answers" && d.answers && d.answersEndsAt && nowMs() > d.answersEndsAt - 4500 && bots.some((id) => d.picks?.[id] === undefined)) {
           botRescueAt = nowMs(); scheduleBotPicks(currentRoomCode, d.answers, true);
@@ -19690,8 +19773,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }[d.phase];
     if (due && due[0] && nowMs() > due[0] + 1500) due[1](currentRoomCode);
   }
-  setInterval(hostWatchdog, 2000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(hostWatchdog, 400); });
+  // Restarted every time the app comes back, in case the phone dropped the interval while the app was away.
+  let hostWatchdogHandle = setInterval(hostWatchdog, 2000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    clearInterval(hostWatchdogHandle); hostWatchdogHandle = setInterval(hostWatchdog, 2000);
+    setTimeout(hostWatchdog, 400);
+  });
   window.addEventListener("size-em-up:app-active", () => setTimeout(hostWatchdog, 400));
 
   let hudTickHandle = null;
@@ -19835,7 +19923,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkQuestionAdvance(roomCode) {
-    if (!isHost || transitionBusy() || powerups?.busy) return;
+    if (!isHost || transitionBusy() || powerupHold()) return;
     if (roomState.phase !== "question") return;
     if (roomState.paused) return;
     if (questionClockPending(roomState)) { syncQuestionClock(); return; }
@@ -19919,7 +20007,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
   function checkAnswersAdvance(roomCode) {
-    if (!isHost || transitionBusy() || powerups?.busy) return;
+    if (!isHost || transitionBusy() || powerupHold()) return;
     if (roomState.phase !== "answers") return;
     if (roomState.paused) return;
     if (nowMs() < roomState.answersEndsAt) return;
@@ -20240,7 +20328,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (roomState.paused) return;
     if (!(roomState.settings || currentSettings).autoAdvanceEnabled) return;
     if (nowMs() < (roomState.revealAdvanceAt || Infinity)) return;
-    if (isHlSettings(roomState.settings) && hlOceanReveal?.busy) return;
+    if (isHlSettings(roomState.settings) && hlRevealBusy()) return;
     const order = roomState.revealOrder || [];
     const idx = roomState.revealIndex || 0;
     if (idx < revealStepCount(order)) {
@@ -20258,7 +20346,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const NAV_GUARD_MS = 1100;
   const navBlocked = () => nowMs() - navGuardAt < NAV_GUARD_MS;
   revealNextBtn.addEventListener("click", () => {
-    if (revealAnimating || isHlSettings(roomState.settings) && hlOceanReveal?.busy) return;
+    if (revealAnimating || isHlSettings(roomState.settings) && hlRevealBusy()) return;
     navGuardAt = nowMs();
     advanceReveal(currentRoomCode);
   });
@@ -20289,7 +20377,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudAutoToggleEl.style.display = "block";
     hudAutoToggleEl.classList.toggle("is-on", autoOn);
     hudAutoToggleEl.textContent = autoOn ? "Auto: On" : "Auto: Off";
-    const hlBusy = isHlSettings(data.settings) && !!hlOceanReveal?.busy;
+    const hlBusy = isHlSettings(data.settings) && hlRevealBusy();
     revealNextBtn.disabled = autoOn || hlBusy;
     showSummaryBtn.disabled = autoOn || hlBusy;
     nextRoundBtn.disabled = autoOn;
@@ -20446,6 +20534,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     } else if (roomState.phase === "answers") {
       updates.answersEndsAt = roomState.answersEndsAt + pauseDurationMs;
       scheduleHostDeadline(updates.answersEndsAt, () => checkAnswersAdvance(currentRoomCode));
+    } else if ((roomState.phase === "reveal" && roomState.revealAdvanceAt) || (roomState.phase === "summary" && roomState.summaryAdvanceAt)) {
+      // The reveal and summary auto-advance too: without this, coming back from a pause skipped straight past them.
+      const k = roomState.phase === "reveal" ? "revealAdvanceAt" : "summaryAdvanceAt";
+      updates[k] = roomState[k] + pauseDurationMs;
+      scheduleHostDeadline(updates[k], () => (k === "revealAdvanceAt" ? checkRevealAdvance : checkSummaryAdvance)(currentRoomCode));
     } else if (roomState.phase === "animation" && roomState.animEndsAt) {
       // Every screen's animation clock stood still while paused (see animClock), so push its start
       // and end back by the pause: it carries on from the same frame.
@@ -20642,6 +20735,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
+    detachRoom();
     showLeftScreen("The other players can keep playing without you.", {
       title: "You left the game", icon: "icons/reactions/wave.webp", tiles,
       hint: `Want back in? Tap Join Game, then Rejoin under "My games" (room ${roomCode}).`,
@@ -20658,6 +20752,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     onDisconnect(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`)).cancel();
     await remove(ref(db, `rooms/${roomCode}/players/${currentPlayerId}`));
     await maybeDeleteEmptyRoom(roomCode);
+    detachRoom();
     showLeftScreen("The room is now closed for everyone.", {
       title: "You ended the game", icon: "icons/reactions/padlock.webp", tiles,
       hint: "Start a new game any time from the home screen.",
@@ -21590,13 +21685,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     })(t0);
   }
   let twRevealSig = null, twRevealAnimated = {};
-  let hlOceanReveal = null, hlOceanKey = null;
+  let hlOceanReveal = null, hlOceanKey = null, hlBusySince = 0;
+  // The High/Low reveal holds the Next button and the auto-advance while it animates. Capped, so an animation that never
+  // reported back (the app was minimized mid-way) cannot hold the round up for good.
+  function hlRevealBusy() {
+    if (!hlOceanReveal?.busy) { hlBusySince = 0; return false; }
+    if (!hlBusySince) hlBusySince = Date.now();
+    return Date.now() - hlBusySince < 20000;
+  }
   const hlOceanResults = new Set();
   function renderHighLowReveal(data) {
     const key = `${currentRoomCode}:${data.gameId || ""}:${data.round || 1}`;
     const controls = () => {
       const index = Math.min(2, roomState.revealIndex || 0);
-      const busy = !!hlOceanReveal?.busy;
+      const busy = hlRevealBusy();
       const autoOn = !!(roomState.settings || currentSettings).autoAdvanceEnabled;
       revealNextBtn.style.display = isHost && index < 2 ? "flex" : "none";
       revealNextBtn.textContent = busy ? "Revealing…" : index === 0 ? "Reveal HIGH" : "Reveal LOW";
@@ -21613,7 +21715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         avatarHtml: id => avatarHtml((currentPlayers[id] || {}).avatar),
         offInfo: hlOffInfo,
         verdictHtml: current => hlVerdictHtml(current, true),
-        onBusyChange: () => { if (hlOceanKey === key) { controls();renderHudTop(roomState); } },
+        onBusyChange: () => { hlRevealBusy(); if (hlOceanKey === key) { controls();renderHudTop(roomState); } },
         onSettled: () => {
           if (hlOceanKey !== key || roomState.phase !== "reveal" || leavingGame || !hudEl.classList.contains("active")) return;
           controls();renderHudTop(roomState);navGuardAt = nowMs();
@@ -22057,7 +22159,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     for (let i = 1; i <= totalRounds; i++) {
       slots += `<span class="round-slot${i < round ? " done" : i === round ? " current" : ""}"></span>`;
     }
-    const holdingHlResult = data.phase === "animation" || (data.phase === "reveal" && ((data.revealIndex || 0) < revealStepCount(data.revealOrder || []) || isHlSettings(data.settings) && !!hlOceanReveal?.busy));
+    const holdingHlResult = data.phase === "animation" || (data.phase === "reveal" && ((data.revealIndex || 0) < revealStepCount(data.revealOrder || []) || isHlSettings(data.settings) && hlRevealBusy()));
     const shownSyncStreak = holdingHlResult ? (data.hlLast?.previousSyncStreak ?? 0) : (data.hlSyncStreak || 0);
     hudRoundLabelEl.innerHTML = isHlSettings(data.settings)
       ? `<span class="round-text hl-round">Round <b>${round}</b>${shownSyncStreak >= 3 ? `<span class="hl-flame" title="${shownSyncStreak} in a row">${FIRE_IC}</span>` : ""}</span>`
