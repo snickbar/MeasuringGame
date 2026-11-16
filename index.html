@@ -16612,7 +16612,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // can already derive (avatars owned, items/combos seen) are read straight from
   // the profile. Rewards are claimed manually (atomic transaction), and claimed
   // ids live in profiles/<id>/achClaimed.
-  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", "Supporter", ...MODE_AWARD_CATEGORIES];
+  const ACH_CATS = ["Getting started", "Collector", "Accuracy", "Winning", "Second chance", "Social", "Fun", "Worlds", "Monthly", "Fantasy", "Supporter", "Player borders", ...MODE_AWARD_CATEGORIES];
   function ownedNonDefaultAvatars() {
     const u = (myProfile && myProfile.unlockedAvatars) || {};
     return Object.keys(u).filter((a) => u[a] && AVATAR_TIERS[a] && AVATAR_TIERS[a] !== "default");
@@ -16776,7 +16776,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const claimed = myProfile.achClaimed || {};
     const real = ACHIEVEMENTS.filter((a) => !a.test);
     const doneCount = real.filter((a) => claimed[a.id]).length;
-    const waiting = real.filter(achClaimable).length;
+    const claimable = real.filter(achClaimable);
+    const waiting = claimable.length;
     updateAwardClaimDot(waiting);
     const baseRewardText = (a) => (a.fantasy ? `Unlocks the ${a.fantasyLabel}` : a.bg ? `Scene: ${a.bgLabel}` : a.mrw ? `${a.mrw.kindLabel}: ${a.mrw.label}` : a.home ? `Home screen: ${a.homeLabel}` : a.thanks ? "Our thanks!" : `+${a.reward} coins`);
     const rewardText = a => {
@@ -16796,9 +16797,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const tierArt = badgePinArt(a);
       return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal${tierArt ? " pin" : ""}${tierArt || a.icon || ACH_ICON_IDS.has(a.id) ? " has-img" : ""}">${tierArt ? `<img class="ach-icon" src="icons/badges/${tierArt}.webp" alt="" draggable="false">` : a.icon ? `<img class="ach-icon" src="${a.icon}" alt="" draggable="false">` : ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.webp" alt="" draggable="false">` : ""}${tierArt || a.icon ? "" : TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
     };
-    let body = "";
+    const now = Date.now();
+    const ready = [...claimable, ...real.filter(a => claimed[a.id] && achHold[a.id] > now)];
+    const readyIds = new Set(ready.map(a => a.id));
+    let body = ready.length ? '<div class="ach-cat-title">Ready to claim</div>' + ready.map(rowHtml).join("") : "";
     ACH_CATS.forEach((cat) => {
-      const list = ACHIEVEMENTS.filter((a) => a.cat === cat && (claimed[a.id] || achChainOpen(a)) && !(achHideDone && claimed[a.id] && !a.test && !(achHold[a.id] && achHold[a.id] > Date.now())));
+      const list = ACHIEVEMENTS.filter((a) => a.cat === cat && !readyIds.has(a.id) && (claimed[a.id] || achChainOpen(a)) && !(achHideDone && claimed[a.id] && !a.test));
       if (list.length) body += `<div class="ach-cat-title">${cat}</div>` + list.map(rowHtml).join("");
     });
     if (!body) body = `<div class="ach-empty">Everything is claimed. Nice work!</div>`;
