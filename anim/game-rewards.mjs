@@ -81,6 +81,7 @@ export function createGameRewards({ owner, transaction, ad, finish, storage = lo
     get('[data-status]').textContent = error || (busy ? 'Please wait…' : '');
     get('[data-continue]').disabled = busy;
     get('[data-continue]').textContent = !receipt ? 'Retry adding coins' : 'Continue';
+    get('[data-continue]').className = receipt ? 'coin-reward-continue art-play-icon' : 'coin-reward-continue';
     const presentation = current.owner + ':' + current.key + ':' + !!r.doubled;
     if (active && receipt && !receipt.completed && presentation !== presented) {
       presented = presentation;

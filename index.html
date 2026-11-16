@@ -2623,7 +2623,7 @@ if (location.protocol === "file:") {
   #toolbar-menu .menu-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; margin: 0; padding: 6px 12px; border: 2px solid #e3cfa0; border-image: none; border-radius: 14px; background: #fffdf6; box-shadow: none; color: #4a2c12; font-size: 19px; font-weight: 700; text-align: left; text-shadow: none; }
   #toolbar-menu .menu-row img { width: 34px; height: 34px; object-fit: contain; flex: 0 0 auto; pointer-events: none; }
   #toolbar-menu .menu-row:active { filter: brightness(.94); }
-  #toolbar-menu .menu-row-exit { background: linear-gradient(#f4695a, #d63d2e); border-color: #c0392b; box-shadow: 0 3px 0 #8f241a; color: #fff; text-shadow: 0 2px 0 #8f241a; }
+  #toolbar-menu .menu-row-exit { background: url(icons/btn-back-to-lobby.webp) center / 100% 100% no-repeat; border-color: transparent; box-shadow: none; }
   #menu-version { text-align: center; font-size: 11px; color: #8b6f4e; padding-top: 2px; }
   #exit-confirm-overlay {
     position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center;
@@ -2756,8 +2756,9 @@ if (location.protocol === "file:") {
     border-image-source: url(icons/btn-pause.webp); border-image-slice: 0 60 0 125 fill;
   }
   #exit-btn, #exit-btn-guest {
-    height: 38px; padding: 0; font-size: 15px; min-width: 96px; border-width: 0 11.1px 0 31.4px;
-    border-image-source: url(icons/btn-exit.webp); border-image-slice: 0 60 0 170 fill;
+    height: 38px; padding: 0; font-size: 15px; min-width: 96px; border-width: 0 21px;
+    border-image-source: url(icons/btn-back-to-lobby.webp); border-image-slice: 0 95 fill;
+    color: #3b2718; text-shadow: none;
   }
   #share-room-btn {
     height: 34px; padding: 0; font-size: 12px; min-width: 104px; border-width: 0 14.9px 0 28.5px;
@@ -3023,7 +3024,7 @@ if (location.protocol === "file:") {
   }
   .hud-btn-row { display: flex; gap: 4px; flex-shrink: 0; }
   #hud-sub-toolbar #pause-btn { height: 28px; font-size: 12px; min-width: 66px; border-width: 0 13.5px 0 28.2px; }
-  #hud-sub-toolbar #exit-btn, #hud-sub-toolbar #exit-btn-guest { height: 28px; font-size: 12px; min-width: 62px; border-width: 0 8.2px 0 23.1px; }
+  #hud-sub-toolbar #exit-btn, #hud-sub-toolbar #exit-btn-guest { height: 28px; font-size: 12px; min-width: 62px; border-width: 0 15.6px; }
   #hud-sub-toolbar #hud-round-label { flex: 1 1 auto; min-width: 0; }
   .hud-btn-row button {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; padding: 8px 12px; width: auto; margin: 0; color: var(--text);
@@ -10041,7 +10042,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function confirmAccountProgress(account){return new Promise(resolve=>{
     const dialog=document.createElement('dialog');dialog.className='cozy-dialog';dialog.setAttribute('aria-label','Use saved Google progress');
-    dialog.innerHTML=`<h2>This account has saved progress</h2><p>Connecting will use its saved coins, avatars, and World stars. This device's guest progress is kept as a backup; the two coin balances are not added together.</p><p>Saved account: <b>${account.coins||0} coins</b></p><div class="cozy-actions"><button data-choice="yes">Use saved account</button><button data-choice="no">Keep playing as guest</button></div>`;
+    dialog.innerHTML=`<h2>This account has saved progress</h2><p>Connecting will use its saved coins, avatars, and World stars. This device's guest progress is kept as a backup; the two coin balances are not added together.</p><p>Saved account: <b>${account.coins||0} coins</b></p><div class="cozy-actions"><button data-choice="yes">Use saved account</button><button data-choice="no" class="art-play-icon">Keep playing as guest</button></div>`;
     let answered=false;const finish=ok=>{if(answered)return;answered=true;dialog.remove();resolve(ok);};dialog.onclick=e=>{const b=e.target.closest('[data-choice]');if(b)finish(b.dataset.choice==='yes');};dialog.oncancel=e=>{e.preventDefault();finish(false);};document.body.append(dialog);dialog.showModal();
   });}
   async function signInWithGoogle() {
@@ -11511,15 +11512,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const illustrated = soloSave || start || exit || join || roomNotFound || resume || slotNotice || unlock;
     exitConfirmTitleEl.parentElement.classList.toggle("exit-card", illustrated);
     exitConfirmYesBtn.classList.toggle("menu-action-art", illustrated);
-    exitConfirmYesBtn.classList.toggle("art-join-lobby", soloSave || join);
+    exitConfirmYesBtn.classList.toggle("art-confirm-red", soloSave || exit);
     exitConfirmYesBtn.classList.toggle("art-confirm-ack", roomNotFound || slotNotice);
     exitConfirmYesBtn.classList.toggle("art-confirm-green", unlock);
-    exitConfirmYesBtn.classList.toggle("art-start-game", start || resume);
-    exitConfirmYesBtn.classList.toggle("art-exit-game", exit);
+    exitConfirmYesBtn.classList.toggle("art-start-game", start || resume || join);
     const keepPlaying = illustrated && noLabel === "Keep playing";
     exitConfirmNoBtn.classList.toggle("menu-action-art", start || resume || keepPlaying);
     exitConfirmNoBtn.classList.toggle("art-confirm-red", start || resume);
     exitConfirmNoBtn.classList.toggle("art-confirm-green", keepPlaying);
+    exitConfirmNoBtn.classList.toggle("art-play-icon", keepPlaying);
     if (illustrated) {
       document.getElementById("exit-confirm-art").src = start || resume ? "icons/start-medallion.webp"
         : exit ? "icons/exit-door.webp"
@@ -11652,7 +11653,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         pendingNavAction = action;
         openExitConfirm("navFromLobby", "Leave the lobby?",
           "The game could start while you're away, and it may be hard to find your way back to this room. Continue?",
-          "Continue", "Stay here");
+          "Leave lobby", "Stay here");
         return;
       }
       if(joinScreen.classList.contains('active')||nameAvatarScreenEl.classList.contains('active'))pendingQrInvite.clear();
@@ -14294,7 +14295,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const st = states[l], idxs = mo.split[l], seen = monthlySeenIndexes({ levels: mo.prog }, mo.split, l);
         const lv = mo.prog[l] || {};
         const best = st === "done" ? `<small>Best ${Math.round((lv.total || 0) / idxs.length * 10) / 10}</small>` : "";
-        const pill = st === "done" ? `<span class="mc-pill ok">\u2713 Done</span>` : st === "play" ? `<span class="mc-pill go">${monthlyLevelGuesses(l).length ? "Continue" : "Play"}</span>` : `<span class="mc-pill lk">\uD83D\uDD12</span>`;
+        const resuming = st === "play" && monthlyLevelGuesses(l).length > 0;
+        const pill = st === "done" ? `<span class="mc-pill ok">\u2713 Done</span>` : st === "play" ? `<span class="mc-pill go${resuming ? " art-play-icon" : ""}">${resuming ? "Continue" : "Play"}</span>` : `<span class="mc-pill lk">\uD83D\uDD12</span>`;
         const why = st === "lock" ? `<small>${monthlyLockText(l)}</small>` : "";
         const title = l === 4 ? "MEGA" : `Level ${l}`;
         const reward = monthlyLevelReward(mo.key, l);
@@ -16853,7 +16855,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="lu-coins"><img src="icons/coin-v2.webp" alt=""><b id="lu-coin-n">+0</b><span>coins</span><div class="lu-burst" id="lu-burst" aria-hidden="true"></div></div>
       <div class="lu-pull"><img src="icons/flair/star.webp" alt="">${g.pulls === 1 ? "1 free capsule pull" : g.pulls + " free capsule pulls"}</div>
       <button type="button" class="dc-btn" id="lu-pull">Pull now</button>
-      <button type="button" class="dc-btn dc-alt" id="lu-close">Continue</button></div>`;
+      <button type="button" class="dc-btn dc-alt art-play-icon" id="lu-close">Continue</button></div>`;
     document.body.appendChild(ov);
     playSound("win");
     // Coins count up with a soft tick, with a burst of coins at the start.
