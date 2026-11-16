@@ -11280,7 +11280,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function frameEdgeHtml(id) {
     const art = playerFrameArt(id);
-    return art ? '<span class="player-frame-art" aria-hidden="true" style=\'--player-frame-art:' + art + '\'></span>' : "";
+    // The picture is used from anim/equipped-player-frames.css, which would resolve a relative url() against anim/ (anim/anim/...),
+    // so give it a full address up front.
+    const full = art ? art.replace(/url\("([^"]+)"\)/, (m, u) => 'url("' + new URL(u, document.baseURI).href + '")') : "";
+    return art ? '<span class="player-frame-art" aria-hidden="true" style=\'--player-frame-art:' + full + '\'></span>' : "";
   }
   function showPlayerFrame(target, id) {
     target.classList.toggle("player-frame-host", Boolean(playerFrameArt(id)));
@@ -11342,7 +11345,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const owned = playerFrameCatalog.filter(frame => ownsPlayerFrame(frame.id, myProfile.achClaimed));
     const current = shownPlayerFrame();
     // Load every border you own up front so stepping through them swaps instantly instead of waiting on each picture.
-    for (const frame of owned) { const m = /url\("(.*)"\)/.exec(playerFrameArt(frame.id)); if (m && !preloadedFrames.has(m[1])) { preloadedFrames.add(m[1]); new Image().src = m[1]; } }
+    for (const frame of owned) { const m = /url\("(.*)"\)/.exec(playerFrameArt(frame.id)); if (m && !preloadedFrames.has(m[1])) { preloadedFrames.add(m[1]); new Image().src = new URL(m[1], document.baseURI).href; } }
     showPlayerFrame(avatar, current);
     name.textContent = playerFrameCatalog[current].name;
     controls.querySelector("[data-frame-count]").textContent = "Borders (" + (owned.length - 1) + "/" + (playerFrameCatalog.length - 1) + ")";
