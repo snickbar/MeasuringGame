@@ -2632,13 +2632,19 @@ if (location.protocol === "file:") {
   }
   #exit-confirm-overlay.show { opacity: 1; pointer-events: auto; }
   #exit-confirm-card {
-    width: 240px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
-    box-shadow: 0 14px 34px rgba(0,0,0,.4); transform: scale(.7); opacity: 0;
+    transform: scale(.7); opacity: 0;
     transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
   }
+  #exit-confirm-card:not(.exit-card) {
+    width: 240px; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px; text-align: center;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4);
+  }
+  #exit-confirm-overlay:has(.exit-card) { padding: 48px 12px 24px; overflow-y: auto; align-items: safe center; }
+  #exit-confirm-card:not(.exit-card) .solo-leave-art { display: none; }
+  #exit-confirm-card.exit-card #exit-confirm-no-btn:focus-visible { outline: 2px solid #287cb8; outline-offset: 2px; border-radius: 24px; }
   #exit-confirm-overlay.show #exit-confirm-card { transform: scale(1); opacity: 1; }
-  #exit-confirm-card h3 { margin: 0 0 8px; font-size: 18px; color: #000; text-shadow: none; }
-  #exit-confirm-card p { margin: 0 0 16px; font-size: 13px; font-weight: 600; color: var(--text); }
+  #exit-confirm-card:not(.exit-card) h2 { margin: 0 0 8px; font-size: 18px; color: #000; text-shadow: none; }
+  #exit-confirm-card:not(.exit-card) p { margin: 0 0 16px; font-size: 13px; font-weight: 600; color: var(--text); }
   #exit-confirm-buttons { display: flex; flex-direction: column; gap: 8px; }
   #exit-confirm-yes-btn, #exit-confirm-no-btn {
     width: 100%; margin: 0; color: #fff;
@@ -4400,11 +4406,12 @@ if (location.protocol === "file:") {
 
 <div id="exit-confirm-overlay">
   <div id="exit-confirm-card">
-    <h3 id="exit-confirm-title">Exit the game?</h3>
-    <p id="exit-confirm-message">Are you sure you want to exit?</p>
+    <div class="exit-icon exit-hero solo-leave-art" aria-hidden="true"><img src="icons/rejoin-door.webp" alt=""></div>
+    <h2 id="exit-confirm-title">Exit the game?</h2>
+    <p class="exit-reason" id="exit-confirm-message">Are you sure you want to exit?</p>
     <div id="exit-confirm-buttons">
-      <button id="exit-confirm-yes-btn" type="button">Yes</button>
-      <button id="exit-confirm-no-btn" type="button">No, go back</button>
+      <button id="exit-confirm-yes-btn" type="button" data-fit-single-line="true">Yes</button>
+      <button id="exit-confirm-no-btn" type="button" data-fit-single-line="true">No, go back</button>
     </div>
   </div>
 </div>
@@ -11499,6 +11506,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function openExitConfirm(action, title, message, yesLabel, noLabel) {
     exitAppAfterLeave = false;
     pendingExitAction = action;
+    const soloSave = action === "quickSave" || action === "navFromSolo";
+    exitConfirmTitleEl.parentElement.classList.toggle("exit-card", soloSave);
+    exitConfirmYesBtn.classList.toggle("menu-action-art", soloSave);
+    exitConfirmYesBtn.classList.toggle("art-join-lobby", soloSave);
     exitConfirmYesBtn.textContent = yesLabel || "Yes";
     exitConfirmNoBtn.textContent = noLabel || "No, go back";
     exitConfirmNoBtn.style.display = noLabel === null ? "none" : "";
