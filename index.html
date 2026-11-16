@@ -15611,13 +15611,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const BADGE_WORLD_ART = { tiny: "tiny", games: "games", home: "home", food: "food", town: "town", critters: "critters", wheels: "wheels", landmarks: "landmarks", "under-the-sea": "sea", "toy-box": "toybox", "make-believe": "makebelieve", "holiday-mix": "holiday" };
   const BADGE_SINGLE_ART = { "welcome-size-em-up": "welcome", "account-connected": "account", "collector-object_spotter-351": "spotter-3", "home-space": "star-collector",
     "home-penguin": "ice-cold", "home-cactus": "desert-survivor", "home-dragon": "dragon-slayer", "home-giraffe": "head-above" };
-  // Hand-drawn pin badges for a few ladder steps (matched by badge name). Other steps keep the category icon for now.
-  const BADGE_TIER_ART = { "Round winner": "round-winner-i", "Round winner V": "round-winner-v", "Round winner X": "round-winner-x",
-    "The 1%": "spot-on-i", "The 1% V": "spot-on-v", "The 1% X": "spot-on-x",
-    "Gacha fan": "gacha-fan-i", "Gacha fan V": "gacha-fan-v", "Gacha fan X": "gacha-fan-x", "Ad watcher V": "ad-watcher-v" };
+  // Hand-drawn pin badges for every ladder step, matched by badge name ("Round winner", "Round winner II" ... ).
+  const BADGE_LADDER_ART = { "Round winner": "round-winner", "The 1%": "spot-on", "Gacha fan": "gacha-fan", "Ad watcher": "ad-watcher", "Avatar fan": "avatar-fan", "Ultra lucky": "ultra-lucky",
+    "Object spotter": "object-spotter", "Combo hunter": "combo-hunter", Perfect: "perfect", "On a roll": "on-a-roll", Champion: "champion", Regular: "regular", "Second look": "second-look", "Double down": "double-down", "Party time": "party-time" };
+  function badgeTierArt(name) {
+    const m = /^(.+?)(?: (I{1,3}|IV|VI{0,3}|IX|X))?$/.exec(name || "");
+    const base = m && BADGE_LADDER_ART[m[1]];
+    return base ? `${base}-${(m[2] || "I").toLowerCase()}` : null;
+  }
   function badgeArtKey(a) {
     if (BADGE_SINGLE_ART[a.id]) return BADGE_SINGLE_ART[a.id];
-    if (BADGE_TIER_ART[a.name]) return BADGE_TIER_ART[a.name];
+    const tierArt = badgeTierArt(a.name); if (tierArt) return tierArt;
     let m = /^mode-(team-spirit|winning-combination|travel-buddies|perfect-partnership|holding-the-line|in-sync|at-the-table|high-roller|called-your-bluff|daily-regular)-\d+$/.exec(a.id);
     if (m) return m[1];
     m = /^monthly-(\d\d)(?:-[a-z]+)?$/.exec(a.id);
