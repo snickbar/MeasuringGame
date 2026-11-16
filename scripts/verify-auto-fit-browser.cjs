@@ -372,7 +372,7 @@ server.listen(0,'127.0.0.1',()=>{const child=spawn('C:\\Program Files\\Google\\C
   const start=document.getElementById('host-start-btn'),back=document.getElementById('lobby-back-btn'),extra=document.createElement('li');extra.style.height='1000px';document.getElementById('player-list').append(extra);
   window.scrollTo(0,150);await wait(40);const first=start.getBoundingClientRect().top;
   window.scrollTo(0,document.documentElement.scrollHeight);await wait(40);const last=start.getBoundingClientRect(),toolbar=document.getElementById('app-toolbar').getBoundingClientRect();
-  if(Math.abs(first-last.top)>1||last.top<toolbar.bottom-1||last.top>toolbar.bottom+12||back.getBoundingClientRect().top<toolbar.bottom-1)failures.push({kind:'Start game not pinned below toolbar',first,last:last.top,toolbar:toolbar.bottom});
+  if(Math.abs(first-last.top)>1||last.top<toolbar.bottom-1||last.top>document.querySelector('.lobby-banner-row').getBoundingClientRect().bottom+12 || document.querySelector('#lobby-screen .screen-lock').getBoundingClientRect().top>toolbar.bottom+12||back.getBoundingClientRect().top<toolbar.bottom-1)failures.push({kind:'Start game not pinned below toolbar',first,last:last.top,toolbar:toolbar.bottom});
   extra.remove();window.scrollTo(0,0);
  }
  return JSON.stringify(failures);
