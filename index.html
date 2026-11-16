@@ -5410,7 +5410,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress, monthlyLevelSplit, monthlyLevelStates, monthlyLockText, monthlyLevelCoins, monthlyReplayCoins, monthlySeenIndexes } from "./anim/monthly-challenge.mjs";
   import { createCareerLedger, MODE_NAMES, MODE_CODE, historyRows, topScores, objectFrequency } from "./anim/career-ledger.mjs";
   import { mountRoomQr, pendingRoomInvite, roomAppIntent, nativeRoomScanner } from "./anim/room-qr.mjs";
-  import { frameAwards, playerFrameCatalog, ownsPlayerFrame, playerFrameArt } from "./anim/player-frames.mjs";
+  import { frameAwards, playerFrameCatalog, ownsPlayerFrame, playerFrameArt, shadedPalette, shinyFrames } from "./anim/player-frames.mjs";
   import { installDebugTools } from "./anim/debug-tools.mjs";
   const DEBUG_TOOLS = true; // Settings > Debug / Admin tools. Set to false to remove the section for a public release.
   var debugTools;
@@ -11278,25 +11278,61 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const id = profile.cosmetics?.equipped?.playerFrame;
     return ownsPlayerFrame(id, profile.achClaimed) ? id : 0;
   }
-  function frameEdgeHtml(id) {
-    const art = playerFrameArt(id);
-    // The picture is used from anim/equipped-player-frames.css, which would resolve a relative url() against anim/ (anim/anim/...),
-    // so give it a full address up front.
-    const full = art ? art.replace(/url\("([^"]+)"\)/, (m, u) => 'url("' + new URL(u, document.baseURI).href + '")') : "";
-    return art ? '<span class="player-frame-art" aria-hidden="true" style=\'--player-frame-art:' + full + '\'></span>' : "";
+  // Each player's border is recoloured to the colour they were given for this game (the same slot colour as their card).
+  const FRAME_TINTS = ["#d4825f", "#f0b98a", "#a8a0a0", "#4fb0e0", "#3a9d90", "#4cc035", "#f26fa0", "#8fd98a", "#e84a55", "#f4b94a"];
+  const tintedFrames = new Map(), tintingFrames = new Set();
+  const fullFrameUrl = (path) => new URL(path, document.baseURI).href;
+  function frameArtVar(id, fi) {
+    const tinted = fi ? tintedFrames.get(id + "|" + fi) : null;
+    if (tinted) return 'url("' + tinted + '")';
+    return playerFrameArt(id).replace(/url\("([^"]+)"\)/, (m, u) => 'url("' + fullFrameUrl(u) + '")');
   }
-  function showPlayerFrame(target, id) {
+  async function tintFrame(id, fi) {
+    const key = id + "|" + fi;
+    if (tintedFrames.has(key) || tintingFrames.has(key) || !FRAME_TINTS[fi - 1]) return;
+    tintingFrames.add(key);
+    try {
+      const image = new Image();
+      image.src = fullFrameUrl("anim/player-frames/" + id + ".png");
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const tint = FRAME_TINTS[fi - 1].slice(1).match(/../g).map((hex) => parseInt(hex, 16));
+      const palette = shadedPalette(tint, shinyFrames.has(id));
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        const light = pixels.data[i];
+        for (let channel = 0; channel < 3; channel++) pixels.data[i + channel] = palette[light][channel];
+      }
+      ctx.putImageData(pixels, 0, 0);
+      tintedFrames.set(key, canvas.toDataURL());
+      for (const el of document.querySelectorAll('.player-frame-art[data-pf="' + key + '"]')) el.style.setProperty("--player-frame-art", frameArtVar(id, fi));
+    } catch { /* keep the original colours */ }
+    finally { tintingFrames.delete(key); }
+  }
+  function frameEdgeHtml(id, fi) {
+    if (!playerFrameArt(id)) return "";
+    fi = Number(fi) || 0;
+    if (fi) void tintFrame(id, fi);
+    // The picture is used from anim/equipped-player-frames.css, which would resolve a relative url() against anim/ (anim/anim/...),
+    // so it always gets a full address.
+    return '<span class="player-frame-art" aria-hidden="true" data-pf="' + id + "|" + fi + '" style=\'--player-frame-art:' + frameArtVar(id, fi) + '\'></span>';
+  }
+  function showPlayerFrame(target, id, fi) {
     target.classList.toggle("player-frame-host", Boolean(playerFrameArt(id)));
     target.querySelector(":scope > .player-frame-art")?.remove();
-    if (id) target.insertAdjacentHTML("beforeend", frameEdgeHtml(id));
+    if (id) target.insertAdjacentHTML("beforeend", frameEdgeHtml(id, fi));
   }
   function framedAvatar(player) {
     const image = avatarHtml(player?.avatar);
     return playerFrameArt(player?.playerFrame)
-      ? '<span class="player-frame-avatar">' + image + frameEdgeHtml(player.playerFrame) + '</span>'
+      ? '<span class="player-frame-avatar">' + image + frameEdgeHtml(player.playerFrame, player.frameIndex) + '</span>'
       : image;
   }
   const bluffFramedAvatar = (id, player) => framedAvatar({ ...player, avatar: id });
+  const myGameFrameIndex = () => Number((currentPlayers[currentPlayerId] || {}).frameIndex) || 0;
   let pendingPlayerFrame;
   function shownPlayerFrame() {
     const pending = pendingPlayerFrame;
@@ -11306,7 +11342,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function refreshPlayerFramePickers() {
     renderPlayerFramePicker("settings-frame-picker");
     renderPlayerFramePicker("room-frame-picker");
-    showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame());
+    showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame(), myGameFrameIndex());
   }
   async function equipPlayerFrame(id) {
     const owner = deviceId;
@@ -11345,8 +11381,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const owned = playerFrameCatalog.filter(frame => ownsPlayerFrame(frame.id, myProfile.achClaimed));
     const current = shownPlayerFrame();
     // Load every border you own up front so stepping through them swaps instantly instead of waiting on each picture.
-    for (const frame of owned) { const m = /url\("(.*)"\)/.exec(playerFrameArt(frame.id)); if (m && !preloadedFrames.has(m[1])) { preloadedFrames.add(m[1]); new Image().src = new URL(m[1], document.baseURI).href; } }
-    showPlayerFrame(avatar, current);
+    for (const frame of owned) { if (myGameFrameIndex()) void tintFrame(frame.id, myGameFrameIndex()); const m = /url\("(.*)"\)/.exec(playerFrameArt(frame.id)); if (m && !preloadedFrames.has(m[1])) { preloadedFrames.add(m[1]); new Image().src = new URL(m[1], document.baseURI).href; } }
+    showPlayerFrame(avatar, current, myGameFrameIndex());
     name.textContent = playerFrameCatalog[current].name;
     controls.querySelector("[data-frame-count]").textContent = "Borders (" + (owned.length - 1) + "/" + (playerFrameCatalog.length - 1) + ")";
     for (const button of controls.querySelectorAll("[data-frame-step]")) {
@@ -11448,7 +11484,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("settings-avatar-random").addEventListener("click", pickRandomAvatar);
   function renderSettingsAvatarGrid() {
     settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
-    showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame());
+    showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame(), myGameFrameIndex());
     if (!settingsAvatarPickerEl.open) return;
     document.getElementById("settings-avatar-current").innerHTML = avatarHtml(currentAvatar);
     renderPlayerFramePicker("settings-frame-picker");

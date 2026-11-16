@@ -5,7 +5,7 @@ const styles = [
   "Layered paper", "Arcade pixel", "Candy shell", "Water ripple",
 ];
 
-const shinyFrames = new Set([4, 5, 6, 7, 9, 10, 11, 13, 19, 20]);
+export const shinyFrames = new Set([4, 5, 6, 7, 9, 10, 11, 13, 19, 20]);
 const colors = [
   ["Gold", "#c49538"], ["Green", "#5b903b"], ["Blue", "#397eb6"],
   ["Purple", "#8861ad"], ["Red", "#b14752"], ["Brown", "#986b4d"],
