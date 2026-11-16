@@ -5,6 +5,25 @@ const styles = [
   "Layered paper", "Arcade pixel", "Candy shell", "Water ripple",
 ];
 
+const shinyFrames = new Set([4, 5, 6, 7, 9, 10, 11, 13, 19, 20]);
+
+function shadedPalette(tint, shiny) {
+  const brightness = ([r, g, b]) => r * 0.2126 + g * 0.7152 + b * 0.0722;
+  const average = brightness(tint);
+  const middle = Math.max(100, Math.min(151, average));
+  return Array.from({ length: 256 }, (_, light) => {
+    const level = light < 128
+      ? 24 + (middle - 24) * light / 128
+      : middle + (213 - middle) * (light - 128) / 127;
+    const colorStrength = light < 128 ? 0.18 + light / 320 : 0.58 - (light - 128) / 420;
+    const glint = shiny ? Math.max(0, (light - 244) / 11) * 0.65 : 0;
+    return tint.map((channel) => {
+      const shade = Math.max(0, Math.min(255, level + (channel - average) * colorStrength));
+      return shade + (255 - shade) * glint;
+    });
+  });
+}
+
 export function buildPlayerFramePreview(getPlayer) {
   const root = document.createElement("div");
   root.className = "dbg-body";
@@ -31,18 +50,21 @@ export function buildPlayerFramePreview(getPlayer) {
     </style>
     <div class="frame-preview-controls">
       <label>Frame <select data-frame></select></label>
-      <label>Color <input type="color" value="#bb8251" data-color></label>
-      <label><span>Use color <input type="checkbox" data-tint></span></label>
+      <label>Tint <select data-tint><option value="shaded">Shaded</option><option value="original">Original</option><option value="none">Grayscale</option></select></label>
+      <label>Color <input type="color" value="#bb9651" data-color></label>
+      <button type="button" data-preset="#bb9651">Muted gold</button>
+      <button type="button" data-preset="#67874f">Leaf green</button>
     </div>
     <div class="frame-preview-grid"></div>
     <p class="dbg-note" role="status" data-preview-status>Sample scores. Preview choices are temporary.</p>`;
 
   const select = root.querySelector("[data-frame]");
   const color = root.querySelector("[data-color]");
-  const useTint = root.querySelector("[data-tint]");
+  const tintMode = root.querySelector("[data-tint]");
   const status = root.querySelector("[data-preview-status]");
   const grid = root.querySelector(".frame-preview-grid");
   select.append(...styles.map((style, index) => new Option(style, String(index))));
+  select.value = "1";
   const cards = [
     ["Lobby", "", "Ready"],
     ["In-game", "is-compact", "4 pts"],
@@ -62,7 +84,7 @@ export function buildPlayerFramePreview(getPlayer) {
     for (const card of cards) {
       card.classList.toggle("has-frame", Boolean(url));
       card.style.setProperty("--frame-art", url ? `url("${url}")` : "none");
-      card.style.borderColor = !url && useTint.checked ? color.value : "";
+      card.style.borderColor = !url && tintMode.value !== "none" ? color.value : "";
     }
   }
   async function updateArt() {
@@ -82,7 +104,7 @@ export function buildPlayerFramePreview(getPlayer) {
       const image = images.get(id);
       await image.decode();
       if (currentRequest !== request) return;
-      if (!useTint.checked) {
+      if (tintMode.value === "none") {
         applyArt(image.src);
         return;
       }
@@ -92,10 +114,11 @@ export function buildPlayerFramePreview(getPlayer) {
       ctx.drawImage(image, 0, 0);
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const tint = color.value.slice(1).match(/../g).map((hex) => parseInt(hex, 16));
+      const palette = tintMode.value === "shaded" ? shadedPalette(tint, shinyFrames.has(id)) : null;
       for (let i = 0; i < pixels.data.length; i += 4) {
         const light = pixels.data[i];
         for (let channel = 0; channel < 3; channel++) {
-          pixels.data[i + channel] = light < 128
+          pixels.data[i + channel] = palette ? palette[light][channel] : light < 128
             ? tint[channel] * light / 128
             : tint[channel] + (255 - tint[channel]) * (light - 128) / 127;
         }
@@ -117,11 +140,18 @@ export function buildPlayerFramePreview(getPlayer) {
     }
   };
   select.addEventListener("change", updateArt);
-  useTint.addEventListener("change", updateArt);
+  tintMode.addEventListener("change", updateArt);
   color.addEventListener("input", () => {
-    useTint.checked = true;
+    if (tintMode.value === "none") tintMode.value = "shaded";
     updateArt();
   });
+  for (const button of root.querySelectorAll("[data-preset]")) {
+    button.addEventListener("click", () => {
+      color.value = button.dataset.preset;
+      color.dispatchEvent(new Event("input"));
+    });
+  }
   root.refreshPlayer();
+  updateArt();
   return root;
 }
