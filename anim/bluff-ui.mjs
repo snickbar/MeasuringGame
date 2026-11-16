@@ -122,7 +122,8 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       revealRaccoon='<span class="bl-raccoon-outcome" aria-hidden="true" style="--raccoon-react-at:'+
         (reacting?Math.round(at):0)+'ms">'+
         (reacting&&at> -300 ? '<span class="bl-raccoon-outcome-before">'+bluffRaccoonHtml('reveal',flip,s.claim.kind)+'</span>' : '')+
-        '<span class="bl-raccoon-outcome-after'+(reacting?' moving':'')+'">'+raccoonArt(outcome)+'</span></span>';
+        '<span class="bl-raccoon-outcome-after bl-raccoon-outcome-'+outcome+(reacting?' moving':'')+'">'+
+        raccoonArt(outcome)+(reacting?raccoonArt(outcome==='notes'?'glance':'notes'):'')+'</span></span>';
       content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,motion);
     }
     const stageChanged=cueKey!==key;

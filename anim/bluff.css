@@ -116,7 +116,7 @@ html[data-motion=reduced] .bl-win-dance,html[data-motion=reduced] .bl-maker-laug
 #bluff-content .bl-meta .hs-dots.many i.now{background:#ffd43b;border-color:#4a2c12}
 /* Host button anchored to the bottom of the visible screen, above the reaction toolbar. */
 #bluff-content.bl-has-dock{padding-bottom:calc(var(--bl-tb,0px) + 84px)}
-#bluff-content .bl-dock{position:fixed;left:0;right:0;bottom:var(--bl-tb,0px);z-index:45;max-width:520px;margin:0 auto;padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px)*0);background:linear-gradient(rgba(251,250,246,0),#fbfaf6 28%);pointer-events:none;animation:bl-dock-in .25s ease-out}
+#bluff-content .bl-dock{position:fixed;left:0;right:0;bottom:var(--bl-tb,0px);z-index:45;max-width:520px;margin:0 auto;padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px)*0);background:transparent;pointer-events:none;animation:bl-dock-in .25s ease-out}
 #bluff-content .bl-dock>*{pointer-events:auto}
 #bluff-content .bl-dock .bl-dock-btn{margin:0;min-height:58px;font-size:18px}
 #bluff-content .bl-dock .hs-hint{margin:0;text-align:center;padding:10px;border-radius:14px;background:#fffdf6;border:2px solid #ecdcc0}
@@ -399,3 +399,34 @@ html[data-motion=reduce] .bl-raccoon-voting .bl-raccoon-frame,
 html[data-motion=reduce] .bl-raccoon-outcome-before,
 html[data-motion=reduce] .bl-raccoon-outcome-after { animation:none!important; }
 html[data-motion=reduce] .bl-raccoon-outcome-before { display:none; }
+
+
+/* Start after the answer lands, then alternate registered artwork with a rest. */
+.bl-raccoon-outcome-after { display:grid; transform-origin:50% 90%; }
+.bl-raccoon-outcome-after .bl-raccoon-frame { grid-area:1 / 1; }
+.bl-raccoon-outcome-after .bl-raccoon-frame + .bl-raccoon-frame { opacity:0; }
+.bl-raccoon-outcome-after.moving {
+  --raccoon-loop-at:calc(var(--raccoon-react-at) + .85s);
+  animation:blRaccoonReact .28s ease-out var(--raccoon-react-at) both,
+    blOutcomeGesture 3.25s ease-in-out var(--raccoon-loop-at) infinite;
+}
+.bl-raccoon-outcome-after.moving .bl-raccoon-frame {
+  animation:blOutcomeRest 3.25s steps(1,end) var(--raccoon-loop-at) infinite;
+}
+.bl-raccoon-outcome-after.moving .bl-raccoon-frame + .bl-raccoon-frame {
+  animation-name:blOutcomePeek;
+}
+.bl-raccoon-outcome-grin { --raccoon-lift:-3px; --raccoon-tilt:-3deg; }
+.bl-raccoon-outcome-caught { --raccoon-lift:1px; --raccoon-tilt:4deg; }
+.bl-raccoon-outcome-notes { --raccoon-lift:-1px; --raccoon-tilt:2deg; }
+@keyframes blOutcomeGesture {
+  0%,42%,100%{transform:none}
+  11%,25%{transform:translateY(var(--raccoon-lift)) rotate(var(--raccoon-tilt))}
+}
+@keyframes blOutcomeRest { 0%,27%,100%{opacity:1} 12%{opacity:0} }
+@keyframes blOutcomePeek { 0%,27%,100%{opacity:0} 12%{opacity:1} }
+html[data-motion=reduce] .bl-raccoon-outcome-after .bl-raccoon-frame { animation:none!important; }
+@media(prefers-reduced-motion:reduce) {
+  .bl-raccoon-outcome-after.moving,.bl-raccoon-outcome-after .bl-raccoon-frame { animation:none!important; }
+  .bl-raccoon-outcome-before { display:none; }
+}
