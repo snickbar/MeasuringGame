@@ -12,20 +12,30 @@ const colors = [
 ];
 
 export const frameAwards = Object.freeze({
-  "winning-round_winner-1": [1, 2],
-  "winning-regular-5": [3, 17],
-  "winning-champion-1": [4, 10],
-  "winning-round_winner-10": [5, 6],
-  "mode-team-spirit-1": [7, 8],
-  "mode-at-the-table-1": [9, 18],
-  "mode-travel-buddies-1": [11, 20],
-  "winning-on_a_roll-3": [12, 16],
-  "accuracy-spot_on-1": [13, 19],
-  "collector-object_spotter-25": [14, 15],
+  "winning-round_winner-1": 1,
+  "frame-first-game": 2,
+  "winning-regular-5": 3,
+  "winning-champion-1": 4,
+  "winning-round_winner-10": 5,
+  "frame-survival-two": 6,
+  "mode-team-spirit-1": 7,
+  "frame-first-star": 8,
+  "mode-at-the-table-1": 9,
+  "frame-first-daily": 10,
+  "mode-travel-buddies-1": 11,
+  "winning-on_a_roll-3": 12,
+  "accuracy-spot_on-1": 13,
+  "collector-object_spotter-25": 14,
+  "frame-ten-combinations": 15,
+  "frame-two-straight": 16,
+  "frame-three-rounds": 17,
+  "frame-first-bigger": 18,
+  "frame-second-chance": 19,
+  "frame-ten-objects": 20,
 });
 
 export const playerFrameCatalog = Object.freeze(styles.map((name, id) => Object.freeze({
-  id, name, award: Object.keys(frameAwards).find((award) => frameAwards[award].includes(id)),
+  id, name, award: Object.keys(frameAwards).find((award) => frameAwards[award] === id),
 })));
 
 export function ownsPlayerFrame(id, claims) {

@@ -16658,6 +16658,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   ACHIEVEMENTS.push(...createModeAwards(() => myProfile));
 
+  // Starter milestones for player borders. Progress counts play from before the award was added.
+  for (const [slug, name, desc, target, progress] of [
+    ["first-game", "First game", "Finish one game", 1, ACH_STAT("gamesPlayed")],
+    ["survival-two", "Finding your footing", "Survive two rounds in Survival", 2, () => survivalBest()],
+    ["first-star", "First star", "Earn a star on any Worlds level", 1,
+      () => Number(Object.values(myProfile.worlds || {}).some(levels => Object.values(levels || {}).some(stars => Number(stars) > 0)))],
+    ["first-daily", "Daily debut", "Complete one Daily Challenge", 1,
+      () => Math.max(myProfile.stats?.dailies || 0, myProfile.modeStats?.daily?.attempts || 0, Object.keys(myProfile.dailyHistory || {}).length)],
+    ["ten-combinations", "Mix and match", "See ten different item combinations", 10, () => Object.keys(myProfile.seenCombos || {}).length],
+    ["two-straight", "Back to back", "Win two rounds in a row", 2, ACH_STAT("bestStreak")],
+    ["three-rounds", "Warm-up", "Play three rounds", 3, ACH_STAT("rounds")],
+    ["first-bigger", "Size it up", "Get one correct answer in Which Is Bigger", 1, () => wbBest()],
+    ["second-chance", "Another shot", "Earn points from a second chance in one round", 1, ACH_STAT("secondChances")],
+    ["ten-objects", "Getting curious", "See ten different objects in rounds", 10,
+      () => OBJECTS.filter(obj => myProfile.seenObjects?.[obj.id]).length],
+  ]) {
+    ACHIEVEMENTS.push({ id: "frame-" + slug, cat: "Player borders", name, desc, target, reward: 0, progress });
+  }
+
+
   // Monthly rewards, four awards a month, all claimed here: Level 1 = scene, Level 2 = reaction, Level 3 = question board, Mega = flair.
   // Participation only: finish that level for real (first try) in its month. No coins; the item is the reward. A missed month stays missed until next year.
   // (The old "finish the whole month" scene award is now the Level 1 one; a month already finished before still counts.)
@@ -16755,8 +16775,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     updateAwardClaimDot(waiting);
     const baseRewardText = (a) => (a.fantasy ? `Unlocks the ${a.fantasyLabel}` : a.bg ? `Scene: ${a.bgLabel}` : a.mrw ? `${a.mrw.kindLabel}: ${a.mrw.label}` : a.home ? `Home screen: ${a.homeLabel}` : a.thanks ? "Our thanks!" : `+${a.reward} coins`);
     const rewardText = a => {
-      const frames = frameAwards[a.id];
-      return frames ? baseRewardText(a) + " · Borders: " + frames.map(id => playerFrameCatalog[id].name).join(", ") : baseRewardText(a);
+      const frame = playerFrameCatalog[frameAwards[a.id]];
+      if (!frame) return baseRewardText(a);
+      const border = "Border: " + frame.name;
+      return a.reward ? baseRewardText(a) + " · " + border : border;
     };
     const rowHtml = (a) => {
       const p = Math.min(a.progress(), a.target);
