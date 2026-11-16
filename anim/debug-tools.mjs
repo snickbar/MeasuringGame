@@ -2,7 +2,7 @@
 // Built from the game's own catalogs, so new items show up here automatically. Everything writes straight to the profile.
 // To hide the whole section for a release, set DEBUG_TOOLS = false in index.html.
 import { buildSceneViewer } from "./scene-viewer.mjs";
-import { buildPlayerFramePreview } from "./player-frame-preview.mjs";
+import { buildPlayerFramePreview } from "./player-frames.mjs";
 export function installDebugTools(ctx) {
   const card = document.getElementById("settings-debug-card"), root = document.getElementById("debug-tools-root");
   if (!card || !root) return { refresh() {} };
