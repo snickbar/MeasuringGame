@@ -3666,11 +3666,20 @@ if (location.protocol === "file:") {
   .question-note { margin-top: 8px; padding: 5px 3px; overflow-wrap: anywhere; min-width: 0; box-sizing: border-box; width: 100%; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 10.5px; line-height: 1.15; color: #1a1208; background: rgba(255,248,230,.92); border: 2px solid #d9c29a; border-radius: 10px; }
 
   /* ---- Left / ended game screens: one centered card with a recap of the game ---- */
-  #left-screen.active, #ended-screen.active { display: flex; justify-content: center; padding: 22px 4px 40px; }
-  .exit-card { width: 100%; max-width: 380px; box-sizing: border-box; text-align: center; background: rgba(255,252,246,.94); border: 3px solid #d9c29a; border-radius: 26px; padding: 22px 18px 20px; box-shadow: 0 6px 0 rgba(120,85,40,.18), 0 10px 24px rgba(60,40,10,.18); }
+  #left-screen.active, #ended-screen.active { display: flex; justify-content: center; align-items: center; min-height: calc(100dvh - 94px); padding: 46px 0 22px; }
+  .exit-card {
+    width: 100%; max-width: 380px; box-sizing: border-box; text-align: center;
+    background: linear-gradient(#fff4de, #ffebcb); color: #50321c;
+    border: 3px solid #6c3d20; border-radius: 26px; padding: 20px 16px 16px;
+    box-shadow: inset 0 -5px #e6c397, 0 5px 0 #5c321d44, 0 12px 28px #3c1b182b;
+  }
   .exit-icon { font-size: 54px; line-height: 1; margin-bottom: 6px; }
   .exit-icon img { display: block; margin: 0 auto; height: 64px; width: auto; max-width: 90px; object-fit: contain; }
-  .exit-card h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.2; }
+  .exit-icon.exit-hero { margin-top: -45px; margin-bottom: 10px; }
+  .exit-icon.exit-hero img { height: 82px; max-width: 126px; }
+  .exit-card :is(h1,h2) { margin: 0 0 8px; font-size: clamp(22px, 6.8vw, 29px); line-height: 1.14; color: #502b15; text-shadow: none; }
+  .exit-stats[hidden] { display: none; }
+  #paused-overlay .exit-reason { margin-bottom: 8px; }
   .exit-reason { margin: 0 0 14px; font-size: 17px; line-height: 1.35; color: var(--text); }
   .exit-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0 0 14px; }
   .exit-stat { background: #fff; border: 2px solid #ecdcbc; border-radius: 14px; padding: 8px 6px; min-width: 0; }
@@ -4108,6 +4117,7 @@ if (location.protocol === "file:") {
     align-items: center; justify-content: center; flex-direction: column; text-align: center;
     padding: 24px; z-index: 1000;
   }
+  #paused-overlay { justify-content: safe center; overflow-y: auto; padding: 48px 12px 24px; }
   #paused-overlay.active, #kick-modal.active { display: flex; }
   .overlay-card {
     width: 240px; max-width: 100%; box-sizing: border-box; background: #fffaf0; border-radius: 20px; padding: 22px 20px 18px;
@@ -5278,7 +5288,7 @@ if (location.protocol === "file:") {
 
 <div id="ended-screen" class="screen">
   <div class="exit-card">
-    <div class="exit-icon" aria-hidden="true"><img src="icons/reactions/trophy.webp" alt=""></div>
+    <div class="exit-icon exit-hero" aria-hidden="true"><img src="icons/reactions/trophy.webp" alt=""></div>
     <h1>Game ended</h1>
     <p class="exit-reason">The host ended this game.</p>
     <div id="ended-stats" class="exit-stats" hidden></div>
@@ -5294,17 +5304,18 @@ if (location.protocol === "file:") {
     <p id="left-reason" class="exit-reason"></p>
     <div id="left-stats" class="exit-stats" hidden></div>
     <p id="left-hint" class="exit-hint" hidden></p>
-    <button id="left-rejoin-btn" class="exit-btn" hidden>Rejoin room</button>
+    <button id="left-rejoin-btn" type="button" class="exit-btn menu-action-art art-join-lobby" data-fit-single-line="true" hidden>Rejoin room</button>
     <button id="left-reload-btn" class="exit-btn">Back to home</button>
   </div>
 </div>
 
 <div id="paused-overlay">
-  <div class="overlay-card">
-    <h3>Game paused</h3>
-    <p id="paused-msg">Waiting for the host to resume</p>
-    <button id="paused-resume-btn" type="button" style="display:none;">Resume</button>
-  </div>
+  <section class="exit-card" role="dialog" aria-labelledby="paused-title" aria-describedby="paused-msg">
+    <div class="exit-icon exit-hero" aria-hidden="true"><img src="icons/pause-medallion.webp" alt=""></div>
+    <h2 id="paused-title">Game paused</h2>
+    <p class="exit-reason" id="paused-msg">Waiting for the host to resume</p>
+    <button id="paused-resume-btn" type="button" class="menu-action-art art-start-game" data-fit-single-line="true" style="display:none;">Resume</button>
+  </section>
 </div>
 
 <div id="kick-modal">
@@ -20322,7 +20333,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hudSubToolbarEl.classList.remove("active"); // the Pause/Exit bar must not sit on top of this screen
     leftReasonEl.textContent = reason;
     document.getElementById("left-title").textContent = opts.title || "You left the game";
-    document.getElementById("left-icon").innerHTML = gameOutcomeArt(opts.icon || "icons/reactions/wave.webp");
+    const icon = document.getElementById("left-icon");
+    icon.classList.toggle("exit-hero", !!opts.roomCode);
+    icon.innerHTML = opts.roomCode ? '<img src="icons/rejoin-door.webp" alt="">'
+      : gameOutcomeArt(opts.icon || "icons/reactions/wave.webp");
     fillExitStats(document.getElementById("left-stats"), opts.tiles || []);
     const hintEl = document.getElementById("left-hint");
     hintEl.textContent = opts.hint || "";
@@ -21768,7 +21782,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pausedOverlayEl.classList.toggle("active", !!paused);
     const canResume = isHost || (roomState.settings && roomState.settings.solo && currentPlayers[currentPlayerId] && !currentPlayers[currentPlayerId].isBot); // a solo player can always resume their own game
     pausedResumeBtn.style.display = canResume ? "flex" : "none";
-    document.getElementById("paused-msg").textContent = canResume ? "Tap resume when you're ready" : "Waiting for the host to resume";
+    document.getElementById("paused-msg").textContent = canResume ? "Pick up where you left off." : "Waiting for the host to resume";
   }
 
   // ==================== Summary / final ====================
@@ -23460,7 +23474,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     updateReactionAvailability();
     if (phase === "ended") {
       fillExitStats(document.getElementById("ended-stats"), gameRecapTiles());
-      document.querySelector("#ended-screen .exit-icon").innerHTML = gameOutcomeArt("icons/reactions/padlock.webp");
     }
     endedScreenEl.classList.toggle("active", phase === "ended" && !overlayStillOpen);
 
