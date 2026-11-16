@@ -5125,6 +5125,7 @@ if (location.protocol === "file:") {
 
 <div id="name-avatar-screen" class="screen">
   <button id="name-avatar-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
+  <h2 id="na-banner" class="dc-title polish-banner flow-banner"></h2>
   <div class="na-pin">
   <div class="setup-header">
     <button id="join-lobby-btn">Join Lobby</button>
@@ -5147,6 +5148,7 @@ if (location.protocol === "file:") {
 </div>
 
 <div id="lobby-screen" class="screen">
+  <h2 id="lobby-banner" class="dc-title polish-banner flow-banner"></h2>
   <div class="screen-lock">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
   <div class="players-header lobby-start-row">
@@ -18249,7 +18251,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // "solo" = Solo Game (bots, no room code); "party" = Host Party.
   let createMode = "classic";
-  const CREATE_BANNER_TITLES = { solo: "Quick Game", classic: "Classic Party", teamvteam: "Team vs Team", teamworlds: "Team Worlds", hlsurvival: "High/Low Survival", highstakes: "High Stakes", bluff: "Bluff the Room" };
+  const CREATE_BANNER_TITLES = { solo: "Quick Game", quick: "Quick Game", classic: "Classic Party", teamvteam: "Team vs Team", teamworlds: "Team Worlds", hlsurvival: "High/Low Survival", highstakes: "High Stakes", bluff: "Bluff the Room" };
+  // The game mode's banner stays on screen from the mode menu until the game starts.
+  function flowBannerKey(st) {
+    if (!st) return "classic";
+    if (st.solo) return "quick";
+    if (st.mode === "teamvteam") return "teamvteam";
+    if (st.mode === "teamworlds") return isHlSettings(st) ? "hlsurvival" : "teamworlds";
+    if (st.mode === "highstakes") return "highstakes";
+    if (st.mode === "bluff") return "bluff";
+    return "classic";
+  }
+  function setFlowBanner(el, st) {
+    if (!el) return;
+    const key = flowBannerKey(st);
+    el.textContent = CREATE_BANNER_TITLES[key];
+    applyMenuBanner(el, key);
+  }
+  let flowBannerSettings = null;
   function showCreateScreen(mode) {
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
@@ -18324,6 +18343,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     nameAvatarCameFrom = cameFrom;
     nameAvatarStatusEl.textContent = "";
     nameInput.value = currentName;
+    setFlowBanner(document.getElementById("na-banner"), pendingSettings || flowBannerSettings || roomState?.settings);
     // Quick Game also goes through a lobby, so the button always says Join Lobby.
     joinLobbyBtn.textContent = "Join Lobby";
     watchTakenAvatarsForCode(pendingRoomCode);
@@ -18470,6 +18490,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingRoomCode = roomCode;
     pendingIsHost = true;
     pendingSettings = settings;
+    flowBannerSettings = settings;
     showNameAvatarScreen("create");
   }
   createRoomBtn.addEventListener("click", () => hostRoomNow((text) => { createStatusEl.textContent = text; }));
@@ -18498,6 +18519,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingRoomCode = code;
     pendingIsHost = false;
     pendingSettings = null;
+    flowBannerSettings = snap.val().settings || null;
     showNameAvatarScreen("join");
   }
   joinContinueBtn.addEventListener("click",()=>continueRoomJoin());
@@ -23262,6 +23284,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   setInterval(() => { try { syncRoomTour(); } catch (e) {} }, 300);
   function setLobbySwitch(btn,on){btn.setAttribute('aria-pressed',String(on));btn.setAttribute('aria-checked',String(on));const st=btn.querySelector('.lobby-switch-state');if(st)st.textContent=on?'On':'Off';}
   function applyLobbyMode(data) {
+    setFlowBanner(document.getElementById("lobby-banner"), data.settings);
     const solo = !!(data.settings && data.settings.solo);
     const teamMode = data.settings?.mode === "teamvteam";
     const worldsMode = data.settings?.mode === "teamworlds";
