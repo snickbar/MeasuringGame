@@ -2640,7 +2640,7 @@ if (location.protocol === "file:") {
     box-shadow: 0 14px 34px rgba(0,0,0,.4);
   }
   #exit-confirm-overlay:has(.exit-card) { padding: 48px 12px 24px; overflow-y: auto; align-items: safe center; }
-  #exit-confirm-card:not(.exit-card) .solo-leave-art { display: none; }
+  #exit-confirm-card:not(.exit-card) .confirm-card-art { display: none; }
   #exit-confirm-card.exit-card #exit-confirm-no-btn:focus-visible { outline: 2px solid #287cb8; outline-offset: 2px; border-radius: 24px; }
   #exit-confirm-overlay.show #exit-confirm-card { transform: scale(1); opacity: 1; }
   #exit-confirm-card:not(.exit-card) h2 { margin: 0 0 8px; font-size: 18px; color: #000; text-shadow: none; }
@@ -4406,7 +4406,7 @@ if (location.protocol === "file:") {
 
 <div id="exit-confirm-overlay">
   <div id="exit-confirm-card">
-    <div class="exit-icon exit-hero solo-leave-art" aria-hidden="true"><img src="icons/rejoin-door.webp" alt=""></div>
+    <div class="exit-icon exit-hero confirm-card-art" aria-hidden="true"><img id="exit-confirm-art" alt=""></div>
     <h2 id="exit-confirm-title">Exit the game?</h2>
     <p class="exit-reason" id="exit-confirm-message">Are you sure you want to exit?</p>
     <div id="exit-confirm-buttons">
@@ -11507,9 +11507,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     exitAppAfterLeave = false;
     pendingExitAction = action;
     const soloSave = action === "quickSave" || action === "navFromSolo";
-    exitConfirmTitleEl.parentElement.classList.toggle("exit-card", soloSave);
-    exitConfirmYesBtn.classList.toggle("menu-action-art", soloSave);
+    const start = action === "startGame";
+    const exit = action === "leaveGame" || action === "hostGame" || action === "app";
+    const illustrated = soloSave || start || exit;
+    exitConfirmTitleEl.parentElement.classList.toggle("exit-card", illustrated);
+    exitConfirmYesBtn.classList.toggle("menu-action-art", illustrated);
     exitConfirmYesBtn.classList.toggle("art-join-lobby", soloSave);
+    exitConfirmYesBtn.classList.toggle("art-start-game", start);
+    exitConfirmYesBtn.classList.toggle("art-exit-game", exit);
+    if (illustrated) {
+      document.getElementById("exit-confirm-art").src = start ? "icons/start-medallion.webp"
+        : exit ? "icons/exit-door.webp" : "icons/rejoin-door.webp";
+    }
     exitConfirmYesBtn.textContent = yesLabel || "Yes";
     exitConfirmNoBtn.textContent = noLabel || "No, go back";
     exitConfirmNoBtn.style.display = noLabel === null ? "none" : "";
@@ -11617,11 +11626,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (isGameOver()) { if (isHost) hostExit(); else guestExit(); return; }
     if (quickCanSave()) { openExitConfirm("quickSave", QUICK_LEAVE_TEXT[0], QUICK_LEAVE_TEXT[1], "Leave", "Keep playing"); return; }
     if (isHost && roomState && roomState.settings && roomState.settings.solo) {
-      openExitConfirm("leaveGame", "Quit this game?", "Your progress in this game won't be saved. Quit?");
+      openExitConfirm("leaveGame", "Quit this game?", "Your progress in this game won't be saved.", "Quit game", "Keep playing");
     } else if (isHost) {
-      openExitConfirm("leaveGame", "End the game?", "You're the host - leaving now ends the game and removes everyone from the room. Are you sure?");
+      openExitConfirm("leaveGame", "End the game?", "You're the host. Leaving ends the game for everyone in the room.", "End game", "Keep playing");
     } else {
-      openExitConfirm("leaveGame", "Leave the game?", "You'll leave this game, but you can rejoin anytime with the room code. Continue?");
+      openExitConfirm("leaveGame", "Leave the game?", "You'll leave this game. You can use the room code to rejoin.", "Leave game", "Keep playing");
     }
   }
   function guardToolbarNav(action) {
@@ -11757,7 +11766,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (isGameOver()) { void exitCompletedGame().then(left => { if (left) closeAppNow(); }); return; }
       openLeaveGameConfirm(); exitAppAfterLeave = true; return;
     }
-    openExitConfirm("app", "Exit the game?", "Are you sure you want to exit?");
+    openExitConfirm("app", "Exit game?", "Close the app.", "Exit game", "Stay here");
   });
   function closeAppNow() {
     const appPlugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
@@ -18819,7 +18828,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (hostStartBtn.disabled) return;
     // Solo has nobody to wait for, so no "Start game?" question.
     if (roomState && roomState.settings && roomState.settings.solo) { startGameNow(); return; }
-    openExitConfirm('startGame','Start game?',"Everyone in the room will join the game. Let's play!");
+    openExitConfirm("startGame", "Start game?", "Everyone in the room will join the game.", "Start game", "Back to lobby");
   });
 
   const hostTransfers = new Set();
@@ -20217,8 +20226,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   exitBtnGuest.addEventListener("click", openLeaveGameConfirm);
   exitBtn.addEventListener("click", () => {
     if (quickCanSave()) { openExitConfirm("quickSave", QUICK_LEAVE_TEXT[0], QUICK_LEAVE_TEXT[1], "Leave", "Keep playing"); return; }
-    if (roomState && roomState.settings && roomState.settings.solo) { openExitConfirm("hostGame", "Quit this game?", "Your progress in this game won't be saved. Quit?"); return; }
-    openExitConfirm("hostGame", "End the game?", "You're the host - this ends the game and removes everyone from the room. Are you sure?");
+    if (roomState && roomState.settings && roomState.settings.solo) { openExitConfirm("hostGame", "Quit this game?", "Your progress in this game won't be saved.", "Quit game", "Keep playing"); return; }
+    openExitConfirm("hostGame", "End the game?", "You're the host. This ends the game for everyone in the room.", "End game", "Keep playing");
   });
   endedReloadBtn.addEventListener("click", () => location.reload());
   // Results lead to each player's receipt. After collecting, the host closes
