@@ -15624,12 +15624,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const tierArt = badgeTierArt(a.name); if (tierArt) return tierArt;
     let m = /^mode-(team-spirit|winning-combination|travel-buddies|perfect-partnership|holding-the-line|in-sync|at-the-table|high-roller|called-your-bluff|daily-regular)-\d+$/.exec(a.id);
     if (m) return m[1];
-    m = /^monthly-(\d\d)(?:-[a-z]+)?$/.exec(a.id);
-    if (m) return "month-" + m[1];
-    m = /^world-(?:beat|perfect)-(.+)$/.exec(a.id);
-    if (m && BADGE_WORLD_ART[m[1]]) return "world-" + BADGE_WORLD_ART[m[1]];
+    m = /^monthly-(\d\d)(?:-(reaction|board|flair))?$/.exec(a.id);
+    if (m) return `month-${m[1]}-${{ reaction: "2", board: "3", flair: "mega" }[m[2]] || "1"}`;
+    m = /^world-(beat|perfect)-(.+)$/.exec(a.id);
+    if (m && BADGE_WORLD_ART[m[2]]) return `world-${BADGE_WORLD_ART[m[2]]}-${m[1]}`;
     return null;
   }
+  function badgePinArt(a) { const k = badgeArtKey(a); return k && (badgeTierArt(a.name) === k || /^(month-\d\d-|world-[a-z]+-(beat|perfect)$)/.test(k)) ? k : null; }
   function badgeIcon(a) {
     const key = badgeArtKey(a);
     if (key) return `icons/badges/${key}.webp`;
@@ -15645,9 +15646,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function badgeMedal(a, st, seen) {
     const tier = a.tier != null && a.tier >= 0 && ACHIEVEMENTS.filter((x) => x.cat === a.cat && x.chain === a.chain).length > 1 ? `<span class="bd-tier">${ROMAN[a.tier]}</span>` : "";
-    const star = a.id.startsWith("world-perfect-") ? `<span class="bd-tier"><img src="icons/flair/star.webp" alt="" style="width:11px;height:11px"></span>` : "";
+    const star = "";
     const fresh = st.earned && !seen.has(a.id) ? `<span class="bd-new">NEW</span>` : "";
-    return `<span class="bd-medal ${badgeTierClass(a)}${badgeTierArt(a.name) ? " pin" : ""}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}${star}</span>`;
+    return `<span class="bd-medal ${badgeTierClass(a)}${badgePinArt(a) ? " pin" : ""}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}${star}</span>`;
   }
   function badgesTabHtml(lv) {
     const seen = badgeSeen();
@@ -16652,7 +16653,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : `<div class="ach-reward">${rewardText(a)}</div>`;
       const cls = isClaimed ? "done" : done ? "ready" : "";
       const just = achJustClaimed === a.id;
-      const tierArt = badgeTierArt(a.name);
+      const tierArt = badgePinArt(a);
       return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal${tierArt ? " pin" : ""}${tierArt || a.icon || ACH_ICON_IDS.has(a.id) ? " has-img" : ""}">${tierArt ? `<img class="ach-icon" src="icons/badges/${tierArt}.webp" alt="" draggable="false">` : a.icon ? `<img class="ach-icon" src="${a.icon}" alt="" draggable="false">` : ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.webp" alt="" draggable="false">` : ""}${tierArt || a.icon ? "" : TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
     };
     let body = "";
