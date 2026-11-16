@@ -12375,7 +12375,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : banner ? `<img class="sh-bimg" src="${banner}" alt="" draggable="false">` : `<img class="sh-ic" src="${img}" alt="" draggable="false">`;
       return `<button type="button" class="${cls}" id="${id}"${extra && extra.disabled ? " disabled" : ""}>${pic}<span class="sh-tx"${mm ? ` style="padding-left:${mm.pad}%"` : ""}><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span><span class="sh-dot"${extra && extra.dot ? "" : " hidden"}></span></button>`;
     };
-    soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div><p class="dc-sub">Pick how you want to play</p>
+    soloContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner solo-mode-heading">Solo</h2></div>
       ${card("sh-quick", "items/ant.webp", "Quick Game", savedQ ? `Saved &middot; Round ${savedQ.round} of ${savedQ.total}` : "A solo game against bots", { banner: "icons/banner-quick.webp", saved: !!savedQ, mascot: "quick" })}
       ${card("sh-daily", "icons/toolbar-daily.webp", "Daily Challenge", dailySub, { hot: !played, dot: !played, banner: "icons/banner-daily.webp", mascot: "daily" })}
       ${card("sh-monthly", monthlyIcon(), "Monthly Challenge", monthlySub(), { hot: !monthlyPlayed(), dot: !monthlyPlayed(), banner: "icons/banner-monthly.webp", mascot: "monthly" })}
@@ -12433,7 +12433,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const mm = bannerMascot(mode);
       return `<button type="button" class="sh-card sh-banner" id="${id}"><img class="sh-bimg" src="${banner}" alt="" draggable="false">${mm ? `<img class="sh-bic sh-bmasc" src="${mm.src}" alt="" draggable="false" style="${mm.style}">` : `<img class="sh-bic" src="${img}" alt="" draggable="false">`}<span class="sh-tx"${mm ? ` style="padding-left:${mm.pad}%"` : ""}><span class="sh-name">${name}</span><span class="sh-sub">${sub}</span></span>${badge}</button>`;
     };
-    partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner party-mode-heading">Party Mode</h2></div><p class="dc-sub">Play with friends</p>
+    partyContentEl.innerHTML = `<div class="setup-header solo-mode-header"><h2 class="mode-heading-banner party-mode-heading">Party Mode</h2></div>
       ${card("pm-classic", "icons/shop-host-crown.webp", "Classic Party", "Everyone for themselves &mdash; closest guess wins the round", "classic", "icons/banner-blank-orange.webp")}
       ${card("pm-teamvteam", "items/soccer-ball.webp", "Team vs Team", "2v2 &mdash; round points go to your whole team", "teamvteam", "icons/banner-blank-green.webp")}
       ${card("pm-teamworlds", "icons/mode-team-worlds.webp", "Team Worlds", "Your guesses, averaged together", "teamworlds", "icons/banner-blank-blue.webp")}${HL_PREVIEW ? card("pm-hlsurvival", "icons/mode-high-low.webp", "High/Low Survival", "One of you picks a ceiling, one a floor &mdash; stay in sync to survive", "hlsurvival", "icons/banner-blank-red.webp") : ""}
@@ -12481,7 +12481,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `${r.s} round${r.s === 1 ? "" : "s"} survived${r.syncStreak ? ` &middot; best streak ${r.syncStreak}` : ""}`, r.t)).join("")}</div>`;
   }
   function openClassicInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Classic Party</h2><p class="dc-sub">Everyone for themselves &mdash; bots can fill in</p>${tourBtn('party')}
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Classic Party</h2>${tourBtn('party')}
       <div class="dc-card dc-hot"><div class="dc-big">Closest guess wins</div><div class="dc-note">Everyone sees the same two objects and guesses how many of one fit in the other. Whoever lands closest takes the round.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
@@ -12504,7 +12504,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function applyRoomOpts() { if (roomOptsPending) { Object.assign(currentSettings, roomOptsPending); roomOptsPending = null; } }
   function showRoomOptions({ title, like, extrasHtml = "", bindExtras = null, onCreate, back, host = teamvteamContentEl }) {
     const avail = roomOptsAvail(like), st = { tour: avail.tour && tourWanted(like), anim: true, mb: true };
-    host.innerHTML = `<h2 class="dc-title">${title}</h2><p class="dc-sub">Room options</p>${roomOptsHtml(avail, st)}${extrasHtml}
+    host.innerHTML = `<h2 class="dc-title">${title}</h2>${roomOptsHtml(avail, st)}${extrasHtml}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-pick-avatar dc-btn" id="ro-create" data-fit-single-line="true">Pick Avatar</button></div>`;
     roomOptsBack = back;
     host.querySelectorAll(".lobby-opt").forEach((b) => b.addEventListener("click", () => { st[b.dataset.opt] = !st[b.dataset.opt]; setLobbySwitch(b, st[b.dataset.opt]); }));
@@ -12530,7 +12530,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     syncCreateRoomOpts();
   }));
   function openHlInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2><p class="dc-sub">2 players &mdash; a bot can fill in</p>${tourBtn('hl')}
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">High/Low Survival</h2>${tourBtn('hl')}
       <div class="dc-card dc-hot"><div class="dc-big">Bracket the answer</div><div class="dc-note">Each round one of you is HIGH and picks a number the answer can't possibly be more than. The other is LOW and picks a number it can't possibly be less than. Roles swap randomly every round.</div></div>
       <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 message bottles. You survive when the real answer sits between your two picks AND your bracket isn't too wide. HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a bottle. Survive 3 rounds to earn an empty bottle that breaks in place of a message bottle. You can hold one empty bottle at a time. Every fifth survival is a themed round worth double coins. A failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
@@ -12540,7 +12540,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     overlayReturnScreen = partyScreenEl;
   }
   function openHsInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title mode-intro-title">High Stakes</h2><p class="dc-sub">2–10 players · friends and bots</p>${tourBtn('highstakes')}
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title mode-intro-title">High Stakes</h2>${tourBtn('highstakes')}
       <div class="dc-card mode-intro-rules mode-intro-stakes">
         <div class="mode-rule-grid">
           <div class="mode-rule"><img src="items/sheet-of-paper-a4.webp" alt=""><strong>Pick an answer</strong><span>Choose secretly from four answers.</span></div>
@@ -12571,7 +12571,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   let bluffTurnsChoice='auto';
   function openBluffInfo(){
-    teamvteamContentEl.innerHTML=`<h2 class="dc-title mode-intro-title">Bluff the Room</h2><p class="dc-sub">3–10 players · friends and bots</p>${tourBtn('bluff')}
+    teamvteamContentEl.innerHTML=`<h2 class="dc-title mode-intro-title">Bluff the Room</h2>${tourBtn('bluff')}
       <div class="dc-card mode-intro-rules mode-intro-bluff">
         <div class="mode-rule-grid">
           <div class="mode-rule"><img src="items/pencil.webp" alt=""><strong>Make a claim</strong><span>Show the room one number. It can be correct, too low, or too high.</span><b>+1 per voter fooled</b></div>
@@ -12645,7 +12645,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       `${r.s} points${r.accuracy ? ` &middot; ${formatAccuracy(r.accuracy)}% avg` : ""}`, r.t)).join("")}</div>`;
   }
   function renderTeamVTeamInfo() {
-    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2><p class="dc-sub">2 teams of 2 &mdash; bots can fill in</p>${tourBtn('teamvteam')}
+    teamvteamContentEl.innerHTML = `<h2 class="dc-title">Team vs Team</h2>${tourBtn('teamvteam')}
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">Pick a team color with your partner in the lobby. Whoever guesses closest each round wins the point for the whole team, not just themselves.</div></div>
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
@@ -13972,7 +13972,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderTeamWorldsScreen() {
     const el = teamworldsContentEl;
     if (!twWorldId) {
-      el.innerHTML = `<h2 class="dc-title">Team Worlds</h2><p class="dc-sub">Pick a World to play together</p>${tourBtn('teamworlds')}` +
+      el.innerHTML = `<h2 class="dc-title">Team Worlds</h2>${tourBtn('teamworlds')}` +
         WORLDS.map((x, i) => {
           const open = worldUnlocked(i);
           return worldCard("tw-world-" + i, OBJECT_BY_ID.get(WORLD_ICON[x.id]).image, x.name, open ? "Play it together" : (x.unlockHolidays ? "Finish 2 holiday Monthly Challenges first" : "Unlock this World in Solo first"), { disabled: !open });
@@ -13980,7 +13980,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return;
     }
     const w = WORLDS.find((x) => x.id === twWorldId);
-    el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2><p class="dc-sub">Team Worlds</p>${tourBtn('teamworlds')}
+    el.innerHTML = `<h2 class="dc-title">${escapeHtml(w.name)}</h2>${tourBtn('teamworlds')}
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}
