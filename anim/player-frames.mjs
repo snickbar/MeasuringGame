@@ -11,7 +11,34 @@ const colors = [
   ["Purple", "#8861ad"], ["Red", "#b14752"], ["Brown", "#986b4d"],
 ];
 
-function shadedPalette(tint, shiny) {
+export const frameAwards = Object.freeze({
+  "winning-round_winner-1": [1, 2],
+  "winning-regular-5": [3, 17],
+  "winning-champion-1": [4, 10],
+  "winning-round_winner-10": [5, 6],
+  "mode-team-spirit-1": [7, 8],
+  "mode-at-the-table-1": [9, 18],
+  "mode-travel-buddies-1": [11, 20],
+  "winning-on_a_roll-3": [12, 16],
+  "accuracy-spot_on-1": [13, 19],
+  "collector-object_spotter-25": [14, 15],
+});
+
+export const playerFrameCatalog = Object.freeze(styles.map((name, id) => Object.freeze({
+  id, name, award: Object.keys(frameAwards).find((award) => frameAwards[award].includes(id)),
+})));
+
+export function ownsPlayerFrame(id, claims) {
+  return id === 0 || (Number.isInteger(id) && Boolean(claims?.[playerFrameCatalog[id]?.award]) && Boolean(playerFrameCatalog[id]?.award));
+}
+
+export function playerFrameArt(id) {
+  return Number.isInteger(id) && id > 0 && id < styles.length
+    ? 'url("anim/player-frames/equipped-' + id + '.png")'
+    : "";
+}
+
+export function shadedPalette(tint, shiny) {
   const brightness = ([r, g, b]) => r * 0.2126 + g * 0.7152 + b * 0.0722;
   const average = brightness(tint);
   const middle = Math.max(100, Math.min(151, average));
