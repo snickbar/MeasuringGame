@@ -6,6 +6,10 @@ const styles = [
 ];
 
 const shinyFrames = new Set([4, 5, 6, 7, 9, 10, 11, 13, 19, 20]);
+const colors = [
+  ["Gold", "#bb9651"], ["Green", "#67874f"], ["Blue", "#5281a9"],
+  ["Purple", "#866da5"], ["Red", "#a95357"], ["Brown", "#986b4d"],
+];
 
 function shadedPalette(tint, shiny) {
   const brightness = ([r, g, b]) => r * 0.2126 + g * 0.7152 + b * 0.0722;
@@ -32,6 +36,11 @@ export function buildPlayerFramePreview(getPlayer) {
       .frame-preview-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:end; margin-bottom:12px; }
       .frame-preview-controls label { display:grid; gap:4px; font-weight:700; }
       .frame-preview-controls select { max-width:100%; font:inherit; }
+      .frame-preview-control { display:grid; gap:4px; max-width:100%; }
+      .frame-preview-stepper { display:flex; align-items:center; gap:4px; }
+      .frame-preview-stepper select { min-width:0; }
+      .frame-preview-stepper button { flex:none; min-width:30px; min-height:32px;
+        border:1px solid #c7aa83; border-radius:7px; background:#fff8e6; color:#3b2b1e; font:inherit; }
       .frame-preview-grid { display:grid; gap:12px; }
       .frame-preview-grid figure { margin:0; }
       .frame-preview-grid figcaption { margin-bottom:4px; font-size:.8rem; font-weight:700; }
@@ -49,22 +58,39 @@ export function buildPlayerFramePreview(getPlayer) {
       .frame-preview-card.is-results img { width:54px; height:54px; }
     </style>
     <div class="frame-preview-controls">
-      <label>Frame <select data-frame></select></label>
+      <div class="frame-preview-control">
+        <strong>Frame</strong>
+        <div class="frame-preview-stepper">
+          <button type="button" data-step-frame="-1" aria-label="Previous frame">‹</button>
+          <select data-frame aria-label="Frame"></select>
+          <button type="button" data-step-frame="1" aria-label="Next frame">›</button>
+        </div>
+      </div>
+      <div class="frame-preview-control">
+        <strong>Color</strong>
+        <div class="frame-preview-stepper">
+          <button type="button" data-step-color="-1" aria-label="Previous color">‹</button>
+          <select data-palette aria-label="Preset color"></select>
+          <button type="button" data-step-color="1" aria-label="Next color">›</button>
+          <input type="color" value="#bb9651" data-color aria-label="Custom color">
+        </div>
+      </div>
       <label>Tint <select data-tint><option value="shaded">Shaded</option><option value="original">Original</option><option value="none">Grayscale</option></select></label>
-      <label>Color <input type="color" value="#bb9651" data-color></label>
-      <button type="button" data-preset="#bb9651">Muted gold</button>
-      <button type="button" data-preset="#67874f">Leaf green</button>
     </div>
     <div class="frame-preview-grid"></div>
     <p class="dbg-note" role="status" data-preview-status>Sample scores. Preview choices are temporary.</p>`;
 
   const select = root.querySelector("[data-frame]");
   const color = root.querySelector("[data-color]");
+  const paletteSelect = root.querySelector("[data-palette]");
   const tintMode = root.querySelector("[data-tint]");
   const status = root.querySelector("[data-preview-status]");
   const grid = root.querySelector(".frame-preview-grid");
   select.append(...styles.map((style, index) => new Option(style, String(index))));
   select.value = "1";
+  paletteSelect.append(...colors.map(([label, hex]) => new Option(label, hex)), new Option("Custom", ""));
+  paletteSelect.value = color.value;
+  paletteSelect.lastElementChild.disabled = true;
   const cards = [
     ["Lobby", "", "Ready"],
     ["In-game", "is-compact", "4 pts"],
@@ -142,13 +168,27 @@ export function buildPlayerFramePreview(getPlayer) {
   select.addEventListener("change", updateArt);
   tintMode.addEventListener("change", updateArt);
   color.addEventListener("input", () => {
+    paletteSelect.value = colors.some(([, hex]) => hex === color.value) ? color.value : "";
     if (tintMode.value === "none") tintMode.value = "shaded";
     updateArt();
   });
-  for (const button of root.querySelectorAll("[data-preset]")) {
+  paletteSelect.addEventListener("change", () => {
+    color.value = paletteSelect.value;
+    color.dispatchEvent(new Event("input"));
+  });
+  for (const button of root.querySelectorAll("[data-step-frame]")) {
     button.addEventListener("click", () => {
-      color.value = button.dataset.preset;
-      color.dispatchEvent(new Event("input"));
+      select.selectedIndex = (select.selectedIndex + Number(button.dataset.stepFrame) + styles.length) % styles.length;
+      updateArt();
+    });
+  }
+  for (const button of root.querySelectorAll("[data-step-color]")) {
+    button.addEventListener("click", () => {
+      const step = Number(button.dataset.stepColor);
+      const index = colors.findIndex(([, hex]) => hex === color.value);
+      const next = index < 0 ? (step > 0 ? 0 : colors.length - 1) : (index + step + colors.length) % colors.length;
+      paletteSelect.value = colors[next][1];
+      paletteSelect.dispatchEvent(new Event("change"));
     });
   }
   root.refreshPlayer();
