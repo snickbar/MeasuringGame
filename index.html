@@ -21510,8 +21510,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderFaceDownCards(order, idOrder);
       if (isHost) { revealNextBtn.disabled = true; revealAllBtn.disabled = true; }
       setTimeout(() => {
-        if ((roomState.revealIndex || 0) === 0) {
-          flipReorder(revealListEl, () => renderFaceDownCards(order, order.slice().reverse().map((e) => e.playerId)));
+        {
+          // Move the existing cards into reveal order (worst guess at the bottom, winner on top). Moving them, rather than
+          // rebuilding, keeps any card that was already revealed if the host tapped through quickly.
+          flipReorder(revealListEl, () => order.slice().reverse().forEach((e) => { const li = revealListEl.querySelector(`[data-id="${e.playerId}"]`); if (li) revealListEl.appendChild(li); }));
           // Reveals proceed bottom-up (furthest guess first, winner last, on top) — start
           // scrolled to the bottom card so the very first reveal is visible without
           // requiring a manual scroll first, especially with many players.
