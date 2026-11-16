@@ -15647,7 +15647,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const tier = a.tier != null && a.tier >= 0 && ACHIEVEMENTS.filter((x) => x.cat === a.cat && x.chain === a.chain).length > 1 ? `<span class="bd-tier">${ROMAN[a.tier]}</span>` : "";
     const star = a.id.startsWith("world-perfect-") ? `<span class="bd-tier"><img src="icons/flair/star.webp" alt="" style="width:11px;height:11px"></span>` : "";
     const fresh = st.earned && !seen.has(a.id) ? `<span class="bd-new">NEW</span>` : "";
-    return `<span class="bd-medal ${badgeTierClass(a)}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}${star}</span>`;
+    return `<span class="bd-medal ${badgeTierClass(a)}${badgeTierArt(a.name) ? " pin" : ""}">${fresh}<img src="${badgeIcon(a)}" alt="" draggable="false">${tier}${star}</span>`;
   }
   function badgesTabHtml(lv) {
     const seen = badgeSeen();
@@ -16653,7 +16653,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const cls = isClaimed ? "done" : done ? "ready" : "";
       const just = achJustClaimed === a.id;
       const tierArt = badgeTierArt(a.name);
-      return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal${tierArt || a.icon || ACH_ICON_IDS.has(a.id) ? " has-img" : ""}">${tierArt ? `<img class="ach-icon" src="icons/badges/${tierArt}.webp" alt="" draggable="false">` : a.icon ? `<img class="ach-icon" src="${a.icon}" alt="" draggable="false">` : ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.webp" alt="" draggable="false">` : ""}${tierArt || a.icon ? "" : TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
+      return `<div class="ach-row ${cls}${just ? " just" : ""}"><div class="ach-medal${tierArt ? " pin" : ""}${tierArt || a.icon || ACH_ICON_IDS.has(a.id) ? " has-img" : ""}">${tierArt ? `<img class="ach-icon" src="icons/badges/${tierArt}.webp" alt="" draggable="false">` : a.icon ? `<img class="ach-icon" src="${a.icon}" alt="" draggable="false">` : ACH_ICON_IDS.has(a.id) ? `<img class="ach-icon" src="icons/ach/${a.id}.webp" alt="" draggable="false">` : ""}${tierArt || a.icon ? "" : TROPHY_SVG}</div><div class="ach-main"><div class="ach-name">${escapeHtml(a.name)}</div><div class="ach-desc">${escapeHtml(a.desc)}</div><div class="ach-bar"><i style="width:${Math.round(p / a.target * 100)}%"></i></div><div class="ach-count">${p.toLocaleString()} / ${a.target.toLocaleString()}</div></div><div class="ach-side">${just ? achBurstHtml() : ""}${side}</div></div>`;
     };
     let body = "";
     ACH_CATS.forEach((cat) => {
