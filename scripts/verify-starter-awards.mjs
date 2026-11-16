@@ -128,7 +128,7 @@ for(const failAt of [-1,1,'cancel']){
 // Exercise the real achievement renderer: automatic awards cannot expose a
 // manual Claim button, and both rewards remain separate, named rows.
 const content={innerHTML:''};
-const ui=vm.createContext({STARTER_AWARDS,myProfile:guest,ACH_CATS:['Getting started'],ACH_ICON_IDS:new Set(),badgeTierArt:()=>null,badgePinArt:()=>null,TROPHY_SVG:'',
+const ui=vm.createContext({STARTER_AWARDS,myProfile:guest,ACH_CATS:['Getting started'],ACH_ICON_IDS:new Set(),badgeTierArt:()=>null,badgePinArt:()=>null,playerFrameCatalog:[],frameAwards:{},TROPHY_SVG:'',
  achChainOpen:()=>true,achHideDone:false,achJustClaimed:null,achHold:{},escapeHtml:s=>s,updateCareerDot(){},
  document:{getElementById:id=>id==='achievements-content'?content:{classList:{toggle(){}}}}});
 vm.runInContext(source.slice(source.indexOf('  const ACHIEVEMENTS = [];'),source.indexOf('  function achTier(')),ui);
