@@ -4745,8 +4745,7 @@ if (location.protocol === "file:") {
       <div id="settings-name-keyboard" class="custom-kbd"></div>
     </div>
     <dialog id="settings-avatar-picker" class="cozy-dialog" aria-labelledby="settings-avatar-title">
-      <div class="avatar-picker-heading"><h3 id="settings-avatar-title">Your<br>avatar</h3><div class="frame-picker-avatar-slot"><span id="settings-avatar-current" class="avatar-picker-current" aria-hidden="true"></span><div class="frame-picker-controls" id="settings-frame-picker-controls"><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Previous border" data-frame-step="-1">‹</button><b>Border</b><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Next border" data-frame-step="1">›</button></div></div><button id="settings-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random</button><button id="settings-avatar-close" type="button" class="settings-cream-btn">Done</button></div>
-      <div class="frame-picker" id="settings-frame-picker"><div aria-live="polite"><strong data-frame-name></strong><small class="frame-picker-hint" data-frame-hint></small></div><button type="button" class="frame-picker-btn frame-picker-equip" data-frame-equip>Equip</button></div>
+      <div class="avatar-picker-heading"><h3 id="settings-avatar-title">Your<br>avatar</h3><div class="frame-picker-avatar-slot"><span id="settings-avatar-current" class="avatar-picker-current" aria-hidden="true"></span><div class="frame-picker-controls" id="settings-frame-picker-controls"><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Previous border" data-frame-step="-1">‹</button><b data-frame-count>Borders (0/20)</b><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Next border" data-frame-step="1">›</button></div><span class="frame-picker-name" id="settings-frame-picker" aria-live="polite"></span></div><button id="settings-avatar-random" type="button" class="avatar-random-btn"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg>Random</button><button id="settings-avatar-close" type="button" class="settings-cream-btn">Done</button></div>
       <div id="settings-avatar-grid"></div>
     </dialog>
   </div>
@@ -5145,7 +5144,7 @@ if (location.protocol === "file:") {
   </div>
 
   <div class="settings-profile-row name-avatar-row">
-    <div class="frame-picker-avatar-slot"><div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div><div class="frame-picker-controls" id="room-frame-picker-controls"><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Previous border" data-frame-step="-1">‹</button><b>Border</b><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Next border" data-frame-step="1">›</button></div></div>
+    <div class="frame-picker-avatar-slot"><div id="name-avatar-big" class="settings-avatar-big" aria-hidden="true"></div><div class="frame-picker-controls" id="room-frame-picker-controls"><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Previous border" data-frame-step="-1">‹</button><b data-frame-count>Borders (0/20)</b><button type="button" class="frame-picker-btn frame-picker-arrow" aria-label="Next border" data-frame-step="1">›</button></div><span class="frame-picker-name" id="room-frame-picker" aria-live="polite"></span></div>
     <button id="name-avatar-random" type="button" class="avatar-random-btn" aria-label="Random avatar" title="Random avatar"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff8e6" stroke="#4a2c12" stroke-width="3.5"/><g fill="#4a2c12"><circle cx="16" cy="16" r="3.6"/><circle cx="32" cy="16" r="3.6"/><circle cx="24" cy="24" r="3.6"/><circle cx="16" cy="32" r="3.6"/><circle cx="32" cy="32" r="3.6"/></g></svg></button>
     <div class="settings-profile-name">
       <label for="name-input">Your name</label>
@@ -5155,7 +5154,6 @@ if (location.protocol === "file:") {
   </div>
   <div id="name-keyboard" class="custom-kbd"></div>
 
-  <div class="frame-picker" id="room-frame-picker"><div aria-live="polite"><strong data-frame-name></strong><small class="frame-picker-hint" data-frame-hint></small></div><button type="button" class="frame-picker-btn frame-picker-equip" data-frame-equip>Equip</button></div>
   <div id="avatar-grid"></div>
 
   <p id="name-avatar-status"></p>
@@ -11296,61 +11294,62 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       : image;
   }
   const bluffFramedAvatar = (id, player) => framedAvatar({ ...player, avatar: id });
-  let savingPlayerFrame = false;
+  let pendingPlayerFrame;
+  function shownPlayerFrame() {
+    const pending = pendingPlayerFrame;
+    return pending?.owner === deviceId && ownsPlayerFrame(pending.id, myProfile.achClaimed)
+      ? pending.id : equippedPlayerFrame();
+  }
+  function refreshPlayerFramePickers() {
+    renderPlayerFramePicker("settings-frame-picker");
+    renderPlayerFramePicker("room-frame-picker");
+    showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame());
+  }
   async function equipPlayerFrame(id) {
-    if (savingPlayerFrame || id === equippedPlayerFrame() || !ownsPlayerFrame(id, myProfile.achClaimed)) return;
-    savingPlayerFrame = true;
     const owner = deviceId;
+    const selection = { owner, id };
+    pendingPlayerFrame = selection;
+    refreshPlayerFramePickers();
     try {
       const result = await changeProfile(owner, profile => {
-        if (!ownsPlayerFrame(id, profile?.achClaimed)) return null;
+        if (pendingPlayerFrame !== selection || !ownsPlayerFrame(id, profile?.achClaimed)) return null;
         return { ...profile, cosmetics: { ...profile.cosmetics,
           equipped: { ...profile.cosmetics?.equipped, playerFrame: id } } };
       });
-      if (!result.committed || owner !== deviceId) return;
-      showPlayerFrame(settingsAvatarBigEl, id);
+      if (pendingPlayerFrame !== selection || owner !== deviceId) return;
+      if (!result.committed) throw Error("Player border was not saved");
+      myProfile = { ...myProfile, cosmetics: { ...myProfile.cosmetics,
+        equipped: { ...myProfile.cosmetics?.equipped, playerFrame: id } } };
       if (currentRoomCode && currentPlayerId && roomState?.players?.[currentPlayerId]) {
         const playerRef = ref(db, "rooms/" + currentRoomCode + "/players/" + currentPlayerId);
-        await runTransaction(playerRef, player => player ? { ...player, playerFrame: id } : undefined);
+        await runTransaction(playerRef, player => player && pendingPlayerFrame === selection && owner === deviceId
+          ? { ...player, playerFrame: id } : undefined);
       }
     } catch {
-      if (owner === deviceId) showAchToast("Couldn’t update your player border. Try again.");
+      if (pendingPlayerFrame === selection && owner === deviceId) showAchToast("Couldn’t update your player border. Try again.");
     } finally {
-      savingPlayerFrame = false;
+      if (pendingPlayerFrame === selection) {
+        pendingPlayerFrame = undefined;
+        refreshPlayerFramePickers();
+      }
     }
   }
   function renderPlayerFramePicker(id) {
-    const picker = document.getElementById(id);
+    const name = document.getElementById(id);
     const controls = document.getElementById(id + "-controls");
     const avatar = document.getElementById(id === "settings-frame-picker" ? "settings-avatar-current" : "name-avatar-big");
-    const equipped = equippedPlayerFrame();
-    const current = Number(picker.dataset.previewFrame ?? equipped);
-    const frame = playerFrameCatalog[current];
-    const owned = ownsPlayerFrame(current, myProfile.achClaimed);
-    const award = owned ? null : ACHIEVEMENTS.find(a => a.id === frame.award);
+    const owned = playerFrameCatalog.filter(frame => ownsPlayerFrame(frame.id, myProfile.achClaimed));
+    const current = shownPlayerFrame();
     showPlayerFrame(avatar, current);
-    picker.querySelector("[data-frame-name]").textContent = frame.name;
-    picker.querySelector("[data-frame-hint]").textContent = owned ? "" :
-      award ? "Unlock in Awards · " + award.desc : "Achievement reward";
-    const equip = picker.querySelector("[data-frame-equip]");
-    equip.disabled = savingPlayerFrame || !owned || current === equipped;
-    equip.textContent = current === equipped ? "Equipped" : owned ? "Equip border" : "Locked";
+    name.textContent = playerFrameCatalog[current].name;
+    controls.querySelector("[data-frame-count]").textContent = "Borders (" + (owned.length - 1) + "/" + (playerFrameCatalog.length - 1) + ")";
     for (const button of controls.querySelectorAll("[data-frame-step]")) {
+      button.disabled = owned.length < 2;
       button.onclick = () => {
-        // Earned frames come first. Locked frames can still be tried on.
-        const order = [...playerFrameCatalog.filter(item => ownsPlayerFrame(item.id, myProfile.achClaimed)),
-          ...playerFrameCatalog.filter(item => !ownsPlayerFrame(item.id, myProfile.achClaimed))];
-        const next = (order.findIndex(item => item.id === current) + Number(button.dataset.frameStep) + order.length) % order.length;
-        picker.dataset.previewFrame = order[next].id;
-        renderPlayerFramePicker(id);
+        const next = (owned.findIndex(frame => frame.id === current) + Number(button.dataset.frameStep) + owned.length) % owned.length;
+        void equipPlayerFrame(owned[next].id);
       };
     }
-    equip.onclick = async () => {
-      const saving = equipPlayerFrame(current);
-      renderPlayerFramePicker(id);
-      await saving;
-      renderPlayerFramePicker(id);
-    };
   }
 
   function renderAvatarGrid() {
@@ -11362,7 +11361,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     avatarGridEl.innerHTML = "";
     document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar);
-    showPlayerFrame(document.getElementById("name-avatar-big"), equippedPlayerFrame());
     renderPlayerFramePicker("room-frame-picker");
     // Only avatars the player has unlocked - the full catalog, locked ones
     // included, is only ever shown via the Shop's "View All Avatars".
@@ -11424,7 +11422,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const settingsAvatarBigEl = document.getElementById("settings-avatar-big");
   const settingsAvatarPickerEl = document.getElementById("settings-avatar-picker");
   settingsAvatarBigEl.addEventListener("click", () => {
-    delete document.getElementById("settings-frame-picker").dataset.previewFrame;
     settingsAvatarPickerEl.showModal();
     renderSettingsAvatarGrid();
     settingsAvatarBigEl.setAttribute("aria-expanded", "true");
@@ -11445,10 +11442,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("settings-avatar-random").addEventListener("click", pickRandomAvatar);
   function renderSettingsAvatarGrid() {
     settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
-    showPlayerFrame(settingsAvatarBigEl, equippedPlayerFrame());
+    showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame());
     if (!settingsAvatarPickerEl.open) return;
     document.getElementById("settings-avatar-current").innerHTML = avatarHtml(currentAvatar);
-    showPlayerFrame(document.getElementById("settings-avatar-current"), equippedPlayerFrame());
     renderPlayerFramePicker("settings-frame-picker");
     // shown in the picker heading so you see what you have now
     settingsAvatarGridEl.innerHTML = "";
@@ -18560,7 +18556,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     joinLobbyBtn.textContent = "Join Lobby";
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
-    delete document.getElementById("room-frame-picker").dataset.previewFrame;
     nameAvatarScreenEl.classList.add("active");
     renderAvatarGrid();
   }
