@@ -19,7 +19,7 @@ assert(source.includes('phase === "ended" && !overlayStillOpen'),'Late ended upd
 
 const active = () => {
   const classes = new Set(['active']);
-  return {classList: {remove: c => classes.delete(c), add: c => classes.add(c), contains: c => classes.has(c)}};
+  return {classList: {remove: c => classes.delete(c), add: c => classes.add(c), contains: c => classes.has(c), toggle: (c, on) => { const want = on === undefined ? !classes.has(c) : !!on; if (want) classes.add(c); else classes.delete(c); return want; }}};
 };
 const elements = new Map();
 const docElement = id => {
