@@ -11509,15 +11509,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const soloSave = action === "quickSave" || action === "navFromSolo";
     const start = action === "startGame";
     const exit = action === "leaveGame" || action === "hostGame" || action === "app";
-    const illustrated = soloSave || start || exit;
+    const join = action === "joinContinueConfirmed";
+    const roomNotFound = action === "roomNotFound";
+    const illustrated = soloSave || start || exit || join || roomNotFound;
     exitConfirmTitleEl.parentElement.classList.toggle("exit-card", illustrated);
     exitConfirmYesBtn.classList.toggle("menu-action-art", illustrated);
-    exitConfirmYesBtn.classList.toggle("art-join-lobby", soloSave);
+    exitConfirmYesBtn.classList.toggle("art-join-lobby", soloSave || join);
+    exitConfirmYesBtn.classList.toggle("art-confirm-ack", roomNotFound);
     exitConfirmYesBtn.classList.toggle("art-start-game", start);
     exitConfirmYesBtn.classList.toggle("art-exit-game", exit);
+    const keepPlaying = illustrated && noLabel === "Keep playing";
+    exitConfirmNoBtn.classList.toggle("menu-action-art", start || keepPlaying);
+    exitConfirmNoBtn.classList.toggle("art-back-to-lobby", start);
+    exitConfirmNoBtn.classList.toggle("art-keep-playing", keepPlaying);
     if (illustrated) {
       document.getElementById("exit-confirm-art").src = start ? "icons/start-medallion.webp"
-        : exit ? "icons/exit-door.webp" : "icons/rejoin-door.webp";
+        : exit ? "icons/exit-door.webp" : roomNotFound ? "icons/room-code-search.webp" : "icons/rejoin-door.webp";
     }
     exitConfirmYesBtn.textContent = yesLabel || "Yes";
     exitConfirmNoBtn.textContent = noLabel || "No, go back";
@@ -11525,7 +11532,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     exitConfirmTitleEl.textContent = title;
     exitConfirmMessageEl.textContent = message;
     exitConfirmOverlayEl.setAttribute("role","dialog");exitConfirmOverlayEl.setAttribute("aria-modal","true");exitConfirmOverlayEl.setAttribute("aria-labelledby","exit-confirm-title");
-    exitConfirmOverlayEl.classList.add("show");exitConfirmNoBtn.focus();
+    exitConfirmOverlayEl.classList.add("show");
+    (noLabel === null ? exitConfirmYesBtn : exitConfirmNoBtn).focus({ preventScroll: true });
   }
   // The top toolbar (Home/Items/Shop/Help/Settings/Exit) is visible on every
   // screen, including mid-game - clicking one used to just barrel through its
@@ -11787,6 +11795,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     pendingExitAction = null;
     pendingNavAction = null;
     if (action === "dismiss") return;
+    if (action === "roomNotFound") { codeInput.focus({ preventScroll: true }); return; }
     if (action === "startGame") { startGameNow(); return; }
     if (action === "joinContinueConfirmed") { joinContinueBtn.click(); return; }
     if (action === "joinLobbyConfirmed") { joinLobbyBtn.click(); return; }
@@ -18594,7 +18603,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     joinStatusEl.textContent = "";
     if (snap.val() === null) {
       pendingQrInvite.clear();
-      openExitConfirm("dismiss", "Room not found", "Double check the 4-character code and try again.", "OK", null);
+      openExitConfirm("roomNotFound", "Room not found", "Double check the 4-character code and try again.", "OK", null);
       return;
     }
     pendingRoomCode = code;
