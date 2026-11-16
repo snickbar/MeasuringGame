@@ -11,7 +11,7 @@ export const MENU_BANNERS = {
   hlsurvival: ['icons/banner-blank-red.webp', 'icons/mode-high-low.webp'],
   highstakes: ['icons/banner-blank-purple.webp', 'items/poker-chip.webp'],
   bluff: ['icons/banner-blank-pink.webp', 'icons/reactions/giggle.webp'],
-  join: ['icons/banner-blank-blue.webp', 'items/door.webp'],
+  join: ['icons/banner-blank-blue.webp', 'icons/home-join.webp'],
 };
 // Mode mascots that stand on the big mode buttons and on each mode's own header banner (picture aspect ratio = width / height after cropping).
 // Banners are 1000 x 222; the artwork is capped so the title keeps its room. Modes without a mascot keep their own icon.
