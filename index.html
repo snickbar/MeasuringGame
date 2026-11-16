@@ -11990,8 +11990,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const jit = (d, n, a = 2.2) => { const x = Math.sin((Y * 372 + M * 31 + d) * 12.9898 + n * 78.233) * 43758.5453; return Math.round((x - Math.floor(x) - 0.5) * 2 * a * 10) / 10; };
     const check = (d) => `<svg class="dc-mk" viewBox="0 0 50 50" aria-hidden="true"><path d="M${7 + jit(d, 1)} ${26 + jit(d, 2)} Q${14 + jit(d, 3)} ${33 + jit(d, 4)} ${18 + jit(d, 5)} ${38 + jit(d, 6)} Q${30 + jit(d, 7)} ${22 + jit(d, 8)} ${43 + jit(d, 9)} ${6 + jit(d, 10)}" stroke="#2f9e2f"/></svg>`;
     const cross = (d) => `<svg class="dc-mk" viewBox="0 0 50 50" aria-hidden="true"><path d="M${9 + jit(d, 1)} ${9 + jit(d, 2)} Q${25 + jit(d, 3)} ${25 + jit(d, 4)} ${41 + jit(d, 5)} ${42 + jit(d, 6)}" stroke="#d62828"/><path d="M${42 + jit(d, 7)} ${8 + jit(d, 8)} Q${25 + jit(d, 9)} ${26 + jit(d, 10)} ${8 + jit(d, 11)} ${43 + jit(d, 12)}" stroke="#d62828"/></svg>`;
-    const ring = `<svg class="dc-mk dc-ring" viewBox="0 0 50 50" aria-hidden="true"><path d="M26 4 C42 3 49 16 47 28 C45 42 30 48 18 45 C6 42 1 30 4 18 C7 8 18 3 31 6 C36 8 39 10 41 13" stroke="#1f5fbf"/></svg>`;
-    let cells = "", played = 0;
+    const ring = `<svg class="dc-mk dc-ring" viewBox="0 0 50 50" aria-hidden="true"><path pathLength="1" d="M26 4 C42 3 49 16 47 28 C45 42 30 48 18 45 C6 42 1 30 4 18 C7 8 18 3 31 6 C36 8 39 10 41 13" stroke="#1f5fbf"/></svg>`;
+    let cells = "", played = 0, ringStrides = 3;
     for (let i = 0; i < lead; i++) cells += `<i class="dc-cal-e"></i>`;
     for (let d = 1; d <= days; d++) {
       const key = `${Y}-${pad(M)}-${pad(d)}`, h = hist[key];
@@ -12006,13 +12006,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const fromLeft = column >= 4;
         const neighbor = fromLeft ? -1 : 1;
         const travel = (fromLeft ? 0 : 6) - (column + neighbor);
+        ringStrides = Math.abs(travel);
         inner += `<span class="dc-cal-rooster" style="--dc-neighbor:${neighbor};--dc-travel:${travel};--dc-strides:${Math.abs(travel)}" aria-hidden="true">
           <img class="dc-cal-point" src="anim/mode-mascots/daily-rooster-tutorial.webp" alt="" draggable="false">
           ${stamp ? `<img class="dc-cal-step-one" src="anim/mode-mascots/daily-rooster-step-one.webp" alt="" draggable="false">
           <img class="dc-cal-step-two" src="anim/mode-mascots/daily-rooster-step-two.webp" alt="" draggable="false">` : ""}
         </span>`;
       }
-      cells += `<div class="${cls}"><span class="dc-cal-n">${d}</span>${inner}</div>`;
+      if (h || cls.includes("today")) cls += " dc-cal-tap";
+      cells += `<div class="${cls}"${cls.includes("dc-cal-stamp") ? ` style="--dc-ring-strides:${ringStrides}"` : ""}${h ? ` data-day="${key}" data-chain="${chain[key] || 1}" role="button" tabindex="0" aria-label="${dailyPretty(key)} details"` : ""}><span class="dc-cal-n">${d}</span>${inner}</div>`;
     }
     const ymNow = today.slice(0, 7), ymFirst = firstKey.slice(0, 7), name = new Date(Y, M - 1, 1).toLocaleDateString(undefined, { month: "long", year: ym === ymNow ? undefined : "numeric" });
     const shift = (n) => { const dt = new Date(Date.UTC(Y, M - 1 + n, 1)); return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}`; };
@@ -12277,6 +12279,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     title.focus({preventScroll:true});
   }
 
+  function dailyDayPopup(key, chainLen) {
+    const h = myProfile.dailyHistory?.[key] || (daily?.phase === "complete" && key === daily.date ? { s: dailyTotal() / 3, p: dailyAccuracies().every((x) => x >= 90) ? 1 : 0 } : null);
+    if (!h) return;
+    document.getElementById("dc-day-pop")?.remove();
+    const acc = Number.isFinite(h.s) ? h.s : 0;
+    const perQ = daily?.date === key && daily.guesses?.length ? dailyAccuracies().map((a, i) => `<li><span>Question ${i + 1}</span><b>${formatAccuracy(a)}%</b></li>`).join("") : "";
+    const played = h.t ? new Date(h.t).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "";
+    const ov = document.createElement("div");
+    ov.id = "dc-day-pop"; ov.className = "dc-day-pop";
+    ov.innerHTML = `<div class="dc-day-card" role="dialog" aria-modal="true" aria-label="${dailyPretty(key)}">
+      <h3>${dailyPretty(key)}</h3>
+      <div class="dc-day-score"><b>${formatAccuracy(acc)}%</b><span>accuracy</span></div>
+      ${h.p ? '<div class="dc-day-row"><span class="medal gold" aria-hidden="true"></span> Perfect day</div>' : ""}
+      <div class="dc-day-row">Streak that day: <b>${chainLen} day${chainLen === 1 ? "" : "s"}</b></div>
+      ${played ? `<div class="dc-day-row">Played at <b>${played}</b></div>` : ""}
+      ${perQ ? `<ul class="dc-day-q">${perQ}</ul>` : ""}
+      <button type="button" class="dc-btn dc-alt" data-day-close>Close</button></div>`;
+    ov.addEventListener("click", (ev) => { if (ev.target === ov || ev.target.closest("[data-day-close]")) ov.remove(); });
+    document.body.appendChild(ov);
+  }
+  dailyContentEl.addEventListener("click", (e) => {
+    const c = e.target.closest(".dc-cal-d[data-day]");
+    if (c && daily) dailyDayPopup(c.dataset.day, Number(c.dataset.chain) || 1);
+  });
+  dailyContentEl.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches?.(".dc-cal-d[data-day]")) { e.preventDefault(); dailyDayPopup(e.target.dataset.day, Number(e.target.dataset.chain) || 1); }
+  });
   dailyContentEl.addEventListener("click", async (e) => {
     const b = e.target.closest("button");
     if (!b || !daily) return;
