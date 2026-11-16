@@ -10161,7 +10161,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // The strip along the bottom of every in-game screen: your equipped reactions first, then any empty owned slots, then the locked ones.
   const reactionStripEl = document.getElementById("reaction-strip");
   let lastReactionTapAt = 0;
-  const REACTION_COOLDOWN_MS = 1000;
+  const REACTION_COOLDOWN_MS = 1000; // the shortest wait; each reaction waits out its own length (rxLifeMs) instead
+  let reactionCooldownMs = REACTION_COOLDOWN_MS;
   // The sweeping-ring CSS animation (.cooling ::after, see rxCool keyframes)
   // can't read a JS constant directly - drives its duration off this custom
   // property instead, so the visual indicator can't drift out of sync with
@@ -10211,7 +10212,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   let appliedReactionKey = "";
   function updateReactionAvailability() {
     const state = reactionState();
-    const cooling = Date.now() - lastReactionTapAt < REACTION_COOLDOWN_MS;
+    const cooling = Date.now() - lastReactionTapAt < reactionCooldownMs;
     const key = (state.allowed ? "1" : "0") + (cooling ? "1" : "0") + state.reason;
     if (key === appliedReactionKey) return;
     appliedReactionKey = key;
@@ -10229,13 +10230,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!b || !currentRoomCode) return;
     if (!reactionState().allowed) { updateReactionAvailability(); return; }
     const t = Date.now();
-    if (t - lastReactionTapAt < REACTION_COOLDOWN_MS) return;
+    if (t - lastReactionTapAt < reactionCooldownMs) return;
     lastReactionTapAt = t;
+    reactionCooldownMs = Math.max(REACTION_COOLDOWN_MS, rxLifeMs(b.dataset.emoji));
+    document.documentElement.style.setProperty("--rx-cool-ms", reactionCooldownMs + "ms");
     reactionStripEl.classList.remove("cooling");
     void reactionStripEl.offsetWidth; // restart the sweeping ring
     reactionStripEl.classList.add("cooling");
     updateReactionAvailability();
-    setTimeout(() => reactionStripEl.classList.remove("cooling"), REACTION_COOLDOWN_MS);
+    setTimeout(() => { reactionStripEl.classList.remove("cooling"); updateReactionAvailability(); }, reactionCooldownMs);
     sendReaction(b.dataset.emoji);
   });
   new ResizeObserver(() => document.documentElement.style.setProperty("--bottom-bar-h", `${bottomToolbarEl.offsetHeight || 58}px`)).observe(bottomToolbarEl);
@@ -20968,6 +20971,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // One reaction per player at a time: a new one replaces the one still showing.
   const RX_STAGE = 96;          // px; the picture itself takes the middle 60%
   const rxShowing = {};         // playerId -> element
+  // Measured by playing every reaction: how long each one really plays (ms, never under 2 s) and the size correction that makes
+  // them all about the same size on screen (the picture + its sparkles end up roughly 96 px across; the monthly ones are a bit bigger).
+  const RX_LIFE = {"clap": 2350, "heart": 2500, "fire": 2650, "grin": 2200, "popper": 2700, "triumph": 2250, "flex": 2250, "crying": 2600, "mindblown": 2350, "crown": 2450, "trophy": 2550, "kiss": 3000, "hourglass": 2200};
+  const RX_SCALE = {"laughing": 0.91, "clap": 1.12, "fire": 0.95, "shrug": 1.13, "grin": 1.05, "alarm": 1.08, "triumph": 1.09, "tired": 1.13, "nerd": 1.13, "flex": 0.96, "skull": 1.1, "crying": 1.12, "nervous": 1.14, "crown": 1.12, "sideeye": 1.08, "cool": 1.08, "peek": 0.84, "wave": 0.95, "point": 0.91, "hourglass": 1.3, "thumbsdown": 1.13, "zany": 1.08, "cake": 1.08, "think": 1.08, "facepalm": 0.72, "crossed": 1.26, "mrx1": 0.57, "mrx2": 0.96, "mrx3": 1.3, "mrx4": 0.78, "mrx5": 0.79, "mrx6": 0.77, "mrx7": 0.81, "mrx8": 0.7, "mrx9": 1.13, "mrx10": 1.11, "mrx11": 0.68, "mrx12": 1.1};
+  // Each reaction's own timer: how long it stays on screen, which is also how long you wait before sending another.
+  function rxLifeMs(emoji) {
+    const def = REACTIONS[emoji];
+    if (!def) return 2000;
+    if (def.monthly) { const info = window.MM && MM.info("r" + def.monthly); return info ? info.D + 600 : 4500; }
+    return RX_LIFE[def.id] || 2000;
+  }
   // A reaction sent just before the stacking animation starts must not keep playing over it.
   function clearReactionBubbles() {
     document.querySelectorAll(".rx-stage").forEach((el) => el.remove());
@@ -21037,11 +21051,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       piv.innerHTML = `<span class="rx-text">${emojiHtml(r.emoji)}</span>`; // an older version's emoji
     }
     stage.appendChild(piv);
-    if (lingering && lingering.isConnected) {
-      reactionsPanelEl.insertBefore(stage, lingering);
-    } else {
-      reactionsPanelEl.appendChild(stage);
-    }
+    if (lingering && lingering.isConnected) lingering.remove(); // never two from the same player on screen together
+    reactionsPanelEl.appendChild(stage);
+    const sizeFix = def && RX_SCALE[def.id];
+    if (sizeFix) { stage.style.scale = String(sizeFix); }
     rxShowing[r.playerId] = stage;
     if (def && def.id === "sideeye") {
       piv.animate([{ transform: "scale(.35)" }, { transform: "scale(1.12)", offset: .2 }, { transform: "none" }], { duration: 500, easing: "ease-out" });
@@ -21098,9 +21111,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       { opacity: 0, transform: `translateX(${reactionSide === "l" ? 28 : -34}px)`, offset: 1 },
     ], { duration: mmLife, easing: "ease-in", fill: "forwards" }) : stage.animate([
       { opacity: 1, transform: "translateX(0)", offset: 0 },
-      { opacity: 1, transform: "translateX(0)", offset: .62 },
+      { opacity: 1, transform: "translateX(0)", offset: 1 - 760 / rxLifeMs(r.emoji) },
       { opacity: 0, transform: `translateX(${reactionSide === "l" ? 28 : -34}px)`, offset: 1 },
-    ], { duration: 2000, easing: "ease-in", fill: "forwards" });
+    ], { duration: rxLifeMs(r.emoji), easing: "ease-in", fill: "forwards" });
     // Slide out from behind the sender's card. A monthly reaction first has to load its animation, so its
     // slide waits until the animation actually starts (the stage stays hidden until then); the others slide at once.
     const runEntrance = () => {
