@@ -18,6 +18,22 @@ function bluffRaccoonHtml(pose,delay=null,kind){
    : `<span class="bl-raccoon-pad"><span class="bl-pad-cover"></span><span class="bl-pad-page" data-verdict="${esc(kind)}"><svg viewBox="0 0 24 24"><path d="${Object.hasOwn(BLUFF_PAD_MARKS,kind)?BLUFF_PAD_MARKS[kind]:''}"/></svg></span></span>`;
  return `<span class="bl-raccoon bl-raccoon-${pose}${moving?' moving':''}" aria-hidden="true"${moving?` style="--raccoon-delay:${Math.round(delay)}ms"`:''}><img src="anim/mode-mascots/bluff-raccoon-${pose}.webp" width="256" height="337" alt="" draggable="false">${prop}</span>`;
 }
+const raccoonArt = pose => '<img class="bl-raccoon-frame bl-raccoon-frame-' + pose +
+  '" src="anim/bluff-raccoon/' + pose + '.png" width="192" height="220" alt="" draggable="false">';
+
+export function bluffVotingRaccoon(age, motion, round = 1) {
+  // Offset the same neutral poses by round. Nothing in this cue reads the claim or vote.
+  const offset = (round % 3) * 1400;
+  const delay = -Math.round(age + offset);
+  return '<span class="bl-raccoon bl-raccoon-write bl-raccoon-voting' + (motion ? ' moving' : '') +
+    '" aria-hidden="true" style="--raccoon-loop-delay:' + delay + 'ms">' +
+    ["notes", "glance", "pencil", "write"].map(raccoonArt).join("") + '</span>';
+}
+
+export function bluffRaccoonOutcome(claim, fooled) {
+  return claim === "correct" ? "notes" : fooled > 0 ? "grin" : "caught";
+}
+
 export function bluffPickHtml(s,me){
  const mine=me===s.maker,kind=mine?s.claim.kind:s.votes?.[me],label=BLUFF_LABELS[kind]||'No vote',value=bluffNumber(s.claim.value);
  const icon=kind==='correct'?'<img src="icons/check-selected.svg" alt="">':`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="${kind==='low'?'M16 5v22M6 17l10 10 10-10':kind==='high'?'M16 27V5M6 15 16 5l10 10':'M7 16h18'}" fill="none" stroke="#513621" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -87,7 +103,9 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     const ball=(c,l,v)=>`<span class="bl-ball ${c}"><small>${l}</small><b>${v}</b></span>`,flank=(av,claim)=>`<div class="bl-flank">${ball('red','Claim',claim)}${av}${ball('blue','Truth','?')}</div>`;
     const scaleArt='<div class="bl-scale" aria-hidden="true"><div class="bl-seesaw bl-static" style="--t1:0deg;--t2:0deg"><div class="bl-ss-beam"><img class="bl-ss-beamimg" src="icons/bluff2-beam.webp" alt="">'+['l:red','r:blue'].map(x=>{const[a,c]=x.split(':');return `<div class="bl-ss-end ${a}"><div class="bl-ss-hang"><img class="bl-ss-rope" src="icons/bluff2-rope.webp" alt=""><div class="bl-ss-cup"><img class="bl-ss-cupimg" src="icons/bluff2-cup-${c}.webp" alt=""></div></div></div>`;}).join('')+'</div><div class="bl-ss-post"><img src="icons/bluff2-stand.webp" alt=""></div></div></div>';
     const voteState=s.stage==='vote'&&member&&!mine?'<div class="bl-vote-state"><p class="bl-locked" data-vote-status role="status"></p><div class="lock-bar" data-lock-bar hidden><i></i></div></div>':'<div class="bl-vote-state ghost"></div>';
-    const scribbler=s.stage==='make'||s.stage==='vote'?bluffRaccoonHtml('write',!reduced()&&visible()&&!room.paused?-age:null):'';
+    const raccoonMoving=!reduced()&&visible()&&!room.paused;
+    const scribbler=s.stage==='vote'?bluffVotingRaccoon(age,raccoonMoving,s.round):
+      s.stage==='make'?bluffRaccoonHtml('write',raccoonMoving?-age:null):'';
     const idleScale='<div class="bl-scale-dock">'+scaleArt+voteState+scribbler+'</div>';
     let content='';
     if(s.stage==='animation')content='<p class="bl-instruction">Revealing the sizes…</p><p class="bl-note">Votes are locked.</p>';
@@ -98,7 +116,13 @@ export function createBluffUI({element,context,now,transact,act,question,object,
       const ck=room.gameId+':'+s.round,sAge=ck===celebrationKey?(celebrationAbandoned?Infinity:now()-celebrationAt):0;
       const motion=!reduced()&&visible();
       const flip=motion&&Number.isFinite(sAge)&&!room.paused?bluffRevealTimes(s).answerLand-240-sAge:null;
-      revealRaccoon=bluffRaccoonHtml('reveal',flip,s.claim.kind);
+      const outcome=bluffRaccoonOutcome(s.claim.kind,s.result.wrong);
+      const reacting=motion&&Number.isFinite(sAge)&&!room.paused;
+      const at=bluffRevealTimes(s).answerLand+430-sAge;
+      revealRaccoon='<span class="bl-raccoon-outcome" aria-hidden="true" style="--raccoon-react-at:'+
+        (reacting?Math.round(at):0)+'ms">'+
+        (reacting&&at> -300 ? '<span class="bl-raccoon-outcome-before">'+bluffRaccoonHtml('reveal',flip,s.claim.kind)+'</span>' : '')+
+        '<span class="bl-raccoon-outcome-after'+(reacting?' moving':'')+'">'+raccoonArt(outcome)+'</span></span>';
       content=bluffSummaryHtml(s,room.players||{},avatar,me,sAge,motion);
     }
     const stageChanged=cueKey!==key;

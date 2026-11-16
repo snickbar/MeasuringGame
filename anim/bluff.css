@@ -366,3 +366,36 @@ html[data-motion=reduced] .bl-win-dance,html[data-motion=reduced] .bl-maker-laug
 @media(prefers-reduced-motion:reduce){
   .bl-raccoon-write.moving .bl-raccoon-ink path,.bl-raccoon-reveal.moving .bl-raccoon-pad{animation:none}
 }
+
+
+/* Layer registered illustrations so the mascot stays in place as the pose changes. */
+.bl-raccoon-voting { aspect-ratio:192 / 220; }
+.bl-raccoon-voting .bl-raccoon-frame {
+  position:absolute; inset:0; width:100%; height:100%; opacity:0;
+}
+.bl-raccoon-voting .bl-raccoon-frame-notes { opacity:1; }
+.bl-raccoon-voting.moving .bl-raccoon-frame {
+  animation-duration:4.2s; animation-timing-function:steps(1,end);
+  animation-iteration-count:infinite; animation-delay:var(--raccoon-loop-delay);
+}
+.bl-raccoon-voting.moving .bl-raccoon-frame-notes { animation-name:blNotes; }
+.bl-raccoon-voting.moving .bl-raccoon-frame-glance { animation-name:blGlance; }
+.bl-raccoon-voting.moving .bl-raccoon-frame-pencil { animation-name:blPencil; }
+.bl-raccoon-voting.moving .bl-raccoon-frame-write { animation-name:blPencilTap; }
+@keyframes blNotes { 0%,74%,100%{opacity:1} 28%{opacity:0} }
+@keyframes blGlance { 0%,49%,100%{opacity:0} 28%{opacity:1} }
+@keyframes blPencil { 0%,58%,74%,100%{opacity:0} 49%,65%{opacity:1} }
+@keyframes blPencilTap { 0%,65%,100%{opacity:0} 58%{opacity:1} }
+
+.bl-raccoon-outcome { position:relative; display:grid; justify-self:end; width:min(100%,70px); aspect-ratio:192 / 220; }
+.bl-raccoon-outcome-before,.bl-raccoon-outcome-after { grid-area:1 / 1; align-self:end; }
+.bl-raccoon-outcome .bl-raccoon-reveal,.bl-raccoon-outcome img { display:block; width:100%; height:auto; }
+.bl-raccoon-outcome-after.moving { animation:blRaccoonReact .28s ease-out var(--raccoon-react-at) both; }
+.bl-raccoon-outcome-before { animation:blRaccoonLeave .28s ease-out var(--raccoon-react-at) both; }
+@keyframes blRaccoonReact { from { opacity:0; transform:translateY(2px) } to { opacity:1; transform:none } }
+@keyframes blRaccoonLeave { from { opacity:1 } to { opacity:0 } }
+
+html[data-motion=reduce] .bl-raccoon-voting .bl-raccoon-frame,
+html[data-motion=reduce] .bl-raccoon-outcome-before,
+html[data-motion=reduce] .bl-raccoon-outcome-after { animation:none!important; }
+html[data-motion=reduce] .bl-raccoon-outcome-before { display:none; }
