@@ -50,9 +50,9 @@ export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=
     if(busy||joinButton.disabled)return;
     if(!scanner){status.textContent='Scan QR is available in the Android app. You can still enter a room code here.';return;}
     busy=true;button.disabled=true;joinButton.disabled=true;status.textContent='Opening scanner…';
-    let code=null;pending?.beginScan();onScanStart();
+    let code=null,scanned=false;pending?.beginScan();onScanStart();
     try{
-      const result=await scanner();
+      const result=await scanner();scanned=true;
       // If the app drifted off the Join screen while the camera was open (e.g. a stray Back on first use),
       // bring the player back to it rather than dropping the scanned code.
       if(!isActive()&&!(restore&&result&&!result.cancelled))return;
@@ -72,7 +72,14 @@ export function mountRoomQr({button,input,status,joinButton,scanner,isActive=()=
           else{joinButton.disabled=false;joinButton.click();}
         }
       }
-    }catch{if(isActive())status.textContent='Could not open the scanner. On first use it may need a download. Try again, or enter the room code.';}
+    }catch(error){
+      if(!isActive())return;
+      // The camera opened fine if we got a result; anything thrown after that is the join step, not the scanner.
+      status.textContent=scanned?'Scanned, but the room could not be opened. Try again, or enter the room code.'
+        :error?.code==='SCAN_EMPTY'?'No QR code was read. Please scan again.'
+        :error?.code==='SCAN_BUSY'?''
+        :'Could not open the scanner. On first use it may need a download. Try again, or enter the room code.';
+    }
     finally{if(!code)pending?.clear();busy=false;button.disabled=false;joinButton.disabled=false;onScanEnd();}
   });
 }
