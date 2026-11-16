@@ -11334,12 +11334,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
   }
+  const preloadedFrames = new Set();
   function renderPlayerFramePicker(id) {
     const name = document.getElementById(id);
     const controls = document.getElementById(id + "-controls");
     const avatar = document.getElementById(id === "settings-frame-picker" ? "settings-avatar-current" : "name-avatar-big");
     const owned = playerFrameCatalog.filter(frame => ownsPlayerFrame(frame.id, myProfile.achClaimed));
     const current = shownPlayerFrame();
+    // Load every border you own up front so stepping through them swaps instantly instead of waiting on each picture.
+    for (const frame of owned) { const m = /url\("(.*)"\)/.exec(playerFrameArt(frame.id)); if (m && !preloadedFrames.has(m[1])) { preloadedFrames.add(m[1]); new Image().src = m[1]; } }
     showPlayerFrame(avatar, current);
     name.textContent = playerFrameCatalog[current].name;
     controls.querySelector("[data-frame-count]").textContent = "Borders (" + (owned.length - 1) + "/" + (playerFrameCatalog.length - 1) + ")";
