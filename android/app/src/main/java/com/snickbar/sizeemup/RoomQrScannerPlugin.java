@@ -76,7 +76,17 @@ public class RoomQrScannerPlugin extends Plugin {
             JSObject result = new JSObject();result.put("cancelled", true);call.resolve(result);
           })
           .addOnFailureListener(error -> {
-            scanning = false;call.reject("Could not open the QR scanner.", "SCAN_FAILED", error);
+            scanning = false;
+            // Pressing the phone's Back button closes Google's scanner as a "failure" (MlKitException
+            // CODE_SCANNER_CANCELLED = 201), not a cancel. That is the player backing out, not an error.
+            int errorCode = -1;
+            try { errorCode = (Integer) error.getClass().getMethod("getErrorCode").invoke(error); } catch (Exception ignored) { }
+            String message = error.getMessage() == null ? "" : error.getMessage().toLowerCase();
+            if (errorCode == 201 || message.contains("cancel")) {
+              JSObject result = new JSObject();result.put("cancelled", true);call.resolve(result);
+              return;
+            }
+            call.reject("Could not open the QR scanner.", "SCAN_FAILED", error);
           });
       } catch (Exception error) {
         scanning = false;call.reject("Could not open the QR scanner.", "SCAN_FAILED", error);
