@@ -4,7 +4,7 @@ import { setText } from './set-text.mjs';
 export const MENU_BANNERS = {
   quick: ['icons/banner-quick.webp'], daily: ['icons/banner-daily.webp'],
   monthly: ['icons/banner-monthly.webp'], worlds: ['icons/banner-worlds.webp'],
-  survival: ['icons/banner-survival.webp'], whichbigger: ['icons/banner-which-bigger.webp'],
+  survival: ['icons/banner-survival.webp'], whichbigger: ['icons/banner-which-bigger.webp', 'anim/mode-mascots/wb-elephant-tutorial.webp'],
   classic: ['icons/banner-blank-orange.webp', 'icons/home-host.webp'],
   teamvteam: ['icons/banner-blank-green.webp', 'items/soccer-ball.webp'],
   teamworlds: ['icons/banner-blank-blue.webp', 'icons/mode-team-worlds.webp'],

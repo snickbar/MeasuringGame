@@ -4828,11 +4828,11 @@ if (location.protocol === "file:") {
   </div></details>
 
   <details class="howto-section"><summary>Hosting a party</summary><div class="howto-body">
-    <p>Tap <b>Party Mode</b>, then pick a mode (Classic Party, or Team vs Team to play 2v2) to choose the room settings and what happens if you disconnect, then tap <b>Create Room</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
+    <p>Tap <b>Party Mode</b>, then pick a mode (Classic Party, or Team vs Team to play 2v2) then tap <b>Room Settings</b> to choose the room settings and what happens if you disconnect, and tap <b>Pick Avatar</b>. Next, pick your name and avatar and tap <b>Join Lobby</b> - you're the host, so only you can start the game once everyone's in. If you've saved a preset (see <b>Host settings</b> below), tap one of the three preset slots above the settings to load it instantly.</p>
   </div></details>
 
   <details class="howto-section"><summary>Joining a room</summary><div class="howto-body">
-    <p>Tap <b>Join Game</b>, type the 4-letter room code the host gave you, and tap <b>Continue</b>. Then pick your name and avatar and tap <b>Join Lobby</b>. Every player needs a unique avatar per room, so any already taken will be grayed out.</p>
+    <p>Tap <b>Join Game</b>, type the 4-letter room code the host gave you, and tap <b>Pick Avatar</b>. Then pick your name and avatar and tap <b>Join Lobby</b>. Every player needs a unique avatar per room, so any already taken will be grayed out.</p>
   </div></details>
 
   <details class="howto-section"><summary>Rejoining a room</summary><div class="howto-body">
@@ -4919,8 +4919,9 @@ if (location.protocol === "file:") {
 
 <div id="create-screen" class="screen cozy-setup" data-setup-mode="party">
   <button id="create-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
-  <div class="setup-header">
-    <button id="create-room-btn" type="button">Create Room</button>
+  <div class="setup-header setup-header-stack">
+    <h2 id="create-banner" class="dc-title polish-banner"></h2>
+    <button id="create-room-btn" type="button">Pick Avatar</button>
   </div>
   <button type="button" class="dc-btn dc-alt tour-btn" id="create-tour-btn" data-tour="quick" hidden><img src="icons/watch-play.webp" alt=""><span>Watch how to play</span></button>
   <p id="create-settings-summary" class="cozy-settings-summary"></p>
@@ -5099,8 +5100,9 @@ if (location.protocol === "file:") {
 
 <div id="join-screen" class="screen">
   <button id="join-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
-  <div class="setup-header">
-    <button id="join-game-title" type="button">Join Game</button>
+  <div class="setup-header setup-header-stack">
+    <h2 id="join-banner" class="dc-title polish-banner plain-banner">Join Game</h2>
+    <button id="join-game-title" type="button">Pick Avatar</button>
   </div>
 
   <div class="join-code-row">
@@ -5148,7 +5150,7 @@ if (location.protocol === "file:") {
   <div class="screen-lock">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
   <div class="players-header lobby-start-row">
-    <button id="host-start-btn" type="button" style="display:none;">Start game</button>
+    <button id="host-start-btn" type="button" style="display:none;">Start Game</button>
   </div>
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
@@ -12451,7 +12453,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="classic-start">Create Room</button></div>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="classic-start">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -12470,7 +12472,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function showRoomOptions({ title, like, extrasHtml = "", bindExtras = null, onCreate, back, host = teamvteamContentEl }) {
     const avail = roomOptsAvail(like), st = { tour: avail.tour && tourWanted(like), anim: true, mb: true };
     host.innerHTML = `<h2 class="dc-title">${title}</h2><p class="dc-sub">Room options</p>${roomOptsHtml(avail, st)}${extrasHtml}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="ro-create">Create Room</button></div>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="ro-create">Room Settings</button></div>`;
     roomOptsBack = back;
     host.querySelectorAll(".lobby-opt").forEach((b) => b.addEventListener("click", () => { st[b.dataset.opt] = !st[b.dataset.opt]; setLobbySwitch(b, st[b.dataset.opt]); }));
     bindExtras?.();
@@ -12500,7 +12502,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 message bottles. You survive when the real answer sits between your two picks AND your bracket isn't too wide. HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a bottle. Survive 3 rounds to earn an empty bottle that breaks in place of a message bottle. You can hold one empty bottle at a time. Every fifth survival is a themed round worth double coins. A failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="hl-start">Create Room</button></div>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="hl-start">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -12515,7 +12517,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card"><div class="dc-big">Bluffs can win</div><div class="dc-note">If everyone else folds, the pot is yours. If nobody still in picked correctly, the pot rolls over.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast the table</div><div class="dc-note">Start with ${HS.HS_START_COINS} chips. The ante rises by 5 every 2 rounds. Run out of chips and you’re out. The last player standing or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds wins.</div></div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="hs-start">Create Room</button></div>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="hs-start">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -12545,7 +12547,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card"><div class="dc-big">Everyone takes a turn</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Highest score wins. Vote accuracy breaks ties, and a complete tie shares the win.</div></div>
       <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">60 seconds to make a claim, then 60 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Create Room</button></div>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
       extrasHtml:`<div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more.</div>
@@ -12615,7 +12617,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
       <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="tvt-start">Create Room</button></div>`;
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="tvt-start">Room Settings</button></div>`;
   }
   function openTeamVTeamInfo() {
     renderTeamVTeamInfo();
@@ -13949,7 +13951,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="tw-start">Create Room</button>
+      <div class="pin-bottom"><button type="button" class="dc-btn" id="tw-start">Room Settings</button>
       <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button></div>`;
   }
   function openTeamWorldsScreen() {
@@ -18247,12 +18249,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // "solo" = Solo Game (bots, no room code); "party" = Host Party.
   let createMode = "classic";
+  const CREATE_BANNER_TITLES = { solo: "Quick Game", classic: "Classic Party", teamvteam: "Team vs Team", teamworlds: "Team Worlds", hlsurvival: "High/Low Survival", highstakes: "High Stakes", bluff: "Bluff the Room" };
   function showCreateScreen(mode) {
     createMode = mode === "solo" ? "solo" : mode;
     createScreenEl.dataset.setupMode = createMode;
-    createRoomBtn.textContent = createMode === "solo" ? "Create Game" : "Create Room";
+    createRoomBtn.textContent = "Pick Avatar";
+    const createBanner = document.getElementById("create-banner");
+    createBanner.textContent = CREATE_BANNER_TITLES[createMode] || "Party Mode";
     document.getElementById("create-tour-btn").hidden = createMode !== "solo";
-    applyMenuBanner(createRoomBtn, createMode === "solo" ? "quick" : createMode);
+    applyMenuBanner(createBanner, createMode === "solo" ? "quick" : createMode);
     // Team Worlds has no configurable rounds/timer/item-selection at all - always exactly 5
     // questions from the chosen World's pool (settings.totalRounds=5 is hardcoded at room
     // creation regardless of what this panel shows) - so the whole "Round settings"/"Play your
@@ -18319,8 +18324,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     nameAvatarCameFrom = cameFrom;
     nameAvatarStatusEl.textContent = "";
     nameInput.value = currentName;
-    // A solo game has no lobby to join, so the button just says Let's go.
-    joinLobbyBtn.textContent = pendingSettings && pendingSettings.solo ? "Let's go" : "Join Lobby";
+    // Quick Game also goes through a lobby, so the button always says Join Lobby.
+    joinLobbyBtn.textContent = "Join Lobby";
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
@@ -23311,7 +23316,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const lrIcon = MENU_BANNERS[lrKey]?.[1];
     rules.dataset.mode = lrKey;
     rules.innerHTML = `<div class="lr-head">${lrIcon ? img(lrIcon) : ''}<h2>${lrTitle}</h2></div><div class="lr-chips">${lrChips.join('')}</div>`;
-    hostStartBtn.textContent='Start game';
+    hostStartBtn.textContent='Start Game';
     hostStartBtn.disabled = needsFriend;
     hostStartBtn.style.opacity = hostStartBtn.disabled ? ".5" : "";
     lobbyStatusEl.textContent = needsFriend && data.phase === "waiting" ? waitingMsg : "";

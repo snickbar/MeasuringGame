@@ -45,5 +45,5 @@ try {
 } finally {globalThis.MutationObserver = previous;}
 assert.match(css, /aspect-ratio:1000\/222/);
 assert.match(css, /\.dc-title\.polish-banner\.matching-mode-banner \+ \.dc-sub,/);
-assert(source.includes('applyMenuBanner(createRoomBtn, createMode === "solo" ? "quick" : createMode)'));
+assert(source.includes('applyMenuBanner(createBanner, createMode === "solo" ? "quick" : createMode)'));
 console.log('PASS: ten matching menu headers, app-relative and local-file artwork, no duplicate icons, shared Party containers and Quick Game action.');
