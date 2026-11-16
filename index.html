@@ -5176,7 +5176,7 @@ if (location.protocol === "file:") {
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
   <div class="lobby-room-box">
-    <span id="lobby-title-room"><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
+    <span id="lobby-title-room" role="button" tabindex="0" aria-label="Room code. Tap to share."><span class="lobby-code-label">Room code</span><strong id="room-code-display"></strong></span>
     <button id="share-room-btn" type="button" class="back-btn">Share room</button>
   </div>
 
@@ -17299,6 +17299,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   hudRoomCodeEl.addEventListener("click", async () => {
     if (!currentRoomCode || hudRoomCodeEl.classList.contains("code-locked")) return;
+    if (window.qrcode) { openPartyQr(true); return; }
     const copied = await copyTextToClipboard(currentRoomCode);
     if (!copied) return;
     playSound("select");
@@ -17344,15 +17345,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return false;
   }
   let partyQrDialog = null;
-  shareRoomBtn.addEventListener("click", () => {
+  function openPartyQr(inGame) {
     if (!currentRoomCode) return;
     if (!window.qrcode) { void sendRoomInvite().then((ok) => { if (!ok) void copyTextToClipboard(joinLinkFor(currentRoomCode)); }); return; }
     partyQrDialog?.close();
     const code = currentRoomCode, qr = window.qrcode(0, "M"); qr.addData(joinLinkFor(code)); qr.make();
     const dialog = document.createElement("dialog"); partyQrDialog = dialog; dialog.id = "party-room-qr"; dialog.setAttribute("aria-labelledby", "party-qr-title");
     dialog.innerHTML = `<div id="qr-card"><div id="party-qr-title" class="qr-title">Invite friends</div><div class="qr-img">${qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true })}</div><div class="qr-code">${escapeHtml(code)}</div><div class="qr-sub">Scan the code, or enter it in Join Game</div><button type="button" class="qr-send">Send invite</button><button type="button" class="qr-copy">Copy link</button><button type="button" class="qr-close">Close</button></div>`;
-    const observer = new MutationObserver(() => { if (!lobbyScreenEl.classList.contains("active") || currentRoomCode !== code) dialog.close(); });
-    observer.observe(lobbyScreenEl, { attributes: true, attributeFilter: ["class"] });
+    const observer = new MutationObserver(() => { if ((!inGame && !lobbyScreenEl.classList.contains("active")) || currentRoomCode !== code) dialog.close(); });
+    observer.observe(inGame ? document.body : lobbyScreenEl, { attributes: true, attributeFilter: ["class"] });
     dialog.addEventListener("close", () => { observer.disconnect(); dialog.remove(); if (partyQrDialog === dialog) partyQrDialog = null; });
     dialog.querySelector(".qr-close").onclick = () => dialog.close();
     dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
@@ -17360,7 +17361,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     dialog.querySelector(".qr-send").onclick = async () => { if (!(await sendRoomInvite())) { copyBtn.click(); } };
     copyBtn.onclick = async () => { const ok = await copyTextToClipboard(joinLinkFor(code)); copyBtn.textContent = ok ? "Link copied!" : "Copy failed"; setTimeout(() => { copyBtn.textContent = "Copy link"; }, 1600); };
     document.body.append(dialog); dialog.showModal();
-  });
+  }
+  shareRoomBtn.addEventListener("click", () => openPartyQr(false));
+  // Tapping the room code itself (lobby header, or the chip in the game row) opens the same QR / share card.
+  const lobbyCodeTap = document.getElementById("lobby-title-room");
+  lobbyCodeTap.addEventListener("click", () => { if (!roomCodeDisplay.classList.contains("code-locked")) openPartyQr(false); });
+  lobbyCodeTap.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); lobbyCodeTap.click(); } });
 
   // ---- Room-code paywall: only the host's own view is ever gated - a guest
   // already has the code (that's how they joined), so there's nothing to
