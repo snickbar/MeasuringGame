@@ -12506,14 +12506,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Classic Party and High/Low Survival get an intro page like Team vs Team's (the same overlay
   // screen, different content): what the mode is, how it scores, then "your best" at the bottom.
-  function classicBestHtml() {
-    const games = (myProfile.matches || []).filter((m) => m.mode === "party" && Number.isFinite(m.score));
-    const st = myProfile.modeStats?.party || {};
+  function classicBestHtml(mode = "party", unit = "points") {
+    const games = (myProfile.matches || []).filter((m) => m.mode === mode && Number.isFinite(m.score));
+    const st = myProfile.modeStats?.[mode] || {};
     if (!games.length && !st.games) return `<div class="dc-card">${emptyHtml("icons/party-results-podium.webp", "No games yet", "Host one to get started!")}</div>`;
     const rows = games.slice().sort((a, b) => b.score - a.score || b.t - a.t).slice(0, 3);
     const head = st.games ? `<div class="dc-note" style="text-align:center;font-weight:700">${st.games} game${st.games === 1 ? "" : "s"} played &middot; ${st.wins || 0} win${(st.wins || 0) === 1 ? "" : "s"}</div>` : "";
     return `<div class="dc-card">${head}${rows.map((r) => `<div class="tw-best-row"><div class="tw-best-avatars"><span class="avatar">${avatarHtml(r.myAvatar)}</span></div>
-      <div class="tw-best-info"><div class="tw-best-names">${r.score} points</div><div class="tw-best-stats">${r.place ? "Place #" + r.place + " &middot; " : ""}${r.accuracy ? formatAccuracy(r.accuracy) + "% avg &middot; " : ""}${new Date(r.t).toLocaleDateString()}</div></div></div>`).join("")}</div>`;
+      <div class="tw-best-info"><div class="tw-best-names">${r.score} ${unit}</div><div class="tw-best-stats">${r.place ? "Place #" + r.place + " &middot; " : ""}${r.accuracy ? formatAccuracy(r.accuracy) + "% avg &middot; " : ""}${new Date(r.t).toLocaleDateString()}</div></div></div>`).join("")}</div>`;
   }
   function hlBestHtml() {
     const rows = topScores(historyRows(myProfile.hlHistory || {}), 3);
@@ -12591,6 +12591,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card"><div class="dc-big">Bluffs can win</div><div class="dc-note">If everyone else folds, the pot is yours. If nobody still in picked correctly, the pot rolls over.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast the table</div><div class="dc-note">Start with ${HS.HS_START_COINS} chips. The ante rises by 5 every 2 rounds. Run out of chips and you’re out. The last player standing or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds wins.</div></div>
+      <h3 class="cs-h">Your personal best</h3>${classicBestHtml("highstakes", "chips")}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hs-start" data-fit-single-line="true">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
@@ -12621,6 +12622,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card"><div class="dc-big">Everyone takes a turn</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Highest score wins. Vote accuracy breaks ties, and a complete tie shares the win.</div></div>
       <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">60 seconds to make a claim, then 60 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
+      <h3 class="cs-h">Your personal best</h3>${classicBestHtml("bluff", "points")}
       <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="bluff-start" data-fit-single-line="true">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
@@ -13696,7 +13698,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function survivalRecordsHtml(noRecent,noAvg){
     const data=myProfile.survival||{},stats=myProfile.modeStats?.survival||{},history=noRecent?[]:(myProfile.attemptHistory||[]).filter(r=>r.mode==='survival').slice(-5).reverse();
-    return `<div class="cozy-panel"><div class="cs-tiles">${statTile(data.best||0,'Best run')}${statTile(data.runs||0,'Runs finished')}${noAvg?'':statTile(stats.answered?formatAccuracy(stats.accuracyTotal/stats.answered)+'%':'—','Average accuracy')}</div>${history.length?'<h3>Recent runs</h3>'+history.map(r=>'<p>'+r.survived+' survived · '+formatAccuracy(r.accuracy)+'% accurate</p>').join(''):''}</div>`;
+    return `<div class="cozy-panel"><div class="cs-tiles">${statTile(data.best||0,'Best run')}${statTile(data.runs||0,'Runs finished')}${noAvg?'':statTile(stats.answered?formatAccuracy(stats.accuracyTotal/stats.answered)+'%':'—','Average accuracy')}</div>${history.length?'<h3>Recent runs</h3><div class="sv-runs">'+history.map((r,i)=>{const top=Math.max(data.best||0,...history.map(x=>x.survived||0),1),isBest=(r.survived||0)>0&&r.survived>=(data.best||0);return '<div class="sv-run'+(isBest?' best':'')+(i===0?' latest':'')+'"><img class="sv-run-ic" src="icons/life-heart-full.webp" alt="" draggable="false"><span class="sv-run-n"><b>'+r.survived+'</b> survived</span><span class="sv-run-bar"><i style="width:'+Math.max(6,Math.round((r.survived||0)/top*100))+'%"></i></span><span class="sv-run-acc">'+formatAccuracy(r.accuracy)+'%</span>'+(isBest?'<em class="sv-run-tag">Best</em>':i===0?'<em class="sv-run-tag new">Latest</em>':'')+'</div>';}).join('')+'</div>':''}</div>`;
   }
   function worldStop() { if (wlAnim) { try { wlAnim.destroy(); } catch (e) {} wlAnim = null; } }
   function openWorlds() {
@@ -23941,7 +23943,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if(active('final-screen'))return {session:gameRewardKey(currentRoomCode,roomState),element:finalScreenEl.querySelector('.tw-final-row:has(.tw-space--final)') || document.querySelector('#final-session-recap,#final-screen .tw-fin-card')};
       if(active('worlds-screen')&&wl?.phase==='done')return {session:wl.runId,element:document.querySelector('#worlds-content .dc-card.dc-hot')};
       if(active('daily-screen')&&daily?.phase==='done'&&!daily.replay)return {session:'daily_'+daily.date,element:document.querySelector('#daily-content .dc-card.dc-hot')};
-      if(active('monthly-screen')&&mo?.phase==='done')return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
+      if(active('monthly-screen')&&mo?.phase==='done'&&mo.justFinished)return {session:mo.practice?mo.runId:'monthly_'+mo.key+'_L'+mo.level+'_v'+MONTHLY_FORMAT,element:document.querySelector('#monthly-content .dc-card.dc-hot')};
       if(active('survival-screen')&&sv?.phase==='over')return {session:sv.runId,element:document.querySelector('#survival-content .dc-card.dc-hot')};
       if(active('hs-screen')&&roomState.hs?.stage==='over')return {session:gameRewardKey(currentRoomCode,roomState),element:hsContentEl.querySelector('.hs-end-hero')};
       return null;
