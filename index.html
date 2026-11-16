@@ -21842,10 +21842,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function flipReorder(container, renderFn) {
     const rows = Array.from(container.children);
     const oldRects = new Map(rows.map((r) => [r.dataset.id, r.getBoundingClientRect()]));
+    // A rebuild empties the list, which snaps the scroll position back to the top (and made the cards impossible to
+    // scroll while updates kept arriving) - remember it and put it back.
+    const keepScroll = container.scrollTop;
     renderFn();
+    if (keepScroll) container.scrollTop = keepScroll;
     Array.from(container.children).forEach((r) => {
       const old = oldRects.get(r.dataset.id);
       if (!old) return;
+      // A card that was already on screen is redrawn in place: don't replay its pop-in (that was the flashing).
+      if (container.classList.contains("score-col") && !r.style.animation) r.style.animation = r.classList.contains("round-winner") ? "winnerPulse 1.5s ease-in-out infinite" : "none";
       const newRect = r.getBoundingClientRect();
       const dy = old.top - newRect.top;
       if (dy) {
