@@ -18972,7 +18972,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return Math.max(0, Math.round(answer * ratio * 100) / 100);
   }
 
-  function scheduleBotGuesses(roomCode, q, freshRound = false, round = roomState.round) {
+  function scheduleBotGuesses(roomCode, q, freshRound = false, round = roomState.round, fast = false) {
     if (!freshRound && questionClockPending(roomState)) return;
     const scope = botDecisionScope(roomState, q, round), hostId = currentPlayerId;
     if (freshRound) scope.clockKey = undefined; // untimed rounds clear the previous room clock
@@ -18984,7 +18984,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const p = players[id];
       if (!p || !p.isBot) return;
       if (existingGuesses[id] !== undefined) return; // already guessed - e.g. re-triggered after a host handoff
-      const delay = Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
+      const delay = fast ? 200 + Math.random() * 1500 : Math.min(1000 + Math.random() * 4000, timerMs * 0.7);
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
         if (!isHost || currentPlayerId !== hostId || roomState.paused) return;
@@ -19001,7 +19001,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
   }
 
-  function scheduleBotPicks(roomCode, sorted) {
+  function scheduleBotPicks(roomCode, sorted, fast = false) {
     const scope = botDecisionScope(roomState), hostId = currentPlayerId;
     const players = roomState.players || {};
     const existingPicks = roomState.picks || {};
@@ -19010,7 +19010,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!p || !p.isBot) return;
       if (existingPicks[id] !== undefined) return; // already picked - e.g. re-triggered after a host handoff
       const others = sorted.filter((e) => e.playerId !== id);
-      const delay = 1000 + Math.random() * 11000; // spread across the 15-second window
+      const delay = fast ? 200 + Math.random() * 1500 : 1000 + Math.random() * 11000; // spread across the 15-second window
       setTimeout(() => {
         if (currentRoomCode !== roomCode) return;
         if (!isHost || currentPlayerId !== hostId || roomState.paused) return;
@@ -19418,7 +19418,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (qBoard === "curtains" && qCurtainO < qCurtainTarget) return 100;
     return 0;
   }
-  let questionReadyWrite = null, questionClockWrite = null, questionBotsKey = null;
+  let questionReadyWrite = null, questionClockWrite = null, questionClockWriteAt = 0, questionBotsKey = null, botRescueAt = 0;
   function syncQuestionClock() {
     if (roomState?.phase === "question" && !roomState.paused && isHost && roomState.questionClock?.startedAt && questionBotsKey !== roomState.questionClock.key) {
       questionBotsKey = roomState.questionClock.key;
@@ -19433,9 +19433,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       set(ref(db, `rooms/${code}/players/${currentPlayerId}/questionReady`), readyToken)
         .catch(() => {}).finally(() => { if (questionReadyWrite === readyToken) questionReadyWrite = null; });
     }
-    if (!isHost || questionClockWrite === key) return;
+    // A start-the-clock write that never came back (app frozen mid-write) must not block the clock forever - retry after 5s.
+    if (!isHost || (questionClockWrite === key && Date.now() - questionClockWriteAt < 5000)) return;
     if (!beginQuestionClock(roomState, key, nowMs(), isPlayerAway)) return;
-    questionClockWrite = key;
+    questionClockWrite = key; questionClockWriteAt = Date.now();
     runTransaction(ref(db, `rooms/${code}`), room => beginQuestionClock(room, key, nowMs(), isPlayerAway))
       .then(result => {
         if (!result.committed || currentRoomCode !== code) return;
@@ -19455,6 +19456,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const d = roomState;
     if (!isHost || !currentRoomCode || !d || d.paused || document.hidden) return;
     if (d.phase === "hs" && nativeAudioActive && hsScreenEl.classList.contains("active")) { hsHostTick(); return; }
+    // A bot answer is a one-shot timer on this phone. If the app was backgrounded, those timers fire while we are still marked
+    // disconnected (bot answers are refused then) or never fire, and the bot would stay silent for the whole round - so
+    // whenever bots are still missing after their normal window, queue them again quickly.
+    if (nowMs() - botRescueAt > 3000) {
+      const bots = Object.keys(d.players || {}).filter((id) => d.players[id]?.isBot);
+      if (bots.length) {
+        if (d.phase === "question" && d.currentQuestion && !questionClockPending(d) && d.questionClock?.startedAt !== 0 && nowMs() > (d.questionClock?.startedAt || d.questionEndsAt - (currentSettings.timerSeconds || DEFAULT_ROUND_SECONDS) * 1000) + 6500 && bots.some((id) => d.guesses?.[id] === undefined)) {
+          botRescueAt = nowMs(); scheduleBotGuesses(currentRoomCode, d.currentQuestion, false, d.round, true);
+        } else if (d.phase === "answers" && d.answers && d.answersEndsAt && nowMs() > d.answersEndsAt - 4500 && bots.some((id) => d.picks?.[id] === undefined)) {
+          botRescueAt = nowMs(); scheduleBotPicks(currentRoomCode, d.answers, true);
+        }
+      }
+    }
     const due = {
       countdown: [d.countdownEndsAt, checkCountdownAdvance],
       question: [questionClockPending(d) ? d.questionClock.waitUntil : d.graceEndsAt || d.questionEndsAt, checkQuestionAdvance],
