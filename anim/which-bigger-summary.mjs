@@ -28,9 +28,10 @@ function elephantBody() {
   const style=`width:${width/w*100}%;height:${height/h*100}%;left:${-x/w*100}%;top:${-y/h*100}%`;
   return `<span class="wb-art-piece wb-elephant-body" style="aspect-ratio:${w}/${h}"><img src="anim/which-bigger-art/elephant-open.webp" alt="" draggable="false" style="${style}"><img class="wb-closed-eyes" src="anim/which-bigger-art/elephant-closed.webp" alt="" draggable="false" style="${style}"></span>`;
 }
-export function wbMascotsHtml(correct) {
+export function wbMascotsHtml(correct, variant) {
+  const pose = (correct ? ["spray", "bow", "bounce"] : ["stomp", "shake", "hop"]).includes(variant) ? variant : (correct ? "spray" : "stomp");
   const animal=correct
     ? `<div class="wb-summary-elephant"><span class="wb-tail-rig">${piece('elephant-tail')}</span>${elephantBody()}<span class="wb-trunk-rig">${piece('elephant-trunk')}<span class="wb-water-source">${drops()}</span></span></div>`
     : `<div class="wb-summary-mouse">${piece('mouse-body','wb-mouse-body')}<span class="wb-foot-rig">${piece('mouse-foot')}</span><span class="wb-stomp-impact"></span><span class="wb-angry-sign one">${anger}</span><span class="wb-angry-sign two">${anger}</span></div>`;
-  return `<div class="wb-result-mascot ${correct?'celebrate':'upset'}" aria-hidden="true">${animal}</div>`;
+  return `<div class="wb-result-mascot ${correct?'celebrate':'upset'} wb-reaction-${pose}" aria-hidden="true">${animal}</div>`;
 }

@@ -241,7 +241,7 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 .wb-mascots .wb-mc-t{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;transform-origin:var(--tp,20% 80%);animation:wbMcTail var(--tt,3.4s) ease-in-out infinite;animation-delay:var(--ph,0s)}
 @keyframes wbMcTail{0%,100%{transform:rotate(calc(var(--ta,6deg)*-1))}50%{transform:rotate(var(--ta,6deg))}}
 @keyframes wbMcTailFlick{0%{transform:rotate(calc(var(--ta,6deg)*-.7))}100%{transform:rotate(calc(var(--ta,6deg)*.7))}}
-.wb-mc-e{height:calc(112px*var(--wbm,1))}.wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-e{height:calc(164px*var(--wbm,1))}
+.wb-mc-e{height:calc(112px*var(--wbm,1))}.wb-mc-b[data-art]:not([data-art=""]) .wb-mc-e{height:calc(164px*var(--wbm,1))}
 .wb-mc-m{height:calc(82px*var(--wbm,1))}
 /* Breathing: a little taller and narrower on the in-breath, feet planted, the mouse a beat behind the elephant. */
 @keyframes wbMcIdle{0%,100%{transform:rotate(var(--lean)) scale(1,1)}50%{transform:translateY(calc(var(--bob)*-.6)) rotate(calc(var(--lean) + .8deg)) scale(.992,1.026)}}
@@ -256,7 +256,9 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 .wb-mascots[data-pose=proud] .wb-mc-b{animation:wbMcProud 2.4s ease-in-out infinite;animation-delay:var(--ph,0s)}
 .wb-mascots[data-pose=proud] .wb-mc-w{--ta:3deg}
 /* Holding breath while choosing: the tail hardly moves. */
-.wb-mascots[data-pick] .wb-mc-w{--ta:1.5deg}
+.wb-mascots[data-pick] .wb-mc-b[data-art=breath]{--ta:1.5deg}
+.wb-mascots[data-pick] .wb-mc-b[data-art=proud]{animation:wbMcProud 2s ease-in-out infinite}
+.wb-mascots[data-pick] .wb-mc-b[data-art=waiting]{animation:wbMcTap 2.4s ease-in-out infinite}
 /* Waiting a long time: the mouse taps its foot twice, then rests; the elephant sways; tails swing slow and wide. */
 @keyframes wbMcTap{0%,40%,100%{transform:rotate(0)}8%{transform:rotate(-4deg)}16%{transform:rotate(.5deg)}24%{transform:rotate(-4deg)}32%{transform:rotate(.5deg)}}
 @keyframes wbMcSway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
@@ -268,5 +270,32 @@ html[data-motion=reduce] .sv-earn-shield,html[data-motion=reduce] .sv-earn-shiel
 .wb-danger .wb-mascots .wb-mc-w .wb-mc-b,.wb-danger .wb-mascots.idle .wb-mc-w .wb-mc-b{animation:wbMcNerve 1.9s ease-in-out infinite;animation-delay:var(--ph,0s)}
 .wb-danger .wb-mascots .wb-mc-t{animation:wbMcTailFlick .42s ease-in-out infinite alternate;animation-delay:0s}
 html[data-motion=reduce] .wb-mc-b,html[data-motion=reduce] .wb-mascots .wb-mc-t,html[data-motion=reduce] .wb-mascots .wb-mc-ear{animation:none!important}
-.wb-mascots[data-pose]:not([data-pose=""]) .wb-mc-m{height:calc(124px*var(--wbm,1))}
+.wb-mc-b[data-art]:not([data-art=""]) .wb-mc-m{height:calc(124px*var(--wbm,1))}
 .wb-mascots[data-pick]{--spd:1s;--bob:1px}
+
+
+/* Alternate verdicts use the same illustrated joints with distinct body and limb timing. */
+.wb-reaction-bow .wb-summary-elephant{animation:wbVerdictBow 1.05s ease-in-out both,wbElBreathe 3.2s ease-in-out 1.05s infinite}
+.wb-reaction-bow .wb-trunk-rig{animation:wbTrunkBow 1.05s ease-in-out both}
+.wb-reaction-bow .wb-water-source,.wb-reaction-shake .wb-stomp-impact,.wb-reaction-hop .wb-stomp-impact{display:none}
+.wb-reaction-bounce .wb-summary-elephant{animation:wbVerdictBounce .95s ease-out both,wbElBreathe 3.2s ease-in-out .95s infinite}
+.wb-reaction-shake .wb-mouse-body{animation:wbVerdictShake 2.7s ease-in-out infinite}
+.wb-reaction-shake .wb-foot-rig{animation:none}
+.wb-reaction-hop .wb-mouse-body,.wb-reaction-hop .wb-foot-rig{animation:wbVerdictHop 2.9s ease-in-out infinite}
+@keyframes wbVerdictBow{
+  0%,100%{transform:none}35%,52%{transform:rotate(8deg) translateY(2px)}76%{transform:rotate(-3deg)}
+}
+@keyframes wbTrunkBow{
+  0%,100%{transform:rotate(30deg)}36%,52%{transform:rotate(55deg)}76%{transform:rotate(7deg)}
+}
+@keyframes wbVerdictBounce{
+  0%,100%{transform:none}12%,49%{transform:scale(1.04,.92)}
+  29%{transform:translateY(-10px) scale(.96,1.04)}66%{transform:translateY(-5px) scale(.98,1.025)}
+}
+@keyframes wbVerdictShake{
+  0%,9%,37%,100%{transform:none}15%,27%{transform:rotate(-6deg)}21%,32%{transform:rotate(5deg)}
+}
+@keyframes wbVerdictHop{
+  0%,8%,48%,100%{transform:none}14%,38%{transform:translateY(2px) scale(1.05,.94)}
+  25%{transform:translateY(-11px) scale(.96,1.03)}
+}
