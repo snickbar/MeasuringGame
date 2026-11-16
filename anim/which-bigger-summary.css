@@ -1,12 +1,16 @@
 /* One reacting animal and its verdict sit together near the center. */
 .wb-verdict .wb-result-stage{display:grid;grid-template-columns:150px 78px;justify-content:center;align-items:center;gap:12px;margin:0 auto;min-height:146px}
 .wb-result-mascot{position:relative;height:146px;width:150px;isolation:isolate}
-.wb-summary-elephant{position:absolute;left:0;top:4px;width:140px;aspect-ratio:1;transform-origin:45% 95%;animation:wbElPop .85s cubic-bezier(.3,1.2,.5,1) both,wbElBreathe 3.2s ease-in-out .85s infinite}
+.wb-summary-elephant{position:absolute;left:0;top:4px;width:140px;aspect-ratio:1;transform-origin:45% 95%;animation:wbElPop 5s ease-in-out .55s infinite}
 /* Right answer: crouch, spring up past standing height, settle, then breathe. The shadow beneath tightens and loosens with it. */
-@keyframes wbElPop{0%{transform:scale(1.04,.84)}30%{transform:scale(.96,1.1) translateY(-7px)}55%{transform:scale(1.02,.97)}78%{transform:scale(.995,1.015)}100%{transform:scale(1,1)}}
-@keyframes wbElBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(.992,1.022)}}
-.wb-result-mascot.celebrate::after{content:'';position:absolute;left:14px;bottom:2px;width:112px;height:10px;border-radius:50%;background:radial-gradient(ellipse,#5b3d1e38,transparent 70%);z-index:-1;animation:wbElShadow .85s cubic-bezier(.3,1.2,.5,1) both}
-@keyframes wbElShadow{0%{transform:scale(1.1);opacity:.9}30%{transform:scale(.72);opacity:.45}55%{transform:scale(1.04);opacity:.9}100%{transform:scale(1);opacity:.8}}
+@keyframes wbElPop{
+  0%,31%,100%{transform:none}
+  6%{transform:scale(1.04,.89)}
+  15%{transform:translateY(-7px) scale(.96,1.08)}
+  23%{transform:scale(1.02,.98)}
+}
+.wb-result-mascot.celebrate::after{content:'';position:absolute;left:14px;bottom:2px;width:112px;height:10px;border-radius:50%;background:radial-gradient(ellipse,#5b3d1e38,transparent 70%);z-index:-1;animation:wbElShadow 5s ease-in-out .55s infinite}
+@keyframes wbElShadow{0%,31%,100%{transform:scale(1);opacity:.8}6%{transform:scale(1.1);opacity:.9}15%{transform:scale(.72);opacity:.45}23%{transform:scale(1.04);opacity:.9}}
 .wb-summary-mouse{position:absolute;left:22px;top:9px;width:100px;aspect-ratio:1;z-index:2}
 .wb-verdict.bad .wb-result-stage{min-height:122px}
 .wb-verdict.bad .wb-result-mascot{height:122px}
@@ -18,9 +22,9 @@
 /* Seat the tail's rounded root inside the rump; the body covers its joint. */
 .wb-tail-rig{position:absolute;left:2%;top:59%;width:23%;transform-origin:93% 8%;animation:wbTailSway 3.4s ease-in-out infinite;z-index:0}
 @keyframes wbTailSway{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(13deg)}}
-.wb-trunk-rig{position:absolute;left:70%;top:8%;width:39%;z-index:2;transform-origin:16% 80%;animation:wbTrunkLift 5s ease-in-out infinite}
+.wb-trunk-rig{position:absolute;left:70%;top:8%;width:39%;z-index:2;transform-origin:16% 80%;transform:rotate(30deg);animation:wbTrunkLift 5s ease-in-out .55s infinite}
 .wb-water-source{position:absolute;left:81%;top:10%;width:0;height:0;pointer-events:none}
-.wb-water-drop{position:absolute;left:-2px;top:-2px;width:var(--drop-size);height:calc(var(--drop-size)*1.35);border-radius:65% 65% 55% 55%;background:#63c7f4;border:1px solid #2c9edb;box-shadow:inset 1px 1px 0 #d9f7ff;opacity:0;animation:wbWaterArc 5s var(--drop-delay) linear infinite}
+.wb-water-drop{position:absolute;left:-2px;top:-2px;width:var(--drop-size);height:calc(var(--drop-size)*1.35);border-radius:65% 65% 55% 55%;background:#63c7f4;border:1px solid #2c9edb;box-shadow:inset 1px 1px 0 #d9f7ff;opacity:0;animation:wbWaterArc 5s calc(.55s + var(--drop-delay)) linear infinite}
 @keyframes wbTrunkLift{0%,8%{transform:rotate(38deg)}16%{transform:rotate(-7deg)}22%{transform:rotate(1.5deg)}26%,52%{transform:rotate(0)}60%{transform:rotate(44deg)}66%,100%{transform:rotate(38deg)}}
 @keyframes wbWaterArc{0%,23%{opacity:0;transform:translate(0,0) scale(.6)}25%{opacity:1}32%{opacity:1;transform:translate(calc(var(--flight-x)*.85),calc(var(--flight-y)*-1)) rotate(var(--drop-tilt)) scale(1)}43%{opacity:.95;transform:translate(var(--flight-x),5px) rotate(var(--drop-tilt)) scale(.85)}46%,100%{opacity:0;transform:translate(calc(var(--flight-x)*1.12),19px) scale(.45)}}
 .wb-mouse-body{position:absolute;left:0;bottom:0;width:91%;z-index:1;transform-origin:65% 90%;animation:wbStompBody 4.6s ease-in-out infinite}
@@ -275,22 +279,37 @@ html[data-motion=reduce] .wb-mc-b,html[data-motion=reduce] .wb-mascots .wb-mc-t,
 
 
 /* Alternate verdicts use the same illustrated joints with distinct body and limb timing. */
-.wb-reaction-bow .wb-summary-elephant{animation:wbVerdictBow 1.05s ease-in-out both,wbElBreathe 3.2s ease-in-out 1.05s infinite}
-.wb-reaction-bow .wb-trunk-rig{animation:wbTrunkBow 1.05s ease-in-out both}
-.wb-reaction-bow .wb-water-source,.wb-reaction-shake .wb-stomp-impact,.wb-reaction-hop .wb-stomp-impact{display:none}
-.wb-reaction-bounce .wb-summary-elephant{animation:wbVerdictBounce .95s ease-out both,wbElBreathe 3.2s ease-in-out .95s infinite}
+/* Give the verdict time to read, then repeat the gesture with a rest between loops. */
+.wb-reaction-bow .wb-summary-elephant{animation:wbVerdictBow 3.8s ease-in-out .55s infinite}
+.wb-reaction-bow .wb-trunk-rig{animation:wbTrunkBow 3.8s ease-in-out .55s infinite}
+.wb-reaction-bow .wb-water-source,.wb-reaction-bounce .wb-water-source,
+.wb-reaction-shake .wb-stomp-impact,.wb-reaction-hop .wb-stomp-impact{display:none}
+.wb-reaction-bounce .wb-summary-elephant{animation:wbVerdictBounce 3.8s ease-in-out .55s infinite}
+.wb-reaction-bounce .wb-trunk-rig{animation:wbTrunkCheer 3.8s ease-in-out .55s infinite}
+.wb-result-mascot:is(.wb-reaction-bow,.wb-reaction-bounce)::after{animation:none}
 .wb-reaction-shake .wb-mouse-body{animation:wbVerdictShake 2.7s ease-in-out infinite}
 .wb-reaction-shake .wb-foot-rig{animation:none}
 .wb-reaction-hop .wb-mouse-body,.wb-reaction-hop .wb-foot-rig{animation:wbVerdictHop 2.9s ease-in-out infinite}
 @keyframes wbVerdictBow{
-  0%,100%{transform:none}35%,52%{transform:rotate(8deg) translateY(2px)}76%{transform:rotate(-3deg)}
+  0%,50%,100%{transform:none}
+  18%,29%{transform:rotate(10deg) translateY(3px)}
+  42%{transform:rotate(-2deg)}
 }
 @keyframes wbTrunkBow{
-  0%,100%{transform:rotate(30deg)}36%,52%{transform:rotate(55deg)}76%{transform:rotate(7deg)}
+  0%,50%,100%{transform:rotate(30deg)}
+  18%,29%{transform:rotate(55deg)}
+  42%{transform:rotate(12deg)}
 }
 @keyframes wbVerdictBounce{
-  0%,100%{transform:none}12%,49%{transform:scale(1.04,.92)}
-  29%{transform:translateY(-10px) scale(.96,1.04)}66%{transform:translateY(-5px) scale(.98,1.025)}
+  0%,49%,100%{transform:none}
+  7%,26%{transform:scale(1.04,.92)}
+  16%{transform:translateY(-12px) scale(.96,1.04)}
+  37%{transform:translateY(-8px) scale(.98,1.025)}
+}
+@keyframes wbTrunkCheer{
+  0%,49%,100%{transform:rotate(30deg)}
+  7%,26%{transform:rotate(42deg)}
+  16%,37%{transform:rotate(-6deg)}
 }
 @keyframes wbVerdictShake{
   0%,9%,37%,100%{transform:none}15%,27%{transform:rotate(-6deg)}21%,32%{transform:rotate(5deg)}
