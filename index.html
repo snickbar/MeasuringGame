@@ -4921,7 +4921,7 @@ if (location.protocol === "file:") {
   <button id="create-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
   <div class="setup-header setup-header-stack">
     <h2 id="create-banner" class="dc-title polish-banner"></h2>
-    <button id="create-room-btn" type="button">Pick Avatar</button>
+    <button class="menu-action-art art-pick-avatar" id="create-room-btn" type="button" data-fit-single-line="true">Pick Avatar</button>
   </div>
   <button type="button" class="dc-btn dc-alt tour-btn" id="create-tour-btn" data-tour="quick" hidden><img src="icons/watch-play.webp" alt=""><span>Watch how to play</span></button>
   <p id="create-settings-summary" class="cozy-settings-summary"></p>
@@ -5102,7 +5102,7 @@ if (location.protocol === "file:") {
   <button id="join-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
   <div class="setup-header setup-header-stack">
     <h2 id="join-banner" class="dc-title polish-banner plain-banner">Join Game</h2>
-    <button id="join-game-title" type="button">Pick Avatar</button>
+    <button class="menu-action-art art-pick-avatar" id="join-game-title" type="button" data-fit-single-line="true">Pick Avatar</button>
   </div>
 
   <div class="join-code-row">
@@ -5152,7 +5152,7 @@ if (location.protocol === "file:") {
   <div class="screen-lock">
   <button id="lobby-back-btn" type="button" class="screen-back-btn" aria-label="Back"><img src="icons/back-btn.webp" alt=""></button>
   <div class="players-header lobby-start-row">
-    <button id="host-start-btn" type="button" style="display:none;">Start Game</button>
+    <button class="menu-action-art art-start-game" id="host-start-btn" type="button" style="display:none;" data-fit-single-line="true">Start Game</button>
   </div>
   </div>
   <div id="lobby-rules" class="cozy-panel" aria-label="Room rules"></div>
@@ -12066,7 +12066,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ${complete ? dailyCalendarHtml(daily.calYm || daily.date.slice(0, 7), stampCalendar) : ""}
         ${dailyFlameHtml(streak, stampCalendar, complete ? `<div class="dc-note">Next challenge in ${dailyResetText()}</div>` : `<div class="dc-note">Play every day to keep it going. A new challenge arrives at midnight Eastern (in ${dailyResetText()}).</div>`)}
         ${complete ? '<button type="button" class="dc-btn dc-alt" id="dc-share">Share today’s result</button>'
-          : `${dailyCalendarHtml(daily.calYm || daily.date.slice(0, 7))}<div class="pin-bottom"><button type="button" class="dc-btn" id="dc-start">Start</button></div>`}
+          : `${dailyCalendarHtml(daily.calYm || daily.date.slice(0, 7))}<div class="pin-bottom"><button type="button" class="menu-action-art art-start-game dc-btn" id="dc-start" data-fit-single-line="true">Start</button></div>`}
         <h3 class="cs-h">Today's leaderboard</h3><div class="dc-card" id="dc-board">${skelRows(4)}</div>`;
       dailyLoadBoard();
       if (complete) dailyShowRank(total);
@@ -12455,7 +12455,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Points for the closest guess, plus second chances, crowd favorite and accuracy bonuses. Highest score at the end wins the party.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Every player earns coins based on their final score.</div></div>
       <h3 class="cs-h">Your personal best</h3>${classicBestHtml()}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="classic-start">Room Settings</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="classic-start" data-fit-single-line="true">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -12474,7 +12474,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function showRoomOptions({ title, like, extrasHtml = "", bindExtras = null, onCreate, back, host = teamvteamContentEl }) {
     const avail = roomOptsAvail(like), st = { tour: avail.tour && tourWanted(like), anim: true, mb: true };
     host.innerHTML = `<h2 class="dc-title">${title}</h2><p class="dc-sub">Room options</p>${roomOptsHtml(avail, st)}${extrasHtml}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="ro-create">Room Settings</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-pick-avatar dc-btn" id="ro-create" data-fit-single-line="true">Pick Avatar</button></div>`;
     roomOptsBack = back;
     host.querySelectorAll(".lobby-opt").forEach((b) => b.addEventListener("click", () => { st[b.dataset.opt] = !st[b.dataset.opt]; setLobbySwitch(b, st[b.dataset.opt]); }));
     bindExtras?.();
@@ -12504,7 +12504,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Survive together</div><div class="dc-note">You share 3 message bottles. You survive when the real answer sits between your two picks AND your bracket isn't too wide. HIGH &divide; LOW must stay within the max gap. It starts at ${HL_LIMIT_START}&times; and tightens by ${HL_LIMIT_STEP}&times; for every round you survive, down to ${HL_LIMIT_FLOOR}&times; after 10 wins. Cross your picks, miss the answer or go too wide and you lose a bottle. Survive 3 rounds to earn an empty bottle that breaks in place of a message bottle. You can hold one empty bottle at a time. Every fifth survival is a themed round worth double coins. A failed attempt keeps that theme.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">2 coins for every round you survive, every game. The free game ends at ${HL_FREE_CAP} rounds; Party Mode hosts can play endless.</div></div>
       <h3 class="cs-h">Your best runs</h3>${hlBestHtml()}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="hl-start">Room Settings</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hl-start" data-fit-single-line="true">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -12519,7 +12519,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card"><div class="dc-big">Bluffs can win</div><div class="dc-note">If everyone else folds, the pot is yours. If nobody still in picked correctly, the pot rolls over.</div></div>
       <div class="dc-card"><div class="dc-big">Outlast the table</div><div class="dc-note">Start with ${HS.HS_START_COINS} chips. The ante rises by 5 every 2 rounds. Run out of chips and you’re out. The last player standing or the biggest stack after ${HS.HS_MAX_ROUNDS} rounds wins.</div></div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="hs-start">Room Settings</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="hs-start" data-fit-single-line="true">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);
     overlayReturnScreen = partyScreenEl;
   }
@@ -12549,7 +12549,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <div class="dc-card"><div class="dc-big">Everyone takes a turn</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more. Highest score wins. Vote accuracy breaks ties, and a complete tie shares the win.</div></div>
       <div class="dc-card"><div class="dc-big">On the clock</div><div class="dc-note">60 seconds to make a claim, then 60 seconds to vote. After you submit, you can change your vote for up to 10 seconds if time remains. Missed votes earn no points. No Second Chance or power-ups.</div></div>
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="bluff-start">Room Settings</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="bluff-start" data-fit-single-line="true">Room Settings</button></div>`;
     openOverlay(teamvteamScreenEl);overlayReturnScreen=partyScreenEl;
     document.getElementById('bluff-start').onclick=()=>showRoomOptions({title:'Bluff the Room',like:{mode:'bluff'},back:openBluffInfo,
       extrasHtml:`<div class="dc-card"><div class="dc-big">Equal maker turns</div><div class="dc-note">Auto gives everyone two turns with 3 players, or one turn with 4 or more.</div>
@@ -12619,7 +12619,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card"><div class="dc-big">Scoring</div><div class="dc-note">Same rules as Classic Party &mdash; closest guess, second chances, crowd favorite &mdash; just credited to your team. If you and your teammate tie for the round win, your team only gets it once.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">Both teammates earn the same full amount, based on your team's final score.</div></div>
       <h3 class="cs-h">Your best teams</h3>${teamVTeamBestHtml()}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="tvt-start">Room Settings</button></div>`;
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tvt-start" data-fit-single-line="true">Room Settings</button></div>`;
   }
   function openTeamVTeamInfo() {
     renderTeamVTeamInfo();
@@ -13953,7 +13953,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="dc-card dc-hot"><div class="dc-big">Play as a team</div><div class="dc-note">You and your partner each answer the same 5 questions independently - we average your two guesses and score that. Rated the same way as Solo Worlds: up to 3 stars for a great run.</div></div>
       <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${WORLD_STAR_COINS} coins for every star your team earns, every game you play - replay for more.</div></div>
       <h3 class="cs-h">Your top 5 for ${escapeHtml(w.name)}</h3>${teamWorldsBestHtml(w.id)}
-      <div class="pin-bottom"><button type="button" class="dc-btn" id="tw-start">Room Settings</button>
+      <div class="pin-bottom"><button type="button" class="menu-action-art art-room-settings dc-btn" id="tw-start" data-fit-single-line="true">Room Settings</button>
       <button type="button" class="dc-btn dc-alt" id="tw-back-to-list">Pick another World</button></div>`;
   }
   function openTeamWorldsScreen() {
@@ -14242,7 +14242,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const title = mo.level === 4 ? "Mega Challenge" : `Level ${mo.level}`;
       el.innerHTML = `<button type="button" class="mc-back" id="mo-levels">\u2039 Levels</button><h2 class="dc-title">${name} ${title}</h2><p class="dc-sub">${mo.questions.length} questions \u00b7 the same for everyone</p>${tourBtn('monthly')}
         <div class="dc-card">${thumbs(mo.split[mo.level], monthlySeenIndexes({ levels: mo.prog }, mo.split, mo.level))}</div>
-        <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-start">Start</button></div>
+        <div class="pin-bottom"><button type="button" class="menu-action-art art-start-game dc-btn" id="mo-start" data-fit-single-line="true">Start</button></div>
         <h3 class="cs-h">${title} leaderboard</h3><div class="dc-card" id="mo-board">${skelRows(4)}</div>`;
       monthlyLoadBoard();
       return;
@@ -14816,7 +14816,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <p class="dc-note">Questions get trickier as you go.</p>
         </div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">${SURVIVAL_COINS_PER} coins for every round you survive. Every 5th round is a surprise themed round that pays ${SURVIVAL_THEME_COINS} coins.</div></div>
-        ${soloResumeHtml("survival")}${survivalRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="sv-start">${readSoloSession("survival")?"New run":"Start"}</button></div>
+        ${soloResumeHtml("survival")}${survivalRecordsHtml()}<div class="pin-bottom"><button type="button" class="menu-action-art art-start-game dc-btn" id="sv-start" data-fit-single-line="true">${readSoloSession("survival")?"New run":"Start"}</button></div>
         <button type="button" class="dc-btn dc-alt" id="sv-help">How scoring works</button>
         <h3 class="cs-h">Best survivors</h3><div class="dc-card" id="sv-board">${skelRows(4)}</div>`;
       survivalLoadBoard();
@@ -15225,7 +15225,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       el.innerHTML = `<h2 class="dc-title">Which Is Bigger</h2><p class="dc-sub">${wbSub()}</p>${tourBtn('wb')}
         <div class="dc-card dc-hot"><div class="dc-big">Tap the bigger one</div><div class="dc-note">You have ${WB_LIVES} lives. A wrong pick costs one. The two objects get closer in size the further you get.</div></div>
         <div class="dc-card"><div class="dc-big">Earn coins</div><div class="dc-note">1 coin for every 2 right picks, rounded up.</div></div>
-        ${soloResumeHtml("wb")}${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="dc-btn" id="wb-start">${readSoloSession("wb")?"New run":"Start"}</button></div>`;
+        ${soloResumeHtml("wb")}${wbRecordsHtml()}<div class="pin-bottom"><button type="button" class="menu-action-art art-start-game dc-btn" id="wb-start" data-fit-single-line="true">${readSoloSession("wb")?"New run":"Start"}</button></div>`;
       return;
     }
     if (wb.phase === "question") {
