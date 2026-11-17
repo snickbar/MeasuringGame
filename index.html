@@ -893,6 +893,8 @@ if (location.protocol === "file:") {
   .hs-pl-name { font-size: 12px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hs-pl-coins { font-size: 12px; color: #6b3a05; }
   .hs-pl.out { opacity: .45; filter: grayscale(.8); }
+  .hs-pl.player-frame-host { --player-frame-edge: 9px; padding: 10px 9px 11px; border-color: transparent; }
+  .hs-pl.player-frame-host > .player-frame-art { inset: -2px; z-index: 2; }
   .hs-pl.turn { border-color: #f2820f; background: #fff3d1; box-shadow: 0 0 0 3px rgba(242,130,15,.35); }
   .hs-pl.folded { opacity: .55; }
   .hs-pl.win { border-color: #4faa38; background: #e8f9df; }
@@ -11404,6 +11406,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       ? '<span class="player-frame-avatar">' + image + frameEdgeHtml(player.playerFrame, player.frameIndex) + '</span>'
       : image;
   }
+  // High Stakes player cards wear the equipped border around the whole card, like the other modes (not just around the avatar).
+  const hsFrameCls = (player) => playerFrameArt(player?.playerFrame) ? " player-frame-host" : "";
+  const hsFrameArt = (player) => frameEdgeHtml(player?.playerFrame, player?.frameIndex);
   const myGameFrameIndex = () => Number((currentPlayers[currentPlayerId] || {}).frameIndex) || 0;
   let pendingPlayerFrame;
   function shownPlayerFrame() {
@@ -13441,7 +13446,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const p = (roomState.players || {})[id];
     const out = !!hs.out?.[id];
     const coins = hs.chips[id] ?? 0;
-    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${framedAvatar(p)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}</div>`;
+    return `<div class="hs-pl${out ? " out" : ""}${extra.cls || ""}${hsFrameCls(p)}" data-hs-pl="${id}"${hsNeonStyle(id)}><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === currentPlayerId ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${extra.tag ? `<span class="hs-tag ${extra.tagCls || ""}">${extra.tag}</span>` : ""}${hsFrameArt(p)}</div>`;
   }
   // Standings rows slide from their old place into the new order: measure one row step so CSS can offset each by its rank change.
   function hsSlideStand() {
@@ -13688,7 +13693,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           }
         }
       }
-      return `<div class="hs-pl${out ? " out" : ""}${cls}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${framedAvatar(p)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}</div>`;
+      return `<div class="hs-pl${out ? " out" : ""}${cls}${hsFrameCls(p)}" data-hs-pl="${id}" data-hs-side="${side}"${hsNeonStyle(id)}><span class="avatar${cls === " win" ? " hs-dance" : ""}">${avatarHtml(p?.avatar)}</span><b class="hs-pl-name">${escapeHtml(p?.name || "Gone")}${id === me ? " (you)" : ""}</b><span class="hs-pl-coins">${out ? "Out" : hsFmt(shown[id] ?? 0) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${allIn ? '<span class="hs-tag all-in">All in</span>' : ""}${tag ? `<span class="hs-tag ${tagCls}">${tag}</span>` : ""}${hsFrameArt(p)}</div>`;
     };
     const colL = [], colR = [];
     hs.seatsAll.forEach((id, i) => (i % 2 ? colR : colL).push(cardFor(id, i % 2 ? "r" : "l")));
