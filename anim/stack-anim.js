@@ -1051,8 +1051,14 @@ export function createStackAnimation(container, options = {}) {
       const readable = fast && R >= 100;
       // Applied straight away (it only grows as the camera zooms out), so the objects settle at their
       // readable size without first shrinking and then growing back.
-      const climbBoost = readable ? 1 - eOut : 0;
-      const pitch = Ls + Math.max(0, Math.min(30, Ls * 3) - Ls) * climbBoost;
+      const boosted = (ls) => ls + Math.max(0, Math.min(30, ls * 3) - ls);
+      let pitch = readable ? boosted(Ls) : Ls;
+      if (readable && eOut > 0) {
+        // On the way back out, go straight from the stack's size to the final size, never dipping in between.
+        const c0 = cameraAt(tHoldEnd).c, cZ = cameraAt(tEnd).c;
+        const from = boosted(tw * c0 / aSm), to = Math.max(tw * cZ, stripMin) * finaleScale / aSm;
+        pitch = Math.max(Ls, Math.exp(Math.log(from) + (Math.log(to) - Math.log(from)) * eOut));
+      }
       const stackBase = sy0 + count * (pitch - Ls);
       const stackWidth = pitch * aSm;
 
