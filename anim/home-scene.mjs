@@ -15,6 +15,7 @@ const CUSTOM_HOME = {
   "cat-room": () => import("./home-cat-room.mjs"),
   jungle: () => import("./home-jungle.mjs"),
   gadgets: () => import("./home-gadgets.mjs"),
+  bedroom: () => import("./home-bedroom.mjs"),
 };
 // Scenes switched on so far (reviewed one at a time) and how each one's layers and critters move.
 // critters: row (% of picture height), size (visible width, % of picture width), secs per crossing, start delay, dir (1 = left to right,
@@ -57,7 +58,7 @@ function boing(scene, role) {
     const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
     // Tiny phone speakers lose the old 130/150 Hz sine tones on Launchpad and
     // Castle. Keep every cue in an audible range, with gentle harmonics there.
-    const pitch = ({ games: 430, town: 340, house: 540, underwater: 600, lighthouse: 720, "toy-box": 480, wheels: 430, dragon: 380, space: 360, 'make-believe':620,'holiday-mix':520, gadgets: 450 })[scene] || 350;
+    const pitch = ({ games: 430, town: 340, house: 540, underwater: 600, lighthouse: 720, "toy-box": 480, wheels: 430, dragon: 380, space: 360, 'make-believe':620,'holiday-mix':520, gadgets: 450, bedroom: 400 })[scene] || 350;
     o.type = ['toy-box','wheels','dragon'].includes(scene) ? "triangle" : "sine"; o.frequency.setValueAtTime(pitch, t); o.frequency.exponentialRampToValueAtTime(pitch * (role ? 1.3 : 1.7), t + .09); o.frequency.exponentialRampToValueAtTime(pitch * .9, t + .22);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16 * vol, t + .015); g.gain.exponentialRampToValueAtTime(0.0001, t + .26);
     o.connect(g); g.connect(actx.destination); tapSounds.add(o); o.onended = () => tapSounds.delete(o); o.start(t); o.stop(t + .28);
