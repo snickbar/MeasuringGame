@@ -12,7 +12,7 @@ const NAMES = ['plate', 'clocks', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub
   'plant-1', 'pendulum', 'fp-front', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
   ...SLICES.map((_, i) => 'clock-' + i)];
 // The fireplace was moved 55 px lower in the background picture (the clocks stand on the floor level with its hearth); everything on it follows.
-const RATTLE = [{ transform: 'none' }, { transform: 'translate(-3%,-.5%) rotate(-5deg)', offset: .1 }, { transform: 'translate(3%,.5%) rotate(5deg)', offset: .25 }, { transform: 'translate(-3%,0) rotate(-4deg)', offset: .4 }, { transform: 'translate(2.5%,0) rotate(4deg)', offset: .55 }, { transform: 'translate(-1.5%,0) rotate(-2deg)', offset: .7 }, { transform: 'translate(1%,0) rotate(1.5deg)', offset: .85 }, { transform: 'none' }];
+const RATTLE = [{ transform: 'none' }, { transform: 'translate(-2.2%,0) rotate(-3.5deg)', offset: .1 }, { transform: 'translate(2.2%,0) rotate(3.5deg)', offset: .25 }, { transform: 'translate(-2.2%,0) rotate(-3deg)', offset: .4 }, { transform: 'translate(1.8%,0) rotate(3deg)', offset: .55 }, { transform: 'translate(-1.1%,0) rotate(-1.5deg)', offset: .7 }, { transform: 'translate(.7%,0) rotate(1deg)', offset: .85 }, { transform: 'none' }];
 const FIRE_DY = 55;
 const FIRE = { x: 212, y: 1316 + FIRE_DY, w: 262, h: 186 };
 
@@ -66,7 +66,7 @@ export async function build(home, load, current) {
       const kind = e.target.closest('[data-w]')?.dataset.w; if (!kind || !gate.isActive()) return;
       play(kind === 'clock' ? 1 : 0);
       if (kind === 'fire') { flash(root, 'stoked', 2800); for (let i = 0; i < 6; i++) later(spark, i * 160); }
-      else if (kind === 'clock') { const c = e.target.closest('.l-clock'), st = q(`.l-static[data-i="${c.dataset.i}"]`); st.style.visibility = 'hidden'; clearTimeout(st._t); st._t = later(() => { st.style.visibility = ''; }, 900); c.dataset.rattle = ''; clearTimeout(c._t); c._t = later(() => { delete c.dataset.rattle; }, 900); c.animate(RATTLE, { duration: 900, easing: 'ease-in-out' }); }
+      else if (kind === 'clock') { const c = e.target.closest('.l-clock'), st = q(`.l-static[data-i="${c.dataset.i}"]`); st.dataset.hole = ''; clearTimeout(st._t); st._t = later(() => { delete st.dataset.hole; }, 900); c.dataset.rattle = ''; clearTimeout(c._t); c._t = later(() => { delete c.dataset.rattle; }, 900); c.animate(RATTLE, { duration: 900, easing: 'ease-in-out' }); }
       else if (kind === 'lamp') flash(lamp, 'shake', 1500);
     });
     const gate = watchActive(home, root, on => {
