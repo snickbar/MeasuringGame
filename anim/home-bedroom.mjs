@@ -8,7 +8,7 @@ const SLICES = [[0, 125], [124, 240], [233, 349], [343, 459], [452, 568], [559, 
 const FACE_Y = [75, 190, 299, 409, 518, 625, 731, 837, 942], FACE_X = 70;
 // Hands: [piece width, height, scale, pivot y inside the piece, seconds per turn]
 const HANDS = { hour: [107, 504, .047, 444, 1500], min: [53, 744, .0457, 690, 150], sec: [101, 747, .05, 603, 24] };
-const NAMES = ['plate', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub', 'lamp', 'blob-1', 'blob-2', 'blob-3', 'blob-4', 'blob-5', 'curtain-1',
+const NAMES = ['plate', 'clocks', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub', 'lamp', 'blob-1', 'blob-2', 'blob-3', 'blob-4', 'blob-5', 'curtain-1',
   'plant-1', 'pendulum', 'cat-1', 'cat-2', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
   ...SLICES.map((_, i) => 'clock-' + i)];
 const FIRE = { x: 212, y: 1316, w: 262, h: 186 };
@@ -26,7 +26,7 @@ export async function build(home, load, current) {
       return `<div class="l-hand l-${kind}" style="left:${pct(cx - px, 144)};top:${pct(cy - pyy, h)};width:${pct(w, 144)};height:${pct(hh, h)};transform-origin:50% ${(py / h0 * 100).toFixed(1)}%;--a:${spin}deg;--d:${secs}s">${img(D + 'hand-' + (kind === 'min' ? 'min' : kind) + '.webp')}</div>`;
     };
     return `<div class="l-clock" data-i="${i}" style="${place(CLOCK.x, CLOCK.y + t, CLOCK.w, h)}z-index:${i + 1}">
-      ${img(D + 'clock-' + i + '.webp', 'l-clock-img')}${hand('hour', start)}${hand('min', start * 7 % 360)}${hand('sec', start * 3 % 360)}
+      ${img(D + 'clock-' + i + '.webp', 'l-clock-img' + (i === 0 ? ' l-first' : i === 8 ? ' l-last' : ''))}${hand('hour', start)}${hand('min', start * 7 % 360)}${hand('sec', start * 3 % 360)}
       <img class="l-hub" src="${D}hand-hub.webp" alt="" draggable="false" style="left:${pct(cx - 4.5, 144)};top:${pct(cy - 4.5, h)};width:${pct(9, 144)}">
       ${hit('clock', CLOCK.x, CLOCK.y + t, CLOCK.w, h, 'Rattle alarm clock ' + (i + 1)).replace('class="w-hit"', `class="w-hit l-clock-hit" data-i="${i}"`)}</div>`;
   }).join('');
@@ -41,6 +41,7 @@ export async function build(home, load, current) {
     <div class="l-lamp" style="${place(289, 966, 98)}">${img(D + 'lamp.webp', 'l-lamp-img')}<div class="l-blobs">${[1, 2, 3, 4, 5].map(n => img(D + `blob-${n}.webp`, 'l-blob l-blob-' + n)).join('')}</div></div>
     <div class="l-pend-clip" style="${place(922, 906, 82, 86)}"><div class="l-pendulum" style="left:${(936 - 922) / 82 * 100}%;top:${(844 - 906) / 86 * 100}%;width:${48 / 82 * 100}%">${img(D + 'pendulum.webp')}</div></div>
     <div class="l-cat" style="${place(833, 1595, 173)}">${img(D + 'cat-1.webp', 'l-cat-1')}${img(D + 'cat-2.webp', 'l-cat-2')}<div class="l-zzz"></div></div>
+    ${img(D + 'clocks.webp', 'l-clocks-static', place(CLOCK.x, CLOCK.y, CLOCK.w))}
     ${clocks}
     ${hit('fire', FIRE.x, FIRE.y - 40, FIRE.w, FIRE.h + 80, 'Stoke the fire')}
     ${hit('lamp', 280, 960, 116, 210, 'Shake the lava lamp')}
