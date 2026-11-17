@@ -394,31 +394,26 @@ addVariant('desert', c => { c.flyers = 'hawks'; });
 addVariant('grass', c => { c.pieces = [balloons, kite]; });
 addVariant('fair', c => { c.pieces = [{ ...balloons, prob: .85 }]; });
 addVariant('resort', c => { c.pieces = [kite]; });
-addVariant('enchanted', c => { c.pieces = [{ img: 'enchanted-reveal-lantern', cell: 700, prob: .6, w: 30, speed: 4, bob: 10, sway: .06, minH: 600 }]; });
 
 // Indoor v2: wall decorations up the climb; Kitchen, Library and Living Room also get a deep floor with rows of furniture.
 addVariant('kitchen', c => {
   c.floor = 'kitchen-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
-  c.floorDepth = { par: .5, tables: [{ img: 'kitchen-v2-furn-0', s: 1.10 }, { img: 'kitchen-v2-furn-1', s: 1.11 }, { img: 'kitchen-v2-furn-2', s: 1.11 }, { img: 'kitchen-v2-furn-3', s: 0.93 }, { img: 'kitchen-v2-furn-4', s: 1.13 }, { img: 'kitchen-v2-furn-5', s: 0.76 }, { img: 'kitchen-v2-furn-6', s: 1.01 }, { img: 'kitchen-v2-furn-7', s: 0.84 }],
-    rows: [{ r: 0.06, w: 0.036, gap: 0.085, jitter: .06 }, { r: 0.14, w: 0.046, gap: 0.105, jitter: .06 }, { r: 0.24, w: 0.058, gap: 0.13, jitter: .06 }, { r: 0.35, w: 0.072, gap: 0.16, jitter: .06 }] };
+  c.floorDepth = { par: .5, tables: [{ img: 'kitchen-v2-furn-3', s: .93 }, { img: 'kitchen-v2-furn-4', s: 1.13 }, { img: 'kitchen-v2-furn-5', s: .76 }, { img: 'kitchen-v2-furn-7', s: .84 }],
+    rows: [{ r: 0.06, w: 0.036, gap: 0.12, jitter: .08 }, { r: 0.14, w: 0.046, gap: 0.15, jitter: .08 }, { r: 0.25, w: 0.058, gap: 0.19, jitter: .08 }],
+    singles: [{ img: 'kitchen-v2-furn-2', r: .2, x: .27, w: .22 }, { img: 'kitchen-climb-island', r: .4, x: .73, w: .49 }] };
   c.parallax = [{ img: 'kitchen-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 280 }];
   c.wallPieces = [{ img: 'kitchen-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'kitchen-v2-wall-1', x: 0.74, w: 0.267 }, { img: 'kitchen-v2-wall-2', x: 0.7, w: 0.204 }, { img: 'kitchen-v2-wall-3', x: 0.28, w: 0.240 }, { img: 'kitchen-v2-wall-4', x: 0.22, w: 0.239 }, { img: 'kitchen-v2-wall-5', x: 0.78, w: 0.233 }, { img: 'kitchen-v2-wall-6', x: 0.76, w: 0.264 }, { img: 'kitchen-v2-wall-7', x: 0.26, w: 0.224 }];
 });
 addVariant('library', c => {
   c.floor = 'library-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
   c.floorDepth = { par: .5, tables: [{ img: 'library-v2-furn-0', s: 1.09 }, { img: 'library-v2-furn-1', s: 0.94 }, { img: 'library-v2-furn-2', s: 1.03 }, { img: 'library-v2-furn-3', s: 0.81 }, { img: 'library-v2-furn-4', s: 0.95 }, { img: 'library-v2-furn-5', s: 1.09 }, { img: 'library-v2-furn-6', s: 1.12 }, { img: 'library-v2-furn-7', s: 0.96 }],
-    rows: [{ r: 0.06, w: 0.036, gap: 0.085, jitter: .06 }, { r: 0.14, w: 0.046, gap: 0.105, jitter: .06 }, { r: 0.24, w: 0.058, gap: 0.13, jitter: .06 }, { r: 0.35, w: 0.072, gap: 0.16, jitter: .06 }] };
+    rows: [{ r: 0.06, w: 0.04, gap: 0.05, tables: [{ img: 'library-v2-furn-2', s: 1.06 }] }, { r: 0.13, w: 0.048, gap: 0.06, tables: [{ img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-3', s: .83 }] }, { r: 0.21, w: 0.057, gap: 0.072, tables: [{ img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-2', s: 1.06 }, { img: 'library-v2-furn-7', s: .99 }] }, { r: 0.3, w: 0.067, gap: 0.085, tables: [{ img: 'library-v2-furn-2', s: 1.06 }] },
+      { r: 0.4, w: 0.078, gap: 0.16, jitter: .08, tables: [{ img: 'library-v2-furn-0', s: 1.12 }, { img: 'library-v2-furn-5', s: 1.12 }] }] };
   c.parallax = [{ img: 'library-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 227 }];
   c.wallPieces = [{ img: 'library-v2-wall-0', x: 0.25, w: 0.269 }, { img: 'library-v2-wall-1', x: 0.74, w: 0.231 }, { img: 'library-v2-wall-2', x: 0.7, w: 0.230 }, { img: 'library-v2-wall-3', x: 0.28, w: 0.226 }, { img: 'library-v2-wall-4', x: 0.22, w: 0.276 }, { img: 'library-v2-wall-5', x: 0.78, w: 0.246 }, { img: 'library-v2-wall-6', x: 0.76, w: 0.213 }, { img: 'library-v2-wall-7', x: 0.26, w: 0.269 }]; c.bookcase = undefined;
 });
-addVariant('living', c => {
-  c.floor = 'living-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
-  c.floorDepth = { par: .5, tables: [{ img: 'living-v2-furn-0', s: 1.23 }, { img: 'living-v2-furn-1', s: 1.14 }, { img: 'living-v2-furn-2', s: 1.09 }, { img: 'living-v2-furn-3', s: 0.80 }, { img: 'living-v2-furn-4', s: 0.52 }, { img: 'living-v2-furn-5', s: 1.02 }, { img: 'living-v2-furn-6', s: 1.17 }, { img: 'living-v2-furn-7', s: 1.03 }],
-    rows: [{ r: 0.06, w: 0.036, gap: 0.085, jitter: .06 }, { r: 0.14, w: 0.046, gap: 0.105, jitter: .06 }, { r: 0.24, w: 0.058, gap: 0.13, jitter: .06 }, { r: 0.35, w: 0.072, gap: 0.16, jitter: .06 }] };
-  c.parallax = [{ img: 'living-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 284 }];
-  c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; c.roomPlant = undefined;
-});
-addVariant('workshop', c => { c.wallPieces = [{ img: 'workshop-v2-wall-0', x: 0.25, w: 0.235 }, { img: 'workshop-v2-wall-1', x: 0.74, w: 0.257 }, { img: 'workshop-v2-wall-2', x: 0.7, w: 0.205 }, { img: 'workshop-v2-wall-3', x: 0.28, w: 0.271 }, { img: 'workshop-v2-wall-4', x: 0.22, w: 0.171 }, { img: 'workshop-v2-wall-5', x: 0.78, w: 0.278 }, { img: 'workshop-v2-wall-6', x: 0.76, w: 0.186 }, { img: 'workshop-v2-wall-7', x: 0.26, w: 0.194 }]; });
+addVariant('living', c => { c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; });
+addVariant('workshop', c => { c.wallPiecesAbove = -1; c.wallPieces = [{ img: 'workshop-v2-wall-0', x: 0.25, w: 0.235 }, { img: 'workshop-v2-wall-1', x: 0.74, w: 0.257 }, { img: 'workshop-v2-wall-2', x: 0.7, w: 0.205 }, { img: 'workshop-v2-wall-3', x: 0.28, w: 0.271 }, { img: 'workshop-v2-wall-4', x: 0.22, w: 0.171 }, { img: 'workshop-v2-wall-5', x: 0.78, w: 0.278 }, { img: 'workshop-v2-wall-6', x: 0.76, w: 0.186 }, { img: 'workshop-v2-wall-7', x: 0.26, w: 0.194 }]; });
 addVariant('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'tabletop-v2-wall-1', x: 0.74, w: 0.272 }, { img: 'tabletop-v2-wall-2', x: 0.7, w: 0.279 }, { img: 'tabletop-v2-wall-3', x: 0.28, w: 0.218 }, { img: 'tabletop-v2-wall-4', x: 0.22, w: 0.237 }, { img: 'tabletop-v2-wall-5', x: 0.78, w: 0.196 }, { img: 'tabletop-v2-wall-6', x: 0.76, w: 0.221 }, { img: 'tabletop-v2-wall-7', x: 0.26, w: 0.233 }]; });
 
 const imageCache = new Map();
@@ -436,7 +431,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), ...(config.floorDepth?.rows || []).flatMap(r => (r.tables || []).map(q => q.img || q)), ...(config.floorDepth?.singles || []).map(q => q.img), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1246,8 +1241,16 @@ function worldCells(groundTop, height, gs, cell) {
 }
 // Drifting art pieces (balloon, kite): placed per slice of the climb so they never repeat in the same spot,
 // each drifting one way at its own pace, bobbing and swaying a little.
+// The highest top edge of the scenery layers on screen right now; flying things stay above it.
+function sceneSkyline(kit, { height, shiftY, floorY, groundScale = 1 }) {
+  const base = (floorY ?? height - 40) - 4 * groundScale;
+  let top = Infinity;
+  for (const layer of kit.config.parallax || []) top = Math.min(top, base - layer.lift * groundScale + layer.par * shiftY);
+  return top === Infinity ? height : top;
+}
 function drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time = 0, reduced, groundScale = 1, seed = kit.id }) {
   const gs = groundScale, t = reduced ? 0 : time, groundTop = (floorY ?? height - 40) - 4 * gs + shiftY;
+  const skyline = sceneSkyline(kit, { height, shiftY, floorY, groundScale });
   for (const p0 of kit.config.pieces || []) {
     const image = kit.images[p0.img]; if (!image) continue;
     const p = p0;
@@ -1258,7 +1261,8 @@ function drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dar
       const x = ((((r(2) * c + dir * t * p.speed * gs - shiftX * .05) % c) + c) % c) - margin;
       const y = groundTop - yWorld * gs + Math.sin(t * .5 + r(4) * 6.28) * p.bob * gs, w = p.w * gs, h = w * image.naturalHeight / image.naturalWidth;
       if (y + h < 0 || y - h > height) continue;
-      ctx.save(); ctx.globalAlpha = vis * (dark ? .7 : 1); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.3 + r(5) * 6.28) * p.sway); if (p.face && dir !== p.face) ctx.scale(-1, 1); // `face`: which way the picture points (1 = right), so it never flies backwards
+      const clear = Math.max(0, Math.min(1, (skyline - (y + h / 2)) / (50 * gs))); if (!clear) continue; // never in front of the hills, trees or buildings
+      ctx.save(); ctx.globalAlpha = vis * clear * (dark ? .7 : 1); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.3 + r(5) * 6.28) * p.sway); if (p.face && dir !== p.face) ctx.scale(-1, 1); // `face`: which way the picture points (1 = right), so it never flies backwards
       ctx.drawImage(image, -w / 2, -h / 2, w, h); ctx.restore();
     }
   }
@@ -1822,8 +1826,11 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
         const wp = config.wallPieces;
         if (wp && (!roofPic || roofBottom > -1e8)) { // framed things hung on the wall, two to a wall tile, cycling through the list
           const idx = Math.round((y - shiftY * config.roomBackParallax) / h), period = wp.length >> 1, m = (((idx % period) + period) % period) * 2;
+          const low = config.wallPiecesAbove !== undefined && idx > config.wallPiecesAbove; // keep the lowest wall clear, e.g. behind the garage door
           ctx.save(); if (dark) ctx.filter = 'brightness(62%)';
+          if (!low) {
           for (let q = 0; q < 2; q++) { const pc = wp[m + q], pic = pc && images[pc.img]; if (!pic) continue; const pw = pc.w * width, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, width * pc.x - pw / 2, y + h * (q ? .72 : .28) - ph / 2, pw, ph); }
+          }
           ctx.restore();
         }
         if (glint && !reduced) {
@@ -2017,14 +2024,21 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
   const restTop = floorY - shiftY - tileH * meta.surface - floorInset(kit) * groundScale;
   const phase = shiftX + anchorX * (1 - groundScale), offset = ((phase % tile) + tile) % tile - tile;
   ctx.save(); if (dark) ctx.filter = 'brightness(60%)';
-  for (const [ri, row] of depth.rows.entries()) {
+  const items = [...depth.rows.map((row, ri) => ({ r: row.r, row, ri })), ...(depth.singles || []).map(one => ({ r: one.r, one }))].sort((a, b) => a.r - b.r);
+  for (const { row, ri, one } of items) {
+    if (one) { // a single piece placed once, by screen position
+      const pic = kit.images[one.img]; if (!pic) continue;
+      const base = restTop + one.r * tileH + floorDepthPar(depth, one.r, meta.surface) * shiftY, w = one.w * width * groundScale, h = w * pic.naturalHeight / pic.naturalWidth;
+      if (base - h < height && base > 0) ctx.drawImage(pic, width * one.x + shiftX - w / 2, base - h, w, h);
+      continue;
+    }
     const base = restTop + row.r * tileH + floorDepthPar(depth, row.r, meta.surface) * shiftY;
     const tw = row.w * tile; if (base - tw * 1.3 > height || base < 0) continue;
-    const count = Math.round(1 / row.gap);
+    const count = Math.round(1 / row.gap), list = row.tables || depth.tables;
     for (let k = 0; k < count; k++) {
-      const item = depth.tables[(k * 3 + ri * 5) % depth.tables.length], pic = kit.images[item.img || item]; if (!pic) continue;
+      const item = list[(k * 3 + ri * 5) % list.length], pic = kit.images[item.img || item]; if (!pic) continue;
       const iw = tw * (item.s || 1), th = iw * pic.naturalHeight / pic.naturalWidth, u = (k + (ri % 2 ? .5 : 0) + (row.jitter || 0) * Math.sin(k * 12.9 + ri * 7.3)) / count;
-      for (let x = offset + u * tile; x - tw / 2 < width; x += tile) if (x + iw / 2 > 0) ctx.drawImage(pic, x - iw / 2, base - th, iw, th);
+      for (let x = offset + u * tile; x - iw / 2 < width; x += tile) if (x + iw / 2 > 0) ctx.drawImage(pic, x - iw / 2, base - th, iw, th);
     }
   }
   ctx.restore();
