@@ -571,17 +571,17 @@ def('f10', 'f', FD + 5400, (s) => { const D = FD + 5400, g = box(s, 'left:0;top:
 def('f11', 'f', FD + 5200, (s) => { const D = FD + 5200, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), pr = [0, 1, 2, 3, 4, 5].map((i) => '56-harvest-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: pr, move: 'bob', lap: 3000, size: 28, items: 10 });
   /* cornucopia slides in and sits; produce rises out of its mouth (hidden inside the hole until clear), then tumbles out and lands */
-  const W = 150, H = W * A['55-cornucopia'].h / A['55-cornucopia'].w, cc = { x: 88, y: 372 }, rc = -8 * Math.PI / 180, rot = (x, y) => [x * Math.cos(rc) - y * Math.sin(rc), x * Math.sin(rc) + y * Math.cos(rc)];
+  const W = 150, H = W * A['55-cornucopia'].h / A['55-cornucopia'].w, FLOOR = Math.min(418, FC.vb - 150), cc = { x: Math.max(88, FC.vl + 82), y: FLOOR - 46 }, rc = -8 * Math.PI / 180, rot = (x, y) => [x * Math.cos(rc) - y * Math.sin(rc), x * Math.sin(rc) + y * Math.cos(rc)];
   const [hx, hy] = rot((.675 - .5) * W, (.55 - .5) * H), hole = { x: cc.x + hx, y: cc.y + hy }, rx = .165 * W, ry = .2 * H;
   const ell = (k) => 'polygon(' + Array.from({ length: 20 }, (_, i) => { const a = i / 20 * 6.2832, [ex, ey] = rot(k * rx * Math.cos(a), k * ry * Math.sin(a)); return `${hole.x + ex}px ${hole.y + ey}px`; }).join(',') + ')';
   const c = mk(g, '55-cornucopia', 0, 0, W, { z: 7 });
   path(c, D, FD, FD + 4300, (u) => { const e = Math.min(1, u / .16), out = Math.max(0, (u - .88) / .12); return { x: lerp(-100, cc.x, 1 - Math.pow(1 - e, 3)) - out * 170, y: cc.y, r: lerp(0, -8, e), op: 1 }; }, 60);
   for (let i = 0; i < 12; i++) { const t0 = FD + 800 + i * 170, wr = box(g, 'left:0;top:0;width:300px;height:440px;', 8), e = mk(wr, pr[i % 6], 0, 0, 34, { z: 1 }), vx = 35 + rnd() * 80, vy = -(120 + rnd() * 120), gv = 520, P = 320;
-    const p1 = { x: hole.x + rx * .9, y: hole.y - ry * .35 }, tl = (-vy + Math.sqrt(vy * vy + 2 * gv * (418 - p1.y))) / gv, LL = P + (tl + .9) * 1000;
+    const p1 = { x: hole.x + rx * .9, y: hole.y - ry * .35 }, tl = (-vy + Math.sqrt(vy * vy + 2 * gv * (FLOOR - p1.y))) / gv, LL = P + (tl + .9) * 1000;
     wr.animate([{ clipPath: ell(1.15), offset: 0 }, { clipPath: ell(1.15), offset: (t0 + P - 80) / D }, { clipPath: ell(80), offset: (t0 + P + 80) / D }, { clipPath: 'none', offset: (t0 + P + 100) / D }, { clipPath: 'none', offset: 1 }], { duration: D, fill: 'both' });
     path(e, D, t0, t0 + LL, (u) => { const ms = u * LL; let x, y, sc, r;
       if (ms < P) { const q = ms / P, qq = q * q * (3 - 2 * q); x = lerp(hole.x - rx * .2, p1.x, qq); y = lerp(hole.y + ry * .1, p1.y, qq); sc = .45 + .4 * qq; r = q * 40; }
-      else { const tt = (ms - P) / 1000; x = p1.x + vx * Math.min(tt, tl) + (tt > tl ? vx * .3 * (tt - tl) : 0); y = p1.y + vy * tt + .5 * gv * tt * tt; if (tt > tl) y = 418 - Math.abs(Math.sin((tt - tl) * 7)) * 20 * Math.max(0, 1 - (tt - tl) * 1.3); y = Math.min(y, 420); sc = .85 + .15 * Math.min(1, tt / .3); r = 40 + Math.min(tt, tl) * 260 * (i % 2 ? 1 : -1); }
+      else { const tt = (ms - P) / 1000; x = p1.x + vx * Math.min(tt, tl) + (tt > tl ? vx * .3 * (tt - tl) : 0); y = p1.y + vy * tt + .5 * gv * tt * tt; if (tt > tl) y = FLOOR - Math.abs(Math.sin((tt - tl) * 7)) * 20 * Math.max(0, 1 - (tt - tl) * 1.3); y = Math.min(y, FLOOR + 2); sc = .85 + .15 * Math.min(1, tt / .3); r = 40 + Math.min(tt, tl) * 260 * (i % 2 ? 1 : -1); }
       return { x, y, r, sx: sc, op: u > .88 ? (1 - u) / .12 : 1 }; }, Math.round(LL / 16)); } });
 def('f12', 'f', FD + 5000, (s) => { const D = FD + 5000, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), pn = [0, 1, 2, 3].map((i) => '61-present-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: [0, 1, 2, 3, 4].map((i) => '60-christmas-bulb-sheet-' + i), move: 'twinkle', lap: 3000, size: 24, items: 14 });
