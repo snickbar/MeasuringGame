@@ -1212,17 +1212,31 @@ if (location.protocol === "file:") {
   .hs-finale-amount small { font-size: 11px; }
   .hs-finale-winners.split .hs-finale-amount { font-size: clamp(15px,4.9vw,24px); }
   .hs-finale-empty { align-self: center; margin: 0 0 24px; color: #69442f; }
-  .hs-finale-standings { margin: 0 0 5px; padding: 6px 7px 4px; border: 1px solid #dfbc91; border-radius: 15px; background: #fff8ed; text-align: left; }
-  .hs-finale-standings h3 { margin: 1px 3px 5px; color: #543257; font-size: 15px; }
-  .hs-final-row { display: grid; grid-template-columns: 22px 24px minmax(0,1fr) auto; gap: 4px; align-items: center; padding: 2px 3px; min-height: 26px; border-top: 1px solid #e9d9cd; font-size: 12px; }
-  .hs-final-row.win { background: #fff3c4; border-radius: 6px; }
-  .hs-final-row .avatar-icon { width: 22px; height: 22px; object-fit: contain; }
-  .hs-finale-standings.dense .hs-final-row { min-height: 23px; padding-block: 1px; }
-  .hs-finale-standings.dense .avatar { display: grid; place-items: center; }
-  .hs-finale-standings.dense .avatar-icon { width: 20px; height: 20px; }
-  .hs-final-row > b { overflow-wrap: anywhere; }
-  .hs-final-pos { text-align: center; color: #704752; }
-  .hs-final-coins { display: flex; align-items: center; gap: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .hs-finale-standings { margin:0 0 5px; padding:0; border:0; background:transparent; text-align:left; }
+  .hs-finale-standings h3 { margin:0 0 6px; padding:5px 9px; background:#fff9eecc; border-radius:9px; color:#543257; font-size:15px; }
+  .hs-final-row {
+    position:relative; display:grid; grid-template-columns:27px 43px minmax(0,1fr) auto;
+    align-items:center; gap:6px; margin-bottom:7px; padding:7px 8px; min-height:65px;
+    border:2px solid #c8ad83; border-radius:12px; background:linear-gradient(#fffdf4,#f5e8d3);
+    box-shadow:0 2px 0 #84613e29; font-size:15px;
+  }
+  .hs-final-row.win { background:linear-gradient(#fff2b7,#ffe49f); border-color:#ba8d2c; }
+  .hs-final-row.me:not(.win) { background:linear-gradient(#f6fdff,#deeff6); border-color:#4b94b1; }
+  .hs-final-row .avatar { display:grid;place-items:center; }
+  .hs-final-row .avatar-icon { width:42px;height:42px;object-fit:contain; }
+  .hs-final-row > b { min-width:0;overflow-wrap:anywhere;line-height:1.1; }
+  .hs-final-pos { display:grid;place-items:center;width:25px;height:25px;border:1px solid #b69a68;border-radius:50%;background:#f5e6c8;font-size:16px;font-weight:600;color:#704752; }
+  .hs-final-coins { display:flex;align-items:center;justify-content:flex-end;gap:4px;white-space:nowrap;font-size:24px;font-weight:600;color:#623919;font-variant-numeric:tabular-nums; }
+  .hs-final-coins .hs-chip-inline { width:21px;height:21px;object-fit:contain;flex:none; }
+  .hs-final-row.busted { opacity:1; }
+  .hs-final-row.busted .hs-final-coins { font-size:16px;color:#796451; }
+  .hs-final-row.player-frame-host, .hs-final-row.me.player-frame-host { border-color:transparent;--player-frame-edge:9px; }
+  .hs-final-row.player-frame-host > .player-frame-art { inset:-2px; }
+  @media(max-width:350px){
+    .hs-final-row { grid-template-columns:24px 36px minmax(0,1fr) auto;gap:5px;padding:7px 6px; }
+    .hs-final-row .avatar-icon { width:35px;height:35px; }
+    .hs-final-coins { font-size:21px; }
+  }
   .hs-finale-wallet { display: grid; grid-template-columns: 29px minmax(0,1fr) auto; align-items: center; gap: 7px; margin: 0 0 5px; padding: 8px; text-align: left; border: 1px solid #d8ac6a; border-radius: 12px; background: #fff0ce; color: #64391a; }
   .hs-finale-wallet img { width: 29px; height: 29px; object-fit: contain; }
   .hs-finale-wallet h3 { margin: 0; font-size: 14px; }
@@ -13504,7 +13518,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const rw = hs.seatsAll.includes(me) ? HS.hsRewardFor(hs, me) : null;
     const players = data.players || {};
     const name = id => escapeHtml(players[id]?.name || 'Gone');
-    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar])]);
+    const sig = JSON.stringify([data.gameId, me, isHost, winners, rw, order.map(id => [id, hs.chips[id], players[id]?.name, players[id]?.avatar, players[id]?.playerFrame, players[id]?.frameIndex])]);
     if (hsFinalSig === sig && hsContentEl.querySelector('.hs-end-hero')) return;
     hsFinalSig = sig;
     document.getElementById('hs-turn-toast')?.remove();
@@ -13523,9 +13537,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     </div>`).join('');
     const standings = order.map(id => {
       const hasChips = hs.chips[id] > 0;
-      return `<div class="hs-final-row${winners.includes(id) ? ' win' : ''}${hasChips ? '' : ' busted'}">
+      return `<div class="hs-final-row${winners.includes(id) ? ' win' : ''}${hasChips ? '' : ' busted'}${id === me ? ' me' : ''}${playerFrameArt(players[id]?.playerFrame) ? ' player-frame-host' : ''}">
         <span class="hs-final-pos">${hasChips ? HS.hsPlaceOf(hs, id) : '–'}</span><span class="avatar">${avatarHtml(players[id]?.avatar)}</span>
-        <b>${name(id)}${id === me ? ' (you)' : ''}</b><span class="hs-final-coins">${hasChips ? hsChipsFmt(hs.chips[id]) + chip : 'Out'}</span>
+        <b>${name(id)}</b><span class="hs-final-coins">${hasChips ? hsChipsFmt(hs.chips[id]) + chip : 'Out'}</span>
+        ${frameEdgeHtml(players[id]?.playerFrame, players[id]?.frameIndex)}
       </div>`;
     }).join('');
     let html = `<div class="pin-top"><h2 class="hs-finale-banner"><img src="icons/poker-chip-stack.webp" alt="">High Stakes</h2><p class="hs-finale-tag">✦ FINAL RESULTS ✦</p></div>
