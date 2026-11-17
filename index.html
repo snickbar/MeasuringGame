@@ -3313,6 +3313,16 @@ if (location.protocol === "file:") {
      what filled its background (border-image-slice's "fill" keyword) - so this needs an
      explicit solid background of its own, or the page pattern behind it shows through. */
   .team-card { border-image: none; border-width: 4px; border-color: var(--tc); border-radius: 10px; background: #fffdf6; }
+  .score-card.team-card-live { display:flex; flex-direction:column; align-items:stretch; gap:2px; padding:3px 4px; }
+  .team-card-live-members { display:grid; gap:2px; }
+  .team-card-live-member { display:grid; grid-template-columns:22px minmax(0,1fr); align-items:center; gap:4px; }
+  .score-card.team-card-live .avatar { position:relative; width:22px; height:22px; min-height:0; padding:0; }
+  .score-card.team-card-live .name { font-size:clamp(10px, 2.8vw, 13px); text-align:left; white-space:normal; overflow-wrap:anywhere; }
+  .team-card-live-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:center; justify-items:center; gap:2px; padding-top:3px; border-top:1px solid #d9c6ab; text-align:center; }
+  .team-card-live-metric { display:grid; justify-items:center; align-items:center; min-width:0; gap:1px; }
+  .team-card-live-label { font-size:8px; line-height:1; color:#624c39; }
+  .score-card.team-card-live .pts { font-size:clamp(14px, 4vw, 18px); white-space:nowrap; }
+  .score-card.team-card-live .acc { font-size:clamp(9px, 2.8vw, 12px); line-height:1; }
   .team-card-avatars { grid-row: 1 / 3; grid-column: 1; display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center; padding: 1px 0; }
   .team-card-avatars .avatar { font-size: 15px; width: 32px; height: auto; min-height: 22px; display: flex; align-items: center; justify-content: center; }
   .medal {
@@ -22096,7 +22106,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const teamOf = {};
     Object.entries(currentPlayers).forEach(([id, p]) => { if (p.team) teamOf[p.team] = [...(teamOf[p.team] || []), id]; });
     const teams = Object.keys(teamOf);
-    const signature = gameMotionKey + teams.map((team) => {
+    const liveLayout = roomState.phase === "question" || roomState.phase === "waiting";
+    const signature = gameMotionKey + (liveLayout ? ":live:" : ":results:") + teams.map((team) => {
       const members = teamOf[team];
       const score = overrideScores ? (overrideScores[members[0]] || 0) : (currentPlayers[members[0]].score || 0);
       return `${team}:${score}:${members.map((id) => currentPlayers[id].avatar + currentPlayers[id].name + ":" + scoreColumnAverage(id, !!overrideScores) + ":" + (lockedIn(id) ? 1 : 0)).join(",")}`;
@@ -22146,8 +22157,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="sc-top"><span class="name">${names}</span></div>
           <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
         `;
+        if (liveLayout) {
+          box.classList.add("team-card-live");
+          const membersHtml = members.map((id) => {
+            const player = currentPlayers[id];
+            const lock = lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : "";
+            return `<div class="team-card-live-member"><span class="avatar">${framedAvatar(player)}${lock}</span><span class="name">${escapeHtml(player.name)}</span></div>`;
+          }).join("");
+          box.innerHTML = `${crown}<div class="team-card-live-members">${membersHtml}</div>
+            <div class="team-card-live-metrics">
+              <span class="team-card-live-metric" aria-label="Place ${rank}">${medal}<span class="team-card-live-label" aria-hidden="true">Place</span></span>
+              <span class="team-card-live-metric"><span class="pts">${score}</span><span class="team-card-live-label">Points</span></span>
+              <span class="team-card-live-metric"><span class="acc">${avg == null ? "&ndash;" : formatAccuracy(avg) + "%"}</span><span class="team-card-live-label">Accuracy</span></span>
+            </div>`;
+        }
         scoreColEl.appendChild(box);
-        fitNameToCard(box.querySelector(".name"));
+        if (!liveLayout) fitNameToCard(box.querySelector(".name"));
         if (team === celebratingId && roomState.phase !== "waiting") {
           celebrateLead(box, prefersReducedMotion());
           playSound("lead");
