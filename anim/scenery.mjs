@@ -415,7 +415,7 @@ improve('library', c => {
   c.parallax = [{ img: 'library-v2-back', par: .5, lift: 430, scale: 0.85, noFill: true, skyRow: 227 }];
   c.wallPieces = [{ img: 'library-v2-wall-0', x: 0.25, w: 0.269 }, { img: 'library-v2-wall-1', x: 0.74, w: 0.231 }, { img: 'library-v2-wall-2', x: 0.7, w: 0.230 }, { img: 'library-v2-wall-3', x: 0.28, w: 0.226 }, { img: 'library-v2-wall-4', x: 0.22, w: 0.276 }, { img: 'library-v2-wall-5', x: 0.78, w: 0.246 }, { img: 'library-v2-wall-6', x: 0.76, w: 0.213 }, { img: 'library-v2-wall-7', x: 0.26, w: 0.269 }]; c.bookcase = undefined;
 });
-addVariant('living', c => { c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; });
+improve('living', c => { c.wallSparse = true; c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; });
 improve('workshop', c => { c.wallPiecesAbove = -1; c.wallPieces = [{ img: 'workshop-v2-wall-0', x: 0.25, w: 0.235 }, { img: 'workshop-v2-wall-1', x: 0.74, w: 0.257 }, { img: 'workshop-v2-wall-2', x: 0.7, w: 0.205 }, { img: 'workshop-v2-wall-3', x: 0.28, w: 0.271 }, { img: 'workshop-v2-wall-4', x: 0.22, w: 0.171 }, { img: 'workshop-v2-wall-5', x: 0.78, w: 0.278 }, { img: 'workshop-v2-wall-6', x: 0.76, w: 0.186 }, { img: 'workshop-v2-wall-7', x: 0.26, w: 0.194 }]; });
 improve('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'tabletop-v2-wall-1', x: 0.74, w: 0.272 }, { img: 'tabletop-v2-wall-2', x: 0.7, w: 0.279 }, { img: 'tabletop-v2-wall-3', x: 0.28, w: 0.218 }, { img: 'tabletop-v2-wall-4', x: 0.22, w: 0.237 }, { img: 'tabletop-v2-wall-5', x: 0.78, w: 0.196 }, { img: 'tabletop-v2-wall-6', x: 0.76, w: 0.221 }, { img: 'tabletop-v2-wall-7', x: 0.26, w: 0.233 }]; });
 
@@ -1832,7 +1832,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
           const low = config.wallPiecesAbove !== undefined && idx > config.wallPiecesAbove; // keep the lowest wall clear, e.g. behind the garage door
           ctx.save(); if (dark) ctx.filter = 'brightness(62%)';
           if (!low) {
-          for (let q = 0; q < 2; q++) { const pc = wp[m + q], pic = pc && images[pc.img]; if (!pic) continue; const pw = pc.w * width, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, width * pc.x - pw / 2, y + h * (q ? .72 : .28) - ph / 2, pw, ph); }
+          for (let q = 0; q < 2; q++) { if (config.wallSparse && ((((idx * 2 + q) % 3) + 3) % 3) === 1) continue; const pc = wp[m + q], pic = pc && images[pc.img]; if (!pic) continue; const pw = pc.w * width, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, width * pc.x - pw / 2, y + h * (q ? .72 : .28) - ph / 2, pw, ph); }
           }
           ctx.restore();
         }
