@@ -3960,6 +3960,13 @@ if (location.protocol === "file:") {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .summary-row-body { display: flex; align-items: center; gap: 4px; }
+  .round-zero-note { color:#65503c; font-size:clamp(10px,2.7vw,13px); font-weight:500; line-height:1.2; text-wrap:pretty; }
+  .final-game-best { border-top:1px solid #d7bc86; margin-top:12px; padding-top:10px; text-align:left; }
+  .final-game-best h3 { display:flex; align-items:center; gap:6px; margin:0 0 6px; font-size:16px; }
+  .final-game-best ul { padding:0; margin:0; list-style:none; display:grid; gap:6px; }
+  .final-game-best li { display:flex; gap:8px; align-items:center; padding:6px 8px; border:1px solid #dcc79c; border-radius:8px; background:#fffaf0; overflow-wrap:anywhere; }
+  .final-game-best .avatar { width:30px; height:30px; flex:none; }
+  .final-game-best small { display:block; color:#654e39; margin-top:2px; line-height:1.2; }
   .summary-row .breakdown { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 3px; }
   .summary-row .roundpts {
     flex: 0 0 auto; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; line-height: .9; color: #000;
@@ -5406,6 +5413,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { careerXpTotal, roundCareerProfile } from "./anim/opponent-xp.mjs";
   import { createSubmissionMotion, createLeadMotion, playSubmissionBounce, celebrateLead, sparkleCoins } from "./anim/game-motion.mjs";
   import { roundAccuracy, formatAccuracy } from "./anim/accuracy.mjs";
+  import { zeroPointNote, roundBestGuesses, gameBestGuesses } from "./anim/round-result-notes.mjs";
   import { createObjectMemory } from "./anim/object-memory.mjs";
   import { mountSettingsNameEditor } from "./anim/settings-name-editor.mjs";
   import { createMonthlyPairs, validMonthlyPairs, restoreMonthlyPairs, monthlyBoardScore, MONTHLY_FORMAT, monthlyBoardKey, resetMonthlyProgress, monthlyLevelSplit, monthlyLevelStates, monthlyLockText, monthlyLevelCoins, monthlyReplayCoins, monthlySeenIndexes } from "./anim/monthly-challenge.mjs";
@@ -19107,7 +19115,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const now = new Date();
     const updates = {
       phase: "countdown", countdownRound: 1, countdownEndsAt, countdownBoard: pickRoomBoard(),
-      gameId: crypto.randomUUID(),
+      gameId: crypto.randomUUID(), bestGuessRounds: null,
       activePacks: activePackIdsFor(now, myProfile.holidayPacks), seasonPacks: seasonPackIds(now), fantasyIds: unlockedFantasyIds(),
     };
     if (roomState.settings?.mode === "teamworlds") updates.teamWorldsOrder = randomTeamWorldsOrder();
@@ -20232,6 +20240,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const revealDelayMs = ((roomState.settings || currentSettings).autoAdvanceSeconds || 5) * 1000;
     let revealAdvanceAt = nowMs() + revealDelayMs;
     const updates = { revealOrder: entries, revealIndex: 0, lastRoundPoints, truthPickedBy: truthPickedBy.length ? truthPickedBy : null, phase: "reveal", revealAdvanceAt };
+    const bestThisRound = roundBestGuesses(entries, q, roomState.round, playersSnap);
+    updates["bestGuessRounds/r" + roomState.round] = bestThisRound.length ? bestThisRound : null;
     // The answer animation plays between second chance and the one-by-one reveal. If it can't run
     // (nobody answered, an older question without picture ids, or the engine failed to load), the
     // game goes straight to the reveal like before.
@@ -20287,7 +20297,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       updates[`players/${e.playerId}/roundsCounted`] = (p.roundsCounted || 0) + 1;
       updates[`players/${e.playerId}/consecutiveWins`] = e.consecutiveWins;
       if (!p.bestGuess || Math.abs(e.accuracyPercent - 100) < Math.abs(p.bestGuess.percent - 100)) {
-        updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.effectiveGuess, rawGuess: e.guess, answer, prompt: q.prompt };
+        updates[`players/${e.playerId}/bestGuess`] = { percent: e.accuracyPercent, guess: e.effectiveGuess, rawGuess: e.guess, answer, prompt: q.prompt, round: roomState.round };
       }
     });
     // Sitting a round out counts as a 0% round in your average, so skipping questions can't protect your accuracy.
@@ -20485,7 +20495,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   async function playAgain(roomCode) {
     if (!isHost) return;
     const players = roomState.players || {};
-    const updates = { previousRankOrder: null, rankDeltas: null, gameId: crypto.randomUUID() };
+    const updates = { previousRankOrder: null, rankDeltas: null, gameId: crypto.randomUUID(), bestGuessRounds: null };
     Object.keys(players).forEach((id) => {
       updates[`players/${id}/score`] = 0;
       updates[`players/${id}/accuracySum`] = null;
@@ -22264,7 +22274,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const p = currentPlayers[id];
       const delta = (data.rankDeltas || {})[id] || 0;
       const roundPts = lastRoundPoints[id] || 0;
-      const bufferedEntry = (data.revealOrder || []).find(e => e.playerId === id && e.bufferUsed);
+      const revealEntry = (data.revealOrder || []).find(e => e.playerId === id);
+      const bufferedEntry = revealEntry?.bufferUsed ? revealEntry : null;
+      const zeroNote = roundPts === 0
+        ? zeroPointNote(revealEntry, data.currentQuestion?.answer, [data.gameId, data.round, id].join(":"))
+        : "";
       const chips = breakdown[id] || [];
       const li = document.createElement("li");
       li.className = "summary-row";
@@ -22280,7 +22294,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="summary-row-top"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span></div>
         ${bufferedEntry ? bufferResultNote(data.currentQuestion, bufferedEntry.guess, id, roundPts) : ""}
         <div class="summary-row-body lines-${Math.min(lineCount, 3)}">
-          <div class="breakdown">${chipHtml}</div>
+          <div class="breakdown">${chipHtml}${zeroNote ? `<span class="round-zero-note">${escapeHtml(zeroNote)}</span>` : ""}</div>
           <span class="roundpts${roundPts === 0 ? " zero" : ""}" data-score-total="${roundPts}">+${roundPts}</span>
         </div>
       `;
@@ -22696,8 +22710,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     finalListEl.innerHTML = "";
     const previousRecap=document.getElementById('final-session-recap');if(previousRecap)previousRecap.remove();
     const recap=document.createElement('div');recap.id='final-session-recap';recap.className='cozy-panel';
-    const me=currentPlayers[currentPlayerId],best=me?.bestGuess;
-    recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(me?.avatar||currentAvatar)}</span>${myPlace?.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.webp" alt="">':''}<b>${myPlace?.rank===1?'You won!':'Your game'}</b></div><div class="summary-result-number">${myFinalScore} <small>points</small></div><p>${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p>${best?`<p>Closest guess: ${formatAccuracy(best.percent)}% accurate</p>`:''}<button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
+    const me=currentPlayers[currentPlayerId];
+    recap.innerHTML=`<div class="summary-result-heading"><span class="avatar">${avatarHtml(me?.avatar||currentAvatar)}</span>${myPlace?.rank===1?'<img class="summary-result-trophy" src="icons/reactions/trophy.webp" alt="">':''}<b>${myPlace?.rank===1?'You won!':'Your game'}</b></div><div class="summary-result-number">${myFinalScore} <small>points</small></div><p>${myPlace?.avg==null?'—':formatAccuracy(myPlace.avg)+'%'} accuracy · ${myPlace?.rank===1?'Winner':'Place '+myPlace?.rank}</p><button type="button" id="share-session-result">Share my result</button><p class="cs-note">Your share includes your result, without other players' names.</p>`;
+    const best = gameBestGuesses(roomState.bestGuessRounds, currentPlayers);
+    if (best.length) {
+      const section = document.createElement("section");
+      section.className = "final-game-best";
+      section.innerHTML = '<h3><span class="icon-target-inline"></span>' +
+        (best.length > 1 ? "Best guesses · Perfect tie" : "Best guess of the game") + '</h3><ul>' +
+        best.map((row) => {
+          const guess = Number(row.rawGuess ?? row.guess).toLocaleString("en-US", { maximumFractionDigits: 2 });
+          const accuracy = row.percent < 100 && row.percent >= 99.95 ? "Over 99.9" : formatAccuracy(row.percent);
+          const adjusted = Number.isFinite(row.rawGuess) && row.rawGuess !== row.guess;
+          const round = Number.isInteger(row.round) ? " · Round " + row.round : "";
+          return '<li><span class="avatar">' + avatarHtml(row.avatar) + '</span><div><strong>' +
+            escapeHtml(row.name) + ' · ' + guess + '</strong><small>' +
+            accuracy + '% accurate' + (adjusted ? ' with Buffer' : '') + round +
+            '</small>' + (row.prompt ? '<small>' + escapeHtml(row.prompt) + '</small>' : '') + '</div></li>';
+        }).join("") + '</ul>';
+      recap.appendChild(section);
+    }
     finalListEl.after(recap);
     recap.querySelector('button').onclick=async(e)=>{const btn=e.currentTarget;const text=`Size Em Up! ${myPlace?.rank===1?'I won!':'I finished #'+myPlace?.rank} ${myFinalScore} points, ${formatAccuracy(myPlace?.avg||0)}% accurate. Can you size it up?`;const modeKey=roomState.settings?.mode;const modeLabel=(MODE_IDENTITIES[modeKey]?.label)||'Party Game';await shareResultCard({text,url:'https://size-em-up.web.app/',dialogTitle:'Share your result',btn,label:'Share my result',card:{modeLabel,headline:(myPlace?.avg==null?'\u2014':formatAccuracy(myPlace.avg)+'%'),headlineLabel:'ACCURATE \u00b7 '+(myPlace?.rank===1?'Winner!':'Place '+myPlace?.rank)}});};
     let rank1Delay = 0, podium = null;
@@ -22776,13 +22808,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const bonusNote = p.accuracyBonus ? `<div class="final-bonus-note">+${p.accuracyBonus} accuracy bonus</div>` : "";
       const tiebreakNote = tiebreakUsed ? `<div class="final-tiebreak-note">\<span class="icon-target-inline"></span> Tied on score — ranked by higher avg accuracy</div>` : "";
       const avgPctHtml = avgAccuracy == null ? "" : `<span class="final-avg-pct">${avgAccuracy}%</span>`;
-      const statsHtml = `
-        <div class="final-row-stats">
-          ${p.bestGuess ? `<span>\<span class="icon-target-inline"></span> Best guess: ${Number(p.bestGuess.guess).toLocaleString("en-US", { maximumFractionDigits: 2 })} on "${p.bestGuess.prompt}" (${formatAccuracy(p.bestGuess.percent)}% accurate)</span>` : ""}
-        </div>
-        ${bonusNote}
-        ${tiebreakNote}
-      `;
+      const statsHtml = bonusNote + tiebreakNote;
       const li = document.createElement("li");
       li.className = "final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
       li.dataset.place = rank === 1 ? 'Winner' : `Place ${rank}`;
