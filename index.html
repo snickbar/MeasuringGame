@@ -3323,6 +3323,8 @@ if (location.protocol === "file:") {
   .team-card-live-label { font-size:8px; line-height:1; color:#624c39; }
   .score-card.team-card-live .pts { font-size:clamp(14px, 4vw, 18px); white-space:nowrap; }
   .score-card.team-card-live .acc { font-size:clamp(9px, 2.8vw, 12px); line-height:1; }
+  .team-score-names { display:grid; gap:2px; width:100%; }
+  .score-card .team-score-names .name { text-align:left; white-space:normal; overflow-wrap:anywhere; }
   .team-card-avatars { grid-row: 1 / 3; grid-column: 1; display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center; padding: 1px 0; }
   .team-card-avatars .avatar { font-size: 15px; width: 32px; height: auto; min-height: 22px; display: flex; align-items: center; justify-content: center; }
   .medal {
@@ -22152,12 +22154,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         box.dataset.id = team;
         box.dataset.members = members.join(" ");
         if (members.includes(roundWinnerId)) box.classList.add("round-winner");
-        const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+        const names = members.map((id) => `<span class="name">${escapeHtml(currentPlayers[id].name)}</span>`).join("");
         const avatars = members.map((id) => `<span class="avatar">${framedAvatar(currentPlayers[id])}${lockedIn(id) ? '<span class="sc-lock" aria-label="Locked in"></span>' : ""}</span>`).join("");
         const crown = (rank === 1 && score > 0 && roomState.phase !== "waiting") ? '<span class="sc-crown" aria-label="Leading"></span>' : "";
         box.innerHTML = `
           <div class="team-card-avatars">${avatars}</div>${crown}
-          <div class="sc-top"><span class="name">${names}</span></div>
+          <div class="sc-top"><div class="team-score-names">${names}</div></div>
           <div class="sc-bot">${medal}<span class="sc-div"></span><span class="pts">${score}</span>${accHtml}${arrow}</div>
         `;
         if (liveLayout) {
@@ -22175,7 +22177,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </div>`;
         }
         scoreColEl.appendChild(box);
-        if (!liveLayout) fitNameToCard(box.querySelector(".name"));
         if (team === celebratingId && roomState.phase !== "waiting") {
           celebrateLead(box, prefersReducedMotion());
           playSound("lead");
@@ -22802,7 +22803,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const medal = medalType ? `<span class="medal ${medalType}"></span>` : `<span class="medal rank-num">${rank}</span>`;
         const avg = teamAvgFn(team);
         const avgPctHtml = avg == null ? "" : `<span class="final-avg-pct">${formatAccuracy(avg)}%</span>`;
-        const names = members.map((id) => escapeHtml(currentPlayers[id].name)).join(" &amp; ");
+        const names = members.map((id) => `<span>${escapeHtml(currentPlayers[id].name)}</span>`).join("");
         const avatars = members.map((id) => `<span class="avatar">${avatarHtml(currentPlayers[id].avatar)}</span>`).join("");
         const memberRows = members.map((id) => {
           const p = currentPlayers[id];
