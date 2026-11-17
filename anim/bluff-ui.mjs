@@ -86,7 +86,24 @@ export function bluffRankingsHtml(s,players,avatar,me){
     return `<div class="hs-srow bl-standing${row.rank===1?' leader':''}${row.id===me?' me':''}${newLeaders.includes(row.id)?' bl-new-leader':''}${shift>0?' bl-climb':shift<0?' bl-fall':''}${customFrameClass(players[row.id])}" data-bluff-rank="${esc(row.id)}" style="--shift:${shift};animation-delay:${(rows.length-1-i)*180}ms,${(rows.length-1)*180+450}ms">${customFrameEdge(players[row.id])}<span class="hs-srank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><span class="hs-sname"><b>${row.id===me?'You':esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b>${newLeaders.includes(row.id)?'<span class="bl-leader-badge">New leader</span>':''}<small>${Math.round(row.accuracy)}% vote accuracy</small></span>${mv}<span class="bl-standing-score"><strong>${row.score}</strong><small>points</small></span><span class="hs-delta${s.result.points[row.id]?' up':''}">+${s.result.points[row.id]||0}<small>this round</small></span></div>`;}).join('')}</div></section>`;
 }
 export function bluffFinalHtml(s,players,avatar){
-  return bluffStandings(s).map(row=>`<li class="final-row bl-final-card${row.rank===1?' rank-1':''}${customFrameClass(players[row.id])}" data-bluff-final-player="${esc(row.id)}"${row.rank===1?' data-bluff-winner':''}>${customFrameEdge(players[row.id])}<div class="bl-final-row"><span class="bl-final-rank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><div class="bl-final-identity"><b>${esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b><small>${Math.round(row.accuracy)}% vote accuracy</small></div><strong class="bl-final-score">${row.score}<small>points</small></strong></div><p class="bl-final-detail">${s.correct?.[row.id]||0}/${s.judged?.[row.id]||0} correct · ${s.fooled?.[row.id]||0} fooled</p></li>`).join('');
+  return bluffStandings(s).map(row=>{
+    const player=players[row.id];
+    const fooled=s.fooled?.[row.id]||0;
+    return `<li class="final-row bl-final-card${row.rank===1?' rank-1':''}${customFrameClass(player)}" data-bluff-final-player="${esc(row.id)}"${row.rank===1?' data-bluff-winner':''}>
+      ${customFrameEdge(player)}
+      <div class="bl-final-row">
+        <span class="bl-final-rank place-medallion" data-rank="${row.rank}">${row.rank}</span>
+        <span class="avatar">${avatar(player?.avatar||s.avatars?.[row.id])}</span>
+        <div class="bl-final-identity"><b>${esc(player?.name||s.names?.[row.id]||'Player')}</b></div>
+        <strong class="bl-final-score">${row.score}<small>points</small></strong>
+      </div>
+      <div class="bl-final-detail">
+        <span class="bl-final-stat"><b>${Math.round(row.accuracy)}%</b><span>vote accuracy</span></span>
+        <span class="bl-final-stat"><b>${s.correct?.[row.id]||0} / ${s.judged?.[row.id]||0}</b><span>correct votes</span></span>
+        <span class="bl-final-stat"><b>${fooled}</b><span>${fooled===1?'player fooled':'players fooled'}</span></span>
+      </div>
+    </li>`;
+  }).join('');
 }
 export function createBluffUI({element,context,now,transact,act,question,object,avatar,sound,visible,revealAnimation,reduced=()=>false,laugh=()=>{},vibrate=()=>{},toast=()=>{}}){
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
