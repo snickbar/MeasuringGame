@@ -19,7 +19,7 @@ export const FLOOR_DATA = {
     "color": "#99836c"
   },
   "library-v2-floor": {
-    "surface": 0.47,
+    "surface": 0.58,
     "color": "#a04717"
   },
   "living-v2-floor": {
