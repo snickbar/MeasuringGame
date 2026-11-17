@@ -41,8 +41,8 @@ export const isNight = (config, dark) => config.night === 'dark' ? !!dark : !!co
 
 // Rooms, caves and the sea have no open sky, so they never get stars.
 // Rooms get a lamp-lit night look instead of stars.
-const INDOOR = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop']);
-const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'cave', 'underwater']);
+const INDOOR = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'restaurant']);
+const NO_STARS = new Set(['living', 'kitchen', 'tabletop', 'library', 'workshop', 'restaurant', 'cave', 'underwater']);
 
 export const SETTINGS = {
   grass: { movers: ['butterflies'], floor: 'meadow-lane', floorTileWidth: 600, sky: ['#74bdf0', '#d6eefc'], nightSky: ['#0e1a38', '#33456b'], night: 'dark', floaters: ['cloud-set-meadow'], cloudClear: 240, flyers: 'geese', fireflies: true,
@@ -241,6 +241,10 @@ export const SETTINGS = {
       { img: 'library-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'library-n-reveals-0', x: 0.14, row: 546, w: 0.084 }, { img: 'library-n-reveals-1', x: 0.5, row: 546, w: 0.095 }, { img: 'library-n-reveals-2', x: 0.84, row: 546, w: 0.057 }, { img: 'library-n-anim-0', x: 0.72, row: 546, w: 0.178, spin: { img: 'library-n-anim-1', fx: .86, fy: .45, size: .35, speed: 1.0, swing: .15, px: .5, py: 0 } }] },
       { img: 'library-n-near', par: .6, lift: 155, scale: 0.7, props: [{ img: 'library-n-loose-0', x: 0.08, row: 706, w: 0.053 }, { img: 'library-n-loose-2', x: 0.3, row: 706, w: 0.047 }, { img: 'library-n-loose-3', x: 0.55, row: 706, w: 0.028 }, { img: 'library-n-loose-5', x: 0.8, row: 706, w: 0.063 }] }],
     pieces: [{ img: 'library-n-movers-1', cell: 1800, prob: 0.6, w: 68, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }, { img: 'library-n-movers-2', cell: 2300, prob: 0.6, w: 64, speed: 16, bob: 5, sway: 0.03, minH: 440, face: 1 }] },
+  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 640, sky: ['#2a1114', '#3d1a1d'],
+    parallax: [{ img: 'restaurant-n-far', par: .16, lift: 330, scale: 0.85, tanks: [{ box: [.408, .39, .59, .66], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] },
+      { img: 'restaurant-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'restaurant-light-globe', x: .2, row: 235, w: .05, move: { type: 'dangle', amp: 3, speed: .9 } }, { img: 'restaurant-light-chandelier', x: .5, row: 245, w: .08, move: { type: 'dangle', amp: 2, speed: .7 } }, { img: 'restaurant-light-dome', x: .8, row: 235, w: .06, move: { type: 'dangle', amp: 3, speed: 1.1 } }, { img: 'restaurant-light-lantern', x: .35, row: 225, w: .04, move: { type: 'dangle', amp: 4, speed: 1.2 } }, { img: 'restaurant-light-trio', x: .65, row: 225, w: .04, move: { type: 'dangle', amp: 3, speed: .8 } }] },
+      { img: 'restaurant-n-near', par: .6, lift: 155, scale: 0.7, props: [] }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -297,6 +301,10 @@ const layeredReveals = {
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
     bookcase: { chairCase: 'library-climb-wide-case', wideCase: 'library-climb-eight-shelf', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
+  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 640, fittedFloor: true, floorInset: 0,
+    roomBack: 'restaurant-climb-wall', roomBackParallax: .34,
+    roomRoof: { img: 'restaurant-climb-roof', at: .55 },
+    wallPieces: [{ img: 'restaurant-climb-cabinet', x: .17, w: .2 }, { img: 'restaurant-climb-window', x: .82, w: .26 }, { img: 'restaurant-climb-sconce', x: .5, w: .17 }, { img: 'restaurant-climb-painting', x: .8, w: .27 }, { img: 'restaurant-climb-chalkboard', x: .2, w: .2 }, { img: 'restaurant-climb-plant', x: .52, w: .2 }] },
   living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
     parallax: [
@@ -382,7 +390,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -912,6 +920,17 @@ function drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundSca
         ctx.restore();
       }
       for (const fl of layer.flows || []) drawFlow(ctx, kit, fl, x, top, k, k, time, reduced);
+      for (const tk of layer.tanks || []) { // fish swimming inside a glass tank painted on this layer, clipped to the water
+        const [bx0, by0, bx1, by1] = tk.box, tx = x + bx0 * tw, ty = top + by0 * th, tW = (bx1 - bx0) * tw, tH = (by1 - by0) * th;
+        ctx.save(); ctx.beginPath(); ctx.rect(tx, ty, tW, tH); ctx.clip();
+        for (const f of tk.fish) {
+          const pic = kit.images[f.img]; if (!pic) continue;
+          const fw = f.w * tW, fh = fw * pic.naturalHeight / pic.naturalWidth, span = tW + fw, u = ((f.phase + (reduced ? 0 : time * f.speed)) % 1 + 1) % 1, dir = f.speed < 0 ? -1 : 1;
+          const fx = tx - fw / 2 + (dir > 0 ? u : 1 - u) * span, fy = ty + f.y * tH + (reduced ? 0 : Math.sin(time * 1.3 + f.phase * 9) * tH * .04);
+          ctx.save(); ctx.translate(fx, fy); if (dir < 0) ctx.scale(-1, 1); ctx.drawImage(pic, -fw / 2, -fh / 2, fw, fh); ctx.restore();
+        }
+        ctx.restore();
+      }
       if (layer.mirror) { // keep painting below the picture with its own lower rows, flipped back and forth, so no flat band or edge ever shows
         const m = Math.min(layer.mirror, image.naturalHeight - st.sky - 20), mh = m * k;
         for (let j = 0; bottom + j * mh < height && j < 8; j++) {
@@ -1727,12 +1746,34 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
     if (config.roomBackParallax) {
       const offset = ((shiftY * config.roomBackParallax % h) + h) % h;
       const glint = images[config.roomBackGlint?.img];
+      const roofPic = images[config.roomRoof?.img];
+      let roofBottom = -1e9, roofH = 0;
+      if (roofPic && climbPx > 0) { // the room's roof: the wall ends at it and the night sky carries on above
+        roofH = width * roofPic.naturalHeight / roofPic.naturalWidth;
+        const base0 = height * .3 - config.roomRoof.at * climbPx * config.roomBackParallax;
+        roofBottom = base0 + Math.min(0, -roofH - 4 - base0) + shiftY * config.roomBackParallax;
+        if (roofBottom > 0) {
+          const sg = ctx.createLinearGradient(0, 0, 0, Math.max(roofBottom, 1)); sg.addColorStop(0, '#070a1f'); sg.addColorStop(1, '#1f1740');
+          ctx.fillStyle = sg; ctx.fillRect(0, 0, width, roofBottom);
+          const stars = images['star-field'];
+          if (stars) { ctx.save(); ctx.globalAlpha = .8; ctx.beginPath(); ctx.rect(0, 0, width, roofBottom); ctx.clip(); const tile = 300, oy = ((shiftY * .06) % tile + tile) % tile, ox = ((shiftX * .04) % tile + tile) % tile; for (let yy = oy - tile; yy < height; yy += tile) for (let xx = ox - tile; xx < width; xx += tile) ctx.drawImage(stars, xx, yy, tile, tile); ctx.restore(); }
+        }
+        ctx.save(); ctx.beginPath(); ctx.rect(0, Math.max(0, roofBottom), width, height); ctx.clip();
+      }
       for (let y = offset - h; y < height; y += h) {
         ctx.drawImage(roomBack, x, y, w, h + .5);
+        const wp = config.wallPieces;
+        if (wp && roofBottom > -1e8) { // framed things hung on the wall, two to a wall tile, repeating every three tiles
+          const idx = Math.round((y - shiftY * config.roomBackParallax) / h), m = (((idx % 3) + 3) % 3) * 2;
+          ctx.save(); if (dark) ctx.filter = 'brightness(62%)';
+          for (let q = 0; q < 2; q++) { const pc = wp[m + q], pic = pc && images[pc.img]; if (!pic) continue; const pw = pc.w * width, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, width * pc.x - pw / 2, y + h * (q ? .72 : .28) - ph / 2, pw, ph); }
+          ctx.restore();
+        }
         if (glint && !reduced) {
           drawCrystalGlints(ctx, glint, config.roomBackGlint.points, x, y, w, h, time, .45);
         }
       }
+      if (roofPic && climbPx > 0) { ctx.restore(); if (roofBottom > 0) { ctx.save(); if (dark) ctx.filter = 'brightness(62%)'; ctx.drawImage(roofPic, 0, roofBottom - roofH, width, roofH); ctx.restore(); } }
     } else {
       ctx.drawImage(roomBack, x, (height - h) / 2, w, h);
     }

@@ -14,6 +14,10 @@ export const FLOOR_DATA = {
     "surface": 0.455,
     "color": "#a7622b"
   },
+  "restaurant-n-floor": {
+    "surface": 0.55,
+    "color": "#241a1d"
+  },
   "tabletop-n-floor": {
     "surface": 0.436,
     "color": "#dd7312"

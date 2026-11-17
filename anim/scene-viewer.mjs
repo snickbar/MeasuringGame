@@ -3,7 +3,7 @@
 // Move a scene to the front when its artwork or layout changes. Scenes without
 // a recent revision appear alphabetically after this list.
 const recentScenes = [
-  "workshop", "library", "tabletop", "kitchen", "living", "enchanted", "town", "city", "beach", "rooftop", "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
+  "restaurant", "workshop", "library", "tabletop", "kitchen", "living", "enchanted", "town", "city", "beach", "rooftop", "stadium", "boardwalk", "blossom", "cave", "space", "fair", "mountain", "jungle", "grass", "farm",
   "volcano",
   "desert",
   "underwater", "snow", "forest",
@@ -12,7 +12,7 @@ const sceneLabels = {
   space: "Moon", jungle: "Temple", grass: "Meadow", fair: "County Fair",
   city: "Times Square at Night", cave: "Crystal Cave", blossom: "Cherry Blossom",
   rooftop: "Rooftops at Sunset", living: "Living Room", resort: "Beach Resort",
-  tabletop: "Tabletop",
+  tabletop: "Tabletop", restaurant: "Restaurant",
 };
 const sceneLabel = (id) => sceneLabels[id] ?? id.charAt(0).toUpperCase() + id.slice(1);
 
