@@ -945,11 +945,14 @@ export function createStackAnimation(container, options = {}) {
       }
       for (let k = 0; k < L.length; k++) cTable[k] = Math.exp(L[k]);
     }
-    // The camera goes straight to the zoom it keeps for the rest of the stack, with no close-up
-    // on the first few objects followed by a zoom back out.
-    const cSettle = cTable.length ? cTable[cTable.length - 1] : 1;
     function climbScale(t) {
-      return cSettle;
+      if (t <= tZ1) return 1;
+      const x = (t - tZ1) / C_STEP;
+      const k = Math.floor(x);
+      if (k >= cTable.length - 1) return cTable[cTable.length - 1];
+      const a = cTable[k];
+      const b = cTable[k + 1];
+      return Math.exp(Math.log(a) + (Math.log(b) - Math.log(a)) * (x - k));
     }
     function cameraAt(t) {
       if (t < tZ0) return { c: cEnd, sx0: colCenterX, sy0: floorY };
@@ -957,7 +960,7 @@ export function createStackAnimation(container, options = {}) {
         const u = (t - tZ0) / (tZ1 - tZ0);
         const e = 0.5 - 0.5 * Math.cos(Math.PI * u);
         return {
-          c: Math.exp(Math.log(cEnd) + (Math.log(cSettle) - Math.log(cEnd)) * e),
+          c: Math.exp(Math.log(cEnd) * (1 - e)),
           sx0: colCenterX + (axClimb - colCenterX) * e,
           sy0: floorY + (floorStartY - floorY) * e,
         };
