@@ -12,6 +12,7 @@ const NAMES = ['plate', 'clocks', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub
   'plant-1', 'pendulum', 'fp-front', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
   ...SLICES.map((_, i) => 'clock-' + i)];
 // The fireplace was moved 55 px lower in the background picture (the clocks stand on the floor level with its hearth); everything on it follows.
+const RATTLE = [{ transform: 'none' }, { transform: 'translate(-3%,-.5%) rotate(-5deg)', offset: .1 }, { transform: 'translate(3%,.5%) rotate(5deg)', offset: .25 }, { transform: 'translate(-3%,0) rotate(-4deg)', offset: .4 }, { transform: 'translate(2.5%,0) rotate(4deg)', offset: .55 }, { transform: 'translate(-1.5%,0) rotate(-2deg)', offset: .7 }, { transform: 'translate(1%,0) rotate(1.5deg)', offset: .85 }, { transform: 'none' }];
 const FIRE_DY = 55;
 const FIRE = { x: 212, y: 1316 + FIRE_DY, w: 262, h: 186 };
 
@@ -43,7 +44,7 @@ export async function build(home, load, current) {
     <div class="l-sparks" style="${place(FIRE.x, FIRE.y - 60, FIRE.w, FIRE.h + 60)}"></div>
     <div class="l-lamp" style="${place(289, 966 + FIRE_DY, 98)}">${img(D + 'lamp.webp', 'l-lamp-img')}<div class="l-blobs">${[1, 2, 3, 4, 5].map(n => img(D + `blob-${n}.webp`, 'l-blob l-blob-' + n)).join('')}</div></div>
     <div class="l-pend-clip" style="${place(922, 906, 82, 86)}"><div class="l-pendulum" style="left:${(936 - 922) / 82 * 100}%;top:${(844 - 906) / 86 * 100}%;width:${48 / 82 * 100}%">${img(D + 'pendulum.webp')}</div></div>
-    ${img(D + 'clocks.webp', 'l-clocks-static', place(CLOCK.x, CLOCK.y, CLOCK.w))}
+    ${SLICES.map(([t, b], i) => `<div class="l-static" data-i="${i}" style="${place(CLOCK.x, CLOCK.y + t, CLOCK.w, b - t)}overflow:hidden">${img(D + 'clocks.webp', 'l-static-img', `left:0;top:${(-t / (b - t) * 100).toFixed(3)}%;width:100%;`)}</div>`).join('')}
     ${clocks}
     ${hit('fire', FIRE.x, FIRE.y - 40, FIRE.w, FIRE.h + 80, 'Stoke the fire')}
     ${hit('lamp', 280, 960 + FIRE_DY, 116, 210, 'Shake the lava lamp')}
@@ -65,7 +66,7 @@ export async function build(home, load, current) {
       const kind = e.target.closest('[data-w]')?.dataset.w; if (!kind || !gate.isActive()) return;
       play(kind === 'clock' ? 1 : 0);
       if (kind === 'fire') { flash(root, 'stoked', 2800); for (let i = 0; i < 6; i++) later(spark, i * 160); }
-      else if (kind === 'clock') { const c = e.target.closest('.l-clock'); flash(c, 'rattle', 900); }
+      else if (kind === 'clock') { const c = e.target.closest('.l-clock'), st = q(`.l-static[data-i="${c.dataset.i}"]`); st.style.visibility = 'hidden'; clearTimeout(st._t); st._t = later(() => { st.style.visibility = ''; }, 900); c.dataset.rattle = ''; clearTimeout(c._t); c._t = later(() => { delete c.dataset.rattle; }, 900); c.animate(RATTLE, { duration: 900, easing: 'ease-in-out' }); }
       else if (kind === 'lamp') flash(lamp, 'shake', 1500);
     });
     const gate = watchActive(home, root, on => {
