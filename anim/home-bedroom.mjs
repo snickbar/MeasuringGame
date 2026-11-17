@@ -8,7 +8,7 @@ const SLICES = [[0, 125], [124, 240], [233, 349], [343, 459], [452, 568], [559, 
 const FACE_Y = [75, 190, 299, 409, 518, 625, 731, 837, 942], FACE_X = 70;
 // Hands: [piece width, height, scale, pivot y inside the piece, seconds per turn]
 const HANDS = { hour: [107, 504, .047, 444, 1500], min: [53, 744, .0457, 690, 150], sec: [101, 747, .05, 603, 24] };
-const NAMES = ['plate', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub', 'lamp', 'blob-1', 'blob-2', 'blob-3', 'blob-4', 'blob-5', 'curtain-1', 'curtain-2', 'curtain-3',
+const NAMES = ['plate', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub', 'lamp', 'blob-1', 'blob-2', 'blob-3', 'blob-4', 'blob-5', 'curtain-1',
   'plant-1', 'pendulum', 'cat-1', 'cat-2', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
   ...SLICES.map((_, i) => 'clock-' + i)];
 const FIRE = { x: 212, y: 1316, w: 262, h: 186 };
@@ -33,7 +33,7 @@ export async function build(home, load, current) {
   const frames = (set, cls) => [1, 2, 3].map(n => img(D + `flame-${set}${n}.webp`, `l-fl ${cls} l-fl-${n}`)).join('');
   root.innerHTML = `<div class="hs-stage">
     ${img(D + 'plate.webp', 'hs-plate')}
-    ${img(D + 'curtain-1.webp', 'l-curtain l-c1', place(-96, 700, 263))}${img(D + 'curtain-2.webp', 'l-curtain l-c2', place(-96, 700, 263))}${img(D + 'curtain-3.webp', 'l-curtain l-c3', place(-96, 700, 263))}
+    ${img(D + 'curtain-1.webp', 'l-curtain', place(-5, 692, 200, 547))}
     ${img(D + 'plant-1.webp', 'l-plant', place(-109, 1181, 238))}
     <div class="l-glow" style="${place(-60, 1150, 800, 760)}"></div>
     <div class="l-fire" style="${place(FIRE.x, FIRE.y, FIRE.w, FIRE.h)}">${frames('m', 'l-fl-m')}${frames('l', 'l-fl-l')}</div>
