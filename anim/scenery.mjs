@@ -242,17 +242,11 @@ export const SETTINGS = {
       { img: 'library-n-near', par: .6, lift: 155, scale: 0.7, props: [{ img: 'library-n-loose-0', x: 0.08, row: 706, w: 0.053 }, { img: 'library-n-loose-2', x: 0.3, row: 706, w: 0.047 }, { img: 'library-n-loose-3', x: 0.55, row: 706, w: 0.028 }, { img: 'library-n-loose-5', x: 0.8, row: 706, w: 0.063 }] }],
     pieces: [{ img: 'library-n-movers-1', cell: 1800, prob: 0.6, w: 68, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }, { img: 'library-n-movers-2', cell: 2300, prob: 0.6, w: 64, speed: 16, bob: 5, sway: 0.03, minH: 440, face: 1 }] },
   restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 1450, floorBehind: true, sky: ['#2a1114', '#3d1a1d'],
-    parallax: [{ img: 'restaurant-n-far', par: 1, lift: 365, scale: 0.85, noFill: true,
+    floorDepth: { par: .5, tables: ['restaurant-table-0', 'restaurant-table-1', 'restaurant-table-2', 'restaurant-table-3', 'restaurant-table-5', 'restaurant-table-6'],
+      rows: [{ r: 0.05, w: 0.036, gap: 0.052, jitter: .06 }, { r: 0.11, w: 0.044, gap: 0.062, jitter: .06 }, { r: 0.18, w: 0.054, gap: 0.074, jitter: .06 }, { r: 0.26, w: 0.066, gap: 0.09, jitter: .06 }, { r: 0.35, w: 0.08, gap: 0.108, jitter: .06 }] },
+    parallax: [{ img: 'restaurant-n-far', par: .5, lift: 365, scale: 0.85, noFill: true,
       props: [{ img: 'restaurant-table-0', x: 0.1, row: 730, w: 0.12 }, { img: 'restaurant-table-5', x: 0.9, row: 730, w: 0.12 }],
-      tanks: [{ box: [.418, .493, .582, .76], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] },
-      { img: 'restaurant-n-clear', skyRow: 0, noFill: true, par: 1, lift: 300, scale: 0.8,
-        props: [{ img: 'restaurant-table-0', x: 0.2, row: 0, w: 0.1 }, { img: 'restaurant-table-2', x: 0.68, row: 0, w: 0.09 }, { img: 'restaurant-table-5', x: 0.85, row: 0, w: 0.1 }] },
-      { img: 'restaurant-n-clear', skyRow: 0, noFill: true, par: 1, lift: 270, scale: 0.8,
-        props: [{ img: 'restaurant-table-6', x: 0.05, row: 0, w: 0.12 }, { img: 'restaurant-table-1', x: 0.36, row: 0, w: 0.11 }, { img: 'restaurant-table-3', x: 0.7, row: 0, w: 0.12 }, { img: 'restaurant-table-0', x: 0.98, row: 0, w: 0.11 }] },
-      { img: 'restaurant-n-clear', skyRow: 0, noFill: true, par: 1, lift: 250, scale: 0.8,
-        props: [{ img: 'restaurant-table-2', x: 0.18, row: 0, w: 0.13 }, { img: 'restaurant-table-5', x: 0.34, row: 0, w: 0.14 }, { img: 'restaurant-table-1', x: 0.66, row: 0, w: 0.13 }, { img: 'restaurant-table-0', x: 0.92, row: 0, w: 0.13 }] },
-      { img: 'restaurant-n-mid', par: 1, lift: 235, scale: 0.8, noFill: true,
-        props: [{ img: 'restaurant-table-6', x: 0.14, row: 800, w: 0.16 }, { img: 'restaurant-table-1', x: 0.5, row: 815, w: 0.17 }, { img: 'restaurant-table-3', x: 0.88, row: 800, w: 0.18 }, { img: 'restaurant-table-0', x: 0.3, row: 900, w: 0.19 }, { img: 'restaurant-table-5', x: 0.7, row: 905, w: 0.2 }, { img: 'restaurant-table-2', x: 0.08, row: 1010, w: 0.2 }, { img: 'restaurant-table-1', x: 0.96, row: 1020, w: 0.22 }] }] },
+      tanks: [{ box: [.418, .493, .582, .76], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -1874,6 +1868,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   if (config.bookcase) drawLibraryShelfRows(ctx, kit, { width, height, floorY, shiftY, dark });
   if (behindFloor && config.floorBehind) drawSceneryFloor(ctx, kit, FLOOR_DATA[config.floor], { width, height, groundScale, dark, time, reduced, ...behindFloor }); // a deep floor that the rows of tables stand on
   drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
+  if (behindFloor && config.floorDepth) drawFloorDepthRows(ctx, kit, { width, height, groundScale, dark, ...behindFloor });
   const petals = images[config.fallingPetals];
   if (petals && !reduced) drawFallingPetals(ctx, petals, width, height, time, shiftY);
   drawSpritePieces(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale }); // in front of the far layers, so nothing flies behind a hill and vanishes
@@ -1959,6 +1954,26 @@ function drawWorkshopPiece(ctx, image, x, y, width, anchorY = .5) {
   ctx.drawImage(image, x - width / 2, y - height * anchorY, width, height);
 }
 
+function floorDepthPar(depth, r, surface) { return r >= surface ? 1 : depth.par + (1 - depth.par) * Math.max(0, r) / surface; }
+// Rows of tables standing on a deep floor: each row rides the floor at its own depth.
+export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0, shiftX = 0, groundScale = 1, anchorX = width / 2, dark }) {
+  const depth = kit.config.floorDepth, image = kit.images[kit.config.floor]; if (!depth || !image) return;
+  const meta = FLOOR_DATA[kit.config.floor], tile = (kit.config.floorTileWidth || 380) * groundScale, tileH = tile * image.naturalHeight / image.naturalWidth;
+  const restTop = floorY - shiftY - tileH * meta.surface - floorInset(kit) * groundScale;
+  const phase = shiftX + anchorX * (1 - groundScale), offset = ((phase % tile) + tile) % tile - tile;
+  ctx.save(); if (dark) ctx.filter = 'brightness(60%)';
+  for (const [ri, row] of depth.rows.entries()) {
+    const base = restTop + row.r * tileH + floorDepthPar(depth, row.r, meta.surface) * shiftY;
+    const tw = row.w * tile; if (base - tw * 1.3 > height || base < 0) continue;
+    const count = Math.round(1 / row.gap);
+    for (let k = 0; k < count; k++) {
+      const pic = kit.images[depth.tables[(k * 3 + ri * 5) % depth.tables.length]]; if (!pic) continue;
+      const th = tw * pic.naturalHeight / pic.naturalWidth, u = (k + (ri % 2 ? .5 : 0) + (row.jitter || 0) * Math.sin(k * 12.9 + ri * 7.3)) / count;
+      for (let x = offset + u * tile; x - tw / 2 < width; x += tile) if (x + tw / 2 > 0) ctx.drawImage(pic, x - tw / 2, base - th, tw, th);
+    }
+  }
+  ctx.restore();
+}
 export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX, shiftY = 0, groundScale = 1, anchorX = width / 2, dark, time = 0, reduced }) {
   const image = kit.images[kit.config.floor]; if (!image) return;
   const workshop = kit.config.workshop;
@@ -2074,7 +2089,16 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
     const x = ((dir * clock * q.speed * groundScale + (q.start || 0) * span) % span + span) % span - vw, y = top + q.lane * tileH - vh + Math.sin(clock * 9 + (q.start || 0) * 40) * (q.bob || 0) * groundScale;
     if (dir < 0) { ctx.save(); ctx.translate(x + vw, 0); ctx.scale(-1, 1); ctx.drawImage(pic, 0, y, vw, vh); ctx.restore(); } else ctx.drawImage(pic, x, y, vw, vh);
   }
-  for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
+  const depth = kit.config.floorDepth;
+  if (depth && shiftY) { // far rows of the floor scroll slower than near rows, so the room has real depth
+    const restTop = top - shiftY, slices = 90, sh = image.naturalHeight / slices;
+    for (let i = 0; i < slices; i++) {
+      const y0 = restTop + i / slices * tileH + floorDepthPar(depth, i / slices, meta.surface) * shiftY;
+      const y1 = restTop + (i + 1) / slices * tileH + floorDepthPar(depth, (i + 1) / slices, meta.surface) * shiftY;
+      if (y1 < 0 || y0 > height) continue;
+      for (let x = offset; x < width; x += tile) ctx.drawImage(image, 0, i * sh, image.naturalWidth, sh, x, y0, tile + 1, y1 - y0 + .7);
+    }
+  } else for (let x = offset; x < width; x += tile) ctx.drawImage(image, x, top, tile + 1, tileH);
   const wash = kit.config.wash && kit.images[kit.config.wash.img];
   if (wash) { // a wave that rolls up the sand, then slides back out leaving a line of foam
     const t = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : performance.now() / 1000, ph = (Math.sin(t * .6) + 1) / 2, wh = tile * wash.naturalHeight / wash.naturalWidth * kit.config.wash.scale;
