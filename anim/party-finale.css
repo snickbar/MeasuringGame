@@ -58,13 +58,17 @@ html[data-motion=reduce] .pd-landed .pd-art,html[data-motion=reduce] .pd-landed 
 .party-ranked .final-bonus-note{font-size:12px;background:#e9f4d7;border-radius:8px;padding:5px 8px;align-self:flex-start;color:#3e6f2b}
 #final-screen.party-ranked .team-final-avatars .avatar{width:36px;height:44px;display:flex;align-items:center}
 #final-screen.party-ranked .team-final-avatars .avatar-icon{width:38px;height:44px;object-fit:contain}
-#final-screen.party-ranked #final-list>.team-final-row{gap:5px}
-#final-screen.party-ranked .team-final-row .final-row-top{grid-template-columns:30px 74px minmax(0,1fr);padding-bottom:2px}
-#final-screen.party-ranked .team-final-row .team-final-avatars{width:100%;gap:4px}
-#final-screen.party-ranked .team-final-avatars .avatar,#final-screen.party-ranked .team-final-avatars .avatar-icon{width:35px}
+#final-screen.party-ranked #final-list>.team-final-row{gap:5px;padding:10px}
+#final-screen.party-ranked .team-final-row .final-row-top{grid-template-columns:36px 90px minmax(0,1fr);padding:3px 2px 2px}
+#final-screen.party-ranked .team-final-row .final-row-top>.medal{width:36px;height:40px}
+#final-screen.party-ranked .team-final-row .final-row-top>.medal.rank-num{height:36px;font-size:18px}
+#final-screen.party-ranked .team-final-row .team-final-avatars{width:100%;height:auto;gap:4px}
+#final-screen.party-ranked .team-final-avatars .avatar,#final-screen.party-ranked .team-final-avatars .avatar-icon{width:43px;height:52px}
 @media(max-width:350px){
-  #final-screen.party-ranked .team-final-row .final-row-top{grid-template-columns:25px 66px minmax(0,1fr)}
-  #final-screen.party-ranked .team-final-avatars .avatar,#final-screen.party-ranked .team-final-avatars .avatar-icon{width:31px}
+  #final-screen.party-ranked .team-final-row .final-row-top{grid-template-columns:30px 78px minmax(0,1fr)}
+  #final-screen.party-ranked .team-final-avatars .avatar,#final-screen.party-ranked .team-final-avatars .avatar-icon{width:37px;height:46px}
+  #final-screen.party-ranked .team-final-row .final-row-top>.medal{width:30px;height:34px}
+  #final-screen.party-ranked .team-final-row .final-row-top>.medal.rank-num{height:30px;font-size:15px}
 }
 .party-ranked .team-final-members{border-top:1px solid #b3955d33;padding-top:2px;margin:0}
 #final-screen.party-ranked .team-final-row .final-row-top>.name{display:grid;gap:2px;text-align:center;white-space:normal;overflow-wrap:anywhere}
@@ -205,15 +209,16 @@ html[data-motion=reduce] :is(.pd-mascot.pd-m-ant,.pd-m-ant img,.pd-ant-confetti 
   :is(.pd-mascot.pd-m-ant,.pd-m-ant img,.pd-ant-confetti i){animation:none}
 }
 
-/* Team vs Team: each reaction takes .8s, then the mascots rest for 2s. */
+/* Team vs Team: cheers and applause repeat with a rest between bursts. */
 .pd-mascot.pd-m-left{left:14%;bottom:-3%;width:22%}
 .pd-mascot.pd-m-right{left:86%;bottom:-3%;width:23%;--pd-team-stagger:.22s}
 .pd-mascot[data-team-reaction] {
   --pd-team-cycle: 2.8s;
 }
 .pd-mascot[data-team-reaction="cheer"] {
+  --pd-cheer-at: calc(var(--pd-at) + .25s + var(--pd-team-stagger, 0s));
   animation: pdMascotIn .25s ease-out var(--pd-at) backwards,
-    pdTeamCheer var(--pd-team-cycle) ease-in-out calc(var(--pd-at) + .25s + var(--pd-team-stagger, 0s)) infinite;
+    pdTeamCheer var(--pd-team-cycle) ease-in-out var(--pd-cheer-at) infinite;
 }
 .pd-mascot[data-team-reaction="clap"] {
   --pd-clap-at: calc(var(--pd-at) + .42s + var(--pd-team-stagger, 0s));
@@ -224,12 +229,18 @@ html[data-motion=reduce] :is(.pd-mascot.pd-m-ant,.pd-m-ant img,.pd-ant-confetti 
 .pd-team-clap-open { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
 [data-team-reaction].pose-ready :where(.pd-team-clap-contact) { animation: pdTeamClapContact var(--pd-team-cycle) step-end var(--pd-clap-at) infinite; }
 [data-team-reaction].pose-ready :where(.pd-team-clap-open) { animation: pdTeamClapOpen var(--pd-team-cycle) step-end var(--pd-clap-at) infinite; }
-@keyframes pdTeamCheer {
-  0%, 28.57%, 100% { transform: translateX(-50%); }
-  4.86% { transform: translateX(-50%) scale(1.03, .96); }
-  12% { transform: translate(-50%, -17%) scale(1.02); }
-  19.71% { transform: translateX(-50%) scale(1.03, .96); }
-  24% { transform: translate(-50%, -3%); }
+.pd-team-cheer-rest{display:block;width:100%;height:auto}
+.pd-team-cheer-air{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;opacity:0}
+[data-team-reaction="cheer"]:where(.pose-ready) .pd-team-cheer-rest{animation:pdTeamCheerRest var(--pd-team-cycle) step-end var(--pd-cheer-at) infinite}
+[data-team-reaction="cheer"]:where(.pose-ready) .pd-team-cheer-air{animation:pdTeamCheerAir var(--pd-team-cycle) step-end var(--pd-cheer-at) infinite}
+@keyframes pdTeamCheerRest{0%, 17%, 34%, 100%{opacity:1}5%, 22%{opacity:0}}
+@keyframes pdTeamCheerAir{0%, 17%, 34%, 100%{opacity:0}5%, 22%{opacity:1}}
+@keyframes pdTeamCheer{
+  0%, 37%, 100%{transform:translateX(-50%)}
+  4%, 20%{transform:translateX(-50%) scale(1.06,.9)}
+  10%{transform:translate(-50%,-35%) rotate(-4deg)}
+  17%, 34%{transform:translateX(-50%) scale(1.06,.93)}
+  27%{transform:translate(-50%,-23%) rotate(3deg)}
 }
 @keyframes pdTeamClap {
   0%, 10.57%, 21.71%, 100% { transform: translateX(-50%); }

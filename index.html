@@ -22686,6 +22686,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <img class="pd-ant-toss" src="anim/mode-mascots/classic-ant-toss.webp" alt="" draggable="false">
         <span class="pd-ant-confetti"><i></i><i></i><i></i><i></i><i></i><i></i></span>
       </span>`;
+      if (reaction === "cheer" && openPose && !reduce) return `<span class="pd-mascot ${variant}" data-team-reaction="cheer" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
+        <img class="pd-team-cheer-rest" src="${openPose}" alt="" draggable="false">
+        <img class="pd-team-cheer-air" src="${src}" alt="" draggable="false">
+      </span>`;
       if (openPose && !reduce) return `<span class="pd-mascot ${variant}" data-team-reaction="clap" style="--pd-at:${mascotDelay}ms" aria-hidden="true">
         <img class="pd-team-clap-contact" src="${src}" alt="" draggable="false">
         <img class="pd-team-clap-open" src="${openPose}" alt="" draggable="false">
@@ -22699,7 +22703,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join("");
     const li = document.createElement('li'); li.className='pd-stage'+(reduce?' skip pd-skip-motion':'');
     li.innerHTML='<div class="pd-pod"><img class="pd-art" src="icons/party-results-podium.webp" alt="Winner podium"><div class="pd-impact" aria-hidden="true"></div>'+badges+slots+mascotHtml+(confetti&&!reduce?'<div class="pd-confetti" aria-hidden="true" style="--pd-at:'+impactAt+'ms">'+Array.from({length:34},(_,i)=>{const a=(i/34)*Math.PI*2+Math.random()*.4,d=70+Math.random()*110;return '<i style="--x:'+Math.round(Math.cos(a)*d)+'px;--y:'+Math.round(Math.sin(a)*d*.8-60)+'px;--r:'+Math.round(Math.random()*720-360)+'deg;--c:'+['#ff5a5a','#ffc828','#50beff','#78dc6e','#ff82dc'][i%5]+';--w:'+(i%3*40)+'ms"></i>';}).join('')+'</div>':'')+'</div><button type="button" class="pd-skip">Skip celebration</button><div class="pd-list">'+rows+'</div>';
-    li.querySelectorAll('.pd-team-clap-open').forEach(img => {
+    li.querySelectorAll('.pd-team-clap-open, .pd-team-cheer-air').forEach(img => {
       img.decode().then(() => img.parentElement.classList.add('pose-ready'), () => {});
     });
     const ant = li.querySelector('span.pd-m-ant');
@@ -22820,7 +22824,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const mascots = [["red", "dogs", "pd-m-left"], ["blue", "cats", "pd-m-right"]].map(([team, animal, side]) => {
           const cheers = winningTeams.has(team);
           const art = `anim/mode-mascots/team-${animal}`;
-          return cheers ? [`${art}-cheer.webp`, side, "cheer"] : [`${art}-clap.webp`, side, "clap", `${art}-clap-open.webp`];
+          return cheers ? [`${art}-cheer.webp`, side, "cheer", `${art}-clap-open.webp`] : [`${art}-clap.webp`, side, "clap", `${art}-clap-open.webp`];
         });
         podium = partyPodiumStage(teamRanked, teams, mascots); finalListEl.appendChild(podium.el);
         if (!podium.el.classList.contains('skip')) { finalListEl.classList.add('pd-waiting'); recap.classList.add('pd-hold'); }
