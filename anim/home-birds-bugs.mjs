@@ -22,6 +22,7 @@ export async function build(home, load, current) {
   root.innerHTML = `<div class="hs-stage">
     ${img(D + 'plate.webp', 'hs-plate')}
     ${img(D + 'cloud-1.webp', 'p-cloud p-cloud-1', place(0, 522, 304))}${img(D + 'cloud-2.webp', 'p-cloud p-cloud-2', place(789, 474, 240))}${img(D + 'cloud-3.webp', 'p-cloud p-cloud-3', place(811, 642, 218))}
+    ${[0, 1, 2].map(i => `<div class="p-dragon" style="${place(0, 0, 100, 100)}" data-i="${i}"><div class="p-dgr">${[['l', 'p-dg p-dg-l'], ['r', 'p-dg p-dg-r'], ['b', 'p-dg p-dg-b']].map(([k, c]) => img(D + 'dragonfly-down.webp', c, `left:0;top:24%;width:100%;animation-delay:${-i * .031}s`)).join('')}</div></div>`).join('')}
     ${img(D + 'reeds-l.webp', 'p-reeds p-reeds-l', place(-60, 1105, 210))}
     <div class="p-ripples" style="${place(FOOT.x - 80, FOOT.y - 22, 160, 44)}"><i></i><i></i><i></i></div>
     <div class="p-frog" style="${place(FROG.x, FROG.y, FROG.w, FROG.h)}" data-pose="sit">${img(D + 'frog-sit.webp', 'p-fr p-fr-sit', at(FROG, 388, 1393, 75))}${img(D + 'frog-croak.webp', 'p-fr p-fr-croak', at(FROG, 388, 1389, 75))}${img(D + 'frog-jump.webp', 'p-fr p-fr-jump', at(FROG, 375, 1380, 101))}</div>
@@ -32,7 +33,6 @@ export async function build(home, load, current) {
       <div class="p-top" style="${at(CAT, TOPC.x, TOPC.y, TOPC.w)}height:${(TOPC.h / CAT.h * 100).toFixed(3)}%">${img(D + 'cat-top.webp', 'p-top-img')}${eye(80, 76)}${eye(127, 83)}${img(D + 'leaf.webp', 'p-leaf', 'left:-12%;top:38%;width:28%')}</div>
     </div>
     ${img(D + 'reeds-r.webp', 'p-reeds p-reeds-r', place(800, 1295, 250))}
-    <div class="p-dragon" style="${place(60, 960, 110, 80)}">${img(D + 'dragonfly-down.webp', 'p-dg', 'left:0;top:20%;width:100%')}</div>
     ${hit('flamingo', 60, 830, 480, 860, 'Make the flamingo spread its wings')}
     ${hit('top', 641, 847, 193, 200, 'Make the top caterpillar perk up')}
     ${hit('stack', 600, 1040, 270, 670, 'Wobble the caterpillar stack')}
@@ -41,7 +41,7 @@ export async function build(home, load, current) {
   </div>`;
 
   function start(play, stopSound) {
-    const q = s => root.querySelector(s), fl = q('.p-flamingo'), top = q('.p-top'), stack = q('.p-stack'), frog = q('.p-frog'), fish = q('.p-fish'), ripples = q('.p-ripples'), dragon = q('.p-dragon');
+    const q = s => root.querySelector(s), fl = q('.p-flamingo'), top = q('.p-top'), stack = q('.p-stack'), frog = q('.p-frog'), fish = q('.p-fish'), ripples = q('.p-ripples'), dragons = [...root.querySelectorAll('.p-dragon')];
     const timers = new Set(), stops = [];
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
     const flag = (el, key, ms) => { el.dataset[key] = ''; clearTimeout(el['_' + key]); el['_' + key] = later(() => { delete el.dataset[key]; }, ms); };
@@ -83,8 +83,21 @@ export async function build(home, load, current) {
       const a = fish.animate([{ transform: 'translate(0,0) rotate(-55deg)' }, { transform: 'translate(70%,-210%) rotate(-10deg)', offset: .5 }, { transform: 'translate(150%,0) rotate(55deg)' }], { duration: 1000, easing: 'ease-in-out' });
       a.onfinish = a.oncancel = () => { fish.style.visibility = 'hidden'; };
     }
-    const DART = [{ transform: 'translate(0,0)' }, { transform: 'translate(160%,-70%)', offset: .35 }, { transform: 'translate(110%,-20%)', offset: .65 }, { transform: 'translate(0,0)' }];
-    function dart() { dragon.animate(DART, { duration: 1800, easing: 'ease-in-out' }); }
+    // Dragonflies: wings flap fast (see css); each dashes about erratically, pausing to hover, behind the other things.
+    const flyers = dragons.map((el, i) => ({ el, x: 150 + i * 280, y: 900 + i * 90, ang: 0, live: false, t: null }));
+    flyers.forEach(f => { f.el.style.transform = `translate(${f.x - 50}%,${f.y - 50}%)`; });
+    function dash(f, quick) {
+      if (!f.live) return;
+      const nx = 40 + Math.random() * 860, ny = 760 + Math.random() * 620, dx = nx - f.x, dy = ny - f.y, d = Math.hypot(dx, dy) || 1;
+      let ang = Math.atan2(dx, -dy) * 180 / Math.PI; while (ang - f.ang > 180) ang -= 360; while (ang - f.ang < -180) ang += 360;
+      const dur = Math.max(260, Math.min(1100, d * (quick ? 1.1 : 2.1) + 150 * Math.random()));
+      const sc = 0.95 + (f.el.dataset.i % 3) * 0.12;
+      const a = f.el.animate([{ transform: `translate(${f.x - 50}%,${f.y - 50}%)` }, { transform: `translate(${nx - 50}%,${ny - 50}%)` }], { duration: dur, easing: 'cubic-bezier(.3,.1,.2,1)', fill: 'forwards' });
+      f.el.firstElementChild.animate([{ transform: `rotate(${f.ang}deg) scale(${sc})` }, { transform: `rotate(${ang}deg) scale(${sc})` }], { duration: Math.min(dur, 420), easing: 'ease-out', fill: 'forwards' });
+      f.x = nx; f.y = ny; f.ang = ang;
+      f.t = later(() => dash(f), dur + 150 + Math.random() * (Math.random() < .35 ? 1400 : 350));
+    }
+    function scatter() { flyers.forEach(f => { clearTimeout(f.t); dash(f, true); }); }
     root.addEventListener('click', e => {
       const kind = e.target.closest('[data-w]')?.dataset.w; if (!kind || !gate.isActive()) return;
       play(kind === 'frog' || kind === 'reeds' ? 1 : 0);
@@ -92,7 +105,7 @@ export async function build(home, load, current) {
       else if (kind === 'top') perk();
       else if (kind === 'stack') { wobble(); if (!busy) flag(top, 'blink', 260); }
       else if (kind === 'frog') (Math.random() < .5 ? hop : croak)();
-      else if (kind === 'reeds') { flag(root, 'rustle', 1600); dart(); }
+      else if (kind === 'reeds') { flag(root, 'rustle', 1600); scatter(); }
     });
     const gate = watchActive(home, root, on => {
       if (on) {
@@ -102,9 +115,9 @@ export async function build(home, load, current) {
         stops.push(every(8000, 14000, croak));
         stops.push(every(16000, 26000, hop));
         stops.push(every(12000, 20000, leap));
-        stops.push(every(10000, 18000, dart));
+        flyers.forEach((f, i) => { f.live = true; later(() => dash(f), 300 + i * 450); });
         stops.push(every(5000, 9000, splash));
-      } else { stops.splice(0).forEach(s => s()); stopSound(); }
+      } else { flyers.forEach(f => { f.live = false; clearTimeout(f.t); }); stops.splice(0).forEach(s => s()); stopSound(); }
     });
     return () => { gate.stop(); stops.forEach(s => s()); timers.forEach(clearTimeout); };
   }
