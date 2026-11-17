@@ -2028,7 +2028,8 @@ export function drawSceneryFloor(ctx, kit, meta, { width, height, floorY, shiftX
   const top = floorY - tileH * meta.surface - inset;
   const arm = kit.images[kit.config.deskLamp?.arm];
   const shade = kit.images[kit.config.deskLamp?.shade];
-  if (top >= height && !(arm && shade) && !kit.config.bookcase) return;
+  const depthTop = kit.config.floorDepth ? top - shiftY * (1 - kit.config.floorDepth.par) : top; // a deep floor's back rows lag behind
+  if (depthTop >= height && !(arm && shade) && !kit.config.bookcase) return;
   if (top + tileH <= 0) return;
   if (kit.config.fittedFloor) {
     ctx.save();
