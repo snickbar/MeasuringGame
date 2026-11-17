@@ -396,6 +396,31 @@ addVariant('fair', c => { c.pieces = [{ ...balloons, prob: .85 }]; });
 addVariant('resort', c => { c.pieces = [kite]; });
 addVariant('enchanted', c => { c.pieces = [{ img: 'enchanted-reveal-lantern', cell: 700, prob: .6, w: 30, speed: 4, bob: 10, sway: .06, minH: 600 }]; });
 
+// Indoor v2: wall decorations up the climb; Kitchen, Library and Living Room also get a deep floor with rows of furniture.
+addVariant('kitchen', c => {
+  c.floor = 'kitchen-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
+  c.floorDepth = { par: .5, tables: [{ img: 'kitchen-v2-furn-0', s: 1.10 }, { img: 'kitchen-v2-furn-1', s: 1.11 }, { img: 'kitchen-v2-furn-2', s: 1.11 }, { img: 'kitchen-v2-furn-3', s: 0.93 }, { img: 'kitchen-v2-furn-4', s: 1.13 }, { img: 'kitchen-v2-furn-5', s: 0.76 }, { img: 'kitchen-v2-furn-6', s: 1.01 }, { img: 'kitchen-v2-furn-7', s: 0.84 }],
+    rows: [{ r: 0.06, w: 0.036, gap: 0.085, jitter: .06 }, { r: 0.14, w: 0.046, gap: 0.105, jitter: .06 }, { r: 0.24, w: 0.058, gap: 0.13, jitter: .06 }, { r: 0.35, w: 0.072, gap: 0.16, jitter: .06 }] };
+  c.parallax = [{ img: 'kitchen-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 280 }];
+  c.wallPieces = [{ img: 'kitchen-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'kitchen-v2-wall-1', x: 0.74, w: 0.267 }, { img: 'kitchen-v2-wall-2', x: 0.7, w: 0.204 }, { img: 'kitchen-v2-wall-3', x: 0.28, w: 0.240 }, { img: 'kitchen-v2-wall-4', x: 0.22, w: 0.239 }, { img: 'kitchen-v2-wall-5', x: 0.78, w: 0.233 }, { img: 'kitchen-v2-wall-6', x: 0.76, w: 0.264 }, { img: 'kitchen-v2-wall-7', x: 0.26, w: 0.224 }];
+});
+addVariant('library', c => {
+  c.floor = 'library-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
+  c.floorDepth = { par: .5, tables: [{ img: 'library-v2-furn-0', s: 1.09 }, { img: 'library-v2-furn-1', s: 0.94 }, { img: 'library-v2-furn-2', s: 1.03 }, { img: 'library-v2-furn-3', s: 0.81 }, { img: 'library-v2-furn-4', s: 0.95 }, { img: 'library-v2-furn-5', s: 1.09 }, { img: 'library-v2-furn-6', s: 1.12 }, { img: 'library-v2-furn-7', s: 0.96 }],
+    rows: [{ r: 0.06, w: 0.036, gap: 0.085, jitter: .06 }, { r: 0.14, w: 0.046, gap: 0.105, jitter: .06 }, { r: 0.24, w: 0.058, gap: 0.13, jitter: .06 }, { r: 0.35, w: 0.072, gap: 0.16, jitter: .06 }] };
+  c.parallax = [{ img: 'library-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 227 }];
+  c.wallPieces = [{ img: 'library-v2-wall-0', x: 0.25, w: 0.269 }, { img: 'library-v2-wall-1', x: 0.74, w: 0.231 }, { img: 'library-v2-wall-2', x: 0.7, w: 0.230 }, { img: 'library-v2-wall-3', x: 0.28, w: 0.226 }, { img: 'library-v2-wall-4', x: 0.22, w: 0.276 }, { img: 'library-v2-wall-5', x: 0.78, w: 0.246 }, { img: 'library-v2-wall-6', x: 0.76, w: 0.213 }, { img: 'library-v2-wall-7', x: 0.26, w: 0.269 }]; c.bookcase = undefined;
+});
+addVariant('living', c => {
+  c.floor = 'living-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
+  c.floorDepth = { par: .5, tables: [{ img: 'living-v2-furn-0', s: 1.23 }, { img: 'living-v2-furn-1', s: 1.14 }, { img: 'living-v2-furn-2', s: 1.09 }, { img: 'living-v2-furn-3', s: 0.80 }, { img: 'living-v2-furn-4', s: 0.52 }, { img: 'living-v2-furn-5', s: 1.02 }, { img: 'living-v2-furn-6', s: 1.17 }, { img: 'living-v2-furn-7', s: 1.03 }],
+    rows: [{ r: 0.06, w: 0.036, gap: 0.085, jitter: .06 }, { r: 0.14, w: 0.046, gap: 0.105, jitter: .06 }, { r: 0.24, w: 0.058, gap: 0.13, jitter: .06 }, { r: 0.35, w: 0.072, gap: 0.16, jitter: .06 }] };
+  c.parallax = [{ img: 'living-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 284 }];
+  c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; c.roomPlant = undefined;
+});
+addVariant('workshop', c => { c.wallPieces = [{ img: 'workshop-v2-wall-0', x: 0.25, w: 0.235 }, { img: 'workshop-v2-wall-1', x: 0.74, w: 0.257 }, { img: 'workshop-v2-wall-2', x: 0.7, w: 0.205 }, { img: 'workshop-v2-wall-3', x: 0.28, w: 0.271 }, { img: 'workshop-v2-wall-4', x: 0.22, w: 0.171 }, { img: 'workshop-v2-wall-5', x: 0.78, w: 0.278 }, { img: 'workshop-v2-wall-6', x: 0.76, w: 0.186 }, { img: 'workshop-v2-wall-7', x: 0.26, w: 0.194 }]; });
+addVariant('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'tabletop-v2-wall-1', x: 0.74, w: 0.272 }, { img: 'tabletop-v2-wall-2', x: 0.7, w: 0.279 }, { img: 'tabletop-v2-wall-3', x: 0.28, w: 0.218 }, { img: 'tabletop-v2-wall-4', x: 0.22, w: 0.237 }, { img: 'tabletop-v2-wall-5', x: 0.78, w: 0.196 }, { img: 'tabletop-v2-wall-6', x: 0.76, w: 0.221 }, { img: 'tabletop-v2-wall-7', x: 0.26, w: 0.233 }]; });
+
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
 export function groundScaleFor(cameraScale, finalScale) {
@@ -411,7 +436,7 @@ function loadImage(url) {
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
   const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
-  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...[0, 1, 2, 3, 5, 6].filter(() => id === 'restaurant').map(l => 'restaurant-table-' + l), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
+  const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...(config.floorDepth?.tables || []).map(q => q.img || q), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
   return { id, config, images };
@@ -1795,8 +1820,8 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
       for (let y = offset - h; y < height; y += h) {
         ctx.drawImage(roomBack, x, y, w, h + .5);
         const wp = config.wallPieces;
-        if (wp && roofBottom > -1e8) { // framed things hung on the wall, two to a wall tile, repeating every three tiles
-          const idx = Math.round((y - shiftY * config.roomBackParallax) / h), m = (((idx % 3) + 3) % 3) * 2;
+        if (wp && (!roofPic || roofBottom > -1e8)) { // framed things hung on the wall, two to a wall tile, cycling through the list
+          const idx = Math.round((y - shiftY * config.roomBackParallax) / h), period = wp.length >> 1, m = (((idx % period) + period) % period) * 2;
           ctx.save(); if (dark) ctx.filter = 'brightness(62%)';
           for (let q = 0; q < 2; q++) { const pc = wp[m + q], pic = pc && images[pc.img]; if (!pic) continue; const pw = pc.w * width, ph = pw * pic.naturalHeight / pic.naturalWidth; ctx.drawImage(pic, width * pc.x - pw / 2, y + h * (q ? .72 : .28) - ph / 2, pw, ph); }
           ctx.restore();
@@ -1997,9 +2022,9 @@ export function drawFloorDepthRows(ctx, kit, { width, height, floorY, shiftY = 0
     const tw = row.w * tile; if (base - tw * 1.3 > height || base < 0) continue;
     const count = Math.round(1 / row.gap);
     for (let k = 0; k < count; k++) {
-      const pic = kit.images[depth.tables[(k * 3 + ri * 5) % depth.tables.length]]; if (!pic) continue;
-      const th = tw * pic.naturalHeight / pic.naturalWidth, u = (k + (ri % 2 ? .5 : 0) + (row.jitter || 0) * Math.sin(k * 12.9 + ri * 7.3)) / count;
-      for (let x = offset + u * tile; x - tw / 2 < width; x += tile) if (x + tw / 2 > 0) ctx.drawImage(pic, x - tw / 2, base - th, tw, th);
+      const item = depth.tables[(k * 3 + ri * 5) % depth.tables.length], pic = kit.images[item.img || item]; if (!pic) continue;
+      const iw = tw * (item.s || 1), th = iw * pic.naturalHeight / pic.naturalWidth, u = (k + (ri % 2 ? .5 : 0) + (row.jitter || 0) * Math.sin(k * 12.9 + ri * 7.3)) / count;
+      for (let x = offset + u * tile; x - tw / 2 < width; x += tile) if (x + iw / 2 > 0) ctx.drawImage(pic, x - iw / 2, base - th, iw, th);
     }
   }
   ctx.restore();

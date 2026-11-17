@@ -14,6 +14,18 @@ export const FLOOR_DATA = {
     "surface": 0.455,
     "color": "#a7622b"
   },
+  "kitchen-v2-floor": {
+    "surface": 0.47,
+    "color": "#99836c"
+  },
+  "library-v2-floor": {
+    "surface": 0.47,
+    "color": "#a04717"
+  },
+  "living-v2-floor": {
+    "surface": 0.47,
+    "color": "#dc8538"
+  },
   "restaurant-n-floor": {
     "surface": 0.47,
     "color": "#241a1d"
