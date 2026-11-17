@@ -4,7 +4,7 @@
 import { place, img, hit, every, watchActive } from './home-worlds-util.mjs';
 const D = 'anim/home-art/home-birds-bugs/';
 export const SIZE = { width: 1029, height: 2222 };
-const NAMES = ['plate', 'flamingo-1', 'flamingo-2', 'flamingo-up', 'caterpillars-base', 'cat-top', 'leaf', 'frog-sit', 'frog-croak', 'frog-jump', 'fish', 'dragonfly-up', 'dragonfly-down',
+const NAMES = ['plate', 'flamingo-1', 'flamingo-2', 'flamingo-up', 'caterpillars-base', 'cat-top', 'leaf', 'frog-sit', 'frog-croak', 'frog-jump', 'fish',  'dragonfly-down',
   'reeds-l', 'reeds-r', 'cloud-1', 'cloud-2', 'cloud-3', 'ripple-2'];
 // Position of an image inside a box, in percent of the box.
 const at = (b, x, y, w) => `left:${((x - b.x) / b.w * 100).toFixed(3)}%;top:${((y - b.y) / b.h * 100).toFixed(3)}%;width:${(w / b.w * 100).toFixed(3)}%;`;
@@ -32,7 +32,7 @@ export async function build(home, load, current) {
       <div class="p-top" style="${at(CAT, TOPC.x, TOPC.y, TOPC.w)}height:${(TOPC.h / CAT.h * 100).toFixed(3)}%">${img(D + 'cat-top.webp', 'p-top-img')}${eye(80, 76)}${eye(127, 83)}${img(D + 'leaf.webp', 'p-leaf', 'left:-12%;top:38%;width:28%')}</div>
     </div>
     ${img(D + 'reeds-r.webp', 'p-reeds p-reeds-r', place(800, 1295, 250))}
-    <div class="p-dragon" style="${place(60, 960, 110, 80)}">${img(D + 'dragonfly-down.webp', 'p-dg p-dg-a', 'left:0;top:30%;width:100%')}${img(D + 'dragonfly-up.webp', 'p-dg p-dg-b', 'left:22%;top:0;width:66%')}</div>
+    <div class="p-dragon" style="${place(60, 960, 110, 80)}">${img(D + 'dragonfly-down.webp', 'p-dg', 'left:0;top:20%;width:100%')}</div>
     ${hit('flamingo', 60, 830, 480, 860, 'Make the flamingo spread its wings')}
     ${hit('top', 641, 847, 193, 200, 'Make the top caterpillar perk up')}
     ${hit('stack', 600, 1040, 270, 670, 'Wobble the caterpillar stack')}
@@ -73,9 +73,9 @@ export async function build(home, load, current) {
     const fp = (x, y) => `translate(${(x / FROG.w * 100).toFixed(2)}%,${(y / FROG.h * 100).toFixed(2)}%)`;
     function hop() {
       if (hopping) return; hopping = true; frog.dataset.pose = 'jump';
-      const far = frog.dataset.at === 'far', from = far ? [75, 52] : [0, 0], to = far ? [0, 0] : [75, 52];
+      const far = frog.dataset.at === 'far'; frog.dataset.dir = far ? 'back' : 'fwd'; const from = far ? [75, 52] : [0, 0], to = far ? [0, 0] : [75, 52];
       const a = frog.animate([{ transform: fp(...from) }, { transform: fp((from[0] + to[0]) / 2, (from[1] + to[1]) / 2 - 70), offset: .5 }, { transform: fp(...to) }], { duration: 800, easing: 'ease-in-out' });
-      a.onfinish = () => { frog.dataset.at = far ? 'near' : 'far'; frog.style.transform = far ? '' : fp(...to); frog.dataset.pose = 'sit'; hopping = false; splash(); };
+      a.onfinish = () => { frog.dataset.dir = 'fwd'; frog.dataset.at = far ? 'near' : 'far'; frog.style.transform = far ? '' : fp(...to); frog.dataset.pose = 'sit'; hopping = false; splash(); };
     }
     // Fish: leaps out of the water and back in.
     function leap() {
