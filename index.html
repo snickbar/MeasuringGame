@@ -22652,7 +22652,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       group:Object.values(currentPlayers).filter(p=>!p.isBot).length>=2,myAvatar:currentPlayers[me]?.avatar,
       opponents:Object.entries(currentPlayers).filter(([id])=>id!==me).map(([,p])=>p.isBot?p.botDifficulty||'medium':'human')});
     document.getElementById('final-session-recap')?.remove();
-    finalListEl.innerHTML=bluffFinalHtml(s,currentPlayers,avatarHtml);
+    finalListEl.innerHTML=bluffFinalHtml(s,currentPlayers,avatarHtml,frameEdgeHtml);
     // Bottom-up arrival: last place first, the winner's card last (then the hero dances); scores count up, detail lines fade in.
     const finCards=[...finalListEl.querySelectorAll('.bl-final-card')],finStep=300,finLast=Math.max(0,finCards.length-1)*finStep;
     finCards.forEach((li,i)=>{const d=(finCards.length-1-i)*finStep;li.style.animationDelay=d+'ms';countNode(li.querySelector('.bl-final-score'),500,d+200);const det=li.querySelector('.bl-final-detail');if(det){det.classList.add('hl-arr');det.style.setProperty('--a',((d+350)/1000).toFixed(2)+'s');}});
@@ -24429,7 +24429,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   bluffUI=createBluffUI({element:document.getElementById('bluff-content'),context:()=>({room:roomState,me:currentPlayerId,host:isHost,leaving:leavingGame}),now:nowMs,
     transact:(expected,next,host)=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>commitBluff(cur,expected,next,host),{applyLocally:false}),
     act:action=>runTransaction(ref(db,'rooms/'+currentRoomCode),cur=>bluffAction(cur,action,nowMs()),{applyLocally:false}),
-    question:generateQuestion,object:id=>OBJECT_BY_ID.get(id),avatar:avatarHtml,sound:playSound,reduced:prefersReducedMotion,laugh:hsLaugh,vibrate,toast:hsTurnToast,
+    question:generateQuestion,object:id=>OBJECT_BY_ID.get(id),avatar:avatarHtml,renderFrame:frameEdgeHtml,sound:playSound,reduced:prefersReducedMotion,laugh:hsLaugh,vibrate,toast:hsTurnToast,
     revealAnimation:{
       duration:async q=>{if(prefersReducedMotion()||roomState.settings?.animationReveal===false)return 0;const pair=questionObjects(q),mod=pair?await loadAnimModule():null;return pair&&mod?mod.animationDuration(pair[0],pair[1])*1000:0;},
       mount:(node,q,state)=>{

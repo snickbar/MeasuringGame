@@ -11,8 +11,10 @@ function countUpEl(el,ms,delay,reduced){
 }
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const customFrameClass = player => playerFrameArt(player?.playerFrame) ? ' bl-custom-frame' : '';
-const customFrameEdge = player => {
-  const art = playerFrameArt(player?.playerFrame);
+const customFrameEdge = (player, renderFrame) => {
+  if (renderFrame) return renderFrame(player?.playerFrame, player?.frameIndex);
+  const art = playerFrameArt(player?.playerFrame).replace(/url\("([^"]+)"\)/, (_, path) =>
+    'url("' + new URL('../' + path, import.meta.url).href + '")');
   return art ? '<span class="player-frame-art" aria-hidden="true" style=\'--player-frame-art:' + art + '\'></span>' : '';
 };
 export const bluffNumber=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
@@ -77,20 +79,20 @@ export function bluffSummaryHtml(s,players,avatar,me,age=Infinity,motion=true){
   const seesaw=bluffScaleHtml(s,T,age,motion);
   return `<div class="bl-stage${judged?' bl-judged':''}">${seesaw}<div class="bl-bins">${['low','correct','high'].map(box).join('')}</div><div class="bl-maker-result"><img class="bl-maker-laugh" src="icons/reactions/laughing.webp" alt="Fooled you!" hidden><span class="avatar">${avatar(players[s.maker]?.avatar||s.avatars?.[s.maker])}</span><b class="bl-maker-name">${esc(name(s.maker))}</b><span class="bl-pill faker">Faker</span><span class="bl-pill fooled">${s.autoClaim?'Auto claim':`${s.result.wrong} fooled`}</span><strong data-maker-points>+${s.result.points[s.maker]||0}</strong></div>${missed.length?`<div class="bl-missed-votes"><p>No vote submitted · 0 points</p><div class="bl-result-people">${missed.map(id=>person(id,false)).join('')}</div></div>`:''}</div>`;
 }
-export function bluffRankingsHtml(s,players,avatar,me){
+export function bluffRankingsHtml(s,players,avatar,me,renderFrame){
   const newLeaders=bluffNewLeaders(s),rows=bluffStandings(s),before=bluffStandingsBefore(s);
   const prev=new Map((before||[]).map((r,i)=>[r.id,{rank:r.rank,pos:i}]));
   return `<section class="bl-rankings" aria-label="Current rankings"><h2>Current rankings</h2><p class="bl-rank-sub">After round ${s.round}</p><div class="hs-stand bl-stand-list">${rows.map((row,i)=>{
     const was=prev.get(row.id),move=was?was.rank-row.rank:0,shift=was?was.pos-i:0;
     const mv=move>0?`<span class="hs-mv up" aria-label="Up ${move}">&#9650;${move}</span>`:move<0?`<span class="hs-mv down" aria-label="Down ${-move}">&#9660;${-move}</span>`:'<span class="hs-mv same" aria-label="Same place">&ndash;</span>';
-    return `<div class="hs-srow bl-standing${row.rank===1?' leader':''}${row.id===me?' me':''}${newLeaders.includes(row.id)?' bl-new-leader':''}${shift>0?' bl-climb':shift<0?' bl-fall':''}${customFrameClass(players[row.id])}" data-bluff-rank="${esc(row.id)}" style="--shift:${shift};animation-delay:${(rows.length-1-i)*180}ms,${(rows.length-1)*180+450}ms">${customFrameEdge(players[row.id])}<span class="hs-srank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><span class="hs-sname"><b>${row.id===me?'You':esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b>${newLeaders.includes(row.id)?'<span class="bl-leader-badge">New leader</span>':''}<small>${Math.round(row.accuracy)}% vote accuracy</small></span>${mv}<span class="bl-standing-score"><strong>${row.score}</strong><small>points</small></span><span class="hs-delta${s.result.points[row.id]?' up':''}">+${s.result.points[row.id]||0}<small>this round</small></span></div>`;}).join('')}</div></section>`;
+    return `<div class="hs-srow bl-standing${row.rank===1?' leader':''}${row.id===me?' me':''}${newLeaders.includes(row.id)?' bl-new-leader':''}${shift>0?' bl-climb':shift<0?' bl-fall':''}${customFrameClass(players[row.id])}" data-bluff-rank="${esc(row.id)}" style="--shift:${shift};animation-delay:${(rows.length-1-i)*180}ms,${(rows.length-1)*180+450}ms">${customFrameEdge(players[row.id],renderFrame)}<span class="hs-srank place-medallion" data-rank="${row.rank}">${row.rank}</span><span class="avatar">${avatar(players[row.id]?.avatar||s.avatars?.[row.id])}</span><span class="hs-sname"><b>${row.id===me?'You':esc(players[row.id]?.name||s.names?.[row.id]||'Player')}</b>${newLeaders.includes(row.id)?'<span class="bl-leader-badge">New leader</span>':''}<small>${Math.round(row.accuracy)}% vote accuracy</small></span>${mv}<span class="bl-standing-score"><strong>${row.score}</strong><small>points</small></span><span class="hs-delta${s.result.points[row.id]?' up':''}">+${s.result.points[row.id]||0}<small>this round</small></span></div>`;}).join('')}</div></section>`;
 }
-export function bluffFinalHtml(s,players,avatar){
+export function bluffFinalHtml(s,players,avatar,renderFrame){
   return bluffStandings(s).map(row=>{
     const player=players[row.id];
     const fooled=s.fooled?.[row.id]||0;
     return `<li class="final-row bl-final-card${row.rank===1?' rank-1':''}${customFrameClass(player)}" data-bluff-final-player="${esc(row.id)}"${row.rank===1?' data-bluff-winner':''}>
-      ${customFrameEdge(player)}
+      ${customFrameEdge(player,renderFrame)}
       <div class="bl-final-row">
         <span class="bl-final-rank place-medallion" data-rank="${row.rank}">${row.rank}</span>
         <span class="avatar">${avatar(player?.avatar||s.avatars?.[row.id])}</span>
@@ -105,7 +107,7 @@ export function bluffFinalHtml(s,players,avatar){
     </li>`;
   }).join('');
 }
-export function createBluffUI({element,context,now,transact,act,question,object,avatar,sound,visible,revealAnimation,reduced=()=>false,laugh=()=>{},vibrate=()=>{},toast=()=>{}}){
+export function createBluffUI({element,context,now,transact,act,question,object,avatar,renderFrame,sound,visible,revealAnimation,reduced=()=>false,laugh=()=>{},vibrate=()=>{},toast=()=>{}}){
   const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./bluff.css',import.meta.url);document.head.append(css);
   let handle=null,busy=false,busySince=0,autoClaimKey='',selection=null,selectionKey='',signature='',cueKey='',error='';
   let animationKey='',animationNode=null,animationStop=null;
@@ -151,11 +153,11 @@ export function createBluffUI({element,context,now,transact,act,question,object,
     }
     const stageChanged=cueKey!==key;
     element.classList.toggle('bl-stage-enter',stageChanged);
-    const NEON=["#ff6b4a","#7a8cff","#b86bff","#19c3ff","#12d6b0","#8ee03a","#ff4fa0","#4cd98a","#ff5a66","#ffa23a"],neonIds=Object.keys(room.players||{}),neonStyle=id=>{const fi=Number(room.players?.[id]?.frameIndex)||(Math.max(0,neonIds.indexOf(id))+1);return ` style="--pc:${NEON[(fi-1+10)%10]}"`};const cardFor=(id,side)=>{const p=room.players?.[id],maker=id===s.maker,tag=maker?'Maker':s.stage==='vote'?(s.votes?.[id]?'Voted':'Thinking…'):s.stage==='reveal'?(s.result.points[id]?'+'+s.result.points[id]:'0 points'):p?'Ready':'Away';return `<div class="hs-pl bl-player${maker?' turn':s.stage==='vote'&&s.votes?.[id]?' voted':''}${customFrameClass(p)}" data-bluff-player="${esc(id)}" data-bluff-side="${side}"${neonStyle(id)}>${customFrameEdge(p)}<span class="avatar">${avatar(p?.avatar||s.avatars?.[id])}</span><b class="hs-pl-name" title="${esc(p?.name||s.names?.[id])}">${esc(p?.name||s.names?.[id]||'Player')}</b><span class="hs-pl-coins">${s.scores[id]||0} pts</span><span class="hs-tag${maker?' turn':s.votes?.[id]?' ok':''}">${tag}</span></div>`;};
+    const NEON=["#ff6b4a","#7a8cff","#b86bff","#19c3ff","#12d6b0","#8ee03a","#ff4fa0","#4cd98a","#ff5a66","#ffa23a"],neonIds=Object.keys(room.players||{}),neonStyle=id=>{const fi=Number(room.players?.[id]?.frameIndex)||(Math.max(0,neonIds.indexOf(id))+1);return ` style="--pc:${NEON[(fi-1+10)%10]}"`};const cardFor=(id,side)=>{const p=room.players?.[id],maker=id===s.maker,tag=maker?'Maker':s.stage==='vote'?(s.votes?.[id]?'Voted':'Thinking…'):s.stage==='reveal'?(s.result.points[id]?'+'+s.result.points[id]:'0 points'):p?'Ready':'Away';return `<div class="hs-pl bl-player${maker?' turn':s.stage==='vote'&&s.votes?.[id]?' voted':''}${customFrameClass(p)}" data-bluff-player="${esc(id)}" data-bluff-side="${side}"${neonStyle(id)}>${customFrameEdge(p,renderFrame)}<span class="avatar">${avatar(p?.avatar||s.avatars?.[id])}</span><b class="hs-pl-name" title="${esc(p?.name||s.names?.[id])}">${esc(p?.name||s.names?.[id]||'Player')}</b><span class="hs-pl-coins">${s.scores[id]||0} pts</span><span class="hs-tag${maker?' turn':s.votes?.[id]?' ok':''}">${tag}</span></div>`;};
     const left=[],right=[];s.order.forEach((id,i)=>(i%2?right:left).push(cardFor(id,i%2?'r':'l')));
     const nextLabel=!s.showStand?'Show standings':s.round===s.total?'Finish game':'Start next round';
     const dock=s.stage==='reveal'?`<div class="bl-dock">${host?`<button type="button" class="dc-btn bl-dock-btn" data-next ${busy?'disabled':''}>${nextLabel}</button>`:`<p class="hs-hint">Waiting for the host to ${s.showStand?(s.round===s.total?'finish the game':'start the next round'):'show the standings'}…</p>`}</div>`:'';
-    const standings=s.stage==='reveal'&&s.showStand?bluffRankingsHtml(s,room.players||{},avatar,me):'';
+    const standings=s.stage==='reveal'&&s.showStand?bluffRankingsHtml(s,room.players||{},avatar,me,renderFrame):'';
     const board=s.stage==='reveal'?s.showStand?standings:`<section class="bl-summary" aria-label="The claim is"><div class="bl-summary-head"><h2>The claim is…</h2>${revealRaccoon}</div>${content}</section>`:`<div class="hs-board bl-table${s.order.length>6?' dense':''}">${idleScale}<div class="hs-col l">${left.join('')}</div><section class="hs-mid bl-panel${intro&&s.stage==='vote'?' bl-thud':''}"${intro&&s.stage==='vote'?introStyle:''} aria-label="${s.stage==='make'?'Maker choice':'Judge the claim'}">${content}<p class="bl-error" role="status">${esc(error)}</p></section><div class="hs-col r">${right.join('')}</div></div>`;
     const keepView=element.ownerDocument.defaultView,keepY=keepView.scrollY; // a rebuild must not throw the page back to the top
     // Pictures in the rebuilt board load a moment later, so for a beat the page is shorter and the browser clamps the scroll to the top.
