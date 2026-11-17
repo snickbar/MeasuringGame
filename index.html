@@ -2805,7 +2805,7 @@ if (location.protocol === "file:") {
   button#reveal-all-btn { border-image-source: url(icons/btn-bot-medium.webp); }
   /* Solo reveal row (Auto | Reveal next | Reveal all): Auto stays small so both labels fit on one line */
   #bottom-actions[data-bar-reveal] #hud-auto-toggle { flex: 0 0 auto; min-width: 72px; }
-  #bottom-actions[data-bar-reveal] :is(#reveal-next-btn,#reveal-all-btn) { white-space: nowrap; font-size: 13px; }
+  #bottom-actions[data-bar-reveal] :is(#reveal-next-btn,#reveal-all-btn) { max-width: none; white-space: nowrap; font-size: 13px; }
   button#reveal-next-btn,
   button#show-summary-btn,
   button#next-round-btn,
@@ -22681,6 +22681,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const winners=top.filter(e=>e.rank===1&&e.score>0);
     return {el:li,winMs:reduce?0:impactAt+120,reveal,winnerEl:winners.length===1?[...li.querySelectorAll('.pd-slot')].find(e=>e.dataset.id===winners[0].id)?.querySelector('.pd-who'):null};
   }
+  function finalWinnerHeading(label) {
+    const art = ["icons/reactions/crown.webp", "icons/reactions/trophy.webp", "icons/ui-place-medallion.webp"];
+    const icon = art[Math.floor(Math.random() * art.length)];
+    return `<h3 class="final-winner-heading"><img src="${icon}" alt="">${label}</h3>`;
+  }
   function renderFinal() {
     if (finalRendered) return;
     finalScreenEl.classList.toggle('bluff-final',roomState.settings?.mode==='bluff');
@@ -22775,7 +22780,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }).join("");
         const li = document.createElement("li");
         li.className = "final-row team-final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
-        li.dataset.place = rank === 1 ? 'Winning team' : `Place ${rank}`;
         li.style.setProperty("--tc", TEAM_COLOR_HEX[team]);
         const delayMs = (teamRanked.length - 1 - idx) * 300; // bottom-up: last place first, the winner lands last
         li.style.animationDelay = `${delayMs}ms`;
@@ -22785,6 +22789,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           : "";
         li.innerHTML = `
           ${winnerStars}
+          ${rank === 1 ? finalWinnerHeading("Winning team") : ""}
           <div class="final-row-top">${medal}<div class="team-final-avatars">${avatars}</div><span class="name">${names}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
           <div class="team-final-members">${memberRows}</div>
         `;
@@ -22811,7 +22816,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const statsHtml = bonusNote + tiebreakNote;
       const li = document.createElement("li");
       li.className = "final-row" + (rank === 1 ? " rank-1" : rank === 2 ? " rank-2" : rank === 3 ? " rank-3" : "");
-      li.dataset.place = rank === 1 ? 'Winner' : `Place ${rank}`;
       const delayMs = (ranked.length - 1 - idx) * 300; // bottom-up: last place first, the winner lands last
       li.style.animationDelay = `${delayMs}ms`;
       if (rank === 1) rank1Delay = Math.max(rank1Delay, delayMs);
@@ -22820,6 +22824,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : "";
       li.innerHTML = `
         ${winnerStars}
+        ${rank === 1 ? finalWinnerHeading("Winner!") : ""}
         <div class="final-row-top">${medal}<span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span><div class="final-metrics">${avgPctHtml}<span class="pts">${score}</span></div></div>
         ${statsHtml}
       `;

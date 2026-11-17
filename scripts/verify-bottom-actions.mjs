@@ -10,6 +10,7 @@ const buttons = showing => ids.map(id => ({ id, hidden: !showing.includes(id) })
 // Which layout each part of a game gets.
 assert.deepEqual(bottomActionsState(buttons([])), { empty: true, final: false, reveal: false }, 'Nothing showing: the bar takes no space');
 assert.deepEqual(bottomActionsState(buttons(['hud-auto-toggle', 'reveal-next-btn', 'reveal-all-btn'])), { empty: false, final: false, reveal: true }, 'Solo reveal row');
+assert.deepEqual(bottomActionsState(buttons(['hud-auto-toggle', 'reveal-next-btn'])), { empty: false, final: false, reveal: true }, 'Keep Auto anchored for the last guess');
 assert.deepEqual(bottomActionsState(buttons(['play-again-btn', 'final-home-btn', 'final-double-coins-btn'])), { empty: false, final: true, reveal: false }, 'Final results row');
 assert.deepEqual(bottomActionsState(buttons(['next-round-btn'])), { empty: false, final: false, reveal: false }, 'A lone button keeps the default layout');
 assert.deepEqual(bottomActionsState(buttons(['final-double-coins-btn', 'play-again-btn'])), { empty: false, final: false, reveal: false }, 'Final row needs the Finish button itself');

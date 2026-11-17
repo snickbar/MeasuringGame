@@ -10,7 +10,7 @@
 //
 //   data-bar-empty   no button is showing, so the bar takes no space
 //   data-bar-final   the "Finish game" button is showing (the Play again / Finish / ad row)
-//   data-bar-reveal  the "Reveal all" button is showing (the solo Auto | Reveal next | Reveal all row)
+//   data-bar-reveal  the reveal controls are showing, including the last guess with Auto
 
 export const BAR_FLAGS = { empty: 'data-bar-empty', final: 'data-bar-final', reveal: 'data-bar-reveal' };
 
@@ -20,7 +20,7 @@ export function bottomActionsState(buttons) {
   return {
     empty: buttons.every(button => button.hidden),
     final: showing('final-home-btn'),
-    reveal: showing('reveal-all-btn')
+    reveal: showing('reveal-all-btn') || (showing('hud-auto-toggle') && showing('reveal-next-btn'))
   };
 }
 
