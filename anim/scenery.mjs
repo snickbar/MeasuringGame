@@ -242,9 +242,9 @@ export const SETTINGS = {
       { img: 'library-n-near', par: .6, lift: 155, scale: 0.7, props: [{ img: 'library-n-loose-0', x: 0.08, row: 706, w: 0.053 }, { img: 'library-n-loose-2', x: 0.3, row: 706, w: 0.047 }, { img: 'library-n-loose-3', x: 0.55, row: 706, w: 0.028 }, { img: 'library-n-loose-5', x: 0.8, row: 706, w: 0.063 }] }],
     pieces: [{ img: 'library-n-movers-1', cell: 1800, prob: 0.6, w: 68, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }, { img: 'library-n-movers-2', cell: 2300, prob: 0.6, w: 64, speed: 16, bob: 5, sway: 0.03, minH: 440, face: 1 }] },
   restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 640, sky: ['#2a1114', '#3d1a1d'],
-    parallax: [{ img: 'restaurant-n-far', par: .16, lift: 330, scale: 0.85, tanks: [{ box: [.408, .39, .59, .66], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] },
-      { img: 'restaurant-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'restaurant-light-globe', x: .2, row: 235, w: .05, move: { type: 'dangle', amp: 3, speed: .9 } }, { img: 'restaurant-light-chandelier', x: .5, row: 245, w: .08, move: { type: 'dangle', amp: 2, speed: .7 } }, { img: 'restaurant-light-dome', x: .8, row: 235, w: .06, move: { type: 'dangle', amp: 3, speed: 1.1 } }, { img: 'restaurant-light-lantern', x: .35, row: 225, w: .04, move: { type: 'dangle', amp: 4, speed: 1.2 } }, { img: 'restaurant-light-trio', x: .65, row: 225, w: .04, move: { type: 'dangle', amp: 3, speed: .8 } }] },
-      { img: 'restaurant-n-near', par: .6, lift: 155, scale: 0.7, props: [] }] },
+    parallax: [{ img: 'restaurant-n-far', par: .16, lift: 510, noFill: true, scale: 0.85, tanks: [{ box: [.408, .39, .59, .66], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] },
+      { img: 'restaurant-n-mid', par: .34, lift: 365, noFill: true, scale: 0.75, props: [{ img: 'restaurant-light-globe', x: .2, row: 235, w: .05, move: { type: 'dangle', amp: 3, speed: .9 } }, { img: 'restaurant-light-chandelier', x: .5, row: 245, w: .08, move: { type: 'dangle', amp: 2, speed: .7 } }, { img: 'restaurant-light-dome', x: .8, row: 235, w: .06, move: { type: 'dangle', amp: 3, speed: 1.1 } }, { img: 'restaurant-light-lantern', x: .35, row: 225, w: .04, move: { type: 'dangle', amp: 4, speed: 1.2 } }, { img: 'restaurant-light-trio', x: .65, row: 225, w: .04, move: { type: 'dangle', amp: 3, speed: .8 } }] },
+      { img: 'restaurant-n-near', par: .6, lift: 225, noFill: true, scale: 0.7, props: [] }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -301,10 +301,10 @@ const layeredReveals = {
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
     bookcase: { chairCase: 'library-climb-wide-case', wideCase: 'library-climb-eight-shelf', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
-  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 640, fittedFloor: true, floorInset: 0,
+  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 640, floorInset: 0,
     roomBack: 'restaurant-climb-wall', roomBackParallax: .34,
     roomRoof: { img: 'restaurant-climb-roof', at: .55 },
-    wallPieces: [{ img: 'restaurant-climb-cabinet', x: .17, w: .2 }, { img: 'restaurant-climb-window', x: .82, w: .26 }, { img: 'restaurant-climb-sconce', x: .5, w: .17 }, { img: 'restaurant-climb-painting', x: .8, w: .27 }, { img: 'restaurant-climb-chalkboard', x: .2, w: .2 }, { img: 'restaurant-climb-plant', x: .52, w: .2 }] },
+    wallPieces: [{ img: 'restaurant-climb-cabinet', x: .17, w: .2 }, { img: 'restaurant-climb-window', x: .82, w: .26 }, { img: 'restaurant-climb-sconce', x: .5, w: .17 }, { img: 'restaurant-climb-painting', x: .8, w: .27 }, { img: 'restaurant-climb-chalkboard', x: .2, w: .2 }, { img: 'restaurant-climb-sconce', x: .24, w: .16 }] },
   living: { floor: 'living-climb-blue-rug', floorTileWidth: 640, fittedFloor: true, floorInset: 0, roomBack: 'living-climb-wall', roomBackParallax: .27,
     roomCeiling: 'living-climb-ceiling', roomPlant: 'living-climb-plant',
     parallax: [
@@ -370,7 +370,7 @@ const layeredReveals = {
 
 for (const [id, scene] of Object.entries(layeredReveals)) {
   Object.assign(SETTINGS[id], {
-    overlapTerrain: true, tall: undefined, pieces: undefined,
+    overlapTerrain: id !== 'restaurant', // the restaurant's rows of tables each end in a solid fill, never a repeated strip tall: undefined, pieces: undefined,
     floorDrifters: undefined, panels: undefined, decor: undefined, movers: undefined,
   }, scene);
 }
