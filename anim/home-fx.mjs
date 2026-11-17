@@ -30,7 +30,10 @@ function installParticlePops(home,layer){
   home.addEventListener('pointerdown',e=>{
     if(e.isPrimary===false||e.button>0||document.hidden||!home.classList.contains('active')||document.documentElement.dataset.motion==='reduce')return;
     // Keep all navigation, tiles and other controls fully reliable, even under a particle.
-    if(e.target.closest('button,a,input,select,textarea,[role=button],.home-tile'))return;
+    // (The big invisible tap areas of the animated scenes, .w-hit, are the one exception: a particle floating over them still pops.)
+    const control=e.target.closest('button,a,input,select,textarea,[role=button],.home-tile');
+    if(control&&!control.classList.contains('w-hit'))return;
+    const overScene=!!control;
     let hit,distance=Infinity;
     for(const el of layer.querySelectorAll('.hf:not([data-popped])')){
       if(Number(getComputedStyle(el).opacity)<.18)continue;
@@ -40,7 +43,10 @@ function installParticlePops(home,layer){
       if(d<=Math.max(18,Math.min(28,r.width/2+8))&&d<distance){hit=el;distance=d;}
     }
     if(!hit)return;
-    e.preventDefault();e.stopImmediatePropagation();hit.dataset.popped='true';hit.style.visibility='hidden';
+    e.preventDefault();e.stopImmediatePropagation();
+    // Popping a particle over a scene's tap area must not also trigger that area when the finger lifts.
+    if(overScene){const eat=ev=>{ev.stopImmediatePropagation();ev.preventDefault();};home.addEventListener('click',eat,{capture:true,once:true});later(()=>home.removeEventListener('click',eat,true),600);}
+    hit.dataset.popped='true';hit.style.visibility='hidden';
     const bounds=layer.getBoundingClientRect(),pop=document.createElement('span');pop.className='hf-pop';
     pop.style.cssText=`left:${e.clientX-bounds.left}px;top:${e.clientY-bounds.top}px`;
     for(let i=0;i<6;i++){const dot=document.createElement('i');dot.style.setProperty('--angle',i*60+'deg');pop.appendChild(dot);}
