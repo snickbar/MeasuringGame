@@ -377,6 +377,25 @@ for (const [id, scene] of Object.entries(layeredReveals)) {
   }, scene);
 }
 
+// Draft revisions ("v2") sit beside the current scene in the debug scene viewer so the two can be compared.
+// Each copies its scene and changes only what is listed; the game itself never picks them.
+export const VARIANT_OF = Object.create(null);
+function addVariant(base, change) {
+  const id = base + '-v2', config = structuredClone(SETTINGS[base]);
+  change(config); VARIANT_OF[id] = base; SETTINGS[id] = config;
+}
+const balloons = { img: 'meadow-balloon', cell: 1000, prob: .6, w: 54, speed: 6, bob: 5, sway: .04, minH: 480 };
+const kite = { img: 'meadow-kite', cell: 1100, prob: .55, w: 58, speed: 9, bob: 12, sway: .16, minH: 420 };
+addVariant('city', c => { c.skyStars = true; });
+addVariant('farm', c => { const mill = c.parallax.find(l => l.img === 'farm-n-big-0'); mill.single.x = .55; mill.single.w = .58; c.flyers = 'geese'; c.pieces = [balloons]; });
+addVariant('mountain', c => { c.flyers = 'hawks'; });
+addVariant('jungle', c => { c.flyers = 'swallows'; });
+addVariant('desert', c => { c.flyers = 'hawks'; });
+addVariant('grass', c => { c.pieces = [balloons, kite]; });
+addVariant('fair', c => { c.pieces = [{ ...balloons, prob: .85 }]; });
+addVariant('resort', c => { c.pieces = [kite]; });
+addVariant('enchanted', c => { c.pieces = [{ img: 'enchanted-reveal-lantern', cell: 700, prob: .6, w: 30, speed: 4, bob: 10, sway: .06, minH: 600 }]; });
+
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
 export function groundScaleFor(cameraScale, finalScale) {
@@ -391,7 +410,7 @@ function loadImage(url) {
 }
 // Load the selected kit before its first frame. A missing required floor falls back to grass.
 export async function loadScenery(object, base) {
-  const id = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[id];
+  const pick = SETTINGS[object.sceneryOverride] ? object.sceneryOverride : sceneryFor(object), config = SETTINGS[pick], id = VARIANT_OF[pick] || pick;
   const names = [!NO_STARS.has(id) && 'star-field', config.floor, config.floorProp?.img, ...Object.values(config.bookcase || {}), ...Object.values(config.workshop || {}), config.deskLamp?.arm, config.deskLamp?.shade, ...Object.values(config.avenue || {}), ...Object.values(config.rooftop || {}), ...Object.values(config.coast || {}), ...Object.values(config.square || {}), ...Object.values(config.town || {}), config.fallingPetals, config.roomBack, config.roomCeiling, config.roomRoof?.img, ...[0, 1, 2, 3, 5, 6].filter(() => id === 'restaurant').map(l => 'restaurant-table-' + l), config.roomRoof && 'star-field', ...(config.wallPieces || []).map(q => q.img), ...(config.parallax || []).flatMap(l => (l.tanks || []).flatMap(t => t.fish.map(f => f.img))), config.roomPlant, config.roomBackGlint?.img, config.texture, config.backdrop, ...(config.layers || []), config.nightBackdrop, config.wall, ...(config.tall || []), config.decor, ...(config.skyPieces || []).map(p => p.img), ...(config.parallax || []).flatMap(l => [l.img, l.paneling, l.single?.liftChair, l.glint?.img, l.crowd?.img, l.single?.spin?.carriage, l.single?.smoke, l.single?.torches?.stand, l.single?.torches?.flame, l.spin && l.spin.img, l.single && l.single.spin && l.single.spin.img, ...((l.single && l.single.hang) || []).map(q => q.img), ...(l.props || []).map(q => q.img), ...(l.props || []).map(q => q.spin && q.spin.img), ...(l.drifters || []).map(q => q.img), ...(l.glow || []), ...(l.flows || []).map(q => q.img), ...(l.vanes || []).map(q => q.img), ...(l.props || []).map(q => q.foam), ...((l.scatter && l.scatter.imgs) || [])]), ...(config.floorDrifters || []).map(q => q.img), config.wash && config.wash.img, config.wash && config.wash.foam, ...(config.pieces || []).map(q => q.img), ...(config.panels ? [config.panels.base, ...config.panels.mids, config.panels.top] : []), ...(config.floaters || [])].filter(Boolean);
   const images = Object.fromEntries(await Promise.all(names.map(async name => [name, await loadImage(base + name + '.webp')])));
   if ((config.town && Object.values(config.town).some(name => !images[name])) || (config.square && Object.values(config.square).some(name => !images[name])) || (config.coast && Object.values(config.coast).some(name => !images[name])) || (config.rooftop && Object.values(config.rooftop).some(name => !images[name])) || (config.floor && !images[config.floor]) || (config.avenue && ['pier', 'beach', 'ocean'].some(key => !images[config.avenue[key]]))) return { id: 'grass', config: SETTINGS.grass, images: {} };
@@ -1408,6 +1427,17 @@ function drawTimesSquare(ctx, kit, { width, height, floorY, shiftY, time, reduce
   const paint = (name, x, y, w, h) => ctx.drawImage(image(name), x, y, w, h);
 
   if (skyY > 0) ctx.drawImage(image('sky'), 512, 0, 1, 1, 0, 0, width, Math.min(height, skyY + 1));
+  if (kit.config.skyStars && skyY > 0) { // the plain sky above the painted one gets small twinkling stars instead of flat blue
+    const cell = 400, off = climb * .06, bottom = Math.min(height, skyY + 40 * scale);
+    for (let cy = Math.floor(-off / cell) - 1; (cy * cell + off) < bottom; cy++) for (let cx = 0; cx * cell < width; cx++) for (let k = 0; k < 34; k++) {
+      const r = j => unitRandom('city-stars', cx * 997 + cy, k * 7 + j), y = cy * cell + off + r(1) * cell, x = cx * cell + r(0) * cell;
+      if (y > bottom || y < 0) continue;
+      const size = (1.1 + r(2) * 2.2) * Math.max(1, scale * 1.4);
+      ctx.globalAlpha = (.55 + .45 * Math.sin(clock * (1 + r(3) * 2) + r(4) * 6.28) ** 2) * Math.min(1, (bottom - y) / (60 * scale));
+      ctx.fillStyle = r(5) > .8 ? '#ffe9a8' : '#ffffff'; ctx.fillRect(x - size / 2, y - size / 2, size, size);
+    }
+    ctx.globalAlpha = 1;
+  }
   drawTerrainImage(ctx, image('sky'), left, skyY, 1024 * scale, 1536 * scale, height, .86);
   const skyscrapers = image('skyscrapers');
   const skyscraperY = height - 1820 * scale + climb * .23;
