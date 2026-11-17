@@ -13,7 +13,9 @@ const NAMES = ['plate', 'clocks', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub
   'plant-1', 'pendulum', 'stand', ...POSES.map(n => 'parrot-' + n), 'note-a', 'note-b', 'note-c', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
   ...SLICES.map((_, i) => 'clock-' + i)];
 const PARROT = { x: 752, y: 1168, w: 345, h: 306 }, STAND = { x: 849, y: 1455, w: 155 };
-const FIRE = { x: 212, y: 1316, w: 262, h: 186 };
+// The fireplace was moved 55 px lower in the background picture (the clocks stand on the floor level with its hearth); everything on it follows.
+const FIRE_DY = 55;
+const FIRE = { x: 212, y: 1316 + FIRE_DY, w: 262, h: 186 };
 
 export async function build(home, load, current) {
   await Promise.all(NAMES.map(n => load(D + n + '.webp')));
@@ -37,17 +39,17 @@ export async function build(home, load, current) {
     ${img(D + 'plate.webp', 'hs-plate')}
     ${img(D + 'curtain-1.webp', 'l-curtain', place(-5, 692, 200, 547))}
     ${img(D + 'plant-1.webp', 'l-plant', place(-109, 1181, 238))}
-    <div class="l-glow" style="${place(-60, 1150, 800, 760)}"></div>
+    <div class="l-glow" style="${place(-60, 1150 + FIRE_DY, 800, 760)}"></div>
     <div class="l-fire" style="${place(FIRE.x, FIRE.y, FIRE.w, FIRE.h)}">${frames('m', 'l-fl-m')}${frames('l', 'l-fl-l')}</div>
     <div class="l-sparks" style="${place(FIRE.x, FIRE.y - 60, FIRE.w, FIRE.h + 60)}"></div>
-    <div class="l-lamp" style="${place(289, 966, 98)}">${img(D + 'lamp.webp', 'l-lamp-img')}<div class="l-blobs">${[1, 2, 3, 4, 5].map(n => img(D + `blob-${n}.webp`, 'l-blob l-blob-' + n)).join('')}</div></div>
+    <div class="l-lamp" style="${place(289, 966 + FIRE_DY, 98)}">${img(D + 'lamp.webp', 'l-lamp-img')}<div class="l-blobs">${[1, 2, 3, 4, 5].map(n => img(D + `blob-${n}.webp`, 'l-blob l-blob-' + n)).join('')}</div></div>
     <div class="l-pend-clip" style="${place(922, 906, 82, 86)}"><div class="l-pendulum" style="left:${(936 - 922) / 82 * 100}%;top:${(844 - 906) / 86 * 100}%;width:${48 / 82 * 100}%">${img(D + 'pendulum.webp')}</div></div>
     ${img(D + 'stand.webp', 'b-stand', place(STAND.x, STAND.y, STAND.w))}
     <div class="b-parrot" data-pose="idle" style="${place(PARROT.x, PARROT.y, PARROT.w, PARROT.h)}">${POSES.map(n => img(D + `parrot-${n}.webp`, 'b-p b-p-' + n)).join('')}<div class="b-notes"></div></div>
     ${img(D + 'clocks.webp', 'l-clocks-static', place(CLOCK.x, CLOCK.y, CLOCK.w))}
     ${clocks}
     ${hit('fire', FIRE.x, FIRE.y - 40, FIRE.w, FIRE.h + 80, 'Stoke the fire')}
-    ${hit('lamp', 280, 960, 116, 210, 'Shake the lava lamp')}
+    ${hit('lamp', 280, 960 + FIRE_DY, 116, 210, 'Shake the lava lamp')}
     ${hit('parrot', 840, 1170, 170, 300, 'Make the parrot whistle')}
   </div>`;
 
