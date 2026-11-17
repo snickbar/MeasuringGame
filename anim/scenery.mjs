@@ -241,13 +241,13 @@ export const SETTINGS = {
       { img: 'library-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'library-n-reveals-0', x: 0.14, row: 546, w: 0.084 }, { img: 'library-n-reveals-1', x: 0.5, row: 546, w: 0.095 }, { img: 'library-n-reveals-2', x: 0.84, row: 546, w: 0.057 }, { img: 'library-n-anim-0', x: 0.72, row: 546, w: 0.178, spin: { img: 'library-n-anim-1', fx: .86, fy: .45, size: .35, speed: 1.0, swing: .15, px: .5, py: 0 } }] },
       { img: 'library-n-near', par: .6, lift: 155, scale: 0.7, props: [{ img: 'library-n-loose-0', x: 0.08, row: 706, w: 0.053 }, { img: 'library-n-loose-2', x: 0.3, row: 706, w: 0.047 }, { img: 'library-n-loose-3', x: 0.55, row: 706, w: 0.028 }, { img: 'library-n-loose-5', x: 0.8, row: 706, w: 0.063 }] }],
     pieces: [{ img: 'library-n-movers-1', cell: 1800, prob: 0.6, w: 68, speed: 26, bob: 3, sway: 0.02, minH: 380, face: 1 }, { img: 'library-n-movers-2', cell: 2300, prob: 0.6, w: 64, speed: 16, bob: 5, sway: 0.03, minH: 440, face: 1 }] },
-  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 1000, sky: ['#2a1114', '#3d1a1d'],
-    parallax: [{ img: 'restaurant-n-far', par: .45, lift: 585, scale: 0.7, overlapFrom: .9135, filter: 'brightness(88%)',
-      props: [{ img: 'restaurant-table-0', x: .1, row: 820, w: .075 }, { img: 'restaurant-table-6', x: .4, row: 835, w: .075 }, { img: 'restaurant-table-2', x: .62, row: 822, w: .06 }, { img: 'restaurant-table-1', x: .9, row: 838, w: .075 }],
-      tanks: [{ box: [.418, .405, .582, .62], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] },
-      { img: 'restaurant-n-mid', par: .7, lift: 485, scale: 0.72, overlapFrom: .8716, filter: 'brightness(94%)',
-        props: [{ img: 'restaurant-table-5', x: .07, row: 905, w: .12 }, { img: 'restaurant-table-0', x: .36, row: 925, w: .12 }, { img: 'restaurant-table-1', x: .66, row: 910, w: .12 }, { img: 'restaurant-table-3', x: .93, row: 990, w: .15 }, { img: 'restaurant-table-6', x: .2, row: 1010, w: .13 }, { img: 'restaurant-table-2', x: .52, row: 1030, w: .11 }] },
-      { img: 'restaurant-n-near', par: 1, lift: 0, scale: 0.7, grounded: true, overlapFrom: .8708, props: [] }] },
+  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 1150, floorBehind: true, sky: ['#2a1114', '#3d1a1d'],
+    parallax: [{ img: 'restaurant-n-far', par: .35, lift: 365, scale: 0.85, noFill: true,
+      props: [{ img: 'restaurant-table-0', x: 0.1, row: 730, w: 0.12 }, { img: 'restaurant-table-2', x: 0.5, row: 740, w: 0.1 }, { img: 'restaurant-table-5', x: 0.9, row: 730, w: 0.12 }],
+      tanks: [{ box: [.418, .493, .582, .76], fish: [{ img: 'restaurant-fish-0', y: .3, w: .17, speed: .05, phase: 0 }, { img: 'restaurant-fish-1', y: .55, w: .2, speed: -.035, phase: .4 }, { img: 'restaurant-fish-2', y: .2, w: .16, speed: .04, phase: .7 }, { img: 'restaurant-fish-7', y: .72, w: .14, speed: -.06, phase: .15 }, { img: 'restaurant-fish-4', y: .45, w: .17, speed: .03, phase: .55 }] }] },
+      { img: 'restaurant-n-mid', par: .6, lift: 235, scale: 0.8, noFill: true,
+        props: [{ img: 'restaurant-table-6', x: 0.14, row: 800, w: 0.16 }, { img: 'restaurant-table-1', x: 0.5, row: 815, w: 0.17 }, { img: 'restaurant-table-3', x: 0.88, row: 800, w: 0.18 }, { img: 'restaurant-table-0', x: 0.3, row: 900, w: 0.19 }, { img: 'restaurant-table-5', x: 0.7, row: 905, w: 0.2 }, { img: 'restaurant-table-2', x: 0.08, row: 1010, w: 0.2 }, { img: 'restaurant-table-1', x: 0.96, row: 1020, w: 0.22 }] },
+      { img: 'restaurant-n-near', par: 1, lift: 20, scale: 0.7, grounded: true, noFill: true, props: [] }] },
   workshop: { floor: 'workshop-n-floor', floorTileWidth: 640, floorDrifters: [{ img: 'workshop-n-movers-0', lane: 0.5, w: 0.032, speed: 20, start: 0.2, bob: 0.3 }, { img: 'workshop-n-movers-1', lane: 0.5, w: 0.061, speed: 40, start: 0.5 }, { img: 'workshop-n-movers-3', lane: 0.5, w: 0.043, speed: 10, start: 0.7 }, { img: 'workshop-n-movers-4', lane: 0.5, w: 0.038, speed: 26, start: 0.35, bob: 0.3 }, { img: 'workshop-n-movers-5', lane: 0.5, w: 0.071, speed: 16, start: 0.85 }], sky: ['#d6dbe0', '#eef0f2'],
     parallax: [{ img: 'workshop-n-far', par: .16, lift: 330, scale: 0.85, props: [{ img: 'workshop-n-big-0', x: 0.5, row: 360, w: 0.258 }] },
       { img: 'workshop-n-mid', par: .34, lift: 166, scale: 0.75, props: [{ img: 'workshop-n-reveals-0', x: 0.14, row: 546, w: 0.085 }, { img: 'workshop-n-reveals-1', x: 0.5, row: 546, w: 0.086 }, { img: 'workshop-n-reveals-2', x: 0.84, row: 546, w: 0.150 }, { img: 'workshop-n-anim-0', x: 0.72, row: 546, w: 0.152, spin: { img: 'workshop-n-anim-1', fx: .5, fy: .5, size: .7, speed: .8 } }] },
@@ -304,7 +304,7 @@ const layeredReveals = {
     parallax: [], roomBack: 'library-climb-wall', roomBackParallax: .34, roomCeiling: 'kitchen-climb-ceiling',
     bookcase: { chairCase: 'library-climb-wide-case', wideCase: 'library-climb-eight-shelf', shelf: 'library-climb-shelf', ladder: 'library-climb-ladder', rail: 'library-climb-rail' },
   },
-  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 1000, floorInset: 0,
+  restaurant: { floor: 'restaurant-n-floor', floorTileWidth: 1150, floorBehind: true, floorInset: 0,
     roomBack: 'restaurant-climb-wall', roomBackParallax: .34,
     roomRoof: { img: 'restaurant-climb-roof', at: .55 },
     wallPieces: [{ img: 'restaurant-climb-window', x: .8, w: .26 }, { img: 'restaurant-climb-painting', x: .2, w: .26 }, { img: 'restaurant-climb-sconce', x: .5, w: .16 }, { img: 'restaurant-climb-window', x: .2, w: .26 }, { img: 'restaurant-climb-painting', x: .8, w: .26 }, { img: 'restaurant-climb-sconce', x: .25, w: .16 }] },
@@ -373,7 +373,7 @@ const layeredReveals = {
 
 for (const [id, scene] of Object.entries(layeredReveals)) {
   Object.assign(SETTINGS[id], {
-    overlapTerrain: true, tall: undefined, pieces: undefined,
+    overlapTerrain: id !== 'restaurant', tall: undefined, pieces: undefined,
     floorDrifters: undefined, panels: undefined, decor: undefined, movers: undefined,
   }, scene);
 }
@@ -1737,7 +1737,7 @@ function drawFallingPetals(ctx, image, width, height, time, shiftY) {
   }
 }
 
-export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0 }) {
+export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale = 1, anchorX = width / 2, pass = 'all', climbPx = 0, behindFloor }) {
   const { config, images } = kit;
   ctx.save();
   const roomBack = images[config.roomBack];
@@ -1867,6 +1867,7 @@ export function drawSceneryLayers(ctx, kit, { width, height, shiftY, shiftX, flo
   drawMovers(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, time, reduced, groundScale });
   drawBackdrop(ctx, kit, { width, height, shiftY, shiftX, floorY, dark, groundScale, anchorX });
   if (config.bookcase) drawLibraryShelfRows(ctx, kit, { width, height, floorY, shiftY, dark });
+  if (behindFloor && config.floorBehind) drawSceneryFloor(ctx, kit, FLOOR_DATA[config.floor], { width, height, groundScale, dark, time, reduced, ...behindFloor }); // a deep floor that the rows of tables stand on
   drawParallax(ctx, kit, { width, height, shiftY, floorY, dark, groundScale, time, reduced });
   const petals = images[config.fallingPetals];
   if (petals && !reduced) drawFallingPetals(ctx, petals, width, height, time, shiftY);
