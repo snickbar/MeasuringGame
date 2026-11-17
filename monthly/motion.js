@@ -445,6 +445,8 @@ function fradial(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, 
   path(e, D, t0 + dl, t0 + dl + L, (u) => { const tt = u * L / 1000; return { x: FC.x + Math.cos(ang) * v * Math.min(1, tt * 1.4) * (o.spread || 1.2), y: FC.y + Math.sin(ang) * v * Math.min(1, tt * 1.4) + (o.grav || 0) * tt * tt, r: tt * sp, sx: 1 - u * .25, op: fade(u, .02, .3) }; }, 24); } }
 function fup(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, pick(o.pics), 0, 0, o.size * (.7 + rnd() * .6), { z: 7 }), x0 = 20 + rnd() * 260, dl = rnd() * (o.stagger || 900), L = (o.life || 3000) * (.8 + rnd() * .4), sw = 14 + rnd() * 22, ph = rnd() * 6;
   path(e, D, t0 + dl, t0 + dl + L, (u) => ({ x: x0 + Math.sin(u * 7 + ph) * sw, y: lerp(FC.y + 40 + rnd() * 0, -30, u) + (o.start || 0) * (1 - u), r: Math.sin(u * 5 + ph) * 18, sx: .7 + .3 * u, op: fade(u, .12, .25) }), 30); } }
+/* keep something of width w (centred on x) fully inside the screen, however far to a side the card is */
+const inView = (x, w) => Math.max(FC.vl + w / 2 + 6, Math.min(FC.vr - w / 2 - 6, x));
 function ffall(g, D, t0, o) { for (let i = 0; i < o.n; i++) { const e = mk(g, pick(o.pics), 0, 0, o.size * (.75 + rnd() * .5), { z: 7 }), x0 = FC.vl + rnd() * (FC.vr - FC.vl), dl = rnd() * (o.stagger || 1200), L = (o.life || 3000) * (.8 + rnd() * .4) * Math.max(1, (FC.vb - FC.vt) / 490), sw = o.sway == null ? 18 : o.sway, ph = rnd() * 6, tum = o.tumble;
   path(e, D, t0 + dl, t0 + dl + L, (u) => ({ x: x0 + Math.sin(u * 5 + ph) * sw, y: lerp(FC.vt, FC.vb, u), r: u * (o.spin == null ? 280 : o.spin) * (i % 2 ? 1 : -1), sx: tum ? Math.cos(u * 9 + ph) : 1, sy: 1, op: fade(u, .05, .03) }), 34); } }
 const FL = {};
@@ -516,7 +518,7 @@ def('f4', 'f', FD + 5600, (s) => { const D = FD + 5600, g = box(s, 'left:0;top:0
 def('f5', 'f', FD + 4800, (s) => { const D = FD + 4800, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), cd = [0, 1, 2, 3, 4, 5].map((i) => '27-candy-sheet-' + i); fcard(g, D);
   forbit(g, D, { pics: ['26-star-pi-ata', '62-donkey-pinata'], move: 'bob', lap: 3000, size: 32, items: 6 });
   /* big donkey pinata: drops in and keeps hanging from its string, swings, then splits from the top of its back down; both halves keep dangling while candy spills */
-  const W = 190, H = W * A['62-donkey-pinata'].h / A['62-donkey-pinata'].w, PX = 150, PY = 18, tc = 1500, L = 4300, BK = .27;
+  const W = 190, H = W * A['62-donkey-pinata'].h / A['62-donkey-pinata'].w, PX = inView(150, 240), PY = Math.max(18, FC.vt + 28), tc = 1500, L = 4300, BK = .27;
   const pl = 'polygon(38% -5%,56% -5%,56% 27%,38% 27%)', cl = 'polygon(-5% -5%,38% -5%,38% 27%,51% 27%,57% 36%,47% 48%,58% 62%,48% 80%,55% 105%,-5% 105%)', cr = 'polygon(56% -5%,105% -5%,105% 105%,55% 105%,48% 80%,58% 62%,47% 48%,57% 36%,51% 27%,56% 27%)';
   const rot = (x, y, d) => { const a = d * Math.PI / 180; return [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]; };
   /* whole piñata state at time tt: swing angle about the string pivot; halves additionally open about the crack's top (the back) */
@@ -558,10 +560,10 @@ def('f8', 'f', FD + 4400, (s) => { const D = FD + 4400, g = box(s, 'left:0;top:0
 def('f9', 'f', FD + 4500, (s) => { const D = FD + 4500, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1); fcard(g, D);
   forbit(g, D, { pics: ['45-red-pen-marks-sheet-2'], move: 'pulse', lap: 2400, size: 28, items: 9 });
   const stamp = (e, t0, rot, big) => seq(e, D, [[0, 0, 0, rot, 3, 0], [t0, 0, 0, rot, 3, 0], [t0 + 110, 0, 0, rot, 1, 1, 'ease-in'], [t0 + 190, 0, 0, rot, 1.12, 1, 'ease-out'], [t0 + 300, 0, 0, rot, 1], [t0 + 380, big ? 4 : 0, 0, rot, 1], [t0 + 460, big ? -4 : 0, 0, rot, 1], [t0 + 540, 0, 0, rot, 1], [D - 900, 0, 0, rot, 1, 1], [D - 400, 0, 0, rot, 1, 0], [D, 0, 0, rot, 1, 0]]);
-  stamp(mk(g, '45-red-pen-marks-sheet-1', 78, 318, 120, { z: 8 }), FD + 300, -10);
-  const gr = mk(g, 'great', 150, 392, 190, { z: 8 });
+  stamp(mk(g, '45-red-pen-marks-sheet-1', inView(78, 120), 318, 120, { z: 8 }), FD + 300, -10);
+  const gr = mk(g, 'great', inView(150, 190), 392, 190, { z: 8 });
   stamp(gr, FD + 1100, -5);
-  stamp(mk(g, '46-giant-a', FC.x, 100, 210, { z: 9 }), FD + 1900, -8, true); });
+  stamp(mk(g, '46-giant-a', inView(FC.x, 210), Math.max(100, FC.vt + 24 + 108), 210, { z: 9 }), FD + 1900, -8, true); });
 def('f10', 'f', FD + 5400, (s) => { const D = FD + 5400, g = box(s, 'left:0;top:0;width:300px;height:440px;', 1), gh = ['50-smiling-ghost', '51-boo-ghost']; fcard(g, D);
   forbit(g, D, { pics: gh, move: 'glow', lap: 3000, size: 30, items: 8 });
   /* ghosts fly in from both the left and the right, cross the screen, and drift out the far side */
