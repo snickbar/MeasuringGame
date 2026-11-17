@@ -936,6 +936,15 @@ if (location.protocol === "file:") {
   @keyframes hsWinRing { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .hs-pl.turn::before, .hs-pl.win::before { animation: none; } }
   html[data-motion=reduce] .hs-pl.turn::before, html[data-motion=reduce] .hs-pl.win::before { animation: none; }
+  /* On your turn a custom border stays visible: the card keeps it and gains a pulsing gold glow with a shimmer sweep instead of the spinning gold ring. */
+  .hs-pl.turn.player-frame-host { overflow: visible; isolation: auto; background: #fff3d1; box-shadow: none; }
+  .hs-pl.turn.player-frame-host::before { content: ""; position: absolute; inset: -3px; z-index: -1; border-radius: 17px; background: none; box-shadow: 0 0 18px 7px rgba(255,214,70,.95); pointer-events: none; animation: hsFrameGlow 1.3s ease-in-out infinite; }
+  .hs-pl.turn.player-frame-host::after { inset: 0; z-index: 1; border-radius: 13px; pointer-events: none; background: linear-gradient(115deg, rgba(255,247,190,0) 25%, rgba(255,247,190,.85) 48%, rgba(255,247,190,0) 70%); animation: hsFrameSheen 2.2s ease-in-out infinite; }
+  .hs-pl.turn.player-frame-host > .player-frame-art { position: absolute; z-index: 3; }
+  @keyframes hsFrameGlow { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+  @keyframes hsFrameSheen { 0%, 100% { opacity: 0; } 50% { opacity: .9; } }
+  @media (prefers-reduced-motion: reduce) { .hs-pl.turn.player-frame-host::before, .hs-pl.turn.player-frame-host::after { animation: none; } }
+  html[data-motion=reduce] .hs-pl.turn.player-frame-host::before, html[data-motion=reduce] .hs-pl.turn.player-frame-host::after { animation: none; }
   .hs-reward { margin: 8px 0; text-align: left; } .hs-reward > b { display: block; margin-bottom: 4px; font-size: 17px; }
   .hs-final-row.busted { opacity: .6; }
   .hs-stand { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
