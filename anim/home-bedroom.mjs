@@ -1,5 +1,5 @@
 // Home & Bedroom home: a stone fireplace whose fire grows when tapped, a lava lamp, a stack of nine red alarm clocks
-// whose hands keep time and which rattle when tapped, plus curtains, a plant, a pendulum and a parrot on a perch that whistles when tapped.
+// whose hands keep time and which rattle when tapped, plus curtains, a plant and a pendulum.
 import { place, img, hit, every, watchActive } from './home-worlds-util.mjs';
 const D = 'anim/home-art/home-bedroom/';
 export const SIZE = { width: 1029, height: 2222 };
@@ -8,11 +8,9 @@ const SLICES = [[0, 125], [124, 240], [233, 349], [343, 459], [452, 568], [559, 
 const FACE_Y = [75, 190, 299, 409, 518, 625, 731, 837, 942], FACE_X = 70;
 // Hands: [piece width, height, scale, pivot y inside the piece, seconds per turn]
 const HANDS = { hour: [107, 504, .047, 444, 1500], min: [53, 744, .0457, 690, 150], sec: [101, 747, .05, 603, 24] };
-const POSES = ['idle', 'tilt-a', 'tilt-b', 'blink', 'whistle', 'wings', 'fluff'];
 const NAMES = ['plate', 'clocks', 'hand-hour', 'hand-min', 'hand-sec', 'hand-hub', 'lamp', 'blob-1', 'blob-2', 'blob-3', 'blob-4', 'blob-5', 'curtain-1',
-  'plant-1', 'pendulum', 'stand', ...POSES.map(n => 'parrot-' + n), 'note-a', 'note-b', 'note-c', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
+  'plant-1', 'pendulum', 'fp-front', ...['s1', 's2', 's3', 'm1', 'm2', 'm3', 'l1', 'l2', 'l3'].map(n => 'flame-' + n), ...[1, 2, 3, 4, 5, 6].map(n => 'spark-' + n),
   ...SLICES.map((_, i) => 'clock-' + i)];
-const PARROT = { x: 752, y: 1168, w: 345, h: 306 }, STAND = { x: 849, y: 1455, w: 155 };
 // The fireplace was moved 55 px lower in the background picture (the clocks stand on the floor level with its hearth); everything on it follows.
 const FIRE_DY = 55;
 const FIRE = { x: 212, y: 1316 + FIRE_DY, w: 262, h: 186 };
@@ -38,23 +36,21 @@ export async function build(home, load, current) {
   root.innerHTML = `<div class="hs-stage">
     ${img(D + 'plate.webp', 'hs-plate')}
     ${img(D + 'curtain-1.webp', 'l-curtain', place(-5, 692, 200, 547))}
+    ${img(D + 'fp-front.webp', 'l-fp-front', place(100, 734, 481, 964))}
     ${img(D + 'plant-1.webp', 'l-plant', place(-109, 1181, 238))}
     <div class="l-glow" style="${place(-60, 1150 + FIRE_DY, 800, 760)}"></div>
     <div class="l-fire" style="${place(FIRE.x, FIRE.y, FIRE.w, FIRE.h)}">${frames('m', 'l-fl-m')}${frames('l', 'l-fl-l')}</div>
     <div class="l-sparks" style="${place(FIRE.x, FIRE.y - 60, FIRE.w, FIRE.h + 60)}"></div>
     <div class="l-lamp" style="${place(289, 966 + FIRE_DY, 98)}">${img(D + 'lamp.webp', 'l-lamp-img')}<div class="l-blobs">${[1, 2, 3, 4, 5].map(n => img(D + `blob-${n}.webp`, 'l-blob l-blob-' + n)).join('')}</div></div>
     <div class="l-pend-clip" style="${place(922, 906, 82, 86)}"><div class="l-pendulum" style="left:${(936 - 922) / 82 * 100}%;top:${(844 - 906) / 86 * 100}%;width:${48 / 82 * 100}%">${img(D + 'pendulum.webp')}</div></div>
-    ${img(D + 'stand.webp', 'b-stand', place(STAND.x, STAND.y, STAND.w))}
-    <div class="b-parrot" data-pose="idle" style="${place(PARROT.x, PARROT.y, PARROT.w, PARROT.h)}">${POSES.map(n => img(D + `parrot-${n}.webp`, 'b-p b-p-' + n)).join('')}<div class="b-notes"></div></div>
     ${img(D + 'clocks.webp', 'l-clocks-static', place(CLOCK.x, CLOCK.y, CLOCK.w))}
     ${clocks}
     ${hit('fire', FIRE.x, FIRE.y - 40, FIRE.w, FIRE.h + 80, 'Stoke the fire')}
     ${hit('lamp', 280, 960 + FIRE_DY, 116, 210, 'Shake the lava lamp')}
-    ${hit('parrot', 840, 1170, 170, 300, 'Make the parrot whistle')}
   </div>`;
 
   function start(play, stopSound) {
-    const q = s => root.querySelector(s), fire = q('.l-fire'), sparks = q('.l-sparks'), parrot = q('.b-parrot'), notes = q('.b-notes'), lamp = q('.l-lamp');
+    const q = s => root.querySelector(s), fire = q('.l-fire'), sparks = q('.l-sparks'), lamp = q('.l-lamp');
     const timers = new Set(), stops = [];
     const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
     const flash = (el, name, ms) => { delete el.dataset[name]; void el.offsetWidth; el.dataset[name] = ''; later(() => delete el.dataset[name], ms); };
@@ -65,35 +61,16 @@ export async function build(home, load, current) {
       const u = sparks.clientWidth / FIRE.w, dx = (Math.random() - .5) * 70 * u;
       s.animate([{ transform: 'translate(0,0) scale(.7)', opacity: 0 }, { opacity: 1, offset: .2 }, { transform: `translate(${dx}px,${-(110 + Math.random() * 90) * u}px) scale(.4)`, opacity: 0 }], { duration: 1500 + Math.random() * 700, easing: 'ease-out' }).onfinish = () => s.remove();
     }
-    // Parrot: rests on its perch, blinks, tilts its head and fluffs up now and then; a tap makes it whistle with music notes.
-    let poseTimer, busy = false;
-    function pose(name, ms) { clearTimeout(poseTimer); parrot.dataset.pose = name; poseTimer = setTimeout(() => { parrot.dataset.pose = 'idle'; }, ms); }
-    function note() {
-      const n = document.createElement('img'); n.src = D + `note-${'abc'[Math.floor(Math.random() * 3)]}.webp`; n.className = 'b-note'; n.draggable = false;
-      n.style.cssText = `left:${50 + Math.random() * 18}%;top:${4 + Math.random() * 10}%;width:${10 + Math.random() * 6}%`; notes.appendChild(n);
-      const u = parrot.clientWidth / PARROT.w, dx = (30 + Math.random() * 60) * u * (Math.random() < .5 ? 1 : .4);
-      n.animate([{ transform: 'translate(0,0) rotate(-8deg) scale(.5)', opacity: 0 }, { opacity: 1, offset: .2 },
-        { transform: `translate(${dx * .5}px,${-70 * u}px) rotate(10deg) scale(1)`, opacity: 1, offset: .6 }, { transform: `translate(${dx}px,${-140 * u}px) rotate(-6deg) scale(.9)`, opacity: 0 }],
-        { duration: 1700 + Math.random() * 500, easing: 'ease-out' }).onfinish = () => n.remove();
-    }
-    function whistle() {
-      if (busy) return; busy = true; pose('whistle', 1700); flash(parrot, 'bounce', 1500);
-      for (let i = 0; i < 4; i++) later(note, i * 380);
-      later(() => { if (Math.random() < .6) { pose('wings', 700); } }, 1750); later(() => { busy = false; }, 2500);
-    }
     root.addEventListener('click', e => {
       const kind = e.target.closest('[data-w]')?.dataset.w; if (!kind || !gate.isActive()) return;
       play(kind === 'clock' ? 1 : 0);
       if (kind === 'fire') { flash(root, 'stoked', 2800); for (let i = 0; i < 6; i++) later(spark, i * 160); }
       else if (kind === 'clock') { const c = e.target.closest('.l-clock'); flash(c, 'rattle', 900); }
       else if (kind === 'lamp') flash(lamp, 'shake', 1500);
-      else whistle();
     });
     const gate = watchActive(home, root, on => {
       if (on) { stops.push(every(2500, 5000, spark));
-        stops.push(every(2600, 4800, () => { if (!busy) pose('blink', 170); }));
-        stops.push(every(6000, 11000, () => { if (!busy) pose(Math.random() < .5 ? 'tilt-a' : 'tilt-b', 1300); }));
-        stops.push(every(22000, 34000, () => { if (!busy) pose(Math.random() < .5 ? 'fluff' : 'wings', 1200); })); } else { stops.splice(0).forEach(s => s()); stopSound(); }
+      } else { stops.splice(0).forEach(s => s()); stopSound(); }
     });
     return () => { gate.stop(); stops.forEach(s => s()); timers.forEach(clearTimeout); };
   }
