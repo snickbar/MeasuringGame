@@ -397,6 +397,7 @@ addVariant('resort', c => { c.pieces = [kite]; });
 
 // Indoor v2: wall decorations up the climb; Kitchen, Library and Living Room also get a deep floor with rows of furniture.
 addVariant('kitchen', c => {
+  c.wallPiecesAbove = -1;
   c.floor = 'kitchen-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
   c.floorDepth = { par: .5, tables: [{ img: 'kitchen-v2-furn-3', s: .93 }, { img: 'kitchen-v2-furn-4', s: 1.13 }, { img: 'kitchen-v2-furn-5', s: .76 }, { img: 'kitchen-v2-furn-7', s: .84 }],
     rows: [],
@@ -405,10 +406,11 @@ addVariant('kitchen', c => {
   c.wallPieces = [{ img: 'kitchen-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'kitchen-v2-wall-1', x: 0.74, w: 0.267 }, { img: 'kitchen-v2-wall-2', x: 0.7, w: 0.204 }, { img: 'kitchen-v2-wall-3', x: 0.28, w: 0.240 }, { img: 'kitchen-v2-wall-4', x: 0.22, w: 0.239 }, { img: 'kitchen-v2-wall-5', x: 0.78, w: 0.233 }, { img: 'kitchen-v2-wall-6', x: 0.76, w: 0.264 }, { img: 'kitchen-v2-wall-7', x: 0.26, w: 0.224 }];
 });
 addVariant('library', c => {
+  c.wallPiecesAbove = -1;
   c.floor = 'library-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
   c.floorDepth = { par: .5, tables: [{ img: 'library-v2-furn-0', s: 1.09 }, { img: 'library-v2-furn-1', s: 0.94 }, { img: 'library-v2-furn-2', s: 1.03 }, { img: 'library-v2-furn-3', s: 0.81 }, { img: 'library-v2-furn-4', s: 0.95 }, { img: 'library-v2-furn-5', s: 1.09 }, { img: 'library-v2-furn-6', s: 1.12 }, { img: 'library-v2-furn-7', s: 0.96 }],
-    rows: [{ r: 0.06, w: 0.034, gap: 0.066, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.13, w: 0.042, gap: 0.082, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.21, w: 0.051, gap: 0.099, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.3, w: 0.061, gap: 0.119, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.4, w: 0.078, gap: 0.16, jitter: .08, tables: [{ img: 'library-v2-furn-0', s: 1.12 }, { img: 'library-v2-furn-5', s: 1.12 }] }] };
-  c.parallax = [{ img: 'library-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 227 }];
+    rows: [{ r: 0.13, w: 0.042, gap: 0.082, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.21, w: 0.051, gap: 0.099, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.3, w: 0.061, gap: 0.119, tables: [{ img: 'library-v2-case-0', s: 1 }, { img: 'library-v2-case-1', s: 1.81 }, { img: 'library-v2-case-2', s: 2 }] }, { r: 0.4, w: 0.078, gap: 0.16, jitter: .08, tables: [{ img: 'library-v2-furn-0', s: 1.12 }, { img: 'library-v2-furn-5', s: 1.12 }] }] };
+  c.parallax = [{ img: 'library-v2-back', par: .5, lift: 430, scale: 0.85, noFill: true, skyRow: 227 }];
   c.wallPieces = [{ img: 'library-v2-wall-0', x: 0.25, w: 0.269 }, { img: 'library-v2-wall-1', x: 0.74, w: 0.231 }, { img: 'library-v2-wall-2', x: 0.7, w: 0.230 }, { img: 'library-v2-wall-3', x: 0.28, w: 0.226 }, { img: 'library-v2-wall-4', x: 0.22, w: 0.276 }, { img: 'library-v2-wall-5', x: 0.78, w: 0.246 }, { img: 'library-v2-wall-6', x: 0.76, w: 0.213 }, { img: 'library-v2-wall-7', x: 0.26, w: 0.269 }]; c.bookcase = undefined;
 });
 addVariant('living', c => { c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; });
