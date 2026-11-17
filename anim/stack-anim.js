@@ -1049,8 +1049,10 @@ export function createStackAnimation(container, options = {}) {
       // Keep the stack readable independently of the scenery camera. Space the
       // larger sprites from the visible tip, easing back to the full-height layout.
       const readable = fast && R >= 100;
-      const climbBoost = readable ? smooth(clamp((count - nHop) / 20, 0, 1)) * (1 - eOut) : 0;
-      const pitch = Ls + Math.max(0, Math.min(24, Ls * 2.4) - Ls) * climbBoost;
+      // Applied straight away (it only grows as the camera zooms out), so the objects settle at their
+      // readable size without first shrinking and then growing back.
+      const climbBoost = readable ? 1 - eOut : 0;
+      const pitch = Ls + Math.max(0, Math.min(30, Ls * 3) - Ls) * climbBoost;
       const stackBase = sy0 + count * (pitch - Ls);
       const stackWidth = pitch * aSm;
 
@@ -1265,7 +1267,7 @@ export function createStackAnimation(container, options = {}) {
           h.y = -ep.lift;
           if (!['walk', 'drive', 'fly', 'sail'].includes(smKind)) { h.x = 1 - ep.p; h.sx = ep.sx; h.sy = ep.sy; }
         }
-        let bottom = sy0 - i * Ls;
+        let bottom = stackBase - i * pitch;   // the same spot and size it will have on the stack
         let px = sx0 - dHop * h.x, shadowY = bottom + 1, shadowLift = Math.abs(h.y);
         // While the ground is on screen the second to fourth objects come in along it in their own style,
         // wait beside the stack, then jump up to their place on it.
@@ -1292,7 +1294,8 @@ export function createStackAnimation(container, options = {}) {
         ctx.translate(px, bottom + h.y);
         if (ep && ep.rot) { const cy = spins(smKind) ? -Ls / 2 : 0; ctx.translate(0, cy); ctx.rotate(ep.rot); ctx.translate(0, -cy); }
         ctx.scale(h.sx, h.sy);
-        ctx.drawImage(smallSprite, -wcol / 2, -Ls, wcol, Ls);
+        const hw = Math.max(wcol, stackWidth), hh = Math.max(Ls, pitch);
+        ctx.drawImage(smallSprite, -hw / 2, -hh, hw, hh);
         ctx.restore();
       }
 
