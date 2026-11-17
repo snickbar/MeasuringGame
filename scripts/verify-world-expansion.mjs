@@ -36,7 +36,7 @@ assert(source.includes('#f39432 60% 75%,#65b94e 75% 90%,#3999ef 90% 100%'));
 assert(source.includes('left:90%; right:0; top:0; bottom:0; background:linear-gradient(110deg'));
 assert(source.includes('WORLD_STAR_AT.map((at, i)'));
 assert.deepEqual(Array.from(api.WORLDS,w=>w.id).filter(id=>!['under-the-sea'].includes(id)),['tiny','toy-box','home','gadgets','bedroom','food','town','critters','wild','birds-bugs','wheels','landmarks','make-believe','holiday-mix']);
-for(const [id,count,home]of [['under-the-sea',34,'underwater'],['toy-box',55,'toy-box']]){
+for(const [id,count,home]of [['under-the-sea',37,'underwater'],['toy-box',67,'toy-box']]){
   const world=api.WORLDS.find(w=>w.id===id);assert.equal(world.ids.length,count);assert.equal(new Set(world.ids).size,count);
   assert(objects.has(api.WORLD_ICON[id]));
   for(const objectId of world.ids)assert.equal(objects.get(objectId)?.group,'Standard',objectId+' must not require a pack');
@@ -98,3 +98,9 @@ for(const selected of ['underwater','toy-box','make-believe','holiday-mix','rand
   if(selected!=='random')assert(background.includes('home-'+selected+(['make-believe','holiday-mix'].includes(selected)?'.webp':'.jpg')));
 }
 console.log('PASS: two Worlds, 400 five-question runs, ungated pools, existing unlocks, 13-star home rewards, one-time perfect coins, owned/equipped homes and cold-start/Random selection.');
+
+// Every regular object belongs to at least one World (new objects must be given a home).
+{const homed=new Set(api.WORLDS.flatMap(w=>w.ids));
+ const missing=[...objects.values()].filter(o=>o.group==='Standard'&&!homed.has(o.id)).map(o=>o.id);
+ assert.deepEqual(missing,[],'Objects with no World: '+missing.join(', '));
+ console.log('PASS: every regular object is in a World.');}
