@@ -39,7 +39,7 @@ export async function build(home, load, current) {
     <div class="l-fire" style="${place(FIRE.x, FIRE.y, FIRE.w, FIRE.h)}">${frames('m', 'l-fl-m')}${frames('l', 'l-fl-l')}</div>
     <div class="l-sparks" style="${place(FIRE.x, FIRE.y - 60, FIRE.w, FIRE.h + 60)}"></div>
     <div class="l-lamp" style="${place(289, 966, 98)}">${img(D + 'lamp.webp', 'l-lamp-img')}<div class="l-blobs">${[1, 2, 3, 4, 5].map(n => img(D + `blob-${n}.webp`, 'l-blob l-blob-' + n)).join('')}</div></div>
-    <div class="l-pendulum" style="${place(938, 864, 48)}">${img(D + 'pendulum.webp')}</div>
+    <div class="l-pend-clip" style="${place(922, 906, 82, 86)}"><div class="l-pendulum" style="left:${(936 - 922) / 82 * 100}%;top:${(844 - 906) / 86 * 100}%;width:${48 / 82 * 100}%">${img(D + 'pendulum.webp')}</div></div>
     <div class="l-cat" style="${place(833, 1595, 173)}">${img(D + 'cat-1.webp', 'l-cat-1')}${img(D + 'cat-2.webp', 'l-cat-2')}<div class="l-zzz"></div></div>
     ${clocks}
     ${hit('fire', FIRE.x, FIRE.y - 40, FIRE.w, FIRE.h + 80, 'Stoke the fire')}
