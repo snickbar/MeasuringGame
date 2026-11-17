@@ -384,19 +384,21 @@ function addVariant(base, change) {
   const id = base + '-v2', config = structuredClone(SETTINGS[base]);
   change(config); VARIANT_OF[id] = base; SETTINGS[id] = config;
 }
+// Liked v2 revisions are applied straight to their scene; the old version is gone.
+const improve = (base, change) => change(SETTINGS[base]);
 const balloons = { img: 'meadow-balloon', cell: 1000, prob: .6, w: 54, speed: 6, bob: 5, sway: .04, minH: 480 };
 const kite = { img: 'meadow-kite', cell: 1100, prob: .55, w: 58, speed: 9, bob: 12, sway: .16, minH: 420 };
-addVariant('city', c => { c.skyStars = true; });
-addVariant('farm', c => { const mill = c.parallax.find(l => l.img === 'farm-n-big-0'); mill.single.x = .55; mill.single.w = .58; c.flyers = 'geese'; c.pieces = [balloons]; });
-addVariant('mountain', c => { c.flyers = 'hawks'; });
-addVariant('jungle', c => { c.flyers = 'swallows'; });
-addVariant('desert', c => { c.flyers = 'hawks'; });
-addVariant('grass', c => { c.pieces = [balloons, kite]; });
-addVariant('fair', c => { c.pieces = [{ ...balloons, prob: .85 }]; });
-addVariant('resort', c => { c.pieces = [kite]; });
+improve('city', c => { c.skyStars = true; });
+improve('farm', c => { const mill = c.parallax.find(l => l.img === 'farm-n-big-0'); mill.single.x = .55; mill.single.w = .58; c.flyers = 'geese'; c.pieces = [balloons]; });
+improve('mountain', c => { c.flyers = 'hawks'; });
+improve('jungle', c => { c.flyers = 'swallows'; });
+improve('desert', c => { c.flyers = 'hawks'; });
+improve('grass', c => { c.pieces = [balloons, kite]; });
+improve('fair', c => { c.pieces = [{ ...balloons, prob: .85 }]; });
+improve('resort', c => { c.pieces = [kite]; });
 
 // Indoor v2: wall decorations up the climb; Kitchen, Library and Living Room also get a deep floor with rows of furniture.
-addVariant('kitchen', c => {
+improve('kitchen', c => {
   c.wallPiecesAbove = -1;
   c.floor = 'kitchen-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
   c.floorDepth = { par: .5, tables: [{ img: 'kitchen-v2-furn-3', s: .93 }, { img: 'kitchen-v2-furn-4', s: 1.13 }, { img: 'kitchen-v2-furn-5', s: .76 }, { img: 'kitchen-v2-furn-7', s: .84 }],
@@ -405,7 +407,7 @@ addVariant('kitchen', c => {
   c.parallax = [{ img: 'kitchen-v2-back', par: .5, lift: 365, scale: 0.85, noFill: true, skyRow: 280 }];
   c.wallPieces = [{ img: 'kitchen-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'kitchen-v2-wall-1', x: 0.74, w: 0.267 }, { img: 'kitchen-v2-wall-2', x: 0.7, w: 0.204 }, { img: 'kitchen-v2-wall-3', x: 0.28, w: 0.240 }, { img: 'kitchen-v2-wall-4', x: 0.22, w: 0.239 }, { img: 'kitchen-v2-wall-5', x: 0.78, w: 0.233 }, { img: 'kitchen-v2-wall-6', x: 0.76, w: 0.264 }, { img: 'kitchen-v2-wall-7', x: 0.26, w: 0.224 }];
 });
-addVariant('library', c => {
+improve('library', c => {
   c.wallPiecesAbove = -1;
   c.floor = 'library-v2-floor'; c.floorTileWidth = 1450; c.floorBehind = true; c.fittedFloor = undefined; c.floorProp = undefined; c.floorInset = 0; c.overlapTerrain = false;
   c.floorDepth = { par: .5, tables: [{ img: 'library-v2-furn-0', s: 1.09 }, { img: 'library-v2-furn-1', s: 0.94 }, { img: 'library-v2-furn-2', s: 1.03 }, { img: 'library-v2-furn-3', s: 0.81 }, { img: 'library-v2-furn-4', s: 0.95 }, { img: 'library-v2-furn-5', s: 1.09 }, { img: 'library-v2-furn-6', s: 1.12 }, { img: 'library-v2-furn-7', s: 0.96 }],
@@ -414,8 +416,8 @@ addVariant('library', c => {
   c.wallPieces = [{ img: 'library-v2-wall-0', x: 0.25, w: 0.269 }, { img: 'library-v2-wall-1', x: 0.74, w: 0.231 }, { img: 'library-v2-wall-2', x: 0.7, w: 0.230 }, { img: 'library-v2-wall-3', x: 0.28, w: 0.226 }, { img: 'library-v2-wall-4', x: 0.22, w: 0.276 }, { img: 'library-v2-wall-5', x: 0.78, w: 0.246 }, { img: 'library-v2-wall-6', x: 0.76, w: 0.213 }, { img: 'library-v2-wall-7', x: 0.26, w: 0.269 }]; c.bookcase = undefined;
 });
 addVariant('living', c => { c.wallPieces = [{ img: 'living-v2-wall-0', x: 0.25, w: 0.238 }, { img: 'living-v2-wall-1', x: 0.74, w: 0.209 }, { img: 'living-v2-wall-2', x: 0.7, w: 0.232 }, { img: 'living-v2-wall-3', x: 0.28, w: 0.259 }, { img: 'living-v2-wall-4', x: 0.22, w: 0.177 }, { img: 'living-v2-wall-5', x: 0.78, w: 0.251 }, { img: 'living-v2-wall-6', x: 0.76, w: 0.199 }, { img: 'living-v2-wall-7', x: 0.26, w: 0.254 }]; });
-addVariant('workshop', c => { c.wallPiecesAbove = -1; c.wallPieces = [{ img: 'workshop-v2-wall-0', x: 0.25, w: 0.235 }, { img: 'workshop-v2-wall-1', x: 0.74, w: 0.257 }, { img: 'workshop-v2-wall-2', x: 0.7, w: 0.205 }, { img: 'workshop-v2-wall-3', x: 0.28, w: 0.271 }, { img: 'workshop-v2-wall-4', x: 0.22, w: 0.171 }, { img: 'workshop-v2-wall-5', x: 0.78, w: 0.278 }, { img: 'workshop-v2-wall-6', x: 0.76, w: 0.186 }, { img: 'workshop-v2-wall-7', x: 0.26, w: 0.194 }]; });
-addVariant('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'tabletop-v2-wall-1', x: 0.74, w: 0.272 }, { img: 'tabletop-v2-wall-2', x: 0.7, w: 0.279 }, { img: 'tabletop-v2-wall-3', x: 0.28, w: 0.218 }, { img: 'tabletop-v2-wall-4', x: 0.22, w: 0.237 }, { img: 'tabletop-v2-wall-5', x: 0.78, w: 0.196 }, { img: 'tabletop-v2-wall-6', x: 0.76, w: 0.221 }, { img: 'tabletop-v2-wall-7', x: 0.26, w: 0.233 }]; });
+improve('workshop', c => { c.wallPiecesAbove = -1; c.wallPieces = [{ img: 'workshop-v2-wall-0', x: 0.25, w: 0.235 }, { img: 'workshop-v2-wall-1', x: 0.74, w: 0.257 }, { img: 'workshop-v2-wall-2', x: 0.7, w: 0.205 }, { img: 'workshop-v2-wall-3', x: 0.28, w: 0.271 }, { img: 'workshop-v2-wall-4', x: 0.22, w: 0.171 }, { img: 'workshop-v2-wall-5', x: 0.78, w: 0.278 }, { img: 'workshop-v2-wall-6', x: 0.76, w: 0.186 }, { img: 'workshop-v2-wall-7', x: 0.26, w: 0.194 }]; });
+improve('tabletop', c => { c.wallPieces = [{ img: 'tabletop-v2-wall-0', x: 0.25, w: 0.250 }, { img: 'tabletop-v2-wall-1', x: 0.74, w: 0.272 }, { img: 'tabletop-v2-wall-2', x: 0.7, w: 0.279 }, { img: 'tabletop-v2-wall-3', x: 0.28, w: 0.218 }, { img: 'tabletop-v2-wall-4', x: 0.22, w: 0.237 }, { img: 'tabletop-v2-wall-5', x: 0.78, w: 0.196 }, { img: 'tabletop-v2-wall-6', x: 0.76, w: 0.221 }, { img: 'tabletop-v2-wall-7', x: 0.26, w: 0.233 }]; });
 
 const imageCache = new Map();
 // Compress extreme object zooms into a gentle terrain zoom (1–1.35×).
