@@ -30,13 +30,13 @@ vm.runInContext([
   'globalThis.api={WORLDS,HOME_SCREENS,WORLD_LEVELS,WORLD_Q,WORLD_ICON,worldStarsFor,worldQuestions,worldUnlocked,worldStarsOf,worldTotalStars,worldObjects,holidayMonthsPlayed};'
 ].join('\n'),ctx);
 const api=ctx.api;
-assert.equal(api.WORLDS.length,12);
+assert.equal(api.WORLDS.length,15);
 for(const [accuracy,stars]of [[0,0],[60,0],[60.01,1],[75,1],[75.01,2],[80,2],[90,2],[90.01,3],[92,3],[100,3]])assert.equal(api.worldStarsFor(accuracy),stars,'World stars at '+accuracy);
 assert(source.includes('#f39432 60% 75%,#65b94e 75% 90%,#3999ef 90% 100%'));
 assert(source.includes('left:90%; right:0; top:0; bottom:0; background:linear-gradient(110deg'));
 assert(source.includes('WORLD_STAR_AT.map((at, i)'));
-assert.deepEqual(Array.from(api.WORLDS,w=>w.id).filter(id=>!['under-the-sea','toy-box'].includes(id)),['tiny','games','home','food','town','critters','wheels','landmarks','make-believe','holiday-mix']);
-for(const [id,count,home]of [['under-the-sea',29,'underwater'],['toy-box',20,'toy-box']]){
+assert.deepEqual(Array.from(api.WORLDS,w=>w.id).filter(id=>!['under-the-sea'].includes(id)),['tiny','toy-box','home','gadgets','bedroom','food','town','critters','wild','birds-bugs','wheels','landmarks','make-believe','holiday-mix']);
+for(const [id,count,home]of [['under-the-sea',29,'underwater'],['toy-box',55,'toy-box']]){
   const world=api.WORLDS.find(w=>w.id===id);assert.equal(world.ids.length,count);assert.equal(new Set(world.ids).size,count);
   assert(objects.has(api.WORLD_ICON[id]));
   for(const objectId of world.ids)assert.equal(objects.get(objectId)?.group,'Standard',objectId+' must not require a pack');
