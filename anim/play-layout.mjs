@@ -93,7 +93,9 @@ export function createPlayLayout(doc = document) {
   win.addEventListener('resize', measure);
   win.visualViewport?.addEventListener('resize', measure);
   doc.fonts?.ready.then(measure);
-  function track(owner, mode) { owners.add(owner); owner.dataset.playLayout = mode; measure(); }
+  // Boxes only scroll when the content really cannot fit, so the fit check must also run when a screen's content changes.
+  const contentWatch = new win.MutationObserver(() => { if (!fitFrame) fitFrame = win.requestAnimationFrame(fit); });
+  function track(owner, mode) { owners.add(owner); owner.dataset.playLayout = mode; contentWatch.observe(owner, {childList: true, subtree: true}); measure(); }
   // Result screens: the question card is already handed back, but the party result layout (behind-the-board scroll area, paper fit) must stay on.
   function keepParty(owner) { if (owner.dataset.playLayout !== 'party' || !owners.has(owner)) track(owner, 'party'); }
   function clear(owner) { owners.delete(owner); delete owner.dataset.playLayout; delete owner.dataset.playDensity; }
