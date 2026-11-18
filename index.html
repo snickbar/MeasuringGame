@@ -1160,9 +1160,6 @@ if (location.protocol === "file:") {
   .hs-fake { display: flex; gap: 8px; align-items: stretch; }
   .hs-fake-display { flex: 1; min-width: 0; padding: 10px 12px; border: 3px solid #4a2c12; border-radius: 14px; background: #fffdf6; font: 700 26px 'Fredoka', sans-serif; text-align: center; min-height: 34px; }
   .hs-fake-display.bad { border-color: #b3261e; background: #fde4e1; }
-  .hs-pad { display: grid; grid-template-columns: repeat(3, 72px); justify-content: center; gap: 8px 10px; margin: 8px 0; }
-  .hs-key { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 54px; padding: 0 0 5px; margin: 0; border: none; background: url(icons/key-cream.webp) center / 100% 100% no-repeat; color: #5b3a26; font: 700 22px/1 'Fredoka', sans-serif; text-shadow: none; }
-  .hs-key-back { background-image: url(icons/key-back.webp); font-size: 0; color: transparent; }
   .hs-fake input { flex: 1; min-width: 0; padding: 12px; border: 3px solid #4a2c12; border-radius: 14px; font: 700 20px 'Fredoka', sans-serif; text-align: center; }
   .hs-fake input.bad { border-color: #b3261e; }
   .hs-fake .dc-btn { width: 110px; margin: 0; }
@@ -13243,16 +13240,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hsFakeKey(k) {
     if (!roomState.hsPre) return;
-    if (k === "back") hsFakeStr = hsFakeStr.slice(0, -1);
-    else {
-      if (k === "." && hsFakeStr.includes(".")) return;
-      const [whole, frac] = hsFakeStr.split(".");
-      if (frac !== undefined ? frac.length >= 2 : (k !== "." && whole.length >= 8)) return; // same limits as the main guess pad
-      hsFakeStr += k;
-    }
+    hsFakeStr = kpApply(hsFakeStr, k); // same keys and limits as every other keypad
     const d = document.getElementById("hs-fake-display");
     if (d) { d.textContent = hsFakeStr || "0"; d.classList.remove("bad"); }
-    playSound("tap");
   }
   function hsSendFake() {
     const d = document.getElementById("hs-fake-display");
@@ -13634,7 +13624,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const myFake = sent[me];
       if (isOut) html += myFake !== undefined
         ? `<div class="hs-result">Fake answer <b>${HS.hsFormatAnswer(myFake)}</b> submitted.</div>`
-        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><div id="hs-fake-display" class="hs-fake-display">${escapeHtml(hsFakeStr || "0")}</div></div><div class="hs-pad">${["1","2","3","4","5","6","7","8","9",".","0","back"].map((k) => k === "back" ? `<button type="button" class="hs-key hs-key-back" data-hs-key="back" aria-label="Backspace">&larr;</button>` : `<button type="button" class="hs-key" data-hs-key="${k}">${k}</button>`).join("")}</div><button type="button" class="dc-btn" id="hs-fake-send">Send</button><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
+        : `<p class="hs-hint">You're out &mdash; but you can still mess with them. Write a believable <b>fake</b> answer for this question. Up to 3 get used &mdash; every player your fake fools earns you 2 coins at the end of the game:</p><div class="hs-fake"><div id="hs-fake-display" class="hs-fake-display">${escapeHtml(hsFakeStr || "0")}</div></div>${kpKeysHtml()}<button type="button" class="dc-btn" id="hs-fake-send">Send</button><p class="hs-hint"><span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s left</p>`;
       else html += `<p class="hs-hint">The players who are out are writing fake answers for this round... <span class="hs-timer" data-hs-ends="${data.hsPre.endsAt}">${Math.max(0, Math.ceil((data.hsPre.endsAt - nowMs()) / 1000))}</span>s</p>`;
       hsContentEl.innerHTML = html;
       return;
@@ -13811,7 +13801,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     else if (e.target.closest("#hs-again")) hsPlayAgain();
     else if (e.target.closest("#hs-deal") && isHost) hsWrite({ "hs/waitHost": false, "hs/nextAt": nowMs() });
     else if (e.target.closest("#hs-exit")) openLeaveGameConfirm();
-    else if (e.target.closest("[data-hs-key]")) hsFakeKey(e.target.closest("[data-hs-key]").dataset.hsKey);
+    else if (e.target.closest(".dc-key")) hsFakeKey(e.target.closest(".dc-key").dataset.k);
     else if (e.target.closest("#hs-fake-send")) hsSendFake();
     else if (e.target.closest("[data-hs-skip-animation]") && isHost && !roomState.paused && roomState.hs?.stage === "reveal" && hsAnimating(roomState.hs)) {
       const n = nowMs();
@@ -21068,22 +21058,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     numpadPressAt = performance.now();
     if (key.id === "backspace-btn") pressBackspace(key); else pressNumpadKey(key);
   });
-  // Every other mode's keypad (Daily, Worlds, Monthly, Survival: .dc-key; the High Stakes fake-answer pad: .hs-key) gets the same touch-down press and the same feedback from here,
+  // Every other mode's keypad (every mode, including the High Stakes fake-answer pad: .dc-key) gets the same touch-down press and the same feedback from here,
   // so a mode cannot lose it by rebuilding its own keypad markup. The press is passed on as a click for that mode's own handler, and the
   // real click that follows the finger lifting is swallowed so a digit never counts twice.
   let dcPressAt = 0;
   document.addEventListener("pointerdown", (e) => {
     if (e.button > 0) return;
-    const key = e.target.closest?.(".dc-key, .hs-key");
+    const key = e.target.closest?.(".dc-key");
     if (!key || key.disabled) return;
     dcPressAt = performance.now();
     key.click();
     playSound("tap");
-    numpadFeedback(key, (key.dataset.k || key.dataset.hsKey) !== "back");
+    numpadFeedback(key, key.dataset.k !== "back");
   }, true);
   document.addEventListener("click", (e) => {
     if (!e.isTrusted || performance.now() - dcPressAt > 700) return;
-    if (e.target.closest?.(".dc-key, .hs-key")) { e.stopPropagation(); e.preventDefault(); }
+    if (e.target.closest?.(".dc-key")) { e.stopPropagation(); e.preventDefault(); }
   }, true);
   numpadEl.addEventListener("click", (e) => {
     if (performance.now() - numpadPressAt < 700) return;
