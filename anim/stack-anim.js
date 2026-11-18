@@ -615,9 +615,9 @@ export function createStackAnimation(container, options = {}) {
     : (document.documentElement.dataset.motion==='reduce'||(document.documentElement.dataset.motion!=='full'&&!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)));
   // Objects that turn to stand arrive right side up and turn during their hop (false = arrive already turned).
   const rotateInJump = options.rotateInJump !== false;
-  // Polish switches (off unless asked for): a little crouch before the second to fourth objects jump, flatter hops
+  // Polish switches (on unless set to false): a little crouch before the second to fourth objects jump, flatter hops
   // as the stack grows, and a small sway when a big object finishes standing up.
-  const crouchJump = !!options.crouchJump, flatHops = !!options.flatHops, bigSway = !!options.bigSway;
+  const crouchJump = options.crouchJump !== false, flatHops = options.flatHops !== false, bigSway = options.bigSway !== false, stackSway = options.stackSway !== false;
   const flipFacing = !!options.flipFacing;   // swaps which of the two pictures is mirrored
   // The caller can mirror the running count elsewhere (via start()'s onFrame,
   // which now also receives the current shown value) instead of showing it
@@ -1209,6 +1209,14 @@ export function createStackAnimation(container, options = {}) {
       const frac = count - full;
       const iStart = Math.max(0, Math.floor((stackBase - stageH) / pitch) - 1);
       const iEnd = Math.min(full - 1, Math.ceil(stackBase / pitch));
+      // A tall stack of many small things rocks a little once it is finished, then settles.
+      // It turns about its foot; the cut line above stays put.
+      const sAge = t - tB1;
+      const stackTall = Math.min(full, Math.ceil(stackBase / pitch)) * pitch;
+      const stackA = stackSway && !reduceMotion && R >= 6 && sAge > 0 && sAge < 2.6 && stackTall > 30
+        ? clamp(stackWidth * 0.45 / stackTall, 0.004, 0.03) * Math.exp(-1.7 * sAge) * Math.sin(2 * Math.PI * 1.15 * sAge) : 0;
+      ctx.save();
+      if (stackA) { ctx.translate(sx0, stackBase); ctx.rotate(stackA); ctx.translate(-sx0, -stackBase); }
       for (let i = iStart; i <= iEnd; i++) {
         if (i < nHop && t < starts[i] + durs[i]) continue;   // still hopping in
         const bottom = stackBase - i * pitch;
@@ -1222,6 +1230,7 @@ export function createStackAnimation(container, options = {}) {
             sx0 - stackWidth / 2, bottom - hv, stackWidth, hv);
         }
       }
+      ctx.restore();
       ctx.restore();
 
       const wcol = baseWidth;
