@@ -4235,8 +4235,9 @@ if (location.protocol === "file:") {
   #items-content .items-row.sticker.locked { background: #f1e8d6; border: 2px dashed #cdbd9f; }
   #items-content .items-row.sticker.locked .items-thumb img { filter: brightness(0); opacity: .2; }
   #items-content .items-row.sticker.locked .items-name { color: #9c8b74; font-weight: 700; letter-spacing: 1px; }
-  #items-content .items-progress { height: 12px; margin: 0 0 8px; border-radius: 8px; background: #f3e6d0; border: 2px solid #d9b87a; overflow: hidden; }
+  #items-content .items-progress { height: 10px; margin: 6px 0 0; border-radius: 8px; background: #f3e6d0; border: 2px solid #d9b87a; overflow: hidden; }
   #items-content .items-progress i { display: block; height: 100%; background: linear-gradient(#7bd56a, #3fa83a); border-radius: 6px; }
+  #items-content .items-progress.combos i { background: linear-gradient(#7cc4f0, #3b8fd0); }
 
   /* Contextual power-ups stay above the player cards, beside the objects/keypad. */
   .pu-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px; margin:4px 0 6px; border:1px solid #decaa9; border-radius:12px; background:#fff7e7; }
@@ -16796,6 +16797,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>`;
       }).join("");
     }
+    const pct = (n, total) => total ? Math.max(n ? 2 : 0, Math.round(n / total * 100)) : 0; // a sliver shows as soon as anything is found
     itemsContentEl.innerHTML =
       `<div class="items-tabs">
           <button type="button" class="items-tab${isHoliday ? "" : " active"}" data-tab="normal" aria-pressed="${!isHoliday}">Main</button>
@@ -16807,14 +16809,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <div class="items-stat-box">
             <div class="items-stat-value" data-discovery-count>${seenCount} / ${totalCount}</div>
             <div class="items-stat-label">${isHoliday ? "Monthly objects seen" : "Objects seen"}</div>
+            <div class="items-progress" role="img" aria-label="${seenCount} of ${totalCount} objects seen"><i style="width:${pct(seenCount, totalCount)}%"></i></div>
           </div>
           <div class="items-stat-box">
             <div class="items-stat-value">${seenComboCount.toLocaleString()} / ${comboCount.toLocaleString()}</div>
             <div class="items-stat-label">Combinations seen</div>
+            <div class="items-progress combos" role="img" aria-label="${seenComboCount} of ${comboCount} combinations seen"><i style="width:${pct(seenComboCount, comboCount)}%"></i></div>
           </div>
           ${isHoliday ? `<button type="button" class="items-stat-box items-jump" id="items-jump-btn">Jump to current month</button>` : ""}
         </div>
-        <div class="items-progress" role="img" aria-label="${seenCount} of ${totalCount} found"><i style="width:${totalCount ? Math.max(seenCount ? 2 : 0, Math.round(seenCount / totalCount * 100)) : 0}%"></i></div>
       </div>` + recentHtml + listHtml;
     itemsContentEl.querySelector(".items-tabs").after(searchPanel);
     document.getElementById("object-search-toggle").onclick = (event) => {
