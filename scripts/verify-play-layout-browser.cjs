@@ -46,6 +46,8 @@ window.__layoutSm=async n=>{
  return n;
 };
 window.__layoutSummaryPhase=async mode=>{await window.__layoutAudit(mode);stopAnimation();animScene=null;animSceneRound=null;roomState.phase='summary';applyPhase(roomState);};
+window.__layoutHsRefresh=()=>{roomState.players.me.layoutTick=(roomState.players.me.layoutTick||0)+1;renderHighStakes(roomState);};
+window.__layoutBluffRefresh=()=>{roomState.players.me.layoutTick=(roomState.players.me.layoutTick||0)+1;bluffUI.refresh();};
 window.__layoutBoard=id=>{roomState.board=id;applyBoard(id);getPlayLayout().measure();};
 window.__layoutRv=async n=>{
  await window.__layoutAudit('quick');
@@ -198,6 +200,18 @@ server.listen(0,'127.0.0.1',()=>{
        const bl=await evaluate(`(async()=>{const cols=[...document.querySelectorAll('#bluff-screen .bl-table>.hs-col')];cols.forEach(c=>{const t=c.querySelector('.hs-pl');for(let i=0;i<3;i++)c.appendChild(t.cloneNode(true))});window.dispatchEvent(new Event('resize'));await new Promise(r=>setTimeout(r,500));const m=document.querySelector('#bluff-screen .play-middle'),mid=document.querySelector('#bluff-screen .hs-mid'),top=mid.getBoundingClientRect().top;cols[0].scrollTop=100;await new Promise(r=>setTimeout(r,80));return {middleScrolls:m.scrollHeight>m.clientHeight+1,c0:cols[0].scrollHeight>cols[0].clientHeight+1,c0Top:cols[0].scrollTop,c1Top:cols[1].scrollTop,midMoved:Math.round(mid.getBoundingClientRect().top-top)}})()`);
        if(bl.middleScrolls||!bl.c0||bl.c0Top<50||bl.c1Top!==0||bl.midMoved!==0)throw Error('Bluff columns must scroll on their own while the board stays still '+width+'x'+height+': '+JSON.stringify(bl));
        await evaluate('window.__layoutAudit("bluff")');await new Promise(r=>setTimeout(r,180));
+      }
+      if(mode==='bluff'){ // a rebuild (someone locking in) must keep the scrolled columns where they were
+       await evaluate('window.__layoutAudit("bluff:many")');await new Promise(r=>setTimeout(r,250));
+       const keep=await evaluate(`(async()=>{const cols=[...document.querySelectorAll('#bluff-screen .bl-table>.hs-col')];if(!(cols[0].scrollHeight>cols[0].clientHeight+40))return {skip:true,sh:cols[0].scrollHeight,ch:cols[0].clientHeight};cols[0].scrollTop=90;cols[1].scrollTop=40;const a=[cols[0].scrollTop,cols[1].scrollTop];window.__layoutBluffRefresh();await new Promise(r=>setTimeout(r,400));const n=[...document.querySelectorAll('#bluff-screen .bl-table>.hs-col')];return {a,b:[n[0].scrollTop,n[1].scrollTop],same:n[0]===cols[0]}})()`);
+       if(!keep.skip&&(Math.abs(keep.b[0]-keep.a[0])>8||Math.abs(keep.b[1]-keep.a[1])>8))throw Error('Bluff columns jumped back after a rebuild '+width+'x'+height+': '+JSON.stringify(keep));
+       await evaluate('window.__layoutAudit("bluff")');await new Promise(r=>setTimeout(r,180));
+      }
+      if(mode==='highstakes'){ // High Stakes with a full table: only the two player columns scroll (each on its own), the board never moves, and a rebuild keeps them where they were
+       await evaluate('window.__layoutAudit("highstakes:many")');await new Promise(r=>setTimeout(r,250));
+       const hk=await evaluate(`(async()=>{const q=()=>[...document.querySelectorAll('#hs-screen .hs-board>.hs-col')],cols=q(),m=document.querySelector('#hs-screen .play-middle'),mid=document.querySelector('#hs-screen .hs-mid');if(!(cols[0].scrollHeight>cols[0].clientHeight+40))return {skip:true,sh:cols[0].scrollHeight,ch:cols[0].clientHeight};const top=mid.getBoundingClientRect().top;cols[0].scrollTop=90;cols[1].scrollTop=40;await new Promise(r=>setTimeout(r,80));const a=[cols[0].scrollTop,cols[1].scrollTop],moved=Math.round(mid.getBoundingClientRect().top-top),middleScrolls=m.scrollHeight>m.clientHeight+1;window.__layoutHsRefresh();await new Promise(r=>setTimeout(r,400));const n=q();return {a,b:[n[0].scrollTop,n[1].scrollTop],moved,middleScrolls}})()`);
+       if(!hk.skip&&(hk.middleScrolls||hk.moved!==0||hk.a[0]<50||hk.a[1]<20||Math.abs(hk.b[0]-hk.a[0])>8||Math.abs(hk.b[1]-hk.a[1])>8))throw Error('High Stakes columns must scroll on their own, keep their place after a rebuild, and leave the board still '+width+'x'+height+': '+JSON.stringify(hk));
+       await evaluate('window.__layoutAudit("highstakes")');await new Promise(r=>setTimeout(r,180));
       }
       const isQuestion=!mode.includes(':')||mode==='bluff:vote'||mode.startsWith('quick:');
       if(isQuestion&&state.overflow>1)throw Error(mode+' '+width+'x'+height+' question overflow '+JSON.stringify(state));

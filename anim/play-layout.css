@@ -420,15 +420,15 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
 [data-play-layout][data-play-density=tight] .play-middle{overflow:auto}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds]) :is(.game-body,.main-col){overflow:visible}
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds])[data-play-density=tight] .main-col{overflow:auto}
-/* Bluff table: the board itself stays put; only the two player-card columns scroll, each on its own. The middle area reaches down behind the see-through button (--pm-down) and the columns have a little room on every side for glows and shadows, so no card is cut by an invisible edge. */
-#bluff-screen[data-play-layout] .play-middle:has(>.bl-table){display:flex;flex-direction:column;overflow:visible;padding:0;margin-bottom:calc(-1 * var(--pm-down,0px))}
-#bluff-screen[data-play-layout] .play-middle:has(>.bl-table)>:not(.bl-table){flex:none}
-#bluff-screen[data-play-layout] .play-middle>.bl-table{flex:1 1 0;min-height:0;align-items:stretch;margin:2px 0 0}
-#bluff-screen[data-play-layout] .bl-table>.hs-mid{padding-bottom:var(--pm-down,0px)}
-#bluff-screen[data-play-layout] .bl-table>.hs-col{min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:calc(var(--pm-up,0px) + 6px) 6px calc(var(--pm-down,0px) + 10px);margin:calc(-1 * (var(--pm-up,0px) + 6px)) -6px 0}
-#bluff-screen[data-play-layout] .play-middle:has(>.bl-table)>:not(.bl-table){position:relative;z-index:3} /* the question card stays on top: cards scrolling up pass behind it */
-#bluff-screen[data-play-layout] .bl-table>.hs-col>.hs-pl{flex:none}
-#bluff-screen[data-play-layout] .bl-table>.hs-col::-webkit-scrollbar{display:none}
+/* Bluff and High Stakes table: the board itself stays put; only the two player-card columns scroll, each on its own. The middle area reaches down behind the see-through button (--pm-down) and the columns have a little room on every side for glows and shadows, so no card is cut by an invisible edge. */
+:is(#bluff-screen,#hs-screen)[data-play-layout] .play-middle:has(>.hs-board){display:flex;flex-direction:column;overflow:visible;padding:0;margin-bottom:calc(-1 * var(--pm-down,0px))}
+:is(#bluff-screen,#hs-screen)[data-play-layout] .play-middle:has(>.hs-board)>:not(.hs-board){flex:none}
+:is(#bluff-screen,#hs-screen)[data-play-layout] .play-middle>.hs-board{flex:1 1 0;min-height:0;align-items:stretch;margin:2px 0 0}
+:is(#bluff-screen,#hs-screen)[data-play-layout] .hs-board>.hs-mid{padding-bottom:var(--pm-down,0px)}
+:is(#bluff-screen,#hs-screen)[data-play-layout] .hs-board>.hs-col{min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:calc(var(--pm-up,0px) + 6px) 6px calc(var(--pm-down,0px) + 10px);margin:calc(-1 * (var(--pm-up,0px) + 6px)) -6px 0}
+:is(#bluff-screen,#hs-screen)[data-play-layout] .play-middle:has(>.hs-board)>:not(.hs-board){position:relative;z-index:3} /* the question card stays on top: cards scrolling up pass behind it */
+:is(#bluff-screen,#hs-screen)[data-play-layout] .hs-board>.hs-col>.hs-pl{flex:none}
+:is(#bluff-screen,#hs-screen)[data-play-layout] .hs-board>.hs-col::-webkit-scrollbar{display:none}
 /* Very small phones: shrink the question card and the notes a little so the board plus the choices fit without the whole room scrolling. */
 #bluff-screen[data-play-layout][data-play-density=tight] .bl-objects img{height:38px}
 #bluff-screen[data-play-layout][data-play-density=tight] .bl-objects{gap:8px}
@@ -440,3 +440,12 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
 #bluff-screen[data-play-layout][data-play-density=tight] .bl-claim>strong{font-size:22px;margin:0}
 #bluff-screen[data-play-layout][data-play-density=tight] .bl-claims{gap:4px;margin:4px 0}
 @media(max-height:660px){#bluff-screen[data-play-layout][data-play-density=tight] .bl-panel .bl-note{display:none}}
+/* High Stakes on smaller phones: the "your turn / is thinking" card lies down (small avatar beside the text) so the board's middle fits and only the player columns have to scroll. */
+#hs-screen[data-play-layout][data-play-density=tight] .hs-think{aspect-ratio:auto;flex-direction:row;width:min(100%,196px);margin:4px auto 0;padding:4px 8px;gap:8px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-think .avatar,#hs-screen[data-play-layout][data-play-density=tight] .hs-think.hs-mine .avatar{width:34px;height:34px;font-size:32px}
+@media(max-height:760px){
+#hs-screen[data-play-layout][data-play-density=tight] .hs-opt{min-height:40px;padding:2px 4px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-opts{gap:4px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-potbox{margin-top:3px;padding:1px 2px 3px}
+#hs-screen[data-play-layout][data-play-density=tight] .hs-potbox img{width:26px;height:26px}
+}

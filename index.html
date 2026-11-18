@@ -13443,8 +13443,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     };
     requestAnimationFrame(step);
   }
+  let hsColKey = "";
   function hsRenderInto(html, hs, data, animating, started = animating) {
+    // a rebuild (someone acting) must not throw the scrolled player columns back to the top
+    const colKey = `${data.gameId}:${hs.round}:${hs.stage}`;
+    const colTops = colKey === hsColKey ? [...hsContentEl.querySelectorAll(".hs-board > .hs-col")].map((c) => c.scrollTop) : null;
+    hsColKey = colKey;
     hsContentEl.innerHTML = html;
+    if (colTops?.some(Boolean)) {
+      const putBack = () => hsContentEl.querySelectorAll(".hs-board > .hs-col").forEach((c, i) => { if (colTops[i]) c.scrollTop = colTops[i]; });
+      putBack(); requestAnimationFrame(putBack);
+    }
     const pig = hsContentEl.querySelector('.hs-table-pig');
     if (pig) hsStartTablePig(pig, data.gameId, hs.round);
     hsRenderedAnimating = started;
