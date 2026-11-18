@@ -6650,6 +6650,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     saveCachedProfile(deviceId, myProfile);
     renderProfileDependentUi();
     grantLevelRewards();
+    if (!levelUpRestored) { levelUpRestored = true; restoreLevelUps(); }
     powerups?.recover(data, deviceId);
     gameRewards?.recover();
     void careerLedger?.flush();
@@ -17187,23 +17188,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     levelGrantBusy = false;
   }
 
-  // ---- Level-up pop-up: level badge, coins counting up with a burst, and a "Pull now" button. Never during a live round. ----
-  let levelUpOpen = false;
+  // ---- Level-up pop-up: level badge, coins counting up with a burst, and a "Pull now" button. ----
+  // It only appears when no game is in progress: after a game ends or is closed early, or the next time the app opens if it was
+  // closed first. Pending level-ups are kept in localStorage until they have been shown.
+  let levelUpOpen = false, levelUpRestored = false;
   const levelUpWaiting = [];
+  const LEVELUP_KEY = "mg_levelup_pending";
+  let levelUpCurrent = null; // the one on screen stays saved until it is closed, so quitting the app mid-pop-up does not lose it
+  const levelUpSave = () => { const all = (levelUpCurrent ? [levelUpCurrent] : []).concat(levelUpWaiting); try { all.length ? localStorage.setItem(LEVELUP_KEY, JSON.stringify(all)) : localStorage.removeItem(LEVELUP_KEY); } catch (e) { /* optional */ } };
   function levelUpBlocked() {
-    const livePhases = ["countdown", "question", "answers", "animation", "reveal"];
-    if (currentRoomCode && roomState && livePhases.includes(roomState.phase) && !document.getElementById("final-screen")?.classList.contains("active")) return true;
-    const solo = [[sv, survivalScreenEl], [wl, worldsScreenEl], [wb, wbScreenEl]];
+    // Any room game that is past the lobby and not yet on the final screen counts as in progress (round summaries included).
+    if (currentRoomCode && roomState && roomState.phase && !["waiting", "final", "ended"].includes(roomState.phase) && !document.getElementById("final-screen")?.classList.contains("active")) return true;
+    const solo = [[sv, survivalScreenEl], [wl, worldsScreenEl], [wb, wbScreenEl], [daily, dailyScreenEl], [mo, monthlyScreenEl]];
     return solo.some(([st, el]) => st && el && el.classList.contains("active") && ["question", "reveal"].includes(st.phase));
+  }
+  function pumpLevelUps() {
+    if (levelUpOpen || !levelUpWaiting.length) return;
+    if (levelUpBlocked()) { setTimeout(pumpLevelUps, 1500); return; }
+    levelUpCurrent = levelUpWaiting.shift();
+    showLevelUp(levelUpCurrent);
   }
   function queueLevelUp(g) {
     levelUpWaiting.push(g);
-    const tryShow = () => {
-      if (levelUpOpen || !levelUpWaiting.length) return;
-      if (levelUpBlocked()) { setTimeout(tryShow, 1500); return; }
-      showLevelUp(levelUpWaiting.shift());
-    };
-    tryShow();
+    levelUpSave();
+    pumpLevelUps();
+  }
+  // Level-ups earned in an earlier session that never got shown.
+  function restoreLevelUps() {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(LEVELUP_KEY) || "[]"); } catch (e) { saved = []; }
+    if (!Array.isArray(saved)) return;
+    saved.filter((g) => g && g.to > 0).forEach((g) => levelUpWaiting.push(g));
+    pumpLevelUps();
   }
   function showLevelUp(g) {
     levelUpOpen = true;
@@ -17247,7 +17263,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (k < 1) requestAnimationFrame(step); else playSound("coins");
     };
     setTimeout(() => requestAnimationFrame(step), reduced ? 0 : 250);
-    const close = () => { ov.remove(); levelUpOpen = false; if (levelUpWaiting.length) queueLevelUp(levelUpWaiting.shift()); };
+    const close = () => { ov.remove(); levelUpOpen = false; levelUpCurrent = null; levelUpSave(); pumpLevelUps(); };
     ov.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
