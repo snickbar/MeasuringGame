@@ -64,6 +64,8 @@ export function createPlayLayout(doc = document) {
     }
     if (!fitFrame) fitFrame = win.requestAnimationFrame(fit);
   }
+  const scrollCol = doc.querySelector('#hud .main-col');
+  if (scrollCol) scrollCol.addEventListener('scroll', () => scrollCol.toggleAttribute('data-scrolled', scrollCol.scrollTop > 2), {passive: true});
   const resize = new win.ResizeObserver(measure);
   [toolbar, sub, bottom].filter(Boolean).forEach(el => resize.observe(el));
   win.addEventListener('resize', measure);
