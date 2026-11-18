@@ -3180,7 +3180,7 @@ if (location.protocol === "file:") {
   .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
   .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
   /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
-  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-template-rows: auto auto minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
+  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 130px; grid-template-rows: auto auto minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
   #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
   /* rows, top to bottom: progress, the two objects (takes any spare height, so everything else sits down against the Lock button), board, answer box + keypad with the two player cards beside them, role hint, status */
   #hud #question-view.tw-mode > #tw-question-progress { grid-row: 1; }
@@ -3189,6 +3189,8 @@ if (location.protocol === "file:") {
   #hud #question-view.tw-mode > #hl-gap-chip { grid-column: 1; grid-row: 4; justify-self: start; width: 192px; box-sizing: border-box; margin: 2px 0 0; }
   #hud #question-view.tw-mode > #hl-gap-chip[hidden] { display: none; }
   #hud #question-view.tw-mode > #tw-guess-display { grid-column: 1; grid-row: 5; justify-self: start; width: 192px; margin: 4px 0; font-size: 26px; } /* as wide as the keypad, right above it */
+  #hud #question-view.tw-mode > #hl-wait { grid-column: 1; grid-row: 6; align-self: stretch; z-index: 2; }
+  #hud #question-view.tw-mode > #hl-wait[hidden] { display: none; }
   #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-row: 6; grid-template-columns: repeat(3, minmax(0, 60px)); gap: 6px; justify-content: start; }
   #hud #question-view.tw-mode > #tw-question-stats { grid-column: 2; grid-row: 5 / span 2; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; margin: 0; align-self: stretch; }
   #hud #question-view.tw-mode > #hl-role-hint { grid-row: 7; }
@@ -3198,7 +3200,7 @@ if (location.protocol === "file:") {
   #hud #question-view.tw-mode .tw-qs-pair { flex: 1 1 0; width: 100%; }
   #hud #question-view.tw-mode .tw-qs-gutter { display: none; }
   #hud #question-view.tw-mode .tw-qs-half { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; box-sizing: border-box; gap: 3px; padding: 6px 4px; border-radius: 16px; }
-  #hud #question-view.tw-mode .tw-qs-half .avatar { width: 52px; height: 52px; grid-row: auto; }
+  #hud #question-view.tw-mode .tw-qs-half .avatar { width: 58px; height: 58px; grid-row: auto; }
   #hud #question-view.tw-mode .tw-qs-half .avatar .avatar-icon { width: 100%; height: 100%; }
   #hud #question-view.tw-mode .tw-qs-half .name { font-size: 13px; }
   #hud #question-view.tw-mode .tw-qs-half .tw-qs-acc { font-size: 15px; }
@@ -5303,6 +5305,7 @@ if (location.protocol === "file:") {
         <div id="guess-display">0</div>
         <div id="hl-gap-chip" class="hl-limit" hidden></div>
         <div id="tw-guess-display" class="dc-display" hidden>0</div>
+        <div id="hl-wait" class="hl-wait" hidden><img class="hl-wait-mascot" alt="" draggable="false"><div class="hl-wait-text"><b>Locked in!</b><span id="hl-wait-sub">Waiting for your partner...</span></div></div>
         <div id="numpad">
           <button class="num-btn" data-val="1">1</button>
           <button class="num-btn" data-val="2">2</button>
@@ -20925,7 +20928,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
   function setTwBoardPrompt(text) {
     twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
-    qBoardMount(twQuestionPromptEl, text, 260); // the real question card (with its writing animation) is borrowed into this slot
+    qBoardMount(twQuestionPromptEl, text, 300); // the real question card (with its writing animation) is borrowed into this slot
     if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
   }
   function renderTeamWorldsQuestionStats(q) {
@@ -21028,8 +21031,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   function updateWaitingUi() {
     const waiting = hasSubmittedThisRound && !guessLocked && roomState.phase === "question";
-    numpadEl.style.display = waiting ? "none" : "grid";
-    submitGuessBtn.style.display = waiting ? "none" : "flex";
+    const hlWaitEl = document.getElementById("hl-wait");
+    const hlRole = isHlSettings(roomState.settings) ? (roomState.hlRoles || {})[currentPlayerId] : "";
+    if (hlRole && hlWaitEl) {
+      // High/Low: the keypad and Lock button keep their space (so nothing shifts), and your mascot waits where the keys were.
+      numpadEl.style.display = "grid"; numpadEl.style.visibility = waiting ? "hidden" : "";
+      submitGuessBtn.style.display = "flex"; submitGuessBtn.style.visibility = waiting ? "hidden" : "";
+      hlWaitEl.hidden = !waiting;
+      if (waiting) {
+        hlWaitEl.dataset.role = hlRole;
+        hlWaitEl.querySelector("img").src = hlRole === "high" ? "anim/high-low-art/bird.webp" : "anim/high-low-art/shark.webp";
+        const other = Object.keys(currentPlayers).find((id) => id !== currentPlayerId);
+        hlWaitEl.querySelector("#hl-wait-sub").textContent = other && currentPlayers[other]?.name ? `Waiting for ${currentPlayers[other].name}...` : "Waiting for your partner...";
+      }
+    } else {
+      if (hlWaitEl) hlWaitEl.hidden = true;
+      numpadEl.style.visibility = ""; submitGuessBtn.style.visibility = "";
+      numpadEl.style.display = waiting ? "none" : "grid";
+      submitGuessBtn.style.display = waiting ? "none" : "flex";
+    }
     powerups?.render();
   }
 
