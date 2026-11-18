@@ -20892,9 +20892,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // star progress meter, the two objects, the question, then (standing in for the power-up row
   // this mode doesn't have) a half/half split of each player's own avatar + their own running
   // (un-averaged) individual accuracy.
+  // A newly lit empty-bottle dot bursts in with a ring.
+  function hlPipGain(pip) {
+    if (!pip) return;
+    pip.animate([{transform:"scale(.3)"},{transform:"scale(1.9)",offset:.6},{transform:"scale(1)"}], {duration:700,easing:"cubic-bezier(.2,1.6,.4,1)"});
+    const ring = document.createElement("b"); ring.className = "hl-pip-ring"; pip.appendChild(ring);
+    ring.animate([{transform:"scale(.6)",opacity:.9},{transform:"scale(2.6)",opacity:0}], {duration:700,easing:"ease-out"}).onfinish = () => ring.remove();
+  }
   function hlReserveBottleHtml(room) {
     const held = !!room.hlShield, charge = room.hlShieldCharge || 0;
-    return `<div class="hl-reserve" aria-label="${held ? 'Empty bottle ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward an empty bottle'}"><span class="hl-reserve-icon${held ? '' : ' waiting'}"><img class="hl-bottle-icon" src="${HL_EMPTY_BOTTLE}" alt=""></span><span>${held ? 'Empty bottle ready' : 'Empty bottle'}</span>${held ? '' : `<span class="hl-pips" role="progressbar" aria-label="Empty bottle charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : ''}"></i>`).join('')}</span>`}</div>`;
+    return `<div class="hl-reserve" aria-label="${held ? 'Empty bottle ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward an empty bottle'}"><span class="hl-reserve-icon${held ? '' : ' waiting'}"><img class="hl-bottle-icon" src="${HL_EMPTY_BOTTLE}" alt=""></span><span>${held ? 'Empty bottle ready' : 'Empty bottle'}</span>${held ? '' : `<span class="hl-pips" role="progressbar" aria-label="Empty bottle charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : i === charge ? 'next' : ''}"></i>`).join('')}</span>`}</div>`;
   }
   function hlBottlesHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
@@ -21727,7 +21734,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       cls = "bad"; title = "Lost a bottle"; sub = `Answer was inside, but the bracket is ${l.ratio == null ? "too" : Number(l.ratio).toFixed(1) + "&times;"} wide. Limit is ${limit}&times;.`;
     }
     if (l.saved) { title = "Empty bottle saved you!"; cls = "ok"; sub = `${sub.replace(/[.!?]$/, "")}. Your team keeps its message bottles. This round doesn't count as survived.`; }
-    const moment = [l.earned ? "Empty bottle earned!" : "", l.milestone ? l.milestone + " rounds survived together!" : ""].filter(Boolean).join(" · ");
+    const charged = l.passed && !l.earned && !l.previousShield && (data.hlShieldCharge || 0) > (l.previousCharge || 0) ? (data.hlShieldCharge || 0) : 0;
+    const moment = [l.earned ? "Empty bottle earned!" : "", charged ? `Empty-bottle dot earned! ${charged} of ${HL_SHIELD_CHAIN}` : "", l.milestone ? l.milestone + " rounds survived together!" : ""].filter(Boolean).join(" · ");
     return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div>${moment ? `<div class="hl-milestone">${moment}</div>` : ""}<div class="hl-verdict-bottles">${hlBottlesHtml(data, true)}</div></div></div>`;
   }
   // Counts a number up (e.g. the team average) so it lands with a little drama.
@@ -21824,7 +21832,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const last = roomState.hlLast || {};
           if (!prefersReducedMotion()) {
             const pips = hlOceanReveal.root.querySelectorAll(".hl-pips i"), reserve = hlOceanReveal.root.querySelector(".hl-reserve-icon img");
-            for (let i = last.previousCharge || 0; i < (roomState.hlShieldCharge || 0); i++) if (pips[i]) pips[i].animate([{transform:"scale(.3)"},{transform:"scale(1.4)",offset:.6},{transform:"scale(1)"}], {duration:450,easing:"ease-out"});
+            for (let i = last.previousCharge || 0; i < (roomState.hlShieldCharge || 0); i++) if (pips[i]) hlPipGain(pips[i]);
             if (last.earned && reserve) reserve.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
             if (!last.passed) hlAnimateBottleSpend(hlOceanReveal.root, last.saved);
           }
@@ -21897,7 +21905,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             if (!prefersReducedMotion()) {
               const pips = v.querySelectorAll(".hl-pips i"), reserve = v.querySelector(".hl-reserve-icon img");
               // The dot(s) this round just lit pop in.
-              for (let i = data.hlLast?.previousCharge || 0; i < (data.hlShieldCharge || 0); i++) if (pips[i]) pips[i].animate([{transform:"scale(.3)"},{transform:"scale(1.4)",offset:.6},{transform:"scale(1)"}], {duration:450,easing:"ease-out"});
+              for (let i = data.hlLast?.previousCharge || 0; i < (data.hlShieldCharge || 0); i++) if (pips[i]) hlPipGain(pips[i]);
               if (data.hlLast?.earned && reserve) reserve.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}], {duration:450});
             }
             if (data.hlLast?.saved) { svCrackHeart("empty-bottle"); vibrate([35, 40, 35]); }
