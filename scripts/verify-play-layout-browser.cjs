@@ -35,6 +35,16 @@ window.__layoutAudit=async requested=>{
 };
 
 // Reveal papers with n players (Classic / Party / Team vs Team), with the bottom buttons showing like the real screen.
+// The round summary list with n players (same screen the Next round button sits under).
+window.__layoutSm=async n=>{
+ await window.__layoutAudit('quick');
+ const base=Object.keys(currentPlayers);for(let i=base.length;i<n;i++)currentPlayers['x'+i]={...currentPlayers[base[i%base.length]],name:'P'+i};
+ const list=document.getElementById('summary-list');list.innerHTML='';
+ Object.keys(currentPlayers).slice(0,n).forEach((id,i)=>{const li=document.createElement('li');li.className='summary-row';li.dataset.id=id;li.innerHTML='<div class="summary-row-top"><span class="avatar">'+avatarHtml(currentPlayers[id].avatar)+'</span><span class="name">'+currentPlayers[id].name+'</span></div><div class="summary-row-body lines-2"><div class="breakdown"><span class="breakdown-chip">+2 Closest</span><span class="breakdown-chip">+1 Perfect!</span></div><span class="roundpts">+3</span></div>';list.appendChild(li);});
+ document.getElementById('question-view').classList.remove('active');document.getElementById('reveal-view').classList.remove('active');document.getElementById('summary-view').classList.add('active');
+ const b=document.getElementById('bottom-actions');b.removeAttribute('data-bar-empty');getPlayLayout().measure();
+ return n;
+};
 window.__layoutBoard=id=>{roomState.board=id;applyBoard(id);getPlayLayout().measure();};
 window.__layoutRv=async n=>{
  await window.__layoutAudit('quick');
@@ -139,15 +149,22 @@ server.listen(0,'127.0.0.1',()=>{
      // Result screens must not cut anything off or leave a big empty gap. (npm run test:result-fit)
      for(const [board,n] of [['',3],['',4],['',10],['phone',4]]){ // 'phone' is a picture board: its art sits inside a taller box, the papers must still sit right under the art
       await evaluate('window.__layoutRv('+n+')');if(board)await evaluate('window.__layoutBoard('+JSON.stringify(board)+')');await new Promise(r=>setTimeout(r,500));
-      const m=await evaluate(`(()=>{const lis=[...document.querySelectorAll('#reveal-list > li')].map(l=>l.getBoundingClientRect()),col=document.querySelector('.main-col').getBoundingClientRect(),board=document.querySelector('.question-prompt').getBoundingClientRect(),fit=parseFloat(getComputedStyle(document.getElementById('hud')).getPropertyValue('--rv-fit'))||1;const last=document.querySelectorAll('#reveal-list > li')[lis.length-1];const st=document.querySelector('#reveal-list > li .owner-stamp').getBoundingClientRect();last.scrollIntoView({block:'center'});const after=last.getBoundingClientRect();document.querySelector('.main-col').scrollTop=0;const stg=document.querySelector('#q-stage'),artBottom=stg?stg.getBoundingClientRect().bottom:board.bottom,hit=document.elementFromPoint(board.left+board.width/2,board.top+board.height/2);return {stampTop:Math.round(st.top),stampClip:Math.round(artBottom-st.top),behind:col.top<=board.top+1,boardOnTop:!!(hit&&hit.closest('.question-prompt')),gap:Math.round(lis[0].top-board.bottom),lastBottom:Math.round(lis[lis.length-1].bottom),colBottom:Math.round(col.bottom),colTop:Math.round(col.top),fit,scrolledIntoView:after.bottom<=col.bottom+1&&after.top>=col.top-1}})()`);
+      const m=await evaluate(`(()=>{const lis=[...document.querySelectorAll('#reveal-list > li')].map(l=>l.getBoundingClientRect()),col=document.querySelector('.main-col').getBoundingClientRect(),board=document.querySelector('.question-prompt').getBoundingClientRect(),fit=parseFloat(getComputedStyle(document.getElementById('hud')).getPropertyValue('--rv-fit'))||1;const last=document.querySelectorAll('#reveal-list > li')[lis.length-1];const st=document.querySelector('#reveal-list > li .owner-stamp').getBoundingClientRect();last.scrollIntoView({block:'center'});const after=last.getBoundingClientRect();document.querySelector('.main-col').scrollTop=0;const stg=document.querySelector('#q-stage'),artBottom=stg?stg.getBoundingClientRect().bottom:board.bottom,hit=document.elementFromPoint(board.left+board.width/2,board.top+board.height/2);return {barTop:Math.round(document.getElementById('bottom-toolbar').getBoundingClientRect().top),stampTop:Math.round(st.top),stampClip:Math.round(artBottom-st.top),behind:col.top<=board.top+1,boardOnTop:!!(hit&&hit.closest('.question-prompt')),gap:Math.round(lis[0].top-board.bottom),lastBottom:Math.round(lis[lis.length-1].bottom),colBottom:Math.round(col.bottom),colTop:Math.round(col.top),fit,scrolledIntoView:after.bottom<=col.bottom+1&&after.top>=col.top-1}})()`);
       if(board&&m.gap>(height<700?36:26))throw Error('Reveal papers under the '+board+' board '+width+'x'+height+': big empty gap under the picture '+JSON.stringify(m));
       if(m.stampClip>0)throw Error('Reveal papers '+n+' players '+width+'x'+height+': the first avatar runs into the board '+JSON.stringify(m));
       if(!m.behind||!m.boardOnTop)throw Error('Reveal papers '+n+' players '+width+'x'+height+': papers must scroll behind the board (column reaches the board top, board stays on top) '+JSON.stringify(m));
       if(m.gap>40)throw Error('Reveal papers '+n+' players '+width+'x'+height+': big empty gap under the question board '+JSON.stringify(m));
       if(m.fit<0.65)throw Error('Reveal papers '+n+' players '+width+'x'+height+': shrunk too small '+JSON.stringify(m));
-      if(n<=3&&m.lastBottom>m.colBottom+1)throw Error('Reveal papers '+n+' players '+width+'x'+height+': cut off by the bottom buttons '+JSON.stringify(m));
+      if(n<=3&&m.lastBottom>m.barTop+1)throw Error('Reveal papers '+n+' players '+width+'x'+height+': cut off by the bottom buttons '+JSON.stringify(m));
       if(!m.scrolledIntoView)throw Error('Reveal papers '+n+' players '+width+'x'+height+': last paper cannot scroll into view '+JSON.stringify(m));
       console.log(JSON.stringify({revealPapers:n,width,height,gap:m.gap,fit:m.fit,pass:true}));
+     }
+     // Round summary: rows start right under the board, scroll behind it and behind the button bar, and the last row can be scrolled clear of the buttons.
+     for(const n of [4,10]){
+      await evaluate('window.__layoutSm('+n+')');await new Promise(r=>setTimeout(r,500));
+      const m=await evaluate(`(()=>{const q=e=>document.querySelector(e).getBoundingClientRect(),board=q('.question-prompt'),col=q('.main-col'),rows=[...document.querySelectorAll('#summary-list > li')],hit=document.elementFromPoint(board.left+board.width/2,board.top+board.height/2),first=rows[0].getBoundingClientRect().top;document.querySelector('.main-col').scrollTop=1e5;const last=rows[rows.length-1].getBoundingClientRect(),bar=q('#bottom-toolbar');const r={gap:Math.round(first-board.bottom),behind:col.top<=board.top+1,boardOnTop:!!(hit&&hit.closest('.question-prompt')),lastClear:last.bottom<=bar.top+1,reaches:col.bottom>=bar.bottom-1};document.querySelector('.main-col').scrollTop=0;return r})()`);
+      if(m.gap>40||m.gap<0||!m.behind||!m.boardOnTop||!m.lastClear||!m.reaches)throw Error('Round summary '+n+' players '+width+'x'+height+': '+JSON.stringify(m));
+      console.log(JSON.stringify({summaryRows:n,width,height,gap:m.gap,pass:true}));
      }
      // After Lock it in: the answer sits at the bottom with the fact boxes and mascot above it, and nothing overflows.
      for(const mode of ['quick','party','teamvteam']){
