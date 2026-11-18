@@ -35,6 +35,7 @@ window.__layoutAudit=async requested=>{
 };
 
 // Reveal papers with n players (Classic / Party / Team vs Team), with the bottom buttons showing like the real screen.
+window.__layoutBoard=id=>{roomState.board=id;applyBoard(id);getPlayLayout().measure();};
 window.__layoutRv=async n=>{
  await window.__layoutAudit('quick');
  const base=Object.keys(currentPlayers);for(let i=base.length;i<n;i++)currentPlayers['x'+i]={...currentPlayers[base[i%base.length]],name:'P'+i};
@@ -136,9 +137,10 @@ server.listen(0,'127.0.0.1',()=>{
     const baselines={};
     if(process.env.PLAY_LAYOUT_RESULTS){
      // Result screens must not cut anything off or leave a big empty gap. (npm run test:result-fit)
-     for(const n of [3,4,10]){
-      await evaluate('window.__layoutRv('+n+')');await new Promise(r=>setTimeout(r,500));
+     for(const [board,n] of [['',3],['',4],['',10],['phone',4]]){ // 'phone' is a picture board: its art sits inside a taller box, the papers must still sit right under the art
+      await evaluate('window.__layoutRv('+n+')');if(board)await evaluate('window.__layoutBoard('+JSON.stringify(board)+')');await new Promise(r=>setTimeout(r,500));
       const m=await evaluate(`(()=>{const lis=[...document.querySelectorAll('#reveal-list > li')].map(l=>l.getBoundingClientRect()),col=document.querySelector('.main-col').getBoundingClientRect(),board=document.querySelector('.question-prompt').getBoundingClientRect(),fit=parseFloat(getComputedStyle(document.getElementById('hud')).getPropertyValue('--rv-fit'))||1;const last=document.querySelectorAll('#reveal-list > li')[lis.length-1];last.scrollIntoView({block:'center'});const after=last.getBoundingClientRect();document.querySelector('.main-col').scrollTop=0;return {gap:Math.round(lis[0].top-board.bottom),lastBottom:Math.round(lis[lis.length-1].bottom),colBottom:Math.round(col.bottom),colTop:Math.round(col.top),fit,scrolledIntoView:after.bottom<=col.bottom+1&&after.top>=col.top-1}})()`);
+      if(board&&m.gap>(height<700?44:34))throw Error('Reveal papers under the '+board+' board '+width+'x'+height+': big empty gap under the picture '+JSON.stringify(m));
       if(m.gap>56)throw Error('Reveal papers '+n+' players '+width+'x'+height+': big empty gap under the question board '+JSON.stringify(m));
       if(m.fit<0.65)throw Error('Reveal papers '+n+' players '+width+'x'+height+': shrunk too small '+JSON.stringify(m));
       if(n<=3&&m.lastBottom>m.colBottom+1)throw Error('Reveal papers '+n+' players '+width+'x'+height+': cut off by the bottom buttons '+JSON.stringify(m));

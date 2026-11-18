@@ -32,6 +32,14 @@ export function createPlayLayout(doc = document) {
       if (owner.dataset.playLayout === 'party' && owner.querySelector('#reveal-view.active')) {
         const col = owner.querySelector('.main-col');
         owner.style.removeProperty('--rv-fit');
+        // A picture board (monthly boards and the like) draws its art centred inside a taller box, which leaves an empty band under the art.
+        // Pull the papers up into that band so they sit right under the board.
+        owner.style.removeProperty('--rv-pull');
+        const board = owner.querySelector('.question-prompt'), stage = board && board.querySelector('#q-stage');
+        if (board && stage) {
+          const slack = board.getBoundingClientRect().bottom - stage.getBoundingClientRect().bottom;
+          if (slack > 10) owner.style.setProperty('--rv-pull', `${Math.round(slack - 6)}px`);
+        }
         let k = 1;
         for (let i = 0; i < 3 && col && col.scrollHeight > col.clientHeight + 1; i++) {
           k = Math.max(0.66, k * (col.clientHeight / col.scrollHeight) * 0.99);
