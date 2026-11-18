@@ -7915,15 +7915,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   const SOLO_MIN_BOTS = 3;
   const FRAME_COUNT = 10; // guess-slot border colors — also caps room size at 10 players
   // Bot accuracy. The saved ids stay easy/medium/hard (old rooms, stats and button art use them); players see Low/Medium/High.
-  // A bot's guess is a random multiple of the true answer in this range. Medium and High were widened so they are easier to beat (Low is unchanged).
-  const BOT_DIFFICULTY_RANGES = { easy: [0, 3], medium: [0.05, 2.1], hard: [0.45, 1.55] };
+  // A bot's guess is a random multiple of the true answer in this range. Low and Medium are wide (easy to beat); High stays tight.
+  const BOT_DIFFICULTY_RANGES = { easy: [0, 4], medium: [0.05, 2.6], hard: [0.6, 1.4] };
   const BOT_LEVEL_LABEL = { easy: "Low", medium: "Medium", hard: "High", mixed: "Mixed" };
   const botLevelLabel = (level) => BOT_LEVEL_LABEL[level] || (level ? level.charAt(0).toUpperCase() + level.slice(1) : "");
   // High/Low Survival bots. A bot's pick sits on its own side of the answer, using a share of the round's
   // slack (limit - 1): High-accuracy bots stay close (tight bracket), Low-accuracy bots use most of the slack
   // (so the human must be sharp to keep the bracket within the limit), and always stays on the correct side of
   // the answer, including rounding. Capped below 100% of the slack so a perfect human partner can always survive.
-  const HL_BOT_LEVELS = { easy: { lo: 0.2, hi: 0.6, miss: 0.08 }, medium: { lo: 0.2, hi: 0.55, miss: 0.04 }, hard: { lo: 0.1, hi: 0.35, miss: 0.02 } };
+  const HL_BOT_LEVELS = { easy: { lo: 0.35, hi: 0.85, miss: 0.08 }, medium: { lo: 0.25, hi: 0.7, miss: 0.04 }, hard: { lo: 0.05, hi: 0.2, miss: 0.02 } };
   function hlBotGuess(answer, difficulty, role, limit) {
     const c = HL_BOT_LEVELS[difficulty] || HL_BOT_LEVELS.medium;
     const slack = Math.max(0.1, (limit || HL_LIMIT_START) - 1);
