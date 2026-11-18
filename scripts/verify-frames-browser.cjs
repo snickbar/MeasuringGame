@@ -24,6 +24,8 @@ for (const [marker, calls] of needs) {
   }
   good ? ok(`${marker} template renders the frame`) : fail(`${marker} template no longer calls ${calls.join(' + ')}`);
 }
+{ const bl = fs.readFileSync(path.join(root, 'anim', 'bluff-ui.mjs'), 'utf8'), n = (bl.match(/customFrameEdge\(/g) || []).length, m = (bl.match(/customFrameClass\(/g) || []).length;
+  n >= 3 && m >= 2 ? ok(`Bluff cards still draw the frame (${n} frame art, ${m} frame class)`) : fail(`Bluff card templates lost their frame (${n} frame art calls, ${m} frame class calls)`); }
 for (const [name, re, min] of [['score cards', /showPlayerFrame\(box,/g, 2], ['lobby cards', /showPlayerFrame\(li,/g, 2]]) {
   const n = (html.match(re) || []).length; n >= min ? ok(`${name} still call showPlayerFrame (${n})`) : fail(`${name}: showPlayerFrame calls dropped to ${n}`);
 }
@@ -51,6 +53,9 @@ const srv = http.createServer((q, r) => { let f = path.join(root, decodeURICompo
     const qv = document.getElementById('question-view'); qv.classList.add('active', 'tw-mode'); qv.style.display = 'block';
     const lobbyScreen = document.getElementById('lobby-screen'), lobbyList = document.getElementById('player-list');
     lobbyScreen.style.cssText = 'position:fixed;left:0;top:0;width:392px;z-index:99999;display:block'; lobbyList.style.display = 'block';
+    const bluffScreen = document.getElementById('bluff-screen'), bluffContent = document.getElementById('bluff-content'), finalScreen = document.getElementById('final-screen'), finalList = document.getElementById('final-list');
+    if (bluffScreen) bluffScreen.style.cssText = 'position:fixed;left:0;top:0;width:392px;z-index:99999;display:block';
+    if (finalScreen) { finalScreen.classList.add('bluff-final'); finalScreen.style.cssText = 'position:fixed;left:0;top:0;width:392px;z-index:99999;display:block'; }
     const cases = [
       ['High Stakes card', '<div class="hs-pl player-frame-host">X' + art + '</div>', hud],
       ['High Stakes card, your turn', '<div class="hs-pl turn player-frame-host">X' + art + '</div>', hud],
@@ -58,6 +63,10 @@ const srv = http.createServer((q, r) => { let f = path.join(root, decodeURICompo
       ['Score card', '<div class="score-card player-frame-host">X' + art + '</div>', hud],
       ['High Stakes final row', '<div class="hs-final-row player-frame-host">X' + art + '</div>', hud],
       ['Lobby card', '<li class="lobby-player-card player-frame-host">X' + art + '</li>', lobbyList],
+      ['Bluff player card', '<div class="hs-pl bl-player bl-custom-frame player-frame-host">X' + art + '</div>', bluffContent],
+      ['Bluff player card, your turn', '<div class="hs-pl bl-player bl-custom-frame turn player-frame-host">X' + art + '</div>', bluffContent],
+      ['Bluff standings row', '<div class="hs-srow bl-standing bl-custom-frame player-frame-host">X' + art + '</div>', bluffContent],
+      ['Bluff final card', '<ul style="margin:0;padding:0;list-style:none"><li class="final-row bl-final-card bl-custom-frame player-frame-host">X' + art + '</li></ul>', finalList],
     ];
     for (const [name, markup, parent] of cases) {
       const box = document.createElement('div'); box.style.cssText = 'width:150px;height:110px;margin:6px;position:relative'; box.innerHTML = markup; parent.appendChild(box);

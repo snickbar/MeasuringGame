@@ -352,7 +352,7 @@ export function hsFinishRound(hsIn) {
 // ---------- bots ----------
 // A bot forms its own estimate of the answer (noisier on easy), picks the option closest to that estimate
 // (in log terms) and reports how sure it is: 1 = estimate sits right on the pick and far from the next option.
-const BOT_NOISE = { easy: 0.9, medium: 0.5, hard: 0.22 }; // sigma of ln(estimate / answer)
+const BOT_NOISE = { easy: 0.9, medium: 0.65, hard: 0.36 }; // sigma of ln(estimate / answer)
 export function hsBotPick(options, answer, difficulty = "medium", rng = Math.random) {
   const sigma = BOT_NOISE[difficulty] ?? BOT_NOISE.medium;
   const u1 = Math.max(1e-9, rng()), u2 = rng();
