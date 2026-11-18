@@ -21003,12 +21003,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     currentGuessStr += val;
     renderGuessDisplay();
     playSound("tap");
+    numpadFeedback(key, true);
   }
-  function pressBackspace() {
+  function pressBackspace(key) {
     if (guessLocked || roomState.paused) return;
     currentGuessStr = currentGuessStr.slice(0, -1);
     renderGuessDisplay();
     playSound("tap");
+    numpadFeedback(key, false);
+  }
+  // Brightness-only glow on the pressed key and the typed number, plus a tiny buzz (never moves or scales anything).
+  function numpadFeedback(key, lightDisplay) {
+    vibrate(8);
+    if (prefersReducedMotion()) return;
+    const glow = [{ filter: "brightness(1.3) drop-shadow(0 0 5px #ffe27a)" }, { filter: "none" }];
+    try {
+      key.animate(glow, { duration: 220, easing: "ease-out" });
+      if (lightDisplay) for (const el of [twGuessDisplayEl, guessDisplayEl]) if (el && el.offsetParent) el.animate(glow, { duration: 260, easing: "ease-out" });
+    } catch (e) { /* optional */ }
   }
   // Keys fire the moment a finger lands (pointerdown), not when it lifts: a tap whose finger drifts a few pixels, lands while the
   // screen is updating, or comes right after another tap can lose its click event, which is how a first digit went missing.
@@ -21019,13 +21031,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const key = e.target.closest?.(".num-btn, #backspace-btn");
     if (!key || !numpadEl.contains(key)) return;
     numpadPressAt = performance.now();
-    if (key.id === "backspace-btn") pressBackspace(); else pressNumpadKey(key);
+    if (key.id === "backspace-btn") pressBackspace(key); else pressNumpadKey(key);
   });
   numpadEl.addEventListener("click", (e) => {
     if (performance.now() - numpadPressAt < 700) return;
     const key = e.target.closest?.(".num-btn, #backspace-btn");
     if (!key) return;
-    if (key.id === "backspace-btn") pressBackspace(); else pressNumpadKey(key);
+    if (key.id === "backspace-btn") pressBackspace(key); else pressNumpadKey(key);
   });
 
   function setGuessStatus(text) {
