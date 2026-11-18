@@ -37,11 +37,10 @@ export function mountHighLowReveal(container, data, options={}) {
 // a win overflows both ends equally, a miss is shorter than the stretch between the guesses.
  function placeGreen(){
   const c=model,green=gap.querySelector('.cw-green');if(!p)return;
-  const both=c.hi!=null&&c.lo!=null&&c.hi>0&&c.lo>0;
-  if(!both){green.style.height='0px';return;}
-  const h=p.h,y=v=>Math.max(58,Math.min(h-62,p.sea-Math.asinh(Math.log(Math.max(answer*1e-6,v)/answer)*3)*h*.215));
-  const g=Math.sqrt(c.hi*c.lo),half=Math.sqrt(limit),mid=(y(c.hi)+y(c.lo))/2,u=v=>Math.asinh(Math.log(v/answer)*3)*h*.215,height=Math.abs(u(g/half)-u(g*half));
-  green.style.top=(mid-height/2-(gap.querySelector('.cw-track').offsetTop||32))+'px';green.style.height=height+'px';
+  if(!(c.hi>0&&c.lo>0)){green.style.height='0px';return;}
+  const tr=gap.querySelector('.cw-track').getBoundingClientRect(),mid=(r=>r.top+r.height/2)(bird.getBoundingClientRect())/2+(r=>r.top+r.height/2)(shark.getBoundingClientRect())/2-tr.top;
+  const g=Math.sqrt(c.hi*c.lo),half=Math.sqrt(limit),u=v=>Math.asinh(Math.log(v/answer)*3)*p.h*.215,height=Math.abs(u(g/half)-u(g*half));
+  green.style.top=(mid-height/2)+'px';green.style.height=height+'px';
  }
  function layout(){
   const c=model,w=stage.clientWidth,h=stage.clientHeight,size=bird.offsetWidth,sea=h*.51;
@@ -78,11 +77,12 @@ export function mountHighLowReveal(container, data, options={}) {
  }
 
 function syncMeterMarks(){
- const bounds=stage.getBoundingClientRect(),positions=[];
+ const bounds=stage.getBoundingClientRect(),off=gap.getBoundingClientRect().top-bounds.top,positions=[];
  for(const [animal,selector,revealAt]of [[bird,'.cw-high',2],[shark,'.cw-low',3]]){
   const r=animal.getBoundingClientRect(),cy=r.top+r.height/2-bounds.top,visible=step>=revealAt&&Number.isFinite(animal===bird?model.hi:model.lo)&&r.right>bounds.left&&r.left<bounds.right&&cy>=0&&cy<=bounds.height;
-  const mark=gap.querySelector(selector);mark.style.top=cy+'px';mark.style.opacity=visible?'1':'0';positions.push({cy,visible});
+  const mark=gap.querySelector(selector);mark.style.top=(cy-off)+'px';mark.style.opacity=visible?'1':'0';positions.push({cy:cy-off,visible});
  }
+ placeGreen();
  if(root.dataset.numberPlacement!=='meter')return;
  const high=gap.querySelector('.cw-number-high'),low=gap.querySelector('.cw-number-low'),diameter=34,pad=8,separation=6;
  let ht=positions[0].cy-diameter-pad,lt=positions[1].cy+pad;
@@ -112,7 +112,7 @@ function waterEffects(x,cy,surface){
 // A mascot that lands right at the surface line gets a short glow behind it, once.
 function landGlow(el){
  if(reduced()||model.hi==null||model.lo==null)return;
- const near=el===bird?(model.hi>=answer&&model.hi/answer<=1.12):(model.lo<=answer&&model.lo>0&&answer/model.lo<=1.12);
+ const near=el===bird?(model.hi>=answer&&model.hi/answer<=1.15):(model.lo<=answer&&model.lo>0&&answer/model.lo<=1.15);
  if(!near)return;
  const glow=document.createElement('i');glow.className='oc-landglow';el.insertBefore(glow,el.firstChild);
  glow.animate([{opacity:0,transform:'scale(.5)'},{opacity:.95,transform:'scale(1.15)',offset:.35},{opacity:0,transform:'scale(1.7)'}],{duration:1100,easing:'ease-out'}).finished.catch(()=>{}).then(()=>glow.remove());
