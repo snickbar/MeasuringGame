@@ -27,6 +27,19 @@ export function createPlayLayout(doc = document) {
     for (const owner of owners) {
       if (!visible(owner)) continue;
       delete owner.dataset.playDensity;
+      // While the round's papers are being revealed, the thing that has to fit is the whole answer column (not the hidden keypad area):
+      // the papers get a little narrower, which also makes them shorter, only as much as needed.
+      if (owner.dataset.playLayout === 'party' && owner.querySelector('#reveal-view.active')) {
+        const col = owner.querySelector('.main-col');
+        owner.style.removeProperty('--rv-fit');
+        let k = 1;
+        for (let i = 0; i < 3 && col && col.scrollHeight > col.clientHeight + 1; i++) {
+          k = Math.max(0.5, k * (col.clientHeight / col.scrollHeight) * 0.99);
+          owner.style.setProperty('--rv-fit', k.toFixed(3));
+        }
+        continue; // the question board keeps its size here; only the papers adapt
+      }
+      owner.style.removeProperty('--rv-fit');
       const middle = owner.querySelector('.play-input-body') || owner.querySelector('.play-middle') || owner.querySelector('.main-col');
       if (middle && middle.scrollHeight > middle.clientHeight + 1) {
         owner.dataset.playDensity = 'compact';
