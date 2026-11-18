@@ -33,6 +33,14 @@ export function mountHighLowReveal(container, data, options={}) {
  function wait(fn,ms){const job={fn,left:ms,at:performance.now(),id:null};const run=()=>{timers=timers.filter(t=>t!==job);if(!destroyed)fn();};job.run=run;if(!paused&&!document.hidden)job.id=setTimeout(run,ms);timers.push(job);return job;}
  function cancel(){token++;for(const t of timers)clearTimeout(t.id);timers=[];cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];stage.querySelectorAll('.oc-water-fx').forEach(el=>{el.getAnimations({subtree:true}).forEach(a=>a.cancel());el.remove();});root.querySelectorAll('.splashing,.is-stroking').forEach(el=>el.classList.remove('splashing','is-stroking'));}
  function number(el,value){el.textContent=fmt(value);}
+ // Rolls a number up from 0 to what the element already says (keeps commas, decimals and a trailing ×). Stops if the step is cancelled or replaced.
+ function roll(el,ms,delay=0){
+  if(!el||reduced())return;const m=/^(\D*)(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/.exec(el.textContent.trim());if(!m)return;
+  const to=parseFloat(m[2].replace(/,/g,'')),dec=(m[2].split('.')[1]||'').length;if(!(to>0))return;
+  const mine=token,t0=performance.now()+delay,text=v=>m[1]+v.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec})+m[3];
+  el.textContent=text(0);
+  (function tick(){if(destroyed||mine!==token||!el.isConnected)return;const k=Math.max(0,Math.min(1,(performance.now()-t0)/ms));el.textContent=text(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(tick);})();
+ }
 // The green bar is the accepted gap (e.g. 2.5x) drawn to the same scale as the picks, always centred between the two guess lines:
 // a win overflows both ends equally, a miss is shorter than the stretch between the guesses.
  function placeGreen(){
@@ -63,6 +71,7 @@ export function mountHighLowReveal(container, data, options={}) {
   const c=model,missing=c.hi==null||c.lo==null,crossed=!missing&&c.lo>c.hi,ratio=!missing&&c.lo>0?c.hi/c.lo:Infinity,wide=ratio>limit;
   gap.dataset.ready='true';gap.classList.toggle('bad',!c.passed);gap.classList.toggle('crossed',crossed);gap.querySelector('.cw-meter').dataset.result=c.passed?'won':'lost';
   root.querySelector('[data-ratio]').textContent=missing?'No pick':crossed?'Crossed':Number.isFinite(ratio)?fmt(ratio)+'×':'Too wide';
+  if(animateBreak&&Number.isFinite(ratio)&&!missing&&!crossed)roll(root.querySelector('[data-ratio]'),700);
   root.querySelector('[data-gap-status]').textContent=missing?'Both picks required':crossed?'Picks crossed':wide?'Gap too wide':'Gap fits';
   const meter=gap.querySelector('.cw-meter');meter.setAttribute('aria-valuenow',String(Math.max(1,Math.min(4,ratio))));
   verdict.className='rs-verdict final'+(c.passed||c.saved?'':' bad');
@@ -189,7 +198,7 @@ function formatBottleNumbers(){
   options.onBusyChange?.(busy);
  }
  function showStep(n,animate=true){
-  cancel();step=n;busy=animate&&!reduced();layout();resetGap();ui();const c=model,el=n===1?boat:n===2?bird:shark,current=token;
+  cancel();step=n;busy=animate&&!reduced();layout();resetGap();ui();if(n===1&&animate&&!document.hidden)roll(root.querySelector('.oc-sail-answer b'),900,200);const c=model,el=n===1?boat:n===2?bird:shark,current=token;
   let splashed=false,previousWaterSide=null;
   function crossing(){
    if(n===1||splashed||document.hidden||paused)return;
