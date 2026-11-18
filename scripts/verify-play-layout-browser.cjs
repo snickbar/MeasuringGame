@@ -183,6 +183,8 @@ server.listen(0,'127.0.0.1',()=>{
       if(!w.waiting||!w.facts||!w.answer)throw Error(mode+' '+width+'x'+height+': wait screen missing '+JSON.stringify(w));
       const mc=await evaluate(`(()=>{const box=document.querySelector('.qw-mascot').getBoundingClientRect();document.querySelectorAll('.qw-mascot img').forEach(i=>{i.style.animation='none';i.style.transform='none'});return [...document.querySelectorAll('.qw-mascot img')].map(i=>{const b=i.getBoundingClientRect();return {l:Math.round(b.left-box.left),r:Math.round(box.right-b.right)}})})()`);
       if(mc.some(m=>m.l<-1||m.r<-1))throw Error(mode+' '+width+'x'+height+': wait screen mascot is cut off at the edge '+JSON.stringify(mc));
+      const ov=await evaluate(`(()=>{const b=document.querySelector('.play-input-body'),h=document.getElementById('hud');return {ov:getComputedStyle(b).overflowX,density:h.dataset.playDensity||''}})()`);
+      if(ov.ov!=='visible'&&ov.density!=='tight')throw Error(mode+' '+width+'x'+height+': the question card box clips its edges (invisible edge) '+JSON.stringify(ov));
       if(w.overflow>1||w.answer.bottom>w.body.bottom+1||w.facts.top<w.preview.bottom-1)throw Error(mode+' '+width+'x'+height+': wait screen does not fit '+JSON.stringify(w));
       console.log(JSON.stringify({waitScreen:mode,width,height,pass:true}));
      }
