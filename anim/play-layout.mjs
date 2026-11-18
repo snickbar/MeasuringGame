@@ -29,6 +29,13 @@ export function createPlayLayout(doc = document) {
       delete owner.dataset.playDensity;
       // While the round's papers are being revealed, the thing that has to fit is the whole answer column (not the hidden keypad area):
       // the papers get a little narrower, which also makes them shorter, only as much as needed.
+      if (owner.id === 'bluff-screen') {
+        // The Bluff player columns reach down behind the see-through button, so measure how far.
+        owner.style.removeProperty('--pm-down'); owner.style.removeProperty('--pm-up');
+        const mid = owner.querySelector('.play-middle'), act = owner.querySelector('.play-actions'), tbl = mid && mid.querySelector(':scope > .bl-table');
+        if (mid && tbl) owner.style.setProperty('--pm-up', `${Math.max(0, Math.round(tbl.getBoundingClientRect().top - mid.getBoundingClientRect().top))}px`);
+        if (mid && act && act.getClientRects().length) owner.style.setProperty('--pm-down', `${Math.max(0, Math.round(act.getBoundingClientRect().bottom - mid.getBoundingClientRect().bottom))}px`);
+      }
       if (owner.dataset.playLayout === 'party') {
         // The player/team score column scrolls up behind the board row (the board and timer stay on top), in every phase, instead of being cut by a flat edge under it.
         owner.style.removeProperty('--sc-up');
