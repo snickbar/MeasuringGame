@@ -14957,7 +14957,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Header: hearts, the round number and your run accuracy, clear of the Back button.
   const SURVIVAL_SHIELD_ACC = 75, SURVIVAL_SHIELD_CHAIN = 3;
   // Shield state under the hearts: a full shield when you hold one, otherwise an empty one and three pips for your chain.
-  const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : ""}"></i>`).join("")}</span>`}</div>`;
+  const svShieldHtml = (held, chain) => `<div class="sv-shieldrow${held ? " held" : ""}" id="sv-shield" title="${held ? "Shield ready: it will save you from one lost life" : `Get ${SURVIVAL_SHIELD_CHAIN} rounds at ${SURVIVAL_SHIELD_ACC}%+ for a shield`}"><img src="icons/survival-shield-${held ? "full" : "empty"}.webp" alt="" draggable="false">${held ? "<b>Shield</b>" : `<span class="sv-pips">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < chain ? "on" : i === chain ? "next" : ""}"></i>`).join("")}</span>`}</div>`;
   const svHudHtml = (lives, round, acc, held = !!(sv && sv.shield), chain = (sv && sv.chain) || 0) => `<div class="wb-hud sv-top"><div class="sv-leftcol"><div class="sv-hearts" id="sv-hearts">${Array.from({ length: SURVIVAL_LIVES }, (_, i) => svHeartSvg(i < lives)).join("")}</div>${svShieldHtml(held, chain)}</div><div class="wb-score"><span class="wb-score-l">Round</span><b data-pop="round">${round}</b></div><div class="wb-best sv-accbox ${acc == null ? "" : acc >= 80 ? "acc-g" : acc >= 60 ? "acc-y" : acc >= 40 ? "acc-o" : "acc-r"}"><span class="wb-score-l">Accuracy</span><b id="sv-acc" data-pop="acc">${acc == null ? "&ndash;" : Math.round(acc) + "%"}</b></div><div class="wb-best sv-correctbox" aria-label="Correct answers this run"><span class="wb-score-l">Correct</span><b id="sv-correct" data-pop="correct">${sv ? sv.survived : 0}</b></div><div class="sv-coinbox" aria-label="Coins earned this run"><img src="icons/coin-v2.webp" alt="" draggable="false"><b id="sv-coins" data-pop="coins">${sv ? sv.survived * SURVIVAL_COINS_PER + (sv.bonusWins || 0) * (SURVIVAL_THEME_COINS - SURVIVAL_COINS_PER) : 0}</b></div></div>`;
   // How hard a question is: the bigger the answer, the harder it is to estimate. Five tiers, same stamp as Which Is Bigger.
   function svDifficulty(answer) {
@@ -15037,7 +15037,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const ans = m ? m.formatCount(q.answer, q.answer) : String(Math.round(q.answer * 100) / 100);
     if (ok) vibrate(25); else vibrate([70, 60, 70]); // safe: a small buzz; lost a life: a heavy double
     void preloadWbReactionArt();
-    sv.res = { acc, ok, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", ans, boost: bufferResultNote(q, g, deviceId) };
+    sv.res = { acc, ok, themed: sv.q && sv.q.theme || "", checkpoint: ok && sv.survived > 0 && sv.survived % 5 === 0 ? sv.survived : 0, saved: sv.shieldEvent === "saved", earned: sv.shieldEvent === "earned", dot: ok && sv.shieldEvent !== "earned" && !sv.prevShield && (sv.chain || 0) > (sv.prevChain || 0) ? sv.chain : 0, near: ok && !sv.prevShield && acc < SURVIVAL_SHIELD_ACC, ans, boost: bufferResultNote(q, g, deviceId) };
     sv.phase = "result";
     renderSurvival();
   }
@@ -15125,6 +15125,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           ${svGaugeHtml(r.acc)}
         </div>
         ${r.boost || ""}
+        ${r.dot ? `<div class="sv-callout dot sv-arr" style="--a:.85s"><span class="sv-pips big">${Array.from({ length: SURVIVAL_SHIELD_CHAIN }, (_, i) => `<i class="${i < r.dot ? "on" : ""}"></i>`).join("")}</span>Shield dot earned! ${r.dot} of ${SURVIVAL_SHIELD_CHAIN}</div>` : ""}
+        ${r.near ? `<div class="sv-callout near sv-arr" style="--a:.85s">So close! ${SURVIVAL_SHIELD_ACC}%+ earns a shield dot</div>` : ""}
         ${r.earned ? `<div class="sv-callout earn sv-arr" style="--a:.85s"><span class="sv-earn-shield"><img src="icons/survival-shield-full.webp" alt="" draggable="false"></span>Shield earned! It will save you from one lost life.</div>` : ""}
       </div>
       <div class="wb-diff wb-diff-res">${svStampHtml(q.answer)}</div>
@@ -15211,11 +15213,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         setTimeout(() => { if (sv?.phase === 'result' && sv.res === result && survivalScreenEl.classList.contains('active')) svCrackHeart('shield'); }, impactDelay);
       }
       else if (sv.res.earned) { try { playSound("streak"); } catch (e) {} }
+      else if (sv.res.dot) { vibrate([20, 30, 20]); }
       setTimeout(() => {
         const el2 = document.getElementById("sv-shield"); if (!el2 || !sv || sv.phase !== "result" || sv.res !== result) return;
         const changed = (!!sv.prevShield !== !!sv.shield) || (sv.prevChain || 0) !== (sv.chain || 0);
         el2.outerHTML = svShieldHtml(!!sv.shield, sv.chain || 0);
-        const n2 = document.getElementById("sv-shield"); if (n2 && changed) n2.classList.add(sv.shield ? "pop" : "tick");
+        const n2 = document.getElementById("sv-shield"); if (n2 && changed) { n2.classList.add(sv.shield ? "pop" : "tick"); if (!sv.shield) n2.querySelectorAll(".sv-pips i")[(sv.chain || 1) - 1]?.classList.add("gain"); }
       }, sv.res.saved ? impactDelay + 150 : 650);
       if (sv.lossPending) {
         sv.lossPending = false;

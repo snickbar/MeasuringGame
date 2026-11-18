@@ -344,3 +344,22 @@ html[data-motion=reduce] .wb-mc-b,html[data-motion=reduce] .wb-mascots .wb-mc-t,
 .sv-top .sv-accbox.acc-r{background:linear-gradient(#ffe3df,#f28b82)}
 .sv-top .sv-correctbox{background:linear-gradient(#f0f9ff,#a9d7f4)}
 :is(#survival-content,#daily-content) .sv-top .sv-coinbox{align-self:stretch;border-radius:18px;min-width:52px;padding:4px 5px 5px;box-sizing:border-box}
+
+/* Shield dots: bigger and brighter so they get noticed, one pulses for what to earn next, and a new one bursts in. */
+.sv-shieldrow{height:24px}
+.sv-pips{gap:4px}
+.sv-pips i{position:relative;width:13px;height:13px;border-width:2.5px;border-color:#3b82e0;background:rgba(59,130,224,.12)}
+.sv-pips i.next{animation:svPipNext 1.4s ease-in-out infinite}
+.sv-pips i.on{background:radial-gradient(circle at 35% 30%,#bfe0ff,#3b82e0 70%);border-color:#1f5fb8;box-shadow:0 0 0 1px #fff,0 0 6px rgba(59,130,224,.8)}
+.sv-pips i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #7db1ec;opacity:0;pointer-events:none}
+.sv-shieldrow.tick .sv-pips i.gain{animation:svPipGain .7s cubic-bezier(.2,1.6,.4,1)}
+.sv-shieldrow.tick .sv-pips i.gain::after{animation:svPipRing .7s ease-out}
+.sv-shieldrow.tick img{animation:svShieldPop .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes svPipNext{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.25);opacity:1}}
+@keyframes svPipGain{0%{transform:scale(.3)}60%{transform:scale(1.9)}100%{transform:scale(1)}}
+@keyframes svPipRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+.sv-pips.big i{width:14px;height:14px}
+.sv-pips.big i.next{animation:none}
+.sv-callout.dot{display:inline-flex;align-items:center;gap:8px;padding-left:8px;background:#dcecff;color:#1f5fb8;border:2px solid #7db1ec}
+.sv-callout.near{background:#eef3fb;color:#4a6a96;border:2px dashed #9db8dc;font-weight:700}
+html[data-motion=reduce] .sv-pips i,html[data-motion=reduce] .sv-pips i::after,html[data-motion=reduce] .sv-shieldrow.tick img{animation:none}
