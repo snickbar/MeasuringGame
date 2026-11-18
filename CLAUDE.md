@@ -37,3 +37,6 @@ but the papers must not shrink tiny to fit all 10.
 Picking an avatar for one game (the name/avatar screen, its random button, or the automatic swap when someone else has taken yours) only changes
 `currentAvatar` for that game. The saved default (`mg_avatar`) is written only by `setDefaultAvatar()`, called from the Settings picker (and its random
 button) and Equip in the shop. A new game starts from `defaultAvatarId()`. Run `npm run test:avatar-default` after touching avatar pickers.
+
+## The party result layout must survive the phase change
+`applyPhase` clears `data-play-layout` on every non-question phase (`restoreHighLow`). Reveal and summary put it back with `keepParty`; without it the papers and score cards are cut by a flat edge under the board even though the test fixtures (which set the attribute by hand) pass. Run `npm run test:result-layout` after touching `applyPhase` or the play-layout.

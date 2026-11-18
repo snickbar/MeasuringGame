@@ -74,7 +74,11 @@ export function createPlayLayout(doc = document) {
   // Re-measure whenever the reveal / summary screen opens or its papers change, so the behind-the-board scroll area never depends on who happened to call measure().
   let watchFrame = 0;
   const remeasure = () => { if (watchFrame) return; watchFrame = win.requestAnimationFrame(() => { watchFrame = 0; measure(); }); };
-  const watch = new win.MutationObserver(remeasure);
+  // The board can still be changing size when the reveal opens (scene art loads, text refits, answer line appears), so also re-measure when it resizes and shortly after the screen opens.
+  const boardResize = new win.ResizeObserver(remeasure);
+  { const hudEl = doc.getElementById('hud'); hudEl?.querySelectorAll('.hud-timer-row, .question-prompt, #q-stage').forEach(el => boardResize.observe(el)); }
+  const lateMeasure = () => { for (const ms of [250, 700, 1500]) win.setTimeout(remeasure, ms); };
+  const watch = new win.MutationObserver(muts => { if (muts.some(m => m.type === 'attributes' && m.target.id && /view$/.test(m.target.id))) lateMeasure(); remeasure(); });
   for (const id of ['reveal-view', 'summary-view']) { const el = doc.getElementById(id); if (el) watch.observe(el, {attributes: true, attributeFilter: ['class']}); }
   for (const id of ['reveal-list', 'summary-list']) { const el = doc.getElementById(id); if (el) watch.observe(el, {childList: true}); }
   { const hudEl = doc.getElementById('hud'); if (hudEl) watch.observe(hudEl, {attributes: true, attributeFilter: ['data-phase', 'data-play-layout']}); }
@@ -84,6 +88,8 @@ export function createPlayLayout(doc = document) {
   win.visualViewport?.addEventListener('resize', measure);
   doc.fonts?.ready.then(measure);
   function track(owner, mode) { owners.add(owner); owner.dataset.playLayout = mode; measure(); }
+  // Result screens: the question card is already handed back, but the party result layout (behind-the-board scroll area, paper fit) must stay on.
+  function keepParty(owner) { if (owner.dataset.playLayout !== 'party' || !owners.has(owner)) track(owner, 'party'); }
   function clear(owner) { owners.delete(owner); delete owner.dataset.playLayout; delete owner.dataset.playDensity; }
   function shell(owner, content, {mode = 'solo', force = false} = {}) {
     if (owner.classList.contains('wb-playing')) { clear(owner); content.classList.remove('play-shell-content'); return; }
@@ -150,6 +156,6 @@ export function createPlayLayout(doc = document) {
     observer.observe(content,{childList:true});
     shell(owner,content,{mode,force});
   }
-  return {worlds, highLow, party, restoreHighLow, clear, measure};
+  return {worlds, highLow, party, keepParty, restoreHighLow, clear, measure};
 }
 
