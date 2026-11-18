@@ -26,3 +26,9 @@ Every mode's keypad and its Lock/Submit button must stay fully on screen, and th
 After touching keypads, key sizes, the question board or `anim/play-layout.*`, run `npm run test:keypad-fit` (the pinned-layout audit at
 360x640, 360x740, 390x650, 392x830 and 412x915; Bluff has no keypad so it is skipped). If a screen is too tall, shrink the keys
 (the density rules in `anim/play-layout.css`) rather than let anything run off the bottom. Known gaps: 320x568 and 320x650 are not yet supported by every mode.
+
+## Result screens must fit (check EVERY time)
+After touching the answer reveal papers, the wait scene after Lock it in, `anim/play-layout.*` or the reveal CSS, run `npm run test:result-fit`
+(360x640, 360x740, 393x786, 412x915). It fails on a big empty gap under the question board, papers shrunk below 0.65, the last paper unable to
+scroll into view, or a wait screen that overflows. Not every paper has to be visible at once: with many players the worst ones may scroll away,
+but the papers must not shrink tiny to fit all 10.

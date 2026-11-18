@@ -34,7 +34,7 @@ export function createPlayLayout(doc = document) {
         owner.style.removeProperty('--rv-fit');
         let k = 1;
         for (let i = 0; i < 3 && col && col.scrollHeight > col.clientHeight + 1; i++) {
-          k = Math.max(0.5, k * (col.clientHeight / col.scrollHeight) * 0.99);
+          k = Math.max(0.66, k * (col.clientHeight / col.scrollHeight) * 0.99);
           owner.style.setProperty('--rv-fit', k.toFixed(3));
         }
         continue; // the question board keeps its size here; only the papers adapt

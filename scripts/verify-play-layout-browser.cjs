@@ -34,6 +34,17 @@ window.__layoutAudit=async requested=>{
  document.querySelectorAll('#ach-toast').forEach(e=>e.remove());window.scrollTo(0,0);
 };
 
+// Reveal papers with n players (Classic / Party / Team vs Team), with the bottom buttons showing like the real screen.
+window.__layoutRv=async n=>{
+ await window.__layoutAudit('quick');
+ const base=Object.keys(currentPlayers);for(let i=base.length;i<n;i++)currentPlayers['x'+i]={...currentPlayers[base[i%base.length]],name:'P'+i};
+ const ids=Object.keys(currentPlayers).slice(0,n);const vals=[4,2.11,4.28,3.3,2.9,5.1,3.9,2.4,6.6,3.1];
+ revealListEl.innerHTML='';
+ ids.forEach((id,i)=>{const e={playerId:id,guess:vals[i%10],accuracyPercent:70.3-i*3,isClosest:i===1,pickedBy:[],basePoints:1,doubleDownPoints:0};const li=document.createElement('li');li.className='reveal-card';li.dataset.id=id;li.innerHTML=revealCardFinalHtml(e);revealListEl.appendChild(li);});
+ document.getElementById('question-view').classList.remove('active');document.getElementById('reveal-view').classList.add('active');
+ const b=document.getElementById('bottom-actions');b.removeAttribute('data-bar-empty');['hud-auto-toggle','show-summary-btn'].forEach(id=>document.getElementById(id).style.display='');getPlayLayout().measure();
+ return ids.length;
+};
 window.__layoutReveal=async mode=>{
  await window.__layoutAudit(mode);
  if(mode==='survival'){sv={...sv,phase:'reveal',asked:1,g:3,lastOk:true,resultShown:false,accs:[{r:1}]};renderSurvival();}
@@ -123,6 +134,28 @@ server.listen(0,'127.0.0.1',()=>{
     for(let i=0;i<250;i++){if(await evaluate('window.__layoutReady?.()'))break;await new Promise(r=>setTimeout(r,30));}
     if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
+    if(process.env.PLAY_LAYOUT_RESULTS){
+     // Result screens must not cut anything off or leave a big empty gap. (npm run test:result-fit)
+     for(const n of [3,4,10]){
+      await evaluate('window.__layoutRv('+n+')');await new Promise(r=>setTimeout(r,500));
+      const m=await evaluate(`(()=>{const lis=[...document.querySelectorAll('#reveal-list > li')].map(l=>l.getBoundingClientRect()),col=document.querySelector('.main-col').getBoundingClientRect(),board=document.querySelector('.question-prompt').getBoundingClientRect(),fit=parseFloat(getComputedStyle(document.getElementById('hud')).getPropertyValue('--rv-fit'))||1;const last=document.querySelectorAll('#reveal-list > li')[lis.length-1];last.scrollIntoView({block:'center'});const after=last.getBoundingClientRect();document.querySelector('.main-col').scrollTop=0;return {gap:Math.round(lis[0].top-board.bottom),lastBottom:Math.round(lis[lis.length-1].bottom),colBottom:Math.round(col.bottom),colTop:Math.round(col.top),fit,scrolledIntoView:after.bottom<=col.bottom+1&&after.top>=col.top-1}})()`);
+      if(m.gap>56)throw Error('Reveal papers '+n+' players '+width+'x'+height+': big empty gap under the question board '+JSON.stringify(m));
+      if(m.fit<0.65)throw Error('Reveal papers '+n+' players '+width+'x'+height+': shrunk too small '+JSON.stringify(m));
+      if(n<=3&&m.lastBottom>m.colBottom+1)throw Error('Reveal papers '+n+' players '+width+'x'+height+': cut off by the bottom buttons '+JSON.stringify(m));
+      if(!m.scrolledIntoView)throw Error('Reveal papers '+n+' players '+width+'x'+height+': last paper cannot scroll into view '+JSON.stringify(m));
+      console.log(JSON.stringify({revealPapers:n,width,height,gap:m.gap,fit:m.fit,pass:true}));
+     }
+     // After Lock it in: the answer sits at the bottom with the fact boxes and mascot above it, and nothing overflows.
+     for(const mode of ['quick','party','teamvteam']){
+      await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,200));
+      await evaluate(`document.querySelector('#numpad [data-val="2"]').click();document.getElementById('submit-guess-btn').click();new Promise(r=>setTimeout(r,1500))`);
+      const w=await evaluate(`(()=>{const r=e=>{const b=document.querySelector(e)?.getBoundingClientRect();return b?{top:Math.round(b.top),bottom:Math.round(b.bottom)}:null},body=document.querySelector('.play-input-body');return {waiting:document.getElementById('question-view').classList.contains('q-waiting'),facts:r('.qw-facts'),answer:r('#guess-display'),status:r('#guess-status'),body:r('.play-input-body'),preview:r('#q-preview'),overflow:body.scrollHeight-body.clientHeight}})()`);
+      if(!w.waiting||!w.facts||!w.answer)throw Error(mode+' '+width+'x'+height+': wait screen missing '+JSON.stringify(w));
+      if(w.overflow>1||w.answer.bottom>w.body.bottom+1||w.facts.top<w.preview.bottom-1)throw Error(mode+' '+width+'x'+height+': wait screen does not fit '+JSON.stringify(w));
+      console.log(JSON.stringify({waitScreen:mode,width,height,pass:true}));
+     }
+     continue;
+    }
     for(const mode of ['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:letterboard','quick:terminal','quick:tv','quick:phone','quick','party','teamvteam'].filter(m=>!(process.env.PLAY_LAYOUT_KEYPAD_ONLY&&m.startsWith('bluff')))){
       await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,180));
       const state=await evaluate(`(()=>{const vis=e=>e.getClientRects().length&&getComputedStyle(e).display!=='none';const owner=[...document.querySelectorAll('[data-play-layout].active,#wb-screen.active')].find(vis);if(!owner)throw Error('No active layout');const pane=owner.querySelector('.play-input-body')||owner.querySelector('.play-middle')||owner.querySelector('.main-col')||owner.querySelector('.wb-play-scroll');const action=[...owner.querySelectorAll('.play-actions button,.wb-play-footer button')].find(vis),pad=[...owner.querySelectorAll('#numpad,.dc-keys')].find(vis),r=e=>{const b=e.getBoundingClientRect();return {top:Math.round(b.top),bottom:Math.round(b.bottom),width:Math.round(b.width),height:Math.round(b.height)}};return {mode:owner.dataset.playLayout,footerBackground:getComputedStyle(owner.querySelector('.play-actions,.wb-play-footer')).backgroundColor,overflow:pane?(owner.id==='wb-screen'?Math.max(0,(pane.lastElementChild?.offsetTop||0)+(pane.lastElementChild?.offsetHeight||0)-pane.clientHeight):pane.scrollHeight-pane.clientHeight):0,action:action?r(action):null,pad:pad?r(pad):null,key:pad?r(pad.querySelector('button')):null,cards:document.querySelectorAll('#score-col .score-card').length,duplicateSubmit:document.querySelectorAll('#submit-guess-btn').length,health:window.__layoutHealth()};})()`);
