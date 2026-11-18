@@ -38,7 +38,7 @@ export function createPlayLayout(doc = document) {
         const board = owner.querySelector('.question-prompt'), stage = board && board.querySelector('#q-stage');
         if (board && stage) {
           const slack = board.getBoundingClientRect().bottom - stage.getBoundingClientRect().bottom;
-          if (slack > 10) owner.style.setProperty('--rv-pull', `${Math.round(slack - 6)}px`);
+          if (slack > 6) owner.style.setProperty('--rv-pull', `${Math.round(slack - 3)}px`);
         }
         let k = 1;
         for (let i = 0; i < 3 && col && col.scrollHeight > col.clientHeight + 1; i++) {
