@@ -20992,8 +20992,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join(""));
   }
 
-  numpadEl.addEventListener("click", (e) => {
-    const key = e.target.closest?.(".num-btn");
+  function pressNumpadKey(key) {
     if (!key || !numpadEl.contains(key) || key.disabled) return;
     if (guessLocked || roomState.paused) return;
     const val = key.dataset.val;
@@ -21004,13 +21003,29 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     currentGuessStr += val;
     renderGuessDisplay();
     playSound("tap");
-  });
-
-  document.getElementById("backspace-btn").addEventListener("click", () => {
+  }
+  function pressBackspace() {
     if (guessLocked || roomState.paused) return;
     currentGuessStr = currentGuessStr.slice(0, -1);
     renderGuessDisplay();
     playSound("tap");
+  }
+  // Keys fire the moment a finger lands (pointerdown), not when it lifts: a tap whose finger drifts a few pixels, lands while the
+  // screen is updating, or comes right after another tap can lose its click event, which is how a first digit went missing.
+  // The click that follows a handled press is ignored; clicks without a press (keyboard, assistive tech) still work.
+  let numpadPressAt = 0;
+  numpadEl.addEventListener("pointerdown", (e) => {
+    if (e.button > 0) return;
+    const key = e.target.closest?.(".num-btn, #backspace-btn");
+    if (!key || !numpadEl.contains(key)) return;
+    numpadPressAt = performance.now();
+    if (key.id === "backspace-btn") pressBackspace(); else pressNumpadKey(key);
+  });
+  numpadEl.addEventListener("click", (e) => {
+    if (performance.now() - numpadPressAt < 700) return;
+    const key = e.target.closest?.(".num-btn, #backspace-btn");
+    if (!key) return;
+    if (key.id === "backspace-btn") pressBackspace(); else pressNumpadKey(key);
   });
 
   function setGuessStatus(text) {
