@@ -1152,11 +1152,11 @@ if (location.protocol === "file:") {
   html[data-motion=reduce] #hs-content :is(.hs-table-pig, .hs-win, .hs-win-shine, .hs-win-trophy) { animation: none; }
   .hs-pl .avatar.hs-dance { display: inline-block; transform-origin: 50% 100%; animation: hsDance 1.9s ease-in-out .1s both; }
   @keyframes hsDance {
-    0% { transform: translateY(0) rotate(0) scale(1); } 12% { transform: translateY(-12px) scale(1.1); }
-    24% { transform: translateY(0) rotate(-14deg) scale(1.18); } 36% { transform: translateY(-10px) rotate(-14deg) scale(1.24); }
-    48% { transform: translateY(0) rotate(14deg) scale(1.24); } 60% { transform: translateY(-10px) rotate(14deg) scale(1.26); }
-    72% { transform: translateY(0) rotate(-9deg) scale(1.28); } 84% { transform: translateY(-6px) rotate(7deg) scale(1.3); }
-    100% { transform: translateY(0) rotate(0) scale(1.3); } }
+    0% { transform: translateY(0) rotate(0) scale(1); } 12% { transform: translateY(-5px) scale(1.05); }
+    24% { transform: translateY(0) rotate(-12deg) scale(1.08); } 36% { transform: translateY(-4px) rotate(-12deg) scale(1.1); }
+    48% { transform: translateY(0) rotate(12deg) scale(1.1); } 60% { transform: translateY(-4px) rotate(12deg) scale(1.1); }
+    72% { transform: translateY(0) rotate(-8deg) scale(1.08); } 84% { transform: translateY(-2px) rotate(6deg) scale(1.04); }
+    100% { transform: translateY(0) rotate(0) scale(1); } } /* ends at normal size: the winner's picture stays inside its card */
   .hs-fake { display: flex; gap: 8px; align-items: stretch; }
   .hs-fake-display { flex: 1; min-width: 0; padding: 10px 12px; border: 3px solid #4a2c12; border-radius: 14px; background: #fffdf6; font: 700 26px 'Fredoka', sans-serif; text-align: center; min-height: 34px; }
   .hs-fake-display.bad { border-color: #b3261e; background: #fde4e1; }
@@ -13724,8 +13724,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (stage === "pick" && seated) return `<button type="button" class="hs-opt${mine === i ? " sel" : ""}" data-hs-pick="${i}"${pickLocked ? " disabled" : ""}>${HS.hsFormatAnswer(o)}</button>`;
       if (result && i === hs.realIdx) return hsRoundAnswerHtml(o, hs, data.players);
       const pickers = result ? hs.seats.filter((id) => hs.picks?.[id] === i) : [];
-      const who = pickers.filter((id) => !hs.bet.folded?.[id]); // players who folded aren't shown on their answer at all
-      const ghostId = result ? hs.fakeBy?.[i] : null, fooled = !!ghostId && pickers.length > 0; // a folded player still got fooled (and still pays the bounty)
+      const who = pickers.filter((id) => !hs.bet.folded?.[id] && !(result?.uncontested && result.winners?.includes(id))); // players who folded aren't shown on their answer at all; a win by everyone else folding keeps the winner's pick hidden (like not showing your cards)
+      const ghostId = result ? hs.fakeBy?.[i] : null, fooled = !!ghostId && pickers.some((id) => !(result?.uncontested && result.winners?.includes(id))); // a folded player still got fooled (and still pays the bounty)
       if (fooled) fooledNow = true;
       const pickerAvatars = who.length ? `<span class="hs-who">${who.map(id => `<span class="avatar" title="${escapeHtml(data.players?.[id]?.name || "")}">${avatarHtml(data.players?.[id]?.avatar)}</span>`).join("")}</span>` : "";
       const author = ghostId ? `<span class="hs-author" data-hs-side="r" title="Fake by ${escapeHtml(data.players?.[ghostId]?.name || "a ghost")}"><span class="avatar">${avatarHtml(data.players?.[ghostId]?.avatar)}</span></span>` : "";
