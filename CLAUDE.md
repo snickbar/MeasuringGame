@@ -15,3 +15,8 @@ Changes to card layout, borders, backgrounds, glows, padding or z-index keep bre
 ## Other checks before pushing
 `npm run sync-www`, `npm run test:css`, `node scripts/verify-animation-properties.mjs`, `node scripts/verify-size-budget.mjs`.
 When the user points out a visual problem on one screen, check and fix it on every game mode and screen.
+
+## Number keypads must keep their feedback (check EVERY time)
+Every number keypad presses on touch-down and gives the tap sound, a tiny buzz and a brief brightness glow on the key and the typed number
+(`numpadFeedback`, the team keypad handler, and the shared `.dc-key, .hs-key` handler). Never replace them with click-only handlers, and
+give any new keypad kind the same treatment. Run `npm run test:numpad` after touching keypads, question screens or input code.

@@ -21019,7 +21019,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const glow = [{ filter: "brightness(1.3) drop-shadow(0 0 5px #ffe27a)" }, { filter: "none" }];
     try {
       key.animate(glow, { duration: 220, easing: "ease-out" });
-      if (lightDisplay) for (const el of [twGuessDisplayEl, guessDisplayEl]) if (el && el.offsetParent) el.animate(glow, { duration: 260, easing: "ease-out" });
+      if (lightDisplay) {
+        const scope = key.closest("[id$='-content'], .screen") || document;
+        for (const el of [twGuessDisplayEl, guessDisplayEl, scope.querySelector(".dc-display, #hs-fake-display")]) if (el && el.offsetParent) el.animate(glow, { duration: 260, easing: "ease-out" });
+      }
     } catch (e) { /* optional */ }
   }
   // Keys fire the moment a finger lands (pointerdown), not when it lifts: a tap whose finger drifts a few pixels, lands while the
@@ -21033,6 +21036,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     numpadPressAt = performance.now();
     if (key.id === "backspace-btn") pressBackspace(key); else pressNumpadKey(key);
   });
+  // Every other mode's keypad (Daily, Worlds, Monthly, Survival: .dc-key; the High Stakes fake-answer pad: .hs-key) gets the same touch-down press and the same feedback from here,
+  // so a mode cannot lose it by rebuilding its own keypad markup. The press is passed on as a click for that mode's own handler, and the
+  // real click that follows the finger lifting is swallowed so a digit never counts twice.
+  let dcPressAt = 0;
+  document.addEventListener("pointerdown", (e) => {
+    if (e.button > 0) return;
+    const key = e.target.closest?.(".dc-key, .hs-key");
+    if (!key || key.disabled) return;
+    dcPressAt = performance.now();
+    key.click();
+    playSound("tap");
+    numpadFeedback(key, (key.dataset.k || key.dataset.hsKey) !== "back");
+  }, true);
+  document.addEventListener("click", (e) => {
+    if (!e.isTrusted || performance.now() - dcPressAt > 700) return;
+    if (e.target.closest?.(".dc-key, .hs-key")) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
   numpadEl.addEventListener("click", (e) => {
     if (performance.now() - numpadPressAt < 700) return;
     const key = e.target.closest?.(".num-btn, #backspace-btn");
