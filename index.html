@@ -4369,7 +4369,7 @@ if (location.protocol === "file:") {
   :is(#worlds-content,#survival-content) .dc-keys { gap:4px; }
   :is(#worlds-content,#survival-content) .dc-key { box-sizing:border-box; height:44px; min-height:44px; padding:3px 6px; margin:0; font-size:20px; line-height:1; border-radius:12px; }
   /* Every number pad uses the stylized cream keys (same art as Party's pad). */
-  .dc-keys, :is(#worlds-content,#survival-content) .dc-keys { grid-template-columns: repeat(3, 72px); justify-content: center; gap: 6px 10px; }
+  .dc-keys, :is(#worlds-content,#survival-content) .dc-keys { grid-template-columns: repeat(3, 72px); justify-content: center; gap: 5px 6px; }
   .dc-key, :is(#worlds-content,#survival-content) .dc-key { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 52px; min-height: 52px; padding: 0 0 5px; margin: 0; border: none; border-radius: 0; box-shadow: none; background: url(icons/key-cream.webp) center / 100% 100% no-repeat; color: #5b3a26; text-shadow: none; font: 700 22px/1 'Fredoka', sans-serif; }
   .dc-key[data-k="back"], :is(#worlds-content,#survival-content) .dc-key[data-k="back"] { background-image: url(icons/key-back.webp); font-size: 0; color: transparent; }
   :is(#worlds-content,#survival-content,#question-view) .dc-display { box-sizing:border-box; min-height:44px; padding:3px 8px; margin:5px 0; font-size:28px; line-height:1.2; border-width:2px; }
@@ -5506,6 +5506,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (k === ".") return !str.includes(".");
     const [whole, frac] = str.split(".");
     return frac !== undefined ? frac.length < 2 : whole.length < 8;
+  }
+  // The one place the typed-answer keypad is built and its typing rules live. Keys keep the dc-key / dc-keys classes so the screen
+  // fit rules (compact and tight sizes in play-layout.css) apply to every mode that uses it.
+  const KEYPAD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
+  function kpKeysHtml() {
+    return `<div class="dc-keys">${KEYPAD_KEYS.map((k) => `<button type="button" class="dc-key" data-k="${k}">${k === "back" ? "&larr;" : k}</button>`).join("")}</div>`;
+  }
+  function kpApply(str, k) {
+    if (k === "back") return str.slice(0, -1);
+    if (!guessCharOk(str, k)) return str;
+    return (str === "0" && k !== ".") ? k : (str === "" && k === "." ? "0." : str + k);
   }
   function effectiveGuess(q, raw, playerId) {
     return bufferedGuess(raw, q.answer, !!q.powerups?.used?.buffer && q.powerups.owner === playerId);
@@ -12398,7 +12409,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="dc-display">${daily.input || "0"}</div>
-        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        ${kpKeysHtml()}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="dc-submit" disabled>Lock it in</button></div>`;
       if (dailyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
@@ -12633,8 +12644,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.classList.contains("dc-cal-nav") && b.dataset.cal) { daily.calYm = b.dataset.cal; const cal = document.getElementById("dc-cal"); if (cal) cal.outerHTML = dailyCalendarHtml(daily.calYm); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
-      if (k === "back") daily.input = daily.input.slice(0, -1);
-      else if (guessCharOk(daily.input, k)) daily.input = (daily.input === "0" && k !== ".") ? k : (daily.input === "" && k === "." ? "0." : daily.input + k);
+      daily.input = kpApply(daily.input, k);
       document.getElementById("dc-display").textContent = daily.input || "0";
       document.getElementById("dc-submit").disabled = !(parseFloat(daily.input) > 0);
       return;
@@ -14051,7 +14061,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="wl-display">${wl.input || "0"}</div>
-        <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
+        <div class="dc-padrow">${kpKeysHtml()}${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="wl-submit" ${parseFloat(wl.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       if (worldsScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       getPlayLayout().worlds(worldsScreenEl, el);
@@ -14207,8 +14217,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id.startsWith("wl-level-")) { worldStartLevel(Number(b.id.slice(9))); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
-      if (k === "back") wl.input = wl.input.slice(0, -1);
-      else if (guessCharOk(wl.input, k)) wl.input = (wl.input === "0" && k !== ".") ? k : (wl.input === "" && k === "." ? "0." : wl.input + k);
+      wl.input = kpApply(wl.input, k);
       document.getElementById("wl-display").textContent = wl.input || "0";
       persistSoloSession("worlds",wl);
       document.getElementById("wl-submit").disabled = !(parseFloat(wl.input) > 0);
@@ -14605,7 +14614,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-pics"><div class="dc-pic"><img src="${u.image}" alt="" draggable="false"><span>${escapeHtml(u.name)}</span></div><div class="dc-pic"><img src="${t.image}" alt="" draggable="false"><span>${escapeHtml(t.name)}</span></div></div>
         <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
-        <div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>
+        ${kpKeysHtml()}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
       if (monthlyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
       return;
@@ -14768,8 +14777,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "mo-main") { if (moMain) { mo = moMain; moMain = null; renderMonthly(); } return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
-      if (k === "back") mo.input = mo.input.slice(0, -1);
-      else if (guessCharOk(mo.input, k)) mo.input = (mo.input === "0" && k !== ".") ? k : (mo.input === "" && k === "." ? "0." : mo.input + k);
+      mo.input = kpApply(mo.input, k);
       document.getElementById("mo-display").textContent = mo.input || "0";
       document.getElementById("mo-submit").disabled = !(parseFloat(mo.input) > 0);
       return;
@@ -15195,7 +15203,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dq-board" id="dq-board"></div>
         <div class="dc-display" id="sv-display">${sv.input || "0"}</div>
         <div class="sv-diff"><span class="wb-diff-l">DIFFICULTY</span>${svStampHtml(q.answer, "in")}</div>
-        <div class="dc-padrow"><div class="dc-keys">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "←"].map((k) => `<button type="button" class="dc-key" data-k="${k === "←" ? "back" : k}">${k}</button>`).join("")}</div>${powerups?.html(powerupContext()) || ""}</div>
+        <div class="dc-padrow">${kpKeysHtml()}${powerups?.html(powerupContext()) || ""}</div>
         <div class="pin-bottom"><button type="button" class="dc-btn" id="sv-submit" ${parseFloat(sv.input) > 0 ? "" : "disabled"}>Lock it in</button></div>`;
       svApplyThemeVars(sv.q.theme);
       if (sv.q.theme && sv.bannerFor !== sv.asked) { sv.bannerFor = sv.asked; svShowThemeBanner(sv.q.theme); }
@@ -15319,8 +15327,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (b.id === "sv-start" || b.id === "sv-again") { sv = { runId:crypto.randomUUID(),phase: "question", lives: SURVIVAL_LIVES, shield: false, chain: 0, survived: 0, asked: 0, q: null, g: 0, input: "", recent: [], accs: [], gain: 0 }; renderSurvival(); return; }
     if (b.classList.contains("dc-key")) {
       const k = b.dataset.k;
-      if (k === "back") sv.input = sv.input.slice(0, -1);
-      else if (guessCharOk(sv.input, k)) sv.input = (sv.input === "0" && k !== ".") ? k : (sv.input === "" && k === "." ? "0." : sv.input + k);
+      sv.input = kpApply(sv.input, k);
       document.getElementById("sv-display").textContent = sv.input || "0";
       persistSoloSession("survival",sv);
       document.getElementById("sv-submit").disabled = !(parseFloat(sv.input) > 0);
