@@ -32,3 +32,8 @@ After touching the answer reveal papers, the wait scene after Lock it in, `anim/
 (360x640, 360x740, 393x786, 412x915). It fails on a big empty gap under the question board, papers shrunk below 0.65, the last paper unable to
 scroll into view, or a wait screen that overflows. Not every paper has to be visible at once: with many players the worst ones may scroll away,
 but the papers must not shrink tiny to fit all 10.
+
+## The default avatar only changes in Settings
+Picking an avatar for one game (the name/avatar screen, its random button, or the automatic swap when someone else has taken yours) only changes
+`currentAvatar` for that game. The saved default (`mg_avatar`) is written only by `setDefaultAvatar()`, called from the Settings picker (and its random
+button) and Equip in the shop. A new game starts from `defaultAvatarId()`. Run `npm run test:avatar-default` after touching avatar pickers.

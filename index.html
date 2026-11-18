@@ -7912,7 +7912,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function gachaEquipResult(cat, id) {
     if (cat === "avatar") {
       if (!isAvatarUnlocked(id)) return false;
-      currentAvatar = id; localStorage.setItem("mg_avatar", id); renderAvatarGrid(); renderSettingsAvatarGrid();
+      currentAvatar = id; setDefaultAvatar(id); renderAvatarGrid(); renderSettingsAvatarGrid();
       return true;
     }
     if (cat === "reaction") {
@@ -8121,6 +8121,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   if (checkName(currentName)) { currentName = ""; try { localStorage.removeItem("mg_name"); } catch (e) {} }
   let currentAvatar = localStorage.getItem("mg_avatar") || AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0];
   if (!AVATARS.includes(currentAvatar)) { currentAvatar = AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0]; localStorage.setItem("mg_avatar", currentAvatar); }
+  // "mg_avatar" is the DEFAULT avatar: only the Settings picker (and Equip in the shop) change it. Picking an avatar for one game only changes currentAvatar.
+  const defaultAvatarId = () => { let id = null; try { id = localStorage.getItem("mg_avatar"); } catch (e) {} return AVATARS.includes(id) ? id : (AVATARS.find((a) => AVATAR_TIERS[a] === "default") || AVATARS[0]); };
+  const setDefaultAvatar = (id) => { try { localStorage.setItem("mg_avatar", id); } catch (e) {} };
   let localSoundEnabled = localStorage.getItem("mg_soundEnabled") !== "false";
 
   function loadRecentRooms() {
@@ -11527,7 +11530,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // silently move us to a free one rather than leaving the picker stuck.
     if (takenAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !takenAvatars.has(a) && isAvatarUnlocked(a));
-      if (free) { currentAvatar = free; localStorage.setItem("mg_avatar", free); }
+      if (free) currentAvatar = free; // for this game only; the saved default stays
     }
     avatarGridEl.innerHTML = "";
     document.getElementById("name-avatar-big").innerHTML = avatarHtml(currentAvatar);
@@ -11547,8 +11550,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       btn.disabled = taken;
       btn.addEventListener("click", () => {
         if (taken) return;
-        currentAvatar = a;
-        localStorage.setItem("mg_avatar", a);
+        currentAvatar = a; // for this game only; the saved default stays
         renderAvatarGrid();
         renderSettingsAvatarGrid();
         playSound("pick");
@@ -11599,22 +11601,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   document.getElementById("settings-avatar-close").addEventListener("click", () => settingsAvatarPickerEl.close());
   settingsAvatarPickerEl.addEventListener("close", () => { settingsAvatarBigEl.setAttribute("aria-expanded", "false"); settingsAvatarBigEl.focus(); });
   // Random avatar: any avatar you own that nobody in the room has taken, other than the one you have now.
-  function pickRandomAvatar() {
+  function pickRandomAvatar(saveAsDefault) {
     const opts = AVATARS.filter((a) => isAvatarUnlocked(a) && !takenAvatars.has(a) && a !== currentAvatar);
     if (!opts.length) return;
     currentAvatar = opts[Math.floor(Math.random() * opts.length)];
-    localStorage.setItem("mg_avatar", currentAvatar);
+    if (saveAsDefault === true) setDefaultAvatar(currentAvatar);
     renderAvatarGrid();
     renderSettingsAvatarGrid();
     playSound("pick");
   }
-  document.getElementById("name-avatar-random").addEventListener("click", pickRandomAvatar);
-  document.getElementById("settings-avatar-random").addEventListener("click", pickRandomAvatar);
+  document.getElementById("name-avatar-random").addEventListener("click", () => pickRandomAvatar(false));
+  document.getElementById("settings-avatar-random").addEventListener("click", () => pickRandomAvatar(true));
   function renderSettingsAvatarGrid() {
-    settingsAvatarBigEl.innerHTML = avatarHtml(currentAvatar);
+    settingsAvatarBigEl.innerHTML = avatarHtml(defaultAvatarId());
     showPlayerFrame(settingsAvatarBigEl, shownPlayerFrame(), myGameFrameIndex());
     if (!settingsAvatarPickerEl.open) return;
-    document.getElementById("settings-avatar-current").innerHTML = avatarHtml(currentAvatar);
+    document.getElementById("settings-avatar-current").innerHTML = avatarHtml(defaultAvatarId());
     renderPlayerFramePicker("settings-frame-picker");
     // shown in the picker heading so you see what you have now
     settingsAvatarGridEl.innerHTML = "";
@@ -11629,10 +11631,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = avatarHtml(a) + (isFavAvatar(a) ? `<i class="fav-dot">${FAV_HEART}</i>` : "");
-      btn.className = "avatar-choice" + (a === currentAvatar ? " selected" : "");
+      btn.className = "avatar-choice" + (a === defaultAvatarId() ? " selected" : "");
       btn.addEventListener("click", () => {
         currentAvatar = a;
-        localStorage.setItem("mg_avatar", a);
+        setDefaultAvatar(a);
         renderSettingsAvatarGrid();
         renderAvatarGrid();
         playSound("pick");
@@ -18858,6 +18860,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     joinScreen.classList.add("active");
   }
   homeJoinBtn.addEventListener("click", () => activateButton(homeJoinBtn, showJoinScreen));
+  // Back on the home screen = the game is over: the next game starts from your default avatar again, even where there is no avatar screen.
+  new MutationObserver(() => { if (homeScreen.classList.contains("active") && currentAvatar !== defaultAvatarId()) { currentAvatar = defaultAvatarId(); renderSettingsAvatarGrid(); } }).observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
   joinBackBtn.addEventListener("click", () => {
     pendingQrInvite.clear();
     joinScreen.classList.remove("active");
@@ -18871,6 +18875,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setFlowBanner(document.getElementById("na-banner"), pendingSettings || flowBannerSettings || roomState?.settings);
     // Quick Game also goes through a lobby, so the button always says Join Lobby.
     joinLobbyBtn.textContent = "Join Lobby";
+    if (cameFrom !== "lobby") currentAvatar = defaultAvatarId(); // every new game starts from your default avatar
     watchTakenAvatarsForCode(pendingRoomCode);
     ALL_SCREEN_ELS.forEach(el=>el.classList.remove('active'));
     nameAvatarScreenEl.classList.add("active");
@@ -19147,8 +19152,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { nameAvatarStatusEl.textContent = "Every avatar is taken in that room."; return; }
-      currentAvatar = free;
-      localStorage.setItem("mg_avatar", free);
+      currentAvatar = free; // for this game only
     }
     takenAvatars = existingAvatars;
     renderAvatarGrid();
@@ -19179,8 +19183,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (existingAvatars.has(currentAvatar)) {
       const free = AVATARS.find((a) => !existingAvatars.has(a) && isAvatarUnlocked(a));
       if (!free) { joinStatusEl.textContent = "Every avatar is taken in that room."; return; }
-      currentAvatar = free;
-      localStorage.setItem("mg_avatar", free);
+      currentAvatar = free; // for this game only
     }
     joinRoomAsPlayer(code, currentName, false, data);
   }
