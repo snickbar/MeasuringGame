@@ -20081,6 +20081,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (untimed) scheduleBotGuesses(roomCode, q, true, roundNum);
   }
 
+  const LOCKED_GRACE_MS = 10000; // how long the wait screen (your answer, object stats, mascot) stays up once everyone has locked in
   function checkQuestionAdvance(roomCode) {
     if (!isHost || transitionBusy() || powerupHold()) return;
     if (roomState.phase !== "question") return;
@@ -20106,7 +20107,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // Grace window once everyone's answered, before the round locks and
       // moves to second chance - gives players a beat to send a reaction
       // emoji rather than snapping straight to the next phase.
-      const ge = now + 5000;
+      const ge = now + LOCKED_GRACE_MS;
       set(ref(db, `rooms/${roomCode}/graceEndsAt`), ge);
       scheduleHostDeadline(ge, () => checkQuestionAdvance(roomCode));
     } else if (!roomState.graceEndsAt) {
