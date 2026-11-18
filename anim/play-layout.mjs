@@ -29,6 +29,12 @@ export function createPlayLayout(doc = document) {
       delete owner.dataset.playDensity;
       // While the round's papers are being revealed, the thing that has to fit is the whole answer column (not the hidden keypad area):
       // the papers get a little narrower, which also makes them shorter, only as much as needed.
+      if (owner.dataset.playLayout === 'party') {
+        // The player/team score column scrolls up behind the board row (the board and timer stay on top), in every phase, instead of being cut by a flat edge under it.
+        owner.style.removeProperty('--sc-up');
+        const row = owner.querySelector('.hud-timer-row'), side = owner.querySelector('.score-sidebar');
+        if (row && side && side.getClientRects().length) owner.style.setProperty('--sc-up', `${Math.max(0, Math.round(side.getBoundingClientRect().top - row.getBoundingClientRect().top))}px`);
+      }
       if (owner.dataset.playLayout === 'party' && owner.querySelector('#reveal-view.active, #summary-view.active')) {
         const col = owner.querySelector('.main-col');
         owner.style.removeProperty('--rv-fit');
