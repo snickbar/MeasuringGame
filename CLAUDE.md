@@ -20,3 +20,9 @@ When the user points out a visual problem on one screen, check and fix it on eve
 Every number keypad presses on touch-down and gives the tap sound, a tiny buzz and a brief brightness glow on the key and the typed number
 (`numpadFeedback`, the team keypad handler, and the shared `.dc-key` handler (every typed-answer keypad except the team one is built by `kpKeysHtml()`)). Never replace them with click-only handlers, and
 give any new keypad kind the same treatment. Run `npm run test:numpad` after touching keypads, question screens or input code.
+
+## Keypads must never pass the bottom edge (check EVERY time)
+Every mode's keypad and its Lock/Submit button must stay fully on screen, and the question board must not collapse, on small phones.
+After touching keypads, key sizes, the question board or `anim/play-layout.*`, run `npm run test:keypad-fit` (the pinned-layout audit at
+360x640, 360x740, 390x650, 392x830 and 412x915; Bluff has no keypad so it is skipped). If a screen is too tall, shrink the keys
+(the density rules in `anim/play-layout.css`) rather than let anything run off the bottom. Known gaps: 320x568 and 320x650 are not yet supported by every mode.

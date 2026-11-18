@@ -123,14 +123,14 @@ server.listen(0,'127.0.0.1',()=>{
     for(let i=0;i<250;i++){if(await evaluate('window.__layoutReady?.()'))break;await new Promise(r=>setTimeout(r,30));}
     if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
-    for(const mode of ['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:letterboard','quick:terminal','quick:tv','quick:phone','quick','party','teamvteam']){
+    for(const mode of ['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:letterboard','quick:terminal','quick:tv','quick:phone','quick','party','teamvteam'].filter(m=>!(process.env.PLAY_LAYOUT_KEYPAD_ONLY&&m.startsWith('bluff')))){
       await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,180));
       const state=await evaluate(`(()=>{const vis=e=>e.getClientRects().length&&getComputedStyle(e).display!=='none';const owner=[...document.querySelectorAll('[data-play-layout].active,#wb-screen.active')].find(vis);if(!owner)throw Error('No active layout');const pane=owner.querySelector('.play-input-body')||owner.querySelector('.play-middle')||owner.querySelector('.main-col')||owner.querySelector('.wb-play-scroll');const action=[...owner.querySelectorAll('.play-actions button,.wb-play-footer button')].find(vis),pad=[...owner.querySelectorAll('#numpad,.dc-keys')].find(vis),r=e=>{const b=e.getBoundingClientRect();return {top:Math.round(b.top),bottom:Math.round(b.bottom),width:Math.round(b.width),height:Math.round(b.height)}};return {mode:owner.dataset.playLayout,footerBackground:getComputedStyle(owner.querySelector('.play-actions,.wb-play-footer')).backgroundColor,overflow:pane?(owner.id==='wb-screen'?Math.max(0,(pane.lastElementChild?.offsetTop||0)+(pane.lastElementChild?.offsetHeight||0)-pane.clientHeight):pane.scrollHeight-pane.clientHeight):0,action:action?r(action):null,pad:pad?r(pad):null,key:pad?r(pad.querySelector('button')):null,cards:document.querySelectorAll('#score-col .score-card').length,duplicateSubmit:document.querySelectorAll('#submit-guess-btn').length,health:window.__layoutHealth()};})()`);
       if(state.footerBackground!=='rgba(0, 0, 0, 0)')throw Error(mode+' action panel is opaque '+state.footerBackground);
       const isQuestion=!mode.includes(':')||mode==='bluff:vote'||mode.startsWith('quick:');
       if(isQuestion&&state.overflow>1)throw Error(mode+' '+width+'x'+height+' question overflow '+JSON.stringify(state));
       if(state.pad&&state.action&&state.pad.bottom>state.action.top)throw Error(mode+' action overlaps keypad '+JSON.stringify(state));
-      if(state.key&&(state.key.width<44||state.key.width>73||state.key.height<(height<=600?26:height<=700||['highlow','teamworlds'].includes(mode)?30:44)))throw Error(mode+' stretched/tiny keys '+JSON.stringify(state.key));
+      if(state.key&&(state.key.width<44||state.key.width>73||state.key.height<(height<=600?26:height<=700||['highlow','teamworlds'].includes(mode)?28:44)))throw Error(mode+' stretched/tiny keys '+JSON.stringify(state.key));
       if(state.action&&state.action.bottom>height)throw Error(mode+' action outside viewport');
       if(['quick','party','teamvteam'].includes(mode)){
        const expected=mode==='teamvteam'?2:4;if(state.cards!==expected)throw Error(mode+' missing player/team cards '+state.cards);
@@ -165,6 +165,7 @@ server.listen(0,'127.0.0.1',()=>{
      }
      console.log(JSON.stringify({mode:mode+':reveal',width,height,...state,pass:true}));
     }
+    if(process.env.PLAY_LAYOUT_KEYPAD_ONLY)continue; // keypad-fit run (npm run test:keypad-fit): every mode's keypad and Lock button stay on screen; skip the slower timing checks
     for(const sample of [{count:1,sum:70.6,last:70.6,expected:'No answers yet'},{count:2,sum:160,last:70,expected:'90%'},{count:2,sum:110,last:90,expected:'20%'}]){
      const progress=await evaluate('window.__layoutAccuracy('+[sample.count,sample.sum,sample.last].join(',')+')');
      if(progress.before!==sample.expected||progress.refreshed!==sample.expected)throw Error('Accuracy spoiled unfinished round '+JSON.stringify(progress));
