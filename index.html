@@ -3180,17 +3180,19 @@ if (location.protocol === "file:") {
   .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
   .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
   /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
-  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-template-rows: auto auto minmax(auto, 1fr) auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
+  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 118px; grid-template-rows: auto auto minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
   #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
   /* rows, top to bottom: progress, the two objects (takes any spare height, so everything else sits down against the Lock button), board, answer box + keypad with the two player cards beside them, role hint, status */
   #hud #question-view.tw-mode > #tw-question-progress { grid-row: 1; }
   #hud #question-view.tw-mode > #tw-question-pics { grid-row: 2; align-self: stretch; align-items: stretch; }
   #hud #question-view.tw-mode > #tw-question-prompt { grid-row: 3; align-self: center; } /* spare height goes to the board row, the board sits centred in it */
-  #hud #question-view.tw-mode > #tw-guess-display { grid-column: 1; grid-row: 4; justify-self: start; width: 192px; margin: 4px 0; font-size: 26px; } /* as wide as the keypad, right above it */
-  #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-row: 5; grid-template-columns: repeat(3, minmax(0, 60px)); gap: 6px; justify-content: start; }
-  #hud #question-view.tw-mode > #tw-question-stats { grid-column: 2; grid-row: 4 / span 2; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; margin: 0; align-self: stretch; }
-  #hud #question-view.tw-mode > #hl-role-hint { grid-row: 6; }
-  #hud #question-view.tw-mode > #guess-status { grid-row: 7; }
+  #hud #question-view.tw-mode > #hl-gap-chip { grid-column: 1; grid-row: 4; justify-self: start; width: 192px; box-sizing: border-box; margin: 2px 0 0; }
+  #hud #question-view.tw-mode > #hl-gap-chip[hidden] { display: none; }
+  #hud #question-view.tw-mode > #tw-guess-display { grid-column: 1; grid-row: 5; justify-self: start; width: 192px; margin: 4px 0; font-size: 26px; } /* as wide as the keypad, right above it */
+  #hud #question-view.tw-mode > #numpad { grid-column: 1; grid-row: 6; grid-template-columns: repeat(3, minmax(0, 60px)); gap: 6px; justify-content: start; }
+  #hud #question-view.tw-mode > #tw-question-stats { grid-column: 2; grid-row: 5 / span 2; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; margin: 0; align-self: stretch; }
+  #hud #question-view.tw-mode > #hl-role-hint { grid-row: 7; }
+  #hud #question-view.tw-mode > #guess-status { grid-row: 8; }
   #hud #question-view.tw-mode .dc-pic { max-width: 128px; }
   #hud #question-view.tw-mode .dc-pic img { flex: 1 1 0; min-height: 63px; max-height: 78px; height: auto; }
   #hud #question-view.tw-mode .tw-qs-pair { flex: 1 1 0; width: 100%; }
@@ -5299,6 +5301,7 @@ if (location.protocol === "file:") {
         <p id="tw-question-prompt" class="dc-prompt" hidden></p>
         <div id="tw-question-stats" hidden></div>
         <div id="guess-display">0</div>
+        <div id="hl-gap-chip" class="hl-limit" hidden></div>
         <div id="tw-guess-display" class="dc-display" hidden>0</div>
         <div id="numpad">
           <button class="num-btn" data-val="1">1</button>
@@ -20901,12 +20904,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function hlReserveBottleHtml(room) {
     const held = !!room.hlShield, charge = room.hlShieldCharge || 0;
-    return `<div class="hl-reserve" aria-label="${held ? 'Empty bottle ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward an empty bottle'}"><span class="hl-reserve-icon${held ? '' : ' waiting'}"><img class="hl-bottle-icon" src="${HL_EMPTY_BOTTLE}" alt=""></span><span>${held ? 'Empty bottle ready' : 'Empty bottle'}</span>${held ? '' : `<span class="hl-pips" role="progressbar" aria-label="Empty bottle charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : i === charge ? 'next' : ''}"></i>`).join('')}</span>`}</div>`;
+    return `<div class="hl-reserve" aria-label="${held ? 'Empty bottle ready' : charge + ' of ' + HL_SHIELD_CHAIN + ' survived rounds toward an empty bottle'}"><span class="hl-reserve-icon${held ? '' : ' waiting'}"><img class="hl-bottle-icon" src="${HL_EMPTY_BOTTLE}" alt=""></span><span class="hl-reserve-text"><span class="hl-reserve-name">Empty bottle</span>${held ? '<span class="hl-ready">Ready!</span>' : `<span class="hl-pips" role="progressbar" aria-label="Empty bottle charge" aria-valuemin="0" aria-valuemax="${HL_SHIELD_CHAIN}" aria-valuenow="${charge}">${Array.from({ length: HL_SHIELD_CHAIN }, (_, i) => `<i class="${i < charge ? 'on' : i === charge ? 'next' : ''}"></i>`).join('')}</span>`}</span></div>`;
   }
   function hlBottlesHtml(room, hideLimit) {
     const total = room.settings?.lives || HL_LIVES, left = room.hlLives ?? total, survived = room.hlSurvived || 0, cap = room.settings?.cap || 0;
     const bottles = Array.from({ length: total }, (_, i) => i < left ? `<img class="hl-bottle-icon" src="${HL_MESSAGE_BOTTLE}" alt="" draggable="false">` : highLowBottlePieces({ className: "hl-bottle-spent", hasNote: i === left })).join("");
-    return `<div class="sv-hud"><div class="hl-bottle-row" role="img" aria-label="${left} of ${total} bottles left">${bottles}</div><div class="hl-sub-row"><div class="hl-sub">Survived ${survived}${cap ? ` of ${cap}` : ""}${room.hlSyncStreak > 1 ? ` &middot; ${room.hlSyncStreak} in sync in a row` : ""}</div>${hlReserveBottleHtml(room)}${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div>${room.currentQuestion?.theme ? `<div class="hl-theme" style="${svThemeVars(room.currentQuestion.theme)}">${svThemeStripHtml(room.currentQuestion.theme)}</div>` : ""}</div>`;
+    return `<div class="sv-hud hl-panel"><div class="hl-panel-row"><div class="hl-bottle-row" role="img" aria-label="${left} of ${total} bottles left">${bottles}</div><div class="hl-sub-row"><div class="hl-survived"><span class="hl-survived-l">Survived</span><b class="hl-survived-n">${survived}</b>${cap ? `<span class="hl-survived-cap">of ${cap}</span>` : ""}${room.hlSyncStreak > 1 ? `<span class="hl-survived-cap">${room.hlSyncStreak} in sync</span>` : ""}</div>${hlReserveBottleHtml(room)}${hideLimit ? "" : `<div class="hl-limit">Max gap ${hlLimit(survived)}&times;</div>`}</div></div>${room.currentQuestion?.theme ? `<div class="hl-theme" style="${svThemeVars(room.currentQuestion.theme)}">${svThemeStripHtml(room.currentQuestion.theme)}</div>` : ""}</div>`;
   }
   function hlAnimateBottleSpend(root, saved) {
     if (!saved) {
@@ -20961,7 +20964,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const teamAvg = me?.roundsCounted ? me.accuracySum / me.roundsCounted : null;
     const hl = isHlSettings(roomState.settings);
     const hlRoles = roomState.hlRoles || {};
-    renderQuestionMarkup(twQuestionProgressEl, hl ? hlBottlesHtml(roomState) : worldProgressBarHtml(teamAvg, true));
+    renderQuestionMarkup(twQuestionProgressEl, hl ? hlBottlesHtml(roomState, true) : worldProgressBarHtml(teamAvg, true));
+    const hlGapEl = document.getElementById("hl-gap-chip");
+    if (hlGapEl) { hlGapEl.hidden = !hl; if (hl) hlGapEl.innerHTML = `Max gap ${hlLimit(roomState.hlSurvived || 0)}&times;`; }
     const pair = q ? questionObjects(q) : null;
     renderQuestionMarkup(twQuestionPicsEl, pair ? pair.map((o) => `<div class="dc-pic"><img src="${o.image}" alt="" draggable="false"><span>${escapeHtml(o.name)}</span></div>`).join("") : "");
     if (hl && q) {
