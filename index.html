@@ -21856,7 +21856,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (!(to > 0) || performance.now() - startAt >= ms) return;
     const fmt = (v) => m[1] + (dec ? v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) : comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + m[3];
     (function step() {
-      if (!node.isConnected) return;
+      if (!node.isConnected || node._countStop) return;
       const k = Math.max(0, Math.min(1, (performance.now() - startAt) / ms));
       const text = fmt(to * (1 - Math.pow(1 - k, 3)));
       if (isText) node.nodeValue = text; else setText(node, text);
@@ -22900,7 +22900,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const tok=++partyFinaleToken, animations=[];
     const alive=()=>tok===partyFinaleToken&&finalScreenEl.classList.contains('active');
     const reveal=()=>{finalListEl.classList.remove('pd-waiting');document.getElementById('final-session-recap')?.classList.remove('pd-hold');};
-    const finish=()=>{li.classList.add('skip');animations.forEach(a=>a.cancel());li.querySelectorAll('.pd-who').forEach(e=>{e.style.opacity='1';e.style.transform='none';});reveal();};
+    const counts=[]; // scores that roll up as each place arrives; Skip puts the real numbers straight back
+    const finish=()=>{counts.forEach(n=>{n._countStop=true;if(n.nodeType===3)n.nodeValue=n._final;else n.textContent=n._final;});li.classList.add('skip');animations.forEach(a=>a.cancel());li.querySelectorAll('.pd-who').forEach(e=>{e.style.opacity='1';e.style.transform='none';});reveal();};
     li.querySelector('.pd-skip').onclick=()=>{li.classList.add('pd-skip-motion');finish();};
     // Start on attached nodes. Resting state is VISIBLE, so interruption or a missing
     // animation never leaves the winner stranded at opacity zero.
@@ -22924,9 +22925,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           {opacity:1,transform:'translate('+side*48+'%,-20px)',offset:.65},
           {opacity:1,transform:'translate('+side*12+'%,0)',offset:.83},
           {opacity:1,transform:'none',offset:1}];
+        const sc=who.parentElement.querySelector('.pd-sc')?.firstChild;
+        if(sc&&sc.nodeType===3){sc._final=sc.nodeValue;counts.push(sc);countNodeText(sc,performance.now()+delay+350,900);}
         const animation=who.animate(frames,{duration:winner?1150:1500,delay,fill:'backwards',easing:'linear'});
         animation.onfinish=()=>{who.style.opacity='1';who.style.transform='none';who.parentElement.classList.add('pd-settled');};animations.push(animation);
       });
+      li.querySelectorAll('.pd-row i').forEach(i=>{i._final=i.textContent;counts.push(i);countNodeText(i,performance.now()+thirdAt,900);});
       setTimeout(()=>{if(alive()&&!li.classList.contains('skip')){li.classList.add('pd-landed');playSound('podium-thud');}},impactAt);
       setTimeout(()=>{if(alive())finish();},doneMs);
     });
