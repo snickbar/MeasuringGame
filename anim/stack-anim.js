@@ -613,6 +613,8 @@ export function createStackAnimation(container, options = {}) {
   const reduceMotion = options.reduceMotion != null
     ? options.reduceMotion
     : (document.documentElement.dataset.motion==='reduce'||(document.documentElement.dataset.motion!=='full'&&!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)));
+  // Objects that turn to stand arrive right side up and turn during their hop (false = arrive already turned).
+  const rotateInJump = options.rotateInJump !== false;
   const flipFacing = !!options.flipFacing;   // swaps which of the two pictures is mirrored
   // The caller can mirror the running count elsewhere (via start()'s onFrame,
   // which now also receives the current shown value) instead of showing it
@@ -1277,14 +1279,18 @@ export function createStackAnimation(container, options = {}) {
         let px = sx0 - dHop * h.x, shadowY = bottom + 1, shadowLift = Math.abs(h.y);
         // While the ground is on screen the second to fourth objects come in along it in their own style,
         // wait beside the stack, then jump up to their place on it.
+        // One that turns to stand (smLean) comes in right side up, then turns smoothly through the whole hop.
+        let turnDraw = null;
         if (i >= 1 && i < GROUND_N && sy0 < stageH - 4 && !reduceMotion) {
           const f = clamp((t - starts[i]) / durs[i], 0, 1), fa = approachOf(i) / durs[i];
-          const standX = wcol * 0.95;
+          const lieTurn = rotateInJump && smLean && smLying;
+          const standX = lieTurn ? Ls / 2 + wcol / 2 + 6 : wcol * 0.95;
           shadowY = sy0 + 1;
           if (f < fa) {
             ep = entryPose(smKind, f / fa, { thick: wcol, dist: dHop, dir: 1 });
-            px = sx0 - standX - (dHop - standX) * (1 - ep.p);
+            px = sx0 - standX - (Math.max(dHop, standX + 20) - standX) * (1 - ep.p);
             bottom = sy0; h.y = -ep.lift; h.sx = ep.sx; h.sy = ep.sy;
+            if (lieTurn) turnDraw = { u: 0, half: wcol / 2 };
           } else {
             ep = null;
             const f2 = (f - fa) / (1 - fa);
@@ -1292,10 +1298,22 @@ export function createStackAnimation(container, options = {}) {
             px = sx0 - standX * (1 - f2 * f2 * (3 - 2 * f2));
             bottom = sy0; h.y = -rise * smooth(f2) - arc * Math.sin(Math.PI * f2);
             h.sx = 1; h.sy = 1;
+            if (lieTurn) turnDraw = { u: smooth(f2), half: wcol / 2 + (Ls / 2 - wcol / 2) * smooth(f2) };
           }
           shadowLift = Math.abs(h.y);
         }
-        shadow(px, shadowY, wcol * .85, clamp(wcol * .07, 2, 5), .24 / (1 + shadowLift / 10));
+        shadow(px, shadowY, (turnDraw ? Ls + (wcol - Ls) * turnDraw.u : wcol) * .85, clamp(wcol * .07, 2, 5), .24 / (1 + shadowLift / 10));
+        if (turnDraw) {
+          // Drawn about its middle: the lying picture turns a quarter turn the way it will stand.
+          ctx.save();
+          ctx.translate(px, bottom + h.y - turnDraw.half);
+          if (ep && ep.rot) ctx.rotate(ep.rot);
+          ctx.rotate((smLean === 'cw' ? 1 : -1) * (Math.PI / 2) * turnDraw.u);
+          ctx.scale(h.sx, h.sy);
+          ctx.drawImage(smLying, -Ls / 2, -wcol / 2, Ls, wcol);
+          ctx.restore();
+          continue;
+        }
         ctx.save();
         ctx.translate(px, bottom + h.y);
         if (ep && ep.rot) { const cy = spins(smKind) ? -Ls / 2 : 0; ctx.translate(0, cy); ctx.rotate(ep.rot); ctx.translate(0, -cy); }
