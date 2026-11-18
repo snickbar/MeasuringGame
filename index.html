@@ -16572,6 +16572,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const el = [...document.querySelectorAll(sel)].find((n) => n.offsetParent !== null && n.getBoundingClientRect().width);
       if (el) { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
     }
+    // Any screen that shows "+N coins" (Daily, Monthly, Worlds, Survival, Which Is Bigger, party and team finals...) is the source,
+    // so every game's coins burst out of the reward on screen and no screen needs its own marker.
+    const shown = /\+\s*[\d,]+\s*coins?|coins\s*earned/i;
+    const reward = [...document.querySelectorAll(":is(.screen.active, #hud.active) :is(.dc-note, .wb-coins, .tw-fin-coins, .coin-award-popup, [class*='coin'])")]
+      .find((n) => n.offsetParent !== null && n.getBoundingClientRect().width && n.textContent.length < 90 && shown.test(n.textContent));
+    if (reward) { const r = reward.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
     const fresh = performance.now() - lastTapPoint.t < 1500;
     return fresh ? { x: lastTapPoint.x, y: lastTapPoint.y } : { x: innerWidth / 2, y: innerHeight * 0.6 };
   }
