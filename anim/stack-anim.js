@@ -615,6 +615,9 @@ export function createStackAnimation(container, options = {}) {
     : (document.documentElement.dataset.motion==='reduce'||(document.documentElement.dataset.motion!=='full'&&!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)));
   // Objects that turn to stand arrive right side up and turn during their hop (false = arrive already turned).
   const rotateInJump = options.rotateInJump !== false;
+  // Polish switches (off unless asked for): a little crouch before the second to fourth objects jump, flatter hops
+  // as the stack grows, and a small sway when a big object finishes standing up.
+  const crouchJump = !!options.crouchJump, flatHops = !!options.flatHops, bigSway = !!options.bigSway;
   const flipFacing = !!options.flipFacing;   // swaps which of the two pictures is mirrored
   // The caller can mirror the running count elsewhere (via start()'s onFrame,
   // which now also receives the current shown value) instead of showing it
@@ -1179,6 +1182,10 @@ export function createStackAnimation(container, options = {}) {
         const hop = ep ? ep.lift : 0;
         shadow(bx + slide + bw / 2, sy0 + 2, bw * .95, clamp(bw * .07, 3, 10), .36 / (1 + hop / 12));
         if (bx + slide < W && bx + bw > 0 && by < stageH && by + bh > 0) {
+          // A really big object that has just stood up rocks a little on its feet, then settles.
+          const swayA = bigSway && bigLean && targetAge > 0 && targetAge < 1.3 && !reduceMotion
+            ? (bigLean === 'cw' ? -1 : 1) * 0.045 * clamp((bh - 120) / 260, 0, 1) * Math.exp(-3.2 * targetAge) * Math.sin(2 * Math.PI * 1.8 * targetAge) : 0;
+          if (swayA) { ctx.save(); ctx.translate(bx + bw / 2, sy0); ctx.rotate(swayA); ctx.translate(-(bx + bw / 2), -sy0); }
           if (ep && (ep.rot || ep.sx !== 1 || ep.sy !== 1)) {
             const pcx = bx + slide + bw / 2, pcy = sy0 - hop - (spins(bigKind) ? bh / 2 : 0);
             ctx.save();
@@ -1186,6 +1193,7 @@ export function createStackAnimation(container, options = {}) {
             drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
             ctx.restore();
           } else drawLanded(bigSprite, bx + slide, sy0 - hop, bw, bh, bigLanding, targetAge);
+          if (swayA) ctx.restore();
         }
       }
       if (bigKind !== 'fly') dust(bx + bw / 2, sy0, t - tLeanEnd, bw, target.mm, false, bigKind === 'sail' ? 'water' : landingSurfaceFor(scenery));
@@ -1281,6 +1289,14 @@ export function createStackAnimation(container, options = {}) {
         // wait beside the stack, then jump up to their place on it.
         // One that turns to stand (smLean) comes in right side up, then turns smoothly through the whole hop.
         let turnDraw = null;
+        // Later hops fly in at stack height and turn as they come, finishing as they land.
+        if (i >= GROUND_N || (i >= 1 && !(sy0 < stageH - 4)) ) {
+          if (flatHops && i >= GROUND_N) { h.y *= Math.max(0.3, 1 - 0.05 * (i - GROUND_N + 1)); shadowLift = Math.abs(h.y); }
+          if (rotateInJump && smLean && smLying && !reduceMotion) {
+            const u = smooth(clamp(1 - h.x, 0, 1));
+            turnDraw = { u, half: wcol / 2 + (Ls / 2 - wcol / 2) * u };
+          }
+        }
         if (i >= 1 && i < GROUND_N && sy0 < stageH - 4 && !reduceMotion) {
           const f = clamp((t - starts[i]) / durs[i], 0, 1), fa = approachOf(i) / durs[i];
           const lieTurn = rotateInJump && smLean && smLying;
@@ -1293,11 +1309,16 @@ export function createStackAnimation(container, options = {}) {
             if (lieTurn) turnDraw = { u: 0, half: wcol / 2 };
           } else {
             ep = null;
-            const f2 = (f - fa) / (1 - fa);
+            const fj = (f - fa) / (1 - fa);
+            // A short crouch (squash down) before the leap, then a little stretch as it takes off.
+            const CR = crouchJump ? 0.2 : 0;
+            const f2 = CR ? clamp((fj - CR) / (1 - CR), 0, 1) : fj;
             const rise = i * Ls, arc = Math.max(Ls * 0.55, 14);
             px = sx0 - standX * (1 - f2 * f2 * (3 - 2 * f2));
             bottom = sy0; h.y = -rise * smooth(f2) - arc * Math.sin(Math.PI * f2);
             h.sx = 1; h.sy = 1;
+            if (CR && fj < CR) { const q = smooth(fj / CR); h.sy = 1 - 0.16 * q; h.sx = 1 + 0.08 * q; }
+            else if (CR && f2 < 0.15) { const q = 1 - f2 / 0.15; h.sy = 1 + 0.07 * q; h.sx = 1 - 0.035 * q; }
             if (lieTurn) turnDraw = { u: smooth(f2), half: wcol / 2 + (Ls / 2 - wcol / 2) * smooth(f2) };
           }
           shadowLift = Math.abs(h.y);
@@ -1306,7 +1327,7 @@ export function createStackAnimation(container, options = {}) {
         if (turnDraw) {
           // Drawn about its middle: the lying picture turns a quarter turn the way it will stand.
           ctx.save();
-          ctx.translate(px, bottom + h.y - turnDraw.half);
+          ctx.translate(px, bottom + h.y - turnDraw.half * h.sy);
           if (ep && ep.rot) ctx.rotate(ep.rot);
           ctx.rotate((smLean === 'cw' ? 1 : -1) * (Math.PI / 2) * turnDraw.u);
           ctx.scale(h.sx, h.sy);
