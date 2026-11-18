@@ -71,6 +71,13 @@ export function createPlayLayout(doc = document) {
     }
     if (!fitFrame) fitFrame = win.requestAnimationFrame(fit);
   }
+  // Re-measure whenever the reveal / summary screen opens or its papers change, so the behind-the-board scroll area never depends on who happened to call measure().
+  let watchFrame = 0;
+  const remeasure = () => { if (watchFrame) return; watchFrame = win.requestAnimationFrame(() => { watchFrame = 0; measure(); }); };
+  const watch = new win.MutationObserver(remeasure);
+  for (const id of ['reveal-view', 'summary-view']) { const el = doc.getElementById(id); if (el) watch.observe(el, {attributes: true, attributeFilter: ['class']}); }
+  for (const id of ['reveal-list', 'summary-list']) { const el = doc.getElementById(id); if (el) watch.observe(el, {childList: true}); }
+  { const hudEl = doc.getElementById('hud'); if (hudEl) watch.observe(hudEl, {attributes: true, attributeFilter: ['data-phase', 'data-play-layout']}); }
   const resize = new win.ResizeObserver(measure);
   [toolbar, sub, bottom].filter(Boolean).forEach(el => resize.observe(el));
   win.addEventListener('resize', measure);
