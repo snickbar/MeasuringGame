@@ -13484,6 +13484,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return `<div class="hs-srow${r.delta > 0 ? " up" : r.delta < 0 ? " down" : ""}${r.out ? " out" : ""}${r.id === me ? " me" : ""}${r.shift > 0 ? " hs-climb" : ""}" style="--shift:${r.shift || 0};animation-delay:${i * 70}ms,650ms"><span class="hs-srank place-medallion" data-rank="${r.rank}">${r.rank}</span><span class="avatar">${avatarHtml(p?.avatar)}</span><b class="hs-sname">${escapeHtml(p?.name || "Gone")}${r.id === me ? " (you)" : ""}</b>${mv}<span class="hs-scoins">${r.out ? "Out" : hsFmt(r.coins) + ' <img class="hs-chip-inline" src="icons/poker-chip-blue.webp" alt="chips">'}</span>${dl}</div>`;
       }).join("")}</div>`;
   }
+  // The round result rolls up: the real answer first, then the winner's payout. Keyed to the round so a redraw carries on instead of restarting.
+  let hsCountKey = "", hsCountAt = 0;
+  function hsCountResult(hs, data) {
+    const key = `${data.gameId}:${hs.round}`;
+    if (key !== hsCountKey) { hsCountKey = key; hsCountAt = performance.now() + 150; }
+    const box = hsContentEl.querySelector(".hs-round-answer"); if (!box) return;
+    countNodeText(box.querySelector(".hs-round-answer-value b"), hsCountAt, 900);
+    box.querySelectorAll(".hs-win-amt").forEach((el) => countNodeText(el.firstChild?.nodeType === 3 ? el.firstChild : null, hsCountAt + 700, 800));
+    box.querySelectorAll(".hs-win-payouts b").forEach((el) => countNodeText(el, hsCountAt + 700, 800));
+  }
   function hsRoundAnswerHtml(answer, hs, players) {
     const result = hs.result;
     const winners = result.winners || [];
@@ -13784,6 +13794,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (revealing && isHost && !animating) html += `<button type="button" class="dc-btn dc-alt" id="hs-skip">Show standings</button>`;
     html = html.replace("<!--HSTURN-->", turnHtml);
     hsRenderInto(html, hs, data, animating, animStarted);
+    if (result && !animating) hsCountResult(hs, data);
     if (fooledNow) {
       const fk = `${data.gameId}:${hs.round}`;
       if (hsFooledKey !== fk) { hsFooledKey = fk; setTimeout(hsLaugh, 250); }
@@ -21834,6 +21845,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const charged = l.passed && !l.earned && !l.previousShield && (data.hlShieldCharge || 0) > (l.previousCharge || 0) ? (data.hlShieldCharge || 0) : 0;
     const moment = [l.earned ? "Empty bottle earned!" : "", charged ? `Empty-bottle dot earned! ${charged} of ${HL_SHIELD_CHAIN}` : "", l.milestone ? l.milestone + " rounds survived together!" : ""].filter(Boolean).join(" · ");
     return `<div class="tw-slot${shown ? "" : " tw-ph"}"><div class="dc-card hl-verdict ${cls}"><div class="hl-verdict-title">${title}</div><div class="hl-verdict-sub">${sub}</div>${moment ? `<div class="hl-milestone">${moment}</div>` : ""}<div class="hl-verdict-bottles">${hlBottlesHtml(data, true)}</div></div></div>`;
+  }
+  // Rolls a number up from 0 to what the element (or text node) already says, keeping its prefix/suffix/commas/decimals ("+35 " stays "+35 ").
+  // Time-based from startAt, so a redraw of the screen part-way through carries on from the right number instead of restarting.
+  function countNodeText(node, startAt, ms) {
+    if (!node || prefersReducedMotion()) return;
+    const isText = node.nodeType === 3, m = /^(\D*)(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/.exec(isText ? node.nodeValue : node.textContent);
+    if (!m) return;
+    const to = parseFloat(m[2].replace(/,/g, "")), dec = (m[2].split(".")[1] || "").length, comma = m[2].includes(",");
+    if (!(to > 0) || performance.now() - startAt >= ms) return;
+    const fmt = (v) => m[1] + (dec ? v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) : comma ? Math.round(v).toLocaleString("en-US") : String(Math.round(v))) + m[3];
+    (function step() {
+      if (!node.isConnected) return;
+      const k = Math.max(0, Math.min(1, (performance.now() - startAt) / ms));
+      const text = fmt(to * (1 - Math.pow(1 - k, 3)));
+      if (isText) node.nodeValue = text; else setText(node, text);
+      if (k < 1) requestAnimationFrame(step);
+    })();
   }
   // Counts a number up (e.g. the team average) so it lands with a little drama.
   function twCountUp(el, to, ms, suffix) {
