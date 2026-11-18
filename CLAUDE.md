@@ -1,0 +1,17 @@
+# Size Em Up! - rules for changes
+
+## Equipped player frames must never be lost (check EVERY time)
+Players can equip a custom border ("player frame"). It must show on every player card in every mode: High Stakes cards
+(including your turn), High/Low player cards, score cards, High Stakes final rows, lobby cards, Bluff cards.
+Changes to card layout, borders, backgrounds, glows, padding or z-index keep breaking it, so after ANY such change:
+
+1. Run `npm run test:frames` (scripts/verify-frames-browser.cjs). It checks every card template still renders the frame
+   and, in a real browser, that the frame picture is drawn, visible and not turned off by another rule.
+2. If you add a new kind of player card, give it the frame: add `player-frame-host` to the card (see `hsFrameCls(p)`),
+   append the frame art (see `hsFrameArt(p)` / `showPlayerFrame`), and add the card to the case list in that script.
+3. A card's own border or glow must never replace the frame. Keep the card border transparent and draw glows on
+   pseudo-elements underneath the frame art (see `.hs-pl.turn.player-frame-host`).
+
+## Other checks before pushing
+`npm run sync-www`, `npm run test:css`, `node scripts/verify-animation-properties.mjs`, `node scripts/verify-size-budget.mjs`.
+When the user points out a visual problem on one screen, check and fix it on every game mode and screen.

@@ -45,8 +45,9 @@ export function mountHighLowReveal(container, data, options={}) {
    mark.textContent=value==null?'×':ok?'✓':'×';mark.classList.toggle('bad',!ok);root.querySelector('[data-'+role+'-off]').textContent=value==null?'No pick':info?.text||'';
   }
   root.querySelector('.bird-splash').style.left=birdCenter+'px';root.querySelector('.shark-splash').style.left=sharkCenter+'px';root.querySelectorAll('.oc-guide').forEach(g=>g.hidden=true);
-  const upper=y(c.lo==null?answer*limit:c.lo*limit),lower=y(c.hi==null?answer/limit:c.hi/limit),green=gap.querySelector('.cw-green');
-  green.style.top=(upper-32)+'px';green.style.height=Math.max(0,lower-upper)+'px';
+  // The green bar is the stretch between the two guesses (HIGH on top, LOW below). Missing or crossed picks leave it empty.
+  const upper=y(c.hi),lower=y(c.lo),green=gap.querySelector('.cw-green'),span=c.hi!=null&&c.lo!=null&&c.hi>=c.lo;
+  green.style.top=((span?upper:lower||0)-32)+'px';green.style.height=span?Math.max(0,lower-upper)+'px':'0px';
   gap.querySelector('.cw-meter').setAttribute('aria-label','HIGH '+fmt(c.hi)+', LOW '+fmt(c.lo)+'. Correct answer '+fmt(answer)+'. Maximum gap '+fmt(limit)+' times.');
   formatBottleNumbers();
  }

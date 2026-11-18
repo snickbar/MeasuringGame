@@ -3180,7 +3180,7 @@ if (location.protocol === "file:") {
   .qbs[data-board="sand"] { color: #a8702c; font-weight: 700; text-shadow: 0 1px 0 rgba(255,238,200,.9); }
   .qbs[data-board="splitflap"] { color: #f1e9c9; font-weight: 700; text-transform: uppercase; }
   /* Team Worlds / High-Low question screen: board on top, keypad on the left, the two player cards stacked in the right gutter. */
-  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 130px; grid-template-rows: auto auto minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
+  #hud #question-view.tw-mode.active { display: grid; grid-template-columns: minmax(0, 1fr) 130px; grid-template-rows: auto minmax(auto, .7fr) minmax(auto, 1fr) auto auto auto auto auto; column-gap: 8px; align-content: stretch; height: 100%; }
   #hud #question-view.tw-mode > * { grid-column: 1 / -1; }
   /* rows, top to bottom: progress, the two objects (takes any spare height, so everything else sits down against the Lock button), board, answer box + keypad with the two player cards beside them, role hint, status */
   #hud #question-view.tw-mode > #tw-question-progress { grid-row: 1; }
@@ -3196,7 +3196,7 @@ if (location.protocol === "file:") {
   #hud #question-view.tw-mode > #hl-role-hint { grid-row: 7; }
   #hud #question-view.tw-mode > #guess-status { grid-row: 8; }
   #hud #question-view.tw-mode .dc-pic { max-width: 128px; }
-  #hud #question-view.tw-mode .dc-pic img { flex: 1 1 0; min-height: 63px; max-height: 78px; height: auto; }
+  #hud #question-view.tw-mode .dc-pic img { flex: 1 1 0; min-height: 63px; max-height: 100px; height: auto; }
   #hud #question-view.tw-mode .tw-qs-pair { flex: 1 1 0; width: 100%; }
   #hud #question-view.tw-mode .tw-qs-gutter { display: none; }
   #hud #question-view.tw-mode .tw-qs-half { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; box-sizing: border-box; gap: 3px; padding: 6px 4px; border-radius: 16px; }
@@ -20928,7 +20928,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Team Worlds / High-Low: the question sits on your equipped board, with the typed guess inside it. Only redrawn when the question or board changes.
   function setTwBoardPrompt(text) {
     twQuestionPromptEl.classList.add("tw-qboard", "dq-board");
-    qBoardMount(twQuestionPromptEl, text, 300); // the real question card (with its writing animation) is borrowed into this slot
+    qBoardMount(twQuestionPromptEl, text, 260); // the real question card (with its writing animation) is borrowed into this slot
     if (twGuessDisplayEl.previousElementSibling !== twQuestionPromptEl) twQuestionPromptEl.after(twGuessDisplayEl); // the typed guess sits right under the board
   }
   function renderTeamWorldsQuestionStats(q) {
@@ -20986,7 +20986,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderQuestionMarkup(twQuestionStatsEl, ids.map((id) => {
       const p = currentPlayers[id];
       const acc = p.individualRoundsCounted ? formatAccuracy(p.individualAccuracySum / p.individualRoundsCounted) + "%" : "--";
-      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) + `<span class="tw-qs-ask">${hlRoles[id] === "high" ? "Get close without going under." : "Get close without going over."}</span>` : `<span class="tw-qs-acc">${acc}</span>`}</div></div>`;
+      return `<div class="tw-qs-pair"${hl ? ` style="order:${hlRoles[id] === "high" ? 0 : 1}"` : ""}><div class="tw-qs-gutter"></div><div class="tw-qs-half${hl && hlRoles[id] && id === currentPlayerId ? ` hl-mine hl-mine-${hlRoles[id]}` : ""}${hsFrameCls(p)}" data-id="${id}"><span class="avatar">${avatarHtml(p.avatar)}</span><span class="name">${escapeHtml(p.name)}</span>${hl && hlRoles[id] ? hlChipHtml(hlRoles[id]) + `<span class="tw-qs-ask">${hlRoles[id] === "high" ? "Get close without going under." : "Get close without going over."}</span>` : `<span class="tw-qs-acc">${acc}</span>`}${hsFrameArt(p)}</div></div>`;
     }).join(""));
   }
 
