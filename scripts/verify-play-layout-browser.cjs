@@ -181,6 +181,8 @@ server.listen(0,'127.0.0.1',()=>{
       await evaluate(`document.querySelector('#numpad [data-val="2"]').click();document.getElementById('submit-guess-btn').click();new Promise(r=>setTimeout(r,1500))`);
       const w=await evaluate(`(()=>{const r=e=>{const b=document.querySelector(e)?.getBoundingClientRect();return b?{top:Math.round(b.top),bottom:Math.round(b.bottom)}:null},body=document.querySelector('.play-input-body');return {waiting:document.getElementById('question-view').classList.contains('q-waiting'),facts:r('.qw-facts'),answer:r('#guess-display'),status:r('#guess-status'),body:r('.play-input-body'),preview:r('#q-preview'),overflow:body.scrollHeight-body.clientHeight}})()`);
       if(!w.waiting||!w.facts||!w.answer)throw Error(mode+' '+width+'x'+height+': wait screen missing '+JSON.stringify(w));
+      const mc=await evaluate(`(()=>{const box=document.querySelector('.qw-mascot').getBoundingClientRect();document.querySelectorAll('.qw-mascot img').forEach(i=>{i.style.animation='none';i.style.transform='none'});return [...document.querySelectorAll('.qw-mascot img')].map(i=>{const b=i.getBoundingClientRect();return {l:Math.round(b.left-box.left),r:Math.round(box.right-b.right)}})})()`);
+      if(mc.some(m=>m.l<-1||m.r<-1))throw Error(mode+' '+width+'x'+height+': wait screen mascot is cut off at the edge '+JSON.stringify(mc));
       if(w.overflow>1||w.answer.bottom>w.body.bottom+1||w.facts.top<w.preview.bottom-1)throw Error(mode+' '+width+'x'+height+': wait screen does not fit '+JSON.stringify(w));
       console.log(JSON.stringify({waitScreen:mode,width,height,pass:true}));
      }
