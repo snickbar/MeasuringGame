@@ -33,6 +33,16 @@ export function mountHighLowReveal(container, data, options={}) {
  function wait(fn,ms){const job={fn,left:ms,at:performance.now(),id:null};const run=()=>{timers=timers.filter(t=>t!==job);if(!destroyed)fn();};job.run=run;if(!paused&&!document.hidden)job.id=setTimeout(run,ms);timers.push(job);return job;}
  function cancel(){token++;for(const t of timers)clearTimeout(t.id);timers=[];cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];stage.querySelectorAll('.oc-water-fx').forEach(el=>{el.getAnimations({subtree:true}).forEach(a=>a.cancel());el.remove();});root.querySelectorAll('.splashing,.is-stroking').forEach(el=>el.classList.remove('splashing','is-stroking'));}
  function number(el,value){el.textContent=fmt(value);}
+// The green bar is the accepted gap (e.g. 2.5x) drawn to the same scale as the picks, always centred between the two guess lines:
+// a win overflows both ends equally, a miss is shorter than the stretch between the guesses.
+ function placeGreen(){
+  const c=model,green=gap.querySelector('.cw-green');if(!p)return;
+  const both=c.hi!=null&&c.lo!=null&&c.hi>0&&c.lo>0;
+  if(!both){green.style.height='0px';return;}
+  const h=p.h,y=v=>Math.max(58,Math.min(h-62,p.sea-Math.asinh(Math.log(Math.max(answer*1e-6,v)/answer)*3)*h*.215));
+  const g=Math.sqrt(c.hi*c.lo),half=Math.sqrt(limit),mid=(y(c.hi)+y(c.lo))/2,u=v=>Math.asinh(Math.log(v/answer)*3)*h*.215,height=Math.abs(u(g/half)-u(g*half));
+  green.style.top=(mid-height/2-(gap.querySelector('.cw-track').offsetTop||32))+'px';green.style.height=height+'px';
+ }
  function layout(){
   const c=model,w=stage.clientWidth,h=stage.clientHeight,size=bird.offsetWidth,sea=h*.51;
   const y=v=>Math.max(58,Math.min(h-62,sea-Math.asinh(Math.log(Math.max(answer*1e-6,v??answer)/answer)*3)*h*.215));
@@ -45,9 +55,7 @@ export function mountHighLowReveal(container, data, options={}) {
    mark.textContent=value==null?'×':ok?'✓':'×';mark.classList.toggle('bad',!ok);root.querySelector('[data-'+role+'-off]').textContent=value==null?'No pick':info?.text||'';
   }
   root.querySelector('.bird-splash').style.left=birdCenter+'px';root.querySelector('.shark-splash').style.left=sharkCenter+'px';root.querySelectorAll('.oc-guide').forEach(g=>g.hidden=true);
-  // The green bar is the stretch between the two guesses (HIGH on top, LOW below). Missing or crossed picks leave it empty.
-  const upper=y(c.hi),lower=y(c.lo),green=gap.querySelector('.cw-green'),span=c.hi!=null&&c.lo!=null&&c.hi>=c.lo;
-  green.style.top=((span?upper:lower||0)-32)+'px';green.style.height=span?Math.max(0,lower-upper)+'px':'0px';
+  p.mid=null;p.gapH=0;placeGreen();
   gap.querySelector('.cw-meter').setAttribute('aria-label','HIGH '+fmt(c.hi)+', LOW '+fmt(c.lo)+'. Correct answer '+fmt(answer)+'. Maximum gap '+fmt(limit)+' times.');
   formatBottleNumbers();
  }
@@ -100,6 +108,14 @@ function waterEffects(x,cy,surface){
   for(let i=0;i<6;i++){const bubble=document.createElement('i');bubble.className='fx-bubble';pool.appendChild(bubble);const dx=(i%3-1)*12,dy=-Math.min(42+12*i,Math.max(12,cy-p.sea));jobs.push(bubble.animate([{opacity:0,transform:'translate('+dx+'px,12px) scale(.5)'},{opacity:.8,offset:.2},{opacity:0,transform:'translate('+(dx+6)+'px,'+dy+'px) scale(1.15)'}],{duration:1100+i*70,delay:i*55,easing:'ease-out'}));}
  }
  Promise.all(jobs.map(a=>a.finished.catch(()=>{}))).then(()=>pool.remove());
+}
+// A mascot that lands right at the surface line gets a short glow behind it, once.
+function landGlow(el){
+ if(reduced()||model.hi==null||model.lo==null)return;
+ const near=el===bird?(model.hi>=answer&&model.hi/answer<=1.12):(model.lo<=answer&&model.lo>0&&answer/model.lo<=1.12);
+ if(!near)return;
+ const glow=document.createElement('i');glow.className='oc-landglow';el.insertBefore(glow,el.firstChild);
+ glow.animate([{opacity:0,transform:'scale(.5)'},{opacity:.95,transform:'scale(1.15)',offset:.35},{opacity:0,transform:'scale(1.7)'}],{duration:1100,easing:'ease-out'}).finished.catch(()=>{}).then(()=>glow.remove());
 }
 function reaction(el,yes){
  const changed=el.classList.contains('is-reacting')!==yes;el.classList.toggle('is-reacting',yes);
@@ -184,7 +200,7 @@ function formatBottleNumbers(){
   }
   reaction(bird,step>2&&c.hi!=null&&c.hi<answer);reaction(shark,false);
   function done(){if(current!==token||destroyed)return;cancelAnimationFrame(raf);animations.forEach(a=>a.cancel());animations=[];el.classList.remove('is-stroking');busy=false;
-   if(animate&&!reduced()){crossing();settleWater();}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
+   if(animate&&!reduced()){crossing();settleWater();landGlow(el);}reaction(bird,step>=2&&c.hi!=null&&c.hi<answer);reaction(shark,step>=3&&c.lo!=null&&c.lo>answer);ui();
    if(step===2&&!reduced()&&c.hi>=answer)bird.classList.add('is-stroking');
    if(step===3){const fresh=animate&&!reduced()&&!document.hidden;revealGap(fresh);if(fresh)playResultBeat();}syncMeterMarks();
    if(step===3&&!settledResult){settledResult=true;options.onResult?.({fresh:animate&&!document.hidden,passed:model.passed,saved:model.saved});}
