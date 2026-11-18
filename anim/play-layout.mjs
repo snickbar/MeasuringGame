@@ -32,13 +32,19 @@ export function createPlayLayout(doc = document) {
       if (owner.dataset.playLayout === 'party' && owner.querySelector('#reveal-view.active')) {
         const col = owner.querySelector('.main-col');
         owner.style.removeProperty('--rv-fit');
-        // A picture board (monthly boards and the like) draws its art centred inside a taller box, which leaves an empty band under the art.
-        // Pull the papers up into that band so they sit right under the board.
-        owner.style.removeProperty('--rv-pull');
+        owner.style.removeProperty('--rv-up');
+        owner.style.removeProperty('--rv-pad');
+        // The papers scroll BEHIND the question board (no clip edge floating under it): the column reaches up to the board's top,
+        // and its own top padding starts the first paper right under the board's art. A picture board draws its art centred inside
+        // a taller box, so the papers also start up inside the empty band under the art.
         const board = owner.querySelector('.question-prompt'), stage = board && board.querySelector('#q-stage');
-        if (board && stage) {
-          const slack = board.getBoundingClientRect().bottom - stage.getBoundingClientRect().bottom;
-          if (slack > 6) owner.style.setProperty('--rv-pull', `${Math.round(slack - 3)}px`);
+        if (board && col) {
+          const boardRect = board.getBoundingClientRect();
+          const up = Math.max(0, Math.round(col.getBoundingClientRect().top - boardRect.top));
+          let pull = 0;
+          if (stage) { const slack = boardRect.bottom - stage.getBoundingClientRect().bottom; if (slack > 6) pull = Math.round(slack - 3); }
+          owner.style.setProperty('--rv-up', `${up}px`);
+          owner.style.setProperty('--rv-pad', `${Math.max(0, up - pull)}px`);
         }
         let k = 1;
         for (let i = 0; i < 3 && col && col.scrollHeight > col.clientHeight + 1; i++) {
@@ -64,8 +70,6 @@ export function createPlayLayout(doc = document) {
     }
     if (!fitFrame) fitFrame = win.requestAnimationFrame(fit);
   }
-  const scrollCol = doc.querySelector('#hud .main-col');
-  if (scrollCol) scrollCol.addEventListener('scroll', () => scrollCol.toggleAttribute('data-scrolled', scrollCol.scrollTop > 2), {passive: true});
   const resize = new win.ResizeObserver(measure);
   [toolbar, sub, bottom].filter(Boolean).forEach(el => resize.observe(el));
   win.addEventListener('resize', measure);
