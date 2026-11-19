@@ -1,6 +1,6 @@
 // Quick Game robot: stands on YOUR Player card in the score column for the whole round result.
-//  - While the papers are still being revealed he waits in a calm standing pose with a slow bob (stand()).
-//  - When the last paper is revealed he plays his reaction to YOUR accuracy on a loop (react()).
+//  - He slides in from the right and waits in a happy standing pose with a tiny sway while the papers are revealed (stand()).
+//  - When YOUR paper is revealed he plays his reaction to YOUR accuracy on a loop (react()).
 // Three tiers (win 60%+, so-so 40-59%, lose under 40%), three animations each. The pick is random but never the one he
 // played last time. Each animation is one strip image (frames side by side); the frames are stepped from here (not by an
 // endless CSS animation) and the sheet is shown through quick-robot.css.
@@ -9,7 +9,7 @@ const REACTIONS = {
   soso: [["soso-shrug", 2], ["soso-scratch", 3], ["soso-meh", 2]],
   lose: [["lose-slump", 3], ["lose-spring", 3], ["lose-sink", 2]],
 };
-const IDLE = ["soso-shrug", 2]; // frame 1 of this strip is him standing neutral with his arms down
+const IDLE = ["idle", 1]; // him standing with a small smile, fists on his hips
 const FRAME_MS = 260;
 const ART = (id) => `anim/mode-mascots/quick-robot-react-${id}.webp`;
 
@@ -84,13 +84,13 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
     raf = requestAnimationFrame(place);
   }
 
-  // Last paper revealed: play the reaction to your accuracy (0-100), looping. Does nothing twice for the same round.
+  // Your paper is revealed: play the reaction to your accuracy (0-100), looping. Does nothing twice for the same round.
   function react(key, accuracy) {
     if (standKey !== key) stand(key);
     if (reactKey === key) return;
     reactKey = key;
     clearTimeout(reactTimer);
-    reactTimer = setTimeout(() => { // after the winner's paper has finished flipping
+    reactTimer = setTimeout(() => { // once your paper has finished flipping
       if (reactKey !== key) return;
       const [id, frames] = pickRobotReaction(robotTier(accuracy), last);
       last = id;
@@ -100,7 +100,7 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
       if (reduceMotion()) { setFrame(frames - 1, frames); return; } // reduced motion: hold the last pose
       let i = 0;
       stepTimer = setInterval(() => { i = (i + 1) % frames; setFrame(i, frames); }, FRAME_MS);
-    }, 1100);
+    }, 800);
   }
 
   return { stand, react, hide, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };

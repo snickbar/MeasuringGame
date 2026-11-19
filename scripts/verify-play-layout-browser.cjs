@@ -100,6 +100,7 @@ const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColE
   rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardTop:Math.round(board.top),boardBottom:Math.round(board.bottom)};};
 const robotWait=ms=>new Promise(r=>setTimeout(r,ms));
 window.__layoutRobotHide=()=>quickRobot.hide();
+window.__layoutRobotIdle=async()=>{quickRobot.hide();quickRobot.stand('idle:'+Math.random());await robotWait(1300);return robotSnap();};
 window.__layoutRobot=async acc=>{quickRobot.hide();const key='test:'+Math.random();quickRobot.stand(key);await robotWait(700);
  const idle=robotSnap();quickRobot.react(key,acc);await robotWait(1500);
  const out=robotSnap(),seen=new Set();for(let i=0;i<5;i++){seen.add(robotSnap().pos);await robotWait(FRAME_PROBE_MS);}
@@ -238,8 +239,9 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
       if(late.colTop>late.rowTop+1)throw Error('Score column top edge must catch up when the side panel appears late ('+mode+' '+width+'x'+height+'): '+JSON.stringify(late));}
      for(const [board,n] of [['',3],['',4],['',10],['phone',4]]){ // 'phone' is a picture board: its art sits inside a taller box, the papers must still sit right under the art
       await evaluate('window.__layoutRv('+n+')');if(board)await evaluate('window.__layoutBoard('+JSON.stringify(board)+')');await new Promise(r=>setTimeout(r,500));
+      if(!board&&n===4&&process.env.PLAY_LAYOUT_SHOT){await evaluate('window.__layoutRobotIdle()');const ish=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'robot-idle-'+width+'x'+height+'.png'),Buffer.from(ish.data,'base64'));}
       if(!board&&n===4){const robot=await evaluate('window.__layoutRobot(80)'),why='Quick robot '+width+'x'+height+': ';
-       if(!robot||!robot.idle||!robot.idle.visible||!robot.idle.on||robot.idle.off||robot.idle.reacting||robot.idle.reaction!=='soso-shrug')throw Error(why+'he must wait in his standing pose while the papers are revealed: '+JSON.stringify(robot&&robot.idle));
+       if(!robot||!robot.idle||!robot.idle.visible||!robot.idle.on||robot.idle.off||robot.idle.reacting||robot.idle.reaction!=='idle')throw Error(why+'he must wait in his standing pose while the papers are revealed: '+JSON.stringify(robot&&robot.idle));
        if(!robot.visible||!robot.on||robot.off||!robot.image||!robot.reacting)throw Error(why+'he is not reacting on your card: '+JSON.stringify(robot));
        if(robot.positionsSeen<2)throw Error(why+'his animation must loop, but the frame never changed: '+JSON.stringify(robot));
        if(!robot.card||Math.abs(robot.rect.b-robot.card.t)>10)throw Error(why+'he must stand on top of your Player card: '+JSON.stringify(robot));
