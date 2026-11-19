@@ -1,11 +1,16 @@
-// Quick Game robot: reacts to YOUR round result by standing on your Player card in the score column.
-// Three tiers (win 60%+, so-so 40-59%, lose under 40%), three animations each. The pick is random but never the one
-// he played last time. Each animation is one strip image (frames side by side) stepped through by CSS (quick-robot.css).
+// Quick Game robot: stands on YOUR Player card in the score column for the whole round result.
+//  - While the papers are still being revealed he waits in a calm standing pose with a slow bob (stand()).
+//  - When the last paper is revealed he plays his reaction to YOUR accuracy on a loop (react()).
+// Three tiers (win 60%+, so-so 40-59%, lose under 40%), three animations each. The pick is random but never the one he
+// played last time. Each animation is one strip image (frames side by side); the frames are stepped from here (not by an
+// endless CSS animation) and the sheet is shown through quick-robot.css.
 const REACTIONS = {
   win: [["win-jump", 3], ["win-confetti", 4], ["win-dance", 4]],
   soso: [["soso-shrug", 2], ["soso-scratch", 3], ["soso-meh", 2]],
   lose: [["lose-slump", 3], ["lose-spring", 3], ["lose-sink", 2]],
 };
+const IDLE = ["soso-shrug", 2]; // frame 1 of this strip is him standing neutral with his arms down
+const FRAME_MS = 260;
 const ART = (id) => `anim/mode-mascots/quick-robot-react-${id}.webp`;
 
 export const robotTier = (accuracy) => accuracy >= 60 ? "win" : accuracy >= 40 ? "soso" : "lose";
@@ -19,64 +24,84 @@ export function pickRobotReaction(tier, last, random = Math.random) {
 // hud: the fixed game container the robot is added to (nothing in it clips, so he can overlap the question board).
 // cardFor(): your own score card element (or null). reduceMotion(): true when animation should be skipped.
 export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, raf = 0, shownKey = null, last = null, timer = 0;
+  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, reactTimer = 0;
 
   function build() {
     el = document.createElement("div");
-    el.className = "qr-robot off";
+    el.className = "qr-robot";
     el.setAttribute("aria-hidden", "true");
     el.innerHTML = '<div class="qr-pop"><i class="qr-sprite"></i></div>';
+    sprite = el.querySelector(".qr-sprite");
     hud.appendChild(el);
   }
 
-  // Keep him on the card's top edge (the card moves while the scores re-sort or the column scrolls).
+  function setFrame(i, frames) { sprite.style.backgroundPosition = frames > 1 ? `${(i / (frames - 1)) * 100}% 0` : "0 0"; }
+  function setStrip(id, frames) {
+    sprite.style.setProperty("--n", String(frames));
+    sprite.style.backgroundImage = `url(${ART(id)})`;
+    el.dataset.reaction = id;
+    setFrame(0, frames);
+  }
+  function stopFrames() { clearInterval(stepTimer); stepTimer = 0; }
+
+  // Keep him on the card's top edge: the card moves while the scores re-sort and while the column scrolls, and he scrolls with it.
   function place() {
     raf = 0;
-    if (!el || shownKey === null) return;
+    if (!el || standKey === null) return;
     const card = cardFor();
+    let off = true;
     if (card && card.isConnected) {
       const board = hud.querySelector(".question-prompt");
       const c = card.getBoundingClientRect(), h = hud.getBoundingClientRect();
       const w = el.offsetWidth, ht = el.offsetHeight;
       const x = Math.round(c.left + c.width / 2 - h.left - w / 2), y = Math.round(c.top - h.top - ht + 5);
       if (el._x !== x || el._y !== y) { el.style.transform = `translate(${x}px, ${y}px)`; el._x = x; el._y = y; }
-      // Scrolled up under the board: he would float over the board, so he steps out until the card comes back.
-      const hidden = board && c.top < board.getBoundingClientRect().bottom - 2;
-      el.classList.toggle("off", !!hidden);
-    } else el.classList.add("off");
+      // He only steps out once his feet are above the question board (he would be up in the header) or below the score column.
+      const colBottom = card.parentElement ? card.parentElement.getBoundingClientRect().bottom : h.bottom;
+      off = (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
+    }
+    el.classList.toggle("off", off);
     raf = requestAnimationFrame(place);
   }
 
   function hide() {
-    clearTimeout(timer);
-    shownKey = null;
+    clearTimeout(reactTimer); stopFrames();
+    standKey = reactKey = null;
     cancelAnimationFrame(raf); raf = 0;
-    if (el) { el.classList.add("off"); el.classList.remove("on"); }
+    if (el) { el.classList.remove("on", "reacting"); el.classList.add("off"); }
   }
 
-  // key: one value per round (the same round shown twice keeps the same animation). accuracy: your accuracy, 0-100.
-  function show(key, accuracy) {
-    if (shownKey === key) return;
-    shownKey = key;
+  // Waiting pose for the whole reveal. key: one value per round.
+  function stand(key) {
+    if (standKey === key) return;
+    hide();
+    standKey = key;
     if (!el) build();
-    const [id, frames] = pickRobotReaction(robotTier(accuracy), last);
-    last = id;
-    clearTimeout(timer);
-    el.classList.remove("on");
-    el.classList.add("off");
-    timer = setTimeout(() => {
-      if (shownKey !== key) return;
-      const sprite = el.querySelector(".qr-sprite");
-      sprite.style.setProperty("--n", String(frames));
-      sprite.style.backgroundImage = `url(${ART(id)})`;
-      el.dataset.reaction = id;
-      el.classList.toggle("still", !!reduceMotion());
-      // Restart the pop and the frames from the first one.
-      el.classList.remove("on"); void el.offsetWidth; el.classList.add("on");
-      if (!raf) raf = requestAnimationFrame(place);
-    }, 700); // after your paper has flipped
-    if (!raf) raf = requestAnimationFrame(place);
+    setStrip(IDLE[0], IDLE[1]);
+    el.classList.remove("reacting", "on");
+    void el.offsetWidth; el.classList.add("on");
+    el.classList.toggle("still", !!reduceMotion());
+    raf = requestAnimationFrame(place);
   }
 
-  return { show, hide, get reaction() { return el?.dataset.reaction || null; } };
+  // Last paper revealed: play the reaction to your accuracy (0-100), looping. Does nothing twice for the same round.
+  function react(key, accuracy) {
+    if (standKey !== key) stand(key);
+    if (reactKey === key) return;
+    reactKey = key;
+    clearTimeout(reactTimer);
+    reactTimer = setTimeout(() => { // after the winner's paper has finished flipping
+      if (reactKey !== key) return;
+      const [id, frames] = pickRobotReaction(robotTier(accuracy), last);
+      last = id;
+      stopFrames();
+      setStrip(id, frames);
+      el.classList.add("reacting");
+      if (reduceMotion()) { setFrame(frames - 1, frames); return; } // reduced motion: hold the last pose
+      let i = 0;
+      stepTimer = setInterval(() => { i = (i + 1) % frames; setFrame(i, frames); }, FRAME_MS);
+    }, 1100);
+  }
+
+  return { stand, react, hide, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
 }

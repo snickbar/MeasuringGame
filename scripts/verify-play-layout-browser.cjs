@@ -93,16 +93,25 @@ window.__layoutRv=async n=>{
  const b=document.getElementById('bottom-actions');b.removeAttribute('data-bar-empty');['hud-auto-toggle','show-summary-btn'].forEach(id=>document.getElementById(id).style.display='');getPlayLayout().measure();
  return ids.length;
 };
-// Quick robot: show him for one accuracy and report where he stands (see anim/quick-robot.mjs).
-// Monthly always plays on its own month's question board (the fixture's month is 2026-10, board mb10), whatever board is equipped.
-window.__layoutMonthlyBoard=async()=>{await window.__layoutAudit('monthly');renderMonthly();await new Promise(r=>setTimeout(r,300));await new Promise(r=>setTimeout(r,500));const q=document.getElementById('question-prompt').getBoundingClientRect(),sub=document.getElementById('mo-submit').getBoundingClientRect(),bar=document.getElementById('bottom-toolbar').getBoundingClientRect();return {board:document.getElementById('question-prompt').dataset.board,mounted:!!document.querySelector('#dq-board #question-prompt'),boardH:Math.round(q.height),submitBottom:Math.round(sub.bottom),barTop:Math.round(bar.top),vh:innerHeight};};
+// Quick robot (anim/quick-robot.mjs): he waits on your card, then reacts (looping) to one accuracy. Reports where he stands.
+const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColEl.querySelector('.score-card[data-id="'+currentPlayerId+'"]'),hud=document.getElementById('hud').getBoundingClientRect();
+ if(!el)return null;const r=el.getBoundingClientRect(),c=card?card.getBoundingClientRect():null,sp=el.querySelector('.qr-sprite'),board=document.querySelector('.question-prompt').getBoundingClientRect(),cs=getComputedStyle(el);
+ return {reaction:el.dataset.reaction,visible:cs.visibility==='visible'&&cs.opacity!=='0',on:el.classList.contains('on'),off:el.classList.contains('off'),reacting:el.classList.contains('reacting'),image:getComputedStyle(sp).backgroundImage.includes('quick-robot-react-'),frames:getComputedStyle(sp).getPropertyValue('--n').trim(),pos:sp.style.backgroundPosition,
+  rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardTop:Math.round(board.top),boardBottom:Math.round(board.bottom)};};
+const robotWait=ms=>new Promise(r=>setTimeout(r,ms));
 window.__layoutRobotHide=()=>quickRobot.hide();
-window.__layoutRobot=async acc=>{quickRobot.hide();quickRobot.show('test:'+Math.random(),acc);await new Promise(r=>setTimeout(r,1400));
- const el=document.querySelector('.qr-robot'),card=scoreColEl.querySelector('.score-card[data-id="'+currentPlayerId+'"]'),hud=document.getElementById('hud').getBoundingClientRect();
- if(!el)return null;const r=el.getBoundingClientRect(),c=card?card.getBoundingClientRect():null,sp=el.querySelector('.qr-sprite'),board=document.querySelector('.question-prompt').getBoundingClientRect();
- return {reaction:el.dataset.reaction,visible:getComputedStyle(el).visibility==='visible'&&getComputedStyle(el).opacity!=='0',on:el.classList.contains('on'),off:el.classList.contains('off'),image:getComputedStyle(sp).backgroundImage.includes('quick-robot-react-'),frames:getComputedStyle(sp).getPropertyValue('--n').trim(),
-  rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardBottom:Math.round(board.bottom)};
-};
+window.__layoutRobot=async acc=>{quickRobot.hide();const key='test:'+Math.random();quickRobot.stand(key);await robotWait(700);
+ const idle=robotSnap();quickRobot.react(key,acc);await robotWait(1500);
+ const out=robotSnap(),seen=new Set();for(let i=0;i<5;i++){seen.add(robotSnap().pos);await robotWait(FRAME_PROBE_MS);}
+ return {...out,idle,positionsSeen:seen.size};};
+// With many players the score column scrolls: he must keep standing on his card (not vanish) while it scrolls up under the board.
+window.__layoutRobotScroll=async()=>{quickRobot.hide();quickRobot.stand('scroll:'+Math.random());await robotWait(500);
+ const col=scoreColEl;if(col.scrollHeight<=col.clientHeight+20)return {scrollable:false};
+ const before=robotSnap();col.scrollTop=Math.min(col.scrollHeight-col.clientHeight,45);await robotWait(250);const after=robotSnap();col.scrollTop=0;
+ return {scrollable:true,before,after};};
+const FRAME_PROBE_MS=300;
+// Monthly always plays on its own month's question board (the fixture's month is 2026-10, board mb10), whatever board is equipped.
+window.__layoutMonthlyBoard=async()=>{await window.__layoutAudit('monthly');renderMonthly();await new Promise(r=>setTimeout(r,500));const q=document.getElementById('question-prompt').getBoundingClientRect(),sub=document.getElementById('mo-submit').getBoundingClientRect(),bar=document.getElementById('bottom-toolbar').getBoundingClientRect();return {board:document.getElementById('question-prompt').dataset.board,mounted:!!document.querySelector('#dq-board #question-prompt'),boardH:Math.round(q.height),submitBottom:Math.round(sub.bottom),barTop:Math.round(bar.top),vh:innerHeight};};
 window.__layoutReveal=async mode=>{
  await window.__layoutAudit(mode);
  if(mode==='survival'){sv={...sv,phase:'reveal',asked:1,g:3,lastOk:true,resultShown:false,accs:[{r:1}]};renderSurvival();}
@@ -229,13 +238,20 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
       if(late.colTop>late.rowTop+1)throw Error('Score column top edge must catch up when the side panel appears late ('+mode+' '+width+'x'+height+'): '+JSON.stringify(late));}
      for(const [board,n] of [['',3],['',4],['',10],['phone',4]]){ // 'phone' is a picture board: its art sits inside a taller box, the papers must still sit right under the art
       await evaluate('window.__layoutRv('+n+')');if(board)await evaluate('window.__layoutBoard('+JSON.stringify(board)+')');await new Promise(r=>setTimeout(r,500));
-      if(!board&&n===4){const robot=await evaluate('window.__layoutRobot(80)');
-       if(!robot||!robot.visible||!robot.on||robot.off||!robot.image)throw Error('Quick robot is not showing on your card '+width+'x'+height+': '+JSON.stringify(robot));
-       if(!robot.card||Math.abs(robot.rect.b-robot.card.t)>10)throw Error('Quick robot must stand on top of your Player card '+width+'x'+height+': '+JSON.stringify(robot));
-       if(robot.rect.l<robot.hud.l-1||robot.rect.r>robot.hud.r+1)throw Error('Quick robot runs off the side of the game screen '+width+'x'+height+': '+JSON.stringify(robot));
-       if(robot.rect.t>robot.boardBottom-10)throw Error('Quick robot should overlap the question board a little '+width+'x'+height+': '+JSON.stringify(robot));
-       for(const [acc,tier] of [[80,'win'],[50,'soso'],[20,'lose']]){const x=await evaluate('window.__layoutRobot('+acc+')');if(!x||!x.reaction||!x.reaction.startsWith(tier))throw Error('Quick robot picked the wrong tier for '+acc+'%: '+JSON.stringify(x));if(process.env.PLAY_LAYOUT_SHOT){fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});const rs=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'robot-'+tier+'-'+width+'x'+height+'.png'),Buffer.from(rs.data,'base64'));}}
-       console.log(JSON.stringify({quickRobot:true,width,height,...robot,pass:true}));}
+      if(!board&&n===4){const robot=await evaluate('window.__layoutRobot(80)'),why='Quick robot '+width+'x'+height+': ';
+       if(!robot||!robot.idle||!robot.idle.visible||!robot.idle.on||robot.idle.off||robot.idle.reacting||robot.idle.reaction!=='soso-shrug')throw Error(why+'he must wait in his standing pose while the papers are revealed: '+JSON.stringify(robot&&robot.idle));
+       if(!robot.visible||!robot.on||robot.off||!robot.image||!robot.reacting)throw Error(why+'he is not reacting on your card: '+JSON.stringify(robot));
+       if(robot.positionsSeen<2)throw Error(why+'his animation must loop, but the frame never changed: '+JSON.stringify(robot));
+       if(!robot.card||Math.abs(robot.rect.b-robot.card.t)>10)throw Error(why+'he must stand on top of your Player card: '+JSON.stringify(robot));
+       if(robot.rect.l<robot.hud.l-1||robot.rect.r>robot.hud.r+1)throw Error(why+'he runs off the side of the game screen: '+JSON.stringify(robot));
+       if(robot.rect.t>robot.boardBottom-10)throw Error(why+'he should overlap the question board a little: '+JSON.stringify(robot));
+       for(const [acc,tier] of [[80,'win'],[50,'soso'],[20,'lose']]){const x=await evaluate('window.__layoutRobot('+acc+')');if(!x||!x.reaction||!x.reaction.startsWith(tier))throw Error(why+'wrong tier for '+acc+'%: '+JSON.stringify(x));if(process.env.PLAY_LAYOUT_SHOT){fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});const rs=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'robot-'+tier+'-'+width+'x'+height+'.png'),Buffer.from(rs.data,'base64'));}}
+       console.log(JSON.stringify({quickRobot:true,width,height,idle:robot.idle.reaction,reaction:robot.reaction,positionsSeen:robot.positionsSeen,pass:true}));}
+      if(!board&&n===10){const sc=await evaluate('window.__layoutRobotScroll()');
+       if(sc&&sc.scrollable){const a=sc.after,why='Quick robot '+width+'x'+height+': ';
+        if(!a||!a.card||Math.abs(a.rect.b-a.card.t)>10)throw Error(why+'he must scroll along with your Player card: '+JSON.stringify(sc));
+        if(a.card.t>=a.boardTop+4&&a.off)throw Error(why+'he disappeared while your card is still on screen: '+JSON.stringify(sc));
+        console.log(JSON.stringify({quickRobotScroll:true,width,height,pass:true}));}}
       if(process.env.PLAY_LAYOUT_SHOT){const shotDir=process.env.PLAY_LAYOUT_SHOT;fs.mkdirSync(shotDir,{recursive:true});const sh=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(shotDir,'papers-'+n+(board?'-'+board:'')+'-'+width+'x'+height+'.png'),Buffer.from(sh.data,'base64'));} // optional: save the paper screens for review
       await evaluate('window.__layoutRobotHide()');
       const m=await evaluate(`(()=>{const lis=[...document.querySelectorAll('#reveal-list > li')].map(l=>l.getBoundingClientRect()),col=document.querySelector('.main-col').getBoundingClientRect(),board=document.querySelector('.question-prompt').getBoundingClientRect(),fit=parseFloat(getComputedStyle(document.getElementById('hud')).getPropertyValue('--rv-fit'))||1;const last=document.querySelectorAll('#reveal-list > li')[lis.length-1];const st=document.querySelector('#reveal-list > li .owner-stamp').getBoundingClientRect();last.scrollIntoView({block:'center'});const after=last.getBoundingClientRect();document.querySelector('.main-col').scrollTop=0;const stg=document.querySelector('#q-stage'),artBottom=stg?stg.getBoundingClientRect().bottom:board.bottom,hit=document.elementFromPoint(board.left+board.width/2,board.top+board.height/2);return {barTop:Math.round(document.getElementById('bottom-toolbar').getBoundingClientRect().top),stampTop:Math.round(st.top),stampClip:Math.round(artBottom-st.top),behind:col.top<=board.top+1,boardOnTop:!!(hit&&hit.closest('.question-prompt')),gap:Math.round(lis[0].top-board.bottom),lastBottom:Math.round(lis[lis.length-1].bottom),colBottom:Math.round(col.bottom),colTop:Math.round(col.top),fit,scrolledIntoView:after.bottom<=col.bottom+1&&after.top>=col.top-1}})()`);
