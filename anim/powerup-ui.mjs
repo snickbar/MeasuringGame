@@ -76,7 +76,7 @@ export function createPowerupController(ports) {
   function clearTray(side) {
     if (!drawn && tray.hidden && !tray.firstChild && !side?.style.paddingTop) return; // already empty
     tray.hidden = true;
-    if (side) side.style.paddingTop = '';
+    if (side) { side.style.paddingTop = ''; side.style.removeProperty('--sc-pu'); }
     tray.innerHTML = '';
     drawn = null;
   }
@@ -96,7 +96,7 @@ export function createPowerupController(ports) {
     if (drawn && drawn.content === content && !tray.hidden && side?.style.paddingTop === drawn.padding &&
       layoutKey(col, main, side, body) === drawn.layout) return;
     tray.hidden = true;
-    if (side) side.style.paddingTop = '';
+    if (side) { side.style.paddingTop = ''; side.style.removeProperty('--sc-pu'); }
     const hudRect = hud.getBoundingClientRect(), colRect = col.getBoundingClientRect();
     const mainRect = main.getBoundingClientRect(), sideRect = side.getBoundingClientRect();
     const width = sideRect.right - mainRect.right - 6;
@@ -123,6 +123,7 @@ export function createPowerupController(ports) {
     tray.style.top = `${top - hudRect.top}px`;
     tray.hidden = false;
     side.style.paddingTop = `${Math.max(0, top + panelHeight - body.getBoundingClientRect().top + 6)}px`;
+    side.style.setProperty('--sc-pu', side.style.paddingTop); // the score column scrolls up behind the tray instead of starting under it (play-layout.css)
     drawn = { content, padding: side.style.paddingTop, layout: layoutKey(col, main, side, body) };
   }
   function same(c) {

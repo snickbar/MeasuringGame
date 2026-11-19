@@ -29,6 +29,16 @@ export function createPlayLayout(doc = document) {
       delete owner.dataset.playDensity;
       // While the round's papers are being revealed, the thing that has to fit is the whole answer column (not the hidden keypad area):
       // the papers get a little narrower, which also makes them shorter, only as much as needed.
+      if (owner.dataset.playLayout !== 'party' && owner.querySelector('.play-middle')) {
+        // Any scrolling middle section reaches up behind the status row and down behind the see-through buttons, so its edges never cut content.
+        owner.style.removeProperty('--pm-top'); owner.style.removeProperty('--pm-bot');
+        const mid = owner.querySelector('.play-middle'), st = owner.querySelector('.play-status'), ac = owner.querySelector('.play-actions');
+        if (mid.getClientRects().length) {
+          const mr = mid.getBoundingClientRect();
+          if (st && st.getClientRects().length) owner.style.setProperty('--pm-top', `${Math.min(24, Math.max(0, Math.round(mr.top - st.getBoundingClientRect().top)))}px`);
+          if (ac && ac.getClientRects().length) owner.style.setProperty('--pm-bot', `${Math.min(24, Math.max(0, Math.round(ac.getBoundingClientRect().bottom - mr.bottom)))}px`);
+        }
+      }
       if (owner.id === 'bluff-screen' || owner.id === 'hs-screen') {
         // The Bluff / High Stakes player columns reach down behind the see-through button, so measure how far.
         owner.style.removeProperty('--pm-down'); owner.style.removeProperty('--pm-up');

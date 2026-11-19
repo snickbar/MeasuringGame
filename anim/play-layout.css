@@ -20,7 +20,7 @@ body:has(#worlds-screen.active[data-play-layout=worlds]){overflow:hidden}
 :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-prompt{margin:4px 0;padding:6px 10px;font-size:14px}
 :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .pu-row{margin:3px 0}
 :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo]) .dc-display{margin:4px 0;min-height:36px;font-size:26px}
-:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo],#hs-screen[data-play-layout]) .dc-keys{grid-template-columns:repeat(3,72px);gap:3px 6px}
+:is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo],#hs-screen[data-play-layout]) .dc-keys{grid-template-columns:repeat(3,minmax(0,72px));gap:3px 6px}
 :is(#worlds-screen[data-play-layout=worlds],.screen[data-play-layout=solo],#hs-screen[data-play-layout]) .dc-key{height:48px;min-height:48px;font-size:21px}
 /* Reuse the real High/Low input nodes; no cloned buttons or event handlers. */
 #hud:is([data-play-layout=highlow],[data-play-layout=teamworlds])>.hud-timer-row{display:none}
@@ -411,7 +411,7 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
 #hud[data-play-layout=party] .game-body{overflow:visible}
 #hud[data-play-layout=party] .hud-timer-row{z-index:5}
 #hud[data-play-layout=party] .score-sidebar{margin-top:calc(-1 * var(--sc-up,0px))}
-#hud[data-play-layout=party] .score-col{padding-top:calc(var(--sc-up,0px) + 15px)} /* the score column scrolls up behind the board and timer in every phase (they stay on top), instead of being cut by a flat edge under them */
+#hud[data-play-layout=party] .score-col{margin-top:calc(-1 * var(--sc-pu,0px));padding-top:calc(var(--sc-up,0px) + 15px + var(--sc-pu,0px))} /* --sc-pu: the power-up tray pads the sidebar down; the column still reaches up behind it */ /* the score column scrolls up behind the board and timer in every phase (they stay on top), instead of being cut by a flat edge under them */
 /* The question card's inner box no longer clips at its edges (an invisible edge that cut off mascots, glows and shadows). Content is sized to fit by the density rules above; only when even the tightest density cannot fit does it fall back to scrolling. */
 #hud[data-play-layout=party] .play-input-body{overflow:visible}
 #hud[data-play-layout=party][data-play-density=tight] .play-input-body{overflow:auto}
@@ -453,3 +453,9 @@ body:has(#final-screen.active) #bottom-toolbar #reaction-strip::before{content:"
 #hud.active[data-play-layout=party]{bottom:0}
 #hud[data-play-layout=party] .main-col{padding-bottom:var(--play-bottom,0px)}
 #hud[data-play-layout=party] .score-col{padding-bottom:calc(var(--play-bottom,0px) + 8px)}
+/* Every other scrolling middle section (when the content really cannot fit): it reaches up behind the status row and down behind the see-through buttons, which stay on top, so the scroll edges never cut content. */
+[data-play-layout]:not([data-play-layout=party]) :is(.play-status,.play-actions){position:relative;z-index:3}
+[data-play-layout]:not([data-play-layout=party])[data-play-density=tight] .play-middle:not(:has(>.hs-board)){margin:calc(-1 * var(--pm-top,0px)) 0 calc(-1 * var(--pm-bot,0px));padding:calc(var(--pm-top,0px) + 4px) 0 calc(var(--pm-bot,0px) + 8px)}
+/* The guessing column never clips its sides (a clip box there only ever cut shadows and floating reactions). */
+#hud[data-play-layout=party] .main-col{overflow:visible}
+#hud[data-play-layout=party]:is([data-phase=reveal],[data-phase=summary]) .main-col{overflow-y:auto}

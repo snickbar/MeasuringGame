@@ -40,3 +40,8 @@ button) and Equip in the shop. A new game starts from `defaultAvatarId()`. Run `
 
 ## The party result layout must survive the phase change
 `applyPhase` clears `data-play-layout` on every non-question phase (`restoreHighLow`). Reveal and summary put it back with `keepParty`; without it the papers and score cards are cut by a flat edge under the board even though the test fixtures (which set the attribute by hand) pass. Run `npm run test:result-layout` after touching `applyPhase` or the play-layout.
+
+## No invisible walls (check EVERY time)
+No box may clip, mask or scroll-cut content along an axis that cannot scroll, and scroll areas reach up/down behind transparent chrome (board, status row, power-up tray, button bars) so no flat edge ever cuts a card in view.
+Run `npm run test:no-walls` (360x640, 390x780, 412x915) after touching any `overflow`, `clip-path`, `mask`, scroll box or `anim/play-layout.*`. Boxes that clip on purpose live in `WALL_ALLOW` in `scripts/verify-play-layout-browser.cjs`
+with the reason; add to it only for a visible, bordered decorative frame. The power-up tray pads the score sidebar, so `anim/powerup-ui.mjs` must keep publishing `--sc-pu` (checked by `test:result-layout`).

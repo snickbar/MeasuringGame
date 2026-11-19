@@ -1,5 +1,35 @@
 // Phone-layout regression with isolated Firebase/storage; no live player writes.
 const fs=require('fs'),path=require('path'),http=require('http'),os=require('os'),vm=require('vm'),{spawn}=require('child_process');
+// "No invisible walls" audit (npm run test:no-walls). Finds every box that clips its contents (overflow, clip-path, mask) and reports the ones that
+// cut a child along an axis that cannot scroll. A clip that only hides content scrolled out of a real scroll area is fine; anything else is an invisible wall.
+// Boxes that clip on purpose (a visible bordered sky panel, a sprite strip, the home scenery) are listed in WALL_ALLOW with the reason.
+const WALL_ALLOW=[
+ '.wl-sky',          // bordered sky panel: clouds drift and the rocket/balloon fly inside its visible frame
+ '.hs-pig-frames',   // sprite strip: one frame shown at a time
+ '#home-art','#home-fx','#home-title-shine','.hs-sheen', // home scenery and shine sweep
+ '#final-screen',    // overflow-x:clip only trims the final title bounce
+ '.wl-bar',          // accuracy bar fill reveal (clip-path animates the fill)
+];
+const WALLS=`(()=>{const ALLOW=${JSON.stringify(WALL_ALLOW)};const out=[];
+const roots=[...document.querySelectorAll('.screen.active,#hud.active,#worlds-screen.active,#daily-screen.active,#monthly-screen.active,#survival-screen.active,#wb-screen.active,#hs-screen.active,#bluff-screen.active')];
+const vis=e=>{const r=e.getBoundingClientRect();const c=getComputedStyle(e);return r.width>1&&r.height>1&&c.display!=='none'&&c.visibility!=='hidden'};
+const name=e=>{let n=e.tagName.toLowerCase();if(e.id)n+='#'+e.id;const c=[...e.classList].slice(0,2).join('.');if(c)n+='.'+c;return n};
+roots.forEach(root=>{[root,...root.querySelectorAll('*')].forEach(el=>{if(!vis(el))return;const cs=getComputedStyle(el);
+ const ox=cs.overflowX,oy=cs.overflowY;const cp=cs.clipPath!=='none',mk=(cs.maskImage&&cs.maskImage!=='none')||(cs.webkitMaskImage&&cs.webkitMaskImage!=='none');
+ if(ox==='visible'&&oy==='visible'&&!cp&&!mk)return;
+ if(ALLOW.some(s=>el.matches(s)||el.closest(s)))return;
+ if(['IMG','SVG','CANVAS'].includes(el.tagName.toUpperCase()))return;
+ const sx=ox==='auto'||ox==='scroll',sy=oy==='auto'||oy==='scroll';
+ const r=el.getBoundingClientRect();const sides={l:0,r:0,t:0,b:0};let sample='';
+ el.querySelectorAll('*').forEach(d=>{if(!vis(d)||ALLOW.some(s=>d.matches(s)||d.closest(s)))return;const q=d.getBoundingClientRect();if(q.width<3||q.height<3)return;
+  const l=r.left-q.left,rr=q.right-r.right,t=r.top-q.top,b=q.bottom-r.bottom;
+  const xClip=ox!=='visible'||cp||mk,yClip=oy!=='visible'||cp||mk;
+  if(xClip&&!sx){if(l>2)sides.l=Math.max(sides.l,Math.round(l));if(rr>2)sides.r=Math.max(sides.r,Math.round(rr));}
+  if(yClip&&!sy){if(t>2)sides.t=Math.max(sides.t,Math.round(t));if(b>2)sides.b=Math.max(sides.b,Math.round(b));}
+  if(!sample&&(sides.l||sides.r||sides.t||sides.b))sample=name(d)});
+ // a scroller's own sides still must not cut anything: the scroll box is allowed to hide only what is scrolled away along its scroll axis
+ if(sides.l||sides.r||sides.t||sides.b)out.push(name(el)+' ('+ox+'/'+oy+') cuts '+sample+' '+JSON.stringify(sides))})});
+return JSON.stringify(out)})()`;
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/\r\n/g,'\n');
 const existing=fs.readFileSync(path.join(root,'scripts/verify-screen-visibility-browser.cjs'),'utf8');
 const sandbox={};vm.runInNewContext(existing.slice(existing.indexOf('const dbStub='),existing.indexOf('const injected='))+';globalThis.stubs={dbStub,authStub};',sandbox);
@@ -131,7 +161,7 @@ const server=http.createServer((req,res)=>{
  try{res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ttf':'font/ttf','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}
 });
 server.listen(0,'127.0.0.1',()=>{
- const child=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'wb-summary-'+process.pid),'about:blank'],{windowsHide:true});
+ const child=spawn(process.platform==='win32'?'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe':'/usr/bin/google-chrome',[...(process.platform==='win32'?[]:['--no-sandbox']),'--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+path.join(os.tmpdir(),'wb-summary-'+process.pid),'about:blank'],{windowsHide:true});
  let stderr='',started=false,socket;const timer=setTimeout(()=>{child.kill();server.close();process.exitCode=1;},180000);
  child.stderr.on('data',async chunk=>{
   stderr+=chunk;const match=stderr.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(started||!match)return;started=true;
@@ -149,6 +179,11 @@ server.listen(0,'127.0.0.1',()=>{
     for(let i=0;i<250;i++){if(await evaluate('window.__layoutReady?.()'))break;await new Promise(r=>setTimeout(r,30));}
     if(!process.env.PLAY_LAYOUT_NAV_ONLY){
     const baselines={};
+if(process.env.PLAY_LAYOUT_WALLS){const bad=[];const run=async tag=>{const rows=JSON.parse(await evaluate(WALLS));rows.forEach(x=>bad.push(tag+' '+width+'x'+height+': '+x))};
+ const modes=['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:many','bluff:many','highstakes:many'];
+ for(const mode of modes){await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,2200));await run(mode)}
+ for(const n of [4,10]){await evaluate('window.__layoutAudit("quick")');await evaluate('window.__layoutRv('+n+')');await new Promise(r=>setTimeout(r,500));await run('reveal'+n);await evaluate('window.__layoutAudit("quick")');await evaluate('window.__layoutSm('+n+')');await new Promise(r=>setTimeout(r,500));await run('summary'+n)}
+ const uniq=[...new Set(bad)];if(uniq.length){console.error('Invisible walls found:\n'+uniq.join('\n'));process.exitCode=1}else console.log('No invisible walls at '+width+'x'+height);continue;}
     if(process.env.PLAY_LAYOUT_RESULTS){
      // Result screens must not cut anything off or leave a big empty gap. (npm run test:result-fit)
      // The score / team column must also reach up behind the board row during the question phase (no flat cut under the board and timer).
@@ -201,7 +236,7 @@ server.listen(0,'127.0.0.1',()=>{
      continue;
     }
     for(const mode of ['quick','party','teamvteam','worlds','daily','monthly','survival','whichbigger','highlow','teamworlds','highstakes','highstakes:bet','bluff','bluff:vote','bluff:summary','bluff:standings','quick:letterboard','quick:terminal','quick:tv','quick:phone','quick','party','teamvteam'].filter(m=>!(process.env.PLAY_LAYOUT_KEYPAD_ONLY&&m.startsWith('bluff')))){
-      await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,180));
+      await evaluate('window.__layoutAudit('+JSON.stringify(mode)+')');await new Promise(r=>setTimeout(r,400));
       const state=await evaluate(`(()=>{const vis=e=>e.getClientRects().length&&getComputedStyle(e).display!=='none';const owner=[...document.querySelectorAll('[data-play-layout].active,#wb-screen.active')].find(vis);if(!owner)throw Error('No active layout');const pane=owner.querySelector('.play-input-body')||owner.querySelector('.play-middle')||owner.querySelector('.main-col')||owner.querySelector('.wb-play-scroll');const action=[...owner.querySelectorAll('.play-actions button,.wb-play-footer button')].find(vis),pad=[...owner.querySelectorAll('#numpad,.dc-keys')].find(vis),r=e=>{const b=e.getBoundingClientRect();return {top:Math.round(b.top),bottom:Math.round(b.bottom),width:Math.round(b.width),height:Math.round(b.height)}};return {mode:owner.dataset.playLayout,footerBackground:getComputedStyle(owner.querySelector('.play-actions,.wb-play-footer')).backgroundColor,overflow:pane?(owner.id==='wb-screen'?Math.max(0,(pane.lastElementChild?.offsetTop||0)+(pane.lastElementChild?.offsetHeight||0)-pane.clientHeight):pane.scrollHeight-pane.clientHeight):0,action:action?r(action):null,pad:pad?r(pad):null,key:pad?r(pad.querySelector('button')):null,cards:document.querySelectorAll('#score-col .score-card').length,duplicateSubmit:document.querySelectorAll('#submit-guess-btn').length,health:window.__layoutHealth()};})()`);
       if(state.footerBackground!=='rgba(0, 0, 0, 0)')throw Error(mode+' action panel is opaque '+state.footerBackground);
       if(mode==='bluff'){ // Bluff: with many players only the two player columns scroll (each on its own); the board and the middle area never move.
