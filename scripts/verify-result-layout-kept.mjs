@@ -22,5 +22,5 @@ const kp = html.slice(html.indexOf('focusedPlayLayout?.restoreHighLow()'), html.
 if (!kp.includes('"answers"') || !kp.includes('"animation"')) { console.error('FAIL: applyPhase must keep the party layout in the answers and animation phases too'); process.exit(1); }
 console.log('ok: second-chance and reveal-scene phases keep the party layout');
 
-if (!html.includes('phase !== "reveal" && phase !== "summary") { quickRobot.hide(); partyAnt.hide(); }')) { console.error('FAIL: the Quick robot and the Party ant must stay through the round summary (applyPhase hides them only outside reveal and summary)'); process.exit(1); }
+if (!html.includes('!["answers", "animation", "reveal", "summary"].includes(phase)) { quickRobot.hide(); partyAnt.hide(); }')) { console.error('FAIL: the Quick robot and the Party ant must stay through the round summary (applyPhase hides them only outside the second-chance page, reveal scene, reveal and summary)'); process.exit(1); }
 console.log('ok: the Quick robot stays through reveal and summary');

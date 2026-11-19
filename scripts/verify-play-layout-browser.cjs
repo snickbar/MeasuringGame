@@ -105,10 +105,19 @@ window.__layoutWbResult=()=>{Object.assign(wb,{phase:'result',ok:true,picked:wb.
 window.__layoutAnt=async()=>{quickRobot.hide();partyAnt.hide();const solo=roomState.settings.solo;roomState.settings.solo=false;
  const snap=()=>{const el=document.querySelector('.pa-ant'),card=scoreColEl.querySelector('.score-card'),hud=document.getElementById('hud').getBoundingClientRect();if(!el)return null;const r=el.getBoundingClientRect(),c=card?card.getBoundingClientRect():null,cs=getComputedStyle(el);
   return {reaction:el.dataset.reaction,visible:cs.visibility==='visible'&&cs.opacity!=='0',off:el.classList.contains('off'),rect:{l:Math.round(r.left),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{t:Math.round(c.top),id:card.dataset.id},hud:{l:Math.round(hud.left),r:Math.round(hud.right)}};};
- const order=roomState.revealOrder.slice(),key='ant:'+Math.random();partyAnt.sync(key,order,0);await robotWait(1300);const idle=snap();const reactions=[];
+ const order=roomState.revealOrder.slice(),key=roomState.gameId+':'+roomState.round;
+ // arrives with the second-chance page, steps aside (not out) for the reveal scene, and is back without a second slide-in
+ standMascots('answers');await robotWait(1000);const arrived=snap(),pop=document.querySelector('.pa-pop'),slide=pop.getAnimations()[0];standMascots('animation');await robotWait(200);const held=snap();
+ standMascots('reveal');await robotWait(300);const back=snap(),slideAgain=pop.getAnimations()[0]!==slide;
+ partyAnt.sync(key,order,0);await robotWait(300);const idle=snap();const reactions=[];
  for(let i=1;i<=order.length;i++){partyAnt.sync(key,order,i);await robotWait(1000);reactions.push(partyAnt.reaction);}
- const end=snap();partyAnt.hide();roomState.settings.solo=solo;return {idle,reactions,end};};
+ const end=snap();partyAnt.hide();roomState.settings.solo=solo;return {arrived,held,back,slideAgain,idle,reactions,end};};
 window.__layoutAntShow=async i=>{partyAnt.hide();roomState.settings.solo=false;const order=roomState.revealOrder.slice(),key='antshot:'+Math.random();partyAnt.sync(key,order,0);await robotWait(1000);partyAnt.sync(key,order,i);await robotWait(1100);};
+window.__layoutQWaitExit=async()=>{const qv=document.getElementById('question-view'),scene=document.getElementById('q-wait-scene');qWaitKey='audit:wait:'+Math.random();qWaitExited='';
+ scene.querySelector('.qw-mascot').innerHTML='<img src="anim/mode-mascots/party-ant-tutorial.webp" alt="">';const wasQ=qv.classList.contains('active');qv.classList.add('active','q-waiting','q-wait-ready');scene.hidden=false;scene.querySelector('.qw-mascot').style.cssText='opacity:1;flex:none;height:80px;width:173px';await robotWait(100);
+ const mm=scene.querySelector('.qw-mascot'),dbg={h:Math.round(mm.getBoundingClientRect().height),op:getComputedStyle(mm).opacity,key:qWaitKey,ex:qWaitExited,hid:scene.hidden};const m=mm.getBoundingClientRect(),n0=document.body.querySelectorAll(':scope > div[aria-hidden=true]').length;qWaitExit('answers');
+ const n1=document.body.querySelectorAll(':scope > div[aria-hidden=true]').length,c=document.body.querySelector(':scope > div[aria-hidden=true]:last-child'),r1=c&&c.getBoundingClientRect();await robotWait(260);const r2=c&&c.getBoundingClientRect();await robotWait(700);
+ const n2=document.body.querySelectorAll(':scope > div[aria-hidden=true]').length;scene.querySelector('.qw-mascot').style.cssText='';qWaitKey='';scene.hidden=true;qv.classList.remove('q-waiting','q-wait-ready');if(!wasQ)qv.classList.remove('active');return {dbg,w:Math.round(m.width),n0,n1,n2,moved:r1&&r2?Math.round(r1.left-r2.left):0};};
 window.__layoutRobotIdle=async()=>{quickRobot.hide();quickRobot.stand('idle:'+Math.random());await robotWait(1300);return robotSnap();};
 window.__layoutRobot=async acc=>{quickRobot.hide();const key='test:'+Math.random();quickRobot.stand(key);await robotWait(700);
  const idle=robotSnap();quickRobot.react(key,acc);await robotWait(1500);
@@ -271,8 +280,12 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
        if(robot.rect.t>robot.boardBottom-10)throw Error(why+'he should overlap the question board a little: '+JSON.stringify(robot));
        for(const [acc,tier] of [[80,'win'],[50,'soso'],[20,'lose']]){const x=await evaluate('window.__layoutRobot('+acc+')');if(!x||!x.reaction||!x.reaction.startsWith(tier))throw Error(why+'wrong tier for '+acc+'%: '+JSON.stringify(x));if(process.env.PLAY_LAYOUT_SHOT){fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});const rs=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'robot-'+tier+'-'+width+'x'+height+'.png'),Buffer.from(rs.data,'base64'));}}
        console.log(JSON.stringify({quickRobot:true,width,height,idle:robot.idle.reaction,reaction:robot.reaction,positionsSeen:robot.positionsSeen,pass:true}));}
+      if(!board&&n===4){const qx=await evaluate('window.__layoutQWaitExit()');if(!qx||qx.n1!==qx.n0+1||qx.n2!==qx.n0||qx.moved<20)throw Error('Wait-scene mascot must slide out to the left and clean up '+width+'x'+height+': '+JSON.stringify(qx));console.log(JSON.stringify({qWaitExit:true,width,height,moved:qx.moved,pass:true}));}
       if(!board&&n===4){const ant=await evaluate('window.__layoutAnt()'),why='Party ant '+width+'x'+height+': ';
        if(!ant||!ant.idle||!ant.idle.visible||ant.idle.reaction!=='idle')throw Error(why+'he must wait in his standing pose before the first reveal: '+JSON.stringify(ant&&ant.idle));
+       if(!ant.arrived||!ant.arrived.visible||!ant.arrived.card||Math.abs(ant.arrived.rect.b-ant.arrived.card.t)>10)throw Error(why+'he must already stand on the top card on the second-chance page: '+JSON.stringify(ant.arrived));
+       if(!ant.held||!ant.held.off)throw Error(why+'he must step aside while the reveal scene plays: '+JSON.stringify(ant.held));
+       if(!ant.back||!ant.back.visible||ant.slideAgain)throw Error(why+'he must be back after the scene WITHOUT sliding in a second time: '+JSON.stringify({back:ant.back,slideAgain:ant.slideAgain}));
        if(JSON.stringify(ant.reactions)!=='["lose","soso","close","win"]')throw Error(why+'he must react to every paper by place (lose, soso, close, win): '+JSON.stringify(ant.reactions));
        if(!ant.end||!ant.end.visible||ant.end.off||!ant.end.card||Math.abs(ant.end.rect.b-ant.end.card.t)>10)throw Error(why+'he must stand on top of the TOP score card: '+JSON.stringify(ant.end));
        if(ant.end.rect.l<ant.end.hud.l-1||ant.end.rect.r>ant.end.hud.r+1)throw Error(why+'he runs off the side of the game screen: '+JSON.stringify(ant.end));

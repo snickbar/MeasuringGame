@@ -24,7 +24,7 @@ export function pickRobotReaction(tier, last, random = Math.random) {
 // hud: the fixed game container the robot is added to (nothing in it clips, so he can overlap the question board).
 // cardFor(): your own score card element (or null). reduceMotion(): true when animation should be skipped.
 export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, reactTimer = 0;
+  let el = null, sprite = null, raf = 0, standKey = null, reactKey = null, last = null, stepTimer = 0, reactTimer = 0, held = false;
 
   function build() {
     el = document.createElement("div");
@@ -58,7 +58,7 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
       if (el._x !== x || el._y !== y) { el.style.transform = `translate(${x}px, ${y}px)`; el._x = x; el._y = y; }
       // He only steps out once his feet are above the question board (he would be up in the header) or below the score column.
       const colBottom = card.parentElement ? card.parentElement.getBoundingClientRect().bottom : h.bottom;
-      off = (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
+      off = held || (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
     }
     el.classList.toggle("off", off);
     raf = requestAnimationFrame(place);
@@ -66,22 +66,29 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
 
   function hide() {
     clearTimeout(reactTimer); stopFrames();
-    standKey = reactKey = null;
+    standKey = reactKey = null; held = false;
     cancelAnimationFrame(raf); raf = 0;
     if (el) { el.classList.remove("on", "reacting"); el.classList.add("off"); }
   }
 
   // Waiting pose for the whole reveal. key: one value per round.
-  function stand(key) {
+  function stand(key, hold = false) {
     if (standKey === key) return;
     hide();
     standKey = key;
     if (!el) build();
     setStrip(IDLE[0], IDLE[1]);
     el.classList.remove("reacting", "on");
-    void el.offsetWidth; el.classList.add("on");
+    held = !!hold;
+    if (!held) { void el.offsetWidth; el.classList.add("on"); } // he slides in from the right once, when he first appears
     el.classList.toggle("still", !!reduceMotion());
     raf = requestAnimationFrame(place);
+  }
+
+  // Hide him in place (he keeps his spot, and does NOT slide in again when he comes back) while a full-screen scene covers the board.
+  function setHeld(on) {
+    held = !!on;
+    if (!held && el && standKey !== null && !el.classList.contains("on")) { void el.offsetWidth; el.classList.add("on"); }
   }
 
   // Your paper is revealed: play the reaction to your accuracy (0-100), looping. Does nothing twice for the same round.
@@ -100,8 +107,8 @@ export function createQuickRobot({ hud, cardFor, reduceMotion = () => false }) {
       if (reduceMotion()) { setFrame(frames - 1, frames); return; } // reduced motion: hold the last pose
       let i = 0;
       stepTimer = setInterval(() => { i = (i + 1) % frames; setFrame(i, frames); }, FRAME_MS);
-    }, 800);
+    }, 300); // `accuracy` is only passed once your paper is completely revealed (flair included)
   }
 
-  return { stand, react, hide, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
+  return { stand, react, hide, hold: setHeld, get reaction() { return el?.dataset.reaction || null; }, get reacting() { return !!el && el.classList.contains("reacting"); } };
 }

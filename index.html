@@ -21196,6 +21196,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const avg = rows.length ? rows.reduce((sum, h) => sum + roundAccuracy(h.r), 0) / rows.length : null;
     return { html: `<b>Seen ${times || 1} ${(times || 1) === 1 ? "time" : "times"}</b><small>${avg === null ? `First time as the ${role} one` : `${formatAccuracy(avg)}% as the ${role} one`}</small>` };
   }
+  // The mascot that waited at the bottom of the question screen slides out to the left when the phase moves on (the question screen is
+  // about to be replaced, so a copy of it carries the exit).
+  let qWaitExited = "";
+  function qWaitExit(phase) {
+    if (phase === "question" || phase === "countdown" || !qWaitKey || qWaitExited === qWaitKey) return;
+    const m = document.querySelector("#q-wait-scene .qw-mascot");
+    qWaitExited = qWaitKey;
+    if (!m || prefersReducedMotion() || !m.animate) return;
+    const r = m.getBoundingClientRect();
+    if (r.width < 20 || r.height < 20 || getComputedStyle(m).opacity === "0") return;
+    const copy = document.createElement("div");
+    copy.setAttribute("aria-hidden", "true");
+    copy.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;display:flex;align-items:center;justify-content:center;gap:4px;pointer-events:none;z-index:6`;
+    m.querySelectorAll("img").forEach((i) => { const c = i.cloneNode(); c.style.cssText = `height:92%;max-width:${m.querySelectorAll("img").length > 1 ? "calc(50% - 2px)" : "100%"};width:auto;object-fit:contain`; copy.appendChild(c); });
+    document.body.appendChild(copy);
+    copy.animate([{ transform: "none" }, { transform: `translateX(${-(r.right + 30)}px)` }], { duration: 480, easing: "cubic-bezier(.5,0,.8,.4)", fill: "forwards" }).finished.then(() => copy.remove(), () => copy.remove());
+  }
   function qWaitScene(on) {
     const qv = document.getElementById("question-view"), scene = document.getElementById("q-wait-scene");
     if (!qv || !scene) return;
@@ -22159,18 +22176,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   // Classic Party: the ant stands on the TOP score card (not yours) and reacts to every paper as it is revealed.
   const partyAnt = createPartyAnt({ hud: hudEl, cardFor: () => scoreColEl.querySelector(".score-card"), reduceMotion: prefersReducedMotion });
+  function syncMascots(order, settled) { syncQuickRobot(order, settled); syncPartyAnt(order, settled); }
   function syncPartyAnt(order, revealIndex) {
     const party = !roomState.settings?.solo && (roomState.settings?.mode || "party") === "party";
     if (!party || !order.length) { partyAnt.hide(); return; }
     partyAnt.sync(`${roomState.gameId}:${roomState.round}`, order, revealIndex);
   }
 
+  // The mascots arrive when the second-chance page does (sliding in from the right, once) and stay through the reveal scene,
+  // the reveals and the round summary. While the full-width reveal scene plays they only step aside (no second slide-in after).
+  function standMascots(phase) {
+    const party = (roomState.settings?.mode || "party") === "party" && !roomState.settings?.solo, quick = (roomState.settings?.mode || "party") === "party" && !!roomState.settings?.solo;
+    const key = `${roomState.gameId}:${roomState.round}`, held = phase === "animation";
+    if (quick && currentPlayers[currentPlayerId]) { quickRobot.stand(key, held); quickRobot.hold(held); } else quickRobot.hide();
+    if (party && Object.keys(currentPlayers || {}).length) { partyAnt.stand(key, held); partyAnt.hold(held); } else partyAnt.hide();
+  }
+
   function renderRevealChoreography(data) {
     const order = data.revealOrder || [];
     const revealIndex = data.revealIndex || 0;
     const lastRoundPoints = data.lastRoundPoints || {};
-    syncQuickRobot(order, revealIndex);
-    syncPartyAnt(order, revealIndex);
+    syncMascots(order, Math.max(0, Math.min(revealIndex, lastChoreographedIndex))); // they only react to papers that are completely revealed, flair included
 
     if (order.length === 0) {
       revealListEl.innerHTML = "<li>No one answered in time.</li>";
@@ -22215,11 +22241,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       lastChoreographedIndex = revealIndex;
       renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, revealIndex));
+      syncMascots(order, revealIndex);
     } else if (revealIndex === lastChoreographedIndex + 1 && !revealAnimating) {
       revealAnimating = true;
       playCardReveal(order, revealIndex - 1, lastRoundPoints).then(() => {
         lastChoreographedIndex = revealIndex;
         revealAnimating = false;
+        syncMascots(order, revealIndex); // the answer and flair have popped: now the mascot reacts
       });
     } else if (revealIndex > lastChoreographedIndex) {
       // jumped by more than one — just snap remaining cards to final state
@@ -22239,6 +22267,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       lastChoreographedIndex = revealIndex;
       renderScoreColumn(computeDisplayedScores(order, lastRoundPoints, revealIndex));
+      syncMascots(order, revealIndex);
     }
 
     if (isHost) {
@@ -24232,7 +24261,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
-    if (phase !== "reveal" && phase !== "summary") { quickRobot.hide(); partyAnt.hide(); } // the robot and the ant stay on your card through the round result AND the round summary; any other screen sends him off
+    qWaitExit(phase); // the waiting mascot slides out to the left as the second-chance page arrives
+    if (!["answers", "animation", "reveal", "summary"].includes(phase)) { quickRobot.hide(); partyAnt.hide(); } else standMascots(phase); // they arrive with the second-chance page and stay through the reveal and the round summary; any other screen sends them off
     // The game actually starting (or anything else moving the phase off
     // "waiting") while someone's mid-edit cancels the edit outright rather
     // than leaving the name/avatar screen stuck showing on top of the HUD

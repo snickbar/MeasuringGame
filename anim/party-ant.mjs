@@ -21,7 +21,7 @@ export function antTier(index, count) {
 }
 
 export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
-  let el = null, img = null, raf = 0, standKey = null, seen = 0, stepTimer = 0, calmTimer = 0;
+  let el = null, img = null, raf = 0, standKey = null, seen = 0, stepTimer = 0, calmTimer = 0, held = false;
 
   function build() {
     el = document.createElement("div");
@@ -57,7 +57,7 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
       const x = Math.round(c.left + c.width / 2 - h.left - w / 2), y = Math.round(c.top - h.top - ht + 5);
       if (el._x !== x || el._y !== y) { el.style.transform = `translate(${x}px, ${y}px)`; el._x = x; el._y = y; }
       const colBottom = card.parentElement ? card.parentElement.getBoundingClientRect().bottom : h.bottom;
-      off = (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
+      off = held || (board && c.top < board.getBoundingClientRect().top) || c.top > colBottom - 4;
     }
     el.classList.toggle("off", off);
     raf = requestAnimationFrame(place);
@@ -67,20 +67,29 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
     clearTimeout(calmTimer); clearInterval(stepTimer);
     standKey = null; seen = 0;
     cancelAnimationFrame(raf); raf = 0;
+    held = false;
     if (el) { el.classList.remove("on"); el.classList.add("off"); }
   }
 
-  function stand(key) {
+  function stand(key, hold = false) {
     if (standKey === key) return;
     hide();
     standKey = key; seen = 0;
     if (!el) build();
     setPose("idle");
-    el.classList.remove("on"); void el.offsetWidth; el.classList.add("on");
+    el.classList.remove("on");
+    held = !!hold;
+    if (!held) { void el.offsetWidth; el.classList.add("on"); } // he slides in from the right once, when he first appears
     raf = requestAnimationFrame(place);
   }
 
-  // Call on every render of the reveal: `order` worst-first, `revealIndex` = papers shown so far. Reacts to the newest one.
+  // Hide him in place (he keeps his spot, and does NOT slide in again when he comes back) while a full-screen scene covers the board.
+  function setHeld(on) {
+    held = !!on;
+    if (!held && el && standKey !== null && !el.classList.contains("on")) { void el.offsetWidth; el.classList.add("on"); } // first time he shows: slide in
+  }
+
+  // Call on every render of the reveal: `order` worst-first, `revealIndex` = papers completely revealed so far (flair included). Reacts to the newest one.
   function sync(key, order, revealIndex) {
     stand(key);
     if (revealIndex <= seen) return;
@@ -93,8 +102,8 @@ export function createPartyAnt({ hud, cardFor, reduceMotion = () => false }) {
       replay(name);
       // after a reaction he goes back to waiting, except the winner's celebration, which he keeps through the summary
       if (name !== "win") calmTimer = setTimeout(() => { if (standKey === key) replay("idle"); }, 1500);
-    }, 650); // once the paper has finished flipping
+    }, 300); // `revealIndex` only counts papers that are completely revealed, flair included; a short beat, then he reacts
   }
 
-  return { stand, sync, hide, get reaction() { return el?.dataset.reaction || null; } };
+  return { stand, sync, hide, hold: setHeld, get reaction() { return el?.dataset.reaction || null; } };
 }
