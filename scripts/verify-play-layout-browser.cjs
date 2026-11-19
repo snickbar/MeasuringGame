@@ -99,8 +99,16 @@ const robotSnap=()=>{const el=document.querySelector('.qr-robot'),card=scoreColE
  return {reaction:el.dataset.reaction,visible:cs.visibility==='visible'&&cs.opacity!=='0',on:el.classList.contains('on'),off:el.classList.contains('off'),reacting:el.classList.contains('reacting'),image:getComputedStyle(sp).backgroundImage.includes('quick-robot-react-'),frames:getComputedStyle(sp).getPropertyValue('--n').trim(),pos:sp.style.backgroundPosition,
   rect:{l:Math.round(r.left),t:Math.round(r.top),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{l:Math.round(c.left),t:Math.round(c.top),r:Math.round(c.right)},hud:{l:Math.round(hud.left),r:Math.round(hud.right)},boardTop:Math.round(board.top),boardBottom:Math.round(board.bottom)};};
 const robotWait=ms=>new Promise(r=>setTimeout(r,ms));
-window.__layoutRobotHide=()=>quickRobot.hide();
+window.__layoutRobotHide=()=>{quickRobot.hide();partyAnt.hide();};
 window.__layoutWbResult=()=>{Object.assign(wb,{phase:'result',ok:true,picked:wb.pair.bigger.id,score:1,prevStreak:0});renderWhichBigger();};
+// Classic Party ant (anim/party-ant.mjs): stands on the TOP score card, then reacts to every revealed paper by finishing place.
+window.__layoutAnt=async()=>{quickRobot.hide();partyAnt.hide();const solo=roomState.settings.solo;roomState.settings.solo=false;
+ const snap=()=>{const el=document.querySelector('.pa-ant'),card=scoreColEl.querySelector('.score-card'),hud=document.getElementById('hud').getBoundingClientRect();if(!el)return null;const r=el.getBoundingClientRect(),c=card?card.getBoundingClientRect():null,cs=getComputedStyle(el);
+  return {reaction:el.dataset.reaction,visible:cs.visibility==='visible'&&cs.opacity!=='0',off:el.classList.contains('off'),rect:{l:Math.round(r.left),r:Math.round(r.right),b:Math.round(r.bottom)},card:c&&{t:Math.round(c.top),id:card.dataset.id},hud:{l:Math.round(hud.left),r:Math.round(hud.right)}};};
+ const order=roomState.revealOrder.slice(),key='ant:'+Math.random();partyAnt.sync(key,order,0);await robotWait(1300);const idle=snap();const reactions=[];
+ for(let i=1;i<=order.length;i++){partyAnt.sync(key,order,i);await robotWait(1000);reactions.push(partyAnt.reaction);}
+ const end=snap();partyAnt.hide();roomState.settings.solo=solo;return {idle,reactions,end};};
+window.__layoutAntShow=async i=>{partyAnt.hide();roomState.settings.solo=false;const order=roomState.revealOrder.slice(),key='antshot:'+Math.random();partyAnt.sync(key,order,0);await robotWait(1000);partyAnt.sync(key,order,i);await robotWait(1100);};
 window.__layoutRobotIdle=async()=>{quickRobot.hide();quickRobot.stand('idle:'+Math.random());await robotWait(1300);return robotSnap();};
 window.__layoutRobot=async acc=>{quickRobot.hide();const key='test:'+Math.random();quickRobot.stand(key);await robotWait(700);
  const idle=robotSnap();quickRobot.react(key,acc);await robotWait(1500);
@@ -263,6 +271,13 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
        if(robot.rect.t>robot.boardBottom-10)throw Error(why+'he should overlap the question board a little: '+JSON.stringify(robot));
        for(const [acc,tier] of [[80,'win'],[50,'soso'],[20,'lose']]){const x=await evaluate('window.__layoutRobot('+acc+')');if(!x||!x.reaction||!x.reaction.startsWith(tier))throw Error(why+'wrong tier for '+acc+'%: '+JSON.stringify(x));if(process.env.PLAY_LAYOUT_SHOT){fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});const rs=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'robot-'+tier+'-'+width+'x'+height+'.png'),Buffer.from(rs.data,'base64'));}}
        console.log(JSON.stringify({quickRobot:true,width,height,idle:robot.idle.reaction,reaction:robot.reaction,positionsSeen:robot.positionsSeen,pass:true}));}
+      if(!board&&n===4){const ant=await evaluate('window.__layoutAnt()'),why='Party ant '+width+'x'+height+': ';
+       if(!ant||!ant.idle||!ant.idle.visible||ant.idle.reaction!=='idle')throw Error(why+'he must wait in his standing pose before the first reveal: '+JSON.stringify(ant&&ant.idle));
+       if(JSON.stringify(ant.reactions)!=='["lose","soso","close","win"]')throw Error(why+'he must react to every paper by place (lose, soso, close, win): '+JSON.stringify(ant.reactions));
+       if(!ant.end||!ant.end.visible||ant.end.off||!ant.end.card||Math.abs(ant.end.rect.b-ant.end.card.t)>10)throw Error(why+'he must stand on top of the TOP score card: '+JSON.stringify(ant.end));
+       if(ant.end.rect.l<ant.end.hud.l-1||ant.end.rect.r>ant.end.hud.r+1)throw Error(why+'he runs off the side of the game screen: '+JSON.stringify(ant.end));
+       if(process.env.PLAY_LAYOUT_SHOT){fs.mkdirSync(process.env.PLAY_LAYOUT_SHOT,{recursive:true});for(const [i,nm] of [[1,'lose'],[3,'close'],[4,'win']]){await evaluate('window.__layoutAntShow('+i+')');const as=await call('Page.captureScreenshot',{format:'png'},sessionId);fs.writeFileSync(path.join(process.env.PLAY_LAYOUT_SHOT,'ant-'+nm+'-'+width+'x'+height+'.png'),Buffer.from(as.data,'base64'));}await evaluate('window.__layoutRobotHide()');}
+       console.log(JSON.stringify({partyAnt:true,width,height,reactions:ant.reactions,pass:true}));}
       if(!board&&n===10){const sc=await evaluate('window.__layoutRobotScroll()');
        if(sc&&sc.scrollable){const a=sc.after,why='Quick robot '+width+'x'+height+': ';
         if(!a||!a.card||Math.abs(a.rect.b-a.card.t)>10)throw Error(why+'he must scroll along with your Player card: '+JSON.stringify(sc));

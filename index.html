@@ -4456,6 +4456,7 @@ if (location.protocol === "file:") {
 <link rel="stylesheet" href="anim/party-finale.css" />
 <link rel="stylesheet" href="anim/play-layout.css">
 <link rel="stylesheet" href="anim/quick-robot.css">
+<link rel="stylesheet" href="anim/party-ant.css">
 </head>
 <body>
 
@@ -5449,6 +5450,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   import { HL_MESSAGE_BOTTLE, HL_EMPTY_BOTTLE, highLowBottlePieces } from "./anim/high-low-bottles.mjs";
   import { createPlayLayout, fitRevealStage } from "./anim/play-layout.mjs";
   import { createQuickRobot } from "./anim/quick-robot.mjs";
+  import { createPartyAnt } from "./anim/party-ant.mjs";
   import { installHomeScene } from "./anim/home-scene.mjs";
   import { bufferedGuess, quickEligible } from "./anim/powerups.mjs";
   import { createPowerupController } from "./anim/powerup-ui.mjs";
@@ -22155,11 +22157,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (revealIndex > mine) quickRobot.react(key, Number(order[mine].accuracyPercent) || 0); // ...and reacts to YOUR answer as soon as your paper is revealed
   }
 
+  // Classic Party: the ant stands on the TOP score card (not yours) and reacts to every paper as it is revealed.
+  const partyAnt = createPartyAnt({ hud: hudEl, cardFor: () => scoreColEl.querySelector(".score-card"), reduceMotion: prefersReducedMotion });
+  function syncPartyAnt(order, revealIndex) {
+    const party = !roomState.settings?.solo && (roomState.settings?.mode || "party") === "party";
+    if (!party || !order.length) { partyAnt.hide(); return; }
+    partyAnt.sync(`${roomState.gameId}:${roomState.round}`, order, revealIndex);
+  }
+
   function renderRevealChoreography(data) {
     const order = data.revealOrder || [];
     const revealIndex = data.revealIndex || 0;
     const lastRoundPoints = data.lastRoundPoints || {};
     syncQuickRobot(order, revealIndex);
+    syncPartyAnt(order, revealIndex);
 
     if (order.length === 0) {
       revealListEl.innerHTML = "<li>No one answered in time.</li>";
@@ -24221,7 +24232,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if(data.phase==='waiting')finalRendered=false;
     requestAnimationFrame(fitScoreNames);
     const phase = data.phase;
-    if (phase !== "reveal" && phase !== "summary") quickRobot.hide(); // the robot stays on your card through the round result AND the round summary; any other screen sends him off
+    if (phase !== "reveal" && phase !== "summary") { quickRobot.hide(); partyAnt.hide(); } // the robot and the ant stay on your card through the round result AND the round summary; any other screen sends him off
     // The game actually starting (or anything else moving the phase off
     // "waiting") while someone's mid-edit cancels the edit outright rather
     // than leaving the name/avatar screen stuck showing on top of the HUD

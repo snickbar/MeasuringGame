@@ -1,0 +1,21 @@
+/* Classic Party ant (anim/party-ant.mjs): stands on the top score card through the round result and may overlap the question board. */
+.pa-ant{position:absolute;left:0;top:0;z-index:7;width:var(--pa-w,clamp(84px,14vh,108px));height:calc(var(--pa-w,clamp(84px,14vh,108px)) * 1.1);pointer-events:none;visibility:hidden;transition:opacity .15s}
+.pa-ant.on{visibility:visible}
+.pa-ant.off{opacity:0}
+.pa-pop{width:100%;height:100%;transform-origin:50% 100%}
+.pa-ant.on .pa-pop{animation:paSlide .75s cubic-bezier(.18,.8,.25,1) both} /* slides in from the right edge of the screen */
+.pa-sprite{display:block;width:100%;height:100%;background-repeat:no-repeat;background-size:calc(var(--n,1) * 100%) 100%;background-position:0 0;transform-origin:50% 100%}
+/* temporary code wobbles (transform only): they stand in until the hand-drawn animation sheets replace the pictures */
+.pa-sprite[data-wobble=idle]{animation:paIdle 3.2s ease-in-out infinite}
+.pa-sprite[data-wobble=hop]{animation:paHop .5s ease-in-out infinite}
+.pa-sprite[data-wobble=sway]{animation:paSway 1.2s ease-in-out infinite}
+.pa-sprite[data-wobble=tilt]{animation:paTilt 1.4s ease-in-out infinite}
+.pa-sprite[data-wobble=wince]{animation:paWince .6s ease-in-out infinite}
+@keyframes paIdle{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-3px) rotate(1.2deg)}}
+@keyframes paHop{0%,100%{transform:translateY(0)}45%{transform:translateY(-14px) rotate(-3deg)}}
+@keyframes paSway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes paTilt{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(-3deg) translateY(-3px)}}
+@keyframes paWince{0%,100%{transform:scale(1,1) translateX(0)}25%{transform:translateX(-3px) scale(.96,.94)}75%{transform:translateX(3px) scale(.96,.94)}}
+@keyframes paSlide{from{transform:translateX(100vw)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.pa-ant .pa-pop,.pa-ant .pa-sprite{animation:none}}
+html[data-motion=reduce] .pa-ant .pa-pop,html[data-motion=reduce] .pa-ant .pa-sprite{animation:none}
