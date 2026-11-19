@@ -10501,6 +10501,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Monthly boards (Level 3 of each Monthly Challenge): the art, text area and colours come from monthly/motion.js.
   const MONTHLY_BOARD_LABELS = ["Skyrockets", "Love letters", "Rainbow sweep", "Spring meadow", "Papel picado", "Pool deck", "Painted fence", "Bubble words", "Pencil notebook", "Lightning window", "Harvest table", "Fireplace"];
   const mbId = (m) => "mb" + String(m).padStart(2, "0");
+  // The Monthly Challenge always plays on the question board of its own month (Jan Skyrockets ... Dec Fireplace). mo.key is "YYYY-MM".
+  const monthlyOwnBoard = () => { const m = Number(String(mo?.key || "").slice(5, 7)); return m >= 1 && m <= 12 ? mbId(m) : null; };
   const MONTHLY_BOARD_ITEMS = (window.MM ? MM.boards : []).map((b, i) => ({ id: mbId(i + 1), label: MONTHLY_BOARD_LABELS[i], monthly: i + 1, img: `monthly/art/${b.img.replace(/-board$/, '')}-board-wide.webp`, color: b.color, css: b.css }));
   MONTHLY_BOARD_ITEMS.forEach((b, i) => {
     const r = window.MM.boards[i].rect;
@@ -11125,7 +11127,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   // Card height on a solo / team question screen: shorter on small phones (maxH caps it further). 0 = the normal height.
   function qBoardBaseH(maxH) { let h = window.innerHeight < 680 ? 124 : window.innerHeight < 740 ? 160 : 0; if (maxH && (!h || h > maxH)) h = maxH; return h; }
   function qBoardSetH(h) { qCardH = h; if (h) qPromptEl.style.setProperty("--qh", h + "px"); else qPromptEl.style.removeProperty("--qh"); if (qSB) sbLayout(); }
-  function qBoardMount(slot, text, maxH) {
+  function qBoardMount(slot, text, maxH, boardId) { // boardId: a board this screen insists on (Monthly uses its own month's board); otherwise the equipped one
     if (!slot) return;
     const fresh = qPromptEl.parentNode !== slot;
     if (fresh) slot.appendChild(qPromptEl);
@@ -11135,7 +11137,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (fresh || questionPromptTextEl.dataset.txt !== text) { questionAnswerLineEl.style.display = "none"; questionAnswerLineEl.innerHTML = ""; delete questionAnswerLineEl.dataset.shown; }
     if (fresh) qBoardSetH(qBoardBaseH(maxH));
     const boardBefore = qPromptEl.dataset.board;
-    applyBoard(activeBoard());
+    applyBoard(boardId || activeBoard());
     if (qPromptEl.dataset.board !== boardBefore) questionPromptTextEl.dataset.txt = ""; // a new board starts blank, so write the question onto it
     setPromptText(text, true);
     if (fresh) requestAnimationFrame(() => { if (qSB) sbLayout(); });
@@ -14655,7 +14657,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="dc-display" id="mo-display">${mo.input || "0"}</div>
         ${kpKeysHtml()}
         <div class="pin-bottom"><button type="button" class="dc-btn" id="mo-submit" disabled>Lock it in</button></div>`;
-      if (monthlyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt);
+      if (monthlyScreenEl.classList.contains("active")) qBoardMount(el.querySelector("#dq-board"), q.prompt, undefined, monthlyOwnBoard()); // always this month's own board, not the equipped one
       return;
     }
     qBoardHome(el);

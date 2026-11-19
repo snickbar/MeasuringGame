@@ -94,6 +94,8 @@ window.__layoutRv=async n=>{
  return ids.length;
 };
 // Quick robot: show him for one accuracy and report where he stands (see anim/quick-robot.mjs).
+// Monthly always plays on its own month's question board (the fixture's month is 2026-10, board mb10), whatever board is equipped.
+window.__layoutMonthlyBoard=async()=>{await window.__layoutAudit('monthly');renderMonthly();await new Promise(r=>setTimeout(r,300));await new Promise(r=>setTimeout(r,500));const q=document.getElementById('question-prompt').getBoundingClientRect(),sub=document.getElementById('mo-submit').getBoundingClientRect(),bar=document.getElementById('bottom-toolbar').getBoundingClientRect();return {board:document.getElementById('question-prompt').dataset.board,mounted:!!document.querySelector('#dq-board #question-prompt'),boardH:Math.round(q.height),submitBottom:Math.round(sub.bottom),barTop:Math.round(bar.top),vh:innerHeight};};
 window.__layoutRobotHide=()=>quickRobot.hide();
 window.__layoutRobot=async acc=>{quickRobot.hide();quickRobot.show('test:'+Math.random(),acc);await new Promise(r=>setTimeout(r,1400));
  const el=document.querySelector('.qr-robot'),card=scoreColEl.querySelector('.score-card[data-id="'+currentPlayerId+'"]'),hud=document.getElementById('hud').getBoundingClientRect();
@@ -330,6 +332,7 @@ for(const m of ['quick:many','teamvteam:many','party']){await evaluate('window._
      }
      console.log(JSON.stringify({mode:mode+':reveal',width,height,...state,pass:true}));
     }
+    {const mb=await evaluate('window.__layoutMonthlyBoard()');if(!mb||!mb.mounted||mb.board!=='mb10'||mb.submitBottom>mb.vh||mb.boardH<90)throw Error('Monthly must use its own month\'s question board (mb10 for 2026-10) '+width+'x'+height+': '+JSON.stringify(mb));console.log(JSON.stringify({monthlyBoard:mb.board,width,height,pass:true}));}
     if(process.env.PLAY_LAYOUT_KEYPAD_ONLY)continue; // keypad-fit run (npm run test:keypad-fit): every mode's keypad and Lock button stay on screen; skip the slower timing checks
     for(const sample of [{count:1,sum:70.6,last:70.6,expected:'No answers yet'},{count:2,sum:160,last:70,expected:'90%'},{count:2,sum:110,last:90,expected:'20%'}]){
      const progress=await evaluate('window.__layoutAccuracy('+[sample.count,sample.sum,sample.last].join(',')+')');
